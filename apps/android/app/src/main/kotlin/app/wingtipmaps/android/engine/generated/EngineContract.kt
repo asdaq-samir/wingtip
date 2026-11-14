@@ -6587,6 +6587,19 @@ object EngineContract {
          */
         @SerialName("taxi_counted")
         val taxiCounted: Boolean? = null,
+        /**
+         * The hop flown: 0 the first, one more for each fuel stop (refuel_at) behind the airplane; arriving at a stop it is still the hop ending there. An index into the planner's totals' hops, strip_fuel's `hop`.
+         */
+        val hop: Int,
+        /**
+         * The fuel the legs burn from the start of the hop flown to here, gallons: strip_fuel's `burnt_gal` for that hop. Planning figures from the nav log's legs, never the airplane's gauge.
+         */
+        @SerialName("hop_burnt_gal")
+        val hopBurntGal: Double,
+        /**
+         * The nav log's leg flown (legs[leg], from points[leg] to the next): the leg the next waypoint ends. Null with fewer than two points.
+         */
+        val leg: Int? = null,
         val next: EngineContract.InFlightAnswerNext? = null,
         val destination: EngineContract.InFlightAnswerDestination? = null,
     )
@@ -10543,6 +10556,31 @@ object EngineContract {
     data class RegionOfInput(
         val lat: Double,
         val lon: Double,
+    )
+
+    @Serializable
+    data class RegionsAheadInput(
+        val lat: Double,
+        val lon: Double,
+        /**
+         * The track over the ground, degrees true; null or left out where there is none (standing still), and only the route is looked along.
+         */
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        /**
+         * The route's line, [lat, lon] points in the order flown; left out, none.
+         */
+        val route: List<List<Double>>? = null,
+        /**
+         * How far along the track and the route to look, nm: for the alerts ahead, the groundspeed over their five minutes.
+         */
+        @SerialName("look_ahead_nm")
+        val lookAheadNm: Double,
+        /**
+         * Either side of each line, nm; 1 where left out.
+         */
+        @SerialName("pad_nm")
+        val padNm: Double? = null,
     )
 
     @Serializable

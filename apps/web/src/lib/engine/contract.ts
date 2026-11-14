@@ -620,6 +620,18 @@ export type InFlightAnswer = {
    * Whether the start and taxi allowance was taken off the fuel figures (taxi_fuel_gal given).
    */
   taxi_counted?: boolean;
+  /**
+   * The hop flown: 0 the first, one more for each fuel stop (refuel_at) behind the airplane; arriving at a stop it is still the hop ending there. An index into the planner's totals' hops, strip_fuel's `hop`.
+   */
+  hop: number;
+  /**
+   * The fuel the legs burn from the start of the hop flown to here, gallons: strip_fuel's `burnt_gal` for that hop. Planning figures from the nav log's legs, never the airplane's gauge.
+   */
+  hop_burnt_gal: number;
+  /**
+   * The nav log's leg flown (legs[leg], from points[leg] to the next): the leg the next waypoint ends. Null with fewer than two points.
+   */
+  leg: number | null;
   next: {
     index: number;
     name: string;
@@ -870,6 +882,10 @@ export type ReadTrackAnswer =
     };
 export type ReceiverTrafficAnswer = HeardPlane[];
 export type RegionOfAnswer = string;
+/**
+ * Region names ("n40w088"), the airplane's own first, each once.
+ */
+export type RegionsAheadAnswer = string[];
 export type RegisteredProfileAnswer = string | null;
 export type ReserveMinAnswer = number;
 export type RoutePositionAnswer = {
@@ -2540,7 +2556,7 @@ export interface EngineContract {
     answer: InEmergencyAnswer;
   };
   /**
-   * A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves there (fuel_left): from fuel_start_gal less the start and taxi allowance (taxi_fuel_gal), and from each fuel stop passed (refuel_at) with the tanks filled again (fuel_full_gal, else fuel_start_gal) less another allowance, never from the first tank past a fuel stop; fuel_now_gal is what it leaves here. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).
+   * A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves there (fuel_left): from fuel_start_gal less the start and taxi allowance (taxi_fuel_gal), and from each fuel stop passed (refuel_at) with the tanks filled again (fuel_full_gal, else fuel_start_gal) less another allowance, never from the first tank past a fuel stop; fuel_now_gal is what it leaves here. hop is the hop flown (0 the first, one more past each fuel stop, an index into the planner's totals' hops), hop_burnt_gal the legs' burn from that hop's start to here, and leg the nav log's leg flown, so the strip's fuel past a stop is strip_fuel's of that hop less its own burn, not the first tank's. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).
    */
   in_flight: {
     input: InFlightInput;
@@ -3231,6 +3247,13 @@ export interface EngineContract {
   region_of: {
     input: RegionOfInput;
     answer: RegionOfAnswer;
+  };
+  /**
+   * The phone packs' regions (region_of's 4-degree squares) ahead of the airplane, in the order it reaches them: its own first, then those its track over the ground and its route (from the point on it nearest the airplane) cross within look_ahead_nm, each line padded pad_nm either side (1 nm, the pad the alerts ahead read volumes within, where left out). A shell reads these packs for what is ahead rather than a fixed span of degrees round itself, which at 48 N fell short of five minutes at 200 kt (the iPhone audit's IOS-20). Geometry only, on the WGS-84 ellipsoid.
+   */
+  regions_ahead: {
+    input: RegionsAheadInput;
+    answer: RegionsAheadAnswer;
   };
   /**
    * The stock profile an airplane the FAA's registry names flies on, or null.
@@ -11532,6 +11555,26 @@ export interface HeardPlane {
 export interface RegionOfInput {
   lat: number;
   lon: number;
+}
+export interface RegionsAheadInput {
+  lat: number;
+  lon: number;
+  /**
+   * The track over the ground, degrees true; null or left out where there is none (standing still), and only the route is looked along.
+   */
+  track_deg?: number | null;
+  /**
+   * The route's line, [lat, lon] points in the order flown; left out, none.
+   */
+  route?: [number, number][] | null;
+  /**
+   * How far along the track and the route to look, nm: for the alerts ahead, the groundspeed over their five minutes.
+   */
+  look_ahead_nm: number;
+  /**
+   * Either side of each line, nm; 1 where left out.
+   */
+  pad_nm?: number | null;
 }
 export interface RegisteredProfileInput {
   manufacturer?: string | null;

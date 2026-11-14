@@ -35,10 +35,10 @@ def _hard(surface: str) -> bool:
 
 
 @once(maxsize=2)
-def _sites_of(apt_path: str, apt_mtime: float, rwy_path: str, _rwy_mtime: float) -> dict[str, tuple[str, str, int]]:
-    """Each field's (SITE_TYPE_CODE, FACILITY_USE_CODE, longest hard
-    runway ft) by its FAA and its ICAO identifier, the FAA's winning;
-    helipads (RWY_ID H1 and the like) are no runways, as the tiles have it."""
+def _hard_ft_of(rwy_path: str, _rwy_mtime: float) -> dict[str, int]:
+    """Each field's longest hard runway in ft by its FAA identifier (APT_RWY's
+    ARPT_ID); helipads (RWY_ID H1 and the like) are no runways, as the
+    tiles have it, and a field with no hard runway is not listed."""
     rwy = pd.read_csv(rwy_path, dtype=str, usecols=["ARPT_ID", "RWY_ID", "RWY_LEN", "SURFACE_TYPE_CODE"], low_memory=False).fillna("")
     hard_ft: dict[str, int] = {}
     for ident, runway, length, surface in zip(rwy["ARPT_ID"], rwy["RWY_ID"], rwy["RWY_LEN"], rwy["SURFACE_TYPE_CODE"]):
@@ -47,6 +47,14 @@ def _sites_of(apt_path: str, apt_mtime: float, rwy_path: str, _rwy_mtime: float)
             continue
         key = ident.strip().upper()
         hard_ft[key] = max(hard_ft.get(key, 0), int(feet))
+    return hard_ft
+
+
+@once(maxsize=2)
+def _sites_of(apt_path: str, apt_mtime: float, rwy_path: str, rwy_mtime: float) -> dict[str, tuple[str, str, int]]:
+    """Each field's (SITE_TYPE_CODE, FACILITY_USE_CODE, longest hard
+    runway ft) by its FAA and its ICAO identifier, the FAA's winning."""
+    hard_ft = _hard_ft_of(rwy_path, rwy_mtime)
     base = faa_data._read_apt_base_cached(apt_path, apt_mtime).fillna("")
     out: dict[str, tuple[str, str, int]] = {}
     for faa_id, icao, site, use in zip(base["ARPT_ID"], base["ICAO_ID"], base["SITE_TYPE_CODE"], base["FACILITY_USE_CODE"]):
@@ -65,6 +73,19 @@ def sites(cache_dir=altitude.DEFAULT_FAA_CACHE_DIR) -> dict[str, tuple[str, str,
         return _sites_of(str(apt), apt.stat().st_mtime, str(rwy), rwy.stat().st_mtime)
     except Exception:
         log.warning("No APT_BASE.csv or APT_RWY.csv for the marks' ranks; ranked on the tower alone", exc_info=True)
+        return {}
+
+
+def hard_runways(cache_dir=altitude.DEFAULT_FAA_CACHE_DIR) -> dict[str, str]:
+    """Each field's longest hard runway in ft, as text, by its FAA
+    identifier: the cycle pack's HARD_FT (wingtip.pack_airports). Empty
+    where APT_RWY.csv cannot be had: the phones then rank every field as
+    having none, below those of its tier that have one, never above."""
+    try:
+        rwy = faa_data.ensure_nasr_file("APT_RWY.csv", cache_dir)
+        return {k: str(v) for k, v in _hard_ft_of(str(rwy), rwy.stat().st_mtime).items()}
+    except Exception:
+        log.warning("No APT_RWY.csv for the pack's hard runways; none written", exc_info=True)
         return {}
 
 

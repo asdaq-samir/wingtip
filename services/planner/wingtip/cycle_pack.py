@@ -12,7 +12,8 @@ What it holds:
   (wingtip.sua), with when;
 - `urban`: the Census urban areas' outlines (wingtip.congested);
 - `airports`, `navaids`, `fixes`: the NASR rows a phone needs to find a
-  place offline, as CSV columns and rows in JSON;
+  place offline, as CSV columns and rows in JSON, the airports with
+  wingtip.pack_airports' SIZE and HARD_FT besides;
 - `meta`: the cycle, and each source's size and time, so a reader can
   tell the pack still matches the files the planner holds.
 
@@ -54,6 +55,11 @@ log = logging.getLogger(__name__)
 PACK_DIR = Path(__file__).resolve().parents[3] / "data" / "raw" / "packs"
 MAGIC = b"WTPK"
 VERSION = 1
+#: What the tables hold, apart from the binary format (VERSION, which an
+#: older engine refuses): 2 since 2026-11-14, the airports' HARD_FT. A pack
+#: or a phone's pack index of another is built again, and the phones,
+#: seeing each region's new crc32, fetch it again.
+TABLES = 2
 HEADER = 64
 ENTRY = 32
 #: The NASR rows a phone needs to name and find a place, and to draw the
@@ -321,49 +327,25 @@ def _airspace(shp_path: Path):
     return boxes, wkbs, fields
 
 
-def _table(path: Path, columns: tuple, sizes: dict[str, str] | None = None) -> bytes:
-    """The NASR file's rows under `columns`, as JSON; with `sizes`, a
-    SIZE column after them: OurAirports' size of each field (large, medium
-    or small, as the map draws its pins) by its ICAO or FAA ident, "" for
-    a field OurAirports has no landing field by."""
+def _table(path: Path, columns: tuple, extra: dict[str, dict[str, str]] | None = None) -> bytes:
+    """The NASR file's rows under `columns`, as JSON; with `extra`, a
+    column after them for each of its names, its value by the field's ICAO
+    or FAA ident, "" for none (wingtip.pack_airports: SIZE, HARD_FT)."""
     with open(path, newline="", encoding="utf-8", errors="replace") as f:
         rows = [[row.get(c) or "" for c in columns] for row in csv.DictReader(f)]
     names = list(columns)
-    if sizes is not None:
-        icao, faa = names.index("ICAO_ID"), names.index("ARPT_ID")
+    for name, by_ident in (extra or {}).items():
+        icao, faa = columns.index("ICAO_ID"), columns.index("ARPT_ID")
         for r in rows:
-            r.append(sizes.get(r[icao].strip().upper()) or sizes.get(r[faa].strip().upper()) or "")
-        names.append("SIZE")
+            r.append(by_ident.get(r[icao].strip().upper()) or by_ident.get(r[faa].strip().upper()) or "")
+        names.append(name)
     return json.dumps({"columns": names, "rows": rows}, separators=(",", ":")).encode()
-
-
-def airport_sizes() -> dict[str, str]:
-    """OurAirports' size of every US landing field (wingtip.airports'
-    large, medium and small, which NASR has no column for) by each ident
-    it goes by, for the airports table's SIZE: what the phone's map sizes
-    a pin by, as the planner's /api/airports/in-view does. Empty where
-    OurAirports cannot be had, and every pin is then drawn alike."""
-    from . import airports
-
-    try:
-        us = airports._us_airports(airports.DEFAULT_CACHE_PATH)
-    except Exception:
-        log.warning("No OurAirports table for the pack's airport sizes; none written", exc_info=True)
-        return {}
-    kinds = us["type"].map(airports._FIELD_KINDS)
-    found: dict[str, str] = {}
-    for column in ("ident", "local_code", "icao_code", "gps_code"):
-        if column in us.columns:
-            for ident, kind in zip(us[column], kinds):
-                if isinstance(kind, str) and isinstance(ident, str) and ident.strip():
-                    found.setdefault(ident.strip().upper(), kind)
-    return found
 
 
 def build(cache_dir, pack_dir=None) -> Path:
     """The pack for the files the planner holds now, written whole beside
     them, and any older pack removed."""
-    from . import airspace, congested, sua
+    from . import airspace, congested, pack_airports, sua
 
     cache_dir = Path(cache_dir)
     started = time.monotonic()
@@ -377,7 +359,7 @@ def build(cache_dir, pack_dir=None) -> Path:
         urban=congested._urban_areas(),
         urban_path=congested.URBAN_AREAS_PATH,
         tables={name: (cache_dir / file, columns) for name, (file, columns) in COLUMNS.items()},
-        sizes=airport_sizes(),
+        airports=pack_airports.columns(cache_dir),
     )
     log.info("Cycle pack %s built in %.1f s, %.0f MB", path.name, time.monotonic() - started, path.stat().st_size / 1e6)
     return path
@@ -393,11 +375,11 @@ def write(
     urban: list,
     urban_path: Path | None,
     tables: dict,
-    sizes: dict[str, str] | None = None,
+    airports: dict[str, dict[str, str]] | None = None,
 ) -> Path:
     """The pack of these sources written to pack_dir, whole or not at all,
-    and any other pack there removed. `sizes`, OurAirports' sizes by
-    ident (airport_sizes), gives the airports table its SIZE column."""
+    and any other pack there removed. `airports` (pack_airports.columns)
+    gives the airports table its columns besides NASR's, by ident."""
     import shapely
 
     from . import sua
@@ -407,6 +389,7 @@ def write(
         sources["urban"] = source_key(urban_path)
     meta = {
         "format": VERSION,
+        "tables": TABLES,
         "cycle": cycle,
         "sources": sources,
         "sua_fetched_at": sua_at,
@@ -432,7 +415,7 @@ def write(
         )
         _layer(w, "urban", shapely.bounds(urban) if urban else [], list(shapely.to_wkb(urban, byte_order=1)), None)
         for name, (file, columns) in tables.items():
-            w.put(name, _table(file, columns, sizes if name == "airports" else None))
+            w.put(name, _table(file, columns, airports if name == "airports" else None))
         w.finish(cycle, time.time())
     for old in pack_dir.glob("wingtip-*.pack"):
         if old != path:
@@ -443,7 +426,8 @@ def write(
 def ensure(cache_dir, pack_dir=None) -> Path | None:
     """The pack built where the one on disk is not of the files the
     planner holds now: a new NASR cycle, a new airspace file, a new urban
-    areas file or special-use areas read with other fields (sua.FIELDS).
+    areas file, special-use areas read with other fields (sua.FIELDS) or
+    tables of another TABLES.
     None where it already is."""
     from . import airspace, congested, sua
 
@@ -452,6 +436,7 @@ def ensure(cache_dir, pack_dir=None) -> Path | None:
     if (
         pack is not None
         and pack.cycle == cycle_of(cache_dir)
+        and pack.meta.get("tables") == TABLES
         and matches(pack, "airspace", shp_path)
         and matches(pack, "urban", congested.URBAN_AREAS_PATH)
         and (pack.meta.get("sources") or {}).get("sua") == sua.FIELDS
@@ -719,6 +704,7 @@ def write_phone(pack: Pack, out_dir: Path, veil: list[dict]) -> dict:
         "worst_nm": PHONE_WORST_NM,
         "region_deg": REGION_DEG,
         "terrain_pool": TERRAIN_POOL,
+        "tables": TABLES,
         # The ground grid the terrain was read from: a new one (its voids
         # read as no height, 2026-11-02) builds the phones' packs again.
         "ground_grid": ground_grid_version(),
@@ -891,7 +877,8 @@ def ensure_phone(pack_dir=None) -> dict | None:
     if pack is None:
         return None
     index = phone_index(pack_dir) or {}
-    wanted = {"cycle": pack.cycle, "tolerance_deg": PHONE_TOLERANCE_DEG, "terrain_pool": TERRAIN_POOL, "ground_grid": ground_grid_version()}
+    wanted = {"cycle": pack.cycle, "tolerance_deg": PHONE_TOLERANCE_DEG, "terrain_pool": TERRAIN_POOL, "tables": TABLES}
+    wanted["ground_grid"] = ground_grid_version()
     if index and all(index.get(k) == v for k, v in {**wanted, "sources": pack.meta.get("sources")}.items()):
         return None
     started = time.monotonic()

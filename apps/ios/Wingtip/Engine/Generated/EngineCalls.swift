@@ -1050,7 +1050,7 @@ extension Engine {
         try Self.rule("in_emergency", EngineContract.InEmergencyInput(squawk: squawk, emergency: emergency))
     }
 
-    /// A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves there (fuel_left): from fuel_start_gal less the start and taxi allowance (taxi_fuel_gal), and from each fuel stop passed (refuel_at) with the tanks filled again (fuel_full_gal, else fuel_start_gal) less another allowance, never from the first tank past a fuel stop; fuel_now_gal is what it leaves here. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).
+    /// A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves there (fuel_left): from fuel_start_gal less the start and taxi allowance (taxi_fuel_gal), and from each fuel stop passed (refuel_at) with the tanks filled again (fuel_full_gal, else fuel_start_gal) less another allowance, never from the first tank past a fuel stop; fuel_now_gal is what it leaves here. hop is the hop flown (0 the first, one more past each fuel stop, an index into the planner's totals' hops), hop_burnt_gal the legs' burn from that hop's start to here, and leg the nav log's leg flown, so the strip's fuel past a stop is strip_fuel's of that hop less its own burn, not the first tank's. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).
     static func inFlight(fix: EngineContract.InFlightInputFix, line: [[Double]]? = nil, points: [EngineContract.InFlightInputPointsItem]? = nil, legs: [EngineContract.InFlightInputLegsItem]? = nil, fuelStartGal: Double? = nil, fuelFullGal: Double? = nil, taxiFuelGal: Double? = nil, refuelAt: [Int]? = nil, nowS: Double? = nil) throws -> EngineContract.InFlightAnswer? {
         try Self.rule("in_flight", EngineContract.InFlightInput(fix: fix, line: line, points: points, legs: legs, fuelStartGal: fuelStartGal, fuelFullGal: fuelFullGal, taxiFuelGal: taxiFuelGal, refuelAt: refuelAt, nowS: nowS))
     }
@@ -1543,6 +1543,11 @@ extension Engine {
     /// The phone pack's region holding a point, "n40w088": a square of 4 degrees named by its south-west corner.
     static func regionOf(lat: Double, lon: Double) throws -> String {
         try Self.rule("region_of", EngineContract.RegionOfInput(lat: lat, lon: lon))
+    }
+
+    /// The phone packs' regions (region_of's 4-degree squares) ahead of the airplane, in the order it reaches them: its own first, then those its track over the ground and its route (from the point on it nearest the airplane) cross within look_ahead_nm, each line padded pad_nm either side (1 nm, the pad the alerts ahead read volumes within, where left out). A shell reads these packs for what is ahead rather than a fixed span of degrees round itself, which at 48 N fell short of five minutes at 200 kt (the iPhone audit's IOS-20). Geometry only, on the WGS-84 ellipsoid.
+    static func regionsAhead(lat: Double, lon: Double, trackDeg: Double? = nil, route: [[Double]]? = nil, lookAheadNm: Double, padNm: Double? = nil) throws -> [String] {
+        try Self.rule("regions_ahead", EngineContract.RegionsAheadInput(lat: lat, lon: lon, trackDeg: trackDeg, route: route, lookAheadNm: lookAheadNm, padNm: padNm))
     }
 
     /// The stock profile an airplane the FAA's registry names flies on, or null.
