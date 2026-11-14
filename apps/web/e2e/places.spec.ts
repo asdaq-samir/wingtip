@@ -1,4 +1,4 @@
-import { test, expect, type Locator } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import {
   airportMark,
   airportMarks,
@@ -31,12 +31,6 @@ import { pickAirplane } from "./startState";
 
 /** Airports as places, as Maps has them: a tap on one on the chart opens its card in the panel -- its name, what kind of field it is, the
  *  weather there as pilots read it -- with Fly Here, Weather and Frequencies; the card is the address's (?place=) and puts itself away. */
-
-/** The tabs are icons, only the picked one with its word, so they are found by name: Info, Weather, Runways, Charts. */
-async function expectTabNames(tabs: Locator) {
-  await expect(tabs).toHaveCount(4);
-  for (const [i, name] of [/^Info$/, /^Weather/, /^Runways$/, /^Charts/].entries()) await expect(tabs.nth(i)).toHaveAccessibleName(name);
-}
 
 test("the departure's own card says no distance from itself while the pilot's position is not known", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=C81");
@@ -77,7 +71,8 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(card(page).getByTestId("place-actions").locator(":scope > *")).toHaveText([/Fly Here|≈ \d/, /Add Stop/, /Call/, /Favorite/]);
   await expect(card(page).getByTestId("place-add-stop")).toBeDisabled();
   await expect(card(page).getByTestId("place-add-stop")).toHaveAccessibleName(/already on the route/);
-  await expectTabNames(card(page).getByRole("tab"));
+  // The tabs are icons, only the picked one with its word: found by their names.
+  expect((await card(page).getByRole("tab").evaluateAll((t) => t.map((x) => x.ariaLabel))).join("|")).toMatch(/^Info\|Weather(, \w+)?\|Runways\|Charts(, \d+)?$/);
   await expect(card(page).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
   const [actions, bar] = await Promise.all(
     [card(page).getByTestId("place-actions"), card(page).getByRole("tablist")].map(async (l) => (await l.boundingBox())!),
@@ -389,7 +384,8 @@ test("an airport's card has four tabs right under its actions, in sight at half,
   await expect(card(page).getByTestId("fly-here")).toBeEnabled({ timeout: slow(15000) });
   await expect(card(page).getByTestId("place-actions")).toBeInViewport({ ratio: 1 });
   const tabs = card(page).getByRole("tab");
-  await expectTabNames(tabs);
+  // The tabs are icons, only the picked one with its word: found by their names.
+  expect((await tabs.evaluateAll((t) => t.map((x) => x.ariaLabel))).join("|")).toMatch(/^Info\|Weather(, \w+)?\|Runways\|Charts(, \d+)?$/);
   await expect(card(page).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
   // No weather summary over the bar: the weather is its tab's.
   await expect(card(page).getByTestId("place-weather-summary")).toHaveCount(0);
