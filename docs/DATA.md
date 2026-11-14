@@ -101,7 +101,9 @@ data/
                 tiles (charts.nosync/, chart_tiles.nosync/), the cycle packs (raw/packs)
   processed/    feature tables made from it
   labels/       the owner's ratings (chart_picks.csv) and pilots' checkpoint notes
-  aircraft/     stock performance profiles (c172.json and others)
+  aircraft/     stock performance profiles (c172.json and others), each figure with
+                its handbook's page in a source field; one no handbook gives is left
+                out (the PA-28-140s' climb fuel flow), never filled from another airplane
   models/       the trained models: candidate/, current/, versions/<time>/, and run.json
 ```
 
