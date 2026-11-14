@@ -19,8 +19,6 @@ import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/t
 import { compassPoint } from "../../../lib/compass";
 import { useGeo, type Geo, type LatLon } from "../../../lib/geo";
 import { awayFrom } from "../../../lib/useAway";
-import { chipFillOf } from "../../../lib/map/marks/flightCategory";
-import { inkOn } from "../../../lib/scoreScale";
 import { clockTime, feet, miles, nm, zoneName } from "../../../lib/format";
 import { reportedWind } from "../format";
 import { placeWind } from "./place/placeWind";
@@ -43,7 +41,7 @@ import { PlacePictures } from "./place/PlacePictures";
 import { runwaysPictureOf } from "./place/runwayPicks";
 import { useFlyHereMinutes } from "./place/flyHereTime";
 import { useShown } from "../../../lib/shown";
-import { Badge } from "../../../components/ui/badge";
+import StatusBadge from "../../../components/StatusBadge";
 import { callEngine } from "../../../lib/engine/engine";
 
 /** "18 nm NE", from wherever the card is measured from. */
@@ -253,18 +251,10 @@ export default function PlaceCard({
       ? { category: nearCategory, said: `from the report of ${nearby?.ident}, another station, not this field's own` }
       : null;
   const category = weather?.category ?? approximate?.category ?? null;
-  const chipColour = category ? chipFillOf(category) : null;
-  const chip = category && chipColour && (
-    <Badge
-      // In whichever ink reads on the colour (inkOn): white on a no-report
-      // grey was 2.6:1. The FAA's colours (lib/map/marks/flightCategory).
-      className={cn("h-[1.625rem] px-2.5 font-bold", TEXT.detail)}
-      style={{ backgroundColor: chipColour, color: inkOn(chipColour) }}
-      data-testid="place-category"
-    >
-      {weather?.category ? (
-        category
-      ) : (
+  // The shared StatusBadge in the category's chip colour (AIM 7-1-7's categories, the FAA's colours).
+  const chip = category && (
+    <StatusBadge category={category} className="h-[1.625rem] px-2.5" data-testid="place-category">
+      {weather?.category ? undefined : (
         <>
           {/* Words for VoiceOver, which may read a bare "≈" as a symbol;
               an aria-label on a role-less span may be ignored. */}
@@ -274,7 +264,7 @@ export default function PlaceCard({
           </span>
         </>
       )}
-    </Badge>
+    </StatusBadge>
   );
   // The weather in a line at the top of its tab where there is no
   // forecast to say, as a pilot reads a report first: the wind, the

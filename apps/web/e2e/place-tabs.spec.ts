@@ -125,13 +125,15 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   await atTheFoot(page, bar);
   // The last row of a page clear of the bar once scrolled to its end.
   await card(page).getByTestId("place-tab-radio").click();
-  const last = card(page).getByRole("tabpanel").locator("li, [data-slot=list-row]").last();
-  await last.scrollIntoViewIfNeeded();
-  await page.mouse.wheel(0, 5000);
+  const panel = card(page).locator("[role=tabpanel]:not([inert])");
+  await panel.evaluate((el) => {
+    const scroller = el.closest<HTMLElement>("[data-sheet-scroll]")!;
+    scroller.scrollTop = scroller.scrollHeight;
+  });
   await expect
     .poll(async () => {
-      const [row, b] = await Promise.all([last.boundingBox(), bar.boundingBox()]);
-      return row!.y + row!.height <= b!.y + 1;
+      const [content, b] = await Promise.all([panel.boundingBox(), bar.boundingBox()]);
+      return content!.y + content!.height <= b!.y + 1;
     })
     .toBe(true);
 });
@@ -194,7 +196,8 @@ test("each picture opens full screen, where a pinch zooms it and the zoom stays,
   // zoom in/out?" -- the viewer's map was laid out again at each draw of the
   // card (a new list of pages each time), the pinch lost within the minute.
   test.slow(); // a minute's wait, for the card's minute clock to draw it again
-  await kdlh(page, MVFR);
+  // The FAA's own diagram, as the planner has it: not the stub's address.
+  await kdlh(page, { metar: MVFR.metar });
   await page.route(
     (url) => url.pathname.endsWith("/api/planner/airport/KDLH/photos"),
     (route) => route.fulfill({ json: { aerial_url: "/api/planner/airport-aerial/KDLH.jpg", photo: null } }),
@@ -207,8 +210,7 @@ test("each picture opens full screen, where a pinch zooms it and the zoom stays,
     await card(page).getByTestId(tile).click();
     await expect(viewer).toBeVisible();
     // The whole screen, over the card.
-    const box = (await viewer.boundingBox())!;
-    expect(box.width).toBe(page.viewportSize()!.width);
+    await expect.poll(async () => (await viewer.boundingBox())?.width).toBe(page.viewportSize()!.width);
     const canvas = viewer.locator("canvas");
     await expect(canvas).toBeVisible({ timeout: slow(15000) });
     await page.waitForTimeout(1500); // its picture drawn

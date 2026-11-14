@@ -3,10 +3,11 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import { PillSection } from "../../../../components/Favorites";
 import { SheetCard } from "../../../../components/SheetCard";
+import StatusBadge from "../../../../components/StatusBadge";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
-import { Badge } from "../../../../components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { TEXT } from "../../../../lib/text";
+import { useMinuteClock } from "../../../../lib/useMinuteClock";
 import {
   headingOf,
   readNotam,
@@ -185,23 +186,20 @@ function NotamWhat({ what }: { what: string }) {
   );
 }
 
-/** Whether it is in force now: "Active" in red, "Inactive" in the muted
- *  colours (the owner, 2026-11-11: "put a active and inactive badge on
- *  each notam").
- *  In force unless the planner says it is not yet (in_force false). */
+/** Whether it is in force now, the shared StatusBadge (the owner,
+ *  2026-11-11: "put a active and inactive badge on each notam"; 2026-11-14:
+ *  "Use badges where we can"): Active; Later where it starts later; and
+ *  Inactive, the owner's word, in the cold fill where it is out of force
+ *  otherwise. In force unless the planner says it is not (in_force false). */
 function NotamState({ n }: { n: FieldNotam }) {
   const active = n.in_force !== false;
+  const starts = n.starts ? Date.parse(n.starts) : NaN;
+  const now = useMinuteClock();
+  const later = !active && !Number.isNaN(starts) && starts > now;
   return (
-    <Badge
-      // Inactive in the disabled colours: nothing to act on yet (the owner,
-      // 2026-11-11: "Inactive notam can be disabled color").
-      variant={active ? "destructive" : "secondary"}
-      className={cn("w-fit shrink-0", !active && "text-muted-foreground")}
-      data-testid="place-notam-state"
-      data-active={active}
-    >
-      {active ? "Active" : "Inactive"}
-    </Badge>
+    <StatusBadge variant={active ? "active" : later ? "later" : "cold"} className="w-fit shrink-0" data-testid="place-notam-state">
+      {active || later ? undefined : "Inactive"}
+    </StatusBadge>
   );
 }
 

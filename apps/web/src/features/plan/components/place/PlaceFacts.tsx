@@ -1,12 +1,10 @@
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
-import { Badge } from "../../../../components/ui/badge";
+import StatusBadge from "../../../../components/StatusBadge";
 import type { AirportPlace } from "../../../../lib/api/types";
 import { feet } from "../../../../lib/format";
-import { chipFillOf } from "../../../../lib/map/marks/flightCategory";
 import { servicesQuery } from "../../../../lib/queryClient";
-import { inkOn } from "../../../../lib/scoreScale";
 import { fuelNames } from "../../../../lib/stopServices";
 import { TEXT } from "../../../../lib/text";
 import { useNotamMarks } from "./notamBadges";
@@ -62,10 +60,6 @@ export function PlaceFacts({
   const open = runways.filter((r) => !r.closed && r.length_ft != null).length;
   const wind = place.metar?.wind_speed_kt != null ? placeWind(place.metar) : null;
   const fuel = services?.fuel_types.length ? fuelNames(services.fuel_types) : null;
-  // TODO(claude/badges): the flight-category StatusBadge here once it is on
-  // origin; until then the card's own category chip, the FAA's colour under
-  // the ink that reads on it (inkOn).
-  const fill = category ? chipFillOf(category) : null;
   return (
     <dl
       // A sideways drag the row's, an up or down one the sheet's (rules.md, Sideways rows).
@@ -73,13 +67,9 @@ export function PlaceFacts({
       className="-mx-4 flex gap-6 overflow-x-auto overscroll-x-contain px-4 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       data-testid="place-facts"
     >
-      {category && fill && (
+      {category && (
         <Fact label="Weather" testId="place-fact-weather">
-          <Badge
-            className={cn("px-2 font-bold", TEXT.detail)}
-            style={{ backgroundColor: fill, color: inkOn(fill) }}
-            data-testid="place-fact-category"
-          >
+          <StatusBadge category={category} data-testid="place-fact-category">
             {approximate ? (
               <>
                 <span aria-hidden>≈ {category}</span>
@@ -87,10 +77,8 @@ export function PlaceFacts({
                   About {category}, {approximate}
                 </span>
               </>
-            ) : (
-              category
-            )}
-          </Badge>
+            ) : undefined}
+          </StatusBadge>
         </Fact>
       )}
       {wind && (
