@@ -140,7 +140,7 @@ fun OneSearch(
 
     val pick: (SearchPick) -> Unit = { picked ->
         when (picked) {
-            is SearchPick.Airport -> memory.picked(Remembered(Remembered.Kind.AIRPORT, picked.ident, picked.name))
+            is SearchPick.Airport -> memory.picked(Remembered(Remembered.Kind.AIRPORT, picked.ident, picked.name, closed = picked.closed))
             is SearchPick.Airplane -> memory.picked(Remembered(Remembered.Kind.AIRPLANE, picked.tail ?: picked.name, type = picked.type))
             else -> {}
         }

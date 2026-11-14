@@ -90,7 +90,7 @@ fun LazyListScope.searchResults(
             // then its use, then where it is.
             val use = FieldMarks.use(a.use)?.let { stringResource(it) }
             ResultRow(a.ident, a.name, listOfNotNull(use, where(a).ifEmpty { null }).joinToString(" · "), Icons.Filled.LocalAirport, alert = a.closed?.ifBlank { null }) {
-                onPick(SearchPick.Airport(a.ident, a.name))
+                onPick(SearchPick.Airport(a.ident, a.name, FieldMarks.closed(a.closed)))
             }
         }
     }
@@ -133,16 +133,22 @@ fun LazyListScope.nothingTyped(
         item(key = "favorites") {
             LazyRow(contentPadding = PaddingValues(horizontal = WingtipSpace.Lg), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                 items(starred, key = { it.kind.name + it.ident }) { f ->
-                    AssistChip(onClick = { onPick(pickOf(f)) }, label = { Text(listOf(f.ident, f.name).filter { it.isNotEmpty() }.joinToString(" ")) })
+                    // A closed field's label after its name, in the error ink (decision 0043).
+                    val error = MaterialTheme.colorScheme.error
+                    val label = buildAnnotatedString {
+                        append(listOf(f.ident, f.name).filter { it.isNotEmpty() }.joinToString(" "))
+                        f.closed?.let { withStyle(SpanStyle(color = error)) { append(" · $it") } }
+                    }
+                    AssistChip(onClick = { onPick(pickOf(f)) }, label = { Text(label) })
                 }
             }
         }
     }
-    group("recents", R.string.recents, recents) { r -> ResultRow(r.ident, r.name, null, Icons.Filled.History) { onPick(pickOf(r)) } }
+    group("recents", R.string.recents, recents) { r -> ResultRow(r.ident, r.name, null, Icons.Filled.History, alert = r.closed) { onPick(pickOf(r)) } }
 }
 
 private fun pickOf(r: Remembered): SearchPick = when (r.kind) {
-    Remembered.Kind.AIRPORT -> SearchPick.Airport(r.ident, r.name)
+    Remembered.Kind.AIRPORT -> SearchPick.Airport(r.ident, r.name, r.closed)
     Remembered.Kind.AIRPLANE -> SearchPick.Airplane(tail = r.ident.takeIf { SearchGroups.looksLikeTail(it) }, type = r.type, name = r.ident)
 }
 

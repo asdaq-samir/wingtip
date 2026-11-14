@@ -21,9 +21,13 @@ object FieldMarks {
         else -> null
     }
 
+    /** A field's closed label as the planner sent it ("Closed
+     *  indefinitely"), null for an open field (a blank one is none). */
+    fun closed(label: String?): String? = label?.trim()?.ifEmpty { null }
+
     /** The first field or fix found that may be flown to: a closed field
      *  (the planner's `closed` label) is passed over, so Direct To is never
      *  offered to one. */
     fun firstOffered(fields: List<AirportSuggestion>, fixes: List<AirportSuggestion>): String? =
-        (fields.filter { it.closed.isNullOrBlank() } + fixes).firstOrNull()?.ident
+        (fields.filter { closed(it.closed) == null } + fixes).firstOrNull()?.ident
 }

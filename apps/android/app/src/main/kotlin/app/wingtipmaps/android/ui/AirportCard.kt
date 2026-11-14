@@ -49,6 +49,7 @@ import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.search.FieldMarks
 import app.wingtipmaps.android.search.Remembered
 import app.wingtipmaps.android.search.SearchMemory
 import app.wingtipmaps.android.ui.sheet.CardExit
@@ -189,7 +190,9 @@ private fun rememberFavorite(place: AirportPlace): Pair<Boolean, () -> Unit> {
     val memory = remember(context) { SearchMemory.of(context) }
     val favorites by memory.favorites.collectAsStateWithLifecycle()
     val starred = favorites.any { it.kind == Remembered.Kind.AIRPORT && it.ident.equals(place.ident, ignoreCase = true) }
-    return starred to { memory.toggleFavorite(Remembered(Remembered.Kind.AIRPORT, place.ident, place.name)) }
+    // The card says what the field is now: a remembered label put right.
+    LaunchedEffect(place.ident, place.closed) { memory.status(place.ident, place.closed) }
+    return starred to { memory.toggleFavorite(Remembered(Remembered.Kind.AIRPORT, place.ident, place.name, closed = FieldMarks.closed(place.closed))) }
 }
 
 /** The facts under the title, each in its own container, read as one
