@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import type { FeatureCollection, Geometry } from "geojson";
 import type { FillLayerSpecification, LineLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo } from "react";
-import { usePreferences } from "../../../../lib/preferences";
 import { useMapHover } from "../../../../lib/map/marks/mapHover";
 import { CHART } from "../../../../lib/tokens";
 import { tfrsQuery } from "../../../../lib/queryClient";
@@ -70,19 +69,20 @@ const HOVER: LineLayerSpecification = {
 const DRAWN = [...ALL, HOVER];
 
 /**
- * The temporary flight restrictions (tfrsQuery), at the settings' TFRs:
+ * The temporary flight restrictions (tfrsQuery), always: a hazard a pilot
+ * must know of near the route (14 CFR 91.103), with no switch to lose it
+ * by (the owner, 2026-11-14):
  * each area a fill and its edge, all of them in one source rather than a
  * shape each. A tap inside one opens its card.
  */
 export function TfrGl() {
-  const show = usePreferences((s) => s.tfrs);
-  const { data, dataUpdatedAt: now } = useQuery({ ...tfrsQuery, enabled: show });
+  const { data, dataUpdatedAt: now } = useQuery(tfrsQuery);
   useGlLayer("areas", SOURCES, DRAWN);
   // Faded in as the first answer comes, not snapped on over the chart.
   useGlFadeIn(ALL, !!data);
   const features = useMemo<FeatureCollection | null>(
     () =>
-      show && data
+      data
         ? {
             type: "FeatureCollection",
             features: data.map((tfr) => ({
@@ -92,7 +92,7 @@ export function TfrGl() {
             })),
           }
         : null,
-    [show, data, now],
+    [data, now],
   );
   useGlData(SOURCE, features);
   // The one under the mouse in the Brief, lit by its feature state; none

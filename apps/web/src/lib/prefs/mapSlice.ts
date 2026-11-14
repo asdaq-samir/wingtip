@@ -2,10 +2,15 @@ import { DEFAULT_FILTERS, type FilterKey, type Filters } from "../pointFilters";
 import type { StopPick } from "../stopKinds";
 import type { Slice } from "./slice";
 
-/** The base chart: the sectional, or an IFR enroute chart. */
-export type BaseChart = "sec" | "ifr_low" | "ifr_high";
+/** The base chart: none, the sectional, or an IFR enroute chart. None
+ *  draws no FAA chart, only the overlay picked, if any, over the plain
+ *  ground (BaseGl's PlainGround), with the airports, the airspace, the
+ *  navaids, the route, the weather and the traffic over it as ever (the
+ *  owner, 2026-11-14: "chart should also have none option"). */
+export type BaseChart = "none" | "sec" | "ifr_low" | "ifr_high";
 
 export const BASE_CHARTS: { kind: BaseChart; label: string }[] = [
+  { kind: "none", label: "None" },
   { kind: "sec", label: "Sectional" },
   { kind: "ifr_low", label: "IFR Low" },
   { kind: "ifr_high", label: "IFR High" },
@@ -43,38 +48,36 @@ export interface MapSlice {
    *  over the sectional, the IFR area chart over an IFR chart) is
    *  pinned: drawn at every zoom it exists at. */
   tac: boolean;
-  /** Whether the route has its VFR checkpoints, at every zoom: the
-   *  planner's checkpoints and the landmarks they were chosen from, the
-   *  training map's detections and added points. Off unless turned on, at
-   *  the owner's ask ("Let's not enable waypoints for a pilot"). */
-  waypoints: boolean;
-  /** Whether the Class B airports are drawn, with their current flight
-   *  category and a terminal chart on hover. Off by default: useful on
-   *  a route that passes near one, clutter on a route that does not. */
-  classB: boolean;
-  /** Whether the Class B, C and D are drawn over the chart (AirspaceGl).
-   *  On by default, the owner's pick of the map's looks ("C", 2026-10-29). */
-  airspace: boolean;
-  /** Whether the VORs are drawn over the chart, and closer in the low
-   *  enroute chart's fixes (NavaidsGl). On by default, as `airspace`. */
-  navaids: boolean;
-  /** Whether the temporary flight restrictions are drawn (TfrGl). On
-   *  by default: a pilot must know of every one near the route. */
-  tfrs: boolean;
-  /** Whether a picked approach's plate is laid on the chart (PlatesGl).
-   *  On by default. */
-  plates: boolean;
+  /** The Map card's four layers (the owner, 2026-11-14: "I want to keep
+   *  it simple though. can we just have four layers aeronautical,
+   *  weather, traffic, private/military in the map settings?"), where
+   *  there were eleven tiles. Always drawn, with no switch: the public
+   *  fields, the route and the plan's points, own ship, and the TFRs, a
+   *  hazard a pilot must know of near the route (14 CFR 91.103).
+   *
+   *  Aeronautical: the Class B, C and D and the special-use airspace
+   *  (AirspaceGl), the VORs, fixes and VFR waypoints (NavaidsGl), and the
+   *  route's VFR checkpoints with the landmarks they were chosen from.
+   *  On by default, as the airspace and the VORs were. */
+  aeronautical: boolean;
+  /** Weather: the fields' weather marks (Settings' Airport Weather says
+   *  how), the Class B fields' weather chips, and whatever weather the
+   *  pilot picked under it -- the AIRMETs and SIGMETs, the PIREPs, the
+   *  winds aloft, the radar loop, the model weather. On by default, as
+   *  the fields' weather marks were. */
+  weather: boolean;
   /** Whether the airplanes ADS-B receivers hear about the map are drawn
    *  (TrafficGl). Off by default: it asks a third party every five seconds. */
   traffic: boolean;
-  /** Whether the fields the armed services own are drawn (AirportsGl):
-   *  off by default, as a civil airplane lands there only with the
-   *  service's permission. Joint-use fields are always drawn. */
-  military: boolean;
-  /** Whether the privately owned fields are drawn (AirportsGl): off by
-   *  default (the owner, 2026-10-27; NASR APT_BASE's facility use, PR). A
-   *  field on the route or picked is drawn either way. */
-  privateFields: boolean;
+  /** Whether a picked approach's plate is laid on the chart (PlatesGl).
+   *  On by default; the procedure's own menu, not the Map card. */
+  plates: boolean;
+  /** Private/Military: the privately owned fields (NASR APT_BASE's
+   *  facility use, PR) and those the armed services own, which a pilot
+   *  lands at only by leave. Off by default; drawn whatever this says
+   *  while the emergency assistant is open (overlayFilters), and a field
+   *  on the route or picked either way. Joint-use fields always are. */
+  privateMilitary: boolean;
   /** What is drawn over the chart (OverlayTiles), and how strongly: kept,
    *  as every other map choice is, where a reload lost it (WEB-15). */
   overlay: MapOverlay;
@@ -100,15 +103,11 @@ export interface MapSlice {
   stopKind: StopPick;
   setBase: (base: BaseChart) => void;
   setTac: (tac: boolean) => void;
-  setWaypoints: (waypoints: boolean) => void;
-  setClassB: (classB: boolean) => void;
-  setAirspace: (airspace: boolean) => void;
-  setNavaids: (navaids: boolean) => void;
-  setTfrs: (tfrs: boolean) => void;
-  setPlates: (plates: boolean) => void;
+  setAeronautical: (aeronautical: boolean) => void;
+  setWeather: (weather: boolean) => void;
   setTraffic: (traffic: boolean) => void;
-  setMilitary: (military: boolean) => void;
-  setPrivateFields: (privateFields: boolean) => void;
+  setPlates: (plates: boolean) => void;
+  setPrivateMilitary: (privateMilitary: boolean) => void;
   setOverlay: (overlay: MapOverlay) => void;
   setOverlayStrength: (overlayStrength: OverlayStrength) => void;
   setKeepOffline: (keepOffline: boolean) => void;
@@ -125,15 +124,11 @@ export interface MapSlice {
 export const MAP_KEPT = [
   "base",
   "tac",
-  "waypoints",
-  "classB",
-  "airspace",
-  "navaids",
-  "tfrs",
-  "plates",
+  "aeronautical",
+  "weather",
   "traffic",
-  "military",
-  "privateFields",
+  "plates",
+  "privateMilitary",
   "overlay",
   "overlayStrength",
   "keepOffline",
@@ -149,15 +144,11 @@ export const MAP_KEPT = [
 export const mapSlice: Slice<MapSlice> = (set) => ({
   base: "sec",
   tac: false,
-  waypoints: false,
-  classB: false,
-  airspace: true,
-  navaids: true,
-  tfrs: true,
-  plates: true,
+  aeronautical: true,
+  weather: true,
   traffic: false,
-  military: false,
-  privateFields: false,
+  plates: true,
+  privateMilitary: false,
   overlay: "none",
   overlayStrength: "half",
   keepOffline: false,
@@ -170,15 +161,11 @@ export const mapSlice: Slice<MapSlice> = (set) => ({
   stopKind: "all",
   setBase: (base) => set({ base }),
   setTac: (tac) => set({ tac }),
-  setWaypoints: (waypoints) => set({ waypoints }),
-  setClassB: (classB) => set({ classB }),
-  setAirspace: (airspace) => set({ airspace }),
-  setNavaids: (navaids) => set({ navaids }),
-  setTfrs: (tfrs) => set({ tfrs }),
-  setPlates: (plates) => set({ plates }),
+  setAeronautical: (aeronautical) => set({ aeronautical }),
+  setWeather: (weather) => set({ weather }),
   setTraffic: (traffic) => set({ traffic }),
-  setMilitary: (military) => set({ military }),
-  setPrivateFields: (privateFields) => set({ privateFields }),
+  setPlates: (plates) => set({ plates }),
+  setPrivateMilitary: (privateMilitary) => set({ privateMilitary }),
   setOverlay: (overlay) => set({ overlay }),
   setOverlayStrength: (overlayStrength) => set({ overlayStrength }),
   setKeepOffline: (keepOffline) => set({ keepOffline }),

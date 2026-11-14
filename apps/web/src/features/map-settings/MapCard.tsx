@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { FieldError } from "../../components/ui/field";
 import Segmented from "../../components/Segmented";
+import { Switch } from "../../components/ui/switch";
 import MapPictureChoices from "./MapPictureChoices";
 import MapLayers from "./MapLayers";
 import {
@@ -25,9 +26,10 @@ import { useTerrainView } from "../plan/map/terrain/useTerrainView";
  * The Map card, what is on the map and nothing else, one screen at a
  * phone's width with nothing to scroll, as Apple Maps' "Choose Map" card
  * is (the owner's pick, 2026-10-27, canvas RZDPvJ6hxfp93UL53LYLec; the
- * owner's screenshot, 2026-11-10): the charts as pictures, the overlay
+ * owner's screenshot, 2026-11-10): the charts as pictures (None first,
+ * as the overlay's, the owner, 2026-11-14), the overlay
  * over them with its strength, in 3D how tall it stands its heights
- * (HeightsChoice), the layers as tiles (MapLayers). How the
+ * (HeightsChoice), the four layers as tiles (MapLayers). How the
  * map behaves -- the airport weather, the glide ring, the alerts, keeping
  * the charts, where the data comes from -- is the app's Settings, which
  * the gear at the card's head opens at its Map group (option A of the
@@ -35,20 +37,43 @@ import { useTerrainView } from "../plan/map/terrain/useTerrainView";
  * here went into it.
  */
 export default function MapCard() {
-  const prefs = usePreferences();
   return (
     <div className="flex flex-col gap-5" data-testid="map-settings-groups">
-      {/* The charts first, as Apple Maps' card has its maps. */}
+      <ChartChoice />
+      <OverlayChoice />
+      <HeightsChoice />
+      <MapLayers />
+    </div>
+  );
+}
+
+/**
+ * The charts first, as Apple Maps' card has its maps, and under them,
+ * while there is a chart, its terminal sheet pinned or not: the TAC over
+ * the sectional, the IFR area chart over the IFR charts, at every zoom it
+ * exists at. A row of its own under the chart it belongs to, as the
+ * overlay's Strength is, since the layers became four (the owner,
+ * 2026-11-14); a Class B field's card pins its own sheet either way.
+ */
+function ChartChoice() {
+  const prefs = usePreferences();
+  return (
+    <div className="flex flex-col gap-2">
       <MapPictureChoices
         title="Chart"
         value={prefs.base}
         onChange={(v) => prefs.setBase(v as BaseChart)}
         testId="base-chart-select"
-        options={BASE_CHARTS.map((b) => ({ value: b.kind, label: b.label, src: chartPicture(b.kind) }))}
+        options={BASE_CHARTS.map((b) => ({ value: b.kind, label: b.label, ...chartPicture(b.kind) }))}
       />
-      <OverlayChoice />
-      <HeightsChoice />
-      <MapLayers />
+      {prefs.base !== "none" && (
+        <div className="flex items-center justify-between gap-3 px-1">
+          <label htmlFor="tac-toggle" className={cn("text-foreground", TEXT.row)}>
+            {prefs.base === "sec" ? "Terminal Area Charts" : "IFR Area Charts"}
+          </label>
+          <Switch id="tac-toggle" checked={prefs.tac} onCheckedChange={prefs.setTac} data-testid="tac-toggle" />
+        </div>
+      )}
     </div>
   );
 }
@@ -82,7 +107,7 @@ function OverlayChoice() {
         testId="overlay-select"
         onChange={(v) => prefs.setOverlay(v as MapOverlay)}
         options={[
-          { value: "none", label: "None", src: chartPicture(prefs.base), faded: true },
+          { value: "none", label: "None", ...chartPicture(prefs.base), faded: true },
           { value: "usgs", label: "USGS", src: USGS_PICTURE },
           ...(google
             ? [
@@ -173,8 +198,12 @@ const PICTURE_TILE = [9, 130, 190] as const;
 /** A chart's own picture, cut once from that tile of the 2026-10-29 cycle's
  *  @2x PMTiles (the planner image's pmtiles and Pillow: the tile's middle,
  *  16:9, 360 by 202, WebP) and kept with the app, so the card shows it
- *  with no request to the planner, offline too. */
-const chartPicture = (kind: BaseChart) => `${import.meta.env.BASE_URL}map-tiles/${kind}.webp`;
+ *  with no request to the planner, offline too. None is the plain ground
+ *  the map draws with no chart (BaseGl's PlainGround), in its own token. */
+const chartPicture = (kind: BaseChart): { src?: string; className?: string } =>
+  kind === "none"
+    ? { className: "bg-(--chart-map-ground) dark:bg-(--chart-map-ground-night)" }
+    : { src: `${import.meta.env.BASE_URL}map-tiles/${kind}.webp` };
 /** The USGS's imagery of the same tile (OverlayTiles' service). */
 const USGS_PICTURE = USGS_URL.replace("{z}", String(PICTURE_TILE[0]))
   .replace("{x}", String(PICTURE_TILE[1]))

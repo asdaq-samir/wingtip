@@ -11,6 +11,7 @@ import { useAtcListen } from "../lib/atc/listenSetting";
 import { cn } from "cn";
 import { useFlying } from "../lib/mapChrome";
 import { useWeatherLayers } from "../lib/map/sources/weatherLayers";
+import { usePreferences } from "../lib/preferences";
 // The radar and satellite loop's bar, lazy in its feature: fetched once a loop is turned on.
 import { LoopBar } from "../features/weather-loop";
 import { EngineGate } from "../lib/engine/engineGate";
@@ -67,7 +68,9 @@ function MapBannersDrawn({ map }: { map: GlMap | null }) {
   // alert clear of the stack.
   const flying = useFlying((s) => s.flying);
   const atc = useAtcListen((s) => s.value !== "off");
-  const loop = useWeatherLayers((s) => s.loop !== "off");
+  // The loop's bar only while the Map card's Weather is on too.
+  const weather = usePreferences((s) => s.weather);
+  const loop = useWeatherLayers((s) => s.loop !== "off") && weather;
   return (
     <div
       className={cn(

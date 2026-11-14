@@ -61,7 +61,7 @@ export default function ChartMap({
   flyTo = null,
   flyZoom = 12,
 }: Props) {
-  const show = usePreferences((s) => s.waypoints);
+  const show = usePreferences((s) => s.aeronautical);
   const candidates = useMemo<GlCandidate[]>(
     () =>
       !show

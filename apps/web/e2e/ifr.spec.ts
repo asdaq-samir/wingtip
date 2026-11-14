@@ -102,7 +102,7 @@ test("under IFR an airway in the route is flown fix by fix, its published MEA th
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
     localStorage.setItem(
       "wingtip.preferences",
-      JSON.stringify({ ...kept, state: { ...kept.state, flightRules: "ifr", waypoints: false } }),
+      JSON.stringify({ ...kept, state: { ...kept.state, flightRules: "ifr", aeronautical: false } }),
     );
   });
   // Milwaukee's VOR to Oshkosh's along V191, by its fix CORIR, then
@@ -195,7 +195,7 @@ test("under IFR the Weather tab says whether an alternate is needed, files one w
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
     localStorage.setItem(
       "wingtip.preferences",
-      JSON.stringify({ ...kept, state: { ...kept.state, flightRules: "ifr", waypoints: false } }),
+      JSON.stringify({ ...kept, state: { ...kept.state, flightRules: "ifr", aeronautical: false } }),
     );
   });
   // The TAFs are the day's: the planner's answer is stubbed, its fuel is not.
@@ -266,7 +266,7 @@ test("under IFR a leg in cloud at or above the freezing level is icing possible,
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
     localStorage.setItem(
       "wingtip.preferences",
-      JSON.stringify({ ...kept, state: { ...kept.state, flightRules: "ifr", waypoints: false } }),
+      JSON.stringify({ ...kept, state: { ...kept.state, flightRules: "ifr", aeronautical: false } }),
     );
   });
   // The day's weather pinned: the freezing level at 2,000 ft with cloud,
@@ -354,7 +354,7 @@ test("under IFR the AWC's forecast icing at the altitude flown is a caution, leg
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
     localStorage.setItem(
       "wingtip.preferences",
-      JSON.stringify({ ...kept, state: { ...kept.state, flightRules: "ifr", waypoints: false } }),
+      JSON.stringify({ ...kept, state: { ...kept.state, flightRules: "ifr", aeronautical: false } }),
     );
   });
   // Nothing else to say first: no freezing level in reach, no hazard, no

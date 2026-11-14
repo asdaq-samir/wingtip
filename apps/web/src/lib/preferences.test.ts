@@ -69,6 +69,24 @@ describe("the settings taken out (2026-11-13)", () => {
   });
 });
 
+describe("the Map card's four layers (2026-11-14)", () => {
+  it("fold the old switches into their groups, each on where any of its old ones was on", () => {
+    expect(usePreferences.getInitialState()).toMatchObject({ aeronautical: true, weather: true, traffic: false, privateMilitary: false });
+    // The airspace and the VORs off, the checkpoints on: Aeronautical on.
+    expect(migratePreferences({ airspace: false, navaids: false, waypoints: true }, 9)).toMatchObject({ aeronautical: true });
+    expect(migratePreferences({ airspace: false, navaids: false, waypoints: false }, 9)).toMatchObject({ aeronautical: false });
+    // Never kept: the defaults then, the airspace and the VORs on.
+    expect(migratePreferences({}, 9)).toMatchObject({ aeronautical: true, privateMilitary: false });
+    expect(migratePreferences({ military: false, privateFields: true }, 9)).toMatchObject({ privateMilitary: true });
+    // The fields' weather marks were drawn (Settings' Airport Weather not Off).
+    expect(migratePreferences({ classB: false }, 9)).toMatchObject({ weather: true });
+    expect(migratePreferences({ traffic: true }, 9)).toMatchObject({ traffic: true });
+    const kept = migratePreferences({ airspace: true, tfrs: false, classB: true, military: true }, 9);
+    for (const old of ["airspace", "navaids", "waypoints", "tfrs", "classB", "military", "privateFields"])
+      expect(kept).not.toHaveProperty(old);
+  });
+});
+
 describe("what is kept", () => {
   it("writes the map's overlay and its strength with the rest, and no functions", () => {
     const kept = keptPreferences({ ...usePreferences.getState(), overlay: "usgs", overlayStrength: "full" }) as Record<string, unknown>;

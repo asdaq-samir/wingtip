@@ -18,8 +18,8 @@ export const PAGES = ["/app/plan", "/app/dev"] as const;
  *  with none of the suite's saved session. */
 export function noTips() {
   localStorage.setItem("wingtip.tips", JSON.stringify({ state: { seen: ["*"] }, version: 0 }));
-  // The route's VFR checkpoints on, as a student has them: off by default
-  // (lib/preferences), and most specs read the route through them; Comms
+  // The route's VFR checkpoints on (the Map card's Aeronautical, on by
+  // default, lib/preferences): most specs read the route through them; Comms
   // Assist on, off by default (2026-11-13), as the radio's specs need it.
   if (!localStorage.getItem("wingtip.preferences"))
     localStorage.setItem("wingtip.preferences", JSON.stringify({ state: { waypoints: true }, version: 1 }));

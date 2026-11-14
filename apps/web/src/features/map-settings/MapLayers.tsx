@@ -1,18 +1,5 @@
 import { useId } from "react";
-import {
-  Ban,
-  CircleDashed,
-  CloudAlert,
-  CloudSun,
-  Flag,
-  Grid2x2,
-  Hexagon,
-  Lock,
-  MessageSquareText,
-  Plane,
-  Shield,
-  Wind,
-} from "lucide-react";
+import { CircleDashed, CloudAlert, CloudSun, MessageSquareText, Plane, Shield, Wind } from "lucide-react";
 import { LayerMenu, LayerToggle } from "../../components/LayerTile";
 import SectionTitle from "../../components/SectionTitle";
 import { usePreferences } from "../../lib/preferences";
@@ -35,109 +22,101 @@ const WINDS: { value: WindsAt; label: string }[] = [
 ];
 
 /**
- * What the map draws over the chart, as the Map card's tiles (LayerTile;
- * the owner's pick, option A of the map settings canvas, 2026-11-13),
- * where they were a list of switches and menus: the chart's own marks,
- * the traffic, the weather (WeatherGl, and the loop's WeatherLoopGl and
- * the flow layer) and the fields. Each kept as it was: the map's in the
- * preferences, the weather's on this device (lib/map/sources/weatherLayers).
+ * What the map draws over the chart, four layers as the Map card's tiles
+ * (LayerTile), each on or off and kept in the preferences (the owner,
+ * 2026-11-14: "I want to keep it simple though. can we just have four
+ * layers aeronautical, weather, traffic, private/military in the map
+ * settings?"), where there were eleven. The public fields, the route and
+ * the plan's points, own ship and the TFRs have no switch: always drawn.
+ * Under them, while Weather is on, which weather it draws -- the pilot's
+ * picks as they were, kept on this device (lib/map/sources/weatherLayers)
+ * -- and the fields' weather marks as Settings' Airport Weather says.
  */
 export default function MapLayers() {
   const prefs = usePreferences();
-  const { areas, pireps, winds, set } = useWeatherLayers();
   const id = useId();
-  const sec = prefs.base === "sec";
   return (
-    <section role="group" aria-labelledby={id} className="flex flex-col">
+    <section role="group" aria-labelledby={id} className="flex flex-col gap-2">
       <div className="pb-1.5">
         <SectionTitle id={id}>Layers</SectionTitle>
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        {/* The Class B, C and D's lines and altitudes over the chart
-            (AirspaceGl), and the VORs and enroute fixes (NavaidsGl):
-            on unless turned off, the owner's pick of the map's looks. */}
-        <LayerToggle name="Airspace" glyph={CircleDashed} on={prefs.airspace} onChange={prefs.setAirspace} testId="airspace-toggle" />
-        {/* The temporary flight restrictions, from tfr.faa.gov: on unless
-            turned off, as a pilot must know of every one near the route
-            (14 CFR 91.103). */}
-        <LayerToggle name="TFRs" glyph={Ban} on={prefs.tfrs} onChange={prefs.setTfrs} testId="tfrs-toggle" />
-        {/* The route's VFR checkpoints, on either map: the planner's
-            numbered checkpoints at every zoom and the dim landmarks they
-            were chosen from closer in; off, the course line and its two
-            airports alone. */}
-        <LayerToggle name="VFR Checkpoints" glyph={Flag} on={prefs.waypoints} onChange={prefs.setWaypoints} testId="waypoints-toggle" />
-        <LayerToggle name="VORs and Fixes" glyph={Hexagon} on={prefs.navaids} onChange={prefs.setNavaids} testId="navaids-toggle" />
+      <div className="grid grid-cols-4 gap-2">
+        {/* The Class B, C and D and special-use airspace (AirspaceGl), the
+            VORs, fixes and VFR waypoints (NavaidsGl), and the route's VFR
+            checkpoints with their landmarks: on unless turned off. */}
+        <LayerToggle
+          name="Aeronautical"
+          glyph={CircleDashed}
+          on={prefs.aeronautical}
+          onChange={prefs.setAeronautical}
+          testId="aeronautical-toggle"
+        />
+        {/* The fields' weather marks, the Class B fields' chips and the
+            weather picked under it: on unless turned off. */}
+        <LayerToggle name="Weather" glyph={CloudSun} on={prefs.weather} onChange={prefs.setWeather} testId="weather-toggle" />
         {/* The airplanes ADS-B receivers hear about the map (TrafficGl),
             from adsb.lol: off unless turned on, as it asks a third party
-            every five seconds. Setup's Controls has it too, for the
-            cockpit, as iOS has Wi-Fi in Control Center and Settings. */}
+            every five seconds. */}
         <LayerToggle name="Traffic" glyph={Plane} on={prefs.traffic} onChange={prefs.setTraffic} testId="traffic-toggle" />
-        {/* The SIGMETs and G-AIRMETs and the pilot reports, each on or off:
-            a tile whose state reads at a glance, as the stock switch's did
-            where a "Show" pill looked the same on and off (the UI audit,
-            2026-11-09). */}
+        {/* The privately owned fields and the armed services' own: off by
+            default, as each is landed at only by leave; drawn whatever
+            this says while the emergency assistant is open. */}
         <LayerToggle
-          name="AIRMETs and SIGMETs"
-          glyph={CloudAlert}
-          on={areas}
-          onChange={(on) => set({ areas: on })}
-          testId="weather-areas-toggle"
+          // A break after the slash, as four tiles to a row leave its
+          // name too narrow a line at a phone's width.
+          name={"Private/\u200bMilitary"}
+          glyph={Shield}
+          on={prefs.privateMilitary}
+          onChange={prefs.setPrivateMilitary}
+          testId="private-military-toggle"
         />
-        <LayerToggle
-          name="PIREPs"
-          glyph={MessageSquareText}
-          on={pireps}
-          onChange={(on) => set({ pireps: on })}
-          testId="weather-pireps-toggle"
-        />
-        {/* The winds aloft at an altitude picked from a menu (discrete
-            altitudes, not a slider); whose winds the barbs draw, the
-            GFS's (lib/windsAloft), under the menu's heading. */}
-        <LayerMenu
-          name="Winds Aloft"
-          glyph={Wind}
-          testId="weather-winds"
-          off="off"
-          pick={{
-            heading: "Winds Aloft",
-            note: WINDS_MODELLED_LABEL,
-            value: winds,
-            choices: WINDS,
-            onPick: (v) => set({ winds: v }),
-            testId: "weather-winds",
-          }}
-        />
-        {/* The radar and satellite loop and its speed (features/weather-loop),
-            and the model weather under the wind's streaks (features/weather-flow). */}
-        <LoopTile />
-        <FlowTile />
-        {/* The Class B airports' weather now, as chips on the map, and
-            the terminal sheet over the base wherever there is one: the
-            TAC over the sectional, the IFR area chart over the IFR
-            charts. A chip's card pins its field's sheet either way. */}
-        <LayerToggle name="Class B Weather" glyph={CloudSun} on={prefs.classB} onChange={prefs.setClassB} testId="class-b-toggle" />
-        <LayerToggle
-          name={sec ? "Terminal Area Charts" : "IFR Area Charts"}
-          glyph={Grid2x2}
-          on={prefs.tac}
-          onChange={prefs.setTac}
-          testId="tac-toggle"
-        />
-        {/* The privately owned fields (the owner, 2026-10-27): off by
-            default, as a field landed at only by its owner's leave, on to
-            see them. */}
-        <LayerToggle
-          name="Private Fields"
-          glyph={Lock}
-          on={prefs.privateFields}
-          onChange={prefs.setPrivateFields}
-          testId="private-toggle"
-        />
-        {/* The fields the armed services own and keep to themselves: off by
-            default, as most pilots may not land there without the
-            service's permission. A joint-use field is drawn either way. */}
-        <LayerToggle name="Military Fields" glyph={Shield} on={prefs.military} onChange={prefs.setMilitary} testId="military-toggle" />
       </div>
+      {prefs.weather && <WeatherPicks />}
     </section>
+  );
+}
+
+/** Which weather the Weather layer draws, as it was picked before the four
+ *  layers: the SIGMETs and G-AIRMETs and the pilot reports, each on or
+ *  off (off by default, as an area hundreds of miles across takes the tap
+ *  meant for what is under it), the winds aloft at an altitude from a menu
+ *  (discrete altitudes, not a slider; the GFS's, lib/windsAloft), the radar
+ *  and satellite loop (features/weather-loop) and the model weather
+ *  (features/weather-flow). */
+function WeatherPicks() {
+  const { areas, pireps, winds, set } = useWeatherLayers();
+  return (
+    <div className="grid grid-cols-3 gap-2" data-testid="weather-picks">
+      <LayerToggle
+        name="AIRMETs and SIGMETs"
+        glyph={CloudAlert}
+        on={areas}
+        onChange={(on) => set({ areas: on })}
+        testId="weather-areas-toggle"
+      />
+      <LayerToggle
+        name="PIREPs"
+        glyph={MessageSquareText}
+        on={pireps}
+        onChange={(on) => set({ pireps: on })}
+        testId="weather-pireps-toggle"
+      />
+      <LayerMenu
+        name="Winds Aloft"
+        glyph={Wind}
+        testId="weather-winds"
+        off="off"
+        pick={{
+          heading: "Winds Aloft",
+          note: WINDS_MODELLED_LABEL,
+          value: winds,
+          choices: WINDS,
+          onPick: (v) => set({ winds: v }),
+          testId: "weather-winds",
+        }}
+      />
+      <LoopTile />
+      <FlowTile />
+    </div>
   );
 }

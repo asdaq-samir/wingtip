@@ -20,6 +20,7 @@ import { useRouteFit } from "./useRouteFit";
 import { inRoom, keepStill, useTappedInSight } from "./cardRoom";
 import type { Course, OverlayTiles } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
+import { usePreferences } from "../../lib/preferences";
 import { chartQuery, overlayTilesQuery, queryClient } from "../../lib/queryClient";
 import { CardCloseContext } from "../../lib/map/cards/cardClose";
 import { prefetchRing, registerOverlayProtocol } from "../../lib/map/sources/overlayTiles";
@@ -178,15 +179,14 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
     const b = m.getBounds();
     prefetchRing(tiles, { west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() }, m.getZoom());
   });
-  // The map shown as one thing (the owner, 2026-11-07: the chart, then
-  // the rings, then the airports snapping on one by one): the canvas
-  // kept clear over the page's background until the map is first at
-  // rest with the chart's tiles drawn and the overlay tiles' first ones
-  // in, then faded in once; never longer than REVEAL_LATEST_MS, so a
-  // slow tile never leaves the map blank.
+  // The map shown as one thing (the owner, 2026-11-07): the canvas clear
+  // over the page's background until the map is first at rest with the
+  // chart's tiles drawn (none to wait for with the chart None) and the
+  // overlay tiles' first ones in, then faded in once; never longer than
+  // REVEAL_LATEST_MS, so a slow tile never leaves the map blank.
   const canvas = m.getCanvas();
   canvas.style.opacity = "0";
-  let chartIn = false;
+  let chartIn = usePreferences.getState().base === "none";
   let overlaysIn = !tiles;
   const tileIn = (e: { sourceId?: string; tile?: unknown }) => {
     if (!e.tile) return;

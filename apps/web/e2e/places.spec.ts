@@ -757,10 +757,10 @@ test("the map's Private setting draws the private fields, off by default and kep
   await expect.poll(async () => (await airportMarks(page)).length, { timeout: slow(15000) }).toBeGreaterThan(0);
   expect(await airportMark(page, "IL11")).toBeFalsy();
   await openMapSettings(page);
-  await expect(page.getByTestId("private-toggle")).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId("private-military-toggle")).toHaveAttribute("aria-pressed", "false");
   // Under the Map card's edge at half, as every card opens: pulled up to it.
-  await inSheet(page, page.getByTestId("private-toggle"));
-  await page.getByTestId("private-toggle").click();
+  await inSheet(page, page.getByTestId("private-military-toggle"));
+  await page.getByTestId("private-military-toggle").click();
   await page.keyboard.press("Escape");
   await expect.poll(async () => (await airportMark(page, "IL11"))?.use, { timeout: slow(15000) }).toBe("private");
   // The airport's card kept under the settings', as it was.

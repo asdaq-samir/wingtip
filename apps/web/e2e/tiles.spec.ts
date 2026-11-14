@@ -63,9 +63,9 @@ for (const path of ["/app/dev"] as const) {
     // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
     await grabberTo(page, "full");
     const pin = page.getByTestId("tac-toggle");
-    await expect(pin).toHaveAttribute("aria-pressed", "false");
+    await expect(pin).toHaveAttribute("aria-checked", "false");
     await pin.click();
-    await expect(pin).toHaveAttribute("aria-pressed", "true");
+    await expect(pin).toHaveAttribute("aria-checked", "true");
     await page.keyboard.press("Escape");
     await expect.poll(kinds, { timeout: slow(10000) }).toBe("sec tac");
     await expect.poll(() => tacDrawn, { timeout: slow(45000) }).toBeGreaterThan(0);
@@ -77,9 +77,9 @@ for (const path of ["/app/dev"] as const) {
     await openMapSettings(page);
     await grabberTo(page, "full");
     const toggle = page.getByTestId("tac-toggle");
-    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
     await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
     await page.keyboard.press("Escape");
     await expect.poll(kinds).toBe("sec");
   });
@@ -110,5 +110,35 @@ for (const path of ["/app/dev"] as const) {
     await page.getByTestId("base-chart-select").getByRole("button", { name: "Sectional" }).click();
     await expect.poll(kinds, { timeout: slow(10000) }).toBe("sec");
     await expect(page.getByTestId("map-settings").getByText("Terminal Area Charts")).toBeVisible();
+  });
+
+  test(`${path}: the chart can be None: no chart tile, the plain ground, the route still drawn`, async ({ page }) => {
+    // The owner, 2026-11-14: "chart should also have none option". None
+    // asks for no chart tile and draws the plain ground (BaseGl's
+    // PlainGround) under the vector layers; the terminal charts' row is
+    // gone, with nothing to lay a sheet over; kept over a reload.
+    test.setTimeout(slow(90000));
+    await page.goto(`${path}?dep=C81&dest=KDLH`);
+    await settle(page);
+    const map = page.getByTestId("gl-map");
+    await expect.poll(() => map.getAttribute("data-chart-kinds"), { timeout: slow(15000) }).toBe("sec");
+
+    await openMapSettings(page);
+    await grabberTo(page, "full");
+    await page.getByTestId("base-chart-select").getByRole("button", { name: "None" }).click();
+    await expect(page.getByTestId("tac-toggle")).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect.poll(() => map.getAttribute("data-chart-kinds")).toBe("");
+    await expect(map).toHaveAttribute("data-ground", "plain");
+
+    let chartAsked = 0;
+    page.on("request", (r) => {
+      if (/chart-tile\/|\/(?:sec|ifr_low|ifr_high|tac)\/\d+\//.test(r.url())) chartAsked += 1;
+    });
+    await page.reload();
+    await settle(page);
+    await expect(map).toHaveAttribute("data-ground", "plain");
+    await expect.poll(markWith(page, "route-marks", "C81")).not.toBeNull();
+    expect(chartAsked).toBe(0);
   });
 }

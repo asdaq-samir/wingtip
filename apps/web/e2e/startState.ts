@@ -29,7 +29,7 @@ export async function pickAirplane(
 export async function noCheckpoints(page: Page) {
   await page.addInitScript(() => {
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":7}');
-    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, waypoints: false } }));
+    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, aeronautical: false } }));
   });
 }
 

@@ -76,7 +76,7 @@ export function usePlanRoute() {
   const localMin = address.local_min;
   // Load pressed again for the same route: a fresh nav log, fresh winds.
   const [load, setLoad] = useState(0);
-  const showWaypoints = usePreferences((p) => p.waypoints);
+  const showWaypoints = usePreferences((p) => p.aeronautical);
   // VFR or IFR, kept from flight to flight (the altitude's popover).
   const flightRules = usePreferences((p) => p.flightRules);
   const setFlightRules = usePreferences((p) => p.setFlightRules);

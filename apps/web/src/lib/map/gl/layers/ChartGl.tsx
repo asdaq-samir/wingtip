@@ -20,6 +20,7 @@ import { useCloseImagery } from "../useCloseImagery";
  * imagery under it (closeZoom, useCloseImagery: the USGS's, or Google's
  * at the pilot's pick, never for export, `publicOnly`), and the map goes
  * in to CLOSE_MAX_ZOOM; where there is none, to two levels past the chart.
+ * With the chart None, nothing of it is drawn.
  */
 export function ChartGl({
   course,
@@ -42,7 +43,13 @@ export function ChartGl({
   useEffect(() => {
     document.documentElement.dataset.chartNight = chartNight;
   }, [chartNight]);
-  const spec = useMemo(() => (chart ? chartStyle(chart, base, pinned, window.location.origin) : null), [chart, base, pinned]);
+  // None picked: no chart, its terminal sheet or the imagery it fades
+  // into; the overlay and the plain ground (BaseGl) are the map's base.
+  const none = base === "none";
+  const spec = useMemo(
+    () => (chart && !none ? chartStyle(chart, base, pinned, window.location.origin) : null),
+    [chart, none, base, pinned],
+  );
   // The base and the terminal sheet each made again only as its own tiles
   // change: pinning the TAC left the sectional's tiles where they were.
   const parts = useMemo(
@@ -64,6 +71,11 @@ export function ChartGl({
   // Which charts are drawn and how, on the map's element, for the browser
   // tests: each part's kind (its tiles' path) and the paint's look.
   const { map } = useGlMap();
+  // With no chart to set it, the map goes in as far as over the imagery:
+  // the overlay and the vector layers have their detail that far.
+  useEffect(() => {
+    if (none) map.setMaxZoom(CLOSE_MAX_ZOOM);
+  }, [map, none]);
   const kinds = parts
     .map((p) => /\/(?:chart-tile\/)?([a-z_]+)\/\{z\}/.exec(Object.values(p.spec.sources).at(-1)?.tiles?.[0] ?? "")?.[1] ?? "")
     .join(" ");

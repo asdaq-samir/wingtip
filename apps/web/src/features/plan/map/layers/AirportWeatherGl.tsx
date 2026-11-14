@@ -6,7 +6,8 @@ import { glZoom } from "../../../../lib/map/gl/glStyle";
 import { GL_FONT_BOLD, LABEL_HALO } from "../../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
 import { weatherMarksOf } from "../../../../lib/map/marks/airportWeather";
-import { airportWeatherDrawn, useAirportWeatherPrefs } from "../../../../lib/map/marks/airportWeatherPrefs";
+import { airportWeatherDrawn } from "../../../../lib/map/marks/airportWeatherPrefs";
+import { useAirportWeatherShown } from "../../../../lib/map/marks/useAirportWeatherShown";
 import { WORSE_ID } from "../../../../lib/map/marks/stationModel";
 import { useDemonstratedCrosswind } from "../../../../lib/map/marks/useDemonstratedCrosswind";
 import { CHART, MAP } from "../../../../lib/tokens";
@@ -116,7 +117,7 @@ const LAYERS = [BARB, LINES, FAR, WORSE];
  */
 export default function AirportWeatherGl({ fields, worse }: { fields: AirportPin[]; worse: string[] }) {
   const { map } = useGlMap();
-  const show = useAirportWeatherPrefs((s) => s.show);
+  const show = useAirportWeatherShown();
   const demonstrated = useDemonstratedCrosswind();
   useGlLayer("marks", { [SOURCE]: { type: "geojson", data: EMPTY } }, LAYERS, "airports");
   const data = useMemo<GeoJSON.FeatureCollection>(() => {

@@ -132,18 +132,19 @@ const LABEL_LAYER: SymbolLayerSpecification = {
 export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: number[] | null }) {
   const { map, openCard } = useGlMap();
   const eye = useEye(map);
-  const showAirspace = usePreferences((s) => s.airspace);
-  const showTfrs = usePreferences((s) => s.tfrs);
+  // The airspace with the Map card's Aeronautical; the TFRs always, a
+  // hazard with no switch (the owner, 2026-11-14).
+  const showAirspace = usePreferences((s) => s.aeronautical);
   const { box, level: zoom } = useGlView(volumeBox, "rest");
   const tick = useGroundTick(map);
   const stretch = useDrawnStretch();
   const classes = classesAt(zoom);
   const { data: volumes } = useQuery({ ...volumesQuery(box, classes), enabled: showAirspace });
-  const { data: tfrs, dataUpdatedAt: now } = useQuery({ ...tfrsQuery, enabled: showTfrs });
+  const { data: tfrs, dataUpdatedAt: now } = useQuery({ ...tfrsQuery });
 
   const features = useMemo(() => {
     const areas = showAirspace ? ((volumes?.features ?? []) as unknown as Parameters<typeof piecesOf>[0]) : [];
-    const restrictions = (showTfrs ? (tfrs ?? []) : []).map((t) => ({
+    const restrictions = (tfrs ?? []).map((t) => ({
       geometry: t.geometry as unknown as { type: string },
       properties: {
         layer: "tfr",
@@ -158,7 +159,7 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
     // Each kind from its own zoom (KINDS), a wider view's answer kept
     // on screen while a closer one comes.
     return [...areas.filter((f) => zoom >= KINDS[kindOf(f.properties)].from), ...restrictions];
-  }, [volumes, tfrs, showAirspace, showTfrs, now, zoom]);
+  }, [volumes, tfrs, showAirspace, now, zoom]);
 
   const pieces = useMemo(
     () => piecesOf(features, (at) => map.queryTerrainElevation(at), altitudes, stretch),

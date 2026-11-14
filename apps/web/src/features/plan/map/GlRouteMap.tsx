@@ -35,6 +35,7 @@ import { FlowGl } from "../../weather-flow";
 import { PlatesGl } from "../../plates";
 import { FaaChart } from "../components/AirportDiagram";
 import { useWeatherLayers } from "../../../lib/map/sources/weatherLayers";
+import { usePreferences } from "../../../lib/preferences";
 import { useGlFit } from "./useGlFit";
 import type { AloftPoint } from "./terrain/geometry";
 import { useTerrainView } from "./terrain/useTerrainView";
@@ -178,10 +179,12 @@ function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void })
   const route = course ? [course.departure.ident, ...(course.stops ?? []).map((s) => s.ident), course.destination.ident] : [];
   const worse = useWorseByArrival(p.briefing, course);
   const terrain = useTerrainView();
-  // The radar and satellite loop under the advisories, while one is on.
-  const loop = useWeatherLayers((s) => s.loop !== "off");
-  // The model weather's flow layer, its own chunk, while a field is picked.
-  const flow = useWeatherLayers((s) => s.flow !== "off");
+  // The weather picked, only while the Map card's Weather is on (the
+  // owner, 2026-11-14): the radar and satellite loop under the advisories,
+  // and the model weather's flow layer, its own chunk.
+  const weather = usePreferences((s) => s.weather);
+  const loop = useWeatherLayers((s) => s.loop !== "off") && weather;
+  const flow = useWeatherLayers((s) => s.flow !== "off") && weather;
   return (
     <>
       <ReliefGl />
@@ -202,7 +205,7 @@ function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void })
           <FlowGl />
         </Suspense>
       )}
-      <WeatherGl line={p.courseLine} altitudeFt={p.cruiseFt} />
+      {weather && <WeatherGl line={p.courseLine} altitudeFt={p.cruiseFt} />}
       <TfrGl />
       {/* A search sent, its fields marked (the one search's results). */}
       <SearchResultsGl />

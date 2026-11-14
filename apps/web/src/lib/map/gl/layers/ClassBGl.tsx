@@ -16,8 +16,8 @@ const CLASS_B = "class-b-fields";
 const CLASS_B_LAYERS = [labelledLayer(CLASS_B, CLASS_B)];
 
 /**
- * The Class B fields' weather, as marks over the chart, at the settings'
- * Class B Weather, on the planner's map and the training map alike: a
+ * The Class B fields' weather, as marks over the chart, with the Map
+ * card's Weather (the four layers, 2026-11-14), on the planner's map and the training map alike: a
  * tap the field's card where the map has one (`onSelectPlace`), and on
  * the training map, which has none, the map goes to the field at the zoom
  * its terminal chart starts at; a hover shows the terminal sheet over it
@@ -36,7 +36,7 @@ export function ClassBGl({
   onSelectPlace?: (ident: string) => void;
 }) {
   const { map } = useGlMap();
-  const show = usePreferences((s) => s.classB);
+  const show = usePreferences((s) => s.weather);
   const base = usePreferences((s) => s.base);
   const { overlay } = chartPair(chart.chart_layers, base);
   const overlayFromZoom = overlay?.min_zoom ?? 10;

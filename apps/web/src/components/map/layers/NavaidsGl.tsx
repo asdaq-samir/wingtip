@@ -41,12 +41,12 @@ function tileVors(map: ReturnType<typeof useGlMap>["map"]): VorPin[] {
 
 function TileNavaids() {
   const { map, openCard } = useGlMap();
-  const show = usePreferences((s) => s.navaids);
+  const show = usePreferences((s) => s.aeronautical);
   // The VORs about the view, for the point cards' "off a VOR" (pointActions'
   // stations), at each rest.
   useEffect(() => {
     const rest = () => {
-      const stations = usePreferences.getState().navaids ? tileVors(map) : [];
+      const stations = usePreferences.getState().aeronautical ? tileVors(map) : [];
       const was = usePointActions.getState().stations;
       const key = (list: readonly { ident: string; lat: number }[]) => list.map((v) => `${v.ident}-${v.lat}`).join();
       if (key(stations) !== key(was)) usePointActions.setState({ stations });

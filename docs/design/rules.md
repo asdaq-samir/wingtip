@@ -662,10 +662,23 @@ way: three homes, and every control in one of them.
    card's gear opens the same page at its Map group; it is the one
    thing called Settings.
 3. **The Map card**, the map's own button: only what is on the map --
-   the charts, the overlay (None, USGS, Google Map, Google Satellite,
-   Google's only with a key) with its Strength while one is picked, in
-   3D its Heights (×1, ×3 or ×5, ×3 unless picked; the owner, 2026-11-14),
-   and the layers.
+   the charts (None, Sectional, IFR Low, IFR High: None draws no FAA
+   chart, only the overlay over a plain ground in the look's colours,
+   with every vector layer over it; the owner, 2026-11-14: "chart should
+   also have none option") with the terminal charts' switch under them
+   while there is a chart, the overlay (None, USGS, Google Map, Google
+   Satellite, Google's only with a key) with its Strength while one is
+   picked, in 3D its Heights (×1, ×3 or ×5, ×3 unless picked; the owner,
+   2026-11-14), and four layers (the owner, 2026-11-14: "I want to keep
+   it simple though. can we just have four layers aeronautical, weather,
+   traffic, private/military in the map settings?"): Aeronautical (the
+   airspace, special-use areas, VORs, fixes, VFR waypoints and the route's
+   checkpoints), Weather (the fields' weather marks as Settings' Airport
+   Weather says, the Class B chips, and under it, while on, which weather:
+   AIRMETs and SIGMETs, PIREPs, Winds Aloft, the radar loop, the model
+   weather), Traffic, and Private/Military (drawn whatever it says while
+   the Emergency Assistant is open). The public fields, the route and the
+   plan's points, own ship and the TFRs have no switch: always drawn.
 
 Taken out the same day, with no home: the sheet's Position (a phone's
 sheet is always at the bottom), Terrain's Flat (the 2D chart is always
