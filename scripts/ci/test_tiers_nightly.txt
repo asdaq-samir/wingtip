@@ -13,6 +13,7 @@ airspace-lines.spec.ts
 approach-debrief.spec.ts
 approach-lesson.spec.ts
 brief-glance.spec.ts
+card-once.spec.ts
 card-scroll.spec.ts
 checkride.spec.ts
 coach.spec.ts

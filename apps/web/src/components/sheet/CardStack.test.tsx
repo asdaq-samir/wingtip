@@ -15,7 +15,14 @@ import { afterEach, expect, test } from "vitest";
 import { useSheetCards, type CardEntry } from "../../lib/sheetCards";
 import { CardStack } from "./CardStack";
 
-const card = (id: string): CardEntry => ({ id, at: "half", state: "open", frame: { testId: id }, slot: null });
+const card = (id: string): CardEntry => ({
+  id,
+  at: "half",
+  state: "open",
+  frame: { testId: id },
+  slot: null,
+  host: document.createElement("div"),
+});
 
 function Sheet() {
   const [host, setHost] = useState<HTMLElement | null>(null);
