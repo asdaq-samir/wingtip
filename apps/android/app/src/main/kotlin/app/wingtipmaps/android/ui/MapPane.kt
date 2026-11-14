@@ -209,6 +209,8 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     LaunchedEffect(ahead) { flight.hear(ahead) }
     // The plan's legs' altitudes, which the 3D airspace is held against.
     LaunchedEffect(state.legs) { AirspaceVolumes3d.planAltitudes(state.legs.map { it.altitudeFt }) }
+    // The route's line, which the packs ahead follow as well as the track.
+    LaunchedEffect(ship, state.course) { ship.routeLine = state.course?.courseLine?.filter { it.size == 2 } }
     // While the emergency assistant is open, the line from the airplane
     // to the field it picked (the same model EmergencyCard holds).
     val emergencyFrom by EmergencyOpen.from.collectAsStateWithLifecycle()

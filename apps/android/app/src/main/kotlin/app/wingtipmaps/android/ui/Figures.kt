@@ -33,7 +33,6 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.FlightModel
-import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.navigation.ScreenRequests
@@ -58,8 +57,9 @@ fun FiguresStrip(state: Plan.State, model: FlightModel = hiltViewModel()) {
     val warn = model.stripFuel(state.totals).getOrNull()?.short?.isNotEmpty() == true
     // A failed rule reads "Failed" in the error colour, never as no fuel
     // required (Engine.rule logs the engine's words).
-    val flown = progress?.let { InFlight.hopFlown(it, state) }
-    val fuel = model.stripFuel(state.totals, hop = flown?.first ?: 0, burntGal = flown?.second)
+    // The hop being flown and what has burnt since it began, the engine's
+    // (in_flight's hop and hop_burnt_gal, the tanks filled at each stop).
+    val fuel = model.stripFuel(state.totals, hop = progress?.hop ?: 0, burntGal = progress?.hopBurntGal)
     val to = stringResource(R.string.figure_to)
     val dist = stringResource(R.string.figure_dist)
     val ete = stringResource(R.string.figure_ete)

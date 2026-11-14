@@ -34,7 +34,10 @@ object MapMarks {
         } catch (e: Exception) {
             emptyList()
         }
-        fields.take(MOST)
+        // In the chart's own order: the engine's field_mark_rank, which the
+        // packs' and the planner's answers carry as mark_order (a Class B's
+        // field first), the list's order kept where an older one has none.
+        fields.sortedBy { it.markOrder ?: Int.MAX_VALUE }.take(MOST)
     }
 
     /** What an action on the map says for a field: "KDLH, Duluth

@@ -13,7 +13,7 @@ import org.junit.Test
 class FlightUpdateTest {
     private fun answer(burnt: Double = 4.0) = EngineContract.InFlightAnswer(
         onRoute = true, alongNm = 25.0, totalNm = 100.0, leftNm = 75.0, offNm = 0.2,
-        desiredTrackDeg = 90.0, burntGal = burnt, fuelNowGal = 36.0,
+        desiredTrackDeg = 90.0, burntGal = burnt, fuelNowGal = 36.0, hop = 0, hopBurntGal = burnt,
         next = EngineContract.InFlightAnswerNext(index = 1, name = "PIPER", distanceNm = 12.0, bearingDeg = 91.0, eteMin = 12.0),
         destination = EngineContract.InFlightAnswerDestination(index = 3, name = "KDLH", distanceNm = 75.0, bearingDeg = 88.0, eteMin = 65.0, etaS = 1_793_620_000.0),
     )

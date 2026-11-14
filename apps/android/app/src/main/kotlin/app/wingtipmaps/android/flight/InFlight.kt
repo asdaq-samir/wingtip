@@ -160,32 +160,6 @@ class InFlight {
             }
         }
 
-        /** The hop being flown (how many of the plan's hops have ended
-         *  behind the airplane: the next field's place among the fields,
-         *  less one) and what has been burnt since it began, the plan's leg
-         *  fuel before it taken off the engine's burnt_gal, for the strip's
-         *  strip_fuel. Hop 0 and the whole burn where the route has no
-         *  stops. */
-        fun hopFlown(progress: EngineContract.InFlightAnswer, plan: Plan.State): Pair<Int, Double> {
-            val hops = plan.totals?.hops.orEmpty()
-            if (hops.size < 2) return 0 to progress.burntGal
-            val course = plan.course ?: return 0 to progress.burntGal
-            val fields = (listOf(course.departure) + course.stops.orEmpty() + listOf(course.destination)).map { it.ident }
-            val starts = refuelAt(fields, hops.map { it.departure })
-            val nextField = progress.next?.index ?: return 0 to progress.burntGal
-            val hop = starts.count { it < nextField }.coerceAtMost(hops.size - 1)
-            if (hop == 0) return 0 to progress.burntGal
-            // The legs flown before the hop began: up to its departure.
-            var landed = 0
-            var before = 0.0
-            for (leg in plan.legs) {
-                if (landed >= hop) break
-                before += leg.fuelGal ?: 0.0
-                if (leg.to.equals(hops[landed + 1].departure, ignoreCase = true)) landed++
-            }
-            return hop to maxOf(0.0, progress.burntGal - before)
-        }
-
         /** How often the nearest field is asked for the ring's ground: a
          *  field's elevation changes slowly as an airplane flies. */
         const val FIELD_EVERY_MS = 60_000L

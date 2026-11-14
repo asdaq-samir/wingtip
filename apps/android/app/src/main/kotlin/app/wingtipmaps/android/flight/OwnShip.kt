@@ -300,6 +300,11 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
      *  at, so a taxiing airplane asks nothing it would not answer. The
      *  asking is a job of its own, so the next question cancels one still
      *  unanswered. */
+    /** The planned route's course line, [lat, lon] pairs, for the packs
+     *  ahead to follow it as well as the track (set as the plan changes). */
+    @Volatile
+    var routeLine: List<List<Double>>? = null
+
     private fun askAhead() {
         val fix = _fix.value ?: return
         val track = fix.trackDeg ?: return
@@ -312,7 +317,7 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
             // The packs' answer is asked either way, for the ground under
             // the airplane the glide ring stands on, network or none: off
             // the main thread, as the engine reads nine regions' packs.
-            val offline = withContext(Dispatchers.Default) { CyclePacks.of(context).ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt) }
+            val offline = withContext(Dispatchers.Default) { CyclePacks.of(context).ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt, routeLine) }
             _groundFt.value = offline?.groundFt
             val alerts = try {
                 Planner.ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt)
