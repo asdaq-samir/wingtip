@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_brief::gonogo::permission::call",
-  "description": "The Go / No-Go's row for a departure, destination or stop that is private (NASR FACILITY_USE_CODE PR: \"IL11 is private: land only with the owner's permission (call 847-323-8911)\") or military-only (\"prior permission required (PPR)\"), the phone NASR APT_CON's; 14 CFR 91.103 (all available information). A caution, opening the Depart tab for the departure and Arrive otherwise; null where every field is public or joint use. The hosts add it to gonogo_verdict_items' list before gonogo_verdict_line.",
+  "description": "The Go / No-Go's \"fields\" row for a departure, destination or stop that NASR lists as closed (APT_BASE ARPT_STATUS not O: \"00MO is closed indefinitely (NASR): it cannot be planned as a landing field\", decision 0043), private (FACILITY_USE_CODE PR: \"IL11 is private: land only with the owner's permission (call 847-323-8911)\") or military-only (\"prior permission required (PPR)\"), the phone NASR APT_CON's; 14 CFR 91.103 (all available information). A caution, opening the Depart tab for the departure and Arrive otherwise; null where every field is open and public or joint use. The hosts add it to gonogo_verdict_items' list before gonogo_verdict_line.",
   "type": "object",
   "properties": {
     "input": {
@@ -53,6 +53,13 @@
                   "null"
                 ],
                 "description": "NASR APT_CON's phone, the manager's or else the owner's."
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where the host has no NASR record."
               }
             },
             "required": [

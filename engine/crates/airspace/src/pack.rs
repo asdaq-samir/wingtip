@@ -154,7 +154,7 @@ impl<'a> Layer<'a> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     #[test]
@@ -181,11 +181,16 @@ mod tests {
         for v in [0u64, wkb.len() as u64] {
             offsets.extend_from_slice(&v.to_le_bytes());
         }
-        let sections: Vec<(&str, Vec<u8>)> = vec![("a.box", boxes), ("a.off", offsets), ("a.wkb", wkb)];
+        written(&[("a.box", boxes), ("a.off", offsets), ("a.wkb", wkb)])
+    }
+
+    /// A pack of these sections, written as wingtip.cycle_pack writes one:
+    /// for the tests of what reads a pack's tables (spoken's places).
+    pub(crate) fn written(sections: &[(&str, Vec<u8>)]) -> Vec<u8> {
         let mut body = Vec::new();
         let mut table = Vec::new();
         let start = HEADER + ENTRY * sections.len();
-        for (name, data) in &sections {
+        for (name, data) in sections {
             while !(start + body.len()).is_multiple_of(8) {
                 body.push(0);
             }

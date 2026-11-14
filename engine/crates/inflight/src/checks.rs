@@ -10,7 +10,7 @@ use crate::input::{same_field, Field};
 use crate::message::{minutes_words, zulu, Level, Message};
 use crate::watch::Flight;
 use wingtip_core::geo;
-use wingtip_flight::sun;
+use wingtip_flight::{field, sun};
 use wingtip_procedures::figures::debrief::AIRBORNE_KT;
 use wingtip_procedures::figures::words::{ceiling_and_visibility, js_num};
 
@@ -191,6 +191,29 @@ fn weather_message(f: &Flight, field: &Field, alternate: bool) -> Option<Message
     m.title = title;
     m.say = say;
     Some(m)
+}
+
+/// A destination NASR lists as closed (APT_BASE ARPT_STATUS CI, CP or any
+/// but O: wingtip_flight::field, decision 0043): a warning, as it cannot be
+/// landed at as planned, with the best alternative best_fields gives (which
+/// never ranks a closed field).
+pub fn closed(f: &Flight) -> Vec<Message> {
+    let Some(words) = field::closed_words(f.dest.status.as_deref()) else { return vec![] };
+    let ident = &f.dest.ident;
+    let state = words.to_lowercase();
+    let mut title = format!("{ident} is {state} (NASR)");
+    let mut say = format!("{} is {state}.", f.dest.said());
+    let mut m = Message::new(format!("closed:{ident}"), "closed", Level::Warning, String::new(), String::new());
+    if let Some(p) = fields::alternative(&f.ask, &f.fields, &f.candidates, false, &[ident.as_str()]) {
+        title.push_str(&format!("; {}", alternative_words(&p)));
+        say.push_str(&format!(" {}.", alternative_words(&p)));
+        m.detail.push(format!("Best alternative: {}", alternative_detail(&p)));
+        m.alternative = Some(fields::to_value(&p));
+    }
+    m.sources.push("FAA NASR APT_BASE, ARPT_STATUS".to_owned());
+    m.title = title;
+    m.say = say;
+    vec![m]
 }
 
 /// The destination's or the alternate's report under the flight's

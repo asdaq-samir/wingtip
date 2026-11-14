@@ -5,7 +5,7 @@
 //! planned at (limits.rs) and FAA Form 7233-4's items (filing.rs), as the
 //! planner's wingtip_native functions of the same names work them out.
 
-use crate::{filing, flight, limits, sun};
+use crate::{field, filing, flight, limits, sun};
 use wingtip_core::ask::Ask;
 use wingtip_core::json::{self, Value};
 
@@ -163,4 +163,19 @@ fn filed_route(ask: &Ask) -> Result<String, String> {
     let (stops, airways) = (words("stops")?, words("airways")?);
     let (departure, arrival) = (procedure("departure")?, procedure("arrival")?);
     Ok(filing::route(&stops, |w| airways.contains(&w), departure.as_ref(), arrival.as_ref()))
+}
+
+/// Whether a field is open, and the words a closed one is labelled with
+/// (field.rs, NASR APT_BASE's ARPT_STATUS): `status` null or missing where
+/// NASR has no record of the field.
+pub fn field_status(name: &str, v: &Value) -> Result<String, String> {
+    let code = match v.get("status") {
+        None | Some(Value::Null) => None,
+        Some(Value::String(s)) => Some(s.as_str()),
+        Some(_) => return Err(format!("{name}: \"status\" is not a string or null")),
+    };
+    let mut out = format!("{{\"open\":{},\"closed\":", field::is_open(code));
+    json::opt_string(&mut out, field::closed_words(code));
+    out.push('}');
+    Ok(out)
 }

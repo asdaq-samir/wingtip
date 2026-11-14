@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 
 from shapely.geometry import Polygon, shape
 
-from . import airports, emergency, fuelstops, itws, saa, sua, tfr, weather
+from . import airports, emergency, fuelstops, geo, itws, saa, sua, tfr, weather
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +53,35 @@ def fields(lat: float, lon: float, dest: str, alternate: str | None) -> list[dic
     except (OSError, ValueError, KeyError) as err:
         log.warning("fuel listings not read: %s", err)
         selling = set()
-    return [{**field, "fuel": ident in selling or ident.removeprefix("K") in selling} for ident, field in found.items()]
+    out = [{**field, "fuel": ident in selling or ident.removeprefix("K") in selling} for ident, field in found.items()]
+    return out + _closed(dest, found, lat, lon)
+
+
+def _closed(dest: str, found: dict, lat: float, lon: float) -> list[dict]:
+    """The destination where NASR lists it as closed (decision 0043), which
+    the field lists leave out: sent with its status and no runway, so the
+    engine's copilot_watch says it is closed and names an alternative, and
+    best_fields never ranks it."""
+    out = []
+    for ident in (dest,):
+        place = airports.find_place(ident) if ident else None
+        if not place or place["ident"] in found or not place.get("closed"):
+            continue
+        out.append(
+            {
+                "ident": place["ident"],
+                "name": place["name"],
+                "lat": place["lat"],
+                "lon": place["lon"],
+                "elevation_ft": place.get("elevation_ft"),
+                "distance_nm": geo.distance_nm(lat, lon, place["lat"], place["lon"]),
+                "bearing_deg": geo.bearing_deg(lat, lon, place["lat"], place["lon"]),
+                "runways": [],
+                "status": place.get("status"),
+                "fuel": False,
+            }
+        )
+    return out
 
 
 def _sigmet_id(raw: str | None) -> str:

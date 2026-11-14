@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from "react";
 import { BookOpenCheck, Diamond, LocateFixed, MoveUpRight, Navigation, Plane, Search, Siren, SquareArrowOutUpRight } from "lucide-react";
 import { cn } from "cn";
+import { AirportDetail } from "../../../../components/AirportResults";
 import { CommandEmpty, CommandList, CommandShortcut } from "../../../../components/ui/command";
 import { TEXT } from "../../../../lib/text";
 import { PreviewCard, PreviewCardContent, PreviewCardTrigger } from "../../../../components/ui/preview-card";
@@ -82,7 +83,7 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
             · <Matched text={r.name} typed={typed} />
           </>
         }
-        detail={r.municipality}
+        detail={r.closed ? <AirportDetail closed={r.closed} municipality={r.municipality} /> : r.municipality}
         onSelect={() => model.pickAirport(r)}
         testId="airport-result"
         actions={

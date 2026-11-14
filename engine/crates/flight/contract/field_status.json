@@ -1,0 +1,46 @@
+{
+  "x-call": "wingtip_flight::calls::field_status",
+  "description": "Whether a field is open, from the FAA's NASR APT_BASE.csv ARPT_STATUS: O operational is open; CI closed indefinitely, CP closed permanently and any other code are closed, and a closed field is never shown or offered as an open one (the owner's hard rule, decision 0043): hidden from the map and every list, and where it appears at all (a search for its ident, its card) labelled with `closed`. `status` null where NASR has no record of the field: not judged, open, unlabelled.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FieldStatusInput",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where NASR has no record."
+        }
+      }
+    },
+    "answer": {
+      "title": "FieldStatusAnswer",
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "boolean",
+          "description": "Whether the field may be shown or offered as an open one."
+        },
+        "closed": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "A closed field's label: Closed indefinitely, Closed permanently, or Closed; null for an open one."
+        }
+      },
+      "required": [
+        "open",
+        "closed"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

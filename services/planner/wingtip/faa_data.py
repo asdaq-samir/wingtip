@@ -28,7 +28,7 @@ import pandas as pd
 import requests
 import wingtip_native
 
-from . import apra, dof
+from . import apra, dof, field_status
 
 # The obstacle file's reader is wingtip.dof; its callers read the table
 # through this module, which downloads it with the NASR tables.
@@ -737,7 +737,7 @@ def _charted_open_airports(path: str, _mtime: float) -> tuple:
     and the route's own two fields are the route's (py-spy on the live
     planner, 2026-10-28)."""
     df = _read_apt_base_cached(path, _mtime)
-    df = df[df["SITE_TYPE_CODE"].map(_SITE_TYPE_NAMES).isin(CHARTED_FACILITY_TYPES) & (df["ARPT_STATUS"] == "O")]
+    df = df[df["SITE_TYPE_CODE"].map(_SITE_TYPE_NAMES).isin(CHARTED_FACILITY_TYPES) & field_status.open_mask(df["ARPT_STATUS"].fillna(""))]
     lat = df["LAT_DECIMAL"].astype(float)
     lon = df["LONG_DECIMAL"].astype(float)
     fields = pd.DataFrame(

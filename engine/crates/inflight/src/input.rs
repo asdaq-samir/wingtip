@@ -35,6 +35,10 @@ pub struct Field {
     /// worse one now is said as a change ("just went IFR").
     pub planned_category: Option<String>,
     pub fuel: bool,
+    /// NASR APT_BASE's ARPT_STATUS where the host sent it: a destination
+    /// sent closed is said so (checks::closed), and best_fields never
+    /// ranks such a field (decision 0043).
+    pub status: Option<String>,
 }
 
 impl Field {
@@ -115,6 +119,7 @@ pub fn fields(name: &str, v: &Value) -> R<Vec<Field>> {
                 raw,
                 planned_category: text(name, f, "planned_category")?.map(str::to_owned),
                 fuel: flag(name, f, "fuel")?.unwrap_or(false),
+                status: text(name, f, "status")?.map(str::to_owned),
             })
         })
         .collect()

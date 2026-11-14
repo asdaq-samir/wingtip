@@ -333,8 +333,7 @@ def test_a_waypoint_is_flown_through_not_landed_at(a_vfr_waypoint):
     body = client.get("/api/plan", params=params).json()
     legs = body["legs"]
     out_of_it = next(i for i, leg in enumerate(legs) if leg["from"] == "VPBNG")
-    # A climb from the field at the start, none out of the waypoint.
-    assert legs[0]["climb_min"] > 0 and legs[out_of_it]["climb_min"] == 0
+    assert legs[0]["climb_min"] > 0 and legs[out_of_it]["climb_min"] == 0  # a climb out of the field, none out of the waypoint
     # One flight, one fuel check: nothing is landed at on the way.
     assert body["totals"]["hops"] == [] and body["totals"]["fuel_required_gal"] is not None
 
@@ -352,7 +351,8 @@ def test_neither_an_airport_nor_a_waypoint_is_a_404(a_vfr_waypoint):
 def test_a_stops_search_finds_the_waypoints_after_the_airports(a_vfr_waypoint, monkeypatch):
     monkeypatch.setattr(airports, "search_airports", lambda q, near=None: [])
     found = client.get("/api/airports/search", params={"q": "VPB", "fixes": True}).json()["airports"]
-    assert found == [{"ident": "VPBNG", "name": "VFR waypoint", "municipality": None, "region": "IL", "kind": "fix"}]
+    row = dict.fromkeys(("municipality", "closed", "use"))
+    assert found == [{"ident": "VPBNG", "name": "VFR waypoint", "region": "IL", "kind": "fix", **row}]
     assert client.get("/api/airports/search", params={"q": "VPB"}).json()["airports"] == []
 
 

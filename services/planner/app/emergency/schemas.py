@@ -1,6 +1,8 @@
 """GET /api/emergency/fields' answer: each field as the engine's
 best_fields reads a candidate, with what the screen shows beside it."""
 
+from typing import Literal
+
 from pydantic import BaseModel
 
 from ..schemas.plan import DemonstratedCrosswind, ShortField
@@ -54,7 +56,12 @@ class EmergencyField(BaseModel):
     metar: EmergencyMetar | None = None
     towered: bool = False
     private: bool = False
-    military: bool = False
+    #: "military" (the service's permission) or "joint" (public use), as
+    #: AirportPin's; None for every other field.
+    military: Literal["military", "joint"] | None = None
+    #: NASR APT_BASE's ARPT_STATUS, None with no NASR record: the engine's
+    #: best_fields never ranks a field with any but O (decision 0043).
+    status: str | None = None
     frequencies: list[EmergencyFrequency] = []
     #: The FAA's listed phone for the field (NASR APT_CON); None where none.
     phone: str | None = None

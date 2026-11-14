@@ -555,6 +555,11 @@ extension Engine {
         try Self.rule("field_relation", EngineContract.FieldRelationInput(plane: plane, field: field))
     }
 
+    /// Whether a field is open, from the FAA's NASR APT_BASE.csv ARPT_STATUS: O operational is open; CI closed indefinitely, CP closed permanently and any other code are closed, and a closed field is never shown or offered as an open one (the owner's hard rule, decision 0043): hidden from the map and every list, and where it appears at all (a search for its ident, its card) labelled with `closed`. `status` null where NASR has no record of the field: not judged, open, unlabelled.
+    static func fieldStatus(status: String? = nil) throws -> EngineContract.FieldStatusAnswer {
+        try Self.rule("field_status", EngineContract.FieldStatusInput(status: status))
+    }
+
     /// The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (FAA-H-8083-28B 27.4.1, 24.4.3.8.2).
     static func fieldTaf(ident: String, at: EngineContract.FieldTafInputAt? = nil, stations: [EngineContract.FieldTafInputStationsItem]) throws -> EngineContract.FieldTafAnswer {
         try Self.rule("field_taf", EngineContract.FieldTafInput(ident: ident, at: at, stations: stations))
@@ -770,7 +775,7 @@ extension Engine {
         try Self.rule("gonogo_end_distance", EngineContract.GonogoEndDistanceInput(table: table, runway: runway, pressureAltFt: pressureAltFt, tempC: tempC, weightLb: weightLb, headwindKt: headwindKt))
     }
 
-    /// The Go / No-Go's row for a departure, destination or stop that is private (NASR FACILITY_USE_CODE PR: "IL11 is private: land only with the owner's permission (call 847-323-8911)") or military-only ("prior permission required (PPR)"), the phone NASR APT_CON's; 14 CFR 91.103 (all available information). A caution, opening the Depart tab for the departure and Arrive otherwise; null where every field is public or joint use. The hosts add it to gonogo_verdict_items' list before gonogo_verdict_line.
+    /// The Go / No-Go's "fields" row for a departure, destination or stop that NASR lists as closed (APT_BASE ARPT_STATUS not O: "00MO is closed indefinitely (NASR): it cannot be planned as a landing field", decision 0043), private (FACILITY_USE_CODE PR: "IL11 is private: land only with the owner's permission (call 847-323-8911)") or military-only ("prior permission required (PPR)"), the phone NASR APT_CON's; 14 CFR 91.103 (all available information). A caution, opening the Depart tab for the departure and Arrive otherwise; null where every field is open and public or joint use. The hosts add it to gonogo_verdict_items' list before gonogo_verdict_line.
     static func gonogoFieldPermission(fields: [EngineContract.GonogoFieldPermissionInputFieldsItem]) throws -> EngineContract.GonogoItem? {
         try Self.rule("gonogo_field_permission", EngineContract.GonogoFieldPermissionInput(fields: fields))
     }

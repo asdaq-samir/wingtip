@@ -36,7 +36,7 @@ def _field(ident: str, name: str, lat: float, lon: float, raw: str, category: st
         "metar": {"raw": raw, "flight_category": category},
         "towered": False,
         "private": False,
-        "military": False,
+        "military": None,
         "frequencies": [],
         "phone": None,
     }
@@ -115,3 +115,31 @@ def test_the_copilot_reads_round_the_airplane(sources):
 def test_a_path_that_is_not_points_is_refused():
     response = client.get("/api/copilot/around", params={"lat": 43.6, "lon": -88.4, "dest": "KOSH", "path": "43.6;x"})
     assert response.status_code == 422
+
+
+def test_a_closed_destination_is_sent_with_its_status_and_said(sources, monkeypatch):
+    # NASR lists the destination as closed (ARPT_STATUS CI, decision 0043):
+    # the field lists leave it out, so /around sends it with its status
+    # and no runway, and the engine warns, naming Fond du Lac instead of
+    # failing on a destination not among the fields.
+    closed = {**OSH, "status": "CI", "closed": "Closed indefinitely"}
+    places = {"KOSH": closed, "KFLD": FLD}
+    monkeypatch.setattr(copilot.airports, "find_place", lambda ident: places.get(ident))
+    monkeypatch.setattr(copilot.emergency, "fields_near", lambda lat, lon, limit=12: [FLD])
+    body = client.get(
+        "/api/copilot/around", params={"lat": 43.6, "lon": -88.4, "dest": "KOSH", "path": "43.6,-88.4;43.9844,-88.557"}
+    ).json()
+    sent = {f["ident"]: f for f in body["fields"]}
+    assert sent["KOSH"]["status"] == "CI" and sent["KOSH"]["runways"] == []
+    answer = engine.ask(
+        "copilot_watch",
+        now_s=time.time(),
+        own={"lat": 43.6, "lon": -88.4, "track_deg": 340, "gs_kt": 105},
+        rules="VFR",
+        dest="KOSH",
+        fields=body["fields"],
+    )
+    first = answer["messages"][0]
+    assert first["kind"] == "closed" and first["level"] == "warning"
+    assert first["title"].startswith("KOSH is closed indefinitely (NASR)")
+    assert first["alternative"]["ident"] == "KFLD"

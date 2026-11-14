@@ -42,6 +42,7 @@ def test_the_record_says_who_reported_it_and_when(tmp_path, monkeypatch):
         "icao_id": "",
         "notam_id": "",
         "name": "Pillow Hill",
+        "status": None,
     }
     three_ck = field_use.record_of("3CK", tmp_path)
     assert (three_ck["data_source"], three_ck["info_date"], three_ck["notam_id"]) == ("inspected", "2025-07-30", "IKK")

@@ -1328,6 +1328,17 @@
             ],
             "title": "Chart Supplement Url"
           },
+          "closed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed"
+          },
           "data_source": {
             "anyOf": [
               {
@@ -1776,6 +1787,17 @@
       "AirportSuggestion": {
         "description": "An airport the search answers -- or, asked with `fixes`, a named\nfix (`kind` \"fix\": a VFR waypoint, a GPS waypoint), its `name` the\nkind of fix and its `region` the state it is in.",
         "properties": {
+          "closed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed"
+          },
           "ident": {
             "title": "Ident",
             "type": "string"
@@ -1814,6 +1836,22 @@
               }
             ],
             "title": "Region"
+          },
+          "use": {
+            "anyOf": [
+              {
+                "enum": [
+                  "private",
+                  "military",
+                  "joint"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use"
           }
         },
         "required": [
@@ -5316,9 +5354,19 @@
             ]
           },
           "military": {
-            "default": false,
-            "title": "Military",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "enum": [
+                  "military",
+                  "joint"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Military"
           },
           "name": {
             "title": "Name",
@@ -5346,6 +5394,17 @@
             },
             "title": "Runways",
             "type": "array"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
           },
           "towered": {
             "default": false,
@@ -8164,9 +8223,19 @@
             ]
           },
           "military": {
-            "default": false,
-            "title": "Military",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "enum": [
+                  "military",
+                  "joint"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Military"
           },
           "name": {
             "title": "Name",
@@ -8194,6 +8263,17 @@
             },
             "title": "Runways",
             "type": "array"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
           },
           "towered": {
             "default": false,
@@ -23526,7 +23606,7 @@
               "runways",
               "balance",
               "risk",
-              "permission"
+              "fields"
             ],
             "title": "Key",
             "type": "string"

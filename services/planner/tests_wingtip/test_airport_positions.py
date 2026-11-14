@@ -28,8 +28,8 @@ def test_a_field_the_faa_lists_sits_at_the_faas_reference_point(tmp_path):
         ]
     ).to_csv(path, index=False)
     (tmp_path / "faa_nasr").mkdir()
-    pd.DataFrame([{"ARPT_ID": "DEN", "ICAO_ID": "KDEN", "LAT_DECIMAL": 39.86166666, "LONG_DECIMAL": -104.67316666}]).to_csv(
-        tmp_path / "faa_nasr" / "APT_BASE.csv", index=False
-    )
+    pd.DataFrame(
+        [{"ARPT_ID": "DEN", "ICAO_ID": "KDEN", "ARPT_STATUS": "O", "LAT_DECIMAL": 39.86166666, "LONG_DECIMAL": -104.67316666}]
+    ).to_csv(tmp_path / "faa_nasr" / "APT_BASE.csv", index=False)
     place = find_place("KDEN", cache_path=path)
     assert (place["lat"], place["lon"]) == (39.86166666, -104.67316666)

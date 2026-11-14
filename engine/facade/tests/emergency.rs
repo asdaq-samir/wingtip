@@ -43,6 +43,34 @@ fn over_lake_geneva_the_fields_within_a_glide_come_first() {
     assert!(answer["fields"][1]["reasons"].as_array().unwrap().iter().any(|r| r["text"].as_str().unwrap().starts_with("Private field")));
 }
 
+/// A field NASR lists as closed (ARPT_STATUS CI or CP, or any code but O)
+/// is never ranked as a landing site, a glide's or a diversion's (decision
+/// 0043); one with no status (no NASR record) or O is ranked as before.
+#[test]
+fn a_closed_field_is_never_a_landing_site() {
+    let case = &fixture()["lakeGeneva"];
+    let first = case["order"][0].as_str().unwrap().to_owned();
+    for code in ["CI", "CP", ""] {
+        for mode in ["glide", "diversion"] {
+            let mut input = case["input"].clone();
+            input["mode"] = json!(mode);
+            for f in input["fields"].as_array_mut().unwrap() {
+                if f["ident"] == json!(first) {
+                    f["status"] = json!(code);
+                }
+            }
+            let answer = ask("best_fields", &input);
+            assert!(!idents(&answer).contains(&first), "{code} {mode}: {:?}", idents(&answer));
+            assert!(!idents(&answer).is_empty());
+        }
+    }
+    let mut open = case["input"].clone();
+    for f in open["fields"].as_array_mut().unwrap() {
+        f["status"] = json!("O");
+    }
+    assert_eq!(json!(idents(&ask("best_fields", &open))), case["order"]);
+}
+
 #[test]
 fn with_no_airplane_the_glide_is_not_guessed() {
     let case = &fixture()["lakeGeneva"];

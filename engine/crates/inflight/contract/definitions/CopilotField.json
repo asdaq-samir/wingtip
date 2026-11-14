@@ -117,6 +117,13 @@
         "null"
       ],
       "description": "Its flight category when the copilot first saw it, so a worse one is said as a change."
+    },
+    "status": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "NASR APT_BASE's ARPT_STATUS (O operational, CI closed indefinitely, CP closed permanently); a field with any status but O is never ranked (field_status, decision 0043). Null or missing where the host has no NASR record."
     }
   },
   "required": [

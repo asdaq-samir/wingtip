@@ -17,7 +17,12 @@
 //!   90-66C's 1,000 ft), reachable but lower, then beyond -- and only then
 //!   by the runway and the distance. In "diversion" mode every field is
 //!   reachable and the runway, the weather and the time decide.
-//! - Nothing is refused (the owner's "warn, never limit"): a private or a
+//! - A field NASR lists as closed (its `status` not ARPT_STATUS O,
+//!   wingtip_flight::field) is never ranked or offered as a landing site,
+//!   in either mode: it is left out (the owner's hard rule, decision 0043).
+//!   No candidate's status is refused for being missing: the host's own
+//!   list then decides, as it did.
+//! - Nothing else is refused (the owner's "warn, never limit"): a private or a
 //!   military field, a runway shorter than the POH's distance, a crosswind
 //!   past the demonstrated one, a field in IFR stay in the list with the
 //!   reason said. The runway and, for a diversion, the weather rank a
@@ -101,6 +106,8 @@ pub struct Field {
     pub towered: bool,
     /// Who may land there: public, private, military or joint use.
     pub usage: Use,
+    /// NASR APT_BASE's ARPT_STATUS, None where the host has no NASR record.
+    pub status: Option<String>,
 }
 
 /// How a field is reached.

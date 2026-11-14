@@ -1812,6 +1812,13 @@ export interface EngineContract {
     answer: FieldRelationAnswer;
   };
   /**
+   * Whether a field is open, from the FAA's NASR APT_BASE.csv ARPT_STATUS: O operational is open; CI closed indefinitely, CP closed permanently and any other code are closed, and a closed field is never shown or offered as an open one (the owner's hard rule, decision 0043): hidden from the map and every list, and where it appears at all (a search for its ident, its card) labelled with `closed`. `status` null where NASR has no record of the field: not judged, open, unlabelled.
+   */
+  field_status: {
+    input: FieldStatusInput;
+    answer: FieldStatusAnswer;
+  };
+  /**
    * The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (FAA-H-8083-28B 27.4.1, 24.4.3.8.2).
    */
   field_taf: {
@@ -2113,7 +2120,7 @@ export interface EngineContract {
     answer: GonogoEndDistanceAnswer;
   };
   /**
-   * The Go / No-Go's row for a departure, destination or stop that is private (NASR FACILITY_USE_CODE PR: "IL11 is private: land only with the owner's permission (call 847-323-8911)") or military-only ("prior permission required (PPR)"), the phone NASR APT_CON's; 14 CFR 91.103 (all available information). A caution, opening the Depart tab for the departure and Arrive otherwise; null where every field is public or joint use. The hosts add it to gonogo_verdict_items' list before gonogo_verdict_line.
+   * The Go / No-Go's "fields" row for a departure, destination or stop that NASR lists as closed (APT_BASE ARPT_STATUS not O: "00MO is closed indefinitely (NASR): it cannot be planned as a landing field", decision 0043), private (FACILITY_USE_CODE PR: "IL11 is private: land only with the owner's permission (call 847-323-8911)") or military-only ("prior permission required (PPR)"), the phone NASR APT_CON's; 14 CFR 91.103 (all available information). A caution, opening the Depart tab for the departure and Arrive otherwise; null where every field is open and public or joint use. The hosts add it to gonogo_verdict_items' list before gonogo_verdict_line.
    */
   gonogo_field_permission: {
     input: GonogoFieldPermissionInput;
@@ -4936,6 +4943,10 @@ export interface BestFieldsInput {
      * A field the armed services own (NASR OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where it is not open to the public, "joint" where it is (FACILITY_USE_CODE PU), a public-use field never marked as military.
      */
     military?: "military" | "joint" | null;
+    /**
+     * NASR APT_BASE's ARPT_STATUS (O operational, CI closed indefinitely, CP closed permanently); a field with any status but O is never ranked (field_status, decision 0043). Null or missing where the host has no NASR record.
+     */
+    status?: string | null;
   }[];
   /**
    * At most this many; 10 where not given.
@@ -5467,6 +5478,9 @@ export interface CopilotWatchInput {
   fuel_gal?: number | null;
   burn_gph?: number | null;
   tas_kt?: number | null;
+  /**
+   * The destination's ident. Sent among `fields` with its `status`, a closed one (NASR ARPT_STATUS not O) is said in a "closed" warning with the best alternative; not among them at all, it is still watched for, its weather and position unknown and `remaining_nm` the host's.
+   */
   dest: string;
   alternate?: string | null;
   remaining_nm?: number | null;
@@ -5525,6 +5539,10 @@ export interface CopilotField {
    * Its flight category when the copilot first saw it, so a worse one is said as a change.
    */
   planned_category?: string | null;
+  /**
+   * NASR APT_BASE's ARPT_STATUS (O operational, CI closed indefinitely, CP closed permanently); a field with any status but O is never ranked (field_status, decision 0043). Null or missing where the host has no NASR record.
+   */
+  status?: string | null;
 }
 export interface CopilotArea {
   kind: "tfr" | "sua" | "sigmet";
@@ -5563,7 +5581,7 @@ export interface CopilotMessage {
    * The same while what it says is; speak a message once by it.
    */
   id: string;
-  kind: "ahead" | "itws" | "fuel" | "weather" | "tfr" | "convective" | "sua" | "night" | "groundspeed";
+  kind: "ahead" | "itws" | "fuel" | "closed" | "weather" | "tfr" | "convective" | "sua" | "night" | "groundspeed";
   level: "warning" | "caution" | "advisory";
   /**
    * The banner's line.
@@ -6606,6 +6624,22 @@ export interface FieldRelationAnswer {
   inbound: boolean;
   departing: boolean;
 }
+export interface FieldStatusInput {
+  /**
+   * NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where NASR has no record.
+   */
+  status?: string | null;
+}
+export interface FieldStatusAnswer {
+  /**
+   * Whether the field may be shown or offered as an open one.
+   */
+  open: boolean;
+  /**
+   * A closed field's label: Closed indefinitely, Closed permanently, or Closed; null for an open one.
+   */
+  closed: string | null;
+}
 export interface FieldTafInput {
   ident: string;
   /**
@@ -7300,6 +7334,10 @@ export interface GonogoFieldPermissionInput {
      * NASR APT_CON's phone, the manager's or else the owner's.
      */
     phone?: string | null;
+    /**
+     * NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where the host has no NASR record.
+     */
+    status?: string | null;
   }[];
 }
 export interface GonogoHazardWindowInput {

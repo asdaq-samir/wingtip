@@ -1872,6 +1872,10 @@ object EngineContract {
          * A field the armed services own (NASR OWNERSHIP_TYPE_CODE MA, MN, MR, CG): "military" where it is not open to the public, "joint" where it is (FACILITY_USE_CODE PU), a public-use field never marked as military.
          */
         val military: String? = null,
+        /**
+         * NASR APT_BASE's ARPT_STATUS (O operational, CI closed indefinitely, CP closed permanently); a field with any status but O is never ranked (field_status, decision 0043). Null or missing where the host has no NASR record.
+         */
+        val status: String? = null,
     )
 
     @Serializable
@@ -2501,6 +2505,10 @@ object EngineContract {
          */
         @SerialName("planned_category")
         val plannedCategory: String? = null,
+        /**
+         * NASR APT_BASE's ARPT_STATUS (O operational, CI closed indefinitely, CP closed permanently); a field with any status but O is never ranked (field_status, decision 0043). Null or missing where the host has no NASR record.
+         */
+        val status: String? = null,
     )
 
     @Serializable
@@ -2575,6 +2583,9 @@ object EngineContract {
         val burnGph: Double? = null,
         @SerialName("tas_kt")
         val tasKt: Double? = null,
+        /**
+         * The destination's ident. Sent among `fields` with its `status`, a closed one (NASR ARPT_STATUS not O) is said in a "closed" warning with the best alternative; not among them at all, it is still watched for, its weather and position unknown and `remaining_nm` the host's.
+         */
         val dest: String,
         val alternate: String? = null,
         @SerialName("remaining_nm")
@@ -3696,6 +3707,26 @@ object EngineContract {
     )
 
     @Serializable
+    data class FieldStatusAnswer(
+        /**
+         * Whether the field may be shown or offered as an open one.
+         */
+        val open: Boolean,
+        /**
+         * A closed field's label: Closed indefinitely, Closed permanently, or Closed; null for an open one.
+         */
+        val closed: String? = null,
+    )
+
+    @Serializable
+    data class FieldStatusInput(
+        /**
+         * NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where NASR has no record.
+         */
+        val status: String? = null,
+    )
+
+    @Serializable
     data class FieldTafAnswer(
         /**
          * The station's index in `stations`; null for none within reach.
@@ -4675,6 +4706,10 @@ object EngineContract {
          * NASR APT_CON's phone, the manager's or else the owner's.
          */
         val phone: String? = null,
+        /**
+         * NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where the host has no NASR record.
+         */
+        val status: String? = null,
     )
 
     @Serializable

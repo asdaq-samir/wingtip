@@ -29,9 +29,10 @@ impl Level {
 
 /// The kinds, in the order they are ranked within a level: the ground
 /// and airspace about to be met first (seconds), then the runway's wind,
-/// the fuel, the field's weather, the areas further ahead, the night,
-/// the ground speed. A design choice, written down here once.
-pub const KINDS: [&str; 9] = ["ahead", "itws", "fuel", "weather", "tfr", "convective", "sua", "night", "groundspeed"];
+/// the fuel, a destination NASR lists as closed, the field's weather, the
+/// areas further ahead, the night, the ground speed. A design choice,
+/// written down here once.
+pub const KINDS: [&str; 10] = ["ahead", "itws", "fuel", "closed", "weather", "tfr", "convective", "sua", "night", "groundspeed"];
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Message {

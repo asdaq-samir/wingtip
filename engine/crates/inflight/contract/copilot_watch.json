@@ -103,7 +103,8 @@
           ]
         },
         "dest": {
-          "type": "string"
+          "type": "string",
+          "description": "The destination's ident. Sent among `fields` with its `status`, a closed one (NASR ARPT_STATUS not O) is said in a \"closed\" warning with the best alternative; not among them at all, it is still watched for, its weather and position unknown and `remaining_nm` the host's."
         },
         "alternate": {
           "type": [

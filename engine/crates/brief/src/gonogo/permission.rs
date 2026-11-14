@@ -1,5 +1,7 @@
-//! The Go / No-Go's finding for a departure, destination or stop that is
-//! private or military-only: such a field is used only with its owner's
+//! The Go / No-Go's finding for a departure, destination or stop that NASR
+//! lists as closed (APT_BASE ARPT_STATUS not O: wingtip_flight::field, the
+//! owner's hard rule of 2026-11-13, decision 0043), or that is private or
+//! military-only: such a field is used only with its owner's
 //! permission, or the service's prior permission (PPR), and 14 CFR 91.103
 //! has the pilot in command become familiar with all available
 //! information about the flight before it. NASR's FACILITY_USE_CODE PR is
@@ -19,6 +21,7 @@ use super::calls::In;
 use super::verdict::{item_json, Item};
 use crate::airport_use::{self, Use};
 use crate::json::Value;
+use wingtip_flight::field;
 
 type R<T> = Result<T, String>;
 
@@ -30,10 +33,17 @@ pub struct Used {
     pub role: String,
     pub usage: Use,
     pub phone: Option<String>,
+    /// NASR APT_BASE's ARPT_STATUS, None where the host has no record.
+    pub status: Option<String>,
 }
 
 fn words(f: &Used) -> Option<String> {
-    let what = f.usage.permission_line(&f.ident, f.role == "departure")?;
+    let departure = f.role == "departure";
+    if let Some(closed) = field::closed_words(f.status.as_deref()) {
+        let what = if departure { "departure" } else { "landing" };
+        return Some(format!("{} is {} (NASR): it cannot be planned as a {what} field", f.ident, closed.to_lowercase()));
+    }
+    let what = f.usage.permission_line(&f.ident, departure)?;
     Some(match f.phone.as_deref().map(str::trim).filter(|p| !p.is_empty()) {
         Some(phone) => format!("{what} (call {phone})"),
         None => what,
@@ -46,8 +56,8 @@ pub fn permission_item(fields: &[Used]) -> Option<Item> {
     let named: Vec<(&Used, String)> = fields.iter().filter_map(|f| words(f).map(|w| (f, w))).collect();
     let (first, _) = named.first()?;
     Some(Item {
-        key: "permission".into(),
-        label: "Permission".into(),
+        key: "fields".into(),
+        label: "Fields".into(),
         tab: if first.role == "departure" { "depart" } else { "arrive" }.into(),
         section: None,
         finding: "caution".into(),
@@ -67,6 +77,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                 role: i.opt_str(f, "role")?.unwrap_or_else(|| "destination".into()),
                 usage: airport_use::read(name, f)?,
                 phone: i.opt_str(f, "phone")?,
+                status: i.opt_str(f, "status")?,
             })
         })
         .collect::<R<Vec<_>>>()?;
@@ -85,7 +96,7 @@ mod tests {
     use super::*;
 
     fn used(ident: &str, role: &str, usage: Use, phone: Option<&str>) -> Used {
-        Used { ident: ident.into(), role: role.into(), usage, phone: phone.map(Into::into) }
+        Used { ident: ident.into(), role: role.into(), usage, phone: phone.map(Into::into), status: None }
     }
 
     #[test]
@@ -106,6 +117,25 @@ mod tests {
         let item = permission_item(&[used("KMXF", "stop", Use::Military, None), used("KFHU", "destination", Use::Joint, None)]).unwrap();
         assert_eq!(item.detail, "KMXF is military: prior permission required (PPR)");
         assert!(permission_item(&[used("KFHU", "destination", Use::Joint, None), used("3CK", "departure", Use::Public, None)]).is_none());
+    }
+
+    #[test]
+    fn a_closed_field_is_said_first_from_nasrs_status() {
+        // 00MO, Cooper Flying Service, ARPT_STATUS CI; BFW CP (NASR 2026-10-29).
+        let mut dest = used("00MO", "destination", Use::Private, None);
+        dest.status = Some("CI".into());
+        let mut dep = used("BFW", "departure", Use::Public, None);
+        dep.status = Some("CP".into());
+        let item = permission_item(&[dep, dest]).unwrap();
+        assert_eq!(item.tab, "depart");
+        assert_eq!(
+            item.detail,
+            "BFW is closed permanently (NASR): it cannot be planned as a departure field; \
+             00MO is closed indefinitely (NASR): it cannot be planned as a landing field"
+        );
+        let mut open = used("C81", "departure", Use::Public, None);
+        open.status = Some("O".into());
+        assert!(permission_item(&[open]).is_none());
     }
 
     #[test]

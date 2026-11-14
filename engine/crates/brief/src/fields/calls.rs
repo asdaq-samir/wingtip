@@ -83,6 +83,7 @@ fn field(i: In, f: &Value) -> R<Field> {
         flight_category: metar.map_or(Ok(None), |m| i.opt_str(m, "flight_category"))?,
         towered: truth(f, "towered"),
         usage: crate::airport_use::read(i.name, f)?,
+        status: i.opt_str(f, "status")?,
     })
 }
 

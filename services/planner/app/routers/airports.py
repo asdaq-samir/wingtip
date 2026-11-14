@@ -452,7 +452,7 @@ def airport_place(ident: str) -> AirportPlace:
         "private": private,
         "towered": any(f["type"] == "TWR" for f in frequencies),
         **_notes(place["ident"]),
-        **{k: v for k, v in (field_use.record_of(source) or {}).items() if k != "name"},  # NASR's record (AirportRecord)
+        **{k: v for k, v in (field_use.record_of(source) or {}).items() if k not in ("name", "status")},  # NASR's record (AirportRecord)
         "pattern": pattern.pattern_at(place["ident"], place["elevation_ft"]),
         # Calm now, the field's last wind for the runway in use.
         "runways": _with_turf(

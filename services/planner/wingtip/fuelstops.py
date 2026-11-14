@@ -20,7 +20,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import airports, faa_data
+from . import airports, faa_data, field_status
 from .engine import ask as engine
 from .terrain import DEFAULT_FAA_CACHE_DIR
 from .single_flight import once
@@ -61,7 +61,7 @@ def _fields_of(path: str, _mtime: float, fuel_only: bool = True) -> pd.DataFrame
     fuel."""
     df = faa_data._read_apt_base_cached(path, _mtime)
     sells = df["FUEL_TYPES"].fillna("").str.split(",").apply(lambda types: FUEL in [t.strip() for t in types])
-    open_public = (df["FACILITY_USE_CODE"] == "PU") & (df["SITE_TYPE_CODE"] == "A") & (df["ARPT_STATUS"].fillna("O") == "O")
+    open_public = (df["FACILITY_USE_CODE"] == "PU") & (df["SITE_TYPE_CODE"] == "A") & field_status.open_mask(df["ARPT_STATUS"].fillna(""))
     df = df[(sells | (not fuel_only)) & open_public]
     icao = df["ICAO_ID"].fillna("").str.strip()
     return pd.DataFrame(

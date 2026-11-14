@@ -51,13 +51,21 @@ def with_alternate(items: list[dict], found: dict | None) -> list[dict]:
 
 
 def field_permission(idents: tuple[str, ...] | list[str]) -> dict | None:
-    """The row for a private or military-only departure, destination or
-    stop (the engine's gonogo_field_permission: the owner's permission or
-    the service's PPR, with NASR APT_CON's phone, 14 CFR 91.103), to add
-    after the seven before the line; None where every field is public use."""
+    """The row for a departure, destination or stop NASR lists as closed,
+    or that is private or military-only (the engine's
+    gonogo_field_permission: closed by NASR's ARPT_STATUS, decision 0043;
+    the owner's permission or the service's PPR, with NASR APT_CON's phone;
+    14 CFR 91.103), to add after the seven before the line; None where
+    every field is open and public use."""
     roles = ["departure", *["stop"] * (len(idents) - 2), "destination"] if len(idents) > 1 else ["destination"]
     fields = [
-        {"ident": ident, "role": role, **field_use.use_of(ident), "phone": faa_data.airport_contact(ident, DEFAULT_FAA_CACHE_DIR)["phone"]}
+        {
+            "ident": ident,
+            "role": role,
+            **field_use.use_of(ident),
+            "phone": faa_data.airport_contact(ident, DEFAULT_FAA_CACHE_DIR)["phone"],
+            "status": (field_use.record_of(ident) or {}).get("status"),
+        }
         for ident, role in zip(idents, roles)
     ]
     return ask("gonogo_field_permission", fields=fields)
