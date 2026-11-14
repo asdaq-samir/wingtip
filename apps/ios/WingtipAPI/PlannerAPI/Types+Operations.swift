@@ -3357,18 +3357,15 @@ public enum Operations {
     }
     /// Airports In View
     ///
-    /// The landing fields inside the map's view, the ones that report
-    /// first and then the biggest -- at most `limit` of them, since a whole
-    /// state holds thousands and the map only lays a tap target over each --
-    /// with each one's flight category from its METAR, for a weather chip on
-    /// the ones that report: the limit drops small fields with nothing to
-    /// show, never a chip a pilot saw a zoom further out -- and each one's
-    /// class of airspace at its surface, for its mark.
-    /// The METARs are the national cache already in memory; with the
-    /// weather service out the fields come back without, as fields with no
-    /// station do. With `reporting`, only the fields that report, before
-    /// the limit: what the map asks once for a whole route's box, so its
-    /// chips are there before the pilot zooms in on any of it.
+    /// The landing fields inside the map's view, the ones that report first
+    /// and then the biggest -- at most `limit`: a state holds thousands -- each
+    /// with its METAR's flight category, for a weather chip (the limit drops
+    /// small fields with nothing to show, never a chip seen further out), its
+    /// class of airspace at its surface, and its mark's order and size as the
+    /// overlay tiles carry them (wingtip.field_marks). The METARs are the
+    /// national cache in memory; with the weather service out the fields come
+    /// back without. With `reporting`, only the fields that report, before
+    /// the limit: the map asks so once for a whole route's box.
     ///
     /// - Remark: HTTP `GET /api/airports/in-view`.
     /// - Remark: Generated from `#/paths//api/airports/in-view/get(airports_in_view)`.

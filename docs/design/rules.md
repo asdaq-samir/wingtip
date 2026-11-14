@@ -508,6 +508,9 @@ gone on every platform.
 2. **A waypoint's altitude, Start At or Cross At.** A tap on a waypoint
    sets its altitude: Cross At (done by the waypoint, the planner's
    `altitudes`) or Start At (begun there, `altitude_starts` beside it).
+   A waypoint the route is at more than once keeps one for each visit,
+   "VPBNG@2:6500" the second time (a bare ident is every visit), so the
+   second visit's is never the first's (the web audit's WEB-2).
    Where the climb or descent is flown is the engine's `altitude_change`:
    the airplane's climb, the three-to-one descent, and with no airplane no
    time or fuel.

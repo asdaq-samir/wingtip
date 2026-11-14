@@ -24,3 +24,8 @@ class AirportRecord(BaseModel):
     #: NASR's NOTAM_ID, "" where it lists none: the engine's
     #: airport_notams_none then says none are issued for a private field.
     notam_id: str | None = None
+    #: NASR's ARPT_STATUS as sent ("O", "CI", "CP"; "" where NASR gives
+    #: none), for the hosts to ask the engine's field_status of, as the
+    #: Go / No-Go's fields row does: "closed indefinitely (NASR)", not a
+    #: bare "closed" (decision 0043). None where NASR has no record of it.
+    status: str | None = None
