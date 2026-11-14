@@ -1,4 +1,5 @@
 import { PathLayer } from "@deck.gl/layers";
+import { useDrawnStretch } from "./heightStretch";
 import { useEffect, useMemo } from "react";
 import { deckColour, deckSlot, useDeckLayers } from "../../../../lib/map/gl/deckLayers";
 import { useGlMap } from "../../../../lib/map/gl/glLayer";
@@ -11,16 +12,18 @@ import { aloftPath, curtainWalls, type AloftPoint } from "./geometry";
  * a curtain from it down to the course drawn on the ground (RouteGl's
  * line, which lies on the 3D ground as the chart does). deck.gl's
  * PathLayer and walls (lib/map/gl/deckLayers) at metres above the sea,
- * the plan's own altitudes; the ground hides the curtain's foot.
+ * the plan's own altitudes, stood up by the Heights' stretch as the
+ * ground is; the ground hides the curtain's foot.
  */
 export default function AloftGl({ points }: { points: AloftPoint[] }) {
   const { map } = useGlMap();
+  const stretch = useDrawnStretch();
   const layers = useMemo(
     () => [
-      curtainLayer("route-aloft-curtain", curtainWalls(points), CHART.course, 0.22),
+      curtainLayer("route-aloft-curtain", curtainWalls(points, stretch), CHART.course, 0.22),
       new PathLayer<number[][]>({
         id: "route-aloft",
-        data: [aloftPath(points)],
+        data: [aloftPath(points, stretch)],
         getPath: (p) => p as never,
         getColor: deckColour(CHART.course, 0.9),
         getWidth: ALOFT_WIDTH_M,
@@ -31,7 +34,7 @@ export default function AloftGl({ points }: { points: AloftPoint[] }) {
         ...deckSlot("route"),
       }),
     ],
-    [points],
+    [points, stretch],
   );
   useDeckLayers("route-aloft", layers);
   // For the browser tests: the points the line is drawn through.

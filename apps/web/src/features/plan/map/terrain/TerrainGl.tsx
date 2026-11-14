@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useDrawnStretch } from "./heightStretch";
 import { useGlMap } from "../../../../lib/map/gl/glLayer";
 import AirspaceVolumesGl from "./AirspaceVolumesGl";
 import { planAltitudes } from "./airspaceShelves";
@@ -7,7 +8,7 @@ import ApproachGl from "./ApproachGl";
 import type { ProcedureDrawing } from "../../../../lib/api/types";
 import ClearanceGl from "./ClearanceGl";
 import { MAP } from "../../../../lib/tokens";
-import { DEM, EXAGGERATION } from "./dem";
+import { DEM } from "./dem";
 import type { AloftPoint } from "./geometry";
 import ObstaclesGl from "./ObstaclesGl";
 import PilotCamera from "./PilotCamera";
@@ -23,7 +24,7 @@ const TILT_MS = 600;
 /**
  * The ground stood up in 3D (the map's 3D button; useTerrainView), on
  * the relief's terrain tiles (ReliefGl, which shades them in 2D) -- the map tilted with
- * two fingers up to 75 degrees, the FAA's obstacles stood up over the
+ * two fingers up to 85 degrees (MAP.pitchMax), the FAA's obstacles stood up over the
  * ground (ObstaclesGl), and the route drawn at its planned altitudes with
  * a curtain down to its ground track (AloftGl), under a sky with the
  * distance hazed (SkyGl); the way in to the route's destination or the
@@ -74,7 +75,6 @@ export default function TerrainGl({
   useEffect(() => {
     if (!raised) return;
     const el = map.getContainer();
-    map.setTerrain({ source: DEM, exaggeration: EXAGGERATION });
     map.setMaxPitch(MAP.pitchMax);
     map.dragRotate.enable();
     map.touchPitch.enable();
@@ -83,6 +83,7 @@ export default function TerrainGl({
     if (map.getPitch() < 1) map.easeTo({ pitch: MAP.pitchOpen, duration: TILT_MS });
     return () => {
       delete el.dataset.terrain;
+      delete el.dataset.heightStretch;
       if (!map.style) return;
       if (map.getTerrain()) map.setTerrain(null);
       map.dragRotate.disable();
@@ -92,6 +93,15 @@ export default function TerrainGl({
       map.setMaxPitch(MAP.pitchFlatMax);
     };
   }, [map, raised]);
+  // The ground stood up by the pilot's Heights (HeightStretch), as
+  // everything drawn over it is, true in the pilot's and the replay
+  // cameras' views (heightStretch); picked again, only the ground changes.
+  const stretch = useDrawnStretch();
+  useEffect(() => {
+    if (!raised) return;
+    map.setTerrain({ source: DEM, exaggeration: stretch });
+    map.getContainer().dataset.heightStretch = String(stretch);
+  }, [map, raised, stretch]);
   if (!raised) return null;
   return (
     <>

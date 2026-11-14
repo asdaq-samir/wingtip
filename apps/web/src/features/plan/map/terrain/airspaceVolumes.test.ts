@@ -65,6 +65,28 @@ describe("the volumes in view", () => {
     expect(p!.polygon[0]![0]![2]).toBeCloseTo(520 + 500 * FT, 6);
   });
 
+  it("stands a volume up with the ground by the Heights' stretch, its words' figures true", () => {
+    const brady = {
+      geometry: { type: "Polygon", coordinates: square(-99.5, 31) },
+      properties: {
+        layer: "special_use",
+        type: "MOA",
+        name: "BRADY LOW MOA",
+        floor_ft: 500,
+        floor_ref: "SFC",
+        ceiling_ft: 6000,
+        ceiling_ref: "MSL",
+      },
+    };
+    // The map's ground drawn three times its 520 m; the floor 500 ft over
+    // the true ground, the whole stood up three times, as the ground is.
+    const [p] = piecesOf([brady], () => 3 * 520, null, 3);
+    expect(p!.polygon[0]![0]![2]).toBeCloseTo(3 * (520 + 500 * FT), 6);
+    expect(p!.topM).toBeCloseTo(3 * 6000 * FT, 6);
+    expect(p!.heightM).toBeCloseTo(3 * (6000 * FT - (520 + 500 * FT)), 6);
+    expect(p!.floorFt).toBeCloseTo((520 + 500 * FT) / FT, 6);
+  });
+
   it("names an area drawn as several polygons once, at its top", () => {
     const part = (n: number) => ({
       geometry: { type: "Polygon", coordinates: square(-84.5 + n, 44.5) },

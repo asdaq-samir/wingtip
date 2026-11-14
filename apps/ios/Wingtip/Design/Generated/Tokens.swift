@@ -951,7 +951,7 @@ enum WingtipHaptic {
 /// The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees.
 enum WingtipMap {
     static let pitchOpen: Double = 50
-    static let pitchMax: Double = 75
+    static let pitchMax: Double = 85
     static let pitchFlatMax: Double = 60
     static let zoomStationClose: Double = 10
     static let zoomStationAlways: Double = 7

@@ -666,8 +666,9 @@ way: three homes, and every control in one of them.
    thing called Settings.
 3. **The Map card**, the map's own button: only what is on the map --
    the charts, the overlay (None, USGS, Google Map, Google Satellite,
-   Google's only with a key) with its Strength while one is picked, and
-   the layers.
+   Google's only with a key) with its Strength while one is picked, in
+   3D its Heights (×1, ×3 or ×5, ×3 unless picked; the owner, 2026-11-14),
+   and the layers.
 
 Taken out the same day, with no home: the sheet's Position (a phone's
 sheet is always at the bottom), Terrain's Flat (the 2D chart is always

@@ -11,6 +11,10 @@ import { M_PER_FT, M_PER_NM, rad } from "../../../../lib/geo";
  * fill-extrusions, small squares as tall above the ground as the FAA
  * says: MapLibre stands one on the ground at its middle, which for a
  * square round the obstacle is the obstacle's own point.
+ *
+ * Each takes `stretch`, the 3D view's Heights (lib/prefs' HeightStretch):
+ * the ground is drawn that many times its height, so what stands over it
+ * is too, to keep its place against it.
  */
 
 /** A point of the planned flight: where, and the plan's altitude there, ft MSL. */
@@ -24,16 +28,17 @@ export interface AloftPoint {
 }
 
 /** The flight's line in the air as deck.gl takes it: [lon, lat, metres
- *  MSL] a point, the plan's altitude there. */
-export const aloftPath = (points: AloftPoint[]): number[][] => points.map((p) => [p.lon, p.lat, p.altFt * M_PER_FT]);
+ *  MSL] a point, the plan's altitude there, stretched. */
+export const aloftPath = (points: AloftPoint[], stretch = 1): number[][] => points.map((p) => [p.lon, p.lat, p.altFt * M_PER_FT * stretch]);
 
 /** The curtain under the line: one upright wall a leg, from the sea up to
  *  the line's altitudes at its two ends, drawn as deck.gl's polygons in
  *  3D (SolidPolygonLayer's _full3d; the four corners of a wall are in one
  *  upright plane, so it is flat). The 3D ground hides its foot, so it
  *  reaches down to the ground track wherever the ground is. */
-export function curtainWalls(points: AloftPoint[]): number[][][] {
+export function curtainWalls(points: AloftPoint[], stretch = 1): number[][][] {
   const walls: number[][][] = [];
+  const up = (p: AloftPoint) => p.altFt * M_PER_FT * stretch;
   for (let i = 1; i < points.length; i++) {
     const a = points[i - 1]!,
       b = points[i]!;
@@ -41,8 +46,8 @@ export function curtainWalls(points: AloftPoint[]): number[][][] {
     walls.push([
       [a.lon, a.lat, 0],
       [b.lon, b.lat, 0],
-      [b.lon, b.lat, b.altFt * M_PER_FT],
-      [a.lon, a.lat, a.altFt * M_PER_FT],
+      [b.lon, b.lat, up(b)],
+      [a.lon, a.lat, up(a)],
       [a.lon, a.lat, 0],
     ]);
   }
@@ -50,10 +55,12 @@ export function curtainWalls(points: AloftPoint[]): number[][][] {
 }
 
 /** The FAA's obstacles as squares `sideM` across, as tall as the Digital
- *  Obstacle File says (agl_ft, above the ground they stand on). */
+ *  Obstacle File says (agl_ft, above the ground they stand on), stretched;
+ *  their `agl` and `amsl` the file's own. */
 export function obstacleFeatures(
   obstacles: { lat: number; lon: number; agl_ft: number; amsl_ft: number; type: string; lit: boolean }[],
   sideM: number,
+  stretch = 1,
 ): GeoJSON.FeatureCollection {
   const half = sideM / 2;
   return {
@@ -75,7 +82,7 @@ export function obstacleFeatures(
             ],
           ],
         },
-        properties: { height: o.agl_ft * M_PER_FT, agl: o.agl_ft, amsl: o.amsl_ft, type: o.type, lit: o.lit },
+        properties: { height: o.agl_ft * M_PER_FT * stretch, agl: o.agl_ft, amsl: o.amsl_ft, type: o.type, lit: o.lit },
       };
     }),
   };

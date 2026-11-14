@@ -70,14 +70,35 @@ describe("the plan's altitudes", () => {
 });
 
 describe("shelfLabelsOf", () => {
-  it("labels each shelf once at its top, on the edge nearest the camera", () => {
+  it("labels each shelf at its top in places spread along its edge, the nearest the camera first", () => {
     const pieces = piecesOf([shelf(3000, 10000)], () => null);
+    // The same shelf twice (a multipolygon's pieces) is labelled along one.
     const labels = shelfLabelsOf([...pieces, ...pieces], [-88.25, 41]);
-    expect(labels.features).toHaveLength(1);
+    expect(labels.features).toHaveLength(8);
     const f = labels.features[0]!;
-    expect(f.properties).toMatchObject({ text: "100\n30", class: "B", floor_ft: 3000, held: true });
+    expect(f.properties).toMatchObject({ text: "100\n30", class: "B", floor_ft: 3000, held: true, rank: 0 });
     expect(f.properties!.top_m).toBeCloseTo(10000 * 0.3048, 6);
-    // The camera is south of the ring: the label is on its south side.
+    // The camera is south of the ring: the first place is on its south side.
     expect((f.geometry as GeoJSON.Point).coordinates[1]).toBe(42);
+    expect(labels.features.map((l) => l.properties!.rank)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    // Spread round it, none on another: at least 8 km apart.
+    const at = labels.features.map((l) => (l.geometry as GeoJSON.Point).coordinates);
+    for (let i = 0; i < at.length; i++)
+      for (let j = i + 1; j < at.length; j++) {
+        const dx = (at[i]![0]! - at[j]![0]!) * Math.cos((42 * Math.PI) / 180) * 111.32;
+        const dy = (at[i]![1]! - at[j]![1]!) * 111.32;
+        expect(Math.hypot(dx, dy)).toBeGreaterThan(8);
+      }
+  });
+
+  it("gives a small shelf fewer places, so its label never crowds itself", () => {
+    const small = { ...shelf(0, 4000), geometry: { type: "Polygon", coordinates: ring(-88, 42, 0.05) } };
+    // Some 19 km round: two places, 8 km apart at least.
+    expect(
+      shelfLabelsOf(
+        piecesOf([small], () => 200),
+        [-88, 41],
+      ).features,
+    ).toHaveLength(2);
   });
 });

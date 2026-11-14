@@ -26,6 +26,16 @@ export type ChartNight = "normal" | "dimmed";
  *  one; On and Off are the pilot's own. */
 export type ChartLight = "auto" | "on" | "off";
 
+/** How many times the 3D view stands every height up: the ground, the
+ *  airspace, the route in the air, the obstacles and the traffic, all by
+ *  the one factor, so each keeps its true place against the others. A
+ *  display factor, not an aviation figure: at true scale Chicago's Class
+ *  B is some 55 km across and 3 km tall, so its shelves are slivers, and
+ *  stretched three times the upside-down wedding cake reads (the owner,
+ *  2026-11-14). The words on the map keep the true altitudes. */
+export type HeightStretch = 1 | 3 | 5;
+export const HEIGHT_STRETCHES: readonly HeightStretch[] = [1, 3, 5];
+
 /** What the map draws and how: the Map card's and Settings' Map group. */
 export interface MapSlice {
   base: BaseChart;
@@ -80,6 +90,9 @@ export interface MapSlice {
   chartLight: ChartLight;
   /** The map stood up in 3D, the map's 3D button (ThreeDButton). */
   threeD: boolean;
+  /** How many times 3D stands its heights up (HeightStretch): three
+   *  unless picked, the Map card's Heights while 3D is on. */
+  heightStretch: HeightStretch;
   /** How far round the pilot the map's Stops look, nm: 25 unless picked
    *  (the owner, 2026-10-27; StopsCard's menu). */
   stopsRadiusNm: number;
@@ -103,6 +116,7 @@ export interface MapSlice {
   setChartNight: (chartNight: ChartNight) => void;
   setChartLight: (chartLight: ChartLight) => void;
   setThreeD: (threeD: boolean) => void;
+  setHeightStretch: (heightStretch: HeightStretch) => void;
   setStopsRadiusNm: (nm: number) => void;
   setStopKind: (kind: StopPick) => void;
 }
@@ -127,6 +141,7 @@ export const MAP_KEPT = [
   "chartNight",
   "chartLight",
   "threeD",
+  "heightStretch",
   "stopsRadiusNm",
   "stopKind",
 ] as const;
@@ -150,6 +165,7 @@ export const mapSlice: Slice<MapSlice> = (set) => ({
   chartNight: "dimmed",
   chartLight: "auto",
   threeD: false,
+  heightStretch: 3,
   stopsRadiusNm: 25,
   stopKind: "all",
   setBase: (base) => set({ base }),
@@ -170,6 +186,7 @@ export const mapSlice: Slice<MapSlice> = (set) => ({
   setChartNight: (chartNight) => set({ chartNight }),
   setChartLight: (chartLight) => set({ chartLight }),
   setThreeD: (threeD) => set({ threeD }),
+  setHeightStretch: (heightStretch) => set({ heightStretch }),
   setStopsRadiusNm: (stopsRadiusNm) => set({ stopsRadiusNm }),
   setStopKind: (stopKind) => set({ stopKind }),
 });

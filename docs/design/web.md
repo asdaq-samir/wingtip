@@ -1318,19 +1318,46 @@ sheet scrolls one way on a phone:
 
 **The airspace in 3D (the owner, 2026-11-14: "the class B airspace
 shelves are not differentiating altitudes").** The 3D button stands the
-Class B, C and D, the special use areas and the TFRs up at true height
-(`features/plan/map/terrain/AirspaceVolumesGl`, deck.gl), never
-exaggerated, so three things tell the altitudes apart
-(`terrain/airspaceShelves`):
+Class B, C and D, the special use areas and the TFRs up
+(`features/plan/map/terrain/AirspaceVolumesGl`, deck.gl), at their
+heights times the Map card's Heights, and four things tell the altitudes
+apart (`terrain/airspaceShelves`):
 
-- Each Class B, C and D shelf is labelled at its top, on the edge nearest
-  the viewer and facing the screen, as the sectional writes it: the
-  ceiling over the floor in hundreds of feet MSL, "100" over "30", "100"
+- **Heights** (the owner, 2026-11-14: "In 3d, can you clearly see the
+  upside-down birthday cake for Class B airspace?"): at true scale
+  Chicago's Class B is some 55 km across and 3 km tall, its shelves
+  slivers, so 3D stands every height up ×3 unless the pilot picks ×1 or
+  ×5 (the Map card's Heights, a segmented control shown while 3D is on;
+  the preference `heightStretch`, its one source `lib/prefs/mapSlice`'s
+  `HeightStretch`). The ground (MapLibre's terrain `exaggeration`), the
+  volumes' floors and ceilings, the names and shelves' tabs lifted to
+  their tops, the route and the approach in the air with their curtains,
+  the obstacles, the traffic and the dry run's and replay's cameras are
+  all stood up by the one factor, so each keeps its true place over the
+  ground (the heights are MSL; the ground's own is read back at true
+  height for the engine's AGL floors). A display factor, not an
+  aviation figure: the words on the map keep the true altitudes
+  ("100" over "30"), and the ground's clearance colours read the
+  terrain's true heights. The dry run's pilot's view and the replay's
+  cameras always draw at true height, whatever Heights says: a view from
+  the airplane is read for its clearance over the ground, and a stretched
+  mountain there would mislead (`terrain/heightStretch`'s
+  `drawnStretch`); the Heights picked come back as the view ends, and a
+  line under the control says "True height in the pilot's view" (or
+  while a replay camera follows) meanwhile, no toast. The map tilts to 85 degrees in 3D
+  (`map.pitch-max`), low enough to see the shelves from the side.
+
+- Each Class B, C and D shelf is labelled at its top, facing the screen,
+  in up to eight places spread along its edge at least 8 km apart, the
+  one nearest the viewer tried first and every shelf's first before any
+  shelf's next, MapLibre's collision keeping whichever fit, as the
+  sectional writes it: the ceiling over the floor in hundreds of feet MSL, "100" over "30", "100"
   over "SFC", a Class C's "T", a Class D's ceiling alone ("-30"), in the
   2D chart's airspace tab (the engine's `airspace_shelf_label`; the FAA's
-  Chart User's Guide). One a shelf, lifted with MapLibre's
+  Chart User's Guide). Lifted with MapLibre's
   `symbol-height-offset`, kept apart by MapLibre's own collision and
-  placed after the airports' and navaids' marks, which they never hide;
+  placed after the airports' and navaids' marks, which they never hide,
+  and before the special use areas' names where they meet at a low tilt;
   the chart's own tabs on the ground are hidden meanwhile.
 - Each volume is shaded by its floor within its class's ink, the lower
   the darker (the tokens' `chart.airspace-floor-low`/`-high` and

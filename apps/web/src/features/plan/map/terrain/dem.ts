@@ -13,8 +13,9 @@ import { absoluteTiles } from "../../../../lib/map/gl/glStyle";
  * pixels drawn larger (wingtip.terrain_fine); the map draws closer in from
  * them. A tile is the same 256 pixels at every zoom, so the ground's mesh
  * costs a phone's frame the same; the finer ones are only asked close in.
- * The ground at its own height, never exaggerated -- which the colours
- * against the plan need besides (svColours), as they are read against it.
+ * The 3D view stands it up by the pilot's Heights (lib/prefs' HeightStretch,
+ * TerrainGl), as it does everything over it; the colours against the plan
+ * (svColours) read the tiles' own heights, never stretched.
  */
 
 export const DEM = "terrain-dem";
@@ -24,7 +25,6 @@ export const SV_TINT = "terrain-sv";
 /** The finest terrain tile asked for, the planner's finest
  *  (wingtip.terrain_view.MAX_ZOOM). */
 const DEM_MAX_ZOOM = 13;
-export const EXAGGERATION = 1;
 
 export const demSource = (origin: string): RasterDEMSourceSpecification => ({
   type: "raster-dem",

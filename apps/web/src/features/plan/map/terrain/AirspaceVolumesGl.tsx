@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useDrawnStretch } from "./heightStretch";
 import { PathLayer, SolidPolygonLayer } from "@deck.gl/layers";
 import type { Map as MlMap, SymbolLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useState } from "react";
@@ -35,13 +36,16 @@ import { SuaVolumeCard } from "./SuaVolumeCard";
  * Heights (airspaceHeights): deck.gl draws at the heights it is given,
  * metres above the sea, and the 3D ground hides what is under it; only a
  * floor or ceiling above the ground reads the terrain, once a volume, as
- * its tiles come in. Only the volumes in view are asked for, and far out
+ * its tiles come in. Each stood up by the Heights' stretch with the
+ * ground (piecesOf), the names and shelves' tabs lifted to the stretched
+ * tops, their words the true altitudes. Only the volumes in view are asked for, and far out
  * only Class B and the special use areas (KINDS' `from`).
  *
  * Each area's name is a tab of the chart's look at its top (a MapLibre
  * symbol lifted to it, symbol-height-offset), and each Class B, C and D
  * shelf's altitudes as the sectional writes them, "100" over "30", at its
- * top on the edge nearest the camera; each volume is shaded by its floor,
+ * top on the edge nearest the camera, placed before the names where they
+ * meet (and after the airports' and navaids' marks); each volume is shaded by its floor,
  * the lower the darker, and with a plan the volumes at its altitudes are
  * drawn stronger and the rest fainter (airspaceShelves). The chart's own
  * tabs on the ground, special use and Class B, C and D, are hidden
@@ -132,6 +136,7 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
   const showTfrs = usePreferences((s) => s.tfrs);
   const { box, level: zoom } = useGlView(volumeBox, "rest");
   const tick = useGroundTick(map);
+  const stretch = useDrawnStretch();
   const classes = classesAt(zoom);
   const { data: volumes } = useQuery({ ...volumesQuery(box, classes), enabled: showAirspace });
   const { data: tfrs, dataUpdatedAt: now } = useQuery({ ...tfrsQuery, enabled: showTfrs });
@@ -156,9 +161,9 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
   }, [volumes, tfrs, showAirspace, showTfrs, now, zoom]);
 
   const pieces = useMemo(
-    () => piecesOf(features, (at) => map.queryTerrainElevation(at), altitudes),
+    () => piecesOf(features, (at) => map.queryTerrainElevation(at), altitudes, stretch),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- tick: the terrain came in
-    [features, map, tick, altitudes],
+    [features, map, tick, altitudes, stretch],
   );
   const layers = useMemo(
     () => [
@@ -191,11 +196,13 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
   );
   useDeckLayers("airspace-3d", layers);
 
-  useGlLayer("marks", { [LABELS]: { type: "geojson", data: EMPTY } }, [LABEL_LAYER]);
   // The shelves' altitudes among the lines' labels, as the chart's own
   // tabs on the ground are: under the marks, so an airport's or a navaid's
-  // mark is placed first and never hidden by one.
+  // mark is placed first and never hidden by one. The areas' names under
+  // the shelves' tabs (MapLibre places the upper layer's first), so where
+  // they meet at a low tilt each shelf keeps its own altitudes.
   useGlLayer("lines", { [SHELVES]: { type: "geojson", data: EMPTY } }, [shelfLabelLayer(SHELVES, SHELVES)]);
+  useGlLayer("lines", { [LABELS]: { type: "geojson", data: EMPTY } }, [LABEL_LAYER], SHELVES);
   useGlData(
     LABELS,
     useMemo(() => labelsOf(features, pieces), [features, pieces]),

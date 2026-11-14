@@ -14,6 +14,11 @@ describe("the route aloft", () => {
     ]);
   });
 
+  it("is stood up by the Heights' stretch, as the ground is", () => {
+    expect(aloftPath([CRUISE], 3)[0]![2]).toBeCloseTo(3 * 1371.6, 1);
+    expect(curtainWalls([C81, CRUISE], 3)[0]![2]![2]).toBeCloseTo(3 * 1371.6, 1);
+  });
+
   it("hangs one upright wall a leg, from the sea to the line", () => {
     const walls = curtainWalls([C81, CRUISE, CRUISE, KMSN]);
     // The point repeated makes no wall.
@@ -31,5 +36,8 @@ describe("the obstacles", () => {
   it("stand as tall above their ground as the obstacle file says", () => {
     const [post] = obstacleFeatures([{ lat: 42.1, lon: -88.2, agl_ft: 1000, amsl_ft: 1900, type: "TOWER", lit: true }], 60).features;
     expect(post!.properties).toMatchObject({ height: 304.8, agl: 1000, type: "TOWER" });
+    // Stretched, the post is drawn taller; its figures stay the file's.
+    const [tall] = obstacleFeatures([{ lat: 42.1, lon: -88.2, agl_ft: 1000, amsl_ft: 1900, type: "TOWER", lit: true }], 60, 3).features;
+    expect(tall!.properties).toMatchObject({ height: expect.closeTo(914.4, 6), agl: 1000, amsl: 1900 });
   });
 });
