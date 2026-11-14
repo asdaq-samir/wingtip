@@ -63,10 +63,10 @@ function useFlight(view: PanelView) {
 
 const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: new QueryClient() }, children);
 
-/** The Profile card opened on FPL and its dry run started. */
+/** The Profile's tab picked on FPL and its dry run started. */
 function flying() {
   const hook = renderHook(({ view }: { view: PanelView }) => useFlight(view), { initialProps: { view: "plan" }, wrapper });
-  act(() => hook.result.current.cards.openProfileCard());
+  act(() => hook.result.current.cards.openProfileTab());
   act(() => hook.result.current.run.start());
   expect(hook.result.current.run.running).not.toBeNull();
   return hook;
@@ -84,7 +84,7 @@ describe("a dry run with Nearest opened over it", () => {
     // The map flies own ship from the replay (ReplayGl's simulateFix).
     const point = usePastFlight.getState().points[3]!;
     act(() => simulateFix(point));
-    // NRST: Search's page, Nearest on it, over the Profile card.
+    // NRST: Search's page, Nearest on it, over the Profile's tab.
     hook.rerender({ view: "search" });
     expect(hook.result.current.cards.profileShown).toBe(false);
     expect(usePastFlight.getState().hex).toBe(DRY_RUN);
@@ -92,9 +92,9 @@ describe("a dry run with Nearest opened over it", () => {
     expect(hook.result.current.nearestFrom).toMatchObject({ lat: point.lat, lon: point.lon });
   });
 
-  test("is put away once the Profile card is closed", () => {
+  test("is put away once another tab is picked", () => {
     const hook = flying();
-    act(() => hook.result.current.cards.closeProfileCard());
+    act(() => hook.result.current.cards.openNavLog());
     expect(usePastFlight.getState().hex).toBeNull();
     expect(hook.result.current.run.running).toBeNull();
   });

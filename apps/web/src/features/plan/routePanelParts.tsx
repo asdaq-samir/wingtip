@@ -84,7 +84,9 @@ export const AltitudeGroup = fromRoutePanel("AltitudeGroup");
 export const AltitudeProfile = fromRoutePanel("AltitudeProfile");
 export const RouteProblem = fromRoutePanel("RouteProblem");
 export const LocalDuration = fromRoutePanel("LocalDuration");
-export const BriefCard = fromRoutePanel("BriefCard");
+export const BriefPage = fromRoutePanel("BriefPage");
+// FPL's tab bar, its Share and ForeFlight, drawn once there is a route.
+export const FplTabBar = fromRoutePanel("FplTabBar");
 // The cards for an airplane or a point held on the map are drawn only at a
 // tap, so they ride with the route panel rather than the first load.
 export const AirspaceCard = fromRoutePanel("AirspaceCard");

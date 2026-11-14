@@ -41,7 +41,7 @@ apps/web/src/features/plan/components/AltitudeReasoning.tsx 577
 apps/web/src/features/plan/components/ApproachLesson.tsx 476
 apps/web/src/features/plan/components/PlaceCard.tsx 441
 apps/web/src/features/plan/components/RouteMap.tsx 452
-apps/web/src/features/plan/components/navlog/NavLogView.tsx 868
+apps/web/src/features/plan/components/navlog/NavLogView.tsx 867
 apps/web/src/features/plan/components/procedures/FieldStep.tsx 553
 apps/web/src/features/plan/components/procedures/PatternChips.tsx 434
 apps/web/src/features/plan/hooks/useFlightBriefing.ts 531

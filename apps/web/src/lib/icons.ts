@@ -1,5 +1,5 @@
 import {
-  ChartArea,
+  ClipboardCheck,
   ClipboardCopy,
   CloudSun,
   Ellipsis,
@@ -7,6 +7,7 @@ import {
   LocateFixed,
   Map as MapLayers,
   MapPinPlus,
+  Mountain,
   MoveUpRight,
   Navigation,
   PlaneTakeoff,
@@ -15,7 +16,6 @@ import {
   Route,
   Send,
   Share,
-  Sparkles,
   Star,
   X,
   type LucideIcon,
@@ -36,18 +36,18 @@ type Glyph = LucideIcon | ComponentType<SVGProps<SVGSVGElement>>;
 export const ICON = {
   /** Closes a level and goes back one (decision 0015). */
   close: X,
-  /** The route box's and the cards' share. */
+  /** The route's share (FPL's tab bar) and the cards'. */
   share: Share,
-  /** The route box's menu: share, print, the nav log. */
+  /** The route's menu: save, file, print, the view. */
   more: Ellipsis,
   /** The map's own position. */
   myLocation: Navigation,
-  /** The AI brief, the route box's second button. */
-  brief: Sparkles,
-  /** The nav log, in the route's menu. */
+  /** The Brief, FPL's tab (the owner's ClipboardCheck, 2026-11-14). */
+  brief: ClipboardCheck,
+  /** The nav log, FPL's first tab. */
   navLog: ListOrdered,
-  /** The side view (Profile), the route box's first button. */
-  profile: ChartArea,
+  /** The side view (Profile), FPL's tab (the owner's Mountain, 2026-11-14). */
+  profile: Mountain,
   /** The map's layers and weather. */
   mapLayers: MapLayers,
   /** A route, as a list's mark. */
@@ -72,7 +72,7 @@ export const ICON = {
   weather: CloudSun,
   /** A frequency or an ident to the clipboard. */
   copy: ClipboardCopy,
-  /** File or send a flight plan. */
+  /** File or send a flight plan: FPL's ForeFlight. */
   send: Send,
   /** A course line's direction, where no D-arrow fits. */
   course: MoveUpRight,
