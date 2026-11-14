@@ -121,6 +121,11 @@ export function directOnDevice(
           unflyable_legs: summed.unflyable_legs,
           legs_without_wind: summed.legs_without_wind,
           rules: totals?.rules,
+          // No hop of its own: the page reads the next landing from the
+          // hops (figures' nextLanding), and totals without them threw
+          // there, the whole page lost to "No connection" at an offline
+          // Direct To (flight-critical.spec).
+          hops: [] as Totals["hops"],
         } as Totals,
       },
     ] as NavLogMessage[];

@@ -17,12 +17,12 @@ import type { PlanViewModel } from "./usePlanView";
 export function usePlanFlight(
   { planned, depart, routed, flightRules }: PlanRoute,
   { s, course, selected, directToPoint }: PlanAnswerModel,
-  { profileShown, openNearest }: PlanFpl,
+  { profileOpen, openNearest }: PlanFpl,
   { setViewPick }: PlanViewModel,
 ) {
   "use no memo"; // As usePlanWorkspace, whose part this is: left to its own memos.
   // The flight flown on paper, from the Profile card (useDryRun).
-  const dryRun = useDryRun({ course, selected, legs: s.legs, depart, routed, profileShown });
+  const dryRun = useDryRun({ course, selected, legs: s.legs, depart, routed, profileOpen });
   // The airplane flying the route (useFlyingMode): its NRST is Nearest's
   // list over Airport, as the microphone's is; its D→ direct to the next
   // landing, as the Stops' Direct To goes (directToPoint).
