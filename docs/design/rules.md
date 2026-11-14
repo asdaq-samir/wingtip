@@ -237,7 +237,13 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    picked tab filled in the tint, Weather with the field's category dot
    and Charts with its count. The bar is glass because it floats over the
    card (the owner's decision of 2026-11-10 keeps glass for what floats).
-   This replaces T4's tabs under the actions and its one-line report. On
+   This replaces T4's tabs under the actions and its one-line report.
+   The airplane cards are laid out the same way, with the same parts (the
+   owner, 2026-11-14: "make sure the airplane card looks similar to
+   airport card"): an N-number's card and a tracked flight's have their
+   facts in the strip (Type, Year, Seats, Engines, Registration, Owner),
+   their photos as the same picture tiles, and their tabs (Flights, Info,
+   Figures; a flight's Info and Flights) in the same floating glass bar. On
    Android, at half height a
    card shows the small bar, its title and actions on one row, and at
    full the large flexible bar, folding as it scrolls (owner decision
@@ -256,7 +262,7 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
 
 | | Web | iPhone | Android |
 |---|---|---|---|
-| Pinned head | One scroller per sheet (SheetParts' `data-sheet-scroll`), its scroll indicator the browser's own, shown while it scrolls (iOS's transient bar; 2026-11-11), its head band (the search, the route's row) `position: sticky; top: 0` in it and frosted, the grabber's room inside it; tab pages laid out whole in it, nothing measured and no scroller pulled up under the head (2026-11-11); a card has its own nested drawer's scroller (CardStack). `PinnedHead`: one row sticky at the sheet's top from the start (under the search's row, a fixed height, `--sheet-head`, on a tab's list), frosted (index.css `frost-head`: the sheet's ground at the glass fill over the sheet blur, solid without backdrop-filter and under Reduce Transparency); on `CardTitle`, `CardHead`, `SheetCard`, `ListPageHead`, Settings' title row and a console page's head. The airport card's tabs float at its foot instead (C1, the owner, 2026-11-14): a glass bar sticky at its scroller's foot, held at the foot of the part in sight by the Drawer's offset (`place/PlaceTabBar`), its pages starting under the head (`PINNED_BELOW`) | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport card's section picker pins under the bar | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs a `stickyHeader` |
+| Pinned head | One scroller per sheet (SheetParts' `data-sheet-scroll`), its scroll indicator the browser's own, shown while it scrolls (iOS's transient bar; 2026-11-11), its head band (the search, the route's row) `position: sticky; top: 0` in it and frosted, the grabber's room inside it; tab pages laid out whole in it, nothing measured and no scroller pulled up under the head (2026-11-11); a card has its own nested drawer's scroller (CardStack). `PinnedHead`: one row sticky at the sheet's top from the start (under the search's row, a fixed height, `--sheet-head`, on a tab's list), frosted (index.css `frost-head`: the sheet's ground at the glass fill over the sheet blur, solid without backdrop-filter and under Reduce Transparency); on `CardTitle`, `CardHead`, `SheetCard`, `ListPageHead`, Settings' title row and a console page's head. The airport card's tabs float at its foot instead (C1, the owner, 2026-11-14): a glass bar sticky at its scroller's foot, held at the foot of the part in sight by the Drawer's offset (`CardTabBar`, the airport's `place/PlaceTabBar`), its pages starting under the head (`PINNED_BELOW`, `CardTabPages`); the airplane cards' the same (2026-11-14) | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport card's section picker pins under the bar | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs a `stickyHeader` |
 | Grow, then scroll | Base UI's Drawer gives a drag to any scroller that can scroll, so below full the sheet's scroller and any in its body are `overflow-y: hidden` (index.css), which its arbitration skips; a script, the keyboard and a focused row still scroll them, the sheet left at its size | The system sheet's own behaviour, with nothing overriding it; no zoom push inside a resizable sheet, whose pull-down would pop the page | The sheet's nested scroll; every card shown from the search or the map opens at half (`halfWindow`) and grows to full; one pushed inside a card keeps the height |
 | Detents | A card's nested drawer has its own snap point among the sheet's three sizes, the same fixed values in the Drawer's own units (`"4.25rem"`, `"23rem"`, `1`; `components/sheet/insets`), never px worked out from the window: it opens at half, every card but Emergency (`lib/sheetCards`' `cardOpening`), and the sheet under it stays where it was; what is drawn follows the snap point the moment it is set; a swipe moves one size however fast, by the Drawer's own `snapToSequentialPoints` (the owner, 2026-11-11, "enforce the detents, regardless of how fast you swipe") | Every card opens at `.medium` (Emergency at `.large`) and the pilot's drag sizes it, a card opened inside a card keeping the height; the map stays live under it up to `.medium` (`presentationBackgroundInteraction`); questions and forms stay modal | A card from the search or the map opens at half and grows to full; one opened inside a card keeps the height |
 | Sideways rows | The Embla carousels (`CardPictures`, `RecentCards`) and the route's pills carry `data-base-ui-swipe-ignore="x"`; every native sideways row `overscroll-x-contain` and, in the sheet, `overflow-y: hidden` (index.css: `overflow-x: auto` alone made it a few points' vertical scroller, which took a drag up at half); the upright altitude Slider and the sortable rows' grips keep `""`, their drag being up and down | No control takes the sheet's drag: the Profile's upright altitude slider is a stock `Slider` the sheet does not take; the flown track's chart moves the replay on a tap | A sideways row takes only a sideways drag; the sheet's nested scroll takes the rest |
@@ -347,9 +353,13 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   one row of four buttons, the first filled -- Fly This, Follow (the
   flight card's alerts: takes off, lands, comes near), Favorite and Share,
   Follow and Favorite greyed where the registry gives no ICAO address;
-  the tabs **Flights · Info · Figures** in that order, Flights first with
-  its count as the hint; and one status line under the tabs, where the
-  airport card's weather line is: "In the air · 4,500 ft · 112 kt" from
+  one status line under them; the facts in a sideways strip, as the
+  airport card's (Type, Year, Seats, Engines, Registration, Owner); its
+  photo as the airport card's picture tiles; and the tabs **Flights ·
+  Info · Figures** in that order in the airport card's floating glass bar
+  at the card's foot (C1; the owner, 2026-11-14: "make sure the airplane
+  card looks similar to airport card"), Flights first with its count as
+  the hint. The status line says "In the air · 4,500 ft · 112 kt" from
   the live find, else "On the ground · landed KPWK 2h ago" from its last
   flight, else "Not heard in the last 6 weeks", and "Checking whether
   it's in the air…" while the find is out. Flights is the flight card's
@@ -368,8 +378,8 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   docket), Ownership history (this airframe's past registrations first,
   then other airplanes that held the N-number) and Documents filed with
   any reservation -- each group saying in place where it has nothing; its
-  Planespotters.net photo at the card's head once one is found, the
-  photographer named beside it and the picture a link to its page; Figures every
+  Planespotters.net photo in the card's pictures once one is found, the
+  photographer named on it and the picture a link to its page; Figures every
   planning figure, edited in place, a missing one asked for there.
 - **The owner rule:** the FAA aircraft registry is public data, so Info's
   Owner group always shows the registry's owner for every airplane --

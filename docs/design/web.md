@@ -464,7 +464,8 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    `fuel_estimate` over its great-circle distance at the airplane's cruise
    TAS, no wind, so marked "≈" and said "about 38 minutes at 110 knots, no
    wind" (`place/flyHereTime`); "Fly Here" otherwise.
-3. Facts, a sideways strip under the actions (`place/PlaceFacts`), each a
+3. Facts, a sideways strip under the actions (`place/PlaceFacts` on the
+   shared `CardFacts`), each a
    small grey name over its value, as Maps' Hours, Yelp, Accepts and
    Distance: Weather (the flight category chip, "≈" where it is the
    model's or a near station's), Wind (true, "310°T 4 kt"), Longest (the
@@ -477,7 +478,8 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    map, its pages kept across the card's redraws so a pinch holds).
 5. The tab's page (Info: elevation, the frequencies a pilot needs first,
    each copying on click, lights and services; Weather; Runways; Charts),
-   then the tabs, Info, Weather, Runways, Charts (`place/PlaceTabBar`), in
+   then the tabs, Info, Weather, Runways, Charts (`place/PlaceTabBar` on
+   the shared `CardTabBar`, the pages in `CardTabPages`), in
    a glass capsule floating at the card's foot like Maps' group of
    buttons: sticky at the foot of the card's scroller and moved up by the
    Drawer's own offset (`--sheet-offset`, `--sheet-swipe`) so it stays at
@@ -500,17 +502,24 @@ figures), the actions `lib/cardActions` gives its kind, then the figures
 the engine has for it. The airplane card (`features/airplane`, `AirplaneProfileSheet`) is
 laid out as the airport card is, the owner's P1 of 2026-11-14 (canvas
 <https://claude.ai/artifact/XFZoWyJWzov7RCwRRPH253>; docs/design/rules.md,
-the airplane card): the `CardAction` row Fly This, Follow
-(`AircraftAlertMenu` labelled Follow), Favorite (`FavoriteTile`) and Share
-(`shareOrCopy`, `?airplane=`); the stock Tabs through `CardTabBar`, as
-PlaceCard's, Flights · Info · Figures; the status line (`airplaneStatus`)
-under them. It reads its N-number two ways at once (`lib/airplane/lookup`,
+the airplane card), and after Apple Maps' place card as the airport
+card's C1 is (the owner, 2026-11-14: "make sure the airplane card looks
+similar to airport card"), top to bottom: the `CardAction` row Fly This,
+Follow (`AircraftAlertMenu` labelled Follow), Favorite (`FavoriteTile`)
+and Share (`shareOrCopy`, `?airplane=`); the status line
+(`airplaneStatus`); the facts strip (`components/airplane/AirplaneFacts`
+on `CardFacts`: Type, Year, Seats, Engines, Registration, its status in
+the destructive ink where lapsed, and Owner, public as the FAA publishes
+it); its Planespotters.net photo as the airport card's picture tiles
+(`CardPictures`, the tile the link to its page, the photographer named on
+it); then the page of Flights · Info · Figures, the tabs in the same
+floating glass bar (`CardTabBar`, Flights with its count). It reads its N-number two ways at once (`lib/airplane/lookup`,
 `useTailLookup`, in `useAirplaneCard`): the FAA's record from the
 planner's `/api/traffic/registered`, off its disk in milliseconds, for
 the line, Info (`AirplaneInfo`) and the ICAO address, and the rest of
 its public record from `/api/airplanes/{n_number}` and its `/photo`
 (`lib/airplane/details`; the history groups in `AirplaneHistory`, the
-photo at the head in `AirplanePhotoHead`); and
+photo in the pictures); and
 `/api/traffic/find`, the live sources, seconds when adsb.lol's API is
 busy, for whether it is in the air. Flights is `PastFlights` by that
 address with a ▶ on each row (`play`), each opening `PastFlightCard`
@@ -522,6 +531,20 @@ in hand. The FPL's airplane field suggests from the same rows as it is typed
 Autocomplete through `CommandRoot` and `CommandField` in `InlineField`,
 the list in a Popover under the field), the record alone, no live find. No airplane picked shows "No airplane
 picked" and Pick Airplane, never a default type (decision 0011).
+
+**Structure, a tracked flight's card** (`FlightCard`), the same way (C1,
+2026-11-14): the head (callsign, what it is and who flies it, Share, ✕);
+Follow, Alert, Debrief and Favorite; the flight in its summary
+(`FlightSummary`: its ends, the bar of the way flown, height, speed and
+track, or where its last flight landed); the facts strip
+(`AirplaneFacts`, from the FAA record, the traffic's type and year where
+it has none); the pictures (its Planespotters photo, then the sketch of
+where it has flown); then Info (`FlightInfoTab`: Details -- registration
+opening its N-number's card, type, squawk, registered to, model,
+operator, ICAO address, callsign, the tower's departure event -- the
+scheduled route and the FAA registration) or Flights (its earlier
+flights, each replayed) in the floating glass bar, Info first, the tab
+kept for the airplane while the page is open (`useCardTab`).
 
 **Structure, VOR and TFR cards** (the owner's iPhone screenshots of OBK's
 and TFR 6/4116's cards, 2026-11-14). Both heads are the shared one: Share
