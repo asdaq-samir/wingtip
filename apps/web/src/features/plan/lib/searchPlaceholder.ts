@@ -15,22 +15,15 @@ export function placeholderOf(direct: boolean, pick: SearchPick | null, picking:
   return SEARCH_ALL;
 }
 
-/** The default's whole sentence, said to a screen reader (the field's
- *  aria-label). */
+/** The default, in the field and to a screen reader alike: the owner,
+ *  2026-11-14, "Just say Search airports and airplanes" (it was cut to
+ *  "Search airports" on 2026-11-10 to fit beside the mic at the owner's
+ *  larger text sizes; the whole words now, cut by the field only where
+ *  they cannot fit). */
 const SEARCH_ALL = "Search airports and airplanes";
-/** The field's own words for them, which fit beside the mic and Cancel at
- *  the owner's larger text sizes (17.88 and 19.65 px; the sheet audit's
- *  F-S2, 2026-11-10: the whole sentence ran under them). */
-const SHORT: Record<string, string> = { [SEARCH_ALL]: "Search airports" };
-
-/** What the empty field shows of `placeholderOf`'s words: a default cut
- *  short, the rest as they are. */
-export function shortPlaceholder(label: string): string {
-  return SHORT[label] ?? label;
-}
 
 /** The one search's words: `placeholder` in the field, `label` its name. */
 export function searchWords(direct: boolean, pick: SearchPick | null, picking: string) {
   const label = placeholderOf(direct, pick, picking);
-  return { label, placeholder: shortPlaceholder(label) };
+  return { label, placeholder: label };
 }

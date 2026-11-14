@@ -133,6 +133,18 @@ Every endpoint, with its parameters and answers, is in
 (`openapi.json`, here); a route's docstring is where its behaviour is
 said. The one with a story of its own is the chart tile endpoint.
 
+An airplane's card asks `GET /api/airplanes/{n_number}`
+(`wingtip.aircraft_details`): its FAA registration in full, its make and
+model's and its engine's reference records, its past registrations, the
+documents filed, an N-number's reservation (the registry file
+`wingtip.registry` reads once a day), its NTSB cases (the store ingest
+keeps) and where it is usually based (the engine's `usual_base`), each
+from what is on disk, so nothing waits on a fetch. Its photo is
+`GET /api/airplanes/{n_number}/photo` (`wingtip.aircraft_photo`), from
+Planespotters.net, asked only where `PLANESPOTTERS_CONTACT` is set, the
+contact URL or email its terms ask a server to send. Sources and terms:
+[docs/DATA.md](../../docs/DATA.md#an-airplanes-public-record).
+
 The tile endpoint renders a tile on first request and caches it on
 disk where a kind has no archive yet, which is fine for one corridor and
 not for a map with no street layer under it. The whole country ahead of

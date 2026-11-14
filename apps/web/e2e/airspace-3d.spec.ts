@@ -7,7 +7,7 @@ import { setMap3d } from "./mapCard";
  * from the map's round 3D button (ThreeDButton), the Class B, C and D, the special use
  * areas and the TFRs drawn whole with deck.gl between their floors and
  * ceilings (the planner's /api/airspace/volumes), each area named once at
- * its top. The container has no GPU to look at, so the map's own element
+ * its top and each Class B, C and D shelf's altitudes written there. The container has no GPU to look at, so the map's own element
  * says what is drawn: its data-layers (the names' layer) and
  * data-airspace3d, the volumes standing (AirspaceVolumesGl's
  * dataset.airspace3d: a digit takes no dash, so not data-airspace-3d).
@@ -58,6 +58,8 @@ test("in 3D the airspace stands between its floors and ceilings, and flat again 
   await settle(page);
   await expect(map(page)).toHaveAttribute("data-terrain", "3d", { timeout: slow(20_000) });
   await expect.poll(() => map(page).getAttribute("data-layers"), { timeout: slow(20_000) }).toContain("airspace-3d-labels");
+  // Each shelf's altitudes at its top, as the sectional writes them ("100" over "SFC").
+  await expect.poll(() => map(page).getAttribute("data-layers")).toContain("airspace-3d-shelves");
   await expect
     .poll(async () => Number((await map(page).getAttribute("data-airspace3d")) ?? 0), { timeout: slow(60_000) })
     .toBeGreaterThan(0);

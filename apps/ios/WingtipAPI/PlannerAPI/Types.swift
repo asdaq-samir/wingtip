@@ -47,6 +47,27 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/aircraft/problems`.
     /// - Remark: Generated from `#/paths//api/aircraft/problems/post(check_airplane)`.
     func checkAirplane(_ input: Operations.CheckAirplane.Input) async throws -> Operations.CheckAirplane.Output
+    /// Airplane
+    ///
+    /// Everything public about a US airplane: its FAA registration in full,
+    /// its make and model's and its engine's reference records, its past
+    /// registrations, the documents filed against it, the N-number's
+    /// reservation, its NTSB accidents and incidents, and where it is usually
+    /// based (`based_pending` while that is looked up: ask again). A 422 for
+    /// what is not an N-number.
+    ///
+    /// - Remark: HTTP `GET /api/airplanes/{n_number}`.
+    /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/get(airplane)`.
+    func airplane(_ input: Operations.Airplane.Input) async throws -> Operations.Airplane.Output
+    /// Airplane Photo
+    ///
+    /// The newest photo of this very airplane on Planespotters.net, with its
+    /// photographer and its page, to be shown on their terms (AirplanePhoto);
+    /// null where it has none or it cannot be asked now.
+    ///
+    /// - Remark: HTTP `GET /api/airplanes/{n_number}/photo`.
+    /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/photo/get(airplane_photo)`.
+    func airplanePhoto(_ input: Operations.AirplanePhoto.Input) async throws -> Operations.AirplanePhoto.Output
     /// Airport Aerial
     ///
     /// The field's aerial photo from the USGS National Map's imagery
@@ -1556,6 +1577,43 @@ extension APIProtocol {
         try await checkAirplane(Operations.CheckAirplane.Input(
             headers: headers,
             body: body
+        ))
+    }
+    /// Airplane
+    ///
+    /// Everything public about a US airplane: its FAA registration in full,
+    /// its make and model's and its engine's reference records, its past
+    /// registrations, the documents filed against it, the N-number's
+    /// reservation, its NTSB accidents and incidents, and where it is usually
+    /// based (`based_pending` while that is looked up: ask again). A 422 for
+    /// what is not an N-number.
+    ///
+    /// - Remark: HTTP `GET /api/airplanes/{n_number}`.
+    /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/get(airplane)`.
+    public func airplane(
+        path: Operations.Airplane.Input.Path,
+        headers: Operations.Airplane.Input.Headers = .init()
+    ) async throws -> Operations.Airplane.Output {
+        try await airplane(Operations.Airplane.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Airplane Photo
+    ///
+    /// The newest photo of this very airplane on Planespotters.net, with its
+    /// photographer and its page, to be shown on their terms (AirplanePhoto);
+    /// null where it has none or it cannot be asked now.
+    ///
+    /// - Remark: HTTP `GET /api/airplanes/{n_number}/photo`.
+    /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/photo/get(airplane_photo)`.
+    public func airplanePhoto(
+        path: Operations.AirplanePhoto.Input.Path,
+        headers: Operations.AirplanePhoto.Input.Headers = .init()
+    ) async throws -> Operations.AirplanePhoto.Output {
+        try await airplanePhoto(Operations.AirplanePhoto.Input(
+            path: path,
+            headers: headers
         ))
     }
     /// Airport Aerial

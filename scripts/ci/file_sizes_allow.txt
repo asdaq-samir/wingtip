@@ -111,7 +111,7 @@ services/planner/tests/test_stops.py 888
 services/planner/tests_wingtip/test_airports.py 625
 services/planner/tests_wingtip/test_charts.py 1648
 services/planner/tests_wingtip/test_route_options.py 473
-services/planner/tests_wingtip/test_traffic.py 1382
+services/planner/tests_wingtip/test_traffic.py 1372
 services/planner/wingtip/airports.py 749
 services/planner/wingtip/airspace.py 611
 services/planner/wingtip/chart_faces.py 937

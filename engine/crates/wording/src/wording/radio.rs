@@ -5,6 +5,7 @@
 //! type and description as the file has them.
 
 use super::faa::{faa_words, js_trim};
+use wingtip_core::sort::StableSort;
 
 /// A frequency as the airport file lists it.
 #[derive(Clone, Debug, PartialEq)]
@@ -137,7 +138,7 @@ fn use_rank(f: &Frequency) -> u8 {
 /// indices into `frequencies`; the file's own order kept within a kind.
 pub fn frequencies_in_order(frequencies: &[Frequency]) -> Vec<usize> {
     let mut order: Vec<usize> = (0..frequencies.len()).collect();
-    order.sort_by_key(|&i| use_rank(&frequencies[i]));
+    order.stable_sort_by_key(|&i| use_rank(&frequencies[i]));
     order
 }
 

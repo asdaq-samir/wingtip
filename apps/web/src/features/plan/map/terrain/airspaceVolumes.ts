@@ -102,8 +102,9 @@ export const kindOf = (p: Record<string, unknown>): Kind =>
 
 /** One polygon of a volume as deck.gl draws it: its rings at its floor
  *  ([lon, lat, metres MSL]), how tall, the rims along its top (and its
- *  floor where that is off the ground), and the feature's fields, which a
- *  tap opens its card from. */
+ *  floor where that is off the ground), its floor in feet MSL (what it is
+ *  shaded by), whether it holds the plan's altitudes (null with no plan),
+ *  and the feature's fields, which a tap opens its card from. */
 export interface VolumePiece {
   id: string;
   kind: Kind;
@@ -111,6 +112,8 @@ export interface VolumePiece {
   polygon: number[][][];
   heightM: number;
   topM: number;
+  floorFt: number;
+  holds: boolean | null;
   rims: number[][][];
 }
 
@@ -124,8 +127,13 @@ const sample = (ring: number[][], most = 48) => ring.filter((_, i) => i % Math.m
 
 /** The pieces of the features, each at its own floor and ceiling over
  *  the ground `ground` reads (MapLibre's queryTerrainElevation), where it
- *  needs it. A volume above the ground waits for the terrain under it. */
-export function piecesOf(features: Feature[], ground: (at: [number, number]) => number | null): VolumePiece[] {
+ *  needs it, and held against the plan's `altitudes` (ft MSL) where there
+ *  is one. A volume above the ground waits for the terrain under it. */
+export function piecesOf(
+  features: Feature[],
+  ground: (at: [number, number]) => number | null,
+  altitudes: number[] | null = null,
+): VolumePiece[] {
   const out: VolumePiece[] = [];
   features.forEach((f, n) => {
     const polygons = polygonsOf(f.geometry);
@@ -136,7 +144,7 @@ export function piecesOf(features: Feature[], ground: (at: [number, number]) => 
         polygons.flatMap((p) => sample(p[0] ?? [])),
         ground,
       );
-    const span = volumeSpan(heights, under);
+    const span = volumeSpan(heights, under, altitudes);
     if (!span) return;
     const kind = kindOf(f.properties);
     polygons.forEach((rings, k) => {
@@ -148,6 +156,8 @@ export function piecesOf(features: Feature[], ground: (at: [number, number]) => 
         polygon: at(span.floorM),
         heightM: span.ceilingM - span.floorM,
         topM: span.ceilingM,
+        floorFt: span.floorFt,
+        holds: span.holds,
         rims: [...at(span.ceilingM), ...(span.surface ? [] : at(span.floorM))],
       });
     });

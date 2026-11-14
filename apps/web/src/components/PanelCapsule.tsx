@@ -24,7 +24,7 @@ export function SearchField({
   onFocus,
   onCancel,
   onSubmit,
-  placeholder = "Search airports",
+  placeholder = "Search airports and airplanes",
   inputRef,
   label,
   testId = "search-airports",

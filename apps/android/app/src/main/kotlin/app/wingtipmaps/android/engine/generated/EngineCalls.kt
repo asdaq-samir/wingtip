@@ -91,10 +91,16 @@ fun Engine.airspaceEntryRules(`class`: String): Result<EngineContract.AirspaceEn
     rule("airspace_entry_rules", EngineContract.AirspaceEntryRulesInput(`class` = `class`))
 
 /**
- * How high a 3D map stands an airspace volume: its floor and top in feet MSL, from its limits as the FAA's data gives them (each its figure in feet, a flight level times 100, its CODE SFC, AGL, MSL, STD or UNLTD and its DESC TI, TNI or ANI), read as special_use_tab reads them: SFC above 0 is that height above the ground, a ceiling "to but not including" a foot under its figure (FL180 TNI 17,999 ft MSL), a floor "above but not including" a foot over it. A floor above the ground stands on the lowest of `ground`, a ceiling on its highest; the surface is 0 ft MSL with `surface` true; a flight level is drawn as if MSL; no ceiling, or one above it, is drawn to 18,000 ft MSL, where Class A begins (14 CFR 71.33(a)), a drawing bound. Null where nothing is left to draw, or where a limit above the ground has no `ground`.
+ * A Class B, C or D shelf's altitudes as the sectional writes them, for the label the 3D map stands at the shelf's top: the ceiling over the floor in hundreds of feet MSL, the last two zeros omitted, "SFC" for the surface ("100" over "30", "100" over "SFC"); a Class C ceiling to but not including the floor of the Class B over it "T"; a Class D its ceiling alone, with a minus where it is from the surface to but not including it ("-30"). FAA Aeronautical Chart User's Guide, 9 July 2026, VFR Terms and Symbols, Airspace (p. 16) and its legend Airspace Information (p. 52). The limits as the planner sends a NASR Class Airspace volume (floor_ft with floor_ref SFC, AGL or MSL; ceiling_ft MSL; ceiling_excluded for UPPER_DESC TNI). Null for another class, a Class E surface area among them, or a shelf with no ceiling.
  */
-fun Engine.airspaceVolumeSpan(floor: EngineContract.SpecialUseTabLimit? = null, ceiling: EngineContract.SpecialUseTabLimit? = null, ground: EngineContract.AirspaceVolumeSpanInputGround? = null): Result<EngineContract.AirspaceVolumeSpanAnswer?> =
-    rule("airspace_volume_span", EngineContract.AirspaceVolumeSpanInput(floor = floor, ceiling = ceiling, ground = ground))
+fun Engine.airspaceShelfLabel(`class`: String, floorFt: Double? = null, floorRef: String? = null, ceilingFt: Double? = null, ceilingExcluded: Boolean? = null): Result<EngineContract.AirspaceShelfLabelAnswer?> =
+    rule("airspace_shelf_label", EngineContract.AirspaceShelfLabelInput(`class` = `class`, floorFt = floorFt, floorRef = floorRef, ceilingFt = ceilingFt, ceilingExcluded = ceilingExcluded))
+
+/**
+ * How high a 3D map stands an airspace volume: its floor and top in feet MSL, from its limits as the FAA's data gives them (each its figure in feet, a flight level times 100, its CODE SFC, AGL, MSL, STD or UNLTD and its DESC TI, TNI or ANI), read as special_use_tab reads them: SFC above 0 is that height above the ground, a ceiling "to but not including" a foot under its figure (FL180 TNI 17,999 ft MSL), a floor "above but not including" a foot over it. A floor above the ground stands on the lowest of `ground`, a ceiling on its highest; the surface is 0 ft MSL with `surface` true; a flight level is drawn as if MSL; no ceiling, or one above it, is drawn to 18,000 ft MSL, where Class A begins (14 CFR 71.33(a)), a drawing bound. Null where nothing is left to draw, or where a limit above the ground has no `ground`. Where `altitudes_ft` is given (ft MSL, the plan's cruise and each leg's own), `holds` says whether any of them is inside the volume, floor to ceiling both included as a Class B shelf's published altitudes are part of it (14 CFR 91.131(a)(1); class_b_at_altitude), against the FAA's own ceiling rather than the 18,000 ft drawing bound, an unlimited ceiling holding every altitude from the floor up, and a limit above the ground at the ground drawn under it: the larger volume, so the pilot is told an area may be at their altitude rather than that it is not.
+ */
+fun Engine.airspaceVolumeSpan(floor: EngineContract.SpecialUseTabLimit? = null, ceiling: EngineContract.SpecialUseTabLimit? = null, ground: EngineContract.AirspaceVolumeSpanInputGround? = null, altitudesFt: List<Double>? = null): Result<EngineContract.AirspaceVolumeSpanAnswer?> =
+    rule("airspace_volume_span", EngineContract.AirspaceVolumeSpanInput(floor = floor, ceiling = ceiling, ground = ground, altitudesFt = altitudesFt))
 
 /**
  * An airway segment's minimum IFR altitude (14 CFR 91.177(a)(1)): its MEA, else its GNSS MEA; null where it publishes neither.
@@ -2141,6 +2147,12 @@ fun Engine.turbulenceCategory(edr: Double, weightClass: String): Result<String?>
  */
 fun Engine.underway(speedKt: Double? = null): Result<Boolean> =
     rule("underway", EngineContract.UnderwayInput(speedKt = speedKt))
+
+/**
+ * Where an airplane is usually based: the field its past flights (as ADS-B receivers heard them) most often take off from or land at. Each flight's ends are its takeoff field and, where it was heard landing, its landing field. A field is the base where at least min_ends (3) of the ends are there, at least min_share (0.4) of all the ends are, and no other field has as many; otherwise `ident` is null and nothing is said. The figures are the owner's (2026-10-13), not the FAA's: no public data says where an airplane is kept.
+ */
+fun Engine.usualBase(flights: List<EngineContract.UsualBaseInputFlightsItem>): Result<EngineContract.UsualBaseAnswer> =
+    rule("usual_base", EngineContract.UsualBaseInput(flights = flights))
 
 /**
  * Velocities' east and north parts as tracks and speeds, for a surveillance report that sends its parts (the FAA's STDDS tracks, which the ingest service reads from SWIM): each track degrees true 0 to 360 toward where it goes, and its speed in the parts' own unit (knots for STDDS). The track is null where the speed is 0: what does not move has no track. A list, so a message's tracks cross into the engine once.

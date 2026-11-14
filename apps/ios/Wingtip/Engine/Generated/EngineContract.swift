@@ -333,6 +333,33 @@ enum EngineContract {
         var `class`: String
     }
 
+    struct AirspaceShelfLabelAnswer: Codable, Equatable, Sendable {
+        /// The ceiling as the chart writes it: "100", "T", "-30".
+        var ceiling: String
+        /// The floor as the chart writes it, "30" or "SFC"; null for a Class D.
+        var floor: String?
+        /// The label as the map sets it: the ceiling, a line break and the floor; a Class D's ceiling alone.
+        var text: String
+    }
+
+    struct AirspaceShelfLabelInput: Codable, Equatable, Sendable {
+        var `class`: String
+        var floorFt: Double?
+        var floorRef: String?
+        /// Feet MSL.
+        var ceilingFt: Double?
+        /// The ceiling is to but not including its figure (NASR UPPER_DESC TNI).
+        var ceilingExcluded: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case `class`
+            case floorFt = "floor_ft"
+            case floorRef = "floor_ref"
+            case ceilingFt = "ceiling_ft"
+            case ceilingExcluded = "ceiling_excluded"
+        }
+    }
+
     struct AirspaceVolumeSpanAnswer: Codable, Equatable, Sendable {
         /// Feet MSL.
         var floorFt: Double
@@ -340,11 +367,14 @@ enum EngineContract {
         var ceilingFt: Double
         /// Whether the floor is the surface, drawn from the sea up.
         var surface: Bool
+        /// Whether any of altitudes_ft is inside the volume; only where altitudes_ft was given.
+        var holds: Bool?
 
         enum CodingKeys: String, CodingKey {
             case floorFt = "floor_ft"
             case ceilingFt = "ceiling_ft"
             case surface
+            case holds
         }
     }
 
@@ -353,6 +383,15 @@ enum EngineContract {
         var ceiling: EngineContract.SpecialUseTabLimit?
         /// The ground under the volume, ft MSL: its lowest and its highest. Null where the map has none in yet.
         var ground: EngineContract.AirspaceVolumeSpanInputGround?
+        /// The altitudes the plan flies, ft MSL: its cruise and each leg's own. Absent or null for no plan.
+        var altitudesFt: [Double]?
+
+        enum CodingKeys: String, CodingKey {
+            case floor
+            case ceiling
+            case ground
+            case altitudesFt = "altitudes_ft"
+        }
     }
 
     struct AirspaceVolumeSpanInputGround: Codable, Equatable, Sendable {
@@ -12128,6 +12167,44 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case speedKt = "speed_kt"
         }
+    }
+
+    struct UsualBaseAnswer: Codable, Equatable, Sendable {
+        /// The base; null where the flights do not show one clearly.
+        var ident: String?
+        /// The field most of the ends are at (the first to reach the count, ties too); null with no ends.
+        var most: String?
+        /// How many of the ends are at `most`.
+        var mostEnds: Int
+        /// All the takeoffs and landings counted.
+        var ends: Int
+        /// The fewest ends at a field for it to be the base.
+        var minEnds: Int
+        /// The least share of all the ends at a field for it to be the base.
+        var minShare: Double
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case most
+            case mostEnds = "most_ends"
+            case ends
+            case minEnds = "min_ends"
+            case minShare = "min_share"
+        }
+    }
+
+    struct UsualBaseInput: Codable, Equatable, Sendable {
+        /// The airplane's past flights, any order; each field one identifier, as the host names it.
+        var flights: [EngineContract.UsualBaseInputFlightsItem]
+    }
+
+    struct UsualBaseInputFlightsItem: Codable, Equatable, Sendable {
+        /// The field it took off from; null where not known.
+        var origin: String?
+        /// The field it landed at; null where not known.
+        var destination: String?
+        /// Whether it was heard landing: a destination not landed at is no end.
+        var landed: Bool?
     }
 
     struct VelocityTrackAnswerItem: Codable, Equatable, Sendable {

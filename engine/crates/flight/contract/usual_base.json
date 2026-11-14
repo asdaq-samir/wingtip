@@ -1,0 +1,68 @@
+{
+  "x-call": "wingtip_flight::calls::usual_base",
+  "description": "Where an airplane is usually based: the field its past flights (as ADS-B receivers heard them) most often take off from or land at. Each flight's ends are its takeoff field and, where it was heard landing, its landing field. A field is the base where at least min_ends (3) of the ends are there, at least min_share (0.4) of all the ends are, and no other field has as many; otherwise `ident` is null and nothing is said. The figures are the owner's (2026-10-13), not the FAA's: no public data says where an airplane is kept.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "UsualBaseInput",
+      "type": "object",
+      "properties": {
+        "flights": {
+          "type": "array",
+          "description": "The airplane's past flights, any order; each field one identifier, as the host names it.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "origin": {
+                "type": ["string", "null"],
+                "description": "The field it took off from; null where not known."
+              },
+              "destination": {
+                "type": ["string", "null"],
+                "description": "The field it landed at; null where not known."
+              },
+              "landed": {
+                "type": "boolean",
+                "description": "Whether it was heard landing: a destination not landed at is no end."
+              }
+            }
+          }
+        }
+      },
+      "required": ["flights"]
+    },
+    "answer": {
+      "title": "UsualBaseAnswer",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": ["string", "null"],
+          "description": "The base; null where the flights do not show one clearly."
+        },
+        "most": {
+          "type": ["string", "null"],
+          "description": "The field most of the ends are at (the first to reach the count, ties too); null with no ends."
+        },
+        "most_ends": {
+          "type": "integer",
+          "description": "How many of the ends are at `most`."
+        },
+        "ends": {
+          "type": "integer",
+          "description": "All the takeoffs and landings counted."
+        },
+        "min_ends": {
+          "type": "integer",
+          "description": "The fewest ends at a field for it to be the base."
+        },
+        "min_share": {
+          "type": "number",
+          "description": "The least share of all the ends at a field for it to be the base."
+        }
+      },
+      "required": ["ident", "most", "most_ends", "ends", "min_ends", "min_share"]
+    }
+  },
+  "required": ["input", "answer"],
+  "additionalProperties": false
+}

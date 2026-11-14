@@ -38,6 +38,34 @@ interface PlannerApi {
     suspend fun aircraftProfiles(): Response<app.wingtipmaps.android.api.generated.AircraftProfiles>
 
     /**
+     * GET airplanes/{n_number}
+     * Airplane
+     * Everything public about a US airplane: its FAA registration in full, its make and model&#39;s and its engine&#39;s reference records, its past registrations, the documents filed against it, the N-number&#39;s reservation, its NTSB accidents and incidents, and where it is usually based (&#x60;based_pending&#x60; while that is looked up: ask again). A 422 for what is not an N-number.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param nNumber An N-number: N654FL, 654FL or N-654FL
+     * @return [app.wingtipmaps.android.api.generated.AirplaneDetails]
+     */
+    @GET("airplanes/{n_number}")
+    suspend fun airplane(@Path("n_number") nNumber: kotlin.String): Response<app.wingtipmaps.android.api.generated.AirplaneDetails>
+
+    /**
+     * GET airplanes/{n_number}/photo
+     * Airplane Photo
+     * The newest photo of this very airplane on Planespotters.net, with its photographer and its page, to be shown on their terms (AirplanePhoto); null where it has none or it cannot be asked now.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param nNumber An N-number: N654FL, 654FL or N-654FL
+     * @return [app.wingtipmaps.android.api.generated.AirplanePhoto]
+     */
+    @GET("airplanes/{n_number}/photo")
+    suspend fun airplanePhoto(@Path("n_number") nNumber: kotlin.String): Response<app.wingtipmaps.android.api.generated.AirplanePhoto>
+
+    /**
      * GET airport-aerial/{ident}.jpg
      * Airport Aerial
      * The field&#39;s aerial photo from the USGS National Map&#39;s imagery (public domain), framed on its runways (wingtip.airport_photos.aerial): asked of the USGS once and kept, a week in the browser.

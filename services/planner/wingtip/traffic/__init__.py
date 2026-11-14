@@ -103,7 +103,7 @@ from .flights import (
     past_flight,
 )
 from .alerts import LANDED_UNHEARD_S, status
-from .bases import BASED_MIN_ENDS, BASED_SHARE, BASED_TTL_S, BASED_WORKERS, based
+from .bases import BASED_TTL_S, BASED_WORKERS, based, based_judged
 
 __all__ = [
     "ADSBFI_BACKOFF_S",
@@ -121,8 +121,6 @@ __all__ = [
     "ALTIMETER_NM",
     "ARCHIVE_DAYS",
     "BACKOFF_S",
-    "BASED_MIN_ENDS",
-    "BASED_SHARE",
     "BASED_TTL_S",
     "BASED_WORKERS",
     "DEPARTED_WITHIN_NM",
@@ -179,6 +177,7 @@ __all__ = [
     "WIDE_REGION_DEG",
     "WIDE_REGION_RADIUS_NM",
     "based",
+    "based_judged",
     "find",
     "find_credited",
     "flight",

@@ -31,16 +31,38 @@ export interface GroundSpan {
   high: number;
 }
 
-/** The volume's floor and ceiling in metres MSL, and whether its floor is
- *  the surface; null where nothing is left to draw, or where it needs the
- *  ground and the terrain has none in yet (`ground` null). */
-export function volumeSpan(v: VolumeHeights, ground: GroundSpan | null): { floorM: number; ceilingM: number; surface: boolean } | null {
+/** A volume as drawn: floor and ceiling in metres MSL, the floor in feet
+ *  too (what it is shaded by, airspaceShelves), whether the floor is the
+ *  surface, and whether it holds any of a plan's altitudes (null with no
+ *  plan). */
+export interface DrawnSpan {
+  floorM: number;
+  ceilingM: number;
+  floorFt: number;
+  surface: boolean;
+  holds: boolean | null;
+}
+
+/** The volume's span (DrawnSpan); null where nothing is left to draw, or
+ *  where it needs the ground and the terrain has none in yet (`ground`
+ *  null). With `altitudes` (ft MSL, the plan's), whether it holds any of
+ *  them is the engine's too (its `holds`). */
+export function volumeSpan(v: VolumeHeights, ground: GroundSpan | null, altitudes: number[] | null = null): DrawnSpan | null {
   const span = callEngine("airspace_volume_span", {
     floor: v.floor,
     ceiling: v.ceiling,
     ground: ground && { low_ft: ground.low / M_PER_FT, high_ft: ground.high / M_PER_FT },
+    altitudes_ft: altitudes,
   });
-  return span && { floorM: span.floor_ft * M_PER_FT, ceilingM: span.ceiling_ft * M_PER_FT, surface: span.surface };
+  return (
+    span && {
+      floorM: span.floor_ft * M_PER_FT,
+      ceilingM: span.ceiling_ft * M_PER_FT,
+      floorFt: span.floor_ft,
+      surface: span.surface,
+      holds: span.holds ?? null,
+    }
+  );
 }
 
 /** The ground's lowest and highest at the points, metres; null where the

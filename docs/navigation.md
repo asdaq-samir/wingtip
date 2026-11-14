@@ -158,7 +158,7 @@ otherwise.
 
 Since the one search (the owner's approved design, 2026-11-09, branch
 `claude/one-search-web`) the web's sheet has no tabs. Its first row is one
-field, "Search airports" (the web has no Ask since decision 0041), with the microphone its
+field, "Search airports and airplanes" (the web has no Ask since decision 0041), with the microphone its
 trailing button, and over it the title row with the account button at its
 right (the owner's Apple Maps screenshot, 2026-11-10); under it the plan (with a route) or the search's
 own page (with none, or the field in use). On a desktop the same in the
