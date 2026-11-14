@@ -115,7 +115,8 @@ fun OneSearch(
     val favorites by memory.favorites.collectAsStateWithLifecycle()
     val recents by memory.recents.collectAsStateWithLifecycle()
     val own by remember(context) { OwnAirplanes.of(context) }.records.collectAsStateWithLifecycle()
-    val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()
+    val choices = remember(context) { FlightChoices.of(context) }
+    val tail by choices.tail.collectAsStateWithLifecycle()
 
     // Opened from elsewhere: an Airport link, the plan's Add a Stop.
     LaunchedEffect(control.asked) { if (control.takeAsk()) searchBarState.animateToExpanded() }
@@ -139,14 +140,16 @@ fun OneSearch(
         onLine(line)
     }
 
-    val pick: (SearchPick) -> Unit = { picked ->
-        when (picked) {
-            is SearchPick.Airport -> memory.picked(Remembered(Remembered.Kind.AIRPORT, picked.ident, picked.name, closed = picked.closed))
-            is SearchPick.Airplane -> memory.picked(Remembered(Remembered.Kind.AIRPLANE, picked.tail ?: picked.name, type = picked.type))
-            else -> {}
+    val pick: (SearchPick) -> Unit = pick@{ picked ->
+        // Opened by an Add: the pick kept, not opened (KeepPick).
+        val keeping = control.keeping
+        if (keeping != null && KeepPick.keep(picked, keeping, memory, choices)) {
+            close()
+            return@pick
         }
+        KeepPick.keyOf(picked)?.let(memory::picked)
         close()
-        onPick(picked)
+        if (picked == SearchPick.Do(DoAction.ShowTraffic)) model.showTraffic() else onPick(picked)
     }
 
     val voice = remember(context) { RadioListener.canListen(context) }
@@ -183,6 +186,7 @@ fun OneSearch(
         stringResource(
             when {
                 listening -> R.string.voice_speak
+                control.keeping != null -> control.keeping?.hint ?: R.string.search_hint
                 control.picking != null -> control.pickHint
                 control.addingStop -> R.string.search_add_stop
                 flying && voice -> R.string.search_hint_flying
@@ -261,20 +265,28 @@ fun OneSearch(
     val results: @Composable ColumnScope.() -> Unit = {
         val typed = textFieldState.text.isNotBlank()
         val asked = rememberAiOffered()
-        val actions = remember(state.query, state.airports, state.waypoints, planState.routed, fix != null, asked) {
-            SearchGroups.actions(state.query, planState.routed, fix != null, FieldMarks.firstOffered(state.airports, state.waypoints), asked)
+        val trafficOn by model.trafficOn.collectAsStateWithLifecycle()
+        val keeping = control.keeping
+        val actions = remember(state.query, state.airports, state.waypoints, planState.routed, fix != null, asked, trafficOn, keeping) {
+            if (keeping != null) emptyList() else SearchGroups.actions(state.query, planState.routed, fix != null, FieldMarks.firstOffered(state.airports, state.waypoints), asked, trafficOn)
         }
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
             if (typed) {
-                kindFilters(chosen) { kind -> chosen = if (kind in chosen) chosen - kind else chosen + kind }
-                searchResults(state, actions, routed = planState.routed, hasFix = fix != null, chosen = chosen, onPick = pick)
+                // An Add asks for its own kind alone, with no chips to narrow it.
+                val only = when (keeping) {
+                    null -> chosen
+                    SearchControl.Keep.Airport -> setOf(ResultKind.AIRPORTS)
+                    else -> setOf(ResultKind.AIRPLANES)
+                }
+                if (keeping == null) kindFilters(chosen) { kind -> chosen = if (kind in chosen) chosen - kind else chosen + kind }
+                searchResults(state, actions, routed = planState.routed, hasFix = fix != null, chosen = only, onPick = pick)
             } else {
                 if (!control.addingStop) {
                     item(key = "flight") {
                         FlightCard(planState, tail = tail, onOpen = { pick(SearchPick.Flight) }, modifier = Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm))
                     }
                 }
-                nothingTyped(favorites, own.values, recents, state.nearest, state.nearestProblem, fix, onPick = pick)
+                nothingTyped(favorites, own.values, recents, state.nearest, state.nearestProblem, fix, tail, onPick = pick, onKeep = control::keep)
             }
         }
     }

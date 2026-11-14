@@ -196,6 +196,7 @@ private fun RegistrationField() {
                     is AirplaneHit.Registered -> ("N" + hit.registration.nNumber.uppercase().removePrefix("N")) to
                         listOfNotNull(hit.registration.manufacturer, hit.registration.model).joinToString(" ").ifEmpty { stringResource(R.string.airplane_registry) }
                     is AirplaneHit.Type -> hit.profile.name.uppercase() to hit.profile.type
+                    is AirplaneHit.Heard -> (hit.plane.registration ?: hit.plane.hex.uppercase()) to hit.plane.type.orEmpty()
                 }
                 DropdownMenuItem(
                     text = { Text("$name · $line") },

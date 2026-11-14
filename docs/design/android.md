@@ -435,6 +435,26 @@ placement wins, and the difference is noted.
        - trailing: the flight category's pip for reporting fields
   3. Picking a result collapses the bar, flies the map to it, and opens
      its card ([§3.2](#32-the-airport-card-and-the-airplane-card)).
+  4. **Airplanes are the one search's** (the web's 75c9de75d, the owner,
+     2026-11-14), with no traffic page or airplane field of its own: its
+     Airplanes group holds the airplanes the map hears, found by callsign,
+     registration or ICAO address from three letters
+     (`SearchGroups.heard`, In the air as their badge; a tap opens the
+     tracked flight's card), the FAA registry's record by its N-number
+     (In the air or On the ground as its badge), the pilot's own and the
+     stock types. Do offers Show Traffic while the map's traffic is off,
+     which turns it on. With nothing typed, the Favorites row
+     (`search/FavoritesRow`, assist chips) leads with the airplane flown
+     or Add Your Airplane, then the starred airports, then the starred
+     airplanes, and ends with Add, Material's menu of Airport or Airplane;
+     the Recents list the airports before the airplanes. Each Add asks the
+     one search, its field saying "Search for your airplane", "Search for
+     an airplane to keep" or "Search for an airport to keep"
+     (`SearchControl.keep`), and the pick is kept, not opened
+     (`search/KeepPick`): your airplane's N-number is the plan's, a
+     favorite starred. Airport rows lead with their badges, Closed with
+     NASR's label, then Private, Military or Joint use (rules.md 9;
+     `FieldMarks.badges`, `ui/card/BadgedLine`), as Nearest's rows do.
 - **Primary action**: the result row itself. There is no Search button,
   and the keyboard's action key searches.
 - **Motion**: the stock bar's expand and collapse, which runs on the

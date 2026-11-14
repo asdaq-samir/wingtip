@@ -4,6 +4,7 @@ import app.wingtipmaps.android.airplane.OwnRecord
 import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.api.generated.AircraftProfileSummary
 import app.wingtipmaps.android.api.generated.AircraftRegistration
+import app.wingtipmaps.android.api.generated.TrafficAircraft
 import app.wingtipmaps.android.navigation.generated.Screen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -78,5 +79,39 @@ class SearchGroupsTest {
         val actions = SearchGroups.actions("emerg", routed = false, hasFix = false, first = null)
         assertTrue(DoAction.Open(Screen.EMERGENCY) in actions)
         assertEquals(DoAction.Ask("emerg"), actions.last())
+    }
+
+    /** The airplanes the map hears, found by callsign, registration or
+     *  address from three letters (the web's useHeardHits), a whole name first. */
+    @Test
+    fun anAirplaneHeardIsFoundByItsCallsignRegistrationOrAddress() {
+        val sky = TrafficAircraft(hex = "a1b2c3", lat = 0.0, lon = 0.0, callsign = "SKW5501 ", registration = "N501SK")
+        val ual = TrafficAircraft(hex = "ab1234", lat = 0.0, lon = 0.0, callsign = "UAL12", registration = "N12UA")
+        val ua = TrafficAircraft(hex = "ab9999", lat = 0.0, lon = 0.0, callsign = "UAL1")
+        val heard = listOf(sky, ual, ua)
+        assertEquals(listOf(sky), SearchGroups.heard("skw", heard).map { it.plane })
+        assertEquals(listOf(sky), SearchGroups.heard("N501-SK", heard).map { it.plane })
+        assertEquals(listOf(ual), SearchGroups.heard("AB12", heard).map { it.plane })
+        assertEquals(listOf(ua, ual), SearchGroups.heard("UAL1", heard).map { it.plane })
+        assertTrue(SearchGroups.heard("ab", heard).isEmpty())
+    }
+
+    /** Show Traffic, where Traffic Nearby was, only while the traffic is off. */
+    @Test
+    fun showTrafficIsOfferedWhileTheTrafficIsOff() {
+        assertTrue(DoAction.ShowTraffic in SearchGroups.actions("show tr", routed = false, hasFix = false, first = null, trafficOn = false))
+        assertTrue(DoAction.ShowTraffic in SearchGroups.actions("traffic", routed = false, hasFix = false, first = null, trafficOn = false))
+        assertFalse(DoAction.ShowTraffic in SearchGroups.actions("traffic", routed = false, hasFix = false, first = null, trafficOn = true))
+        assertFalse(DoAction.ShowTraffic in SearchGroups.actions("brief", routed = false, hasFix = false, first = null, trafficOn = false))
+    }
+
+    /** The airplanes' Favorites and Recents after the airports'. */
+    @Test
+    fun theAirportsComeBeforeTheAirplanes() {
+        val plane = Remembered(Remembered.Kind.AIRPLANE, "N12345")
+        val field = Remembered(Remembered.Kind.AIRPORT, "KOSH")
+        assertEquals(listOf(field, plane), SearchGroups.airportsFirst(listOf(plane, field)))
+        val own = OwnRecord(tail = "N9876A", type = "pa28")
+        assertEquals(listOf("KOSH", "N12345", "N9876A"), SearchGroups.starred(listOf(plane, field), listOf(own)).map { it.ident })
     }
 }

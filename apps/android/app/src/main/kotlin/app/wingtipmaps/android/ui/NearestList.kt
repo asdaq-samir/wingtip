@@ -27,6 +27,7 @@ import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.search.FieldMarks
+import app.wingtipmaps.android.ui.card.BadgedLine
 
 /**
  * The fields nearest the airplane as one list, the same rows wherever
@@ -38,8 +39,8 @@ import app.wingtipmaps.android.search.FieldMarks
  * height (the engine's glide_reaches, AC 90-66C's 1,000 ft over the
  * field) at the picked airplane's own glide ratio, and its flight
  * category as its chip in the chart's colours. A private, military or
- * joint-use field is marked first, the engine's airport_use_words naming
- * its use as the web's Nearest does (FieldMarks).
+ * joint-use field leads with its badge, the engine's airport_use_words
+ * naming its use as the web's Nearest does (FieldMarks).
  */
 fun LazyListScope.nearestRows(fields: List<NearestAirport>, fix: OwnShip.Fix?, onOpen: (NearestAirport) -> Unit) {
     items(fields, key = { "near-" + it.ident }) { field -> NearestRow(field, fix, onClick = { onOpen(field) }) }
@@ -53,7 +54,6 @@ private fun NearestRow(field: NearestAirport, fix: OwnShip.Fix?, onClick: () -> 
     val reach = fix?.let { model.glideReaches(it, field) }
     val use = remember(field.isPrivate, field.military) { model.useWords(field) }
     val parts = listOfNotNull(
-        FieldMarks.use(use)?.let { stringResource(it) },
         "${Format.distance(field.distanceNm)} ${Format.heading(field.bearingDeg)}T",
         field.longestRunwayFt?.let { "${Format.altitude(it.toDouble())} runway" },
         reach?.fold({ if (it) "within a glide" else null }, { "glide not worked out" }),
@@ -61,7 +61,8 @@ private fun NearestRow(field: NearestAirport, fix: OwnShip.Fix?, onClick: () -> 
     ListItem(
         onClick = onClick,
         leadingContent = { Icon(Icons.Filled.LocalAirport, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-        supportingContent = { Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        // Its use a badge before the rest (rules.md 9), as the web's Nearest.
+        supportingContent = { BadgedLine(FieldMarks.badges(null, use), parts.joinToString(" · ")) },
         trailingContent = field.flightCategory?.let { c -> { CategoryChip(c) } },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().semantics { onClick(label = openWord, action = null) },

@@ -5,6 +5,7 @@ import app.wingtipmaps.android.airplane.OwnRecord
 import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.api.generated.AircraftProfileSummary
 import app.wingtipmaps.android.api.generated.AircraftRegistration
+import app.wingtipmaps.android.api.generated.TrafficAircraft
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.strip.FieldCommand
 import app.wingtipmaps.android.strip.FieldCommands
@@ -20,6 +21,10 @@ sealed interface AirplaneHit {
     data class Registered(val registration: AircraftRegistration, val inAir: InAir = InAir.Checking) : AirplaneHit
 
     data class Type(val profile: AircraftProfileSummary) : AirplaneHit
+
+    /** One the map hears now, found by its callsign, registration or ICAO
+     *  address (the web's useHeardHits, 2026-11-14). */
+    data class Heard(val plane: TrafficAircraft) : AirplaneHit
 }
 
 /** What the search's Do group offers: Direct To a field or fix, one of the
@@ -30,6 +35,10 @@ sealed interface DoAction {
     data class Open(val screen: Screen) : DoAction
 
     data class Ask(val question: String) : DoAction
+
+    /** The traffic turned on on the map, where the traffic's own page was
+     *  (the owner, 2026-11-14: its airplanes are this search's now). */
+    data object ShowTraffic : DoAction
 }
 
 /** What a tap in the search picked, done by the root (SearchPicks). */
@@ -42,6 +51,9 @@ sealed interface SearchPick {
     data class Airplane(val tail: String?, val type: String?, val name: String) : SearchPick
 
     data class Do(val action: DoAction) : SearchPick
+
+    /** An airplane the map hears: its tracked flight's card, by its ICAO address. */
+    data class Traffic(val hex: String, val registration: String? = null) : SearchPick
 
     /** The flight's card: the plan. */
     data object Flight : SearchPick
@@ -88,6 +100,18 @@ object SearchGroups {
         return mine + stock
     }
 
+    /** A list kept with its airports before its airplanes, each kind in
+     *  its own order (the web's one search, 2026-11-14). */
+    fun airportsFirst(list: List<Remembered>): List<Remembered> = list.sortedBy { it.kind != Remembered.Kind.AIRPORT }
+
+    /** The Favorites' row: the starred airports, then the starred airplanes
+     *  with the pilot's own N-numbered airplanes, each once. */
+    fun starred(favorites: List<Remembered>, own: Collection<OwnRecord>): List<Remembered> =
+        airportsFirst(
+            (favorites + own.mapNotNull { r -> r.tail?.let { Remembered(Remembered.Kind.AIRPLANE, it, r.type, r.type) } })
+                .distinctBy { it.kind.name + it.ident.uppercase() },
+        )
+
     /** Whether the registry's airplane is one of the pilot's own already. */
     fun isOwn(registration: AircraftRegistration, own: Collection<OwnRecord>): Boolean {
         val tail = "N" + registration.nNumber.uppercase().removePrefix("N")
@@ -101,11 +125,13 @@ object SearchGroups {
      * last the line asked of the assistant -- only where a model can answer
      * it (`asked`, AiOffered: Gemini Nano here).
      */
-    fun actions(query: String, routed: Boolean, hasFix: Boolean, first: String?, asked: Boolean = true): List<DoAction> {
+    fun actions(query: String, routed: Boolean, hasFix: Boolean, first: String?, asked: Boolean = true, trafficOn: Boolean = true): List<DoAction> {
         val q = query.trim()
         if (q.isEmpty()) return emptyList()
         val out = mutableListOf<DoAction>()
         if (hasFix && first != null) out += DoAction.DirectTo(first)
+        // Show Traffic, while the traffic is off, for a line its words begin.
+        if (!trafficOn && q.lowercase().split(' ').filter { it.isNotEmpty() }.all { w -> SHOW_TRAFFIC.any { it.startsWith(w) } }) out += DoAction.ShowTraffic
         val screens = linkedSetOf<Screen>()
         (FieldCommands.readField(q) as? FieldCommand.Open)?.let { OpenScreen.screenOf(it.screen)?.let(screens::add) }
         val lower = q.lowercase()
@@ -115,6 +141,34 @@ object SearchGroups {
         if (asked) out += DoAction.Ask(q)
         return out
     }
+
+    /**
+     * The airplanes the map hears whose callsign, registration or ICAO
+     * address begins with the line (spaces and a registration's dash
+     * aside), as the traffic's own search found them before it went for
+     * the one search (the web's useHeardHits): three letters at least, as
+     * two match scores of addresses; a whole name first; a few at most.
+     */
+    fun heard(query: String, planes: List<TrafficAircraft>): List<AirplaneHit.Heard> {
+        val wanted = query.filterNot { it.isWhitespace() }.uppercase()
+        if (wanted.length < HEARD_LEAST) return emptyList()
+        val bare = wanted.replace("-", "")
+        fun callsign(p: TrafficAircraft) = p.callsign.orEmpty().trim().uppercase()
+        fun registration(p: TrafficAircraft) = p.registration.orEmpty().replace("-", "").uppercase()
+        fun whole(p: TrafficAircraft) = callsign(p) == wanted || registration(p) == bare || p.hex.uppercase() == wanted
+        return planes
+            .filter { callsign(it).startsWith(wanted) || registration(it).startsWith(bare) || it.hex.uppercase().startsWith(wanted) }
+            .sortedByDescending(::whole)
+            .take(HEARD_MOST)
+            .map(AirplaneHit::Heard)
+    }
+
+    private const val HEARD_LEAST = 3
+    private const val HEARD_MOST = 4
+
+    /** The words of Show Traffic a line may begin (its row's words are the
+     *  string resource's). */
+    private val SHOW_TRAFFIC = listOf("show", "traffic")
 
     private val TAIL = Regex("^N[1-9][0-9A-Z]{0,4}$")
 

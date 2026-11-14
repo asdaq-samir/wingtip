@@ -1,7 +1,8 @@
 package app.wingtipmaps.android.search
 
-import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AirportSuggestion
+import app.wingtipmaps.android.ui.card.Badged
+import app.wingtipmaps.android.ui.card.Status
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -10,12 +11,19 @@ import org.junit.Test
  *  closed field never the one offered to fly to (decision 0043). */
 class FieldMarksTest {
     @Test
-    fun eachUseHasItsMarkAndAPublicFieldNone() {
-        assertEquals(R.string.use_private, FieldMarks.use("private"))
-        assertEquals(R.string.use_military, FieldMarks.use("military"))
-        assertEquals(R.string.use_joint, FieldMarks.use("joint"))
-        assertNull(FieldMarks.use("public"))
-        assertNull(FieldMarks.use(null))
+    fun eachUseHasItsBadgeAndAPublicFieldNone() {
+        assertEquals(Status.Private, FieldMarks.useStatus("private"))
+        assertEquals(Status.Military, FieldMarks.useStatus("military"))
+        assertEquals(Status.Joint, FieldMarks.useStatus("joint"))
+        assertNull(FieldMarks.useStatus("public"))
+        assertNull(FieldMarks.useStatus(null))
+    }
+
+    /** Closed first with the planner's own label (decision 0043), then the use. */
+    @Test
+    fun aClosedFieldLeadsWithItsClosedBadge() {
+        assertEquals(listOf(Badged(Status.Closed, "Closed indefinitely"), Badged(Status.Private)), FieldMarks.badges("Closed indefinitely", "private"))
+        assertEquals(emptyList<Badged>(), FieldMarks.badges(" ", null))
     }
 
     @Test

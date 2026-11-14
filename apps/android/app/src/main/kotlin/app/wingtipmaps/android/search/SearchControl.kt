@@ -40,6 +40,23 @@ class SearchControl {
     var picking by mutableStateOf<((String) -> Unit)?>(null)
         private set
 
+    /** An airplane asked for, to keep rather than open (the web's
+     *  pickAirplane, 2026-11-14): the pilot's own (Mine) or a favorite. */
+    var keeping by mutableStateOf<Keep?>(null)
+        private set
+
+    /** What an Add asks the one search for, each its own words in the field. */
+    enum class Keep(@param:StringRes val hint: Int) {
+        /** The airplane flown, Airplane's Add: "Search for your airplane". */
+        Mine(R.string.search_for_your_airplane),
+
+        /** An airplane to the Favorites: "Search for an airplane to keep". */
+        Airplane(R.string.search_for_airplane_to_keep),
+
+        /** An airport to the Favorites: "Search for an airport to keep". */
+        Airport(R.string.search_for_airport_to_keep),
+    }
+
     /** What the bar asks while it picks an airport ("Where to?"). */
     @get:StringRes
     var pickHint by mutableIntStateOf(0)
@@ -71,6 +88,14 @@ class SearchControl {
         asked++
     }
 
+    /** The one search opened for an Add: what is picked is kept, its card
+     *  not opened (SearchPicks' keep). */
+    fun keep(what: Keep) {
+        done()
+        keeping = what
+        asked++
+    }
+
     /** An end of `plan`'s route not given yet, asked for (the web's
      *  688305a42: half a route asks for its departure where it can):
      *  picked, the route is planned with it; with neither end, the search
@@ -99,6 +124,7 @@ class SearchControl {
     }
 
     fun done() {
+        keeping = null
         addingStop = false
         stopAfter = null
         picking = null

@@ -3,6 +3,8 @@ package app.wingtipmaps.android.ui
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.airplane.ProfileOpen
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.map.MapPick
+import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.search.DoAction
 import app.wingtipmaps.android.search.SearchPick
@@ -53,7 +55,11 @@ class SearchPicks(
                 is DoAction.DirectTo -> fix()?.let { directTo(action.ident, it) }
                 is DoAction.Open -> ScreenRequests.ask(action.screen)
                 is DoAction.Ask -> ask(action.question)
+                // The search turns the traffic on itself (SearchModel.showTraffic).
+                DoAction.ShowTraffic -> {}
             }
+            // An airplane the map hears: its tracked flight's card.
+            is SearchPick.Traffic -> CardRequests.open(MapPick.Plane(picked.hex))
             SearchPick.Flight -> onPlan()
         }
     }

@@ -36,9 +36,6 @@
     <string name="group_airplanes">Airplanes</string>
     <string name="group_do">Do</string>
     <!-- A field's use beside it in a list (the planner's `use`, NASR's facility use and ownership), the web's marks. -->
-    <string name="use_private">Private</string>
-    <string name="use_military">Military</string>
-    <string name="use_joint">Joint use</string>
     <string name="do_direct_to">Direct To %1$s</string>
     <string name="do_ask">Ask: “%1$s”</string>
     <string name="airplane_yours">Yours</string>

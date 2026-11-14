@@ -14,6 +14,7 @@ import app.wingtipmaps.android.api.generated.AircraftRegistration
 import app.wingtipmaps.android.api.nearest
 import app.wingtipmaps.android.api.registered
 import app.wingtipmaps.android.api.searchWithFixes
+import app.wingtipmaps.android.flight.FlightSession
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
@@ -38,7 +39,7 @@ import javax.inject.Inject
  */
 @OptIn(FlowPreview::class)
 @HiltViewModel
-class SearchModel @Inject constructor() : ViewModel() {
+class SearchModel @Inject constructor(private val session: FlightSession) : ViewModel() {
     data class State(
         val query: String = "",
         val airports: List<AirportSuggestion> = emptyList(),
@@ -93,7 +94,8 @@ class SearchModel @Inject constructor() : ViewModel() {
         val found = attempt(problems) { Planner.searchWithFixes(q, near?.let { (lat, lon) -> String.format(Locale.US, "%.4f,%.4f", lat, lon) }) }.orEmpty()
         val (airports, waypoints) = SearchGroups.split(found)
         val stock = types ?: attempt(problems) { Planner.aircraftProfiles() }?.also { types = it }.orEmpty()
-        val airplanes = SearchGroups.airplanes(q, own, stock)
+        // The airplanes the map hears, by callsign, registration or address.
+        val airplanes = SearchGroups.heard(q, session.traffic.planes.value) + SearchGroups.airplanes(q, own, stock)
         var registered: AircraftRegistration? = null
         if (SearchGroups.looksLikeTail(q)) {
             // The FAA's record by itself, from the planner's disk, drawn at
@@ -115,6 +117,14 @@ class SearchModel @Inject constructor() : ViewModel() {
             }
             _state.update { s -> s.copy(airplanes = s.airplanes.map { if (it is AirplaneHit.Registered) it.copy(inAir = inAir) else it }) }
         }
+    }
+
+    /** Whether the map's traffic is on, for the Do group's Show Traffic. */
+    val trafficOn: StateFlow<Boolean> get() = session.traffic.on
+
+    /** Show Traffic: the map's traffic turned on, as the Map card's tile does. */
+    fun showTraffic() {
+        session.traffic.setOn(true)
     }
 
     /** The fields nearest a position, asked again only once it has moved. */

@@ -30,6 +30,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.search.FlightCard
+import app.wingtipmaps.android.search.SearchControl
 import app.wingtipmaps.android.search.SearchMemory
 import app.wingtipmaps.android.search.SearchModel
 import app.wingtipmaps.android.search.SearchPick
@@ -103,7 +104,7 @@ private fun UnderSearch(head: @Composable () -> Unit, page: @Composable () -> Un
 /** Nothing typed: the assistant's answer where there is one, the flight's
  *  card, then Nearest, Favorites and Recents, as the search shows them. */
 @Composable
-internal fun Home(plan: Plan, ownShip: OwnShip, answer: @Composable () -> Unit, onPick: (SearchPick) -> Unit, modifier: Modifier = Modifier) {
+internal fun Home(plan: Plan, ownShip: OwnShip, answer: @Composable () -> Unit, onPick: (SearchPick) -> Unit, onKeep: (SearchControl.Keep) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     // The fix read here, for the nearest fields' rows, rather than by the root.
     val fix by ownShip.fix.collectAsStateWithLifecycle()
@@ -123,6 +124,6 @@ internal fun Home(plan: Plan, ownShip: OwnShip, answer: @Composable () -> Unit, 
         item(key = "flight") {
             FlightCard(state, tail, onOpen = { onPick(SearchPick.Flight) }, modifier = Modifier.padding(horizontal = WingtipSpace.Lg))
         }
-        nothingTyped(favorites, own.values, recents, found.nearest, found.nearestProblem, fix, onPick = onPick)
+        nothingTyped(favorites, own.values, recents, found.nearest, found.nearestProblem, fix, tail, onPick = onPick, onKeep = onKeep)
     }
 }

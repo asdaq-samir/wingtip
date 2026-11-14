@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The one search's airplanes (the web's 75c9de75d, 2026-11-14): the Adds that ask it, in its field. -->
+    <string name="search_for_your_airplane">Search for your airplane</string>
+    <string name="search_for_airplane_to_keep">Search for an airplane to keep</string>
+    <string name="search_for_airport_to_keep">Search for an airport to keep</string>
+    <!-- Do's row that turns the map's traffic on, where the traffic's own page was. -->
+    <string name="do_show_traffic">Show Traffic</string>
+    <!-- An airplane the map hears, with no type or registration to say. -->
+    <string name="heard_now">Heard now</string>
+    <!-- The Favorites' row: the airplane flown's Add, and the Add at its end with its menu. -->
+    <string name="favorite_your_airplane_add">Add Your Airplane</string>
+    <string name="favorite_add">Add</string>
+    <string name="favorite_add_airport">Airport</string>
+    <string name="favorite_add_airplane">Airplane</string>
+</resources>
