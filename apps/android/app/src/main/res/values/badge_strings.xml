@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- StatusBadge's words, as the web's components/StatusBadge says them (docs/design/rules.md, 9). -->
+    <string name="badge_active">Active</string>
+    <string name="badge_later">Later</string>
+    <string name="badge_cold">Cold</string>
+    <string name="badge_closed">Closed</string>
+    <string name="badge_out_of_service">Out of service</string>
+    <string name="badge_private">Private</string>
+    <string name="badge_military">Military</string>
+    <string name="badge_joint">Joint use</string>
+    <string name="badge_in_air">In the air</string>
+    <string name="badge_ground">On the ground</string>
+    <string name="badge_emergency">Emergency</string>
+</resources>
