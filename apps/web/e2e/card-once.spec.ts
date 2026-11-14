@@ -1,6 +1,21 @@
 import { test, expect, type Page } from "@playwright/test";
 import { showPage } from "./oneSearch";
-import { frontSheet, grabberTo, searchAirports, settle, settled, sheetUpToType, showTabs, slow } from "./helpers";
+import {
+  closeCard,
+  closeProfile,
+  frontSheet,
+  grabberTo,
+  navLogSheet,
+  openNavLog,
+  openProfile,
+  searchAirports,
+  settle,
+  settled,
+  sheetUpToType,
+  showTabs,
+  sideDrawer,
+  slow,
+} from "./helpers";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
 /**
@@ -247,4 +262,26 @@ test("a field tapped on the chart with You open comes up once over it", async ({
     },
     { card: "place-card", maxMoves: 1 },
   );
+});
+
+// The flicker audit, 2026-11-14, FL-2: a card kept between its openings
+// (You, the Nav Log, the Profile) was drawn anew closed as it was put away,
+// gone with no close, and the map's buttons were thrown off the screen's top
+// and swept down to the sheet. Now it closes where it is, its own drawer.
+test("a kept card closes where it is, the map's buttons never off the screen", async ({ page }) => {
+  test.skip(page.viewportSize()!.width >= 768, "a phone's cards");
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await settled(sideDrawer(page));
+  await showPage(page, 0);
+  await page.getByTestId("account-button").click();
+  await settled(page.locator("[data-sheet-card]").filter({ has: page.getByTestId("console-sheet") }));
+  const you = page.getByTestId("console-sheet");
+  await expectDrawnOnce(page, () => closeCard(page, "console-close").then(() => expect(you).toHaveCount(0)), { maxMoves: 0 });
+  await openNavLog(page);
+  await settled(page.locator("[data-sheet-card]").filter({ has: navLogSheet(page) }));
+  await expectDrawnOnce(page, () => closeCard(page, "navlog-close").then(() => expect(navLogSheet(page)).toBeHidden()), { maxMoves: 0 });
+  await openProfile(page);
+  await settled(page.locator("[data-sheet-card]").filter({ has: page.getByTestId("profile-card") }));
+  await expectDrawnOnce(page, () => closeProfile(page), { maxMoves: 0 });
 });

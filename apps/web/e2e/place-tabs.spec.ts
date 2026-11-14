@@ -1,6 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
-import { frontSheet, settle, slow } from "./helpers";
+import { frontSheet, searchAirports, settle, settled, sheetUpToType, showTabs, slow } from "./helpers";
 import { card } from "./placeCard";
+import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
+import { showPage } from "./oneSearch";
 
 /** The airport card's tabs as the owner picked them (T4, 2026-11-14; the
  *  canvas's "Airport card tabs"): directly under the four actions, in sight
@@ -103,4 +105,42 @@ test("with no report of its own the Weather tab has no dot and the card no line"
   await expect(card(page).getByTestId("place-tab-category")).toHaveCount(0);
   await expect(card(page).getByTestId("place-tab-charts")).toHaveCount(0);
   await expect(card(page).getByTestId("place-weather-line")).toHaveCount(0);
+});
+
+// The flicker audit, 2026-11-14: the airport's card from the one search
+// comes up once at half, each tab turns its panel in place, and its close
+// closes it where it is: no drawer drawn anew, nothing shown and hidden and
+// shown, the map's buttons never off the screen.
+test("the airport's card opens once, its tabs turn in place, and its close closes it where it is", async ({ page }) => {
+  test.skip(page.viewportSize()!.width >= 768, "a phone's card");
+  await installFrameRecorder(page);
+  await page.goto("/app/plan");
+  await settle(page);
+  await showPage(page, 0);
+  await showTabs(page);
+  const search = page.getByTestId("search-airports");
+  await search.click();
+  await sheetUpToType(page);
+  await search.fill("KDLH");
+  const row = searchAirports(page).filter({ hasText: "KDLH" }).first();
+  // Flown to once, as a field picked from the search is.
+  await expectDrawnOnce(page, () => row.click().then(() => expect(card(page)).toBeVisible()), { card: "place-card", maxMoves: 1 });
+  await settled(frontSheet(page));
+  for (const tab of ["weather", "runways", "diagrams", "radio"]) {
+    const trigger = card(page).getByTestId(`place-tab-${tab}`);
+    await expectDrawnOnce(page, () => trigger.click().then(() => expect(trigger).toHaveAttribute("aria-selected", "true")), {
+      card: "place-card",
+      maxMoves: 0,
+    });
+  }
+  await expectDrawnOnce(
+    page,
+    () =>
+      card(page)
+        .getByTestId("place-close")
+        .first()
+        .click()
+        .then(() => expect(card(page)).toHaveCount(0)),
+    { maxMoves: 0 },
+  );
 });

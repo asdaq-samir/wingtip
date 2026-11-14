@@ -72,7 +72,9 @@ export async function installFrameRecorder(page: Page) {
     const sample = () => {
       if (st.armed) {
         const map = maps[0] as unknown as { project(p: [number, number]): { x: number; y: number } } | undefined;
-        const ctl = document.querySelector("[data-map-controls]")?.getBoundingClientRect();
+        const controls = document.querySelector("[data-map-controls]");
+        // In sight only: all the way up they are faded out (index.css).
+        const ctl = controls && +getComputedStyle(controls).opacity > 0.05 ? controls.getBoundingClientRect() : undefined;
         st.frames.push({
           t: performance.now() - st.t0,
           cards: [...document.querySelectorAll("[data-sheet-card]")].map((c) => {
@@ -85,7 +87,7 @@ export async function installFrameRecorder(page: Page) {
               open: c.hasAttribute("data-open") && !c.hasAttribute("data-ending-style"),
             };
           }),
-          // Hidden (all the way up, index.css) they have no box: not counted.
+          // With no box (not drawn) they are not counted either.
           controlsTop: ctl && ctl.height > 0 ? Math.round(ctl.top) : null,
           anchor: map && st.anchor ? map.project(st.anchor) : null,
         });
