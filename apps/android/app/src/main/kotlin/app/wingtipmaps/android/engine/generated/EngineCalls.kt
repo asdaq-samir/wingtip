@@ -823,6 +823,12 @@ fun Engine.freezingLevel(profile: List<List<Double>>? = null): Result<EngineCont
     rule("freezing_level", EngineContract.FreezingLevelInput(profile = profile))
 
 /**
+ * Freezing rain and freezing drizzle (FZRA, FZDZ, any intensity) in the METAR or TAF of each field the flight takes off from, lands at or passes: AIM 7-1-20, freezing precipitation falls 'through or outside of visible cloud', so it ices an airplane clear of cloud and is a Go / No-Go caution on any flight (FAA-H-8083-28B ch. 20). Every TAF group is read, TEMPO and PROB included; a METAR's remarks are not. The line is null where none was found.
+ */
+fun Engine.freezingPrecip(fields: List<EngineContract.FreezingPrecipInputFieldsItem>): Result<EngineContract.FreezingPrecipAnswer> =
+    rule("freezing_precip", EngineContract.FreezingPrecipInput(fields = fields))
+
+/**
  * A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name.
  */
 fun Engine.frequencyLine(type: String? = null, description: String? = null): Result<EngineContract.FrequencyLineAnswer> =
@@ -959,6 +965,12 @@ fun Engine.gonogoIcing(selection: EngineContract.GonogoIcingInputSelection? = nu
  */
 fun Engine.gonogoIcingLine(icing: EngineContract.GonogoIcingLineInputIcing): Result<String> =
     rule("gonogo_icing_line", EngineContract.GonogoIcingLineInput(icing = icing))
+
+/**
+ * Under IFR, whether icing could not be checked: icing possible (the moisture forecast) at the altitudes flown, but the freezing level not known, so no altitude can be held to it (FAA-H-8083-28B ch. 20: structural icing needs visible moisture at or below 0 °C). The line, "Icing not checked: freezing level not known", or null; gonogo_icing gives null in that case.
+ */
+fun Engine.gonogoIcingUnchecked(selection: EngineContract.GonogoIcingUncheckedInputSelection? = null, flownFt: List<Double>? = null): Result<String?> =
+    rule("gonogo_icing_unchecked", EngineContract.GonogoIcingUncheckedInput(selection = selection, flownFt = flownFt))
 
 /**
  * Minutes after departure the flight passes a point along the route, or null.
@@ -1201,10 +1213,10 @@ fun Engine.inEmergency(squawk: String? = null, emergency: JsonElement? = null): 
     rule("in_emergency", EngineContract.InEmergencyInput(squawk = squawk, emergency = emergency))
 
 /**
- * A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves from fuel_start_gal. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).
+ * A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves there (fuel_left): from fuel_start_gal less the start and taxi allowance (taxi_fuel_gal), and from each fuel stop passed (refuel_at) with the tanks filled again (fuel_full_gal, else fuel_start_gal) less another allowance, never from the first tank past a fuel stop; fuel_now_gal is what it leaves here. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).
  */
-fun Engine.inFlight(fix: EngineContract.InFlightInputFix, line: List<List<Double>>? = null, points: List<EngineContract.InFlightInputPointsItem>? = null, legs: List<EngineContract.InFlightInputLegsItem>? = null, fuelStartGal: Double? = null, nowS: Double? = null): Result<EngineContract.InFlightAnswer?> =
-    rule("in_flight", EngineContract.InFlightInput(fix = fix, line = line, points = points, legs = legs, fuelStartGal = fuelStartGal, nowS = nowS))
+fun Engine.inFlight(fix: EngineContract.InFlightInputFix, line: List<List<Double>>? = null, points: List<EngineContract.InFlightInputPointsItem>? = null, legs: List<EngineContract.InFlightInputLegsItem>? = null, fuelStartGal: Double? = null, fuelFullGal: Double? = null, taxiFuelGal: Double? = null, refuelAt: List<Int>? = null, nowS: Double? = null): Result<EngineContract.InFlightAnswer?> =
+    rule("in_flight", EngineContract.InFlightInput(fix = fix, line = line, points = points, legs = legs, fuelStartGal = fuelStartGal, fuelFullGal = fuelFullGal, taxiFuelGal = taxiFuelGal, refuelAt = refuelAt, nowS = nowS))
 
 /**
  * The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given.
@@ -1411,7 +1423,7 @@ fun Engine.navlogLegsAt(fixes: List<EngineContract.NavLogFix>, segments: List<En
     rule("navlog_legs_at", EngineContract.NavlogLegsAtInput(fixes = fixes, segments = segments, profile = profile, departureElevationFt = departureElevationFt, air = air, targetFt = targetFt))
 
 /**
- * The four altitude plans -- lowest and highest over the legal band, fastest by the winds, economical by the fuel, each paying its climbs -- and the route flown at each legal altitude (by_altitude). Empty where a leg has no legal altitude.
+ * The four altitude plans -- lowest and highest over the legal band, fastest by the winds, economical by the fuel (left out where the profile gives no climb fuel flow, whose climbs' fuel is not known), each paying its climbs -- and the route flown at each legal altitude (by_altitude). Empty where a leg has no legal altitude.
  */
 fun Engine.navlogPlans(fixes: List<EngineContract.NavLogFix>, segments: List<EngineContract.NavLogSegment>, profile: EngineContract.NavLogProfile? = null, departureElevationFt: Double? = null, air: List<EngineContract.NavLogLegAir>): Result<EngineContract.NavlogPlansAnswer> =
     rule("navlog_plans", EngineContract.NavlogPlansInput(fixes = fixes, segments = segments, profile = profile, departureElevationFt = departureElevationFt, air = air))
@@ -1849,7 +1861,7 @@ fun Engine.runwayCrosswind(wind: EngineContract.RunwayCrosswindInputWind): Resul
     rule("runway_crosswind", EngineContract.RunwayCrosswindInput(wind = wind))
 
 /**
- * Whether an end fits the airplane today for a takeoff or a landing: crosswind against the demonstrated, distance needed against the length with SAFO 19001's 15 per cent margin.
+ * Whether an end fits the airplane today for a takeoff or a landing: crosswind against the demonstrated, distance needed against the length with SAFO 19001's 15 per cent margin. A landing is judged against the landing distance available (the end's declared LDA, else the length past its displaced threshold, AIM 2-3-3), a takeoff against the whole length; `length_ft` is the one judged against.
  */
 fun Engine.runwayEndFit(aircraft: EngineContract.RunwayEndFitInputAircraft? = null, runway: EngineContract.Runway, end: EngineContract.RunwayEndFitInputEnd? = null, wind: EngineContract.RunwayEndFitInputWind? = null, elevationFt: Double? = null, altimeterInHg: Double? = null, tempC: Double? = null, weightLb: Double? = null, kind: String): Result<EngineContract.RunwayEndFitAnswer> =
     rule("runway_end_fit", EngineContract.RunwayEndFitInput(aircraft = aircraft, runway = runway, end = end, wind = wind, elevationFt = elevationFt, altimeterInHg = altimeterInHg, tempC = tempC, weightLb = weightLb, kind = kind))

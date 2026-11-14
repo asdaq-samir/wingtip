@@ -20,7 +20,11 @@ pub fn near(lon: f64, reference: f64) -> f64 {
 /// A longitude between -180 (inclusive) and 180, as the data writes it.
 pub fn normal(lon: f64) -> f64 {
     let l = (lon + 180.0).rem_euclid(360.0) - 180.0;
-    if l == -180.0 && lon > 0.0 { 180.0 } else { l }
+    if l == -180.0 && lon > 0.0 {
+        180.0
+    } else {
+        l
+    }
 }
 
 fn point(p: &mut Point, reference: f64) {

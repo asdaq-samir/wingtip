@@ -338,9 +338,7 @@
             "variation_deg",
             "burnt_gal",
             "next",
-            "destination",
-            "fuel_now_gal",
-            "taxi_counted"
+            "destination"
           ]
         },
         {
