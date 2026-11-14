@@ -98,9 +98,8 @@ struct SearchRowLabel: View {
         Label {
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(title).font(.headline)
-                if let flag {
-                    Text("\(Text(flag.words).foregroundStyle(flag.ink))\(detail.isEmpty ? "" : " · \(detail)")")
-                        .font(.subheadline).foregroundStyle(.secondary)
+                if flag != nil {
+                    FieldFlagLine(flag: flag, detail: detail)
                 } else if !detail.isEmpty {
                     Text(detail).font(.subheadline).foregroundStyle(.secondary)
                 }

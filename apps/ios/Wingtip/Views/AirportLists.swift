@@ -128,10 +128,7 @@ struct NearestRow: View {
                     if withoutColour, let category = field.flightCategory { Text(category).font(.caption.weight(.semibold)).foregroundStyle(.secondary) }
                 }
                 let detail = [field.name, field.longestRunwayFt.map { Format.altitude(Double($0)) }].compactMap { $0 }.joined(separator: " · ")
-                Group {
-                    if let flag { Text("\(Text(flag.words).foregroundStyle(flag.ink)) · \(detail)") } else { Text(detail) }
-                }
-                .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                FieldFlagLine(flag: flag, detail: detail)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {

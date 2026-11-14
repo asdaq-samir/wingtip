@@ -29,19 +29,21 @@ struct StatusLabel: View {
     }
 }
 
-/// Whether it is in force now: "Active" in red, "Inactive" in the
-/// secondary grey, nothing to act on yet (the owner, 2026-11-11: "put a
-/// active and inactive badge on each notam", "Inactive notam can be
-/// disabled color"). In force unless the planner says it is not yet.
+/// Whether it is in force now, the shared badge (the owner, 2026-11-11:
+/// "put a active and inactive badge on each notam"; 2026-11-14: "Use
+/// badges where we can"; the web's PlaceNotams NotamState): Active; Later
+/// where it starts later; and Inactive, the owner's word, in the cold fill
+/// where it is out of force otherwise. In force unless the planner says it
+/// is not (in_force false).
 struct NotamStateBadge: View {
     let notam: APIRankedNotam
 
     var body: some View {
-        let active = notam.inForce != false
-        if active {
-            StatusLabel("Active", systemImage: "exclamationmark.circle.fill", colour: WingtipInk.problem)
-        } else {
-            StatusLabel("Inactive", systemImage: "clock", colour: .secondary)
+        TimelineView(.everyMinute) { context in
+            let active = notam.inForce != false
+            let starts = notam.starts.flatMap { try? Date($0, strategy: .iso8601) }
+            let later = !active && (starts.map { $0 > context.date } ?? false)
+            StatusBadge(active ? .active : later ? .later : .cold, words: active || later ? nil : "Inactive")
         }
     }
 }
