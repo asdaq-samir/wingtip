@@ -66,7 +66,12 @@ def find_credited(query: str) -> tuple[list[dict], dict]:
                 # The API only where the trace could not be read: a search
                 # there waits its turn behind the map's regions and any
                 # refusal's back-off, which is what kept the owner's
-                # searches waiting (2026-10-12).
+                # searches waiting (2026-10-12). A trace read (a 404 is
+                # "none heard") settles it, as the API reads the same
+                # data; ADS-B Exchange's "none" alone does not, since its
+                # receivers are not adsb.lol's and an airplane heard only
+                # by adsb.lol's would be missed in the air. The FAA's
+                # record never waits on this: /api/traffic/registered.
                 answer = (recent, ADSB_LOL_SOURCE) if recent is not None else _asked(text, adsbx_tried=True)
             # The answer is stored in the same lock section the gate is
             # dropped in, so a search arriving between finds one or the other.

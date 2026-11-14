@@ -20,7 +20,7 @@
 
 use crate::geo::{self, destination};
 use crate::json::{self, Value};
-use crate::{pack::Pack, sort::StableSort, sua_tab};
+use crate::{pack::Pack, sort::StableSort, sua_limit};
 
 /// How far ahead the airspace is looked at: the minutes it takes to find
 /// the frequency, call and be answered before a Class C or D, or to be
@@ -306,7 +306,7 @@ fn height_msl(value: Option<f64>, agl: bool, ground: Option<f64>, missing: f64) 
 struct Area<'a> {
     kind: String,
     name: String,
-    heights: sua_tab::Heights,
+    heights: sua_limit::Heights,
     under: Option<f64>,
     times_of_use: Option<String>,
     holds: Box<dyn Fn(f64, f64) -> bool + 'a>,
@@ -365,7 +365,7 @@ fn special_use(packs: &[Pack], track: &Track, ground: Option<f64>) -> Vec<Alert>
             let (Some(wkb), Some(name)) = (layer.wkb(i), text(names, r, 16)) else { continue };
             // The FAA's codes and DESC as the pack keeps them (wingtip.sua `_area`).
             let codes = p.section("sua.json").and_then(|d| text(d, r, 8)).and_then(|t| json::parse(t).ok());
-            let heights = sua_tab::heights(codes.as_ref(), f64_at(a, 8), f64_at(a, 16), [a[4], a[5]]);
+            let heights = sua_limit::heights(codes.as_ref(), f64_at(a, 8), f64_at(a, 16), [a[4], a[5]]);
             // The ground under the area for its AGL heights: the middle of
             // its box, the airplane's own where that cannot be read.
             let under = if heights.floor_agl || heights.ceiling_agl {
@@ -930,7 +930,7 @@ fn alerts_ahead(v: &Value) -> R<String> {
                 areas.push(Area {
                     kind: str_of(a, "type").to_string(),
                     name: str_of(a, "name").to_string(),
-                    heights: sua_tab::heights(Some(a), floor_ft, ceiling_ft, [0, 0]),
+                    heights: sua_limit::heights(Some(a), floor_ft, ceiling_ft, [0, 0]),
                     under: opt_num_of(name, a, "ground_ft")?.or(ground),
                     times_of_use: a.get("times_of_use").and_then(Value::as_str).map(str::to_string),
                     holds: Box::new(move |x: f64, y: f64| polygons_hold(&shape, x, y)),

@@ -23,6 +23,7 @@ import { usePlanWorkspace } from "./hooks/usePlanWorkspace";
 import PlanMap from "./components/workspace/PlanMap";
 import PlanSidebar from "./components/workspace/PlanSidebar";
 import PlanPage from "./components/workspace/PlanPage";
+import PlanCards from "./components/workspace/PlanCards";
 import FlightFoot from "./components/workspace/FlightFoot";
 import RouteHead from "./components/workspace/RouteHead";
 import RouteControls from "./components/workspace/RouteControls";
@@ -423,11 +424,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // opened from, its close back to it.
         sidebar: <PlanSidebar vm={vm} model={search} />,
         // The pages, turned by the round toggle on the sheet's top (PageToggle; the owner, 2026-11-13): Search over `sidebar`, FPL's `route` over the plan.
-        pages: {
-          at: view === "plan" ? 1 : 0,
-          go: pickPage,
-          second: <PlanPage vm={vm} navLog={navLog} navLogCard={navLogCard} briefContents={briefContents} briefNotice={briefNotice} />,
-        },
+        pages: { at: view === "plan" ? 1 : 0, go: pickPage, second: <PlanPage vm={vm} navLog={navLog} /> },
         // The one search's Autocomplete round the whole panel, so its field
         // (the first row) and its list (the body) are one combobox.
         around: (panel) => (
@@ -450,17 +447,10 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // keep the calculations pinned at the bottom"; "Why can't the half card
         // have calculations pinned at the very bottom as the full card, just
         // make them bigger smoothly as expanded").
-        // A dry run's chart in the side view's place and its size, at every
-        // height: still as the sheet is dragged, the nav log coming out over it,
-        // as the side view is, at the owner's ask ("the dry run drags up instead
-        // of staying still like the profile"); all the way up the log scrolls
-        // over it and follows the run (NavLogView), at the owner's ask ("I wanna
-        // be able to do the dry run with navlog in full fpl"). It took the
-        // body's room half way, and grew with the sheet under a finger.
         // At the pill on FPL they are the pill's one row (MapPanel), the
         // route's row from half up (the owner, 2026-11-11, the canvas's b).
-        // FPL's page's own (SheetParts); under the Profile, its foot (PlanPage), but flying no page is drawn (MapPanel).
-        foot: !place && !heldPoint && !flight && !briefShown && (flying || !profileShown) ? routed && <FlightFoot vm={vm} /> : undefined,
+        // FPL's page's own (SheetParts), and the sheet's in flight; under the Profile, the card's foot (PlanCards), in flight too.
+        foot: !place && !heldPoint && !flight && !briefShown && !profileShown ? routed && <FlightFoot vm={vm} /> : undefined,
         // The route as one box of pills, the top row to itself (MapPanel keeps
         // it under the others' heads). How it shows once whole is the pilot's
         // pick from its ••• menu's Show Route As (lib/preferences RouteEdit:
@@ -475,6 +465,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         ),
         console: <PilotPanel />,
       })}
+      {/* FPL's cards over the sheet, beside its pages, kept in flight (PlanCards). */}
+      <PlanCards vm={vm} navLogCard={navLogCard} briefContents={briefContents} briefNotice={briefNotice} />
     </RouteShareMenu.Provider>
   );
 }

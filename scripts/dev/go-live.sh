@@ -111,7 +111,12 @@ if [ -n "$ip" ] && ! grep -q "^PHONE_BASE_URL=https://$ip:8443" "$main/.env" 2>/
 fi
 docker compose -p wingtip up -d --build --remove-orphans
 for _ in $(seq 1 40); do
-  docker compose -p wingtip ps --format '{{.Health}}' | grep -q starting || break
+  # Read whole, then tested: piped into `grep -q`, a match ended grep
+  # before compose finished writing, compose died of SIGPIPE, and under
+  # pipefail the pipeline failed -- so a service still starting read as
+  # none starting and the wait broke at once (2026-11-14).
+  health=$(docker compose -p wingtip ps --format '{{.Health}}' 2>/dev/null || true)
+  case $health in *starting*) ;; *) break ;; esac
   sleep 15
 done
 # A volume made under the bookworm image warns on every connection until
@@ -122,7 +127,12 @@ scripts/dev/pg-refresh-collation.sh
 # owner's efficiency rules, 2026-11-12). GO_LIVE_KEEP_WEB_BUILD=1 keeps it.
 if [ "${GO_LIVE_KEEP_WEB_BUILD:-0}" != 1 ]; then
   for _ in $(seq 1 60); do
-    docker compose -p wingtip logs --since 20m web-build 2>/dev/null | grep -q "built in" && break
+    # Read whole, then tested, as the health wait above: piped into
+    # `grep -q`, the match killed `logs` with SIGPIPE and pipefail failed
+    # the pipeline, so "built in" was never taken as found and the wait ran
+    # its whole ten minutes (the owner, 2026-11-14).
+    built=$(docker compose -p wingtip logs --since 20m web-build 2>/dev/null || true)
+    case $built in *"built in"*) break ;; esac
     sleep 10
   done
   docker compose -p wingtip stop web-build >/dev/null 2>&1 || true

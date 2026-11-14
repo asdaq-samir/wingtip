@@ -675,7 +675,7 @@ export type LeastCrosswindAnswer = {
    */
   end: string | null;
   /**
-   * Knots, unsigned, steady or gust whichever is more.
+   * Knots, unsigned, steady or gust whichever is more, unrounded (to a millionth of a knot), so the map's arrow is judged against the demonstrated crosswind on the crosswind itself, not whole knots (AV-10).
    */
   crosswind_kt: number;
 } | null;
@@ -1985,6 +1985,13 @@ export interface EngineContract {
   flight_category: {
     input: FlightCategoryInput;
     answer: FlightCategoryAnswer;
+  };
+  /**
+   * The floor of a leg flown along a path other than its own line -- a departure (SID), an arrival (STAR) or an approach flown in its place: of the leg's own floor and the floors under each piece of the path (vfr_floors' or ifr_floors' answers, the leg's own first), the highest, the leg's own on a tie, with the lowest ground under any of them. The airplane is over all of the path at its cruising altitude until it comes down, so 14 CFR 91.119's clearances (VFR) or 91.177(a)(2)'s (IFR) hold over all of it; a procedure's published altitudes (91.177(a)(1), Part 97) may be lower, so this errs high (the aviation audit's AV-2).
+   */
+  floor_along_path: {
+    input: FloorAlongPathInput;
+    answer: FloorAlongPathAnswer;
   };
   /**
    * What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.
@@ -3324,6 +3331,13 @@ export interface EngineContract {
     answer: RunwayEndsTrafficAnswer;
   };
   /**
+   * Whether a runway's surface is hard, as the sectional's airport symbol counts it (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports: "hard-surfaced runways"), from NASR APT_RWY.csv's SURFACE_TYPE_CODE: ASPH, CONC, PEM, PFC and BRICK are; a mixed surface ("ASPH-TURF") only where every part is hard; TRTD (treated) goes with a hard one and is not one alone. The longest hard runway is what field_mark_rank's hard_ft is: the cycle pack's overlays and the planner's map list both read it here.
+   */
+  runway_hard_surface: {
+    input: RunwayHardSurfaceInput;
+    answer: RunwayHardSurfaceAnswer;
+  };
+  /**
    * Each runway's favoured end, the planner's RunwayWind or null.
    */
   runway_with_winds: {
@@ -3581,6 +3595,13 @@ export interface EngineContract {
   underway: {
     input: UnderwayInput;
     answer: UnderwayAnswer;
+  };
+  /**
+   * Where an airplane is usually based: the field its past flights (as ADS-B receivers heard them) most often take off from or land at. Each flight's ends are its takeoff field and, where it was heard landing, its landing field. A field is the base where at least min_ends (3) of the ends are there, at least min_share (0.4) of all the ends are, and no other field has as many; otherwise `ident` is null and nothing is said. The figures are the owner's (2026-10-13), not the FAA's: no public data says where an airplane is kept.
+   */
+  usual_base: {
+    input: UsualBaseInput;
+    answer: UsualBaseAnswer;
   };
   /**
    * Velocities' east and north parts as tracks and speeds, for a surveillance report that sends its parts (the FAA's STDDS tracks, which the ingest service reads from SWIM): each track degrees true 0 to 360 toward where it goes, and its speed in the parts' own unit (knots for STDDS). The track is null where the speed is 0: what does not move has no track. A list, so a message's tracks cross into the engine once.
@@ -7051,6 +7072,36 @@ export interface FlightCategoryInput {
    * The lowest broken, overcast or obscured layer was sent with no height (OVC///): the ceiling is not known, and only a visibility under a mile says the category (14 CFR 1.1).
    */
   ceiling_unknown?: boolean | null;
+}
+export interface FloorAlongPathInput {
+  /**
+   * The leg's own floor first, then the floor under each piece of the path: vfr_floors' or ifr_floors' answers, as they came.
+   *
+   * @minItems 1
+   */
+  floors: [
+    {
+      floor_ft: number;
+      /**
+       * VFR's lowest ground under the piece; none under IFR.
+       */
+      lowest_ground_ft?: number | null;
+    },
+    ...{
+      floor_ft: number;
+      /**
+       * VFR's lowest ground under the piece; none under IFR.
+       */
+      lowest_ground_ft?: number | null;
+    }[]
+  ];
+}
+/**
+ * The bounding floor as it came, its lowest_ground_ft (where it has one) the least of all of them.
+ */
+export interface FloorAlongPathAnswer {
+  floor_ft: number;
+  lowest_ground_ft?: number | null;
 }
 export interface FloorCautionInput {
   /**
@@ -11910,6 +11961,15 @@ export interface RunwayEndsTrafficInput {
    */
   right?: string[] | null;
 }
+export interface RunwayHardSurfaceInput {
+  /**
+   * NASR APT_RWY's SURFACE_TYPE_CODE (ASPH, CONC, TURF, ASPH-TURF ...); null or "" for none.
+   */
+  surface?: string | null;
+}
+export interface RunwayHardSurfaceAnswer {
+  hard: boolean;
+}
 export interface RunwayWithWindsInput {
   runways?:
     | {
@@ -12563,6 +12623,51 @@ export interface TurbulenceCategoryInput {
 }
 export interface UnderwayInput {
   speed_kt?: number | null;
+}
+export interface UsualBaseInput {
+  /**
+   * The airplane's past flights, any order; each field one identifier, as the host names it.
+   */
+  flights: {
+    /**
+     * The field it took off from; null where not known.
+     */
+    origin?: string | null;
+    /**
+     * The field it landed at; null where not known.
+     */
+    destination?: string | null;
+    /**
+     * Whether it was heard landing: a destination not landed at is no end.
+     */
+    landed?: boolean;
+  }[];
+}
+export interface UsualBaseAnswer {
+  /**
+   * The base; null where the flights do not show one clearly.
+   */
+  ident: string | null;
+  /**
+   * The field most of the ends are at (the first to reach the count, ties too); null with no ends.
+   */
+  most: string | null;
+  /**
+   * How many of the ends are at `most`.
+   */
+  most_ends: number;
+  /**
+   * All the takeoffs and landings counted.
+   */
+  ends: number;
+  /**
+   * The fewest ends at a field for it to be the base.
+   */
+  min_ends: number;
+  /**
+   * The least share of all the ends at a field for it to be the base.
+   */
+  min_share: number;
 }
 export interface VelocityTrackInput {
   velocities: {

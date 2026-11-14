@@ -9910,6 +9910,68 @@
       ],
       "additionalProperties": false
     },
+    "floor_along_path": {
+      "description": "The floor of a leg flown along a path other than its own line -- a departure (SID), an arrival (STAR) or an approach flown in its place: of the leg's own floor and the floors under each piece of the path (vfr_floors' or ifr_floors' answers, the leg's own first), the highest, the leg's own on a tie, with the lowest ground under any of them. The airplane is over all of the path at its cruising altitude until it comes down, so 14 CFR 91.119's clearances (VFR) or 91.177(a)(2)'s (IFR) hold over all of it; a procedure's published altitudes (91.177(a)(1), Part 97) may be lower, so this errs high (the aviation audit's AV-2).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FloorAlongPathInput",
+          "type": "object",
+          "properties": {
+            "floors": {
+              "type": "array",
+              "minItems": 1,
+              "description": "The leg's own floor first, then the floor under each piece of the path: vfr_floors' or ifr_floors' answers, as they came.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "floor_ft": {
+                    "type": "number"
+                  },
+                  "lowest_ground_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "VFR's lowest ground under the piece; none under IFR."
+                  }
+                },
+                "required": [
+                  "floor_ft"
+                ]
+              }
+            }
+          },
+          "required": [
+            "floors"
+          ]
+        },
+        "answer": {
+          "title": "FloorAlongPathAnswer",
+          "type": "object",
+          "description": "The bounding floor as it came, its lowest_ground_ft (where it has one) the least of all of them.",
+          "properties": {
+            "floor_ft": {
+              "type": "number"
+            },
+            "lowest_ground_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "floor_ft"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "floor_caution": {
       "description": "What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.",
       "type": "object",
@@ -16541,7 +16603,7 @@
                 },
                 "crosswind_kt": {
                   "type": "number",
-                  "description": "Knots, unsigned, steady or gust whichever is more."
+                  "description": "Knots, unsigned, steady or gust whichever is more, unrounded (to a millionth of a knot), so the map's arrow is judged against the demonstrated crosswind on the crosswind itself, not whole knots (AV-10)."
                 }
               },
               "required": [
@@ -25853,6 +25915,43 @@
       ],
       "additionalProperties": false
     },
+    "runway_hard_surface": {
+      "description": "Whether a runway's surface is hard, as the sectional's airport symbol counts it (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports: \"hard-surfaced runways\"), from NASR APT_RWY.csv's SURFACE_TYPE_CODE: ASPH, CONC, PEM, PFC and BRICK are; a mixed surface (\"ASPH-TURF\") only where every part is hard; TRTD (treated) goes with a hard one and is not one alone. The longest hard runway is what field_mark_rank's hard_ft is: the cycle pack's overlays and the planner's map list both read it here.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RunwayHardSurfaceInput",
+          "type": "object",
+          "properties": {
+            "surface": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "NASR APT_RWY's SURFACE_TYPE_CODE (ASPH, CONC, TURF, ASPH-TURF ...); null or \"\" for none."
+            }
+          }
+        },
+        "answer": {
+          "title": "RunwayHardSurfaceAnswer",
+          "type": "object",
+          "properties": {
+            "hard": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "hard"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "runway_with_winds": {
       "description": "Each runway's favoured end, the planner's RunwayWind or null.",
       "type": "object",
@@ -28686,6 +28785,97 @@
       ],
       "additionalProperties": false
     },
+    "usual_base": {
+      "description": "Where an airplane is usually based: the field its past flights (as ADS-B receivers heard them) most often take off from or land at. Each flight's ends are its takeoff field and, where it was heard landing, its landing field. A field is the base where at least min_ends (3) of the ends are there, at least min_share (0.4) of all the ends are, and no other field has as many; otherwise `ident` is null and nothing is said. The figures are the owner's (2026-10-13), not the FAA's: no public data says where an airplane is kept.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "UsualBaseInput",
+          "type": "object",
+          "properties": {
+            "flights": {
+              "type": "array",
+              "description": "The airplane's past flights, any order; each field one identifier, as the host names it.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "origin": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The field it took off from; null where not known."
+                  },
+                  "destination": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The field it landed at; null where not known."
+                  },
+                  "landed": {
+                    "type": "boolean",
+                    "description": "Whether it was heard landing: a destination not landed at is no end."
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "flights"
+          ]
+        },
+        "answer": {
+          "title": "UsualBaseAnswer",
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The base; null where the flights do not show one clearly."
+            },
+            "most": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The field most of the ends are at (the first to reach the count, ties too); null with no ends."
+            },
+            "most_ends": {
+              "type": "integer",
+              "description": "How many of the ends are at `most`."
+            },
+            "ends": {
+              "type": "integer",
+              "description": "All the takeoffs and landings counted."
+            },
+            "min_ends": {
+              "type": "integer",
+              "description": "The fewest ends at a field for it to be the base."
+            },
+            "min_share": {
+              "type": "number",
+              "description": "The least share of all the ends at a field for it to be the base."
+            }
+          },
+          "required": [
+            "ident",
+            "most",
+            "most_ends",
+            "ends",
+            "min_ends",
+            "min_share"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "velocity_track": {
       "description": "Velocities' east and north parts as tracks and speeds, for a surveillance report that sends its parts (the FAA's STDDS tracks, which the ingest service reads from SWIM): each track degrees true 0 to 360 toward where it goes, and its speed in the parts' own unit (knots for STDDS). The track is null where the speed is 0: what does not move has no track. A list, so a message's tracks cross into the engine once.",
       "type": "object",
@@ -30350,6 +30540,7 @@
     "filed_zzzz",
     "fix_radial_distance",
     "flight_category",
+    "floor_along_path",
     "floor_caution",
     "floor_corridor_nm",
     "flow_cell",
@@ -30541,6 +30732,7 @@
     "runway_end_heading",
     "runway_end_key",
     "runway_ends_traffic",
+    "runway_hard_surface",
     "runway_with_winds",
     "runways_read",
     "rvr_check",
@@ -30578,6 +30770,7 @@
     "traffic_reach",
     "turbulence_category",
     "underway",
+    "usual_base",
     "velocity_track",
     "vertical_speed",
     "vfr_altitudes",

@@ -166,6 +166,7 @@ fn bands(out: &mut String, list: &[(&str, f64)]) {
 /// The rules, JSON in and out (call.rs): model_weather_bands,
 /// precip_intensity, precip_dbz, cloud_cover, cape_category and
 /// compass_point.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let mut out = String::new();
     match name {

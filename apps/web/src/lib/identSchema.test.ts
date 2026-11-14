@@ -52,6 +52,11 @@ describe("altitudesOf", () => {
     expect(altitudesOf("VPBNG:18000,KMSN:0,KDLH:abc,:4500,KRYV")).toEqual({});
     expect(altitudesOf(null)).toEqual({});
   });
+  test("a point flown twice keeps one a visit, counted from 1 (WEB-2)", () => {
+    expect(altitudesOf("VPBNG:4500,vpbng@2:6500")).toEqual({ VPBNG: 4500, "VPBNG@2": 6500 });
+    expect(altitudesOf("VPBNG@0:4500,VPBNG@x:4500,VPBNG@:4500")).toEqual({});
+    expect(altitudesParam({ "VPBNG@2": 6500 })).toBe("VPBNG@2:6500");
+  });
   test("back to the address", () => {
     expect(altitudesParam({ VPBNG: 4500, KMSN: 1900 })).toBe("VPBNG:4500,KMSN:1900");
     expect(altitudesParam({})).toBe("");

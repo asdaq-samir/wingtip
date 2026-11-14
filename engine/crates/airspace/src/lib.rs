@@ -11,7 +11,8 @@
 //! - ahead: the alerts ahead of the airplane from the phone's packs;
 //! - spoken, spoken_ask: the places a clearance names, found among those
 //!   the planner gives or the phone's packs keep, and its SID and STAR;
-//! - view_marks, sua_tab: the special-use areas, their tabs and the fixes in view;
+//! - view_marks, sua_tab, sua_place: the special-use areas, their tabs and the fixes in view;
+//! - sua_limit: a special-use area's floor and ceiling, read from the FAA's codes;
 //! - volume_span: how high a 3D map stands a volume, from its limits;
 //! - drills: the oral's flash cards (91.125, 91.155) and 91.155 by name;
 //! - class_b_band: which Class B band of a profile holds an altitude (91.131).
@@ -30,6 +31,8 @@ pub mod spoken;
 pub mod spoken_ask;
 #[cfg(test)]
 mod spoken_closed_tests;
+pub mod sua_limit;
+pub mod sua_place;
 pub mod sua_tab;
 pub mod view;
 pub mod view_marks;

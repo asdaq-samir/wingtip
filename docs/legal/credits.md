@@ -16,6 +16,7 @@ the terms it is used under.
 | FAA NASR: airports, runways, navaids, fixes and airspace | Public domain | As above |
 | FAA CIFP procedures, d-TPP plates and the Digital Obstacle File | Public domain | As above |
 | FAA aircraft registry | Public domain | As above |
+| NTSB aviation accident database: accident and incident records | Public domain | As above |
 | FAA SWIM: NOTAMs, flow programs, terminal data and airspace status | Public domain | As above; reached under the FAA's SWIM access agreement |
 | NOAA Aviation Weather Center: METARs, TAFs, PIREPs, SIGMETs and G-AIRMETs | Public domain | As above |
 | NOAA models: GFS winds and temperatures aloft, GLMP, magnetic declination | Public domain | As above |
@@ -29,6 +30,7 @@ the terms it is used under.
 | ADS-B Exchange traffic | ADS-B Exchange's API terms | Credited as its terms ask |
 | adsb.fi ADS-B traffic | Personal, non-commercial use, credited and linked | adsb.fi's terms |
 | Virtual Radar Server flight routes | CC0 | None owed; credited by choice |
+| Planespotters.net aircraft photos, each credited to its photographer beside it | Planespotters.net's photo API terms | Its terms ask for the photographer's name next to each photo and a link to the photo's page |
 
 ## Maps and software
 

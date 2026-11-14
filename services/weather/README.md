@@ -15,9 +15,13 @@ through `wingtip_native`, the same answer the planner and the phones get.
 
 ## Products and schedule
 
-Each is fetched when the service starts, then at the first interval while
-a pilot is planning (the planner read the store in the last 15 minutes)
-and at the second otherwise (`app/settings.py`, `WEATHER_*_EVERY_S`).
+Each is a job on wingtip's scheduler (`wingtip.schedule`, APScheduler),
+fetched when the service starts, then at the first interval while a pilot
+is planning (the planner read the store in the last 15 minutes) and at
+the second otherwise (`app/settings.py`, `WEATHER_*_EVERY_S`): the job
+comes at the planning pace and, with nobody planning, lets turns go by
+until the idle pace has come round. One fetch of a product runs at a time,
+`WEATHER_WORKERS` (3) at once.
 
 | Product (store name) | Source | Planning | Idle | Served to |
 |---|---|---|---|---|

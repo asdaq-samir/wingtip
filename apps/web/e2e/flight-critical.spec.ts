@@ -200,6 +200,9 @@ test(
     await expect(page.getByTestId("page-error")).toHaveCount(0);
     await expect(strip.getByTestId("navlog-to")).toHaveText("KDLH");
     await expect(strip).toContainText(/\d+(\.\d)? nm/);
+    // Its fuel required too, the engine's fuel plan over the direct's legs
+    // (navlog_fuel_plan), where it read "—" for want of the rule on the device.
+    await expect(strip.getByTestId("navlog-fuel")).toHaveText(/\d/);
     await context.setOffline(false);
   },
 );

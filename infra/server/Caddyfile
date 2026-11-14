@@ -8,6 +8,8 @@
 # everything else to HTTPS.
 
 {$ORIGIN_HOST} {
+	# An answer the gateway has already encoded (the web build's Brotli,
+	# WebMvcConfig) passes through as it is; these are for the rest.
 	encode zstd gzip
 
 	# The routes only the planner calls, over the compose network to the

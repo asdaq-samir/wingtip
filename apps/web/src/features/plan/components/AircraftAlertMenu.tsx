@@ -53,6 +53,8 @@ export default function AircraftAlertMenu({
   airborne,
   from,
   to,
+  label = "Alert",
+  testId = "flight-alert",
 }: {
   hex: string;
   /** Its name as the card shows it, said with the alert. */
@@ -61,6 +63,9 @@ export default function AircraftAlertMenu({
   /** The fields it left and is bound for, offered as airports to be near. */
   from: SketchField | null;
   to: SketchField | null;
+  /** The tile's word: the airplane profile's Follow (the owner's P1, 2026-11-14), the flight card's Alert. */
+  label?: string;
+  testId?: string;
 }) {
   const all = usePreferences((s) => s.aircraftAlerts);
   const alerts = useMemo(() => all.filter((a) => a.hex === hex), [all, hex]);
@@ -95,10 +100,10 @@ export default function AircraftAlertMenu({
         render={
           <CardAction
             icon={waiting ? <BellRing /> : <Bell />}
-            label="Alert"
+            label={label}
             filled={waiting}
-            testId="flight-alert"
-            spoken={waiting ? `Alert: ${alertsLine(alerts)}` : `Alert for ${name}`}
+            testId={testId}
+            spoken={waiting ? `${label}: ${alertsLine(alerts)}` : `${label} ${label === "Alert" ? "for " : ""}${name}`}
           />
         }
       />

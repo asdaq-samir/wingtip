@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { api } from "../../../lib/api/client";
+import { liveFindQuery, registeredQuery, SEARCH_RETRIES } from "../../../lib/airplane/lookup";
 import type { AircraftRegistration, TrafficAircraft } from "../../../lib/api/types";
 import { useOwnFixShown } from "../../../lib/map/position/ownShip";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
@@ -24,12 +24,6 @@ import RefreshButton from "../../../components/RefreshButton";
 /** What is typed waits this long for the next letter before it is asked
  *  about: each search is a request adsb.lol paces (wingtip.traffic). */
 const TYPING_MS = 500;
-/** A search adsb.lol could not be asked for, asked again this many times… */
-const SEARCH_RETRIES = 3;
-/** …this long apart: past the planner's fifteen-second wait after adsb.lol
- *  turns it away (wingtip.traffic BACKOFF_S), in three tries. */
-const SEARCH_RETRY_MS = 6_000;
-
 /** Whether an airplane's callsign, registration or ICAO address begins
  *  with what is typed (spaces and a registration's hyphen aside). */
 function named(plane: TrafficAircraft, text: string): boolean {
@@ -67,26 +61,11 @@ export default function AircraftCard({
   const [asked, setAsked] = useState("");
   const wanted = typed.replace(/\s+/g, "").toUpperCase();
   const searching = wanted.length >= 3;
-  const {
-    data: found,
-    isFetching,
-    isError,
-  } = useQuery({
-    queryKey: ["trafficFind", asked],
-    queryFn: () => api.trafficFind(asked),
-    enabled: asked.length >= 3,
-    staleTime: 30_000,
-    // adsb.lol answers one request every few seconds from the planner's
-    // address and turns the rest away; the planner then answers with what
-    // it can show without it (`checked` false: the airplanes the map has
-    // heard, the FAA's record of the one named), and this asks again, past
-    // the planner's fifteen-second wait (wingtip.traffic BACKOFF_S), three
-    // times at most. It was a 503 and "Couldn't search" for N654FL, which
-    // the registry knew (seen on 2026-10-11).
-    refetchInterval: (query) =>
-      query.state.data?.checked === false && query.state.dataUpdateCount <= SEARCH_RETRIES ? SEARCH_RETRY_MS : false,
-    meta: { silent: true },
-  });
+  // The live find, asked again while adsb.lol is busy (lib/airplane/lookup: it was a 503 and
+  // "Couldn't search" for N654FL, which the registry knew, 2026-10-11); and the FAA's record of
+  // one named by its N-number or address, at once, before the find is back (2026-11-14).
+  const { data: found, isFetching, isError } = useQuery({ ...liveFindQuery(asked), enabled: asked.length >= 3 });
+  const { data: recordNow } = useQuery({ ...registeredQuery(wanted), enabled: searching });
   // Asked once the typing pauses, and one search at a time: what is typed
   // while one is out is asked when it is back, the letters between never.
   // A search asked at each pause ("N65", "N654", "N654F") queued its
@@ -140,7 +119,7 @@ export default function AircraftCard({
   // None in the air by that name: the FAA's record of a US airplane named
   // by its N-number or address, its card opened all the same (FlightCard:
   // its registration, and its last flight where it flew today).
-  const registered = asked === wanted && !listed.length ? (found?.registered ?? null) : null;
+  const registered = !listed.length ? ((asked === wanted ? found?.registered : null) ?? recordNow ?? null) : null;
   // Return in the field: the first found, or the search asked now rather
   // than at the pause.
   const submit = () => {
@@ -184,7 +163,7 @@ export default function AircraftCard({
                 title={<span className="font-semibold">{registered.n_number}</span>}
                 description={[
                   [registered.manufacturer, registered.model].filter(Boolean).join(" "),
-                  unchecked ? "not yet known whether it is flying" : "not in the air now",
+                  unchecked || !answer ? "not yet known whether it is flying" : "not in the air now",
                 ]
                   .filter(Boolean)
                   .join(" · ")}

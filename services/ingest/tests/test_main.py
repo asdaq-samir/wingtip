@@ -49,3 +49,23 @@ def test_ingest_follows_the_airplanes_the_planner_follows():
     ingest's radar and adsb.fi rounds look for it."""
     traffic.follow("A3C858")
     assert traffic.radar_wanted()[1] == {"a3c858"}
+
+
+def test_the_followed_airplanes_are_a_job_where_adsbfi_is_on(monkeypatch):
+    for name in ("SWIM_HOST", "SWIM_USERNAME", "SWIM_PASSWORD"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("ADSBFI_OPEN_DATA", "1")
+    stop = threading.Event()
+    jobs = []
+    monkeypatch.setattr(main.schedule, "every", lambda on, seconds, job, *, name, **kw: jobs.append((name, seconds, job)))
+
+    class Scheduler:
+        def start(self):
+            stop.set()
+
+        def shutdown(self, wait):
+            pass
+
+    monkeypatch.setattr(main.schedule, "scheduler", Scheduler)
+    main.run(stop)
+    assert ("adsb-follow", traffic.FOLLOW_EVERY_S, traffic.follow_job) in jobs

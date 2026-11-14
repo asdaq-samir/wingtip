@@ -4027,6 +4027,33 @@ enum EngineContract {
         }
     }
 
+    /// The bounding floor as it came, its lowest_ground_ft (where it has one) the least of all of them.
+    struct FloorAlongPathAnswer: Codable, Equatable, Sendable {
+        var floorFt: Double
+        var lowestGroundFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case floorFt = "floor_ft"
+            case lowestGroundFt = "lowest_ground_ft"
+        }
+    }
+
+    struct FloorAlongPathInput: Codable, Equatable, Sendable {
+        /// The leg's own floor first, then the floor under each piece of the path: vfr_floors' or ifr_floors' answers, as they came.
+        var floors: [EngineContract.FloorAlongPathInputFloorsItem]
+    }
+
+    struct FloorAlongPathInputFloorsItem: Codable, Equatable, Sendable {
+        var floorFt: Double
+        /// VFR's lowest ground under the piece; none under IFR.
+        var lowestGroundFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case floorFt = "floor_ft"
+            case lowestGroundFt = "lowest_ground_ft"
+        }
+    }
+
     struct FloorCautionInput: Codable, Equatable, Sendable {
         /// A selection's segment: floor_ft, highest_ft, highest_is_obstacle, obstacle_type, obstacle_clearance_ft, congested.
         var segment: [String: OpenAPIValueContainer]
@@ -6710,7 +6737,7 @@ enum EngineContract {
     struct LeastCrosswindAnswer: Codable, Equatable, Sendable {
         /// The end it is on, null for a variable wind or calm.
         var end: String?
-        /// Knots, unsigned, steady or gust whichever is more.
+        /// Knots, unsigned, steady or gust whichever is more, unrounded (to a millionth of a knot), so the map's arrow is judged against the demonstrated crosswind on the crosswind itself, not whole knots (AV-10).
         var crosswindKt: Double
 
         enum CodingKeys: String, CodingKey {
@@ -11048,6 +11075,15 @@ enum EngineContract {
         }
     }
 
+    struct RunwayHardSurfaceAnswer: Codable, Equatable, Sendable {
+        var hard: Bool
+    }
+
+    struct RunwayHardSurfaceInput: Codable, Equatable, Sendable {
+        /// NASR APT_RWY's SURFACE_TYPE_CODE (ASPH, CONC, TURF, ASPH-TURF ...); null or "" for none.
+        var surface: String?
+    }
+
     struct RunwayRunwayEndsItem: Codable, Equatable, Sendable {
         var ident: String
         var headingTrueDeg: Double?
@@ -12197,6 +12233,44 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case speedKt = "speed_kt"
         }
+    }
+
+    struct UsualBaseAnswer: Codable, Equatable, Sendable {
+        /// The base; null where the flights do not show one clearly.
+        var ident: String?
+        /// The field most of the ends are at (the first to reach the count, ties too); null with no ends.
+        var most: String?
+        /// How many of the ends are at `most`.
+        var mostEnds: Int
+        /// All the takeoffs and landings counted.
+        var ends: Int
+        /// The fewest ends at a field for it to be the base.
+        var minEnds: Int
+        /// The least share of all the ends at a field for it to be the base.
+        var minShare: Double
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case most
+            case mostEnds = "most_ends"
+            case ends
+            case minEnds = "min_ends"
+            case minShare = "min_share"
+        }
+    }
+
+    struct UsualBaseInput: Codable, Equatable, Sendable {
+        /// The airplane's past flights, any order; each field one identifier, as the host names it.
+        var flights: [EngineContract.UsualBaseInputFlightsItem]
+    }
+
+    struct UsualBaseInputFlightsItem: Codable, Equatable, Sendable {
+        /// The field it took off from; null where not known.
+        var origin: String?
+        /// The field it landed at; null where not known.
+        var destination: String?
+        /// Whether it was heard landing: a destination not landed at is no end.
+        var landed: Bool?
     }
 
     struct VelocityTrackAnswerItem: Codable, Equatable, Sendable {

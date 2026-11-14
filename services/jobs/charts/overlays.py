@@ -55,11 +55,11 @@ import json
 import logging
 import math
 import os
-import re
 import shutil
 import subprocess
 import tempfile
 import time
+from functools import lru_cache
 from pathlib import Path
 
 from wingtip import cycle_pack, geo, vector_tiles
@@ -127,15 +127,6 @@ FIX_MIN_ZOOM = 10
 RUNWAY_MIN_ZOOM = 10
 
 ATTRIBUTION = "FAA NASR and special use airspace (ADDS), cycle {cycle}"
-
-#: The runway surfaces the sectional's airport symbol counts as hard
-#: (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports:
-#: "hard-surfaced runways"), by NASR's SURFACE_TYPE_CODE (APT_RWY):
-#: asphalt, concrete, PEM (partially concrete, asphalt or bitumen-bound
-#: macadam), porous friction courses and brick. A mixed surface
-#: ("ASPH-TURF") counts only when every part is hard ("ASPH-CONC"); TRTD
-#: (treated) goes with a hard one and is not one alone.
-HARD_SURFACES = frozenset({"ASPH", "CONC", "PEM", "PFC", "BRICK"})
 
 
 def _orient(geometry):
@@ -339,14 +330,19 @@ def _number(text) -> float | None:
         return None
 
 
+@lru_cache(maxsize=256)
 def _hard(surface: str) -> bool:
-    parts = [p for p in re.split(r"[-/]", (surface or "").strip().upper()) if p]
-    return bool(parts) and all(p in HARD_SURFACES or p == "TRTD" for p in parts) and any(p in HARD_SURFACES for p in parts)
+    """Whether NASR's SURFACE_TYPE_CODE is a hard surface, the sectional's
+    "hard-surfaced runways": the engine's runway_hard_surface, asked once
+    a code."""
+    from wingtip.engine import ask
+
+    return bool(ask("runway_hard_surface", surface=surface or "")["hard"])
 
 
 def runways_by_site(rwy_path: Path, rwy_end_path: Path | None) -> dict[str, dict]:
     """Each field's runways, by NASR's SITE_NO: its longest (RWY_LEN, ft),
-    its longest hard-surfaced one (HARD_SURFACES), and the true alignment
+    its longest hard-surfaced one (_hard), and the true alignment
     of its longest's first end (APT_RWY_END's TRUE_ALIGNMENT, degrees).
     Helipads (RWY_ID H1 and the like) are no runways here."""
     found: dict[str, dict] = {}

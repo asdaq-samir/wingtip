@@ -35,7 +35,7 @@ RUN npm run types && npx vite build --outDir /web/dist --emptyOutDir
 # JDK 25, the same LTS the app targets (pom.xml's java.version), runs on
 # (the eclipse-temurin:25-jre stage below) and CI tests with. ASM in
 # Spring Boot's `repackage` can't parse Java 26+ class files anyway.
-FROM maven:3.10-eclipse-temurin-25@sha256:047a82fc82c613266cfb1b66fd920be9c8ba51fd67edc68245e4542768f45e36 AS build
+FROM maven:4.0.0-rc-7-eclipse-temurin-25@sha256:9872c43346bb375e39186da530d096819215092fe1d626de455729dce8789512 AS build
 WORKDIR /build
 COPY services/gateway/pom.xml .
 # Maven's JVM options: Lombok, run inside javac, still reads fields

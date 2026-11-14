@@ -5,11 +5,12 @@
 //! planned at (limits.rs) and FAA Form 7233-4's items (filing.rs), as the
 //! planner's wingtip_native functions of the same names work them out.
 
-use crate::{field, filing, flight, limits, sun};
+use crate::{based, field, filing, flight, limits, sun};
 use wingtip_core::ask::Ask;
 use wingtip_core::json::{self, Value};
 
 /// A figure of the flight's own (flight.rs).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();
@@ -44,6 +45,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
 }
 
 /// Night and civil twilight (sun.rs, 14 CFR 1.1, 61.57(b)).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn night(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let pair = |key: &str| -> Result<(f64, f64), String> {
@@ -67,6 +69,7 @@ pub fn night(name: &str, v: &Value) -> Result<String, String> {
 
 /// The altitudes a flight may be planned at (limits.rs: 71.33, 91.119(c),
 /// 91.121, 91.159, 91.179).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn altitudes(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();
@@ -101,6 +104,7 @@ pub fn altitudes(name: &str, v: &Value) -> Result<String, String> {
 }
 
 /// FAA Form 7233-4's items as AIM Appendix 4 writes them (filing.rs).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn filed(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();
@@ -195,6 +199,17 @@ pub fn field_military(name: &str, v: &Value) -> Result<String, String> {
     Ok(out)
 }
 
+/// `runway_hard_surface`: whether NASR APT_RWY's SURFACE_TYPE_CODE is a
+/// hard surface (field.rs's hard_surface): `{"hard": bool}`.
+pub fn runway_hard_surface(name: &str, v: &Value) -> Result<String, String> {
+    let code = match v.get("surface") {
+        None | Some(Value::Null) => "",
+        Some(Value::String(s)) => s.as_str(),
+        Some(_) => return Err(format!("{name}: \"surface\" is not a string or null")),
+    };
+    Ok(format!("{{\"hard\":{}}}", field::hard_surface(code)))
+}
+
 /// `field_mark_rank`: what a field's map mark is first drawn at and kept
 /// by where marks overlap and drawn at (field.rs's mark_rank):
 /// `{"tier", "order", "size"}`.
@@ -217,4 +232,43 @@ pub fn field_mark_rank(name: &str, v: &Value) -> Result<String, String> {
     let primary = text("primary_of")?;
     let rank = field::mark_rank(text("site_type")?, text("use")?, towered, hard_ft, (!primary.is_empty()).then_some(primary));
     Ok(format!("{{\"tier\":{},\"order\":{},\"size\":\"{}\"}}", rank.tier, rank.order, rank.size))
+}
+
+/// `usual_base`: the field an airplane's past flights usually start or end
+/// at (based.rs), with the counts it was judged on and the rule's figures,
+/// so the host can say "6 of 9 takeoffs and landings".
+pub fn usual_base(name: &str, v: &Value) -> Result<String, String> {
+    let ask = Ask::new(name, v);
+    let field = |f: &'_ Value, key: &str| -> Result<Option<String>, String> {
+        match f.get(key) {
+            None | Some(Value::Null) => Ok(None),
+            Some(Value::String(s)) => Ok(Some(s.clone())),
+            Some(_) => Err(format!("{name}: a flight's \"{key}\" is not a string or null")),
+        }
+    };
+    let mut held = Vec::new();
+    for f in ask.list("flights")? {
+        let landed = match f.get("landed") {
+            None | Some(Value::Null) => false,
+            Some(Value::Bool(b)) => *b,
+            Some(_) => return Err(format!("{name}: a flight's \"landed\" is not true or false")),
+        };
+        held.push((field(f, "origin")?, field(f, "destination")?, landed));
+    }
+    let flights: Vec<based::Flight> =
+        held.iter().map(|(o, d, landed)| based::Flight { origin: o.as_deref(), destination: d.as_deref(), landed: *landed }).collect();
+    let base = based::usual_base(&flights);
+    let mut out = String::from("{\"ident\":");
+    json::opt_string(&mut out, base.ident);
+    out.push_str(",\"most\":");
+    json::opt_string(&mut out, base.most.map(|(i, _)| i));
+    out.push_str(&format!(
+        ",\"most_ends\":{},\"ends\":{},\"min_ends\":{},\"min_share\":",
+        base.most.map_or(0, |(_, n)| n),
+        base.ends,
+        based::MIN_ENDS
+    ));
+    json::number(&mut out, based::MIN_SHARE);
+    out.push('}');
+    Ok(out)
 }

@@ -6,6 +6,8 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { compression, defineAlgorithm } from "vite-plugin-compression2";
+import { constants as zlib } from "node:zlib";
 import { IN_FLIGHT_READS, OVERLAY_ARCHIVE, RADAR_FRAMES, markFromCache } from "./vite-plugins/workboxRules";
 import { preloadEngine } from "./vite-plugins/preloadEngine.ts";
 import { MANIFEST, themeColor } from "./vite-plugins/manifest.ts";
@@ -57,6 +59,21 @@ export default defineConfig({
     // and without it the compiler ran over react-dom and MapLibre too.
     babel({ exclude: [/[/\\]node_modules[/\\]/, /\/components\/ui\//], presets: [reactCompilerPreset()] }),
     tailwindcss(),
+    // Each file a .br (Brotli at 11) and a .gz (gzip at 9) beside it, made
+    // once here, which the gateway sends to a browser that asks for them
+    // (WebMvcConfig's EncodedResourceResolver): Brotli at 11 is too slow to
+    // make per request, and made here it is 19% under gzip for the engine's
+    // WebAssembly (397,838 bytes to 492,654, 2026-11-14), which iPhone Safari
+    // takes (Accept-Encoding: gzip, deflate, br). The service worker's
+    // globPatterns name no .br or .gz, so it keeps only the files themselves.
+    compression({
+      include: /\.(js|mjs|css|html|svg|json|webmanifest|wasm)$/,
+      threshold: 1024,
+      algorithms: [
+        defineAlgorithm("brotliCompress", { params: { [zlib.BROTLI_PARAM_QUALITY]: 11 } }),
+        defineAlgorithm("gzip", { level: 9 }),
+      ],
+    }),
     // The app in the air: a service worker (Workbox, generated at
     // build) that keeps the app shell, every chart tile the map has
     // drawn or `KeepRoute` fetched ahead, and the planner's own

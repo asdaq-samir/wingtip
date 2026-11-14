@@ -168,6 +168,7 @@ pub fn vor_limit_deg(kind: &str) -> Option<f64> {
 }
 
 /// The rule `name` worked on `v`.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     match name {
         // `{"held": [{"code", "on", "make_model"?}], "flight_on"?}`:
