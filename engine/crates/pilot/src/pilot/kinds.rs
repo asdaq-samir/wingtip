@@ -264,11 +264,11 @@ fn kind_json(out: &mut String, k: &Kind) {
 }
 
 /// The rule `name` worked on `v`.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     match name {
-        // `{}`: `[{"code", "paragraph", "rule", "label", "template",
-        // "fields": [{"key", "label", "example", "required"}]}]`, the
-        // gateway's EndorsementKindDto list.
+        // `{}`: `[{"code", "paragraph", "rule", "label", "template", "fields": [{"key", "label", "example", "required"}]}]`,
+        // the gateway's EndorsementKindDto list.
         "endorsement_kinds" => {
             let mut out = String::from("[");
             for (i, k) in KINDS.iter().enumerate() {

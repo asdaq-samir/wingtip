@@ -87,6 +87,23 @@ pub fn military(ownership: Option<&str>, facility_use: Option<&str>) -> Option<&
 /// gliderport (G), ultralight park (U) and balloonport (B).
 pub const LANDING_SITES: [&str; 5] = ["A", "C", "G", "U", "B"];
 
+/// The runway surfaces the sectional's airport symbol counts as hard (FAA
+/// Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports:
+/// "hard-surfaced runways"), by NASR APT_RWY's SURFACE_TYPE_CODE: asphalt,
+/// concrete, PEM (partially concrete, asphalt or bitumen-bound macadam),
+/// porous friction courses and brick.
+pub const HARD_SURFACES: [&str; 5] = ["ASPH", "CONC", "PEM", "PFC", "BRICK"];
+
+/// Whether a runway's NASR SURFACE_TYPE_CODE is hard (HARD_SURFACES): a
+/// mixed surface ("ASPH-TURF", "ASPH/CONC") only where every part is hard;
+/// TRTD (treated) goes with a hard one and is not one alone. The one
+/// statement the cycle pack's overlays and the planner's map list read.
+pub fn hard_surface(code: &str) -> bool {
+    let parts: Vec<String> = code.split(['-', '/']).map(|p| p.trim().to_ascii_uppercase()).filter(|p| !p.is_empty()).collect();
+    let hard = |p: &String| HARD_SURFACES.contains(&p.as_str());
+    !parts.is_empty() && parts.iter().all(|p| hard(p) || p == "TRTD") && parts.iter().any(hard)
+}
+
 /// The hard runway (asphalt, concrete and the like: the FAA Aeronautical
 /// Chart User's Guide's "hard-surfaced runways", as the overlays read
 /// APT_RWY's SURFACE_TYPE_CODE) that puts a public field in the tier
@@ -227,5 +244,16 @@ mod tests {
         assert_eq!(mark_rank(" c ", "pu", false, 5_000, None).tier, 2);
         assert_eq!(mark_rank("A", " pu ", false, 3_000, None).tier, 1);
         assert_eq!(mark_rank("A", "PU", true, 200_000, Some("b")).order, 0);
+    }
+
+    // NASR APT_RWY's codes, each side of the rule (the overlays' cases).
+    #[test]
+    fn a_hard_surface_is_one_paved_all_through() {
+        for code in ["ASPH", "CONC", "asph-conc", "ASPH-TRTD", "PEM", "PFC", "BRICK", "ASPH/CONC"] {
+            assert!(hard_surface(code), "{code}");
+        }
+        for code in ["ASPH-TURF", "TURF", "GRVL", "TRTD", "WATER", ""] {
+            assert!(!hard_surface(code), "{code}");
+        }
     }
 }

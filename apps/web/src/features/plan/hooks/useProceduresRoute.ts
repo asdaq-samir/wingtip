@@ -167,7 +167,7 @@ export interface ProceduresRouteProps {
   /** The altitude at a point of the route, as the route box's menu offers
    *  it (PlanWorkspace's altitudeAt), and the pilot's own set there or
    *  (null) given back to the plan. */
-  pointAltitude: (ident: string, waypoint: boolean) => PointAltitude;
+  pointAltitude: (ident: string, waypoint: boolean, visit?: number) => PointAltitude;
   onPointAltitude: (ident: string, feet: number | null) => void;
   /** The point flown direct to (the address's `direct`), and Direct to
    *  one, or (null) the route flown as it was. */

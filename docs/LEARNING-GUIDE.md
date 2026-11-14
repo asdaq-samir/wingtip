@@ -148,7 +148,7 @@ FROM node:26-slim AS web
 COPY apps/web/ ./
 RUN npx vite build --outDir /web/dist
 
-FROM maven:3.10.0-eclipse-temurin-25 AS build
+FROM maven:4.0.0-rc-7-eclipse-temurin-25 AS build
 COPY services/gateway/src ./src
 RUN mvn -q package -DskipTests
 

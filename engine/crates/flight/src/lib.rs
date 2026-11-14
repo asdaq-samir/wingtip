@@ -18,8 +18,10 @@
 //! - sun: night and civil twilight (14 CFR 1.1), NOAA's solar calculation,
 //!   and 61.57(b)'s night-passenger period;
 //! - vfr: 91.155's basic VFR weather minimums;
+//! - based: where an airplane is usually based, from its past flights;
 //! - calls: these rules asked by name.
 
+pub mod based;
 pub mod calls;
 pub mod field;
 pub mod filing;

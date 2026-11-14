@@ -8,6 +8,7 @@ use crate::json::{self, Value};
 use wingtip_core::ask::{num_in, opt_num_in, Ask};
 
 /// `debrief`, `debrief_marked` and `debrief_airborne`.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     match name {

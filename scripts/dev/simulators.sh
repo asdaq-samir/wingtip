@@ -103,7 +103,10 @@ newest_iphone() {
   xcrun simctl list devices available -j | python3 "$(dirname "$0")/newest_simulator.py" iPhone
 }
 
-sim_booted() { xcrun simctl list devices | grep -q "$1.*(Booted)"; }
+# The list read whole, then searched: piped into `grep -q` under pipefail,
+# a match killed simctl with SIGPIPE and failed the pipeline, so a booted
+# simulator could read as not booted (go-live.sh's waits, 2026-11-14).
+sim_booted() { grep -q "$1.*(Booted)" <<<"$(xcrun simctl list devices)"; }
 
 ios() {
   command -v xcodegen >/dev/null || die "xcodegen is not installed (brew install xcodegen)."

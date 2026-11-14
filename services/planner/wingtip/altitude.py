@@ -19,7 +19,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from itertools import pairwise
 
-from . import airspace, ifr, sua, terrain, weather
+from . import airspace, ifr, procedure_legs, sua, terrain, weather
 from .engine import ask as engine
 from .geo import along_track_distance_nm, distance_nm
 from .magnetic import magnetic_variation_deg
@@ -104,6 +104,7 @@ def select_cruise_altitude(
     class_b_cleared: bool = False,
     rules: str = "vfr",
     airway: dict | None = None,
+    paths: tuple = (),
 ) -> dict:
     """Returns a dict with the recommended altitude (None if no legal VFR
     altitude exists for this route/aircraft) plus the floor/ceiling
@@ -122,7 +123,11 @@ def select_cruise_altitude(
     `fixes`, the nav log's (lat, lon) fixes from departure to destination,
     adds `segments`: the floor, ceiling and legal altitudes of each leg
     between them, for the stepped plans. Without them the route is one
-    segment, as it always was. `fcst_hr` picks the winds/temperatures
+    segment, as it always was. `paths`, the legs flown along a departure's,
+    an arrival's or an approach's path (wingtip.procedure_legs.paths_by_hop):
+    each such leg's floor is the highest over its own line and the path's
+    pieces, the ground the airplane flies over (the aviation audit's AV-2).
+    `fcst_hr` picks the winds/temperatures
     forecast period the freezing level is read from (see
     wingtip.weather.forecast_hour). `pending`, when given, holds the stages
     still running while this works (see _timed). `window`, (start, end)
@@ -245,6 +250,17 @@ def select_cruise_altitude(
         # icing/ceiling/hazard verdict pretending the missing source
         # means "no concern found."
         floors = floor_future.result() if floor_future else []
+        # The ground under a procedure flown in a leg's place, read as the
+        # leg's own is: the VFR floor's terrain and obstacles, or IFR's.
+        floors = procedure_legs.floors_along(
+            floors,
+            paths,
+            (lambda pts: ifr.floor_profile(pts, faa_cache_dir))
+            if under_ifr
+            else lambda pts: terrain.floor_profile(
+                pts[0], pts[-1], [0.0, distance_nm(*pts[0], *pts[-1])], faa_cache_dir=faa_cache_dir, fixes=pts
+            ),
+        )
         airspace_ceilings_ft = airspace_future.result() if airspace_future else [None] * (len(fixes) - 1 if fixes else 1)
         transits = transits_future.result()
         # The hemispheric rule is written for magnetic course, and the

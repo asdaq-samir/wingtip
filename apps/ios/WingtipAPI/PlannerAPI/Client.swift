@@ -357,6 +357,185 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Airplane
+    ///
+    /// Everything public about a US airplane: its FAA registration in full,
+    /// its make and model's and its engine's reference records, its past
+    /// registrations, the documents filed against it, the N-number's
+    /// reservation, its NTSB accidents and incidents, and where it is usually
+    /// based (`based_pending` while that is looked up: ask again). A 422 for
+    /// what is not an N-number.
+    ///
+    /// - Remark: HTTP `GET /api/airplanes/{n_number}`.
+    /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/get(airplane)`.
+    public func airplane(_ input: Operations.Airplane.Input) async throws -> Operations.Airplane.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.Airplane.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/airplanes/{}",
+                    parameters: [
+                        input.path.nNumber
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.Airplane.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.AirplaneDetails.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.Airplane.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Airplane Photo
+    ///
+    /// The newest photo of this very airplane on Planespotters.net, with its
+    /// photographer and its page, to be shown on their terms (AirplanePhoto);
+    /// null where it has none or it cannot be asked now.
+    ///
+    /// - Remark: HTTP `GET /api/airplanes/{n_number}/photo`.
+    /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/photo/get(airplane_photo)`.
+    public func airplanePhoto(_ input: Operations.AirplanePhoto.Input) async throws -> Operations.AirplanePhoto.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.AirplanePhoto.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/airplanes/{}/photo",
+                    parameters: [
+                        input.path.nNumber
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.AirplanePhoto.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.AirplanePhoto.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.AirplanePhoto.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// Airport Aerial
     ///
     /// The field's aerial photo from the USGS National Map's imagery
@@ -1483,18 +1662,15 @@ public struct Client: APIProtocol {
     }
     /// Airports In View
     ///
-    /// The landing fields inside the map's view, the ones that report
-    /// first and then the biggest -- at most `limit` of them, since a whole
-    /// state holds thousands and the map only lays a tap target over each --
-    /// with each one's flight category from its METAR, for a weather chip on
-    /// the ones that report: the limit drops small fields with nothing to
-    /// show, never a chip a pilot saw a zoom further out -- and each one's
-    /// class of airspace at its surface, for its mark.
-    /// The METARs are the national cache already in memory; with the
-    /// weather service out the fields come back without, as fields with no
-    /// station do. With `reporting`, only the fields that report, before
-    /// the limit: what the map asks once for a whole route's box, so its
-    /// chips are there before the pilot zooms in on any of it.
+    /// The landing fields inside the map's view, the ones that report first
+    /// and then the biggest -- at most `limit`: a state holds thousands -- each
+    /// with its METAR's flight category, for a weather chip (the limit drops
+    /// small fields with nothing to show, never a chip seen further out), its
+    /// class of airspace at its surface, and its mark's order and size as the
+    /// overlay tiles carry them (wingtip.field_marks). The METARs are the
+    /// national cache in memory; with the weather service out the fields come
+    /// back without. With `reporting`, only the fields that report, before
+    /// the limit: the map asks so once for a whole route's box.
     ///
     /// - Remark: HTTP `GET /api/airports/in-view`.
     /// - Remark: Generated from `#/paths//api/airports/in-view/get(airports_in_view)`.
@@ -12304,6 +12480,104 @@ public struct Client: APIProtocol {
                 case 422:
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
                     let body: Operations.TrafficStatus.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Traffic Registered
+    ///
+    /// The FAA's record of a US airplane named by its N-number or ICAO
+    /// address (wingtip.traffic.registered), null for any other name: the
+    /// registry is on this service's disk, so this answers in milliseconds,
+    /// where /api/traffic/find waits on the live sources, seconds at a time
+    /// when adsb.lol's API is busy. A page asks both at once, drawing the
+    /// record as soon as it is here and whether the airplane is in the air
+    /// when the find answers (the owner, 2026-11-14: "Why does looking up a
+    /// plane takes a long time?").
+    ///
+    /// - Remark: HTTP `GET /api/traffic/registered`.
+    /// - Remark: Generated from `#/paths//api/traffic/registered/get(traffic_registered)`.
+    public func trafficRegistered(_ input: Operations.TrafficRegistered.Input) async throws -> Operations.TrafficRegistered.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.TrafficRegistered.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/traffic/registered",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "q",
+                    value: input.query.q
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.TrafficRegistered.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.AircraftRegistration.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.TrafficRegistered.Output.UnprocessableContent.Body
                     let chosenContentType = try converter.bestContentType(
                         received: contentType,
                         options: [

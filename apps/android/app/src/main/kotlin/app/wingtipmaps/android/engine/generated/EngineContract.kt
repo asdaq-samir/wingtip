@@ -4052,6 +4052,36 @@ object EngineContract {
         val ceilingUnknown: Boolean? = null,
     )
 
+    /**
+     * The bounding floor as it came, its lowest_ground_ft (where it has one) the least of all of them.
+     */
+    @Serializable
+    data class FloorAlongPathAnswer(
+        @SerialName("floor_ft")
+        val floorFt: Double,
+        @SerialName("lowest_ground_ft")
+        val lowestGroundFt: Double? = null,
+    )
+
+    @Serializable
+    data class FloorAlongPathInput(
+        /**
+         * The leg's own floor first, then the floor under each piece of the path: vfr_floors' or ifr_floors' answers, as they came.
+         */
+        val floors: List<EngineContract.FloorAlongPathInputFloorsItem>,
+    )
+
+    @Serializable
+    data class FloorAlongPathInputFloorsItem(
+        @SerialName("floor_ft")
+        val floorFt: Double,
+        /**
+         * VFR's lowest ground under the piece; none under IFR.
+         */
+        @SerialName("lowest_ground_ft")
+        val lowestGroundFt: Double? = null,
+    )
+
     @Serializable
     data class FloorCautionInput(
         /**
@@ -6781,7 +6811,7 @@ object EngineContract {
          */
         val end: String? = null,
         /**
-         * Knots, unsigned, steady or gust whichever is more.
+         * Knots, unsigned, steady or gust whichever is more, unrounded (to a millionth of a knot), so the map's arrow is judged against the demonstrated crosswind on the crosswind itself, not whole knots (AV-10).
          */
         @SerialName("crosswind_kt")
         val crosswindKt: Double,
@@ -11178,6 +11208,19 @@ object EngineContract {
     )
 
     @Serializable
+    data class RunwayHardSurfaceAnswer(
+        val hard: Boolean,
+    )
+
+    @Serializable
+    data class RunwayHardSurfaceInput(
+        /**
+         * NASR APT_RWY's SURFACE_TYPE_CODE (ASPH, CONC, TURF, ASPH-TURF ...); null or "" for none.
+         */
+        val surface: String? = null,
+    )
+
+    @Serializable
     data class RunwayRunwayEndsItem(
         val ident: String,
         @SerialName("heading_true_deg")
@@ -12287,6 +12330,61 @@ object EngineContract {
     data class UnderwayInput(
         @SerialName("speed_kt")
         val speedKt: Double? = null,
+    )
+
+    @Serializable
+    data class UsualBaseAnswer(
+        /**
+         * The base; null where the flights do not show one clearly.
+         */
+        val ident: String? = null,
+        /**
+         * The field most of the ends are at (the first to reach the count, ties too); null with no ends.
+         */
+        val most: String? = null,
+        /**
+         * How many of the ends are at `most`.
+         */
+        @SerialName("most_ends")
+        val mostEnds: Int,
+        /**
+         * All the takeoffs and landings counted.
+         */
+        val ends: Int,
+        /**
+         * The fewest ends at a field for it to be the base.
+         */
+        @SerialName("min_ends")
+        val minEnds: Int,
+        /**
+         * The least share of all the ends at a field for it to be the base.
+         */
+        @SerialName("min_share")
+        val minShare: Double,
+    )
+
+    @Serializable
+    data class UsualBaseInput(
+        /**
+         * The airplane's past flights, any order; each field one identifier, as the host names it.
+         */
+        val flights: List<EngineContract.UsualBaseInputFlightsItem>,
+    )
+
+    @Serializable
+    data class UsualBaseInputFlightsItem(
+        /**
+         * The field it took off from; null where not known.
+         */
+        val origin: String? = null,
+        /**
+         * The field it landed at; null where not known.
+         */
+        val destination: String? = null,
+        /**
+         * Whether it was heard landing: a destination not landed at is no end.
+         */
+        val landed: Boolean? = null,
     )
 
     @Serializable

@@ -105,8 +105,15 @@ integration branch"):
   `gradlew … --tests <class>`, `xcodebuild … -only-testing:<class>`. A few
   minutes, never a whole suite.
 - Work that builds on an unmerged branch merges that branch in; nothing
-  waits for a merge. Branches merge into `claude/integration` as they
-  finish.
+  waits for a merge.
+- **The order, a hard rule** (the owner, 2026-11-14: "make all the code
+  changes first, then merge and tidy up, then live, then validate only
+  the code changes"; "Phones go after live"): every web, engine and
+  service branch of a wave finishes its code first; then they merge into
+  `claude/integration` in one pass, the generated files regenerated once,
+  and the worktrees, branches and simulators tidied; then live; then the
+  phones' ports; then the validation of the wave's own changes. No merge,
+  go-live or validation while a branch is still coding.
 - **Live for the owner first:** once a wave is merged into
   `claude/integration`, `scripts/dev/go-live.sh` (in
   `~/Developer/wingtip-live`) tidies the Mac and moves the live tree to it,

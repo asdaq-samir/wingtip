@@ -8,7 +8,7 @@ import gzip
 import json
 
 from fastapi.testclient import TestClient
-from wingtip import airports, airspace, airspace_primaries, faa_data, weather
+from wingtip import airports, airspace, airspace_primaries, faa_data, field_marks, weather
 
 from app.main import app
 
@@ -73,7 +73,8 @@ def test_the_fields_in_view_carry_their_metar_for_the_maps_marks(monkeypatch):
     monkeypatch.setattr(map_weather, "magnetic_variation_deg", lambda lat, lon: 0.0)
     body = client.get("/api/airports/in-view", params={"south": 46, "west": -93, "north": 47, "east": -92}).json()
     dlh, small = body["airports"]
-    # 40 degrees off runway 18, the gust's 26 sin 40 = 16.7: 17 kt.
+    # 40 degrees off runway 18, the gust's 26 sin 40 = 16.71 kt, unrounded
+    # so the arrow is judged on the crosswind itself (the engine's AV-10).
     assert dlh["weather"] == {
         "wind_dir_true_deg": 220,
         "wind_speed_kt": 18,
@@ -84,7 +85,7 @@ def test_the_fields_in_view_carry_their_metar_for_the_maps_marks(monkeypatch):
         "ceiling_ft": 800,
         "ceiling_cover": "OVC",
         "ceiling_unknown": False,
-        "crosswind_kt": 17,
+        "crosswind_kt": 16.712478,
     }
     assert small["weather"]["crosswind_kt"] is None and small["weather"]["wx"] is None
     assert (small["weather"]["visibility_sm"], small["weather"]["visibility_plus"]) == (6, True)
@@ -250,3 +251,22 @@ def test_a_box_turned_inside_out_is_refused(monkeypatch):
     monkeypatch.setattr(airports, "places_in", lambda *args, **kwargs: [])
     response = client.get("/api/airports/in-view", params={"south": 47, "west": -93, "north": 46, "east": -92})
     assert response.status_code == 422
+
+
+def test_the_fields_in_view_carry_their_marks_rank_as_the_tiles_do(monkeypatch):
+    # The engine's field_mark_rank on NASR's facts, as the overlay tiles
+    # carry it (wingtip.field_marks): a Class B's field the largest and
+    # first; a public field without a tower but 5,000 ft of asphalt the
+    # regular size, where the iPhone drew it small (2026-11-14).
+    dfw = {**DULUTH, "ident": "KDFW", "source_ident": "KDFW", "faa_id": "DFW", "kind": "large"}
+    long_hard = {**DULUTH, "ident": "1D2", "source_ident": "1D2", "faa_id": "1D2", "kind": "small"}
+    monkeypatch.setattr(airports, "places_in", lambda *args, **kwargs: [dfw, long_hard])
+    monkeypatch.setattr(weather, "reporting_idents", lambda: set())
+    monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {})
+    monkeypatch.setattr(airspace, "surface_classes", lambda points, shp: ["B", "G"])
+    monkeypatch.setattr(airspace_primaries, "primaries", lambda: {"DFW": "B"})
+    monkeypatch.setattr(faa_data, "towered_fields", lambda cache_dir: frozenset({"DFW", "KDFW"}))
+    monkeypatch.setattr(field_marks, "sites", lambda cache_dir=None: {"DFW": ("A", "PU", 13401), "1D2": ("A", "PU", 5000)})
+    body = client.get("/api/airports/in-view", params={"south": 30, "west": -100, "north": 50, "east": -90}).json()
+    marks = [(a["ident"], a["mark_size"], a["mark_order"]) for a in body["airports"]]
+    assert marks == [("KDFW", "largest", 86598), ("1D2", "regular", 394999)]

@@ -97,6 +97,19 @@ class AircraftRegistration(BaseModel):
     fractional: bool = False
     status: str | None = None
     standing: Literal["valid", "lapsed", "other"] = "other"
+    #: The rest of the FAA's MASTER record: its make and model's and its
+    #: engine's codes (the reference records' keys), the FAA region of the
+    #: address, the last action on the record, the transponder code in
+    #: octal, the FAA's unique id, the certification code as filed, and the
+    #: co-owners' names. The street, zip code and county are not given.
+    model_code: str | None = None
+    engine_code: str | None = None
+    region: str | None = None
+    last_action: str | None = None
+    mode_s_octal: str | None = None
+    unique_id: str | None = None
+    certification_code: str | None = None
+    co_owner_names: list[str] = []
 
 
 class TrafficFound(BaseModel):

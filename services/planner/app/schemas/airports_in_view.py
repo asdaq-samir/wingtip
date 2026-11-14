@@ -15,7 +15,7 @@ class PinWeather(BaseModel):
     variable one), the visibility in statute miles and the weather with it
     as reported ("BR", "-TSRA"), the ceiling in feet AGL -- not known where
     `ceiling_unknown` (14 CFR 1.1) -- and `crosswind_kt`, the least
-    crosswind on the field's runways, steady or gust (the engine's
+    crosswind on the field's runways, steady or gust, unrounded (the engine's
     least_crosswind), there only where the wind earns an arrow (the
     engine's wind_arrow) and a runway end has a heading."""
 
@@ -41,6 +41,12 @@ class AirportInView(AirportPin):
     its METAR as the map's marks read it, None where it has no report."""
 
     weather: PinWeather | None = None
+    #: The engine's field_mark_rank for its mark, as the overlay tiles carry
+    #: it (`rank`, `size`; wingtip.field_marks): `mark_order`, lower kept first
+    #: where marks overlap (a Class B's field, a Class C's, then by tier and
+    #: the longer hard runway); `mark_size`, the step its mark is drawn at.
+    mark_order: int | None = None
+    mark_size: Literal["largest", "larger", "regular", "small"] | None = None
 
 
 class AirportsInView(BaseModel):

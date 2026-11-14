@@ -12,7 +12,7 @@
  * approach that locked its takeoff runway (the 19 and 20 Oct audits).
  */
 import type { Address } from "../../../lib/address";
-import { altitudesOf, altitudesParam, groundOf } from "../../../lib/identSchema";
+import { altitudesOf, altitudesParam, groundOf, pointOfKey } from "../../../lib/identSchema";
 import { holdsOf, holdsParam, type Hold } from "./routeHolds";
 import { proceduresOf, proceduresParam, sameField, type PickedProcedure } from "../../../lib/procedures";
 import { patternsOf, patternsParam } from "../../../lib/trafficPattern";
@@ -62,8 +62,9 @@ export function fieldListParams(lists: FieldLists): Record<FieldListKey, string 
 const keepMap = (m: Map<string, string>, keep: (ident: string) => boolean) => new Map([...m].filter(([ident]) => keep(ident)));
 const renameMap = (m: Map<string, string>, rename: (ident: string) => string) => new Map([...m].map(([ident, v]) => [rename(ident), v]));
 
+// A point's visit ("VPBNG@2", altitudesOf) kept as it is renamed.
 const renameRecord = (r: Record<string, number>, rename: (ident: string) => string) =>
-  Object.fromEntries(Object.entries(r).map(([ident, v]) => [rename(ident), v]));
+  Object.fromEntries(Object.entries(r).map(([key, v]) => [rename(pointOfKey(key)) + key.slice(pointOfKey(key).length), v]));
 
 /** A field named anew -- "ORD" made "KORD" -- in every list naming fields
  *  (not `cross`, whose idents are a procedure's fixes). */
@@ -115,7 +116,7 @@ export function prunedFieldLists(
       (ident) => on(ident, route.stops) || (!!route.dep && route.dep === route.dest && on(ident, [route.dep])),
     ),
     procs,
-    altitudes: Object.fromEntries(Object.entries(lists.altitudes).filter(([ident]) => on(ident))),
+    altitudes: Object.fromEntries(Object.entries(lists.altitudes).filter(([key]) => on(pointOfKey(key)))),
     cross: procs.length ? lists.cross : {},
     ground: Object.fromEntries(Object.entries(lists.ground).filter(([ident]) => on(ident, route.stops))),
     holds: lists.holds.filter((h) => on(h.fix)),

@@ -7,3 +7,12 @@ events,ev_highest_injury,ct_inj_ix,MINR,Minor
 events,ev_highest_injury,ct_inj_ix,NONE,None
 events,ev_highest_injury,ct_inj_ix,SERS,Serious
 events,ev_highest_injury,ct_inj_ix,UNK,Unknown
+aircraft,damage,ct_damage,DEST,Destroyed
+aircraft,damage,ct_damage,MINR,Minor
+aircraft,damage,ct_damage,NONE,None
+aircraft,damage,ct_damage,SUBS,Substantial
+aircraft,damage,ct_damage,UNK,Unknown
+events,ev_type,ct_ev_type,ACC,Accident
+events,ev_type,ct_ev_type,INC,Incident
+events,ev_type,ct_ev_type,OCC,Occurrence
+events,ev_type,ct_ev_type,UNK,Unknown Event Type

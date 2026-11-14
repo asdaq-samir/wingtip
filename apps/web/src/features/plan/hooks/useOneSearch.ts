@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../../../lib/api/client";
 import { aircraftKey, choiceOf, tailTyped } from "../../../lib/aircraftChoice";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
+import { useAirplaneHits } from "./useAirplaneHits";
+import type { TrafficAircraft } from "../../../lib/api/types";
 import { useRadioActions } from "../../../lib/atcRadio";
 import { SCREENS, type ScreenId } from "../../../lib/navigation/generated/screens";
 import { wantScreen } from "../../../lib/navigation/wanted";
@@ -12,8 +12,6 @@ import { usePickScope } from "./usePickScope";
 import { positionIdent } from "../../../lib/identSchema";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { searchWords } from "../lib/searchPlaceholder";
-import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
-import { aircraftListQuery, aircraftProfilesQuery, pilotQuery } from "../../../lib/queryClient";
 import type { AirportSearchRow } from "../../../lib/useAirportSearch";
 import { SCREEN_KEYS, DIRECT_KEY } from "../../../hooks/use-shortcuts";
 import { useAirportIndex } from "../../../lib/airportIndex";
@@ -35,6 +33,10 @@ export interface AirplaneHit {
    *  the plan's airplane straight from the result (the top hit's "Fly This
    *  Airplane", Apple Maps' quick actions in a result, 2026-11-10). */
   fly?: () => void;
+  /** Whether it is in the air, said in place as the live find answers (lib/airplane/lookup). */
+  live?: { text: string; problem: boolean };
+  /** In the air: its flight's card, tracked (FlightCard). */
+  track?: () => void;
 }
 
 /** One thing to do: an action, a screen, or the words typed sent as a search round a place (Apple Maps' "Search
@@ -104,94 +106,23 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   const [focused, setFocused] = useState(false);
   const directTo = useRadioActions((s) => s.directTo);
 
-  // The pilot's own airplanes: their records signed in, and the ones kept
-  // on this device (their Airplane, Favorites and Recents, by ICAO address).
-  const { data: pilot } = useQuery(pilotQuery);
-  const { data: records } = useQuery({ ...aircraftListQuery, enabled: !!pilot });
-  const { data: profiles } = useQuery(aircraftProfilesQuery);
-  const mine = usePreferences((p) => p.myAircraft);
-  const favoriteAircraft = usePreferences((p) => p.favoriteAircraft);
-  const recentAircraft = usePreferences((p) => p.recentAircraft);
   // An N-number is the engine's to tell (tailTyped): none until it is there.
   const engine = useEngineReady();
   const tail = direct || !engine ? null : tailTyped(typed);
-  const ownTail = !!tail && !!records?.some((r) => r.tailNumber.toUpperCase() === tail);
-  // The registry's by the N-number typed, where none of the pilot's: the
-  // profile's own lookup (useAirplaneProfile), its answer kept for it.
-  const registry = useQuery({
-    queryKey: ["registered", tail ?? ""],
-    queryFn: () => api.trafficFind(tail!),
-    staleTime: 24 * 60 * 60_000,
-    enabled: !!tail && !ownTail,
-    meta: { silent: true },
-  });
-
-  const airplanes = useMemo<AirplaneHit[]>(() => {
-    if (!typed || direct || pick) return [];
-    const out: AirplaneHit[] = [];
-    for (const r of records ?? []) {
-      if (finds(typed, r.tailNumber) || finds(typed, r.typeDesignator))
-        out.push({
-          key: `own-${r.tailNumber}`,
-          title: r.tailNumber,
-          detail: `${r.typeDesignator} · Your airplane`,
-          pick: () => openAirplaneProfile(r.tailNumber),
-          fly: () => changeAircraft(aircraftKey(choiceOf(r, profiles ?? []))),
-        });
-    }
-    const kept = new Map<string, KeptAircraft>();
-    for (const a of [mine, ...favoriteAircraft, ...recentAircraft]) if (a && !kept.has(a.hex)) kept.set(a.hex, a);
-    for (const a of kept.values()) {
-      if (out.some((o) => o.title === a.name.toUpperCase())) continue;
-      if (finds(typed, a.name) || (a.type && finds(typed, a.type)))
-        out.push({
-          key: `kept-${a.hex}`,
-          title: a.name,
-          detail: [a.type, a.hex === mine?.hex ? "Your airplane" : "Kept"].filter(Boolean).join(" · "),
-          pick: () => selectFlight(a.hex),
-        });
-    }
-    const registered = registry.data?.registered;
-    if (tail && !ownTail && !out.some((o) => o.title === tail))
-      out.push({
-        key: `registry-${tail}`,
-        title: tail,
-        detail: registered
-          ? [registered.manufacturer, registered.model].filter(Boolean).join(" ") + " · FAA registry"
-          : registry.isFetching
-            ? "Fetching from the FAA registry…"
-            : "Its profile, to fly it",
-        pick: () => openAirplaneProfile(tail),
-      });
-    // A type the planner flies by its book: flown by an N-number of the
-    // pilot's, so its row goes to their airplanes, where one is added.
-    for (const p of profiles ?? []) {
-      if (out.length >= 6) break;
-      if (typed.length >= 2 && (finds(typed, p.name) || finds(typed, p.type)))
-        out.push({
-          key: `type-${p.name}`,
-          title: p.name.toUpperCase(),
-          detail: `${p.type} · Add your N-number to fly it`,
-          pick: () => wantScreen("airplanes"),
-        });
-    }
-    return out;
-  }, [
-    typed,
-    direct,
-    pick,
-    records,
-    mine,
-    favoriteAircraft,
-    recentAircraft,
-    tail,
-    ownTail,
-    registry.data,
-    registry.isFetching,
-    profiles,
-    selectFlight,
-    changeAircraft,
-  ]);
+  // The airplanes found, from the one source the FPL's airplane field shares (useAirplaneHits):
+  // the pilot's own open their profile and fly from the top hit, the kept their flight, the
+  // registry's its profile with whether it is in the air, a type the pilot's airplanes.
+  const hits = useAirplaneHits({ typed, tail, live: true, enabled: !direct && !pick });
+  const airplanes: AirplaneHit[] = [
+    ...hits.own.map(({ record: r, ...row }) => ({
+      ...row,
+      pick: () => openAirplaneProfile(r.tailNumber),
+      fly: () => changeAircraft(aircraftKey(choiceOf(r, hits.profiles ?? []))),
+    })),
+    ...hits.kept.map(({ kept: a, ...row }) => ({ ...row, pick: () => selectFlight(a.hex) })),
+    ...(hits.registry ? [registryHit(hits.registry, selectFlight)] : []),
+    ...hits.types.map(({ profile: _, ...row }) => ({ ...row, pick: () => wantScreen("airplanes") })),
+  ];
 
   const airports = useMemo(() => search.rows.filter((r) => r.kind !== "fix"), [search.rows]);
   const noFixes = direct || (!!pick && !pick.fixes);
@@ -398,3 +329,21 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
 }
 
 export type OneSearchModel = ReturnType<typeof useOneSearch>;
+
+/** The registry's row in the one search: its profile, whether it is in the air under it, and
+ *  Track where it is. */
+function registryHit(
+  row: NonNullable<ReturnType<typeof useAirplaneHits>["registry"]>,
+  selectFlight: (hex: string, plane?: TrafficAircraft) => void,
+): AirplaneHit {
+  const { key, title, detail, lookup } = row;
+  const { inAir } = lookup;
+  return {
+    key,
+    title,
+    detail,
+    live: lookup.inAirWords,
+    pick: () => openAirplaneProfile(title),
+    track: inAir.state === "flying" ? () => selectFlight(inAir.plane.hex, inAir.plane) : undefined,
+  };
+}

@@ -176,10 +176,10 @@ jobs:
       # The Java as palantir-java-format writes it (Spotless, in the pom).
       - name: The Java's layout
         working-directory: services/gateway
-        run: mvn -B -q spotless:check
+        run: ./mvnw -B -q spotless:check
       - name: mvn test (gateway)
         working-directory: services/gateway
-        run: mvn -B test
+        run: ./mvnw -B test
       # Each failing test as an annotation, which anyone can read (a log
       # takes admin rights).
       - name: Failing tests, as annotations
@@ -1239,7 +1239,7 @@ jobs:
           cache: maven
       - name: Javadoc (gateway)
         working-directory: services/gateway
-        run: mvn -q javadoc:javadoc
+        run: ./mvnw -q javadoc:javadoc
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:

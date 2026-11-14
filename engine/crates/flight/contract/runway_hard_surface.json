@@ -1,0 +1,38 @@
+{
+  "x-call": "wingtip_flight::calls::runway_hard_surface",
+  "description": "Whether a runway's surface is hard, as the sectional's airport symbol counts it (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports: \"hard-surfaced runways\"), from NASR APT_RWY.csv's SURFACE_TYPE_CODE: ASPH, CONC, PEM, PFC and BRICK are; a mixed surface (\"ASPH-TURF\") only where every part is hard; TRTD (treated) goes with a hard one and is not one alone. The longest hard runway is what field_mark_rank's hard_ft is: the cycle pack's overlays and the planner's map list both read it here.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RunwayHardSurfaceInput",
+      "type": "object",
+      "properties": {
+        "surface": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NASR APT_RWY's SURFACE_TYPE_CODE (ASPH, CONC, TURF, ASPH-TURF ...); null or \"\" for none."
+        }
+      }
+    },
+    "answer": {
+      "title": "RunwayHardSurfaceAnswer",
+      "type": "object",
+      "properties": {
+        "hard": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "hard"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

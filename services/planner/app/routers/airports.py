@@ -28,6 +28,7 @@ from wingtip import (
     faa_data,
     field_facts,
     field_forecast,
+    field_marks,
     field_use,
     geocode,
     glmp,
@@ -75,18 +76,15 @@ def airports_in_view(
     limit: int = Query(default=300, ge=1, le=1000),
     reporting: bool = False,
 ) -> AirportsInView:
-    """The landing fields inside the map's view, the ones that report
-    first and then the biggest -- at most `limit` of them, since a whole
-    state holds thousands and the map only lays a tap target over each --
-    with each one's flight category from its METAR, for a weather chip on
-    the ones that report: the limit drops small fields with nothing to
-    show, never a chip a pilot saw a zoom further out -- and each one's
-    class of airspace at its surface, for its mark.
-    The METARs are the national cache already in memory; with the
-    weather service out the fields come back without, as fields with no
-    station do. With `reporting`, only the fields that report, before
-    the limit: what the map asks once for a whole route's box, so its
-    chips are there before the pilot zooms in on any of it."""
+    """The landing fields inside the map's view, the ones that report first
+    and then the biggest -- at most `limit`: a state holds thousands -- each
+    with its METAR's flight category, for a weather chip (the limit drops
+    small fields with nothing to show, never a chip seen further out), its
+    class of airspace at its surface, and its mark's order and size as the
+    overlay tiles carry them (wingtip.field_marks). The METARs are the
+    national cache in memory; with the weather service out the fields come
+    back without. With `reporting`, only the fields that report, before
+    the limit: the map asks so once for a whole route's box."""
     if south > north or west > east:
         raise HTTPException(422, "The box's south is above its north, or its west east of its east.")
     try:
@@ -104,6 +102,7 @@ def airports_in_view(
     classes = _surface_classes(places)
     primaries = airspace_primaries.primaries()
     towers = faa_data.towered_fields(altitude.DEFAULT_FAA_CACHE_DIR)
+    sites = field_marks.sites()
     return {
         "airports": [
             {
@@ -113,7 +112,8 @@ def airports_in_view(
                 "private": private,
                 "airspace_class": cls,
                 "primary_of": primaries.get(p.get("faa_id") or ""),
-                "towered": p["ident"].upper() in towers or p.get("source_ident", "").upper() in towers,
+                "towered": (tower := p["ident"].upper() in towers or p.get("source_ident", "").upper() in towers),
+                **field_marks.fields(p, tower, primaries.get(p.get("faa_id") or ""), sites),
                 "weather": map_weather.marks_of(p, metars.get(p["source_ident"])) or None,
             }
             for p, cls, (military, private) in zip(places, classes, _owners(places))

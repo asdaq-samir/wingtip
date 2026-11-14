@@ -69,7 +69,7 @@ echo "worktrees: $removed removed, $kept kept"
 checked_out=$(git worktree list --porcelain | sed -n 's#^branch refs/heads/##p')
 for b in $(git for-each-ref --format='%(refname:short)' refs/heads/); do
   [ "$b" = main ] && continue
-  echo "$checked_out" | grep -qx "$b" && continue
+  grep -qx "$b" <<<"$checked_out" && continue
   # The harness's own branch for an agent whose worktree still exists.
   case $b in worktree-agent-*) [ -d "$main/.claude/worktrees/${b#worktree-}" ] && continue;; esac
   landed "$b" && run git branch -D "$b" >/dev/null && echo "branch removed: $b"

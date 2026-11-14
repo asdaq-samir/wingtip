@@ -627,6 +627,379 @@ public enum Operations {
             }
         }
     }
+    /// Airplane
+    ///
+    /// Everything public about a US airplane: its FAA registration in full,
+    /// its make and model's and its engine's reference records, its past
+    /// registrations, the documents filed against it, the N-number's
+    /// reservation, its NTSB accidents and incidents, and where it is usually
+    /// based (`based_pending` while that is looked up: ask again). A 422 for
+    /// what is not an N-number.
+    ///
+    /// - Remark: HTTP `GET /api/airplanes/{n_number}`.
+    /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/get(airplane)`.
+    public enum Airplane {
+        public static let id: Swift.String = "airplane"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/api/airplanes/{n_number}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// An N-number: N654FL, 654FL or N-654FL
+                ///
+                /// - Remark: Generated from `#/paths/api/airplanes/{n_number}/GET/path/n_number`.
+                public var nNumber: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - nNumber: An N-number: N654FL, 654FL or N-654FL
+                public init(nNumber: Swift.String) {
+                    self.nNumber = nNumber
+                }
+            }
+            public var path: Operations.Airplane.Input.Path
+            /// - Remark: Generated from `#/paths/api/airplanes/{n_number}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.Airplane.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.Airplane.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.Airplane.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.Airplane.Input.Path,
+                headers: Operations.Airplane.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/airplanes/{n_number}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/airplanes/{n_number}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AirplaneDetails)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AirplaneDetails {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.Airplane.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.Airplane.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Successful Response
+            ///
+            /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/get(airplane)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.Airplane.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.Airplane.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct UnprocessableContent: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/airplanes/{n_number}/GET/responses/422/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/airplanes/{n_number}/GET/responses/422/content/application\/json`.
+                    case json(Components.Schemas.HTTPValidationError)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.HTTPValidationError {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.Airplane.Output.UnprocessableContent.Body
+                /// Creates a new `UnprocessableContent`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.Airplane.Output.UnprocessableContent.Body) {
+                    self.body = body
+                }
+            }
+            /// Validation Error
+            ///
+            /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/get(airplane)/responses/422`.
+            ///
+            /// HTTP response code: `422 unprocessableContent`.
+            case unprocessableContent(Operations.Airplane.Output.UnprocessableContent)
+            /// The associated value of the enum case if `self` is `.unprocessableContent`.
+            ///
+            /// - Throws: An error if `self` is not `.unprocessableContent`.
+            /// - SeeAlso: `.unprocessableContent`.
+            public var unprocessableContent: Operations.Airplane.Output.UnprocessableContent {
+                get throws {
+                    switch self {
+                    case let .unprocessableContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "unprocessableContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Airplane Photo
+    ///
+    /// The newest photo of this very airplane on Planespotters.net, with its
+    /// photographer and its page, to be shown on their terms (AirplanePhoto);
+    /// null where it has none or it cannot be asked now.
+    ///
+    /// - Remark: HTTP `GET /api/airplanes/{n_number}/photo`.
+    /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/photo/get(airplane_photo)`.
+    public enum AirplanePhoto {
+        public static let id: Swift.String = "airplane_photo"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/api/airplanes/{n_number}/photo/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// An N-number: N654FL, 654FL or N-654FL
+                ///
+                /// - Remark: Generated from `#/paths/api/airplanes/{n_number}/photo/GET/path/n_number`.
+                public var nNumber: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - nNumber: An N-number: N654FL, 654FL or N-654FL
+                public init(nNumber: Swift.String) {
+                    self.nNumber = nNumber
+                }
+            }
+            public var path: Operations.AirplanePhoto.Input.Path
+            /// - Remark: Generated from `#/paths/api/airplanes/{n_number}/photo/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AirplanePhoto.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AirplanePhoto.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.AirplanePhoto.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.AirplanePhoto.Input.Path,
+                headers: Operations.AirplanePhoto.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/airplanes/{n_number}/photo/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/airplanes/{n_number}/photo/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AirplanePhoto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AirplanePhoto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AirplanePhoto.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AirplanePhoto.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Successful Response
+            ///
+            /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/photo/get(airplane_photo)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.AirplanePhoto.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.AirplanePhoto.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct UnprocessableContent: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/airplanes/{n_number}/photo/GET/responses/422/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/airplanes/{n_number}/photo/GET/responses/422/content/application\/json`.
+                    case json(Components.Schemas.HTTPValidationError)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.HTTPValidationError {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AirplanePhoto.Output.UnprocessableContent.Body
+                /// Creates a new `UnprocessableContent`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AirplanePhoto.Output.UnprocessableContent.Body) {
+                    self.body = body
+                }
+            }
+            /// Validation Error
+            ///
+            /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/photo/get(airplane_photo)/responses/422`.
+            ///
+            /// HTTP response code: `422 unprocessableContent`.
+            case unprocessableContent(Operations.AirplanePhoto.Output.UnprocessableContent)
+            /// The associated value of the enum case if `self` is `.unprocessableContent`.
+            ///
+            /// - Throws: An error if `self` is not `.unprocessableContent`.
+            /// - SeeAlso: `.unprocessableContent`.
+            public var unprocessableContent: Operations.AirplanePhoto.Output.UnprocessableContent {
+                get throws {
+                    switch self {
+                    case let .unprocessableContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "unprocessableContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// Airport Aerial
     ///
     /// The field's aerial photo from the USGS National Map's imagery
@@ -3357,18 +3730,15 @@ public enum Operations {
     }
     /// Airports In View
     ///
-    /// The landing fields inside the map's view, the ones that report
-    /// first and then the biggest -- at most `limit` of them, since a whole
-    /// state holds thousands and the map only lays a tap target over each --
-    /// with each one's flight category from its METAR, for a weather chip on
-    /// the ones that report: the limit drops small fields with nothing to
-    /// show, never a chip a pilot saw a zoom further out -- and each one's
-    /// class of airspace at its surface, for its mark.
-    /// The METARs are the national cache already in memory; with the
-    /// weather service out the fields come back without, as fields with no
-    /// station do. With `reporting`, only the fields that report, before
-    /// the limit: what the map asks once for a whole route's box, so its
-    /// chips are there before the pilot zooms in on any of it.
+    /// The landing fields inside the map's view, the ones that report first
+    /// and then the biggest -- at most `limit`: a state holds thousands -- each
+    /// with its METAR's flight category, for a weather chip (the limit drops
+    /// small fields with nothing to show, never a chip seen further out), its
+    /// class of airspace at its surface, and its mark's order and size as the
+    /// overlay tiles carry them (wingtip.field_marks). The METARs are the
+    /// national cache in memory; with the weather service out the fields come
+    /// back without. With `reporting`, only the fields that report, before
+    /// the limit: the map asks so once for a whole route's box.
     ///
     /// - Remark: HTTP `GET /api/airports/in-view`.
     /// - Remark: Generated from `#/paths//api/airports/in-view/get(airports_in_view)`.
@@ -22932,6 +23302,196 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.unprocessableContent`.
             /// - SeeAlso: `.unprocessableContent`.
             public var unprocessableContent: Operations.TrafficStatus.Output.UnprocessableContent {
+                get throws {
+                    switch self {
+                    case let .unprocessableContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "unprocessableContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Traffic Registered
+    ///
+    /// The FAA's record of a US airplane named by its N-number or ICAO
+    /// address (wingtip.traffic.registered), null for any other name: the
+    /// registry is on this service's disk, so this answers in milliseconds,
+    /// where /api/traffic/find waits on the live sources, seconds at a time
+    /// when adsb.lol's API is busy. A page asks both at once, drawing the
+    /// record as soon as it is here and whether the airplane is in the air
+    /// when the find answers (the owner, 2026-11-14: "Why does looking up a
+    /// plane takes a long time?").
+    ///
+    /// - Remark: HTTP `GET /api/traffic/registered`.
+    /// - Remark: Generated from `#/paths//api/traffic/registered/get(traffic_registered)`.
+    public enum TrafficRegistered {
+        public static let id: Swift.String = "traffic_registered"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/api/traffic/registered/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// N-number or ICAO address
+                ///
+                /// - Remark: Generated from `#/paths/api/traffic/registered/GET/query/q`.
+                public var q: Swift.String
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - q: N-number or ICAO address
+                public init(q: Swift.String) {
+                    self.q = q
+                }
+            }
+            public var query: Operations.TrafficRegistered.Input.Query
+            /// - Remark: Generated from `#/paths/api/traffic/registered/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.TrafficRegistered.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.TrafficRegistered.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.TrafficRegistered.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.TrafficRegistered.Input.Query,
+                headers: Operations.TrafficRegistered.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/traffic/registered/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/traffic/registered/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AircraftRegistration)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AircraftRegistration {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.TrafficRegistered.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.TrafficRegistered.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Successful Response
+            ///
+            /// - Remark: Generated from `#/paths//api/traffic/registered/get(traffic_registered)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.TrafficRegistered.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.TrafficRegistered.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct UnprocessableContent: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/traffic/registered/GET/responses/422/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/traffic/registered/GET/responses/422/content/application\/json`.
+                    case json(Components.Schemas.HTTPValidationError)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.HTTPValidationError {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.TrafficRegistered.Output.UnprocessableContent.Body
+                /// Creates a new `UnprocessableContent`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.TrafficRegistered.Output.UnprocessableContent.Body) {
+                    self.body = body
+                }
+            }
+            /// Validation Error
+            ///
+            /// - Remark: Generated from `#/paths//api/traffic/registered/get(traffic_registered)/responses/422`.
+            ///
+            /// HTTP response code: `422 unprocessableContent`.
+            case unprocessableContent(Operations.TrafficRegistered.Output.UnprocessableContent)
+            /// The associated value of the enum case if `self` is `.unprocessableContent`.
+            ///
+            /// - Throws: An error if `self` is not `.unprocessableContent`.
+            /// - SeeAlso: `.unprocessableContent`.
+            public var unprocessableContent: Operations.TrafficRegistered.Output.UnprocessableContent {
                 get throws {
                     switch self {
                     case let .unprocessableContent(response):

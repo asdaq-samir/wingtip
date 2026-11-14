@@ -140,6 +140,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     #: Whether the FAA aircraft registry is downloaded and read (0 on a test stack).
     registry_refresh: bool = True
+    #: The contact URL or email Planespotters.net's photo API asks a server
+    #: to name in its User-Agent (planespotters.net/photo/api); unset, an
+    #: airplane's photo is not asked for (wingtip.aircraft_photo).
+    planespotters_contact: str | None = None
     #: Whether the cycle pack is built once a cycle (0 on a test stack).
     cycle_pack: bool = True
     #: Whether the chart's landmark cells are read at start (0 in CI).

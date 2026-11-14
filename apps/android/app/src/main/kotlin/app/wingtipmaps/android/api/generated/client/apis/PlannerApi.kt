@@ -38,6 +38,34 @@ interface PlannerApi {
     suspend fun aircraftProfiles(): Response<app.wingtipmaps.android.api.generated.AircraftProfiles>
 
     /**
+     * GET airplanes/{n_number}
+     * Airplane
+     * Everything public about a US airplane: its FAA registration in full, its make and model&#39;s and its engine&#39;s reference records, its past registrations, the documents filed against it, the N-number&#39;s reservation, its NTSB accidents and incidents, and where it is usually based (&#x60;based_pending&#x60; while that is looked up: ask again). A 422 for what is not an N-number.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param nNumber An N-number: N654FL, 654FL or N-654FL
+     * @return [app.wingtipmaps.android.api.generated.AirplaneDetails]
+     */
+    @GET("airplanes/{n_number}")
+    suspend fun airplane(@Path("n_number") nNumber: kotlin.String): Response<app.wingtipmaps.android.api.generated.AirplaneDetails>
+
+    /**
+     * GET airplanes/{n_number}/photo
+     * Airplane Photo
+     * The newest photo of this very airplane on Planespotters.net, with its photographer and its page, to be shown on their terms (AirplanePhoto); null where it has none or it cannot be asked now.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param nNumber An N-number: N654FL, 654FL or N-654FL
+     * @return [app.wingtipmaps.android.api.generated.AirplanePhoto]
+     */
+    @GET("airplanes/{n_number}/photo")
+    suspend fun airplanePhoto(@Path("n_number") nNumber: kotlin.String): Response<app.wingtipmaps.android.api.generated.AirplanePhoto>
+
+    /**
      * GET airport-aerial/{ident}.jpg
      * Airport Aerial
      * The field&#39;s aerial photo from the USGS National Map&#39;s imagery (public domain), framed on its runways (wingtip.airport_photos.aerial): asked of the USGS once and kept, a week in the browser.
@@ -256,7 +284,7 @@ interface PlannerApi {
     /**
      * GET airports/in-view
      * Airports In View
-     * The landing fields inside the map&#39;s view, the ones that report first and then the biggest -- at most &#x60;limit&#x60; of them, since a whole state holds thousands and the map only lays a tap target over each -- with each one&#39;s flight category from its METAR, for a weather chip on the ones that report: the limit drops small fields with nothing to show, never a chip a pilot saw a zoom further out -- and each one&#39;s class of airspace at its surface, for its mark. The METARs are the national cache already in memory; with the weather service out the fields come back without, as fields with no station do. With &#x60;reporting&#x60;, only the fields that report, before the limit: what the map asks once for a whole route&#39;s box, so its chips are there before the pilot zooms in on any of it.
+     * The landing fields inside the map&#39;s view, the ones that report first and then the biggest -- at most &#x60;limit&#x60;: a state holds thousands -- each with its METAR&#39;s flight category, for a weather chip (the limit drops small fields with nothing to show, never a chip seen further out), its class of airspace at its surface, and its mark&#39;s order and size as the overlay tiles carry them (wingtip.field_marks). The METARs are the national cache in memory; with the weather service out the fields come back without. With &#x60;reporting&#x60;, only the fields that report, before the limit: the map asks so once for a whole route&#39;s box.
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
@@ -1985,6 +2013,20 @@ interface PlannerApi {
      */
     @GET("traffic/flight/{hex_id}/history/{flight_id}")
     suspend fun trafficPastFlight(@Path("hex_id") hexId: kotlin.String, @Path("flight_id") flightId: kotlin.Int): Response<app.wingtipmaps.android.api.generated.PastFlight>
+
+    /**
+     * GET traffic/registered
+     * Traffic Registered
+     * The FAA&#39;s record of a US airplane named by its N-number or ICAO address (wingtip.traffic.registered), null for any other name: the registry is on this service&#39;s disk, so this answers in milliseconds, where /api/traffic/find waits on the live sources, seconds at a time when adsb.lol&#39;s API is busy. A page asks both at once, drawing the record as soon as it is here and whether the airplane is in the air when the find answers (the owner, 2026-11-14: \&quot;Why does looking up a plane takes a long time?\&quot;).
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param q N-number or ICAO address
+     * @return [app.wingtipmaps.android.api.generated.AircraftRegistration]
+     */
+    @GET("traffic/registered")
+    suspend fun trafficRegistered(@Query("q") q: kotlin.String): Response<app.wingtipmaps.android.api.generated.AircraftRegistration>
 
     /**
      * GET traffic/route

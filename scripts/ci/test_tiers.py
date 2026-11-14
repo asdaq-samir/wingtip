@@ -67,7 +67,7 @@ PHONES = {"native-android.yml": "", "native-ios.yml": "unit_only: true"}
 # rest of a run line (installs, builds, echo) may repeat freely.
 CHECKS = re.compile(
     r"^(?:npx |npm run )?(tsc|eslint|knip|vitest|prettier|format:check|ruff check|ruff format|pytest|lint-imports"
-    r"|cargo (?:test|clippy|fmt|machete)|mvn(?: -B)?(?: -q)? (?:test|verify|spotless:check)"
+    r"|cargo (?:test|clippy|fmt|machete)|(?:\./)?mvnw?(?: -B)?(?: -q)? (?:test|verify|spotless:check)"
     r"|python3? (?:\S*/)?scripts/(?:ci|build)/\S+|scripts/(?:dev|ci|build)/\S+ --check\S*|playwright test)\b"
 )
 

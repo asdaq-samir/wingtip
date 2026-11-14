@@ -156,8 +156,10 @@ model_weather_bands
 morse
 n_number
 navaid_hours
+navlog_fuel_plan
 navlog_leg
 navlog_totals
+night_at_either_end
 notam_read
 notam_subject
 our_call

@@ -51,10 +51,12 @@ public record SaveFlightRequest(
         @Nullable @Valid RiskAssessmentDto risk,
         /* The altitudes the pilot set at points of the route, as the
          *  planner's `altitudes` parameter writes them: "VPBNG:4500,KDLH:2400",
-         *  ten at most. Null or blank for none. */
+         *  ten at most; a point the route is at more than once names its
+         *  visit, "VPBNG@2:6500" (the second time there; the web audit's
+         *  WEB-2, 2026-11-14). Null or blank for none. */
         @Nullable
         @Pattern(
-                regexp = "^$|" + POINT + ":\\d{1,5}(," + POINT + ":\\d{1,5}){0,9}",
+                regexp = "^$|" + POINT + "(?:@\\d{1,2})?:\\d{1,5}(," + POINT + "(?:@\\d{1,2})?:\\d{1,5}){0,9}",
                 message = "altitudes must be IDENT:feet pairs joined by commas, ten at most")
         String altitudes,
         /* The planner's address's other picks for the flight, as it writes

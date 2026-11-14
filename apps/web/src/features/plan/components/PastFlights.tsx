@@ -1,14 +1,14 @@
 import { lazy, memo, Suspense, useEffect, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { localDay } from "../../../lib/format";
-import { ArrowRight, RotateCw } from "lucide-react";
+import { ArrowRight, Play, RotateCw } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } from "../../../components/ResponsivePopover";
 import { Button } from "../../../components/ui/button";
 import type { PastFlightSummary } from "../../../lib/api/types";
 import { TEXT } from "../../../lib/text";
-import { dayOf, lasted, placeOf, when, whenSaid } from "./pastFlightFormat";
+import { dayOf, lasted, legOf, placeOf, when, whenSaid } from "./pastFlightFormat";
 import { pastFlightsQuery } from "./pastFlightsQuery";
 import { useShown } from "../../../lib/shown";
 
@@ -41,6 +41,7 @@ export default function PastFlights({
   nowShown = false,
   untitled = false,
   type = null,
+  play = false,
 }: {
   hex: string;
   /** Opens a flight's own card (PastFlightCard), over this one. */
@@ -53,6 +54,9 @@ export default function PastFlights({
   untitled?: boolean;
   /** Its type, on each row as FlightAware's list has it. */
   type?: string | null;
+  /** Each row ends in a ▶ where the chevron was: the airplane profile's Flights, each a replay
+   *  (the owner's P1, 2026-11-14). */
+  play?: boolean;
 }) {
   // A day picked, else the last flights found.
   const [from, setFrom] = useState<string | null>(null);
@@ -119,7 +123,7 @@ export default function PastFlights({
           />
         )}
         {flights.map((flight) => (
-          <PastFlightRow key={flight.id} flight={flight} type={type} onPick={() => onOpen(flight.id)} />
+          <PastFlightRow key={flight.id} flight={flight} type={type} play={play} onPick={() => onOpen(flight.id)} />
         ))}
         {/* A gap that is adsb.lol's, not the airplane's, said as one. */}
         {!!unread && (
@@ -263,10 +267,12 @@ function endedOf(flight: PastFlightSummary): string {
 const PastFlightRow = memo(function PastFlightRow({
   flight,
   type,
+  play,
   onPick,
 }: {
   flight: PastFlightSummary;
   type: string | null;
+  play: boolean;
   onPick: () => void;
 }) {
   const off = when(flight.off),
@@ -294,7 +300,15 @@ const PastFlightRow = memo(function PastFlightRow({
         </span>
       }
       wide
-      chevron
+      chevron={!play}
+      value={
+        play ? (
+          <span className="text-tint" data-testid="past-flight-play">
+            <Play className="size-5 fill-current" aria-hidden />
+          </span>
+        ) : undefined
+      }
+      aria-label={play ? `Replay ${legOf(flight)}` : undefined}
       onClick={onPick}
       data-testid="past-flight"
     />

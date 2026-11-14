@@ -267,6 +267,7 @@ fn num(name: &str, v: &Value, key: &str) -> Result<f64, String> {
 /// into the engine once, not once each; `velocity_track` from
 /// `{"velocities": [{"east", "north"}]}` to `[{"track_deg", "speed"}]`,
 /// a list for the same reason.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let mut out = String::new();
     match name {

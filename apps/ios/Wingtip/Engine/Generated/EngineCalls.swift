@@ -655,6 +655,11 @@ extension Engine {
         try Self.rule("flight_category", EngineContract.FlightCategoryInput(ceilingFt: ceilingFt, visibilitySm: visibilitySm, ceilingUnknown: ceilingUnknown))
     }
 
+    /// The floor of a leg flown along a path other than its own line -- a departure (SID), an arrival (STAR) or an approach flown in its place: of the leg's own floor and the floors under each piece of the path (vfr_floors' or ifr_floors' answers, the leg's own first), the highest, the leg's own on a tie, with the lowest ground under any of them. The airplane is over all of the path at its cruising altitude until it comes down, so 14 CFR 91.119's clearances (VFR) or 91.177(a)(2)'s (IFR) hold over all of it; a procedure's published altitudes (91.177(a)(1), Part 97) may be lower, so this errs high (the aviation audit's AV-2).
+    static func floorAlongPath(floors: [EngineContract.FloorAlongPathInputFloorsItem]) throws -> EngineContract.FloorAlongPathAnswer {
+        try Self.rule("floor_along_path", EngineContract.FloorAlongPathInput(floors: floors))
+    }
+
     /// What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.
     static func floorCaution(segment: [String: OpenAPIValueContainer], altitudeFt: Double) throws -> String? {
         try Self.rule("floor_caution", EngineContract.FloorCautionInput(segment: segment, altitudeFt: altitudeFt))
@@ -1610,6 +1615,11 @@ extension Engine {
         try Self.rule("runway_ends_traffic", EngineContract.RunwayEndsTrafficInput(endHeadings: endHeadings, variationDeg: variationDeg, right: right))
     }
 
+    /// Whether a runway's surface is hard, as the sectional's airport symbol counts it (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports: "hard-surfaced runways"), from NASR APT_RWY.csv's SURFACE_TYPE_CODE: ASPH, CONC, PEM, PFC and BRICK are; a mixed surface ("ASPH-TURF") only where every part is hard; TRTD (treated) goes with a hard one and is not one alone. The longest hard runway is what field_mark_rank's hard_ft is: the cycle pack's overlays and the planner's map list both read it here.
+    static func runwayHardSurface(surface: String? = nil) throws -> EngineContract.RunwayHardSurfaceAnswer {
+        try Self.rule("runway_hard_surface", EngineContract.RunwayHardSurfaceInput(surface: surface))
+    }
+
     /// Each runway's favoured end, the planner's RunwayWind or null.
     static func runwayWithWinds(runways: [EngineContract.RunwayWithWindsInputRunwaysItem]? = nil, metar: EngineContract.MetarWindIn? = nil, variationDeg: Double, recent: EngineContract.RecentWindIn? = nil) throws -> [EngineContract.RunwayWindOut] {
         try Self.rule("runway_with_winds", EngineContract.RunwayWithWindsInput(runways: runways, metar: metar, variationDeg: variationDeg, recent: recent))
@@ -1793,6 +1803,11 @@ extension Engine {
     /// Whether own ship moves at flying speed.
     static func underway(speedKt: Double? = nil) throws -> Bool {
         try Self.rule("underway", EngineContract.UnderwayInput(speedKt: speedKt))
+    }
+
+    /// Where an airplane is usually based: the field its past flights (as ADS-B receivers heard them) most often take off from or land at. Each flight's ends are its takeoff field and, where it was heard landing, its landing field. A field is the base where at least min_ends (3) of the ends are there, at least min_share (0.4) of all the ends are, and no other field has as many; otherwise `ident` is null and nothing is said. The figures are the owner's (2026-10-13), not the FAA's: no public data says where an airplane is kept.
+    static func usualBase(flights: [EngineContract.UsualBaseInputFlightsItem]) throws -> EngineContract.UsualBaseAnswer {
+        try Self.rule("usual_base", EngineContract.UsualBaseInput(flights: flights))
     }
 
     /// Velocities' east and north parts as tracks and speeds, for a surveillance report that sends its parts (the FAA's STDDS tracks, which the ingest service reads from SWIM): each track degrees true 0 to 360 toward where it goes, and its speed in the parts' own unit (knots for STDDS). The track is null where the speed is 0: what does not move has no track. A list, so a message's tracks cross into the engine once.

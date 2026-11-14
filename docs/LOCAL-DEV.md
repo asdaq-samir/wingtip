@@ -155,7 +155,12 @@ docker compose up -d
 `web-build` runs `vite build --watch` into `apps/web/dist` and the gateway
 serves that folder. Each build is swapped in whole, `index.html` last, so
 a phone that loads mid-build never gets half of one
-([apps/web/README.md](../apps/web/README.md)).
+([apps/web/README.md](../apps/web/README.md)). Each build also writes a
+`.br` and a `.gz` beside every script, stylesheet and the engine's
+WebAssembly (vite.config.ts's compression plugin), and the gateway sends
+the `.br` to a browser that asks for Brotli (WebMvcConfig), as the phone's
+Safari does: `curl -sI -H 'Accept-Encoding: br' <address>/app/assets/<file>`
+shows `Content-Encoding: br`.
 
 ### Going live for the owner
 

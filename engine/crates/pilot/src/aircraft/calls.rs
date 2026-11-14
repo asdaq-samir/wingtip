@@ -49,6 +49,7 @@ fn flag(out: &mut String, b: bool) {
 }
 
 /// The rule `name` worked on `v`.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> R<String> {
     let mut out = String::new();
     match name {
