@@ -13,11 +13,11 @@ import { TEXT } from "../lib/text";
 const FLOATING =
   "[transform:translateY(calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
 
-/** Each trigger's 44-point hit area, a pseudo-element four over and under
- *  its 40 (it was 36 in a 40-point bar, the bar's own 4 round it), the
- *  triggers' areas meeting side by side: controls never grow (CLAUDE.md).
- *  `::before`, as the stock trigger's `::after` is its underline. */
-const TRIGGER_AREA = "before:absolute before:inset-x-0 before:-inset-y-1 before:content-['']";
+/** Each trigger's 44-point hit area, the trigger itself, 48 tall (the stacked
+ *  icon and word's height, the same on every tab so the bar never changes
+ *  height), the triggers' areas meeting side by side: controls never grow
+ *  (CLAUDE.md). `::before`, as the stock trigger's `::after` is its underline. */
+const TRIGGER_AREA = "before:absolute before:inset-0 before:content-['']";
 
 /** One tab of the bar: its value, its word and its icon (required, so none
  *  is bare), and why to open it where there is a reason -- `hint` said in
@@ -93,13 +93,13 @@ export function CardTabBar<T extends string>({
         <TabsList
           variant="tint"
           activateOnFocus
-          className="max-w-full rounded-full bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-10"
+          className="max-w-full rounded-full bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-12"
         >
           {tabs.map((t) => (
             <TabsTrigger
               key={t.value}
               value={t.value}
-              className={cn("group/tab h-full min-w-0 flex-none rounded-full px-3", TEXT.row, TRIGGER_AREA)}
+              className={cn("group/tab h-full min-w-0 flex-none flex-col gap-0 rounded-full px-3", TEXT.row, TRIGGER_AREA)}
               disabled={disabled}
               aria-label={t.hint ? `${t.label}, ${t.hint}` : t.label}
               data-testid={`${tabTestId}${t.value}`}
@@ -112,7 +112,8 @@ export function CardTabBar<T extends string>({
                 <t.icon aria-hidden className="size-5" />
                 {t.badge}
               </span>
-              <span className="hidden truncate group-data-active/tab:inline">{t.label}</span>
+              {/* Under the icon on the picked tab; on the others the same line, no width, so the bar's height holds and every icon stays put. */}
+              <span className={cn("h-4 max-w-0 overflow-hidden leading-4 group-data-active/tab:max-w-none", TEXT.caption)}>{t.label}</span>
             </TabsTrigger>
           ))}
         </TabsList>

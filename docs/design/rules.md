@@ -238,7 +238,7 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    and Charts with its count. Each tab is an icon (Info, CloudSun,
    PlaneLanding, FileText; the owner, 2026-11-14: "make the tabs icons
    instead so it takes less space"), the picked one showing its word
-   beside it and the others the icon alone, each named by its aria-label
+   under it and the others the icon alone, each named by its aria-label
    ("Weather, VFR"), the dot and count over the icon's corner. The bar is glass because it floats over the
    card (the owner's decision of 2026-11-10 keeps glass for what floats).
    This replaces T4's tabs under the actions and its one-line report.
