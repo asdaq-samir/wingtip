@@ -51,6 +51,8 @@ struct ChartMap: UIViewRepresentable {
     /// Setup's Military fields and Private fields.
     @AppStorage(MapExtrasInput.Keys.military) var militaryFields = false
     @AppStorage(MapExtrasInput.Keys.privateFields) var privateFields = false
+    /// The Map card's Aeronautical layer (ChartOverlays.aeronautical).
+    @AppStorage(MapExtrasInput.Keys.aeronautical) var aeronautical = true
     /// The Map card's Terrain: flat, or MapKit's 3D (RaisedMapView).
     @AppStorage(MapTerrain.key) var terrain = MapTerrain.flat.rawValue
     /// Settings' Airport Weather, and the plan's part of the marks: the ↓
@@ -130,6 +132,15 @@ struct ChartMap: UIViewRepresentable {
         // The day's lift on the chart (ChartLift), none on the dimmed one at
         // night: a change of either draws the chart again from the store.
         let lift = shade == 0
+        // Chart None (Charts.picked): no FAA chart, Apple's muted map
+        // under the overlays, and nothing to wait for before it shows.
+        if template == nil, let current = context.coordinator.overlay {
+            context.coordinator.tilesStopped()
+            map.removeOverlay(current)
+            context.coordinator.overlay = nil
+        }
+        if template == nil { context.coordinator.noChart() }
+        context.coordinator.overlays.show(aeronautical: aeronautical, on: map, chart: context.coordinator.overlay)
         if let template, context.coordinator.overlay?.template != template || context.coordinator.overlay?.lift != lift {
             if let current = context.coordinator.overlay {
                 context.coordinator.tilesStopped()
@@ -506,6 +517,14 @@ struct ChartMap: UIViewRepresentable {
                 self.chartDrawn = true
                 self.revealIfIn()
             }
+        }
+
+        /// No chart drawn (Chart None): the map does not wait for its tiles.
+        @MainActor
+        func noChart() {
+            guard !chartDrawn else { return }
+            chartDrawn = true
+            revealIfIn()
         }
 
         /// The airspace answered for the first time (ChartOverlays).

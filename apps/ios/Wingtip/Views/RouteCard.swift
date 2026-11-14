@@ -126,6 +126,7 @@ struct RouteCard: View {
                 }
             }
             ShowRouteAs()
+            RouteOnMapToggles()
             Divider()
             Button(role: .destructive) { plan.clear() } label: { Label("Clear Route", systemImage: WingtipIcon.close) }
         }, label: Image(systemName: WingtipIcon.more).imageScale(.large).hitArea())

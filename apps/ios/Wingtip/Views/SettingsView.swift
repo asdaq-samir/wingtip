@@ -2,8 +2,9 @@ import SwiftUI
 
 /// The app's Settings, one page (the owner's pick of option A of the
 /// account canvas, 2026-11-13; docs/design/rules.md §8): how the app
-/// behaves, in groups as iOS's Settings has them -- Look, Map, In Flight,
-/// Data, and Help & About. Pushed from You's gear, and from the Map card's
+/// behaves, in groups as iOS's Settings has them -- Map, In Flight, Data,
+/// and Help & About. Theme and Appearance, the app's look, are the Map
+/// card's (the owner, 2026-11-14). Pushed from You's gear, and from the Map card's
 /// gear at its Map group, so the system's Back goes back to the card it
 /// was opened from. The one thing called Settings: every control in one
 /// home, where they were Setup's rows and the Map card's switches.
@@ -22,10 +23,6 @@ struct SettingsView: View {
     var body: some View {
         ScrollViewReader { reader in
             List {
-                Section("Look") {
-                    ThemeRow()
-                    AppearanceRow()
-                }
                 Section("Map") {
                     AirportWeatherRow()
                     // The glide ring about own ship, off unless turned on

@@ -522,6 +522,10 @@ final class RunwayEndView: MKAnnotationView {
     private var runwayEnds: [String: [RunwayEndAnnotation]] = [:]
     private var runwaysKept: [String: [RunwayShape]] = [:]
     private var runwaysAsking: Set<String> = []
+    /// The Map card's Aeronautical layer: off, the airspace and its tabs,
+    /// the special-use areas, the VORs and the fixes are taken off and not
+    /// asked for; the fields' runways stay, as the fields do.
+    private(set) var aeronautical = true
     /// Told once, the first time the airspace is answered (or cannot be): the map shows itself with its rings on (ChartMap's reveal).
     var onFirstAnswer: (() -> Void)?
     private var answered = false
@@ -598,20 +602,44 @@ final class RunwayEndView: MKAnnotationView {
 
     /// The view moved (during a gesture with `live`, or at its rest): what is drawn for its zoom, and a new
     /// answer where it wants one -- from the packs at once, from the planner only once it rests.
+    /// The Aeronautical layer turned on or off: off, everything it draws
+    /// taken off at once; on, asked for again where the map is.
+    func show(aeronautical on: Bool, on map: MKMapView, chart: (any MKOverlay)?) {
+        guard on != aeronautical else { return }
+        aeronautical = on
+        if on {
+            moved(map, chart: chart, live: false)
+            return
+        }
+        map.removeOverlays(volumes.values.flatMap { kept in (kept.band.map { [$0 as any MKOverlay] } ?? []) + kept.lines })
+        volumes = [:]
+        map.removeAnnotations(Array(tabs.values))
+        tabs = [:]
+        map.removeAnnotations(Array(vors.values))
+        vors = [:]
+        airspaceFetch.forget()
+        vorFetch.forget()
+        marks.clear(map)
+        // Nothing of it to wait for before the map shows.
+        firstAnswer()
+    }
+
     func moved(_ map: MKMapView, chart: (any MKOverlay)?, live: Bool) {
         guard map.bounds.width > 0 else { return }
         let view = ViewBox(map.region)
         let zoom = MapExtras.zoom(longitudeDelta: map.region.span.longitudeDelta, width: Double(map.bounds.width))
-        marks.moved(map, view: view, zoom: zoom)
-        if airspaceFetch.wants(view, zoom: zoom) { askAirspace(map, view: view, zoom: zoom, chart: chart, live: live) }
-        if zoom >= VorZoom.from, vorFetch.wants(view, zoom: zoom) { askVors(map, view: view, zoom: zoom, live: live) }
-        if zoom < VorZoom.from, !vors.isEmpty {
-            map.removeAnnotations(Array(vors.values))
-            vors = [:]
-            vorFetch.forget()
+        if aeronautical {
+            marks.moved(map, view: view, zoom: zoom)
+            if airspaceFetch.wants(view, zoom: zoom) { askAirspace(map, view: view, zoom: zoom, chart: chart, live: live) }
+            if zoom >= VorZoom.from, vorFetch.wants(view, zoom: zoom) { askVors(map, view: view, zoom: zoom, live: live) }
+            if zoom < VorZoom.from, !vors.isEmpty {
+                map.removeAnnotations(Array(vors.values))
+                vors = [:]
+                vorFetch.forget()
+            }
+            drawAirspace(map, zoom: zoom, chart: chart)
+            if !live { placeTabs(map, zoom: zoom) }
         }
-        drawAirspace(map, zoom: zoom, chart: chart)
-        if !live { placeTabs(map, zoom: zoom) }
         for case let end as RunwayEndView in runwayEnds.values.flatMap({ $0 }).compactMap({ map.view(for: $0) }) {
             end.turn(mapHeading: map.camera.heading)
         }
