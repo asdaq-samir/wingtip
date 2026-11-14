@@ -5,8 +5,9 @@
 # load to 9 to 11 and their tests timed out (2026-10-15), so there was one
 # turn. The Mac mini (12 cores, Docker given 16 GB) runs a few at once: the
 # owner asked to make full use of it (2026-11-06), so there are
-# ONE_AT_A_TIME_SLOTS turns: 3 while the live stack is down and 2 while it
-# is up (below); it was 2 always, since three at once with Xcode or
+# ONE_AT_A_TIME_SLOTS turns, set by the swap watcher (scripts/dev/swap-watch.sh:
+# 6 while the Mac is not swapping, 3 once it is; docs/LOCAL-DEV.md); with no
+# setting, 3 while the live stack is down and 2 while it is up; it was 2 always, since three at once with Xcode or
 # Gradle on the host swapped the 24 GB Mac (12 GB of it Docker's) and cost
 # more time than they saved (2026-11-08). A speed measurement needs a quiet
 # machine: `--alone` waits until no other turn is held and then holds them
@@ -24,8 +25,8 @@
 # And it waits for memory before it takes a turn (macOS): while the system's
 # free memory is under ONE_AT_A_TIME_FREE_MIN percent (memory_pressure; 20
 # by default) or swap in use is over ONE_AT_A_TIME_SWAP_MAX_MB (sysctl
-# vm.swapusage; 4096 by default, set high as macOS keeps swap a while after
-# the pressure has passed). Either set to 0 leaves that check out.
+# vm.swapusage; off by default, 0, as macOS keeps swap long after the
+# pressure has passed). Either set to 0 leaves that check out.
 set -u
 alone=${ONE_AT_A_TIME_ALONE:-}
 if [ "${1:-}" = "--alone" ]; then alone=1; shift; fi
