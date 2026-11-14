@@ -8,7 +8,11 @@ import app.wingtipmaps.android.checklist.ChecklistSection
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.format.Format
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -19,9 +23,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
-import kotlin.math.roundToInt
-import kotlin.math.roundToLong
 
 /**
  * The emergency assistant's one view model (the web's useEmergency): the
@@ -52,6 +53,9 @@ class EmergencyModel(
         /** The field picked's phone and METAR, as the FAA lists them. */
         val phone: String? = null,
         val metar: String? = null,
+        /** Each field's reported visibility by ident, "10+ sm"; none where
+         *  the report has none. */
+        val visibility: Map<String, String> = emptyMap(),
         val loading: Boolean = false,
         val problem: String? = null,
         /** The fields are the packs' on this phone, the planner out of
@@ -164,7 +168,11 @@ class EmergencyModel(
         val ranked = if (fix != null && got != null) rules.bestFields(got, fix).getOrNull() else null
         val picked = ranked?.fields?.firstOrNull { it.ident == pickedIdent } ?: ranked?.fields?.firstOrNull()
         val field = got?.fields?.firstOrNull { it.ident == picked?.ident }
-        _state.update { it.copy(ranked = ranked ?: it.ranked, picked = picked ?: it.picked, phone = field?.phone, metar = field?.metar?.raw) }
+        // Each field's reported visibility beside the engine's weather line
+        // (EmergencyMetar's visibility_sm and visibility_plus, as the web's
+        // Emergency rows say it); none where the report has no visibility.
+        val visibility = got?.fields.orEmpty().mapNotNull { f -> f.metar?.visibilitySm?.let { f.ident to Format.visibility(it, f.metar.visibilityPlus == true) } }.toMap()
+        _state.update { it.copy(ranked = ranked ?: it.ranked, picked = picked ?: it.picked, phone = field?.phone, metar = field?.metar?.raw, visibility = visibility) }
         refill()
     }
 

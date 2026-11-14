@@ -122,7 +122,11 @@ object Format {
     fun altimeter(inHg: Double): String = String.format(Locale.US, "%.2f inHg", inHg)
 
     /** A visibility in statute miles as said, quarters as fractions (the
-     *  web's lib/atis visibilityWords): "10 sm", "2½ sm", "¾ sm". */
+     *  web's lib/atis visibilityWords): "10 sm", "2½ sm", "¾ sm"; a
+     *  report's "more than" (P6SM, FAA JO 7900.5; the planner's
+     *  visibility_plus) "6+ sm", as the web's miles(sm, plus). */
+    fun visibility(sm: Double, plus: Boolean): String = visibility(sm).let { if (plus) it.removeSuffix(" sm") + "+ sm" else it }
+
     fun visibility(sm: Double): String {
         val whole = kotlin.math.floor(sm).toInt()
         val frac = sm - whole

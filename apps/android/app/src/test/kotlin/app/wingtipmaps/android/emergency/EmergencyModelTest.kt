@@ -4,6 +4,7 @@ import app.wingtipmaps.android.MainRule
 import app.wingtipmaps.android.api.generated.EmergencyField
 import app.wingtipmaps.android.api.generated.EmergencyFields
 import app.wingtipmaps.android.api.generated.EmergencyFrequency
+import app.wingtipmaps.android.api.generated.EmergencyMetar
 import app.wingtipmaps.android.checklist.ChecklistSection
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
@@ -60,7 +61,7 @@ class EmergencyModelTest {
         var asks = 0
         var askedAircraft: String? = "?"
         val rules = Rules()
-        val model = EmergencyModel({ _, _, alt, aircraft, _ -> asks++; askedAircraft = aircraft; assertEquals(4500.0, alt!!, 0.0); EmergencyFields(fields = listOf(field("KUGN", 6.2, 30.0), field("C81", 3.4, 45.0))) }, rules)
+        val model = EmergencyModel({ _, _, alt, aircraft, _ -> asks++; askedAircraft = aircraft; assertEquals(4500.0, alt!!, 0.0); EmergencyFields(fields = listOf(field("KUGN", 6.2, 30.0).copy(metar = EmergencyMetar(visibilitySm = 10.0, visibilityPlus = true)), field("C81", 3.4, 45.0))) }, rules)
         model.start(aircraft = "c172", airplaneName = "C172", callsign = null, checklist = "# x")
         model.took(fix, trackMagDeg = 304.0)
         val s = model.state.value
@@ -68,6 +69,8 @@ class EmergencyModelTest {
         assertEquals("c172", askedAircraft)
         assertEquals("C81", s.picked!!.ident)
         assertEquals("555-0100", s.phone)
+        // The report's visibility, "more than" kept; none where no report says one.
+        assertEquals(mapOf("KUGN" to "10+ sm"), s.visibility)
         // The checklist opened at the engine failure, the section the call names.
         assertEquals(1, s.section)
         val facts = rules.facts!!

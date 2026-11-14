@@ -119,7 +119,7 @@ private fun FieldsList(state: EmergencyModel.State, onPick: (String) -> Unit, on
     // live region.
     val best = fields.firstOrNull()
     AnnounceOnce(best?.ident, best?.let { stringResource(R.string.said_best_field, it.ident, fieldWords(it)) })
-    fields.forEachIndexed { i, f -> FieldRow(f, picked = state.picked?.ident == f.ident, best = i == 0) { onPick(f.ident) } }
+    fields.forEachIndexed { i, f -> FieldRow(f, state.visibility[f.ident], picked = state.picked?.ident == f.ident, best = i == 0) { onPick(f.ident) } }
 }
 
 /** A field's way and distance said: the heading magnetic, or true where
@@ -130,12 +130,13 @@ private fun fieldWords(f: EngineContract.BestField): String = listOfNotNull(
 ).joinToString(", ")
 
 @Composable
-private fun FieldRow(f: EngineContract.BestField, picked: Boolean, best: Boolean, onPick: () -> Unit) {
+private fun FieldRow(f: EngineContract.BestField, visibility: String?, picked: Boolean, best: Boolean, onPick: () -> Unit) {
     val heading = f.headingMagDeg ?: f.headingTrueDeg
     val ink = LocalInk.current
     // Read as one: the field, its way and miles in words, then the
     // engine's reasons, rather than "270 degree dot 8.3 n m".
-    val said = (listOf(f.ident, f.name, fieldWords(f)) + f.reasons.map { it.text }).joinToString(", ")
+    val seen = visibility?.let { stringResource(R.string.emergency_visibility, it) }
+    val said = (listOf(f.ident, f.name, fieldWords(f)) + f.reasons.map { it.text } + listOfNotNull(seen)).joinToString(", ")
     ListItem(
         selected = picked,
         onClick = onPick,
@@ -153,6 +154,7 @@ private fun FieldRow(f: EngineContract.BestField, picked: Boolean, best: Boolean
                         fontWeight = if (lead) FontWeight.SemiBold else null,
                     )
                 }
+                seen?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         },
         trailingContent = {
