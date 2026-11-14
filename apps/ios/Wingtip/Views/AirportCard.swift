@@ -1,37 +1,39 @@
 import SwiftUI
 
-/// A field's card, built as Apple's Maps builds a place card on iOS 27
-/// (the owner's screenshot, 2026-11-09): the head (AirportPlaceHead) -- at
-/// full height the field's picture fading in, then its name, what and
-/// where it is, the four actions and the four facts -- then four tabs,
-/// directly under them so they are in sight at half height (the owner's
-/// T4, 2026-11-14), with the field's report in a line under them: Info
-/// (the picture tiles, the plan through it, the radio, the lights, what is
-/// on the ground), Weather, Runways and Charts; at its foot the system's
-/// floating glass toolbar (AirportCardToolbar).
+/// A field's card, laid out after Apple Maps' place card (the owner's C1,
+/// 2026-11-14, sending Maps' Teriyaki Madness card: "How can we make our
+/// airport card more similar to this? Can tabs be similar to that floating
+/// buttons group at the bottom?"; the web's PlaceCard): the head
+/// (AirportPlaceHead) -- at full height the field's picture fading in,
+/// then its name, "Towered" or "Non-towered" and where, the four actions
+/// and the sideways strip of facts -- then the pictures as large tiles
+/// over every tab (AirportTiles), then the tab's page; its tabs Info,
+/// Weather, Runways and Charts in the floating glass bar at the card's
+/// foot (CardTabBar), out of sight at the pill. Share is at the bar's
+/// start, the close at its end, as every card's head.
 struct AirportCard: View {
     let ident: String
     @Environment(Plan.self) private var plan
     @Environment(Verdict.self) private var verdict
-    @Environment(OwnShip.self) private var ownShip
-    /// Back to the plan once an action has set it (PlanSheet).
-    @Environment(\.showPlan) private var showPlan
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.cardExpanded) private var expanded
+    @Environment(\.cardAtPill) private var atPill
+    @Environment(\.lookAccent) private var accent
     @State private var place: AirportPlace?
     /// The field's live reports (D-ATIS, RVR, programs), the tabs' own.
     @State private var live = AirportLive()
     @State private var problem: String?
     @State private var notFound = false
     @State private var photos: AirportPhotos?
+    /// NASR's fuels for sale, for the facts' Fuel.
+    @State private var fuel: [String]?
     /// The field's own NOTAMs and the TFRs near it, read by the engine and
-    /// marked on what they address (FieldNotams), for the Info tab's list,
-    /// the badges and the tile's count.
+    /// marked on what they address (FieldNotams), for the Info tab's list
+    /// and the badges.
     @State private var notams = FieldNotams()
     @State private var tab: CardTab = .info
     @State private var shown: ShownPicture?
-    /// Scrolled past the head: its name in the bar and the section picker
-    /// pinned under it (the owner's scrolling rule, 2026-11-10).
+    /// Scrolled past the head: its name in the bar (the owner's scrolling
+    /// rule, 2026-11-10).
     @State private var pinned = false
     @Environment(AirportShelf.self) private var shelf
 
@@ -41,36 +43,18 @@ struct AirportCard: View {
         var id: String { rawValue }
     }
 
-    /// The card's sections, in the list under the actions and pinned under
-    /// the bar once the head has scrolled away.
-    private func sectionPicker(_ place: AirportPlace) -> some View {
-        AirportTabBar(tab: $tab, place: place)
-    }
-
     var body: some View {
         List {
             if let place {
                 Section {
-                    AirportPlaceHead(place: place, photos: photos, shown: $shown)
+                    AirportPlaceHead(place: place, photos: photos, shown: $shown, fuel: fuel)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
-                Section {
-                    VStack(alignment: .leading, spacing: WingtipSpace.md) {
-                        sectionPicker(place).opacity(pinned ? 0 : 1)
-                        AirportWeatherLine(metar: place.metar)
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
-                }
+                Section { AirportTiles(place: place, photos: photos, shown: $shown) }
                 switch tab {
                 case .info:
-                    // The pictures first on Info, as Maps' place card has
-                    // its photos (T4: they sat above the tabs).
-                    Section {
-                        AirportTiles(place: place, photos: photos, shown: $shown, tab: $tab, notams: notams.ranked)
-                    }
                     AirportReadyCard(ident: place.ident)
                     AirportInfoTab(place: place)
                 case .weather: AirportWeatherTab(place: place, refresh: refresh)
@@ -101,20 +85,15 @@ struct AirportCard: View {
         .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > 180 } action: { _, past in
             if past != pinned { pinned = past }
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if pinned, let place {
-                sectionPicker(place)
-                    .padding(.horizontal, WingtipSpace.lg)
-                    .padding(.vertical, WingtipSpace.xs)
-                    .background(.bar)
-            }
-        }
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
         .toolbar {
             if let place {
-                AirportCardToolbar(place: place, plan: plan, fix: ownShip.fix) {
-                    if let showPlan { showPlan() } else { dismiss() }
+                ToolbarItem(placement: .topBarLeading) {
+                    ShareLink(item: URL(string: "https://\(Config.host)/app/plan?place=\(place.ident)")!, subject: Text(place.name)) {
+                        Label("Share", systemImage: WingtipIcon.share)
+                    }
                 }
+                CardTabBar(tab: $tab, items: Self.tabs(place), atPill: atPill, accent: accent)
             }
         }
         .environment(live)
@@ -128,9 +107,11 @@ struct AirportCard: View {
         .task(id: ident) {
             // The pictures are the card's look, not a figure: none where they can't be had.
             async let pictures = try? Planner.photos(ident)
+            async let services = try? Planner.services(ident)
             async let notices: Void = notams.load(ident)
             await load()
             photos = await pictures
+            fuel = await services?.fuelTypes
             await notices
             notams.attach(place)
             // The weather a report's freshness: asked again every five
@@ -141,6 +122,27 @@ struct AirportCard: View {
                 if let fresh = try? await KeptForAir.answer(.airports, key: ident, fetch: { try await Planner.place(ident) }) { place = fresh.value }
             }
         }
+    }
+
+    /// The tabs in the bar, each with why to open it beside its name:
+    /// Weather the field's own report's category (the engine's
+    /// flight_category, as the planner sends it), said for VoiceOver, as
+    /// the facts' badge shows it; Charts its count, none at 0.
+    static func tabs(_ place: AirportPlace) -> [CardTabBar<CardTab>.Item] {
+        CardTab.allCases.map { tab in
+            switch tab {
+            case .weather: .init(tab: tab, title: tab.rawValue, hint: place.metar?.flightCategory)
+            case .charts: .init(tab: tab, title: tab.rawValue, hint: chartCount(place).map(String.init), shown: true)
+            default: .init(tab: tab, title: tab.rawValue)
+            }
+        }
+    }
+
+    /// The charts the Charts tab lists: the d-TPP plates (the diagram's own
+    /// APD entry left out) and the diagram once; nil at 0.
+    static func chartCount(_ place: AirportPlace) -> Int? {
+        let count = (place.procedures ?? []).filter { $0.kind != "APD" }.count + (place.airportDiagramUrl != nil ? 1 : 0)
+        return count > 0 ? count : nil
     }
 
     /// The Weather tab's Refresh (no pull to refresh in a sheet, IOS-3;
