@@ -9,7 +9,7 @@
 //! them apart (a VOR check, an alternate's `good`).
 
 use super::frat::{self, Currency, Inspections, Squawk, VorCheck};
-use super::icing::{self, Selection};
+use super::icing;
 use super::minimums::{self, Landing, Minimums, Report as Winds, RunwayWind};
 use super::pass_times;
 use super::runways::{self, Airplane, End, Field, Picks, Report, Runway, ShortField};
@@ -440,15 +440,7 @@ fn under_minimums_rule(i: In, v: &Value) -> R<String> {
 // --- icing ------------------------------------------------------------------
 
 fn icing_rule(i: In, v: &Value) -> R<String> {
-    let s = i.obj(v, "selection")?;
-    let selection = match s {
-        None => Selection::default(),
-        Some(s) => Selection {
-            freezing_level_ft: i.opt_num(s, "freezing_level_ft")?,
-            possible: truth(s, "icing_possible"),
-            at_or_below: truth(s, "freezing_level_at_or_below"),
-        },
-    };
+    let selection = icing::selection_of(i, v)?;
     // A report's icing as sent; one that is not a string says none.
     let reports: Vec<Option<String>> =
         i.list(v, "pireps")?.iter().map(|p| p.get("icing").and_then(Value::as_str).map(str::to_owned)).collect();

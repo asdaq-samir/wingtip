@@ -240,8 +240,10 @@ Then the callers switch to the name and the old copy is deleted.
   planner's very answers from `call` (`debrief`, `diversion`,
   `holding`, `lost_comms`).
 - The Brief's Go / No-Go is the engine's too (`crates/brief`): the seven
-  findings and the line over them, the pilot's minimums, icing under IFR,
-  the risk assessment and the airplane's airworthiness, the runway check,
+  findings and the line over them, the pilot's minimums, icing under IFR
+  (and `gonogo_icing_unchecked` where the freezing level is not known),
+  freezing rain and drizzle in a field's METAR or TAF on any flight
+  (`crates/weather`'s `freezing_precip`, AIM 7-1-20), the risk assessment and the airplane's airworthiness, the runway check,
   the weight and balance and the pass times (the web's lib/verdict and
   the modules it is fed from). Each is a name in `call.rs`
   (`gonogo_verdict_items`, `gonogo_risk`, `gonogo_runway_checks` ...), asked by

@@ -6,7 +6,7 @@
 //! the FAA's data cycles (cycles.rs).
 
 use crate::json::{self, Value};
-use crate::{cycles, forecast, metar, notam, tfr, validity, xml};
+use crate::{cycles, forecast, freezing, metar, notam, tfr, validity, xml};
 use wingtip_core::ask::{opt_num_in, Ask};
 use wingtip_flight::vfr::{SURFACE_AREA_CEILING_FT, SURFACE_AREA_VISIBILITY_SM};
 
@@ -37,6 +37,14 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         // Whether a ceiling or a visibility is under 91.155(c), (d)'s basic
         // VFR minimums (1,000 ft, 3 sm): a missing figure is not below
         // anything, the caller saying it is unknown.
+        "freezing_precip" => {
+            let mut fields = Vec::new();
+            for f in ask.list("fields")? {
+                let raw = |key: &str| f.get(key).and_then(Value::as_str).map(str::to_owned);
+                fields.push((raw("ident").unwrap_or_default(), raw("metar"), raw("taf")));
+            }
+            return Ok(freezing::to_json(&freezing::freezing_precip(&fields)));
+        }
         "below_vfr_minimums" => {
             let below = ask.opt_num("ceiling_ft")?.is_some_and(|c| c < SURFACE_AREA_CEILING_FT)
                 || ask.opt_num("visibility_sm")?.is_some_and(|v| v < SURFACE_AREA_VISIBILITY_SM);
