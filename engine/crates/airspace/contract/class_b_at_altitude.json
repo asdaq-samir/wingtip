@@ -1,5 +1,5 @@
 {
-  "x-call": "wingtip_airspace::calls::call",
+  "x-call": "wingtip_airspace::class_b_band::class_b_at_altitude",
   "description": "Which Class B band along a route's profile holds an altitude (14 CFR 91.131(a)(1): an ATC clearance before entering Class B): the index of the first band of class B whose floor is at or under altitude_ft and whose ceiling is at or over it, both ft MSL as the FAA's Class Airspace shapefile publishes them; null where none does. A band with no ceiling given holds every altitude from its floor up, so a clearance is said to be needed rather than not (Class B tops run from 7,000 ft at KMSY to 12,500 ft at KDEN, so no one figure stands in for it).",
   "type": "object",
   "properties": {

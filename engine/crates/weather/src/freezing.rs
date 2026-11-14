@@ -98,6 +98,19 @@ pub fn to_json(found: &[Found]) -> String {
     out
 }
 
+/// `freezing_precip` by name, its own call rather than an arm of the
+/// crate's table (calls.rs), so the web's module takes it without the
+/// crate's other readers (scripts/ci/wasm_size.py).
+pub fn call(name: &str, v: &json::Value) -> Result<String, String> {
+    let ask = wingtip_core::ask::Ask::new(name, v);
+    let mut fields = Vec::new();
+    for f in ask.list("fields")? {
+        let raw = |key: &str| f.get(key).and_then(json::Value::as_str).map(str::to_owned);
+        fields.push((raw("ident").unwrap_or_default(), raw("metar"), raw("taf")));
+    }
+    Ok(to_json(&freezing_precip(&fields)))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

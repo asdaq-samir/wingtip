@@ -48,11 +48,17 @@ export interface Workings {
   phase: Phase;
   /** What the leg's climb adds, where it has one: the log's own time and
    *  fuel are the cruise's and this. */
-  climb: { min: number; gal: number } | null;
+  climb: { min: number; gal: number | null } | null;
   /** What the leg's procedure adds -- a pattern's, a departure's or an
    *  approach's miles past the leg's line -- where it is flown by one. */
   procedure: { nm: number; min: number; gal: number; landing: boolean } | null;
 }
+
+/** The engine's flag on a leg whose climb's fuel it could not count, the
+ *  profile having no climb fuel flow (NavLogLeg's climb_fuel_unknown).
+ *  TODO(claude/planner-follow): the planner's Leg schema gains it; read it
+ *  from the generated type once it is there. */
+const climbFuelUnknown = (leg: Leg) => (leg as Leg & { climb_fuel_unknown?: boolean | null }).climb_fuel_unknown === true;
 
 /** A leg worked out, or null for one that cannot be (no wind is a calm
  *  leg; a wind faster than the airplane, no leg at all). `phase`: the
@@ -66,7 +72,6 @@ export function workingsOf(leg: Leg, phase: Phase = "cruise"): Workings | null {
     leg.true_heading_deg == null ||
     leg.magnetic_heading_deg == null ||
     leg.fuel_burn_gph == null ||
-    leg.power_pct == null ||
     leg.density_altitude_ft == null
   )
     return null;
@@ -112,7 +117,11 @@ export function workingsOf(leg: Leg, phase: Phase = "cruise"): Workings | null {
           ? "the airplane's climb speed"
           : phase === "descent"
             ? "the airplane's descent speed, indicated, at the descent's altitude"
-            : `${Math.round(leg.power_pct)}% power at a density altitude of ${grouped(leg.density_altitude_ft)} ft`,
+            : leg.power_pct == null
+              ? // No cruise power in the profile: the TAS and burn as given,
+                // at every altitude, no power model (the engine's, AV-8).
+                "the airplane's cruise speed as given, at every altitude"
+              : `${Math.round(leg.power_pct)}% power at a density altitude of ${grouped(leg.density_altitude_ft)} ft`,
       result: `${Math.round(tas)} kt`,
     },
     {
@@ -143,7 +152,10 @@ export function workingsOf(leg: Leg, phase: Phase = "cruise"): Workings | null {
     steps,
     answers: { wca, th, mh, gs, ete, fuel },
     phase,
-    climb: climbMin > 0.5 ? { min: climbMin, gal: Math.max(0, climbGal) } : null,
+    // With no climb fuel flow in the profile the engine counts no climb
+    // gallons and flags the leg (`climb_fuel_unknown`, AV-8): the climb's
+    // fuel is missing, never the nought left over (null).
+    climb: climbMin > 0.5 ? { min: climbMin, gal: climbFuelUnknown(leg) ? null : Math.max(0, climbGal) } : null,
     procedure: procedure && procedure.min > 0 ? { ...procedure, landing: p!.landing } : null,
   };
 }

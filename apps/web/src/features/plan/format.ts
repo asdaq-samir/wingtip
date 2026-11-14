@@ -156,6 +156,14 @@ export function cruiseByAltitude(legs: Leg[], cruisePowerPct: number | null | un
  *  (lib/format, where the app's times are written). */
 export { clockTime };
 
+/** How the Altitude Advisor's reasoning says the economical plan: none
+ *  where the airplane has no climb fuel flow, as the engine then leaves it
+ *  out rather than assume one (navlog_plans, the aviation audit's AV-8). */
+export const economicalWords = (plans: { kind: string }[]) =>
+  plans.some((o) => o.kind === "economical")
+    ? "economical for the least fuel, every climb counted"
+    : "no economical plan (no climb fuel flow)";
+
 /** When a leg ends: the departure instant plus the minutes flown to
  *  it -- "—" while the minutes are unknown (a leg not yet in, or one
  *  that cannot be flown). */

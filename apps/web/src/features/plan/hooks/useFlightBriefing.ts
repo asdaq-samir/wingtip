@@ -27,7 +27,7 @@ import { flightPlanForms, type FiledProcedure } from "../lib/flightPlanForm";
 import { alternateFinding, useAlternate } from "./useAlternate";
 import { useRouteFields } from "./useRouteFields";
 import { flowQuery, itwsLines, itwsQuery, liveWhen, programLines, saaQuery } from "../../../lib/liveReports";
-import { icingAtAltitude, icingLine } from "../lib/icing";
+import { icingFindings } from "../lib/icing";
 import { useIcingForecast } from "./useIcingForecast";
 import { assess, riskLine, useRisk } from "../../../lib/frat";
 import type { BriefingPart } from "../components/briefing/sections";
@@ -213,20 +213,18 @@ export function useFlightBriefing({
     crossed: tfrsCrossed.map((t) => t.notam_id),
   });
   const leastMarginGal = routeFigures.least_margin_gal;
-  // Under IFR, in cloud at or above the freezing level (features/plan/lib/icing).
-  const icing =
-    ifr && nav && briefing
-      ? icingAtAltitude(
-          nav.altitude_selection,
-          legs.map((l) => l.altitude_ft),
-          briefing.pireps,
-        )
-      : null;
   // Under IFR, the AWC's forecast icing (CIP and FIP) on each leg at the
-  // altitude flown (useIcingForecast): its line joins the one above in the
-  // Go / No-Go, and a forecast that could not be had is said unchecked.
+  // altitude flown (useIcingForecast); a forecast not had is said unchecked.
   const icingForecast = useIcingForecast({ ifr, briefing, legs, depart });
-  const icingLines = [icing && icingLine(icing), ifr ? icingForecast.data?.line : null].filter((l): l is string => !!l);
+  // The icing finding's lines, the engine's, in its order (lib/icing).
+  const { icing, lines: icingLines } = icingFindings({
+    ifr,
+    nav,
+    legs,
+    briefing,
+    fields: landings,
+    forecastLine: icingForecast.data?.line,
+  });
   const hazardNames = briefing
     ? [...briefing.hazards.map((h) => sigmetHazard(h.hazard, h.type ?? "SIGMET")), ...briefing.gairmets.map(gairmetTitle)]
     : [];

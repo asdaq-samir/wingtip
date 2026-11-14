@@ -96,6 +96,7 @@ flow_levels
 flow_sample
 frd_read
 frd_write
+freezing_precip
 frequency_line
 fuel_estimate
 fuel_in_tanks
@@ -112,6 +113,7 @@ gonogo_end_distance
 gonogo_field_permission
 gonogo_icing
 gonogo_icing_line
+gonogo_icing_unchecked
 gonogo_pass_minutes
 gonogo_picked_end
 gonogo_risk

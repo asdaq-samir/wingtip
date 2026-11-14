@@ -9,6 +9,7 @@ import { flightLevel } from "../../../lib/format";
 import { WINDS_MODELLED, windsSource } from "../../../lib/windsAloft";
 import { capitalised, faaWords, suaAltitudes } from "../../../lib/advisories";
 import { altFt, bearing, cruiseByAltitude, describeFuel, describeSteps, describeTime, feetBelowClouds, PLAN_NAME } from "../format";
+import { economicalWords } from "../format";
 import { callEngine } from "../../../lib/engine/engine";
 import { andList } from "../../../lib/listWords";
 
@@ -48,9 +49,8 @@ interface Step {
   body: ReactNode;
 }
 
-/** The two halves of the direction of flight (14 CFR 91.159(a), 91.179(b)),
- *  north written 360 as every course is (lib/format's bearing): 0.4° read
- *  "360° is eastbound (0° through 179°)" (the code audit's CODE-15). */
+/** The halves of the direction of flight (14 CFR 91.159(a), 91.179(b)), north written 360 as every
+ *  course is (lib/format's bearing): 0.4° read "360° is eastbound (0° through 179°)" (CODE-15). */
 const EASTBOUND = "eastbound (360° through 179°)";
 const WESTBOUND = "westbound (180° through 359°)";
 
@@ -382,7 +382,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false, winds
           key: "plans",
           ...(plansAbove
             ? {
-                title: `Four plans${
+                title: `${["No", "One", "Two", "Three", "Four"][nav.options.length] ?? nav.options.length} plans${
                   nav.flown === "custom"
                     ? `: flying ${altFt(nav.altitude_ft)} ft, your own`
                     : nav.flown === null
@@ -405,7 +405,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false, winds
           body: (
             <>
               Lowest and highest keep to the bottom and the top of the legal altitudes; fastest takes the winds aloft,
-              {` ${windsSource(winds) ?? WINDS_MODELLED}, `}for the least time, and economical for the least fuel, every climb counted.{" "}
+              {` ${windsSource(winds) ?? WINDS_MODELLED}, for the least time, and ${economicalWords(nav.options)}. `}
               {nav.options
                 .map(
                   (o) =>

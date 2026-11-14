@@ -26,25 +26,15 @@ interface WayCard {
   gal: number | null;
 }
 
-/** What a chip's way meets, said on it in amber: the worst it meets
- *  first -- airspace a pilot may not enter, then storms and high ground,
- *  then weather -- each by its own name (a TFR was "Crosses weather"),
- *  or no field with fuel in reach (the planner's "fuel" hazard). */
-export function wayWarning(hazards: RouteOptions["hazards"], crosses: number[]): string | null {
-  const met = crosses.map((i) => hazards[i]).filter((h): h is NonNullable<typeof h> => !!h);
-  const rank = (kind: string) => ["prohibited", "tfr", "storm", "terrain", "sigmet", "fuel"].indexOf(kind) >>> 0;
-  const h = [...met].sort((a, b) => rank(a.kind) - rank(b.kind))[0];
-  if (!h) return null;
-  const words: Record<string, string> = {
-    fuel: "No fuel stop in reach",
-    prohibited: "Crosses a prohibited area",
-    tfr: "Crosses a TFR",
-    storm: "Crosses storms",
-    terrain: "Crosses high ground",
-    sigmet: "Crosses a SIGMET",
-  };
-  return words[h.kind] ?? "Crosses weather";
-}
+/** A way as the engine answers it (route_options' RouteOption), its one
+ *  warning with it: the worst it crosses, in the engine's words, ranked
+ *  there -- a prohibited area or a TFR, a restricted area, storms, high
+ *  ground, a SIGMET, no fuel stop in reach, other weather, then a warning
+ *  area, a MOA and an alert area (14 CFR 91.133, 91.137-91.145; AIM 3-4).
+ *  The web ranked its own copy, which named no restricted area or MOA.
+ *  TODO(claude/planner-follow): the planner's RouteOption schema gains
+ *  `warning`; read it from the generated type once it is there. */
+type Way = NonNullable<RouteOptions["own"]> & { warning?: string | null };
 
 /**
  * The route line's cards (useRouteLine), each way's whole time as its line
@@ -76,10 +66,13 @@ export function wayCards({
   typedNm: number | null;
   typedGal: number | null;
 }): WayCard[] | null {
-  const hazards = routeWays?.hazards ?? [];
   const scale = gridScale(routeWays, minutes);
-  const wayOf = (chip: RouteChip) =>
-    chip.key === "fuel" ? routeWays?.own : routeWays?.options.find((o) => sameStops(o.stops, chip.stops));
+  const wayOf = (chip: RouteChip): Way | undefined =>
+    (chip.key === "fuel" ? routeWays?.own : routeWays?.options.find((o) => sameStops(o.stops, chip.stops))) ?? undefined;
+  // The route as typed is the planner's own way where its stops are the
+  // typed ones, for its warning.
+  const typedWay = (chip: RouteChip): Way | undefined =>
+    routeWays?.own && sameStops(routeWays.own.stops, chip.stops) ? routeWays.own : undefined;
   const timeOf = (chip: RouteChip): string | null => {
     if (chip.key === "none") return minutes === null ? null : duration(minutes + ground);
     const way = wayOf(chip);
@@ -95,7 +88,7 @@ export function wayCards({
     .map((c) => ({
       key: c.key,
       label: c.key === "none" ? "As typed" : c.label,
-      warning: wayWarning(hazards, c.crosses ?? []),
+      warning: (c.key === "none" ? typedWay(c) : wayOf(c))?.warning ?? null,
       time: timeOf(c),
       ...figuresOf(c),
     }))
@@ -208,7 +201,7 @@ export function useRouteLine({
       typedNm: browsing ? browsing.ownNm : ownNm,
       typedGal: browsing ? browsing.ownGal : ownGal,
     });
-    return cards ? { chips: cards, picked: lineKey, onPick: applyChip } : null;
+    return cards ? { chips: cards, picked: lineKey, onPick: applyChip, unchecked: routeWays?.unchecked ?? [] } : null;
   }, [vfrRoute, chips, routeWays, lineKey, applyChip, browsing, ownMinutes, ownGround, ownNm, ownGal]);
 
   // The chips' ways on the chart beside the course while the line is open,

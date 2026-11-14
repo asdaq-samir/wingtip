@@ -5,6 +5,7 @@ import { ToggleGroup, ToggleGroupItem } from "../../../../components/ui/toggle-g
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { TEXT } from "../../../../lib/text";
 import { gal } from "../../../../lib/format";
+import { andList } from "../../../../lib/listWords";
 import { useRouteLineOpen } from "../../lib/routeLine";
 
 /** FPL's route line's choices (PlanWorkspace's routeLine): each chip's
@@ -15,6 +16,9 @@ export interface RouteLineChoices {
   chips: { key: string; label: string; warning: string | null; time: string | null; nm: number | null; gal: number | null }[];
   picked: string;
   onPick: (key: string) => void;
+  /** What the planner could not check the ways for, in the engine's words
+   *  ("service ceiling", "fuel", "start and taxi fuel"): said under them. */
+  unchecked?: string[];
 }
 
 /**
@@ -119,9 +123,22 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
                   {figures(c)}
                 </span>
               )}
+              {/* What it crosses, the engine's words: warned, never refused. */}
+              {c.warning && (
+                <span className={cn("whitespace-normal font-semibold text-caution-ink", TEXT.note)} data-testid="route-line-warning">
+                  {c.warning}
+                </span>
+              )}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
+        {/* Said where the ways are, not left out: a way's fuel or ceiling
+            the planner could not check, the airplane's figure missing. */}
+        {line.unchecked && line.unchecked.length > 0 && (
+          <p className={cn("px-3 pb-3 text-muted-foreground", TEXT.note)} data-testid="route-line-unchecked">
+            {`Not checked: ${andList(line.unchecked)}`}
+          </p>
+        )}
       </CollapsibleContent>
     </Collapsible>
   );
