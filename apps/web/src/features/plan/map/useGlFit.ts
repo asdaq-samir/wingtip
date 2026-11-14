@@ -1,9 +1,9 @@
 import { useEffect, useEffectEvent, useRef } from "react";
 import { SHEET_SECONDS, useMapInsets } from "../../../lib/mapChrome";
-import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { useGlMap } from "../../../lib/map/gl/glLayer";
 import { glZoom } from "../../../lib/map/gl/glStyle";
 import { picked, pilotMoved } from "../../../lib/map/gl/pilotCamera";
+import { cameraOf } from "../../../lib/map/gl/camera";
 import { FIT_MARGIN } from "../../../lib/map/clear";
 
 /**
@@ -16,8 +16,10 @@ import { FIT_MARGIN } from "../../../lib/map/clear";
  * search's results arriving after the pilot moved the map -- never move
  * it again, as Apple Maps leaves a map the pilot has in hand. A subject
  * `held` (the card a pick opened flies the map itself) counts as fitted.
- * Not past `maxZoom`, in the app's levels. Own ship stops pulling the
- * map back, as a route's fit stops it.
+ * Not past `maxZoom`, in the app's levels. Fitted by the camera's owner
+ * (lib/map/gl/camera): every follow ends, as a route's fit ends it, and a
+ * single point is brought into sight only if it is out of the room, not
+ * fitted as a box of no size (the flicker audit's FL-20).
  */
 export function useGlFit(
   points: { lat: number; lon: number }[],
@@ -52,17 +54,15 @@ export function useGlFit(
     fitted.current = subject;
     // Moved by hand while the points were coming: left where the pilot put it.
     if (pilotMoved()) return;
-    const ownShip = useOwnShip.getState();
-    if (ownShip.enabled && ownShip.follow) ownShip.setFollow(false);
     const lats = points.map((p) => p.lat),
       lons = points.map((p) => p.lon);
-    map.fitBounds(
+    cameraOf(map).fit(
       [
         [Math.min(...lons), Math.min(...lats)],
         [Math.max(...lons), Math.max(...lats)],
       ],
       {
-        padding: { ...FIT_MARGIN, top: FIT_MARGIN.top + top, bottom: FIT_MARGIN.bottom + bottom },
+        margin: { ...FIT_MARGIN, top: FIT_MARGIN.top + top, bottom: FIT_MARGIN.bottom + bottom },
         maxZoom: glZoom(maxZoom),
         duration: SHEET_SECONDS * 2000,
       },

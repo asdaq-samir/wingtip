@@ -7,7 +7,7 @@ import { drawOwnShip, ownShipMarker } from "./ownShipMarker";
 import { useOwnShip } from "../../position/ownShip";
 import { useGlMap } from "../glLayer";
 import { glZoom } from "../glStyle";
-import { picked } from "../pilotCamera";
+import { cameraOf } from "../camera";
 
 /** The location arrow's close-in, in the app's levels. */
 const LOCAL_ZOOM = 9;
@@ -17,10 +17,14 @@ const LOCAL_ZOOM = 9;
  * frame it draws the chart, so it stays on its point through a pinch, at
  * the GPS's heading on the map (rotationAlignment). Followed only while
  * the pilot's follow is on -- Apple Maps' tracking mode, which the
- * location arrow sets and a drag ends -- the arrow's tap flying to it
- * (recentred), a pick (lib/map/gl/pilotCamera); a drag before the first
- * fix comes lets that flight go too. Grey at its last place when own ship
- * is turned off (the owner, 2026-10-06).
+ * location arrow sets and a drag or a pick ends (the camera's owner,
+ * lib/map/gl/camera) -- the arrow's tap bringing the map to it
+ * (recentred), a pick; a drag before the first fix comes lets that go
+ * too. Each fix is a step of the owner's follow, one linear ease lasting
+ * till the next fix, so the dry run's four fixes a second move the map at
+ * one steady pace rather than starting and stopping at each (the flicker
+ * audit's FL-13). Grey at its last place when own ship is turned off (the
+ * owner, 2026-10-06).
  */
 export function OwnShipGl() {
   const { map } = useGlMap();
@@ -34,19 +38,12 @@ export function OwnShipGl() {
   // The mark's HTML as last written (drawOwnShip).
   const drawn = useRef("");
   const flown = useRef(recentred);
-  // While the arrow's flight in to own ship is under way.
-  const landing = useRef(false);
   useEffect(() => {
     marker.current = ownShipMarker();
+    // A drag ends the follow (the camera's owner), and a flight to the
+    // position still waiting on its fix is let go.
     const stop = (e: { originalEvent?: Event }) => {
-      if (!e.originalEvent) return;
-      const ownShip = useOwnShip.getState();
-      // Only a drag while following ends it: `follow` is the pilot's kept
-      // setting, and a pan at the desk with own ship off left it off for the
-      // air (map.spec's "Keep the map on me").
-      if (ownShip.follow && ownShip.enabled) ownShip.setFollow(false);
-      // A flight to the position still waiting on its fix is let go.
-      flown.current = ownShip.recentred;
+      if (e.originalEvent) flown.current = useOwnShip.getState().recentred;
     };
     map.on("dragstart", stop);
     return () => {
@@ -72,25 +69,19 @@ export function OwnShipGl() {
   }, [map, fix, enabled, simulated]);
   useEffect(() => {
     if (!fix || !enabled) return;
+    const camera = cameraOf(map);
+    const intent = simulated ? "dry-run" : "own-ship";
     if (flown.current !== recentred) {
       flown.current = recentred;
-      picked();
       const zoom = recentreZoom !== null ? glZoom(recentreZoom) : Math.max(map.getZoom(), glZoom(LOCAL_ZOOM));
-      landing.current = true;
-      map.flyTo({ center: [fix.lon, fix.lat], zoom, duration: SHEET_SECONDS * 2000 });
-      // Ended however it ends: come in, stopped by a drag, or at once
-      // under Reduce Motion (then already over here).
-      if (!map.isMoving()) landing.current = false;
-      else
-        map.once("moveend", () => {
-          landing.current = false;
-        });
+      camera.pick([fix.lon, fix.lat], { zoom, duration: SHEET_SECONDS * 2000, keeps: intent });
       return;
     }
-    // Not over the flight in: the next fix's ease, a quarter second on in
-    // a dry run, stopped it part way, the map left two levels short of
-    // the run's zoom (dry-run.spec, 2026-11-13).
-    if (follow && !landing.current) map.easeTo({ center: [fix.lon, fix.lat], duration: 500 });
-  }, [map, fix, enabled, follow, recentred, recentreZoom]);
+    // Not over the arrow's move in: the owner lets the follow's steps go
+    // by while a pick has the camera, as the next fix's ease, a quarter
+    // second on in a dry run, stopped it part way, the map left two
+    // levels short of the run's zoom (dry-run.spec, 2026-11-13).
+    if (follow) camera.follow(intent, [fix.lon, fix.lat]);
+  }, [map, fix, enabled, simulated, follow, recentred, recentreZoom]);
   return null;
 }

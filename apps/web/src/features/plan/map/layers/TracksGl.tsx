@@ -19,6 +19,7 @@ import { useGlMap } from "../../../../lib/map/gl/glLayer";
 import { iconMarker, setMarkerIcon } from "../../../../lib/map/gl/htmlMarker";
 import { useGlFit } from "../useGlFit";
 import { picked, pilotMoved } from "../../../../lib/map/gl/pilotCamera";
+import { cameraOf } from "../../../../lib/map/gl/camera";
 import { useGlLines, type GlRun } from "../../../../lib/map/gl/useGlLines";
 import { CHART } from "../../../../lib/tokens";
 
@@ -207,9 +208,9 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
       // Not while a replay's camera has the map (features/replay/camera,
       // which marks the map's container): it keeps the airplane in sight.
       if (playing && !pilotMoved() && !map.getContainer().dataset.replayCamera) {
-        const p = map.project([here.lon, here.lat]);
-        const { clientWidth: w, clientHeight: h } = map.getContainer();
-        if (p.x < w * 0.15 || p.x > w * 0.85 || p.y < h * 0.15 || p.y > h * 0.85) map.jumpTo({ center: [here.lon, here.lat] });
+        // Put in the middle once within 15% of the screen's edge (the
+        // camera's follow, with its edge).
+        cameraOf(map).follow("replay", [here.lon, here.lat], { edge: 0.15 });
       }
     };
     // The clock stepped at each frame only while it plays; paused, the
