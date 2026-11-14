@@ -7,7 +7,9 @@
  *  adsb.fi's for personal, non-commercial use, credited and linked;
  *  OurAirports puts its data in the public domain; Overture's places are
  *  CDLA Permissive 2.0, whose terms go with the data; Virtual Radar
- *  Server's routes are CC0. */
+ *  Server's routes are CC0; the NTSB's records are a
+ *  government work too, and Planespotters.net's photos are credited to each
+ *  photographer beside the photo, as its terms ask. */
 const PUBLIC_DOMAIN = "Public domain";
 
 export const DATA_SOURCES: { name: string; licence: string; href?: string }[] = [
@@ -15,6 +17,7 @@ export const DATA_SOURCES: { name: string; licence: string; href?: string }[] = 
   { name: "FAA NASR: airports, runways, navaids, fixes and airspace", licence: PUBLIC_DOMAIN },
   { name: "FAA CIFP procedures, d-TPP plates and the Digital Obstacle File", licence: PUBLIC_DOMAIN },
   { name: "FAA aircraft registry", licence: PUBLIC_DOMAIN },
+  { name: "NTSB aviation accident database: accident and incident records", licence: PUBLIC_DOMAIN },
   { name: "FAA SWIM: NOTAMs, flow programs, terminal data and airspace status", licence: PUBLIC_DOMAIN },
   { name: "NOAA Aviation Weather Center: METARs, TAFs, PIREPs, SIGMETs and G-AIRMETs", licence: PUBLIC_DOMAIN },
   { name: "NOAA models: GFS winds and temperatures aloft, GLMP, magnetic declination", licence: PUBLIC_DOMAIN },
@@ -42,6 +45,12 @@ export const DATA_SOURCES: { name: string; licence: string; href?: string }[] = 
   // Its terms ask for its name and a link to its home page.
   { name: "adsb.fi ADS-B traffic", licence: "Personal, non-commercial use, credited and linked", href: "https://adsb.fi" },
   { name: "Virtual Radar Server flight routes", licence: "CC0", href: "https://creativecommons.org/publicdomain/zero/1.0/" },
+  // Its terms ask for the photographer's name next to each photo and a link to the photo's page.
+  {
+    name: "Planespotters.net aircraft photos, each credited to its photographer beside it",
+    licence: "Planespotters.net's photo API terms",
+    href: "https://www.planespotters.net",
+  },
 ];
 
 /** The maps and software the web app draws with (credits.md's second
