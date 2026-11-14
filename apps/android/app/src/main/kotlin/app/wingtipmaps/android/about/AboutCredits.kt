@@ -28,7 +28,7 @@ object AboutCredits {
         Credit("NOAA GOES East and West satellite loop, via NOAA nowCOAST; not for navigation, check official weather", PUBLIC_DOMAIN),
         Credit("USGS The National Map imagery", PUBLIC_DOMAIN),
         Credit("US Census Bureau geocoder and gazetteer", PUBLIC_DOMAIN),
-        Credit("OurAirports: fields abroad, fields NASR does not list, and field sizes", PUBLIC_DOMAIN),
+        Credit("OurAirports: fields abroad, fields NASR does not list, and field sizes (runways, elevation and frequencies are NASR's wherever NASR lists the field)", PUBLIC_DOMAIN),
         Credit("Overture Maps places: services near a field", "CDLA Permissive 2.0"),
         Credit("adsb.lol ADS-B traffic", "ODbL 1.0"),
         Credit("ADS-B Exchange traffic", "ADS-B Exchange's API terms"),
