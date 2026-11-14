@@ -79,10 +79,11 @@ final class FieldNotams {
 
     /// What the empty list says of a field outside the NOTAM system: a
     /// private one NASR gives no NOTAM_ID (the engine's
-    /// airport_notams_none); nil where "none heard" is right.
-    var outsideNotams: String? {
-        guard let place else { return nil }
-        return (try? Engine.airportNotamsNone(private: place.isPrivate, military: place.military, notamId: place.notamId)) ?? nil
+    /// airport_notams_none); nil where "none heard" is right. A Result, so
+    /// a failed rule is said rather than read as "none heard".
+    var outsideNotams: Result<String?, any Error> {
+        guard let place else { return .success(nil) }
+        return Result { try Engine.airportNotamsNone(private: place.isPrivate, military: place.military, notamId: place.notamId) }
     }
 
     /// The card's place, which the badges go next to.

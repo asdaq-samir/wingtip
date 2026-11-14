@@ -145,10 +145,10 @@ struct FieldNotamsSection: View {
             } else if let ranked = notams.ranked, ranked.notams.isEmpty {
                 // Never "no NOTAMs": none heard since the feed's time (decision
                 // 0023), or for a private field none issued (airport_notams_none).
-                if let outside = notams.outsideNotams {
-                    Text(outside).foregroundStyle(.secondary)
-                } else {
-                    Text(ranked.coverageSince.map { "None heard since \($0)" } ?? "None heard").foregroundStyle(.secondary)
+                switch notams.outsideNotams {
+                case .success(let outside?): Text(outside).foregroundStyle(.secondary)
+                case .success(nil): Text(ranked.coverageSince.map { "None heard since \($0)" } ?? "None heard").foregroundStyle(.secondary)
+                case let failed: ProblemLine(failed, "Whether this field has NOTAMs")
                 }
             } else if notams.ranked == nil {
                 Text("A NOTAM's words and its times").loading("Fetching NOTAMs")

@@ -17,6 +17,22 @@ enum FieldUse {
         return use
     }
 
+    /// The card's line of who may land at a field, the engine's
+    /// airport_use_words ("Private: permission required"; nil for a
+    /// public or joint-use field), kept a Result so a failed rule is said
+    /// on the card rather than read as a public field.
+    static func cardUse(_ place: AirportPlace) -> Result<String?, any Error> {
+        Result { try Engine.airportUseWords(private: place.isPrivate, military: place.military).words }
+    }
+
+    /// The card's line of how far a field's figures are to be trusted, the
+    /// engine's airport_data_words over NASR's INSPECT_METHOD_CODE and
+    /// date ("Owner-reported, last updated Aug 2023"; nil for an inspected
+    /// field), a Result for the same reason.
+    static func cardData(_ place: AirportPlace) -> Result<String?, any Error> {
+        Result { try Engine.airportDataWords(dataSource: place.dataSource, infoDate: place.infoDate) }
+    }
+
     /// A row's mark for the engine's use: "Private", "Military" or "Joint
     /// use", as the web's card writes it beside the name; nil for public.
     static func mark(_ use: String?) -> String? {

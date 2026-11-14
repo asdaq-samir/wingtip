@@ -179,11 +179,11 @@ struct AirportExtrasTests {
         var il11 = AirportPlace(frequencies: [], ident: "IL11", kind: "small_airport", lat: 42.2, lon: -88.3, name: "Il11", runways: [], towered: false)
         il11.isPrivate = true
         notams.attach(il11)
-        #expect(notams.outsideNotams == "No NOTAMs are issued for this private-use field.")
+        #expect(try notams.outsideNotams.get() == "No NOTAMs are issued for this private-use field.")
         var c81 = il11
         c81.ident = "C81"; c81.isPrivate = false; c81.notamId = "C81"
         notams.attach(c81)
-        #expect(notams.outsideNotams == nil)
+        #expect(try notams.outsideNotams.get() == nil)
     }
 
     @Test func rowsMarkAClosedFieldFirstThenItsUse() {
