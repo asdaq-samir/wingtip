@@ -2167,6 +2167,12 @@ fun Engine.underway(speedKt: Double? = null): Result<Boolean> =
     rule("underway", EngineContract.UnderwayInput(speedKt = speedKt))
 
 /**
+ * Where an airplane is usually based: the field its past flights (as ADS-B receivers heard them) most often take off from or land at. Each flight's ends are its takeoff field and, where it was heard landing, its landing field. A field is the base where at least min_ends (3) of the ends are there, at least min_share (0.4) of all the ends are, and no other field has as many; otherwise `ident` is null and nothing is said. The figures are the owner's (2026-10-13), not the FAA's: no public data says where an airplane is kept.
+ */
+fun Engine.usualBase(flights: List<EngineContract.UsualBaseInputFlightsItem>): Result<EngineContract.UsualBaseAnswer> =
+    rule("usual_base", EngineContract.UsualBaseInput(flights = flights))
+
+/**
  * Velocities' east and north parts as tracks and speeds, for a surveillance report that sends its parts (the FAA's STDDS tracks, which the ingest service reads from SWIM): each track degrees true 0 to 360 toward where it goes, and its speed in the parts' own unit (knots for STDDS). The track is null where the speed is 0: what does not move has no track. A list, so a message's tracks cross into the engine once.
  */
 fun Engine.velocityTrack(velocities: List<EngineContract.VelocityTrackInputVelocitiesItem>): Result<List<EngineContract.VelocityTrackAnswerItem>> =

@@ -340,12 +340,20 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   list of past flights (the last ten, more on asking, a day picked), each
   ▶ opening its replay over the card (the owner, 2026-11-14: "How do I
   see the flights of airplane and play them?"); Info the airplane's
-  public record in groups -- Airplane (with the type certificate data
-  sheet), Engine, Registration, Owner, History (past registrations, then
-  its NTSB reports, each linking to the NTSB's report), Based at (where
-  its own flights keep to) and Photos (Planespotters.net's, the
-  photographer credited and the picture linked to its page, on their
-  terms) -- each group saying in place where it has nothing; Figures every
+  public record in groups, in this order -- Registration (owner, owner
+  type, town, co-owners, issued and expires, last action, FAA region,
+  fractional), Airplane (type, category, builder certification, seats,
+  engines, weight class, the FAA's reference cruise said as a reference
+  figure and not for planning, kit, serial, Mode S hex and octal), Engine,
+  Airworthiness (class and operations, date, type certificate data sheet
+  and holder), Usually based at ("6 of 9 takeoffs and landings", nothing
+  where its flights show no one field, "Looking…" while it is looked up),
+  Safety history (the NTSB's cases, each linking to its report and
+  docket), Ownership history (this airframe's past registrations first,
+  then other airplanes that held the N-number) and Documents filed with
+  any reservation -- each group saying in place where it has nothing; its
+  Planespotters.net photo at the card's head once one is found, the
+  photographer named beside it and the picture a link to its page; Figures every
   planning figure, edited in place, a missing one asked for there.
 - **The owner rule:** the FAA aircraft registry is public data, so Info's
   Owner group always shows the registry's owner for every airplane --

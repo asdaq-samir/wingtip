@@ -111,3 +111,18 @@ def test_a_delta_applied_twice_leaves_one_of_each(store):
     ntsb.apply(_delta, store)
     ntsb.apply(_delta, store)
     assert len(ntsb.events("N473AS", "2026-10-12", store)) == 1
+
+
+def test_every_case_of_an_airplane_with_its_kind_and_damage_newest_first(store):
+    (case,) = ntsb.cases("N5393W", store)
+    # The NTSB's words for ev_type ACC and damage SUBS (its data dictionary).
+    assert (case["ntsb_no"], case["date"], case["kind"], case["damage"]) == ("CEN27LA029", "2026-10-22", "Accident", "Substantial")
+    assert (case["city"], case["state"], case["highest_injury"], case["phase"]) == ("Claremore", "OK", "None", "Enroute-descent")
+    assert case["carol_url"].endswith("/204059/pdf")
+    assert ntsb.cases("594BA", store)[0]["ntsb_no"] == "ERA25LA382"
+    assert ntsb.cases("N12345", store) == []
+    assert ntsb.schema(store) == ntsb.SCHEMA
+
+
+def test_no_cases_where_the_store_is_not_built(tmp_path):
+    assert ntsb.cases("N5393W", tmp_path / "ntsb.sqlite") == []

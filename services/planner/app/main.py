@@ -66,7 +66,7 @@ from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
 from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words, plates
-from .routers import aircraft_form, studio, studio_drafts, studio_history, weather_flow
+from .routers import aircraft_form, airplanes, studio, studio_drafts, studio_history, weather_flow
 from .routers import forecast_run, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window
 from .schemas.common import Index
 from .settings import get_settings
@@ -399,7 +399,7 @@ ROUTERS = (
     (plan, chart, briefing, notes, devml, system, classb, devservices, airports, airspace_router, traffic, basemaps),
     (route_options, gonogo, figures, clearance, packs, words, weather_map, weather_flow, weather_loop, forecast_run),
     (pilot, live, feeds, terrain, window, emergency, copilot, logbook_draft, notam_rank, offline, coach),
-    (mcp, plates, studio_history, studio, studio_drafts, aircraft_form),
+    (mcp, plates, studio_history, studio, studio_drafts, aircraft_form, airplanes),
 )
 for group in ROUTERS:
     for module in group:

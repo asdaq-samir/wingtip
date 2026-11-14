@@ -169,7 +169,10 @@ test("the airplane card's Info is the FAA's record, its owner named for an airpl
               carol_url: "https://data.ntsb.gov/carol-repgen/api/Aviation/ReportMain/GenerateNewestReport/1/pdf",
             },
           ],
-          based: { field: LWM, count: 12, ends: 20 },
+          based: { field: LWM, count: 6, ends: 9 },
+          documents: [{ document_id: "1", kind: "Bill of sale", received: "2026-10-20" }],
+          reservation: null,
+          sources: [],
           based_pending: false,
         },
       }),
@@ -191,6 +194,7 @@ test("the airplane card's Info is the FAA's record, its owner named for an airpl
   await page.goto("/app/plan?airplane=N654FL");
   await settle(page);
   const card = page.getByTestId("airplane-profile");
+  // Its tabs in sight at the card's half size, under the photo at its head.
   await card.getByTestId("airplane-tab-info").click();
   const info = card.getByTestId("airplane-info");
   await expect(info.getByTestId("airplane-info-model")).toContainText("Piper PA-28-140", { timeout: slow(15_000) });
@@ -203,9 +207,11 @@ test("the airplane card's Info is the FAA's record, its owner named for an airpl
   // History: past registrations, then the NTSB's, each its report; where it is based; its photo, credited.
   await expect(info.getByTestId("airplane-past-registration")).toContainText("Earlier Owner");
   await expect(info.getByTestId("airplane-ntsb")).toHaveAttribute("href", /data\.ntsb\.gov/);
-  await expect(info.getByTestId("airplane-based-field")).toContainText("LWM");
-  await expect(info.getByTestId("airplane-photo-credit")).toContainText("Jane Spotter");
-  await expect(info.getByTestId("airplane-photo-credit")).toHaveAttribute("href", "https://www.planespotters.net/photo/1/n654fl");
+  await expect(info.getByTestId("airplane-based-field")).toContainText("6 of 9 takeoffs and landings");
+  await expect(info.getByTestId("airplane-documents")).toContainText("Bill of sale");
+  // Its photo at the card's head, the photographer named beside it and the picture its page's link.
+  await expect(card.getByTestId("airplane-photo-credit")).toContainText("Jane Spotter");
+  await expect(card.getByTestId("airplane-photo-credit")).toHaveAttribute("href", "https://www.planespotters.net/photo/1/n654fl");
   // Figures: the planning figures, as the card had them.
   await card.getByTestId("airplane-tab-figures").click();
   await expect(card.locator("[data-figure]").first()).toBeVisible();

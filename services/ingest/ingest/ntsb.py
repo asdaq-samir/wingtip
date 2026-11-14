@@ -140,8 +140,9 @@ def directory() -> dict[str, dict]:
 
 def due(avall: dict, state: dict) -> bool:
     """Whether the store is to be made again from avall.zip: none built,
-    or the NTSB's file not the one it was built from (its date or size)."""
-    return not ntsb.store_path().exists() or state.get("avall") != avall
+    one of an older shape (wingtip.history.ntsb.SCHEMA), or the NTSB's file
+    not the one it was built from (its date or size)."""
+    return ntsb.schema() != ntsb.SCHEMA or state.get("avall") != avall
 
 
 def deltas_due(files: dict[str, dict], state: dict) -> list[str]:

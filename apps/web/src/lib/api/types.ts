@@ -56,6 +56,8 @@ export type AltitudeChoice = AltitudeOption["kind"];
 /** An airplane's flights of the last seven days (wingtip.traffic.history). */
 export type PastFlights = Schemas["PastFlights"];
 export type PastFlightSummary = Schemas["PastFlightSummary"];
+export type AirplaneDetails = Schemas["AirplaneDetails"];
+export type AirplanePhoto = Schemas["AirplanePhoto"];
 /** One past flight's reports, for its track log and replay. */
 export type PastFlight = Schemas["PastFlight"];
 export type PastFlightPoint = Schemas["PastFlightPoint"];

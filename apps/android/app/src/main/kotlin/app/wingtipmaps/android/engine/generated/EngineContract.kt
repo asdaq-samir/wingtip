@@ -12333,6 +12333,61 @@ object EngineContract {
     )
 
     @Serializable
+    data class UsualBaseAnswer(
+        /**
+         * The base; null where the flights do not show one clearly.
+         */
+        val ident: String? = null,
+        /**
+         * The field most of the ends are at (the first to reach the count, ties too); null with no ends.
+         */
+        val most: String? = null,
+        /**
+         * How many of the ends are at `most`.
+         */
+        @SerialName("most_ends")
+        val mostEnds: Int,
+        /**
+         * All the takeoffs and landings counted.
+         */
+        val ends: Int,
+        /**
+         * The fewest ends at a field for it to be the base.
+         */
+        @SerialName("min_ends")
+        val minEnds: Int,
+        /**
+         * The least share of all the ends at a field for it to be the base.
+         */
+        @SerialName("min_share")
+        val minShare: Double,
+    )
+
+    @Serializable
+    data class UsualBaseInput(
+        /**
+         * The airplane's past flights, any order; each field one identifier, as the host names it.
+         */
+        val flights: List<EngineContract.UsualBaseInputFlightsItem>,
+    )
+
+    @Serializable
+    data class UsualBaseInputFlightsItem(
+        /**
+         * The field it took off from; null where not known.
+         */
+        val origin: String? = null,
+        /**
+         * The field it landed at; null where not known.
+         */
+        val destination: String? = null,
+        /**
+         * Whether it was heard landing: a destination not landed at is no end.
+         */
+        val landed: Boolean? = null,
+    )
+
+    @Serializable
     data class VelocityTrackAnswerItem(
         @SerialName("track_deg")
         val trackDeg: Double? = null,

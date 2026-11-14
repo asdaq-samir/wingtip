@@ -22,6 +22,7 @@ import { FavoriteTile } from "../../components/FavoriteTile";
 import { CardTabBar, CardTabPanel } from "../../components/CardTabs";
 import { Tabs } from "../../components/ui/tabs";
 import AirplaneInfo from "./AirplaneInfo";
+import AirplanePhotoHead from "./AirplanePhotoHead";
 
 /** One figure: its name and where it comes from, its field (typed in place,
  *  kept as the pilot's when it changes), and Reset to book figure where
@@ -162,6 +163,8 @@ export default function AirplaneProfileSheet() {
       }}
     >
       <div className="flex flex-col gap-3">
+        {/* Its photo at the head, once Planespotters.net answered with one (AirplanePhotoHead). */}
+        {card.photo && <AirplanePhotoHead photo={card.photo} />}
         {/* One row of four, the first filled, as the airport card's (CardAction). Follow is the
             flight card's alerts -- takes off, lands, comes near -- and Favorite its star, both by
             the ICAO address the registry gives: greyed where it gives none. */}
@@ -220,7 +223,7 @@ export default function AirplaneProfileSheet() {
             )}
           </CardTabPanel>
           <CardTabPanel value="info">
-            <AirplaneInfo record={card.record} details={card.details} detailsFailed={card.detailsFailed} photo={card.photo} />
+            <AirplaneInfo record={card.record} details={card.details} detailsFailed={card.detailsFailed} />
           </CardTabPanel>
           <CardTabPanel value="figures">
             <ListGroup title="Figures">
