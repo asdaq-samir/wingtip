@@ -179,9 +179,9 @@ test("on the training map, which has no card, a tap goes to the field at its ter
   await expect(page.locator(".maplibregl-popup")).toHaveCount(0);
 });
 
-test("on an IFR base, the settings' TAC draws the IFR area chart at a Class B field", async ({ page }) => {
-  // The terminal sheet over an IFR chart is the IFR area chart: the
-  // Class B row's chart segment says Area there, and that is what draws.
+test("on an IFR base, the IFR area chart is drawn at a Class B field", async ({ page }) => {
+  // The terminal sheet over an IFR chart is the IFR area chart, always
+  // drawn where it exists (the owner, 2026-11-14: no switch).
   const areaTiles: string[] = [];
   page.on("request", (r) => {
     if (r.url().includes("/ifr_area/")) areaTiles.push(r.url());
@@ -192,8 +192,6 @@ test("on an IFR base, the settings' TAC draws the IFR area chart at a Class B fi
   await openMapSettings(page);
   await grabberTo(page, "full");
   await page.getByTestId("base-chart-select").getByRole("button", { name: "IFR low" }).click();
-  await expect(page.getByTestId("map-settings").getByText("IFR Area Charts")).toBeVisible();
-  await page.getByTestId("tac-toggle").click();
   await page.keyboard.press("Escape");
 
   await tapMark(page, "class-b-fields", "KORD");

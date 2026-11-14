@@ -1,8 +1,6 @@
-import { ScrollArea } from "@base-ui/react/scroll-area";
-import { cn } from "cn";
-import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
+import { ToggleGroup } from "../../components/ui/toggle-group";
+import { LayerPictureTile } from "../../components/LayerTile";
 import SectionTitle from "../../components/SectionTitle";
-import { TEXT } from "../../lib/text";
 
 export interface PictureChoice {
   value: string;
@@ -13,17 +11,14 @@ export interface PictureChoice {
 }
 
 /**
- * A pick of one of a few, each a picture with its word under it on one
- * line, as Apple Maps' "Choose Map" card sets its maps (the owner's
- * screenshot, 2026-11-10; its words under the picture, not over it, the
- * owner's "How can this be better?", 2026-11-14). The Chart and Base map
- * rows' tiles are one size, a quarter of the card's width; where a word
- * is longer than that (Google Satellite at an iPhone's 393 points) the
- * row's tiles grow to it together and the row slides sideways (Base UI's
- * ScrollArea), never wrapping a word. The one picked ringed in the tint.
- * The stock ToggleGroup underneath, so each is a radio to a screen reader
- * and the arrow keys move between them; a pick applies at once, with
- * nothing to confirm. A picture that does not load leaves its muted box.
+ * A pick of one of a few, each a picture, as Apple Maps' "Choose Map"
+ * card sets its maps (the owner's screenshot, 2026-11-10): two by two in
+ * the layers' tiles' size and form (LayerPictureTile; the owner,
+ * 2026-11-14: "every section should have 4 tiles like Layers one"), the
+ * picture the tile's face and its name on one line in the name's place,
+ * the one picked marked as a layer that is on. The stock ToggleGroup
+ * underneath, so each is a radio to a screen reader and the arrow keys
+ * move between them; a pick applies at once, with nothing to confirm.
  */
 export default function MapPictureChoices({
   title,
@@ -45,69 +40,20 @@ export default function MapPictureChoices({
       <div className="pb-1.5">
         <SectionTitle>{title}</SectionTitle>
       </div>
-      {/* The row's width is the container the tiles' quarter is taken of. */}
-      <ScrollArea.Root className="@container min-w-0">
-        <ScrollArea.Viewport style={{ overflowY: "hidden" }} className="overscroll-x-contain">
-          <ToggleGroup
-            value={[value]}
-            onValueChange={(v) => {
-              if (v[0]) onChange(v[0]);
-            }}
-            aria-label={title}
-            data-testid={testId}
-            // Every column a quarter of the row less its three gaps, or the
-            // longest word's width if that is more, all of them the same
-            // (a track sized by its content, each one fraction); half a step
-            // round them for the picked one's ring, which the viewport clips.
-            className="grid w-max auto-cols-[minmax(calc((100cqw_-_1.75rem)/4),1fr)] grid-flow-col gap-2 p-0.5"
-          >
-            {options.map((o) => (
-              <ToggleGroupItem
-                key={o.value}
-                value={o.value}
-                aria-label={o.label}
-                className={cn(
-                  "group flex h-auto min-w-0 flex-col items-stretch gap-1 rounded-xl border-0 bg-transparent p-0 shadow-none",
-                  "hover:bg-transparent data-pressed:bg-transparent",
-                )}
-              >
-                {/* 16:10, flatter than 4:3, so the card's rows fit an iPhone's screen. */}
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "block aspect-[16/10] overflow-hidden rounded-xl bg-muted",
-                    // The one picked ringed in the tint, two points, as Apple's is.
-                    "ring-1 ring-border group-data-pressed:ring-2 group-data-pressed:ring-tint",
-                    o.className,
-                  )}
-                >
-                  {o.src && (
-                    <img
-                      src={o.src}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      draggable={false}
-                      className="size-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.visibility = "hidden";
-                      }}
-                    />
-                  )}
-                </span>
-                <span
-                  className={cn(
-                    "px-0.5 text-left whitespace-nowrap text-foreground group-data-pressed:font-semibold group-data-pressed:text-tint",
-                    TEXT.note,
-                  )}
-                >
-                  {o.label}
-                </span>
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </ScrollArea.Viewport>
-      </ScrollArea.Root>
+      <ToggleGroup
+        value={[value]}
+        onValueChange={(v) => {
+          if (v[0]) onChange(v[0]);
+        }}
+        aria-label={title}
+        data-testid={testId}
+        // The layers' grid (MapLayers), so every section's tiles line up.
+        className="grid w-full auto-rows-fr grid-cols-2 gap-2"
+      >
+        {options.map((o) => (
+          <LayerPictureTile key={o.value} {...o} />
+        ))}
+      </ToggleGroup>
     </section>
   );
 }

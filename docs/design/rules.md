@@ -707,8 +707,10 @@ way: three homes, and every control in one of them.
    the charts (None, Sectional, IFR Low, IFR High: None draws no FAA
    chart, only the overlay over a plain ground in the look's colours,
    with every vector layer over it; the owner, 2026-11-14: "chart should
-   also have none option") with the terminal charts' switch under them
-   while there is a chart, the base map under it ("Overlay" until the
+   also have none option"), each chart's terminal sheet (the TAC over the
+   sectional, the IFR area chart over the IFR charts) always drawn where
+   it exists, with no switch (the owner, 2026-11-14: "TAC switch is not
+   needed, just have it on by default"), the base map under it ("Overlay" until the
    owner's "How can this be better?", 2026-11-14; None, USGS, Google Map,
    Google Satellite, Google's only with a key) with its Strength while
    one is picked, in 3D its Heights (×1, ×3 or ×5, ×3 unless picked; the owner,
@@ -722,18 +724,21 @@ way: three homes, and every control in one of them.
    Aloft, Radar and Model Weather as submenus, each off by default),
    Traffic, and Private & Military (drawn whatever it says while the
    Emergency Assistant is open), two by two, every tile one size and
-   every name on one line; then Look, Theme, Appearance and Sunlight as
-   three rows of one inset grouped list, each its name and its pull-down,
-   as iOS Settings sets a choice (Sunlight was Settings' Display until the
-   owner's "Sunlight should also move to map settings", 2026-11-14; Settings
-   has no Display now). Laid out as Apple Maps' Map card and iOS
-   Settings are (the owner, 2026-11-14: "How can this be better?"): the
-   Chart and Base map pictures one size, a quarter of the card, each word
-   under its picture on one line (the row slides sideways when a word is
-   longer, never wraps), both Nones an empty map (the surface under a
-   faint grid); the terminal charts', Strength's and Heights' switches and
-   segments rows of an inset grouped list at the tiles' edges, in the
-   list's row type; one section gap (space.xl) between the parts. The public
+   every name on one line; then Look, four tiles: Theme, Appearance and
+   Sunlight, each its value under its name and a tap its menu, Sunlight
+   in the tint while On, and Position, own ship on the map, the location
+   arrow's on and off, in the tint while on, asking for the position as the
+   welcome does (Sunlight was Settings' Display until the owner's
+   "Sunlight should also move to map settings", 2026-11-14; Settings has
+   no Display now). Every section is four tiles two by two in the layers'
+   size and form, the sections lined up (the owner, 2026-11-14: "every
+   section should have 4 tiles like Layers one. The fourth tile for look
+   can be position"): the Chart and Base map tiles their picture as the
+   face and their name on one line in the name's place, the one picked
+   marked as a layer that is on, both Nones an empty map (the surface
+   under a faint grid); Strength and Heights rows of an inset grouped
+   list at the tiles' edges, in the list's row type; one section gap
+   (space.xl) between the parts. The public
    fields, the route and the plan's points, own ship and the TFRs have no
    switch: always drawn. The route's VFR checkpoints and the Class B
    fields' weather chips are switches of the route's ••• menu, On the Map

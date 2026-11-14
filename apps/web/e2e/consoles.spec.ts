@@ -191,3 +191,20 @@ test("The Map card's Appearance control is system, light, dark or dark with the 
   await pickControl(page, "theme-select", "theme-light");
   await expect(html).not.toHaveClass(/dark/);
 });
+
+test("The Map card's Look is four tiles, the fourth Position, which turns own ship off and on as the location arrow does", async ({
+  page,
+}) => {
+  // The owner, 2026-11-14: "every section should have 4 tiles like Layers one. The fourth tile for look can be position."
+  await page.goto("/app/plan");
+  await settle(page);
+  await openMapSettings(page);
+  const look = page.getByTestId("map-look");
+  for (const id of ["brand-select", "theme-select", "sunlight-select", "position-toggle"]) await expect(look.getByTestId(id)).toBeVisible();
+  const position = look.getByTestId("position-toggle");
+  const arrow = page.getByTestId("my-position-button");
+  const was = await position.getAttribute("aria-pressed");
+  await position.click();
+  await expect(position).toHaveAttribute("aria-pressed", was === "true" ? "false" : "true");
+  await expect(arrow).toHaveAccessibleName(was === "true" ? "Show my position" : /Hide my position|Follow my position/);
+});
