@@ -551,10 +551,13 @@ and the traffic are Search); the toggle picks it as a place is picked
 `SheetNav.show` does, none of them kept to come back with its page. The pill is the page's one row (the
 route's figures on FPL); the route's figures sit at the foot on FPL
 alone. The Brief, the Nav Log, the Profile and the Stops are cards over
-FPL (`PlanPage`, `CardLayer`), the last three kept between their
+FPL (`PlanCards`, `CardLayer`), the last three kept between their
 openings: built at the first, their drawers closed and skipped by
 `content-visibility` after (index.css's kept cards), as a tab put away
-is, so the Nav Log is not built again (0.6 s).
+is, so the Nav Log is not built again (0.6 s). They are mounted beside
+the sheet's pages, not in FPL's (`PlanPage`): in flight the sheet draws no
+pages, and the Profile card, with a dry run's controls and its figures
+and Done flying at its foot, stays up while the airplane flies.
 
 ### 3. The flight plan and route editing
 
