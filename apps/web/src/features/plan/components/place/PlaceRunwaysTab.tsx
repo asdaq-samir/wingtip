@@ -10,6 +10,7 @@ import { runwayInUse } from "../../lib/pattern";
 import { NotamBadge, NotamSheet } from "./NotamBadge";
 import { useNotamMarks, useNotamSheet } from "./notamBadges";
 import { NO_RUNWAYS } from "../../../../lib/emptyWords";
+import { longestOpen } from "./runwayPicks";
 
 /** An airport's card's Runways tab (PlaceCard): its pattern altitude, each
  *  runway, a NOTAM's badge by its name ("Closed") and a tap on it opening
@@ -23,7 +24,7 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
   // The longest runway open, what a pilot sizes a field by: a badge on its
   // row (it was a row of the Info tab's Details). None where the field has one.
   const open = runways.filter((r) => !r.closed && r.length_ft != null);
-  const longest = open.length > 1 ? runways.indexOf(open.reduce((a, b) => (b.length_ft! > a.length_ft! ? b : a))) : -1;
+  const longest = open.length > 1 ? runways.indexOf(longestOpen(runways)!) : -1;
   // The runway most nearly into the reported wind (AC 90-66C 11.5, the
   // engine's gonogo_runway_in_use over each runway's wind on the end it
   // favours): only where the wind chose it, not a calm field's most used.

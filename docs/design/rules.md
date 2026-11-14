@@ -216,13 +216,26 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    grabber from the start, the content scrolling under it blurred through
    its frost ("just keep the title on top and content moves under with a
    frosty style"). A card's tabs or segmented control pin under the head,
-   frosted the same way. The airport card's tabs sit directly under its
-   four actions, above its pictures, so they are in sight at half (the
-   owner's T4, 2026-11-14, canvas
-   https://claude.ai/artifact/V1d9RDbmY1aczc4LfXed7a, "Airport card
-   tabs"): the picked tab filled in the tint, Weather with the field's
-   category dot and Charts with its count, the field's report in a line
-   under them, the pictures first on Info. On Android, at half height a
+   frosted the same way. The airport card is laid out after Apple Maps'
+   place card (the owner, 2026-11-14, sending Maps' Teriyaki Madness
+   card: "How can we make our airport card more similar to this? Can tabs
+   be similar to that floating buttons group at the bottom?", then "fix it
+   all"; option C1 on the canvas
+   https://claude.ai/artifact/V1d9RDbmY1aczc4LfXed7a, board "Airport card
+   after Apple Maps"), top to bottom: the head (Share, the ident with its
+   name and "Towered" or "Non-towered", ✕); the four actions, glyph over
+   word in 56-point tiles, Fly Here saying the time there ("≈ 38m") where
+   it can be worked out; a sideways strip of facts, a grey name over each
+   value (Weather, Wind, Longest, Elevation, Distance, Fuel); the pictures
+   as large rounded tiles; then the tab's page. Its tabs (Info, Weather,
+   Runways, Charts) float in a glass bar at the card's foot, as Maps'
+   group of buttons does, in reach at every height and hidden at the
+   pill, the page scrolling under it and clearing it at its end: the
+   picked tab filled in the tint, Weather with the field's category dot
+   and Charts with its count. The bar is glass because it floats over the
+   card (the owner's decision of 2026-11-10 keeps glass for what floats).
+   This replaces T4's tabs under the actions and its one-line report. On
+   Android, at half height a
    card shows the small bar, its title and actions on one row, and at
    full the large flexible bar, folding as it scrolls (owner decision
    2026-11-10, on the Android sheet audit's H-1), so the half-height card
@@ -240,7 +253,7 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
 
 | | Web | iPhone | Android |
 |---|---|---|---|
-| Pinned head | One scroller per sheet (SheetParts' `data-sheet-scroll`), its scroll indicator the browser's own, shown while it scrolls (iOS's transient bar; 2026-11-11), its head band (the search, the route's row) `position: sticky; top: 0` in it and frosted, the grabber's room inside it; tab pages laid out whole in it, nothing measured and no scroller pulled up under the head (2026-11-11); a card has its own nested drawer's scroller (CardStack). `PinnedHead`: one row sticky at the sheet's top from the start (under the search's row, a fixed height, `--sheet-head`, on a tab's list), frosted (index.css `frost-head`: the sheet's ground at the glass fill over the sheet blur, solid without backdrop-filter and under Reduce Transparency); on `CardTitle`, `CardHead`, `SheetCard`, `ListPageHead`, Settings' title row and a console page's head. The airport card's tabs pin directly under it by plain CSS (`PINNED_BELOW`: its room and its 3rem), frosted the same | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport card's section picker pins under the bar | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs a `stickyHeader` |
+| Pinned head | One scroller per sheet (SheetParts' `data-sheet-scroll`), its scroll indicator the browser's own, shown while it scrolls (iOS's transient bar; 2026-11-11), its head band (the search, the route's row) `position: sticky; top: 0` in it and frosted, the grabber's room inside it; tab pages laid out whole in it, nothing measured and no scroller pulled up under the head (2026-11-11); a card has its own nested drawer's scroller (CardStack). `PinnedHead`: one row sticky at the sheet's top from the start (under the search's row, a fixed height, `--sheet-head`, on a tab's list), frosted (index.css `frost-head`: the sheet's ground at the glass fill over the sheet blur, solid without backdrop-filter and under Reduce Transparency); on `CardTitle`, `CardHead`, `SheetCard`, `ListPageHead`, Settings' title row and a console page's head. The airport card's tabs float at its foot instead (C1, the owner, 2026-11-14): a glass bar sticky at its scroller's foot, held at the foot of the part in sight by the Drawer's offset (`place/PlaceTabBar`), its pages starting under the head (`PINNED_BELOW`) | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport card's section picker pins under the bar | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs a `stickyHeader` |
 | Grow, then scroll | Base UI's Drawer gives a drag to any scroller that can scroll, so below full the sheet's scroller and any in its body are `overflow-y: hidden` (index.css), which its arbitration skips; a script, the keyboard and a focused row still scroll them, the sheet left at its size | The system sheet's own behaviour, with nothing overriding it; no zoom push inside a resizable sheet, whose pull-down would pop the page | The sheet's nested scroll; every card shown from the search or the map opens at half (`halfWindow`) and grows to full; one pushed inside a card keeps the height |
 | Detents | A card's nested drawer has its own snap point among the sheet's three sizes, the same fixed values in the Drawer's own units (`"4.25rem"`, `"23rem"`, `1`; `components/sheet/insets`), never px worked out from the window: it opens at half, every card but Emergency (`lib/sheetCards`' `cardOpening`), and the sheet under it stays where it was; what is drawn follows the snap point the moment it is set; a swipe moves one size however fast, by the Drawer's own `snapToSequentialPoints` (the owner, 2026-11-11, "enforce the detents, regardless of how fast you swipe") | Every card opens at `.medium` (Emergency at `.large`) and the pilot's drag sizes it, a card opened inside a card keeping the height; the map stays live under it up to `.medium` (`presentationBackgroundInteraction`); questions and forms stay modal | A card from the search or the map opens at half and grows to full; one opened inside a card keeps the height |
 | Sideways rows | The Embla carousels (`CardPictures`, `RecentCards`) and the route's pills carry `data-base-ui-swipe-ignore="x"`; every native sideways row `overscroll-x-contain` and, in the sheet, `overflow-y: hidden` (index.css: `overflow-x: auto` alone made it a few points' vertical scroller, which took a drag up at half); the upright altitude Slider and the sortable rows' grips keep `""`, their drag being up and down | No control takes the sheet's drag: the Profile's upright altitude slider is a stock `Slider` the sheet does not take; the flown track's chart moves the replay on a tap | A sideways row takes only a sideways drag; the sheet's nested scroll takes the rest |

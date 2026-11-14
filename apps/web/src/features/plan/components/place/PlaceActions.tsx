@@ -10,6 +10,7 @@ import { sameField } from "../../../../lib/procedures";
 import { useShown } from "../../../../lib/shown";
 import { keyHint } from "../../../../lib/shortcutKeys";
 import { useCardKeys } from "../../hooks/useCardKeys";
+import { duration, spokenDuration } from "../../../../lib/format";
 
 /**
  * An airport card's actions, under its title (PlaceCard): four and no
@@ -24,6 +25,12 @@ import { useCardKeys } from "../../hooks/useCardKeys";
  * tab's row. Refresh is in its Weather tab. On a desktop Fly Here and
  * Add as Stop by a letter each, F and S, shown on them, while the card is
  * in sight (lib/shown: not under a card over it).
+ *
+ * Laid out as Apple Maps' place card's (the owner, 2026-11-14, C1 on the
+ * canvas V1d9RDbmY1aczc4LfXed7a): each tile its glyph over its word and
+ * taller, 56 points, Fly Here saying the time to get there where it can
+ * be worked out ("≈ 38m", flyHereTime) as Maps' Directions tile says
+ * "9 min", and "Fly Here" where it cannot.
  */
 export default function PlaceActions({
   place,
@@ -32,6 +39,7 @@ export default function PlaceActions({
   onAddStop,
   addStopOff,
   ident,
+  time,
 }: {
   place: AirportPlace | null;
   /** The field's ident before its answer is in: its star already right. */
@@ -43,6 +51,8 @@ export default function PlaceActions({
   onAddStop?: (place: AirportPlace) => void;
   /** Why Add Stop is greyed; none where it can be added. */
   addStopOff?: string;
+  /** The minutes there at the airplane's cruise, no wind (useFlyHereMinutes); none where not known. */
+  time?: { minutes: number; tasKt: number } | null;
 }) {
   const desktop = useIsDesktop();
   const shown = useShown();
@@ -57,15 +67,26 @@ export default function PlaceActions({
   // The card keeps itself fresh as the window or the card comes back into
   // sight, whichever tab is open; its Refresh, in the Weather tab, asks now.
   useLiveRefresh("airport");
+  // The time where it is known, never for a field closed to landing.
+  const timed = time && !closed ? time : null;
   return (
-    <div className={cn("grid gap-2 pt-3", onAddStop ? "grid-cols-4" : "grid-cols-3")} data-testid="place-actions">
+    // Every tile 56 tall (min-h-14) as Maps' are: the shared tile keeps its
+    // own size elsewhere, where the half card has no room for it.
+    <div className={cn("grid gap-2 pt-3 *:min-h-14", onAddStop ? "grid-cols-4" : "grid-cols-3")} data-testid="place-actions">
       <Action
         icon={<ACTION.flyHere.icon />}
-        label={ACTION.flyHere.label}
+        // "≈": the book's speed in still air, not the nav log's legs (as the figure strip marks its estimate).
+        label={timed ? `≈ ${duration(timed.minutes)}` : ACTION.flyHere.label}
         filled
         busy={flying}
         disabled={!place || !!closed}
-        spoken={closed ? `${ACTION.flyHere.label}: ${closed}` : undefined}
+        spoken={
+          closed
+            ? `${ACTION.flyHere.label}: ${closed}`
+            : timed
+              ? `${ACTION.flyHere.label}, about ${spokenDuration(timed.minutes)} at ${Math.round(timed.tasKt)} knots, no wind`
+              : undefined
+        }
         testId="fly-here"
         keys={keyed ? keyHint("F") : undefined}
         onClick={() => place && onFlyHere(place)}

@@ -450,28 +450,47 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    row; the owner, 2026-11-11) (`lib/cardActions`;
    `docs/design/icons.md`). Refresh is at the right of the Weather tab's
    first row.
-3. Tabs, directly under the actions (the owner's T4, 2026-11-14, on the
-   canvas https://claude.ai/artifact/V1d9RDbmY1aczc4LfXed7a, board
-   "Airport card tabs"; the order the owner first set on 2026-10-29):
-   Info, Weather, Runways, Charts (`place/PlaceTabBar`), in sight at half.
-   The stock Tabs' segmented control in its `tint` variant: the picked tab
-   filled in the look's tint (`primary`, its words `primary-foreground`),
-   the others' words in the foreground colour at a row's size
-   (`TEXT.row`), 36 points tall with a 44-point `::before` hit area.
-   Weather carries the dot of the field's own report's flight category
-   (the engine's `flight_category`, the FAA's colour; none with no report
-   of its own), Charts the count of its charts (the d-TPP's plates and the
-   diagram); each tab is named with its hint, "Weather, MVFR",
-   "Charts, 9". The bar pins under the head (`PINNED_BELOW`) and each tab
-   keeps its place (`useTabScroll`).
-4. The field's own report in one line under the tabs
-   (`PlaceWeatherLine`): its category as a chip in the FAA's colour, then
-   the ceiling, the true wind and the time, "MVFR Ceiling 1,800 ft ·
-   310°T 4 kt · 1255Z"; nothing with no report of its own.
-5. Each tab's content; Info opens on the pictures (from the air, the
-   runways, from the ground), then the facts: elevation, the frequencies a
-   pilot needs first (each copies on click), lights and services; long
-   sections fold.
+   Laid out after Apple Maps' place card since 2026-11-14 (the owner,
+   with Maps' Teriyaki Madness card: "How can we make our airport card
+   more similar to this? Can tabs be similar to that floating buttons
+   group at the bottom?", then "fix it all"; option C1 on the canvas
+   https://claude.ai/artifact/V1d9RDbmY1aczc4LfXed7a, board "Airport card
+   after Apple Maps"; it replaces T4's tabs under the actions and their
+   one-line report). The head's line says "Towered" or "Non-towered" after
+   the name (`towered`, NASR's tower type). The tiles are 56 points tall,
+   glyph over word, as Maps' are; Fly Here says the time there, "≈ 38m",
+   where an airplane is picked and there is somewhere to measure from
+   (own ship's fix, else the route's departure): the engine's
+   `fuel_estimate` over its great-circle distance at the airplane's cruise
+   TAS, no wind, so marked "≈" and said "about 38 minutes at 110 knots, no
+   wind" (`place/flyHereTime`); "Fly Here" otherwise.
+3. Facts, a sideways strip under the actions (`place/PlaceFacts`), each a
+   small grey name over its value, as Maps' Hours, Yelp, Accepts and
+   Distance: Weather (the flight category chip, "≈" where it is the
+   model's or a near station's), Wind (true, "310°T 4 kt"), Longest (the
+   longest runway open; "Runway" where there is one), Elevation, Distance
+   (from the pilot, else "From C81"), Fuel (NASR's types, the engine's
+   `fuel_names`), each only where the data has it.
+4. The pictures (`place/PlacePictures`): large rounded tiles sliding
+   sideways, from the air, the runways, from the ground, over every tab;
+   a tap opens one full screen to pinch in on (ChartViewer's MapLibre
+   map, its pages kept across the card's redraws so a pinch holds).
+5. The tab's page (Info: elevation, the frequencies a pilot needs first,
+   each copying on click, lights and services; Weather; Runways; Charts),
+   then the tabs, Info, Weather, Runways, Charts (`place/PlaceTabBar`), in
+   a glass capsule floating at the card's foot like Maps' group of
+   buttons: sticky at the foot of the card's scroller and moved up by the
+   Drawer's own offset (`--sheet-offset`, `--sheet-swipe`) so it stays at
+   the foot of the part in sight at every height, hidden at the pill with
+   the rest of the body; its own room in the flow is the room the last row
+   scrolls clear of it. Glass (`liquid-glass`) because it floats over the
+   card, the one place glass stays (rules.md; the owner, 2026-11-10). The
+   stock Tabs' list in its `tint` variant, capsule triggers 40 points tall
+   with a 44-point `::before` hit area, the picked one filled in the tint;
+   Weather carries the dot of the field's own report's category (the
+   FAA's colour), Charts the count of its charts, each named with its
+   hint, "Weather, MVFR", "Charts, 9". A tab not yet seen opens at its
+   page's top under the head, and each keeps its place (`useTabScroll`).
 
 **Structure, airplane card.** Head (tail, type, operator where the
 registry gives it; a picked airplane of the pilot's own shows its
@@ -1279,8 +1298,8 @@ The owner's rule: a screenshot of another app means ours should show this.
 | One round button at the bottom left (Look Around) | The 3D button, and under it the page toggle (the owner, 2026-11-13) |
 | Privacy \| Terms \| Legal \| Imagery at the map's bottom right, over the sheet | `MapCredits`: one MapLibre AttributionControl at the bottom right, riding the sheet's top, Privacy \| Terms \| Legal then each drawn source's credit (imagery, Google, the traffic, the overlay tiles' FAA cycle); gone all the way up, where the footer has them |
 | A place picked: its card is the whole sheet, no search | Any card (a field, an airplane, a point, the Brief, the Map card) hides the search; its ✕ goes back to the search with the query kept |
-| A place card scrolled: its title and ✕ stay in sight | `PinnedHead` (owner decision 2026-11-10: one pinned frosted head, no large title): the card's head is one row, its name, Share and ✕, pinned at the sheet's top under the grabber from the start, the content scrolling under it blurred through its frost (`frost-head`), solid where there is no backdrop-filter and under Reduce Transparency. It replaced a large title folding into a compact bar, which on an iPhone stuck partway down the sheet with the card scrolling above it. Every card with a head has it, one row for all (`CardHeadRow`, the card rule's 8): `SheetCard`'s own (Map card and the cards in the sheet), `CardTitle`'s (airport, airplane), `CardHead`'s (Brief, Nav Log, Profile, Nearest, airspace, past flight); the lists in full (`ListPageHead`), the Stops' row (its distance a filter at its list's top), Settings (`flush`, its scroller unpadded) and its pages (`ConsolePages`) draw the same row, its name and line centred across the card, Share at its start and ✕ alone at its end, two buttons at most (the Brief's Refresh in its ••• menu, the Profile's VFR/IFR in its content), as Apple Maps' place card (`HeadGrid`; the owner, 2026-11-11: "let's move the title in the middle"); what scrolls under the head (an airport's name and town line, `CardHead`'s `line`) stays left-aligned (owner-reported 2026-11-11: Settings' title was its own, at 17 points under its pages' 22; `scripts/ci/shared_parts_guard.py` now fails a head drawn by hand). The airport card's tabs pin under it, each tab keeping its own place in the scroll (`useTabScroll`) |
-| Place card: big title, "kind · place" with the place a link, Share and ✕, four action tiles, photos sliding | The airport card: the ident, "name · town" with the town a link, Share and ✕, Fly Here (filled), Add as Stop, Call, Favorite; the tabs directly under them with the report's line (the owner's T4, 2026-11-14), the pictures as a sliding row first on Info |
+| A place card scrolled: its title and ✕ stay in sight | `PinnedHead` (owner decision 2026-11-10: one pinned frosted head, no large title): the card's head is one row, its name, Share and ✕, pinned at the sheet's top under the grabber from the start, the content scrolling under it blurred through its frost (`frost-head`), solid where there is no backdrop-filter and under Reduce Transparency. It replaced a large title folding into a compact bar, which on an iPhone stuck partway down the sheet with the card scrolling above it. Every card with a head has it, one row for all (`CardHeadRow`, the card rule's 8): `SheetCard`'s own (Map card and the cards in the sheet), `CardTitle`'s (airport, airplane), `CardHead`'s (Brief, Nav Log, Profile, Nearest, airspace, past flight); the lists in full (`ListPageHead`), the Stops' row (its distance a filter at its list's top), Settings (`flush`, its scroller unpadded) and its pages (`ConsolePages`) draw the same row, its name and line centred across the card, Share at its start and ✕ alone at its end, two buttons at most (the Brief's Refresh in its ••• menu, the Profile's VFR/IFR in its content), as Apple Maps' place card (`HeadGrid`; the owner, 2026-11-11: "let's move the title in the middle"); what scrolls under the head (an airport's name and town line, `CardHead`'s `line`) stays left-aligned (owner-reported 2026-11-11: Settings' title was its own, at 17 points under its pages' 22; `scripts/ci/shared_parts_guard.py` now fails a head drawn by hand). The airport card's tabs float in a glass bar at its foot (C1, 2026-11-14), each tab keeping its own place in the scroll (`useTabScroll`) |
+| Place card: big title, "kind · place" with the place a link, Share and ✕, four action tiles, photos sliding | The airport card: the ident, "name · Towered", Share and ✕, Fly Here (filled, its time "≈ 38m"), Add as Stop, Call, Favorite; a sideways strip of facts, the pictures as a sliding row, the tab's page, and the tabs in a glass bar floating at the card's foot (C1, the owner, 2026-11-14) |
 | Typing: top hit with inline action pills, suggestion rows, places | `OneSearchResults`: one white group, the top hit with Fly Here and Depart From pills, Search Nearby as a suggestion, the match in bold |
 | One search field (the one card rule, 2026-11-10) | The traffic's airplane and Nearest's place are the one search's field scoped to them (`listSearchOf`, OneSearchField's `list`; Nearest's at its card's top, `nearSearch`, as the card covers the sheet's first row); the route's points, the route box's arrow between two points (a stop there, `useStopAsked`) and the traffic's airport ask it for an airport (`askSearchPick`, AirportPicker), its placeholder what they ask for; the developer's page, with no one search, keeps the picker's own |
 | Questions over the page | Ready to Fly's prompt and a source's report as sent are SheetDialog's: from the bottom on a phone with their ✕, centred from `md` up |

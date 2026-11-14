@@ -56,7 +56,7 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
   // The name under the ident, and no town, distance or elevation in the head (the owner, 2026-11-11).
   // NASR's name for it, as the FAA files it (ARPT_NAME, wingtip.field_use.named).
-  await expect(card(page).getByTestId("place-full-name")).toHaveText("Duluth Intl");
+  await expect(card(page).getByTestId("place-full-name")).toHaveText("Duluth Intl · Towered"); // its tower after it (C1, 2026-11-14)
   await expect(card(page).getByTestId("place-ident")).toHaveCount(0);
   // Measured from the route's departure while the pilot's own position is not known, a row of the Details.
   await expect(card(page).getByTestId("place-line")).toHaveCount(0);
@@ -68,7 +68,7 @@ test("an airport's card has the field's pictures across its top, its ident over 
   // destination greyed, saying why (0612a82b3, the owner: "show it but
   // disable it") -- Info open.
   await expect(card(page).getByTestId("place-actions")).toBeInViewport({ ratio: 1 });
-  await expect(card(page).getByTestId("place-actions").locator(":scope > *")).toHaveText([/Fly Here/, /Add Stop/, /Call/, /Favorite/]);
+  await expect(card(page).getByTestId("place-actions").locator(":scope > *")).toHaveText([/Fly Here|≈ \d/, /Add Stop/, /Call/, /Favorite/]);
   await expect(card(page).getByTestId("place-add-stop")).toBeDisabled();
   await expect(card(page).getByTestId("place-add-stop")).toHaveAccessibleName(/already on the route/);
   await expect(card(page).getByRole("tab")).toHaveText(["Info", "Weather", "Runways", /^Charts\d*$/]);
