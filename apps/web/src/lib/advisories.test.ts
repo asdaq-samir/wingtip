@@ -7,9 +7,11 @@ import {
   sigmetHazard,
   suaAltitudes,
   tfrAltitudes,
+  tfrPurpose,
   tfrTimes,
   titleCase,
 } from "./advisories";
+import { clockTime, zoneName, zuluTime } from "./format";
 import faaWordsCases from "./fixtures/faaWords.json";
 
 const gairmet = {
@@ -42,19 +44,36 @@ describe("advisories in words", () => {
     expect(tfrAltitudes({ floor_ft: 0, floor_ref: "MSL", ceiling_ft: 10000, ceiling_ref: "MSL" })).toBe("Surface to 10,000 ft MSL");
     expect(tfrAltitudes({ floor_ft: 0, floor_ref: "AGL", ceiling_ft: 400, ceiling_ref: "AGL" })).toBe("Surface to 400 ft AGL");
     expect(tfrTimes({ effective: null, expires: null })).toBeNull();
-    // In the test's own zone, as date-fns wrote them.
-    const at = (iso: string) => new Date(iso);
-    const local = (d: Date) =>
-      `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()]} ${d.getDate()} ${
+    // On this device's clock with its zone, UTC beside it (WEB-9), each
+    // end's zone its own; the test's zone is whatever the machine's is.
+    const local = (iso: string, year = false) => {
+      const d = new Date(iso);
+      const day = `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()]} ${d.getDate()} ${
         ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()]
-      } ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-    expect(tfrTimes({ effective: "2026-10-06T18:00:00", expires: "2026-10-06T20:00:00" })).toBe(
-      `${local(at("2026-10-06T18:00:00"))} – 20:00`,
+      }${year ? ` ${d.getFullYear()}` : ""}`;
+      return { day, clock: `${clockTime(d)} ${zoneName(d)} (${zuluTime(d)})` };
+    };
+    const now = new Date("2026-10-01T12:00:00Z");
+    const from = local("2026-10-06T18:00:00Z");
+    const to = local("2026-10-08T00:30:00Z");
+    expect(tfrTimes({ effective: "2026-10-06T18:00:00Z", expires: "2026-10-08T00:30:00Z" }, now)).toBe(
+      `${from.day}, ${from.clock} – ${to.day}, ${to.clock}`,
     );
-    expect(tfrTimes({ effective: "2026-10-06T18:00:00", expires: "2026-10-07T00:30:00" })).toBe(
-      `${local(at("2026-10-06T18:00:00"))} – ${local(at("2026-10-07T00:30:00"))}`,
+    expect(tfrTimes({ effective: "2026-10-06T18:00:00Z", expires: "2026-10-08T00:30:00Z" }, now)).toContain("(1800Z)");
+    expect(tfrTimes({ effective: "2026-10-01T16:00:00Z", expires: null }, now)).toMatch(/^From .* \(1600Z\) until further notice$/);
+    // The owner's iPhone, 2026-11-14: TFR 6/4116 ran into next year with
+    // no year said. Either end in another year, both say theirs.
+    const nov = local("2026-11-01T07:00:00Z", true);
+    const mar = local("2027-03-14T06:59:00Z", true);
+    expect(tfrTimes({ effective: "2026-11-01T07:00:00Z", expires: "2027-03-14T06:59:00Z" }, new Date("2026-11-14T12:00:00Z"))).toBe(
+      `${nov.day}, ${nov.clock} – ${mar.day}, ${mar.clock}`,
     );
-    expect(tfrTimes({ effective: "2026-10-01T16:00:00Z", expires: null })).toMatch(/^From .* until further notice$/);
+  });
+
+  it("a TFR's purpose, else its rule in words with the regulation", () => {
+    expect(tfrPurpose({ purpose: null, rule: "special security instructions (99.7)" })).toBe("Special security instructions, 14 CFR 99.7");
+    expect(tfrPurpose({ purpose: "VIP MOVEMENT", rule: "VIP movement (91.141)" })).toBe("VIP movement");
+    expect(tfrPurpose({ purpose: null, rule: null })).toBeNull();
   });
 });
 
