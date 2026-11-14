@@ -27,6 +27,7 @@ describe("the airplane card's status line", () => {
 
   it("on the ground, says where its last flight landed and how long ago", () => {
     expect(statusLine({ state: "ground" }, [landed], NOW).text).toBe("On the ground · landed KPWK 2h ago");
+    expect(statusLine({ state: "ground" }, [landed], NOW)).toMatchObject({ badge: "ground", rest: "landed KPWK 2h ago" });
   });
 
   it("says none was heard in the archive where no flight was found, and nothing more while they are looked for", () => {

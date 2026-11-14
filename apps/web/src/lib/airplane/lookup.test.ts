@@ -37,6 +37,8 @@ describe("an N-number's two answers", () => {
     const inAir = inAirOf(answered(found([other, PLANE])), "A89C1E");
     expect(inAir).toEqual({ state: "flying", plane: PLANE });
     expect(inAirWords(inAir).text).toBe("In the air · 4,500 ft · 109 kt");
+    // Led by the In the air badge (components/StatusBadge), its figures after it.
+    expect(inAirWords(inAir)).toMatchObject({ badge: "inAir", rest: "4,500 ft · 109 kt" });
   });
 
   it("says not in the air where the find answered none", () => {

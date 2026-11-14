@@ -22,6 +22,7 @@ import { FavoriteTile } from "../../components/FavoriteTile";
 import { CardTabPanel } from "../../components/CardTabs";
 import { Tabs, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import AirplaneInfo from "./AirplaneInfo";
+import { StatusLine } from "../../components/StatusBadge";
 import AirplanePhotoHead from "./AirplanePhotoHead";
 
 /** One figure: its name and where it comes from, its field (typed in place,
@@ -225,10 +226,10 @@ export default function AirplaneProfileSheet() {
           >
             {card.track ? (
               <Button type="button" variant="link" size="sm" className={LINK} onClick={card.track} data-testid="airplane-status-track">
-                {card.status.text}
+                <StatusLine words={card.status} />
               </Button>
             ) : (
-              card.status.text
+              <StatusLine words={card.status} />
             )}
           </p>
           <CardTabPanel value="flights">

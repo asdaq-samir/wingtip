@@ -6,6 +6,7 @@ import { CommandEmpty, CommandGroup, CommandItem, CommandList } from "./ui/comma
 import type { RecentAirport } from "../lib/preferences";
 import type { AirportSearchRow } from "../lib/useAirportSearch";
 import { USE_WORDS, type FieldUse } from "../lib/airportIndex";
+import StatusBadge from "./StatusBadge";
 
 /**
  * What an airport search answers, as a list: the one list for every place
@@ -180,10 +181,11 @@ export function AirportRowFace({
 }
 
 /** An airport's grey line: where NASR lists it as closed, the engine's
- *  label first, in the warning ink; then, where it is not a public field,
- *  who may use it (Private, Military, Joint use: NASR's use and owner, as
- *  the planner's search sends them), so a private strip is never taken for
- *  a public one; then its town. */
+ *  label first as a Closed badge; then, where it is not a public field,
+ *  who may use it as a badge (Private, Military, Joint use: NASR's use and
+ *  owner, as the planner's search sends them), so a private strip is never
+ *  taken for a public one; then its town. The badges are the statuses a
+ *  pilot scans a list for (docs/design/rules.md 9; decision 0043). */
 export function AirportDetail({
   closed,
   use,
@@ -193,16 +195,23 @@ export function AirportDetail({
   use?: FieldUse | null;
   municipality?: string | null;
 }) {
-  const after = [use ? USE_WORDS[use] : null, municipality].filter(Boolean).join(" · ");
   return (
     <>
       {closed && (
-        <span className="font-semibold text-destructive-ink" data-testid="airport-closed">
-          {closed}
-        </span>
+        <>
+          <StatusBadge variant="closed" data-testid="airport-closed">
+            {closed}
+          </StatusBadge>{" "}
+        </>
       )}
-      {closed && after && " · "}
-      {use ? <span data-testid="airport-use">{after}</span> : after}
+      {use && (
+        <>
+          <StatusBadge variant={use} data-testid="airport-use">
+            {USE_WORDS[use]}
+          </StatusBadge>{" "}
+        </>
+      )}
+      {municipality}
     </>
   );
 }

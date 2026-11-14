@@ -2,6 +2,7 @@ import { Fragment, type ReactNode } from "react";
 import { BookOpenCheck, Diamond, LocateFixed, MoveUpRight, Navigation, Plane, Search, Siren, SquareArrowOutUpRight } from "lucide-react";
 import { cn } from "cn";
 import { AirportDetail } from "../../../../components/AirportResults";
+import { StatusLine } from "../../../../components/StatusBadge";
 import { CommandEmpty, CommandList, CommandShortcut } from "../../../../components/ui/command";
 import { TEXT } from "../../../../lib/text";
 import { PreviewCard, PreviewCardContent, PreviewCardTrigger } from "../../../../components/ui/preview-card";
@@ -132,7 +133,7 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
               className={cn("block truncate", a.live.problem && "text-destructive-ink")}
               data-testid="search-airplane-live"
             >
-              {a.live.text}
+              <StatusLine words={a.live} />
             </span>
           )}
         </>

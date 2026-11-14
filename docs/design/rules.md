@@ -700,6 +700,43 @@ and Appearance rows (`firstflight/WelcomeSheet`), the FPL tip the stock
 rich tooltip at the toggle; the route's Plan or Strip layout stays in
 Settings › Look, as Android has no route box, line or cards to choose.
 
+## 9. A status is a badge (the owner, 2026-11-14)
+
+The owner, 2026-11-14: "Use badges where we can for example tfr active
+etc." A status a pilot scans a list or a card for is a badge; the words
+that explain it -- until when, whose word it is, how far, how high --
+stay text beside it, never in the badge.
+
+1. **One component.** On the web every such status is `StatusBadge`
+   (`components/StatusBadge`, on shadcn's Badge), by its variant:
+   `active` (a TFR, a NOTAM, a special-use area in force), `later` (in
+   force later), `cold` (a special-use area not in use; "Not scheduled"
+   where only its published hours say so, as a NOTAM can still activate
+   it), `closed` (a field or runway NASR or a NOTAM closes; decision
+   0043), `out-of-service` (a navaid), `private`, `military` and `joint`
+   (who may use a field), `inAir`, `ground` and `emergency` (a tracked
+   airplane); and a flight category (`category`, AIM 7-1-7) in its chip
+   colour. No card draws its own pill, coloured word or grey line for a
+   status.
+2. **Its look is the tokens'.** Each fill is `color.badge.status-*` in
+   `design/tokens.json` (a flight category's `color.category`), under
+   white words at 4.5:1 or more in every look (WCAG 1.4.3;
+   `lib/looksContrast.test.ts`), its words the `badge` type role (iOS's
+   Caption 1, semibold). A screen reader hears the status's word: it is
+   the badge's own text, never only its colour.
+3. **Where it is now (2026-11-14):** airport rows in the search and
+   Nearest (Closed, Private, Military, Joint use); the airspace card's
+   special-use areas (Active or Cold from SFDPS, else the engine's
+   reading of the times of use) and TFRs (Active, Later); the Brief's
+   special-use areas and TFRs at the time the flight passes; a tracked
+   airplane's card, its search row and its flights (In the air, On the
+   ground, an emergency's code); the flight categories in the Brief and
+   Nearest. The TFR and navaid cards and the airport card take it as they
+   are rebuilt. The phones: SwiftUI's and Material 3's own badge or label
+   with the same tokens (`WingtipColor.Badge.statusActive` and its
+   siblings in Tokens.swift, `Badge.StatusActive` in Tokens.kt), on the
+   owner's word (web first).
+
 ## Changing a rule
 
 A rule here changes only when the owner says so (the `owner` label). Then
