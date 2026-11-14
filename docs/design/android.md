@@ -1131,26 +1131,22 @@ a Material `Badge` at the top of the map, beside the receiver's, says
   - https://m3.material.io/styles/color/dynamic/choosing-a-source
     **[excerpt]**
 
-### 3.14 The first flight (no welcome)
+### 3.14 The first flight's welcome
 
-- **No welcome** (the owner, 2026-11-11, "We don't need the welcome"):
-  a new pilot lands on the map. Each permission is asked where it is
-  needed, by the system's own dialog: location at the position button
-  or the first flight's Plan It, notifications when a watch is set or
-  traffic is near, the microphone at the microphone. Before anything,
-  once, the planning aid's words in a stock `AlertDialog`
+- **The welcome** (`firstflight/WelcomeSheet`, the web's WelcomeSheet,
+  the owner's option A of 2026-11-13): the first time the app opens with
+  no route on this phone, Material's stock `ModalBottomSheet` at the
+  window's height: "Welcome to Wingtip Maps", the three rows (Search,
+  FPL, FAA charts) and Theme and Appearance held together and centred in
+  the room above its buttons, the rows one column under the title no
+  wider than a panel (`WingtipSize.Panel`), scrolled where the room is
+  short (the owner, 2026-11-14: "Can the welcome be more centered?").
+  Its foot is Android's permission priming: Turn On Location, which asks
+  the system's own question, and Later; allowed already, Let's Go Flying
+  alone. Going on marks it seen and puts the one search up asking where
+  to (`FirstFlightMemory`, `FirstFlightModel`). Before anything, once,
+  the planning aid's words in a stock `AlertDialog`
   (`about/PlanningAidNotice`).
-- **The first flight's card** (`firstflight/FirstFlightCard`, the web's
-  FirstFlight): Material's `ElevatedCard` riding the sheet's top under
-  the map's buttons, the first time with no route and no card up: "Your
-  First Flight", its line, a Destination field, Plan It and "Step 1 of 3
-  · Route · Nav Log · Brief", ✕ (Not Now) in its title row. The field is
-  a read-only `OutlinedTextField` that opens the one search to pick the
-  airport (card rule 5; `SearchControl.pickAirport`). Plan It plans from
-  own ship's fix or the phone's position read once (the nearest field),
-  else the home airport, else asks From. Planned, it is gone for good and
-  the nav log opens; Setup's Show First Flight Again brings it back
-  (`FirstFlightMemory`).
 
 ### 3.15 Widgets, Live Updates and shortcuts
 

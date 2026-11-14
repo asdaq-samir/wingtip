@@ -8,10 +8,14 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -49,6 +53,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.search.SearchControl
 import app.wingtipmaps.android.ui.AppearanceRow
@@ -110,37 +115,57 @@ fun WelcomeSheet(plan: Plan, search: SearchControl, ownShip: OwnShipControl, onP
     }
     val allowed = remember { locationAllowed(context) }
     ModalBottomSheet(onDismissRequest = goOn, sheetState = sheet, modifier = Modifier.testTag(WELCOME_TAG)) {
-        Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Xl).padding(bottom = WingtipSpace.Lg),
-            verticalArrangement = Arrangement.spacedBy(WingtipSpace.Lg),
-        ) {
-            Text(
-                stringResource(R.string.welcome_title),
-                style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().semantics { heading() },
-            )
-            WelcomeRow(Icons.Filled.Search, R.string.welcome_search_title, R.string.welcome_search_line)
-            WelcomeRow(WingtipIcons.flightPlan, R.string.welcome_fpl_title, R.string.welcome_fpl_line)
-            WelcomeRow(Icons.Filled.Map, R.string.welcome_charts_title, R.string.welcome_charts_line)
-            SettingsGroup {
-                ThemeRow(index = 0, count = 2)
-                AppearanceRow(index = 1, count = 2)
-            }
-            if (allowed) {
-                Button(onClick = goOn, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.lets_go_flying)) }
-            } else {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
-                    Button(onClick = { ask.launch(OwnShipControl.LOCATION) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.turn_on_location)) }
-                    if (refused) {
-                        Text(
-                            stringResource(R.string.welcome_location_refused), style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
-                        )
+        Column(Modifier.fillMaxSize().padding(horizontal = WingtipSpace.Xl).padding(bottom = WingtipSpace.Lg)) {
+            // The title, the rows and the look held together in the middle
+            // of the room over the buttons, the rows one column centred
+            // under the title and no wider than a panel, as Apple's own
+            // welcome screens sit (the owner, 2026-11-14: "Can the welcome
+            // be more centered?"; the web's efbe7dde5); scrolled where the
+            // room is short.
+            BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                Column(
+                    Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = maxHeight),
+                    verticalArrangement = Arrangement.spacedBy(WingtipSpace.Lg, Alignment.CenterVertically),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        stringResource(R.string.welcome_title),
+                        style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().semantics { heading() },
+                    )
+                    Column(Modifier.widthIn(max = WingtipSize.Panel), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Lg)) {
+                        WelcomeRow(Icons.Filled.Search, R.string.welcome_search_title, R.string.welcome_search_line)
+                        WelcomeRow(WingtipIcons.flightPlan, R.string.welcome_fpl_title, R.string.welcome_fpl_line)
+                        WelcomeRow(Icons.Filled.Map, R.string.welcome_charts_title, R.string.welcome_charts_line)
+                        SettingsGroup {
+                            ThemeRow(index = 0, count = 2)
+                            AppearanceRow(index = 1, count = 2)
+                        }
                     }
-                    TextButton(onClick = goOn) { Text(stringResource(R.string.later)) }
                 }
             }
+            WelcomeFoot(allowed, refused, goOn) { ask.launch(OwnShipControl.LOCATION) }
         }
+    }
+}
+
+/** The welcome's foot: Let's Go Flying where the position is allowed,
+ *  else Turn On Location and Later, with where to allow it once refused. */
+@Composable
+private fun WelcomeFoot(allowed: Boolean, refused: Boolean, goOn: () -> Unit, turnOn: () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(top = WingtipSpace.Md), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
+        if (allowed) {
+            Button(onClick = goOn, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.lets_go_flying)) }
+            return@Column
+        }
+        Button(onClick = turnOn, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.turn_on_location)) }
+        if (refused) {
+            Text(
+                stringResource(R.string.welcome_location_refused), style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
+            )
+        }
+        TextButton(onClick = goOn) { Text(stringResource(R.string.later)) }
     }
 }
 
