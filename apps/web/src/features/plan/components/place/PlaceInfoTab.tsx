@@ -8,6 +8,7 @@ import { RowBadge } from "../../../../components/RowBadge";
 import type { AirportPlace } from "../../../../lib/api/types";
 import { BADGE } from "../../../../lib/rowBadges";
 import { feet } from "../../../../lib/format";
+import { callEngine } from "../../../../lib/engine/engine";
 import { FrequencyRow } from "../FrequencyRow";
 import { StopServices } from "../StopServices";
 import { mapsLink } from "./mapsLink";
@@ -61,6 +62,17 @@ export function PlaceInfoTab({
   const marks = useNotamMarks(place.ident, place);
   const sheet = useNotamSheet();
   const fuel = marks.fuel;
+  // How far its figures are to be trusted ("Owner-reported, last updated
+  // Aug 2023": NASR's 5010 mailout, never inspected), and what its empty
+  // NOTAM list says where NASR gives it no NOTAM_ID, a private field
+  // outside the NOTAM system: each the engine's words (airport_data_words,
+  // airport_notams_none), as every app's card says them.
+  const data = callEngine("airport_data_words", { data_source: place.data_source ?? null, info_date: place.info_date ?? null });
+  const noNotams = callEngine("airport_notams_none", {
+    private: place.private,
+    military: place.military ?? null,
+    notam_id: place.notam_id ?? null,
+  });
   return (
     <>
       <PlaceAge ident={place.ident} kind="airports" />
@@ -99,6 +111,7 @@ export function PlaceInfoTab({
               owner's ask (2026-10-29: "write the address in
               details"); the town where the FAA lists none. */}
           <ListRow title="Address" description={place.address ?? where ?? undefined} href={mapsLink(place)} data-testid="place-address" />
+          {data && <ListRow muted title={data} data-testid="place-data-source" />}
         </ListGroup>
       </CardSection>
       {/* The first few frequencies, the title the way to every one, as
@@ -144,7 +157,7 @@ export function PlaceInfoTab({
 
       {/* The field's own NOTAMs and the TFRs near it, the engine's order
           (PlaceNotams), after its radio, before its details. */}
-      <PlaceNotamsSection ident={place.ident} />
+      <PlaceNotamsSection ident={place.ident} none={noNotams} />
 
       {/* The field's lights, after the radio, as it is the mic that
           turns most of them on (PlaceLights). */}

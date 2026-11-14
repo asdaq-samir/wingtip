@@ -1018,21 +1018,6 @@ test("an airport's card says which lights a pilot turns on with the mic, and the
   await expect(card(page)).toContainText("Weather advisory - CTAF 5 clicks");
 });
 
-test("a military field's card says so in brackets after its name, whole, not cut at an ellipsis", async ({ page }) => {
-  await page.route(
-    (url) => url.pathname.endsWith("/api/planner/airport/KORD"),
-    async (route) => {
-      const answer = await route.fetch();
-      await route.fulfill({ response: answer, json: { ...(await answer.json()), military: "military" } });
-    },
-  );
-  await page.goto("/app/plan?place=KORD");
-  const kind = card(page).getByTestId("place-kind");
-  await expect(kind).toHaveText(" (Military)", { timeout: slow(15000) });
-  // Whole: nothing of it past its box, the name alone shrunk or cut.
-  await expect(kind).toHaveJSProperty("scrollWidth", await kind.evaluate((el) => el.clientWidth));
-});
-
 /**
  * Listen to ATIS on the Weather tab: one broadcast heard through the
  * microphone and read by the engine (features/plan/lib/atis, read_atis), the runway in

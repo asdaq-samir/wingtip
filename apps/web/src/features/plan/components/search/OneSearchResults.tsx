@@ -83,7 +83,7 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
             · <Matched text={r.name} typed={typed} />
           </>
         }
-        detail={r.closed ? <AirportDetail closed={r.closed} municipality={r.municipality} /> : r.municipality}
+        detail={r.closed || r.use ? <AirportDetail closed={r.closed} use={r.use} municipality={r.municipality} /> : r.municipality}
         onSelect={() => model.pickAirport(r)}
         testId="airport-result"
         actions={

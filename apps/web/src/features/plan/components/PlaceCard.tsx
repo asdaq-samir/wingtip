@@ -44,10 +44,10 @@ import { PlaceWeatherTab } from "./place/PlaceWeatherTab";
 import { PlaceSubtitle } from "./place/PlaceSubtitle";
 import { useShown } from "../../../lib/shown";
 import { Badge } from "../../../components/ui/badge";
+import { callEngine } from "../../../lib/engine/engine";
 
 const SketchViewer = lazy(() => import("./SketchViewer"));
-// The pictures behind the diagram, full screen to pinch in on, as a chart is.
-const PictureViewer = lazy(() => import("./AirportDiagramViewer"));
+const PictureViewer = lazy(() => import("./AirportDiagramViewer")); // the pictures behind the diagram, full screen to pinch in on
 
 /** "18 nm NE", from wherever the card is measured from. */
 function away(geo: Geo, from: LatLon, to: LatLon): string {
@@ -65,14 +65,14 @@ function distanceOf(geo: Geo | null, place: AirportPlace, from: { point: LatLon;
   return from.name ? `${away(geo, from.point, place)} of ${from.name}` : away(geo, from.point, place);
 }
 
-/** What the field is, beside its name in brackets where it is not a
- *  public-use one (the owner, 2026-11-11: "For private airport, just say
- *  private in () next to airport name instead of a second line"): one the
- *  armed services own, or a civil airport sharing it (NASR APT_BASE), or
- *  a private one; first, one NASR lists as closed, its label (decision 0043). */
+/** Who may land there, the card's one use line on every app (the owner,
+ *  2026-11-13), under its name (PlaceSubtitle): the engine's airport_use_words,
+ *  "Private: permission required", "Military: prior permission required",
+ *  none for a public or joint-use field; first, one NASR lists as closed,
+ *  its label (decision 0043). */
 function kindOf(place: AirportPlace | undefined): string | null {
   if (!place || place.closed) return place?.closed ?? null;
-  return place.military === "military" ? "Military" : place.military === "joint" ? "Joint use" : place.private ? "Private" : null;
+  return callEngine("airport_use_words", { private: place.private, military: place.military ?? null }).words;
 }
 
 /** How old a report is, "14m ago", for the weather's line. */
@@ -437,9 +437,9 @@ export default function PlaceCard({
             // Its full name the head row's second line, centred under the
             // ident and fitted to it, in sight at the card's smallest size
             // too (the owner, 2026-11-11, after Apple Maps' "Buttermilk Cafe /
-            // Breakfast and Brunch Restaurant"), "(Private)" after it where
-            // it is (kindOf), a NOTAM's badge after it where one closes the
-            // field or a TFR is near (PlaceSubtitle); nothing under it.
+            // Breakfast and Brunch Restaurant"), a NOTAM's badge after it
+            // where one closes the field or a TFR is near, and under it its
+            // use line or closed label (kindOf, PlaceSubtitle).
             sub={<PlaceSubtitle ident={ident} place={place} name={name && name !== ident4 ? name : null} kind={kind} />}
             onClose={onClose}
             onShare={share}
