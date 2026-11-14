@@ -15,7 +15,7 @@ from wingtip import flight_plan as fp
 from wingtip import planning as planning_module
 
 from . import live as live_reports
-from .icing import icing_at_altitude, icing_line
+from .icing import freezing_precip, icing_at_altitude, icing_line, icing_unchecked, icing_words
 from .minimums import ceiling_unknown_at, under_minimums
 from .pass_times import pass_time, sua_when, tfr_when
 from .runways import runway_checks
@@ -252,10 +252,15 @@ def findings_for(
 
     hops = (totals or {}).get("hops") or []
     margins = [m for m in [(totals or {}).get("fuel_margin_gal"), *(h["totals"].get("fuel_margin_gal") for h in hops)] if m is not None]
-    icing = (
-        icing_at_altitude(selection, [leg["altitude_ft"] for leg in legs], briefing.get("pireps") or [])
-        if ifr and nav and briefing
-        else None
+    flown_ft = [leg["altitude_ft"] for leg in legs]
+    icing = icing_at_altitude(selection, flown_ft, briefing.get("pireps") or []) if ifr and nav and briefing else None
+    # The weather's one icing caution: under IFR, icing at an altitude flown
+    # or, where the freezing level is not known, that it was not checked;
+    # on any flight, freezing rain or drizzle reported or forecast on the
+    # route, which ices an airplane out of cloud (AIM 7-1-20).
+    icing_said = icing_words(
+        icing_line(icing) if icing else (icing_unchecked(selection, flown_ft) if ifr and nav and briefing else None),
+        freezing_precip(briefing) if briefing else None,
     )
     hazard_names = (
         (
@@ -316,7 +321,7 @@ def findings_for(
             "failed": failed,
             "vfr_not_recommended": vnr,
             "under_minimums": under_mine,
-            "icing": icing and icing_line(icing),
+            "icing": icing_said,
             "hazards": hazard_names,
             "unchecked": [WEATHER_SOURCE_LABEL[w] for w in (briefing or {}).get("weather_unavailable") or [] if w != "tfrs"]
             # A ceiling reported or forecast with no height is not checked

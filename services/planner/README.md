@@ -21,7 +21,9 @@ gonogo, notes, devml, devservices, system ...), and the work they share --
 resolving a route (`router_basics.py`), what a plan is asked
 (`plan_query.py`, each airplane figure bounded by the engine's
 `airplane_figure_ranges`), a route's briefing (`route_briefing.py`), the Go / No-Go's
-plan and findings (`gonogo/flight.py`), the dev-services sidecar
+plan and findings (`gonogo/flight.py`: its weather's icing caution is the
+engine's `gonogo_icing` or, with no freezing level known,
+`gonogo_icing_unchecked` under IFR, then `freezing_precip` on any flight), the dev-services sidecar
 (`dev_services.py`), scoring the checkpoints (`checkpoint_scoring.py`), the
 corridor read (`detection.py`) -- sits beside them. A router only parses,
 calls and returns, and never imports another: `lint-imports` holds that
@@ -31,7 +33,8 @@ planner areas and in CI. The legs themselves are
 `wingtip.navlog`'s. The planner calls no model; the pilot's own AI app reaches it through
 the MCP connector (`app/mcp`).
 Every response, streamed lines included, is a model in `app/schemas/` (one module per router,
-`common.py` for those shared):
+`common.py` for those shared, `field.py` for a field's METAR, runways and
+frequencies, which the briefing and the airport card share):
 FastAPI validates against it and publishes it in `openapi.json`,
 committed here and checked by `services/planner/tests/test_openapi.py`. After changing a
 model, run `python -m app.openapi` and commit the result; `apps/web/`

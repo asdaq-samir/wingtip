@@ -25,7 +25,17 @@ from .magnetic import magnetic_variation_deg
 from .single_flight import once
 
 #: The METAR's members the map's marks read, as the engine read them.
-METAR_KEYS = ("wind_dir_true_deg", "wind_speed_kt", "wind_gust_kt", "visibility_sm", "wx", "ceiling_ft", "ceiling_cover", "ceiling_unknown")
+METAR_KEYS = (
+    "wind_dir_true_deg",
+    "wind_speed_kt",
+    "wind_gust_kt",
+    "visibility_sm",
+    "visibility_plus",
+    "wx",
+    "ceiling_ft",
+    "ceiling_cover",
+    "ceiling_unknown",
+)
 
 
 def load_runways() -> pd.DataFrame:
@@ -76,6 +86,7 @@ def marks_of(place: dict, metar: dict | None) -> dict:
         return {}
     out = {key: metar.get(key) for key in METAR_KEYS}
     out["ceiling_unknown"] = bool(out["ceiling_unknown"])
+    out["visibility_plus"] = bool(out["visibility_plus"])
     out["wx"] = out["wx"] or None
     shown = ask("wind_arrow", speed_kt=metar.get("wind_speed_kt"), gust_kt=metar.get("wind_gust_kt"))["shown"]
     least = None

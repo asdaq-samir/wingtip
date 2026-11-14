@@ -271,8 +271,8 @@ def resolve_altitude(
         }
         caution = {**caution, "reasons": [*prohibited_caution(selection), *caution["reasons"]]}
         return Flown(selection, options, None, anyway, legs, cautions=(caution,) if caution["reasons"] else (), figures=figures)
-    # With no airplane there is no fastest or most economical plan (the
-    # engine's navlog_plans makes the band's two): the lowest is flown.
+    # No airplane, no fastest or economical plan; no climb fuel flow, no
+    # economical one (the engine's navlog_plans): else the lowest is flown.
     choice = choice if choice in plans else "lowest"
     legs = plans[choice]["legs"]
     return Flown(selection, options, choice, legs[0]["altitude_ft"], legs, figures=figures)

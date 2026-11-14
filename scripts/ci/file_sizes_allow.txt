@@ -104,7 +104,7 @@ services/planner/app/routers/airports.py 761
 services/planner/app/routers/plan.py 482
 services/planner/app/routers/words.py 606
 services/planner/app/schemas/airports.py 483
-services/planner/app/schemas/plan.py 799
+services/planner/app/schemas/plan.py 759
 services/planner/tests/test_airports.py 584
 services/planner/tests/test_api.py 615
 services/planner/tests/test_plan.py 709

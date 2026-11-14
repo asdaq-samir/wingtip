@@ -63,7 +63,8 @@ def test_the_fields_in_view_carry_their_metar_for_the_maps_marks(monkeypatch):
     monkeypatch.setattr(weather, "reporting_idents", lambda: {"KDLH", "1D2"})
     windy = {"flight_category": "MVFR", "wind_dir_true_deg": 220, "wind_speed_kt": 18, "wind_gust_kt": 26}
     windy |= {"visibility_sm": 2, "wx": "BR", "ceiling_ft": 800, "ceiling_cover": "OVC", "ceiling_unknown": False}
-    light = {"flight_category": "VFR", "wind_dir_true_deg": 220, "wind_speed_kt": 5, "wx": "", "visibility_sm": 10}
+    # P6SM: at least 6 sm, as the engine's awc_metars_read says it.
+    light = {"flight_category": "VFR", "wind_dir_true_deg": 220, "wind_speed_kt": 5, "wx": "", "visibility_sm": 6, "visibility_plus": True}
     monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {"KDLH": windy, "1D2": light})
     asked = []
     monkeypatch.setattr(
@@ -78,6 +79,7 @@ def test_the_fields_in_view_carry_their_metar_for_the_maps_marks(monkeypatch):
         "wind_speed_kt": 18,
         "wind_gust_kt": 26,
         "visibility_sm": 2,
+        "visibility_plus": False,
         "wx": "BR",
         "ceiling_ft": 800,
         "ceiling_cover": "OVC",
@@ -85,6 +87,7 @@ def test_the_fields_in_view_carry_their_metar_for_the_maps_marks(monkeypatch):
         "crosswind_kt": 17,
     }
     assert small["weather"]["crosswind_kt"] is None and small["weather"]["wx"] is None
+    assert (small["weather"]["visibility_sm"], small["weather"]["visibility_plus"]) == (6, True)
     assert asked == ["KDLH"]
 
 
