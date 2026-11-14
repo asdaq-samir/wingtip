@@ -472,6 +472,9 @@ data class RunwayTurf (
  */
 @Serializable
 data class RunwayWind (
+    @SerialName("crosswind_exact_kt")
+    val crosswindExactKt: Double? = null,
+
     @SerialName("crosswind_kt")
     val crosswindKt: Double,
 

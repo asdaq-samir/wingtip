@@ -841,6 +841,12 @@ fun Engine.freezingPrecip(fields: List<EngineContract.FreezingPrecipInputFieldsI
     rule("freezing_precip", EngineContract.FreezingPrecipInput(fields = fields))
 
 /**
+ * A field's frequencies in the order a pilot dials them -- its weather (ATIS, AWOS), clearance, ground, the tower or CTAF, approach and departure, then UNICOM and the rest (AIM 4-1-13, 4-1-11) -- as indices into frequencies, the file's order kept within a kind.
+ */
+fun Engine.frequenciesInOrder(frequencies: List<EngineContract.FieldFrequency>): Result<List<Int>> =
+    rule("frequencies_in_order", EngineContract.FrequenciesInOrderInput(frequencies = frequencies))
+
+/**
  * A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name.
  */
 fun Engine.frequencyLine(type: String? = null, description: String? = null): Result<EngineContract.FrequencyLineAnswer> =

@@ -18442,6 +18442,8 @@ extension Components {
         ///
         /// - Remark: Generated from `#/components/schemas/RunwayWind`.
         public struct RunwayWind: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RunwayWind/crosswind_exact_kt`.
+            public var crosswindExactKt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/RunwayWind/crosswind_kt`.
             public var crosswindKt: Swift.Double
             /// - Remark: Generated from `#/components/schemas/RunwayWind/end`.
@@ -18455,18 +18457,21 @@ extension Components {
             /// Creates a new `RunwayWind`.
             ///
             /// - Parameters:
+            ///   - crosswindExactKt:
             ///   - crosswindKt:
             ///   - end:
             ///   - gustCrosswindKt:
             ///   - headwindKt:
             ///   - inUse:
             public init(
+                crosswindExactKt: Swift.Double? = nil,
                 crosswindKt: Swift.Double,
                 end: Swift.String,
                 gustCrosswindKt: Swift.Double? = nil,
                 headwindKt: Swift.Double,
                 inUse: Swift.Bool? = nil
             ) {
+                self.crosswindExactKt = crosswindExactKt
                 self.crosswindKt = crosswindKt
                 self.end = end
                 self.gustCrosswindKt = gustCrosswindKt
@@ -18474,6 +18479,7 @@ extension Components {
                 self.inUse = inUse
             }
             public enum CodingKeys: String, CodingKey {
+                case crosswindExactKt = "crosswind_exact_kt"
                 case crosswindKt = "crosswind_kt"
                 case end
                 case gustCrosswindKt = "gust_crosswind_kt"
