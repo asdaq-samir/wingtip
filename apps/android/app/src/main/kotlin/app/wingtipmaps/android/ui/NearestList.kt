@@ -23,8 +23,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.NearestAirport
-import app.wingtipmaps.android.engine.Engine
-import app.wingtipmaps.android.engine.generated.airportUseWords
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.format.Format
@@ -53,7 +51,7 @@ private fun NearestRow(field: NearestAirport, fix: OwnShip.Fix?, onClick: () -> 
     // A glide the engine could not judge says so, never "out of reach";
     // with no glide ratio (no airplane picked) none is said to be within one.
     val reach = fix?.let { model.glideReaches(it, field) }
-    val use = remember(field.isPrivate, field.military) { Engine.airportUseWords(field.isPrivate, field.military).getOrNull()?.use }
+    val use = remember(field.isPrivate, field.military) { model.useWords(field) }
     val parts = listOfNotNull(
         FieldMarks.use(use)?.let { stringResource(it) },
         "${Format.distance(field.distanceNm)} ${Format.heading(field.bearingDeg)}T",
