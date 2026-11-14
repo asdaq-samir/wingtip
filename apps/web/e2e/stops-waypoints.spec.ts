@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { frontSheet, grabberTo, mapStill, openPanel, settle, settled, sideDrawer, slow, waypointMarks } from "./helpers";
 import { stopsAre } from "./stopsParam";
-import { markWith } from "./marks";
+import { drawnMarks, markWith } from "./marks";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -33,11 +33,14 @@ test("a stop may be a VFR waypoint, offered after the airports as it is typed an
   await waypoint.click();
   await expect(page).toHaveURL(stopsAre("VPBNG"));
 
-  // On the map in the sectional's magenta, not as an airport's chip. With
-  // the whole route in sight it lies under C81's mark, 4 nm off, and
-  // MapLibre's collision leaves it out: the map zoomed in on C81, the sheet
-  // down out of its way, until the two are drawn apart.
+  // On the map as a point the route turns at, not as an airport's chip:
+  // the ringed dot exactly on it, always drawn, and its name beside it
+  // outside the turn (the owner's option A, 2026-11-14). With the whole
+  // route in sight the name lies under C81's mark, 4 nm off, and MapLibre's
+  // collision leaves it out: the map zoomed in on C81, the sheet down out
+  // of its way, until the two are drawn apart.
   await grabberTo(page, "peek");
+  await expect.poll(async () => (await drawnMarks(page, "route-turns")).map((t) => t.name), { timeout: slow(15000) }).toContain("VPBNG");
   await expect(async () => {
     const departure = await markWith(page, "route-marks", "C81")();
     expect(departure, "C81 drawn").not.toBeNull();
@@ -48,6 +51,12 @@ test("a stop may be a VFR waypoint, offered after the airports as it is typed an
     }
     expect((await markWith(page, "route-marks", "VPBNG")())?.kind).toBe("fix");
   }).toPass({ timeout: slow(15000) });
+  // The dot on the point itself, and its name's side a compass direction.
+  const turn = (await drawnMarks(page, "route-turns")).find((t) => t.name === "VPBNG")!;
+  const mark = (await markWith(page, "route-marks", "VPBNG")())!;
+  expect(Math.hypot(turn.x - mark.x, turn.y - mark.y)).toBeLessThan(1);
+  expect(turn.out).toBeGreaterThanOrEqual(0);
+  expect(turn.out).toBeLessThan(360);
 });
 
 test("a VFR waypoint on the chart is a magenta triangle with its ident, and its card adds it as a stop", async ({ page }) => {

@@ -772,6 +772,35 @@ stay text beside it, never in the badge.
    siblings in Tokens.swift, `Badge.StatusActive` in Tokens.kt), on the
    owner's word (web first).
 
+## 10. Where the route turns (the owner, 2026-11-14)
+
+The owner picked option A of the route points canvas (2026-11-14): a
+route point's name pill sat on the point, hiding the exact turn (POS0 →
+WETEV → KMYJ) and own ship on POS0.
+
+1. **A dot on the point.** A point the route flies through and turns at
+   (a VFR or GPS waypoint, a present position) is a small ringed dot
+   exactly where the legs meet: white, ringed in the course's magenta
+   (`color.chart.course`, the ink look's own magenta in Chart ink). It is
+   always drawn and takes no room from other marks.
+2. **Its name beside it, outside the turn.** The name is on its white
+   pill edged in the waypoint magenta, put off the point on the side away
+   from the turn (the two legs leaving the point, added, point into it),
+   never on the line; on a straight point or the route's first or last,
+   square to the course on its upper side. The side follows the map as it
+   turns. The name gives way to the route's fields as before; the dot
+   stays.
+3. **Airports keep their mark.** The departure, stops and destination are
+   the chart's airport mark with the ident on its dark pill (section 5);
+   a top of climb or descent keeps its fix pill on the course.
+4. **Taps are as they were:** the dot or the name opens the point's card.
+
+Web: `lib/map/marks/routeMarks` (the layers `route-fix-dots` and
+`route-fixes`), `routeTurns` (the side, and the layer's anchor for the
+map's bearing), `markPictures`' `turnDotPicture` and `ROUTE_POINT_PILL`;
+tested by `routeTurns.test.ts` and `e2e/stops-waypoints.spec.ts` (the
+`route-turns` probe). The phones follow on the owner's word (web first).
+
 ## Changing a rule
 
 A rule here changes only when the owner says so (the `owner` label). Then

@@ -3,7 +3,8 @@ import { useEffect, useMemo, type ReactNode } from "react";
 import type { Course } from "../../../api/types";
 import type { AirspaceClass } from "../../../preferences";
 import { courseColour } from "../../marks/chartColors";
-import { ROUTE_MARKS, ROUTE_MARK_LAYERS, routeMarks } from "../../marks/routeMarks";
+import { ROUTE_FIX_NAMES, ROUTE_MARKS, ROUTE_MARK_LAYERS, routeMarks } from "../../marks/routeMarks";
+import { turnSide } from "../../marks/routeTurns";
 import { usePreferences } from "../../../preferences";
 import { useSunlight } from "../../../sunlight";
 import { useGlData, useGlLayer, useGlMap, useGlPaint, useGlTap } from "../glLayer";
@@ -111,9 +112,10 @@ const NAMES: SymbolLayerSpecification = {
  * the selected leg alone cased in green, as ForeFlight draws a selected
  * course; a tap on it the nearest leg's Route Leg sheet), its checkpoints numbered in flight
  * order and named closer in (a tap the checkpoint's card, the map flying
- * in to it), the points they were chosen from, and its departure, stops
+ * in to it), the points they were chosen from, its departure, stops
  * and destination as every airport's mark on the chart, in its weather,
- * the ident on a dark pill (routeMarks; a tap its card).
+ * the ident on a dark pill, and a waypoint it turns at as a ringed dot,
+ * its name outside the turn (routeMarks; a tap its card).
  */
 export function RouteGl({
   course,
@@ -133,7 +135,8 @@ export function RouteGl({
   /** The leg whose Route Leg sheet is open: the only one cased in green. */
   selectedLeg?: string | null;
 }) {
-  const layers = useMemo(() => routeLayers(courseColour()), []);
+  const ring = useMemo(() => courseColour(), []);
+  const layers = useMemo(() => routeLayers(ring), [ring]);
   // The line in the route's slot, the marks over every mark on the chart.
   useGlLayer(
     "route",
@@ -198,10 +201,34 @@ export function RouteGl({
             openCard(c.card);
           },
         })),
+        (course?.course_line ?? []) as [number, number][],
+        ring,
       ),
-    [endpoints, checkpoints, openCard],
+    [endpoints, checkpoints, openCard, course, ring],
   );
   useGlSymbols(ROUTE_MARKS, ROUTE_MARK_LAYERS, marks, { rank: TAP.rank.field });
+  // Each turn's dot drawn, and the side its name is put, for the tests.
+  useGlProbe("route-turns", ["route-fix-dots"], (f) => ({ name: f.properties.text, out: f.properties.out }));
+  // A route point's name stays outside its turn as the map turns: its
+  // side follows the map's bearing, in steps of 15 degrees.
+  useEffect(() => {
+    const turn = () => {
+      if (!glMap.getLayer(ROUTE_FIX_NAMES)) return;
+      const side = turnSide(Math.round(glMap.getBearing() / 15) * 15);
+      // Set again only when it changes (a layer put back by a new style
+      // comes back with the north-up side).
+      if (JSON.stringify(glMap.getLayoutProperty(ROUTE_FIX_NAMES, "text-anchor")) === JSON.stringify(side["text-anchor"])) return;
+      glMap.setLayoutProperty(ROUTE_FIX_NAMES, "text-anchor", side["text-anchor"]);
+      glMap.setLayoutProperty(ROUTE_FIX_NAMES, "text-offset", side["text-offset"]);
+    };
+    turn();
+    glMap.on("rotate", turn);
+    glMap.on("idle", turn);
+    return () => {
+      glMap.off("rotate", turn);
+      glMap.off("idle", turn);
+    };
+  }, [glMap]);
   // A tap on the course within a finger's reach of it, nothing nearer
   // taken first (LEG_RANK), the nearest leg's sheet.
   const { map } = useGlMap();
