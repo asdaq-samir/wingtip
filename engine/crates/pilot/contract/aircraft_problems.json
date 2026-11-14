@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_pilot::aircraft::form::call",
-  "description": "What is wrong with the \"Your Airplane\" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's, the descent's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.",
+  "description": "What is wrong with the \"Your Airplane\" form's fields as typed, by field (the gateway's AircraftRequest and OwnFigures names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn required; every figure inside its range, airplane_figure_ranges' (sanity bounds, no regulation: cruise and climb speed above 0 and at most 1,000 kt, descent 30 to 300 kt and 1 to 150 gal/h, cruise power 40 to 100%, the cruise and climb burns above 0 and at most 150 gal/h, usable fuel above 0 and at most 2,000 gal, service ceiling 1,000 to 30,000 ft, climb rate above 0 and at most 5,000 fpm, start and taxi fuel 0 to 50 gal, glide ratio more than 1 and at most 80); equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.",
   "type": "object",
   "properties": {
     "input": {
@@ -67,6 +67,30 @@
             "null"
           ]
         },
+        "serviceCeilingFt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "climbRateFpm": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "taxiFuelGal": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "glideRatio": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "equipment": {
           "type": [
             "string",
@@ -120,6 +144,18 @@
           "type": "string"
         },
         "usableFuelGal": {
+          "type": "string"
+        },
+        "serviceCeilingFt": {
+          "type": "string"
+        },
+        "climbRateFpm": {
+          "type": "string"
+        },
+        "taxiFuelGal": {
+          "type": "string"
+        },
+        "glideRatio": {
           "type": "string"
         },
         "equipment": {

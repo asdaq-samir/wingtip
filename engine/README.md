@@ -359,7 +359,12 @@ Then the callers switch to the name and the old copy is deleted.
   figure needs that the profile lacks, so the app asks for them where the
   figure is) and `endurance` (`crates/procedures`: usable fuel over the
   cruise burn, and what is left once 91.151(a)'s or 91.167(a)(3)'s
-  reserve is kept back, a warning below it, never a refusal).
+  reserve is kept back, a warning below it, never a refusal). Each
+  figure's range is stated once, `airplane_figure_ranges` (`crates/pilot`'s
+  aircraft form, sanity bounds, no regulation): `aircraft_problems` checks
+  the "Your Airplane" form and the gateway's save against it, and the
+  planner builds its query parameters' bounds from it (app.plan_query),
+  so an airplane the form takes is one every plan takes.
 - `emergency_guidance` (`crates/radio`): with no airplane picked, an
   emergency's general good practice only, each item with its source
   (FAA-H-8083-3C ch. 18; AIM 6-1-1, 6-1-2, 6-2-1, 6-2-2, 6-3-1, 6-3-2;
