@@ -2,6 +2,7 @@ package app.wingtipmaps.android.ui
 
 import app.wingtipmaps.android.airplane.ProfileOpen
 import app.wingtipmaps.android.map.MapPick
+import app.wingtipmaps.android.ui.sheet.SwipeDown
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -83,5 +84,24 @@ class SheetPageTest {
     @Test
     fun emergencyAloneOpensAtFullHeight() {
         assertEquals(listOf(SheetPage.Emergency), every.filter { it.opensFull })
+    }
+
+    /** The card rule's 10 (the owner, 2026-11-14): a settings card comes
+     *  from full to half on a swipe down and closes from half; a content
+     *  card parks at its bar and never closes; the search and the plan
+     *  never hide. */
+    @Test
+    fun aSwipeDownClosesASettingsCardOnlyFromHalfAndParksTheRest() {
+        for (page in listOf(SheetPage.You, SheetPage.Settings, SheetPage.MapSettings)) {
+            assertEquals(SwipeDown.Lower, page.swipeDown(fromFull = true, parked = false))
+            assertEquals(SwipeDown.Close, page.swipeDown(fromFull = false, parked = false))
+        }
+        for (page in listOf(SheetPage.Airport("KOSH"), SheetPage.Emergency, SheetPage.NavLog, SheetPage.Thing(MapPick.Plane("abc")))) {
+            assertEquals(SwipeDown.Park, page.swipeDown(fromFull = true, parked = false))
+            assertEquals(SwipeDown.Park, page.swipeDown(fromFull = false, parked = false))
+            assertEquals(SwipeDown.Hold, page.swipeDown(fromFull = false, parked = true))
+        }
+        assertEquals(SwipeDown.Hold, SheetPage.Home.swipeDown(fromFull = true, parked = false))
+        assertEquals(SwipeDown.Hold, SheetPage.Plan.swipeDown(fromFull = false, parked = false))
     }
 }

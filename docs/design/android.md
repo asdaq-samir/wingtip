@@ -1561,7 +1561,15 @@ airport and airplane cards' tabs float at the foot of the part in sight
 (`ui/card/CardTabBar`). Every card opens
 at half -- the sheet's peek is half the window while a card is open
 (`halfWindow`) -- and grows to full when pulled up, the sheet's nested
-scroll taking the drag before the card's list. No pull to refresh in a
+scroll taking the drag before the card's list. A swipe down past the
+lowest size goes by the card on top (`ui/sheet/SwipeDown`, the card
+rule's 10; the owner, 2026-11-14): You, its pages and the Map card come
+from full to half and close from half; a content card (a field, an
+airplane, a TFR, Nearest, the Nav Log, Emergency) parks at its bar, the
+sheet's peek lowered to the handle and the small bar (`MapSheetState.parked`)
+until it is pulled up or another card opens, and never closes on a
+swipe however far the drag goes past it. The stock sheet has two sizes
+and Hidden, so the park is its peek moved, not a third detent. No pull to refresh in a
 sheet: the airport card, the map's cards and the Brief fetch by
 themselves. The checklists tab scrolls; each page of Settings is its own
 back stack entry, with its own scroll and title state. A form with an edit not saved asks before a

@@ -2,6 +2,7 @@ package app.wingtipmaps.android.ui
 
 import app.wingtipmaps.android.airplane.ProfileOpen
 import app.wingtipmaps.android.map.MapPick
+import app.wingtipmaps.android.ui.sheet.SwipeDown
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -133,14 +134,17 @@ sealed interface SheetPage {
      *  carousel's pages. */
     val covers: Boolean get() = this != Home && this != Plan
 
-    /** Whether a swipe down closes it, as Apple Maps closes its settings
-     *  (the owner, 2026-11-14: "Apple Maps closes all setting drawers on
-     *  swipe down"; the web's swipeCloses since claude/flyhere-flicker):
-     *  You and what it opens of the pilot's own (Pilot Details, Minimums,
-     *  Settings and its pages), and the Map card. The content cards still
-     *  rest at their peek on a swipe down, and Emergency closes by its ✕
-     *  alone. */
+    /** Whether a swipe down from half closes it, as Apple Maps closes its
+     *  settings (the owner, 2026-11-14: "Apple Maps closes all setting
+     *  drawers on swipe down"; the web's swipeCloses): You and what it
+     *  opens of the pilot's own (Pilot Details, Minimums, Settings and its
+     *  pages), and the Map card; all the way up a swipe down brings it to
+     *  half. The content cards, Emergency among them, park at their bar
+     *  instead and close by their ✕ alone. */
     val swipeCloses: Boolean get() = this in SWIPE_CLOSES
+
+    /** What a swipe down past the sheet's lowest size does under it. */
+    fun swipeDown(fromFull: Boolean, parked: Boolean): SwipeDown = SwipeDown.of(covers, swipeCloses, fromFull, parked)
 
     /** Whether it opens at the sheet's full height rather than at half:
      *  Emergency alone (the card rule's 2 and 4). */

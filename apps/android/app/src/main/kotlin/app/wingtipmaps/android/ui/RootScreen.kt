@@ -89,7 +89,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val dryRun: DryRun = hiltViewModel()
     val map: MapViewModel = hiltViewModel()
     val ownShip = rememberOwnShipControl()
-    val sheet = rememberMapSheetState(canHide = { map.top.swipeCloses })
+    val sheet = rememberMapSheetState { fromFull, parked -> map.top.swipeDown(fromFull, parked) }
     // The screen's Snackbars: a route edit's Undo (RouteUndoSnackbar).
     val snackbars = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -114,7 +114,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val pages = rememberSheetNav(map, airports) { page ->
         when {
             // Emergency alone opens at the sheet's full height.
-            page.covers -> if (!stripLayout) scope.launch { if (page.opensFull) sheet.expand() else sheet.lower() }
+            page.covers -> if (!stripLayout) scope.launch { sheet.unpark(); if (page.opensFull) sheet.expand() else sheet.lower() }
             stripLayout -> map.raise()
             else -> scope.launch { if (sheet.atPeek) sheet.expand() }
         }

@@ -66,7 +66,10 @@ internal fun PhoneSheetLayout(
     // At the peek, the first row of the carousel's page in view: the
     // search's, or the plan's bar.
     val firstRow = if (nav.planShown) TopAppBarDefaults.TopAppBarExpandedHeight else searchHeight + WingtipSpace.Sm
-    val peek = if (nav.covered) halfWindow() else SheetHandle + firstRow + navigationBar
+    // A card's peek is half, where it opens, or its bar alone once a swipe
+    // down has parked it there (SwipeDown.Park; the card rule's 10).
+    val cardPeek = if (sheet.parked) SheetHandle + TopAppBarDefaults.TopAppBarExpandedHeight + navigationBar else halfWindow()
+    val peek = if (nav.covered) cardPeek else SheetHandle + firstRow + navigationBar
     // The map's buttons ride the sheet's top at the right, just above
     // the search (the owner, 2026-11-11), the position button nearest it;
     // 3D and the pages' toggle at the left (the owner, 2026-11-13).
@@ -95,8 +98,10 @@ internal fun PhoneSheetLayout(
             Box(Modifier.onSizeChanged { searchRowPx = it.height }) { searchRow() }
         }
     }
-    // Swiped away under a card that closes on a swipe (SheetPage.swipeCloses,
-    // which alone lets the sheet hide): the cards closed and the sheet back
+    // Another card on top opens at half, never parked.
+    LaunchedEffect(sheet, nav.top) { sheet.unpark() }
+    // Swiped away under a settings card at half (SwipeDown.Close, which
+    // alone lets the sheet hide): the cards closed and the sheet back
     // at its peek with the search.
     LaunchedEffect(sheet, nav) {
         snapshotFlow { sheet.hidden }.collect { gone ->

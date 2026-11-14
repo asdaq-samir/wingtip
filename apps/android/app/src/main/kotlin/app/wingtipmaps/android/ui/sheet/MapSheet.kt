@@ -30,9 +30,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -64,12 +67,27 @@ class MapSheetState internal constructor(internal val sheet: SheetState) {
 
     internal val expanded: Boolean get() = sheet.currentValue == SheetValue.Expanded
 
+    /** Whether the card on top is parked at its smallest size, its bar
+     *  alone in sight (SwipeDown.Park): the screen lowers the sheet's
+     *  peek to the bar while it is. Cleared as the sheet goes all the way
+     *  up and as another card comes on top, which opens at half. */
+    var parked: Boolean by mutableStateOf(false)
+        private set
+
+    fun unpark() {
+        parked = false
+    }
+
+    internal fun park() {
+        parked = true
+    }
+
     suspend fun expand() = sheet.expand()
 
     internal suspend fun lower() = sheet.partialExpand()
 
-    /** Whether the sheet was swiped away (only a card that closes on a
-     *  swipe lets it, rememberMapSheetState's canHide). */
+    /** Whether the sheet was swiped away (only a settings card at half
+     *  lets it, SwipeDown.Close). */
     val hidden: Boolean get() = sheet.currentValue == SheetValue.Hidden
 }
 
@@ -101,19 +119,40 @@ fun halfWindow(): Dp {
 // in material3 1.5.0-rc01; MapSheetState keeps the opt-in to this file.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun rememberMapSheetState(canHide: () -> Boolean = { false }): MapSheetState {
-    // Hidden only where `canHide` says so, a swipe down from the peek then
-    // putting the sheet away (the cards a swipe closes, SheetPage.swipeCloses,
-    // which the screen closes as the sheet settles there); otherwise the
-    // sheet springs back to its peek, as the stock sheet does with a value
-    // it may not take.
-    val hide by rememberUpdatedState(canHide)
+fun rememberMapSheetState(swipeDown: (fromFull: Boolean, parked: Boolean) -> SwipeDown = { _, _ -> SwipeDown.Hold }): MapSheetState {
+    // The stock sheet has two sizes and Hidden; a swipe down past the
+    // lowest is asked of `swipeDown` by the card on top: Hidden is taken
+    // only to close a settings card from half (the screen closes it as the
+    // sheet settles there); otherwise it is refused, the stock sheet
+    // springing back, and a settings card all the way up is brought to
+    // half, a content card parked at its bar (the peek lowered to it,
+    // and the sheet eased there on the stock motion).
+    val decide by rememberUpdatedState(swipeDown)
+    val scope = rememberCoroutineScope()
+    val held = remember { arrayOfNulls<MapSheetState>(1) }
     val sheet = rememberBottomSheetState(
         initialValue = SheetValue.PartiallyExpanded,
         enabledValues = setOf(SheetValue.Hidden, SheetValue.PartiallyExpanded, SheetValue.Expanded),
-        confirmValueChange = { it != SheetValue.Hidden || hide() },
+        confirmValueChange = { target ->
+            val state = held[0]
+            when {
+                state == null -> target != SheetValue.Hidden
+                target == SheetValue.Expanded -> true.also { state.unpark() }
+                target != SheetValue.Hidden -> true
+                else -> when (decide(state.expanded, state.parked)) {
+                    SwipeDown.Close -> true
+                    SwipeDown.Lower -> false.also { scope.launch { withFrameNanos { }; state.lower() } }
+                    SwipeDown.Park -> false.also {
+                        state.park()
+                        // The next frame, once the lowered peek is laid out.
+                        scope.launch { withFrameNanos { }; state.lower() }
+                    }
+                    SwipeDown.Hold -> false
+                }
+            }
+        },
     )
-    return remember(sheet) { MapSheetState(sheet) }
+    return remember(sheet) { MapSheetState(sheet).also { held[0] = it } }
 }
 
 /**
