@@ -10,7 +10,7 @@ import pytest
 import requests
 from PIL import Image
 
-from wingtip import publications, single_flight
+from wingtip import diagram_crops, publications, single_flight
 
 #: KDLH's charts in a kept index, by either ident.
 DLH_CHARTS = (
@@ -329,8 +329,8 @@ def test_a_kept_miss_says_the_runways_picture_is_not_to_be_asked_for(monkeypatch
     monkeypatch.setattr(publications, "airport_diagram_url", lambda ident, on=None: f"https://aeronav.faa.gov/d-tpp/{cycle}/00001AD.PDF")
     monkeypatch.setattr(publications, "_pdf_of", lambda *a: b"%PDF")
     monkeypatch.setattr(publications, "_runways_drawn", lambda pdf, ends: None)
-    assert not publications.airport_diagram_runways_missing("KXXX", True, on)
+    assert not diagram_crops.runways_missing("KXXX", True, on)
     assert publications.airport_diagram_runways_png("KXXX", cycle, [(44.0, -91.0)], on) is None
-    assert publications.airport_diagram_runways_missing("KXXX", True, on)
+    assert diagram_crops.runways_missing("KXXX", True, on)
     # The crop without ends is its own, not yet tried.
-    assert not publications.airport_diagram_runways_missing("KXXX", False, on)
+    assert not diagram_crops.runways_missing("KXXX", False, on)
