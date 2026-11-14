@@ -12,7 +12,7 @@ Counted from the map with the sheet at rest. The sheet's tabs gave way
 to the one search on 2026-11-09, so a search pick, a map tap or the
 account button is 1 and a row inside what it opens 2; each platform's
 section below says so for its own sheet. Where a table's first counts say
-"tab", they are the tab bar's, from before. "Before" is `claude/integration` on
+"tab", they are from before the one search. "Before" is `claude/integration` on
 2026-11-09; "after" is with this branch. The audit was read from the code,
 not timed on a device.
 
@@ -158,15 +158,15 @@ otherwise.
 
 Since the one search (the owner's approved design, 2026-11-09, branch
 `claude/one-search-web`) the web's sheet has no tabs. Its first row is one
-field, "Search airports, airplanes, or ask", with the microphone its
+field, "Search airports" (the web has no Ask since decision 0041), with the microphone its
 trailing button, and over it the title row with the account button at its
 right (the owner's Apple Maps screenshot, 2026-11-10); under it the plan (with a route) or the search's
 own page (with none, or the field in use). On a desktop the same in the
 side panel, ⌘K or Ctrl K focusing the field (the command palette it
 replaced), `/` too, and the airport card's F, D and S for Fly Here, Depart
 From and Add as Stop. Counted from the map with the sheet at rest: the
-search field or the account button tapped is 1. "Before" is the tab bar's
-count. By the one card rule (the owner, 2026-11-10) every thing and page
+search field or the account button tapped is 1. "Before" is the count
+from before the one search. By the one card rule (the owner, 2026-11-10) every thing and page
 is a card over the search with its ✕ (only Emergency fills the sheet's
 height), and Escape or a device's Back closes the top card or page first,
 then a level back, on a phone as on a desktop; with none open they lower
@@ -245,7 +245,7 @@ Flights, Share and Undo, which were the bar's, are in the route card's
 | Map card (new) | the map's own Map button; Settings' Map row | **1** (was 2, Settings) | The layers, airport weather, traffic, the weather loop and the alerts, each switch in place |
 | Settings (was Setup) | the account button, opening Settings with no menu between (the owner, 2026-11-10) | 1 → 1 | Every switch and picker in place; Sign In or the account's page with Sign Out |
 | Settings' pages (Logbook, Coach, Minimums, Guide, Downloads, About, Practice, Your Airplanes, Checklists, Map) | the account button → row (pushed in the Settings card) | 2 → 2 | Logbook entry edited in the row; swipe delete with an Undo row |
-| Hold, Clearance (forms) | a point's Hold Here…; the radio button | 2 / 1 | Cancel and Add / Done; with an edit, a swipe down is held and Cancel asks first |
+| Hold, Clearance (forms) | a point's Hold Here…; the radio's button, shown only with Comms Assist on (Settings › In Flight › ATC, off by default; the owner, 2026-11-13) | 2 / 1 | Cancel and Add / Done; with an edit, a swipe down is held and Cancel asks first |
 | Emergency | the instruments bar; Settings' Emergency row; "mayday" in the search | 1 / 2 | Full screen, close at the top right; its frequencies copy |
 | An alert ahead, a copilot message | the banner | 0 | Tapped: the airspace card; the message's Direct To and More Info |
 
@@ -273,7 +273,7 @@ in the search is not counted.
 | Airplane card (the one airplane card) | the flight's card → Airplane; search → an airplane; Ready to Fly's Pick an Airplane; a logbook N-number | 2 → 2 | The flown airplane's picker, registration, passengers, Your Airplanes; every figure a tap to edit; Fly This Airplane |
 | Checklists | Airplane → Checklists tab → a checklist (on the card's stack) | 3 → 3 | Ticks; Edit as text |
 | Settings | the account button | 1 → 1 | Layout, theme, account (Sign In, Sign Out), minimums, the copilots |
-| Map Settings (was Settings' Map section) | account → Map Settings; or search "map" / "layers" | 1 → 2 (+ typing 0) | Weather loop, layers, traffic, Airport Weather, glide ring, receiver, spoken alerts |
+| Map card (no Map Settings page; the owner, 2026-11-13) | the map's Layers button; or search "map" / "layers" | 1 (+ typing 0) | The layers, traffic and the weather loop; its gear opens Settings at its Map group (Airport Weather, glide ring) |
 | Logbook, Coach | account → Logbook → Coach, each on Settings' stack | 2 / 3 | Logbook entries edited in the row; Delete with an Undo |
 | Downloads, Passenger Briefing, About | account → Settings' row, on its stack | 2 → 2 | Downloads delete with no confirm or Undo |
 | Clearance | search "clearance" or "radio"; the strip's chip | typing / 1 | Listen, Enter the Route |

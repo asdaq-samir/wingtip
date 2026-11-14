@@ -268,8 +268,10 @@ the suite prints that reason. What runs when is [docs/CI.md](../CI.md).
 ## 4. One search (the owner, 2026-11-09)
 
 The sheet's Search page (§4a: its pages turned by one round toggle
-button riding the sheet's top at the right, the owner, 2026-11-13) has one field as its first row, "Search airports,
-airplanes, or ask", with the on-device microphone and the account button
+button riding the sheet's top at the left, under the 3D, the owner,
+2026-11-13) has one field as its first row, "Search airports" on the web
+(no Ask there since decision 0041; the phones' "Search airports,
+airplanes, or ask"), with the on-device microphone and the account button
 beside it; the account button opens You, who the pilot is and what is
 theirs, with Settings one of its rows (§8), where Setup was. The approved canvas: <https://claude.ai/artifact/XmbNqJTLRwwzebouLbXzCV>.
 
