@@ -63,14 +63,27 @@ fn cover(code: &str) -> Option<&'static str> {
     })
 }
 
+/// Where its weather groups are, the wind's word and the altimeter's, in
+/// its words with their punctuation off; None where it has none.
+pub(crate) fn weather_at(words: &[&str]) -> Option<(usize, usize)> {
+    let wind_at = words.iter().position(|w| is_wind(w))?;
+    let alt_at = words[wind_at..].iter().position(|a| is_altimeter(a))?;
+    Some((wind_at, wind_at + alt_at))
+}
+
+/// One word of the broadcast as the spoken reader hears it: a contraction
+/// or a runway's side said in full, any other word as written.
+pub(crate) fn said_in_full(raw: &str) -> String {
+    let word = bare(raw);
+    said(word).map(str::to_owned).or_else(|| runway_said(word)).unwrap_or_else(|| raw.to_owned())
+}
+
 /// The D-ATIS read: its weather from its METAR groups, the rest as said.
 /// A text with no METAR groups (no wind group, or no altimeter after it)
 /// is read as a spoken broadcast.
 pub fn read_datis(text: &str) -> Atis {
     let words: Vec<&str> = text.split_whitespace().map(bare).collect();
-    let wind_at = words.iter().position(|w| is_wind(w));
-    let alt_at = wind_at.and_then(|w| words[w..].iter().position(|a| is_altimeter(a)).map(|a| w + a));
-    let (Some(wind_at), Some(alt_at)) = (wind_at, alt_at) else {
+    let Some((wind_at, alt_at)) = weather_at(&words) else {
         return read(text);
     };
     // The rest of the broadcast, the contractions said in full and the
@@ -82,12 +95,7 @@ pub fn read_datis(text: &str) -> Atis {
             in_brackets = true;
         }
         if !in_brackets {
-            let word = bare(raw);
-            match (said(word), runway_said(word)) {
-                (Some(full), _) => rest.push(full.to_owned()),
-                (None, Some(full)) => rest.push(full),
-                _ => rest.push(raw.to_owned()),
-            }
+            rest.push(said_in_full(raw));
         }
         if raw.trim_end_matches(['.', ',']).ends_with(')') {
             in_brackets = false;

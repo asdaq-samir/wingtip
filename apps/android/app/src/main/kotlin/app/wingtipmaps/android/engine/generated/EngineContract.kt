@@ -2837,6 +2837,14 @@ object EngineContract {
     )
 
     @Serializable
+    data class DatisRemarksInput(
+        /**
+         * The D-ATIS as the data link sent it.
+         */
+        val text: String,
+    )
+
+    @Serializable
     data class DebriefAirborneInput(
         val points: List<EngineContract.TrackPoint>,
     )

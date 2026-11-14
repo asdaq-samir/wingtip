@@ -495,6 +495,16 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    FAA's colour), Charts the count of its charts, each named with its
    hint, "Weather, MVFR", "Charts, 9". A tab not yet seen opens at its
    page's top under the head, and each keeps its place (`useTabScroll`).
+   The Weather page's D-ATIS (`DigitalAtisRows`, where the tower's data
+   link sends one) is its figures, a row each, then its remarks as their
+   own group, "Remarks": a left-aligned list, an item a line in the
+   broadcast's order, in the FAA's words in sentence case with RWY, TWY
+   and the codes kept, figures as figures ("9,725 ft", "121.67"), and the
+   sentences that say the same of several runways folded into one item
+   with every runway listed ("IM out of service: RWY 9L, 9C, …"): the
+   engine's `datis_remarks`, never the spoken words the read is heard by
+   (the owner, 2026-11-14, of KORD's: "Can we make these remarks read
+   better?"). The words as sent fold away at the group's foot.
 
 **Structure, airplane card.** Head (tail, type, operator where the
 registry gives it; a picked airplane of the pilot's own shows its

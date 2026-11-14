@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Eye, Radio } from "lucide-react";
 import { cn } from "cn";
@@ -6,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../co
 import { RowBadge } from "../../../components/RowBadge";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
-import { atisRows, glanceWords, heardAny, type AtisReading } from "../lib/atis";
+import { atisRows, datisRemarks, glanceWords, heardAny, type AtisReading } from "../lib/atis";
 import { datisQuery, rvrQuery } from "../../../lib/liveReports";
 import { usePreferences } from "../../../lib/preferences";
 import { rvrRows } from "../lib/rvrRows";
@@ -16,8 +17,9 @@ import { useShown } from "../../../lib/shown";
  * The field's D-ATIS, on the card's Weather tab, where the tower's data
  * link sends one (wingtip.datis, STDDS's TDES): each broadcast, arrival
  * and departure apart, read into the figures a heard ATIS is (the
- * engine's read_datis, read_atis's shape), its words kept as sent under
- * them. Nothing where the field has none.
+ * engine's read_datis, read_atis's shape), its remarks a list under them,
+ * an item a line in the FAA's words (the engine's datis_remarks), and its
+ * words kept as sent at the foot. Nothing where the field has none.
  */
 export function DigitalAtisRows({ ident }: { ident: string }) {
   // Asked each minute while its card is in sight, not under another tab
@@ -31,28 +33,11 @@ export function DigitalAtisRows({ ident }: { ident: string }) {
         // passes it on as a plain object).
         const reading = b.reading as unknown as AtisReading;
         const which = b.which ? `${b.which.charAt(0).toUpperCase()}${b.which.slice(1)} D-ATIS` : "D-ATIS";
-        return (
-          <ListGroup key={`${b.which ?? "both"}`} title={`${which}${b.letter ? `, information ${b.letter}` : ""}`}>
-            {heardAny(reading) && (
-              <ListRow
-                media={
-                  <RowBadge colour={BADGE.weather}>
-                    <Radio />
-                  </RowBadge>
-                }
-                title={<span className="font-semibold text-foreground">{glanceWords(reading)}</span>}
-                data-testid="place-datis-glance"
-              />
-            )}
-            {heardAny(reading) &&
-              atisRows(reading).map((row, k) => (
-                <ListRow
-                  key={`${row.label}-${k}`}
-                  title={row.label}
-                  value={<span className="text-foreground">{row.value}</span>}
-                  data-testid="place-datis-row"
-                />
-              ))}
+        const remarks = datisRemarks(b.text);
+        // The words as sent and the credit close the broadcast, under its
+        // remarks where it has any.
+        const foot = (
+          <>
             <Collapsible>
               <CollapsibleTrigger render={<ListRow title="As sent" chevron data-testid="place-datis-sent" />} />
               <CollapsibleContent>
@@ -66,7 +51,48 @@ export function DigitalAtisRows({ ident }: { ident: string }) {
               </CollapsibleContent>
             </Collapsible>
             <ListRow muted title={<span className={TEXT.note}>FAA D-ATIS</span>} />
-          </ListGroup>
+          </>
+        );
+        return (
+          <Fragment key={`${b.which ?? "both"}`}>
+            <ListGroup title={`${which}${b.letter ? `, information ${b.letter}` : ""}`}>
+              {heardAny(reading) && (
+                <ListRow
+                  media={
+                    <RowBadge colour={BADGE.weather}>
+                      <Radio />
+                    </RowBadge>
+                  }
+                  title={<span className="font-semibold text-foreground">{glanceWords(reading)}</span>}
+                  data-testid="place-datis-glance"
+                />
+              )}
+              {heardAny(reading) &&
+                atisRows(reading, { remarks: false }).map((row, k) => (
+                  <ListRow
+                    key={`${row.label}-${k}`}
+                    title={row.label}
+                    value={<span className="text-foreground">{row.value}</span>}
+                    data-testid="place-datis-row"
+                  />
+                ))}
+              {!remarks.length && foot}
+            </ListGroup>
+            {remarks.length > 0 && (
+              <ListGroup title="Remarks" className="pt-5">
+                {/* An item a line, left-aligned and wrapping, in the
+                    broadcast's order: a list to read, not a figure. */}
+                {remarks.map((remark, k) => (
+                  <ListRow
+                    key={`${k}-${remark}`}
+                    title={<span className="text-foreground">{remark}</span>}
+                    data-testid="place-datis-remark"
+                  />
+                ))}
+                {foot}
+              </ListGroup>
+            )}
+          </Fragment>
         );
       })}
     </div>

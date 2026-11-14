@@ -487,6 +487,12 @@ fun Engine.dataCycle(kind: String, effective: String? = null, on: String): Resul
     rule("data_cycle", EngineContract.DataCycleInput(kind = kind, effective = effective, on = on))
 
 /**
+ * A digital ATIS's remarks as the airport card shows them (STDDS TDES DATISData): the sentences after its weather (AIM 4-1-13), an item each, in the FAA's words in sentence case with RWY, TWY and the codes kept, the contractions of FAA Order JO 7340.2 written out, a figure said for the voice ('9 THSD 7 HND 25 FT') written as one (9,725 ft), and the sentences that say the same of several runways folded into one item listing them all. The heading, the closing 'ADVS YOU HAVE INFO' and a sentence whose approach or runways read_datis already shows are left out.
+ */
+fun Engine.datisRemarks(text: String): Result<List<String>> =
+    rule("datis_remarks", EngineContract.DatisRemarksInput(text = text))
+
+/**
  * The planner's /api/debrief answer (ACS PA.VI.A): the flight flown against the plan, each finding marked, and the tolerances it is held to.
  */
 fun Engine.debrief(checkpoints: List<EngineContract.DebriefInputCheckpointsItem>, points: List<EngineContract.TrackPoint>, patterns: Map<String, Double>? = null): Result<EngineContract.DebriefAnswer> =

@@ -103,6 +103,14 @@ fn sentence_word(word: &str) -> String {
 /// (AIM 3-2-1). Text with any lower case is someone's own writing and is
 /// left as it is, and so are raw reports, which pilots read as sent.
 pub fn faa_words(text: &str) -> String {
+    faa_words_keeping(text, &[])
+}
+
+/// `faa_words` with more codes kept as written, for a text whose own codes
+/// a pilot reads as written but the FAA's other capital text does not
+/// keep: a D-ATIS's RWY and TWY before the idents (wingtip-radio's
+/// datis_remarks), where a procedure's title reads "rwy 36".
+pub fn faa_words_keeping(text: &str, keep: &[&str]) -> String {
     if text.bytes().any(|b| b.is_ascii_lowercase()) || whole_notam(text) {
         return text.to_owned();
     }
@@ -161,7 +169,7 @@ pub fn faa_words(text: &str) -> String {
                 j += 1;
             }
             let word: String = c[i..j].iter().collect();
-            if ident_by_place(&c, i, j) {
+            if ident_by_place(&c, i, j) || keep.contains(&word.as_str()) {
                 out.push_str(&word);
             } else {
                 out.push_str(&sentence_word(&word));

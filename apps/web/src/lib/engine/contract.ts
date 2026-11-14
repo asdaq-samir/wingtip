@@ -219,6 +219,7 @@ export type CtafOfAnswer =
       description: "MULTICOM";
       frequency_mhz: number;
     };
+export type DatisRemarksAnswer = string[];
 export type DebriefAirborneAnswer = [number, number][];
 export type DensityAltitudeFtAnswer = number;
 export type DensityRatioAnswer = number;
@@ -1651,6 +1652,13 @@ export interface EngineContract {
   data_cycle: {
     input: DataCycleInput;
     answer: DataCycleAnswer;
+  };
+  /**
+   * A digital ATIS's remarks as the airport card shows them (STDDS TDES DATISData): the sentences after its weather (AIM 4-1-13), an item each, in the FAA's words in sentence case with RWY, TWY and the codes kept, the contractions of FAA Order JO 7340.2 written out, a figure said for the voice ('9 THSD 7 HND 25 FT') written as one (9,725 ft), and the sentences that say the same of several runways folded into one item listing them all. The heading, the closing 'ADVS YOU HAVE INFO' and a sentence whose approach or runways read_datis already shows are left out.
+   */
+  datis_remarks: {
+    input: DatisRemarksInput;
+    answer: DatisRemarksAnswer;
   };
   /**
    * The planner's /api/debrief answer (ACS PA.VI.A): the flight flown against the plan, each finding marked, and the tolerances it is held to.
@@ -5929,6 +5937,12 @@ export interface DataCycleAnswer {
    * How many editions have come out since the one held; 0 unless expired.
    */
   behind: number;
+}
+export interface DatisRemarksInput {
+  /**
+   * The D-ATIS as the data link sent it.
+   */
+  text: string;
 }
 export interface DebriefInput {
   checkpoints: {

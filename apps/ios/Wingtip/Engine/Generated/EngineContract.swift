@@ -2828,6 +2828,11 @@ enum EngineContract {
         var on: String
     }
 
+    struct DatisRemarksInput: Codable, Equatable, Sendable {
+        /// The D-ATIS as the data link sent it.
+        var text: String
+    }
+
     struct DebriefAirborneInput: Codable, Equatable, Sendable {
         var points: [EngineContract.TrackPoint]
     }

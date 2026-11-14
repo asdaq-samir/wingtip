@@ -649,7 +649,7 @@ fn opt_int(out: &mut String, v: Option<i64>) {
     }
 }
 
-fn strings(out: &mut String, items: &[String]) {
+pub(crate) fn strings(out: &mut String, items: &[String]) {
     out.push('[');
     for (k, s) in items.iter().enumerate() {
         if k > 0 {

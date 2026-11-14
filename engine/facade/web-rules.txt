@@ -57,6 +57,7 @@ copilot_watch
 csv_rows
 ctaf_of
 data_cycle
+datis_remarks
 debrief
 debrief_airborne
 departure_pattern
@@ -78,7 +79,6 @@ endorsements_in_force
 endurance
 faa_words
 field_hours
-field_relation
 field_taf
 filed_dof
 filed_duration
@@ -142,7 +142,6 @@ holding
 holding_leg_minutes
 holds_read
 icing_severity
-in_emergency
 kept_age
 kneeboard_radio
 least_crosswind
@@ -214,11 +213,8 @@ tfr_read
 thin_track
 title_case
 tokens
-traffic_kind
 traffic_marks
-traffic_matches
 traffic_pattern
-traffic_reach
 turbulence_category
 underway
 vfr_basic_minimums

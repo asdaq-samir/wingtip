@@ -24,6 +24,14 @@ export function readAtis(text: string): AtisReading {
   return callEngine("read_atis", { text });
 }
 
+/** A D-ATIS's remarks as the card lists them, an item each in the FAA's
+ *  words in sentence case with its codes kept and the sentences saying
+ *  the same of several runways folded into one (the engine's
+ *  datis_remarks); the read's spoken remarks are not for the screen. */
+export function datisRemarks(text: string): string[] {
+  return callEngine("datis_remarks", { text });
+}
+
 /** Whether anything of a broadcast was heard at all. */
 export function heardAny(r: AtisReading): boolean {
   return (
@@ -111,8 +119,10 @@ export function glanceWords(r: AtisReading): string {
   );
 }
 
-/** The table under the line, a row a figure, only the figures heard. */
-export function atisRows(r: AtisReading): { label: string; value: string }[] {
+/** The table under the line, a row a figure, only the figures heard; a
+ *  heard broadcast's remarks with them, a D-ATIS's left to
+ *  datisRemarks (its own list, in the FAA's words). */
+export function atisRows(r: AtisReading, { remarks = true } = {}): { label: string; value: string }[] {
   const rows: { label: string; value: string }[] = [];
   if (r.information) rows.push({ label: "Information", value: `${r.information}${r.time_z ? ` · ${r.time_z}` : ""}` });
   else if (r.time_z) rows.push({ label: "Observed", value: r.time_z });
@@ -125,7 +135,7 @@ export function atisRows(r: AtisReading): { label: string; value: string }[] {
   if (r.approach) rows.push({ label: "Approach", value: r.approach });
   const runways = runwayWords(r.runways);
   if (runways) rows.push({ label: "Runways", value: runways });
-  for (const remark of r.remarks) rows.push({ label: "Remarks", value: remark });
+  if (remarks) for (const remark of r.remarks) rows.push({ label: "Remarks", value: remark });
   return rows;
 }
 
