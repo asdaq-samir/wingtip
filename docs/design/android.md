@@ -549,52 +549,72 @@ placement wins, and the difference is noted.
        button.
      The row is in the card under its head and facts, not docked at the
      sheet's foot, so it is in sight at half (audit AND-1, 2026-11-14).
-  5. The detail tabs directly under the buttons (the owner's T4,
-     2026-11-14; `ui/AirportTabs`' `AirportTabRow`): a
-     `SecondaryScrollableTabRow` (Overview, Weather, Frequencies,
-     Runways, Charts, NOTAMs) pinned as a `stickyHeader`, the picked tab
-     filled in the theme's `primary` with `onPrimary` words and no
-     underline; Weather with the dot of the field's own report's flight
-     category (none without one), Charts with its count (the d-TPP's
-     plates and the diagram); each tab's content description says the
-     hint, "Weather, MVFR", "Charts, 9". Under the tabs the field's report
-     in one line (`AirportWeatherLine`): its category chip, then "Ceiling
-     1,800 ft · 310°T 4 kt · 1255Z". Overview starts with the pictures;
-     Charts with the airport diagram.
-  6. The body is `ListItem` rows inside `SegmentedListItem` groups:
-     - runways with their winds, which the engine works out
-     - frequencies, each with a trailing copy `IconButton`
-  7. Image tiles for the diagram and plates as a
-     `HorizontalMultiBrowseCarousel`.
-- **Structure, the airplane card** (a tracked airplane tapped on the
-  map, `ui/MapCard`; and the Airplane tab):
-  1. The title row: callsign or N-number at `headlineSmallEmphasized`,
-     then the type, with Close at the end.
-  2. The figures row: altitude, groundspeed and track, as the planner
-     and engine answer them. These are `titleLargeEmphasized` numbers
-     with `labelMedium` captions, the way Fitbit's top stats sit "at a
-     glance".
-  3. Actions as a `ButtonGroup`: Track first and filled, then the
-     card's others from `CARD_ACTIONS`.
-  4. Details in `ListItem`s.
+  5. Since C1 (the owner, 2026-11-14, after Apple Maps' place card; the
+     web's 03429b6a4): the bar's line under the name says the town and
+     Towered or Non-towered (NASR's tower type); Closed, Private,
+     Military or Joint use lead the use line as `ui/card/StatusBadge`
+     (rules.md 9). Under the actions the facts in a sideways strip
+     (`ui/card/CardFacts`, `ui/AirportFactStrip`): Weather as the
+     category's badge ("≈ MVFR" where it is the model's for the field or a
+     near station's), Wind, Longest (or Runway over one; NASR's and a
+     NOTAM's closed runways left out), Elevation, Distance or From KMSN,
+     Fuel. Then the pictures as a `HorizontalMultiBrowseCarousel` of
+     large tiles over every page, its height held while they are asked
+     for (`ui/PhotoCarousel`); a tap opens the full-screen viewer, pinch
+     and double-tap zoom (telephoto's `ZoomableAsyncImage`).
+  6. Then the page picked, the web's four: Info (details, frequencies with
+     a copy on a tap, NOTAMs, lights, fuel), Weather, Runways, Charts (the
+     airport diagram first). The tabs are toggle buttons in Material 3
+     Expressive's `HorizontalFloatingToolbar` at the foot of the part of
+     the card in sight (`ui/card/CardTabBar`; held there by the card's
+     frame against the window, `CardFoot`, as the sheet lays a card out
+     at full height whatever it rests at), the page scrolling under it
+     and clearing it at its end (`CardTabBarRoom`); Weather leads with
+     the dot of the field's own report's category, Charts has its count,
+     and each says its hint to TalkBack, "Weather, MVFR", "Charts, 9".
+     Android's own floating toolbar, not the web's glass.
+  7. A NOTAM's state is the StatusBadge: Active, Later where it starts
+     later, else Inactive in the cold fill (`FieldNotams.status`).
+- **Structure, a tracked flight's card** (an airplane heard, tapped on
+  the map; `airplane/TrackedFlightCard`, the web's FlightCard, in the
+  airport card's C1 since 2026-11-14):
+  1. The bar: its callsign, else N-number, with its type under it, ✕.
+  2. Track, filled, as a `ButtonGroup`.
+  3. Its state led by a badge: an emergency's code where the engine's
+     `squawk_meaning` gives one (AIM 6-2-2, 6-3-4, 6-4-2), else In the
+     air; then altitude (to the hundred feet), groundspeed and track as
+     `Figure`s. Not heard now, the N-number card's status line.
+  4. The fact strip from its FAA record (`airplane/AirplaneFacts`), the
+     traffic's type where there is none.
+  5. Its Planespotters photo (a tap opens its page there, the
+     photographer named on the tile) and the sketch of its newest flight
+     (`airplane/FlightSketch`, north up) as picture tiles.
+  6. Info first (its height against own ship, the tower's departure
+     event, its public record, the traffic's credit), then Flights, in
+     the floating bar.
 - **Structure, an N-number's card** (`airplane/AirplaneCard`, the owner's
-  P1 of 2026-11-14, as the web's): the N-number with "Piper PA-28-140,
-  1971" under it from the FAA's record, asked by itself
-  (`/api/traffic/registered`) and drawn at once; its Planespotters.net
-  photo with its photographer only where that call answers; Fly This,
-  Follow (its takeoff and landing watches), Favorite and Share as a
-  `ButtonGroup`; the tabs Flights, Info and Figures (its checklists under
-  its figures); and one status line under them, "Checking whether it's in
-  the air…" until the live find answers, then in the air, where it last
-  landed, or not heard in six weeks (`AirplaneLookup`'s `statusLine`).
-  Flights lists its past flights by its ICAO address, each with ▶, which
-  plays it on the map with its path behind it (`PastFlightReplay`, its bar
-  over the map). Info is its public record in groups: Registration (the
-  owner shown, the FAA registry being public), Airplane, Engine,
-  Airworthiness, Usually based at, Safety history (the NTSB's cases, each
-  its CAROL report), Ownership history and Documents filed
-  (`airplane/AirplaneInfo`). The search's registry row draws the record's
-  type at once with the same status after it.
+  P1 of 2026-11-14, as the web's, laid out as the airport card's C1 the
+  same day): the N-number with "Piper PA-28-140, 1971" under it from the
+  FAA's record, asked by itself (`/api/traffic/registered`) and drawn at
+  once; Fly This, Follow (its takeoff and landing watches), Favorite and
+  Share as a `ButtonGroup`; its status line led by In the air or On the
+  ground as a badge, "Checking whether it's in the air…" until the live
+  find answers, then in the air, where it last landed, or not heard in
+  six weeks (`statusLine`, `StatusLine`); the fact strip (Type, Year,
+  Seats, Engines, Registration in the error ink where lapsed, Owner as
+  the FAA publishes it); its Planespotters.net photo as a tile, a tap
+  to its page there; and the pages Flights (with its count), Info and
+  Figures (its checklists under its figures) in the floating bar.
+  Flights lists its past flights by its ICAO address, one under way led
+  by the In the air badge, each with ▶, which plays it on the map with
+  its path behind it (`PastFlightReplay`, its bar over the map). Info is
+  its public record in groups: Registration (the owner shown, the FAA
+  registry being public), Airplane, Engine, Airworthiness, Usually based
+  at, Safety history (the NTSB's cases, each its CAROL report),
+  Ownership history and Documents filed (`airplane/AirplaneInfo`). The
+  flown airplane's and a type's cards have Figures and Checklists in the
+  same bar. The search's registry row draws the record's type at once
+  with the same status after it.
 - **Primary action**: the first, filled button of the row.
   - **Fly Here** on an airport.
   - **Direct To** on a point.
@@ -1460,7 +1480,10 @@ Left hand-built, with no stock equivalent:
   each leg's time, in its flight category's colour. A proportional
   timeline is a chart; Material has no component for it.
 - The photo carousel's tap (`ui/PhotoCarousel`): `Modifier.clickable` on a
-  carousel item is how Material's own carousel samples open an item.
+  carousel item is how Material's own carousel samples open an item. A
+  flight's sketch tile (`airplane/FlightSketch`) is a `Canvas`: Material
+  has no map thumbnail, and a second MapLibre map in a tile would cost a
+  GL surface per card.
 - The platform's splash screen (Android 12 and up) draws the mark;
   Android 8 to 11 show the window's background, as before. Adding
   `core-splashscreen` for those versions is left for a decision.
@@ -1534,7 +1557,8 @@ its sheet in place of the strip.
 **Scrolling.** Every card and page has Material 3 Expressive's large
 flexible top app bar with `exitUntilCollapsed`, the plan included (its
 route's name, ✕, no ←), so the title, ← and ✕ never scroll away. The
-airport card's tabs pin under it (a `stickyHeader`). Every card opens
+airport and airplane cards' tabs float at the foot of the part in sight
+(`ui/card/CardTabBar`). Every card opens
 at half -- the sheet's peek is half the window while a card is open
 (`halfWindow`) -- and grows to full when pulled up, the sheet's nested
 scroll taking the drag before the card's list. No pull to refresh in a

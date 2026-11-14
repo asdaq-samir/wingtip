@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -19,7 +18,6 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,22 +25,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.graphics.toColorInt
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.airplane.TrackedFlightCard
 import app.wingtipmaps.android.api.name
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.flight.FlightModel
-import app.wingtipmaps.android.flight.Tracking
-import app.wingtipmaps.android.flight.Traffic
-import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.here.HereCard
-import app.wingtipmaps.android.live.DepartureLine
 import app.wingtipmaps.android.live.SpecialUseRows
 import app.wingtipmaps.android.map.MapPick
-import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
 
@@ -63,6 +54,11 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  */
 @Composable
 fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit, onRouted: () -> Unit) {
+    // A tracked flight's card is its own, laid out as the airport card's C1.
+    if (pick is MapPick.Plane) {
+        TrackedFlightCard(pick.hex, exit)
+        return
+    }
     val title = when (pick) {
         is MapPick.Airspace -> stringResource(R.string.airspace_class, pick.airspaceClass)
         // A VOR's name with its kind, "OBK VOR/DME" (the web's 8439547dc).
@@ -100,7 +96,7 @@ fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit, onRouted: () -> Unit) {
         if (action != CardAction.CALL && action != CardAction.ADDRESS && action != CardAction.COPY) onRouted()
     }
     CardPage(title = title, exit = exit, subtitle = subtitle, actions = share) { padding ->
-        // Traffic is heard again by itself; no pull to refresh in a sheet.
+        // No pull to refresh in a sheet, whose drag down is the sheet's.
         Box(Modifier.padding(padding)) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Lg),
@@ -123,7 +119,7 @@ fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit, onRouted: () -> Unit) {
                         PointCard(pick)
                         NavaidActions(pick, null, actions, act)
                     }
-                    is MapPick.Plane -> PlaneCard(pick.hex)
+                    is MapPick.Plane -> {}
                     is MapPick.Here -> {
                         PointActions(CardKind.POINT, pick, actions, act)
                         HereCard(pick.lat, pick.lon)
@@ -170,50 +166,3 @@ internal fun Fact(name: String, value: String, description: Boolean = false) {
 }
 
 internal fun ink(hex: String) = Color(hex.toColorInt())
-
-/** An airplane heard (the web's traffic card): what it is, its height
- *  against own ship's as TCAS writes it (the engine's `traffic_marks`),
- *  its speed and track, and Track, which follows it (Tracking) and keeps
- *  it ringed on the map. */
-@Composable
-private fun PlaneCard(hex: String, flight: FlightModel = hiltViewModel()) {
-    val traffic = flight.traffic
-    val tracking = flight.tracking
-    val planes by traffic.planes.collectAsStateWithLifecycle()
-    val marks by traffic.marks.collectAsStateWithLifecycle()
-    val trafficProblem by traffic.problem.collectAsStateWithLifecycle()
-    val watchProblem by tracking.problem.collectAsStateWithLifecycle()
-    val tracked by tracking.hex.collectAsStateWithLifecycle()
-    val i = planes.indexOfFirst { it.hex.equals(hex, ignoreCase = true) }
-    val plane = planes.getOrNull(i)
-    if (plane == null) {
-        Head(ink(MapStyle.TRAFFIC_FAR), stringResource(R.string.traffic), stringResource(R.string.traffic_gone))
-        return
-    }
-    val mark = marks.getOrNull(i)
-    Head(
-        ink(if (mark?.near == true) MapStyle.TRAFFIC_NEAR else MapStyle.TRAFFIC_FAR),
-        listOfNotNull(plane.name, plane.type).joinToString(" · "),
-        plane.registration?.takeIf { it != plane.name },
-    )
-    ProblemLine(trafficProblem)
-    ProblemLine(watchProblem)
-    // Its figures at a glance, as the planner hears them: altitude,
-    // groundspeed and track, each its name over it (Figure), the way a
-    // health app's top figures sit; a figure not heard is a dash.
-    Row(Modifier.fillMaxWidth()) {
-        Figure(stringResource(R.string.fact_altitude), plane.altitudeFt?.let(Format::reportedAltitude) ?: Format.NONE)
-        Figure(stringResource(R.string.fact_ground_speed), plane.speedKt?.let(Format::speed) ?: Format.NONE)
-        Figure(stringResource(R.string.fact_track), plane.trackDeg?.let { "${Format.heading(it)} true" } ?: Format.NONE)
-    }
-    mark?.label?.takeIf { it.isNotEmpty() }?.let { Fact(stringResource(R.string.fact_height), it) }
-    // The tower's departure event, where TDES sent one.
-    DepartureLine(plane.callsign ?: plane.registration)
-    // Track is the card's one action, filled, where every card's first
-    // action sits (CardButtonGroup).
-    val isTracked = tracked == hex.lowercase()
-    val trackWord = stringResource(if (isTracked) R.string.stop_tracking else R.string.track)
-    CardButtonGroup(listOf(GroupAction(trackWord, null, filled = true) { tracking.track(if (isTracked) null else hex, plane) }), Modifier.fillMaxWidth())
-    val source by traffic.source.collectAsStateWithLifecycle()
-    Text(Traffic.credit(source), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-}

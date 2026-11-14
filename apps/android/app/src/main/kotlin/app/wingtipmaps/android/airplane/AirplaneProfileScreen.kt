@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
@@ -44,11 +45,20 @@ import app.wingtipmaps.android.ui.SectionTitle
  * tap to edit in place, a figure of the pilot's over a book figure with
  * Reset to Book Figure under it, then its endurance (EnduranceSection).
  * Opened at `focus` from an ask's Edit.
- * The Figures section of the airplane's card (AirplaneCard), `head` over
- * the figures in the same scroll (the flown airplane's own rows).
+ * The Figures section of the airplane's card (AirplaneCard), `top` (the
+ * card's own head, edge to edge) and `head` (the flown airplane's own
+ * rows) over the figures in the same scroll, `bottom` the room at its end
+ * (the card's floating tab bar's).
  */
 @Composable
-fun AirplaneProfileScreen(airplane: AirplaneNow, focus: String?, model: AirplaneProfileModel = hiltViewModel(), head: @Composable ColumnScope.() -> Unit = {}) {
+fun AirplaneProfileScreen(
+    airplane: AirplaneNow,
+    focus: String?,
+    model: AirplaneProfileModel = hiltViewModel(),
+    bottom: Dp = WingtipSpace.Xl,
+    top: @Composable ColumnScope.() -> Unit = {},
+    head: @Composable ColumnScope.() -> Unit = {},
+) {
     val context = LocalContext.current
     val own = remember(context) { OwnAirplanes.of(context) }
     val signedIn by own.signedIn.collectAsStateWithLifecycle()
@@ -59,10 +69,22 @@ fun AirplaneProfileScreen(airplane: AirplaneNow, focus: String?, model: Airplane
         if (at != null) model.edit(at.key, airplane.value(at)) else model.cancel()
     }
 
-    Column(
-        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
-        verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
-    ) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = bottom)) {
+        top()
+        Figures(airplane, state, model, own, signedIn, head)
+    }
+}
+
+@Composable
+private fun Figures(
+    airplane: AirplaneNow,
+    state: AirplaneProfileModel.State,
+    model: AirplaneProfileModel,
+    own: OwnAirplanes,
+    signedIn: Boolean,
+    head: @Composable ColumnScope.() -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
         head()
         if (airplane.name == null) {
             Text(stringResource(R.string.no_airplane_line), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

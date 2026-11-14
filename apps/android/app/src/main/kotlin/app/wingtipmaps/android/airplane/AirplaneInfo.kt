@@ -2,7 +2,9 @@ package app.wingtipmaps.android.airplane
 
 import android.content.Intent
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -14,6 +16,7 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -27,11 +30,13 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.card.StatusBadge
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import app.wingtipmaps.android.ui.card.Status as BadgeStatus
 
 private val DAY = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.US)
 
@@ -224,7 +229,13 @@ private fun FlightRow(f: PastFlightSummary, hex: String?, name: String) {
     val minutes = (f.on - f.off) / 60
     val said = stringResource(R.string.said_replay_flight, route)
     ListItem(
-        supportingContent = { Text(joined(off, Format.duration(minutes), Format.reportedAltitude(f.maxAltFt)), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        // A flight still under way leads with the In the air badge (rules.md 9).
+        supportingContent = {
+            Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm), verticalAlignment = Alignment.CenterVertically) {
+                if (f.inAir) StatusBadge(BadgeStatus.InAir)
+                Text(joined(off, Format.duration(minutes), Format.reportedAltitude(f.maxAltFt)), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
         trailingContent = {
             if (hex != null) {
                 IconButton(onClick = { PastFlightReplay.play(hex, f.id, "$name $route") }) {
