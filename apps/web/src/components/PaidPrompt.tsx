@@ -49,7 +49,7 @@ export default function PaidPrompt({
   // takes, and no word of a price, a trial or subscribing.
   if (!sold) {
     return (
-      <div data-testid="paid-prompt-DEBRIEF" className={className}>
+      <div data-testid="paid-prompt-debrief" className={className}>
         <EmptyState
           icon={<Gauge />}
           title={title}
@@ -82,7 +82,7 @@ export default function PaidPrompt({
       <p className={cn("text-muted-foreground", TEXT.note)}>Subscribing is coming.</p>
     );
   return (
-    <div data-testid="paid-prompt-DEBRIEF" className={className}>
+    <div data-testid="paid-prompt-debrief" className={className}>
       <EmptyState icon={<Gauge />} title={title} action={action} className="p-4">
         {children}{" "}
         {trial

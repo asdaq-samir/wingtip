@@ -40,6 +40,10 @@ import DueItemsGroup from "./DueItemsGroup";
 import { VorCheckGroup } from "./VorCheckGroup";
 import { FieldError } from "../../components/ui/field";
 
+/** A figure's key as a test id's words, kebab-case as every other id is
+ *  ("annualOn" is "annual-on"; the web audit's WEB-34). */
+const kebab = (key: string) => key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+
 /** A form field as the request carries it: blank is null. */
 const orNull = (value: string) => (value.trim() ? Number(value) : null);
 
@@ -234,7 +238,7 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
               {recorded?.[d.through] && (
                 <>
                   {" "}
-                  · <Standing through={recorded[d.through]} testId={`inspection-${d.key}`} />
+                  · <Standing through={recorded[d.through]} testId={`inspection-${kebab(d.key)}`} />
                 </>
               )}
             </>
@@ -249,7 +253,7 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
               className="h-8 w-40"
               max={today}
               {...ariaInvalid(`${id}-${d.key}`, errors[d.key]?.message)}
-              data-testid={`inspection-${d.key}-date`}
+              data-testid={`inspection-${kebab(d.key)}-date`}
             />
           </RowField>
         </ListRow>
@@ -266,7 +270,7 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
                 ·{" "}
                 <span
                   className={cn(recorded.eltBatteryDueOn > today ? FINDING_TONE.ok : FINDING_TONE.stop)}
-                  data-testid="inspection-eltBattery"
+                  data-testid="inspection-elt-battery"
                 >
                   {recorded.eltBatteryDueOn > today ? `By ${recorded.eltBatteryDueOn}` : `Due since ${recorded.eltBatteryDueOn}`}
                 </span>
@@ -281,7 +285,7 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
           id={`${id}-battery`}
           aria-label="ELT battery replace by"
           className="h-8 w-40"
-          data-testid="inspection-eltBattery-date"
+          data-testid="inspection-elt-battery-date"
         />
       </ListRow>
       {/* Whether the 100-hour is owed at all: carrying anyone for hire, or
@@ -296,7 +300,7 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
               pressed={field.value}
               onPressedChange={field.onChange}
               label={field.value ? "Yes" : "No"}
-              testId="inspection-forHire"
+              testId="inspection-for-hire"
             />
           )}
         />
@@ -311,7 +315,7 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
             <>
               Due at {due.toFixed(1)} h
               {recorded?.hoursNow != null && (
-                <span className={cn(recorded.hoursNow < due ? FINDING_TONE.ok : FINDING_TONE.stop)} data-testid="inspection-hundredHour">
+                <span className={cn(recorded.hoursNow < due ? FINDING_TONE.ok : FINDING_TONE.stop)} data-testid="inspection-hundred-hour">
                   {recorded.hoursNow < due ? `, ${(due - recorded.hoursNow).toFixed(1)} h to go` : ", due now"}
                 </span>
               )}
@@ -331,7 +335,7 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
               className="h-8 w-28"
               inputClassName="text-right"
               {...ariaInvalid(`${id}-at`, errors.hundredHourAtHours?.message)}
-              data-testid="inspection-hundredHourAt"
+              data-testid="inspection-hundred-hour-at"
             />
           </FieldHit>
         </RowField>
@@ -347,7 +351,7 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
               className="h-8 w-28"
               inputClassName="text-right"
               {...ariaInvalid(`${id}-now`, errors.hoursNow?.message)}
-              data-testid="inspection-hoursNow"
+              data-testid="inspection-hours-now"
             />
           </FieldHit>
         </RowField>
