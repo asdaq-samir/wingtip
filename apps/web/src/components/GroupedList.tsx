@@ -12,7 +12,7 @@ import SectionTitle from "./SectionTitle";
 
 // A group's box, plain on a sheet or translucent on a glass card.
 const GROUP_BASE = "gap-0 has-data-[size=sm]:gap-0 has-data-[size=xs]:gap-0";
-const GROUP = cn(GROUP_BASE, "rounded-lg border border-border bg-card");
+const GROUP = cn(GROUP_BASE, "rounded-(--radius-card) border border-border bg-card");
 const GROUP_GLASS = cn(
   GROUP_BASE,
   "rounded-(--radius-card) border border-transparent bg-background/55 dark:bg-foreground/8 solid:border-border solid:bg-card",

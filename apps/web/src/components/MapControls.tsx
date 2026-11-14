@@ -15,6 +15,7 @@ import { useIsMobile } from "../hooks/use-mobile";
 import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "../lib/mapChrome";
 import { EngineGate } from "../lib/engine/engineGate";
 import { OnSheetTop } from "./sheet/sheetTop";
+import { TEXT } from "../lib/text";
 
 /**
  * The map's buttons, in one group floating over the chart, as Maps
@@ -145,7 +146,7 @@ function MapControlsDrawn() {
               variant="ghost"
               aria-label={`Direct to ${direct.to}`}
               data-testid="flying-direct"
-              className={cn(FLYING_BUTTON, "text-base")}
+              className={cn(FLYING_BUTTON, TEXT.row)}
               onClick={direct.go}
             >
               D→

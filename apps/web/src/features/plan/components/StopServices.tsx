@@ -314,7 +314,7 @@ export type SuggestedStop = {
  *  the ground in a line (StopGlance) -- the rest at the card's foot. */
 export function StopStrip({ ident, stop }: { ident: string; stop: SuggestedStop }) {
   const tile = (label: string, value: string, testId: string) => (
-    <div className="min-w-0 rounded-xl bg-foreground/5 px-2.5 py-1.5" data-testid={testId}>
+    <div className="min-w-0 rounded-(--radius-card) bg-foreground/5 px-2.5 py-1.5" data-testid={testId}>
       <div className={cn("truncate text-muted-foreground", TEXT.note)}>{label}</div>
       <div className={cn("truncate font-semibold tabular-nums", TEXT.row)}>{value}</div>
     </div>

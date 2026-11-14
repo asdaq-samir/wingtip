@@ -1,7 +1,8 @@
 """The feel tokens as the web's custom properties, for design_tokens.py.
 
 design/tokens.json's feel group is the web's alone: the layered shadows
-of its own surfaces over the chart (float, overlay, card, sheet, mark),
+of its own surfaces over the chart (float, overlay, card, sheet, mark)
+and the hairline ring,
 each with its night value under $extensions. Stock components keep their
 own states and shadows, and iOS and Android draw their system's own depth,
 so only tokens.css carries these.
@@ -18,6 +19,10 @@ def shadow_css(layers):
         return "0" if v == 0 else "%gpx" % v
 
     def colour(hex8):
+        # A look's own colour by its custom property ("--border"), so the
+        # shadow follows the look and the night as that colour does.
+        if hex8.startswith("--"):
+            return "var(%s)" % hex8
         r, g, b, a = (int(hex8[i : i + 2], 16) for i in (1, 3, 5, 7))
         return "rgb(%d %d %d / %s)" % (r, g, b, ("%.3f" % (a / 255)).rstrip("0").rstrip("."))
 

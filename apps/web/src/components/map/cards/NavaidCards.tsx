@@ -102,11 +102,7 @@ export function VorCard({ vor }: { vor: VorPin }) {
             <CollapsibleTrigger
               render={
                 <ListRow
-                  title={
-                    <span className={cn(vor.restricted && "text-amber-700 dark:text-amber-400")}>
-                      {vor.restricted ? "Restrictions" : "Remarks"}
-                    </span>
-                  }
+                  title={<span className={cn(vor.restricted && "text-caution")}>{vor.restricted ? "Restrictions" : "Remarks"}</span>}
                   chevron
                   data-testid="vor-remarks"
                 />

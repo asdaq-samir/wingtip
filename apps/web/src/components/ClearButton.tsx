@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import type { ComponentProps } from "react";
 import { X } from "lucide-react";
 import { cn } from "cn";
@@ -23,8 +24,7 @@ export default function ClearButton({
   ...props
 }: { onClear?: () => void; label?: string; testId?: string } & Omit<ComponentProps<"button">, "aria-label">) {
   return (
-    <button
-      type="button"
+    <BaseButton
       aria-label={label}
       data-testid={testId}
       data-slot="clear-button"
@@ -40,6 +40,6 @@ export default function ClearButton({
       )}
     >
       <X className="size-3" strokeWidth={3} aria-hidden="true" />
-    </button>
+    </BaseButton>
   );
 }

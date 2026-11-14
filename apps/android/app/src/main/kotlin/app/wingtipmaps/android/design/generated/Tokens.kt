@@ -164,6 +164,12 @@ object WingtipColors {
         /** An obstacle under 1,000 ft AGL in the 3D view; a taller one is in the warning red. */
         val Obstacle = Color(0xFF7A1F1F)
         const val OBSTACLE_HEX = "#7a1f1f"
+        /** The map's ground before its first tiles are drawn, by day (Tailwind slate-100, as it was). */
+        val MapGround = Color(0xFFF1F5F9)
+        const val MAP_GROUND_HEX = "#f1f5f9"
+        /** And at night (slate-900). */
+        val MapGroundNight = Color(0xFF0F172A)
+        const val MAP_GROUND_NIGHT_HEX = "#0f172a"
     }
     object Category {
         val Vfr = Color(0xFF1A7F37)
@@ -250,6 +256,12 @@ object WingtipColors {
         const val STOP_REPAIR_HEX = "#0f766e"
         val StopTraining = Color(0xFF0369A1)
         const val STOP_TRAINING_HEX = "#0369a1"
+        /** Home's mark, a Favorite tile's and a row's (Tailwind teal-600, as it was drawn). */
+        val Home = Color(0xFF0D9488)
+        const val HOME_HEX = "#0d9488"
+        /** An airplane's own mark on a tile or a row: its profile's, a Favorite's (Tailwind sky-600, as it was drawn). */
+        val Airplane = Color(0xFF0284C7)
+        const val AIRPLANE_HEX = "#0284c7"
     }
     object Weather {
         val Convective = Color(0xFFC2410C)

@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import type { ReactNode } from "react";
 import { Carousel, CarouselContent, CarouselItem } from "./ui/carousel";
 
@@ -50,15 +51,15 @@ export function CardPictures({
       <CarouselContent className="-ml-3">
         {shown.map((slide) => (
           <CarouselItem key={slide.key} className={shown.length > 1 ? SLIDE : SLIDE_ALONE}>
-            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-foreground/8">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-(--radius-card) bg-foreground/8">
               {slide.href ? (
                 <a href={slide.href} target="_blank" rel="noopener" aria-label={slide.label} className={TILE} data-testid={slide.testId}>
                   {slide.picture}
                 </a>
               ) : slide.open ? (
-                <button type="button" onClick={slide.open} aria-label={slide.label} className={TILE} data-testid={slide.testId}>
+                <BaseButton onClick={slide.open} aria-label={slide.label} className={TILE} data-testid={slide.testId}>
                   {slide.picture}
-                </button>
+                </BaseButton>
               ) : (
                 <div role="img" aria-label={slide.label} className="absolute inset-0" data-testid={slide.testId}>
                   {slide.picture}
