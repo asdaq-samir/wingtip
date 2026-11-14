@@ -52,7 +52,8 @@ fields as open."
   carries each closed field's label beside the rows, so the web's search
   labels it and its on-device Nearest and Emergency leave it out.
 - The planner's `AirportPlace.closed` and `AirportSuggestion.closed` say
-  it to every app; the phones' cards and search rows do not show it yet.
+  it to every app; the phones' cards and search rows label it Closed too
+  (iOS f8c77f28d, Android 2d4bdb4de).
 - Held by tests at each level: the engine's own (O, CI, CP, blank, none),
   `best_fields` and the packs' views, the planner's every path over seeded
   closed fields and over the real NASR and OurAirports files where they
