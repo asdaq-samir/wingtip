@@ -136,6 +136,20 @@ struct MapLookTests {
         #expect(pins.contains { $0.towered == false })
     }
 
+    @Test func thePacksOrderAndSizeTheMarksAsThePlannerDoes() throws {
+        let packs = try ["n40w088", "n40w092"].map { name -> String in
+            try #require(Bundle(for: LookBundle.self).url(forResource: name, withExtension: "pack")).path
+        }
+        let pins = try #require(CyclePacks.airportsInView(packs: packs, south: 41.8, west: -88.2, north: 42.2, east: -87.6))
+        // O'Hare, the Class B's own field, is the largest and kept first,
+        // with no field_mark_rank asked on the phone.
+        let ohare = try #require(pins.first { $0.ident == "KORD" })
+        #expect(ohare.markSize == "largest")
+        let ordered = pins.compactMap(\.markOrder)
+        #expect(ordered.count == pins.count)
+        #expect(ohare.markOrder == ordered.min())
+    }
+
     // MARK: Airspace tabs
 
     private func volume(_ cls: String, floor: Double, sfc: Bool, ceiling: Double?, excluded: Bool = false,

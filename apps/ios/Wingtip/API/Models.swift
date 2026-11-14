@@ -31,17 +31,6 @@ typealias ChartLayer = APIChartLayer
 typealias AirportPin = APIAirportInView
 
 extension AirportPin {
-    /// The engine's field_mark_rank asked with what a pin from the phone's
-    /// packs carries of NASR's columns (their reader has no `mark_order`
-    /// yet): a landing field (SITE_TYPE_CODE A; the lists leave heliports
-    /// out), its use, its tower and the B or C it is the primary of, without
-    /// the longest hard runway the planner ranks a public field by. Nil
-    /// where the engine refuses (logged by Engine.rule).
-    func markRank() -> EngineContract.FieldMarkRankAnswer? {
-        let primary = primaryOf == "B" || primaryOf == "C" ? primaryOf : nil
-        return try? Engine.fieldMarkRank(siteType: "A", use: isPrivate == true ? "PR" : "PU", towered: towered, primaryOf: primary)
-    }
-
     /// The fields the map draws, as the web app's AirportsLayer does: the
     /// armed services' (NASR's military, landed at only with the
     /// service's permission) only when asked for, the private ones

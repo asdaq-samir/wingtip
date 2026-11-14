@@ -41,24 +41,19 @@ final class AirportAnnotation: NSObject, MKAnnotation {
         use = pin.military == "military" ? "military" : pin.isPrivate == true ? "private" : nil
         coordinate = CLLocationCoordinate2D(latitude: pin.lat, longitude: pin.lon)
         self.onRoute = onRoute
-        order = pin.markOrder ?? Self.fallback(pin)?.order
-        size = pin.markSize ?? Self.fallback(pin)?.size
+        order = pin.markOrder
+        size = pin.markSize
     }
 
     /// The mark's place where marks overlap, lower kept first, and the step
-    /// it is drawn at: the planner's in-view answer's `mark_order` and
-    /// `mark_size`, the engine's field_mark_rank over NASR's columns
-    /// (wingtip.field_marks), the overlay tiles' `rank` and `size`. Nil
-    /// where neither answers: the mark is then drawn at the regular step
-    /// and kept after every ranked one.
+    /// it is drawn at: the in-view answer's `mark_order` and `mark_size`,
+    /// the engine's field_mark_rank over NASR's columns, from the planner
+    /// (wingtip.field_marks) and from the phone's packs alike (the engine's
+    /// airports_in_view), as the overlay tiles carry them as `rank` and
+    /// `size`. Nil where an older answer has none: the mark is then drawn at
+    /// the regular step and kept after every ranked one.
     let order: Int?
     let size: String?
-
-    /// A field from the phone's own packs, whose reader carries no rank
-    /// yet: the engine asked with what the pin has (AirportPin.markRank).
-    private static func fallback(_ pin: AirportPin) -> EngineContract.FieldMarkRankAnswer? {
-        pin.markOrder == nil || pin.markSize == nil ? pin.markRank() : nil
-    }
 
     /// How much larger the mark is drawn than the regular step (FieldMark.step).
     var step: CGFloat { FieldMark.step(size) }
