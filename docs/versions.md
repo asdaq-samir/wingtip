@@ -55,7 +55,7 @@ The owner, 2026-11-09, standing:
 | Maven | 4.0.0-rc-7 | the gateway: its build image (`maven:4.0.0-rc-7-eclipse-temurin-25`) and `./mvnw`, the Maven Wrapper CI and a Mac without Docker run (`services/gateway/.mvn/wrapper`, checked by its sha256) |
 | Xcode | 27.2 (the iOS 27.2 SDK) | `scripts/ci/select-xcode.sh`, CI's `xcode-27` runner and the Mac mini |
 | Debian | trixie | every Debian-based image (`postgres:18-trixie`; a `-slim` tag is trixie) |
-| Formatters | ruff 0.17.5, SwiftFormat 0.64.6, ktlint 2.0.0-ALPHA-4, palantir-java-format 2.103.0, Prettier 3.9.10 | `scripts/dev/format.sh` (SwiftFormat and ktlint installed by mise) |
+| Formatters | ruff 0.17.5, SwiftFormat 0.64.6, ktlint 2.0.0-ALPHA-4, palantir-java-format 2.103.0, Prettier 3.10.1 | `scripts/dev/format.sh` (SwiftFormat and ktlint installed by mise) |
 | Linters | shellcheck 0.11.0, actionlint 1.7.12, zizmor 1.32.0, lychee 0.24.2, SwiftLint 0.65.1, Semgrep 1.185.0; mise 2026.11.8 installs them | `scripts/build/tool.sh`, CI's `guards` job, the pre-push hook |
 
 Not held to `.tool-versions` on purpose (`scripts/build/toolchain.py`

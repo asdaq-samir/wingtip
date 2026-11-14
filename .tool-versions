@@ -38,7 +38,7 @@ ruff 0.17.5
 swiftformat 0.64.6
 ktlint 2.0.0-ALPHA-4
 palantir-java-format 2.103.0
-prettier 3.9.10
+prettier 3.10.1
 # The release binary scripts/build/tool.sh fetches to install the tools
 # below (mise cannot install itself); its sums are in that script.
 mise 2026.11.8
