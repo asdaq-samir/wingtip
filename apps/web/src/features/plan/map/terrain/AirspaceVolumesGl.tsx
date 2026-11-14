@@ -35,7 +35,9 @@ import { SuaVolumeCard } from "./SuaVolumeCard";
  * Heights (airspaceHeights): deck.gl draws at the heights it is given,
  * metres above the sea, and the 3D ground hides what is under it; only a
  * floor or ceiling above the ground reads the terrain, once a volume, as
- * its tiles come in. Only the volumes in view are asked for, and far out
+ * its tiles come in. Each stood up by the Heights' stretch with the
+ * ground (piecesOf), the names and shelves' tabs lifted to the stretched
+ * tops, their words the true altitudes. Only the volumes in view are asked for, and far out
  * only Class B and the special use areas (KINDS' `from`).
  *
  * Each area's name is a tab of the chart's look at its top (a MapLibre
@@ -132,6 +134,7 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
   const showTfrs = usePreferences((s) => s.tfrs);
   const { box, level: zoom } = useGlView(volumeBox, "rest");
   const tick = useGroundTick(map);
+  const stretch = usePreferences((s) => s.heightStretch);
   const classes = classesAt(zoom);
   const { data: volumes } = useQuery({ ...volumesQuery(box, classes), enabled: showAirspace });
   const { data: tfrs, dataUpdatedAt: now } = useQuery({ ...tfrsQuery, enabled: showTfrs });
@@ -156,9 +159,9 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
   }, [volumes, tfrs, showAirspace, showTfrs, now, zoom]);
 
   const pieces = useMemo(
-    () => piecesOf(features, (at) => map.queryTerrainElevation(at), altitudes),
+    () => piecesOf(features, (at) => map.queryTerrainElevation(at), altitudes, stretch),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- tick: the terrain came in
-    [features, map, tick, altitudes],
+    [features, map, tick, altitudes, stretch],
   );
   const layers = useMemo(
     () => [

@@ -1,6 +1,7 @@
 import type { ColorReliefLayerSpecification } from "maplibre-gl";
 import { useEffect } from "react";
 import { useOwnShip } from "../../../../lib/map/position/ownShip";
+import { usePreferences } from "../../../../lib/preferences";
 import { positionAt, usePastFlight } from "../pastFlight";
 import { slotId, useGlMap } from "../../../../lib/map/gl/glLayer";
 import { DEM, SV_TINT } from "./dem";
@@ -53,8 +54,10 @@ export default function PilotCamera() {
       if (!here) return;
       shownAt = at;
       const altFt = here.alt_ft ?? 0;
+      // The ground as drawn, stood up by the Heights' stretch, and the
+      // seat stretched with it, so it stays the same height over it.
       const ground = map.queryTerrainElevation([here.lon, here.lat]) ?? 0;
-      const altM = Math.max(altFt * M_PER_FT, ground + OVER_GROUND_M);
+      const altM = Math.max(altFt * M_PER_FT * usePreferences.getState().heightStretch, ground + OVER_GROUND_M);
       map.jumpTo(
         map.calculateCameraOptionsFromCameraLngLatAltRotation([here.lon, here.lat], altM, here.track_deg ?? map.getBearing(), PILOT_PITCH),
       );

@@ -250,7 +250,7 @@ export const HAPTIC = {
 /** The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees. */
 export const MAP = {
   pitchOpen: 50,
-  pitchMax: 75,
+  pitchMax: 85,
   pitchFlatMax: 60,
   zoomStationClose: 10,
   zoomStationAlways: 7,

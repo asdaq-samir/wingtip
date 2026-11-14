@@ -7,6 +7,7 @@ import { glZoom } from "../../../../lib/map/gl/glStyle";
 import { useGlView } from "../../../../lib/map/gl/useGlView";
 import { obstacleFeatures } from "./geometry";
 import { setExtrusionData, useExtrusion } from "./useExtrusion";
+import { usePreferences } from "../../../../lib/preferences";
 import { CHART } from "../../../../lib/tokens";
 
 type Box = { south: number; west: number; north: number; east: number };
@@ -27,7 +28,8 @@ function obstacleBox(map: MlMap): Box | null {
  * taller (the planner's /api/terrain/obstacles), each a dark red post as
  * tall above its ground as the file says, a brighter red from 1,000 ft:
  * the towers a tilted chart shows standing, as the sectional's obstacle
- * symbols say they do.
+ * symbols say they do; stood up by the Heights' stretch, as the ground
+ * under them is.
  */
 export default function ObstaclesGl() {
   const { map } = useGlMap();
@@ -41,6 +43,7 @@ export default function ObstaclesGl() {
     },
   });
   const { box } = useGlView(obstacleBox, "rest");
+  const stretch = usePreferences((s) => s.heightStretch);
   const { data } = useQuery({
     queryKey: ["obstacles", box],
     queryFn: () => api.obstacles(box!),
@@ -51,8 +54,8 @@ export default function ObstaclesGl() {
   });
   useEffect(() => {
     // 60 m across: a post a few points wide close in.
-    setExtrusionData(map, "obstacles-3d", data ? obstacleFeatures(data.obstacles, 60) : EMPTY);
+    setExtrusionData(map, "obstacles-3d", data ? obstacleFeatures(data.obstacles, 60, stretch) : EMPTY);
     map.getContainer().dataset.obstacles = String(data?.obstacles.length ?? 0);
-  }, [map, data]);
+  }, [map, data, stretch]);
   return null;
 }

@@ -11,8 +11,9 @@ import { M_PER_FT } from "../../../../lib/geo";
  * floor. This only reads the ground and turns feet into metres.
  *
  * deck.gl stands an extruded polygon at the heights it is given, over
- * the sea, and the 3D ground (MapLibre's terrain, at its own height:
- * dem.ts's EXAGGERATION 1) hides what is under it. The ground
+ * the sea, and the 3D ground (MapLibre's terrain, stood up by the 3D
+ * view's Heights, which piecesOf undoes for the ground and does to the
+ * volume) hides what is under it. The ground
  * under a volume is read once from the terrain at points round its
  * outline (groundSpan), its lowest and its highest.
  */

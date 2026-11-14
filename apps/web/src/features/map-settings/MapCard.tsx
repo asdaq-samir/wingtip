@@ -4,7 +4,15 @@ import { FieldError } from "../../components/ui/field";
 import Segmented from "../../components/Segmented";
 import MapPictureChoices from "./MapPictureChoices";
 import MapLayers from "./MapLayers";
-import { BASE_CHARTS, usePreferences, type BaseChart, type MapOverlay, type OverlayStrength } from "../../lib/preferences";
+import {
+  BASE_CHARTS,
+  HEIGHT_STRETCHES,
+  usePreferences,
+  type BaseChart,
+  type HeightStretch,
+  type MapOverlay,
+  type OverlayStrength,
+} from "../../lib/preferences";
 import { useShownOverlay } from "../../lib/map/sources/useShownOverlay";
 import { USGS_URL } from "../../lib/map/sources/imagery";
 import { useGoogleSession } from "../../lib/map/sources/googleSession";
@@ -16,7 +24,8 @@ import { TEXT } from "../../lib/text";
  * phone's width with nothing to scroll, as Apple Maps' "Choose Map" card
  * is (the owner's pick, 2026-10-27, canvas RZDPvJ6hxfp93UL53LYLec; the
  * owner's screenshot, 2026-11-10): the charts as pictures, the overlay
- * over them with its strength, the layers as tiles (MapLayers). How the
+ * over them with its strength, in 3D how tall it stands its heights
+ * (HeightsChoice), the layers as tiles (MapLayers). How the
  * map behaves -- the airport weather, the glide ring, the alerts, keeping
  * the charts, where the data comes from -- is the app's Settings, which
  * the gear at the card's head opens at its Map group (option A of the
@@ -36,6 +45,7 @@ export default function MapCard() {
         options={BASE_CHARTS.map((b) => ({ value: b.kind, label: b.label, src: chartPicture(b.kind) }))}
       />
       <OverlayChoice />
+      {prefs.threeD && <HeightsChoice />}
       <MapLayers />
     </div>
   );
@@ -97,6 +107,32 @@ function OverlayChoice() {
         </div>
       )}
       <GoogleProblem />
+    </div>
+  );
+}
+
+/**
+ * How many times the 3D view stands its heights up (lib/prefs'
+ * HeightStretch): the ground and all that stands over it, by the one
+ * factor, so a Class B's shelves read as the upside-down wedding cake
+ * they are, which at true scale are slivers (the owner, 2026-11-14). A
+ * segmented control, as a discrete setting is (docs/design/rules.md),
+ * only while 3D is on, as the overlay's strength only with an overlay;
+ * it says the stretch, "×3", and the map's words keep the true altitudes.
+ */
+function HeightsChoice() {
+  const stretch = usePreferences((s) => s.heightStretch);
+  const setStretch = usePreferences((s) => s.setHeightStretch);
+  return (
+    <div className="flex items-center justify-between gap-3 px-1">
+      <span className={cn("text-foreground", TEXT.row)}>Heights</span>
+      <Segmented
+        label="Heights"
+        value={String(stretch)}
+        onChange={(v) => setStretch(Number(v) as HeightStretch)}
+        testId="heights-stretch"
+        options={HEIGHT_STRETCHES.map((k) => ({ value: String(k), label: `×${k}` }))}
+      />
     </div>
   );
 }

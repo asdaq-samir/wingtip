@@ -6,6 +6,7 @@ import { deckColour, deckSlot, useDeckLayers } from "../../../../lib/map/gl/deck
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../../lib/map/gl/glLayer";
 import { useGeo } from "../../../../lib/geo";
 import { airportQuery } from "../../../../lib/queryClient";
+import { usePreferences } from "../../../../lib/preferences";
 import { CHART } from "../../../../lib/tokens";
 import { curtainLayer } from "./curtain";
 import { aloft, approachScene, centrelineFeatures, pickedApproach, ringPoints } from "./approachScene";
@@ -47,16 +48,18 @@ export default function ApproachGl({ ident, picked }: { ident: string; picked: P
   useGlData("approach-centreline", scene ? centrelineFeatures(scene) : null);
 
   const geo = useGeo();
+  // The lines in the air stood up by the Heights' stretch, as the ground is.
+  const stretch = usePreferences((s) => s.heightStretch);
   const layers = useMemo(() => {
     if (!scene) return [];
     const path = scene.path ? aloft(scene.path) : [];
     const lines = [
-      ...scene.glidepaths.map((g) => ({ path: aloftPath(aloft(g.points)), colour: CHART.glidepath, width: GLIDE_M })),
-      ...(path.length > 1 ? [{ path: aloftPath(path), colour: CHART.procedure, width: PATH_M }] : []),
-      ...(scene.ring && geo ? [{ path: aloftPath(ringPoints(geo, scene)), colour: CHART.pattern, width: RING_M }] : []),
+      ...scene.glidepaths.map((g) => ({ path: aloftPath(aloft(g.points), stretch), colour: CHART.glidepath, width: GLIDE_M })),
+      ...(path.length > 1 ? [{ path: aloftPath(path, stretch), colour: CHART.procedure, width: PATH_M }] : []),
+      ...(scene.ring && geo ? [{ path: aloftPath(ringPoints(geo, scene), stretch), colour: CHART.pattern, width: RING_M }] : []),
     ];
     return [
-      curtainLayer("approach-curtain", curtainWalls(path), CHART.procedure, 0.2),
+      curtainLayer("approach-curtain", curtainWalls(path, stretch), CHART.procedure, 0.2),
       new PathLayer<(typeof lines)[number]>({
         id: "approach-aloft",
         data: lines,
@@ -69,7 +72,7 @@ export default function ApproachGl({ ident, picked }: { ident: string; picked: P
         ...deckSlot("route"),
       }),
     ];
-  }, [scene, geo]);
+  }, [scene, geo, stretch]);
   useDeckLayers("approach-aloft", layers);
 
   // For the browser tests: what is drawn, and whose figures.

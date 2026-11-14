@@ -8,7 +8,16 @@ import { KEPT_KEPT, keptSlice, type KeptSlice, type RecentAirport } from "./pref
 import { LOOK_KEPT, lookSlice, type LookSlice } from "./prefs/lookSlice";
 import { MAP_KEPT, mapSlice, type MapSlice } from "./prefs/mapSlice";
 
-export { BASE_CHARTS, type BaseChart, type ChartLight, type ChartNight, type MapOverlay, type OverlayStrength } from "./prefs/mapSlice";
+export {
+  BASE_CHARTS,
+  HEIGHT_STRETCHES,
+  type BaseChart,
+  type HeightStretch,
+  type ChartLight,
+  type ChartNight,
+  type MapOverlay,
+  type OverlayStrength,
+} from "./prefs/mapSlice";
 export type { Brand, FlightRules, NavEdge, RouteEdit } from "./prefs/lookSlice";
 export { airplaneChosen, NO_AIRPLANE, STOCK_C172, type RouteWeather } from "./prefs/airplaneSlice";
 export { recentRouteKey, type AirspaceClass, type KeptAircraft, type RecentAirport, type RecentRoute } from "./prefs/keptSlice";
@@ -79,7 +88,8 @@ export const usePreferences = create<Preferences>()(
     // 9: Position, Terrain and You on the Map taken out (2026-11-13):
     // what was kept of them let go (migratePreferences). The overlay and
     // its strength kept from 2026-11-14 need no step: a browser without
-    // them starts from None at half, as before.
+    // them starts from None at half, as before; nor 3D's heights
+    // stretched (2026-11-14), a browser without them starting at three.
     version: 9,
     migrate: migratePreferences,
     partialize: keptPreferences,

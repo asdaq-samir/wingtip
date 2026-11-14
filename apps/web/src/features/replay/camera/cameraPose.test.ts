@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MAP } from "../../../lib/tokens";
 import { lookAt, offset, poseOf } from "./cameraPose";
 
 const flat = () => 0;
@@ -16,7 +17,7 @@ describe("the replay's cameras", () => {
     expect(below.pitch).toBe(0);
     const far = lookAt({ lat: 45, lon: -93, altM: 10 }, { lat: 45.5, lon: -93, altM: 10 });
     expect(far.bearing).toBeCloseTo(0, 6);
-    expect(far.pitch).toBe(75);
+    expect(far.pitch).toBe(MAP.pitchMax);
   });
 
   it("chases from behind the airplane's track, above it, looking at it", () => {

@@ -101,7 +101,8 @@ export const kindOf = (p: Record<string, unknown>): Kind =>
       : (String(p.class) as Kind);
 
 /** One polygon of a volume as deck.gl draws it: its rings at its floor
- *  ([lon, lat, metres MSL]), how tall, the rims along its top (and its
+ *  ([lon, lat, metres MSL, stood up by the Heights' stretch]), how tall
+ *  (stretched too), the rims along its top (and its
  *  floor where that is off the ground), its floor in feet MSL (what it is
  *  shaded by), whether it holds the plan's altitudes (null with no plan),
  *  and the feature's fields, which a tap opens its card from. */
@@ -128,12 +129,25 @@ const sample = (ring: number[][], most = 48) => ring.filter((_, i) => i % Math.m
 /** The pieces of the features, each at its own floor and ceiling over
  *  the ground `ground` reads (MapLibre's queryTerrainElevation), where it
  *  needs it, and held against the plan's `altitudes` (ft MSL) where there
- *  is one. A volume above the ground waits for the terrain under it. */
+ *  is one. A volume above the ground waits for the terrain under it.
+ *
+ *  `stretch`, the 3D view's Heights (lib/prefs' HeightStretch): the map's
+ *  ground is drawn that many times its height, and `ground` reads it so,
+ *  so the true ground is it over `stretch`; the engine's floor and
+ *  ceiling, read over the true ground, are drawn `stretch` times their
+ *  height, which keeps them where they are over the stretched ground (the
+ *  heights are all MSL). Their feet, what they are shaded by and the
+ *  labels' words, stay true. */
 export function piecesOf(
   features: Feature[],
   ground: (at: [number, number]) => number | null,
   altitudes: number[] | null = null,
+  stretch = 1,
 ): VolumePiece[] {
+  const trueGround = (at: [number, number]) => {
+    const g = ground(at);
+    return g == null ? null : g / stretch;
+  };
   const out: VolumePiece[] = [];
   features.forEach((f, n) => {
     const polygons = polygonsOf(f.geometry);
@@ -142,23 +156,24 @@ export function piecesOf(
     if (polygons.length)
       under = groundSpan(
         polygons.flatMap((p) => sample(p[0] ?? [])),
-        ground,
+        trueGround,
       );
     const span = volumeSpan(heights, under, altitudes);
     if (!span) return;
     const kind = kindOf(f.properties);
+    const [floorM, ceilingM] = [span.floorM * stretch, span.ceilingM * stretch];
     polygons.forEach((rings, k) => {
       const at = (z: number) => rings.map((r) => r.map((p) => [p[0]!, p[1]!, z]));
       out.push({
         id: `${n}-${k}`,
         kind,
         properties: f.properties,
-        polygon: at(span.floorM),
-        heightM: span.ceilingM - span.floorM,
-        topM: span.ceilingM,
+        polygon: at(floorM),
+        heightM: ceilingM - floorM,
+        topM: ceilingM,
         floorFt: span.floorFt,
         holds: span.holds,
-        rims: [...at(span.ceilingM), ...(span.surface ? [] : at(span.floorM))],
+        rims: [...at(ceilingM), ...(span.surface ? [] : at(floorM))],
       });
     });
   });

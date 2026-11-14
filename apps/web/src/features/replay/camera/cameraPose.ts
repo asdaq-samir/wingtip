@@ -1,4 +1,5 @@
 import { M_PER_FT } from "../../../lib/geo";
+import { MAP } from "../../../lib/tokens";
 import type { CameraKind } from "./cameraStore";
 
 /** Metres in a degree of latitude, near enough for a camera's few hundred
@@ -25,7 +26,7 @@ const TOWER_UP_M = 30;
 const OVER_GROUND_M = 15;
 /** As far as the 3D map tilts (tokens' MAP.pitchMax): a camera asked to look
  *  flatter than this looks this far. */
-const MOST_PITCH = 75;
+const MOST_PITCH = MAP.pitchMax;
 
 /** The airplane as a camera follows it. Its altitude is the track's
  *  (pressure altitude for adsb.lol's): the picture is a view, not a
@@ -75,17 +76,19 @@ export function lookAt(
  * - top: straight down on it, north up.
  *
  * `groundM` is the ground's height under a point, m (the 3D map's own,
- * queryTerrainElevation); every eye is kept OVER_GROUND_M over it.
+ * queryTerrainElevation, stood up by its Heights); every eye is kept
+ * OVER_GROUND_M over it, and the airplane is stood up by `stretch`, the
+ * same Heights (lib/prefs' HeightStretch), to keep its place over it.
  */
 export function poseOf(
   kind: CameraKind,
   at: Followed,
   groundM: (lat: number, lon: number) => number,
-  opts: { clockS: number; tower: { lat: number; lon: number } | null },
+  opts: { clockS: number; tower: { lat: number; lon: number } | null; stretch?: number },
 ): Pose {
   const track = at.trackDeg ?? 0;
   const ground = groundM(at.lat, at.lon);
-  const plane = { lat: at.lat, lon: at.lon, altM: Math.max((at.altFt ?? 0) * M_PER_FT, ground + OVER_GROUND_M) };
+  const plane = { lat: at.lat, lon: at.lon, altM: Math.max((at.altFt ?? 0) * M_PER_FT * (opts.stretch ?? 1), ground + OVER_GROUND_M) };
   const eyeAt = (p: { lat: number; lon: number }, altM: number): Pose => {
     const altKept = Math.max(altM, groundM(p.lat, p.lon) + OVER_GROUND_M);
     const look = lookAt({ ...p, altM: altKept }, plane);

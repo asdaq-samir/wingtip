@@ -1164,7 +1164,7 @@ object WingtipHaptic {
 /** The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees. */
 object WingtipMap {
     const val PITCH_OPEN = 50
-    const val PITCH_MAX = 75
+    const val PITCH_MAX = 85
     const val PITCH_FLAT_MAX = 60
     const val ZOOM_STATION_CLOSE = 10
     const val ZOOM_STATION_ALWAYS = 7

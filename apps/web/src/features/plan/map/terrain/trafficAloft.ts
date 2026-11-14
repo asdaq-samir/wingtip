@@ -25,9 +25,10 @@ import { M_PER_FT } from "../../../../lib/geo";
  */
 
 /** An airplane's height to stand it at, metres MSL: its reported height,
- *  never under the ground under it (`groundM`); on the ground where it
- *  sends none. */
-export function standAtM(altitudeFt: number | null | undefined, groundM: number): number {
+ *  never under the ground under it (`groundM`, as the map draws it); on
+ *  the ground where it sends none. Stood up by `stretch`, the 3D view's
+ *  Heights, as the ground drawn is. */
+export function standAtM(altitudeFt: number | null | undefined, groundM: number, stretch = 1): number {
   if (altitudeFt == null) return groundM;
-  return Math.max(groundM, altitudeFt * M_PER_FT);
+  return Math.max(groundM, altitudeFt * M_PER_FT * stretch);
 }
