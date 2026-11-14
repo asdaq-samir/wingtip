@@ -30,7 +30,7 @@ CSV, and reads memo columns (the narratives) whole; access-parser (0.0.6
 of 2025-01, a release every year or two) parses a whole table into
 memory, which ingest's 384 MB would not hold for the narratives' 135 MB.
 
-Run by ingest's history thread (ingest.history), or by hand:
+Run by ingest's history jobs (ingest.history), or by hand:
 ``python -m ingest.ntsb`` (``--force`` to build it again from avall.zip).
 """
 

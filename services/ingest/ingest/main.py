@@ -24,7 +24,7 @@ import signal
 import threading
 import time
 
-from wingtip import traffic, tracing
+from wingtip import schedule, traffic, tracing
 from wingtip.traffic import store
 
 from . import history, swim
@@ -43,19 +43,20 @@ def beat(feeds: list[str]) -> None:
 
 
 def run(stop: threading.Event) -> None:
-    """The feeds and the following started, and the beat kept until `stop`."""
-    feeds = swim.start(stop)
+    """The feeds and the following started, and the beat kept until `stop`:
+    the beat, the radar's wanted views and the history each a job on one
+    scheduler (wingtip.schedule)."""
+    on = schedule.scheduler()
+    feeds = swim.start(stop, on)
     log.info("SWIM feeds: %s", ", ".join(feeds) or "none set up")
     threading.Thread(target=traffic.follow_forever, args=(stop,), name="adsb-follow", daemon=True).start()
     if get_settings().history:
-        threading.Thread(target=history.run, args=(stop,), name="history", daemon=True).start()
-    every = get_settings().beat_every_s
-    while not stop.is_set():
-        try:
-            beat(feeds)
-        except Exception:  # noqa: BLE001 -- the next beat tries again; the health check sees a long gap
-            log.warning("ingest's beat not written", exc_info=True)
-        stop.wait(every)
+        history.jobs(on)
+    # A beat that fails is logged by the scheduler; the health check sees the long gap.
+    schedule.every(on, get_settings().beat_every_s, beat, name="beat", args=(feeds,))
+    on.start()
+    stop.wait()
+    on.shutdown(wait=False)
 
 
 def main() -> None:

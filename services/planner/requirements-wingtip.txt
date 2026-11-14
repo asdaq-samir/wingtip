@@ -24,6 +24,7 @@ requests==2.34.2    # every external source (wingtip.outside, wingtip.retry)
 urllib3==2.8.0      # wingtip.outside's Retry (retry_after_max, backoff_jitter); requests' own pin is only >=1.26
 cachetools==8.0.0   # wingtip.sua's day cache of special-use airspace; planner's own caches
 tenacity==9.2.1     # wingtip.retry: exponential back-off with jitter around a whole fetch-and-read
+APScheduler==3.11.3 # wingtip.schedule: every service's periodic work (the planner's checks, weather's fetches, ingest's beat, crash leads)
 pyarrow==26.0.1     # wingtip.faa_data's Parquet cache of the obstacle table; the pipeline's feature store
 shapely==2.2.0      # wingtip.airspace polygons, wingtip.weather's hazards, wingtip.osm's representative points
 pyshp==3.1.8        # wingtip.airspace reads the FAA Class Airspace shapefile

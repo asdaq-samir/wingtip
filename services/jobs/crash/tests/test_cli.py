@@ -50,30 +50,16 @@ def test_a_run_reads_checks_and_kits(tmp_path, monkeypatch):
     assert made == [(draft["id"], None)]
 
 
-class _Stop(Exception):
-    pass
-
-
-def test_every_runs_now_and_again_after_its_minutes_through_a_failed_run(monkeypatch):
-    runs, slept = [], []
-
-    def poll():
-        runs.append(1)
-        if len(runs) == 1:
-            raise RuntimeError("the FAA's page moved")
-        return 0
-
-    def sleep(seconds):
-        slept.append(seconds)
-        if len(slept) == 2:
-            raise _Stop
-
-    monkeypatch.setattr(cli, "poll", poll)
-    monkeypatch.setattr(cli.time, "sleep", sleep)
+def test_every_runs_poll_now_and_each_of_its_minutes_on_a_blocking_scheduler(monkeypatch):
+    on = cli.schedule.scheduler()
+    made = []
+    monkeypatch.setattr(cli.schedule, "scheduler", lambda **kw: made.append(kw) or on)
+    monkeypatch.setattr(on, "start", lambda: made.append("started"))
     monkeypatch.setattr(cli, "get_settings", lambda: SimpleNamespace(crash_leads_auto=True, crash_leads_every_min=30))
-    with pytest.raises(_Stop):
-        cli.entry(["every"])
-    assert (len(runs), slept) == (2, [1800, 1800])
+    assert cli.entry(["every"]) == 0
+    (job,) = on.get_jobs()
+    assert job.func is cli.poll and job.trigger.interval.total_seconds() == 1800 and job.next_run_time is not None
+    assert made == [{"workers": 1, "blocking": True}, "started"]
 
 
 def test_every_runs_nothing_when_switched_off(monkeypatch):

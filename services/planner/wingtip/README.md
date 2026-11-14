@@ -158,6 +158,7 @@ Grouped by what they are for, not alphabetically.
 | `terrain.py` | Terrain and obstacle floor for a route. |
 | `airports.py` | Identifier → coordinates, and the route form's search. |
 | `retry.py` | The one retry loop the four modules above share for their requests, and `upstream_detail`, the one reader of a service's reason in an error response (the planner's dev-services proxy). |
+| `schedule.py` | The one scheduler (APScheduler) every service's periodic work runs on: the planner's FAA and chart checks, the weather service's fetches, ingest's beat and history, the crash-leads job. One run of a job at a time, missed turns run once. |
 
 **Deciding things** — rules still written here, each to move into the
 engine (#482).
