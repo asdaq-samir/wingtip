@@ -22,6 +22,24 @@ enum AirplaneHits {
         return tail
     }
 
+    /// The airplanes the map hears whose callsign, registration or ICAO
+    /// address begins with what is typed (a registration's hyphen aside),
+    /// three letters at least, eight at most: the one search finds them
+    /// as the retired traffic page did (the web's useHeardHits).
+    static func heard(_ query: String, in planes: [TrafficAircraft]) -> [TrafficAircraft] {
+        let text = query.filter { !$0.isWhitespace }.uppercased()
+        guard text.count >= 3 else { return [] }
+        return Array(planes.filter { named($0, text) }.prefix(8))
+    }
+
+    /// Whether an airplane's callsign, registration or address begins with `text`.
+    static func named(_ plane: TrafficAircraft, _ text: String) -> Bool {
+        let bare = text.replacingOccurrences(of: "-", with: "")
+        return (plane.callsign ?? "").uppercased().hasPrefix(text)
+            || (plane.registration ?? "").replacingOccurrences(of: "-", with: "").uppercased().hasPrefix(bare)
+            || plane.hex.uppercased().hasPrefix(text)
+    }
+
     /// The planner's types that match, the first four.
     static func types(_ query: String, in types: [AircraftProfile]) -> [AircraftProfile] {
         let q = query.lowercased()

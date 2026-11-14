@@ -13,6 +13,8 @@ struct AirportPlaceHead: View {
     let place: AirportPlace
     let photos: AirportPhotos?
     @Binding var shown: ShownPicture?
+    /// NASR's fuels for sale, for the facts' Fuel; nil until they come.
+    var fuel: [String]?
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(Charts.self) private var charts
@@ -42,11 +44,11 @@ struct AirportPlaceHead: View {
                     .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
             }
             titles
-            actions
             let distance = Result { try AirportDistance.of(lat: place.lat, lon: place.lon, ident: place.ident,
                                                            fix: ownShip.fix?.coordinate, departure: plan.course?.departure) }
-            // A failure is said under the facts, so the "—" is not read as no distance.
-            AirportFacts(place: place, distance: try? distance.get())
+            actions(distance: try? distance.get())
+            // A failure is said under the facts, so a missing distance is not read as none.
+            AirportFacts(place: place, distance: try? distance.get(), fuel: fuel)
             ProblemLine(distance, "The distance").padding(.horizontal, WingtipSpace.lg)
         }
         .padding(.bottom, WingtipSpace.md)
@@ -124,8 +126,7 @@ struct AirportPlaceHead: View {
             // Closed, from NASR (decision 0043), then who may land here and
             // how far its figures are to be trusted, each the engine's words.
             if let closed = place.closed {
-                Text(closed).font(.subheadline.weight(.semibold)).foregroundStyle(WingtipInk.problem)
-                    .accessibilityIdentifier("airport-card-closed")
+                StatusBadge(.closed, words: closed).accessibilityIdentifier("airport-card-closed")
             }
             let use = FieldUse.cardUse(place)
             if case .success(let words?) = use {
@@ -160,24 +161,37 @@ struct AirportPlaceHead: View {
     /// Four equal actions and no more, the first filled, as the web's
     /// (PlaceActions; the owner, 2026-11-11: "fly here, add stop, call and
     /// address ... no need for other buttons", Favorite in Address's place
-    /// since): Fly Here (the time there, the planner's, when this is the
-    /// plan's destination), Add Stop (greyed where it can't be one), Call
-    /// (the FAA's phone for the field, greyed where it lists none) and
-    /// Favorite. Depart From is in the foot's Add to Plan, the diagram the
-    /// first picture tile. A field NASR lists as closed is never offered
+    /// since): Fly Here, with the time there -- the planner's where this is
+    /// the plan's destination, else the engine's estimate from the
+    /// airplane's cruise ("≈ 38m", the owner's C1, 2026-11-14) -- and Depart
+    /// From held under it as its menu; Add Stop (greyed where it can't be
+    /// one), Call (the FAA's phone for the field, greyed where it lists
+    /// none) and Favorite. A field NASR lists as closed is never offered
     /// to land at (decision 0043): Fly Here and Add Stop are greyed.
-    private var actions: some View {
+    private func actions(distance: AirportDistance?) -> some View {
         let here = plan.dest == place.ident
-        let ete = here ? plan.totals?.eteMin.map(Format.duration) : nil
+        let tas = plan.airplaneChosen ? plan.figures.cruiseTasKt ?? plan.altitude?.aircraft?.cruiseTasKt : nil
+        let estimate = here ? nil : distance?.minutes(cruiseTasKt: tas)
+        let ete = here ? plan.totals?.eteMin.map(Format.duration) : estimate.map { "≈ \(Format.duration($0))" }
+        let spoken = here ? ete : estimate.map { minutes in
+            "about \(SpokenFigures.minutes(minutes)) at \(SpokenFigures.knots(tas ?? 0)), no wind"
+        }
         let call = place.phone.flatMap { URL(string: "tel:" + $0.filter { !$0.isWhitespace }) }
         let kept = shelf.isFavorite(place.ident)
         return HStack(spacing: WingtipSpace.sm) {
-            Button { Task { await plan.flyHere(place.ident, near: ownShip.fix); done() } } label: {
+            Menu {
+                Button { plan.departFrom(place.ident); done() } label: {
+                    Label(CardAction.departFrom.title, systemImage: CardAction.departFrom.systemImage)
+                }
+            } label: {
                 ActionFace(systemImage: CardAction.flyHere.systemImage, title: ete ?? CardAction.flyHere.title)
+            } primaryAction: {
+                Task { await plan.flyHere(place.ident, near: ownShip.fix); done() }
             }
             .glassProminentButton()
             .disabled(place.closed != nil)
-            .accessibilityLabel(ete.map { "Fly Here, \($0)" } ?? "Fly Here")
+            .accessibilityLabel(spoken.map { "Fly Here, \($0)" } ?? "Fly Here")
+            .accessibilityHint("Hold for Depart From")
             .accessibilityIdentifier("fly-here")
             Button { plan.addStop(place.ident); done() } label: {
                 ActionFace(systemImage: CardAction.addStop.systemImage, title: "Add Stop")
@@ -230,33 +244,55 @@ struct ActionFace: View {
             // the larger text sizes rather than one tile's shrinking (IOS-18).
             Text(title).font(.subheadline.weight(.semibold)).lineLimit(2).multilineTextAlignment(.center)
         }
-        .frame(maxWidth: .infinity, minHeight: 52)
+        .frame(maxWidth: .infinity, minHeight: 56)
     }
 }
 
-/// The field's four facts, label over value, as Maps' facts row: its
-/// weather's category in its colour (≈ where it is not the field's own),
-/// the wind reported, its longest runway and how far it is (from the
-/// airplane, else from the departure: AirportDistance).
+/// The field's facts in the sideways strip under its actions (the owner's
+/// C1, 2026-11-14; the web's PlaceFacts), each where the card's data has
+/// it, in this order:
+/// - Weather: the flight category (the planner's from the report, AIM
+///   7-1-7) as its badge, its own or, marked "≈", the model's or a near
+///   station's.
+/// - Wind: the report's, true, as METAR winds are (FAA JO 7900.5).
+/// - Longest: the longest runway open, closed ones (NASR's or a NOTAM's)
+///   left out; "Runway" where there is one.
+/// - Elevation: NASR's field elevation, feet MSL.
+/// - Distance: from the airplane, else from the route's departure, the
+///   engine's great circle (AirportDistance).
+/// - Fuel: NASR's fuel types for sale, in the engine's names (fuel_names).
 struct AirportFacts: View {
     let place: AirportPlace
     let distance: AirportDistance?
+    let fuel: [String]?
+    @Environment(FieldNotams.self) private var notams
 
     var body: some View {
         let chip = AirportHead.category(place)
-        let metar = place.metar
-        let wind = metar.flatMap { $0.windSpeedKt != nil || $0.windDirTrueDeg != nil ? $0 : nil }
-        let longest = place.runways.compactMap(\.lengthFt).max()
-        FactsRow(facts: [
-            .init(label: "Weather", value: chip.map { ($0.own ? "" : "≈") + $0.category } ?? "—",
-                  spoken: chip.map { $0.own ? SpokenFigures.flightCategory($0.category) : "about \(SpokenFigures.flightCategory($0.category))" },
-                  colour: chip.map { Color(uiColor: FlightCategory.words($0.category)) }),
-            .init(label: "Wind", value: wind.map { AirportWords.windLine(dirTrueDeg: $0.windDirTrueDeg, speedKt: $0.windSpeedKt, gustKt: $0.windGustKt) } ?? "—"),
-            .init(label: "Longest", value: longest.map { Format.altitude(Double($0)) } ?? "—",
-                  spoken: longest.map { "longest runway \(SpokenFigures.feet(Double($0)))" }),
-            .init(label: distance?.caption ?? "Distance", value: distance.map { Format.distance($0.nm, decimals: 0) } ?? "—", spoken: distance?.spoken),
-        ])
-        .padding(.horizontal, WingtipSpace.lg)
+        let wind = place.metar.flatMap { $0.windSpeedKt != nil ? $0 : nil }
+        let open = place.runways.enumerated().filter { i, r in !r.closed && notams.marks.runway[i]?.unusable != true && r.lengthFt != nil }.map(\.element)
+        let longest = open.compactMap(\.lengthFt).max()
+        FactStrip {
+            if let chip {
+                FactCell(label: "Weather") { CategoryBadge(category: chip.category, approximate: !chip.own) }
+            }
+            if let wind {
+                FactCell("Wind", AirportWords.windLine(dirTrueDeg: wind.windDirTrueDeg, speedKt: wind.windSpeedKt, gustKt: wind.windGustKt))
+            }
+            if let longest {
+                FactCell(open.count > 1 ? "Longest" : "Runway", Format.altitude(Double(longest)), spoken: SpokenFigures.feet(Double(longest)))
+            }
+            if let elevation = place.elevationFt {
+                FactCell("Elevation", Format.altitude(elevation), spoken: SpokenFigures.feet(elevation))
+            }
+            if let distance {
+                FactCell(distance.caption, Format.distance(distance.nm, decimals: 0), spoken: distance.spoken)
+            }
+            if let fuel, !fuel.isEmpty {
+                FactCell("Fuel", AirportWords.fuelNames(fuel))
+            }
+        }
+        .accessibilityIdentifier("place-facts")
     }
 }
 

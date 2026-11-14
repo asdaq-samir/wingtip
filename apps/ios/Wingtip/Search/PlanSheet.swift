@@ -16,6 +16,7 @@ struct PlanSheet: View {
     @Environment(Plan.self) var plan
     @Environment(ClearanceListener.self) var listener
     @Environment(AirportShelf.self) var shelf
+    @Environment(Tracking.self) private var tracking
     @Environment(\.splitLayout) private var split
     @Environment(\.sheetAtPill) private var atPill
     @Environment(FirstFlightModel.self) private var firstFlight
@@ -131,6 +132,12 @@ struct PlanSheet: View {
         case .airport(let route): host.card(route)
         case .airplane(let tail): nav.open(.tail(ProfileAsk(tail: tail.uppercased())))
         case .plan: showPlan()
+        case .heard(let plane):
+            tracking.track(plane.hex, plane: plane)
+            nav.open(.traffic(plane.hex.lowercased()))
+        case .kept(let kept):
+            tracking.track(kept.hex)
+            nav.open(.traffic(kept.hex))
         case .directTo, .types, .action: break
         }
     }

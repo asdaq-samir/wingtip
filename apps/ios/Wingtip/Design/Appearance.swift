@@ -66,8 +66,8 @@ enum Appearance: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// Appearance, a menu of four (a discrete setting, CLAUDE.md), in
-/// Settings' Look group and on the welcome.
+/// Appearance, a menu of four (a discrete setting, CLAUDE.md), in the Map
+/// card's Look section and on the welcome.
 struct AppearanceRow: View {
     @AppStorage(Appearance.schemeKey) private var scheme = Appearance.system.scheme
     @AppStorage(ChartNight.key) private var chartNight = ChartNight.dimmed.rawValue
@@ -89,7 +89,7 @@ struct AppearanceRow: View {
 }
 
 /// The app's look, its Theme (Look: Wingtip, Glass Cockpit, Chart Ink,
-/// Native), a menu, in Settings' Look group and on the welcome.
+/// Native), a menu, in the Map card's Look section and on the welcome.
 struct ThemeRow: View {
     @AppStorage(Look.key) private var look = Look.standard.rawValue
 

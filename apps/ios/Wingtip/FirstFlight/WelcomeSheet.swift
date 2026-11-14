@@ -7,8 +7,8 @@ import UIKit
 /// the owner's option A of 2026-11-13 and his later asks), in Apple's own
 /// welcome layout as its apps show one on a first launch: the app's name
 /// large and centred, three rows each a tinted glyph, a bold title and a
-/// line, then the look -- Settings' own Theme and Appearance rows, applied
-/// at once -- and at the foot Apple's permission priming: Turn On Location
+/// line, then the look -- the Map card's own Theme and Appearance rows,
+/// applied at once -- all centred above the foot, and at the foot Apple's permission priming: Turn On Location
 /// with Later under it, or Let's Go Flying alone where the position is
 /// allowed already. A system sheet at the large detent; a swipe down is
 /// Later.
@@ -28,38 +28,52 @@ struct WelcomeSheet: View {
     ]
 
     var body: some View {
-        List {
-            Section {
-                Text("Welcome to Wingtip Maps")
-                    .font(.largeTitle.bold())
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, WingtipSpace.xl)
-                    .accessibilityAddTraits(.isHeader)
-                ForEach(Array(Self.rows.enumerated()), id: \.offset) { _, row in
-                    HStack(alignment: .top, spacing: WingtipSpace.lg) {
-                        Image(systemName: row.icon)
-                            .font(.title)
-                            .foregroundStyle(.tint)
-                            .frame(width: 44)
-                            .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                            Text(row.title).font(.headline)
-                            Text(row.line).foregroundStyle(.secondary)
+        // Centred across and up and down in the room above the buttons, as
+        // Apple's own welcome screens sit (the owner, 2026-11-14: "Can the
+        // welcome be more centered?"), scrolling where the text is too
+        // large for it.
+        GeometryReader { room in
+            ScrollView {
+                VStack(spacing: WingtipSpace.xl) {
+                    Text("Welcome to Wingtip Maps")
+                        .font(.largeTitle.bold())
+                        .multilineTextAlignment(.center)
+                        .accessibilityAddTraits(.isHeader)
+                    VStack(alignment: .leading, spacing: WingtipSpace.lg) {
+                        ForEach(Array(Self.rows.enumerated()), id: \.offset) { _, row in
+                            HStack(alignment: .top, spacing: WingtipSpace.lg) {
+                                Image(systemName: row.icon)
+                                    .font(.title)
+                                    .foregroundStyle(.tint)
+                                    .frame(width: 44)
+                                    .accessibilityHidden(true)
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                                    Text(row.title).font(.headline)
+                                    Text(row.line).foregroundStyle(.secondary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .accessibilityElement(children: .combine)
                         }
                     }
-                    .accessibilityElement(children: .combine)
+                    // The look, picked here as on the Map card and applied at once.
+                    VStack(spacing: 0) {
+                        LabeledContent("Theme") { ThemeRow().labelsHidden() }
+                            .padding(.vertical, WingtipSpace.xs)
+                        Divider()
+                        LabeledContent("Appearance") { AppearanceRow().labelsHidden() }
+                            .padding(.vertical, WingtipSpace.xs)
+                    }
+                    .padding(.horizontal, WingtipSpace.lg)
+                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))
                 }
+                .padding(.horizontal, WingtipSpace.xl)
+                .padding(.vertical, WingtipSpace.lg)
+                .frame(maxWidth: .infinity, minHeight: room.size.height)
             }
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-            // The look, picked here as in Settings and applied at once.
-            Section {
-                ThemeRow()
-                AppearanceRow()
-            }
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .listStyle(.insetGrouped)
+        .background(Color(.systemGroupedBackground))
         .safeAreaInset(edge: .bottom) { foot }
         .accessibilityIdentifier("welcome")
     }

@@ -170,7 +170,7 @@ struct StripSheetView: View {
                 case .notams: path.append(.brief)
                 case .practice, .training, .contact, .leg, .flight: _ = open(.setup)
                 // A thing's card over the strip, as over the plan (Navigator).
-                case .traffic, .tail, .hold, .flown, .ask, .mapSettings, .settings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency:
+                case .traffic, .tail, .hold, .flown, .ask, .mapSettings, .settings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid:
                     nav.open(page)
                 }
             },

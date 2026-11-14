@@ -93,10 +93,13 @@ struct AirspaceCard: View {
                                     title: "\(AirportWords.faaWords(area.name)) · \(area.kind)",
                                     detail: [AirportWords.suaAltitudes(area), area.timesOfUse.map { AirportWords.faaWords($0) }, area.controllingAgency]
                                         .compactMap { $0 }.joined(separator: " · "))
-                            // SFDPS's word on it now, where it has one (LiveWords.saaWords).
-                            if let status = LiveWords.saaWords(saa[area.name]) {
-                                Text(status).font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(saa[area.name]?.active == true ? WingtipInk.caution : Color.primary)
+                            // SFDPS's word on it now, where it has one (LiveWords.saaBadge).
+                            if let status = LiveWords.saaBadge(saa[area.name]) {
+                                HStack(spacing: WingtipSpace.sm) {
+                                    StatusBadge(status.status)
+                                    Text(status.rest).font(.subheadline).foregroundStyle(.secondary)
+                                }
+                                .accessibilityElement(children: .combine)
                             }
                         }
                     }
@@ -108,14 +111,9 @@ struct AirspaceCard: View {
                     } else if (here.tfrs ?? []).isEmpty {
                         Text("None here now or to come").foregroundStyle(.secondary)
                     } else {
-                        ForEach(here.tfrs ?? []) { tfr in
-                            Link(destination: Self.tfrPage(tfr.notamId)) {
-                                CardRow(badge: RowBadge(systemImage: "nosign", colour: tfr.activeNow ? Badge.hazard : Badge.other),
-                                        title: "TFR \(tfr.notamId)" + (tfr.kind.map { " · \($0)" } ?? ""),
-                                        detail: [tfr.activeNow ? "In force now" : "To come", tfr.title].compactMap { $0 }.joined(separator: " · "))
-                            }
-                            .foregroundStyle(tfr.activeNow ? WingtipInk.problem : Color.primary)
-                        }
+                        // Each TFR's own card (TfrCard), as a tap on one
+                        // reaches it, Active or Later as a badge (rules.md §9).
+                        ForEach(here.tfrs ?? []) { TfrHereRow(tfr: $0) }
                     }
                 }
             } else if let problem {
@@ -239,5 +237,21 @@ private enum PreviewData {
         // 91.117(a): 250 kt below 10,000 ft MSL.
         BandRow(band: AirspaceBand(ceilingFt: 18000, airspaceClass: "E", entry: "Nothing for VFR.", floorFt: 3900, minimums: PreviewData.controlled, name: "DULUTH CLASS E", speedKt: 250),
                 ground: PreviewData.ground)
+    }
+}
+
+/// A TFR over the point, now or to come: its number and kind, Active or
+/// Later as a badge (rules.md §9), a tap its own card (TfrCard).
+private struct TfrHereRow: View {
+    let tfr: TfrHere
+
+    var body: some View {
+        NavigationLink(value: SheetPage.tfr(tfr.notamId)) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                CardRow(badge: RowBadge(systemImage: "nosign", colour: tfr.activeNow ? Badge.hazard : Badge.other),
+                        title: "TFR \(tfr.notamId)" + (tfr.kind.map { " · \($0)" } ?? ""), detail: tfr.title ?? "")
+                StatusBadge(tfr.activeNow ? .active : .later)
+            }
+        }
     }
 }

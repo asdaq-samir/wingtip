@@ -47,9 +47,11 @@ struct AirportLiveTests {
 
     @Test func specialUseStatusAndTowerDepartureInWords() throws {
         let saa = try decode(APISaaStatuses.self, #"{"areas":{"R-4305":{"designator":"R-4305","active":true,"until":1762723800,"heard":1},"MOA":{"designator":"MOA","active":false,"next":1762696800,"heard":1},"W-1":{"designator":"W-1","active":null,"heard":1}}}"#).areas.additionalProperties
-        #expect(LiveWords.saaWords(saa["R-4305"]) == "Active now until 2130Z (FAA SFDPS)")
-        #expect(LiveWords.saaWords(saa["MOA"]) == "Cold now; next active 1400Z (FAA SFDPS)")
-        #expect(LiveWords.saaWords(saa["W-1"]) == nil && LiveWords.saaWords(nil) == nil)
+        #expect(LiveWords.saaBadge(saa["R-4305"])?.status == .active)
+        #expect(LiveWords.saaBadge(saa["R-4305"])?.rest == "until 2130Z (FAA SFDPS)")
+        #expect(LiveWords.saaBadge(saa["MOA"])?.status == .cold)
+        #expect(LiveWords.saaBadge(saa["MOA"])?.rest == "next active 1400Z (FAA SFDPS)")
+        #expect(LiveWords.saaBadge(saa["W-1"]) == nil && LiveWords.saaBadge(nil) == nil)
         let events = try decode(APIDepartureEvents.self, #"{"events":[{"ident":"AAL123","heard":1,"departure":"KIND","destination":"KRSW","gate":"B20","times":{"clearance_delivery":1762664220}}]}"#).events
         #expect(LiveWords.departureLine(events.first) == "Cleared 0457Z at KIND, gate B20, to KRSW (FAA TDES)")
         #expect(LiveWords.departureLine(DepartureEvent(heard: 1, ident: "N1")) == "Departure event (FAA TDES)")

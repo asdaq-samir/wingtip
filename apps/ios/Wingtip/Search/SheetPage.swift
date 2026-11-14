@@ -46,6 +46,12 @@ enum SheetPage: Hashable {
     /// A flight another pilot sent, and the flight just ended to log:
     /// each a card of its own.
     case sharedFlight, flightLogged
+    /// A TFR's card by its FDC NOTAM number ("6/4116"), from a tap on it
+    /// or its link (`tfr=`).
+    case tfr(String)
+    /// A VOR's card by its key ("OBK@42.2214,-87.9517", NavaidKey), from a
+    /// tap on its mark or its link (`navaid=`).
+    case navaid(String)
     /// The emergency assistant: a card like every other (the owner,
     /// 2026-11-13: "For phones, just do it natively, but stay
     /// consistent"), the one that opens at full height. Opened by its
@@ -66,7 +72,7 @@ enum SheetPage: Hashable {
         switch self {
         case .airport(let text): RootLayout.inspects(AirportRoute(text))
         case .screen(let screen): [.brief, .profile, .flights].contains(screen)
-        case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency: true
+        case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid: true
         case .flight, .notams, .practice, .training, .instructing, .contact, .settings: false
         }
     }
@@ -91,9 +97,13 @@ enum SheetPage: Hashable {
     }
 
     /// The sizes the card's sheet stops at on the iPhone. A content card
-    /// parks at the pill on a swipe down, its bar in sight there; a
-    /// settings card has no pill, so the swipe closes it; Emergency keeps
-    /// the pill out too and is closed by its ✕ alone (CardHost).
+    /// parks at the pill on a swipe down, its bar in sight there, and a
+    /// drag past the pill leaves it there (CardHost); a settings card has
+    /// no pill, so from all the way up a swipe brings it to half, the
+    /// system's next detent, and from half closes it (the owner,
+    /// 2026-11-14: "Settings cards should only close from a swipe down
+    /// when in medium detents"); Emergency keeps the pill out too and is
+    /// closed by its ✕ alone.
     var detents: Set<PresentationDetent> {
         swipeCloses || self == .emergency ? [.half, .large] : [RootView.pill, .half, .large]
     }
@@ -139,6 +149,8 @@ enum SheetPage: Hashable {
         case .sharedFlight: "card-shared"
         case .flightLogged: "card-logged"
         case .emergency: "card-emergency"
+        case .tfr: "card-tfr"
+        case .navaid: "card-navaid"
         }
     }
 
@@ -158,7 +170,7 @@ enum SheetPage: Hashable {
         case .plate(let key): "+plate:" + key
         case .notams(.route): "+notams"
         case .notams(.field(let ident)): "+notams:" + ident
-        case .leg, .flight, .traffic, .tail, .hold, .flown, .ask, .clearance, .sharedFlight, .flightLogged, .emergency: nil
+        case .leg, .flight, .traffic, .tail, .hold, .flown, .ask, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid: nil
         }
     }
 
@@ -250,6 +262,8 @@ struct SheetPageView: View {
         case .sharedFlight: SharedFlightView()
         case .flightLogged: FlightLoggedCard()
         case .emergency: EmergencyCard()
+        case .tfr(let id): TfrCard(notamId: id).id(id)
+        case .navaid(let key): NavaidCard(key: key).id(key)
         }
     }
 }

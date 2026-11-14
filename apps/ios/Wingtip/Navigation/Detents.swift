@@ -6,7 +6,10 @@ extension PresentationDetent {
     /// .medium covered 53.5% (the iOS sheet audit, 2026-11-10; the owner's
     /// decision of 2026-11-10, docs/design/ios.md §0). A fraction, so the
     /// system moves between it and the others with its own animation.
-    static let half = PresentationDetent.fraction(0.45)
+    static let half = PresentationDetent.fraction(halfShare)
+    /// The share of the screen it covers, for the map to keep a mark
+    /// tapped clear of the card coming up (MapCamera).
+    nonisolated static let halfShare = 0.45
 }
 
 extension EnvironmentValues {

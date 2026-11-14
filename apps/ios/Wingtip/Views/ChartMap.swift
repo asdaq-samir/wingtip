@@ -27,6 +27,8 @@ struct ChartMap: UIViewRepresentable {
     var onRegion: ((CLLocationCoordinate2D, Double) -> Void)?
     /// A field's mark tapped.
     var onAirport: ((String) -> Void)?
+    /// A VOR's mark tapped: its key (VorPin.key), for its card.
+    var onNavaid: ((String) -> Void)?
     /// Own ship kept in the middle; a pan by the pilot ends it.
     @Binding var following: Bool
     /// Whether the route is out of the view, for the arrow's other face.
@@ -49,6 +51,8 @@ struct ChartMap: UIViewRepresentable {
     /// Setup's Military fields and Private fields.
     @AppStorage(MapExtrasInput.Keys.military) var militaryFields = false
     @AppStorage(MapExtrasInput.Keys.privateFields) var privateFields = false
+    /// The Map card's Aeronautical layer (ChartOverlays.aeronautical).
+    @AppStorage(MapExtrasInput.Keys.aeronautical) var aeronautical = true
     /// The Map card's Terrain: flat, or MapKit's 3D (RaisedMapView).
     @AppStorage(MapTerrain.key) var terrain = MapTerrain.flat.rawValue
     /// Settings' Airport Weather, and the plan's part of the marks: the ↓
@@ -79,10 +83,10 @@ struct ChartMap: UIViewRepresentable {
         map.showsScale = true
         map.pointOfInterestFilter = .excludingAll
         map.register(AirportMarkView.self, forAnnotationViewWithReuseIdentifier: AirportMarkView.reuse)
-        map.register(CheckpointMarkView.self, forAnnotationViewWithReuseIdentifier: CheckpointMarkView.reuse)
         map.register(TrafficMarkView.self, forAnnotationViewWithReuseIdentifier: TrafficMarkView.reuse)
         context.coordinator.extras.attach(to: map)
         context.coordinator.overlays.attach(to: map)
+        context.coordinator.routeMarks.attach(to: map)
         // Where the map opens is set once it has its size and the sheet's
         // (Coordinator.open); the map shows at the cap at the latest.
         let coordinator = context.coordinator
@@ -101,6 +105,7 @@ struct ChartMap: UIViewRepresentable {
 
     func updateUIView(_ map: MKMapView, context: Context) {
         context.coordinator.onAirport = onAirport
+        context.coordinator.onNavaid = onNavaid
         context.coordinator.onReveal = onReveal
         let shade = (ChartNight(rawValue: chartNight) ?? .dimmed).shade(dark: colorScheme == .dark)
         context.coordinator.dim(shade)
@@ -127,6 +132,15 @@ struct ChartMap: UIViewRepresentable {
         // The day's lift on the chart (ChartLift), none on the dimmed one at
         // night: a change of either draws the chart again from the store.
         let lift = shade == 0
+        // Chart None (Charts.picked): no FAA chart, Apple's muted map
+        // under the overlays, and nothing to wait for before it shows.
+        if template == nil, let current = context.coordinator.overlay {
+            context.coordinator.tilesStopped()
+            map.removeOverlay(current)
+            context.coordinator.overlay = nil
+        }
+        if template == nil { context.coordinator.noChart() }
+        context.coordinator.overlays.show(aeronautical: aeronautical, on: map, chart: context.coordinator.overlay)
         if let template, context.coordinator.overlay?.template != template || context.coordinator.overlay?.lift != lift {
             if let current = context.coordinator.overlay {
                 context.coordinator.tilesStopped()
@@ -142,7 +156,7 @@ struct ChartMap: UIViewRepresentable {
         }
         if context.coordinator.checkpointsShown != checkpoints {
             context.coordinator.checkpointsShown = checkpoints
-            context.coordinator.showCheckpoints(checkpoints, on: map)
+            context.coordinator.routeMarks.showCheckpoints(checkpoints, on: map)
         }
         if !context.coordinator.proceduresShown.elementsEqual(procedurePaths, by: Self.samePath) {
             // Each path kept as it is while its points are the same; a new
@@ -176,7 +190,7 @@ struct ChartMap: UIViewRepresentable {
             // app's replay keeps its airplane (useReplayMarker).
             if context.coordinator.simulatedAt != simulated.at {
                 context.coordinator.simulatedAt = simulated.at
-                Self.keepInSight(simulated.coordinate, on: map)
+                MapCamera.keepInSight(simulated.coordinate, on: map)
             }
         } else if let plane = context.coordinator.plane {
             map.removeAnnotation(plane)
@@ -195,6 +209,7 @@ struct ChartMap: UIViewRepresentable {
             if let edge = context.coordinator.courseEdge { map.removeOverlay(edge) }
             context.coordinator.courseEdge = nil
             context.coordinator.courseLine = nil
+            context.coordinator.routeMarks.showPoints(course, on: map)
             if let course, course.coordinates.count >= 2 {
                 let edge = CourseEdgePolyline(coordinates: course.coordinates, count: course.coordinates.count)
                 map.addOverlay(edge, level: .aboveLabels)
@@ -230,19 +245,6 @@ struct ChartMap: UIViewRepresentable {
         return UIEdgeInsets(top: 80, left: safe.left + 40, bottom: map.bounds.height * 0.5 + 40, right: safe.right + 40)
     }
 
-    /// A moving airplane's point brought back into the part of the map in
-    /// sight, the route's padding in from its edges, once it leaves it.
-    static func keepInSight(_ at: CLLocationCoordinate2D, on map: MKMapView) {
-        guard map.bounds.width > 0 else { return }
-        let clear = map.bounds.inset(by: routePadding(in: map))
-        let point = map.convert(at, toPointTo: map)
-        guard clear.width > 0, clear.height > 0, !clear.contains(point) else { return }
-        let middle = CGPoint(x: map.bounds.midX + point.x - clear.midX, y: map.bounds.midY + point.y - clear.midY)
-        // A step, not a glide, with Reduce Motion on: the replay's and the
-        // dry run's airplane then jumps back into sight.
-        map.setCenter(map.convert(middle, toCoordinateFrom: map), animated: MapMotion.animated)
-    }
-
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     final class Coordinator: NSObject, MKMapViewDelegate {
@@ -259,35 +261,14 @@ struct ChartMap: UIViewRepresentable {
         /// Each procedure's line with the path it was drawn from, kept
         /// while the path is the same (updateUIView).
         var procedureLines: [(path: [CLLocationCoordinate2D], line: ProcedurePolyline)] = []
-        /// The checkpoints' marks by the checkpoint's id, with the number
-        /// and place each was drawn with.
-        private var checkpointMarks: [String: (number: Int, checkpoint: Checkpoint, mark: CheckpointAnnotation)] = [:]
+        /// The checkpoints and the points the course turns at.
+        let routeMarks = RouteMarksLayer()
         /// The route's fields (its ends and stops): drawn whatever the
         /// zoom, never dropped for another (AirportAnnotation.priority).
         var routeIdents: Set<String> = []
-        /// Whether the checkpoints' names show at the zoom now.
-        var checkpointNames = false
         var onAirport: ((String) -> Void)?
+        var onNavaid: ((String) -> Void)?
 
-        /// The checkpoints' marks brought to `checkpoints`: a new one
-        /// added, a gone one taken off, one whose number, name, place or
-        /// score changed drawn again, the rest left as they are -- every
-        /// change to the plan took every mark off the map and put it back
-        /// before, a flicker of the whole route.
-        @MainActor
-        func showCheckpoints(_ checkpoints: [Checkpoint], on map: MKMapView) {
-            var wanted: [String: (number: Int, checkpoint: Checkpoint)] = [:]
-            for (i, checkpoint) in checkpoints.enumerated() { wanted[checkpoint.id] = (number: i + 1, checkpoint: checkpoint) }
-            for (id, drawn) in checkpointMarks where wanted[id] == nil || wanted[id]!.number != drawn.number || wanted[id]!.checkpoint != drawn.checkpoint {
-                map.removeAnnotation(drawn.mark)
-                checkpointMarks[id] = nil
-            }
-            for (id, want) in wanted where checkpointMarks[id] == nil {
-                let mark = CheckpointAnnotation(number: want.number, checkpoint: want.checkpoint)
-                map.addAnnotation(mark)
-                checkpointMarks[id] = (number: want.number, checkpoint: want.checkpoint, mark: mark)
-            }
-        }
         var onRegion: ((CLLocationCoordinate2D, Double) -> Void)?
         private var trafficShown: [String: TrafficAnnotation] = [:]
         private var trafficDrawn: (planes: [TrafficAircraft], ownFt: Double?)?
@@ -403,22 +384,21 @@ struct ChartMap: UIViewRepresentable {
             }
             if let extra = MainActor.assumeIsolated({ extras.view(for: annotation, on: mapView) }) { return extra }
             if let overlay = MainActor.assumeIsolated({ overlays.view(for: annotation, on: mapView) }) { return overlay }
-            if annotation is CheckpointAnnotation {
-                let view = mapView.dequeueReusableAnnotationView(withIdentifier: CheckpointMarkView.reuse, for: annotation)
-                (view as? CheckpointMarkView)?.showName(checkpointNames)
-                return view
-            }
+            if let mark = MainActor.assumeIsolated({ routeMarks.view(for: annotation, on: mapView) }) { return mark }
             guard annotation is AirportAnnotation else { return nil }
             let view = mapView.dequeueReusableAnnotationView(withIdentifier: AirportMarkView.reuse, for: annotation)
             (view as? AirportMarkView)?.scaleSymbol(symbolScale)
             return view
         }
 
+        /// A mark tapped opens its card; the map moves only where the card
+        /// would hide the mark (MapCamera.easeIntoSight).
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            if flight?.selected(view, on: mapView) == true { return }
-            guard let field = view.annotation as? AirportAnnotation else { return }
-            mapView.deselectAnnotation(field, animated: false)
-            onAirport?(field.ident)
+            guard let mark = view.annotation else { return }
+            if flight?.selected(view, on: mapView) == true { return MapCamera.easeIntoSight(mark.coordinate, on: mapView) }
+            if let vor = mark as? VorAnnotation { onNavaid?(vor.vor.key) } else if let field = mark as? AirportAnnotation { onAirport?(field.ident) } else { return }
+            mapView.deselectAnnotation(mark, animated: false)
+            MapCamera.easeIntoSight(mark.coordinate, on: mapView)
         }
 
         /// The first position moves the map there once, at the web app's
@@ -499,6 +479,14 @@ struct ChartMap: UIViewRepresentable {
             }
         }
 
+        /// No chart drawn (Chart None): the map does not wait for its tiles.
+        @MainActor
+        func noChart() {
+            guard !chartDrawn else { return }
+            chartDrawn = true
+            revealIfIn()
+        }
+
         /// The airspace answered for the first time (ChartOverlays).
         @MainActor
         func airspaceAnswered() {
@@ -548,14 +536,9 @@ struct ChartMap: UIViewRepresentable {
                 if mapView.visibleMapRect.width > 0 {
                     tiles?.keep(visible: mapView.visibleMapRect, zoomScale: MKZoomScale(Double(mapView.bounds.width) / mapView.visibleMapRect.width))
                 }
-                // The checkpoints' names in with the zoom (CheckpointAnnotation).
-                let names = zoom >= CheckpointAnnotation.namesFromZoom
-                if names != checkpointNames {
-                    checkpointNames = names
-                    for case let mark as CheckpointAnnotation in mapView.annotations {
-                        (mapView.view(for: mark) as? CheckpointMarkView)?.showName(names)
-                    }
-                }
+                // The checkpoints' names in with the zoom, the route's
+                // points' names kept outside their turns (RouteMarksLayer).
+                routeMarks.moved(mapView, zoom: zoom)
                 let scale = FieldMark.scale(zoom: zoom)
                 if abs(scale - symbolScale) > 0.02 {
                     symbolScale = scale

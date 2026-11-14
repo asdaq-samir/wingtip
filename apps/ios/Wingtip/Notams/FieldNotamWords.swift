@@ -27,6 +27,14 @@ enum FieldNotamWords {
                                   field: t?.field.map { .init(lat: $0.lat, lon: $0.lon) }, edge: t?.edge.map { .init(lat: $0.lat, lon: $0.lon) })
     }
 
+    /// A TFR from tfr.faa.gov's list read by the engine (tfr_read), for
+    /// its card (TfrCard): its altitudes and where, and the rule it is
+    /// under; nil where the engine cannot read it.
+    static func readTfr(_ tfr: APITfr) -> EngineContract.TfrReadAnswer? {
+        try? Engine.tfrRead(kind: tfr.kind, rule: tfr.rule, floorFt: tfr.floorFt, floorRef: tfr.floorRef,
+                            ceilingFt: tfr.ceilingFt, ceilingRef: tfr.ceilingRef)
+    }
+
     /// What each NOTAM in force addresses on the card, as the engine reads
     /// it (notam_subject: JO 7930.2's keywords and conditions matched to the
     /// card's own runways, lights, approaches and frequencies). One not yet

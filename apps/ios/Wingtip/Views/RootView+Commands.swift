@@ -72,6 +72,8 @@ extension RootView {
             nav.open(.tail(ProfileAsk(tail: tail.uppercased())))
         case .keepForAir:
             keepForAir()
+        case .card(let page):
+            nav.open(page)
         case .sharedFlight(let link):
             // Shown, not planned: the pilot's own plan stays until they
             // tap Use This Plan.

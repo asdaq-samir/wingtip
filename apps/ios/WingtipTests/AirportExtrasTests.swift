@@ -199,10 +199,10 @@ struct AirportExtrasTests {
     }
 
     @Test func rowsMarkAClosedFieldFirstThenItsUse() {
-        #expect(FieldUse.flag(closed: "Closed indefinitely", use: "private") == .init(words: "Closed indefinitely", kind: .closed))
-        #expect(FieldUse.flag(closed: nil, use: "private") == .init(words: "Private", kind: .permission))
+        #expect(FieldUse.flag(closed: "Closed indefinitely", use: "private") == .init(words: "Closed indefinitely", status: .closed))
+        #expect(FieldUse.flag(closed: nil, use: "private") == .init(words: "Private", status: .privateUse))
         #expect(FieldUse.flag(closed: nil, use: "military")?.words == "Military")
-        #expect(FieldUse.flag(closed: nil, use: "joint") == .init(words: "Joint use", kind: .joint))
+        #expect(FieldUse.flag(closed: nil, use: "joint") == .init(words: "Joint use", status: .joint))
         #expect(FieldUse.flag(closed: nil, use: nil) == nil)
         // The use is the engine's: KFHU, joint use, is no military-only field.
         #expect(FieldUse.code(isPrivate: false, military: "joint") == "joint")

@@ -4,10 +4,10 @@ import SwiftUI
 /// canvas XFZoWyJWzov7RCwRRPH253; the web's AirplaneProfileSheet), built as
 /// the airport card's is (AirportPlaceHead): at full height the type's
 /// silhouette on a tile, then the N-number large and centred with the
-/// registry's make, model and year under it ("Piper PA-28-140, 1971"), its
-/// Planespotters.net photo with its credit once that answers with one, and
+/// registry's make, model and year under it ("Piper PA-28-140, 1971"), and
 /// one row of four -- Fly This filled, Follow (tell me when it takes off or
-/// lands), Favorite and Share. Follow and Favorite go by the ICAO address
+/// lands), Favorite and Share. Its photo is a picture tile under the facts
+/// (AirplanePhotoTile, the owner's C1). Follow and Favorite go by the ICAO address
 /// the registry gives, greyed where it gives none.
 struct AirplanePlaceHead: View {
     @Environment(\.lookAccent) private var accent
@@ -37,7 +37,6 @@ struct AirplanePlaceHead: View {
                 Text(model.loaded ? model.typeLine ?? "Not in the FAA's registry" : "Looking it up in the FAA's registry")
                     .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
             }
-            if let photo = lookup.photo { AirplanePhotoHead(photo: photo) }
             actions
         }
         .padding(.horizontal, WingtipSpace.lg)
@@ -98,35 +97,5 @@ struct AirplanePlaceHead: View {
 
     private func watch(_ hex: String, _ kind: AirplaneWatch.Kind) -> Binding<Bool> {
         Binding(get: { tracking.watching(hex, kind) }, set: { _ in tracking.toggleWatch(AirplaneWatch(hex: hex, name: model.tail, kind: kind)) })
-    }
-}
-
-/// The airplane's photo at the card's head, only once Planespotters.net
-/// has answered with one, on its terms (docs/legal/credits.md): the
-/// photographer's name beside it, the picture and the credit a plain link
-/// to its page, its address used as given and never kept. A thumbnail
-/// beside the credit, so the tabs stay in sight at half height.
-struct AirplanePhotoHead: View {
-    let photo: APIAirplanePhoto
-
-    var body: some View {
-        if let src = (photo.thumbnailLarge ?? photo.thumbnail).flatMap(URL.init(string:)), let page = URL(string: photo.link) {
-            Link(destination: page) {
-                HStack(spacing: WingtipSpace.md) {
-                    AsyncImage(url: src) { image in
-                        image.resizable().scaledToFill()
-                    } placeholder: {
-                        WingtipInk.inactiveFill
-                    }
-                    .frame(width: 96, height: 64)
-                    .clipShape(RoundedRectangle(cornerRadius: WingtipRadius.control, style: .continuous))
-                    .accessibilityLabel("The airplane, photographed by \(photo.photographer ?? "a Planespotters.net photographer")")
-                    Text("© \(photo.photographer ?? "Photographer") · \(photo.source ?? "Planespotters.net")")
-                        .font(WingtipType.note).foregroundStyle(.tint).multilineTextAlignment(.leading)
-                    Spacer(minLength: 0)
-                }
-            }
-            .accessibilityIdentifier("airplane-photo")
-        }
     }
 }

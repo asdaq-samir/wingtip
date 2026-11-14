@@ -41,6 +41,20 @@ final class Navigator {
     /// level back, as the web's clearRoute goes back to the airport flown
     /// to (`under`).
     private(set) var planFrom: SheetPage?
+    /// An Add's ask of the one search for an airplane (the owner,
+    /// 2026-11-14: the airplanes' Adds go to the one search), which the
+    /// root hands the search and clears.
+    var airplaneAsked: OneSearchModel.Keeping?
+
+    /// The cards put away and the one search up for an airplane to fly as
+    /// the pilot's or to keep, its placeholder saying which.
+    func searchAirplane(_ keeping: OneSearchModel.Keeping) {
+        close()
+        planPath = []
+        sheetPage = .search
+        airplaneAsked = keeping
+    }
+
     /// The card's height on the iPhone: half way, as Maps opens a place,
     /// for every card but the emergency assistant's (SheetPage.opensFull);
     /// the pilot's drag sets it from there.

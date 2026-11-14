@@ -62,8 +62,10 @@ extension RootView {
 /// The sheet rising for the one search (RootView): all the way while the
 /// search is up, clear of the keyboard; from the pill to half when the
 /// welcome is put away and the search asks for the destination, so it is
-/// seen (rule 11).
+/// seen (rule 11); and up for an airplane where an Add asked for one
+/// (Navigator.searchAirplane), its placeholder saying which.
 struct SheetFollowsSearch: ViewModifier {
+    @Environment(Navigator.self) private var nav
     let search: OneSearchModel
     let layout: RootLayout
     @Binding var detent: PresentationDetent
@@ -72,5 +74,11 @@ struct SheetFollowsSearch: ViewModifier {
         content
             .onChange(of: search.presented) { _, up in if up, layout == .sheet, detent != .large { detent = .large } }
             .onChange(of: search.askingDestination) { _, asking in if asking, detent == RootView.pill { detent = .half } }
+            .onChange(of: nav.airplaneAsked) { _, asked in
+                guard let asked else { return }
+                search.keeping = asked
+                search.presented = true
+                nav.airplaneAsked = nil
+            }
     }
 }

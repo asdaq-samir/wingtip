@@ -85,10 +85,24 @@ final class AirplaneLookup {
         }
     }
 
-    /// The card's one status line under its tabs (the web's statusLine): in
-    /// the air from the live find; else where its last flight ended; else
-    /// none heard in adsb.lol's archive, about six weeks.
-    func status(now: Date = Date()) -> (text: String, problem: Bool) {
+    /// The card's one status line under its actions (the web's statusLine,
+    /// StatusLine): in the air from the live find, "In the air" its badge
+    /// and its height and speed after it; else where its last flight
+    /// ended, "On the ground" its badge where it landed; else none heard in
+    /// adsb.lol's archive, about six weeks.
+    func status(now: Date = Date()) -> (text: String, problem: Bool, badge: BadgeStatus?, rest: String?) {
+        let line = plain(now: now)
+        switch inAir {
+        case .flying(let plane):
+            let how = [plane.altitudeFt.map(Format.trafficAltitude), plane.speedKt.map(Format.speed)].compactMap { $0 }
+            return (line.text, false, .inAir, how.joined(separator: " · "))
+        default:
+            let ground = "On the ground · "
+            return line.text.hasPrefix(ground) ? (line.text, false, .ground, String(line.text.dropFirst(ground.count))) : (line.text, line.problem, nil, nil)
+        }
+    }
+
+    private func plain(now: Date) -> (text: String, problem: Bool) {
         switch inAir {
         case .flying(let plane):
             let how = [plane.altitudeFt.map(Format.trafficAltitude), plane.speedKt.map(Format.speed)].compactMap { $0 }

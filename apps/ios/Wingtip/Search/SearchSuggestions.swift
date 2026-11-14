@@ -9,6 +9,10 @@ enum SearchPick: Hashable {
     case plan
     case directTo(String)
     case airplane(String)
+    /// An airplane the map hears, or one kept (a Favorite, a Recent): its
+    /// card, tracked; or kept, where the search was asked for one.
+    case heard(TrafficAircraft)
+    case kept(KeptAirplane)
     case types
     case action(SearchAction)
 }
@@ -24,6 +28,7 @@ struct SearchSuggestions: View {
     let pick: (SearchPick) -> Void
     @Environment(Plan.self) private var plan
     @Environment(Airplanes.self) private var airplanes
+    @Environment(Traffic.self) private var traffic
 
     var body: some View {
         if model.query.isEmpty { BrowseSections(nearest: model.nearest, pick: pick) } else { results }
@@ -67,10 +72,16 @@ struct SearchSuggestions: View {
         }
         let own = model.ownMatching(airplanes.records)
         let tail = model.typedTail(airplanes.records)
-        let types = model.matchingTypes
-        if !own.isEmpty || tail != nil || !types.isEmpty {
+        let types = model.keeping == nil ? model.matchingTypes : []
+        let heard = AirplaneHits.heard(model.query, in: traffic.planes)
+        if !own.isEmpty || tail != nil || !types.isEmpty || !heard.isEmpty {
             Section {
                 ForEach(own, id: \.tailNumber) { airplane in OwnAirplaneRow(airplane: airplane, pick: pick) }
+                // Those the map hears by callsign, registration or address.
+                ForEach(heard, id: \.hex) { plane in
+                    Button { pick(.heard(plane)) } label: { AirplaneRow(plane: plane) }
+                        .foregroundStyle(.primary)
+                }
                 if let tail {
                     Button { pick(.airplane(tail)) } label: {
                         row(tail, model.registered.map(Self.registryLine) ?? "FAA registry", systemImage: WingtipIcon.airplane)

@@ -10,6 +10,7 @@ import SwiftUI
 struct AircraftView: View {
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
+    @Environment(Navigator.self) private var nav
     @State private var model = AirplanePickModel()
     @State private var typed = ""
     /// Why what was typed could not be flown, said under the field.
@@ -21,10 +22,12 @@ struct AircraftView: View {
 
     var body: some View {
         List {
-            // Any airplane in the air, by its callsign, N-number or
-            // address: its card, tracked on the map.
+            // The airplane by the one search (the owner, 2026-11-14: the
+            // airplanes' Adds ask it, "Search for your airplane"), which
+            // finds the pilot's own, any N-number and those heard.
             Section {
-                NavigationLink { TrafficFindView() } label: { Label("Find an Airplane", systemImage: "magnifyingglass") }
+                Button { nav.searchAirplane(.yours) } label: { Label("Search for Your Airplane", systemImage: "magnifyingglass") }
+                    .accessibilityIdentifier("airplane-search")
             }
             Section("Airplane") {
                 HStack {
