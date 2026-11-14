@@ -3576,6 +3576,13 @@ export interface EngineContract {
     answer: UnderwayAnswer;
   };
   /**
+   * Where an airplane is usually based: the field its past flights (as ADS-B receivers heard them) most often take off from or land at. Each flight's ends are its takeoff field and, where it was heard landing, its landing field. A field is the base where at least min_ends (3) of the ends are there, at least min_share (0.4) of all the ends are, and no other field has as many; otherwise `ident` is null and nothing is said. The figures are the owner's (2026-10-13), not the FAA's: no public data says where an airplane is kept.
+   */
+  usual_base: {
+    input: UsualBaseInput;
+    answer: UsualBaseAnswer;
+  };
+  /**
    * Velocities' east and north parts as tracks and speeds, for a surveillance report that sends its parts (the FAA's STDDS tracks, which the ingest service reads from SWIM): each track degrees true 0 to 360 toward where it goes, and its speed in the parts' own unit (knots for STDDS). The track is null where the speed is 0: what does not move has no track. A list, so a message's tracks cross into the engine once.
    */
   velocity_track: {
@@ -12520,6 +12527,51 @@ export interface TurbulenceCategoryInput {
 }
 export interface UnderwayInput {
   speed_kt?: number | null;
+}
+export interface UsualBaseInput {
+  /**
+   * The airplane's past flights, any order; each field one identifier, as the host names it.
+   */
+  flights: {
+    /**
+     * The field it took off from; null where not known.
+     */
+    origin?: string | null;
+    /**
+     * The field it landed at; null where not known.
+     */
+    destination?: string | null;
+    /**
+     * Whether it was heard landing: a destination not landed at is no end.
+     */
+    landed?: boolean;
+  }[];
+}
+export interface UsualBaseAnswer {
+  /**
+   * The base; null where the flights do not show one clearly.
+   */
+  ident: string | null;
+  /**
+   * The field most of the ends are at (the first to reach the count, ties too); null with no ends.
+   */
+  most: string | null;
+  /**
+   * How many of the ends are at `most`.
+   */
+  most_ends: number;
+  /**
+   * All the takeoffs and landings counted.
+   */
+  ends: number;
+  /**
+   * The fewest ends at a field for it to be the base.
+   */
+  min_ends: number;
+  /**
+   * The least share of all the ends at a field for it to be the base.
+   */
+  min_share: number;
 }
 export interface VelocityTrackInput {
   velocities: {

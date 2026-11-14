@@ -12169,6 +12169,44 @@ enum EngineContract {
         }
     }
 
+    struct UsualBaseAnswer: Codable, Equatable, Sendable {
+        /// The base; null where the flights do not show one clearly.
+        var ident: String?
+        /// The field most of the ends are at (the first to reach the count, ties too); null with no ends.
+        var most: String?
+        /// How many of the ends are at `most`.
+        var mostEnds: Int
+        /// All the takeoffs and landings counted.
+        var ends: Int
+        /// The fewest ends at a field for it to be the base.
+        var minEnds: Int
+        /// The least share of all the ends at a field for it to be the base.
+        var minShare: Double
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case most
+            case mostEnds = "most_ends"
+            case ends
+            case minEnds = "min_ends"
+            case minShare = "min_share"
+        }
+    }
+
+    struct UsualBaseInput: Codable, Equatable, Sendable {
+        /// The airplane's past flights, any order; each field one identifier, as the host names it.
+        var flights: [EngineContract.UsualBaseInputFlightsItem]
+    }
+
+    struct UsualBaseInputFlightsItem: Codable, Equatable, Sendable {
+        /// The field it took off from; null where not known.
+        var origin: String?
+        /// The field it landed at; null where not known.
+        var destination: String?
+        /// Whether it was heard landing: a destination not landed at is no end.
+        var landed: Bool?
+    }
+
     struct VelocityTrackAnswerItem: Codable, Equatable, Sendable {
         var trackDeg: Double?
         var speed: Double

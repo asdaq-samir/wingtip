@@ -262,6 +262,11 @@ Then the callers switch to the name and the old copy is deleted.
   of feet MSL (`airspace_shelf_label`, the FAA's Chart User's Guide: "100"
   over "30", "T", "-30"), held to the web's fixtures
   `airspaceVolumeSpan.json` and `airspaceShelfLabel.json`.
+- Where an airplane is usually based is the engine's too (`crates/flight`,
+  `usual_base`): the field its heard flights most often start or end at,
+  said only with at least 3 of their takeoffs and landings, 0.4 of them
+  and no tie (the owner's figures), for the planner's airplane card and the
+  Aircraft tab's "based at"; held to the web's fixture `usualBase.json`.
 - Runways, the wind on them and the traffic pattern are the engine's too
   (`crates/brief`): a wind along and across a runway and the end it favours,
   the runway flown (the pilot's pick, else into the wind, AC 90-66C

@@ -5,7 +5,7 @@
 //! planned at (limits.rs) and FAA Form 7233-4's items (filing.rs), as the
 //! planner's wingtip_native functions of the same names work them out.
 
-use crate::{field, filing, flight, limits, sun};
+use crate::{based, field, filing, flight, limits, sun};
 use wingtip_core::ask::Ask;
 use wingtip_core::json::{self, Value};
 
@@ -191,6 +191,45 @@ pub fn field_military(name: &str, v: &Value) -> Result<String, String> {
     };
     let mut out = String::from("{\"military\":");
     json::opt_string(&mut out, field::military(code("ownership")?, code("use")?));
+    out.push('}');
+    Ok(out)
+}
+
+/// `usual_base`: the field an airplane's past flights usually start or end
+/// at (based.rs), with the counts it was judged on and the rule's figures,
+/// so the host can say "6 of 9 takeoffs and landings".
+pub fn usual_base(name: &str, v: &Value) -> Result<String, String> {
+    let ask = Ask::new(name, v);
+    let field = |f: &'_ Value, key: &str| -> Result<Option<String>, String> {
+        match f.get(key) {
+            None | Some(Value::Null) => Ok(None),
+            Some(Value::String(s)) => Ok(Some(s.clone())),
+            Some(_) => Err(format!("{name}: a flight's \"{key}\" is not a string or null")),
+        }
+    };
+    let mut held = Vec::new();
+    for f in ask.list("flights")? {
+        let landed = match f.get("landed") {
+            None | Some(Value::Null) => false,
+            Some(Value::Bool(b)) => *b,
+            Some(_) => return Err(format!("{name}: a flight's \"landed\" is not true or false")),
+        };
+        held.push((field(f, "origin")?, field(f, "destination")?, landed));
+    }
+    let flights: Vec<based::Flight> =
+        held.iter().map(|(o, d, landed)| based::Flight { origin: o.as_deref(), destination: d.as_deref(), landed: *landed }).collect();
+    let base = based::usual_base(&flights);
+    let mut out = String::from("{\"ident\":");
+    json::opt_string(&mut out, base.ident);
+    out.push_str(",\"most\":");
+    json::opt_string(&mut out, base.most.map(|(i, _)| i));
+    out.push_str(&format!(
+        ",\"most_ends\":{},\"ends\":{},\"min_ends\":{},\"min_share\":",
+        base.most.map_or(0, |(_, n)| n),
+        base.ends,
+        based::MIN_ENDS
+    ));
+    json::number(&mut out, based::MIN_SHARE);
     out.push('}');
     Ok(out)
 }
