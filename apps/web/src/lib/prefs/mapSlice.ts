@@ -56,16 +56,25 @@ export interface MapSlice {
    *  hazard a pilot must know of near the route (14 CFR 91.103).
    *
    *  Aeronautical: the Class B, C and D and the special-use airspace
-   *  (AirspaceGl), the VORs, fixes and VFR waypoints (NavaidsGl), and the
-   *  route's VFR checkpoints with the landmarks they were chosen from.
-   *  On by default, as the airspace and the VORs were. */
+   *  (AirspaceGl), and the VORs, fixes and VFR waypoints (NavaidsGl). On
+   *  by default, as the airspace and the VORs were. */
   aeronautical: boolean;
   /** Weather: the fields' weather marks (Settings' Airport Weather says
-   *  how), the Class B fields' weather chips, and whatever weather the
-   *  pilot picked under it -- the AIRMETs and SIGMETs, the PIREPs, the
-   *  winds aloft, the radar loop, the model weather. On by default, as
-   *  the fields' weather marks were. */
+   *  how) and whatever weather the pilot picked in its tile's menu -- the
+   *  AIRMETs and SIGMETs, the PIREPs, the winds aloft, the radar loop, the
+   *  model weather. On by default, as the fields' weather marks were. */
   weather: boolean;
+  /** Whether the route has its VFR checkpoints, at every zoom: the
+   *  planner's checkpoints and the landmarks they were chosen from, the
+   *  training map's detections and added points. Off unless turned on, at
+   *  the owner's ask ("Let's not enable waypoints for a pilot"); the
+   *  route's ••• menu's Checkpoints (ShowRouteAs). */
+  waypoints: boolean;
+  /** Whether the Class B airports are drawn, with their current flight
+   *  category and a terminal chart on hover. Off by default: useful on
+   *  a route that passes near one, clutter on a route that does not; the
+   *  route's ••• menu's Class B Weather (ShowRouteAs). */
+  classB: boolean;
   /** Whether the airplanes ADS-B receivers hear about the map are drawn
    *  (TrafficGl). Off by default: it asks a third party every five seconds. */
   traffic: boolean;
@@ -105,6 +114,8 @@ export interface MapSlice {
   setTac: (tac: boolean) => void;
   setAeronautical: (aeronautical: boolean) => void;
   setWeather: (weather: boolean) => void;
+  setWaypoints: (waypoints: boolean) => void;
+  setClassB: (classB: boolean) => void;
   setTraffic: (traffic: boolean) => void;
   setPlates: (plates: boolean) => void;
   setPrivateMilitary: (privateMilitary: boolean) => void;
@@ -126,6 +137,8 @@ export const MAP_KEPT = [
   "tac",
   "aeronautical",
   "weather",
+  "waypoints",
+  "classB",
   "traffic",
   "plates",
   "privateMilitary",
@@ -146,6 +159,8 @@ export const mapSlice: Slice<MapSlice> = (set) => ({
   tac: false,
   aeronautical: true,
   weather: true,
+  waypoints: false,
+  classB: false,
   traffic: false,
   plates: true,
   privateMilitary: false,
@@ -163,6 +178,8 @@ export const mapSlice: Slice<MapSlice> = (set) => ({
   setTac: (tac) => set({ tac }),
   setAeronautical: (aeronautical) => set({ aeronautical }),
   setWeather: (weather) => set({ weather }),
+  setWaypoints: (waypoints) => set({ waypoints }),
+  setClassB: (classB) => set({ classB }),
   setTraffic: (traffic) => set({ traffic }),
   setPlates: (plates) => set({ plates }),
   setPrivateMilitary: (privateMilitary) => set({ privateMilitary }),

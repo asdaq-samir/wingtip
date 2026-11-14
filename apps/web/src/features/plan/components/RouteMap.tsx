@@ -305,8 +305,8 @@ export default memo(function RouteMap({
   // The route's airports, one array while the course is the same answer.
   const airports = useMemo(() => (course ? routeAirports(course) : []), [course]);
   // The fields that wear a chip of their own already: the route's own,
-  // and the Class B ones while the weather is on (ClassBGl).
-  const showClassB = usePreferences((s) => s.weather);
+  // and the Class B ones while they are on (ClassBGl).
+  const showClassB = usePreferences((s) => s.classB);
   const { data: classBAirports } = useQuery({ ...classBQuery, enabled: false });
   const chippedFields = useMemo(
     () => [...airports.filter((a) => a.kind === "airport"), ...(showClassB ? (classBAirports ?? []) : [])],
@@ -338,10 +338,10 @@ export default memo(function RouteMap({
   const aloft = useRouteAloft(useTerrainView().mode, routeRows, courseLine);
 
   // The chosen checkpoints and the candidates they were chosen from, at
-  // every zoom, or neither: the Map card's Aeronautical. Their dots in
+  // every zoom, or neither: the route's ••• menu's Checkpoints. Their dots in
   // their scores' colours, or the Chart ink look's brown
   // (checkpointColour), each with the card a tap opens.
-  const showCheckpoints = usePreferences((s) => s.aeronautical);
+  const showCheckpoints = usePreferences((s) => s.waypoints);
   const ink = useInkLook();
   const legFacts = useMemo(() => legFactsOf(selected, legs), [selected, legs]);
   const glCheckpoints = useMemo<GlCheckpoint[]>(

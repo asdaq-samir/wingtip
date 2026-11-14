@@ -17,7 +17,7 @@ test("under VFR the flight plan flies direct, with no alternate, and says where 
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
     localStorage.setItem(
       "wingtip.preferences",
-      JSON.stringify({ ...kept, state: { ...kept.state, flightRules: "vfr", aeronautical: false } }),
+      JSON.stringify({ ...kept, state: { ...kept.state, flightRules: "vfr", waypoints: false } }),
     );
   });
   await page.goto("/app/plan?dep=KMSN&dest=KOSH");
@@ -94,7 +94,7 @@ test("items 10 and 19 come from the airplane's page, the pilot's and the persons
         state: {
           ...kept.state,
           flightRules: "vfr",
-          aeronautical: false,
+          waypoints: false,
           aircraft: { profile: "c172", label: "N12345 · C172", aircraftId: 5, cruiseTasKt: 110, fuelBurnGph: 8.5, usableFuelGal: 40 },
         },
       }),
@@ -158,7 +158,7 @@ test("where Flight Service is connected, the form is filed from here in the pilo
         state: {
           ...kept.state,
           flightRules: "vfr",
-          aeronautical: false,
+          waypoints: false,
           aircraft: { profile: "c172", label: "N12345 · C172", aircraftId: 5, cruiseTasKt: 110, fuelBurnGph: 8.5, usableFuelGal: 40 },
         },
       }),

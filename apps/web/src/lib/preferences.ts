@@ -57,16 +57,15 @@ export function migratePreferences(kept: unknown, from: number): Preferences {
     ownShipLook: _ownShipLook,
     airspace,
     navaids,
-    waypoints,
     tfrs: _tfrs,
-    classB,
     military,
     privateFields,
     ...rest
   } = kept as { navBar?: unknown; terrain?: string; ownShipLook?: unknown } & Partial<Record<OldLayer, boolean>>;
   return {
     ...rest,
-    ...(from < 10 ? layerGroups({ airspace, navaids, waypoints, classB, military, privateFields }, from) : {}),
+    ...(from < 10 ? layerGroups({ airspace, navaids, military, privateFields }, from) : {}),
+    ...(from < 1 ? { waypoints: false } : {}),
     ...(from < 6 && isStockDefault((kept as { aircraft?: AircraftChoice }).aircraft) ? { aircraft: NO_AIRPLANE } : {}),
     ...(from < 3 ? { chartLight: "auto" } : {}),
     ...(from < 7 && (kept as { brand?: string }).brand !== "ink" ? { brand: "wingtip" } : {}),
@@ -75,24 +74,24 @@ export function migratePreferences(kept: unknown, from: number): Preferences {
 }
 
 /** The Map card's layer switches before its four (2026-11-14). */
-type OldLayer = "airspace" | "navaids" | "waypoints" | "tfrs" | "classB" | "military" | "privateFields";
+type OldLayer = "airspace" | "navaids" | "tfrs" | "military" | "privateFields";
 
 /** 10: the Map card's eleven layer tiles folded into its four (the owner,
  *  2026-11-14), each group on where any of its old layers was on, so a
  *  pilot's choices carry over. A switch never kept was at its default
- *  then (the airspace and the VORs on from version 2, the checkpoints
- *  off); the fields' weather marks (Settings' Airport Weather) were drawn
- *  unless Off, so Weather is on for nearly everyone; the TFRs need none,
- *  drawn always now. */
+ *  then (the airspace and the VORs on from version 2); the fields'
+ *  weather marks (Settings' Airport Weather) were drawn unless Off, so
+ *  Weather is on for nearly everyone; the TFRs need none, drawn always
+ *  now. The checkpoints and the Class B chips keep their own switches,
+ *  in the route's ••• menu. */
 function layerGroups(old: Partial<Record<OldLayer, boolean>>, from: number) {
   const airspaceOn = old.airspace ?? true;
   const navaidsOn = old.navaids ?? true;
   const kept = useWeatherLayers.getState();
   const weatherPicked = kept.areas || kept.pireps || kept.winds !== "off" || kept.loop !== "off" || kept.flow !== "off";
   return {
-    // Before 1 the checkpoints were turned off for every browser.
-    aeronautical: (from < 2 ? true : airspaceOn || navaidsOn) || (from >= 1 && !!old.waypoints),
-    weather: useAirportWeatherPrefs.getState().show !== "off" || !!old.classB || weatherPicked,
+    aeronautical: from < 2 ? true : airspaceOn || navaidsOn,
+    weather: useAirportWeatherPrefs.getState().show !== "off" || weatherPicked,
     privateMilitary: !!old.military || !!old.privateFields,
   };
 }

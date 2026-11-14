@@ -1,12 +1,13 @@
 import { useId } from "react";
-import { CircleDashed, CloudAlert, CloudSun, MessageSquareText, Plane, Shield, Wind } from "lucide-react";
-import { LayerMenu, LayerToggle } from "../../components/LayerTile";
+import { CircleDashed, CloudSun, Plane, Shield } from "lucide-react";
+import { LayerSubmenu, LayerToggle, LayerToggleMenu } from "../../components/LayerTile";
+import { DropdownMenuCheckboxItem, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator } from "../../components/ui/dropdown-menu";
 import SectionTitle from "../../components/SectionTitle";
 import { usePreferences } from "../../lib/preferences";
 import { useWeatherLayers, type WindsAt } from "../../lib/map/sources/weatherLayers";
 import { WINDS_MODELLED_LABEL } from "../../lib/windsAloft";
-import { LoopTile } from "../weather-loop";
-import { FlowTile } from "../weather-flow";
+import { LoopMenu } from "../weather-loop";
+import { FlowMenu } from "../weather-flow";
 
 /** The winds aloft's altitudes: the plan's cruise, or one of the FD
  *  product's own, written FL and hundreds of feet as the map's weather
@@ -27,23 +28,22 @@ const WINDS: { value: WindsAt; label: string }[] = [
  * 2026-11-14: "I want to keep it simple though. can we just have four
  * layers aeronautical, weather, traffic, private/military in the map
  * settings?"), where there were eleven. The public fields, the route and
- * the plan's points, own ship and the TFRs have no switch: always drawn.
- * Under them, while Weather is on, which weather it draws -- the pilot's
- * picks as they were, kept on this device (lib/map/sources/weatherLayers)
- * -- and the fields' weather marks as Settings' Airport Weather says.
+ * the plan's points, own ship and the TFRs have no switch: always drawn;
+ * the route's checkpoints and the Class B chips are the route's ••• menu's
+ * (ShowRouteAs). Which weather the Weather layer draws is its tile's own
+ * menu, the ••• in its corner.
  */
 export default function MapLayers() {
   const prefs = usePreferences();
   const id = useId();
   return (
-    <section role="group" aria-labelledby={id} className="flex flex-col gap-2">
+    <section role="group" aria-labelledby={id} className="flex flex-col">
       <div className="pb-1.5">
         <SectionTitle id={id}>Layers</SectionTitle>
       </div>
       <div className="grid grid-cols-4 gap-2">
-        {/* The Class B, C and D and special-use airspace (AirspaceGl), the
-            VORs, fixes and VFR waypoints (NavaidsGl), and the route's VFR
-            checkpoints with their landmarks: on unless turned off. */}
+        {/* The Class B, C and D and special-use airspace (AirspaceGl), and
+            the VORs, fixes and VFR waypoints (NavaidsGl): on unless turned off. */}
         <LayerToggle
           name="Aeronautical"
           glyph={CircleDashed}
@@ -51,9 +51,19 @@ export default function MapLayers() {
           onChange={prefs.setAeronautical}
           testId="aeronautical-toggle"
         />
-        {/* The fields' weather marks, the Class B fields' chips and the
-            weather picked under it: on unless turned off. */}
-        <LayerToggle name="Weather" glyph={CloudSun} on={prefs.weather} onChange={prefs.setWeather} testId="weather-toggle" />
+        {/* The fields' weather marks (Settings' Airport Weather says how)
+            and the weather picked in its menu: on unless turned off. */}
+        <LayerToggleMenu
+          name="Weather"
+          glyph={CloudSun}
+          on={prefs.weather}
+          onChange={prefs.setWeather}
+          testId="weather-toggle"
+          menuLabel="Weather to show"
+          menuTestId="weather-more"
+        >
+          <WeatherPicks />
+        </LayerToggleMenu>
         {/* The airplanes ADS-B receivers hear about the map (TrafficGl),
             from adsb.lol: off unless turned on, as it asks a third party
             every five seconds. */}
@@ -71,41 +81,34 @@ export default function MapLayers() {
           testId="private-military-toggle"
         />
       </div>
-      {prefs.weather && <WeatherPicks />}
     </section>
   );
 }
 
-/** Which weather the Weather layer draws, as it was picked before the four
- *  layers: the SIGMETs and G-AIRMETs and the pilot reports, each on or
- *  off (off by default, as an area hundreds of miles across takes the tap
- *  meant for what is under it), the winds aloft at an altitude from a menu
- *  (discrete altitudes, not a slider; the GFS's, lib/windsAloft), the radar
- *  and satellite loop (features/weather-loop) and the model weather
- *  (features/weather-flow). */
+/** Which weather the Weather layer draws, each as it was picked before
+ *  the four layers and at its own default: the SIGMETs and G-AIRMETs and
+ *  the pilot reports, each on or off (off by default, as an area hundreds
+ *  of miles across takes the tap meant for what is under it), and as
+ *  submenus the winds aloft at an altitude (discrete altitudes, not a
+ *  slider; the GFS's, lib/windsAloft), the radar and satellite loop
+ *  (features/weather-loop) and the model weather (features/weather-flow). */
 function WeatherPicks() {
   const { areas, pireps, winds, set } = useWeatherLayers();
   return (
-    <div className="grid grid-cols-3 gap-2" data-testid="weather-picks">
-      <LayerToggle
-        name="AIRMETs and SIGMETs"
-        glyph={CloudAlert}
-        on={areas}
-        onChange={(on) => set({ areas: on })}
-        testId="weather-areas-toggle"
-      />
-      <LayerToggle
-        name="PIREPs"
-        glyph={MessageSquareText}
-        on={pireps}
-        onChange={(on) => set({ pireps: on })}
-        testId="weather-pireps-toggle"
-      />
-      <LayerMenu
+    <>
+      <DropdownMenuGroup>
+        <DropdownMenuLabel>Weather</DropdownMenuLabel>
+        <DropdownMenuCheckboxItem checked={areas} onCheckedChange={(on) => set({ areas: on })} data-testid="weather-areas-toggle">
+          AIRMETs and SIGMETs
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem checked={pireps} onCheckedChange={(on) => set({ pireps: on })} data-testid="weather-pireps-toggle">
+          PIREPs
+        </DropdownMenuCheckboxItem>
+      </DropdownMenuGroup>
+      <DropdownMenuSeparator />
+      <LayerSubmenu
         name="Winds Aloft"
-        glyph={Wind}
         testId="weather-winds"
-        off="off"
         pick={{
           heading: "Winds Aloft",
           note: WINDS_MODELLED_LABEL,
@@ -115,8 +118,8 @@ function WeatherPicks() {
           testId: "weather-winds",
         }}
       />
-      <LoopTile />
-      <FlowTile />
-    </div>
+      <LoopMenu />
+      <FlowMenu />
+    </>
   );
 }

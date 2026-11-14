@@ -672,13 +672,18 @@ way: three homes, and every control in one of them.
    2026-11-14), and four layers (the owner, 2026-11-14: "I want to keep
    it simple though. can we just have four layers aeronautical, weather,
    traffic, private/military in the map settings?"): Aeronautical (the
-   airspace, special-use areas, VORs, fixes, VFR waypoints and the route's
-   checkpoints), Weather (the fields' weather marks as Settings' Airport
-   Weather says, the Class B chips, and under it, while on, which weather:
-   AIRMETs and SIGMETs, PIREPs, Winds Aloft, the radar loop, the model
-   weather), Traffic, and Private/Military (drawn whatever it says while
-   the Emergency Assistant is open). The public fields, the route and the
-   plan's points, own ship and the TFRs have no switch: always drawn.
+   airspace, special-use areas, VORs, fixes and VFR waypoints), Weather
+   (the fields' weather marks as Settings' Airport Weather says; a tap on
+   the tile turns it on or off, and the ••• in its corner is a menu of
+   which weather: AIRMETs and SIGMETs and PIREPs as checkbox items, Winds
+   Aloft, Radar and Model Weather as submenus, each off by default),
+   Traffic, and Private/Military (drawn whatever it says while the
+   Emergency Assistant is open), the row exactly four tiles. The public
+   fields, the route and the plan's points, own ship and the TFRs have no
+   switch: always drawn. The route's VFR checkpoints and the Class B
+   fields' weather chips are switches of the route's ••• menu, On the Map
+   (Checkpoints, Class B Weather), each off by default (the owner's "Let's
+   not enable waypoints for a pilot").
 
 Taken out the same day, with no home: the sheet's Position (a phone's
 sheet is always at the bottom), Terrain's Flat (the 2D chart is always

@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { frontSheet, grabberTo, openMapSettings, slow } from "./helpers";
+import { controlsInSight, frontSheet, grabberTo, openMapSettings, openPanel, settle, sideDrawer, slow } from "./helpers";
 
 /* The Map card, the Settings its gear opens, and the map's 3D button
    (features/map-settings, features/settings, ThreeDButton; the owner's
@@ -41,12 +41,21 @@ export async function setMap3d(page: Page, on: boolean) {
   await expect(button).toHaveText(on ? "2D" : "3D");
 }
 
-/** A map setting changed on the planner before a route is loaded --
- *  remembered per browser -- and the route loaded after, for a route's
- *  map that should show it. */
-export async function beforeTheRoute(page: Page, change: () => Promise<void>) {
+/** One of the route's ••• menu's map switches -- Checkpoints
+ *  (`waypoints-toggle`) or Class B Weather (`class-b-toggle`), since the
+ *  Map card's layers became four (the owner, 2026-11-14) -- turned over on
+ *  the planner before a route is loaded, remembered per browser, so the
+ *  route loaded after shows it. */
+export async function routeMenuSwitch(page: Page, testId: "waypoints-toggle" | "class-b-toggle", on: boolean) {
   await page.goto("/app/plan");
-  await openMapSettings(page);
-  await change();
-  await closeMapSettings(page);
+  await settle(page);
+  await openPanel(page);
+  await controlsInSight(page);
+  await sideDrawer(page).getByTestId("share-route").click();
+  const item = page.getByTestId(testId);
+  await expect(item).toHaveAttribute("aria-checked", String(!on));
+  await item.click();
+  await sideDrawer(page).getByTestId("share-route").click();
+  await expect(page.getByTestId(testId)).toHaveAttribute("aria-checked", String(on));
+  await page.keyboard.press("Escape");
 }

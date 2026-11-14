@@ -1,6 +1,6 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { chartZoom, grabberTo, openMapSettings, sideDrawer, slow, tapNear } from "./helpers";
-import { beforeTheRoute } from "./mapCard";
+import { routeMenuSwitch } from "./mapCard";
 import { markWith, tapMark } from "./marks";
 
 /**
@@ -87,26 +87,24 @@ async function mockClassB(page: Page) {
   );
 }
 
-/** The Weather layer off, from the planner's search bar, before the route
- *  is loaded: the chips are the Weather layer's (the owner, 2026-11-14:
- *  the Map card's four layers), on by default. */
-async function hideWeatherFirst(page: Page) {
-  await beforeTheRoute(page, async () => {
-    await grabberTo(page, "full");
-    await page.getByTestId("weather-toggle").click();
-  });
+/** On, from the route's ••• menu's Class B Weather (since the Map card's
+ *  layers became four, 2026-11-14), before the route is loaded; kept per
+ *  browser, so the training map has them too. */
+async function showClassBFirst(page: Page) {
+  await routeMenuSwitch(page, "class-b-toggle", true);
 }
 
-test("with the Weather layer off, a route does not come covered in them", async ({ page }) => {
-  // The chips are the Weather layer's: off, none of them.
-  await hideWeatherFirst(page);
+test("off until asked for: a route does not come covered in them", async ({ page }) => {
+  // Thirty extra markers are useful on a cross-country that passes one
+  // and clutter on a route that does not.
   await page.goto(PLAN);
   await routeDrawn(page);
   await page.waitForTimeout(500); // a moment for any chips that were coming
   expect(await chips(page)).toHaveLength(0);
 });
 
-test("with the Weather layer, every Class B is on the map by name", { tag: "@smoke" }, async ({ page }) => {
+test("switched on, every Class B is on the map by name", { tag: "@smoke" }, async ({ page }) => {
+  await showClassBFirst(page);
   await page.goto(PLAN);
   await routeDrawn(page);
   // The real planner: thirty is what the FAA's own shapefile yields.
@@ -116,6 +114,7 @@ test("with the Weather layer, every Class B is on the map by name", { tag: "@smo
 
 test("the marker's weather dot is the field's own flight category", async ({ page }) => {
   await mockClassB(page);
+  await showClassBFirst(page);
   await page.goto(PLAN);
   await routeDrawn(page);
 
@@ -130,6 +129,7 @@ test("tapping one opens its card in the panel, with Fly Here, as any airport on 
   // pin for its terminal chart; the field's card in the panel has the
   // weather, the radio and the runways, and the settings' TAC the chart.
   await mockClassB(page);
+  await showClassBFirst(page);
   await page.goto(PLAN);
   await routeDrawn(page);
 
@@ -153,6 +153,7 @@ test("a tap a little off one's mark opens its card, as off any airport on the ch
   // where near any other field it opened that field's. (The chart's own
   // O'Hare, from the overlay tiles, is under the chip, and opens the same.)
   await mockClassB(page);
+  await showClassBFirst(page);
   // Chicago Executive's card, O'Hare's chip some 65 points south of it.
   await page.goto("/app/plan?place=KPWK");
   await expect(sideDrawer(page).getByTestId("place-card")).toBeVisible({ timeout: slow(15000) });
@@ -165,6 +166,7 @@ test("on the training map, which has no card, a tap goes to the field at its ter
   // terminal charts from zoom 10 and a whole route fits at about 6 --
   // so the tap goes to where the sheet is.
   await mockClassB(page);
+  await showClassBFirst(page);
   await page.goto("/app/dev?dep=C81&dest=KDLH");
   await expect.poll(ord(page), { timeout: 20000 }).not.toBeNull();
 
@@ -185,6 +187,7 @@ test("on an IFR base, the settings' TAC draws the IFR area chart at a Class B fi
     if (r.url().includes("/ifr_area/")) areaTiles.push(r.url());
   });
   await mockClassB(page);
+  await showClassBFirst(page);
   await page.goto("/app/dev?dep=C81&dest=KDLH");
   await openMapSettings(page);
   await grabberTo(page, "full");
