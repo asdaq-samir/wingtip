@@ -172,6 +172,7 @@ export type ChecklistPhasesAnswer = string[];
 export type ChecklistSectionAnswer = number | null;
 export type ChecklistWriteAnswer = string;
 export type CheckpointsSelectAnswer = number[];
+export type ClassBAtAltitudeAnswer = number | null;
 export type ClosestApproachAnswer = {
   in_min: number;
   nm: number;
@@ -1491,6 +1492,13 @@ export interface EngineContract {
     answer: CheckpointsSelectAnswer;
   };
   /**
+   * Which Class B band along a route's profile holds an altitude (14 CFR 91.131(a)(1): an ATC clearance before entering Class B): the index of the first band of class B whose floor is at or under altitude_ft and whose ceiling is at or over it, both ft MSL as the FAA's Class Airspace shapefile publishes them; null where none does. A band with no ceiling given holds every altitude from its floor up, so a clearance is said to be needed rather than not (Class B tops run from 7,000 ft at KMSY to 12,500 ft at KDEN, so no one figure stands in for it).
+   */
+  class_b_at_altitude: {
+    input: ClassBAtAltitudeInput;
+    answer: ClassBAtAltitudeAnswer;
+  };
+  /**
    * Named fixes to fly through so neither leg comes within a mile of the Class B whose floor is under below_ft (route/options/classb.rs): those adding the least distance first, a VFR waypoint before a GPS fix that saves under 10 nm, at most 5, none adding over 40 nm.
    */
   class_b_detours: {
@@ -2196,6 +2204,13 @@ export interface EngineContract {
   gonogo_risk_line: {
     input: GonogoRiskLineInput;
     answer: GonogoRiskLineAnswer;
+  };
+  /**
+   * The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_verdict_items' fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those).
+   */
+  gonogo_route_figures: {
+    input: GonogoRouteFiguresInput;
+    answer: GonogoRouteFiguresAnswer;
   };
   /**
    * The runway check at each field taken off from or landed at, fields and runways by index: the runway, pressure and density altitude, wind along and across it, and the POH's distances against its length (14 CFR 91.103(b)). Empty without both tables.
@@ -5277,6 +5292,14 @@ export interface CheckpointsSelectInput {
   min_score?: number | null;
   length_nm?: number | null;
 }
+export interface ClassBAtAltitudeInput {
+  bands: {
+    class: string;
+    floor_ft: number;
+    ceiling_ft?: number | null;
+  }[];
+  altitude_ft: number;
+}
 export interface ClassBDetoursInput {
   /**
    * @minItems 2
@@ -7529,6 +7552,40 @@ export interface GonogoFactor {
 export interface GonogoRiskLineInput {
   level: string;
   score: number;
+}
+export interface GonogoRouteFiguresInput {
+  /**
+   * The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.
+   */
+  totals: {
+    fuel_margin_gal?: number | null;
+    fuel_required_gal?: number | null;
+    reserve_min?: number | null;
+    hops?:
+      | {
+          totals?: {
+            fuel_margin_gal?: number | null;
+            fuel_required_gal?: number | null;
+            reserve_min?: number | null;
+          };
+        }[]
+      | null;
+  } | null;
+  /**
+   * How many TFRs the briefing lists along the route.
+   */
+  tfr_count?: number | null;
+  /**
+   * The NOTAM ids of the TFRs the route crosses while they are in force.
+   */
+  crossed: string[];
+}
+export interface GonogoRouteFiguresAnswer {
+  least_margin_gal: number | null;
+  required_gal: number | null;
+  reserve_min: number | null;
+  tfrs_in_force: string[];
+  tfrs_near: number;
 }
 export interface GonogoRunwayChecksInput {
   aircraft?: {

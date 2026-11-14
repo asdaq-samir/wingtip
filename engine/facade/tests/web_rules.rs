@@ -103,3 +103,21 @@ fn a_solo_endorsement_lapsing_within_a_week() {
         assert_eq!(got["standing"], case["standing"], "{case}");
     }
 }
+
+/// The Profile card's Class B band at an altitude (14 CFR 91.131(a)(1)),
+/// asked of the engine where the view compared it with a 10,000 ft guess.
+#[test]
+fn the_class_b_band_an_altitude_is_in() {
+    for case in fixture()["classBAtAltitude"].as_array().unwrap() {
+        assert_eq!(ask("class_b_at_altitude", case["input"].clone()), case["band"], "{}", case["about"]);
+    }
+}
+
+/// The Go / No-Go's fuel and TFR figures, one copy for the web and the
+/// planner (14 CFR 91.151(a), 91.167; 91.137-91.145).
+#[test]
+fn the_go_no_go_route_figures() {
+    for case in fixture()["gonogoRouteFigures"].as_array().unwrap() {
+        assert_same(&ask("gonogo_route_figures", case["input"].clone()), &case["answer"], &case["about"]);
+    }
+}

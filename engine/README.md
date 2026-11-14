@@ -243,10 +243,15 @@ Then the callers switch to the name and the old copy is deleted.
   findings and the line over them, the pilot's minimums, icing under IFR,
   the risk assessment and the airplane's airworthiness, the runway check,
   the weight and balance and the pass times (the web's lib/verdict and
-  the modules it is fed from). Each is a name in `call.rs`
+  the modules it is fed from), and the route's fuel and TFR figures the
+  findings are put together from (`gonogo_route_figures`: the least fuel
+  margin, the fuel required, the reserve, the TFRs in force and near), so
+  neither shell works them out. Each is a name in `call.rs`
   (`gonogo_verdict_items`, `gonogo_risk`, `gonogo_runway_checks` ...), asked by
   the web app (callEngine), the planner's app.gonogo (wingtip_native.call)
-  and the phones (the generated `call`).
+  and the phones (the generated `call`). Which Class B band of a route's
+  profile holds an altitude is `class_b_at_altitude` (crates/airspace,
+  14 CFR 91.131), the Profile card's "clearance needed".
 - Runways, the wind on them and the traffic pattern are the engine's too
   (`crates/brief`): a wind along and across a runway and the end it favours,
   the runway flown (the pilot's pick, else into the wind, AC 90-66C

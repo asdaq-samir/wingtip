@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from wingtip import flight_plan as fp
 from wingtip import planning as planning_module
 
+from . import ask as engine_ask
 from . import live as live_reports
 from .icing import icing_at_altitude, icing_line
 from .minimums import ceiling_unknown_at, under_minimums
@@ -250,8 +251,14 @@ def findings_for(
         scheduled = sua_when(area.get("times_of_use"), at, area.get("time_zone")) if at else "unknown"
         special_use.append({"name": area["name"], "when": live_reports.live_when(scheduled, status_now.get(area["name"]), at)})
 
-    hops = (totals or {}).get("hops") or []
-    margins = [m for m in [(totals or {}).get("fuel_margin_gal"), *(h["totals"].get("fuel_margin_gal") for h in hops)] if m is not None]
+    # The route's fuel and TFR figures, the engine's one copy the web's Brief
+    # asks too (gonogo_route_figures; the aviation audit's AV-12).
+    route_figures = engine_ask(
+        "gonogo_route_figures",
+        totals=totals or None,
+        tfr_count=len((briefing or {}).get("tfrs") or []),
+        crossed=[t["notam_id"] for t in tfrs_crossed],
+    )
     icing = (
         icing_at_altitude(selection, [leg["altitude_ft"] for leg in legs], briefing.get("pireps") or [])
         if ifr and nav and briefing
@@ -274,7 +281,7 @@ def findings_for(
             "hazards": 0 if unchecked("hazards") and unchecked("gairmets") else len(hazard_names),
             "night": (totals or {}).get("night") is True,
             "night_passengers": (totals or {}).get("night_passengers"),
-            "fuel_margin_gal": min(margins) if margins else None,
+            "fuel_margin_gal": route_figures["least_margin_gal"],
             "ifr": ifr,
             "currency": ask.currency.model_dump() if ask.currency else None,
             "day": day,
@@ -335,8 +342,8 @@ def findings_for(
         "airspace": {
             "pending": not briefing and not failed,
             "unchecked": bool(failed) or unchecked("tfrs"),
-            "in_force": [t["notam_id"] for t in tfrs_crossed],
-            "near": len((briefing or {}).get("tfrs") or []) - len(tfrs_crossed),
+            "in_force": route_figures["tfrs_in_force"],
+            "near": route_figures["tfrs_near"],
             "special_use": special_use,
         },
         "altitude": {
@@ -347,13 +354,9 @@ def findings_for(
         },
         "fuel": {
             "pending": not totals,
-            "margin_gal": min(margins) if margins else None,
-            "required_gal": (totals or {}).get("fuel_required_gal")
-            if (totals or {}).get("fuel_required_gal") is not None
-            else (max(h["totals"].get("fuel_required_gal") or 0 for h in hops) if hops else None),
-            "reserve_min": (totals or {}).get("reserve_min")
-            if (totals or {}).get("reserve_min") is not None
-            else (hops[0]["totals"].get("reserve_min") if hops else None),
+            "margin_gal": route_figures["least_margin_gal"],
+            "required_gal": route_figures["required_gal"],
+            "reserve_min": route_figures["reserve_min"],
             "ifr": ifr,
         },
         "runways": {

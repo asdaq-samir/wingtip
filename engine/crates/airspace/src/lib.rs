@@ -13,11 +13,13 @@
 //!   the planner gives or the phone's packs keep, and its SID and STAR;
 //! - view_marks, sua_tab: the special-use areas, their tabs and the fixes in view;
 //! - volume_span: how high a 3D map stands a volume, from its limits;
-//! - drills: the oral's flash cards (91.125, 91.155) and 91.155 by name.
+//! - drills: the oral's flash cards (91.125, 91.155) and 91.155 by name;
+//! - class_b_band: which Class B band of a profile holds an altitude (91.131).
 
 pub mod ahead;
 pub mod airspace;
 pub mod calls;
+pub mod class_b_band;
 pub mod drills;
 pub mod field_name;
 pub mod pack;

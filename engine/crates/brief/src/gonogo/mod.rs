@@ -19,6 +19,8 @@
 //! - `weight_balance`: the weight and balance (lib/weightBalance);
 //! - `permission`: a private or military-only departure, destination or
 //!   stop, a row of its own after the seven;
+//! - `route_figures`: the least fuel margin, the fuel required, the
+//!   reserve and the TFRs in force and near, from the nav log's totals;
 //! - `pass_times`: when the flight passes a point, and a TFR's or a
 //!   special-use area's times then (lib/passTimes);
 //! - `window`: "When should I go?" -- the findings for each departure hour
@@ -36,6 +38,7 @@ pub mod icing;
 pub mod minimums;
 pub mod pass_times;
 pub mod permission;
+pub mod route_figures;
 pub mod runways;
 pub mod verdict;
 pub mod weight_balance;

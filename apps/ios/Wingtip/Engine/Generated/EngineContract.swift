@@ -2143,6 +2143,28 @@ enum EngineContract {
         }
     }
 
+    struct ClassBAtAltitudeInput: Codable, Equatable, Sendable {
+        var bands: [EngineContract.ClassBAtAltitudeInputBandsItem]
+        var altitudeFt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case bands
+            case altitudeFt = "altitude_ft"
+        }
+    }
+
+    struct ClassBAtAltitudeInputBandsItem: Codable, Equatable, Sendable {
+        var `class`: String
+        var floorFt: Double
+        var ceilingFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case `class`
+            case floorFt = "floor_ft"
+            case ceilingFt = "ceiling_ft"
+        }
+    }
+
     struct ClassBDetoursAnswerItem: Codable, Equatable, Sendable {
         var ident: String
         var kind: String
@@ -5163,6 +5185,68 @@ enum EngineContract {
     struct GonogoRiskLineInput: Codable, Equatable, Sendable {
         var level: String
         var score: Double
+    }
+
+    struct GonogoRouteFiguresAnswer: Codable, Equatable, Sendable {
+        var leastMarginGal: Double?
+        var requiredGal: Double?
+        var reserveMin: Double?
+        var tfrsInForce: [String]
+        var tfrsNear: Double
+
+        enum CodingKeys: String, CodingKey {
+            case leastMarginGal = "least_margin_gal"
+            case requiredGal = "required_gal"
+            case reserveMin = "reserve_min"
+            case tfrsInForce = "tfrs_in_force"
+            case tfrsNear = "tfrs_near"
+        }
+    }
+
+    struct GonogoRouteFiguresInput: Codable, Equatable, Sendable {
+        /// The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.
+        var totals: EngineContract.GonogoRouteFiguresInputTotals?
+        /// How many TFRs the briefing lists along the route.
+        var tfrCount: Double?
+        /// The NOTAM ids of the TFRs the route crosses while they are in force.
+        var crossed: [String]
+
+        enum CodingKeys: String, CodingKey {
+            case totals
+            case tfrCount = "tfr_count"
+            case crossed
+        }
+    }
+
+    /// The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.
+    struct GonogoRouteFiguresInputTotals: Codable, Equatable, Sendable {
+        var fuelMarginGal: Double?
+        var fuelRequiredGal: Double?
+        var reserveMin: Double?
+        var hops: [EngineContract.GonogoRouteFiguresInputTotalsHopsItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case fuelMarginGal = "fuel_margin_gal"
+            case fuelRequiredGal = "fuel_required_gal"
+            case reserveMin = "reserve_min"
+            case hops
+        }
+    }
+
+    struct GonogoRouteFiguresInputTotalsHopsItem: Codable, Equatable, Sendable {
+        var totals: EngineContract.GonogoRouteFiguresInputTotalsHopsItemTotals?
+    }
+
+    struct GonogoRouteFiguresInputTotalsHopsItemTotals: Codable, Equatable, Sendable {
+        var fuelMarginGal: Double?
+        var fuelRequiredGal: Double?
+        var reserveMin: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case fuelMarginGal = "fuel_margin_gal"
+            case fuelRequiredGal = "fuel_required_gal"
+            case reserveMin = "reserve_min"
+        }
     }
 
     struct GonogoRunwayChecksAnswerItem: Codable, Equatable, Sendable {

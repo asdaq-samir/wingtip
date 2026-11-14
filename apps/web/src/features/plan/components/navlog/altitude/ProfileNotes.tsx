@@ -5,7 +5,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../..
 import { faaWords } from "../../../../../lib/advisories";
 import type { Detour, Leg, NavLogAltitude, RouteProfile, Totals } from "../../../../../lib/api/types";
 import { altFt } from "../../../../../lib/format";
-import { GROUP_HEADING, TEXT } from "../../../../../lib/text";
+import { callEngine } from "../../../../../lib/engine/engine";
+import { SECTION_TITLE, TEXT } from "../../../../../lib/text";
 import AltitudeReasoning from "../../AltitudeReasoning";
 
 /**
@@ -38,10 +39,18 @@ export default function ProfileNotes({
   onGoRound?: (via: string[], stopIndex: number) => void;
   winds?: Totals["winds"];
 }) {
-  const bravo =
+  // The Class B band the altitude in sight is in, the engine's rule (14 CFR
+  // 91.131(a)(1)): where the view compared it here and took a band with no
+  // ceiling to top out at 10,000 ft, which Class B tops from 7,000 to
+  // 12,500 ft are not (the aviation audit's AV-9).
+  const bravoAt =
     profile && shownAt !== null
-      ? (profile.airspace.find((a) => a.class === "B" && a.floor_ft <= shownAt && (a.ceiling_ft ?? 10_000) >= shownAt) ?? null)
+      ? callEngine("class_b_at_altitude", {
+          bands: profile.airspace.map((a) => ({ class: a.class, floor_ft: a.floor_ft, ceiling_ft: a.ceiling_ft ?? null })),
+          altitude_ft: shownAt,
+        })
       : null;
+  const bravo = profile && bravoAt != null ? (profile.airspace[bravoAt] ?? null) : null;
   const detours = nav?.class_b_detours ?? [];
   const cautions = nav?.cautions ?? [];
   return (
@@ -126,11 +135,11 @@ export default function ProfileNotes({
           <CollapsibleTrigger
             className={cn(
               "group relative flex min-h-11 w-full items-center gap-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              GROUP_HEADING,
+              SECTION_TITLE,
             )}
           >
             <ChevronRight className="size-4 text-tint transition-transform group-data-panel-open:rotate-90" aria-hidden />
-            How the altitude was chosen
+            How the Altitude Was Chosen
           </CollapsibleTrigger>
           {/* Kept in the page folded: the reasoning is found by the page's
               own search and read by its text while closed. */}

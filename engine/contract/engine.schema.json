@@ -4850,6 +4850,60 @@
       ],
       "additionalProperties": false
     },
+    "class_b_at_altitude": {
+      "description": "Which Class B band along a route's profile holds an altitude (14 CFR 91.131(a)(1): an ATC clearance before entering Class B): the index of the first band of class B whose floor is at or under altitude_ft and whose ceiling is at or over it, both ft MSL as the FAA's Class Airspace shapefile publishes them; null where none does. A band with no ceiling given holds every altitude from its floor up, so a clearance is said to be needed rather than not (Class B tops run from 7,000 ft at KMSY to 12,500 ft at KDEN, so no one figure stands in for it).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ClassBAtAltitudeInput",
+          "type": "object",
+          "properties": {
+            "bands": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "class": {
+                    "type": "string"
+                  },
+                  "floor_ft": {
+                    "type": "number"
+                  },
+                  "ceiling_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "class",
+                  "floor_ft"
+                ]
+              }
+            },
+            "altitude_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "bands",
+            "altitude_ft"
+          ]
+        },
+        "answer": {
+          "title": "ClassBAtAltitudeAnswer",
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ]
+    },
     "class_b_detours": {
       "description": "Named fixes to fly through so neither leg comes within a mile of the Class B whose floor is under below_ft (route/options/classb.rs): those adding the least distance first, a VFR waypoint before a GPS fix that saves under 10 nm, at most 5, none adding over 40 nm.",
       "type": "object",
@@ -12416,6 +12470,142 @@
         "answer"
       ],
       "additionalProperties": false
+    },
+    "gonogo_route_figures": {
+      "description": "The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_verdict_items' fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GonogoRouteFiguresInput",
+          "type": "object",
+          "properties": {
+            "totals": {
+              "description": "The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.",
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "fuel_margin_gal": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "fuel_required_gal": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "reserve_min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "hops": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "totals": {
+                        "type": "object",
+                        "properties": {
+                          "fuel_margin_gal": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "fuel_required_gal": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "reserve_min": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "tfr_count": {
+              "description": "How many TFRs the briefing lists along the route.",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "crossed": {
+              "description": "The NOTAM ids of the TFRs the route crosses while they are in force.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "totals",
+            "crossed"
+          ]
+        },
+        "answer": {
+          "title": "GonogoRouteFiguresAnswer",
+          "type": "object",
+          "properties": {
+            "least_margin_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "required_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "reserve_min": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "tfrs_in_force": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "tfrs_near": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "least_margin_gal",
+            "required_gal",
+            "reserve_min",
+            "tfrs_in_force",
+            "tfrs_near"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ]
     },
     "gonogo_runway_checks": {
       "description": "The runway check at each field taken off from or landed at, fields and runways by index: the runway, pressure and density altitude, wind along and across it, and the POH's distances against its length (14 CFR 91.103(b)). Empty without both tables.",
@@ -29622,6 +29812,7 @@
     "checklist_section",
     "checklist_write",
     "checkpoints_select",
+    "class_b_at_altitude",
     "class_b_detours",
     "class_b_entered",
     "clearance_places",
@@ -29723,6 +29914,7 @@
     "gonogo_picked_end",
     "gonogo_risk",
     "gonogo_risk_line",
+    "gonogo_route_figures",
     "gonogo_runway_checks",
     "gonogo_runway_flown",
     "gonogo_runway_in_use",

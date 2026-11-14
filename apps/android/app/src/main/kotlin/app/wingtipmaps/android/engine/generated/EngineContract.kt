@@ -2135,6 +2135,22 @@ object EngineContract {
     )
 
     @Serializable
+    data class ClassBAtAltitudeInput(
+        val bands: List<EngineContract.ClassBAtAltitudeInputBandsItem>,
+        @SerialName("altitude_ft")
+        val altitudeFt: Double,
+    )
+
+    @Serializable
+    data class ClassBAtAltitudeInputBandsItem(
+        val `class`: String,
+        @SerialName("floor_ft")
+        val floorFt: Double,
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+    )
+
+    @Serializable
     data class ClassBDetoursAnswerItem(
         val ident: String,
         val kind: String,
@@ -5191,6 +5207,66 @@ object EngineContract {
     data class GonogoRiskLineInput(
         val level: String,
         val score: Double,
+    )
+
+    @Serializable
+    data class GonogoRouteFiguresAnswer(
+        @SerialName("least_margin_gal")
+        val leastMarginGal: Double? = null,
+        @SerialName("required_gal")
+        val requiredGal: Double? = null,
+        @SerialName("reserve_min")
+        val reserveMin: Double? = null,
+        @SerialName("tfrs_in_force")
+        val tfrsInForce: List<String>,
+        @SerialName("tfrs_near")
+        val tfrsNear: Double,
+    )
+
+    @Serializable
+    data class GonogoRouteFiguresInput(
+        /**
+         * The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.
+         */
+        val totals: EngineContract.GonogoRouteFiguresInputTotals? = null,
+        /**
+         * How many TFRs the briefing lists along the route.
+         */
+        @SerialName("tfr_count")
+        val tfrCount: Double? = null,
+        /**
+         * The NOTAM ids of the TFRs the route crosses while they are in force.
+         */
+        val crossed: List<String>,
+    )
+
+    /**
+     * The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.
+     */
+    @Serializable
+    data class GonogoRouteFiguresInputTotals(
+        @SerialName("fuel_margin_gal")
+        val fuelMarginGal: Double? = null,
+        @SerialName("fuel_required_gal")
+        val fuelRequiredGal: Double? = null,
+        @SerialName("reserve_min")
+        val reserveMin: Double? = null,
+        val hops: List<EngineContract.GonogoRouteFiguresInputTotalsHopsItem>? = null,
+    )
+
+    @Serializable
+    data class GonogoRouteFiguresInputTotalsHopsItem(
+        val totals: EngineContract.GonogoRouteFiguresInputTotalsHopsItemTotals? = null,
+    )
+
+    @Serializable
+    data class GonogoRouteFiguresInputTotalsHopsItemTotals(
+        @SerialName("fuel_margin_gal")
+        val fuelMarginGal: Double? = null,
+        @SerialName("fuel_required_gal")
+        val fuelRequiredGal: Double? = null,
+        @SerialName("reserve_min")
+        val reserveMin: Double? = null,
     )
 
     @Serializable
