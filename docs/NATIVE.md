@@ -50,8 +50,11 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
   the shared engine (`engine/facade`), the same Rust the web app and the
   planner run, asked by name through `Engine.call` (the engine's `call`,
   through the Swift UniFFI writes from the Rust: the `WingtipEngine`
-  module, `engine/bindings/ffi/build-xcframework.sh`;
-  `engine/facade/src/call.rs` lists every name, and
+  module, `engine/bindings/ffi/build-xcframework.sh`, which writes the
+  engine's hash beside the framework, `engine.hash`, so
+  `scripts/dev/xcodebuild.sh` refuses to build against one made from
+  another engine; a panic in the engine comes back as `Engine.Refused`,
+  never a crash; `engine/facade/src/call.rs` lists every name, and
   `engine/contract/engine.schema.json` types each input and answer). An
   answer the app decodes can use a type generated from that contract,
   `apps/ios/Wingtip/Engine/EngineContract.swift` (`scripts/build/engine-contract-apps.sh`,
@@ -254,7 +257,7 @@ owner, 2026-11-03):
   "Stratux · 12 targets · GPS"; a field's FIS-B METAR and TAF show on its
   card's Weather tab when the weather service has none
   (`receiver_reports`); FIS-B NEXRAD is drawn over the chart
-  (`receiver_nexrad`, `NexradMapLayer`). Setup's Map section has ADS-B
+  (`receiver_nexrad`, `NexradMapLayer`). Settings › Data has ADS-B
   Receiver: Auto or Off. A receiver that only broadcasts to the network
   is heard once Apple grants the multicast entitlement.
 - **The privacy manifest** (`Wingtip/PrivacyInfo.xcprivacy`): what is
@@ -521,7 +524,7 @@ own elevation tiles.
 
 ## Downloads: the chart with no signal
 
-Setup → Chart → Downloads (`Wingtip/Offline/`) keeps a region's chart on
+Settings › Data › Downloads (`Wingtip/Offline/`) keeps a region's chart on
 the phone, as ForeFlight's and Garmin Pilot's downloads do: a sectional
 sheet's coverage ("Chicago", "Twin Cities"), a state, or the map's view,
 picked on a list or on a map of the sheets. The planner cuts each one
@@ -612,9 +615,16 @@ Tests: `OfflineFieldsTests`, `FlightExtrasTests` (Direct To put back),
   UserDefaults `1C8F.1`) and the Watch an empty one. The codes are
   Apple's NSPrivacyAccessedAPITypeReasons list's; `StorePrivacyTests`
   reads the bundled manifest. docs/privacy-inventory.md is the list.
-- **Sign-out and Delete Account** erase the path flown and the flight
-  recorder's track with their files, the session's answer cache and the
-  gateway's cookies (`Session.forgetDevice`, `forgetCookies`).
+- **Sign-out and Delete Account** erase the path flown, the flight
+  recorder's track and the logged tracks not yet sent with their files,
+  the session's answer cache and the gateway's cookies
+  (`Session.forgetDevice`, `forgetCookies`).
+- **A logged flight's track** goes to the saved flight it was flown as
+  (`AutoLogbook`); where that upload fails (no signal after landing), the
+  track is kept on the phone (`Logbook/UnsentTracks.swift`, beside the
+  recorder's file) before the recorder lets its copy go, Flight Logged
+  says so where the logged flight shows, with Try Again, and it is sent
+  again each time the app comes to the front with a network.
 - **Purpose strings** name the voice questions (microphone, speech) and
   the position read on in the background while flying (location).
 - **The first launch** puts up one stock alert, "A Planning Aid, Not for

@@ -165,7 +165,13 @@ stack from its own worktree, `~/Developer/wingtip-live`, so the main
 checkout stays on `main`; links the main checkout's `.env`, certificates
 and `data/`; follows the Mac's address if DHCP moved it (a new
 certificate and `PHONE_BASE_URL`); rebuilds what changed; and prints the
-address when every service is healthy.
+address when every service is healthy. Where the live tree holds a
+phone's engine built before (`apps/ios/Frameworks/WingtipEngine`,
+`apps/android/app/engine`) from an older engine than the branch's, it
+builds it again (`build-xcframework.sh`, `build-android.sh`, in a turn;
+from the shared store in a second or two when another worktree built
+that engine, else about a minute), so a phone build from the live tree
+never links an engine that lacks the branch's rules.
 
 ### The phone simulators
 
@@ -348,7 +354,7 @@ files. Every cache is keyed by content, so two builds at once (the turns
 
 | What | Where | Shared how | Pruned |
 |---|---|---|---|
-| The engine for each app: the web's `.wasm`, the iPhone's XCFramework, Android's libraries, the planner's wheel | `~/Library/Caches/wingtip/engine/<hash>/<kind>` | `build-engine-wasm.sh`, `build-xcframework.sh`, `build-android.sh` and `check.sh` copy it (an APFS clone) when the hash of `engine/**`, `.tool-versions` and the build script matches; otherwise they build and publish it with one atomic rename | the newest 5 engines kept |
+| The engine for each app: the web's `.wasm`, the iPhone's XCFramework, Android's libraries, the planner's wheel | `~/Library/Caches/wingtip/engine/<hash>/<kind>` | `build-engine-wasm.sh`, `build-xcframework.sh`, `build-android.sh` and `check.sh` copy it (an APFS clone) when the hash of `engine/**`, `.tool-versions` and the build script matches; otherwise they build and publish it with one atomic rename. The phones' builds write that hash beside them (`engine.hash`), which `xcodebuild.sh` and `go-live.sh` hold to the checkout's engine | the newest 5 engines kept |
 | Rust in Docker (`check.sh engine`, the `.wasm` built in a turn) | volume `wingtip-sccache-turn-<n>`, one per turn of `one-at-a-time.sh`: sccache's disk cache allows one server at a time, and a turn is one build | every worktree is mounted at the same path, so the engine's own crates hit too | sccache's own 10 GB cap per turn |
 | Rust in BuildKit (`check.sh`'s wheel) | cache mount `wingtip-sccache-buildkit`, one build at a time (`sharing=locked`) | as above, at `/engine` | 10 GB cap, and BuildKit's prune |
 | Xcode | `~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex`, and one DerivedData per turn (`wingtip-turn-<n>`) | `scripts/dev/xcodebuild.sh` (which `check.sh ios` uses): compilation caching with the checkout's and DerivedData's paths mapped out of the keys, in the turn's DerivedData | over 25 GB; DerivedData of removed worktrees removed |
@@ -363,7 +369,14 @@ you would give xcodebuild: it takes a turn and builds in that turn's
 DerivedData with the shared compilation cache, so the same commit in a
 second worktree builds from the cache. A changed Swift file compiles its
 module again (Swift's cache key is the whole module), the rest is
-replayed. Plain `xcodebuild`, Xcode itself and CI are unchanged.
+replayed. It refuses to build against an engine XCFramework made from
+another engine than the checkout's (its `engine.hash` against the
+engine store's hash of `engine/**`): the app asks its rules by name, so
+an old framework links without a word and every screen asking a newer
+rule says "the engine has no rule called …". Run
+`engine/bindings/ffi/build-xcframework.sh` (a copy from the store when
+another worktree built that engine). Plain `xcodebuild`, Xcode itself and
+CI are unchanged.
 
 What stays a worktree's own, on purpose: Cargo's target directory (Cargo
 judges a crate fresh by its files' mtimes, so a target shared between

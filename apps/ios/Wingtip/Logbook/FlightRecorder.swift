@@ -47,10 +47,14 @@ final class FlightRecorder {
     @ObservationIgnored private var lastWritten = Date.distantPast
     /// Written off the main actor (BackgroundFile).
     @ObservationIgnored private let disk: BackgroundFile
+    /// The logged tracks not yet sent to their saved flight, in a file
+    /// beside this one: kept until they are, and erased with it.
+    let unsent: UnsentTracks
 
     init(file: URL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appending(path: "flight-recorder.json")) {
         disk = BackgroundFile(file)
+        unsent = UnsentTracks(file: file.deletingPathExtension().appendingPathExtension("unsent.json"))
         kept = (try? JSONDecoder().decode(Kept.self, from: Data(contentsOf: file))) ?? Kept()
         look()
     }
@@ -111,12 +115,14 @@ final class FlightRecorder {
         write()
     }
 
-    /// The track gone from the phone, its file with it: the pilot signed
-    /// out or deleted the account (Session.forgetDevice).
+    /// The track gone from the phone, its file with it, and the tracks not
+    /// yet sent: the pilot signed out or deleted the account
+    /// (Session.forgetDevice).
     func erase() {
         kept = Kept()
         endedAt = nil
         disk.remove()
+        unsent.erase()
     }
 
     private func write() {

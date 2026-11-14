@@ -38,8 +38,11 @@ extension CyclePacks {
         }
         let packs = kept(names, cycle: index.cycle)
         guard !packs.isEmpty else { return nil }
-        let answer = WingtipEngine.ahead(packs: packs, lat: lat, lon: lon, trackDeg: trackDeg, gsKt: groundspeedKt, altFt: altitudeFt,
-                                         vsFpm: 0, now: Int64(now.timeIntervalSince1970), tfrs: nil, tfrsAt: nil)
+        // An engine that failed (its refusal, never a crash) has no
+        // answer, as a region never kept has none: not "nothing ahead".
+        guard let answer = try? WingtipEngine.ahead(packs: packs, lat: lat, lon: lon, trackDeg: trackDeg, gsKt: groundspeedKt,
+                                                    altFt: altitudeFt, vsFpm: 0, now: Int64(now.timeIntervalSince1970), tfrs: nil,
+                                                    tfrsAt: nil) else { return nil }
         return try? Planner.json.decode(Ahead.self, from: Data(answer.utf8))
     }
 

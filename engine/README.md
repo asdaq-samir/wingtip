@@ -439,6 +439,22 @@ Then the callers switch to the name and the old copy is deleted.
   (`bindings/ffi/bindgen`, at the `uniffi` crate's own version) from the
   built library each time it is built, and never committed or edited
   (`bindings/ffi/uniffi.toml` names their modules).
+  Every exported function runs its rule under `catch_unwind`
+  (`guarded`), so a panic in the engine comes back as the call's
+  refusal (`EngineError::Refused`, Swift's `Engine.Refused`, Kotlin's
+  `EngineException`) and the app goes on; UniFFI catches a panic too, but
+  hands it to the generated Swift of a function that cannot fail as a
+  `try!`, a crash. It needs the release profile's `panic = "unwind"`
+  (`Cargo.toml`, said aloud there); only the WebAssembly's own profile
+  aborts. A cycle pack's header is read with its count of sections held
+  to what the file can hold before anything is allocated (`pack.rs`), as
+  an allocation too large aborts rather than panics.
+  The phones' builds write the engine's hash (the engine store's,
+  `scripts/build/shared-cache.sh`) beside what they build, `engine.hash`:
+  `scripts/dev/xcodebuild.sh` refuses to build against an XCFramework
+  from another engine, and `scripts/dev/go-live.sh` builds the live
+  tree's again, since an app linked against an older engine builds and
+  only says "the engine has no rule called …" on a screen.
   `bindings/ffi/build-xcframework.sh` builds a static library for the
   iPhone and the simulator into
   `apps/ios/Frameworks/WingtipEngine/WingtipEngineFFI.xcframework` with

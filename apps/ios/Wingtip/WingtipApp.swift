@@ -97,6 +97,10 @@ struct WingtipApp: App {
                 // background refresh asked for as it goes behind.
                 .task { await Repeating.every(60) { flight.weatherWatch.tick(plan: plan) } }
                 .onChange(of: scenePhase) { _, phase in if phase == .background { Task { await WeatherWatch.schedule() } } }
+                // A logged flight's track that could not be sent (no
+                // signal after landing) sent again each time the app is
+                // in front with a network (AutoLogbook, UnsentTracks).
+                .task(id: scenePhase) { if scenePhase == .active { await screens.autoLogbook.sendUnsentWhenOnline() } }
                 .task { await flight.watchLink.run(plan: plan, ownShip: ownShip) }
                 // The cockpit's ADS-B receiver on the Wi-Fi, read once a
                 // second while the setting is Auto (Receiver).

@@ -315,7 +315,8 @@ view without dismissing the sheet").
   a change to the flight or a warning, never a plain tap.
 - **Data refresh.** Data refreshes by itself ("Don't make people
   responsible for initiating every update", [HIG Progress][hig-progress]).
-  `.refreshable` is a backup, not the only way.
+  No pull to refresh in a sheet (rules.md §2.2); a card's manual refresh
+  is in its ••• menu or its Weather tab.
 
 ### Errors, empties and warnings
 
@@ -1123,8 +1124,8 @@ default.
 No Apple app's emergency screen was verified (Emergency SOS is a system
 feature, not checked).
 
-**Structure (`fullScreenCover`, the map still visible in its top
-third):**
+**Structure (`SheetPage.emergency`, a card at the large detent, opened
+by its model through `CardTriggers`; its own map at the top):**
 
 1. **The bar.** A Close (✕) at the top right, where iOS puts the
    system's close and every card of the app has it (the owner's card
