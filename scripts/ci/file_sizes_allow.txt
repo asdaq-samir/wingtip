@@ -53,7 +53,6 @@ apps/web/src/lib/audioInput.test.ts 632
 apps/web/src/lib/audioInput.ts 592
 apps/web/src/lib/map/gl/glOverlays.ts 465
 apps/web/src/lib/map/gl/glStyle.ts 577
-apps/web/src/lib/preferences.ts 625
 apps/web/src/lib/queryClient.ts 442
 engine/crates/airspace/src/ahead.rs 1032
 engine/crates/airspace/src/rules.rs 553

@@ -11,23 +11,32 @@
  * planner found for it; this keeps the ticks.
  */
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 const NONE: Record<string, boolean> = {};
 
 /**
  * What the pilot has ticked, for one flight: another route or departure
  * time starts the list again -- it is about this flight, where the risk
- * assessment's IMSAFE is about the pilot today and stays (lib/frat).
+ * assessment's IMSAFE is about the pilot today (lib/frat). Kept on this
+ * device with the flight it is for, so a reload does not lose the ticks
+ * (the web audit's WEB-15); localStorage a convenience, as the
+ * preferences' is.
  */
 export const usePreflight = create<{
   flight: string;
   ticked: Record<string, boolean>;
   tick: (flight: string, key: string, on: boolean) => void;
-}>((set) => ({
-  flight: "",
-  ticked: NONE,
-  tick: (flight, key, on) => set((s) => ({ flight, ticked: { ...(s.flight === flight ? s.ticked : NONE), [key]: on } })),
-}));
+}>()(
+  persist(
+    (set) => ({
+      flight: "",
+      ticked: NONE,
+      tick: (flight, key, on) => set((s) => ({ flight, ticked: { ...(s.flight === flight ? s.ticked : NONE), [key]: on } })),
+    }),
+    { name: "wingtip.preflight", partialize: (s) => ({ flight: s.flight, ticked: s.ticked }) },
+  ),
+);
 
 /** The ticks for `flight`: none when another flight's are kept. */
 export const useTicked = (flight: string) => usePreflight((s) => (s.flight === flight ? s.ticked : NONE));

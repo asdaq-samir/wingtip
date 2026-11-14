@@ -22,6 +22,8 @@
  * answers, not copies here.
  */
 import { create } from "zustand";
+import { localDay } from "./format";
+import { persist } from "zustand/middleware";
 import type { Currency, Inspections, Squawk } from "./api/types";
 import { inspectionsInput, riskFactor, squawksInput } from "./airworthiness";
 import { callEngine, type EngineAnswer } from "./engine/engine";
@@ -149,16 +151,37 @@ export function riskLine(a: { level: string; score: number }): string {
  * The assessment for the flight on screen, shared between the briefing
  * that works it out and the Save button in the drawer's header that
  * files it with the flight; and what the pilot ticked, which is about
- * them today, not the route, so it stays for the session.
+ * them today, not the route: kept on this device for the day it was
+ * ticked on (this device's calendar day), so a reload keeps it and
+ * tomorrow starts again (the web audit's WEB-15).
  */
 export const useRisk = create<{
+  day: string;
   ticked: Record<string, boolean>;
   assessment: Assessment | null;
   tick: (key: string, on: boolean) => void;
   setAssessment: (assessment: Assessment | null) => void;
-}>((set) => ({
-  ticked: {},
-  assessment: null,
-  tick: (key, on) => set((s) => ({ ticked: { ...s.ticked, [key]: on } })),
-  setAssessment: (assessment) => set({ assessment }),
-}));
+}>()(
+  persist(
+    (set) => ({
+      day: localDay(),
+      ticked: {},
+      assessment: null,
+      tick: (key, on) =>
+        set((s) => {
+          const today = localDay();
+          return { day: today, ticked: { ...(s.day === today ? s.ticked : {}), [key]: on } };
+        }),
+      setAssessment: (assessment) => set({ assessment }),
+    }),
+    {
+      name: "wingtip.risk",
+      partialize: (s) => ({ day: s.day, ticked: s.ticked }),
+      // Another day's ticks are not today's.
+      merge: (kept, current) => {
+        const k = kept as { day?: string; ticked?: Record<string, boolean> } | undefined;
+        return k?.day === localDay() ? { ...current, day: k.day, ticked: k.ticked ?? {} } : current;
+      },
+    },
+  ),
+);

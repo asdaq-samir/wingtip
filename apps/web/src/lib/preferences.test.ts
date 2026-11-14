@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NO_AIRPLANE, forgetPilot, migratePreferences, usePreferences } from "./preferences";
+import { NO_AIRPLANE, forgetPilot, keptPreferences, migratePreferences, usePreferences } from "./preferences";
 import { NO_MINIMUMS } from "./minimums";
 
 describe("forgetPilot", () => {
@@ -66,5 +66,13 @@ describe("the settings taken out (2026-11-13)", () => {
     expect(kept).not.toHaveProperty("terrain");
     expect(kept).not.toHaveProperty("ownShipLook");
     expect(kept).toMatchObject({ base: "ifr_low" });
+  });
+});
+
+describe("what is kept", () => {
+  it("writes the map's overlay and its strength with the rest, and no functions", () => {
+    const kept = keptPreferences({ ...usePreferences.getState(), overlay: "usgs", overlayStrength: "full" }) as Record<string, unknown>;
+    expect(kept).toMatchObject({ overlay: "usgs", overlayStrength: "full", base: expect.any(String) });
+    expect(Object.values(kept).some((v) => typeof v === "function")).toBe(false);
   });
 });
