@@ -5,6 +5,7 @@
 //! the two to the same answer on every TFR the FAA lists.
 
 use crate::{json, xml};
+use wingtip_core::faa_case::faa_words;
 
 /// The rules a TFR is issued under (14 CFR part 91 and 99, and 49 USC
 /// 44812 for drones), as wingtip.tfr names them.
@@ -77,21 +78,13 @@ pub fn utc(text: &str) -> Option<String> {
     (time_ok && h < 24 && m < 60 && s < 60).then(|| format!("{t}Z"))
 }
 
-/// A NOTAM's words as a sentence: in capitals, lower case after the first
-/// letter (Python's capitalize); otherwise kept as written.
+/// A NOTAM's words as a sentence: the FAA's capitals in sentence case
+/// with its codes kept (core's faa_words, the one copy: "VIP MOVEMENT"
+/// reads "VIP movement", not "Vip movement"); text with lower case in it
+/// kept as written.
 pub fn sentence(text: &str) -> Option<String> {
     let t = text.trim();
-    if t.is_empty() {
-        return None;
-    }
-    let cased = t.chars().any(|c| c.is_lowercase() || c.is_uppercase());
-    let upper = cased && !t.chars().any(char::is_lowercase);
-    if !upper {
-        return Some(t.to_string());
-    }
-    let mut chars = t.chars();
-    let first = chars.next().map(|c| c.to_uppercase().collect::<String>()).unwrap_or_default();
-    Some(first + &chars.as_str().to_lowercase())
+    (!t.is_empty()).then(|| faa_words(t))
 }
 
 fn height(area: &xml::Element, side: &str) -> Option<(f64, Reference)> {
@@ -179,4 +172,18 @@ pub fn to_json(d: &Detail) -> String {
     crate::tfr_contact::to_json(&mut out, d.contact.as_ref());
     out.push('}');
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::sentence;
+
+    #[test]
+    fn a_tfrs_purpose_keeps_its_codes_in_sentence_case() {
+        // tfr.faa.gov's txtDescrPurpose as sent, in capitals (AV-18).
+        assert_eq!(sentence("VIP MOVEMENT").as_deref(), Some("VIP movement"));
+        assert_eq!(sentence(" UAS OPERATIONS IN SUPPORT OF FAA ").as_deref(), Some("UAS operations in support of FAA"));
+        assert_eq!(sentence("Space operations").as_deref(), Some("Space operations"));
+        assert_eq!(sentence("  "), None);
+    }
 }

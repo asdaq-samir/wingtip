@@ -183,7 +183,7 @@ pub struct Field {
 /// from the south). Some([]) where the straight line is clear already;
 /// None where there is no such way in reach.
 pub fn way_round(start: Point, end: Point, ceiling_ft: f64, heights_ft: &[f64], fields: &[Field]) -> Result<Option<Vec<Stone>>, String> {
-    let top = highest_cruise_ft(ceiling_ft);
+    let top = highest_cruise_ft(Some(ceiling_ft));
     let f = frame(start, end);
     let width = f.cols * PER_CELL;
     if heights_ft.len() != f.rows * PER_CELL * width {
@@ -321,7 +321,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         out.push_str(&format!(",\"rows\":{},\"cols\":{},\"cell_deg\":", f.rows, f.cols));
         json::number(&mut out, CELL_DEG);
         out.push_str(&format!(",\"per_cell\":{PER_CELL},\"top_ft\":"));
-        json::number(&mut out, highest_cruise_ft(r.num(v, "ceiling_ft")?));
+        json::number(&mut out, highest_cruise_ft(Some(r.num(v, "ceiling_ft")?)));
         // The fields wanted: those within FIELD_NM of the grid.
         let (s, w, n, e) =
             geo::corridor_bbox((f.lat0, f.lon0), (f.lat0 + f.rows as f64 * CELL_DEG, f.lon0 + f.cols as f64 * CELL_DEG), FIELD_NM);
@@ -397,10 +397,10 @@ mod tests {
     #[test]
     fn the_highest_cruise_either_way_under_the_ceiling() {
         // A PA-28-140's 10,950 ft: 9,500 east, 10,500 west, the lower kept.
-        assert_eq!(highest_cruise_ft(10_950.0), 9_500.0);
-        assert_eq!(highest_cruise_ft(13_500.0), 12_500.0);
+        assert_eq!(highest_cruise_ft(Some(10_950.0)), 9_500.0);
+        assert_eq!(highest_cruise_ft(Some(13_500.0)), 12_500.0);
         // Never into Class A (14 CFR 71.33).
-        assert_eq!(highest_cruise_ft(25_000.0), 16_500.0);
+        assert_eq!(highest_cruise_ft(Some(25_000.0)), 16_500.0);
     }
 
     #[test]

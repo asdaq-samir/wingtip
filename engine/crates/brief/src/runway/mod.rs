@@ -28,6 +28,8 @@
 
 pub mod calls;
 pub mod circuit;
+#[cfg(test)]
+mod crosswind_tests;
 pub mod marks;
 pub mod performance;
 pub mod pick;

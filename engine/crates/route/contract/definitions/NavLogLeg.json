@@ -91,7 +91,8 @@
       "type": [
         "number",
         "null"
-      ]
+      ],
+      "description": "The power flown; null where the profile names no cruise power (no power model: its TAS and burn as given at every altitude, no other airplane's power assumed)."
     },
     "oat_c": {
       "type": [
@@ -110,6 +111,13 @@
         "number",
         "null"
       ]
+    },
+    "climb_fuel_unknown": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "True on a leg with climb minutes where the profile gives no climb fuel flow: the climb's gallons are not counted in its fuel, for the app to ask for the figure (no multiple of the cruise burn is assumed)."
     },
     "phase": {
       "type": [

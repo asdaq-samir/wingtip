@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_route::navlog::calls::call",
-  "description": "The four altitude plans -- lowest and highest over the legal band, fastest by the winds, economical by the fuel, each paying its climbs -- and the route flown at each legal altitude (by_altitude). Empty where a leg has no legal altitude.",
+  "description": "The four altitude plans -- lowest and highest over the legal band, fastest by the winds, economical by the fuel (left out where the profile gives no climb fuel flow, whose climbs' fuel is not known), each paying its climbs -- and the route flown at each legal altitude (by_altitude). Empty where a leg has no legal altitude.",
   "type": "object",
   "properties": {
     "input": {

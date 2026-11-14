@@ -40,6 +40,8 @@
 //! - aviation_grids: the Aviation Weather Center's grids by level -- the
 //!   levels, AWC's icing categories, its turbulence thresholds by weight
 //!   class and its GFA cloud text;
+//! - freezing: freezing rain and drizzle (FZRA, FZDZ) in a field's METAR
+//!   or TAF, which ices an airplane out of cloud (AIM 7-1-20);
 //! - worse: what counts as a route's weather getting worse between two
 //!   readings of its briefing (AIM 7-1-6, 7-1-7).
 
@@ -50,6 +52,7 @@ pub mod contractions;
 pub mod cycles;
 pub mod flow_sample;
 pub mod forecast;
+pub mod freezing;
 pub mod gairmet_window;
 pub mod lighting_read;
 pub mod metar;

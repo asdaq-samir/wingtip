@@ -83,7 +83,8 @@ pub fn assemble_leg(
     leg.set("fuel_gal", Value::Number(fuel_gal));
     leg.set_num("tas_kt", tas_kt);
     leg.set_num("fuel_burn_gph", cruise.fuel_burn_gph);
-    leg.set_num("power_pct", cruise.power_pct);
+    // None where the profile names no cruise power: its figures as given.
+    leg.set_opt("power_pct", cruise.power_pct);
     leg.set_opt("oat_c", air.oat_c);
     leg.set_num("density_altitude_ft", cruise.density_altitude_ft.round_ties_even());
     Ok(leg)

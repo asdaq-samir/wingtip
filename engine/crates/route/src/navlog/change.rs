@@ -92,7 +92,8 @@ pub fn change(along_nm: f64, from_ft: f64, to_ft: f64, mode: Mode, profile: Opti
         ends_nm,
         ft_per_nm: (distance > 0.0).then(|| (to_ft - from_ft) / distance),
         minutes: Some(climb.minutes),
-        gallons: Some(climb.gallons),
+        // Not known where the profile gives no climb fuel flow.
+        gallons: p.airplane.climb_burn_gph().map(|_| climb.gallons),
     }
 }
 

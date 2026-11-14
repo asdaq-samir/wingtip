@@ -146,16 +146,21 @@ pub fn straightened(grid: &Grid, gs: &Vec<f64>, points: &[Point], marginal_cost:
     }
 }
 
-/// The hazards a way through `points` crosses -- those that close a cell,
-/// or (`marginal`) those that make one marginal -- in order, each once.
+/// The hazards a way through `points` crosses -- those that close a cell
+/// and the special-use areas over it (a restricted area, a MOA, a warning
+/// or an alert area: flown through, but said; special_use.rs), or
+/// (`marginal`) those that make one marginal -- in order, each once.
 pub fn crossed(grid: &Grid, points: &[Point], marginal: bool) -> Vec<i64> {
     let over = if marginal { &grid.marginal } else { &grid.closed };
     let mut out = Vec::new();
     for w in points.windows(2) {
         for c in grid.line_cells(w[0], w[1]) {
-            let h = over[grid.at(c)];
-            if h >= 0 && !grid.ends.contains(&c) && !out.contains(&h) {
-                out.push(h);
+            let at = grid.at(c);
+            let special = if marginal { &[][..] } else { &grid.special[at][..] };
+            for &h in std::iter::once(&over[at]).chain(special) {
+                if h >= 0 && !grid.ends.contains(&c) && !out.contains(&h) {
+                    out.push(h);
+                }
             }
         }
     }
