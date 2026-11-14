@@ -1,5 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
-import { drawn, grabberTo, mapStill, settle, slow } from "./helpers";
+import { drawn, grabberTo, mapStill, settle, showTraffic as showTrafficCard, slow } from "./helpers";
+import { sky } from "./cardEntries";
+import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
 /**
  * The traffic about the map (TrafficGl's symbol layers, read through
@@ -191,4 +193,25 @@ test("an answer missed while the map is panned is not said; traffic is said unav
   await expect(page.getByText("Traffic isn't available right now.")).toHaveCount(0);
   await page.clock.runFor(35_000);
   await expect(page.getByText("Traffic isn't available right now.")).toBeVisible({ timeout: slow(10_000) });
+});
+
+test("an airplane's card opens at its size: where it left and its record come into the lines held for them", async ({ page }) => {
+  await sky(page);
+  await installFrameRecorder(page);
+  await page.goto("/app/plan");
+  await settle(page);
+  await showTrafficCard(page);
+  await page.getByTestId("aircraft-search").fill("UAL2088");
+  const row = page.getByTestId("aircraft-card").getByTestId("aircraft-found").filter({ hasText: "UAL2088" }).first();
+  // Its ends' line and its record's rows from the first frame: they came in
+  // as its record answered, 48 px over its figures and the card under them,
+  // a layout shift of 0.114 (the flicker audit's FL-10).
+  await expectDrawnOnce(
+    page,
+    async () => {
+      await row.tap();
+      await expect(page.getByTestId("flight-card")).toBeVisible();
+    },
+    { card: "flight-card", maxMoves: Number.POSITIVE_INFINITY, shiftBudget: 0.01, settleMs: 2500 },
+  );
 });

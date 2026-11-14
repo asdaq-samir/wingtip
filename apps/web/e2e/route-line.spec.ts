@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { drawn, openPanel, settle, sideDrawer, slow } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
+import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -174,4 +175,54 @@ test("the routes stay open until their row folds them, to the way picked", async
   await expect(line.getByTestId("route-line-picked")).toHaveText(/^Fastest/);
   await expect(line.getByTestId("route-line-chip")).toHaveCount(0);
   await expect.poll(async () => (await drawn(page, "route-way-chips")).length).toBe(0);
+});
+
+test("another airplane picked keeps the Routes row in its place, dimmed, till its own ways come", async ({ page }) => {
+  // The first airplane's ways at once, the next one's a second late, as the
+  // planner's grid is for an airplane it has not planned.
+  let asked = 0;
+  await page.route(
+    (url) => url.pathname.endsWith("/route-options"),
+    async (route) => {
+      if (asked++ > 0) await new Promise((done) => setTimeout(done, 1200));
+      await route.fulfill({ json: WAYS });
+    },
+  );
+  await page.route(
+    (url) => url.pathname.endsWith("/traffic/registered"),
+    (route) => route.fulfill({ json: { n_number: "N181PA", mode_s_hex: "A1B2C3", manufacturer: "Piper", model: "PA-28-181", year: 1999 } }),
+  );
+  await installFrameRecorder(page);
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  const line = sideDrawer(page).getByTestId("route-line");
+  await expect(line.getByTestId("route-line-picked")).toHaveText(/^As typed/, { timeout: slow(30_000) });
+  // Whether the row is on the page, every frame from the pick on: it went
+  // for half a second at every change of airplane, the list under it
+  // jumping up and back (the flicker audit's FL-12).
+  await page.evaluate(() => {
+    const w = window as unknown as { routeLineGone: number };
+    w.routeLineGone = 0;
+    const until = performance.now() + 3000;
+    const look = () => {
+      if (!document.querySelector('[data-testid="route-line"]')) w.routeLineGone++;
+      if (performance.now() < until) requestAnimationFrame(look);
+    };
+    requestAnimationFrame(look);
+  });
+  const picker = page.getByTestId("aircraft-input");
+  await expectDrawnOnce(
+    page,
+    async () => {
+      await picker.fill("N181PA");
+      await picker.press("Enter");
+      // Kept, dimmed and not to be picked, while the new airplane's come.
+      await expect(line).toHaveAttribute("data-stale", "");
+      await expect(line).not.toHaveAttribute("data-stale", { timeout: slow(10_000) });
+    },
+    // Nothing moves but the figures' own widths as the plan comes in.
+    { maxMoves: 0, shiftBudget: 0.005, settleMs: 1000 },
+  );
+  expect(await page.evaluate(() => (window as unknown as { routeLineGone: number }).routeLineGone)).toBe(0);
 });

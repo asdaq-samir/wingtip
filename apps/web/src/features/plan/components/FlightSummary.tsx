@@ -13,6 +13,7 @@ import { awayFrom, nmAway } from "../../../lib/useAway";
 import AirplaneSketch from "./AirplaneSketch";
 import { squawkMeaning } from "../lib/squawks";
 import { lasted } from "./pastFlightFormat";
+import { SkeletonLine } from "../../../components/QueryState";
 
 /** The state on the summary's corner: climbing, level or descending in
  *  the air; on the ground; or an emergency's code (AIM 6-2-2, 6-3-4,
@@ -136,6 +137,20 @@ function End({
   );
 }
 
+/** An end still asked for, at an End's height: its ident's and town's lines. */
+function EndPending({ right = false }: { right?: boolean }) {
+  return (
+    <span className={cn("flex min-w-0 flex-col", right && "items-end")}>
+      <span className={TEXT.title}>
+        <SkeletonLine className="w-14" />
+      </span>
+      <span className={TEXT.note}>
+        <SkeletonLine className="w-20" />
+      </span>
+    </span>
+  );
+}
+
 /**
  * The flight in a card under the actions, at the owner's pick of the
  * redesign (A2): where it left and where it is bound, a bar between them
@@ -161,7 +176,11 @@ function FlightSummary({
   cpa,
   onOpenAirport,
   airport,
+  pending = false,
 }: {
+  /** Its ends, or its last flight's, still asked for: their lines held from
+   *  the first frame, so nothing under them moves (the flicker audit's FL-10). */
+  pending?: boolean;
   plane: TrafficAircraft | null;
   badge: StateBadge | null;
   /** Not heard now: "Landed KPSM 16:02", "Last heard 3 Oct". */
@@ -228,6 +247,13 @@ function FlightSummary({
           />
         </div>
       )}
+      {!from && pending && (
+        <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3" aria-hidden="true">
+          <EndPending />
+          <div className="h-1 rounded-full bg-foreground/15" />
+          <EndPending right />
+        </div>
+      )}
       {plane ? (
         <span className={cn("font-semibold text-foreground tabular-nums", TEXT.detail)} data-testid="flight-altitude">
           {reportedAltitude(plane.altitude_ft)} {climb}
@@ -236,10 +262,14 @@ function FlightSummary({
           {/* ADS-B's track is over the ground and true, not magnetic. */}
           {plane.track_deg != null && ` · ${bearing(plane.track_deg)} true`}
         </span>
+      ) : chip ? (
+        <span className={cn("font-semibold text-foreground", TEXT.detail)} data-testid="flight-chip">
+          {chip}
+        </span>
       ) : (
-        chip && (
-          <span className={cn("font-semibold text-foreground", TEXT.detail)} data-testid="flight-chip">
-            {chip}
+        pending && (
+          <span className={TEXT.detail} aria-hidden="true">
+            <SkeletonLine className="w-40" />
           </span>
         )
       )}

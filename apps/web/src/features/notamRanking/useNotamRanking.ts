@@ -53,6 +53,11 @@ export function notamRankingQuery(plan: ReturnType<typeof useBriefPlan.getState>
   const route = routeKeyOf(plan);
   return {
     queryKey: ["notams", "ranked", route, plan.eteMin, plan.altitudeFt, runways],
+    // The route's NOTAMs ranked before kept while they are ranked again for
+    // another time or altitude along it: the section went back to its
+    // skeleton and the Brief under it moved (the flicker audit's E).
+    placeholderData: <T>(previous: T | undefined, previousQuery?: { queryKey: readonly unknown[] }) =>
+      previousQuery?.queryKey[2] === route ? previous : undefined,
     queryFn: async ({ signal }: { signal: AbortSignal }) => {
       const ask = {
         dep: plan.dep,

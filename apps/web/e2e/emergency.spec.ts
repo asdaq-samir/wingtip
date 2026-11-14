@@ -1,6 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
-import { consoleSheet, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
+import { consoleSheet, grabberTo, inSheet, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
 import { pickAirplane } from "./startState";
+import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
+import { showPage } from "./oneSearch";
 
 /**
  * The emergency assistant (features/emergency), reached with no map button
@@ -163,4 +165,32 @@ test("each field's row says its reported visibility, and none where the report g
   const said = sheet.getByTestId("emergency-field-visibility");
   await expect(said).toHaveCount(1);
   await expect(said).toHaveText("Visibility 10+ sm");
+});
+
+test.describe("from the search, where the pilot is", () => {
+  test.use({ geolocation: { latitude: 42.3246, longitude: -88.0741 }, permissions: ["geolocation"] });
+
+  test("Emergency opens at its size: Direct To and the fields come into the room held for them", async ({ page }) => {
+    await installFrameRecorder(page);
+    await page.goto("/app/plan");
+    await settle(page);
+    await showPage(page, 0);
+    await grabberTo(page, "half");
+    await page.getByTestId("search-airports").fill("emergency");
+    const row = sideDrawer(page).getByTestId("search-do-screen-emergency");
+    await inSheet(page, row);
+    // Direct To's button and a row for each of the planner's twelve fields
+    // from its first frame, so nothing moves as they are ranked: the list
+    // jumped down 56 px under the pilot's thumb as Direct To came in over
+    // it, a layout shift of 0.845 (the flicker audit's FL-9).
+    await expectDrawnOnce(
+      page,
+      async () => {
+        await row.tap();
+        await expect(page.getByTestId("emergency-field").first()).toBeVisible({ timeout: slow(20_000) });
+      },
+      { card: "emergency-sheet", maxMoves: Number.POSITIVE_INFINITY, shiftBudget: 0.01 },
+    );
+    await expect(page.getByTestId("emergency-direct-to")).toBeVisible();
+  });
 });

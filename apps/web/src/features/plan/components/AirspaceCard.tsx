@@ -5,6 +5,7 @@ import { ACTION, CARD_ACTIONS } from "../../../lib/cardActions";
 import { cn } from "cn";
 import { PillSection } from "../../../components/Favorites";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
+import { SkeletonLine, SkeletonRows } from "../../../components/QueryState";
 import { api } from "../../../lib/api/client";
 import type { AirspaceBand } from "../../../lib/api/types";
 import { degreesMinutes, minimumsLine, shortAirspaceName } from "../../../lib/airspace";
@@ -146,7 +147,11 @@ export default function AirspaceCard({
   // (lib/cardActions): Direct To first, filled, as every card's is.
   const handlers = { directTo: onDirect, addToRoute: onAdd, holdHere: onHold };
   const testIds = { directTo: "point-direct", addToRoute: "point-add", holdHere: "point-hold" };
-  const actions = named
+  // Held from the first frame while the point is asked about: the tiles,
+  // not to be pressed till it is named, and its name's line, as both came
+  // in over the bands once it answered (the flicker audit's FL-11).
+  const naming = !!named || isLoading;
+  const actions = naming
     ? CARD_ACTIONS.point.map((name) => ({ ...ACTION[name], go: handlers[name], testId: testIds[name] })).filter((a) => a.go)
     : [];
   return (
@@ -163,10 +168,10 @@ export default function AirspaceCard({
           <>
             {degreesMinutes(point)}
             {ground !== null && ` · ground ${altFt(ground)} ft`}
-            {named && (
+            {naming && (
               <>
                 <br />
-                {named.name}
+                {named ? named.name : <SkeletonLine className="w-32" />}
               </>
             )}
           </>
@@ -178,7 +183,7 @@ export default function AirspaceCard({
       />
       {/* The point into the route, as Maps' dropped pin's card offers its
           directions: the first the tint's, the others its wash. */}
-      {named && actions.length > 0 && (
+      {naming && actions.length > 0 && (
         <div className="grid grid-cols-3 gap-2 pt-3" data-testid="point-actions">
           {/* The cards' own tiles (CardAction), as a VOR's and an airport's. */}
           {actions.map((a, i) => (
@@ -187,7 +192,8 @@ export default function AirspaceCard({
               icon={<a.icon />}
               label={a.label}
               filled={i === 0}
-              onClick={() => a.go!(named.ident, point)}
+              disabled={!named}
+              onClick={() => named && a.go!(named.ident, point)}
               testId={a.testId}
             />
           ))}
@@ -198,22 +204,27 @@ export default function AirspaceCard({
           the pill's size the lowest two, the title the way up; all the way
           up every one in the same place, the rest under them, so the top
           stays as it was (the owner's ask). */}
-      {data && (
+      {(data || isLoading) && (
         <div className="pt-3">
           <PillSection title="Airspace here" onMore={summary ? () => card?.setSize("full") : undefined} testId="airspace-summary">
             {/* Feet MSL (each range says so), from the FAA's airspace file
                 and the ground's height there: the chart is the authority. */}
             <ListGroup>
-              {(summary ? data.bands.slice(0, 2) : data.bands).map((band) => (
-                <BandRow key={`${band.floor_ft}-${band.class}`} band={band} ground={ground} />
-              ))}
+              {data ? (
+                (summary ? data.bands.slice(0, 2) : data.bands).map((band) => (
+                  <BandRow key={`${band.floor_ft}-${band.class}`} band={band} ground={ground} />
+                ))
+              ) : (
+                // The lowest two while they come, each a band's height: its
+                // class, its range and its minimums.
+                <SkeletonRows rows={2} lines={2} fetching="Fetching the airspace here…" />
+              )}
             </ListGroup>
           </PillSection>
         </div>
       )}
       {!summary && (
         <div className="space-y-5 pt-4">
-          {isLoading && <p className={cn("text-muted-foreground", TEXT.prose)}>Fetching the airspace here…</p>}
           {isError && (
             <p className={cn("text-destructive", TEXT.prose)}>The planner could not read the airspace here. Try again in a moment.</p>
           )}

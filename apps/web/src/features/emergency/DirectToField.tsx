@@ -24,6 +24,20 @@ export default function DirectToField({ vm }: { vm: EmergencyModel }) {
   const pointDirect = usePointActions((s) => s.directTo);
   const radioDirect = useRadioActions((s) => s.directTo);
   const [why, setWhy] = useState<string | null>(null);
+  const Icon = ACTION.directTo.icon;
+  // While the fields are asked for, the button in its place, not to be
+  // pressed yet: it came in over the list once they were in, and the list
+  // jumped down under a pilot's thumb (the flicker audit's FL-9).
+  if (!picked && vm.fix && !vm.ranked) {
+    return (
+      <div className="grid gap-1">
+        <Button size="lg" disabled aria-busy className="w-full justify-center gap-2" data-testid="emergency-direct-to-pending">
+          <Icon className="size-5" aria-hidden />
+          {ACTION.directTo.label}
+        </Button>
+      </div>
+    );
+  }
   if (!picked) return null;
   const go = async () => {
     setWhy(null);
@@ -40,7 +54,6 @@ export default function DirectToField({ vm }: { vm: EmergencyModel }) {
     if (failed) setWhy(failed);
     else vm.close();
   };
-  const Icon = ACTION.directTo.icon;
   return (
     <div className="grid gap-1">
       <Button size="lg" className="w-full justify-center gap-2" onClick={() => void go()} data-testid="emergency-direct-to">

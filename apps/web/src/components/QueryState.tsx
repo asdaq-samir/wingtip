@@ -36,6 +36,8 @@ export default function QueryState({
   fetching,
   failed,
   row = false,
+  rows,
+  lines = 1,
 }: {
   query: Asked;
   /** While it is asked for: "Fetching the squawks…". */
@@ -43,6 +45,12 @@ export default function QueryState({
   /** Where it could not be had: "The squawks could not be fetched." */
   failed: string;
   row?: boolean;
+  /** As many rows as are coming, where the count is known (a list of the
+   *  planner's twelve fields): each a row's height from the first frame,
+   *  so nothing under them moves as they come (the flicker audit's FL-9). */
+  rows?: number;
+  /** The lines under each row's name, as the rows that come have them. */
+  lines?: number;
 }) {
   // No connection: said so, not a skeleton for ever (a query paused for
   // one drew nothing at all) nor "could not be fetched" as if the server
@@ -78,6 +86,7 @@ export default function QueryState({
   // reader, where a grey line of "Fetching…" read as unfinished (the style
   // audit, 2026-10-26).
   if (query.isLoading || query.isError) {
+    if (row && rows) return <SkeletonRows rows={rows} lines={lines} fetching={fetching} />;
     const bars = (
       <span role="status" className="flex w-full flex-col gap-2 py-1">
         <span className="sr-only">{fetching}</span>
@@ -88,4 +97,44 @@ export default function QueryState({
     return row ? <ListRow title={bars} /> : <div className="px-1">{bars}</div>;
   }
   return null;
+}
+
+/** A line of words to come at the line's own height: the stock Skeleton
+ *  inline in a box set in the row's type, so it stands exactly as tall as
+ *  the line of words that will take its place. */
+export function SkeletonLine({ className }: { className?: string }) {
+  return <Skeleton aria-hidden="true" className={cn("inline-block h-[0.8em] align-middle", className)} />;
+}
+
+/** `rows` list rows still coming, each its name and `lines` lines under it
+ *  in the row's own type, so each is the height of the row that replaces
+ *  it; their words for a screen reader once. */
+export function SkeletonRows({ rows, lines = 1, fetching }: { rows: number; lines?: number; fetching: string }) {
+  return (
+    <>
+      {Array.from({ length: rows }, (_, i) => (
+        <ListRow
+          key={i}
+          data-testid="skeleton-row"
+          title={
+            <span role={i === 0 ? "status" : undefined}>
+              {i === 0 && <span className="sr-only">{fetching}</span>}
+              <SkeletonLine className="w-40" />
+            </span>
+          }
+          description={
+            lines > 0 && (
+              <>
+                {Array.from({ length: lines }, (_, l) => (
+                  <span key={l} className="block">
+                    <SkeletonLine className={l === lines - 1 ? "w-28" : "w-52"} />
+                  </span>
+                ))}
+              </>
+            )
+          }
+        />
+      ))}
+    </>
+  );
 }
