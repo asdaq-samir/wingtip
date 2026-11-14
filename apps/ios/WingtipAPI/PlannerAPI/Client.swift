@@ -9937,7 +9937,7 @@ public struct Client: APIProtocol {
     ///
     /// The public fields along a route with fuel, food, repair or a flight
     /// school, in route order, for the map's Stops while a course is drawn:
-    /// those no more than STOP_OFF_COURSE_NM off each flight's line, each
+    /// those no more than stop_corridor.STOP_OFF_COURSE_NM off each flight's line, each
     /// with its miles from its flight's departure, those it adds and how far
     /// off the course it is; what they have as round the pilot.
     ///
