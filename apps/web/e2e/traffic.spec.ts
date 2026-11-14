@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { drawn, grabberTo, mapStill, settle, slow } from "./helpers";
+import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
 /**
  * The traffic about the map (TrafficGl's symbol layers, read through
@@ -110,11 +111,12 @@ test("between reports each airplane is carried on along its track, as ForeFlight
   // (the account has no home) and flies in, which moved the mark too.
   await mapStill(page);
   const first = (await mark())[0]!;
-  await page.waitForTimeout(3000);
+  // East, some 0.4 nm in three seconds: points to the right at this zoom
+  // (about a point a second), and no jump back as the same report comes
+  // again. Polled, as the probe is written only when the map is idle,
+  // which tiles still coming in can hold off for a while after it rests.
+  await expect.poll(async () => (await mark())[0]!.x - first.x, { timeout: slow(10_000) }).toBeGreaterThan(2);
   const later = (await mark())[0]!;
-  // East, some 0.4 nm in three seconds: points to the right at this
-  // zoom, and no jump back as the same report comes again.
-  expect(later.x - first.x).toBeGreaterThan(2);
   expect(Math.abs(later.y - first.y)).toBeLessThan(2);
 });
 
@@ -191,4 +193,54 @@ test("an answer missed while the map is panned is not said; traffic is said unav
   await expect(page.getByText("Traffic isn't available right now.")).toHaveCount(0);
   await page.clock.runFor(35_000);
   await expect(page.getByText("Traffic isn't available right now.")).toBeVisible({ timeout: slow(10_000) });
+});
+
+test("an airplane tapped on the map is tracked with at most one move, never a move cut short or undone", async ({
+  page,
+}) => {
+  // The flicker audit's FL-7 (2026-11-14): the tracking's follow jumped the
+  // map to the airplane at every frame, which stopped the flight to it
+  // 124 ms in, seven camera calls in a second and a half. Now an airplane
+  // tapped on the chart, in sight already, is not flown to, and the follow
+  // (the camera's owner) keeps it where it is on the screen, moving the map
+  // only as the airplane moves on it. The map opened over Lake Michigan, the
+  // pilot's last position, with no card up; N174HA alone, 9 nm north of
+  // it, clear of any field's mark.
+  await installFrameRecorder(page);
+  await page.addInitScript(() => {
+    const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
+    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, traffic: true } }));
+    localStorage.setItem(
+      "wingtip.ownship",
+      JSON.stringify({ state: { enabled: false, follow: true, lastFix: { lat: 42.6, lon: -87.3 } }, version: 0 }),
+    );
+  });
+  const reported = Date.now();
+  const plane = { ...TRAFFIC.aircraft[0], lat: 42.75, lon: -87.3 };
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/traffic"),
+    (route) => route.fulfill({ json: { ...TRAFFIC, aircraft: [plane], age_s: Math.min(5, (Date.now() - reported) / 1000) } }),
+  );
+  // Its flight's history, route and photo not the suite's to ask for.
+  await page.route(
+    (url) => url.pathname.startsWith("/api/planner/traffic/") || url.hostname === "api.planespotters.net",
+    (route) => route.fulfill({ status: 404, json: { detail: "Not known." } }),
+  );
+  await page.goto("/app/plan");
+  await settle(page);
+  await expect.poll(async () => (await drawn(page, "traffic-marks")).length, { timeout: slow(15_000) }).toBe(1);
+  await mapStill(page);
+  const box = (await page.getByTestId("gl-map").first().boundingBox())!;
+  const mark = (await drawn(page, "traffic-marks"))[0]!;
+  await expectDrawnOnce(
+    page,
+    async () => {
+      await page.mouse.click(box.x + Number(mark.x), box.y + Number(mark.y));
+      await expect(page.getByTestId("flight-card")).toBeVisible();
+    },
+    { card: "flight-card", maxMoves: 1, settleMs: 2500 },
+  );
+  // Tracked and followed all the while.
+  await expect(page).toHaveURL(/[?&]flight=a1/);
+  await expect.poll(async () => (await drawn(page, "traffic-marks"))[0]?.tracked).toBe(true);
 });

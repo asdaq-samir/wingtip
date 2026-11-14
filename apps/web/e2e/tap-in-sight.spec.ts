@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { drawn, frontSheet, mapStill, settle, slow } from "./helpers";
+import { airportMarks, drawn, frontSheet, mapStill, settle, slow } from "./helpers";
+import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
 /**
  * A mark tapped low on the chart is brought into sight over the card it
@@ -115,4 +116,41 @@ test("a VOR tapped low on the chart is brought over its card once, and own ship'
   // And EON in sight over the card.
   await mapStill(page);
   expect((await eon(page))!.y).toBeLessThan((await card.boundingBox())!.y);
+});
+
+test("an airport tapped low on the chart below zoom 9 is eased over its card once, never flown to", async ({ page }) => {
+  // The flicker audit's FL-8 (2026-11-14): below the airport card's zoom a
+  // field tapped on the chart was flown to, and the flight aimed again as
+  // the card's room came, two moves for one tap; now a tap never flies
+  // (GlMapShell's place, the camera's owner).
+  test.skip(page.viewportSize()!.width >= 768, "a phone's card over the chart");
+  await installFrameRecorder(page);
+  await standing(page);
+  await page.goto("/app/plan");
+  await settle(page);
+  await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1, { timeout: slow(15000) });
+  await mapStill(page);
+  const zoom = async () => Number(await page.getByTestId("gl-map").first().getAttribute("data-zoom"));
+  const before = await zoom();
+  expect(before).toBeLessThan(9);
+  // A field low on the chart: above the sheet now, under the card at half.
+  const sheetTop = (await frontSheet(page).boundingBox())!.y;
+  const half = page.viewportSize()!.height / 2;
+  const low = async () =>
+    (await airportMarks(page)).filter((m) => m.y > half + 40 && m.y < sheetTop - 40 && m.x > 60 && m.x < page.viewportSize()!.width - 60);
+  await expect.poll(async () => (await low()).length, { timeout: slow(30000) }).toBeGreaterThan(0);
+  const field = (await low()).sort((a, b) => b.y - a.y)[0]!;
+  await expectDrawnOnce(
+    page,
+    async () => {
+      await page.mouse.click(field.x, field.y);
+      await expect(page.locator("[data-sheet-card][data-open]")).toHaveAttribute("data-panel", "half");
+    },
+    { card: "place-card", maxMoves: 1, settleMs: 2000 },
+  );
+  // Eased, not flown, and in at the zoom it was tapped at.
+  const moves = await page.evaluate(() => (window as unknown as { __wingtipCamera?: { call: string }[] }).__wingtipCamera ?? []);
+  expect(moves.filter((m) => m.call === "flyTo")).toEqual([]);
+  await mapStill(page);
+  expect(Math.abs((await zoom()) - before)).toBeLessThan(0.01);
 });
