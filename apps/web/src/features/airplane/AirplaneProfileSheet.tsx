@@ -19,8 +19,8 @@ import { FieldError } from "../../components/ui/field";
 import PastFlights from "../plan/components/PastFlights";
 import AircraftAlertMenu from "../plan/components/AircraftAlertMenu";
 import { FavoriteTile } from "../../components/FavoriteTile";
-import { CardTabBar, CardTabPanel } from "../../components/CardTabs";
-import { Tabs } from "../../components/ui/tabs";
+import { CardTabPanel } from "../../components/CardTabs";
+import { Tabs, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import AirplaneInfo from "./AirplaneInfo";
 import AirplanePhotoHead from "./AirplanePhotoHead";
 
@@ -144,9 +144,13 @@ export default function AirplaneProfileSheet() {
   // Opened for a figure: on Figures; else on Flights.
   const [tab, setTab] = useState<ProfileTab>(vm.focus ? "figures" : "flights");
   const tabs = [
-    { value: "flights" as const, label: <TabHint label="Flights" hint={card.flightCount ? String(card.flightCount) : null} /> },
-    { value: "info" as const, label: "Info" },
-    { value: "figures" as const, label: "Figures" },
+    {
+      value: "flights" as const,
+      label: <TabHint label="Flights" hint={card.flightCount ? String(card.flightCount) : null} />,
+      said: card.flightCount ? `Flights, ${card.flightCount}` : undefined,
+    },
+    { value: "info" as const, label: "Info", said: undefined },
+    { value: "figures" as const, label: "Figures", said: undefined },
   ];
   return (
     <SheetCard
@@ -195,7 +199,23 @@ export default function AirplaneProfileSheet() {
           <CardAction icon={<Share />} label="Share" onClick={card.share} testId="airplane-share" spoken={`Share ${vm.tail}`} />
         </div>
         <Tabs value={tab} onValueChange={(next) => setTab(next as ProfileTab)} className="gap-0">
-          <CardTabBar tabs={tabs} value={tab} onPick={setTab} activateOnFocus testIdPrefix="airplane-tab" />
+          {/* The airport card's tabs, the same stock control in the same look (PlaceTabBar; the
+              owner's T4 and P1, 2026-11-14): the picked tab in the tint, words at row size, each
+              with a 44-point area that does not grow it. */}
+          <TabsList variant="tint" activateOnFocus className="w-full group-data-[orientation=horizontal]/tabs:h-9">
+            {tabs.map((t) => (
+              <TabsTrigger
+                key={t.value}
+                value={t.value}
+                className={cn("group/tab min-w-0 px-1 before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']", TEXT.row)}
+                aria-label={t.said}
+                data-testid={`airplane-tab-${t.value}`}
+                onClick={() => setTab(t.value)}
+              >
+                {t.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
           {/* Its one status line under the tabs, where the airport card's weather line is: in the air
               from the live find, else where its last flight ended, else none heard (airplaneStatus). */}
           <p
