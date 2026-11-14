@@ -1,0 +1,47 @@
+{
+  "about": "A flight under way past a fuel stop (the engine's in_flight): the hop flown (0 the first, one more past each fuel stop in refuel_at, an index into the planner's totals' hops), the legs' burn since that hop began (hop_burnt_gal, what strip_fuel takes off the hop's own fuel required), the nav log's leg flown, and the fuel the plan leaves (fuel_now_gal: from the start's 40 gal, or past the stop from the tanks filled to 38, less 1 gal to start and taxi each time). East along the equator, a degree each leg: 60.108 nm on the WGS-84 ellipsoid (pyproj's Geod(ellps=\"WGS84\"): 111,319.49 m), legs of 6, 8 and 5 gal, each burnt evenly over its miles. Planning figures from the nav log, never the airplane's gauge. Figures to within 0.01. iOS: InFlight (the strip's fuel). Android: the strip's fuel.",
+  "route": {
+    "line": [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+      [0, 3]
+    ],
+    "points": [
+      { "name": "A", "lat": 0, "lon": 0 },
+      { "name": "B", "lat": 0, "lon": 1 },
+      { "name": "C", "lat": 0, "lon": 2 },
+      { "name": "D", "lat": 0, "lon": 3 }
+    ],
+    "legs": [
+      { "distance_nm": 60.1077, "fuel_gal": 6 },
+      { "distance_nm": 60.1077, "fuel_gal": 8 },
+      { "distance_nm": 60.1077, "fuel_gal": 5 }
+    ],
+    "fuel_start_gal": 40,
+    "fuel_full_gal": 38,
+    "taxi_fuel_gal": 1
+  },
+  "cases": [
+    {
+      "name": "halfway along the first leg, before the stop",
+      "input": { "fix": { "lat": 0, "lon": 0.5, "track_deg": 90, "speed_kt": 120 }, "refuel_at": [1] },
+      "answer": { "hop": 0, "leg": 0, "hop_burnt_gal": 3, "burnt_gal": 3, "fuel_now_gal": 36 }
+    },
+    {
+      "name": "halfway along the second leg, past the fuel stop at B",
+      "input": { "fix": { "lat": 0, "lon": 1.5, "track_deg": 90, "speed_kt": 120 }, "refuel_at": [1] },
+      "answer": { "hop": 1, "leg": 1, "hop_burnt_gal": 4, "burnt_gal": 10, "fuel_now_gal": 33 }
+    },
+    {
+      "name": "a quarter along the third leg, the second hop's burn counted from B",
+      "input": { "fix": { "lat": 0, "lon": 2.25, "track_deg": 90, "speed_kt": 120 }, "refuel_at": [1] },
+      "answer": { "hop": 1, "leg": 2, "hop_burnt_gal": 9.25, "burnt_gal": 15.25, "fuel_now_gal": 27.75 }
+    },
+    {
+      "name": "no fuel stop: one hop, the first tank",
+      "input": { "fix": { "lat": 0, "lon": 1.5, "track_deg": 90, "speed_kt": 120 }, "refuel_at": [] },
+      "answer": { "hop": 0, "leg": 1, "hop_burnt_gal": 10, "burnt_gal": 10, "fuel_now_gal": 29 }
+    }
+  ]
+}

@@ -6587,6 +6587,19 @@ object EngineContract {
          */
         @SerialName("taxi_counted")
         val taxiCounted: Boolean? = null,
+        /**
+         * The hop flown: 0 the first, one more for each fuel stop (refuel_at) behind the airplane; arriving at a stop it is still the hop ending there. An index into the planner's totals' hops, strip_fuel's `hop`.
+         */
+        val hop: Int,
+        /**
+         * The fuel the legs burn from the start of the hop flown to here, gallons: strip_fuel's `burnt_gal` for that hop. Planning figures from the nav log's legs, never the airplane's gauge.
+         */
+        @SerialName("hop_burnt_gal")
+        val hopBurntGal: Double,
+        /**
+         * The nav log's leg flown (legs[leg], from points[leg] to the next): the leg the next waypoint ends. Null with fewer than two points.
+         */
+        val leg: Int? = null,
         val next: EngineContract.InFlightAnswerNext? = null,
         val destination: EngineContract.InFlightAnswerDestination? = null,
     )

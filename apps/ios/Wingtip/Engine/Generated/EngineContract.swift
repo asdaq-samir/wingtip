@@ -6485,6 +6485,12 @@ enum EngineContract {
         var fuelNowGal: Double?
         /// Whether the start and taxi allowance was taken off the fuel figures (taxi_fuel_gal given).
         var taxiCounted: Bool?
+        /// The hop flown: 0 the first, one more for each fuel stop (refuel_at) behind the airplane; arriving at a stop it is still the hop ending there. An index into the planner's totals' hops, strip_fuel's `hop`.
+        var hop: Int
+        /// The fuel the legs burn from the start of the hop flown to here, gallons: strip_fuel's `burnt_gal` for that hop. Planning figures from the nav log's legs, never the airplane's gauge.
+        var hopBurntGal: Double
+        /// The nav log's leg flown (legs[leg], from points[leg] to the next): the leg the next waypoint ends. Null with fewer than two points.
+        var leg: Int?
         var next: EngineContract.InFlightAnswerNext?
         var destination: EngineContract.InFlightAnswerDestination?
 
@@ -6503,6 +6509,9 @@ enum EngineContract {
             case burntGal = "burnt_gal"
             case fuelNowGal = "fuel_now_gal"
             case taxiCounted = "taxi_counted"
+            case hop
+            case hopBurntGal = "hop_burnt_gal"
+            case leg
             case next
             case destination
         }
