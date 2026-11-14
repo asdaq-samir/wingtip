@@ -3,7 +3,6 @@ import { planner, data } from "./http";
 import type {
   AirplaneDetails,
   AirplanePhoto,
-  AircraftBases,
   AircraftRegistration,
   AirspaceAt,
   WeatherLoop,
@@ -98,14 +97,9 @@ export const plannerMap = {
   traffic: (ask: { lat: number; lon: number; radius: number }) =>
     planner.GET("/api/traffic", { params: { query: ask } }).then(data<Traffic>),
 
-  /** Where airplanes are based, the field their last flights keep to; the
-   *  ones still being looked up pending (the Aircraft tab's "based at"). */
-  trafficBased: (hexes: string[]) =>
-    planner.GET("/api/traffic/based", { params: { query: { hex: hexes.join(",") } } }).then(data<AircraftBases>),
-
   /** The airplanes in the air a pilot names, by callsign, registration or
-   *  ICAO address, to track one (AircraftCard); with none in the air, the
-   *  FAA's record of the one named, to open its card all the same. */
+   *  ICAO address (lib/airplane/lookup, the one search's N-number); with
+   *  none in the air, the FAA's record of the one named. */
   trafficFind: (q: string) => planner.GET("/api/traffic/find", { params: { query: { q } } }).then(data<TrafficFound>),
 
   /** Everything public about a US airplane by its N-number (the airplane card's Info). */

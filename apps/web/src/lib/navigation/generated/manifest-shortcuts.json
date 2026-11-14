@@ -82,7 +82,7 @@
     {
       "name": "Airplane",
       "short_name": "Airplane",
-      "description": "The airplane picked's profile, or the traffic about where none is picked.",
+      "description": "The airplane picked's profile, or the one search where none is picked.",
       "url": "/app/plan?open=airplane",
       "icons": [
         {

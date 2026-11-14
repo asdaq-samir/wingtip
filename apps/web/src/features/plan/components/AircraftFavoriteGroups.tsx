@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { Plus } from "lucide-react";
-import { EditToggle, ListPageHead, Mark, RemoveMinus } from "../../../components/Favorites";
+import { Mark, RemoveMinus } from "../../../components/Favorites";
 import { HomePlane, PLANE_ROW, PlaneMark } from "../../../components/PlaneMarks";
 import { MoveHandle, SortableRow, SortableRows } from "../../../components/SortableRows";
 import { keptKind } from "../../../lib/aircraftKind";
@@ -11,22 +10,24 @@ import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
 import { toast } from "../../../lib/toast";
 
 /**
- * The Aircraft tab's Favorites in full, from their title, at the owner's
- * ask ("What about aircraft fav?"), as Airport's are (FavoritesList): the
- * Airplane, the pilot's own, which a tap changes through the search, and the
- * airplanes kept, which a tap opens -- and with Edit, a minus before each
- * to let it go and a handle after each to drag it up or down the list (or
- * pick it up with Enter and move it with the arrow keys). Add a Favorite
- * asks the search for one more.
+ * The airplanes in the Favorites in full (FavoritesList's `airplanes`), after
+ * the airports, as the one search's page has them in its one Favorites row:
+ * the Airplane, the pilot's own, which a tap changes through the search, and
+ * the airplanes kept, which a tap opens -- and with the list's Edit, a minus
+ * before each to let it go and a handle after each to drag it up or down
+ * (or pick it up with Enter and move it with the arrow keys). Add an
+ * Airplane asks the search for one more. The traffic's own Favorites page,
+ * with a head of its own, went with that page (the owner, 2026-11-14).
  */
-export default function AircraftFavoritesList({
-  onBack,
+export default function AircraftFavoriteGroups({
+  editing,
   onOpen,
   onChangeMine,
   onAdd,
 }: {
-  onBack: () => void;
-  onOpen: (hex: string) => void;
+  /** The list's Edit (FavoritesList's). */
+  editing: boolean;
+  onOpen: (kept: KeptAircraft) => void;
   /** The search asked for the pilot's own airplane. */
   onChangeMine: () => void;
   /** The search asked for one more to keep. */
@@ -52,17 +53,9 @@ export default function AircraftFavoritesList({
       { testId: "aircraft-favorites-undo" },
     );
   };
-  const [editing, setEditing] = useState(false);
   const name = (a: KeptAircraft) => <span className="font-semibold">{a.name}</span>;
   return (
-    <div className="space-y-6" data-testid="aircraft-favorites-list">
-      <ListPageHead
-        title="Favorites"
-        backLabel="Back to the airplanes"
-        onBack={onBack}
-        testId="aircraft-favorites-page"
-        action={<EditToggle editing={editing} onToggle={() => setEditing((e) => !e)} testId="aircraft-favorites-edit" />}
-      />
+    <>
       <ListGroup title="Airplane">
         {!mine ? (
           <ListRow
@@ -133,14 +126,14 @@ export default function AircraftFavoritesList({
                 chevron
                 title={name(a)}
                 description={a.type ?? undefined}
-                onClick={() => onOpen(a.hex)}
+                onClick={() => onOpen(a)}
                 data-testid="aircraft-favorites-row"
               />
             </RemovableRow>
           ))
         )}
-        <ListRow media={<Plus className="size-5" />} title="Add a Favorite" onClick={onAdd} data-testid="aircraft-favorites-add" />
+        <ListRow media={<Plus className="size-5" />} title="Add an Airplane" onClick={onAdd} data-testid="aircraft-favorites-add" />
       </ListGroup>
-    </div>
+    </>
   );
 }

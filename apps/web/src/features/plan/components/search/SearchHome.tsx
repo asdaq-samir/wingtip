@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import { FavoriteStrip, PillSection, PillStrip } from "../../../../components/Favorites";
-import { usePreferences } from "../../../../lib/preferences";
+import { usePreferences, type KeptAircraft } from "../../../../lib/preferences";
 import AddFavoriteTile from "../../../../components/AddFavoriteTile";
 import TabPage from "../../../../components/TabPage";
-import { AircraftFavoriteStrip } from "../../aircraftTabChunk";
+import { AircraftFavoriteStrip, AircraftRecentTiles } from "../../aircraftTilesChunk";
 import FindNearby from "../FindNearby";
 import { NearestStrip } from "../NearestStrip";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
@@ -14,8 +14,11 @@ import SheetFooter from "./SheetFooter";
  * The one search with nothing typed (the owner's one-search design,
  * 2026-11-09), the sheet's Search page: Nearest and Find Nearby first (the owner,
  * 2026-11-11: "move nearest and find nearby above favorites"), then
- * Favorites (the airports' and the airplanes', one Add at the end) and Recents, each
- * section's title the list in full.
+ * Favorites and Recents, each the airports' and the airplanes' (one Add at
+ * the Favorites' end), each section's title the list in full. The airplanes
+ * had a page of their own with its own search, the traffic's, gone for this
+ * one (the owner, 2026-11-14); a tap on one opens its card, or keeps it
+ * where the search was asked for one (useSearchPanel's pickAirplane).
  * The flight and the flights saved and planned last are the FPL page's
  * alone (PlanPage), with "Plan a flight" there: the owner, 2026-11-11,
  * "We can remove plan button and saved from search", once the sheet had
@@ -25,11 +28,11 @@ import SheetFooter from "./SheetFooter";
  * legal links and the copyright (SheetFooter).
  */
 export default function SearchHome({ vm }: { vm: PlanWorkspaceModel }) {
-  const { pickView } = vm.view;
   const { selectPlace, openList, selectFlight } = vm.cards;
   const { nearOrigin } = vm.map;
   const { openNearest, findNearby } = vm.fpl;
-  const { home, favorites, addFromPill, askFor, pickPlace, nearStrip } = vm.search;
+  const { home, favorites, askFor, pickAirplane, pickPlace, nearStrip } = vm.search;
+  const openAirplane = (kept: KeptAircraft) => pickAirplane(kept, (hex) => selectFlight(hex));
   const hasAirplane = usePreferences((s) => !!s.myAircraft || s.favoriteAircraft.length > 0);
   return (
     <TabPage testId="search-home">
@@ -44,18 +47,12 @@ export default function SearchHome({ vm }: { vm: PlanWorkspaceModel }) {
             own box laid out of the way (display: contents), its tiles in
             this one. */}
         <PillStrip testId="pill-favorites-row" className="[&>div]:contents">
-          <FavoriteStrip home={home} favorites={favorites} onOpen={(a) => selectPlace(a.ident)} onAddHome={() => addFromPill("home")} />
+          <FavoriteStrip home={home} favorites={favorites} onOpen={(a) => selectPlace(a.ident)} onAddHome={() => askFor("home")} />
           <Suspense fallback={null}>
             <AircraftFavoriteStrip
-              onOpen={(hex) => selectFlight(hex)}
-              onAddMine={() => {
-                pickView("traffic");
-                addFromPill("mine");
-              }}
-              onAddFavorite={() => {
-                pickView("traffic");
-                addFromPill("airplane");
-              }}
+              onOpen={openAirplane}
+              onAddMine={() => askFor("mine")}
+              onAddFavorite={() => askFor("airplane")}
               showAdd={false}
             />
           </Suspense>
@@ -66,15 +63,7 @@ export default function SearchHome({ vm }: { vm: PlanWorkspaceModel }) {
               testId="pill-favorite-add"
               choices={[
                 { value: "airport", label: "Airport", testId: "pill-favorite-add-airport", onPick: () => askFor("favorite") },
-                {
-                  value: "airplane",
-                  label: "Airplane",
-                  testId: "pill-favorite-add-airplane",
-                  onPick: () => {
-                    pickView("traffic");
-                    addFromPill("airplane");
-                  },
-                },
+                { value: "airplane", label: "Airplane", testId: "pill-favorite-add-airplane", onPick: () => askFor("airplane") },
               ]}
             />
           )}
@@ -82,6 +71,9 @@ export default function SearchHome({ vm }: { vm: PlanWorkspaceModel }) {
       </PillSection>
       <PillSection title="Recents" onMore={() => openList("recents")} testId="airport-recents">
         <RecentCards onPick={(airport) => void pickPlace(airport)} />
+        <Suspense fallback={null}>
+          <AircraftRecentTiles onPick={openAirplane} />
+        </Suspense>
       </PillSection>
       <SheetFooter />
     </TabPage>

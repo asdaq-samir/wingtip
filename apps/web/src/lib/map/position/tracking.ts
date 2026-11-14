@@ -19,9 +19,9 @@ export interface PathPoint {
  * An airplane being tracked, as FlightAware and ForeFlight track one: which
  * (`hex`, the address's `?flight=`), whether the map keeps it in the
  * middle (`follow`), its last report, and the path it has flown since its
- * trace was read; and the airplanes of the last answer, for the Aircraft
- * card's list (`seen`). TrafficGl writes the reports in as they come;
- * the cards (AircraftCard, FlightCard) read them, and pick a flight with
+ * trace was read; and the airplanes of the last answer, for the one
+ * search's airplanes heard (`seen`, useHeardHits). TrafficGl writes the
+ * reports in as they come; the search and FlightCard read them, and pick a flight with
  * PlanWorkspace's own `pick`, which puts it in the address.
  */
 interface Tracking {

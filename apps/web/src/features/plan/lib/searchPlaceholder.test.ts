@@ -11,6 +11,8 @@ describe("placeholderOf", () => {
     expect(placeholderOf(false, pick("Stop 1", true), "place")).toBe("Search airports and waypoints");
     expect(placeholderOf(false, null, "home")).toBe("Search for your home airport");
     expect(placeholderOf(false, null, "favorite")).toBe("Search for an airport to keep");
+    expect(placeholderOf(false, null, "mine")).toBe("Search for your airplane");
+    expect(placeholderOf(false, null, "airplane")).toBe("Search for an airplane to keep");
     expect(placeholderOf(false, null, "place")).toBe("Search airports and airplanes");
   });
 });

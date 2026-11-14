@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { useRef, type RefObject } from "react";
+import { useRef, type ReactNode, type RefObject } from "react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
 import { usePreferences, type RecentAirport } from "../lib/preferences";
@@ -126,10 +126,18 @@ export function SearchField({
 
 /** The airports picked last, each taken off from its row's menu (its •••
  *  or a long press), at the pilot's ask, as Maps' Recents are. */
-function RecentAirportRows({ recents, onPick }: { recents: RecentAirport[]; onPick: (airport: RecentAirport) => void }) {
+function RecentAirportRows({
+  recents,
+  onPick,
+  title,
+}: {
+  recents: RecentAirport[];
+  onPick: (airport: RecentAirport) => void;
+  title?: string;
+}) {
   const remove = usePreferences((s) => s.removeRecentAirport);
   return (
-    <ListGroup>
+    <ListGroup title={title}>
       {recents.map((a) => (
         <RemovableRow
           key={a.ident}
@@ -155,11 +163,26 @@ function RecentAirportRows({ recents, onPick }: { recents: RecentAirport[]; onPi
   );
 }
 
-/** The airports' Recents in full, from their section's title: every one,
- *  and Clear for all of them, asked first. */
-export function AirportRecentsPage({ onBack, onPick }: { onBack: () => void; onPick: (airport: RecentAirport) => void }) {
+/** The Recents in full, from their section's title: the airports opened
+ *  last, then the airplanes (`airplanes`, the plan feature's rows: the
+ *  traffic's own Recents page went for the one search's, 2026-11-14), and
+ *  Clear for all of them, asked first. */
+export function RecentsPage({
+  onBack,
+  onPick,
+  airplanes,
+}: {
+  onBack: () => void;
+  onPick: (airport: RecentAirport) => void;
+  airplanes: ReactNode;
+}) {
   const recents = usePreferences((s) => s.recentAirports);
-  const clear = usePreferences((s) => s.clearRecentAirports);
+  const planes = usePreferences((s) => s.recentAircraft.length);
+  const clear = () => {
+    const prefs = usePreferences.getState();
+    prefs.clearRecentAirports();
+    prefs.clearRecentAircraft();
+  };
   return (
     <>
       <ListPageHead
@@ -168,10 +191,10 @@ export function AirportRecentsPage({ onBack, onPick }: { onBack: () => void; onP
         onBack={onBack}
         testId="airport-recents-page"
         action={
-          recents.length > 0 && (
+          (recents.length > 0 || planes > 0) && (
             <ClearList
               title="Clear the Recents?"
-              description="The airports opened last are forgotten in this browser. Favorites stay."
+              description="The airports and airplanes opened last are forgotten in this browser. Favorites stay."
               onClear={clear}
               testId="recents-clear"
             />
@@ -179,10 +202,13 @@ export function AirportRecentsPage({ onBack, onPick }: { onBack: () => void; onP
         }
       />
       {recents.length > 0 ? (
-        <RecentAirportRows recents={recents} onPick={onPick} />
+        <RecentAirportRows recents={recents} onPick={onPick} title={planes > 0 ? "Airports" : undefined} />
       ) : (
-        <p className={cn("px-1 text-muted-foreground", TEXT.note)}>None yet: the airports opened are kept here.</p>
+        planes === 0 && (
+          <p className={cn("px-1 text-muted-foreground", TEXT.note)}>None yet: the airports and airplanes opened are kept here.</p>
+        )
       )}
+      {airplanes}
     </>
   );
 }

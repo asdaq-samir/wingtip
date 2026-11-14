@@ -1,5 +1,4 @@
 import type { AircraftKind } from "../aircraftKind";
-import { NO_FILTER, type AircraftFilter } from "../fbo";
 import { sameField } from "../procedures";
 import type { Slice } from "./slice";
 
@@ -60,7 +59,7 @@ function moved<T>(list: T[], from: number, to: number): T[] {
 }
 
 /** What is the pilot's own of places and airplanes: Maps' Home, Favorites
- *  and Recents, the routes planned last and the Aircraft tab's filters. */
+ *  and Recents, and the routes planned last. */
 export interface KeptSlice {
   /** The airports last picked from the search bar, newest first: what
    *  it offers before anything is typed, as Maps' Recents. */
@@ -70,23 +69,19 @@ export interface KeptSlice {
   homeAirport: RecentAirport | null;
   favoriteAirports: RecentAirport[];
   /** The airplanes whose cards were opened last, newest first, and the
-   *  ones the pilot starred, as the airports' are (AircraftCard). */
+   *  ones the pilot starred, as the airports' are (features/plan AircraftTiles). */
   recentAircraft: KeptAircraft[];
   favoriteAircraft: KeptAircraft[];
-  /** The pilot's own airplane, first among the Aircraft card's Favorites
-   *  as Home is among the airports', at the owner's ask: "My Plane". */
+  /** The pilot's own airplane, first among the airplanes' Favorites as
+   *  Home is among the airports', at the owner's ask: "My Plane". */
   myAircraft: KeptAircraft | null;
   /** The routes planned last, newest first, kept on this device: FPL's
    *  Recents under its Saved, a tap planning one again. */
   recentRoutes: RecentRoute[];
-  /** The Aircraft tab's filters (lib/fbo), kept: an FBO's desk keeps its
-   *  airport from one day to the next. */
-  aircraftFilter: AircraftFilter;
   addRecentRoute: (route: RecentRoute) => void;
   removeRecentRoute: (key: string) => void;
   clearRecentRoutes: () => void;
   setMyAircraft: (aircraft: KeptAircraft | null) => void;
-  setAircraftFilter: (change: Partial<AircraftFilter>) => void;
   addRecentAircraft: (aircraft: KeptAircraft) => void;
   /** One airplane taken off the Recents (a swipe), or all of them (Clear). */
   removeRecentAircraft: (hex: string) => void;
@@ -116,7 +111,6 @@ export const KEPT_KEPT = [
   "favoriteAircraft",
   "myAircraft",
   "recentRoutes",
-  "aircraftFilter",
 ] as const;
 
 export const keptSlice: Slice<KeptSlice> = (set) => ({
@@ -127,13 +121,11 @@ export const keptSlice: Slice<KeptSlice> = (set) => ({
   favoriteAircraft: [],
   myAircraft: null,
   recentRoutes: [],
-  aircraftFilter: NO_FILTER,
   addRecentRoute: (route) =>
     set((s) => ({ recentRoutes: [route, ...s.recentRoutes.filter((r) => recentRouteKey(r) !== recentRouteKey(route))].slice(0, RECENTS) })),
   removeRecentRoute: (key) => set((s) => ({ recentRoutes: s.recentRoutes.filter((r) => recentRouteKey(r) !== key) })),
   clearRecentRoutes: () => set({ recentRoutes: [] }),
   setMyAircraft: (myAircraft) => set({ myAircraft }),
-  setAircraftFilter: (change) => set((s) => ({ aircraftFilter: { ...s.aircraftFilter, ...change } })),
   addRecentAircraft: (aircraft) =>
     set((s) => ({
       recentAircraft: [aircraft, ...s.recentAircraft.filter((a) => a.hex !== aircraft.hex)].slice(0, RECENTS),

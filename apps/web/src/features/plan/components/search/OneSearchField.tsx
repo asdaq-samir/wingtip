@@ -1,10 +1,9 @@
-import { useEffect, useEffectEvent, type ComponentProps } from "react";
+import { useEffect, useEffectEvent } from "react";
 import { Search } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
 import { cn } from "cn";
 import ClearButton from "../../../../components/ClearButton";
 import { PANEL_FIELD } from "../../../../components/panelField";
-import { SearchField } from "../../../../components/PanelCapsule";
 import { CommandClear, CommandField } from "../../../../components/ui/command";
 import { Kbd } from "../../../../components/ui/kbd";
 import { isSearchKey } from "../../../../hooks/use-shortcuts";
@@ -32,17 +31,7 @@ import type { OneSearchModel } from "../../hooks/useOneSearch";
  * the name stays the page's heading, for a screen reader alone. ⌘K or Ctrl K focuses it from anywhere, its keys
  * shown in it on a desktop: the command palette it replaced.
  */
-export default function OneSearchField({
-  model,
-  inputRef,
-  list,
-}: {
-  model: OneSearchModel;
-  inputRef: React.RefObject<HTMLInputElement | null>;
-  /** The field scoped to a list up (listSearchOf: the traffic's airplane,
-   *  Nearest's place), where that list had a second field of its own. */
-  list?: ComponentProps<typeof SearchField> | null;
-}) {
+export default function OneSearchField({ model, inputRef }: { model: OneSearchModel; inputRef: React.RefObject<HTMLInputElement | null> }) {
   const desktop = useIsDesktop();
   // What is said typed in the field once a pause ends it, the field
   // focused to go on from there.
@@ -72,9 +61,6 @@ export default function OneSearchField({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [model, inputRef]);
-  // A list's scope: the same place and shape, its words and its own keys,
-  // until a picker asks for an airport or Direct To does.
-  if (list && !model.pick && !model.direct) return <SearchField {...list} />;
   return (
     <div className="flex w-full items-center gap-2" role="search">
       <h1 className="sr-only">Wingtip Maps</h1>

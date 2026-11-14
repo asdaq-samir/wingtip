@@ -23,12 +23,19 @@ describe("the place under the one search", () => {
     expect(setUp("", false).result.current.view).toBe("search");
   });
 
-  it("is the search for its lists in full and the traffic for an airplane, by the address", () => {
+  it("is the search for its lists in full, by the address, and an airplane's card leaves the place as it was", () => {
     expect(setUp("list=favorites", true).result.current.view).toBe("search");
     expect(setUp("saved=1", true).result.current.view).toBe("search");
     expect(setUp("near=1", true).result.current.view).toBe("search");
-    expect(setUp("aircraft=1", true).result.current.view).toBe("traffic");
-    expect(setUp("flight=a0b7d8", false).result.current.view).toBe("traffic");
+    expect(setUp("flight=a0b7d8", true).result.current.view).toBe("plan");
+    expect(setUp("flight=a0b7d8", false).result.current.view).toBe("search");
+  });
+
+  it("lands an old link to the traffic's page on the one search, the flag let go", () => {
+    // The traffic's page went for the one search (the owner, 2026-11-14).
+    const hook = setUp("dep=KMSN&dest=KOSH&aircraft=1", true);
+    expect(hook.result.current.view).toBe("search");
+    expect(hook.result.current.address.aircraft).toBe(false);
   });
 
   it("goes back to the plan when a new route comes, wherever the pilot was", () => {
@@ -47,41 +54,23 @@ describe("the place under the one search", () => {
     expect(hook.result.current.view).toBe("plan");
   });
 
-  it("opens the traffic in the address, and keeps a card for the place it was open over", () => {
+  it("keeps a card for the place it was open over, and gives it back", () => {
     const hook = setUp("dep=KMSN&dest=KOSH&place=KOSH", true);
-    act(() => hook.result.current.pickView("traffic"));
-    expect(hook.result.current.address.aircraft).toBe(true);
+    act(() => hook.result.current.pickView("search"));
     expect(hook.result.current.address.place).toBeNull();
     act(() => hook.result.current.pickView("plan"));
     expect(hook.result.current.address.place).toBe("KOSH");
   });
 
-  it("keeps an airplane's past flight over the traffic while the search is up, and gives it back", () => {
+  it("keeps an airplane's past flight over the plan while the search is up, and gives it back", () => {
     // The owner's ask (5fa10bde7): "if ... aircraft track is being played it
-    // should show that when coming back". The cards over the sheet hide the
-    // search in the browser now, so the hook's the place to prove it.
-    const hook = setUp("aircraft=1&flight=a0b7d8&past=1794536008", false);
+    // should show that when coming back".
+    const hook = setUp("dep=KMSN&dest=KOSH&flight=a0b7d8&past=1794536008", true);
     act(() => hook.result.current.pickView("search"));
     expect(hook.result.current.address.flight).toBeNull();
     expect(hook.result.current.address.past).toBeNull();
-    act(() => hook.result.current.pickView("traffic"));
+    act(() => hook.result.current.pickView("plan"));
     expect(hook.result.current.address.flight).toBe("a0b7d8");
     expect(hook.result.current.address.past).toBe(1794536008);
-  });
-
-  it("turns back to the traffic on the first page where that is what was left there", () => {
-    // The sheet audit, 2026-11-12: swiped to FPL and back, the traffic came back as the plain search.
-    const hook = setUp("dep=KMSN&dest=KOSH&aircraft=1", true);
-    expect(hook.result.current.view).toBe("traffic");
-    act(() => hook.result.current.pickPage(1));
-    expect(hook.result.current.view).toBe("plan");
-    act(() => hook.result.current.pickPage(0));
-    expect(hook.result.current.view).toBe("traffic");
-    expect(hook.result.current.address.aircraft).toBe(true);
-    // And the search where the search was.
-    act(() => hook.result.current.pickView("search"));
-    act(() => hook.result.current.pickPage(1));
-    act(() => hook.result.current.pickPage(0));
-    expect(hook.result.current.view).toBe("search");
   });
 });

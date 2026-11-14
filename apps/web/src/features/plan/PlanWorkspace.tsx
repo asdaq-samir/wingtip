@@ -27,7 +27,6 @@ import PlanCards from "./components/workspace/PlanCards";
 import FlightFoot from "./components/workspace/FlightFoot";
 import RouteHead from "./components/workspace/RouteHead";
 import RouteControls from "./components/workspace/RouteControls";
-import { listSearchOf } from "./components/workspace/listSearch";
 import OneSearchField from "./components/search/OneSearchField";
 import { useOneSearch } from "./hooks/useOneSearch";
 
@@ -440,7 +439,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         toEdge: !!place,
         flying,
         // The one search, the first page's first row, and at rest its pill (MapPanel).
-        bar: <OneSearchField model={search} inputRef={vm.search.searchInput} list={listSearchOf(vm)} />,
+        bar: <OneSearchField model={search} inputRef={vm.search.searchInput} />,
         // FPL's alone ("Fpl can show calculations but other tabs should show something else").
         // FPL's figures pinned at the sheet's foot at every height, the pill's
         // too, growing as it comes up, at the owner's asks ("While dragging fpl

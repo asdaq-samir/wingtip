@@ -34,7 +34,7 @@ import { pickAirplane } from "./startState";
  */
 
 /** Where a card's close goes back to. */
-export type Back = "search" | "search-home" | "plan" | "map" | "console" | "traffic" | "profile";
+export type Back = "search" | "search-home" | "plan" | "map" | "console" | "profile";
 
 export interface Entry {
   name: string;
@@ -150,7 +150,7 @@ export const CARDS: CardRow[] = [
     not: { sideways: "no sideways row", position: "nothing opens inside a leg", scroll: "a leg's card is shorter than the half sheet" },
   },
   {
-    name: "traffic (an airplane's card)",
+    name: "an airplane's card",
     card: "flight-card",
     close: "flight-close",
     entries: [
@@ -158,16 +158,16 @@ export const CARDS: CardRow[] = [
         name: "link (flight=)",
         open: async (p) => {
           await sky(p);
-          await go(p, "/app/plan?aircraft=1&flight=a0b7d8");
+          await go(p, "/app/plan?flight=a0b7d8");
         },
-        // The traffic it was opened over: the one search in its traffic scope.
-        back: "traffic",
+        // With no route, the one search's own page under it.
+        back: "search-home",
       },
     ],
     not: {
       sideways: "the stub gives it no photo, so no picture slides; its facts strip is the airport card's CardFacts, checked there",
       position: "checked on the airport's card, the same CardTitle and SheetCard",
-      searchHidden: "opened over the traffic's own scope of the one search, which a card hides as any other (checked on the airport)",
+      searchHidden: "a card hides the one search as any other (checked on the airport)",
     },
   },
   {

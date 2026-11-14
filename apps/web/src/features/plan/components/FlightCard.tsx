@@ -118,7 +118,7 @@ export default function FlightCard({
   const flying = route && route.plausible !== false ? route : null;
   const plane = latest?.plane ?? null;
   const following = follow && !!plane;
-  // What is kept of it, for the Aircraft card's Recents and Favorites,
+  // What is kept of it, for the airplanes' Recents and Favorites,
   // once it can be named: its registration, else its callsign.
   // An airplane not heard today has no trace to name it: the FAA's record
   // does, and what this browser kept of it (My Plane, a Favorite, a recent)
@@ -392,7 +392,7 @@ export default function FlightCard({
   );
 }
 
-/** Favorite, which adds the airplane to the Aircraft card's Favorites. */
+/** Favorite, which adds the airplane to the Favorites. */
 function FavoriteButton({ kept }: { kept: KeptAircraft | null }) {
   const starred = usePreferences((s) => !!kept && s.favoriteAircraft.some((a) => a.hex === kept.hex));
   const toggle = usePreferences((s) => s.toggleFavoriteAircraft);

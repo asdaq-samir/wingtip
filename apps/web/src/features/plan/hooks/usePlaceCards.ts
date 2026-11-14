@@ -21,7 +21,7 @@ export function usePlaceCards({
   setPanel: (state: PanelState) => void;
 }) {
   // The cards the address holds -- an airport's, the airspace over a
-  // point, Nearest's, Aircraft's, an airplane's and its past flight's
+  // point, Nearest's, an airplane's and its past flight's
   // (usePanelView), the airport's opened here (selectPlace), which the
   // route's Approaches ask for too.
   const cards = useAddressCards(address, setAddress, setPanel);
@@ -33,7 +33,7 @@ export function usePlaceCards({
   // The tab an airplane's card was opened over from the route box's
   // N-number (openAirplaneCard), and the tab setter, set once the tabs
   // are (usePanelView, in the workspace): its close goes back there, FPL,
-  // not to Aircraft's list under it (the owner's "when closing the card,
+  // not to the search under it (the owner's "when closing the card,
   // it doesn't go back to fpl").
   const airplaneFrom = useRef<PanelView | null>(null);
   const backToView = useRef<(view: PanelView) => void>(() => {});

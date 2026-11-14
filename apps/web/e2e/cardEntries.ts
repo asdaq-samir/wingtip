@@ -169,7 +169,6 @@ export async function expectBack(page: Page, back: Back) {
         .first(),
     ).toBeVisible();
   if (back === "console") await expect(page.getByTestId("console-sheet")).toBeVisible();
-  if (back === "traffic") await expect(page.getByTestId("aircraft-search")).toBeVisible();
   if (back === "profile") await expect(page.getByTestId("profile-card")).toBeVisible();
 }
 

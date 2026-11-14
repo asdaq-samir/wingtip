@@ -1,10 +1,10 @@
 import { expect } from "@playwright/test";
-import { openPanel, settle, showSearch, showTabs, sideDrawer } from "../helpers";
+import { settle, showSearch, showTabs, sideDrawer } from "../helpers";
 import type { Screen } from "./screens";
 
 /** The one search's places (2026-11-09, where the tabs were): its own
- *  page with nothing typed, its results typed, the account button's menu,
- *  and the traffic about. */
+ *  page with nothing typed, its results typed and the account button's
+ *  menu; the traffic's own page went for the one search (2026-11-14). */
 export const SEARCH_SCREENS: Screen[] = [
   {
     name: "one search, nothing typed",
@@ -33,15 +33,6 @@ export const SEARCH_SCREENS: Screen[] = [
       await showTabs(page);
       await page.getByTestId("account-button").click();
       await expect(page.getByTestId("console-sheet")).toBeVisible();
-    },
-  },
-  {
-    name: "traffic",
-    ready: async (page) => {
-      await page.goto("/app/plan?aircraft=1");
-      await settle(page);
-      await openPanel(page);
-      await expect(sideDrawer(page).getByTestId("aircraft-search")).toBeVisible();
     },
   },
 ];

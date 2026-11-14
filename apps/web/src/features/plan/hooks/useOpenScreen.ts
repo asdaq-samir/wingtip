@@ -86,7 +86,7 @@ export function useOpenScreen({
     switch (screen) {
       // The tabs that were (the one search, 2026-11-09): FPL is the plan,
       // Airport the search's own page, Airplane the airplane picked's
-      // profile -- the traffic about where none is picked -- and Setup the
+      // profile -- the one search where none is picked -- and Setup the
       // account page (SETUP_PAGES, above).
       // The sheet's two pages (PageToggle, the owner 2026-11-13): FPL the plan's, Search the one search's.
       case "fpl":
@@ -104,7 +104,9 @@ export function useOpenScreen({
           openAirplaneProfile(tail);
           return;
         }
-        void setAddress({ aircraft: true });
+        // None picked: the one search, which finds airplanes, where the
+        // traffic's page was (2026-11-14).
+        setViewPick("search");
         riseToSee(setPanel);
         return;
       }

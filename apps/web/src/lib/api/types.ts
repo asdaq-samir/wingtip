@@ -186,7 +186,6 @@ export type DepartureEvent = Schemas["DepartureEvent"];
 export type AheadAlert = Schemas["AheadAlert"];
 /** The airplanes ADS-B receivers hear near a point (wingtip.traffic). */
 export type Traffic = Schemas["Traffic"];
-export type AircraftBases = Schemas["AircraftBases"];
 export type TrafficAircraft = Schemas["TrafficAircraft"];
 export type TrafficFound = Schemas["TrafficFound"];
 /** A tracked flight: its airplane, where it took off, its path today. */

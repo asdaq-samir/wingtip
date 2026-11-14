@@ -135,7 +135,7 @@ test("the account button opens the account page itself, no menu first, and its c
   await expect(page.getByTestId("account-button")).toBeVisible();
 });
 
-test("the search's Do runs a screen by its name, and the Traffic Nearby", async ({ page }) => {
+test("the search's Do runs a screen by its name, and Show Traffic", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
   await showSearch(page);
@@ -148,10 +148,14 @@ test("the search's Do runs a screen by its name, and the Traffic Nearby", async 
   await expect(page.getByTestId("console-sheet")).toHaveCount(0);
   await search.fill("traffic");
   await sideDrawer(page).getByTestId("search-do-traffic").click();
-  await expect(page).toHaveURL(/[?&]aircraft=1/);
-  // One search field (the one card rule, 2026-11-10): the traffic's is the one search's, scoped, not a second.
-  await expect(sideDrawer(page).getByTestId("aircraft-search")).toBeVisible();
+  // The traffic on the map, and no page of its own with a second field
+  // (the owner, 2026-11-14): the one search finds the airplanes it hears.
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("wingtip.preferences") ?? "{}").state?.traffic)).toBe(true);
+  await expect(page).not.toHaveURL(/[?&]aircraft=1/);
   await expect(sideDrawer(page).getByRole("search")).toHaveCount(1);
+  // On, it is not offered again.
+  await search.fill("traffic");
+  await expect(sideDrawer(page).getByTestId("search-do-traffic")).toHaveCount(0);
 });
 
 test("⌘K or Ctrl K focuses the one search from anywhere on a desktop", async ({ page }) => {

@@ -73,7 +73,7 @@ function AirspaceTile({ airport, detail, onClick }: { airport: RecentAirport; de
 }
 
 /** A round tile and its words under it, as Maps' Favorites: the
- *  airports' here, and the Aircraft card's own (AircraftCard). */
+ *  airports' here, and the airplanes' own (features/plan AircraftTiles). */
 /** A strip's tile: its round mark over its name, a detail under it --
  *  Favorites' places. */
 function PlaceTile({

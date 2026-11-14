@@ -16,7 +16,7 @@ import { useKeptScroll } from "../lib/scrollPlace";
  * either; Activity's hidden mode is display: none, which with a route
  * lays the Nav Log out again on each return (0.6 s, PanelTabs) and stops
  * and starts its effects (0.5 s), so this stays. A part of it on a
- * chunk not yet in hand (the Aircraft tab's, aircraftTabChunk) waits
+ * chunk not yet in hand (the airplanes' tiles, aircraftTilesChunk) waits
  * here, the tab empty a moment, not the panel round it.
  *
  * Its place in the sheet's one scroller is kept too (useKeptScroll): back

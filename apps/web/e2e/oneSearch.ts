@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { grabberTo, openPanel, settled, sheetUpToType, showTabs, sideDrawer } from "./helpers";
+import { grabberTo, openPanel, settled, sheetUpToType, showTabs, sideDrawer, slow } from "./helpers";
 
 /**
  * The one search's ways round the sheet (the owner's one-search design,
@@ -50,14 +50,25 @@ export async function showSearch(page: Page) {
   await expect(sideDrawer(page).getByTestId("search-home")).toBeVisible();
 }
 
-/** The traffic about (the Airplane tab's list that was): the one search's
- *  Do, Traffic Nearby. */
-export async function showTraffic(page: Page) {
-  await showTabs(page);
-  await showPage(page, 0);
-  await sheetUpToType(page);
-  await page.getByTestId("search-airports").fill("traffic");
-  await sideDrawer(page).getByTestId("search-do-traffic").click();
+/** The traffic on the map from the first load (the map settings' Traffic,
+ *  kept), so the one search finds the airplanes it hears by callsign or
+ *  address (useHeardHits): the traffic's own page, with its own search,
+ *  went for the one search (the owner, 2026-11-14). Before the page is
+ *  opened. */
+export async function trafficOnMap(page: Page) {
+  await page.addInitScript(() => {
+    const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
+    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, traffic: true } }));
+  });
+}
+
+/** An airplane the map hears, typed in the one search: its row. */
+export async function findAirplane(page: Page, typed: string, name = typed) {
+  await showSearch(page);
+  await page.getByTestId("search-airports").fill(typed);
+  const row = sideDrawer(page).getByTestId("search-airplane").filter({ hasText: name }).first();
+  await expect(row).toBeVisible({ timeout: slow(15_000) });
+  return row;
 }
 
 /** The plan's empty box, with no route, by FPL's tab: with

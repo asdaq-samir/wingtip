@@ -24,7 +24,7 @@ apps/web/e2e/plans.spec.ts 543
 apps/web/e2e/procedures.spec.ts 737
 apps/web/e2e/route-fit.spec.ts 441
 apps/web/e2e/stops.spec.ts 756
-apps/web/e2e/tracking.spec.ts 880
+apps/web/e2e/tracking.spec.ts 806
 apps/web/src/components/ApproachDebrief.tsx 415
 apps/web/src/components/ClearanceCard.tsx 464
 apps/web/src/components/RadioLayer.tsx 516
@@ -36,7 +36,7 @@ apps/web/src/features/chart-labels/hooks/useTraining.ts 422
 apps/web/src/features/pilot/AccountPanels.tsx 758
 apps/web/src/features/pilot/FlightPage.tsx 465
 apps/web/src/features/pilot/InstructorPage.tsx 548
-apps/web/src/features/plan/PlanWorkspace.tsx 472
+apps/web/src/features/plan/PlanWorkspace.tsx 471
 apps/web/src/features/plan/components/AltitudeReasoning.tsx 577
 apps/web/src/features/plan/components/ApproachLesson.tsx 476
 apps/web/src/features/plan/components/PlaceCard.tsx 453

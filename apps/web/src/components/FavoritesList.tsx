@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { House, Plus } from "lucide-react";
 import type { RecentAirport } from "../lib/preferences";
 import { placeLink } from "../lib/flightLink";
@@ -14,7 +14,10 @@ import { MoveHandle, SortableRow, SortableRows } from "./SortableRows";
  * and with Edit, a minus before each to let it go and a handle after
  * each to drag it up or down the list (or pick it up with Enter and move it
  * with the arrow keys).
- * Add a Favorite asks the search bar for one more.
+ * Add a Favorite asks the search bar for one more. The airplanes kept
+ * after the airports (`airplanes`, the plan feature's groups, edited with
+ * the same Edit): one Favorites list, as the one search's page has one
+ * Favorites row (the traffic's own list went with its page, 2026-11-14).
  */
 export default function FavoritesList({
   home,
@@ -26,6 +29,7 @@ export default function FavoritesList({
   onRemove,
   onMove,
   onAdd,
+  airplanes,
 }: {
   home: RecentAirport | null;
   favorites: RecentAirport[];
@@ -38,6 +42,8 @@ export default function FavoritesList({
   onRemove: (airport: RecentAirport) => void;
   onMove: (from: number, to: number) => void;
   onAdd: () => void;
+  /** The airplanes' groups, drawn editing as the airports' are. */
+  airplanes: (editing: boolean) => ReactNode;
 }) {
   const [editing, setEditing] = useState(false);
   // Taken off with a toast's Undo, which keeps it again at the list's end
@@ -152,6 +158,7 @@ export default function FavoritesList({
         )}
         <ListRow media={<Plus className="size-5" />} title="Add a Favorite" onClick={onAdd} data-testid="favorites-add" />
       </ListGroup>
+      {airplanes(editing)}
     </div>
   );
 }

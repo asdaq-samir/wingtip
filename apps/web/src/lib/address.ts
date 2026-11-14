@@ -79,9 +79,9 @@ export const addressPoint = (p: LatLon): LatLon => pointOf(point.serialize(p))!;
 export const LOCAL_MINUTES = [30, 45, 60, 90, 120, 150, 180, 240];
 
 /** A list in full, from its section's title (`?list=favorites`): the
- *  airports' Favorites and Recents, the routes planned, the airplanes'
- *  Favorites and Recents. Saved and Nearest have keys of their own. */
-export const PANEL_LISTS = ["favorites", "recents", "routes", "aircraft-favorites", "aircraft-recents"] as const;
+ *  Favorites and Recents, airports' and airplanes' together, and the
+ *  routes planned. Saved and Nearest have keys of their own. */
+export const PANEL_LISTS = ["favorites", "recents", "routes"] as const;
 
 const ALTITUDE_CHOICES = ["fastest", "lowest", "highest", "economical"] as const satisfies readonly AltitudeChoice[];
 
@@ -127,9 +127,10 @@ export const addressParsers = {
   view: parseAsStringLiteral(["briefing"] as const),
   // What is open over the sheet: an airport's card, the airspace over a
   // point held, an airplane tracked by its ICAO address and one of its past
-  // flights by its takeoff's time, the traffic, Nearest and the place it
-  // is from, Saved, a list in full, the Brief, a lesson, an airplane's
-  // profile by its N-number.
+  // flights by its takeoff's time, Nearest and the place it is from,
+  // Saved, a list in full, the Brief, a lesson, an airplane's profile by
+  // its N-number. `aircraft` is the traffic's page that was, read only so
+  // an old link lands on the one search (usePanelView).
   place: parseAsString,
   at: point,
   flight: createParser({ parse: (v) => (/^~?[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : null), serialize: (v: string) => v }),

@@ -71,7 +71,7 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 |---|---|---|---|---|---|
 | `fpl` | FPL | yes | yes | yes | The plan: the route, its altitude and its figures, the sheet's second page (Search, FPL). |
 | `airport` | Airport | yes | yes | yes | The one search with nothing typed: the flight, favorites, recents, nearest. |
-| `airplane` | Airplane | yes | yes | yes | The airplane picked's profile, or the traffic about where none is picked. |
+| `airplane` | Airplane | yes | yes | yes | The airplane picked's profile, or the one search where none is picked. |
 | `setup` | Setup | yes | yes | yes | The account and settings page, the account button's. |
 | `brief` | Brief | yes | yes | yes | The route's Brief and its Go / No-Go (needs a route). |
 | `navlog` | Nav Log | yes | yes | yes | The nav log, leg by leg (needs a route). On Android the plan's Nav Log button opens it. |
@@ -187,11 +187,12 @@ list is where it was.
 | Search results (Airports, Waypoints and Navaids, Airplanes, Do, Ask) | the search field, typed | **new: 1** | -- |
 | Saved flights | search → Saved; account → Flights | 2 | Name and notes edited in the row; delete with a confirm |
 | Airport card | Tap a field; a search result; a route row's More Info; a nav log field | 1 (2 from the search) | **Fly Here, Depart From, Add as Stop at its top (new)**, favorite; frequencies copy |
-| Airport Favorites, Recents | search → Favorites / Recents | 2 | Drag to reorder, swipe to delete, Undo row |
+| Favorites, Recents (airports' and airplanes') | search → Favorites / Recents | 2 | Drag to reorder, swipe to delete, Undo row; the airplanes after the airports in each, and in the search page's rows |
 | Nearest | search → Nearest; search → Do → Nearest | 2 | Change the place it is from in the one search's field, scoped to it (no second field) |
 | Airplane profile | an N-number tapped; a search result (yours, the FAA registry's) | 1, 2 | **Fly This Airplane (new)**; every figure edited in place; a card in the sheet over the search with ✕ (one card rule, 2026-11-10; was a dimmed sheet on a phone) |
-| Traffic, airplane card, past flight | Tap traffic; search → Do → Traffic Nearby; its past row | 1, 2 | Replay; the airplane found in the one search's field, scoped to the traffic (its Cancel back to the search) |
-| A route point's or the traffic's airport picked | its pill or its menu's Change → the one search, scoped ("Search for a destination") | 1 → 2, as before | Enter takes what is typed until the rows answer it; picked, back where it was asked from |
+| Airplane card, past flight | Tap traffic; the airplane found in the one search (heard on the map by callsign or address, kept, or the FAA registry's in the air); a Favorite's or Recent's tile; its past row | 1, 2 | Replay; search → Do → Show Traffic turns the traffic on the map. The traffic's own page, with a second search field, went for the one search (the owner, 2026-11-14), and an old `?aircraft=1` link lands on the search |
+| Your Airplane or an airplane kept, added | search → Favorites' Add → Airplane; the Airplane tile's Add | 1 → 2 | The one search asks for it ("Search for your airplane", "Search for an airplane to keep"); the one picked is kept, not opened |
+| A route point's airport picked | its pill or its menu's Change → the one search, scoped ("Search for a destination") | 1 → 2, as before | Enter takes what is typed until the rows answer it; picked, back where it was asked from |
 | Questions (Ready to Fly's prompt, a source's report as sent) | as they come; a source chip | 0 / 1 | SheetDialog: a sheet from the bottom on a phone with its ✕ (Fly Anyway the prompt's answer), a dialog from `md` up |
 | Map card (was the Map menu) | Map button | 1 | A card in the sheet over the search, as Apple Maps' Choose Map card (the owner, 2026-11-10): the charts as picture tiles (a tap applies), then the weather, the overlay, every switch and the alerts in place; its ✕ goes back to the sheet as it was; its Search row focuses the search |
 | Emergency assistant | Flying head; voice; search → Do → Emergency Assistant | 1 in flight, **2** on the ground | Its frequencies copy; the one full-height card, ✕ top right, nothing dimmed |

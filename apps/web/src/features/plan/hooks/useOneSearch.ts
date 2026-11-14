@@ -3,7 +3,12 @@ import { flushSync } from "react-dom";
 import { aircraftKey, choiceOf, tailTyped } from "../../../lib/aircraftChoice";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
 import { useAirplaneHits } from "./useAirplaneHits";
+import { useHeardHits } from "./useHeardHits";
 import type { TrafficAircraft } from "../../../lib/api/types";
+import { registeredQuery } from "../../../lib/airplane/lookup";
+import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
+import { queryClient } from "../../../lib/queryClient";
+import { keptOf, keptPlane } from "../lib/keptAircraft";
 import { useRadioActions } from "../../../lib/atcRadio";
 import { SCREENS, type ScreenId } from "../../../lib/navigation/generated/screens";
 import { wantScreen } from "../../../lib/navigation/wanted";
@@ -18,8 +23,8 @@ import { useAirportIndex } from "../../../lib/airportIndex";
 import { readQuery } from "../lib/searchFilters";
 import { useEngineReady } from "../../../lib/engine/useEngineReady";
 import { nearOf, useSearchResults } from "./useSearchResults";
-import type { PlanWorkspaceModel } from "./usePlanWorkspace";
 import { riseToSee } from "./panelNow";
+import type { PlanWorkspaceModel } from "./usePlanWorkspace";
 
 /** One airplane the search found: the pilot's own (their record, or one
  *  kept on this device), one the FAA's registry has by the N-number typed,
@@ -93,8 +98,11 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   const { changeAircraft } = vm.plan;
   const { place, selectPlace, selectFlight, listAway } = vm.cards;
   const { flyHere } = vm.map;
-  const { query, setQuery, search, pickPlace, picking, setPicking } = vm.search;
+  const { query, setQuery, search, pickPlace, picking, setPicking, pickAirplane } = vm.search;
   const typed = query.trim();
+  // Asked for an airplane to keep (an Add of the pilot's Airplane or a
+  // Favorite): airplanes alone, the one picked kept rather than opened.
+  const airplaneAsk = picking === "mine" || picking === "airplane";
   // A search sent (useSearchResults): its list in the sheet while the
   // field is not being typed in, its fields on the map.
   const sent = useSearchResults((s) => s.sent);
@@ -113,19 +121,35 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   // the pilot's own open their profile and fly from the top hit, the kept their flight, the
   // registry's its profile with whether it is in the air, a type the pilot's airplanes.
   const hits = useAirplaneHits({ typed, tail, live: true, enabled: !direct && !pick });
+  // And those the map hears by their callsign or address (useHeardHits), each once.
+  const known = new Set([...hits.kept.map((k) => k.kept.hex), hits.registry?.lookup.hex]);
+  const heard = useHeardHits(typed, !direct && !pick).filter((h) => !known.has(h.plane.hex));
+  // Kept as asked, else opened: the one rule (useSearchPanel's pickAirplane).
+  const keep = (kept: KeptAircraft, open: (hex: string) => void) => {
+    pickAirplane(kept, open);
+    if (airplaneAsk) done();
+  };
+  // One named by its N-number asked for to keep -- the pilot's own, the
+  // registry's -- by the address on the FAA's record (asked already, so at once).
+  const keepTail = async (tail: string) => {
+    const record = await queryClient.fetchQuery(registeredQuery(tail)).catch(() => null);
+    if (record?.mode_s_hex) keep(keptOf({ ...record, mode_s_hex: record.mode_s_hex }), () => {});
+    else setProblem(`The FAA's registry gives no address for ${tail}, so it can't be kept.`);
+  };
   const airplanes: AirplaneHit[] = [
     ...hits.own.map(({ record: r, ...row }) => ({
       ...row,
-      pick: () => openAirplaneProfile(r.tailNumber),
-      fly: () => changeAircraft(aircraftKey(choiceOf(r, hits.profiles ?? []))),
+      pick: () => (airplaneAsk ? void keepTail(r.tailNumber) : openAirplaneProfile(r.tailNumber)),
+      fly: airplaneAsk ? undefined : () => changeAircraft(aircraftKey(choiceOf(r, hits.profiles ?? []))),
     })),
-    ...hits.kept.map(({ kept: a, ...row }) => ({ ...row, pick: () => selectFlight(a.hex) })),
-    ...(hits.registry ? [registryHit(hits.registry, selectFlight)] : []),
-    ...hits.types.map(({ profile: _, ...row }) => ({ ...row, pick: () => wantScreen("airplanes") })),
+    ...hits.kept.map(({ kept: a, ...row }) => ({ ...row, pick: () => keep(a, selectFlight) })),
+    ...(hits.registry ? [registryHit(hits.registry, selectFlight, airplaneAsk ? keepTail : null)] : []),
+    ...heard.map(({ plane, ...row }) => ({ ...row, pick: () => keep(keptPlane(plane), () => selectFlight(plane.hex, plane)) })),
+    ...(airplaneAsk ? [] : hits.types.map(({ profile: _, ...row }) => ({ ...row, pick: () => wantScreen("airplanes") }))),
   ];
 
-  const airports = useMemo(() => search.rows.filter((r) => r.kind !== "fix"), [search.rows]);
-  const noFixes = direct || (!!pick && !pick.fixes);
+  const airports = useMemo(() => (airplaneAsk ? [] : search.rows.filter((r) => r.kind !== "fix")), [airplaneAsk, search.rows]);
+  const noFixes = direct || airplaneAsk || (!!pick && !pick.fixes);
   const waypoints = useMemo(() => (noFixes ? [] : search.rows.filter((r) => r.kind === "fix")), [noFixes, search.rows]);
 
   // Done: what is typed let go, Direct To and a picker's ask put away.
@@ -157,7 +181,8 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   // Here's does (the owner's "Departure → HSKEL → KJAX", 2026-11-13).
   if (pick?.label === "Departure" && positioned && (!typed || finds(typed, "My Position")))
     does.push({ key: "my-position", label: "My Position", kind: "action", run: () => pickIdent(positionNow() ?? "") });
-  if (!direct && !pick) {
+  const trafficOn = usePreferences((p) => p.traffic);
+  if (!direct && !pick && !airplaneAsk) {
     const out = does;
     const first = airports[0];
     // Direct To the first airport found, where the radio can fly one.
@@ -165,9 +190,12 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
       out.push({ key: "direct-first", label: `Direct to ${first.ident}`, kind: "action", run: () => void flyDirect(first.ident) });
     const actions: DoHit[] = [
       { key: "direct", label: "Direct To…", keys: DIRECT_KEY, kind: "action", run: () => (setDirect(true), setQuery("")) },
-      { key: "traffic", label: "Traffic Nearby", kind: "action", run: () => (done(), pickView("traffic"), riseToSee(setPanel)) },
+      // The traffic on the map, where its page was (2026-11-14): the airplanes
+      // heard are found by this search, and a tap on one opens its card.
+      { key: "traffic", label: "Show Traffic", kind: "action", run: () => (done(), usePreferences.getState().setTraffic(true)) },
     ];
-    for (const a of actions) if (!typed || finds(typed, a.label)) if (a.key !== "direct" || directTo) out.push(a);
+    for (const a of actions)
+      if (!typed || finds(typed, a.label)) if ((a.key !== "direct" || directTo) && (a.key !== "traffic" || !trafficOn)) out.push(a);
     for (const id of OFFERED) {
       const title = SCREENS[id].title;
       if (typed && !finds(typed, title)) continue;
@@ -335,6 +363,8 @@ export type OneSearchModel = ReturnType<typeof useOneSearch>;
 function registryHit(
   row: NonNullable<ReturnType<typeof useAirplaneHits>["registry"]>,
   selectFlight: (hex: string, plane?: TrafficAircraft) => void,
+  /** Asked for one to keep: kept by its N-number, not opened. */
+  keep: ((tail: string) => Promise<void>) | null,
 ): AirplaneHit {
   const { key, title, detail, lookup } = row;
   const { inAir } = lookup;
@@ -343,7 +373,7 @@ function registryHit(
     title,
     detail,
     live: lookup.inAirWords,
-    pick: () => openAirplaneProfile(title),
-    track: inAir.state === "flying" ? () => selectFlight(inAir.plane.hex, inAir.plane) : undefined,
+    pick: () => (keep ? void keep(title) : openAirplaneProfile(title)),
+    track: !keep && inAir.state === "flying" ? () => selectFlight(inAir.plane.hex, inAir.plane) : undefined,
   };
 }
