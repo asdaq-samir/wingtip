@@ -1,10 +1,12 @@
 package app.wingtipmaps.gateway.controller;
 
 import app.wingtipmaps.gateway.domain.Pilot;
+import app.wingtipmaps.gateway.dto.NotesForgottenDto;
 import app.wingtipmaps.gateway.dto.PilotContactRequest;
 import app.wingtipmaps.gateway.dto.PilotDto;
 import app.wingtipmaps.gateway.service.AccountService;
 import app.wingtipmaps.gateway.service.AccountService.AccountNotDeletedException;
+import app.wingtipmaps.gateway.service.CheckpointNotesClient;
 import app.wingtipmaps.gateway.service.PilotService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -29,7 +31,8 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Who the caller is -- the endpoint a front end asks on load to decide
  * whether to show a sign-in button or a pilot's own flights -- their
- * contact for a flight plan, and the deletion of their account.
+ * contact for a flight plan, their own checkpoint notes forgotten, and the
+ * deletion of their account.
  */
 @RestController
 @RequestMapping("/api/me")
@@ -39,10 +42,12 @@ public class PilotController {
 
     private final PilotService pilots;
     private final AccountService accounts;
+    private final CheckpointNotesClient notes;
 
-    public PilotController(PilotService pilots, AccountService accounts) {
+    public PilotController(PilotService pilots, AccountService accounts, CheckpointNotesClient notes) {
         this.pilots = pilots;
         this.accounts = accounts;
+        this.notes = notes;
     }
 
     @Operation(
@@ -73,6 +78,21 @@ public class PilotController {
     @PutMapping("/contact")
     public ResponseEntity<PilotDto> setContact(Pilot pilot, @Valid @RequestBody PilotContactRequest request) {
         return ResponseEntity.ok(toDto(pilots.setContact(pilot, request.phone(), request.homeBase())));
+    }
+
+    @Operation(
+            summary = "Forget the signed-in pilot's own checkpoint notes",
+            description = "Every note they wrote for themselves, which the planner keeps; the shared notes stay. "
+                    + "The planner's own route for it is internal (no x-gateway mark): this names the pilot from the "
+                    + "session, as the account's deletion does.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "How many went"),
+        @ApiResponse(responseCode = "401", description = "No session"),
+        @ApiResponse(responseCode = "502", description = "The planner could not be asked; nothing went")
+    })
+    @DeleteMapping("/checkpoint-notes")
+    public NotesForgottenDto forgetNotes(Pilot pilot) {
+        return new NotesForgottenDto(notes.forget(pilot));
     }
 
     @Operation(

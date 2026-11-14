@@ -201,18 +201,17 @@ list is where it was.
 
 ### iOS
 
-The one search (the owner's design of 2026-11-09) replaced the sheet's
-four tabs: the plan is the sheet's root, under one stock `.searchable`
-field ("Search airports, airplanes, or ask") with the microphone and the
-account button beside it. Since the card rule (the owner, 2026-11-10)
-every thing and every page opens as **one card over the plan's sheet**,
-as Apple Maps opens a place over its search: the system sheet, half way
-for a thing (a field, an airplane, a leg, a hold, the Map card) and full
-for a page, the map live above it up to half height, its close at the
-right, one card at a time (a field tapped after another takes its place).
-What a card opens is pushed in the card's own stack with Back
-(`Navigation/Navigator`, `CardHost`, `SheetPage`). Only the emergency
-assistant is full screen, its close at the top right. Questions are the
+The sheet has two pages, Search and FPL, turned by one round toggle
+under the 3D button (`Views/MapButtonsDock.swift`); Search is one stock
+`.searchable` field ("Search airports, airplanes, or ask") with the
+microphone and the account button beside it. Since the card rule (the
+owner, 2026-11-10) every thing and every page opens as **one card over
+the sheet**, as Apple Maps opens a place over its search: the system
+sheet at half (`.medium`), the map live above it up to half height, its
+close at the right, one card at a time (a field tapped after another
+takes its place). Emergency alone opens at `.large`, a card like the
+rest. What a card opens is pushed in the card's own stack with Back
+(`Navigation/Navigator`, `CardHost`, `SheetPage`). Questions are the
 stock alert or confirmation dialog (Ready to Fly's prompt, a form's
 Discard Changes?). The iPad's sidebar holds the same search and plan, its
 pages pushed there and its things in the inspector. Counted from the map

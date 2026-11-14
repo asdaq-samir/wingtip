@@ -182,7 +182,19 @@ public class PilotService {
 
     /**
      * The pilot for the current request, or empty when nobody is signed
-     * in or the principal is a kind this app never issues.
+     * in, the principal is a kind this app never issues, or its pilot is
+     * gone (an account deleted while one of its sessions lived on).
+     *
+     * <p>Found, never made: every sign-in made or adopted the pilot already
+     * (PilotOidcUserService and AppleNativeSignInController through
+     * {@link #fromOidcUser}, MagicLinkController and DeviceSignInController
+     * through {@link #fromVerifiedEmail}), so a request only looks them up
+     * -- by the provider's subject, or the link's address. It ran the whole
+     * find-or-create on every request, which could write a provider's new
+     * address on a read and made a deleted pilot again from a session that
+     * outlived them (the September simplification audit's F-BE01-1). The
+     * one write left is a developer listed since they signed in, made one
+     * at their next request ({@link #withListedRole}).
      */
     @Transactional
     public Optional<Pilot> current(Authentication authentication) {
@@ -191,10 +203,16 @@ public class PilotService {
         }
         if (authentication instanceof OAuth2AuthenticationToken oauth
                 && oauth.getPrincipal() instanceof OAuth2User user) {
-            return Optional.of(fromOidcUser(user, oauth.getAuthorizedClientRegistrationId()));
+            String subject = user.getAttribute("sub");
+            if (!StringUtils.hasText(subject)) {
+                return Optional.empty();
+            }
+            boolean apple = "apple".equals(oauth.getAuthorizedClientRegistrationId());
+            return (apple ? pilots.findByAppleSubject(subject) : pilots.findByGoogleSubject(subject))
+                    .map(this::withListedRole);
         }
         if (authentication instanceof MagicLinkAuthenticationToken magicLink) {
-            return Optional.of(fromVerifiedEmail((String) magicLink.getPrincipal()));
+            return pilots.findByEmail((String) magicLink.getPrincipal()).map(this::withListedRole);
         }
         return Optional.empty();
     }

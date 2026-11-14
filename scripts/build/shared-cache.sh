@@ -94,6 +94,31 @@ engine_store_publish() {
   fi
 }
 
+# --- the engine a phone's build links ---------------------------------------
+
+# The engine's hash, engine_store_key's, written into a phone's engine build
+# (<dir>/engine.hash: the XCFramework's folder, Android's app/engine) by
+# build-xcframework.sh and build-android.sh, whether built or copied from
+# the store. Rules are asked by name, so an app linked against an older
+# engine builds without a word and only says "the engine has no rule
+# called ..." on a screen (IOS-11, 2026-11-14); the stamp lets a build see
+# it first. Kept in CI too, where nothing else of the store is.
+engine_stamp() {
+  engine_store_key > "$1/engine.hash"
+}
+
+# Fails, saying so, where the phone's engine build in <dir> is missing or
+# was built from another engine than this checkout's; <rebuild> is the
+# script that makes it again, named in the message.
+engine_stamp_check() {
+  local dir=$1 rebuild=$2 have want
+  want=$(engine_store_key)
+  have=$(cat "$dir/engine.hash" 2>/dev/null || echo none)
+  [ "$have" = "$want" ] && return 0
+  echo "the engine in $dir is engine $have, not this checkout's $want: run $rebuild" >&2
+  return 1
+}
+
 # --- sccache ---------------------------------------------------------------
 
 # The sccache binary for <triple> (aarch64-unknown-linux-musl,

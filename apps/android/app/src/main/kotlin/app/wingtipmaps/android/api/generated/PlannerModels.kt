@@ -699,6 +699,9 @@ data class PinWeather (
     @SerialName("crosswind_kt")
     val crosswindKt: Double? = null,
 
+    @SerialName("visibility_plus")
+    val visibilityPlus: Boolean? = null,
+
     @SerialName("visibility_sm")
     val visibilitySm: Double? = null,
 
@@ -5098,7 +5101,9 @@ data class Detour (
  * the figure the plans are compared on; `tailwind_kt` the
  * distance-weighted wind component along the course, positive helping,
  * over the legs that had wind data. With no airplane, the lowest and
- * highest alone, their times, fuel, climb and wind None.
+ * highest alone, their times, fuel, climb and wind None; with no climb
+ * fuel flow in the airplane's profile, no economical plan, as its
+ * climbs' fuel is not known (the engine's navlog_plans).
  */
 @Serializable
 data class AltitudeOption (
@@ -5372,6 +5377,9 @@ data class NavLogLeg (
 
     @SerialName("altitude_ft")
     val altitudeFt: Double,
+
+    @SerialName("climb_fuel_unknown")
+    val climbFuelUnknown: Boolean? = null,
 
     @SerialName("climb_min")
     val climbMin: Double? = null,
@@ -5676,6 +5684,9 @@ data class NavLogMessage (
     val flown: String? = null,
     val options: List<AltitudeOption>? = null,
     val airway: AirwayAltitudes? = null,
+
+    @SerialName("climb_fuel_unknown")
+    val climbFuelUnknown: Boolean? = null,
 
     @SerialName("climb_min")
     val climbMin: Double? = null,
@@ -6429,8 +6440,9 @@ data class Plan (
  * altitude on a standard day, and the forecast temperature at this
  * altitude gives the density altitude they are flown at, at the power
  * it allows -- the cruise power, or less where full throttle cannot
- * make it. `oat_c` is None where no forecast temperature was near: a
- * standard day is assumed there.
+ * make it; `power_pct` None where the profile names no cruise power, its
+ * TAS and burn then as given. `oat_c` is None where no forecast
+ * temperature was near: a standard day is assumed there.
  */
 @Serializable
 data class Leg (
@@ -6438,6 +6450,9 @@ data class Leg (
 
     @SerialName("altitude_ft")
     val altitudeFt: Double,
+
+    @SerialName("climb_fuel_unknown")
+    val climbFuelUnknown: Boolean? = null,
 
     @SerialName("climb_min")
     val climbMin: Double? = null,
@@ -7070,7 +7085,9 @@ data class RouteNotesRequest (
  * The ways to fly a route, the fastest first; what the straight line
  * crosses (`direct`), what is at its ends (`ends`) and what the pilot's
  * own route crosses and passes (`current`, `current_marginal`), by index
- * in `hazards`; and the sources that could not be read now (`unchecked`).
+ * in `hazards`; and what could not be read or is not known now
+ * (`unchecked`, the engine's words: "terrain", "TFRs", "service ceiling",
+ * "start and taxi fuel" ...).
  */
 @Serializable
 data class RouteOptions (
@@ -7142,8 +7159,11 @@ data class RouteBand (
 )
 
 /**
- * What a way keeps clear of (wingtip.route_options): its kind -- storm,
- * weather, marginal, sigmet, tfr, prohibited, terrain -- and its words.
+ * What a way keeps clear of or is told of (wingtip.route_options): its
+ * kind -- storm, weather, marginal, sigmet, tfr, prohibited, terrain,
+ * fuel, or a special-use area a way is flown through and stays open
+ * across (restricted, moa, warning, alert; AIM 3-4-3 to 3-4-6) -- and its
+ * words ("Restricted area R-2508").
  */
 @Serializable
 data class RouteHazard (
@@ -7193,6 +7213,7 @@ data class RouteOption (
     val tailKt: Double? = null,
 
     val title: String,
+    val warning: String? = null,
 
     @SerialName("water_nm")
     val waterNm: Int? = null

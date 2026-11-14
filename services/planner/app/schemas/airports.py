@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from .airport_lights import LightingNote, LightingSystem
 from .airport_record import AirportRecord
-from .common import Frequency, Metar, Runway, TrafficPattern
+from .field import Frequency, Metar, Runway, TrafficPattern
 from .plates import ApproachFacts
 
 

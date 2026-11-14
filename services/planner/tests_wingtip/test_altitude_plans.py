@@ -25,11 +25,17 @@ def legal_cruising_altitudes(floor_ft, ceiling_ft, course, rule_from_ft=None):
     )
 
 
+# A hand-set airplane with every figure the four plans need: its cruise
+# power, so the thinner air's speed is modelled, and its climb's fuel
+# flow, without which the engine makes no economical plan (no figure of
+# another airplane is assumed for it, the owner's rule of 2026-11-09).
 PROFILE = {
     "cruise_tas_kt": 100.0,
     "fuel_burn_gph": 8.0,
+    "cruise_power_pct": 65.0,
     "climb_rate_fpm_sea_level": 800.0,
     "climb_tas_kt": 70.0,
+    "climb_fuel_burn_gph": 10.4,
     "service_ceiling_ft": 14000.0,
 }
 

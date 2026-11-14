@@ -135,22 +135,12 @@ jobs:
         with:
           path: ~/.cache/wingtip/swift-openapi-generator
           key: swift-openapi-generator-${{ hashFiles('.tool-versions') }}
-      # The phones' API models and engine calls, generated and committed
-      # (neither app's build has Node): a stale one fails here, not on a phone.
-      - name: The phones' generated models and engine calls are the committed ones
+      # The generated and committed files (the phones' models and engine
+      # calls, tokens, screens, icons), each what its source makes: on a
+      # pull request only those it touched (HEAD^1, the base it lands on).
+      - name: The generated files are the committed ones
         working-directory: .
-        run: scripts/ci/phones_generated.sh
-      # The design tokens, the screens' links and the app icons, generated and
-      # committed: each must be what its source makes.
-      - name: The design tokens are the committed ones
-        working-directory: .
-        run: scripts/build/design-tokens.sh --check
-      - name: The screens and their links are the committed ones
-        working-directory: .
-        run: scripts/build/screens.sh --check
-      - name: The app icons are the committed ones
-        working-directory: .
-        run: scripts/build/app-icons.sh --check
+        run: scripts/ci/web_generated.sh ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
       # On a pull request, the tests whose files or imports it changed
       # (Vitest's --changed, against the main it lands on; a change to the
       # package or Vite's config runs them all); on main's push and at
@@ -665,8 +655,9 @@ jobs:
       # done to /tmp/e2e-out/timeline (the shard's annotation lists it). Postgres
       # and Mailpit first, being small; Mailpit's start makes the network the
       # others need. The Playwright image is the slim copy e2e-images makes (no
-      # WebKit, no full Chrome), except at night, whose iOS audit and Lighthouse
-      # need the image itself.
+      # full Chrome, no Firefox; WebKit kept for the webkit-phone smoke on
+      # main's push), except at night, whose iOS audit and Lighthouse need
+      # the image itself.
       - name: The public images, in the background
         env:
           REGISTRY: ghcr.io/${{ github.repository }}
@@ -1019,39 +1010,7 @@ jobs:
         id: keys
         env:
           REGISTRY: ghcr.io/${{ github.repository }}
-        run: |
-          there() { docker buildx imagetools inspect --raw "$1" > /dev/null 2>&1; }
-          keys=$(bash .github/e2e-keys.sh)
-          missing=""
-          while read -r name key; do
-            if [ "$name" = page ]; then
-              if there "$REGISTRY/gateway:e2e-page-$key"; then
-                echo "the page: gateway:e2e-page-$key is there"
-              else
-                echo "the page: gateway:e2e-page-$key to build"
-                echo "page=$REGISTRY/gateway:e2e-page-$key" >> "$GITHUB_OUTPUT"
-              fi
-              continue
-            fi
-            echo "$(echo "$name" | tr 'a-z-' 'A-Z_')_KEY=$key" >> "$GITHUB_ENV"
-            if there "$REGISTRY/$name:e2e-$key"; then
-              echo "$name: e2e-$key is there"
-            else
-              echo "$name: e2e-$key to build"
-              missing="$missing $name"
-            fi
-          done <<< "$keys"
-          echo "missing=${missing# }" >> "$GITHUB_OUTPUT"
-          # And the slim copy of the Playwright image, for the image's
-          # digest: made again whenever what its name points at changes.
-          digest=$(docker buildx imagetools inspect --raw "$PLAYWRIGHT_IMAGE" | sha256sum | cut -d' ' -f1)
-          if there "$REGISTRY/e2e-playwright:${digest:0:16}"; then
-            echo "Playwright: e2e-playwright:${digest:0:16} is there"
-          else
-            echo "Playwright: e2e-playwright:${digest:0:16} to make"
-            echo "playwright=$REGISTRY/e2e-playwright:${digest:0:16}" >> "$GITHUB_OUTPUT"
-            echo "PLAYWRIGHT_FROM=$PLAYWRIGHT_IMAGE@sha256:$digest" >> "$GITHUB_ENV"
-          fi
+        run: scripts/ci/e2e_missing_keys.sh
       - name: Restore the suite's packages, for the page
         if: steps.keys.outputs.page != ''
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -1615,12 +1574,25 @@ jobs:
           sparse-checkout: scripts/ci
       - run: python3 scripts/ci/sources_answer.py
 
+  # A dump of the stack's database restored whole, as the owner's nightly
+  # backup is (scripts/ci/backup_restore.sh): never tried before.
+  backup-restore:
+    name: Backup restores
+    if: github.event_name == 'schedule'
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: scripts/ci/backup_restore.sh
+
   # This run's minutes, job by job, against docs/CI.md's budget, and the
   # caches that missed, in the run's summary: warnings, never a failure
   # (scripts/ci/ci_budget.py). Last, after every job; seconds.
   budget:
     name: CI budget
-    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, e2e, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, passed]
+    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, e2e, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, backup-restore, passed]
     if: ${{ !cancelled() }}
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3

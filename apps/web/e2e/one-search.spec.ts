@@ -35,9 +35,11 @@ test(
   async ({ page }) => {
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
-    // With a route the plan is the sheet's main content, the one search over
-    // it, no tabs.
+    // With a route the sheet opens on FPL, the plan; the one search is its
+    // other page, by the toggle riding the sheet's top (PageToggle, the
+    // owner's 2026-11-13), with no tabs.
     await grabberTo(page, "half");
+    await showPage(page, 0);
     const row = firstRow(page);
     // Short in sight, so it fits beside the mic and Cancel at larger text;
     // the whole sentence its name (the sheet audit's F-S2).

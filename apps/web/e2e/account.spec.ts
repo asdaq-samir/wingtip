@@ -93,7 +93,7 @@ test.describe("the email sign-in link", () => {
       await route.fulfill({ status: 204, body: "" });
     });
     const console = await openPlannerConsole(page);
-    await console.getByRole("button", { name: "Sign in", exact: true }).click();
+    await console.getByRole("button", { name: "Sign In", exact: true }).click();
     const box = page.getByLabel("Email address");
     await box.fill("a@example.com");
     await page.getByRole("button", { name: "Send Link" }).click();
@@ -112,7 +112,7 @@ test.describe("the email sign-in link", () => {
       await route.fulfill({ status: 204, body: "" });
     });
     const console = await openPlannerConsole(page);
-    await console.getByRole("button", { name: "Sign in", exact: true }).click();
+    await console.getByRole("button", { name: "Sign In", exact: true }).click();
     // Sent from the field by Return, the pointer nowhere near the send
     // button: its label is a tooltip with no delay (IconButton), a layer
     // of its own over the dialog, and on CI's desktop runner the Escape
@@ -130,7 +130,7 @@ test.describe("the email sign-in link", () => {
     hold.release();
     await answered;
 
-    await console.getByRole("button", { name: "Sign in", exact: true }).click();
+    await console.getByRole("button", { name: "Sign In", exact: true }).click();
     await expect(page.getByLabel("Email address")).toBeVisible();
     await expect(page.getByRole("dialog").getByRole("status")).toHaveCount(0);
   });
@@ -138,7 +138,7 @@ test.describe("the email sign-in link", () => {
   test("too many asked for says so, not to check the address", async ({ page }) => {
     await page.route("**/api/auth/magic-link", (route) => route.fulfill({ status: 429, body: "" }));
     const console = await openPlannerConsole(page);
-    await console.getByRole("button", { name: "Sign in", exact: true }).click();
+    await console.getByRole("button", { name: "Sign In", exact: true }).click();
     await page.getByLabel("Email address").fill("a@example.com");
     await page.getByRole("button", { name: "Send Link" }).click();
 
@@ -151,7 +151,7 @@ test.describe("the email sign-in link", () => {
     // XSRF-TOKEN got: its POST refused before the address was looked at.
     await page.route("**/api/auth/magic-link", (route) => route.fulfill({ status: 401, body: "" }));
     const console = await openPlannerConsole(page);
-    await console.getByRole("button", { name: "Sign in", exact: true }).click();
+    await console.getByRole("button", { name: "Sign In", exact: true }).click();
     await page.getByLabel("Email address").fill("a@example.com");
     await page.getByRole("button", { name: "Send Link" }).click();
     await expect(page.getByTestId("sign-in-error")).toHaveText("Couldn't send that link. Reload the page and try again.");

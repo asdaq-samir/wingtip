@@ -2156,14 +2156,22 @@
         "required" : [ "email" ],
         "type" : "object"
       },
+      "NotesForgottenDto" : {
+        "properties" : {
+          "removed" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "removed" ],
+        "type" : "object"
+      },
       "OwnFigures" : {
         "description" : "An airplane's own performance figures from its handbook; each null where not given",
         "properties" : {
           "climbRateFpm" : {
             "description" : "Its best rate of climb at sea level, fpm",
-            "exclusiveMinimum" : 0,
             "format" : "double",
-            "maximum" : 5000,
             "type" : [ "number", "null" ]
           },
           "emptyMomentLbIn" : {
@@ -2181,23 +2189,17 @@
           },
           "glideRatio" : {
             "description" : "Its still-air glide ratio, propeller windmilling, flaps up (its handbook's Section 3)",
-            "exclusiveMinimum" : 1,
             "format" : "double",
-            "maximum" : 80,
             "type" : [ "number", "null" ]
           },
           "serviceCeilingFt" : {
             "description" : "Its service ceiling, ft (the altitude where its best climb is 100 fpm)",
             "format" : "double",
-            "maximum" : 30000,
-            "minimum" : 1000,
             "type" : [ "number", "null" ]
           },
           "taxiFuelGal" : {
             "description" : "Its fuel for engine start, taxi and takeoff, gal",
             "format" : "double",
-            "maximum" : 50,
-            "minimum" : 0,
             "type" : [ "number", "null" ]
           }
         },
@@ -5084,6 +5086,46 @@
           }
         },
         "summary" : "The signed-in pilot",
+        "tags" : [ "pilot-controller" ]
+      }
+    },
+    "/api/me/checkpoint-notes" : {
+      "delete" : {
+        "description" : "Every note they wrote for themselves, which the planner keeps; the shared notes stay. The planner's own route for it is internal (no x-gateway mark): this names the pilot from the session, as the account's deletion does.",
+        "operationId" : "forgetNotes",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NotesForgottenDto"
+                }
+              }
+            },
+            "description" : "How many went"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NotesForgottenDto"
+                }
+              }
+            },
+            "description" : "No session"
+          },
+          "502" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NotesForgottenDto"
+                }
+              }
+            },
+            "description" : "The planner could not be asked; nothing went"
+          }
+        },
+        "summary" : "Forget the signed-in pilot's own checkpoint notes",
         "tags" : [ "pilot-controller" ]
       }
     },

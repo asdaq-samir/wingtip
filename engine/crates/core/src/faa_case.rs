@@ -9,6 +9,8 @@
 //! spaces; the scans below keep to those, so an accented letter or an odd
 //! space is treated as the web treated it.
 
+use crate::notam_text::{compass_point, ident_by_place, slashed_code, whole_notam};
+
 /// JavaScript's `\w` without the u flag: ASCII letters, figures and `_`.
 pub fn js_word(c: char) -> bool {
     c.is_ascii_alphanumeric() || c == '_'
@@ -44,8 +46,11 @@ const CODES: [&str; 72] = [
 /// And the codes a TFR's purpose is written with: "VIP MOVEMENT" (a
 /// 91.141 flight restriction in the proximity of the President and other
 /// parties) and "UAS" (unmanned aircraft systems), so they read "VIP
-/// movement" and "UAS", not "Vip" and "uas".
-const MORE_CODES: [&str; 4] = ["RDO", "ANG", "VIP", "UAS"];
+/// movement" and "UAS", not "Vip" and "uas". And a NOTAM's references to
+/// an obstacle's file: the FCC's Antenna Structure Registration (ASR) and
+/// the FAA's aeronautical study number (ASN, 14 CFR 77's obstruction
+/// evaluation).
+const MORE_CODES: [&str; 6] = ["RDO", "ANG", "VIP", "UAS", "ASR", "ASN"];
 
 /// An instrument procedure's codes as its title on the plate writes them
 /// (AIM 5-4-5, the approach charts' naming; the d-TPP's chart names): the
@@ -60,7 +65,7 @@ const PROCEDURE_CODES: [&str; 26] = [
 ];
 
 fn is_code(word: &str) -> bool {
-    CODES.contains(&word) || MORE_CODES.contains(&word) || PROCEDURE_CODES.contains(&word)
+    CODES.contains(&word) || MORE_CODES.contains(&word) || PROCEDURE_CODES.contains(&word) || compass_point(word)
 }
 
 fn day(word: &str) -> Option<&'static str> {
@@ -98,7 +103,7 @@ fn sentence_word(word: &str) -> String {
 /// (AIM 3-2-1). Text with any lower case is someone's own writing and is
 /// left as it is, and so are raw reports, which pilots read as sent.
 pub fn faa_words(text: &str) -> String {
-    if text.bytes().any(|b| b.is_ascii_lowercase()) {
+    if text.bytes().any(|b| b.is_ascii_lowercase()) || whole_notam(text) {
         return text.to_owned();
     }
     let c: Vec<char> = text.chars().collect();
@@ -145,13 +150,22 @@ pub fn faa_words(text: &str) -> String {
                 continue;
             }
         }
+        if edge_before && let Some(len) = slashed_code(&c, i) {
+            out.extend(&c[i..i + len]);
+            i += len;
+            continue;
+        }
         if upper_or_figure(c[i]) {
             let mut j = i;
             while j < c.len() && upper_or_figure(c[j]) {
                 j += 1;
             }
             let word: String = c[i..j].iter().collect();
-            out.push_str(&sentence_word(&word));
+            if ident_by_place(&c, i, j) {
+                out.push_str(&word);
+            } else {
+                out.push_str(&sentence_word(&word));
+            }
             i = j;
             continue;
         }

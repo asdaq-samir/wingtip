@@ -3,8 +3,11 @@ package app.wingtipmaps.gateway.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import org.apache.coyote.CloseNowException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -14,7 +17,8 @@ import org.springframework.web.context.request.async.AsyncRequestNotUsableExcept
  * The catch-all handler's quiet cases, beside its loud one: a browser
  * that left mid-stream (in HTTP/1.1's words and in HTTP/2's), and a
  * response already on its way, get no body; anything else is a 500
- * with a generic message.
+ * with a generic message. And a constraint the database refused: a
+ * tail number already on file says so, any other constraint does not.
  */
 class GlobalExceptionHandlerTest {
 
@@ -75,5 +79,36 @@ class GlobalExceptionHandlerTest {
                 handler.handleUnexpected(new IllegalStateException("boom"), new MockHttpServletResponse());
         assertThat(answer.getStatusCode().value()).isEqualTo(500);
         assertThat(answer.getBody().getDetail()).isEqualTo("An unexpected error occurred");
+    }
+
+    private static DataIntegrityViolationException refused(String constraint) {
+        return new DataIntegrityViolationException(
+                "could not execute statement",
+                new ConstraintViolationException("refused", new SQLException("refused", "23505"), constraint));
+    }
+
+    @Test
+    void aTailNumberAlreadyOnFileSaysSo() {
+        ProblemDetail answer = handler.handleDataIntegrityViolation(refused("uq_aircraft_pilot_tail"));
+        assertThat(answer.getStatus()).isEqualTo(409);
+        assertThat(answer.getDetail()).isEqualTo("That tail number is already registered");
+    }
+
+    @Test
+    void aNavLogsCheckpointSequenceIsNoTailNumber() {
+        ProblemDetail answer = handler.handleDataIntegrityViolation(refused("uq_flight_checkpoint_sequence"));
+        assertThat(answer.getStatus()).isEqualTo(409);
+        assertThat(answer.getDetail()).doesNotContain("tail number").contains("conflicts with what is already saved");
+    }
+
+    @Test
+    void aForeignKeyOrAMissingValueIsNoTailNumber() {
+        for (var ex : new DataIntegrityViolationException[] {
+            refused("flight_checkpoints_flight_id_fkey"),
+            refused(null),
+            new DataIntegrityViolationException("not-null", new SQLException("null value", "23502"))
+        }) {
+            assertThat(handler.handleDataIntegrityViolation(ex).getDetail()).doesNotContain("tail number");
+        }
     }
 }

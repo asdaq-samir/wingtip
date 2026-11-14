@@ -49,7 +49,7 @@ The owner, 2026-11-09, standing:
 |---|---|---|
 | Java | Temurin 25 (`temurin-25`, the LTS) | the gateway (pom `java.version`, `maven:3.10-eclipse-temurin-25`, `eclipse-temurin:25-jre`) and Android (Gradle's daemon JVM, Java 25 bytecode) |
 | Python | 3.15.2 | every service and job image (`python:3.15-slim`), CI's setup-python, the dev container |
-| Rust | 1.99.1, edition 2024 | `engine/rust-toolchain.toml`, every engine crate, the WebAssembly build |
+| Rust | 1.100.0, edition 2024 | `engine/rust-toolchain.toml`, every engine crate, the WebAssembly build |
 | Node | 26 | `apps/web/.nvmrc`, the web build (`node:26-slim`), CI |
 | Gradle | 9.9.1 | `apps/android/gradle/wrapper/gradle-wrapper.properties` |
 | Maven | 3.10.0 | the gateway's build image |
@@ -133,7 +133,6 @@ written here.
 
 | When | Upgrade | Blocked by | Source |
 |---|---|---|---|
-| 2026-11-12 | Rust 1.100.0 (`.tool-versions`' `rust`) | Nothing: bump on release, rebuild the `.wasm` | [releases.rs](https://releases.rs/) |
 | 2026-11-19 | Spring Boot 4.2.0 (and 4.1.3 the same day) | Nothing known; its milestone is due that day | [spring-boot milestones](https://github.com/spring-projects/spring-boot/milestones) |
 | When Google ships it | Material 3 1.5.0 stable (rc01 since 2026-11-04; beta02 was 2026-10-21) | Google's release; then `material3` may go back on the BOM if the BOM carries 1.5.0 | [Compose Material 3 releases](https://developer.android.com/jetpack/androidx/releases/compose-material3) |
 | When Google ships it | AppFunctions 1.0.0 stable; ML Kit Prompt API out of beta | Google's releases | [docs/android-ai.md](android-ai.md) |

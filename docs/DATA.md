@@ -79,13 +79,20 @@ works them out on demand, the same for everyone.
 
 Backups: the owner's Mac dumps it every night ([LOCAL-DEV.md](LOCAL-DEV.md#the-nightly-database-backup));
 the server copies it to S3 ([README-AWS.md](README-AWS.md#backups-and-restore)).
+CI restores such a dump each night (`scripts/ci/backup_restore.sh`, the
+"Backup restores" job): a throwaway Postgres dumped by
+`scripts/dev/backup-db.sh` and restored whole into an empty one, its rows
+and grants counted, so a dump that cannot be restored is found then.
 
 ## The data folder
 
 `data/` at the repository's root, mounted into every Python service at
 `/workspace/data`. Git tracks `aircraft/` and one seed file each in
 `labels/` (`checkpoint_notes.csv`) and `processed/` (the C81 to KDLH
-candidates); the rest is fetched or made and is gitignored.
+candidates); the rest is fetched or made and is gitignored. The rest of
+`labels/` and `processed/` is the owner's ratings and features, never
+committed (CLAUDE.md, "Never"); the two seed files are the one exception,
+staged only when changing them is the commit's point.
 
 ```
 data/
@@ -94,7 +101,9 @@ data/
                 tiles (charts.nosync/, chart_tiles.nosync/), the cycle packs (raw/packs)
   processed/    feature tables made from it
   labels/       the owner's ratings (chart_picks.csv) and pilots' checkpoint notes
-  aircraft/     stock performance profiles (c172.json and others)
+  aircraft/     stock performance profiles (c172.json and others), each figure with
+                its handbook's page in a source field; one no handbook gives is left
+                out (the PA-28-140s' climb fuel flow), never filled from another airplane
   models/       the trained models: candidate/, current/, versions/<time>/, and run.json
 ```
 

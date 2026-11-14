@@ -23,6 +23,9 @@ class PinWeather(BaseModel):
     wind_speed_kt: float | None = None
     wind_gust_kt: float | None = None
     visibility_sm: float | None = None
+    #: The visibility is at least `visibility_sm`: the report's P6SM, the
+    #: AWC's "10+" (the engine's awc_metars_read), for a station model's "6+".
+    visibility_plus: bool = False
     wx: str | None = None
     ceiling_ft: float | None = None
     #: The ceiling's layer as the METAR writes it: "BKN", "OVC" or "VV" (an
