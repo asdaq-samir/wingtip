@@ -365,7 +365,10 @@ pub(crate) fn runway(i: In, r: &Value) -> R<Runway> {
         ends: i
             .list(r, "runway_ends")?
             .iter()
-            .map(|e| Ok(End { ident: i.str(e, "ident")?, heading_true_deg: i.opt_num(e, "heading_true_deg")? }))
+            .map(|e| {
+                let (displaced_threshold_ft, lda_ft) = (i.opt_num(e, "displaced_threshold_ft")?, i.opt_num(e, "lda_ft")?);
+                Ok(End { ident: i.str(e, "ident")?, heading_true_deg: i.opt_num(e, "heading_true_deg")?, displaced_threshold_ft, lda_ft })
+            })
             .collect::<R<_>>()?,
         wind: runway_wind(i, r)?,
     })
@@ -592,6 +595,7 @@ fn end_distance_rule(i: In, v: &Value) -> R<String> {
     let (d, over) = runways::end_distance(
         &t,
         r.as_ref(),
+        r.as_ref().and_then(|r| r.length_ft),
         (i.num(v, "pressure_alt_ft")?, i.num(v, "temp_c")?),
         i.opt_num(v, "weight_lb")?,
         i.num(v, "headwind_kt")?,

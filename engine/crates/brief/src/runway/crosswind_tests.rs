@@ -22,11 +22,11 @@ fn a_crosswind_rounded_down_to_the_demonstrated_is_still_past_it() {
     // 20.8 kt at 30° is 10.4 kt across: it rounds to 10.
     let wind = FitWind { dir_true_deg: Some(30.0), speed_kt: Some(20.8), gust_kt: None };
     let field = FieldReport { elevation_ft: None, altimeter_in_hg: None, temp_c: None };
-    let fit = end_fit(None, Some(10.0), &Runway::default(), Some(360.0), Some(&wind), &field, None);
+    let fit = end_fit(None, Some(10.0), &Runway::default(), Some(360.0), Some(&wind), &field, None, None);
     assert!(fit.crosswind_over);
     assert_eq!(fit.crosswind_kt, 10.4);
     // Within the demonstrated, it is the whole knots.
-    let fit = end_fit(None, Some(11.0), &Runway::default(), Some(360.0), Some(&wind), &field, None);
+    let fit = end_fit(None, Some(11.0), &Runway::default(), Some(360.0), Some(&wind), &field, None, None);
     assert!(!fit.crosswind_over);
     assert_eq!(fit.crosswind_kt, 10.0);
 }

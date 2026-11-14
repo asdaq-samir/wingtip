@@ -6,9 +6,11 @@
 //! what 14 CFR 91.103(b) asks a pilot to know. The Brief's runway check
 //! (crate::gonogo::runways) and FPL's runway chips go by the same sums.
 
-use super::pick::Runway;
+use super::pick::{available_ft, End, Runway};
 use super::wind::{crosswind_kt, headwind_kt, js_round, steady_or_gust_kt};
 use crate::flight;
+use crate::gonogo::calls::{runway, table, In};
+use crate::json::{self, Value};
 
 /// The field's pressure altitude from its elevation and the altimeter
 /// setting reported: a thousand feet for every inch under 29.92
@@ -202,11 +204,13 @@ pub fn field_air(elevation_ft: f64, altimeter_in_hg: Option<f64>, temp_c: Option
 /// "within" (14 CFR 91.103(b): the runway lengths are among what a pilot
 /// must know).
 pub fn end_distance(
-    table: &ShortField, runway: Option<&Runway>, air: (f64, f64), weight_lb: Option<f64>, headwind_kt: f64,
+    table: &ShortField, runway: Option<&Runway>, available_ft: Option<f64>, air: (f64, f64), weight_lb: Option<f64>, headwind_kt: f64,
 ) -> (Distances, bool) {
     let heaviest = table.weights_lb.iter().copied().fold(f64::NEG_INFINITY, f64::max);
     let d = short_field(table, air.0, air.1, weight_lb.unwrap_or(heaviest), headwind_kt, soft_surface(runway));
-    let over = runway.and_then(|r| r.length_ft).is_some_and(|length| d.total_ft > length);
+    // Against the runway available (pick::available_ft), a landing's past
+    // any displaced threshold, not the whole length.
+    let over = available_ft.is_some_and(|length| d.total_ft > length);
     (d, over)
 }
 
@@ -271,10 +275,13 @@ pub struct FieldReport {
 /// airplane today for a takeoff or a landing: the POH's short-field
 /// `table` for it (None where the profile has none) and its demonstrated
 /// crosswind, the weight (None, the table's heaviest), the field's air and
-/// the reported wind.
+/// the reported wind. `landing_end` is the end landed on, whose displaced
+/// threshold or declared LDA shortens the runway (pick::available_ft);
+/// None for a takeoff, which has the whole length.
+#[allow(clippy::too_many_arguments)]
 pub fn end_fit(
     table: Option<&ShortField>, demonstrated_kt: Option<f64>, runway: &Runway, heading_true_deg: Option<f64>, wind: Option<&FitWind>,
-    field: &FieldReport, weight_lb: Option<f64>,
+    field: &FieldReport, weight_lb: Option<f64>, landing_end: Option<&End>,
 ) -> EndFit {
     // Along and across the end (wingtip.runway_wind.components_kt): none with
     // no wind. A variable one (VRB, reported with no direction, AIM 7-1-28)
@@ -296,12 +303,12 @@ pub fn end_fit(
     // page only (wind::crosswind_shown; the aviation audit's AV-10).
     let judged = steady_or_gust_kt(across(wind.and_then(|w| w.speed_kt)), Some(across(wind.and_then(|w| w.gust_kt))));
     let crosswind = super::wind::crosswind_shown(judged, js_round(judged), demonstrated_kt);
-    let length_ft = runway.length_ft;
+    let length_ft = available_ft(runway, landing_end);
     // No elevation, no distance: a field taken as at sea level needs less
     // runway than it will, the higher it is (FAA-H-8083-25C, chapter 11).
     let distances = table.zip(field.elevation_ft).map(|(t, elevation_ft)| {
         let air = field_air(elevation_ft, field.altimeter_in_hg, field.temp_c);
-        end_distance(t, Some(runway), air, weight_lb, js_round(headwind)).0
+        end_distance(t, Some(runway), length_ft, air, weight_lb, js_round(headwind)).0
     });
     let needed_ft = distances.as_ref().map(|d| js_round(d.total_ft));
     let short = matches!((needed_ft, length_ft), (Some(n), Some(l)) if n > l);
@@ -316,4 +323,62 @@ pub fn end_fit(
         unknown: needed_ft.is_none() || length_ft.is_none(),
         beyond: distances.as_ref().is_some_and(Distances::beyond),
     }
+}
+
+/// `{"aircraft"?: {"takeoff"?, "landing"?, "crosswind"?: {"demonstrated_kt"?}},
+/// "runway", "end": {"heading_true_deg"?}, "wind"?: {"dir_true_deg"?,
+/// "speed_kt"?, "gust_kt"?}, "elevation_ft"? (null: not known, no distance), "altimeter_in_hg"?, "temp_c"?,
+/// "weight_lb"?, "kind": "takeoff"|"landing"}`. A landing's end is the
+/// "end" given, its `displaced_threshold_ft` and `lda_ft` its own or, where
+/// it names its `ident`, the runway's end of that ident's.
+pub(crate) fn end_fit_rule(i: In, v: &Value) -> Result<String, String> {
+    let aircraft = i.obj(v, "aircraft")?;
+    let takeoff = i.str(v, "kind")? == "takeoff";
+    let t = match aircraft.map(|a| i.obj(a, if takeoff { "takeoff" } else { "landing" })).transpose()?.flatten() {
+        Some(t) => Some(table(i, t)?),
+        None => None,
+    };
+    let demonstrated = match aircraft.map(|a| i.obj(a, "crosswind")).transpose()?.flatten() {
+        Some(c) => i.opt_num(c, "demonstrated_kt")?,
+        None => None,
+    };
+    let r = runway(i, i.obj(v, "runway")?.map_or_else(|| i.err("runway", "is missing"), Ok)?)?;
+    let end = i.obj(v, "end")?;
+    let heading = match end {
+        Some(e) => i.opt_num(e, "heading_true_deg")?,
+        None => None,
+    };
+    let landing_end = match end.filter(|_| !takeoff) {
+        None => None,
+        Some(e) => {
+            let named = i.opt_str(e, "ident")?.and_then(|id| r.ends.iter().find(|x| x.ident == id).cloned()).unwrap_or_default();
+            Some(End {
+                displaced_threshold_ft: i.opt_num(e, "displaced_threshold_ft")?.or(named.displaced_threshold_ft),
+                lda_ft: i.opt_num(e, "lda_ft")?.or(named.lda_ft),
+                ..named
+            })
+        }
+    };
+    let wind = match i.obj(v, "wind")? {
+        Some(w) => Some(FitWind {
+            dir_true_deg: i.opt_num(w, "dir_true_deg")?,
+            speed_kt: i.opt_num(w, "speed_kt")?,
+            gust_kt: i.opt_num(w, "gust_kt")?,
+        }),
+        None => None,
+    };
+    let field = FieldReport {
+        elevation_ft: i.opt_num(v, "elevation_ft")?,
+        altimeter_in_hg: i.opt_num(v, "altimeter_in_hg")?,
+        temp_c: i.opt_num(v, "temp_c")?,
+    };
+    let f = end_fit(t.as_ref(), demonstrated, &r, heading, wind.as_ref(), &field, i.opt_num(v, "weight_lb")?, landing_end.as_ref());
+    let mut out = String::from("{\"crosswind_kt\":");
+    json::number(&mut out, f.crosswind_kt);
+    out.push_str(&format!(",\"crosswind_over\":{},\"needed_ft\":", f.crosswind_over));
+    json::opt_number(&mut out, f.needed_ft);
+    out.push_str(",\"length_ft\":");
+    json::opt_number(&mut out, f.length_ft);
+    out.push_str(&format!(",\"short\":{},\"close\":{},\"unknown\":{},\"beyond\":{}}}", f.short, f.close, f.unknown, f.beyond));
+    Ok(out)
 }

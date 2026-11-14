@@ -693,7 +693,7 @@ fn runway(length: f64, headwind: f64, crosswind: f64) -> Runway {
 }
 
 fn ends(a: &str, ha: f64, b: &str, hb: f64) -> Vec<End> {
-    vec![End { ident: s(a), heading_true_deg: Some(ha) }, End { ident: s(b), heading_true_deg: Some(hb) }]
+    [(a, ha), (b, hb)].map(|(e, h)| End { ident: s(e), heading_true_deg: Some(h), ..End::default() }).to_vec()
 }
 
 fn fields(c81: Vec<Runway>, kdlh: Vec<Runway>, c81_metar: Option<Report>) -> Vec<Field> {
@@ -795,7 +795,7 @@ fn flown_runway(pairs: &[(&str, f64)], length: f64, w: Option<RunwayWind>, close
         surface: Some(s("ASP")),
         length_ft: Some(length),
         closed,
-        ends: pairs.iter().map(|(i, h)| End { ident: s(i), heading_true_deg: Some(*h) }).collect(),
+        ends: pairs.iter().map(|(i, h)| End { ident: s(i), heading_true_deg: Some(*h), ..End::default() }).collect(),
         wind: w,
     }
 }

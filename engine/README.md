@@ -262,7 +262,10 @@ Then the callers switch to the name and the old copy is deleted.
   the knot for the page only: a limit (the POH's demonstrated crosswind,
   the pilot's own) is judged against the unrounded one, which a
   runway's wind carries as `crosswind_exact_kt`, and one past its limit
-  that rounds within it is shown to the tenth.
+  that rounds within it is shown to the tenth. A landing's distance is
+  held to the runway available on its end (`displaced_threshold_ft`,
+  `lda_ft` on each of a runway's ends: the declared LDA, else the length
+  past a displaced threshold, AIM 2-3-3), a takeoff's to the whole length.
 - The nav log is the engine's too (`crates/route`'s navlog, over
   `crates/flight`'s performance; #482 phase 4): each leg's wind triangle,
   headings, ground speed, time and fuel with the airplane flown in the

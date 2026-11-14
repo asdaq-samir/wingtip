@@ -15,7 +15,9 @@ use crate::json;
 pub use crate::runway::performance::{
     density_altitude_ft, end_distance, field_air, pressure_altitude_ft, short_field, soft_surface, Distances, ShortField,
 };
-pub use crate::runway::pick::{bare_ident, picked_end, runway_flown, runway_in_use, runway_number, End, Flown, Picks, Runway};
+pub use crate::runway::pick::{
+    available_ft, bare_ident, picked_end, runway_flown, runway_in_use, runway_number, End, Flown, Picks, Runway,
+};
 use wingtip_core::sort::StableSort;
 
 /// A field's current report, as much as the check reads of it.
@@ -189,8 +191,12 @@ pub fn runway_checks(
                     let on = flown_for(takeoff);
                     let (table, weight) = if takeoff { (takeoff_table, takeoff_lb) } else { (landing_table, landing_lb) };
                     let runway = on.runway.map(|r| &runways[r]);
-                    let (d, over) = end_distance(table, runway, air, weight, on.headwind);
-                    let unknown = runway.and_then(|r| r.length_ft).is_none();
+                    // A landing has the runway past a displaced threshold, or
+                    // its declared LDA (pick::available_ft); a takeoff all of it.
+                    let landed = runway.and_then(|r| r.ends.iter().find(|e| !takeoff && Some(&e.ident) == on.end.as_ref()));
+                    let available = runway.and_then(|r| available_ft(r, landed));
+                    let (d, over) = end_distance(table, runway, available, air, weight, on.headwind);
+                    let unknown = available.is_none();
                     let beyond = d.beyond();
                     EndCheck {
                         kind: if takeoff { "takeoff" } else { "landing" },
