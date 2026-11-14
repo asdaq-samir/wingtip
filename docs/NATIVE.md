@@ -366,8 +366,10 @@ these places:
   tile on MapKit's drawing threads about 1 ms (measured on the Mac mini,
   2026-11-08). Each load is a signpost (`app.wingtipmaps.ios`, `tiles`).
 - **Marks** (`Views/ChartMap`, `Views/AirportMarks`): the airports'
-  annotations carry display priorities by the field's size
-  and airspace, so MapKit drops overlaps rather than drawing them; the
+  annotations carry display priorities from the in-view answer's
+  `mark_order` (the engine's `field_mark_rank`, as the web's tiles'
+  `rank`; a pack's field, which has none yet, asks the rule with what its
+  pin carries), so MapKit drops overlaps rather than drawing them; the
   checkpoints' annotations are diffed, not removed and re-added.
 - **The map's data from the packs** (`PackMapData`, `Views/ChartOverlays`):
   the airports, airspace and navaids in view are asked of the engine's
@@ -400,10 +402,11 @@ code:
   the web's lift of the chart (`ChartLift`: MapLibre's raster-contrast
   and -saturation 0.1); at night, dimmed, as printed.
 - **ForeFlight-style overlays** (`Views/ChartOverlays`, `AirportMarks`):
-  the sectional's airport symbols (towered blue, others magenta, R and M
-  for private and military, the flight category a pip; `towered` from
-  `/api/airports/in-view` and, from the packs, the engine's
-  airports_in_view reading APT_BASE's TWR_TYPE_CODE), bold idents in the
+  the planner's own airport mark (`Views/FieldMark`, the web's
+  `airportMarkSvg`, option I of 2026-11-14: the surface class's ring in
+  the chart's code, four ticks, the flight category the centre disc, R and
+  M discs for private and military), at the in-view answer's `mark_size`
+  step (1.5, 1.2, 1, 0.82), bold idents in the
   field's ink, the Class B, C and D rings in ForeFlight's brighter inks
   with their altitudes in a dark tab ("B: 100–30"), VORs with their
   frequency tag, and the web's colours from `chartColors.ts`,

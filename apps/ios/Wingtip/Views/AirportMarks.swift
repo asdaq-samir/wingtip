@@ -41,34 +41,36 @@ final class AirportAnnotation: NSObject, MKAnnotation {
         use = pin.military == "military" ? "military" : pin.isPrivate == true ? "private" : nil
         coordinate = CLLocationCoordinate2D(latitude: pin.lat, longitude: pin.lon)
         self.onRoute = onRoute
-        rank = Self.rank(pin)
+        order = pin.markOrder ?? Self.fallback(pin)?.order
+        size = pin.markSize ?? Self.fallback(pin)?.size
     }
 
-    /// The engine's word on the mark (field_mark_rank): its place where
-    /// marks overlap and the step it is drawn at. Nil where the engine
-    /// refuses (logged by Engine.rule): the mark is then drawn at the
-    /// regular step and kept after every ranked one.
-    let rank: EngineContract.FieldMarkRankAnswer?
+    /// The mark's place where marks overlap, lower kept first, and the step
+    /// it is drawn at: the planner's in-view answer's `mark_order` and
+    /// `mark_size`, the engine's field_mark_rank over NASR's columns
+    /// (wingtip.field_marks), the overlay tiles' `rank` and `size`. Nil
+    /// where neither answers: the mark is then drawn at the regular step
+    /// and kept after every ranked one.
+    let order: Int?
+    let size: String?
 
-    /// The engine asked with what the map's pin carries of NASR's
-    /// columns: every pin is a landing field (SITE_TYPE_CODE A, the
-    /// planner's and the packs' lists leave the heliports out), its use,
-    /// its tower and the class it is the primary of (B or C; D counts as
-    /// none). The pin carries no longest hard runway, so a public field
-    /// without a tower is ranked by its tower and use alone until the
-    /// in-view answer carries it (see the wave's report).
-    private static func rank(_ pin: AirportPin) -> EngineContract.FieldMarkRankAnswer? {
+    /// A field from the phone's own packs, whose reader carries no rank
+    /// yet: the engine asked with what the pin has (a landing field, its
+    /// use, its tower, the B or C it is the primary of), without the
+    /// longest hard runway the planner ranks a public field by.
+    private static func fallback(_ pin: AirportPin) -> EngineContract.FieldMarkRankAnswer? {
+        guard pin.markOrder == nil || pin.markSize == nil else { return nil }
         let primary = pin.primaryOf == "B" || pin.primaryOf == "C" ? pin.primaryOf : nil
         return try? Engine.fieldMarkRank(siteType: "A", use: pin.isPrivate == true ? "PR" : "PU", towered: pin.towered, primaryOf: primary)
     }
 
     /// How much larger the mark is drawn than the regular step (FieldMark.step).
-    var step: CGFloat { FieldMark.step(rank?.size) }
+    var step: CGFloat { FieldMark.step(size) }
 
     var title: String? { ident }
 
     /// Which marks MapKit keeps when they would overlap: the route's
-    /// fields always, then the engine's order (field_mark_rank, lower kept
+    /// fields always, then the mark's order (`mark_order`, lower kept
     /// first, as the web's overlay tiles sort by their `rank`: a Class B's
     /// field, a Class C's, then each tier). The order, up to 699,999, is
     /// laid on MapKit's 1 to 999 in thousands, so each class and tier keeps
@@ -76,7 +78,7 @@ final class AirportAnnotation: NSObject, MKAnnotation {
     /// with nothing dropping any (the owner, 2026-11-03).
     var priority: MKFeatureDisplayPriority {
         if onRoute { return .required }
-        guard let order = rank?.order else { return MKFeatureDisplayPriority(rawValue: 1) }
+        guard let order else { return MKFeatureDisplayPriority(rawValue: 1) }
         return MKFeatureDisplayPriority(rawValue: Float(max(1, 990 - order / 1000)))
     }
 

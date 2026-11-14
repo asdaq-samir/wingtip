@@ -150,7 +150,7 @@ enum BriefLegs {
     }
 
     /// The sources the planner says have stopped updating, from its ages.
-    static func staleSources(_ ages: MapLayerAges?) -> [APIDataSource] {
+    static func staleSources(_ ages: MapLayerAges?) -> [APIAppSchemasBriefingDataSource] {
         (ages?.sources ?? []).filter { $0.stale == true }
     }
 }
