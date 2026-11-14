@@ -68,6 +68,7 @@ internal fun NavaidActions(point: MapPick, freq: String?, actions: RouteActions,
     val chart = RouteActions.pointOf(point) ?: return
     val context = LocalContext.current
     var copied by rememberSaveable(point) { mutableStateOf(false) }
+    val copyLabel = stringResource(R.string.navaid_card_copy, freq.orEmpty())
     val items = buildList {
         for (action in listOf(CardAction.DIRECT_TO, CardAction.ADD_TO_ROUTE)) {
             add(
@@ -79,7 +80,7 @@ internal fun NavaidActions(point: MapPick, freq: String?, actions: RouteActions,
         if (freq != null) {
             add(
                 GroupAction(if (copied) stringResource(R.string.frequency_copied) else freq, if (copied) Icons.Filled.Check else CardAction.COPY.icon) {
-                    CardIntents.copy(context, context.getString(R.string.navaid_card_copy, freq), freq)
+                    CardIntents.copy(context, copyLabel, freq)
                     copied = true
                 },
             )

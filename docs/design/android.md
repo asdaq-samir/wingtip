@@ -616,6 +616,38 @@ placement wins, and the difference is noted.
   - https://raw.githubusercontent.com/material-components/material-components-android/master/docs/components/BottomSheet.md
   - https://developer.android.com/jetpack/androidx/releases/compose-material3
 
+#### The TFR and VOR cards (2026-11-14, from the web's)
+
+- **TFRs on the map**: always drawn, no switch (rules.md §8): the
+  planner's GET tfrs as a MapLibre fill and edge in the FAA's TFR red,
+  solid over a wash while in force, dashed over a fainter one before
+  (`map/TfrLayer`, fetched as the map shows and every ten minutes). A tap
+  inside one, after every mark and line, opens its card.
+- **The TFR card** (`ui/TfrCard`, in `ui/ThingCard`'s `CardPage`): "TFR
+  6/4116" in the bar with Share, its link `tfr=`, before ✕; its kind with
+  the stock `StatusBadge` beside it, Active or Later; its floor to its
+  ceiling and the rule it is under in the engine's words (`tfr_read`:
+  "Special security instructions, 14 CFR 99.7"), else its purpose; when
+  it is in force on the phone's clock with its zone and UTC, the year on
+  both ends where either is not this year's (`TfrTimes`); and its page on
+  tfr.faa.gov as a `ListItem`. One a link names that is no longer listed,
+  or with the list not loaded, says so in place.
+- **The VOR card**: "OBK VOR/DME" in the bar with "Northbrook · 113.0"
+  under it (the dial's form of NASR's "113") and Share, its link
+  `navaid=OBK@42.2214,-87.9517`; no mark before the name. Under it the
+  full action row (`ui/NavaidCard`'s `NavaidActions`, the stock button
+  group): Direct To filled and Add to Route, greyed while they cannot be
+  done, and the frequency to copy, "Copied" in its place once it is; the
+  same row, without Copy, on a fix's and a VFR waypoint's cards. Then the
+  radial, the identifier's Morse, the engine's service volume (every band
+  of AIM 1-1-8's TBL 1-1-1), elevation, declination, hours and remarks. A
+  link to a VOR takes the map there and fills the card from the overlay
+  tiles (`map/NavaidFind`), or says it is not in the cycle's data there.
+- **Left out**: the TFR card's "Clear of your route" and its distance
+  from own ship, which need a line-and-area rule the engine does not yet
+  answer (the web works them out in its own geo code); and a separate tap
+  on a TFR's 3D volume, as the 2D area under it takes the tap in 3D too.
+
 ### 3.3 The flight plan and route editing (FPL tab)
 
 - **Follow**: Material's standard bottom sheet beside the map, and

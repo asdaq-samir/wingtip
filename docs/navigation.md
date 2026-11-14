@@ -118,6 +118,14 @@ the route, then opens the screen: the web waits up to 30 s for the route
 (the screen `CommandHost` runs after a link's command, `Links.Route.then`). The word `open` is taken off
 the web's address once used, so a reload or Back does not open it again.
 
+On Android `tfr` and `navaid` open the same card a tap on the map opens
+(`Links.Tfr`, `Links.Navaid`; `ui/ThingCard`), and each card's Share sends
+its link (`Links.tfrLink`, `Links.navaidLink`); a VOR's link takes the map
+there and fills the card from the overlay tiles once they are in
+(`map/NavaidFind`), or says in place that it is not in the cycle's data,
+and a TFR's no longer listed, or with the list not come in, says so in
+its card (2026-11-14, android-wave3).
+
 ## Sharing a flight
 
 A pilot sends a plan to another pilot or an instructor as a link that opens
@@ -322,8 +330,9 @@ change or another branch's work:
    android-parity's).
 3. **Alerts ahead have no one-tap fix**: the planner sends only the rule
    (`need`), so the phones open the airspace's card (iOS) or the Ahead
-   sheet (Android) with it; a fix needs the planner to say one. TFRs,
-   special-use areas, terrain and obstacles have no card on Android.
+   sheet (Android) with it; a fix needs the planner to say one.
+   Special-use areas, terrain and obstacles have no card on Android (a
+   TFR's is a tap on it, since 2026-11-14).
 4. **Android's route Undo row** shows only on the plan (an edit from the
    map's leg card makes one there); the point menu is not on the
    departure or in the strip layout, and has no Set Altitude… (a
