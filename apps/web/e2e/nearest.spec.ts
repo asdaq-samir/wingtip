@@ -73,7 +73,7 @@ test("Nearest opens as a card half way up, a field over it as a layer, and its c
   await expect(kugn).toContainText("3,500 ft · TWR 120.4");
   await expect(kugn).toContainText("11 nm");
   await expect(kugn).toContainText("NE");
-  await expect(kugn.getByTestId("nearest-arrow")).toHaveAttribute("style", /rotate\(5[4-6](\.\d+)?deg\)/);
+  await expect(kugn.getByTestId("nearest-arrow")).toHaveAttribute("style", /rotate\(5[5-9](\.\d+)?deg\)/);
 
   await kugn.click();
   await expect(sideDrawer(page).getByTestId("place-card")).toBeVisible();

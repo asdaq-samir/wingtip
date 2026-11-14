@@ -177,12 +177,13 @@ test(
     await expect(sheet.getByTestId("emergency-squawk")).toContainText("7700");
     await sheet.getByTestId("sheet-card-close").click();
 
-    // Nearest: the fields from the device, or No connection -- never
-    // "Searching…" for good.
+    // Nearest, the card it is now (NearestCard): the fields from the device,
+    // No connection, or the position asked for -- never "Searching…" or a
+    // skeleton for good.
     await page.getByTestId("flying-nearest").click();
-    const results = sideDrawer(page).getByTestId("search-results");
+    const results = sideDrawer(page).getByTestId("nearest-card");
     await expect(results).toBeVisible({ timeout: slow(10_000) });
-    await expect(results).toContainText(/ nm|No connection/, { timeout: slow(20_000) });
+    await expect(results).toContainText(/ nm|No connection|Show my position|Finding your position/, { timeout: slow(20_000) });
     await expect(results).not.toContainText("Searching…");
     await page.keyboard.press("Escape");
 
