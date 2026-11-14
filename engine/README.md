@@ -389,6 +389,11 @@ Then the callers switch to the name and the old copy is deleted.
   closed: warn, never limit; AIM 3-4), and each way's `warning` is its
   card's one warning in the engine's words, the worst first ("Crosses a
   restricted area" before "Crosses a MOA").
+  Across the antimeridian (Adak to Shemya) everything a route's options
+  read is moved within 180 degrees of the departure's longitude before
+  the grid is framed (`options/wrap.rs`), so the frame's boxes may pass
+  -180 or 180 (the planner reads them as two boxes) and every longitude
+  handed back is between -180 and 180.
 - The web's WebAssembly is built with only the rules the web asks
   (`facade/build.rs`, wherever the facade is built for wasm32, which only
   `bindings/wasm` is; the planner's wheel and the phones build every rule,

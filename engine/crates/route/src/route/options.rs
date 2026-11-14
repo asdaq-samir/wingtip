@@ -63,6 +63,7 @@ pub mod stops;
 pub mod terrain;
 pub mod ways;
 pub mod words;
+pub mod wrap;
 
 use self::answer::{along_json, ints, path_json, strings, way_json};
 use self::ask::{Ask, Field, Reader};
@@ -571,7 +572,7 @@ fn options(a: &Ask) -> Result<String, String> {
         out.push_str(",\"lat\":");
         json::number(&mut out, *lat);
         out.push_str(",\"lon\":");
-        json::number(&mut out, *lon);
+        json::number(&mut out, wrap::normal(*lon));
         out.push('}');
     }
     out.push_str("]}");
@@ -637,8 +638,10 @@ fn frame(a: &Ask) -> String {
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let r = Reader { name };
     match name {
-        "route_options_frame" => Ok(frame(&r.ask(v)?)),
-        "route_options" => options(&r.ask(v)?),
+        // Within 180 degrees of the departure's longitude (wrap.rs): the
+        // frame's lon0 and boxes may pass -180 or 180, the answer's do not.
+        "route_options_frame" => Ok(frame(&wrap::unwrapped(r.ask(v)?))),
+        "route_options" => options(&wrap::unwrapped(r.ask(v)?)),
         "terrain_way_frame" | "terrain_way_round" => terrain::call(name, v),
         "fuel_stops" | "fields_along" => fuel::call(name, v),
         "class_b_entered" | "class_b_detours" => classb::call(name, v),

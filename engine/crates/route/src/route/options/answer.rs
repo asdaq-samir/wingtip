@@ -40,7 +40,7 @@ pub fn path_json(out: &mut String, path: &[Point]) {
         out.push('[');
         json::number(out, r5(p.0));
         out.push(',');
-        json::number(out, r5(p.1));
+        json::number(out, r5(super::wrap::normal(p.1)));
         out.push(']');
     }
     out.push(']');
