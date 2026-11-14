@@ -373,6 +373,41 @@ object EngineContract {
     )
 
     @Serializable
+    data class AirspaceShelfLabelAnswer(
+        /**
+         * The ceiling as the chart writes it: "100", "T", "-30".
+         */
+        val ceiling: String,
+        /**
+         * The floor as the chart writes it, "30" or "SFC"; null for a Class D.
+         */
+        val floor: String? = null,
+        /**
+         * The label as the map sets it: the ceiling, a line break and the floor; a Class D's ceiling alone.
+         */
+        val text: String,
+    )
+
+    @Serializable
+    data class AirspaceShelfLabelInput(
+        val `class`: String,
+        @SerialName("floor_ft")
+        val floorFt: Double? = null,
+        @SerialName("floor_ref")
+        val floorRef: String? = null,
+        /**
+         * Feet MSL.
+         */
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+        /**
+         * The ceiling is to but not including its figure (NASR UPPER_DESC TNI).
+         */
+        @SerialName("ceiling_excluded")
+        val ceilingExcluded: Boolean? = null,
+    )
+
+    @Serializable
     data class AirspaceVolumeSpanAnswer(
         /**
          * Feet MSL.
@@ -388,6 +423,10 @@ object EngineContract {
          * Whether the floor is the surface, drawn from the sea up.
          */
         val surface: Boolean,
+        /**
+         * Whether any of altitudes_ft is inside the volume; only where altitudes_ft was given.
+         */
+        val holds: Boolean? = null,
     )
 
     @Serializable
@@ -398,6 +437,11 @@ object EngineContract {
          * The ground under the volume, ft MSL: its lowest and its highest. Null where the map has none in yet.
          */
         val ground: EngineContract.AirspaceVolumeSpanInputGround? = null,
+        /**
+         * The altitudes the plan flies, ft MSL: its cruise and each leg's own. Absent or null for no plan.
+         */
+        @SerialName("altitudes_ft")
+        val altitudesFt: List<Double>? = null,
     )
 
     @Serializable

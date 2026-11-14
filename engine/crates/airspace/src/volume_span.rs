@@ -30,6 +30,19 @@
 //!   writes the FAA's own figure, FL450 or unlimited.
 //! - A floor with no figure is the surface, which draws the volume the
 //!   larger, never the smaller.
+//!
+//! And, where the app gives the altitudes a plan flies (`altitudes_ft`,
+//! ft MSL: its cruise and each leg's own), whether any of them is inside
+//! the volume (`holds`), for the 3D view to stand out the airspace at the
+//! pilot's altitude and fade the rest. Inside from the floor up to the
+//! ceiling, both included, as class_b_band holds a Class B shelf's
+//! published altitudes to be part of it; against the FAA's own ceiling,
+//! not the drawing bound, so an area to FL450 holds FL240; an unlimited
+//! ceiling holds every altitude from the floor up. A floor or ceiling
+//! above the ground is the one drawn (the lowest ground under the floor,
+//! the highest under the ceiling), the larger volume, so a pilot is told
+//! an area may be at their altitude rather than told it is not (warn,
+//! never limit).
 
 use crate::json::{self, Value};
 use crate::rules::CLASS_A_FLOOR_FT;
@@ -49,6 +62,17 @@ pub struct Span {
     pub floor_ft: f64,
     pub ceiling_ft: f64,
     pub surface: bool,
+    /// The FAA's ceiling, ft MSL, before the drawing bound; None where it
+    /// is unlimited.
+    pub top_ft: Option<f64>,
+}
+
+impl Span {
+    /// Whether `altitude_ft` (ft MSL) is inside: from the floor up to the
+    /// ceiling, both included (module note).
+    pub fn holds(&self, altitude_ft: f64) -> bool {
+        self.floor_ft <= altitude_ft && self.top_ft.is_none_or(|t| altitude_ft <= t)
+    }
 }
 
 /// The volume's span (module note), or None where nothing is left to draw
@@ -63,19 +87,20 @@ pub fn span(floor: Limit, ceiling: Limit, ground: Option<Ground>) -> Option<Span
         // SFC, or no figure: the surface.
         _ => (0.0, true),
     };
-    let ceiling_ft = match limit(ceiling, true) {
-        (Some(ft), Some("AGL")) => ground?.high_ft + ft,
-        (Some(ft), _) => ft,
+    let top_ft = match limit(ceiling, true) {
+        (Some(ft), Some("AGL")) => Some(ground?.high_ft + ft),
+        (Some(ft), _) => Some(ft),
         // UNLTD, or no figure: unlimited, drawn to Class A's floor.
-        (None, _) => CLASS_A_FLOOR_FT,
-    }
-    .min(CLASS_A_FLOOR_FT);
-    (ceiling_ft > floor_ft).then_some(Span { floor_ft, ceiling_ft, surface })
+        (None, _) => None,
+    };
+    let ceiling_ft = top_ft.unwrap_or(CLASS_A_FLOOR_FT).min(CLASS_A_FLOOR_FT);
+    (ceiling_ft > floor_ft).then_some(Span { floor_ft, ceiling_ft, surface, top_ft })
 }
 
 /// `airspace_volume_span`: `{"floor": {"ft", "code", "desc"}, "ceiling":
-/// {...}, "ground"?: {"low_ft", "high_ft"}}` to `{"floor_ft",
-/// "ceiling_ft", "surface"}`, or null.
+/// {...}, "ground"?: {"low_ft", "high_ft"}, "altitudes_ft"?: [ft]}` to
+/// `{"floor_ft", "ceiling_ft", "surface"}`, with `"holds"` where
+/// altitudes were given, or null.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let ground = match v.get("ground") {
         None | Some(Value::Null) => None,
@@ -89,6 +114,15 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             Some(Ground { low_ft: at("low_ft")?, high_ft: at("high_ft")? })
         }
     };
+    let altitudes = match v.get("altitudes_ft") {
+        None | Some(Value::Null) => None,
+        Some(Value::Array(list)) => Some(
+            list.iter()
+                .map(|a| a.as_f64().filter(|f| f.is_finite()).ok_or_else(|| format!("{name}: \"altitudes_ft\" holds a number each")))
+                .collect::<Result<Vec<f64>, String>>()?,
+        ),
+        Some(_) => return Err(format!("{name}: \"altitudes_ft\" is not a list")),
+    };
     Ok(match span(read_limit(v, "floor"), read_limit(v, "ceiling"), ground) {
         None => "null".to_owned(),
         Some(s) => {
@@ -96,7 +130,11 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             json::number(&mut o, s.floor_ft);
             o.push_str(",\"ceiling_ft\":");
             json::number(&mut o, s.ceiling_ft);
-            o.push_str(if s.surface { ",\"surface\":true}" } else { ",\"surface\":false}" });
+            o.push_str(if s.surface { ",\"surface\":true" } else { ",\"surface\":false" });
+            if let Some(altitudes) = altitudes {
+                o.push_str(if altitudes.iter().any(|a| s.holds(*a)) { ",\"holds\":true" } else { ",\"holds\":false" });
+            }
+            o.push('}');
             o
         }
     })
@@ -114,7 +152,7 @@ mod tests {
     #[test]
     fn a_class_d_from_the_surface_to_its_msl_top() {
         let s = span(lim(Some(0.0), "SFC", None), lim(Some(2_500.0), "MSL", None), None).unwrap();
-        assert_eq!(s, Span { floor_ft: 0.0, ceiling_ft: 2_500.0, surface: true });
+        assert_eq!(s, Span { floor_ft: 0.0, ceiling_ft: 2_500.0, surface: true, top_ft: Some(2_500.0) });
     }
 
     #[test]
@@ -122,7 +160,10 @@ mod tests {
         // Brady Low MOA, 500 FT SFC to 6,000 MSL TNI (ADDS, 2026-11-12).
         let (floor, ceiling) = (lim(Some(500.0), "SFC", None), lim(Some(6_000.0), "MSL", Some("TNI")));
         assert_eq!(span(floor, ceiling, None), None);
-        assert_eq!(span(floor, ceiling, HILLS), Some(Span { floor_ft: 1_700.0, ceiling_ft: 5_999.0, surface: false }));
+        assert_eq!(
+            span(floor, ceiling, HILLS),
+            Some(Span { floor_ft: 1_700.0, ceiling_ft: 5_999.0, surface: false, top_ft: Some(5_999.0) })
+        );
         // Its pieces above but not including 1,500 AGL: CIFP's "01501A".
         assert_eq!(span(lim(Some(1_500.0), "SFC", Some("ANI")), ceiling, HILLS).unwrap().floor_ft, 2_701.0);
         // A TFR's AGL ceiling stands on the highest ground under it.
@@ -145,7 +186,20 @@ mod tests {
     #[test]
     fn no_figure_is_the_surface_below_and_unlimited_above() {
         let s = span(Limit::default(), Limit::default(), None).unwrap();
-        assert_eq!(s, Span { floor_ft: 0.0, ceiling_ft: 18_000.0, surface: true });
+        assert_eq!(s, Span { floor_ft: 0.0, ceiling_ft: 18_000.0, surface: true, top_ft: None });
+    }
+
+    #[test]
+    fn holds_an_altitude_from_its_floor_to_its_faa_ceiling_both_included() {
+        // Chicago's 3,000-10,000 ft shelf (NASR Class Airspace).
+        let shelf = span(lim(Some(3_000.0), "MSL", None), lim(Some(10_000.0), "MSL", None), None).unwrap();
+        assert!(shelf.holds(3_000.0) && shelf.holds(10_000.0) && shelf.holds(6_500.0));
+        assert!(!shelf.holds(2_999.0) && !shelf.holds(10_001.0));
+        // R-4207 to FL450 is drawn to 18,000 but holds FL240.
+        let high = span(lim(Some(0.0), "SFC", None), lim(Some(45_000.0), "STD", None), None).unwrap();
+        assert!(high.holds(24_000.0) && !high.holds(46_000.0));
+        // Unlimited holds every altitude from its floor.
+        assert!(span(lim(Some(3_600.0), "MSL", None), lim(None, "UNLTD", None), None).unwrap().holds(60_000.0));
     }
 
     #[test]
@@ -158,5 +212,9 @@ mod tests {
         let v = json::parse(r#"{"floor":{"ft":500,"code":"SFC"},"ceiling":{"ft":6000,"code":"MSL"}}"#).unwrap();
         assert_eq!(call("airspace_volume_span", &v).unwrap(), "null");
         assert!(call("airspace_volume_span", &json::parse(r#"{"ground":{"low_ft":"x"}}"#).unwrap()).is_err());
+        let v =
+            json::parse(r#"{"floor":{"ft":3000,"code":"MSL"},"ceiling":{"ft":10000,"code":"MSL"},"altitudes_ft":[2500,4500]}"#).unwrap();
+        assert_eq!(call("airspace_volume_span", &v).unwrap(), r#"{"floor_ft":3000.0,"ceiling_ft":10000.0,"surface":false,"holds":true}"#);
+        assert!(call("airspace_volume_span", &json::parse(r#"{"altitudes_ft":["x"]}"#).unwrap()).is_err());
     }
 }
