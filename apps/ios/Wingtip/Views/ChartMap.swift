@@ -83,10 +83,10 @@ struct ChartMap: UIViewRepresentable {
         map.showsScale = true
         map.pointOfInterestFilter = .excludingAll
         map.register(AirportMarkView.self, forAnnotationViewWithReuseIdentifier: AirportMarkView.reuse)
-        map.register(CheckpointMarkView.self, forAnnotationViewWithReuseIdentifier: CheckpointMarkView.reuse)
         map.register(TrafficMarkView.self, forAnnotationViewWithReuseIdentifier: TrafficMarkView.reuse)
         context.coordinator.extras.attach(to: map)
         context.coordinator.overlays.attach(to: map)
+        context.coordinator.routeMarks.attach(to: map)
         // Where the map opens is set once it has its size and the sheet's
         // (Coordinator.open); the map shows at the cap at the latest.
         let coordinator = context.coordinator
@@ -156,7 +156,7 @@ struct ChartMap: UIViewRepresentable {
         }
         if context.coordinator.checkpointsShown != checkpoints {
             context.coordinator.checkpointsShown = checkpoints
-            context.coordinator.showCheckpoints(checkpoints, on: map)
+            context.coordinator.routeMarks.showCheckpoints(checkpoints, on: map)
         }
         if !context.coordinator.proceduresShown.elementsEqual(procedurePaths, by: Self.samePath) {
             // Each path kept as it is while its points are the same; a new
@@ -209,6 +209,7 @@ struct ChartMap: UIViewRepresentable {
             if let edge = context.coordinator.courseEdge { map.removeOverlay(edge) }
             context.coordinator.courseEdge = nil
             context.coordinator.courseLine = nil
+            context.coordinator.routeMarks.showPoints(course, on: map)
             if let course, course.coordinates.count >= 2 {
                 let edge = CourseEdgePolyline(coordinates: course.coordinates, count: course.coordinates.count)
                 map.addOverlay(edge, level: .aboveLabels)
@@ -273,36 +274,14 @@ struct ChartMap: UIViewRepresentable {
         /// Each procedure's line with the path it was drawn from, kept
         /// while the path is the same (updateUIView).
         var procedureLines: [(path: [CLLocationCoordinate2D], line: ProcedurePolyline)] = []
-        /// The checkpoints' marks by the checkpoint's id, with the number
-        /// and place each was drawn with.
-        private var checkpointMarks: [String: (number: Int, checkpoint: Checkpoint, mark: CheckpointAnnotation)] = [:]
+        /// The checkpoints and the points the course turns at.
+        let routeMarks = RouteMarksLayer()
         /// The route's fields (its ends and stops): drawn whatever the
         /// zoom, never dropped for another (AirportAnnotation.priority).
         var routeIdents: Set<String> = []
-        /// Whether the checkpoints' names show at the zoom now.
-        var checkpointNames = false
         var onAirport: ((String) -> Void)?
         var onNavaid: ((String) -> Void)?
 
-        /// The checkpoints' marks brought to `checkpoints`: a new one
-        /// added, a gone one taken off, one whose number, name, place or
-        /// score changed drawn again, the rest left as they are -- every
-        /// change to the plan took every mark off the map and put it back
-        /// before, a flicker of the whole route.
-        @MainActor
-        func showCheckpoints(_ checkpoints: [Checkpoint], on map: MKMapView) {
-            var wanted: [String: (number: Int, checkpoint: Checkpoint)] = [:]
-            for (i, checkpoint) in checkpoints.enumerated() { wanted[checkpoint.id] = (number: i + 1, checkpoint: checkpoint) }
-            for (id, drawn) in checkpointMarks where wanted[id] == nil || wanted[id]!.number != drawn.number || wanted[id]!.checkpoint != drawn.checkpoint {
-                map.removeAnnotation(drawn.mark)
-                checkpointMarks[id] = nil
-            }
-            for (id, want) in wanted where checkpointMarks[id] == nil {
-                let mark = CheckpointAnnotation(number: want.number, checkpoint: want.checkpoint)
-                map.addAnnotation(mark)
-                checkpointMarks[id] = (number: want.number, checkpoint: want.checkpoint, mark: mark)
-            }
-        }
         var onRegion: ((CLLocationCoordinate2D, Double) -> Void)?
         private var trafficShown: [String: TrafficAnnotation] = [:]
         private var trafficDrawn: (planes: [TrafficAircraft], ownFt: Double?)?
@@ -418,11 +397,7 @@ struct ChartMap: UIViewRepresentable {
             }
             if let extra = MainActor.assumeIsolated({ extras.view(for: annotation, on: mapView) }) { return extra }
             if let overlay = MainActor.assumeIsolated({ overlays.view(for: annotation, on: mapView) }) { return overlay }
-            if annotation is CheckpointAnnotation {
-                let view = mapView.dequeueReusableAnnotationView(withIdentifier: CheckpointMarkView.reuse, for: annotation)
-                (view as? CheckpointMarkView)?.showName(checkpointNames)
-                return view
-            }
+            if let mark = MainActor.assumeIsolated({ routeMarks.view(for: annotation, on: mapView) }) { return mark }
             guard annotation is AirportAnnotation else { return nil }
             let view = mapView.dequeueReusableAnnotationView(withIdentifier: AirportMarkView.reuse, for: annotation)
             (view as? AirportMarkView)?.scaleSymbol(symbolScale)
@@ -576,14 +551,9 @@ struct ChartMap: UIViewRepresentable {
                 if mapView.visibleMapRect.width > 0 {
                     tiles?.keep(visible: mapView.visibleMapRect, zoomScale: MKZoomScale(Double(mapView.bounds.width) / mapView.visibleMapRect.width))
                 }
-                // The checkpoints' names in with the zoom (CheckpointAnnotation).
-                let names = zoom >= CheckpointAnnotation.namesFromZoom
-                if names != checkpointNames {
-                    checkpointNames = names
-                    for case let mark as CheckpointAnnotation in mapView.annotations {
-                        (mapView.view(for: mark) as? CheckpointMarkView)?.showName(names)
-                    }
-                }
+                // The checkpoints' names in with the zoom, the route's
+                // points' names kept outside their turns (RouteMarksLayer).
+                routeMarks.moved(mapView, zoom: zoom)
                 let scale = FieldMark.scale(zoom: zoom)
                 if abs(scale - symbolScale) > 0.02 {
                     symbolScale = scale
