@@ -10,10 +10,7 @@ export const loadTerrainGl = () => import("./map/terrain/TerrainGl");
 export const loadReplayLayers = () => import("./map/layers/ReplayTrackGl");
 export const loadProfileChart = () => import("./components/navlog/ProfileChart");
 
-/** What the airplane, map-settings and settings features draw with. */
+/** What the map-settings and settings features draw with. */
 export { trafficCredit } from "./map/trafficCredit";
 export { useTerrainView } from "./map/terrain/useTerrainView";
 export { useTrueHeightView } from "./map/terrain/heightStretch";
-export { pastFlightsQuery } from "./components/pastFlightsQuery";
-export { default as PastFlights } from "./components/PastFlights";
-export { default as AircraftAlertMenu } from "./components/AircraftAlertMenu";

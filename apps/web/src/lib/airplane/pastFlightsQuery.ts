@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
-import { api } from "../../../lib/api/client";
+import { api } from "../api/client";
 
 /** Where a page of an airplane's past flights starts: a UTC day and,
  *  for the flights before those listed, the last one's takeoff. */
