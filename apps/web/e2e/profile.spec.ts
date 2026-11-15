@@ -17,7 +17,7 @@ test("plan page: a waypoint's altitude is set on the profile, Start At sending t
   await controlsInSight(page);
   await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/\d,\d{3} feet|FL\d{3}/, { timeout: slow(60000) });
   await openProfile(page);
-  const card = page.getByTestId("profile-card");
+  const card = page.getByTestId("profile-page");
   await card.getByRole("button", { name: "VPBNG: set the altitude at it" }).click();
   await page.getByTestId("leg-altitude-input").fill("065");
   await page.getByTestId("leg-altitude-mode").getByText("Start At").click();

@@ -56,8 +56,8 @@ export const SCREENS: Screen[] = [
     },
   },
   {
-    // Half way: the route's box, the airplane, the time, the Nav log and
-    // Share, the figures at the card's foot.
+    // Half way: the route's box, the airplane, the time and its •••, FPL's
+    // tab bar over the figures at the sheet's foot.
     name: "route panel, half way",
     ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}&view=briefing`);
@@ -77,7 +77,7 @@ export const SCREENS: Screen[] = [
       // pointer where the panel had been, fading in, read at 1:1 (P15).
       await openTab(page, "Nav Log");
       await page.getByTestId("navlog-fuel").waitFor({ timeout: slow(120000) });
-      // The nav log in its own sheet, from the route's box.
+      // The nav log, FPL's tab under the route.
       await openNavLog(page);
       // A tap's click, without Playwright's own scroll into view first:
       // where the table is wider than its drawer (every column, on a

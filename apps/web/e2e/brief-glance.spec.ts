@@ -129,7 +129,7 @@ test("a private destination is a line of the Brief: land only with the owner's p
   }
 });
 
-test("the Brief opens at its size, and asking its weather again moves nothing", async ({ page, context }) => {
+test("the Brief's tab opens at its size, and asking its weather again moves nothing", async ({ page, context }) => {
   await installFrameRecorder(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -137,7 +137,7 @@ test("the Brief opens at its size, and asking its weather again moves nothing", 
   // their own shape, so neither the verdict's "Still checking" going from
   // two lines to one nor the hours coming moves the cards under them (the
   // flicker audit's FL-21).
-  await expectDrawnOnce(page, () => openBrief(page), { card: "brief-card", maxMoves: Number.POSITIVE_INFINITY, shiftBudget: 0.01 });
+  await expectDrawnOnce(page, () => openBrief(page), { maxMoves: Number.POSITIVE_INFINITY, shiftBudget: 0.01 });
   const glance = sideDrawer(page).getByTestId("brief-glance");
   await expect(glance.getByTestId("brief-verdict")).not.toHaveAttribute("data-finding", "pending", { timeout: slow(30_000) });
   // Every part in, the last of them Ready to Fly's checks, before the ask again.

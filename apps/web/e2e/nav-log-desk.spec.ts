@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeNavLog, navLogSheet, openNavLog, openPanel, settle, slow } from "./helpers";
+import { navLogSheet, openNavLog, openPanel, settle, slow } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -40,5 +40,4 @@ test("with an airplane the log is a table with a sticky heading, the desk's colu
   // No sideways scroll beside the map.
   const box = await log.evaluate((el) => ({ table: el.querySelector("table")!.offsetWidth, room: el.clientWidth }));
   expect(box.table).toBeLessThanOrEqual(box.room + 1);
-  await closeNavLog(page);
 });
