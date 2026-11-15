@@ -1,30 +1,15 @@
-import { lazy, memo, Suspense, useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { localDay } from "../../../lib/format";
 import { ArrowRight, Play, RotateCw } from "lucide-react";
 import { cn } from "cn";
-import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } from "../../../components/ResponsivePopover";
-import { Button } from "../../../components/ui/button";
-import type { PastFlightSummary } from "../../../lib/api/types";
-import { TEXT } from "../../../lib/text";
+import { ListGroup, ListRow } from "../GroupedList";
+import type { PastFlightSummary } from "../../lib/api/types";
+import { TEXT } from "../../lib/text";
 import { dayOf, lasted, legOf, placeOf, when, whenSaid } from "./pastFlightFormat";
-import { pastFlightsQuery } from "./pastFlightsQuery";
-import StatusBadge from "../../../components/StatusBadge";
-import { useShown } from "../../../lib/shown";
-
-// The stock calendar, as the departure's picker has it (DepartPicker):
-// its own chunk, asked for once a day is to be picked.
-const DayCalendar = lazy(() => import("../../../components/ui/calendar").then((m) => ({ default: m.DayCalendar })));
-
-/** How far back a day may be picked: adsb.lol's archive (wingtip.traffic
- *  ARCHIVE_DAYS), today among them. */
-const ARCHIVE_DAYS = 42;
-
-/** A day, ISO (the planner's `until`): the calendar's day as it shows it,
- *  where an ISO string of its local midnight was the day before east of
- *  Greenwich. */
-const isoDay = (d: Date) => localDay(d);
+import { pastFlightsQuery } from "../../lib/airplane/pastFlightsQuery";
+import PastFlightsDay from "./PastFlightsDay";
+import StatusBadge from "../StatusBadge";
+import { useShown } from "../../lib/shown";
 
 /**
  * An airplane's past flights on its card, at the pilot's ask ("can we
@@ -61,7 +46,6 @@ export default function PastFlights({
 }) {
   // A day picked, else the last flights found.
   const [from, setFrom] = useState<string | null>(null);
-  const [picking, setPicking] = useState(false);
   const { data, isError, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching } = useInfiniteQuery({
     ...pastFlightsQuery(hex, from),
     // Not while its tab is out of sight (lib/shown).
@@ -78,8 +62,6 @@ export default function PastFlights({
   // flights, not a fault that takes the card down.
   const flights = pages.flatMap((page) => page.flights ?? []).filter((f) => !(nowShown && f.in_air));
   const unread = pages.reduce((n, page) => n + (page.unread_days ?? 0), 0);
-  const today = new Date();
-  const earliest = new Date(today.getTime() - (ARCHIVE_DAYS - 1) * 86_400_000);
   // None found yet, and older days left: on back by itself, a fortnight
   // at a time, until one is found or the archive ends -- "the last 10
   // flights you were able to find", where an airplane quiet for a
@@ -89,7 +71,6 @@ export default function PastFlights({
   useEffect(() => {
     if (looking && !isFetchingNextPage && !isError) void fetchNextPage();
   }, [looking, isFetchingNextPage, isError, fetchNextPage]);
-  const picked = from ? new Date(`${from}T12:00:00Z`) : undefined;
   return (
     <>
       <ListGroup
@@ -152,61 +133,7 @@ export default function PastFlights({
           />
         )}
       </ListGroup>
-      {/* From a day picked, on the stock calendar in a sheet, as the
-          departure's day is: the phone's own date field showed an empty
-          box until one was picked (the owner's phone). The archive's days
-          alone can be picked. */}
-      <ResponsivePopover open={picking} onOpenChange={setPicking}>
-        <ResponsivePopoverAnchor asChild>
-          <div>
-            <ListGroup>
-              <ListRow
-                title="Flights before a date"
-                value={picked ? dayOf(picked) : "Pick a day"}
-                chevron
-                onClick={() => setPicking(true)}
-                data-testid="past-flights-date"
-              />
-            </ListGroup>
-          </div>
-        </ResponsivePopoverAnchor>
-        {/* Its Done at the foot its way out (no close). */}
-        <ResponsivePopoverContent title="Flights before a date" className="w-auto p-0" align="start" closeButton={false}>
-          <div className="flex flex-col items-center gap-3 pb-3" data-testid="past-flights-picker">
-            <Suspense fallback={<div className="h-[21rem] w-[17rem]" />}>
-              <DayCalendar
-                aria-label="Flights before a date"
-                value={from}
-                min={isoDay(earliest)}
-                max={isoDay(today)}
-                onChange={(day) => {
-                  setFrom(day);
-                  setPicking(false);
-                }}
-              />
-            </Suspense>
-            <div className="flex items-center gap-2 px-3">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-tint"
-                disabled={!from}
-                onClick={() => {
-                  setFrom(null);
-                  setPicking(false);
-                }}
-                data-testid="past-flights-latest"
-              >
-                Latest
-              </Button>
-              <Button type="button" size="sm" onClick={() => setPicking(false)}>
-                Done
-              </Button>
-            </div>
-          </div>
-        </ResponsivePopoverContent>
-      </ResponsivePopover>
+      <PastFlightsDay from={from} onPick={setFrom} />
       {isFetching && data && !isFetchingNextPage && (
         <span className="sr-only" role="status">
           Updating

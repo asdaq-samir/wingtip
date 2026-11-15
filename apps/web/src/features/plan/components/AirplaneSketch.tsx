@@ -1,6 +1,7 @@
 import { cn } from "cn";
 import { TEXT } from "../../../lib/text";
-import TrailSketch, { type SketchField } from "./TrailSketch";
+import type { SketchField } from "../../../lib/airplane/sketchField";
+import TrailSketch from "./TrailSketch";
 
 /**
  * Where an airplane has flown, sketched -- its flight now, or where it is

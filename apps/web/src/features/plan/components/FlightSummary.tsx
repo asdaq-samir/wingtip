@@ -11,7 +11,7 @@ import { altFt, bearing, clockTime, reportedAltitude } from "../../../lib/format
 import { awayFrom, nmAway } from "../../../lib/useAway";
 import AirplaneSketch from "./AirplaneSketch";
 import { squawkMeaning } from "../lib/squawks";
-import { lasted } from "./pastFlightFormat";
+import { lasted } from "../../../components/airplane/pastFlightFormat";
 import { End, EndPending } from "./FlightEnds";
 import { SkeletonLine } from "../../../components/QueryState";
 

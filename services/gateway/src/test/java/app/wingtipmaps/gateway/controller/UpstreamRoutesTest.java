@@ -94,7 +94,12 @@ class UpstreamRoutesTest {
             Map.entry("GET /api/studio/drafts/{draft_id}/track", "developer csrf"),
             Map.entry("POST /api/studio/drafts/{draft_id}/identity", "developer csrf"),
             Map.entry("POST /api/studio/drafts/{draft_id}/rendered", "developer csrf"),
-            Map.entry("POST /api/studio/drafts/{draft_id}/dismiss", "developer csrf"));
+            Map.entry("POST /api/studio/drafts/{draft_id}/dismiss", "developer csrf"),
+            // An airplane's FAA registration record and its photo, by its
+            // N-number, for its card: public, as the traffic it is found in is.
+            Map.entry("GET /api/airplanes/{n_number}", "public csrf"),
+            Map.entry("GET /api/airplanes/{n_number}/photo", "public csrf"),
+            Map.entry("GET /api/traffic/registered", "public csrf"));
 
     /** Routes whose passed headers changed on purpose since the hand list
      *  was recorded: what each passes now. */

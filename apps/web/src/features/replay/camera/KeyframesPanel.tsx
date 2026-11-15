@@ -16,14 +16,22 @@ import { usePastFlight } from "../../../lib/replay/clock";
 import { useExporting } from "../export/exportStore";
 import { replayTimes } from "../replayTime";
 import { viewNow } from "./cameraView";
-import { addKeyframe, CAMERAS, changeKeyframe, followKeyframes, removeKeyframe, useReplayCamera, type CameraKind } from "./cameraStore";
+import {
+  addKeyframe,
+  CAMERAS,
+  changeKeyframe,
+  followKeyframes,
+  removeKeyframe,
+  useReplayCamera,
+  type CameraKind,
+} from "../../../lib/replay/camera/cameraStore";
 
 /**
  * A video's camera moves: keyframes at moments of the replay, each a
  * camera (the menu's) or, with the camera Free, the view where the map is
  * held. Listed in time, each one's camera changeable from its menu and
  * its moment a tap away; the camera eases from one to the next
- * (keyframes.ts) in the preview and in the export alike.
+ * (lib/replay/camera/keyframes) in the preview and in the export alike.
  */
 export function KeyframesPanel() {
   const { keys, keyed, kind } = useReplayCamera();
