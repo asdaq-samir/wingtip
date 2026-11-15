@@ -12,7 +12,10 @@ describe("airspaceWords", () => {
     expect(said["A field under a Class B shelf and a 700 ft Class E: G at its surface"]).toEqual({ value: "Class G", note: null });
   });
   it("says a part-time class with no hours to read as part-time alone, never E or G", () => {
-    expect(said["A part-time Class D and a part-time Class E surface area: E or G other times"]).toEqual({ value: "Class D", note: "Part-time" });
+    expect(said["A part-time Class D and a part-time Class E surface area: E or G other times"]).toEqual({
+      value: "Class D",
+      note: "Part-time",
+    });
   });
   it("is a dash where the airspace could not be read", () => {
     expect(airspaceWords(null, null)).toEqual({ value: "—", note: null });

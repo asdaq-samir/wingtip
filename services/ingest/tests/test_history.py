@@ -3,12 +3,22 @@ NTSB's database looked at once a day, each a job on ingest's scheduler; the data
 
 import json
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 from wingtip import schedule
 from wingtip.history import notam_archive, ntsb as ntsb_store
 
 from ingest import history, ntsb
+
+
+def _stamp(store: Path, version: int) -> None:
+    """The store given a schema version, its connection closed. A sqlite3
+    connection used as a context manager commits and stays open; left to
+    the collector it is an unclosed-database warning in whichever test is
+    running then, which failed test_main's in CI run 43726455655."""
+    with closing(sqlite3.connect(store)) as db:
+        db.execute(f"PRAGMA user_version = {version}")
 
 
 def test_the_archive_is_a_job_each_hour_and_the_ntsb_each_day_both_first_now():
@@ -36,13 +46,11 @@ def test_avall_is_read_again_only_when_its_date_size_or_the_stores_shape_changes
     avall = ntsb.read_directory(PAGE)["avall.zip"]
     assert ntsb.due(avall, {})
     # A store of the shape the planner reads: only a new avall remakes it.
-    with sqlite3.connect(store) as db:
-        db.execute(f"PRAGMA user_version = {ntsb_store.SCHEMA}")
+    _stamp(store, ntsb_store.SCHEMA)
     assert not ntsb.due(avall, {"avall": avall})
     assert ntsb.due({**avall, "size": 97_200_000}, {"avall": avall})
     # One of an older shape is made again from the same avall.
-    with sqlite3.connect(store) as db:
-        db.execute("PRAGMA user_version = 1")
+    _stamp(store, 1)
     assert ntsb.due(avall, {"avall": avall})
 
 
@@ -68,8 +76,7 @@ def test_a_refresh_builds_then_applies_each_delta_once(monkeypatch, tmp_path):
         read.append(name)
         if name == ntsb.AVALL:
             # A store of the shape the planner reads, as ntsb.build leaves it.
-            with sqlite3.connect(store) as db:
-                db.execute(f"PRAGMA user_version = {ntsb_store.SCHEMA}")
+            _stamp(store, ntsb_store.SCHEMA)
         return 1
 
     monkeypatch.setattr(ntsb, "_read", fake_read)

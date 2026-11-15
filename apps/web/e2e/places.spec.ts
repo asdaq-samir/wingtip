@@ -62,14 +62,14 @@ test("an airport's card has the field's pictures across its top, its ident over 
   // Its share at the head's start, the name centred, ✕ at its end (cards.spec), the star a tile (2026-11-11); the card the whole sheet.
   for (const id of ["place-share", "place-favorite", "place-close"]) await expect(card(page).getByTestId(id)).toBeInViewport();
   await expect(firstRow(page)).toBeHidden();
-  // Four tiles in a row at half, nothing else -- Add Stop for the route's
-  // destination greyed, saying why (0612a82b3, the owner: "show it but
-  // disable it") -- Info open.
+  // Four tiles in a row at half, nothing else -- Add Stop for the route's destination greyed, saying why (0612a82b3, the owner:
+  // "show it but disable it") -- Info open.
   await expect(card(page).getByTestId("place-actions")).toBeInViewport({ ratio: 1 });
   await expect(card(page).getByTestId("place-actions").locator(":scope > *")).toHaveText([/Fly Here|≈ \d/, /Add Stop/, /Call/, /Favorite/]);
   await expect(card(page).getByTestId("place-add-stop")).toBeDisabled();
   await expect(card(page).getByTestId("place-add-stop")).toHaveAccessibleName(/already on the route/);
-  expect((await card(page).getByRole("tab").evaluateAll((t) => t.map((x) => x.ariaLabel))).join("|")).toMatch(/^Info\|Weather(, \w+)?\|Runways\|Charts(, \d+)?$/);
+  const tabs = card(page).getByRole("tab");
+  expect((await tabs.evaluateAll((t) => t.map((x) => x.ariaLabel))).join("|")).toMatch(/^Info\|Weather(, \w+)?\|Runways\|Charts(, \d+)?$/);
   await expect(card(page).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
   const [actions, bar] = await Promise.all(
     [card(page).getByTestId("place-actions"), card(page).getByRole("tablist")].map(async (l) => (await l.boundingBox())!),
