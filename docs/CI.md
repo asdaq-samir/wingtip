@@ -198,7 +198,7 @@ under a minute.
 | `build-images`: every service image whose inputs changed, pushed as `:sha-<commit>` for Promote | 1-4 min |
 | Native iOS's own run: the unit tests and the `CardSmokeTests` UI smoke on the iPhone, then TestFlight | 6-8 min |
 | Native Android's own run: the build, unit tests, lint and a debug APK | 4-6 min |
-| CodeQL: GitHub's default setup (the repository's settings, weekly and on main), not a workflow here | |
+| CodeQL (`codeql.yml`): the six languages on main's push and on Mondays, `build-mode: none`, no dependency cache; never on a pull request. It takes over once the repository's default setup is off (Settings, Code security, CodeQL analysis, "Disable CodeQL"): GitHub runs that one on every pull request too, and refuses an advanced workflow's results while it is on | 4-6 min |
 
 About 10 minutes after a merge, in all. A red run writes its section of
 one issue, "Main CI failed (after merge)", labelled `ready`
