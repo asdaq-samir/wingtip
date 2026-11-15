@@ -1,6 +1,6 @@
 import { M_PER_FT } from "../../../lib/geo";
 import { MAP } from "../../../lib/tokens";
-import type { CameraKind } from "./cameraStore";
+import type { CameraKind } from "../../../lib/replay/camera/cameraStore";
 
 /** Metres in a degree of latitude, near enough for a camera's few hundred
  *  metres (the WGS-84 meridian degree is 110.6 to 111.7 km). */

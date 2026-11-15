@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Marker } from "maplibre-gl";
 import { useEffect, useMemo, useRef } from "react";
-import { pastFlightQuery } from "../../components/pastFlightsQuery";
+import { pastFlightQuery } from "../../../../lib/airplane/pastFlightsQuery";
 import type { Course } from "../../../../lib/api/types";
 import { flightQuery } from "../../../../lib/queryClient";
 import { altFt } from "../../../../lib/format";

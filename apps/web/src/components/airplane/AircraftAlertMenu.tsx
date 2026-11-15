@@ -14,7 +14,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "../../../components/ui/dropdown-menu";
+} from "../ui/dropdown-menu";
 import {
   alertsLine,
   NEAR_AIRPORT_NM,
@@ -22,13 +22,13 @@ import {
   NEAR_ME_NM,
   type AircraftAlert,
   type AircraftAlertKind,
-} from "../../../lib/aircraftAlerts";
-import { useOwnShip } from "../../../lib/map/position/ownShip";
-import { usePreferences } from "../../../lib/preferences";
-import { primeSpeech } from "../../../lib/speech";
-import { TEXT } from "../../../lib/text";
-import { CardAction } from "../../../components/CardAction";
-import type { SketchField } from "./TrailSketch";
+} from "../../lib/aircraftAlerts";
+import type { SketchField } from "../../lib/airplane/sketchField";
+import { useOwnShip } from "../../lib/map/position/ownShip";
+import { usePreferences } from "../../lib/preferences";
+import { primeSpeech } from "../../lib/speech";
+import { TEXT } from "../../lib/text";
+import { CardAction } from "../CardAction";
 
 /** A choice that cannot be made now greyed, as the menu's own items are
  *  (the stock sub-menu's trigger has no look of its own for it). */
