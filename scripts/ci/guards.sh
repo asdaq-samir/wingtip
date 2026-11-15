@@ -36,6 +36,7 @@
 #
 #   scripts/ci/guards.sh
 #   WEB=false ENGINE=false FLIGHT=false scripts/ci/guards.sh    the seconds-long ones
+#   PART=repo|web|engine scripts/ci/guards.sh                   one of ci.yml's three legs
 #
 # Each check's output is printed in a group of its own once all are done,
 # with its seconds, the five slowest named after them, and each failure is
@@ -47,6 +48,12 @@ PATH=$PATH:$HOME/.cargo/bin:$HOME/.local/bin
 out=$(mktemp -d)
 trap 'rm -rf "$out"' EXIT
 on() { [ "${!1:-true}" != false ]; }
+# The leg this run is, where ci.yml's guards job is three on a runner each:
+# `repo`, the checks of the whole tree; `web`; `engine`. Unset, every one,
+# as on the Mac. All at once on one runner, a wave's guards took 5.2
+# minutes with ESLint, tsc and Prettier beside clippy and two Rust builds
+# on four cores (run 43730938912, 2026-11-15).
+part() { [ -z "${PART:-}" ] || [ "$PART" = "$1" ]; }
 CARGO_MACHETE=0.9.2
 RUFF=$(scripts/build/toolchain.sh get ruff)
 
@@ -90,7 +97,7 @@ ruff_check() {
 # The branch a change is held against, fetched once for every check that
 # reads it (one deep: a tree is all they compare).
 base=refs/guards/base
-if on ARCH || on IOS || on ANDROID; then
+if part repo && { on ARCH || on IOS || on ANDROID; }; then
   git fetch -q --depth=1 origin "+refs/heads/${BASE_REF:-main}:$base" 2> /dev/null || base=origin/${BASE_REF:-main}
 fi
 
@@ -149,48 +156,51 @@ flight_planner() {
 # The engine's toolchain (engine/rust-toolchain.toml) and its components,
 # installed once before the checks start: four rustups at once raced on
 # one download (run 42932986845, "could not rename 'downloaded' file").
-if { on ENGINE || on FLIGHT; } && command -v rustup > /dev/null; then
+if part engine && { on ENGINE || on FLIGHT; } && command -v rustup > /dev/null; then
   (cd engine && rustup toolchain install > /dev/null 2>&1 && rustup component add clippy rustfmt > /dev/null 2>&1) || true
 fi
+touch "$out/order" "$out/times"
 
 # Semgrep's "engine was killed" here was never memory (it peaks near
 # 400 MB): its engine crashed under the runner's unlimited stack, which
 # semgrep_check.py now bounds, so it starts with the rest.
-on ARCH && start "One home (Semgrep)" python3 scripts/ci/semgrep_check.py --base "$base"
-start "Areas filter" python3 scripts/areas.py check
-start "Rules boundary" python3 scripts/ci/rules_boundary.py
-start "Legal pages" scripts/build/legal_pages.py --check
-start "Test tiers" python3 scripts/ci/test_tiers.py
-start "Warnings fatal" python3 scripts/ci/warnings_fatal.py
-start "Workflow rules" python3 scripts/ci/workflow_rules.py
-start "Doc links" scripts/ci/check_links.sh
-start "Shell scripts" scripts/ci/shellcheck.sh
-start "Web engine rules" python3 scripts/build/web_rules.py --check
-start "Python lint" ruff_check
-start "Python layout" scripts/dev/format.sh --check python
-if on ARCH; then
-  start "File sizes" file_sizes
-  start "Toolchain" scripts/build/toolchain.sh --check
-  start "Brand" python3 scripts/ci/brand_guard.py
-  start "Shared parts" python3 scripts/ci/shared_parts_guard.py
-  start "Unused Python" scripts/ci/dead_python.sh
-  start "Copy-paste (jscpd)" python3 scripts/ci/jscpd_check.py --base "$base"
-  start "Simplicity ratchet" python3 scripts/ci/simplicity_ratchet.py --base "$base"
+if part repo; then
+  on ARCH && start "One home (Semgrep)" python3 scripts/ci/semgrep_check.py --base "$base"
+  start "Areas filter" python3 scripts/areas.py check
+  start "Rules boundary" python3 scripts/ci/rules_boundary.py
+  start "Legal pages" scripts/build/legal_pages.py --check
+  start "Test tiers" python3 scripts/ci/test_tiers.py
+  start "Warnings fatal" python3 scripts/ci/warnings_fatal.py
+  start "Workflow rules" python3 scripts/ci/workflow_rules.py
+  start "Doc links" scripts/ci/check_links.sh
+  start "Shell scripts" scripts/ci/shellcheck.sh
+  start "Web engine rules" python3 scripts/build/web_rules.py --check
+  start "Python lint" ruff_check
+  start "Python layout" scripts/dev/format.sh --check python
+  if on ARCH; then
+    start "File sizes" file_sizes
+    start "Toolchain" scripts/build/toolchain.sh --check
+    start "Brand" python3 scripts/ci/brand_guard.py
+    start "Shared parts" python3 scripts/ci/shared_parts_guard.py
+    start "Unused Python" scripts/ci/dead_python.sh
+    start "Copy-paste (jscpd)" python3 scripts/ci/jscpd_check.py --base "$base"
+    start "Simplicity ratchet" python3 scripts/ci/simplicity_ratchet.py --base "$base"
+  fi
+  on IOS && start "iPhone: SwiftLint" scripts/ci/phone_lint.sh ios --base "$base"
+  on ANDROID && start "Android: detekt" scripts/ci/phone_lint.sh android --base "$base"
+  on SITE && start "Website" site
+  on FLIGHT && start "Flight-critical: planner" flight_planner
 fi
-on IOS && start "iPhone: SwiftLint" scripts/ci/phone_lint.sh ios --base "$base"
-on ANDROID && start "Android: detekt" scripts/ci/phone_lint.sh android --base "$base"
-on SITE && start "Website" site
-on WEB && start "Web: API types" web
-if on ENGINE; then
-  start "Engine layers" python3 scripts/ci/engine_layers.py
-  start "Engine: WebAssembly size" python3 scripts/ci/wasm_size.py
-  start "Engine: machete" machete
-  start "Engine: rustfmt" scripts/dev/format.sh --check rust
-  start "Engine: clippy" clippy
-fi
-if on FLIGHT; then
-  start "Flight-critical: engine" flight_engine
-  start "Flight-critical: planner" flight_planner
+part web && on WEB && start "Web: API types" web
+if part engine; then
+  if on ENGINE; then
+    start "Engine layers" python3 scripts/ci/engine_layers.py
+    start "Engine: WebAssembly size" python3 scripts/ci/wasm_size.py
+    start "Engine: machete" machete
+    start "Engine: rustfmt" scripts/dev/format.sh --check rust
+    start "Engine: clippy" clippy
+  fi
+  on FLIGHT && start "Flight-critical: engine" flight_engine
 fi
 wait
 
@@ -212,7 +222,7 @@ while read -r name; do
 done < "$out/order"
 
 # The job is as long as its slowest check: which those are, each run.
-echo "slowest: $(sort -rn "$out/times" | head -5 | awk '{ s = $1; $1 = ""; printf "%s%s %ss", sep, substr($0, 2), s; sep = ", " }')"
+[ ! -s "$out/times" ] || echo "slowest: $(sort -rn "$out/times" | head -5 | awk '{ s = $1; $1 = ""; printf "%s%s %ss", sep, substr($0, 2), s; sep = ", " }')"
 [ ${#skipped[@]} -eq 0 ] || echo "skipped, their tool missing here: ${skipped[*]}"
 if [ ${#failed[@]} -gt 0 ]; then
   echo "failed: ${failed[*]}"

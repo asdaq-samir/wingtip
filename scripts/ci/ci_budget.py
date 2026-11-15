@@ -44,7 +44,7 @@ BUDGETS = [
     # Tier 1: a pull request (docs/CI.md, "The tiers").
     ("changes", 1, 1),
     ("Engine wheel", 2, 3),
-    ("Guards", 3, 4),
+    ("Guards (*)", 3, 4),
     ("dependency-review", 1, 1),
     ("API compatibility", 1, 1),
     ("infra", 2, 2),

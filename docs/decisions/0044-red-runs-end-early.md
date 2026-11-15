@@ -65,8 +65,13 @@ the slowest:
    no longer adds the two. Running both at once on one runner was tried
    first and measured slower, 264 s against about 150 s in turn (run
    43727254429): each starved the other of the runner's four cores.
-5. **The guards say what was slow.** `guards.sh` prints each check's
-   seconds and the five slowest, so the next cut is read off a run.
+5. **The guards say what was slow, and have three runners.** `guards.sh`
+   prints each check's seconds and the five slowest, so the next cut is
+   read off a run. The first such run (43730938912) read: 5.2 minutes for
+   a wave's guards, with tsc, ESLint and Prettier beside clippy, cargo
+   machete and two Rust builds on four cores, and no Rust cache, the wave
+   having changed `Cargo.lock`. So `guards` is three legs, `repo`, `web`
+   and `engine` (`PART`), as `test-web` is two.
 
 Taken out as redundant: `npm audit` in `test-web` (advisory, it could not
 fail; `dependency-review` covers a pull request's new dependencies) and

@@ -1131,24 +1131,23 @@ jobs:
           fail-on-severity: high
           comment-summary-in-pr: on-failure
 
-  # The quick checks, on one runner, all started at once
-  # (scripts/ci/guards.sh lists them): no aviation rule outside the engine
-  # (CLAUDE.md, #482); CI's own rules (docs/CI.md, "Rules": every test in
-  # one tier and the tiers in shape, warnings fatal, the workflows small,
-  # scripted, pinned and least-privileged); the links, file sizes,
-  # toolchain versions and brand tokens; each language's lint and layout
-  # where a change touched it (ruff, tsc, ESLint, Prettier, knip, rustfmt,
-  # clippy, cargo-machete); and flight-critical, what must never break in
-  # the air (the owner, 2026-11-09), on every change but words alone: the
-  # engine against the FAA's worked examples and the planner's KMSN-KOSH
-  # nav log. The browser's twin is e2e's @flight-critical test; the
-  # phones' run in their native jobs.
+  # The quick checks, three legs on a runner each, each leg's checks all
+  # started at once (scripts/ci/guards.sh lists them). `repo`: no aviation
+  # rule outside the engine (#482), CI's own rules (docs/CI.md, "Rules"),
+  # links, file sizes, versions, brand tokens, ruff, the phones' lint.
+  # `web`: tsc, ESLint, Prettier, knip. `engine`: rustfmt, clippy, machete.
+  # And flight-critical (the owner, 2026-11-09), on every change but words
+  # alone: the engine's FAA examples (`engine`), the planner's nav log (`repo`).
   guards:
-    name: Guards
+    name: Guards (${{ matrix.part }})
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes, engine-wheel]
     if: ${{ !cancelled() && needs.changes.result == 'success' && needs.engine-wheel.result != 'failure' }}
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [repo, web, engine]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -1159,17 +1158,17 @@ jobs:
       # uv for the planner's requirements, and its uvx for the pinned ruff
       # and vulture.
       - run: pip install -q uv
-      - if: needs.changes.outputs.test-web == 'true'
+      - if: matrix.part == 'web' && needs.changes.outputs.test-web == 'true'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         id: node
         with:
           node-version-file: .tool-versions
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - if: needs.changes.outputs.test-web == 'true' && steps.node.outputs.cache-hit != 'true'
+      - if: matrix.part == 'web' && needs.changes.outputs.test-web == 'true' && steps.node.outputs.cache-hit != 'true'
         run: echo "::notice title=Cache miss::npm (guards)"
       # Clippy's and flight-critical's builds, as test-engine keeps its own.
-      - if: needs.changes.outputs.test-engine == 'true' || needs.engine-wheel.result == 'success'
+      - if: matrix.part == 'engine' && (needs.changes.outputs.test-engine == 'true' || needs.engine-wheel.result == 'success')
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         id: cargo
         with:
@@ -1180,14 +1179,15 @@ jobs:
             engine/target
           key: cargo-guards-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/Cargo.lock', 'engine/rust-toolchain.toml') }}-${{ hashFiles('engine/**/*.rs') }}
           restore-keys: cargo-guards-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/Cargo.lock', 'engine/rust-toolchain.toml') }}-
-      - if: (needs.changes.outputs.test-engine == 'true' || needs.engine-wheel.result == 'success') && steps.cargo.outputs.cache-matched-key == ''
+      - if: matrix.part == 'engine' && (needs.changes.outputs.test-engine == 'true' || needs.engine-wheel.result == 'success') && steps.cargo.outputs.cache-matched-key == ''
         run: echo "::notice title=Cache miss::cargo-guards"
-      - if: needs.engine-wheel.result == 'success'
+      - if: matrix.part == 'repo' && needs.engine-wheel.result == 'success'
         uses: ./.github/actions/engine-wheel
         with:
           mode: install
       - name: The guards
         env:
+          PART: ${{ matrix.part }}
           INSTALL: "true"
           BASE_REF: ${{ github.base_ref || 'main' }}
           ARCH: ${{ needs.changes.outputs.arch }}
