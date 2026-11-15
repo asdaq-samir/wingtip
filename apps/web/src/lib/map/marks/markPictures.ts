@@ -84,14 +84,20 @@ export const FIX_PILL_SHIFT = 5 / 11;
  *  the turn and own ship on it stay in sight; its name is ROUTE_POINT_PILL
  *  beside it, outside the turn (routeTurns). */
 export function turnDotPicture(ring: string): GlPicture {
-  return framed(`turn-dot|${ring}`, () => `<circle cx="7" cy="7" r="5.5" fill="${CHART.casing}" stroke="${ring}" stroke-width="3"/>`, 14, 14);
+  return framed(
+    `turn-dot|${ring}`,
+    () => `<circle cx="7" cy="7" r="5.5" fill="${CHART.casing}" stroke="${ring}" stroke-width="3"/>`,
+    14,
+    14,
+  );
 }
 
 /** A route point's name pill, beside its dot: white edged in the
  *  sectional's waypoint magenta, stretched to the name. */
 export const ROUTE_POINT_PILL: GlPicture = framed(
   "route-point-pill",
-  () => `<rect x="0.75" y="0.75" width="18.5" height="18.5" rx="9.25" fill="${CHART.casing}" stroke="${WAYPOINT_MAGENTA}" stroke-width="1.5"/>`,
+  () =>
+    `<rect x="0.75" y="0.75" width="18.5" height="18.5" rx="9.25" fill="${CHART.casing}" stroke="${WAYPOINT_MAGENTA}" stroke-width="1.5"/>`,
   20,
   20,
   { inset: 9.5, content: [8, 4, 12, 16] },
