@@ -13,14 +13,15 @@ export interface FactWords {
  * (the owner, 2026-11-14: "keep the info strip compact enough so pilot
  * doesn't have to scroll"): the class in force at the field's surface now,
  * the engine's (surface_airspace: 14 CFR 71; a shelf over the field is not
- * its class), "D"; where it is part-time, the note its next change today
+ * its class), "Class D" (the owner, 2026-11-14: the word before the
+ * letter); where it is part-time, the note its next change today
  * from the engine's surface_hours, "G after 22:00" or "D from 06:00", or
  * "Part-time" where the hours are not known (surfaceHoursWords). A dash where
  * the planner could not read the airspace.
  */
 export function airspaceWords(surface: AirportPlace["surface_airspace"], hours: SurfaceHours | null): FactWords {
   if (!surface) return { value: "—", note: null };
-  return { value: classNow(surface, hours) ?? surface.class, note: changeNote(surface, hours) };
+  return { value: `Class ${classNow(surface, hours) ?? surface.class}`, note: changeNote(surface, hours) };
 }
 
 /**

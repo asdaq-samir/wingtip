@@ -50,19 +50,6 @@
         }
       }
     },
-    "%@ NOTAMs" : {
-
-    },
-    "%@ NOTAMs, %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ NOTAMs, %2$lld"
-          }
-        }
-      }
-    },
     "%@ Squawks" : {
 
     },
@@ -358,9 +345,6 @@
     "%@, You" : {
 
     },
-    "%@, full screen" : {
-
-    },
     "%@, in %@, %@" : {
       "localizations" : {
         "en" : {
@@ -395,6 +379,9 @@
       }
     },
     "%@T" : {
+
+    },
+    "%@° to fly to it" : {
 
     },
     "%lld" : {
@@ -618,6 +605,9 @@
     "Add a note" : {
 
     },
+    "Add an Airplane" : {
+
+    },
     "Add an Approach to the Route" : {
 
     },
@@ -625,9 +615,6 @@
 
     },
     "Add to Favorites" : {
-
-    },
-    "Add to Plan" : {
 
     },
     "Add yours with its handbook's figures." : {
@@ -642,6 +629,9 @@
           }
         }
       }
+    },
+    "Aeronautical" : {
+
     },
     "After the flight, from its saved track" : {
 
@@ -683,9 +673,6 @@
 
     },
     "Airworthiness" : {
-
-    },
-    "Alert" : {
 
     },
     "Alerts" : {
@@ -904,9 +891,6 @@
     "Callsign" : {
 
     },
-    "Callsign, N-number or address" : {
-
-    },
     "Cancel" : {
 
     },
@@ -1043,6 +1027,9 @@
     "Climb and Descent" : {
 
     },
+    "Climb fuel" : {
+
+    },
     "Climbing" : {
 
     },
@@ -1067,6 +1054,9 @@
     "Contact" : {
 
     },
+    "Copied" : {
+
+    },
     "Copies it" : {
 
     },
@@ -1086,9 +1076,6 @@
 
     },
     "Couldn't Read That" : {
-
-    },
-    "Couldn't search. Try again in a moment." : {
 
     },
     "Course" : {
@@ -1145,6 +1132,9 @@
     "Currency Status" : {
 
     },
+    "DME channel" : {
+
+    },
     "Danger ahead" : {
 
     },
@@ -1173,6 +1163,9 @@
 
     },
     "Debrief Against" : {
+
+    },
+    "Declination" : {
 
     },
     "Decline" : {
@@ -1271,9 +1264,6 @@
     "Direct to which airport?" : {
 
     },
-    "Directions in Maps" : {
-
-    },
     "Discard Changes" : {
 
     },
@@ -1308,6 +1298,9 @@
 
     },
     "Do" : {
+
+    },
+    "Documents filed" : {
 
     },
     "Done" : {
@@ -1352,7 +1345,7 @@
     "Each leg flies them in the forecast air at its altitude, as a density altitude: faster in thinner air at the same power, and slower and thriftier where full throttle can no longer make it. Climbs slow as the air thins, and a warm day lowers the service ceiling." : {
 
     },
-    "Earlier" : {
+    "Earlier Flights" : {
 
     },
     "Edit" : {
@@ -1374,6 +1367,9 @@
 
     },
     "Effective" : {
+
+    },
+    "Elevation" : {
 
     },
     "Email" : {
@@ -1410,6 +1406,9 @@
 
     },
     "Endurance, HHMM" : {
+
+    },
+    "Engine" : {
 
     },
     "Enter Route" : {
@@ -1472,12 +1471,6 @@
     "FPL, like your EFB" : {
 
     },
-    "Favorite" : {
-
-    },
-    "Favorites" : {
-
-    },
     "Feet" : {
 
     },
@@ -1485,6 +1478,12 @@
 
     },
     "Fetching its flights…" : {
+
+    },
+    "Fetching its history…" : {
+
+    },
+    "Fetching the TFRs…" : {
 
     },
     "Fetching the airspace here…" : {
@@ -1550,13 +1549,10 @@
     "Find Nearby is from where the airplane is." : {
 
     },
-    "Find an Airplane" : {
-
-    },
-    "Find an airplane" : {
-
-    },
     "Find any airport, town or fix the way you would in Apple or Google Maps." : {
+
+    },
+    "Finding it…" : {
 
     },
     "Finding the fields round you…" : {
@@ -1584,6 +1580,9 @@
 
     },
     "Flashing" : {
+
+    },
+    "Flies it" : {
 
     },
     "Flies your route direct to a navaid, a fix or a field said by name from where the airplane is." : {
@@ -1674,6 +1673,9 @@
     "Fly as Planned" : {
 
     },
+    "Fly this airplane" : {
+
+    },
     "Fly via %@ · %@" : {
       "localizations" : {
         "en" : {
@@ -1687,19 +1689,16 @@
     "Flying" : {
 
     },
-    "Flying This Airplane" : {
+    "Flying now" : {
 
     },
-    "Flying now" : {
+    "Flying this airplane" : {
 
     },
     "Folds the reasons" : {
 
     },
-    "Follow" : {
-
-    },
-    "Following" : {
+    "Follow %@ on the map" : {
 
     },
     "Forecast" : {
@@ -1721,9 +1720,6 @@
 
     },
     "Forget your checkpoint notes?" : {
-
-    },
-    "Found" : {
 
     },
     "Found on" : {
@@ -1846,6 +1842,9 @@
     "Hire or instruction for hire: the 100-hour, 91.409(b)" : {
 
     },
+    "History" : {
+
+    },
     "Hold Here…" : {
 
     },
@@ -1853,6 +1852,9 @@
 
     },
     "Hold for" : {
+
+    },
+    "Hold for Depart From" : {
 
     },
     "Hold to reset" : {
@@ -1900,6 +1902,9 @@
     "Ident" : {
 
     },
+    "Identifier" : {
+
+    },
     "Import %lld Flight%@" : {
       "localizations" : {
         "en" : {
@@ -1929,9 +1934,6 @@
 
     },
     "In the air" : {
-
-    },
-    "In the air · %@" : {
 
     },
     "In words" : {
@@ -1989,6 +1991,9 @@
 
     },
     "Its date" : {
+
+    },
+    "Its history couldn't be fetched. Try again in a moment." : {
 
     },
     "Its magnetic course from %@, a VOR's radial, and how far. Flown over next." : {
@@ -2076,10 +2081,10 @@
     "Landings" : {
 
     },
-    "Last check" : {
+    "Last Flights" : {
 
     },
-    "Last flights" : {
+    "Last check" : {
 
     },
     "Later" : {
@@ -2242,6 +2247,9 @@
     "Look" : {
 
     },
+    "Looking…" : {
+
+    },
     "Loop Speed" : {
 
     },
@@ -2288,9 +2296,6 @@
     "Make and model" : {
 
     },
-    "Maker and model · in the air or not" : {
-
-    },
     "Map" : {
 
     },
@@ -2311,9 +2316,6 @@
       }
     },
     "Medical" : {
-
-    },
-    "Military Fields" : {
 
     },
     "Missed It" : {
@@ -2484,6 +2486,9 @@
     "No NOTAMs" : {
 
     },
+    "No NTSB accident or incident on record since 2008." : {
+
+    },
     "No Profile Yet" : {
 
     },
@@ -2532,7 +2537,13 @@
     "No flight planned" : {
 
     },
+    "No flights heard" : {
+
+    },
     "No flights heard in the last six weeks" : {
+
+    },
+    "No flights to show: the FAA's registry gives no address for this N-number." : {
 
     },
     "No flights were read on this page." : {
@@ -2542,6 +2553,12 @@
 
     },
     "No items under the headings yet" : {
+
+    },
+    "No most-economical plan: the climb's fuel flow isn't known for this airplane." : {
+
+    },
+    "No past registrations." : {
 
     },
     "No report" : {
@@ -2565,6 +2582,9 @@
     "None" : {
 
     },
+    "None filed in the last month." : {
+
+    },
     "None for the route" : {
 
     },
@@ -2583,9 +2603,6 @@
     "None here now or to come" : {
 
     },
-    "None in the air by that name is heard now" : {
-
-    },
     "None listed" : {
 
     },
@@ -2593,9 +2610,6 @@
 
     },
     "None yet" : {
-
-    },
-    "None yet: the airplanes opened are kept here." : {
 
     },
     "Not Available" : {
@@ -2611,6 +2625,9 @@
 
     },
     "Not a Flight to Log" : {
+
+    },
+    "Not checked: %@" : {
 
     },
     "Not current" : {
@@ -2655,7 +2672,20 @@
     "On This iPhone" : {
 
     },
+    "On the %@ radial · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On the %1$@ radial · %2$@"
+          }
+        }
+      }
+    },
     "On the Field" : {
+
+    },
+    "On the Map" : {
 
     },
     "On the clock" : {
@@ -2770,6 +2800,9 @@
 
     },
     "Over %@°" : {
+
+    },
+    "Ownership history" : {
 
     },
     "Passenger Briefing" : {
@@ -2950,10 +2983,10 @@
     "Privacy Policy" : {
 
     },
-    "Private Fields" : {
+    "Private Pilot Experience" : {
 
     },
-    "Private Pilot Experience" : {
+    "Private/​Military" : {
 
     },
     "Procedures" : {
@@ -3068,6 +3101,12 @@
     "Refresh" : {
 
     },
+    "Refresh Weather" : {
+
+    },
+    "Refreshing…" : {
+
+    },
     "Registered to" : {
 
     },
@@ -3095,6 +3134,9 @@
     "Replay time" : {
 
     },
+    "Replays it on the map" : {
+
+    },
     "Reset" : {
 
     },
@@ -3107,6 +3149,9 @@
           }
         }
       }
+    },
+    "Restrictions" : {
+
     },
     "Right" : {
 
@@ -3145,6 +3190,9 @@
 
     },
     "Runways %@, north up" : {
+
+    },
+    "Safety history" : {
 
     },
     "Said in Full" : {
@@ -3213,6 +3261,15 @@
     "Search airports and airplanes" : {
 
     },
+    "Search for Your Airplane" : {
+
+    },
+    "Search for an airplane to keep" : {
+
+    },
+    "Search for your airplane" : {
+
+    },
     "Search, like Maps" : {
 
     },
@@ -3249,6 +3306,9 @@
     "Server" : {
 
     },
+    "Service volume" : {
+
+    },
     "Services" : {
 
     },
@@ -3271,6 +3331,9 @@
 
     },
     "Share" : {
+
+    },
+    "Share %@" : {
 
     },
     "Share Link" : {
@@ -3502,6 +3565,9 @@
     "Stop Sharing" : {
 
     },
+    "Stop following %@" : {
+
+    },
     "Stop following my position" : {
 
     },
@@ -3542,6 +3608,9 @@
 
     },
     "System" : {
+
+    },
+    "TFR %@" : {
 
     },
     "TFR as Sent" : {
@@ -3615,10 +3684,16 @@
     "The FAA publishes no airport diagram for this field" : {
 
     },
+    "The FAA's registry has no record of this N-number." : {
+
+    },
     "The Flight" : {
 
     },
     "The Hold" : {
+
+    },
+    "The NOTAM on tfr.faa.gov" : {
 
     },
     "The NOTAM's subject" : {
@@ -3760,6 +3835,9 @@
     "This Page" : {
 
     },
+    "This VOR is not in the regions kept on this phone, or not in this cycle's data." : {
+
+    },
     "This flight is no longer shared." : {
 
     },
@@ -3809,6 +3887,9 @@
 
     },
     "Tracking" : {
+
+    },
+    "Tracks it on the map" : {
 
     },
     "Traffic" : {
@@ -3901,10 +3982,10 @@
     "Use This Plan" : {
 
     },
-    "VFR Flight Not Recommended" : {
+    "Usually based at" : {
 
     },
-    "VFR Waypoints" : {
+    "VFR Flight Not Recommended" : {
 
     },
     "VOR Check" : {
@@ -3944,6 +4025,9 @@
 
     },
     "Waypoints and Navaids" : {
+
+    },
+    "Weather" : {
 
     },
     "Weather When I Land" : {
@@ -4187,9 +4271,6 @@
 
     },
     "active now" : {
-
-    },
-    "adsb.lol is busy; asking again…" : {
 
     },
     "adsb.lol's flight history can't be read now, so only flights followed in this app are listed." : {

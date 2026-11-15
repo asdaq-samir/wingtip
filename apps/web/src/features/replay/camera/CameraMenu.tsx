@@ -1,6 +1,6 @@
 import { Video } from "lucide-react";
 import { SpeedMenu } from "../../../components/PlaybackBar";
-import { CAMERAS, setReplayCamera, useReplayCamera, type CameraKind } from "./cameraStore";
+import { CAMERAS, setReplayCamera, useReplayCamera, type CameraKind } from "../../../lib/replay/camera/cameraStore";
 
 /** The replay's camera, a menu among a playback bar's parts (a menu, not
  *  a slider: decision 0017), the camera's name on its button. "Free" lets

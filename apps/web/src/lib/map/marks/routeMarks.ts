@@ -38,10 +38,7 @@ export const ROUTE_MARK_LAYERS: SymbolLayerSpecification[] = [
   // The dot on the point, always drawn and taking no room from the names;
   // the name beside it gives way as the others do.
   { ...pictureLayer("route-fix-dots", ROUTE_MARKS), filter: KIND("fix") },
-  {
-    ...chipLayer("route-fixes", ROUTE_MARKS, SORT, { "icon-image": ROUTE_POINT_PILL.id, ...turnSide(0) }),
-    filter: KIND("fix"),
-  },
+  { ...chipLayer("route-fixes", ROUTE_MARKS, SORT, { "icon-image": ROUTE_POINT_PILL.id, ...turnSide(0) }), filter: KIND("fix") },
   {
     // The ident 15 points right of the field's middle, past its mark, on
     // its pill: 5 points in from the pill's left.
@@ -102,11 +99,7 @@ export function routeMarks(
       picture: e.fix ? turnDotPicture(ring) : fieldMarkPicture(e.space, e.colour),
       also: e.fix ? [ROUTE_POINT_PILL] : [ROUTE_PILL],
       // The destination's placed before every other.
-      props: {
-        kind: e.fix ? "fix" : "field",
-        sort: i === endpoints.length - 1 ? 0 : 1,
-        ...(e.fix && { out: outsideOfTurn(line, e) }),
-      },
+      props: { kind: e.fix ? "fix" : "field", sort: i === endpoints.length - 1 ? 0 : 1, ...(e.fix && { out: outsideOfTurn(line, e) }) },
       onTap: e.select,
     })),
     ...checkpoints.map((c): GlSymbol => ({

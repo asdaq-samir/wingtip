@@ -71,7 +71,7 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   const order = await facts.locator(":scope > div").evaluateAll((f) => f.map((e) => (e as HTMLElement).dataset.testid));
   expect(order).toEqual(["weather", "airspace", "elevation", "pattern", "distance"].map((n) => `place-fact-${n}`));
   await expect(card(page).getByTestId("place-fact-category")).toHaveText("MVFR");
-  await expect(card(page).getByTestId("place-fact-airspace")).toHaveText(/^Airspace[BCDEG]/);
+  await expect(card(page).getByTestId("place-fact-airspace")).toHaveText(/^AirspaceClass [BCDEG]/);
   await expect(card(page).getByTestId("place-fact-elevation")).toHaveText(/^Elev\.[\d,]+ ft$/);
   await expect(card(page).getByTestId("place-fact-pattern")).toHaveText(/^Pattern[\d,]+ ft$/);
   await expect(card(page).getByTestId("place-fact-distance")).toHaveText(/^From C81\d+ nm$/);

@@ -2,12 +2,12 @@ import { useMemo } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { airplaneDetailsQuery, airplanePhotoQuery } from "../../lib/airplane/details";
 import { useTailLookup } from "../../lib/airplane/lookup";
+import { pastFlightsQuery } from "../../lib/airplane/pastFlightsQuery";
 import { useAddress } from "../../lib/address";
 import { aircraftKind } from "../../lib/aircraftKind";
 import { useTracking } from "../../lib/map/position/tracking";
 import { usePreferences, type KeptAircraft } from "../../lib/preferences";
 import { shareOrCopy } from "../../lib/share";
-import { pastFlightsQuery } from "../plan";
 import { statusLine } from "./airplaneStatus";
 
 /**

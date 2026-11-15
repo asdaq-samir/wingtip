@@ -3,7 +3,7 @@ import { useGlMap } from "../../../lib/map/gl/glLayer";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePastFlight } from "../../../lib/replay/clock";
 import { useExporting } from "../export/exportStore";
-import { useReplayCamera } from "./cameraStore";
+import { useReplayCamera } from "../../../lib/replay/camera/cameraStore";
 import { replayView, showView } from "./cameraView";
 
 /** How close in a camera may come: its height, not the chart, sets it

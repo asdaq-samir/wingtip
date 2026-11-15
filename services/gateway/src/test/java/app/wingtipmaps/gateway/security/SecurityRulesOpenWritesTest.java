@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import app.wingtipmaps.gateway.controller.PilotController;
 import app.wingtipmaps.gateway.controller.SignInCapabilitiesController;
 import app.wingtipmaps.gateway.service.AccountService;
+import app.wingtipmaps.gateway.service.CheckpointNotesClient;
 import app.wingtipmaps.gateway.service.PilotService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,10 @@ class SecurityRulesOpenWritesTest {
 
     @MockitoBean
     private AccountService accountService;
+
+    /** PilotController's third collaborator; no rule here asks it anything. */
+    @MockitoBean
+    private CheckpointNotesClient checkpointNotes;
 
     @Test
     void plannerWritesAndTheNarrativeAreOpen() throws Exception {

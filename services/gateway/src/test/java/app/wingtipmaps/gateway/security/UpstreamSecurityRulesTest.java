@@ -13,6 +13,7 @@ import app.wingtipmaps.gateway.controller.SignInCapabilitiesController;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.domain.PilotRole;
 import app.wingtipmaps.gateway.service.AccountService;
+import app.wingtipmaps.gateway.service.CheckpointNotesClient;
 import app.wingtipmaps.gateway.service.PilotService;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,6 +67,10 @@ class UpstreamSecurityRulesTest {
 
     @MockitoBean
     private AccountService accountService;
+
+    /** PilotController's third collaborator; no rule here asks it anything. */
+    @MockitoBean
+    private CheckpointNotesClient checkpointNotes;
 
     private int status(String method, String path, boolean token, boolean signedIn) throws Exception {
         var builder = request(HttpMethod.valueOf(method), path);

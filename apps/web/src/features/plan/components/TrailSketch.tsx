@@ -1,12 +1,6 @@
 import { memo } from "react";
+import type { SketchField } from "../../../lib/airplane/sketchField";
 import { colourRuns } from "../map/traffic";
-
-/** A field the flight left or is bound for, drawn on the sketch. */
-export interface SketchField {
-  ident: string;
-  lat: number;
-  lon: number;
-}
 
 /**
  * Where an airplane has flown, drawn small in the airport card's diagram's

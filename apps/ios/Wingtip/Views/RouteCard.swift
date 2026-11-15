@@ -113,7 +113,7 @@ struct RouteCard: View {
     /// Clear, which asks nothing: Undo takes it back (warn, never limit).
     private var more: some View {
         let cautioned = !(plan.altitude?.cautions?.isEmpty ?? true)
-        let _ = UndoWatch.shared.changes
+        _ = UndoWatch.shared.changes
         return ShareMenu(rows: Group {
             Button { open(.profile) } label: {
                 Label(cautioned ? "Profile, Altitude Caution" : "Profile", systemImage: cautioned ? "exclamationmark.triangle.fill" : WingtipIcon.profile)

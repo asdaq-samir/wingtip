@@ -17,6 +17,7 @@ import app.wingtipmaps.gateway.controller.PilotController;
 import app.wingtipmaps.gateway.controller.SignInCapabilitiesController;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.service.AccountService;
+import app.wingtipmaps.gateway.service.CheckpointNotesClient;
 import app.wingtipmaps.gateway.service.PilotService;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,10 @@ class SecurityRulesTest {
 
     @MockitoBean
     private AccountService accountService;
+
+    /** PilotController's third collaborator; no rule here asks it anything. */
+    @MockitoBean
+    private CheckpointNotesClient checkpointNotes;
 
     /** The map's overlay draws the USGS's and Google's tiles and asks
      *  Google for a session from the browser, and an airplane's card asks
