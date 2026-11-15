@@ -291,6 +291,23 @@ ci_only:
     - apps/ios/project.yml
     - .github/workflows/*.yml
     - .github/actions/**
+  # The phone apps' own trees, for the pull request's gate (decision 0044).
+  # A pull request builds an app when it changes the app, its generated
+  # code included (the API models, the engine's calls, the tokens, the
+  # screens). A change to what the app is built from besides -- the engine,
+  # the shared fixtures -- builds it after merge, in the app's own
+  # workflow: the engine's own tests hold the same fixtures, and a build of
+  # ten minutes held every engine change's gate. The areas' `ios` and
+  # `android` paths above stay what check.sh and those workflows read.
+  ios-app:
+    - apps/ios/**
+    - scripts/build/ios-strings.sh
+    - scripts/ci/content-mtimes.py
+    - .github/workflows/native-ios.yml
+  android-app:
+    - apps/android/**
+    - .editorconfig
+    - .github/workflows/native-android.yml
   # The APIs the phones call, for api-compat.
   api:
     - services/planner/openapi.json

@@ -29,12 +29,14 @@ for name in ("test-web", "test-engine", "test-gateway", "docs", "infra", "api", 
 # test-python's legs: the suites whose test-<leg> filter matched.
 outputs["python"] = json.dumps([s for s in ("planner", "wingtip", "jobs", "ingest", "weather", "xplane") if due(f"test-{s}")])
 # The phones' builds gate a merge (#499): a pull request, or a run
-# started by hand on one's branch. Main's pushes and the nights
-# have native-android.yml and native-ios.yml for them, so they
+# started by hand on one's branch, that changes an app's own tree (the
+# `ios-app` and `android-app` filters; decision 0044). Main's pushes and
+# the nights have native-android.yml and native-ios.yml for them, which
+# also build on a change to the engine or the shared fixtures, so they
 # are not run twice there.
 gate = os.environ["EVENT"] in ("pull_request", "workflow_dispatch")
 for name in ("android", "ios"):
-    outputs[name] = "true" if gate and due(name) else "false"
+    outputs[name] = "true" if gate and due(f"{name}-app") else "false"
 with open(os.environ["GITHUB_OUTPUT"], "a") as out:
     for key, value in outputs.items():
         out.write(f"{key}={value}\n")

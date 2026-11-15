@@ -44,9 +44,9 @@ script can check, and the rest are for whoever writes a test or a job.
    and those that use them (`scripts/ci/engine_affected.py`), each Python
    suite's own leg. A pull request of words only (docs, Markdown, skills,
    notebooks) runs `changes` and `guards`' seconds-long checks, nothing
-   else; a web change never builds the phones (only the fixtures and
-   generated code they read do). Yet every app whose inputs a pull
-   request changes is built in tier 1 (#499): the web app's `vite build`,
+   else; a web change never builds the phones (only the code generated
+   into them does). Yet every app a pull request changes is built in
+   tier 1 (#499; its own tree, decision 0044): the web app's `vite build`,
    Android's compile and iOS's build. *Guards:* `scripts/areas.py check`
    keeps the filter the table's; `test_tiers.py` the apps' builds.
 4. **Cache everything; main and the night save, pull requests read.**
@@ -250,22 +250,25 @@ path-filtered workflow stays pending on every pull request it skips), so
 #499 merged with the Android app not compiling (fixed in #501). Now
 `native-android.yml` and `native-ios.yml` are reusable workflows as well
 as their own, and `ci.yml` calls them as the `android` and `ios` jobs
-when `changes` finds the pull request touches what the app builds from
-(scripts/areas.yml); the iPhone's UI smoke is the one part left to
-main's push. `test_tiers.py` fails a `ci.yml` in which a pull request
-would no longer build the web app, Android or iOS:
+when `changes` finds the pull request touches the app's own tree
+(scripts/areas.yml's `ios-app` and `android-app`; decision
+[0044](decisions/0044-red-runs-end-early.md)); the iPhone's UI smoke is
+the one part left to main's push. `test_tiers.py` fails a `ci.yml` in
+which a pull request would no longer build the web app, Android or iOS:
 
-- **Android:** `apps/android/**`, `.editorconfig`, `engine/**`,
-  `apps/web/src/lib/fixtures/**`, `scripts/build/api-models-apps.*`,
-  `scripts/build/engine-contract-apps.*`, `design/**`,
-  `native-android.yml`.
-- **iOS:** `apps/ios/**`, `engine/**`, `apps/web/src/lib/fixtures/**`,
-  `apps/web/src/lib/acs.json`,
-  `services/planner/tests_wingtip/fixtures/native/**`,
-  `scripts/build/api-models-apps.*`, `scripts/build/engine-contract-apps.*`,
-  `design/**`, `scripts/ci/content-mtimes.py`, `native-ios.yml`.
+- **Android:** `apps/android/**` (its generated API models, engine calls,
+  tokens and screens among it), `.editorconfig`, `native-android.yml`.
+- **iOS:** `apps/ios/**` (the same), `scripts/build/ios-strings.sh`,
+  `scripts/ci/content-mtimes.py`, `native-ios.yml`.
 - **Both:** a change to `ci.yml` itself, or anything in its `global`
   filter, as for every other job.
+- **Not at the gate, since 2026-11-15:** a change to `engine/**`, the
+  shared fixtures (`apps/web/src/lib/fixtures/**`, `acs.json`, the native
+  fixtures) or `design/**` alone. It held every engine change's gate for
+  a build of 5 to 21 minutes; the engine's own tests hold the same
+  fixtures, and the generated code such a change makes lands under the
+  apps, which does gate. The apps' own workflows still build on those
+  paths after merge, and a break there is main's one `ready` issue.
 
 They are called on pull requests (claude/integration's included) and on
 CI started by hand; main's pushes and the nights run them in their own

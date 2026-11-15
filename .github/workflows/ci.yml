@@ -369,6 +369,15 @@ jobs:
                 - apps/ios/project.yml
                 - .github/workflows/*.yml
                 - .github/actions/**
+              ios-app:
+                - apps/ios/**
+                - scripts/build/ios-strings.sh
+                - scripts/ci/content-mtimes.py
+                - .github/workflows/native-ios.yml
+              android-app:
+                - apps/android/**
+                - .editorconfig
+                - .github/workflows/native-android.yml
               api:
                 - services/planner/openapi.json
                 - services/gateway/openapi.json
