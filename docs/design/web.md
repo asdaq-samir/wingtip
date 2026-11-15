@@ -218,7 +218,7 @@ close does.
   (the owner, 2026-11-13: "For webapp, why don't we make everything a
   nested drawer except the welcome one?"): `SheetCard` for a thing's
   card, the Map card, an airplane's profile and Emergency; `CardLayer`
-  for the route's Brief, Nav Log, Profile and Stops and for You
+  for the route's Stops, a dry run's Profile card and You
   (`features/shell/ConsoleLayer`, its one head row Settings' gear and
   the ✕, Settings and its pages inside it). Each with its own snap point
   among the sheet's three sizes, its grabber and its swipe, the sheet's
@@ -688,8 +688,8 @@ after the bar. The bar before it is one size on both pages
 (`panelField`'s `SHEET_BAR`, 46 tall, round-ended, the row's room less
 the toggle): on Search the one search's field (`OneSearchField`), on FPL
 the airplane's strip (`features/plan/components/workspace/FplBar`, its
-`RouteControls`: the N-number, the altitude, the Profile, the Brief and
-the route's •••, on one line, the airplane and the altitude giving way
+`RouteControls`: the N-number, the altitude and the route's •••, on one
+line, the airplane and the altitude giving way
 first). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
 a turn of the page moves nothing and the head's first row, and the map's
 room, stay the same. The route is the row under FPL's bar (`RouteHead`),
@@ -733,8 +733,18 @@ and the traffic are Search); the toggle picks it as a place is picked
 (`pickPage`), closing whatever card is opening as it is tapped
 (`lib/openCards`' `closeEveryCard`, and You). The pill is the page's one
 row (the route's figures on FPL, FPL's bar with no route); the route's
-figures sit at the foot on FPL alone. The Brief, the Nav Log, the Profile and the Stops are cards over
-FPL (`PlanCards`, `CardLayer`), the last three kept between their
+figures sit at the foot on FPL alone. The Nav Log, the Brief and the
+Profile are FPL's tabs (`workspace/FplTabs`, the owner, 2026-11-14): the
+stock Tabs of `CardTabPages`, each page kept once drawn (`tab-page`), the
+pages' mark pinned under FPL's band by `--fpl-band` (the band's height,
+kept by a ResizeObserver) so `useTabScroll` opens each at its own top, and
+the airport card's `CardTabBar` at FPL's foot (`FplTabBar`, in the route
+panel's chunk), its `actions` Share (`useShareLink`) and ForeFlight
+(`useForeFlight`) after the tabs in the same columns (a CSS subgrid round
+the stock tab list), padded 6 a side where five share it; test ids
+`route-navlog`, `route-brief`, `route-profile`, `route-share`,
+`open-foreflight`. The Stops, and the Profile's card while a dry run
+plays, are cards over FPL (`PlanCards`, `CardLayer`), kept between their
 openings: built at the first, their drawers closed and skipped by
 `content-visibility` after (index.css's kept cards), as a tab put away
 is, so the Nav Log is not built again (0.6 s). They are mounted beside

@@ -18,9 +18,9 @@ own maps follow this table.
 | share | lucide `Share` | `square.and.arrow.up` | `share` | A card's share; the minimized bar's left. |
 | more | lucide `Ellipsis` | `ellipsis.circle` | `more_vert` | The route box's ••• (share, print, nav log). |
 | myLocation | lucide `Navigation` | `location` / `location.fill` | `near_me` | The map's position button. |
-| brief | lucide `Sparkles` | `sparkles` | `auto_awesome` | The route box's AI brief. |
+| brief | lucide `ClipboardCheck` (web, 2026-11-14; the phones at the owner's word) | `sparkles` | `auto_awesome` | FPL's Brief tab. |
 | navLog | lucide `ListOrdered` | `list.number` | `format_list_numbered` | The nav log, in the route's menu. |
-| profile | lucide `ChartArea` | `chart.xyaxis.line` | `show_chart` | The side view. |
+| profile | lucide `Mountain` (web, 2026-11-14; the phones at the owner's word) | `chart.xyaxis.line` | `show_chart` | The side view, FPL's Profile tab. |
 | mapLayers | lucide `Map` | `map` | `layers` | The map's layers and weather. |
 | flightPlan | lucide `Route` | `point.topleft.down.to.point.bottomright.curvepath` | `route` | A route as a list's mark. |
 | nearest | lucide `LocateFixed` | `scope` | `my_location` | Nearest fields. |
