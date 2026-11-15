@@ -100,10 +100,10 @@ jobs:
             engine/target
           key: ${{ steps.cargo.outputs.cache-primary-key }}
 
-  # The web front end, two legs on a runner each: `tests`, the unit tests a
-  # change reaches, and `build`, the generated files (types, the phones'
-  # models, tokens, screens, icons), the build and its first-load budget.
-  # Its tsc, ESLint, Prettier and knip are the guards job's.
+  # The web front end, three legs on a runner each: `tests`, the unit tests
+  # a change reaches; `build`, the build and its first-load budget; and
+  # `generated`, the generated files (types, the phones' models, tokens,
+  # screens, icons). Its tsc, ESLint, Prettier and knip are the guards job's.
   test-web:
     name: test-web (${{ matrix.part }})
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
@@ -112,7 +112,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        part: [tests, build]
+        part: [tests, build, generated]
     defaults:
       run:
         working-directory: apps/web
@@ -136,14 +136,14 @@ jobs:
       - run: npm run types
       # The iPhone's API generator (swift-openapi-generator), built once per
       # version in .tool-versions by api-models-apps.sh.
-      - if: matrix.part == 'build'
+      - if: matrix.part == 'generated'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.cache/wingtip/swift-openapi-generator
           key: swift-openapi-generator-${{ hashFiles('.tool-versions') }}
       # On a pull request, the tests and generated files it touched (HEAD^1,
       # the base it lands on); on main's push and at night, all of them.
-      - name: The unit tests, or the generated files and the build
+      - name: The unit tests, the build, or the generated files
         working-directory: .
         env:
           PART: ${{ matrix.part }}

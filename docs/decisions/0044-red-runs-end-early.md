@@ -60,11 +60,15 @@ the slowest:
    or the tokens' source alone builds the apps after merge, in their own
    workflows, as before. #499's rule stands for what it was about: a pull
    request that changes an app must compile it.
-4. **The web's tests and its build each have a runner.** `test-web` is two
-   legs (`scripts/ci/web_suite.sh tests|build`), so the gate's longest job
-   no longer adds the two. Running both at once on one runner was tried
-   first and measured slower, 264 s against about 150 s in turn (run
-   43727254429): each starved the other of the runner's four cores.
+4. **The web's tests, its build and its generated files each have a
+   runner.** `test-web` is three legs (`scripts/ci/web_suite.sh
+   tests|build|generated`), so the gate's longest job no longer adds them.
+   Running tests and build at once on one runner was tried first and
+   measured slower, 264 s against about 150 s in turn (run 43727254429):
+   each starved the other of the runner's four cores. The build alone is
+   89 s since the wave presses the assets in Brotli at 11 (commit
+   c816e78f5; about 30 s before), which is why it does not share a leg
+   with the generated files' 78 s.
 5. **The guards say what was slow, and have three runners.** `guards.sh`
    prints each check's seconds and the five slowest, so the next cut is
    read off a run. The first such run (43730938912) read: 5.2 minutes for
