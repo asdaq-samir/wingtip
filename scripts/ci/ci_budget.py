@@ -61,6 +61,7 @@ BUDGETS = [
     ("Native Android / build", 5, 10),
     ("Native iOS / test", 6, 70),
     ("CI passed", 1, 1),
+    ("Stop on red", 1, 1),
     # Tier 2: after merge, on main's push.
     ("build (*)", 4, 6),
     ("e2e (*)", 8, 15),

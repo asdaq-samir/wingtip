@@ -227,8 +227,11 @@ without it).
   be fixed at once.
 - **Pre-push hook** (`scripts/dev/install-hooks.sh` once per clone): `tsc`,
   ESLint, ruff, `cargo check`, `format.sh --check` and the simplicity
-  rules for what a push changes. Skip it with `--no-verify` or `SKIP_HOOKS=1`; it is no
-  substitute for the table.
+  rules for what a push adds to the branch it builds on (main, or the
+  wave's branch). Don't skip it (decision 0044): what it refuses, CI's
+  `guards` refuse minutes later. `SKIP_HOOKS=1` is for a hook that is
+  itself broken, and the push's report says so; it is no substitute for
+  the table.
 - **An API that changes changes its document:** `python -m app.openapi`
   (the planner; then `scripts/build/planner-calls.sh` for the MCP connector's calls) or `WRITE_OPENAPI=1 mvn -B test` (the
   gateway), then `npm run types` and `scripts/build/api-models-apps.sh`;

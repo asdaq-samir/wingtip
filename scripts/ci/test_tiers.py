@@ -58,7 +58,9 @@ MAX_RETRIES = 1
 # The slower proofs, after merge and never on a pull request again.
 AFTER_MERGE = {"e2e", "e2e-images", "build-images"}
 # ci.yml's jobs about the run rather than in a tier.
-META = {"passed", "budget"}
+META = {"passed", "budget", "halt"}
+# The script ci.yml's test-web runs the tests and the build through.
+WEB_SUITE = "scripts/ci/web_suite.sh"
 # The apps a pull request must still build when it touches their inputs
 # (#499), each by the reusable workflow ci.yml calls.
 PHONES = {"native-android.yml": "", "native-ios.yml": "unit_only: true"}
@@ -214,9 +216,29 @@ def tiers() -> list[str]:
             errors.append(f"ci.yml: no tier-1 job calls {workflow}; a pull request that touches the app must build it (#499)")
         elif word and not any(word in "\n".join(j.body) for j in callers):
             errors.append(f"ci.yml: the job that calls {workflow} passes `{word}` (the UI smoke is after merge)")
-    if not any("vite build" in r.text for i in tier1 for r in jobs[i].runs):
-        errors.append("ci.yml: no tier-1 job builds the web app (`npx vite build`); a pull request must build it (#499)")
+    if not any(builds_web(r.text) for i in tier1 for r in jobs[i].runs):
+        errors.append(
+            f"ci.yml: no tier-1 job builds the web app (`npx vite build`, itself or through {WEB_SUITE}); "
+            "a pull request must build it (#499)"
+        )
+    halt = jobs.get("halt")
+    if halt is None or "gh run cancel" not in "\n".join(halt.body) or "failure()" not in halt.keys.get("if", ""):
+        errors.append("ci.yml: no `halt` job that cancels a red run (`if: failure()`, `gh run cancel`; decision 0044)")
+    else:
+        errors += [
+            f"ci.yml: halt waits for {i}, a phone's build: a red run would then end no sooner (decision 0044)"
+            for i in sorted(needs(halt))
+            if jobs[i].keys.get("uses", "").startswith("./.github/workflows/")
+        ]
+        linux = {i for i in tier1 if "uses" not in jobs[i].keys}
+        errors += [f"ci.yml: halt does not wait for {i}, so its failure would not end the run" for i in sorted(linux - needs(halt))]
     return errors + budgets([jobs[i] for i in sorted(tier1)])
+
+
+def builds_web(run: str) -> bool:
+    """A run that builds the web app: `vite build` in its own words, or in the
+    script it calls."""
+    return "vite build" in run or (WEB_SUITE in run and "npx vite build" in (ROOT / WEB_SUITE).read_text())
 
 
 def duplicates() -> list[str]:

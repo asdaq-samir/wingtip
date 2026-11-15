@@ -16,5 +16,5 @@ else
   git config core.hooksPath scripts/dev/hooks
   # git blame past the whole-tree reformats (.git-blame-ignore-revs).
   [ ! -f .git-blame-ignore-revs ] || git config blame.ignoreRevsFile .git-blame-ignore-revs
-  echo "git hooks: scripts/dev/hooks (pre-push runs the quick checks; skip with --no-verify or SKIP_HOOKS=1)"
+  echo "git hooks: scripts/dev/hooks (pre-push runs the quick checks on what a push adds; SKIP_HOOKS=1 only for a hook that is itself broken)"
 fi

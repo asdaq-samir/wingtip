@@ -38,7 +38,8 @@
 #   WEB=false ENGINE=false FLIGHT=false scripts/ci/guards.sh    the seconds-long ones
 #
 # Each check's output is printed in a group of its own once all are done,
-# and each failure is an ::error naming it.
+# with its seconds, the five slowest named after them, and each failure is
+# an ::error naming it.
 set -uo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$here" || exit 1
@@ -49,13 +50,18 @@ on() { [ "${!1:-true}" != false ]; }
 CARGO_MACHETE=0.9.2
 RUFF=$(scripts/build/toolchain.sh get ruff)
 
-# NAME CMD...: started in the background, its output and status kept.
+# NAME CMD...: started in the background, its output, status and seconds kept.
 start() {
   local name=$1 slug
   shift
   slug=$(printf '%s' "$name" | tr -c 'A-Za-z0-9' '-')
   echo "$name" >> "$out/order"
-  ( "$@" > "$out/$slug.log" 2>&1; echo $? > "$out/$slug.status" ) &
+  (
+    began=$SECONDS
+    "$@" > "$out/$slug.log" 2>&1
+    echo $? > "$out/$slug.status"
+    echo $((SECONDS - began)) > "$out/$slug.secs"
+  ) &
 }
 
 # TOOL: there, or on the Mac a skip (exit 3, reported as skipped).
@@ -192,7 +198,9 @@ failed=() skipped=()
 while read -r name; do
   slug=$(printf '%s' "$name" | tr -c 'A-Za-z0-9' '-')
   status=$(cat "$out/$slug.status" 2>/dev/null || echo 1)
-  echo "::group::$name ($([ "$status" = 0 ] && echo passed || { [ "$status" = 3 ] && echo skipped; } || echo failed))"
+  secs=$(cat "$out/$slug.secs" 2>/dev/null || echo 0)
+  echo "$secs $name" >> "$out/times"
+  echo "::group::$name ($([ "$status" = 0 ] && echo passed || { [ "$status" = 3 ] && echo skipped; } || echo failed), ${secs}s)"
   cat "$out/$slug.log"
   echo "::endgroup::"
   if [ "$status" = 3 ]; then
@@ -203,6 +211,8 @@ while read -r name; do
   fi
 done < "$out/order"
 
+# The job is as long as its slowest check: which those are, each run.
+echo "slowest: $(sort -rn "$out/times" | head -5 | awk '{ s = $1; $1 = ""; printf "%s%s %ss", sep, substr($0, 2), s; sep = ", " }')"
 [ ${#skipped[@]} -eq 0 ] || echo "skipped, their tool missing here: ${skipped[*]}"
 if [ ${#failed[@]} -gt 0 ]; then
   echo "failed: ${failed[*]}"

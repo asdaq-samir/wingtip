@@ -100,10 +100,10 @@ jobs:
             engine/target
           key: ${{ steps.cargo.outputs.cache-primary-key }}
 
-  # The web front end: the unit tests a change reaches, the build and its
-  # first-load budget, and the generated files (types, the phones' models,
-  # tokens, screens, icons) are the committed ones. Its tsc, ESLint,
-  # Prettier and knip are the guards job's.
+  # The web front end: the unit tests a change reaches, beside (not after)
+  # the generated files' check (types, the phones' models, tokens, screens,
+  # icons), the build and its first-load budget. Its tsc, ESLint, Prettier
+  # and knip are the guards job's.
   test-web:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -135,24 +135,14 @@ jobs:
         with:
           path: ~/.cache/wingtip/swift-openapi-generator
           key: swift-openapi-generator-${{ hashFiles('.tool-versions') }}
-      # The generated and committed files (the phones' models and engine
-      # calls, tokens, screens, icons), each what its source makes: on a
-      # pull request only those it touched (HEAD^1, the base it lands on).
-      - name: The generated files are the committed ones
+      # Vitest at once, and beside it the generated files (each what its
+      # source makes), `vite build` and the first-load budget: one after
+      # the other they were the gate's longest job (scripts/ci/web_suite.sh).
+      # On a pull request, the tests and generated files it touched (HEAD^1,
+      # the base it lands on); on main's push and at night, all of them.
+      - name: The unit tests, beside the generated files and the build
         working-directory: .
-        run: scripts/ci/web_generated.sh ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
-      # On a pull request, the tests whose files or imports it changed
-      # (Vitest's --changed, against the main it lands on; a change to the
-      # package or Vite's config runs them all); on main's push and at
-      # night, every test.
-      - run: npx vitest run ${{ github.event_name == 'pull_request' && '--changed HEAD^1 --passWithNoTests' || '' }}
-      - run: npx vite build
-      # The JavaScript a phone loads before the planner draws, against a
-      # budget (scripts/first-load.mjs); raise it only with the reason.
-      - run: node scripts/first-load.mjs dist --budget 1100000
-      # Advisory: a known-vulnerable dependency is reported, not blocking.
-      - run: npm audit --audit-level=high
-        continue-on-error: true
+        run: scripts/ci/web_suite.sh ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
 
   # The gateway's JUnit suite, Testcontainers' Postgres on the runner's
   # Docker.
@@ -1259,8 +1249,9 @@ jobs:
           retention-days: 30
           path: ${{ runner.temp }}/api-reference
 
-  # The production files: cfn-lint, shellcheck, compose config, caddy
-  # validate. Nothing else runs them before a deploy.
+  # The production files: cfn-lint, compose config, caddy validate. Nothing
+  # else runs them before a deploy; their shell scripts are the guards
+  # job's, with every other one (scripts/ci/shellcheck.sh).
   infra:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -1275,7 +1266,6 @@ jobs:
           python-version-file: .tool-versions
       - run: pip install cfn-lint==1.60.0
       - run: cfn-lint infra/cloudformation/template.yaml
-      - run: shellcheck infra/server/*.sh
       - name: docker compose config (infra/docker-compose.prod.yml)
         run: |
           printf '%s\n' IMAGE_REGISTRY=registry.example/wingtip PUBLIC_HOST=app.example.com \
@@ -1592,7 +1582,7 @@ jobs:
   # (scripts/ci/ci_budget.py). Last, after every job; seconds.
   budget:
     name: CI budget
-    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, e2e, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, backup-restore, passed]
+    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, e2e, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, backup-restore, halt, passed]
     if: ${{ !cancelled() }}
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3
@@ -1611,6 +1601,30 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 scripts/ci/ci_budget.py
+
+  # A red run ends when its Linux jobs do (decision 0044). Every one of them
+  # has said what it found within about four minutes; the phones' builds are
+  # the only jobs that outlast them, and ran ten to twenty minutes more to a
+  # verdict already known (19 of the 22 failed runs of 12-14 November had a
+  # failed job within four minutes and ended 9 to 25 minutes in). So once
+  # any of these has failed, the run is cancelled: "CI passed" then fails
+  # at once, and the next push starts sooner. A pull request's runs only.
+  halt:
+    name: Stop on red
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review]
+    if: ${{ failure() && github.event_name == 'pull_request' }}
+    timeout-minutes: 2
+    # actions: write, to cancel this run and nothing else.
+    permissions:
+      actions: write
+    steps:
+      - name: The phones' builds stopped, the verdict being known
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: gh run cancel "$RUN_ID"
 
   # The one check main requires (its ruleset); auto-merge-agents.yml merges
   # on it. Tier 1, about three minutes (the owner, 2026-11-10: "3-minute

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # The quick checks, before a push, for the parts of the repo the push
-# changes against origin/main: TypeScript and ESLint for apps/web/, ruff for
+# changes against the branch it builds on (main, or the wave's
+# claude/integration where it was cut from that): TypeScript and ESLint for apps/web/, ruff for
 # the Python, `cargo check` for engine/, each changed language's formatter
 # (scripts/dev/format.sh --check), and the generated files and budgets CI
 # checks (the screens, the design tokens, the toolchain versions, the file
@@ -25,13 +26,33 @@ here=$repo
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HOME/.local/bin:$HOME/.cargo/bin
 zero=0000000000000000000000000000000000000000
 
-# The files the pushed commits change against origin/main (from where they
+# Where a pushed commit left the branch it builds on: main, or the wave's
+# branch when that is the nearer of the two. A push is judged by what it
+# adds. Held against main alone, a branch cut from claude/integration
+# answered for the whole wave: on 2026-11-15 a clean checkout of the wave's
+# head was refused for another branch's SwiftLint finding, which no pusher
+# could put right, and about 200 of the 510 pushes to the wave's branch in
+# the four days before had skipped this hook (decision 0044). The wave
+# against main is CI's to judge, on its pull request.
+base_of() {
+  local main wave
+  main=$(git merge-base origin/main "$1" 2>/dev/null) || main=""
+  wave=$(git merge-base origin/claude/integration "$1" 2>/dev/null) || wave=""
+  if [ -n "$wave" ] && { [ -z "$main" ] || git merge-base --is-ancestor "$main" "$wave"; }; then
+    echo "$wave"
+  else
+    echo "$main"
+  fi
+}
+
+# The files the pushed commits change against that base (from where they
 # left it), for each ref pushed. A deleted ref changes nothing.
 refs=$(cat)
 changed=$(
   while read -r _local_ref local_sha _remote_ref _remote_sha; do
     [ "$local_sha" = "$zero" ] && continue
-    base=$(git merge-base origin/main "$local_sha" 2>/dev/null) || continue
+    base=$(base_of "$local_sha")
+    [ -n "$base" ] || continue
     git diff --name-only --diff-filter=d "$base" "$local_sha"
   done <<<"$refs" | sort -u
 )
@@ -56,6 +77,9 @@ if [ -z "$changed" ]; then exit 0; fi
 # is not on that commit, or has uncommitted changes to tracked files, the
 # commit is checked out detached into a temporary worktree, removed on exit.
 pushed=$(printf '%s\n' "$refs" | awk -v z="$zero" '$2 != z { sha = $2 } END { print sha }')
+# What the guards below hold that commit against (their --base).
+judged=$(base_of "${pushed:-HEAD}")
+judged=${judged:-origin/main}
 tmp=""
 # shellcheck disable=SC2329  # run by the EXIT trap below
 cleanup() {
@@ -223,10 +247,14 @@ if [ ${#fmt[@]} -gt 0 ]; then
   esac
 fi
 
-# --- the engine's layering: seconds, the standard library ------------------
+# --- the engine's layering: seconds; it asks Cargo for the crates ----------
 if has_area engine; then
-  note "engine: the crates' layering"
-  out=$(python3 "$here/scripts/ci/engine_layers.py") || { grep "::error" <<<"$out"; fail "engine layers"; }
+  if command -v cargo >/dev/null && cargo --version >/dev/null 2>&1; then
+    note "engine: the crates' layering"
+    out=$(python3 "$here/scripts/ci/engine_layers.py") || { grep "::error" <<<"$out"; fail "engine layers"; }
+  else
+    note "engine: the crates' layering left to CI (no Rust toolchain here)"
+  fi
 fi
 # --- the generated files and the budgets CI holds the tree to ---------------
 # Each a second or two, Python's standard library alone, and each run only
@@ -263,7 +291,7 @@ gen '(^\.tool-versions$|rust-toolchain\.toml$|^engine/.*Cargo\.toml$|^scripts/bu
   "$here/scripts/build/toolchain.sh" --check
 gen '(\.(ts|tsx|py|rs|swift|kt|java|sh|mjs|js|cjs|cs|kts|gradle)$|^scripts/ci/file_sizes)' \
   "the file-size budget" "split the file (a new one over 300 lines, an old one over 400)" \
-  python3 "$here/scripts/ci/file_sizes.py" --base origin/main
+  python3 "$here/scripts/ci/file_sizes.py" --base "$judged"
 gen '(^apps/web/src/.*\.(ts|tsx|css)$|^apps/ios/.*\.swift$|^apps/android/app/src/main/.*\.kt$|^scripts/ci/brand_guard|^design/tokens\.json$)' \
   "no raw style value outside the design tokens" "use design/tokens.json's" \
   python3 "$here/scripts/ci/brand_guard.py"
@@ -275,13 +303,13 @@ gen "($src|^scripts/ci/rules_boundary)" \
   python3 "$here/scripts/ci/rules_boundary.py"
 gen "($src|^scripts/ci/(semgrep|changed))" \
   "one home per constant or helper (Semgrep)" "import from the home the message names" \
-  python3 "$here/scripts/ci/semgrep_check.py" --base origin/main
+  python3 "$here/scripts/ci/semgrep_check.py" --base "$judged"
 gen "($src|^scripts/ci/(jscpd|changed))" \
   "no new copy-paste (jscpd)" "move the copy into one function both call" \
-  python3 "$here/scripts/ci/jscpd_check.py" --base origin/main
+  python3 "$here/scripts/ci/jscpd_check.py" --base "$judged"
 gen "($src|^scripts/ci/simplicity_|^apps/web/eslint-suppressions\.json$)" \
   "the simplicity ratchet" "bring the count back down; never raise the baseline" \
-  python3 "$here/scripts/ci/simplicity_ratchet.py" --base origin/main
+  python3 "$here/scripts/ci/simplicity_ratchet.py" --base "$judged"
 # The stock linters of the scripts, the workflows and the Markdown's links
 # (shellcheck, actionlint and zizmor, lychee: scripts/build/tool.sh installs
 # them at .tool-versions' versions; one not here is left to CI).
@@ -296,13 +324,13 @@ gen '(\.md$|^lychee\.toml$)' \
   "$here/scripts/ci/check_links.sh"
 gen '^(apps/ios/.*\.swift$|scripts/ci/phones/swiftlint)' \
   "SwiftLint" "scripts/ci/phones/swiftlint.yml says what each rule wants" \
-  "$here/scripts/ci/phone_lint.sh" ios --base origin/main
+  "$here/scripts/ci/phone_lint.sh" ios --base "$judged"
 gen '^(apps/android/.*\.kt$|scripts/ci/phones/detekt)' \
   "detekt" "scripts/ci/phones/detekt.yml says what each rule wants" \
-  "$here/scripts/ci/phone_lint.sh" android --base origin/main
+  "$here/scripts/ci/phone_lint.sh" android --base "$judged"
 
 if [ "$failed" -ne 0 ]; then
-  echo "pre-push: fix the above, or push anyway with git push --no-verify (or SKIP_HOOKS=1)"
+  echo "pre-push: fix the above; what this refuses, CI's guards refuse minutes later. If the hook itself is broken, SKIP_HOOKS=1 and say so in the push's report (decision 0044)"
   exit 1
 fi
 exit 0
