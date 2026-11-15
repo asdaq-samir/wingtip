@@ -100,14 +100,19 @@ jobs:
             engine/target
           key: ${{ steps.cargo.outputs.cache-primary-key }}
 
-  # The web front end: the unit tests a change reaches, beside (not after)
-  # the generated files' check (types, the phones' models, tokens, screens,
-  # icons), the build and its first-load budget. Its tsc, ESLint, Prettier
-  # and knip are the guards job's.
+  # The web front end, two legs on a runner each: `tests`, the unit tests a
+  # change reaches, and `build`, the generated files (types, the phones'
+  # models, tokens, screens, icons), the build and its first-load budget.
+  # Its tsc, ESLint, Prettier and knip are the guards job's.
   test-web:
+    name: test-web (${{ matrix.part }})
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.test-web == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [tests, build]
     defaults:
       run:
         working-directory: apps/web
@@ -131,18 +136,18 @@ jobs:
       - run: npm run types
       # The iPhone's API generator (swift-openapi-generator), built once per
       # version in .tool-versions by api-models-apps.sh.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      - if: matrix.part == 'build'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.cache/wingtip/swift-openapi-generator
           key: swift-openapi-generator-${{ hashFiles('.tool-versions') }}
-      # Vitest at once, and beside it the generated files (each what its
-      # source makes), `vite build` and the first-load budget: one after
-      # the other they were the gate's longest job (scripts/ci/web_suite.sh).
       # On a pull request, the tests and generated files it touched (HEAD^1,
       # the base it lands on); on main's push and at night, all of them.
-      - name: The unit tests, beside the generated files and the build
+      - name: The unit tests, or the generated files and the build
         working-directory: .
-        run: scripts/ci/web_suite.sh ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
+        env:
+          PART: ${{ matrix.part }}
+        run: scripts/ci/web_suite.sh "$PART" ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
 
   # The gateway's JUnit suite, Testcontainers' Postgres on the runner's
   # Docker.
@@ -1611,13 +1616,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python3 scripts/ci/ci_budget.py
 
-  # A red run ends when its Linux jobs do (decision 0044). Every one of them
-  # has said what it found within about four minutes; the phones' builds are
-  # the only jobs that outlast them, and ran ten to twenty minutes more to a
-  # verdict already known (19 of the 22 failed runs of 12-14 November had a
-  # failed job within four minutes and ended 9 to 25 minutes in). So once
-  # any of these has failed, the run is cancelled: "CI passed" then fails
-  # at once, and the next push starts sooner. A pull request's runs only.
+  # A red run ends when its Linux jobs do (decision 0044): each has said
+  # what it found within about four minutes, and only the phones' builds
+  # outlast them, to a verdict already known. Once any of these has failed
+  # the run is cancelled, so "CI passed" fails at once. Pull requests only.
   halt:
     name: Stop on red
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}

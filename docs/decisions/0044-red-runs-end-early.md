@@ -60,9 +60,11 @@ the slowest:
    or the tokens' source alone builds the apps after merge, in their own
    workflows, as before. #499's rule stands for what it was about: a pull
    request that changes an app must compile it.
-4. **The web's tests run beside its build**, not before it
-   (`scripts/ci/web_suite.sh`): the gate's longest job no longer adds the
-   two.
+4. **The web's tests and its build each have a runner.** `test-web` is two
+   legs (`scripts/ci/web_suite.sh tests|build`), so the gate's longest job
+   no longer adds the two. Running both at once on one runner was tried
+   first and measured slower, 264 s against about 150 s in turn (run
+   43727254429): each starved the other of the runner's four cores.
 5. **The guards say what was slow.** `guards.sh` prints each check's
    seconds and the five slowest, so the next cut is read off a run.
 

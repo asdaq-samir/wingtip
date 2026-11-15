@@ -49,7 +49,7 @@ BUDGETS = [
     ("API compatibility", 1, 1),
     ("infra", 2, 2),
     ("test-engine", 3, 5),
-    ("test-web", 3, 5),
+    ("test-web (*)", 3, 5),
     ("test-gateway", 3, 4),
     ("test-planner", 3, 4),
     ("test-wingtip", 3, 4),
