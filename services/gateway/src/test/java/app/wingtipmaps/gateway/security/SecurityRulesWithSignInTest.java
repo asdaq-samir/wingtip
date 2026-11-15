@@ -17,6 +17,7 @@ import app.wingtipmaps.gateway.controller.SignInCapabilitiesController;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.domain.PilotRole;
 import app.wingtipmaps.gateway.service.AccountService;
+import app.wingtipmaps.gateway.service.CheckpointNotesClient;
 import app.wingtipmaps.gateway.service.PilotService;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,10 @@ class SecurityRulesWithSignInTest {
 
     @MockitoBean
     private AccountService accountService;
+
+    /** PilotController's third collaborator; no rule here asks it anything. */
+    @MockitoBean
+    private CheckpointNotesClient checkpointNotes;
 
     /** A 204, not the default redirect to /login?logout: this app has no
      *  such page, and the page's fetch read its 401 as the logout failing. */
