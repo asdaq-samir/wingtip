@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
+import { usePinAtFoot } from "../../../../components/sheet/pinAtFoot";
 import { CardAction as Action } from "../../../../components/CardAction";
 import { ICON } from "../../../../lib/icons";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
@@ -63,6 +64,11 @@ export function FplActions({ vm, share }: { vm: PlanWorkspaceModel; share: React
  *  a column the row's width, as the sheet lays the route in a row
  *  (MapPage's routeRowOf), where a grid alone had no width. */
 export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
+  // The figures stop at the screen's foot as the sheet goes down, where
+  // the pill's own are, and stay there while the route slides on under
+  // them (usePinAtFoot): frosted while held, as the head's band is.
+  const figures = useRef<HTMLDivElement>(null);
+  usePinAtFoot(figures, PILL_FIGURES);
   return (
     <div className="flex w-full min-w-0 flex-1 flex-col">
       <RouteHead vm={vm} />
@@ -70,8 +76,13 @@ export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
           with the sheet as the foot's figures fade out (PillHandover), a
           quiet copy till then, the pill's own being the one in sight. */}
       <div className="pt-2 pb-1">
-        <FlightFigures vm={vm} grow={false} quiet={!vm.view.panelOpen} />
+        <div ref={figures} className="relative data-pinned:frost-head">
+          <FlightFigures vm={vm} grow={false} quiet={!vm.view.panelOpen} />
+        </div>
       </div>
     </div>
   );
 }
+
+/** The pill's own figures, large in FPL's foot (FlightFoot's PillHandover). */
+const PILL_FIGURES = '[data-testid="panel-foot"] [data-testid="flight-line"]';
