@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # CI's formatting of a claude/ pull request whose CI failed, and nothing
-# else (the owner, 2026-11-15: "the autofix bot only formats, and skips a
-# branch pushed to in the last 30 minutes"). .github/workflows/ci-autofix.yml
+# else (the owner, 2026-11-15: "the autofix bot only formats").
+# .github/workflows/ci-autofix.yml
 # runs it in two steps, so a run that is to do nothing costs no checkout
 # of the branch and no toolchain:
 #
@@ -11,20 +11,21 @@
 # plan only reads GitHub. It says why there is nothing to do, or writes
 # `langs=...` (scripts/dev/format.sh's names) to $GITHUB_OUTPUT, when the
 # failed run $RUN_ID is of an open pull request from a claude/ branch of
-# this repository, the branch still ends at the commit that failed, that
-# commit is not this bot's own, and the branch's last push is QUIET_MINUTES
-# old or more: its session may be pushing again. A pull request's run
-# fails minutes after the push that started it, so that run is passed
-# over; one that fails once the branch has been quiet (a rerun, CI started
-# by hand) is acted on. The push time is GitHub's
-# own record of the ref (the repository's activity log, whose newest entry
-# also names the branch's tip), not a commit's date, which is when it was
-# written, nor the pull request's updatedAt, which a comment moves.
+# this repository, the branch still ends at the commit that failed, and
+# that commit is not this bot's own. A session that has pushed again has
+# moved the branch on, and its newer run answers for it; one that pushes
+# after the bot is refused and pulls. That is the whole of the quiet it
+# keeps: the 30 minutes first asked for passed over nearly every failed
+# run, which follows its push by minutes (the owner, 2026-11-15, on the
+# recommendation).
 #
 # format runs in a checkout of that commit (the working directory): the
 # branch's own format.sh for each of $LANGS, with no token in its reach,
-# then one commit of the tracked files that changed, by path, pushed to
-# the branch with PUSH_TOKEN. A language whose tool is not on the runner
+# then one commit, by path, of the files it changed among those the pull
+# request itself changes, pushed to the branch with PUSH_TOKEN. format.sh
+# lays out a language's whole tree, and a file the pull request did not
+# touch is not its to change: those are left as they were. A language
+# whose tool is not on the runner
 # is skipped with a note. Nothing changed, nothing written: no commit, no
 # comment, no issue, no pull request, ever. --dry-run (or DRY_RUN=1) leaves
 # the files formatted in the checkout and shows the commit it would make.
@@ -33,8 +34,8 @@
 # from the commit that failed, and the commit it makes starts with MARK,
 # which plan refuses.
 #
-# Env: GH_TOKEN, GH_REPO, RUN_ID; QUIET_MINUTES (30) for plan; LANGS,
-# PUSH_TOKEN, HAS_MERGE_TOKEN and GAP_SECONDS (10) for format.
+# Env: GH_TOKEN, GH_REPO, RUN_ID; LANGS, PUSH_TOKEN, HAS_MERGE_TOKEN and
+# GAP_SECONDS (10) for format.
 set -uo pipefail
 MARK="CI's formatting only:"
 
@@ -64,36 +65,38 @@ langs_of() {
   done | sort -u | tr '\n' ' ' | sed 's/ $//'
 }
 
+# The open pull request from the run's branch, and the files it changes.
+pr_of() {
+  gh pr list --head "$branch" --state open --json number,isCrossRepository --jq '[.[] | select(.isCrossRepository | not)][0].number // empty'
+}
+pr_files() { gh api "repos/$GH_REPO/pulls/$1/files?per_page=100" --paginate --jq '.[].filename'; }
+
 plan() {
-  local pr push tip pushed age langs
+  local pr tip langs
   [ "$conclusion" = failure ] || nothing "run $RUN_ID ended in $conclusion"
   [ "$head_repo" = "$GH_REPO" ] || nothing "run $RUN_ID is of $head_repo, not this repository"
   case "$branch" in claude/*) ;; *) nothing "$branch is not a claude/ branch" ;; esac
   case "$subject" in "$MARK"*) nothing "${sha:0:7} is this bot's own formatting, which it never formats again" ;; esac
-  pr=$(gh pr list --head "$branch" --state open --json number,isCrossRepository \
-    --jq '[.[] | select(.isCrossRepository | not)][0].number // empty') || { echo "autofix: could not list $branch's pull requests" >&2; exit 1; }
+  pr=$(pr_of) || { echo "autofix: could not list $branch's pull requests" >&2; exit 1; }
   [ -n "$pr" ] || nothing "no open pull request from $branch"
 
-  push=$(gh api -X GET "repos/$GH_REPO/activity" -f "ref=refs/heads/$branch" -f per_page=1 \
-    --jq '.[0] | [.after, (.timestamp | fromdateiso8601)] | @tsv') || nothing "GitHub did not say when $branch was last pushed to"
-  IFS=$'\t' read -r tip pushed <<<"$push"
+  tip=$(gh api "repos/$GH_REPO/git/ref/heads/$branch" --jq .object.sha) || nothing "GitHub did not say where $branch ends"
   [ "$tip" = "$sha" ] || nothing "$branch has moved on from ${sha:0:7}, the commit that failed; its newer commit's run answers for it"
-  age=$(($(date -u +%s) - pushed))
-  [ "$age" -ge $((${QUIET_MINUTES:-30} * 60)) ] \
-    || nothing "$branch was pushed to $((age / 60)) min ago, inside the quiet ${QUIET_MINUTES:-30}: its session may be pushing again"
 
-  langs=$(gh api "repos/$GH_REPO/pulls/$pr/files?per_page=100" --paginate --jq '.[].filename' | langs_of) \
-    || { echo "autofix: could not list #$pr's files" >&2; exit 1; }
+  langs=$(pr_files "$pr" | langs_of) || { echo "autofix: could not list #$pr's files" >&2; exit 1; }
   [ -n "$langs" ] || nothing "#$pr changes no file a formatter lays out"
-  echo "autofix: #$pr $branch at ${sha:0:7}, last pushed to $((age / 60)) min ago: to format $langs"
+  echo "autofix: #$pr $branch at ${sha:0:7}, still its tip: to format $langs"
   echo "langs=$langs" >> "${GITHUB_OUTPUT:-/dev/null}"
 }
 
 format() {
-  local dry=$1 lang ran="" count message
+  local dry=$1 lang ran="" count elsewhere message pr list
   cd "$(git rev-parse --show-toplevel)" || exit 1
   [ "$(git rev-parse HEAD)" = "$sha" ] || nothing "this checkout is not at ${sha:0:7}, the commit that failed"
   git diff --quiet HEAD || { echo "autofix: this checkout has changes of its own; not formatted over them" >&2; exit 1; }
+  pr=$(pr_of) && [ -n "$pr" ] || nothing "no open pull request from $branch"
+  list=$(mktemp -d)
+  pr_files "$pr" | sort > "$list/own" || { echo "autofix: could not list #$pr's files" >&2; exit 1; }
 
   for lang in ${LANGS:-}; do
     # The branch's formatters run the branch's settings, so they get no token.
@@ -104,8 +107,13 @@ format() {
       *) echo "::warning title=CI autofix::$lang: its formatter failed; the files it did lay out are kept" ; ran="$ran $lang" ;;
     esac
   done
-  count=$(git diff --name-only | wc -l | tr -d ' ')
-  [ "$count" -gt 0 ] || nothing "format.sh${ran:- (no language ran)} changed no tracked file"
+  # Of what it laid out, only the pull request's own files: the rest of each tree is put back.
+  git diff --name-only | sort > "$list/changed"
+  comm -12 "$list/changed" "$list/own" > "$list/keep"
+  comm -23 "$list/changed" "$list/own" | tr '\n' '\0' | xargs -0 git checkout -q --
+  count=$(wc -l < "$list/keep" | tr -d ' ')
+  elsewhere=$(($(wc -l < "$list/changed") - count))
+  [ "$count" -gt 0 ] || nothing "format.sh${ran:- (no language ran)} changed no file of #$pr's own ($elsewhere elsewhere, left as they were)"
 
   message="$MARK scripts/dev/format.sh$ran laid out $count file(s) as the pinned formatters write them and changed nothing else, after CI run $RUN_ID failed on ${sha:0:7} ($url). The autofix bot's commit (.github/workflows/ci-autofix.yml, scripts/ci/autofix_format.sh): it formats a failed head commit once and never its own, so a run that still fails is the code's to fix."
   if [ -n "$dry" ]; then
@@ -114,7 +122,7 @@ format() {
     printf 'autofix: with the message:\n%s\n' "$message"
     return
   fi
-  git diff --name-only -z | git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+  tr '\n' '\0' < "$list/keep" | git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
     commit -q -m "$message" --pathspec-from-file=- --pathspec-file-nul || exit 1
   # The token stays in the environment: a helper hands it to git, so it is
   # in no command line and no file. No force: a branch that has moved on

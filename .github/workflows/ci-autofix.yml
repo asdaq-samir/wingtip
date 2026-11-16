@@ -1,17 +1,17 @@
 name: CI autofix
 
 # What happens when CI fails (the owner, 2026-11-15: "the autofix bot only
-# formats, and skips a branch pushed to in the last 30 minutes"):
+# formats"):
 #
 # - A job GitHub never ran ("not acquired by Runner", as main's run
 #   37366678665 had four) is the runner's fault, not the code's: the
 #   failed jobs run again, once.
 # - Otherwise, on an open pull request from a claude/ branch of this
 #   repository, the branch is formatted (scripts/dev/format.sh, for the
-#   languages the pull request changes) and the files that changed are
-#   committed and pushed: once per failed head commit, never over the
-#   bot's own commit, and not within 30 minutes of the branch's last push,
-#   whose session may be pushing again (scripts/ci/autofix_format.sh).
+#   languages the pull request changes) and those of its own files that
+#   changed are committed and pushed: once per failed head commit, never
+#   over the bot's own commit, and only while the branch still ends at the
+#   commit that failed (scripts/ci/autofix_format.sh).
 #   It edits nothing else, opens no pull request or issue and comments
 #   nowhere: a failure that is not layout is the branch's own to fix, and
 #   main's is nightly-issue.yml's to report.
@@ -78,8 +78,6 @@ jobs:
       - name: Whether to format, and which languages
         id: plan
         if: steps.cause.outputs.runner != 'true'
-        env:
-          QUIET_MINUTES: 30
         run: scripts/ci/autofix_format.sh plan
       # The commit that failed, beside main's script. format.sh fetches each
       # formatter itself, or skips its language with a note; the Java's wants its JDK
