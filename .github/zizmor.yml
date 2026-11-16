@@ -2,9 +2,11 @@
 # at .tool-versions' version). Each exception says why; a finding fixed in the
 # workflow is not listed here.
 rules:
-  # workflow_run is how these follow a finished CI run. None checks out or
-  # runs the pull request's code: they act on main's own commit or on the
-  # run's logs, with the permissions each declares (docs/CI.md, "Rules").
+  # workflow_run is how these follow a finished CI run. Two act on main's
+  # own commit or on the run's logs and never check out the pull request's
+  # code. ci-autofix.yml checks out a claude/ branch of this repository,
+  # never a fork's, to run its formatters: main's script decides and
+  # pushes, and the branch's formatters get no token (docs/CI.md, "Rules").
   dangerous-triggers:
     ignore:
       - ci-autofix.yml
@@ -14,7 +16,6 @@ rules:
   # them (persist-credentials: false).
   artipacked:
     ignore:
-      - ci-autofix.yml
       - claude-review.yml
   # `uses: ./.github/...` is this commit's own file, the one thing a pin
   # cannot make safer.

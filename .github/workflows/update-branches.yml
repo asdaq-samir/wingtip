@@ -15,6 +15,12 @@ name: Update branches
 # A pull request that cannot be updated for a conflict gets the one label
 # needs-merge, which comes off when its branch is next current.
 #
+# And every open pull request that conflicts with its base, whoever's and
+# whatever the base, carries one comment saying so, taken off when it
+# merges cleanly again (scripts/ci/pr_conflicts.py; the owner, 2026-11-15).
+# GitHub starts no CI on a pull request that conflicts, so it shows no
+# failing check: #579 sat a day under the label alone, and nobody saw it.
+#
 # The token: a push made with the workflow's own GITHUB_TOKEN starts no
 # workflow (GitHub's rule against loops; ci.yml says the same of the
 # branches Auto-merge moved), so the pull request would sit with no checks
@@ -28,6 +34,13 @@ name: Update branches
 on:
   push:
     branches: [main]
+  # The conflict comments alone. Main's push finds the conflicts main
+  # makes; these find the rest within six hours: a pull request opened in
+  # conflict or made so by its own push, one to another base, one GitHub
+  # had not worked out, and the comment to take off a resolved one. Clear
+  # of the night's runs, 09:17 to 09:47 UTC.
+  schedule:
+    - cron: "43 1,7,13,19 * * *"
   workflow_dispatch:
 
 permissions:
@@ -46,18 +59,25 @@ jobs:
   update:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      GAP_SECONDS: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
       - name: Update the claude/ pull requests that are behind main
+        id: update
+        if: github.event_name != 'schedule'
         env:
           UPDATE_TOKEN: ${{ secrets.MERGE_TOKEN || github.token }}
           HAS_MERGE_TOKEN: ${{ secrets.MERGE_TOKEN != '' }}
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
           MAX_UPDATES: 10
           QUIET_MINUTES: 5
-          GAP_SECONDS: 10
           LABEL: needs-merge
         run: scripts/ci/update_branches.sh
+      # Not once GitHub has asked the step above for fewer writes.
+      - name: One comment on each pull request that conflicts with its base
+        if: steps.update.outputs.stopped != 'true'
+        run: python3 scripts/ci/pr_conflicts.py
