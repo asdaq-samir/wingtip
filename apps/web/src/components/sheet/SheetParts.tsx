@@ -324,7 +324,7 @@ export function SheetParts(p: PartsProps) {
             routeAlone,
             at !== 1,
             "0px",
-            footShown,
+            footShown && !p.pages.floats,
             rises,
           )}
           {foot}

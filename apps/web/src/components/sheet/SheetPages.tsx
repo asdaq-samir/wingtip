@@ -16,6 +16,10 @@ export interface SheetPages {
   bar: ReactNode;
   /** The second page's body: the plan. */
   second: ReactNode;
+  /** The second page's foot floats over it (FPL's actions' glass bar on
+   *  the ground), so the page runs on under it uncut, its head passing over
+   *  the bar as the sheet moves, an airport card's head over its tabs. */
+  floats?: boolean;
 }
 
 /** A page's body, kept when the other is up: skipped by its data-hidden

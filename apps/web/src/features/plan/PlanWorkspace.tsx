@@ -427,11 +427,11 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         pages: {
           at: view === "plan" ? 1 : 0,
           go: pickPage,
+          floats: !flying && !vm.flight.dryRunning,
           bar: <FplBar strip={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />} />,
           second: <PlanPage vm={vm} navLog={navLog} share={shareMenu("end", "share-plan", "send")} />,
         },
-        // The one search's Autocomplete round the whole panel, so its field
-        // (the first row) and its list (the body) are one combobox.
+        // The one search's Autocomplete round the whole panel: its field (the first row) and its list (the body) one combobox.
         around: (panel) => (
           <CommandRoot value={vm.search.query} onValueChange={search.setTyped} autoHighlight="always">
             {panel}
