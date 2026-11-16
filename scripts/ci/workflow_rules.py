@@ -9,8 +9,8 @@ the file and line, and how to put it right:
   length; one may shrink, none may grow, and no new one may join.
 - **No hidden failure.** `|| true` on a line that runs a check (a test
   suite, a linter, a build) hides its failure. The few that are read
-  afterwards (the flake hunt's five runs, xcodebuild's log grepped for its
-  verdict) are listed in the allow file, each with why.
+  afterwards (the flake hunt's five runs) are listed in the allow file,
+  each with why.
 - **Least privilege.** Every workflow has a top-level `permissions:`,
   read-only but for the workflows the allow file names with why; every
   `uses:` outside this repository is pinned to a full commit; no

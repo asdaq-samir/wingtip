@@ -227,8 +227,15 @@ without it).
   be fixed at once.
 - **Pre-push hook** (`scripts/dev/install-hooks.sh` once per clone): `tsc`,
   ESLint, ruff, `cargo check`, `format.sh --check` and the simplicity
-  rules for what a push changes. Skip it with `--no-verify` or `SKIP_HOOKS=1`; it is no
-  substitute for the table.
+  rules for what a push adds to the branch it builds on (main, or the
+  wave's branch). Where the Mac has no Node and Docker runs, Prettier
+  and ESLint run on the web files the push changes, in check.sh's image
+  (about 3 s; `PRE_PUSH_WEB_DOCKER=0` leaves them to CI for one push,
+  `=1` adds `tsc` and the layers). Don't skip it (decision 0044): what
+  it refuses, CI's `guards` refuse minutes later, and a red run's summary
+  gives the narrow command to run before the fix is pushed. `SKIP_HOOKS=1`
+  is for a hook that is itself broken, and the push's report says so; it
+  is no substitute for the table.
 - **An API that changes changes its document:** `python -m app.openapi`
   (the planner; then `scripts/build/planner-calls.sh` for the MCP connector's calls) or `WRITE_OPENAPI=1 mvn -B test` (the
   gateway), then `npm run types` and `scripts/build/api-models-apps.sh`;

@@ -66,14 +66,18 @@ export default defineConfig({
     // WebAssembly (397,838 bytes to 492,654, 2026-11-14), which iPhone Safari
     // takes (Accept-Encoding: gzip, deflate, br). The service worker's
     // globPatterns name no .br or .gz, so it keeps only the files themselves.
-    compression({
-      include: /\.(js|mjs|css|html|svg|json|webmanifest|wasm)$/,
-      threshold: 1024,
-      algorithms: [
-        defineAlgorithm("brotliCompress", { params: { [zlib.BROTLI_PARAM_QUALITY]: 11 } }),
-        defineAlgorithm("gzip", { level: 9 }),
-      ],
-    }),
+    // CI's build check reads the JavaScript's own bytes (scripts/first-load.mjs)
+    // and serves nothing, so it asks for none (WINGTIP_PRECOMPRESS=0): they
+    // took the build from about 30 s to 89 (run 43735121847).
+    process.env.WINGTIP_PRECOMPRESS !== "0" &&
+      compression({
+        include: /\.(js|mjs|css|html|svg|json|webmanifest|wasm)$/,
+        threshold: 1024,
+        algorithms: [
+          defineAlgorithm("brotliCompress", { params: { [zlib.BROTLI_PARAM_QUALITY]: 11 } }),
+          defineAlgorithm("gzip", { level: 9 }),
+        ],
+      }),
     // The app in the air: a service worker (Workbox, generated at
     // build) that keeps the app shell, every chart tile the map has
     // drawn or `KeepRoute` fetched ahead, and the planner's own
