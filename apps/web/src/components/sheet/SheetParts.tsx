@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import { cn } from "cn";
 import { PanelSize, type PanelState } from "../../lib/mapChrome";
 import TabKept from "../TabKept";
@@ -98,6 +98,11 @@ const CUT_BOTTOM = "[clip-path:inset(0_0_max(0px,calc(var(--sheet-offset,0px)+va
  * Search's head the one search, FPL's its bar the same size (FplBar) and
  * the route's row under it.
  */
+/** A tap on a pill's row raises the sheet, but not one on a control in it. */
+function tapOpens(event: MouseEvent, open: () => void) {
+  if (!(event.target instanceof Element) || !event.target.closest("button, a, input, [role=button]")) open();
+}
+
 export function SheetParts(p: PartsProps) {
   const { atPill, fromBottom, size, footShown, cardsUp } = p;
   const paged = !!p.pages;
@@ -212,9 +217,13 @@ export function SheetParts(p: PartsProps) {
       style={{ "--sheet-head": head, scrollPaddingTop: head } as CSSProperties}
       className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible", p.onPhone && fromBottom && cut && CUT_BOTTOM)}
     >
+      {/* eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to raise the sheet, and the row's own buttons stay focusable */}
       <div
         data-head-band=""
         style={vars}
+        // Risen from a pill that is a row of it (FPL's figures, held at the
+        // foot), a tap on that row raises the sheet to half, as on the foot.
+        onClick={rises ? (event) => tapOpens(event, p.onFootTap) : undefined}
         // Sticky at the scroller's top, frosted wherever the body runs on
         // up under it, the grabber's room inside it (the owner's iPhone,
         // 2026-11-11: clear, the list showed through the band).
@@ -237,13 +246,7 @@ export function SheetParts(p: PartsProps) {
         // body selects its words rather than moving the sheet (a finger
         // still moves it, where the body's lists are not scrolling).
         data-drawer-content={p.onPhone ? "" : undefined}
-        onClick={
-          p.resting && alone
-            ? (event) => {
-                if (!(event.target instanceof Element) || !event.target.closest("button, a, input, [role=button]")) p.onFootTap();
-              }
-            : undefined
-        }
+        onClick={p.resting && alone ? (event) => tapOpens(event, p.onFootTap) : undefined}
       >
         {/* Not put away under a card (TabKept's `away`): a card's content is
             drawn in it (SheetCard, the Brief, Settings) and opens while it
@@ -306,10 +309,10 @@ export function SheetParts(p: PartsProps) {
     const routeShown = !p.flying && !cardsUp && !atPill && p.top != null;
     const searchAlone = atPill && !p.flying && !p.barShown;
     const routeAlone = atPill && !p.flying && !planShown && !footShown;
-    // At the pill whose face is the foot's figures, FPL's bar and route are
-    // laid out out of sight and rise with the sheet (RISEN_FACE), the
-    // figures handed to the actions' bar (PillHandover): the airport card's
-    // way, nothing swapped as a finger takes it (the owner, 2026-11-16).
+    // At the pill whose face is the route's figures held on the foot's
+    // edge (FplRoute), FPL's bar and route are laid out out of sight and
+    // rise with the sheet (RISEN_FACE): the airport card's way, nothing
+    // swapped as a finger takes it (the owner, 2026-11-16).
     const rises = atPill && footShown && !p.flying && !cardsUp && p.top != null;
     // One page up at a time (SheetPage), turned by its toggle (PageToggle);
     // the other kept, inert.

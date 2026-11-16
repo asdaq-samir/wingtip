@@ -67,25 +67,16 @@ export const PILL_BODY = "invisible group-data-swiping/sheet:visible [&_*]:trans
 export const AT_PILL = `${PILL_BODY} [&_[data-sheet-head]]:visible`;
 
 const HANDED = "transition-opacity duration-(--motion-drawer) ease-(--motion-drawer-ease) motion-reduce:transition-none";
-/** What is the pill's own face while the sheet rests there (FPL's figures)
- *  and is not at half: fading out the moment a finger takes the sheet, as
- *  RISEN_FACE fades in, so what the pill shows is handed to what the sheet
- *  shows risen in the sheet's own time, and held till it has settled (the
- *  popup's data-risen, SheetDrawer), all in CSS (PillHandover), nothing
- *  built or swapped mid-drag -- the airport card's way, for every sheet
- *  (the owner, 2026-11-16: "can we make it a shared code for all cards?"). */
-// Back at once, not faded in: the risen copy it takes over from (FPL's
-// figures held at the foot, usePinAtFoot) goes at once in the same place,
-// and a fade between left neither in sight, a flicker at the pill (the
-// owner, 2026-11-16: "The pull down flickers at the end"). A transition
-// is taken from the state gone to, so only the going out is faded.
-export const PILL_FACE =
-  "group-data-swiping/sheet:opacity-0 group-data-risen/sheet:opacity-0 group-data-swiping/sheet:transition-opacity group-data-swiping/sheet:duration-(--motion-drawer) group-data-swiping/sheet:ease-(--motion-drawer-ease) motion-reduce:transition-none";
-/** And what the sheet shows risen, laid out at the pill but out of sight
- *  (PILL_BODY), fading in as the finger takes it. */
-export const RISEN_FACE = `${PILL_BODY} ${HANDED} opacity-0 group-data-swiping/sheet:opacity-100 group-data-risen/sheet:visible group-data-risen/sheet:opacity-100`;
-/** And a risen face drawn over the pill's own (PillHandover's FPL actions'
- *  bar over the pill's figures): in sight only while a finger has the
+/** What a sheet shows risen where its pill is not simply its top (FPL's
+ *  bar and route over its figures, the pill): laid out at the pill but out
+ *  of sight (PILL_BODY), in sight as the finger takes it and held till the
+ *  sheet has settled (the popup's data-risen, SheetDrawer), all in CSS,
+ *  nothing built or swapped mid-drag -- the airport card's way. Not faded:
+ *  the pill's own row inside it (FplRoute's figures) is in sight at rest
+ *  by its own visibility, which an opacity round it would hide. */
+export const RISEN_FACE = `${PILL_BODY} group-data-risen/sheet:visible`;
+/** And a risen face over the pill (FPL's actions' bar, under the figures
+ *  held there, FlightFoot): in sight only while a finger has the
  *  sheet, not held while it settles, so settled at the pill it does not
  *  show over the figures for the settle's frames (the owner's screen
  *  recording, 2026-11-16: "Still see the flicker at the end"). */

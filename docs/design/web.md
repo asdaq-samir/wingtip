@@ -693,14 +693,21 @@ line, the airplane and the altitude giving way first; the Brief, the Nav
 Log, the Profile and Share are the floating glass bar at the sheet's foot
 from half up, `FplTabBar` in `FlightFoot`, `CardAction`s in its `bar` look
 in `CardTabBar`'s capsule, each opening its card, Share the route's
-`ShareMenu` as `"send"`; at the pill the foot is the figures alone,
-large, `FlightFigures` with `grow`, the two handed over by `PillHandover`
-(components/sheet), the shared way a pill hands over to the sheet risen:
-sheet/insets' `PILL_FACE` fades out and `RISEN_FACE` fades in on Base UI's
-`data-swiping`, CSS alone, as the cards' bodies come into sight
-(`PILL_BODY`); FPL's bar and route are laid out at the pill with
-`RISEN_FACE` (SheetParts' `rises`), the figures under the route a quiet
-copy there with no test ids (`FlightFigures`' `quiet`); `feel("detent")`
+`ShareMenu` as `"send"`, out of sight at the pill under the figures
+(sheet/insets' `RISEN_OVER`, in sight only while a finger has the
+sheet). The figures under the route are FPL's pill too, one copy at
+every size: components/sheet/pinAtFoot's `usePinAtFoot` holds them on
+the foot's edge at the pill, and as the sheet goes down they stop there
+while the route slides on under them, the other way waiting there until
+their place comes up to them, by their transform alone, a frame at a
+time while a finger has the sheet or it settles (FplRoute's `PINNED`:
+in sight at the pill, the foot's sides, the sheet's solid colour under
+them); nothing is handed over at the pill, where two copies flickered.
+FPL's bar and route are laid out at the pill with `RISEN_FACE`
+(SheetParts' `rises`), in sight from the finger's first move by
+visibility alone, as the cards' bodies come into sight (`PILL_BODY`,
+nothing in it eased at the pill); a tap on the held figures raises the
+sheet to half as a tap on the foot does; `feel("detent")`
 as the sheet settles (MapPanel); in flight the tiles are `FplActions`
 at the top of the flying drawer. Under the route, `FplRoute`: the
 figures at their own size, the Routes' chips next. The Brief's findings
