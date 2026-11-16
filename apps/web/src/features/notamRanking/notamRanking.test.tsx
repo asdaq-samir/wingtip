@@ -64,6 +64,7 @@ describe("the NOTAMs that matter", () => {
   test("three lines with their chips, the rest behind N more, and the feed's coverage under them", () => {
     state.value = { shown: true, ...splitRanking(ANSWER), answer: ANSWER, error: null, pending: false };
     render(<NotamRankingSection />);
+    fireEvent.click(screen.getByTestId("brief-notams-open"));
     const lines = screen.getAllByTestId("brief-notam");
     expect(lines.map((l) => l.querySelector("p")!.textContent)).toEqual(ANSWER.notams.slice(0, 3).map((n) => n.why));
     expect(screen.getAllByTestId("brief-notam-source").map((c) => c.textContent)).toEqual([
@@ -82,6 +83,7 @@ describe("the NOTAMs that matter", () => {
     const none: RankedNotams = { ...ANSWER, notams: [], top: 0 };
     state.value = { shown: true, top: [], rest: [], answer: none, error: null, pending: false };
     render(<NotamRankingSection />);
+    fireEvent.click(screen.getByTestId("brief-notams-open"));
     expect(screen.getByTestId("brief-notams-empty").textContent).toBe("None heard since 19 Oct");
     expect(document.body.textContent).not.toMatch(/no notams/i);
   });
@@ -90,6 +92,7 @@ describe("the NOTAMs that matter", () => {
     state.value = { shown: true, ...splitRanking(ANSWER), answer: ANSWER, error: null, pending: false };
     useNotamMarks.setState({ pinned: ["OSH 11/030"], read: ["OSH 11/012"] });
     render(<NotamRankingSection />);
+    fireEvent.click(screen.getByTestId("brief-notams-open"));
     const lines = screen.getAllByTestId("brief-notam");
     expect(lines.map((l) => l.getAttribute("data-notam"))).toEqual(["OSH 11/030", "OSH 11/015", "ZAU 11/301"]);
     expect(screen.queryByTestId("brief-notam-raw")).toBeNull();
@@ -103,6 +106,7 @@ describe("the NOTAMs that matter", () => {
     state.value = { shown: true, ...splitRanking(ANSWER), answer: ANSWER, error: null, pending: false };
     useNotamMarks.setState({ filter: { ...ALL_NOTAMS, when: ["now"] } });
     render(<NotamRankingSection />);
+    fireEvent.click(screen.getByTestId("brief-notams-open"));
     expect(screen.getByTestId("brief-notams-hidden").textContent).toContain("1 hidden by the filter");
     fireEvent.click(screen.getByTestId("brief-notams-show-all"));
     expect(screen.queryByTestId("brief-notams-hidden")).toBeNull();

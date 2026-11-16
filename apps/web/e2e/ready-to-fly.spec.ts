@@ -26,13 +26,15 @@ test("the Brief ends on Ready to fly, its actions fixing in place", async ({ pag
   const top = async (id: string) => (await glance.getByTestId(id).first().boundingBox())!.y;
   expect(await top("brief-glance-preflight")).toBeLessThan(await top("ready-to-fly"));
   await expect(ready.getByTestId("ready-line")).toHaveText(/things? to fix while you have a signal|Ready to fly/);
+  // One row, folded: its actions and every check under its tap (the owner, 2026-11-16).
+  await expect(ready.locator("[data-testid^='ready-action-']")).toHaveCount(0);
+  await ready.getByTestId("ready-all").click();
   const actions = ready.locator("[data-testid^='ready-action-']");
   expect(await actions.count()).toBeLessThanOrEqual(3);
   // No airplane picked: asked for, never a 172.
   const pick = ready.getByTestId("ready-action-airplane");
   await expect(pick).toHaveText("Pick the airplane");
-  // Every check folded, with the next FAA cycle.
-  await ready.getByTestId("ready-all").getByRole("button").click();
+  // Every check with them, and the next FAA cycle.
   await expect(ready.getByTestId("ready-next-cycle")).toContainText(/Next FAA data cycle \d{4}/);
   // The fix in place: FPL's own airplane field, focused.
   await pick.click();

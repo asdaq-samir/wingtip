@@ -117,4 +117,10 @@ describe("the Brief's lines at a glance", () => {
     expect(rest.line).toBe("1 more to look at");
     expect(rest.finding).toBe("unknown");
   });
+
+  it("gives each line its finding alone and its action apart, for the one-row lines", () => {
+    const { act } = glanceLines(with_({ fuel: ["stop", "2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)."] }), null);
+    expect(act[0]!.lead).toBe("2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)");
+    expect(act[0]!.action).toBe("Add fuel, or plan a stop");
+  });
 });

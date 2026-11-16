@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ChevronDown, Ellipsis, Pin } from "lucide-react";
 import { cn } from "cn";
 import RoundButton from "../../components/RoundButton";
@@ -21,6 +22,7 @@ export default function NotamLine({ notam, testId }: { notam: RankedNotam; testI
   const read = useNotamMarks((s) => s.read.includes(notam.id));
   const togglePin = useNotamMarks((s) => s.togglePin);
   const toggleRead = useNotamMarks((s) => s.toggleRead);
+  const [open, setOpen] = useState(false);
   return (
     <li
       className="flex gap-2"
@@ -30,8 +32,13 @@ export default function NotamLine({ notam, testId }: { notam: RankedNotam; testI
       data-read={read ? "" : undefined}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <p className={cn("tabular-nums", TEXT.prose, (notam.in_force === false || read) && "text-muted-foreground")}>{notam.why}</p>
-        <Collapsible>
+        {/* Two lines at most, in full once its name under it opens the NOTAM as sent. */}
+        <p
+          className={cn("tabular-nums", !open && "line-clamp-2", TEXT.prose, (notam.in_force === false || read) && "text-muted-foreground")}
+        >
+          {notam.why}
+        </p>
+        <Collapsible open={open} onOpenChange={setOpen}>
           <CollapsibleTrigger
             className={cn(
               "group relative inline-flex items-center gap-1 self-start font-medium text-tint outline-none after:absolute after:-inset-y-3 after:inset-x-0 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",

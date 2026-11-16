@@ -30,16 +30,14 @@ const TILE_TINT = {
  */
 export default function DepartureWindowStrip() {
   const m = useDepartureWindow();
-  if (!m.shown) return null;
+  // Signed out, nothing: a line asking to sign in sat among the Brief's
+  // findings (the owner, 2026-11-16: "How do we make brief less cluttered?").
+  if (!m.shown || !m.signedIn) return null;
   const now = new Date();
   const title = m.best ? bestLine(m.best, now) : "When to go";
   return (
     <PillSection title={title} testId="departure-window">
-      {!m.signedIn ? (
-        <p className={cn(TEXT.detail, "text-muted-foreground")} data-testid="departure-window-sign-in">
-          Sign in to see the best time to go.
-        </p>
-      ) : m.error ? (
+      {m.error ? (
         // Where it happened, not a toast (lib/problems).
         <FieldError className={cn(TEXT.detail, "text-muted-foreground")} data-testid="departure-window-error">
           Hours unavailable: {describeError(m.error, "the planner did not answer")}

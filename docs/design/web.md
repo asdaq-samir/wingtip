@@ -894,12 +894,22 @@ button is kept as the record for 14 CFR 91.103, for 120 days
 screen offers a next step, and the empty, sparse, dense and error states
 are designed ([Vercel guidelines][vercel-guidelines]).
 
-**Structure, top to bottom** (decision 0012, verdict first).
-1. The verdict, as the engine words it, and at most three one-line
-   actions.
-2. The glance cards (weather, NOTAMs, TFRs, airplane, pilot currency).
-3. The detail, folded under each card.
-4. Ready to Fly: the checks left before departure, each with its source.
+**Structure, top to bottom** (decision 0012, verdict first; made less
+cluttered at the owner's word, 2026-11-16, "How do we make brief less
+cluttered?" then "Do it").
+1. The verdict, as the engine words it, and at most three findings, each
+   on one row, the finding alone (`glanceLines`' `lead`); under its tap
+   what to do first (`action`), then why it matters with its rule, the
+   reports as sent and the way to its page. No "nothing to fix" row: the
+   verdict says the rest is fine. When to go only when signed in.
+2. The part cards, each with only the figures it has: no Risk on Before
+   you go (a finding already), no dashes where there is no airplane or
+   runway, no copy of the weather finding's line in En route.
+3. The NOTAMs folded into one row, "NOTAMs · 3 that matter, 44 more",
+   each NOTAM's reason two lines until opened with the NOTAM as sent.
+4. Ready to Fly, one row, its line ("5 things to fix while you have a
+   signal"), opening to its actions, every check with its source, and
+   the next FAA cycle.
 
 **Stock parts.** Base UI Accordion for the folded detail (its keyboard
 follows the APG since 1.6, [Base UI releases][bui-releases]); shadcn Card,

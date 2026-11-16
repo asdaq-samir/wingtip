@@ -80,6 +80,11 @@ export interface GlanceLine {
   section?: string;
   /** The finding and its action, one sentence of at most LINE_MAX characters. */
   line: string;
+  /** The finding alone, the line the Brief shows on one row; and what to
+   *  do about it, the first thing under its tap (the owner, 2026-11-16:
+   *  "How do we make brief less cluttered?", then "Do it"). */
+  lead: string;
+  action: string;
   why: string;
   cite: string;
   raw: string[];
@@ -221,6 +226,8 @@ export function glanceLines(items: VerdictItem[], glance: BriefGlance | null): G
       tab: i.tab,
       section: i.section,
       line: sentence(lead(i, glance), ACTION[i.key][i.finding === "stop" ? "stop" : "caution"]),
+      lead: lead(i, glance).replace(/[.;:,\s]+$/, ""),
+      action: ACTION[i.key][i.finding === "stop" ? "stop" : "caution"].replace(/^./, (c) => c.toUpperCase()),
       why: WHY[i.key].why,
       cite: WHY[i.key].cite,
       raw: sources(i.key, glance),

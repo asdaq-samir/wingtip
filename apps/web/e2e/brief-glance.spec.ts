@@ -88,17 +88,18 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   }
   const runways = glance.getByTestId("brief-line-runways");
   await expect(runways).toHaveAttribute("data-finding", "caution");
-  // The gusts' crosswind, the figure held against the demonstrated (features/plan/lib/runwayCheck).
-  await expect(runways.getByTestId("brief-line-words")).toContainText(
-    /C81 has 22 kt across, past the POH's demonstrated: ask for another runway, or wait for the wind/,
-  );
-  // The rest folded into one row.
-  await expect(glance.getByTestId("brief-rest")).toBeVisible();
-  await expect(glance.getByTestId("brief-rest-words")).toContainText(/nothing to fix|more to look at|Still checking/);
+  // The gusts' crosswind, the figure held against the demonstrated
+  // (features/plan/lib/runwayCheck), on one row; what to do under its tap
+  // (the owner, 2026-11-16: the Brief less cluttered).
+  await expect(runways.getByTestId("brief-line-words")).toContainText(/C81 has 22 kt across, past the POH's demonstrated$/);
+  // The rest folded into one row, and none where everything else is fine.
+  if (await glance.getByTestId("brief-rest").count())
+    await expect(glance.getByTestId("brief-rest-words")).toContainText(/more to look at|Still checking/);
   // Folded until a tap: why it matters, with the rule, and the METAR as sent.
   await expect(runways.getByTestId("brief-line-why")).toBeHidden();
   await runways.getByTestId("brief-line-words").click();
   await expect(runways.getByTestId("brief-line-why")).toBeVisible();
+  await expect(runways.getByTestId("brief-line-action")).toHaveText("Ask for another runway, or wait for the wind");
   await expect(runways.getByTestId("brief-line-why")).toContainText(
     "Why it matters: The POH's demonstrated crosswind is what the test pilot showed, not a limit",
   );

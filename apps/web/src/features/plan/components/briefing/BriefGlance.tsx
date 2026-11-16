@@ -94,7 +94,7 @@ function Card({
         <span className={cn("ml-auto font-semibold tabular-nums", TEXT.detail)}>{at}</span>
         <ChevronRight className="size-5 shrink-0 text-tint" aria-hidden />
       </span>
-      {stats && <span className="flex w-full gap-2.5">{stats}</span>}
+      {stats && <span className="flex w-full gap-2.5 empty:hidden">{stats}</span>}
       {note && <span className={cn("text-muted-foreground", TEXT.note)}>{note}</span>}
     </BaseButton>
   );
@@ -126,15 +126,18 @@ function FieldCard({
       finding={field.finding}
       onOpen={onOpen}
       stats={
+        // The figures it has, no dashes for those it has not (no airplane, no runway picked).
         !here && (
           <>
-            <Stat label="Runway" value={field.runway ?? DASH} />
-            <Stat
-              label={landing ? "Landing 50 ft" : "Takeoff 50 ft"}
-              value={ft(field.overFiftyFt)}
-              finding={field.finding === "stop" ? "stop" : undefined}
-            />
-            <Stat label={field.radio ? radioLabel(field.radio.to) : "Radio"} value={field.radio ? mhzText(field.radio.mhz) : DASH} />
+            {field.runway && <Stat label="Runway" value={field.runway} />}
+            {field.overFiftyFt != null && (
+              <Stat
+                label={landing ? "Landing 50 ft" : "Takeoff 50 ft"}
+                value={ft(field.overFiftyFt)}
+                finding={field.finding === "stop" ? "stop" : undefined}
+              />
+            )}
+            {field.radio && <Stat label={radioLabel(field.radio.to)} value={mhzText(field.radio.mhz)} />}
           </>
         )
       }
@@ -162,11 +165,15 @@ function Line({ line, onOpen }: { line: GlanceLine; onOpen: (tab: PanelTab) => v
     <AccordionItem value={line.key} className={ITEM} data-testid={`brief-line-${line.key}`} data-finding={line.finding}>
       <AccordionTrigger className={FOLD}>
         <FindingIcon finding={line.finding} className="mt-0.5 size-5 shrink-0" />
-        <span className="min-w-0 flex-1 font-medium" data-testid="brief-line-words">
-          {line.line}
+        {/* One row, the finding alone; what to do first under its tap. */}
+        <span className="min-w-0 flex-1 truncate font-medium" data-testid="brief-line-words" aria-label={line.line}>
+          {line.lead}
         </span>
       </AccordionTrigger>
       <AccordionContent className="space-y-2 px-3.5 pb-3" data-testid="brief-line-why">
+        <p className={cn("font-semibold", TEXT.detail)} data-testid="brief-line-action">
+          {line.action}
+        </p>
         <p className={cn("rounded-lg bg-muted px-3 py-2", TEXT.detail)}>
           <span className="font-semibold">Why it matters: </span>
           {line.why} <span className="text-muted-foreground">({line.cite})</span>
@@ -299,7 +306,7 @@ export default function BriefGlance({
       {/* The verdict and its lines first, at the owner's word ("Verdict
           first", 2026-11-08). */}
       {afterVerdict}
-      {lines && lines.rest.items.length > 0 && (
+      {lines && lines.rest.items.length > 0 && lines.rest.finding !== "ok" && (
         <Accordion>
           <AccordionItem value="rest" className={ITEM} data-testid="brief-rest" data-finding={lines.rest.finding}>
             <AccordionTrigger className={cn(FOLD, "items-center")}>
@@ -336,31 +343,20 @@ export default function BriefGlance({
         finding={before?.finding ?? "pending"}
         onOpen={onOpen}
         stats={
-          <>
-            <Stat
-              label="Risk"
-              value={
-                before?.risk
-                  ? `${before.risk.score} · ${before.risk.level === "high" ? "High" : before.risk.level === "caution" ? "Caution" : "Low"}`
-                  : DASH
-              }
-              finding={before?.risk ? ({ high: "stop", caution: "caution", low: "ok" } as const)[before.risk.level] : undefined}
-            />
-            {airplane && (
-              <>
-                <Stat
-                  label="Fuel spare"
-                  value={before?.spareGal != null ? `${before.spareGal.toFixed(1)} gal` : DASH}
-                  finding={before?.spareGal != null && before.spareGal < 0 ? "stop" : undefined}
-                />
-                <Stat
-                  label="W&B"
-                  value={before?.balance ? (before.balance.within ? "Within" : "Outside") : DASH}
-                  finding={before?.balance && !before.balance.within ? "stop" : undefined}
-                />
-              </>
-            )}
-          </>
+          airplane && (
+            <>
+              <Stat
+                label="Fuel spare"
+                value={before?.spareGal != null ? `${before.spareGal.toFixed(1)} gal` : DASH}
+                finding={before?.spareGal != null && before.spareGal < 0 ? "stop" : undefined}
+              />
+              <Stat
+                label="W&B"
+                value={before?.balance ? (before.balance.within ? "Within" : "Outside") : DASH}
+                finding={before?.balance && !before.balance.within ? "stop" : undefined}
+              />
+            </>
+          )
         }
         note={airplane ? (before?.balance?.problem ?? undefined) : undefined}
       />
@@ -386,7 +382,7 @@ export default function BriefGlance({
             <Stat label="Wind aloft" value={enroute?.wind ?? DASH} />
           </>
         }
-        note={enroute?.line ?? undefined}
+        note={lines?.act.some((l) => l.key === "weather") ? undefined : (enroute?.line ?? undefined)}
       />
       {glance?.arrive && <FieldCard tab="arrive" label="Arrive" field={glance.arrive} landing onOpen={onOpen} />}
       {after}
