@@ -66,8 +66,7 @@ export function FplActions({ vm, share }: { vm: PlanWorkspaceModel; share: React
 export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
   // The figures stop at the screen's foot as the sheet goes down, where
   // the pill's own are, and stay there while the route slides on under
-  // them (usePinAtFoot): on the sheet's solid colour while held, the sheet's
-  // width, so what slides under does not show through.
+  // them (usePinAtFoot), drawn as the pill's own while held (PINNED).
   const figures = useRef<HTMLDivElement>(null);
   usePinAtFoot(figures, PILL_FIGURES);
   return (
@@ -77,7 +76,7 @@ export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
           with the sheet as the foot's figures fade out (PillHandover), a
           quiet copy till then, the pill's own being the one in sight. */}
       <div className="pt-2 pb-1">
-        <div ref={figures} className="relative data-pinned:z-30 data-pinned:-mx-4 data-pinned:bg-(--sheet) data-pinned:px-4">
+        <div ref={figures} className={PINNED}>
           <FlightFigures vm={vm} grow={false} quiet={!vm.view.panelOpen} />
         </div>
       </div>
@@ -87,3 +86,15 @@ export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
 
 /** The pill's own figures, large in FPL's foot (FlightFoot's PillHandover). */
 const PILL_FIGURES = '[data-testid="panel-foot"] [data-testid="flight-line"]';
+
+/** The figures held at the foot (data-pinned) drawn as the pill's own,
+ *  so the handover at the pill moves nothing (the owner, 2026-11-16: "is
+ *  it changing size at the end? And do you see a small gap below/above
+ *  the strip?"): the sheet's width with the foot's 16-point sides, where
+ *  the head's 12 laid them 8 points wider; over everything in the head
+ *  (the airplane's bar's glass capsules stack above the figures' row);
+ *  and on the sheet's solid colour from just under the grabber to the
+ *  screen's foot, where the figures' own box let the route's white box
+ *  show a line above and below them. */
+const PINNED =
+  "relative data-pinned:z-30 data-pinned:-mx-3 data-pinned:px-4 data-pinned:bg-(--sheet) data-pinned:after:absolute data-pinned:after:inset-x-0 data-pinned:after:-top-1.5 data-pinned:after:-bottom-10 data-pinned:after:-z-10 data-pinned:after:bg-(--sheet)";
