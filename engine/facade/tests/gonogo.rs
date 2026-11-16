@@ -172,7 +172,7 @@ fn says_what_was_not_worked_out_and_what_is_still_coming() {
     let mut v = quiet();
     v.runways.worked = false;
     v.balance = verdict::Balance::default();
-    assert_eq!(verdict::verdict_line(&verdict::verdict_items(&v)).1, "Nothing found against it; not worked out: Runways, Weight & balance");
+    assert_eq!(verdict::verdict_line(&verdict::verdict_items(&v)).1, "No problems found; not checked: Runways, Weight & balance");
     let mut coming = quiet();
     coming.weather.pending = true;
     coming.risk = None;

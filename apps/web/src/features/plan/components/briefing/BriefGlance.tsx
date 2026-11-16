@@ -16,6 +16,7 @@ import { FINDING_TONE, type Finding } from "../../../../lib/findings";
 import { TEXT } from "../../../../lib/text";
 import { grouped } from "../../../../lib/format";
 import { mhzText } from "../../../../lib/frequencies";
+import { isPosition } from "../../../../lib/identSchema";
 import { useAirplaneChosen } from "../../../../lib/preferences";
 import { useVerdict, verdictLine } from "../../../../lib/verdict";
 import { useAnnounce } from "../../../../lib/announce";
@@ -73,7 +74,7 @@ function Card({
   category?: string | null;
   at?: string | null;
   finding: Finding;
-  stats: ReactNode;
+  stats?: ReactNode;
   note?: ReactNode;
   onOpen: (tab: PanelTab) => void;
 }) {
@@ -93,7 +94,7 @@ function Card({
         <span className={cn("ml-auto font-semibold tabular-nums", TEXT.detail)}>{at}</span>
         <ChevronRight className="size-5 shrink-0 text-tint" aria-hidden />
       </span>
-      <span className="flex w-full gap-2.5">{stats}</span>
+      {stats && <span className="flex w-full gap-2.5">{stats}</span>}
       {note && <span className={cn("text-muted-foreground", TEXT.note)}>{note}</span>}
     </BaseButton>
   );
@@ -114,25 +115,31 @@ function FieldCard({
   landing: boolean;
   onOpen: (tab: PanelTab) => void;
 }) {
+  // A flight from where the airplane is (POS0): no runway, takeoff or
+  // radio to give, and its coordinates are no name to read (the owner's
+  // screenshot, 2026-11-15: "DEPART @42.2340,-87.9877,700").
+  const here = isPosition(field.ident);
   return (
     <Card
       tab={tab}
       label={label}
-      ident={field.ident}
+      ident={here ? "Present position" : field.ident}
       category={field.category}
       at={time(field.at)}
       finding={field.finding}
       onOpen={onOpen}
       stats={
-        <>
-          <Stat label="Runway" value={field.runway ?? DASH} />
-          <Stat
-            label={landing ? "Landing 50 ft" : "Takeoff 50 ft"}
-            value={ft(field.overFiftyFt)}
-            finding={field.finding === "stop" ? "stop" : undefined}
-          />
-          <Stat label={field.radio ? radioLabel(field.radio.to) : "Radio"} value={field.radio ? mhzText(field.radio.mhz) : DASH} />
-        </>
+        !here && (
+          <>
+            <Stat label="Runway" value={field.runway ?? DASH} />
+            <Stat
+              label={landing ? "Landing 50 ft" : "Takeoff 50 ft"}
+              value={ft(field.overFiftyFt)}
+              finding={field.finding === "stop" ? "stop" : undefined}
+            />
+            <Stat label={field.radio ? radioLabel(field.radio.to) : "Radio"} value={field.radio ? mhzText(field.radio.mhz) : DASH} />
+          </>
+        )
       }
       note={
         [field.runwayFt != null && `Of ${grouped(field.runwayFt)} ft`, field.wind && `wind ${field.wind}`].filter(Boolean).join(" · ") ||

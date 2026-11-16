@@ -32,12 +32,15 @@ function Marked({ children, mark, testId }: { children: ReactNode; mark: "stop" 
  * the N-number, the altitude and the route's ••• (RouteControls). Only
  * once there is a route.
  */
-function FplActions({ vm, share }: { vm: PlanWorkspaceModel; share: ReactNode }) {
+export function FplActions({ vm, share, inFlight = false }: { vm: PlanWorkspaceModel; share: ReactNode; inFlight?: boolean }) {
   const { routed } = vm.route;
+  const { flying } = vm.flight;
   const { course } = vm.plan;
   const { openBrief, openNavLogCard, openProfile, profileReady } = vm.fpl;
   const { altitudeMark, briefMark } = vm.brief;
-  if (!routed) return null;
+  // One row at a time: under the route on the ground, at the top of the
+  // flight's view while flying, where the route's row is not drawn (SheetParts).
+  if (!routed || flying !== inFlight) return null;
   return (
     // 56 tall as the airport card's (PlaceActions), eight apart so their
     // 44-point areas meet.

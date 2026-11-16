@@ -75,7 +75,7 @@ describe("the Go / No-Go", () => {
       runways: { ...quiet.runways, worked: false },
       balance: { pending: false, worked: false, problems: [], takeoff: null },
     });
-    expect(verdictLine(unknown).words).toBe("Nothing found against it; not worked out: Runways, Weight & balance");
+    expect(verdictLine(unknown).words).toBe("No problems found; not checked: Runways, Weight & balance");
     const coming = verdictItems({ ...quiet, weather: { ...quiet.weather, pending: true }, risk: null });
     expect(verdictLine(coming)).toEqual({ finding: "pending", words: "Still checking: Weather, Risk" });
   });

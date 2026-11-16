@@ -37,7 +37,7 @@ export default function DepartureWindowStrip() {
     <PillSection title={title} testId="departure-window">
       {!m.signedIn ? (
         <p className={cn(TEXT.detail, "text-muted-foreground")} data-testid="departure-window-sign-in">
-          Sign in to see the hours to go across the next day.
+          Sign in to see the best time to go.
         </p>
       ) : m.error ? (
         // Where it happened, not a toast (lib/problems).

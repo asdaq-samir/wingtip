@@ -93,7 +93,7 @@ def test_distances_past_the_pohs_tables_are_a_caution_and_a_runway_not_checked_u
 
 def test_says_what_was_not_worked_out_and_what_is_still_coming():
     unknown = verdict_items(quiet(runways={"worked": False}, balance={"pending": False, "worked": False, "problems": [], "takeoff": None}))
-    assert verdict_line(unknown)["words"] == "Nothing found against it; not worked out: Runways, Weight & balance"
+    assert verdict_line(unknown)["words"] == "No problems found; not checked: Runways, Weight & balance"
     coming = verdict_items(quiet(weather={"pending": True}, risk=None))
     assert verdict_line(coming) == {"finding": "pending", "words": "Still checking: Weather, Risk"}
 

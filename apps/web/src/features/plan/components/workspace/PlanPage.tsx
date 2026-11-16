@@ -3,6 +3,7 @@ import { cn } from "cn";
 import TabKept from "../../../../components/TabKept";
 import TabPage from "../../../../components/TabPage";
 import FplStrip from "../FplStrip";
+import { FplActions } from "./FplActions";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 
 /**
@@ -16,7 +17,7 @@ import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
  * either with two buttons"; the search is the other page, its tab beside
  * FPL's).
  */
-export default function PlanPage({ vm, navLog }: { vm: PlanWorkspaceModel; navLog: ReactNode }) {
+export default function PlanPage({ vm, navLog, share }: { vm: PlanWorkspaceModel; navLog: ReactNode; share: ReactNode }) {
   const { stripsDrawn } = vm.view;
   const { hasPoints } = vm.route;
   const { cardUp, openList } = vm.cards;
@@ -35,8 +36,15 @@ export default function PlanPage({ vm, navLog }: { vm: PlanWorkspaceModel; navLo
           <FplStrip onAllSaved={openSaved} onAllRecents={() => openList("routes")} />
         </TabPage>
       )}
-      {/* FPL's nav log once there is a route, at the pilot's ask. */}
-      <div className={cn("flex min-h-0 flex-col print:flex", depAlone ? "flex-none" : "flex-1", !hasPoints && "hidden")}>{navLog}</div>
+      {/* FPL's nav log once there is a route, at the pilot's ask; while
+          flying, FPL's tiles over it, the route's row not drawn then (the
+          owner, 2026-11-15: "What about the fpl drawer when pulling it up?"). */}
+      <div className={cn("flex min-h-0 flex-col print:flex", depAlone ? "flex-none" : "flex-1", !hasPoints && "hidden")}>
+        <div className="px-4 empty:hidden print:hidden">
+          <FplActions vm={vm} share={share} inFlight />
+        </div>
+        {navLog}
+      </div>
       {/* A departure alone: under it the flights saved and the routes
           planned last, to pick from, where the sheet stood empty under
           the one field (the owner's screenshot, 2026-10-23). */}

@@ -427,7 +427,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           at: view === "plan" ? 1 : 0,
           go: pickPage,
           bar: <FplBar strip={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />} />,
-          second: <PlanPage vm={vm} navLog={navLog} />,
+          second: <PlanPage vm={vm} navLog={navLog} share={shareMenu("end", "share-plan", "send")} />,
         },
         // The one search's Autocomplete round the whole panel, so its field
         // (the first row) and its list (the body) are one combobox.
