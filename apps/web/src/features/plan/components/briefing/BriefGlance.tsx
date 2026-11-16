@@ -115,10 +115,7 @@ function FieldCard({
   landing: boolean;
   onOpen: (tab: PanelTab) => void;
 }) {
-  // A flight from where the airplane is (POS0): no runway, takeoff or
-  // radio to give, and its coordinates are no name to read (the owner's
-  // screenshot, 2026-11-15: "DEPART @42.2340,-87.9877,700").
-  const here = isPosition(field.ident);
+  const here = isPosition(field.ident); // From where the airplane is (POS0): no runway, takeoff or radio, nor coordinates for a name.
   return (
     <Card
       tab={tab}

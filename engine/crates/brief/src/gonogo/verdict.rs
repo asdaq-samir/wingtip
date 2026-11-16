@@ -377,8 +377,6 @@ pub fn verdict_line(items: &[Item]) -> (&'static str, String) {
     let words = match finding {
         "stop" => format!("No-go as planned: {}", named("stop")),
         "caution" => format!("Look again at {}", named("caution")),
-        // A finding not worked out is no problem found, and said as one, with
-        // what was not checked after it (the owner's screenshot, 2026-11-15).
         "unknown" => format!("No problems found; not checked: {}", named("unknown")),
         "pending" => format!("Still checking: {}", named("pending")),
         _ => "Nothing found against this flight".into(),
