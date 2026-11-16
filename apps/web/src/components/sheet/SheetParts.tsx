@@ -35,6 +35,10 @@ const BAR = "4.25rem";
 /** Under the head, the body and the foot a shade darker than the glass
  *  over them, the grey of notes and the blue of tappable words a step
  *  darker on it for WCAG's 4.5:1 (design/tokens.json's -shade tokens). */
+/** A band risen with the sheet from the pill: frosted, and over the body, as at half. */
+const RISEN_BAND =
+  "group-data-swiping/sheet:frost-head group-data-risen/sheet:frost-head group-data-swiping/sheet:z-20 group-data-risen/sheet:z-20";
+
 export const SHEET_BELOW = "[--muted-foreground:var(--muted-foreground-shade)] [--tint:var(--tint-shade)] print:bg-transparent";
 
 export interface PartsProps {
@@ -150,7 +154,7 @@ export function SheetParts(p: PartsProps) {
       <div
         className={cn(
           "relative flex flex-col",
-          p.bar && p.barShown && !atPill && SHEET_BELOW,
+          p.bar && p.barShown && (!atPill || risen) && SHEET_BELOW,
           ((!shown && p.kept == null) || alone) && "hidden",
           risen && RISEN_FACE,
         )}
@@ -196,7 +200,8 @@ export function SheetParts(p: PartsProps) {
   // 2026-11-11: Settings dragged to the smallest size left the sheet empty).
   // `off`: a page out of sight beside the one up, its body inert.
   // `cut`: the figures pinned at its foot, so its body is cut off there.
-  const scroller = (band: ReactNode, body: ReactNode, alone: boolean, off: boolean, head: string, cut: boolean) => (
+  // `rises`: its band risen with the sheet from the pill (FPL's), frosted as at half from the finger's first move.
+  const scroller = (band: ReactNode, body: ReactNode, alone: boolean, off: boolean, head: string, cut: boolean, rises = false) => (
     <div
       data-sheet-scroll=""
       // Where a list's pinned head sticks under the head band (PinnedHead):
@@ -213,7 +218,7 @@ export function SheetParts(p: PartsProps) {
         // Sticky at the scroller's top, frosted wherever the body runs on
         // up under it, the grabber's room inside it (the owner's iPhone,
         // 2026-11-11: clear, the list showed through the band).
-        className={cn("sticky top-0 flex shrink-0 flex-col", !atPill && "frost-head z-20")}
+        className={cn("sticky top-0 flex shrink-0 flex-col", !atPill ? "frost-head z-20" : rises && RISEN_BAND)}
       >
         {band}
       </div>
@@ -320,6 +325,7 @@ export function SheetParts(p: PartsProps) {
             at !== 1,
             "0px",
             footShown,
+            rises,
           )}
           {foot}
         </SheetPage>
