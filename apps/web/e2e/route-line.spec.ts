@@ -106,7 +106,7 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("FPL's route line folds to the way picked, As typed at first, and a chip tapped is the route at once", async ({ page }) => {
+test("FPL's Routes are one row of chips, As typed at first, and a chip tapped is the route at once", async ({ page }) => {
   await ways(page);
   const planned: string[] = [];
   page.on("request", (request) => {
@@ -115,33 +115,24 @@ test("FPL's route line folds to the way picked, As typed at first, and a chip ta
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  // No Routes button: the line does its job.
+  // No Routes button: the chips do its job.
   await expect(sideDrawer(page).getByTestId("route-routes")).toHaveCount(0);
   const line = sideDrawer(page).getByTestId("route-line");
-  const picked = line.getByTestId("route-line-picked");
-  // Folded to one row over the fields (the owner's K1, 2026-10-29): None,
-  // the route as typed, planned at once, with its time; what it meets said.
-  await expect(picked).toHaveText(/^As typed/, { timeout: slow(30_000) });
-  // What it shows first, then what it is (WCAG 2.5.3, Label in Name: RouteLine's label).
-  await expect(line.getByTestId("route-line-toggle")).toHaveAccessibleName(
-    /^As typed .*2 more, Routes: As typed, the route as typed, .*crosses storms/,
-  );
+  const chips = line.getByTestId("route-line-chip");
+  // One row of chips, each its name and time (the owner's pick of the
+  // routes canvas, 2026-11-16): None, the route as typed, planned at once
+  // and filled; its miles, fuel and what it meets said in its name (WCAG
+  // 2.5.3, Label in Name: RouteLine's label).
+  await expect(chips).toHaveText([/^As typed/, /^Avoid Weather/, /^Fastest/], { timeout: slow(30_000) });
+  await expect(chips.first()).toHaveAttribute("data-pressed", "");
+  await expect(chips.first()).toHaveAccessibleName(/^As typed, the route as typed, .*\d+ nm.*crosses storms/);
+  await expect(chips.nth(1)).toHaveAccessibleName(/^Avoid Weather, .*\d+ nm, \d+\.\d gal/);
   // Over the route's fields, not among them.
   const lineBox = (await line.boundingBox())!,
     fields = (await sideDrawer(page).getByTestId("procedures").boundingBox())!;
   expect(lineBox.y + lineBox.height).toBeLessThanOrEqual(fields.y + 1);
   await expect.poll(() => planned.length, { timeout: slow(15_000) }).toBeGreaterThan(0);
-
-  // Opened: every way a card, its time over its name, and drawn on the
-  // chart beside the course.
-  await picked.click();
-  const chips = line.getByTestId("route-line-chip");
-  // Each its miles and fuel under its name, as ForeFlight's and Garmin's
-  // cards (the owner, 2026-11-08): the planner's, the route as typed's
-  // from its nav log.
-  await expect(chips).toHaveText([/As typed\d+ nm/, /Avoid Weather/, /Fastest/]);
-  await expect(chips.nth(1).getByTestId("route-line-figures")).toHaveText(/\d+ nm · \d+\.\d gal/);
-  // On the map's canvas, as the chips' probe says (WaysGl).
+  // Every way drawn on the chart beside the course, as the chips' probe says (WaysGl).
   await expect.poll(async () => (await drawn(page, "route-way-chips")).length).toBe(2);
 
   // A chip tapped: the route at once, its fuel stop named, and planned.
@@ -157,24 +148,22 @@ test("FPL's route line folds to the way picked, As typed at first, and a chip ta
   await expect(chips.filter({ hasText: "As typed" })).toHaveAttribute("data-pressed", "");
 });
 
-test("the routes stay open until their row folds them, to the way picked", async ({ page }) => {
+test("the routes' chips and their ways stay, whichever is picked", async ({ page }) => {
   await ways(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
   const line = sideDrawer(page).getByTestId("route-line");
-  await line.getByTestId("route-line-picked").click({ timeout: slow(30_000) });
-  await line.getByTestId("route-line-chip").filter({ hasText: "Fastest" }).click();
-  // Left alone, it stays open, its ways on the chart (the owner,
-  // 2026-10-28: "Keep the routes and runway opened until folded"); it
-  // folded after two seconds.
+  await line
+    .getByTestId("route-line-chip")
+    .filter({ hasText: "Fastest" })
+    .click({ timeout: slow(30_000) });
+  // Left alone, they stay, their ways on the chart (the owner, 2026-10-28:
+  // "Keep the routes and runway opened until folded"; they fold no more).
   await page.waitForTimeout(3000);
   await expect(line.getByTestId("route-line-chip")).toHaveCount(3);
+  await expect(line.getByTestId("route-line-chip").filter({ hasText: "Fastest" })).toHaveAttribute("data-pressed", "");
   await expect.poll(async () => (await drawn(page, "route-way-chips")).length).toBeGreaterThan(0);
-  await line.getByTestId("route-line-toggle").click();
-  await expect(line.getByTestId("route-line-picked")).toHaveText(/^Fastest/);
-  await expect(line.getByTestId("route-line-chip")).toHaveCount(0);
-  await expect.poll(async () => (await drawn(page, "route-way-chips")).length).toBe(0);
 });
 
 test("another airplane picked keeps the Routes row in its place, dimmed, till its own ways come", async ({ page }) => {
@@ -197,7 +186,7 @@ test("another airplane picked keeps the Routes row in its place, dimmed, till it
   await settle(page);
   await openPanel(page);
   const line = sideDrawer(page).getByTestId("route-line");
-  await expect(line.getByTestId("route-line-picked")).toHaveText(/^As typed/, { timeout: slow(30_000) });
+  await expect(line.getByTestId("route-line-chip").first()).toHaveText(/^As typed/, { timeout: slow(30_000) });
   // Whether the row is on the page, every frame from the pick on: it went
   // for half a second at every change of airplane, the list under it
   // jumping up and back (the flicker audit's FL-12).

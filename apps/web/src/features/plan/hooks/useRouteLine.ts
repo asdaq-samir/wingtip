@@ -3,7 +3,6 @@ import type { RouteChip, RouteOptions } from "../../../lib/api/types";
 import { duration } from "../../../lib/format";
 import { callEngine } from "../../../lib/engine/engine";
 import type { RouteWay } from "../../../lib/map/route/routeWays";
-import { useRouteLineOpen } from "../lib/routeLine";
 import { gridScale, sameStops, wayTime } from "../lib/routeWays";
 import type { useRouteEdits } from "./useRouteEdits";
 import type { Browsing, FuelCard } from "./useRouteWays";
@@ -208,12 +207,11 @@ export function useRouteLine({
     return cards ? { chips: cards, picked: lineKey, onPick: applyChip, unchecked: routeWays?.unchecked ?? [], stale: waysStale } : null;
   }, [vfrRoute, chips, routeWays, lineKey, applyChip, browsing, ownMinutes, ownGround, ownNm, ownGal, waysStale]);
 
-  // The chips' ways on the chart beside the course while the line is open,
-  // each its time on its chip, the one picked solid (the owner's "I want
-  // all routes drawn including mine", 2026-10-25); folded, the course alone.
-  const lineOpen = useRouteLineOpen((st) => st.open);
+  // The chips' ways on the chart beside the course, each its time on its
+  // chip, the one picked solid (the owner's "I want all routes drawn
+  // including mine", 2026-10-25), as long as the chips are there.
   const wayLines = useMemo((): RouteWay[] => {
-    if (!lineOpen || !routeLine || !routeWays) return NO_WAYS;
+    if (!routeLine || !routeWays) return NO_WAYS;
     const minutes = browsing ? browsing.ownMinutes : ownMinutes;
     const ground = browsing ? browsing.ownGround : ownGround;
     const scale = gridScale(routeWays, minutes);
@@ -238,7 +236,7 @@ export function useRouteLine({
     // Each chip where it is whichever others are drawn, by its place among
     // all of them (it jumped along its line as another went).
     return lines.map((line, i) => ({ ...line, share: WAY_CHIP_SHARES[i % WAY_CHIP_SHARES.length] }));
-  }, [lineOpen, routeLine, routeWays, chips, browsing, ownMinutes, ownGround]);
+  }, [routeLine, routeWays, chips, browsing, ownMinutes, ownGround]);
   // A way's line or chip on the chart tapped: its chip picked.
   const pickWay = useCallback((key: string) => applyChip(key === "own" ? "none" : key), [applyChip]);
   return { lineKey, routeLine, wayLines, pickWay };

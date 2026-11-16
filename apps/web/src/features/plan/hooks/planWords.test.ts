@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AltitudeSegment } from "../../../lib/api/types";
-import { briefMarkOf, marksOf, planningWords, progressWords, tightLegWords } from "./planWords";
+import { briefMarkOf, findingRows, marksOf, planningWords, progressWords, tightLegWords } from "./planWords";
 
 describe("the progress toast", () => {
   it("says the planner's step, not its leg or its seconds", () => {
@@ -58,5 +58,26 @@ describe("the tabs' marks", () => {
     expect(briefMarkOf(marks)).toBe("stop");
     expect(briefMarkOf({ enroute: "caution" })).toBe("caution");
     expect(briefMarkOf({})).toBeNull();
+  });
+});
+
+describe("FPL's findings under its tiles", () => {
+  const item = (key: string, finding: string, detail = `${key} found`) => ({ key, label: key, finding, detail }) as never;
+
+  it("says the ones to act on, red first, each kind in the Brief's order", () => {
+    const rows = findingRows([
+      item("weather", "caution"),
+      item("airspace", "ok"),
+      item("fuel", "stop", "6.2 gal short of the fuel and its 45 min reserve (14 CFR 91.151)"),
+      item("runways", "unknown"),
+      item("risk", "caution"),
+      item("balance", "stop"),
+    ]);
+    expect(rows.map((r) => `${r.key}:${r.finding}`)).toEqual(["fuel:stop", "balance:stop", "weather:caution", "risk:caution"]);
+    expect(rows[0]!.detail).toBe("6.2 gal short of the fuel and its 45 min reserve (14 CFR 91.151)");
+  });
+
+  it("says nothing where nothing was found", () => {
+    expect(findingRows([item("weather", "ok"), item("runways", "unknown"), item("fuel", "pending")])).toEqual([]);
   });
 });

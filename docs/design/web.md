@@ -691,13 +691,19 @@ the airplane's strip (`features/plan/components/workspace/FplBar`, its
 `RouteControls`: the N-number, the altitude and the route's •••, on one
 line, the airplane and the altitude giving way first; the Brief, the Nav
 Log, the Profile and Share are tiles under the route, `FplActions`, the
-airport card's `CardAction`, Share the route's `ShareMenu` as `"send"`). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
+airport card's `CardAction`, Share the route's `ShareMenu` as `"send"`;
+under them `FplFindings`, the Brief's findings to act on in words, red
+first, from `lib/verdict` through `planWords`' `findingRows`, where the
+tiles had dots). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
 a turn of the page moves nothing and the head's first row, and the map's
 room, stay the same. The route is the row under FPL's bar (`RouteHead`),
 in each of the three ways Show Route As picks: Route Box, the box of
 pills on one line, no footer; Route Line, the line split in three
 (`RouteSplit`); Route Cards, its two ends' cards until the route is
-whole, then the Routes row in its white box (`route-group`), the cards
+whole, then the Routes' chips (`route-group`, `RouteLine`: one row of
+the search's pill, each way's name and time, the one flown filled; on the
+map `WaysGl` draws it solid magenta and the others dotted, their chips
+named and kept apart by MapLibre's collision), the cards
 in the plan under it. The toggle is drawn only on the page that is up,
 so there is one in the page. The account button took the toggle's
 place over the map: a glass circle the size of the 3D's in the left-hand

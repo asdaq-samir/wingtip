@@ -34,10 +34,10 @@ export default function RouteHead({ vm }: { vm: PlanWorkspaceModel }) {
       {routeEdit === "plan" ? (
         // Route Cards, the owner's pick of the canvas's option 3
         // (2026-11-05): until the route is whole its departure and
-        // destination as two cards; once it is, the Routes row in a white
-        // box of its own (the owner's pick B, "show the controls and
-        // routes grouped", the controls now the bar over it), the cards
-        // following in the plan (ProceduresRoute).
+        // destination as two cards; once it is, the Routes' chips (the
+        // owner's pick of the routes canvas, 2026-11-16, where they were a
+        // white box of their own), the cards following in the plan
+        // (ProceduresRoute).
         !wholeRoute ? (
           <Suspense fallback={<div className="h-[7.75rem]" />}>
             <RouteEnds
@@ -49,7 +49,7 @@ export default function RouteHead({ vm }: { vm: PlanWorkspaceModel }) {
           </Suspense>
         ) : (
           routeLine && (
-            <div className="mb-1 w-full rounded-2xl bg-card ring-1 ring-black/5 dark:ring-white/10" data-testid="route-group">
+            <div className="w-full" data-testid="route-group">
               <Suspense fallback={<div className="h-11" />}>
                 <RouteLine line={routeLine} grouped />
               </Suspense>

@@ -10,14 +10,13 @@ import { FIX_PILL, FIX_PILL_SHIFT } from "../../marks/markPictures";
 import { PATTERN_ARROW, PATTERN_LABEL, PATTERN_WORDS_FROM_ZOOM, TEAL } from "../../marks/patternMarks";
 import { PROCEDURE_INK, PROCEDURE_WORDS_FROM_ZOOM, STALE_INK, fixMarks } from "../../marks/procedureMarks";
 import { ROUTE_MARKS_LOWEST } from "../../marks/routeMarks";
-import { WAY_CHIP_PLACE, WAY_SHARES, wayAt, wayChip, wayInk, type RouteWay } from "../../route/routeWays";
 import { useGlData, useGlLayer, useGlMap } from "../glLayer";
 import { chipLayer, pictureLayer } from "../markLayers";
 import { useGlLines, type GlRun } from "../useGlLines";
 import { useGlProbe } from "../useGlProbe";
 import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
 import { useGlView } from "../useGlView";
-import { GL_FONT, GL_FONT_BOLD, TAP } from "./common";
+import { TAP } from "./common";
 import { CHART } from "../../../tokens";
 
 /** The level the map is at, the app's, as the camera comes to rest: what
@@ -26,36 +25,6 @@ const useGlLevel = () => useGlView(noBox, "rest").level;
 const noBox = () => null;
 
 const KIND = (kind: string) => ["==", ["get", "kind"], kind] as ExpressionSpecification;
-
-/** A way's chip: its time in bold, and on the one shown its name under it. */
-const WAY_LAYERS: SymbolLayerSpecification[] = [
-  chipLayer(
-    "route-way-chips",
-    "route-way-chips",
-    {},
-    {
-      "text-field": [
-        "case",
-        ["!=", ["get", "name"], ""],
-        [
-          "format",
-          ["get", "label"],
-          { "text-font": ["literal", GL_FONT_BOLD] },
-          "\n",
-          {},
-          ["get", "name"],
-          { "text-font": ["literal", GL_FONT] },
-        ],
-        ["get", "label"],
-      ] as ExpressionSpecification,
-      "text-size": 13,
-      "text-line-height": 1.25,
-      "text-justify": "left",
-      ...WAY_CHIP_PLACE,
-    },
-    { "text-color": ["get", "ink"] as ExpressionSpecification },
-  ),
-];
 
 /** A pattern's arrows turned along their legs on the chart, its names on
  *  their teal chips. */
@@ -106,35 +75,6 @@ const LEG_POINT_LAYERS: SymbolLayerSpecification[] = [
     },
   ),
 ];
-
-/** FPL's Routes' other ways beside the route: each a wide
- *  faint magenta line, the one shown solid, with its chip a tap picks. */
-export function WaysGl({ ways, shown: shown_, onPick }: { ways: RouteWay[]; shown: string | null; onPick: (key: string) => void }) {
-  const runs = useMemo<GlRun[]>(
-    () =>
-      ways.map((w) => ({ points: w.path, colour: COURSE_MAGENTA, width: w.key === shown_ ? 7 : 6, opacity: w.key === shown_ ? 1 : 0.35 })),
-    [ways, shown_],
-  );
-  useGlLines("route-ways", "lines", runs, null);
-  const marks = useMemo<GlSymbol[]>(
-    () =>
-      ways.map((w, i) => {
-        const [lat, lon] = wayAt(w.path, w.share ?? WAY_SHARES[i % WAY_SHARES.length]!);
-        const shown = w.key === shown_;
-        return {
-          key: w.key,
-          lat,
-          lon,
-          picture: wayChip(shown),
-          props: { label: w.label, name: shown ? (w.name ?? "") : "", ink: wayInk(shown) },
-          onTap: () => onPick(w.key),
-        };
-      }),
-    [ways, shown_, onPick],
-  );
-  useGlSymbols("route-way-chips", WAY_LAYERS, marks);
-  return null;
-}
 
 const pair = (p: LatLon): [number, number] => [p.lat, p.lon];
 const along = (a: LatLon, b: LatLon, f: number): LatLon => ({ lat: a.lat + (b.lat - a.lat) * f, lon: a.lon + (b.lon - a.lon) * f });

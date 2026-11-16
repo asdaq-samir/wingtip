@@ -452,14 +452,25 @@ off by default (the owner, 2026-11-13).
    exactly the search field's size, the page toggle at its end, so a turn
    of the page changes only what is in the bar; under it the route as one
    row, in whichever of the three ways Show Route As picks (the box of
-   pills, the line, or the cards' ends and the Routes row), never in the
+   pills, the line, or the cards' ends and the Routes' chips), never in the
    bar; under the route, once there is one, a row of four tiles as the
-   airport card's actions are: Brief (a dot its worst page's colour), Nav
-   Log, Profile (a dot where the altitude is tight) and Share, one menu
+   airport card's actions are: Brief, Nav Log, Profile and Share, one menu
    for every way the plan leaves the app (its link, Open in ForeFlight,
    the checkpoints for ForeFlight, Print the nav log), the ••• keeping the
    plan's own (Save, File, Refresh, Show Route As, Clear) (the owner's pick
-   A of the FPL buttons canvas, 2026-11-15); then the route in order, and
+   A of the FPL buttons canvas, 2026-11-15). Under the tiles, what the
+   Brief found to act on, in words, red first: a row each, its label and
+   the engine's line ("Fuel: 6.2 gal short of the fuel and its 45 min
+   reserve (14 CFR 91.151)"), three at most and one more row for the
+   rest, a tap opening the Brief, or the Profile for the altitude's own
+   caution; no dots on the tiles, which said there was something but not
+   what. The Routes are one row of chips, each a way's name and time, the
+   one flown filled, a swipe for more; their miles and fuel are the
+   figures' at the sheet's foot and in each chip's spoken name. On the
+   map the way flown is solid magenta and the others thin dotted lines
+   in the chart's ink, each chip named, the others' chips left out where
+   they would overlap (the owner's pick of the routes canvas, board 5,
+   2026-11-16); then the route in order, and
    the route's figures pinned at the foot, which are FPL's alone; the
    Brief, the Nav Log, the Profile and the Stops are cards over it. With
    no route, the route's row stands empty and the bar keeps the airplane

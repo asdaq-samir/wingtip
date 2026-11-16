@@ -1,13 +1,10 @@
 import { useAirplaneChosen } from "../../../../lib/preferences";
-import { ChevronDown, Route } from "lucide-react";
-import { Button } from "../../../../components/ui/button";
+import { Route, TriangleAlert } from "lucide-react";
 import { cn } from "cn";
 import { ToggleGroup, ToggleGroupItem } from "../../../../components/ui/toggle-group";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { TEXT } from "../../../../lib/text";
 import { gal } from "../../../../lib/format";
 import { andList } from "../../../../lib/listWords";
-import { useRouteLineOpen } from "../../lib/routeLine";
 
 /** FPL's route line's choices (PlanWorkspace's routeLine): each chip's
  *  key and words, and what its way meets, in amber; the one picked. */
@@ -27,133 +24,77 @@ export interface RouteLineChoices {
 }
 
 /**
- * FPL's Routes, over the route's fields, at the owner's pick of the
- * canvas's K1 (2026-10-29): folded, one row -- the route's glyph, the way
- * flown and its time, how many more there are; open, its heading and the
- * planner's ways as cards, each its time over its name, a tap on one the
- * route at once ("As typed" is the route as typed, the owner's word for
- * what was "None", 2026-11-08), its miles and fuel under its name. It was a tray under the
- * departure's row, folded to the way picked, as a runway line is. Open
- * until its row folds it (the owner, 2026-10-28: "Keep the routes and
- * runway opened until folded"). A way that meets something says so in
- * amber, in its name too: the planner warns, never refuses.
+ * FPL's Routes, over the route's fields: one row of chips, each a way's
+ * name and its whole time, the one flown filled, a tap on one the route at
+ * once ("As typed" is the route as typed, the owner's word for what was
+ * "None", 2026-11-08); a swipe for more. It was a folding box of cards,
+ * each its time over its name and its miles and fuel, which at half a
+ * sheet took the rest of it, the cards cut off, and said a fuel unlike
+ * the strip's (the owner's pick of the routes canvas, board 5, 2026-11-16,
+ * Hr6eKFhyFBLjAAAmEaq8HB): the miles and fuel of the way flown are the
+ * figures' at the sheet's foot, each way's said in its chip's name to a
+ * screen reader. A way that meets something says so in amber, its name
+ * too: the planner warns, never refuses.
  */
-/** The Routes row. `grouped`: inside Route Cards' head box (PlanWorkspace),
- *  under the airplane and the altitude, the box's fill and corners its
- *  own; else a rounded row of its own over the list. */
-/** A card's miles and fuel, "105 nm · 10.3 gal", as far as they are known. */
+/** A way's miles and fuel, "105 nm, 10.3 gal", as far as they are known. */
 const figures = (c: RouteLineChoices["chips"][number]) =>
-  [c.nm != null ? `${Math.round(c.nm)} nm` : null, c.gal != null ? gal(c.gal) : null].filter(Boolean).join(" · ");
+  [c.nm != null ? `${Math.round(c.nm)} nm` : null, c.gal != null ? gal(c.gal) : null].filter(Boolean).join(", ");
 
 export function RouteLine({ line: asked, grouped = false }: { line: RouteLineChoices; grouped?: boolean }) {
-  const open = useRouteLineOpen((s) => s.open);
   // No airplane picked: each way's miles, not its time or fuel, which are
   // an airplane's (the owner, 2026-11-08: "don't assume").
   const airplane = useAirplaneChosen();
   const line = airplane ? asked : { ...asked, chips: asked.chips.map((c) => ({ ...c, time: null, gal: null })) };
-  const picked = line.chips.find((c) => c.key === line.picked) ?? line.chips[0]!;
   const words = (c: RouteLineChoices["chips"][number]) =>
     `${c.key === "none" ? "As typed, the route as typed" : c.label}${c.time ? `, ${c.time}` : ""}${figures(c) ? `, ${figures(c)}` : ""}${c.warning ? `, ${c.warning.toLowerCase()}` : ""}`;
-  const others = line.chips.length - 1;
   return (
-    <Collapsible
-      open={open}
-      onOpenChange={(next) => useRouteLineOpen.setState({ open: next })}
-      className={cn(
-        grouped ? undefined : "mt-2 mb-1 rounded-xl bg-card",
-        line.stale && "opacity-50 transition-opacity motion-reduce:transition-none",
-      )}
+    <div
+      className={cn(grouped ? "pb-1" : "mt-2 mb-1", line.stale && "opacity-50 transition-opacity motion-reduce:transition-none")}
       data-testid="route-line"
       data-stale={line.stale ? "" : undefined}
       aria-busy={line.stale || undefined}
     >
-      <CollapsibleTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="inline"
-            type="button"
-            data-testid="route-line-toggle"
-            data-disclosure=""
-            // What it shows first, then what it is (WCAG 2.5.3, Label in Name).
-            aria-label={
-              open
-                ? "Routes: fold"
-                : `${picked.label}${picked.time ? ` ${picked.time}` : ""}${others > 0 ? ` ${others} more` : ""}, Routes: ${words(picked)}`
-            }
-            className={cn(
-              "justify-start text-inherit hover:bg-transparent",
-              "flex min-h-11 w-full items-center gap-2.5 px-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              TEXT.row,
-            )}
-          />
-        }
+      <ToggleGroup
+        value={[line.picked]}
+        onValueChange={(v) => {
+          if (v[0]) line.onPick(v[0]);
+        }}
+        aria-label="Routes"
+        disabled={line.stale}
+        // Room above and under for the chips' 44-point areas, which a
+        // scrolling row would cut off.
+        className="flex w-full justify-start gap-2 overflow-x-auto overscroll-x-contain py-1.5 [scrollbar-width:none]"
       >
-        <Route className="size-5 shrink-0 text-tint" aria-hidden />
-        {open ? (
-          <span className="flex-1 font-semibold">Routes</span>
-        ) : (
-          <span className="min-w-0 flex-1 truncate" data-testid="route-line-picked" data-key={picked.key}>
-            {picked.label}
-            {picked.time && <span className="font-semibold"> {picked.time}</span>}
-          </span>
-        )}
-        {/* A space between them in the words, as the gap is on screen. */}
-        {!open && others > 0 && " "}
-        {!open && others > 0 && <span className={cn("shrink-0 text-muted-foreground", TEXT.detail)}>{others} more</span>}
-        <ChevronDown
-          className={cn("size-4 shrink-0 text-tint transition-transform motion-reduce:transition-none", open && "rotate-180")}
-          aria-hidden
-        />
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <ToggleGroup
-          value={[line.picked]}
-          onValueChange={(v) => {
-            if (v[0]) line.onPick(v[0]);
-          }}
-          aria-label="Routes"
-          disabled={line.stale}
-          className="flex w-full justify-start gap-2 overflow-x-auto overscroll-x-contain px-3 pb-3 [scrollbar-width:none]"
-        >
-          {line.chips.map((c) => (
-            <ToggleGroupItem
-              key={c.key}
-              value={c.key}
-              aria-label={words(c)}
-              data-testid="route-line-chip"
-              data-key={c.key}
-              className={cn(
-                "h-auto min-w-24 max-w-44 shrink-0 flex-col items-start gap-0.5 rounded-xl border border-border bg-background px-2.5 py-2 text-left",
-                "data-pressed:border-2 data-pressed:border-tint data-pressed:bg-tint/12",
-              )}
-            >
-              {(airplane || c.time) && (
-                <span className={cn("font-semibold", TEXT.row, c.key === line.picked && "text-tint")}>{c.time ?? "—"}</span>
-              )}
-              <span className={cn("whitespace-normal", TEXT.note, c.warning ? "text-caution-ink" : "text-foreground")}>{c.label}</span>
-              {figures(c) && (
-                <span className={cn("text-muted-foreground tabular-nums", TEXT.note)} data-testid="route-line-figures">
-                  {figures(c)}
-                </span>
-              )}
-              {/* What it crosses, the engine's words: warned, never refused. */}
-              {c.warning && (
-                <span className={cn("whitespace-normal font-semibold text-caution-ink", TEXT.note)} data-testid="route-line-warning">
-                  {c.warning}
-                </span>
-              )}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-        {/* Said where the ways are, not left out: a way's fuel or ceiling
-            the planner could not check, the airplane's figure missing. */}
-        {line.unchecked && line.unchecked.length > 0 && (
-          <p className={cn("px-3 pb-3 text-muted-foreground", TEXT.note)} data-testid="route-line-unchecked">
-            {`Not checked: ${andList(line.unchecked)}`}
-          </p>
-        )}
-      </CollapsibleContent>
-    </Collapsible>
+        {line.chips.map((c) => (
+          <ToggleGroupItem
+            key={c.key}
+            value={c.key}
+            aria-label={words(c)}
+            data-testid="route-line-chip"
+            data-key={c.key}
+            className={cn(
+              // The search's chips' pill (FilterChips), filled in the tint
+              // while it is the way flown; its 44-point area round it.
+              "relative h-8 shrink-0 gap-1.5 rounded-full border border-border bg-card px-3 font-medium text-foreground",
+              "after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']",
+              "data-pressed:border-tint data-pressed:bg-tint data-pressed:text-primary-foreground hover:data-pressed:bg-tint",
+              TEXT.detail,
+            )}
+          >
+            <Route className="size-4 shrink-0" aria-hidden />
+            <span className={cn(c.warning && "text-caution-ink in-data-pressed:text-inherit")}>{c.label}</span>
+            {c.time && <span className="font-semibold">{c.time}</span>}
+            {c.warning && <TriangleAlert className="size-4 shrink-0 text-caution in-data-pressed:text-inherit" aria-hidden />}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+      {/* Said where the ways are, not left out: a way's fuel or ceiling
+          the planner could not check, the airplane's figure missing. */}
+      {line.unchecked && line.unchecked.length > 0 && (
+        <p className={cn("px-1 pt-1.5 text-muted-foreground", TEXT.note)} data-testid="route-line-unchecked">
+          {`Not checked: ${andList(line.unchecked)}`}
+        </p>
+      )}
+    </div>
   );
 }

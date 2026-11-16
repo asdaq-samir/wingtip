@@ -66,3 +66,19 @@ export function briefMarkOf(marks: Partial<Record<string, Mark>>): Mark | null {
   const all = Object.values(marks);
   return all.includes("stop") ? "stop" : all.includes("caution") ? "caution" : null;
 }
+
+/** A finding FPL says under its tiles (FplFindings). */
+export interface FindingRow {
+  key: string;
+  finding: Mark;
+  label: string;
+  detail: string;
+}
+
+/** The Brief's findings to act on, red first, each kind in the order a
+ *  pilot goes through them (lib/verdict); nothing found, none. */
+export function findingRows(items: Pick<VerdictItem, "key" | "label" | "finding" | "detail">[]): FindingRow[] {
+  const of = (finding: Mark) =>
+    items.filter((i) => i.finding === finding).map((i) => ({ key: i.key, finding, label: i.label, detail: i.detail }));
+  return [...of("stop"), ...of("caution")];
+}
