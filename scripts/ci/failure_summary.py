@@ -124,6 +124,8 @@ TABLE = [
     Row("test-web (generated)", "", "scripts/ci/web_generated.sh", note=GENERATED_NOTE),
     Row("test-web*", "", web("npx vitest run {}"), r"apps/web/(\S+\.test\.tsx?)$", "<src/.../name.test.ts>", "web"),
     suite("planner", "services/planner", "requirements-dev", "planner"),
+    # Flight-critical alone, where the planner's suite did not run (plan.py).
+    suite("flight", "services/planner", "requirements-dev", "planner"),
     suite("wingtip", "services/planner", "requirements-dev-wingtip", "py", "tests_wingtip"),
     suite("jobs", "services/jobs", "jobs-requirements-dev-jobs", "jobs", "charts/tests"),
     suite("ingest", "services/ingest", "ingest-requirements-dev", "ingest"),
@@ -173,7 +175,6 @@ TABLE = [
     guard("iPhone: SwiftLint", "scripts/ci/phone_lint.sh ios --base origin/main"),
     guard("Android: detekt", "scripts/ci/phone_lint.sh android --base origin/main"),
     guard("Website", "python3 apps/site/build.py && python3 apps/site/check.py"),
-    guard("Flight-critical: planner", py("services/planner", "requirements-dev", "pytest tests/test_flight_critical.py -v"), PY_NOTE),
     guard("Web: API types", web("npm run types", ""), WEB_LEG),
     guard("Web: tsc", web("npx tsc --noEmit")),
     guard("Web: ESLint", web("npx eslint . --max-warnings 0")),

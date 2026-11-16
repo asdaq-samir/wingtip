@@ -37,7 +37,9 @@ case "$part" in
     ;;
   build)
     cd apps/web
-    npx vite build
+    # No .br or .gz beside each file: nothing here reads or serves them,
+    # and the images' builds, which do, make them (vite.config.ts).
+    WINGTIP_PRECOMPRESS=0 npx vite build
     node scripts/first-load.mjs dist --budget "$FIRST_LOAD_BUDGET"
     ;;
   generated)

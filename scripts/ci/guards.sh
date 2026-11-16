@@ -24,9 +24,10 @@
 #   ENGINE   the crates' layering, the WebAssembly's size budget, no
 #            unused dependency (cargo-machete), rustfmt, clippy with
 #            warnings denied
-#   FLIGHT   flight-critical: the engine's FAA worked examples and the
-#            planner's KMSN-KOSH nav log (needs the engine's wheel and the
-#            planner's requirements)
+#   FLIGHT   flight-critical: the engine's FAA worked examples; and, on the
+#            Mac (no PART), the planner's KMSN-KOSH nav log, which needs the
+#            engine's wheel and the planner's requirements and in CI is
+#            test-python's (scripts/ci/python_suite.sh flight)
 #
 # Each area is on unless its variable is "false" (ci.yml sets them from
 # `changes`). INSTALL=true lets it install what it needs (npm ci, the
@@ -189,7 +190,8 @@ if part repo; then
   on IOS && start "iPhone: SwiftLint" scripts/ci/phone_lint.sh ios --base "$base"
   on ANDROID && start "Android: detekt" scripts/ci/phone_lint.sh android --base "$base"
   on SITE && start "Website" site
-  on FLIGHT && start "Flight-critical: planner" flight_planner
+  # In CI it is test-python's (its `flight` leg or the planner's suite), which has the engine's wheel.
+  [ -z "${PART:-}" ] && on FLIGHT && start "Flight-critical: planner" flight_planner
 fi
 part web && on WEB && start "Web: API types" web
 if part engine; then

@@ -57,6 +57,7 @@ BUDGETS = [
     ("test-ingest", 2, 2),
     ("test-weather", 2, 2),
     ("test-xplane", 1, 1),
+    ("test-flight", 2, 2),
     ("test-sim", 3, 4),
     ("Native Android / build", 5, 10),
     ("Native iOS / test", 6, 70),

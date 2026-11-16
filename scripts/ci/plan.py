@@ -29,8 +29,16 @@ images = [{"service": s} for s in IMAGES if due(s)]
 outputs = {"images": json.dumps(images)}
 for name in ("test-web", "test-engine", "test-gateway", "docs", "infra", "api", "arch", "site", "deps", "sim"):
     outputs[name] = "true" if due(name) else "false"
-# test-python's legs: the suites whose test-<leg> filter matched.
-outputs["python"] = json.dumps([s for s in ("planner", "wingtip", "jobs", "ingest", "weather", "xplane") if due(f"test-{s}")])
+# test-python's legs: the suites whose test-<leg> filter matched. And
+# flight-critical (the owner, 2026-11-09), on every change but words alone
+# (CODE is "false" for those): the planner's KMSN-KOSH nav log is among the
+# planner's own tests when that leg runs, and a leg of its own, `flight`,
+# when it does not. It was a guard, and every guard's leg waited about a
+# minute for the engine's wheel on its account (run 43783303925).
+legs = [s for s in ("planner", "wingtip", "jobs", "ingest", "weather", "xplane") if due(f"test-{s}")]
+if os.environ.get("CODE") != "false" and "planner" not in legs:
+    legs.append("flight")
+outputs["python"] = json.dumps(legs)
 # The phones' builds gate a merge (#499): a pull request, or a run
 # started by hand on one's branch, that changes an app's own tree (the
 # `ios-app` and `android-app` filters; decision 0044). Main's pushes and
@@ -40,8 +48,9 @@ outputs["python"] = json.dumps([s for s in ("planner", "wingtip", "jobs", "inges
 gate = os.environ["EVENT"] in ("pull_request", "workflow_dispatch")
 for name in ("android", "ios"):
     outputs[name] = "true" if gate and due(f"{name}-app") else "false"
-# The browser specs a pull request adds or changes, which e2e runs before
-# it merges (decision 0044), as Playwright takes them, from apps/web. Only
+# The browser specs a pull request adds or changes, which e2e runs beside
+# its gate (decision 0044: seen on the pull request, and "CI passed" does
+# not wait for them), as Playwright takes them, from apps/web. Only
 # those: a change to ci.yml runs every job, not every spec. A deleted one
 # is not there to run; a name with anything but plain characters is left
 # to the night, since the list reaches a shell; and a fork's pull request

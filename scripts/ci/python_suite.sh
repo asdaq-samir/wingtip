@@ -7,18 +7,23 @@
 # engine's wheel is installed by the step before this one, where the leg
 # imports it.
 #
-#   scripts/ci/python_suite.sh planner|wingtip|jobs|ingest|weather|xplane
+#   scripts/ci/python_suite.sh planner|wingtip|jobs|ingest|weather|xplane|flight
+#
+# `flight` is flight-critical alone (the owner, 2026-11-09: on every change
+# but words): the planner's KMSN-KOSH nav log, on a change that does not
+# run the planner's whole suite, which has it (scripts/ci/plan.py).
 #
 # The packages go into the running Python (`--system`), as on a fresh
 # runner; on the Mac, use scripts/dev/check.sh, which runs the same suites in
 # containers.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-leg=${1:?a leg: planner, wingtip, jobs, ingest, weather or xplane}
+leg=${1:?a leg: planner, wingtip, jobs, ingest, weather, xplane or flight}
 
 # The directory it runs in, its requirements there, and its tests.
 case "$leg" in
   planner) dir=services/planner req=requirements-dev.txt tests=tests ;;
+  flight) dir=services/planner req=requirements-dev.txt tests=tests/test_flight_critical.py ;;
   wingtip) dir=services/planner req=requirements-dev-wingtip.txt tests=tests_wingtip ;;
   jobs) dir=services/jobs req=requirements-dev-jobs.txt tests="charts/tests crash/tests" ;;
   ingest | weather) dir=services/$leg req=requirements-dev.txt tests=tests ;;

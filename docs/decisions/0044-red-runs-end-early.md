@@ -1,7 +1,7 @@
 # 0044. A red run ends early, a push is judged by what it adds, and the phones gate their own trees
 
 - **Date:** 2026-11-15
-- **Status:** Proposed: written with the change that carries it, for the owner to accept or amend
+- **Status:** Accepted (the owner, 2026-11-15, on the recommendations below: "just do your recommendations")
 - **Amends:** 0034 (the tiers), and what #499 made the phones' gate
 
 ## Context
@@ -97,21 +97,49 @@ and keep the ratchet; never raise a budget."
 8. **A conflicted pull request says so**, in one comment
    (`scripts/ci/pr_conflicts.py`): GitHub runs no CI on one, and #579
    sat a day with nothing red on it.
-9. **A pull request's own browser specs gate it** (rule 18). This is
-   where the three minutes do not hold: the stack costs 76 to 89 s
-   before the first test when its images exist, and 236 to 272 s when
-   the pull request also changes the app. No budget is raised for it;
-   whether it stays in the gate at that price is the owner's to say.
+9. **A pull request's own browser specs run on it** (rule 18). As first
+   built they gated it, and that is where the three minutes did not
+   hold: one changed spec took 4 min 07 s to "CI passed" (#582). No
+   budget was raised for it; item 12 settles it.
 10. **A red run's summary names each first error and its narrow
     command** (rule 12).
-11. **CI autofix only formats**, and leaves a branch pushed to in the
-    last 30 minutes alone. As asked, that window covers nearly every
-    failed run, which follows its push by minutes, so the bot acts only
-    on a rerun or a run started by hand; and `format.sh` formats a
-    language's whole tree, so its commit may touch files the pull
-    request did not. Both are the owner's to settle before it is relied
-    on. Neither it nor the conflict check can run until they are on
+11. **CI autofix only formats.** As first asked it also left alone a
+    branch pushed to in the last 30 minutes, which covers nearly every
+    failed run, and `format.sh` formats a language's whole tree, so its
+    commit could touch files the pull request did not; item 13 settles
+    both. Neither it nor the conflict check can run until they are on
     main: `schedule` and `workflow_run` read main's file.
+
+## Settled that evening, on the owner's word
+
+Asked what a smarter, smaller CI would be, the session answered with
+eight recommendations, and the owner said: "just do your
+recommendations." Items 1 to 3 above stand accepted with that, the
+phones' gate among them. The rest:
+
+12. **A pull request's own specs do not gate it.** They run beside the
+    gate, red is seen on the pull request and in the run's summary, and
+    "CI passed" waits for no browser job. About 2 min 11 s of #582's
+    4 min 07 s was the page's build, which any pull request changing web
+    code with its spec pays.
+13. **The autofix keeps one quiet rule: the branch still ends at the
+    commit that failed.** A session that has pushed again has moved it
+    on. And it commits only the pull request's own files of those
+    `format.sh` laid out.
+14. **No job waits for what it does not use** (rule 19). The planner's
+    flight-critical test moves from the guards to `test-python`, which
+    has the engine's wheel: every guard's leg had waited about a minute
+    for it, cold. It still runs on every change but words (the owner,
+    2026-11-09). And the build check makes no `.br` or `.gz`: 13 s
+    against 47 on the Mac, the first load's bytes the same (1,011,535).
+15. **Nothing more is added to CI until 2026-11-29.** This decision's
+    pull request adds some 1,500 lines to make CI smaller. Two numbers
+    are watched meanwhile, from the runs' list: pull-request runs for
+    each pull request merged, and the share of runs that end green (4 of
+    100 on 12-14 November).
+16. **What moved out of the gate is only worth it while main is green.**
+    Main's push and the night were red on 2026-11-15; a red main is
+    fixed before anything else lands on it (docs/CI.md, rule 10).
 
 ## What it does not do
 
@@ -119,9 +147,8 @@ and keep the ratchet; never raise a budget."
   265 s at its fastest; iOS is budgeted 4 to 6 minutes warm on GitHub's
   runner. Three minutes is the gate without them; a pull request that
   changes an app still waits for its build.
-- **Flight-critical stays on every change** (the owner, 2026-11-09). The
-  audit proposed starting `guards` without the engine's wheel; with a warm
-  cache the wheel costs about 12 s, so the rule was left alone.
+- **Flight-critical stays on every change** (the owner, 2026-11-09). It
+  moved between jobs (item 14); it was not narrowed.
 - **A draft pull request still runs CI.** Skipping it was proposed and
   dropped: a skipped required check reads as passed, so a draft marked
   ready could merge on it before the real run reported.

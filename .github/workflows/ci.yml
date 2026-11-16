@@ -203,7 +203,8 @@ jobs:
     name: Engine wheel
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
-    # Every change but words alone: the guards' flight-critical imports it.
+    # Every change but words alone: flight-critical imports it (test-python's
+    # `flight` leg, or the planner's own suite when that runs).
     if: needs.changes.outputs.docs-only != 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -620,6 +621,7 @@ jobs:
           EVENT: ${{ github.event_name }}
           SPEC_FILES: ${{ steps.filter.outputs.specs_files }}
           FORK: ${{ github.event.pull_request.head.repo.fork }}
+          CODE: ${{ steps.docsonly.outputs.code }}
         run: python3 scripts/ci/plan.py
 
   # The browser suite (apps/web/e2e, Playwright) against the stack a pilot
@@ -630,7 +632,10 @@ jobs:
   # After merge (docs/CI.md, "The tiers"; the owner, 2026-11-10): main's
   # push runs the @smoke and @flight-critical tests on the phone project,
   # over two shards; the night runs everything over ten. A pull request
-  # runs none; a failure on main is one issue (nightly-issue.yml). Each
+  # runs only the specs it adds or changes, and "CI passed" does not wait
+  # for them (decision 0044: 4 min 07 s for one spec, #582), so a red one
+  # is seen and holds nothing; a failure on main is one issue
+  # (nightly-issue.yml). Each
   # shard pulls its images and restores its caches in the background and
   # starts each service the moment it can: setup is about a minute and a
   # half. Not after e2e-images, which it would wait on; it pulls the image
@@ -1151,12 +1156,12 @@ jobs:
   # links, file sizes, versions, brand tokens, ruff, the phones' lint.
   # `web`: tsc, ESLint, Prettier, knip. `engine`: rustfmt, clippy, machete.
   # And flight-critical (the owner, 2026-11-09), on every change but words
-  # alone: the engine's FAA examples (`engine`), the planner's nav log (`repo`).
+  # alone: the engine's FAA examples here (`engine`); the planner's nav log
+  # is test-python's, which has the engine's wheel, so no leg waits for it.
   guards:
     name: Guards (${{ matrix.part }})
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, engine-wheel]
-    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.engine-wheel.result != 'failure' }}
+    needs: [changes]
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -1182,7 +1187,7 @@ jobs:
       - if: matrix.part == 'web' && needs.changes.outputs.test-web == 'true' && steps.node.outputs.cache-hit != 'true'
         run: echo "::notice title=Cache miss::npm (guards)"
       # Clippy's and flight-critical's builds, as test-engine keeps its own.
-      - if: matrix.part == 'engine' && (needs.changes.outputs.test-engine == 'true' || needs.engine-wheel.result == 'success')
+      - if: matrix.part == 'engine' && (needs.changes.outputs.test-engine == 'true' || needs.changes.outputs.docs-only != 'true')
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         id: cargo
         with:
@@ -1193,12 +1198,8 @@ jobs:
             engine/target
           key: cargo-guards-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/Cargo.lock', 'engine/rust-toolchain.toml') }}-${{ hashFiles('engine/**/*.rs') }}
           restore-keys: cargo-guards-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/Cargo.lock', 'engine/rust-toolchain.toml') }}-
-      - if: matrix.part == 'engine' && (needs.changes.outputs.test-engine == 'true' || needs.engine-wheel.result == 'success') && steps.cargo.outputs.cache-matched-key == ''
+      - if: matrix.part == 'engine' && (needs.changes.outputs.test-engine == 'true' || needs.changes.outputs.docs-only != 'true') && steps.cargo.outputs.cache-matched-key == ''
         run: echo "::notice title=Cache miss::cargo-guards"
-      - if: matrix.part == 'repo' && needs.engine-wheel.result == 'success'
-        uses: ./.github/actions/engine-wheel
-        with:
-          mode: install
       - name: The guards
         env:
           PART: ${{ matrix.part }}
@@ -1210,7 +1211,7 @@ jobs:
           ENGINE: ${{ needs.changes.outputs.test-engine }}
           IOS: ${{ needs.changes.outputs.ios }}
           ANDROID: ${{ needs.changes.outputs.android }}
-          FLIGHT: ${{ needs.engine-wheel.result == 'success' }}
+          FLIGHT: ${{ needs.changes.outputs.docs-only != 'true' }}
         run: scripts/ci/guards.sh
       - if: github.event_name != 'pull_request' && steps.cargo.outputs.cache-primary-key != '' && steps.cargo.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -1661,7 +1662,7 @@ jobs:
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, android, ios, e2e]
+    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, android, ios]
     if: always()
     steps:
       - name: Every job passed or was not needed
