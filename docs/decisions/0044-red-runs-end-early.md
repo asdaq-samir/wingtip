@@ -82,6 +82,37 @@ fail; `dependency-review` covers a pull request's new dependencies) and
 the `infra` job's own shellcheck (`guards` runs it over every tracked
 script).
 
+## Added the same day, on the owner's word through the lead (Mini3)
+
+"Measure before and after as you did. Keep the PR under about 3 minutes
+and keep the ratchet; never raise a budget."
+
+6. **The hook checks the web without Node.** Where the Mac has no Node
+   and Docker runs, Prettier and ESLint run on the web files a push
+   changes, in check.sh's image: 12 s became about 15 s for a web push,
+   3.3 s unchanged for any other. The Mac mini has no Node, and four
+   unformatted web files reached CI in the wave for it.
+7. **A generated file is checked before the job builds or tests
+   further** (docs/CI.md, rule 17).
+8. **A conflicted pull request says so**, in one comment
+   (`scripts/ci/pr_conflicts.py`): GitHub runs no CI on one, and #579
+   sat a day with nothing red on it.
+9. **A pull request's own browser specs gate it** (rule 18). This is
+   where the three minutes do not hold: the stack costs 76 to 89 s
+   before the first test when its images exist, and 236 to 272 s when
+   the pull request also changes the app. No budget is raised for it;
+   whether it stays in the gate at that price is the owner's to say.
+10. **A red run's summary names each first error and its narrow
+    command** (rule 12).
+11. **CI autofix only formats**, and leaves a branch pushed to in the
+    last 30 minutes alone. As asked, that window covers nearly every
+    failed run, which follows its push by minutes, so the bot acts only
+    on a rerun or a run started by hand; and `format.sh` formats a
+    language's whole tree, so its commit may touch files the pull
+    request did not. Both are the owner's to settle before it is relied
+    on. Neither it nor the conflict check can run until they are on
+    main: `schedule` and `workflow_run` read main's file.
+
 ## What it does not do
 
 - **A phone build is not three minutes.** Android's Gradle step alone took
