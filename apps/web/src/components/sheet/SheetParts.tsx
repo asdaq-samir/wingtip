@@ -2,7 +2,7 @@ import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import { cn } from "cn";
 import { PanelSize, type PanelState } from "../../lib/mapChrome";
 import TabKept from "../TabKept";
-import { AT_PILL, PILL_BODY, RISEN_FACE } from "./insets";
+import { AT_PILL, HOLD_AT_EDGE, PILL_BODY, RISEN_FACE } from "./insets";
 import { SheetPage, type SheetPages } from "./SheetPages";
 
 /** The first row's room under the grabber: ten points, the grabber's bar
@@ -70,14 +70,6 @@ export interface PartsProps {
   pages?: SheetPages;
 }
 
-/** Back by the Drawer's snap offset and the finger's movement, on its
- *  curve, held still under a finger. Read through the popup's own copies
- *  (MapPanel's --sheet-offset and --sheet-swipe): Base UI registers its
- *  variables with `inherits: false`, so under the popup they were 0 and
- *  nothing followed -- a top sheet's search rode off the screen at the
- *  pill (consoles.spec, 2026-11-10). */
-const FOLLOW =
-  "[transform:translateY(calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
 /** The body cut off at a bottom sheet's figures by the same offset. */
 const CUT_BOTTOM = "[clip-path:inset(0_0_max(0px,calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)))_0)]";
 
@@ -125,7 +117,7 @@ export function SheetParts(p: PartsProps) {
   // popup, laid out at its full height, slides: moved back by the Drawer's
   // own offset and the finger's (its CSS variables), on its curve, and the
   // body cut off where those parts begin: the sheet's figures.
-  const follows = p.onPhone ? FOLLOW : undefined;
+  const follows = p.onPhone ? HOLD_AT_EDGE : undefined;
 
   // A page's first row: the one search on Search, FPL's bar on FPL (its
   // twin, FplBar), one size on both, so a turn of the page moves nothing

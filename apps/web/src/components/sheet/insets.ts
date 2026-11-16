@@ -82,6 +82,18 @@ export const RISEN_FACE = `${PILL_BODY} group-data-risen/sheet:visible`;
  *  recording, 2026-11-16: "Still see the flicker at the end"). */
 export const RISEN_OVER = `${PILL_BODY} ${HANDED} opacity-0 group-data-swiping/sheet:opacity-100`;
 
+/** Held at a sheet's free edge however far the sheet is slid: moved back by
+ *  the Drawer's snap offset and the finger's movement, on its curve, held
+ *  still under a finger -- the foot's figures and bar (SheetParts), a
+ *  card's tabs (CardTabBar), sticky at its scroller's foot. Read through
+ *  the popup's own copies (--sheet-offset and --sheet-swipe, SheetDrawer
+ *  and CardStack): Base UI registers its variables with `inherits: false`,
+ *  so under the popup they were 0 and nothing followed -- a top sheet's
+ *  search rode off the screen at the pill (consoles.spec, 2026-11-10). 0
+ *  beside the side panel. */
+export const HOLD_AT_EDGE =
+  "[transform:translateY(calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
+
 /** A sheet's snap points and each size's, one constant per edge. */
 export function snapsOf(fromBottom: boolean) {
   return fromBottom ? { at: BOTTOM_SNAPS, points: BOTTOM_POINTS } : { at: TOP_SNAPS, points: TOP_POINTS };

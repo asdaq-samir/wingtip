@@ -19,7 +19,7 @@ const SETTLE_MS = MOTION.drawer * 1000 + 50;
  * "Maybe having common code will remove the bugs from fpl?").
  *
  * The foot is held at the sheet's visible edge at every size (SheetParts'
- * FOLLOW), so its resting edge is read each frame, not remembered: the
+ * sheet/insets' HOLD_AT_EDGE), so its resting edge is read each frame, not remembered: the
  * window's own foot is behind Safari's floating toolbar.
  *
  * By the row's transform alone, nothing laid out again or built: a frame
@@ -73,11 +73,9 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
 
 /** Where the foot's edge is once the sheet is at rest: its place now with
  *  its own and the sheet's transforms taken off, which cancel at rest (the
- *  foot is moved back by the sheet's offset, SheetParts' FOLLOW). As the
- *  sheet settles the two are eased apart, the Drawer's and the foot's, so
- *  its place now wobbled the held row by up to 6 points at a pull down's
- *  end (measured on the live build in Chromium at iPhone size, 2026-11-16).
- */
+ *  foot is moved back by the sheet's offset, sheet/insets' HOLD_AT_EDGE),
+ *  so one place at every moment of a drag and a settle, whatever the two
+ *  easings do on the way. */
 function restingEdge(foot: HTMLElement | null) {
   if (!foot) return window.innerHeight;
   const moved = (el: Element | null) => (el ? new DOMMatrixReadOnly(getComputedStyle(el).transform).m42 : 0);

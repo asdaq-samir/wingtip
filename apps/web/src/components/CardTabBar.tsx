@@ -3,15 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { TabsList, TabsTrigger } from "./ui/tabs";
 import { TEXT } from "../lib/text";
-
-/** Held at the foot of the part of the card in sight: a phone's card is laid
- *  out at its full height and slid down by the Drawer's snap offset and the
- *  finger's movement (CardStack's --sheet-offset and --sheet-swipe), so the
- *  bar, sticky at the scroller's foot, is moved back up by the same, on the
- *  same curve and held still under a finger: SheetParts' FOLLOW, which keeps
- *  the sheet's figures at its free edge. 0 beside the side panel. */
-const FLOATING =
-  "[transform:translateY(calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
+import { HOLD_AT_EDGE } from "./sheet/insets";
 
 /** Each trigger's hit area, the trigger itself, 56 tall in the 64-point bar
  *  (the stacked icon and word, the same on every tab so nothing moves on a
@@ -27,19 +19,36 @@ const TRIGGER_AREA = "before:absolute before:inset-0 before:content-['']";
  *  as only the picked tab shows its word. */
 export type CardTab<T extends string> = { value: T; label: string; icon: LucideIcon; hint?: string | null; badge?: ReactNode };
 
-/** A count over an icon's corner (the airport's charts, the airplane's flights). */
-export function TabCount({ count, testId }: { count: number; testId?: string }) {
+/** A count over an icon's corner (the airport's charts, the airplane's
+ *  flights), in a finding's colour where it counts findings (`mark`: FPL's
+ *  Brief, red where one is a stop, amber where all are cautions). */
+export function TabCount({ count, testId, mark }: { count: number; testId?: string; mark?: "stop" | "caution" }) {
   return (
     <span
       aria-hidden
       data-testid={testId}
+      data-finding={mark}
       className={cn(
-        "pointer-events-none absolute -top-2 left-full -ml-2 min-w-4 rounded-full bg-foreground px-1 text-center leading-4 font-semibold tabular-nums text-background",
+        "pointer-events-none absolute -top-2 left-full -ml-2 min-w-4 rounded-full px-1 text-center leading-4 font-semibold tabular-nums",
+        mark === "stop" ? "bg-destructive text-white" : mark === "caution" ? "bg-caution text-black" : "bg-foreground text-background",
         TEXT.caption,
       )}
     >
       {count}
     </span>
+  );
+}
+
+/** The floating bar's capsule of glass, a card's tabs' (CardTabBar) and
+ *  FPL's actions' (FplTabBar) alike: glass only on what floats over the
+ *  map (rules.md), the bar's own blur and fill. */
+export function GlassBar({ className, children }: { className?: string; children: ReactNode }) {
+  return (
+    <div
+      className={cn("liquid-glass rounded-full p-1 [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)]", className)}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -88,11 +97,11 @@ export function CardTabBar<T extends string>({
     // in the flow at the pages' end, so its own room is the last row's room
     // to clear it. Only the capsule takes taps.
     <div
-      className={cn("pointer-events-none sticky bottom-0 z-10 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", FLOATING)}
+      className={cn("pointer-events-none sticky bottom-0 z-10 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", HOLD_AT_EDGE)}
       data-testid={testId}
     >
       {/* The capsule of glass round the stock list, the list itself clear on it. */}
-      <div className="liquid-glass pointer-events-auto [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)] mx-auto w-fit max-w-full rounded-full p-1">
+      <GlassBar className="pointer-events-auto mx-auto w-fit max-w-full">
         <TabsList
           activateOnFocus
           className="inline-grid max-w-full auto-cols-fr grid-flow-col rounded-full bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-14"
@@ -124,7 +133,7 @@ export function CardTabBar<T extends string>({
             </TabsTrigger>
           ))}
         </TabsList>
-      </div>
+      </GlassBar>
     </div>
   );
 }

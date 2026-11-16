@@ -1,29 +1,10 @@
 import type { ReactNode } from "react";
-import { cn } from "cn";
-import { TEXT } from "../../../../lib/text";
 import { useVerdict } from "../../../../lib/verdict";
 import { findingRows } from "../../hooks/planWords";
 import { CardAction as Action } from "../../../../components/CardAction";
+import { GlassBar, TabCount } from "../../../../components/CardTabBar";
 import { ICON } from "../../../../lib/icons";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
-
-/** A count over a glyph's corner, in its finding's colour. */
-function Count({ count, mark, testId }: { count: number; mark: "stop" | "caution"; testId: string }) {
-  return (
-    <span
-      aria-hidden
-      data-testid={testId}
-      data-finding={mark}
-      className={cn(
-        "pointer-events-none absolute -top-2 left-full -ml-2 min-w-4 rounded-full px-1 text-center leading-4 font-semibold tabular-nums",
-        mark === "stop" ? "bg-destructive text-white" : "bg-caution text-black",
-        TEXT.caption,
-      )}
-    >
-      {count}
-    </span>
-  );
-}
 
 /**
  * FPL's actions as a floating glass bar at the sheet's foot (the owner,
@@ -36,7 +17,7 @@ function Count({ count, mark, testId }: { count: number; mark: "stop" | "caution
  * "send"). From half up; at the pill the figures alone, large (FlightFoot).
  * What the Brief found to act on is counted on its glyph's corner, red
  * where one is a stop, amber where all are cautions, as the airport card's
- * tabs carry their counts (CardTabBar's TabCount): the findings themselves
+ * tabs carry theirs (CardTabBar's TabCount, in the finding's colour): the findings themselves
  * are the Brief's, which opens with them (the owner, 2026-11-16: "isn't
  * there a better place for them? Like brief"), not a list on FPL. The
  * Profile's own altitude caution the same, a 1. Both said in their names.
@@ -51,13 +32,13 @@ export function FplTabBar({ vm, share }: { vm: PlanWorkspaceModel; share: ReactN
       {/* The glass capsule, the airport card's bar's (CardTabBar): glass
           only on what floats (rules.md). Each button 56 tall in its
           columns, side by side, so their areas are over 44 points. */}
-      <div className="liquid-glass grid h-16 max-w-full auto-cols-fr grid-flow-col rounded-full p-1 [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)]">
+      <GlassBar className="grid h-16 max-w-full auto-cols-fr grid-flow-col">
         <Action
           bar
           icon={
             <span className="relative flex">
               <ICON.brief />
-              {briefMark && found > 0 && <Count count={found} mark={briefMark} testId="route-brief-count" />}
+              {briefMark && found > 0 && <TabCount count={found} mark={briefMark} testId="route-brief-count" />}
             </span>
           }
           label="Brief"
@@ -72,7 +53,7 @@ export function FplTabBar({ vm, share }: { vm: PlanWorkspaceModel; share: ReactN
           icon={
             <span className="relative flex">
               <ICON.profile />
-              {altitudeMark && <Count count={1} mark="caution" testId="route-profile-count" />}
+              {altitudeMark && <TabCount count={1} mark="caution" testId="route-profile-count" />}
             </span>
           }
           label="Profile"
@@ -88,7 +69,7 @@ export function FplTabBar({ vm, share }: { vm: PlanWorkspaceModel; share: ReactN
           testId="route-profile"
         />
         {share}
-      </div>
+      </GlassBar>
     </div>
   );
 }

@@ -304,7 +304,7 @@ function CardDrawer({
                 p.look,
                 // Its own snap offset and drag, from the sheet's offset it is
                 // drawn in (--sheet-base, SheetDrawer). Copied for what is
-                // inside (SheetParts' FOLLOW): Base UI's own do not inherit.
+                // inside (sheet/insets' HOLD_AT_EDGE): Base UI's own do not inherit.
                 onPhone &&
                   "[transform:translateY(calc(var(--drawer-snap-point-offset)-var(--sheet-base,0px)+var(--drawer-swipe-movement-y)))] [--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-swipe:var(--drawer-swipe-movement-y)]",
                 onPhone && p.ready && EASE,

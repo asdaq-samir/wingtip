@@ -692,7 +692,8 @@ the airplane's strip (`features/plan/components/workspace/FplBar`, its
 line, the airplane and the altitude giving way first; the Brief, the Nav
 Log, the Profile and Share are the floating glass bar at the sheet's foot
 from half up, `FplTabBar` in `FlightFoot`, `CardAction`s in its `bar` look
-in `CardTabBar`'s capsule, each opening its card, Share the route's
+in the cards' tabs' capsule (`CardTabBar`'s `GlassBar`, held at the
+foot as they are by sheet/insets' `HOLD_AT_EDGE`), each opening its card, Share the route's
 `ShareMenu` as `"send"`, out of sight at the pill under the figures
 (sheet/insets' `RISEN_OVER`, in sight only while a finger has the
 sheet). The figures under the route are FPL's pill too, one copy at
@@ -711,7 +712,8 @@ sheet to half as a tap on the foot does; `feel("detent")`
 as the sheet settles (MapPanel); in flight the tiles are `FplActions`
 at the top of the flying drawer. Under the route, `FplRoute`: the
 figures at their own size, the Routes' chips next. The Brief's findings
-to act on are counted on its button in the bar (`FplTabBar`'s `Count`,
+to act on are counted on its button in the bar (the cards' `TabCount` with its finding's
+`mark`,
 from `lib/verdict` through `planWords`' `findingRows`), the findings
 themselves the Brief's). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
 a turn of the page moves nothing and the head's first row, and the map's
