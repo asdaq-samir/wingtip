@@ -186,5 +186,18 @@ export function SheetDrawer({
  *  (usePanelDragging): what is drawn under the pill is drawn as it comes. */
 function Told({ swiping, ...own }: ComponentProps<"div"> & { swiping: boolean }) {
   useEffect(() => usePanelDragging.setState({ dragging: swiping }), [swiping]);
+  // And over at once as the finger lifts, whatever the Drawer's state says:
+  // a press that never became a swipe left it "swiping", and the pill drawn
+  // as half (MapPanel's atPill) with nothing moving (a touch drag in
+  // Chromium, 2026-11-16).
+  useEffect(() => {
+    if (!swiping) return;
+    const over = () => usePanelDragging.setState({ dragging: false });
+    const ends = ["pointerup", "pointercancel", "touchend", "touchcancel"] as const;
+    for (const e of ends) window.addEventListener(e, over, true);
+    return () => {
+      for (const e of ends) window.removeEventListener(e, over, true);
+    };
+  }, [swiping]);
   return <div {...own} />;
 }

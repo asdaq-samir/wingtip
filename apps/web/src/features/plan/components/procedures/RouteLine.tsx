@@ -4,7 +4,6 @@ import { cn } from "cn";
 import { ToggleGroup, ToggleGroupItem } from "../../../../components/ui/toggle-group";
 import { TEXT } from "../../../../lib/text";
 import { gal } from "../../../../lib/format";
-import { andList } from "../../../../lib/listWords";
 
 /** FPL's route line's choices (PlanWorkspace's routeLine): each chip's
  *  key and words, and what its way meets, in amber; the one picked. */
@@ -14,9 +13,6 @@ export interface RouteLineChoices {
   chips: { key: string; label: string; warning: string | null; time: string | null; nm: number | null; gal: number | null }[];
   picked: string;
   onPick: (key: string) => void;
-  /** What the planner could not check the ways for, in the engine's words
-   *  ("service ceiling", "fuel", "start and taxi fuel"): said under them. */
-  unchecked?: string[];
   /** The ways are the last airplane's or time's while the new ones come
    *  (useRouteWays): the row kept in its place, dimmed, its cards not to be
    *  picked till they are this airplane's. */
@@ -34,7 +30,11 @@ export interface RouteLineChoices {
  * Hr6eKFhyFBLjAAAmEaq8HB): the miles and fuel of the way flown are the
  * figures' at the sheet's foot, each way's said in its chip's name to a
  * screen reader. A way that meets something says so in amber, its name
- * too: the planner warns, never refuses.
+ * too: the planner warns, never refuses. What the planner could not check
+ * the ways for is not said under them (the owner, 2026-11-16: "Why am I
+ * seeing the not checked line?", then "Ok"): a weather source down is the
+ * Brief's to say, counted on FPL's Brief button, and an airplane's figure
+ * missing its fuel breakdown's, which asks for it.
  */
 /** A way's miles and fuel, "105 nm, 10.3 gal", as far as they are known. */
 const figures = (c: RouteLineChoices["chips"][number]) =>
@@ -88,13 +88,6 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
-      {/* Said where the ways are, not left out: a way's fuel or ceiling
-          the planner could not check, the airplane's figure missing. */}
-      {line.unchecked && line.unchecked.length > 0 && (
-        <p className={cn("px-1 pt-1.5 text-muted-foreground", TEXT.note)} data-testid="route-line-unchecked">
-          {`Not checked: ${andList(line.unchecked)}`}
-        </p>
-      )}
     </div>
   );
 }

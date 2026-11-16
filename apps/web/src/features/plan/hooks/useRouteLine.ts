@@ -204,7 +204,7 @@ export function useRouteLine({
       typedNm: browsing ? browsing.ownNm : ownNm,
       typedGal: browsing ? browsing.ownGal : ownGal,
     });
-    return cards ? { chips: cards, picked: lineKey, onPick: applyChip, unchecked: routeWays?.unchecked ?? [], stale: waysStale } : null;
+    return cards ? { chips: cards, picked: lineKey, onPick: applyChip, stale: waysStale } : null;
   }, [vfrRoute, chips, routeWays, lineKey, applyChip, browsing, ownMinutes, ownGround, ownNm, ownGal, waysStale]);
 
   // The chips' ways on the chart beside the course, each its time on its
