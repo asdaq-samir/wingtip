@@ -15,9 +15,6 @@ write | nightly-issue.yml
 # run's report, and a failing run is what it is looking for.
 or-true | ci.yml | pytest ${{ matrix.suite == 'wingtip'
 or-true | ci.yml | npx vitest run --reporter=default --reporter=json
-# xcodebuild's verdict is read from its log on the step's last line
-# (`grep -q "** TEST SUCCEEDED **"`), after its errors are printed.
-or-true | native-ios.yml | test > "$RUNNER_TEMP/xcodebuild.log" 2>&1 || true
 
 # The run blocks longer than 15 lines when the guard came in (2026-11-10):
 # workflow | job | step | lines. Each is to move into a script.

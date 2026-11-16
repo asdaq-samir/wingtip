@@ -76,13 +76,9 @@ jobs:
       # engine_affected.py reads the first such line's crates.
       - if: steps.affected.outputs.contract == 'true'
         run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine --test contract
-      - env:
-          PACKAGES: ${{ steps.affected.outputs.packages }}
-        run: |
-          # shellcheck disable=SC2086  # engine_affected.py's -p flags, one a word
-          cargo test --profile ci --manifest-path engine/Cargo.toml $PACKAGES
       # The committed WebAssembly must be what engine/ builds, or the browser
-      # runs other rules than the planner and the phones.
+      # runs other rules than the planner and the phones. Before the tests,
+      # so a stale one is said without waiting for them.
       - name: The engine's WebAssembly is the committed one
         if: steps.affected.outputs.wasm == 'true'
         run: |
@@ -91,6 +87,11 @@ jobs:
             echo "::error title=Engine wasm out of date::apps/web/src/lib/engine/wingtip-engine.wasm is not what engine/ builds: run scripts/build/build-engine-wasm.sh and commit the file."
             exit 1
           }
+      - env:
+          PACKAGES: ${{ steps.affected.outputs.packages }}
+        run: |
+          # shellcheck disable=SC2086  # engine_affected.py's -p flags, one a word
+          cargo test --profile ci --manifest-path engine/Cargo.toml $PACKAGES
       - if: github.event_name != 'pull_request' && steps.cargo.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
@@ -378,6 +379,7 @@ jobs:
                 - apps/ios/**
                 - scripts/build/ios-strings.sh
                 - scripts/ci/content-mtimes.py
+                - scripts/ci/ios_test.sh
                 - .github/workflows/native-ios.yml
               android-app:
                 - apps/android/**
@@ -536,6 +538,7 @@ jobs:
                 - design/**
                 - scripts/ci/content-mtimes.py
                 - scripts/build/ios-strings.sh
+                - scripts/ci/ios_test.sh
                 - .github/workflows/native-ios.yml
               android:
                 - apps/android/**

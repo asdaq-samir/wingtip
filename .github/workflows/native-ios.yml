@@ -39,6 +39,7 @@ on:
       - scripts/build/engine-contract-apps.*
       - scripts/ci/content-mtimes.py
       - scripts/build/ios-strings.sh
+      - scripts/ci/ios_test.sh
       - .github/workflows/native-ios.yml
   workflow_dispatch:
     inputs:
@@ -142,27 +143,14 @@ jobs:
         env:
           DEVICE: ${{ matrix.device }}
         run: echo "id=$(xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "$DEVICE")" >> "$GITHUB_OUTPUT"
-      # A pull request: the unit tests, in WingtipUnit, which builds no UI
-      # test. Main's push: those and CardSmokeTests, the one UI smoke (the
-      # airport card opened, scrolled and closed). The launch, flow and
-      # accessibility tests, the card suites and the store shots are the night's.
-      - name: Built and tested on the simulator
+      # Built, then the string catalog's check, then the tests, so a stale
+      # catalog fails before they run. scripts/ci/ios_test.sh picks them: a
+      # pull request's unit tests, main's push's CardSmokeTests too (the one
+      # UI smoke), the night's whole suite.
+      - name: Built for the simulator
         env:
           SIM: ${{ steps.sim.outputs.id }}
-        run: |
-          host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")
-          dest=(-destination "platform=iOS Simulator,id=$SIM")
-          only=(-only-testing:WingtipTests) scheme=WingtipUnit
-          [ "$UNIT_ONLY" = true ] || only+=(-only-testing:WingtipUITests/CardSmokeTests) scheme=Wingtip
-          [ "$FULL" = true ] && only=() scheme=Wingtip
-          xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme "$scheme" -configuration Debug "${dest[@]}" \
-            -derivedDataPath "$RUNNER_TEMP/derived" -resultBundlePath "$RUNNER_TEMP/Wingtip.xcresult" "${only[@]}" \
-            CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= COMPILER_INDEX_STORE_ENABLE=NO WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" \
-            test > "$RUNNER_TEMP/xcodebuild.log" 2>&1 || true
-          # Each error with the line after it (a cause), the tests, the verdict.
-          grep -nE "error:|error\b|Could not|Test (Case|Suite)|Executed|\*\* (BUILD|TEST)" -A6 "$RUNNER_TEMP/xcodebuild.log" | tail -200 || true
-          grep -E "✔ Test|✘ Test|Test run with" "$RUNNER_TEMP/xcodebuild.log" || true
-          grep -qE "\*\* TEST SUCCEEDED \*\*" "$RUNNER_TEMP/xcodebuild.log"
+        run: scripts/ci/ios_test.sh build
       # The string catalog holds every word the Swift says: the build above
       # extracted them (SWIFT_EMIT_LOC_STRINGS), and xcodebuild, unlike
       # Xcode's editor, never writes them back, so a change that adds or
@@ -170,6 +158,10 @@ jobs:
       # syncs. After the build, since it reads the build's .stringsdata.
       - name: The string catalog is what the Swift says
         run: scripts/build/ios-strings.sh --check --derived-data "$RUNNER_TEMP/derived"
+      - name: Tested on the simulator
+        env:
+          SIM: ${{ steps.sim.outputs.id }}
+        run: scripts/ci/ios_test.sh test
       - name: DerivedData, kept
         if: always() && matrix.device == 'iPhone' && steps.derived.outputs.cache-hit != 'true' && (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
         continue-on-error: true
