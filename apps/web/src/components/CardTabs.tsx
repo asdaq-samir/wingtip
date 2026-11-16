@@ -21,27 +21,23 @@ import { PINNED_BELOW } from "./PinnedHead";
 /** The stock Tabs round a card's pages and, last, its floating bar. `top`
  *  is useTabScroll's setter: the mark where a page starts, sticky under the
  *  card's head (PINNED_BELOW), where a tab not yet seen opens, which keeps
- *  the pages tall enough for the bar to stay at the card's foot. `pin`,
- *  where the pages are under another head than a card's: its sticky top
- *  (FPL's, under its bar and route's row). */
+ *  the pages tall enough for the bar to stay at the card's foot. */
 export function CardTabPages<T extends string>({
   tab,
   onPick,
   top,
   bar,
-  pin = PINNED_BELOW,
   children,
 }: {
   tab: T;
   onPick: (tab: T) => void;
   top: (node: HTMLDivElement | null) => void;
   bar: ReactNode;
-  pin?: string;
   children: ReactNode;
 }) {
   return (
     <Tabs value={tab} onValueChange={(next) => onPick(next as T)} className="gap-0">
-      <div ref={top} aria-hidden className={cn("sticky h-0", pin)} />
+      <div ref={top} aria-hidden className={cn("sticky h-0", PINNED_BELOW)} />
       {children}
       {bar}
     </Tabs>

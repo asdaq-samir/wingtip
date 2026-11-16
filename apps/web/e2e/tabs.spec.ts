@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, sideDrawer, slow, openTab, openSection, panelTabs, openBrief, closeSidebarWithTheStockKey } from "./helpers";
+import { settle, sideDrawer, slow, openTab, openSection, panelTabs, openBrief, closeCard } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -43,8 +43,8 @@ test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on
   });
   await planned(page);
   const drawer = sideDrawer(page);
-  // Marked on the Brief's tab, and in the Brief on En route.
-  await expect(drawer.getByTestId("route-brief-mark")).toHaveAttribute("data-finding", "stop");
+  // Marked on the chips' Brief, and in the Brief on En route.
+  await expect(drawer.getByTestId("route-brief")).toHaveAttribute("data-finding", "stop");
   await openTab(page, "Brief");
   await expect(page.getByTestId("panel-tab-mark-enroute")).toHaveAttribute("data-finding", "stop");
   const weather = drawer.getByTestId("verdict-weather");
@@ -182,7 +182,7 @@ test("Depart has the takeoff's runway check: a runway too short is red, on the t
   });
   await planned(page);
   const drawer = sideDrawer(page);
-  await expect(drawer.getByTestId("route-brief-mark")).toHaveAttribute("data-finding", "stop");
+  await expect(drawer.getByTestId("route-brief")).toHaveAttribute("data-finding", "stop");
   await openTab(page, "Depart");
   await expect(page.getByTestId("panel-tab-mark-depart")).toHaveAttribute("data-finding", "stop");
   await expect(drawer.getByTestId("tl-flag")).toContainText("Runway too short");
@@ -265,8 +265,8 @@ test("the Brief opens on whether to go and a card for each part of the flight, a
   await glance.getByTestId("brief-glance-enroute").click();
   await expect(panelTabs(page).getByRole("tab", { name: "En route", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(glance).toHaveCount(0);
-  // Back to the cards by the stock Escape, the Brief's tab still up.
-  await closeSidebarWithTheStockKey(page);
+  // Back to the cards, the Brief still open.
+  await closeCard(page, "brief-close");
   await expect(drawer.getByTestId("brief-glance")).toBeVisible();
-  await expect(drawer.getByTestId("route-brief")).toHaveAttribute("aria-selected", "true");
+  await expect(drawer.getByTestId("brief-card")).toBeVisible();
 });

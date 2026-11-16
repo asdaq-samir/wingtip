@@ -3,8 +3,10 @@ import {
   consolePage,
   grabberTo,
   inSheet,
+  openBrief,
   openConsole,
   openMapSettings,
+  openNavLog,
   openPanel,
   openProfile,
   sheetUpToType,
@@ -185,8 +187,46 @@ export const CARDS: CardRow[] = [
     entries: [{ name: "map button", open: async (p) => (await go(p, ROUTE), await openMapSettings(p)), back: "map" }],
     not: { sideways: "its chart tiles wrap in a grid, none slides", position: "nothing opens inside it" },
   },
-  // The Brief, the Nav Log and the Profile are FPL's tabs, not cards
-  // (FplTabs; the owner, 2026-11-14): fpl-tabs.spec checks them.
+  {
+    name: "Brief",
+    card: "brief-card",
+    close: "brief-close",
+    entries: [
+      { name: "the plan", open: async (p) => (await go(p, ROUTE), await openBrief(p)), back: "plan" },
+      { name: "link (open=brief)", open: (p) => go(p, `${ROUTE}&open=brief`), back: "plan" },
+    ],
+    not: { sideways: "no sideways row on its glance", position: "its pages are a stack of their own (briefing.spec)" },
+  },
+  {
+    name: "Nav Log",
+    card: "navlog-sheet",
+    close: "navlog-close",
+    // Its totals: "65.3 nm · 35m · 9.0 gal".
+    pillLine: /nm · .+ · .*gal/,
+    // With an airplane, for its time and fuel (nothing assumes one, the
+    // owner 2026-11-09: with none they read "—").
+    entries: [
+      { name: "the plan", open: async (p) => (await pickAirplane(p), await go(p, ROUTE), void (await openNavLog(p))), back: "plan" },
+      { name: "link (open=navlog)", open: async (p) => (await pickAirplane(p), await go(p, `${ROUTE}&open=navlog`)), back: "plan" },
+    ],
+    not: { sideways: "its table scrolls sideways on purpose inside the card (nav-log-desk.spec)", position: "nothing opens inside it" },
+  },
+  {
+    name: "Profile",
+    card: "profile-card",
+    close: "profile-close",
+    // "Cruise FL-055 · clear of terrain".
+    pillLine: /^Cruise FL-\d{3}/,
+    entries: [
+      { name: "the plan", open: async (p) => (await go(p, ROUTE), void (await openProfile(p))), back: "plan" },
+      { name: "link (open=profile)", open: (p) => go(p, `${ROUTE}&open=profile`), back: "plan" },
+    ],
+    not: {
+      sideways: "its altitude slider is upright",
+      position: "nothing opens inside it",
+      scroll: "capped to the sheet at each detent, nothing scrolls",
+    },
+  },
   {
     name: "Stops",
     card: "stops-card",
@@ -304,7 +344,7 @@ export const CARDS: CardRow[] = [
           await start.click();
           await expect(p.getByTestId("ready-prompt")).toBeVisible({ timeout: slow(10_000) });
         },
-        // The Profile tab the dry run was started from, as it was.
+        // The Profile card the dry run was started from, as it was.
         back: "profile",
       },
     ],

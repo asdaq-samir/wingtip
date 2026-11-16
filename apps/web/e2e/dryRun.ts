@@ -1,30 +1,30 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { pickFplTab, slow } from "./helpers";
+import { openPanel, sideDrawer, slow } from "./helpers";
 
-/* The dry run's side of the suite: the Profile tab it starts from,
+/* The dry run's side of the suite: the side view's card it starts from,
  * and its start. helpers re-exports them, as the specs import them there. */
 
-/** The Profile, FPL's tab beside the Brief's (FplTabs): its rules, its
- *  cruise and clearance line and the side view, a dry run's start under it. */
+/** The side view, a card over FPL, with the altitude's wheel in its
+ *  corner: opened at rest from the route's Profile button, beside the AI
+ *  brief's (the owner, 2026-11-04). */
 export async function openProfile(page: Page) {
-  await pickFplTab(page, "profile");
-  const profile = page.getByTestId("profile-page");
-  await expect(profile).toBeVisible();
-  return profile;
+  await openPanel(page);
+  const card = page.getByTestId("profile-card");
+  if (!(await card.isVisible()))
+    await sideDrawer(page)
+      .getByTestId("route-profile")
+      .click({ timeout: slow(60_000) });
+  await expect(card).toBeVisible();
+  return card;
 }
 
-/** The Profile left: a dry run's card first put away by its close (kept
- *  for a keyboard and a screen reader, CardClose), which stops the run, as
- *  the sheet draws no tabs while one flies; then the Nav Log's tab picked. */
+/** The side view's card put away: its close, kept for a keyboard and a
+ *  screen reader (CardClose), as the nav log's is. */
 export async function closeProfile(page: Page) {
-  const card = page.getByTestId("profile-card");
-  if (await card.isVisible()) {
-    await page.getByTestId("profile-close").focus();
-    await page.keyboard.press("Enter");
-    await expect(card).toBeHidden();
-  }
-  await pickFplTab(page, "navlog");
-  await expect(page.getByTestId("profile-page")).toBeHidden();
+  await page.getByTestId("profile-close").focus();
+  await page.keyboard.press("Enter");
+  // Kept between its openings, closed (CardLayer's `open`).
+  await expect(page.getByTestId("profile-card")).toBeHidden();
 }
 
 /** A dry run started from its button, and Ready to fly's prompt, which

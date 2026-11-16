@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import type { PanelState } from "../../../lib/mapChrome";
 import { useFplCards } from "./useFplCards";
 import type { PlanRoute } from "./usePlanRoute";
@@ -8,8 +9,8 @@ import type { PlanMapModel } from "./usePlanMap";
 import type { PlanViewModel } from "./usePlanView";
 
 /**
- * FPL's tabs, the Stops and the lists in full (useFplCards), and whether
- * the Profile's tab is offered, for usePlanWorkspace.
+ * The cards over FPL, the Stops and the lists in full (useFplCards), and
+ * the Profile opened from the route's button, for usePlanWorkspace.
  */
 export function usePlanFpl(
   { routed, planned, address, setAddress }: PlanRoute,
@@ -36,9 +37,17 @@ export function usePlanFpl(
     setAddress,
     setProceduresShown,
   });
-  // The Profile's tab only where the side view is drawn: a route planned,
-  // not a local flight (ProfileSideView).
-  return { ...cards, profileReady: routed && !!course && !s.local };
+  const { openProfileCard } = cards;
+  // The Profile opened, at rest, from the route's Profile button, where the map's Play opened it and flew its
+  // dry run at once until the owner took Play off the map (2026-11-02:
+  // "I don't want the play button there, just the mic"); the run is the
+  // profile's own Dry run button. With a route to draw it for: the side
+  // view is drawn only then (sideView).
+  const openProfile = useCallback(() => {
+    setViewPick("plan");
+    openProfileCard();
+  }, [setViewPick, openProfileCard]);
+  return { ...cards, openProfile, profileReady: routed && !!course && !s.local };
 }
 
 /** The cards over FPL, as the workspace's hooks read them. */

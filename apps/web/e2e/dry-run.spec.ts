@@ -110,9 +110,10 @@ test("the dry run's chart draws the airspace the course passes through, named as
 test("the dry run waits for the legs: no way to it until the plan is in, and then it flies", async ({ page }) => {
   // A tap before the legs had streamed in did nothing (the side view is
   // drawn before them): seen as the phone's run of this spec tapped it.
-  // The Profile's tab, where the dry run is, shows only once the route is
-  // planned (the owner's ask: "profile button only shows with an altitude
-  // there"), so with the plan held back there is no way to the run at all.
+  // The Profile card, where the dry run is, opens from the altitude's
+  // button, which shows only once there is a plan (the owner's ask: "profile
+  // button only shows with an altitude there"), so with the plan held back
+  // there is no way to the run at all.
   let release!: () => void;
   const held = new Promise<void>((done) => {
     release = done;
@@ -129,7 +130,6 @@ test("the dry run waits for the legs: no way to it until the plan is in, and the
   await openPanel(page);
   await expect(sideDrawer(page).getByTestId("altitude-group")).toBeVisible({ timeout: slow(60_000) });
   await expect(sideDrawer(page).getByTestId("altitude-why")).toHaveCount(0);
-  await expect(sideDrawer(page).getByTestId("route-profile")).toHaveCount(0);
   release();
   await openProfile(page);
   const start = sideDrawer(page).getByTestId("dry-run-start");
@@ -277,7 +277,7 @@ test(
     await expect(skeleton).toBeVisible({ timeout: slow(60_000) });
     await expect(skeleton).toHaveRole("status");
     await expect(skeleton).toContainText("Fetching the side view");
-    // As tall as the chart will be, not a strip.
+    // As tall as the chart will be: the card's height, not a strip.
     expect((await skeleton.boundingBox())!.height).toBeGreaterThan(96);
     await expect.poll(() => answer !== null, { timeout: slow(30_000) }).toBe(true);
     answer!();
@@ -286,13 +286,13 @@ test(
   },
 );
 
-test("the Profile is FPL's tab after the Nav Log, no swipe at the foot; a dry run started there plays in its own card, and stopped, the tab's side view is back", async ({
+test("the profile is a card from its button beside the AI brief's, no swipe at the foot; a dry run started there plays over the route, and stopped, the card is back", async ({
   page,
 }) => {
-  // The owner's asks: "profile view can move next to the navlog button and
-  // open like brief and navlog opens instead of the swipe" (2026-10-20),
-  // "When stopping dry run it should become profile view", and the tab bar
-  // with brief, navlog and profile (2026-11-14).
+  // The owner's ask (2026-10-20): "profile view can move next to the
+  // navlog button and open like brief and navlog opens instead of the
+  // swipe"; and before, "When stopping dry run it should become profile
+  // view".
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "half");
@@ -300,25 +300,26 @@ test("the Profile is FPL's tab after the Nav Log, no swipe at the foot; a dry ru
   await expect(panel.getByTestId("procedures")).toBeVisible({ timeout: slow(60_000) });
   await expect(panel.getByTestId("foot-pager")).toHaveCount(0);
   await expect(panel.getByTestId("mini-profile")).toHaveCount(0);
-  // The Nav Log is the tab up until another is picked.
-  await expect(panel.getByTestId("route-navlog")).toHaveAttribute("aria-selected", "true");
-  const profile = await openProfile(page);
-  // Its cruise and clearance verdict the short line under its rules
-  // (ProfileLine), as the card had it under its name.
-  await expect(profile.getByTestId("profile-line")).toContainText(/^Cruise /);
-  await expect(profile.getByTestId("mini-profile")).toBeVisible();
-  // Flown in a card of its own, its controls in sight while the sheet's
-  // pages give way to the flying screen; stopped, the tab's side view again.
-  const start = profile.getByTestId("dry-run-start");
+  // Its own button in the route's row, where the nav log's was (the
+  // owner, 2026-11-04), the nav log in the route's ••• menu.
+  await expect(panel.getByTestId("route-navlog")).toHaveCount(0);
+  const card = await openProfile(page);
+  // Named Profile, its cruise and clearance verdict the short line under
+  // the name, as the cards canvas draws it (95f9e953b's ProfileLine).
+  await expect(card.getByTestId("profile-name")).toHaveText("Profile");
+  await expect(card.getByTestId("card-sub").first()).toContainText(/^Cruise /);
+  await expect(card.getByTestId("mini-profile")).toBeVisible();
+  // Flown in the card, in the side view's place (the owner's "profile
+  // should play the dry run within profile card"); stopped, the side view
+  // again.
+  const start = card.getByTestId("dry-run-start");
   await expect(start).toBeEnabled({ timeout: slow(60_000) });
   await pressDryRunStart(page, start);
-  const card = page.getByTestId("profile-card");
-  await expect(card.getByTestId("profile-name")).toHaveText("Profile");
   await expect(card.getByTestId("dry-run")).toBeVisible();
+  await expect(card.getByTestId("mini-profile")).toHaveCount(0);
   await card.getByTestId("dry-run-close").click();
-  await expect(card).toBeHidden();
-  await expect(profile.getByTestId("mini-profile")).toBeVisible();
-  // Another tab picked: FPL's route again.
+  await expect(card.getByTestId("mini-profile")).toBeVisible();
+  // Its close: FPL's route again.
   await closeProfile(page);
   await expect(panel.getByTestId("procedures")).toBeVisible();
 });
@@ -365,7 +366,7 @@ test("with an approach picked, the dry run flies it into the field: out to its f
   // The chart's drag (the stock Slider over it): a tap at its right end takes the run there; End to the end.
   const scrub = panel.getByTestId("dry-run-scrub");
   const thumb = scrub.getByRole("slider", { name: "Where the dry run is along the course" });
-  // The run's card opens half way (e7bb15ec8): pulled up to the scrubber, as a finger would.
+  // The Profile card opens half way (e7bb15ec8): pulled up to the scrubber, as a finger would.
   await inSheet(page, scrub);
   const box = (await scrub.boundingBox())!;
   const end = Number(await thumb.getAttribute("max")); // the stock Slider's range input's own

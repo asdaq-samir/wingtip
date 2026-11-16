@@ -67,8 +67,8 @@ test("the Brief says when to go: an hour strip under the verdict, the best windo
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);
-  // The Brief's tab at the sheet's size, half way, the strip under its
-  // foot: pulled all the way up.
+  // The Brief's card opens half way, as every card does (e7bb15ec8), the
+  // strip under its foot, where no scroll reaches: pulled all the way up.
   await grabberTo(page, "full");
   const glance = sideDrawer(page).getByTestId("brief-glance");
   const strip = glance.getByTestId("departure-window");

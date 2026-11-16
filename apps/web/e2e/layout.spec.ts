@@ -117,11 +117,13 @@ test.describe("/app/plan", () => {
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
     await fromRest(page);
-    // Share, the route's own link, in FPL's tab bar half way (FplTabBar):
-    // the GPX file this read went with the SD-card and USB files (the
-    // owner, 2026-11-02, "No need for sd card or usb").
+    // Share among the route's chips half way.
     await openPanel(page);
-    await expect(sideDrawer(page).getByTestId("route-share")).toBeVisible({ timeout: slow(60_000) });
+    await sideDrawer(page).getByTestId("share-route").click();
+    // The route's own link: the GPX file this read went with the SD-card
+    // and USB files (the owner, 2026-11-02, "No need for sd card or usb").
+    await expect(page.getByTestId("share-link")).toBeVisible();
+    await page.keyboard.press("Escape");
 
     await page.reload();
     await settle(page);

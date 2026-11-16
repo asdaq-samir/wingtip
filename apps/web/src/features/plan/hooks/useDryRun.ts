@@ -34,8 +34,8 @@ export function useDryRun({
   /** The departure time picked, ISO; empty for now. */
   depart: string;
   routed: boolean;
-  /** FPL's Profile tab is picked, in sight or under a page over it: the
-   *  run is its, and goes when another tab is picked. */
+  /** The Profile card is open, in sight or under a page over it: the run
+   *  is its, and goes with it when it is closed. */
   profileOpen: boolean;
 }) {
   // Not compiled: the React Compiler dropped the useMemo round the run
@@ -101,7 +101,7 @@ export function useDryRun({
     setRunFrom(null);
     clearPastFlight();
   };
-  // The run is the Profile's (its tab; once its card's): put away with it, at the owner's ask ("I
+  // The run is the Profile card's: put away with it, at the owner's ask ("I
   // still see dry run in fpl after I play it in profile card once") -- it
   // stayed at FPL's foot, over the route, once the card was closed. The
   // replay let go; the run's own start with it, as with another replay's.

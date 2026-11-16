@@ -16,18 +16,14 @@ import type { PlannedRoute } from "./planAddress";
 import type { PanelView } from "./usePanelView";
 import { useOpenScreen } from "./useOpenScreen";
 
-/** FPL's tabs under its route (FplTabs): the Nav Log first. */
-export type FplTab = "navlog" | "brief" | "profile";
-
 /** The Stops card's id among the cards (CardLayer), for its pins' taps. */
 export const STOPS_CARD = "stops";
 
 /**
- * FPL's tabs and cards, and the lists in full (usePlanWorkspace): the Nav
- * Log, the Brief and the Profile as tabs under the route (FplTabs; the
- * owner, 2026-11-14), the map's Stops a card sizing its own drawer
- * (CardStack), opening by the card rule; Saved, Nearest and an
- * instructor's lesson. A list opened
+ * The cards over FPL and the lists in full (usePlanWorkspace): the Brief,
+ * the Nav Log, the Profile and the map's Stops, each a card sizing its own
+ * drawer (CardStack; the owner, 2026-11-11: pages are cards), opening by
+ * the card rule; Saved, Nearest and an instructor's lesson. A list opened
  * from the pill raises the sheet to half so it is seen, and nothing else
  * sizes the sheet: it keeps the size the pilot left it at, opening or
  * closing (riseToSee; the owner, 2026-11-11). With the Stops' own
@@ -65,23 +61,19 @@ export function useFplCards({
   setAddress: SetAddress;
   setProceduresShown: (at: ProceduresAt) => void;
 }) {
-  // FPL's tab picked under its route (FplTabs; the owner, 2026-11-14: "the
-  // same tab bar ... with brief, navlog, profile"): the Nav Log, FPL's
-  // first, or the Profile here; the Brief is the address's (`brief=1`), so
-  // a link opens on it.
-  const [pickedTab, setPickedTab] = useState<"navlog" | "profile">("navlog");
-  const fplTab: FplTab = briefOpen ? "brief" : pickedTab;
-  // Each tab in sight: FPL up, over a route.
-  const onFpl = view === "plan" && routed;
-  const briefShown = onFpl && fplTab === "brief";
-  const navLogShown = onFpl && fplTab === "navlog";
-  const profileShown = onFpl && fplTab === "profile";
-  // The Profile picked, in sight or not: a dry run is its, and goes when
-  // another tab is picked (useDryRun).
-  const profileOpen = routed && fplTab === "profile";
-  // The map's Stops (StopsCard), a card over FPL, opened from the Airport
-  // tab's Find Nearby (its button among the map's gave its place to the
-  // radio's microphone, 2026-11-02).
+  // The Nav Log's card, from the route's menu, where FPL shows the route in
+  // order (NavLogView's `route`).
+  const [navLogOpen, setNavLogOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  // The Brief in sight: FPL's, over a route.
+  const briefShown = briefOpen && view === "plan" && routed;
+  // The Nav Log, a card over FPL as the Brief is (PlanPage).
+  const navLogShown = navLogOpen && view === "plan" && routed && !briefShown;
+  // The side view, a card over FPL as the nav log is (ProfileCard).
+  const profileShown = profileOpen && view === "plan" && routed && !briefShown && !navLogShown;
+  // The map's Stops (StopsCard), a card over FPL as the Profile is, opened
+  // from the Airport tab's Find Nearby (its button among the map's gave its
+  // place to the radio's microphone, 2026-11-02).
   const stopsOpen = useStopsAlong((st) => st.open);
   const setStopsOpen = useStopsAlong((st) => st.setOpen);
   // The page the Stops were opened from, which their close goes back to
@@ -89,7 +81,9 @@ export function useFplCards({
   // keeps Search under them, where they took the sheet to FPL and left it there.
   const [stopsFrom, setStopsFrom] = useState<PanelView>("plan");
   // With a route or none: with none, the stops are round the pilot.
-  const stopsShown = stopsOpen && (view === "plan" || view === stopsFrom);
+  const stopsShown = stopsOpen && (view === "plan" || view === stopsFrom) && !briefShown && !navLogShown && !profileShown;
+  // The same whatever the tab: what FPL keeps under the others (TabKept).
+  const briefHere = briefOpen && routed;
   // Where the Stops are looked for: along the course while one is drawn
   // (the owner, 2026-10-26), else round own ship (StopsCard).
   const stopsRoute = useMemo(
@@ -153,39 +147,50 @@ export function useFplCards({
   const closeSaved = useCallback(() => {
     void setAddress({ saved: null });
   }, [setAddress]);
-  // A tab picked, from the bar or by the app: the Brief by the address,
-  // the others in its place, the map's Stops put away to show it.
-  const pickTab = useCallback(
-    (tab: FplTab) => {
-      if (tab !== "brief") setPickedTab(tab);
-      if ((tab === "brief") !== briefOpen) void setAddress({ brief: tab === "brief" ? true : null });
-    },
-    [briefOpen, setAddress],
-  );
-  const openTab = useCallback(
-    (tab: FplTab) => {
-      setStopsOpen(false);
-      pickTab(tab);
-    },
-    [setStopsOpen, pickTab],
-  );
-  const openBrief = useCallback(() => openTab("brief"), [openTab]);
-  const openNavLog = useCallback(() => openTab("navlog"), [openTab]);
-  const openProfileTab = useCallback(() => openTab("profile"), [openTab]);
+  // The Brief, from the chips' Brief: its own card, opened at the height
+  // FPL is at, half from the pill and all the way up staying so (CardStack,
+  // the owner's "Brief opens in half card when clicked on full fpl tab");
+  // FPL under it stays as it was.
+  const openBrief = useCallback(() => {
+    setStopsOpen(false);
+    void setAddress({ brief: true });
+  }, [setAddress, setStopsOpen]);
+  const closeBrief = useCallback(() => {
+    void setAddress({ brief: null });
+  }, [setAddress]);
+  // The Nav Log from the route's menu, a card over FPL as the Brief is,
+  // opening by the card rule (CardStack), the sheet under it left as it is.
+  const openNavLogCard = useCallback(() => {
+    setStopsOpen(false);
+    setNavLogOpen(true);
+    setProfileOpen(false);
+  }, [setStopsOpen]);
+  const closeNavLogCard = useCallback(() => setNavLogOpen(false), []);
+  // The side view the same way, from its button beside the nav log's, at
+  // the owner's ask ("profile view can move next to the navlog button and
+  // open like brief and navlog opens instead of the swipe").
+  const openProfileCard = useCallback(() => {
+    setStopsOpen(false);
+    setProfileOpen(true);
+    setNavLogOpen(false);
+  }, [setStopsOpen]);
+  const closeProfileCard = useCallback(() => setProfileOpen(false), []);
   // The map's Stops put away, the sheet where it is, on the page they were
   // opened from.
   const closeStops = useCallback(() => {
     setStopsOpen(false);
     if (stopsFrom !== view) setViewPick(stopsFrom);
   }, [setStopsOpen, stopsFrom, view, setViewPick]);
-  // Opened: an airport's card put away; the card
+  // Opened: the other cards over FPL and an airport's put away; the card
   // opens by the card rule, as the Profile's, over the page it was asked
   // from (Search's Find Nearby, round the pilot), that page remembered for
   // its close.
   const openStops = useCallback(() => {
     setStopsOpen(true);
     setStopsFrom(view);
-    void setAddress({ place: null });
+    setNavLogOpen(false);
+    setProfileOpen(false);
+    void setAddress({ brief: null, place: null });
   }, [setStopsOpen, setAddress, view]);
   // Find Nearby's tile (the Airport tab): the Stops round the pilot, that
   // kind picked.
@@ -214,12 +219,12 @@ export function useFplCards({
     },
     [setStopPicked],
   );
-  // The legs asked for from the Brief: the Nav Log's tab, the sheet at the
+  // The legs asked for from the Brief: FPL in its place, the sheet at the
   // size the pilot left it (half from the pill).
   const showLegs = useCallback(() => {
-    pickTab("navlog");
+    void setAddress({ brief: null });
     riseToSee(setPanel);
-  }, [pickTab, setPanel]);
+  }, [setAddress, setPanel]);
   // The strip's title opens the list in full, over Airport: its card all
   // the way up (NearestCard's `opens`).
   const openNearest = useCallback(() => {
@@ -250,15 +255,14 @@ export function useFplCards({
     return () => useRadioActions.setState({ nearest: null, showProcedure: null });
   }, [setViewPick, openNearest, planned.dep, plannedStops, planned.dest, setProceduresShown]);
   // A screen asked for by name, by a link or from inside the app.
-  useOpenScreen({ routed, address, setAddress, setViewPick, setPanel, openBrief, openNavLog, openProfileTab, openNearest });
+  useOpenScreen({ routed, address, setAddress, setViewPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest });
   return {
-    fplTab,
-    pickTab,
     briefShown,
     navLogShown,
     profileShown,
     profileOpen,
     stopsShown,
+    briefHere,
     stopsRoute,
     stopsAt,
     stopsScope,
@@ -270,8 +274,11 @@ export function useFplCards({
     openSaved,
     closeSaved,
     openBrief,
-    openNavLog,
-    openProfileTab,
+    closeBrief,
+    openNavLogCard,
+    closeNavLogCard,
+    openProfileCard,
+    closeProfileCard,
     closeStops,
     findNearby,
     pickStopField,

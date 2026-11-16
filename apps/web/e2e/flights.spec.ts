@@ -321,13 +321,11 @@ test("a saved flight's ••• and its long press offer Edit, Share and Remove
   await expect.poll(() => removed).toEqual(["DELETE"]);
 });
 
-test("Print is in the route's ••• menu with the Brief up; Keep for the Air is in the map's menu, which cannot be on over plain http", async ({
-  page,
-}) => {
+test("Print is in the Brief's Share menu; Keep for the Air is in the map's menu, which cannot be on over plain http", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await controlsInSight(page);
   await openBrief(page);
-  await sideDrawer(page).getByTestId("share-route").click();
+  await page.getByTestId("card-share").click();
   await expect(page.getByTestId("print-briefing")).toBeVisible();
   await page.keyboard.press("Escape");
 

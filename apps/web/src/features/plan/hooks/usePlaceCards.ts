@@ -27,7 +27,8 @@ export function usePlaceCards({
   const cards = useAddressCards(address, setAddress, setPanel);
   const { place, heldPoint, nearOpen, flight, selectFlight } = cards;
   const cardOpen = !!place || !!heldPoint || !!flight;
-  // FPL's Brief, its tab picked (FplTabs): `?brief=1`, so a link opens on it.
+  // FPL's Brief, a card over it (BriefCard): `?brief=1`, kept for FPL as
+  // its other cards are (usePanelView).
   const briefOpen = address.brief;
   // The tab an airplane's card was opened over from the route box's
   // N-number (openAirplaneCard), and the tab setter, set once the tabs

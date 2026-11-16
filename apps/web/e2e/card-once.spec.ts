@@ -1,6 +1,21 @@
 import { test, expect, type Page } from "@playwright/test";
 import { showPage } from "./oneSearch";
-import { closeCard, frontSheet, grabberTo, searchAirports, settle, settled, sheetUpToType, showTabs, sideDrawer, slow } from "./helpers";
+import {
+  closeCard,
+  closeProfile,
+  frontSheet,
+  grabberTo,
+  navLogSheet,
+  openNavLog,
+  openProfile,
+  searchAirports,
+  settle,
+  settled,
+  sheetUpToType,
+  showTabs,
+  sideDrawer,
+  slow,
+} from "./helpers";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
 /**
@@ -250,8 +265,7 @@ test("a field tapped on the chart with You open comes up once over it", async ({
 });
 
 // The flicker audit, 2026-11-14, FL-2: a card kept between its openings
-// (You; the Nav Log and the Profile were too, now FPL's tabs) was drawn
-// anew closed as it was put away,
+// (You, the Nav Log, the Profile) was drawn anew closed as it was put away,
 // gone with no close, and the map's buttons were thrown off the screen's top
 // and swept down to the sheet. Now it closes where it is, its own drawer.
 test("a kept card closes where it is, the map's buttons never off the screen", async ({ page }) => {
@@ -264,4 +278,10 @@ test("a kept card closes where it is, the map's buttons never off the screen", a
   await settled(page.locator("[data-sheet-card]").filter({ has: page.getByTestId("console-sheet") }));
   const you = page.getByTestId("console-sheet");
   await expectDrawnOnce(page, () => closeCard(page, "console-close").then(() => expect(you).toHaveCount(0)), { maxMoves: 0 });
+  await openNavLog(page);
+  await settled(page.locator("[data-sheet-card]").filter({ has: navLogSheet(page) }));
+  await expectDrawnOnce(page, () => closeCard(page, "navlog-close").then(() => expect(navLogSheet(page)).toBeHidden()), { maxMoves: 0 });
+  await openProfile(page);
+  await settled(page.locator("[data-sheet-card]").filter({ has: page.getByTestId("profile-card") }));
+  await expectDrawnOnce(page, () => closeProfile(page), { maxMoves: 0 });
 });

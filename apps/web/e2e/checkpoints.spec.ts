@@ -12,6 +12,7 @@ import {
   grabberTo,
   panelTabs,
   openNavLog,
+  closeNavLog,
   navLogScroller,
   navLogSheet,
   settled,
@@ -79,6 +80,7 @@ test("plan page: a click or Enter selects a nav log checkpoint, with the briefin
 
   // The Brief's tabs take the stock tabs' own arrows, Right to the next:
   // Arrive, after En route.
+  await closeNavLog(page);
   await openBrief(page);
   await briefPage(page, "En route");
   const tabs = panelTabs(page).getByRole("tab");
@@ -128,13 +130,13 @@ test(
     await expect.poll(async () => (await sideDrawer(page).boundingBox())?.height ?? Infinity).toBeLessThanOrEqual(462);
     await settled(sideDrawer(page));
     await grabberTo(page, "full");
-    // The Nav Log's tab shows the pick, brought in.
+    // The nav log opened from the route's box shows the pick, brought in.
     await openNavLog(page);
     const table = page.getByRole("table", { name: /Navigation log from/i });
     await expect(table).toBeVisible();
-    // The sheet come to rest first: still sliding, it carried the row
-    // clicked below 15 points up with it (2026-11-13).
-    await settled(sideDrawer(page));
+    // Its card come all the way up first: still sliding in, it carried the
+    // row clicked below 15 points up with it (2026-11-13).
+    await settled(page.locator("[data-sheet-card]").filter({ has: navLogSheet(page) }));
     const selectedRow = table.locator('[role="row"][data-selected]');
     await expect(selectedRow).toHaveCount(1);
     const scroller = navLogScroller(page);
@@ -177,6 +179,7 @@ test(
     expect(Math.abs((await onScreen()) - before)).toBeLessThan(2);
 
     // Another tab and back: the selection kept, its row brought into view.
+    await closeNavLog(page);
     await openTab(page, "Weather");
     await expect(sideDrawer(page).getByRole("heading", { name: "Adverse Conditions" })).toBeVisible();
     await openNavLog(page);

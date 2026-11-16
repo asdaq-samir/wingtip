@@ -106,7 +106,7 @@ interface Props {
    *  until then, and keeps it if the save fails. */
   onSaveDescription: (lat: number, lon: number, text: string) => Promise<unknown>;
   /** The briefing's pages (FlightBriefingView's parts), printed after the legs: on screen they are the Brief's
-   *  (BriefPage). */
+   *  card's (BriefCard). */
   tabContent: (part: BriefingPart) => ReactNode;
   /** Beside the log, out of sight: Print's kneeboard card. */
   children?: ReactNode;
@@ -114,6 +114,9 @@ interface Props {
   marks?: Partial<Record<PanelTab, "stop" | "caution">>;
   /** The briefing's warnings, over its pages on paper. */
   notice?: ReactNode;
+  /** The Nav Log card's view (PlanPage's; the owner 2026-11-11), its head
+   *  over the legs: on screen only, FPL's view is the paper (`paper`). */
+  cardHead?: ReactNode;
   /** A local flight, one airport to itself: no legs, so the section is
    *  "Local Flight" -- the time aloft, the time back and the fuel, and
    *  the fuel check -- in place of the nav log. */
@@ -138,10 +141,10 @@ interface Props {
   /** The planned flight's dry run while one is up: the log follows it, the
    *  row it is flying to tinted and kept in sight. */
   dryRun: DryRun | null;
-  /** FPL's own list over the legs on screen: the route in order
+  /** FPL's own list in the nav log's place on screen: the route in order
    *  (ProceduresRoute), at the owner's ask ("I want to replace navlog with
-   *  procedures", 2026-10-18), the legs under it in the Nav Log's tab
-   *  (FplTabs; the owner, 2026-11-14), where they were a card's. */
+   *  procedures", 2026-10-18). The legs are the Nav Log card's, this view
+   *  drawn again there without the route (`cardHead`). */
   route?: ReactNode;
 }
 
@@ -262,6 +265,7 @@ export default function NavLogView({
   children,
   marks,
   notice,
+  cardHead,
   local,
   metarColourOf,
   selectedPoint,
@@ -272,8 +276,9 @@ export default function NavLogView({
   dryRun,
   route,
 }: Props) {
-  // Where the log's rows are in sight: the Nav Log's tab up.
-  const logInSight = drawerOpen;
+  // Where the log's rows are in sight: FPL all the way up, and never where
+  // the route's list is in their place.
+  const logInSight = !route && drawerOpen;
   const noWind = totals ? legsWithoutWind(totals) : null;
   // Its winds past their forecast's period are the route box's refresh's
   // dot now (PlanWorkspace's `stale`), at the owner's ask.
@@ -767,23 +772,13 @@ export default function NavLogView({
   );
 
   // The legs, FPL's own at the owner's ask ("FPL is simple with route,
-  // navlog, profile and calculations"): on screen under the route in
-  // order, the Nav Log's tab (FplTabs); the briefing's pages are the
-  // Brief's (BriefPage).
+  // navlog, profile and calculations"): no heading on screen, where they
+  // are all FPL shows under the route; the briefing's pages are the Brief's
+  // card's (BriefCard).
   const legsSection = (
     <SectionPane title={LEGS} heading={printing && !local}>
       {!local && summary}
-      {!local &&
-        (printing ? (
-          navLogTable
-        ) : (
-          <>
-            {route}
-            <div className={cn(route && "mt-4")} data-testid="navlog-legs">
-              {onDesk ? navLogTable : navLogList}
-            </div>
-          </>
-        ))}
+      {!local && (printing ? navLogTable : (route ?? (onDesk ? navLogTable : navLogList)))}
     </SectionPane>
   );
   const title = routeName(
@@ -791,9 +786,10 @@ export default function NavLogView({
     dest,
     ends?.stops?.map((s) => s.ident),
   );
+  const paper = printing && !cardHead;
   return (
     <>
-      {printing ? (
+      {paper ? (
         // On paper the whole briefing, as it always printed: every page in
         // turn, the legs first in En route's, under the briefing's title.
         <PanelTabs
@@ -851,9 +847,14 @@ export default function NavLogView({
               app; laid out whole in the sheet's one scroller (SheetParts). */}
           <div
             className="@container pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))]"
-            data-testid="navlog-scroller"
+            data-testid={cardHead ? "navlog-card-scroller" : "navlog-scroller"}
           >
-            <section aria-label={local ? "Local Flight" : "Nav Log"} className={TEXT.prose}>
+            {cardHead}
+            <section
+              aria-label={local ? "Local Flight" : route ? "Route" : "Nav Log"}
+              className={cn(TEXT.prose, cardHead && "pt-2")}
+              data-testid={cardHead ? "navlog-sheet" : undefined}
+            >
               {legsSection}
             </section>
           </div>
