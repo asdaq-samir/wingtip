@@ -21,3 +21,22 @@ export function keepPlanButton(el: HTMLElement | null) {
     if (usePageToggle.getState().plan === el) usePageToggle.setState({ plan: null });
   };
 }
+
+// Each page draws its own toggle, so a turn takes away the one that was
+// pressed. Where that one held the focus (the keyboard's Enter or Space),
+// the next page's takes it as it is drawn: the focus was left on nothing,
+// and the next Tab started again from the page's top (WCAG 2.4.3). A
+// finger's tap gives a button no focus, and none is given then.
+let handOn = false;
+
+/** Before a turn: whether `el`, the toggle pressed, holds the focus. */
+export function noteFocus(el: Element | null) {
+  handOn = el != null && document.activeElement === el;
+}
+
+/** The toggle drawn after a turn takes the focus the pressed one held. */
+export function takeFocus(el: HTMLElement | null) {
+  if (!el || !handOn) return;
+  handOn = false;
+  el.focus({ preventScroll: true });
+}
