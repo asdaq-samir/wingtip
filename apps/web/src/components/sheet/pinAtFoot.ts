@@ -19,8 +19,8 @@ const SETTLE_MS = MOTION.drawer * 1000 + 50;
  * "Maybe having common code will remove the bugs from fpl?").
  *
  * The foot is held at the sheet's visible edge at every size (SheetParts'
- * FOLLOW), so it is read each frame, not remembered: the window's own foot
- * is behind Safari's floating toolbar.
+ * FOLLOW), so its resting edge is read each frame, not remembered: the
+ * window's own foot is behind Safari's floating toolbar.
  *
  * By the row's transform alone, nothing laid out again or built: a frame
  * at a time while a finger has the sheet (SheetDrawer's usePanelDragging)
@@ -43,7 +43,7 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     if (!on) return letGo();
     let frame = 0;
     const place = () => {
-      const edge = document.querySelector<HTMLElement>(foot)?.getBoundingClientRect().bottom ?? window.innerHeight;
+      const edge = restingEdge(document.querySelector<HTMLElement>(foot));
       // Where it would be unpinned, its transform taken off.
       const below = row.getBoundingClientRect().bottom - Number(row.dataset.shift ?? 0) - edge;
       const shift = below > 0 ? -below : 0;
@@ -69,4 +69,17 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       resized?.disconnect();
     };
   }, [dragging, held, on, foot, ref]);
+}
+
+/** Where the foot's edge is once the sheet is at rest: its place now with
+ *  its own and the sheet's transforms taken off, which cancel at rest (the
+ *  foot is moved back by the sheet's offset, SheetParts' FOLLOW). As the
+ *  sheet settles the two are eased apart, the Drawer's and the foot's, so
+ *  its place now wobbled the held row by up to 6 points at a pull down's
+ *  end (measured on the live build in Chromium at iPhone size, 2026-11-16).
+ */
+function restingEdge(foot: HTMLElement | null) {
+  if (!foot) return window.innerHeight;
+  const moved = (el: Element | null) => (el ? new DOMMatrixReadOnly(getComputedStyle(el).transform).m42 : 0);
+  return foot.getBoundingClientRect().bottom - moved(foot) - moved(foot.closest(".group\\/sheet"));
 }
