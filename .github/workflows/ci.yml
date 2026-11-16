@@ -787,13 +787,17 @@ jobs:
           done
           curl -sf http://localhost:8084/ | grep -q '"warm":true' || { echo "the planner never reported itself warm"; exit 1; }
           echo "$(($(date +%s) - T0)) the planner warm" >> /tmp/e2e-out/timeline
-      # The cycle the planner is serving and the corridor reader's code:
-      # what the charts cache is keyed by, at the end of the job.
+      # The cycle the planner is serving, the corridor reader's code, and
+      # the files that say which tiles Keep for the Air asks for: what the
+      # charts cache is keyed by, at the end of the job. The tiles the suite
+      # has cut are in it, so a keep's 1,400 are there to send; saved once a
+      # key, it went eighteen days without them, each cut on every run at
+      # about a second a tile (#584: 520 of them in a test's two minutes).
       - name: The chart cycle
         id: cycle
         if: matrix.shard == 1
         env:
-          READER: ${{ hashFiles('services/planner/wingtip/chartvision.py', 'services/planner/app/detection.py') }}
+          READER: ${{ hashFiles('services/planner/wingtip/chartvision.py', 'services/planner/app/detection.py', 'apps/web/src/lib/map/route/keepRoute.ts', 'apps/web/src/lib/map/sources/tiles.ts') }}
           RESTORED: ${{ steps.charts.outputs.cache-matched-key || 'no chart cache' }}
         run: |
           cycle=$(curl -sf http://localhost:8084/api/status | python3 -c 'import json, sys; print(json.load(sys.stdin)["charts"]["cycle"])')
