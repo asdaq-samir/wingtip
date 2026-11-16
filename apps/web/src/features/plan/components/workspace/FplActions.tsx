@@ -68,7 +68,7 @@ export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
   // the pill's own are, and stay there while the route slides on under
   // them (usePinAtFoot), drawn as the pill's own while held (PINNED).
   const figures = useRef<HTMLDivElement>(null);
-  usePinAtFoot(figures, PILL_FIGURES);
+  usePinAtFoot(figures, SHEET_FOOT);
   return (
     <div className="flex w-full min-w-0 flex-1 flex-col">
       <RouteHead vm={vm} />
@@ -84,8 +84,8 @@ export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
   );
 }
 
-/** The pill's own figures, large in FPL's foot (FlightFoot's PillHandover). */
-const PILL_FIGURES = '[data-testid="panel-foot"] [data-testid="flight-line"]';
+/** FPL's foot, whose edge the pill's own figures sit on (FlightFoot's PillHandover). */
+const SHEET_FOOT = '[data-testid="panel-foot"]';
 
 /** The figures held at the foot (data-pinned) drawn as the pill's own,
  *  so the handover at the pill moves nothing (the owner, 2026-11-16: "is
