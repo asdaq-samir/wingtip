@@ -25,11 +25,12 @@ The policy, which this script holds the repository to:
 - **At most one retry on a pull request** (playwright.config.ts's
   `retries`): a test that needs more is flaky, and goes to the nightly
   issue (scripts/ci/flaky_tests.py) to be fixed, not retried.
-- **Every iOS UI test class in a tier.** native-ios.yml names main's
-  push's classes with `-only-testing:WingtipUITests/<Class>` (a pull
-  request's run, `unit_only`, has none); the night (`full`) runs every
-  class the scheme holds, less any `-skip-testing:`. A class in neither
-  fails here.
+- **Every iOS UI test class in a tier.** scripts/ci/ios_test.sh, which
+  native-ios.yml's test job builds and tests through (the string catalog's
+  check between the two, before any test runs), names main's push's
+  classes with `-only-testing:WingtipUITests/<Class>` (a pull request's
+  run, `unit_only`, has none); the night (`full`) runs every class the
+  scheme holds, less any `-skip-testing:`. A class in neither fails here.
 - **No check twice in a pull request.** The same check command (tsc,
   ESLint, ruff, pytest, cargo test, ...) run from the same directory in
   two of ci.yml's pull-request jobs fails here.
@@ -64,6 +65,12 @@ WEB_SUITE = "scripts/ci/web_suite.sh"
 # The apps a pull request must still build when it touches their inputs
 # (#499), each by the reusable workflow ci.yml calls.
 PHONES = {"native-android.yml": "", "native-ios.yml": "unit_only: true"}
+# The script native-ios.yml's test job builds and tests through, and the
+# job's three steps in their order: the string catalog's check reads the
+# build and fails before a test runs (run 43732738720 found a stale
+# catalog only after 753 s of build and tests).
+IOS_TEST = "scripts/ci/ios_test.sh"
+IOS_STEPS = (f"{IOS_TEST} build", "scripts/build/ios-strings.sh --check", f"{IOS_TEST} test")
 
 # The commands that are checks, as the first word or two of a command; the
 # rest of a run line (installs, builds, echo) may repeat freely.
@@ -119,32 +126,37 @@ def playwright() -> list[str]:
 
 def ios() -> list[str]:
     errors = []
-    workflow = (ROOT / ".github/workflows/native-ios.yml").read_text()
-    pr = set(re.findall(r"-only-testing:WingtipUITests/(\w+)", workflow))
-    skipped = set(re.findall(r"-skip-testing:WingtipUITests/(\w+)", workflow))
+    # The workflow runs the script, so what the script chooses is what the
+    # workflow runs: the rules below read its lines, comments aside.
+    jobs = workflows.read(workflows.WORKFLOWS / "native-ios.yml").jobs
+    runs = [run.text for job in jobs if job.id == "test" for run in job.runs]
+    at = [next((i for i, text in enumerate(runs) if step in text), -1) for step in IOS_STEPS]
+    if -1 in at or at != sorted(at):
+        errors.append(f".github/workflows/native-ios.yml: the test job must run, in this order, `{'`, `'.join(IOS_STEPS)}`")
+    script = "\n".join(line for line in (ROOT / IOS_TEST).read_text().splitlines() if not line.lstrip().startswith("#")) + "\n"
+    pr = set(re.findall(r"-only-testing:WingtipUITests/(\w+)", script))
+    skipped = set(re.findall(r"-skip-testing:WingtipUITests/(\w+)", script))
     # The night's run drops -only-testing (`only=()` when FULL), so it runs
     # every class the scheme's test targets hold.
-    full_runs_all = re.search(r'(if \[ "\$FULL" = true \]; then\s+|\[ "\$FULL" = true \] && )only=\(\)', workflow) is not None
+    full_runs_all = re.search(r'(if \[ "\$FULL" = true \]; then\s+|\[ "\$FULL" = true \] && )only=\(\)', script) is not None
     project = (ROOT / "apps/ios/project.yml").read_text()
     in_scheme = re.search(r"targets: \[[^\]]*WingtipUITests", project) is not None
     for path in sorted((ROOT / "apps/ios/WingtipUITests").glob("*.swift")):
         for cls in re.findall(r"^(?:final )?class (\w+)\s*:\s*XCTestCase", path.read_text(), re.M):
             nightly = full_runs_all and in_scheme and cls not in skipped
             if cls not in pr and not nightly:
-                errors.append(f"apps/ios/WingtipUITests/{path.name}: {cls} runs in no tier (native-ios.yml)")
+                errors.append(f"apps/ios/WingtipUITests/{path.name}: {cls} runs in no tier ({IOS_TEST})")
     for cls in sorted(pr):
         if not (ROOT / f"apps/ios/WingtipUITests/{cls}.swift").exists():
-            errors.append(f".github/workflows/native-ios.yml: -only-testing names {cls}, which no file holds")
+            errors.append(f"{IOS_TEST}: -only-testing names {cls}, which no file holds")
     # A pull request's run (unit_only) adds no UI test class.
-    if not re.search(r'\[ "\$UNIT_ONLY" = true \] \|\| only\+=\(-only-testing:WingtipUITests/', workflow):
-        errors.append(
-            ".github/workflows/native-ios.yml: unit_only must leave out every UI test (`[ \"$UNIT_ONLY\" = true ] || only+=(...)`)"
-        )
+    if not re.search(r'\[ "\$UNIT_ONLY" = true \] \|\| only\+=\(-only-testing:WingtipUITests/', script):
+        errors.append(f"{IOS_TEST}: unit_only must leave out every UI test (`[ \"$UNIT_ONLY\" = true ] || only+=(...)`)")
     # And builds none: -only-testing still compiles every test target the
     # scheme holds, so unit_only takes a scheme without WingtipUITests.
     unit = re.search(r"^  WingtipUnit:\n((?:    .*\n)+)", project, re.M)
-    if not re.search(r"only=\(-only-testing:WingtipTests\) scheme=WingtipUnit\n.*\|\| only\+=\(.*\) scheme=Wingtip\n", workflow):
-        errors.append(".github/workflows/native-ios.yml: unit_only must build the WingtipUnit scheme")
+    if not re.search(r"only=\(-only-testing:WingtipTests\) scheme=WingtipUnit\n.*\|\| only\+=\(.*\) scheme=Wingtip\n", script):
+        errors.append(f"{IOS_TEST}: unit_only must build the WingtipUnit scheme")
     elif not unit or "WingtipUITests" in unit.group(1):
         errors.append("apps/ios/project.yml: the WingtipUnit scheme must hold no WingtipUITests")
     return errors
