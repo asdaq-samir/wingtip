@@ -6,6 +6,7 @@ import { settle, sideDrawer } from "./helpers";
  * own id, so a later start_url is not a second app; a link opening in the
  * app already running; and the shortcuts on its icon, the same screens as
  * Android's, from design/screens.json. Each shortcut opens its screen.
+ * (A scratch line, to measure a pull request's own specs in CI; not for merging.)
  */
 test("the manifest names the app, keeps one window and lists the screens' shortcuts", async ({ page, request }) => {
   const answer = await request.get("/app/manifest.webmanifest");
