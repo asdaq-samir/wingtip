@@ -276,6 +276,10 @@ export function SheetParts(p: PartsProps) {
         p.layer === "card" ? "px-0" : "px-4",
         !footShown && "hidden",
         pillFoot ? "border-transparent [&_[data-pill-hides]]:hidden [&>*]:flex-none" : cn("border-border/60", SHEET_BELOW),
+        // No hairline over a bar that floats (FPL's actions' glass bar on
+        // the ground), as none is over a card's tabs (the owner, 2026-11-16:
+        // "Why do I see a separator above the tabs bar?").
+        p.pages?.floats && "border-transparent",
       )}
       style={
         {
