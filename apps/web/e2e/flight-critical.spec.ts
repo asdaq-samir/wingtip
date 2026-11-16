@@ -15,6 +15,50 @@ import { closeMapSettings, openSettingsPage } from "./mapCard";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
+// SCRATCH, taken out in this pull request's next commit: where a cold
+// stack's first Keep for the Air spends its time (#576), read from CI's
+// log. Each kind of request to the planner: how many, when the first and
+// the last ended (seconds into the test), their time added up and the
+// longest (ms); and when the nav log's fuel and the keep's two toasts showed.
+let report = () => {};
+test.beforeEach(({ page }, info) => {
+  const t0 = Date.now();
+  const since = () => Math.round((Date.now() - t0) / 100) / 10;
+  const kinds = new Map<string, { n: number; first: number; last: number; sum: number; max: number }>();
+  const marks: string[] = [];
+  const kindOf = (path: string) =>
+    path
+      .replace(/\/\d+\/\d+\/\d+(@\dx)?(\.\w+)?$/, "/{z}/{x}/{y}")
+      .replace(/\/[A-Z0-9]{3,4}(?=\/|$)/g, "/{id}")
+      .slice(0, 70);
+  page.on("requestfinished", (request) => {
+    const url = new URL(request.url());
+    if (!url.pathname.startsWith("/api/")) return;
+    const took = Math.max(0, request.timing().responseEnd);
+    const key = kindOf(url.pathname);
+    const k = kinds.get(key) ?? { n: 0, first: since(), last: 0, sum: 0, max: 0 };
+    kinds.set(key, { n: k.n + 1, first: k.first, last: since(), sum: k.sum + took, max: Math.max(k.max, took) });
+  });
+  const mark = (what: string, shown: Promise<void>) =>
+    void shown.then(
+      () => marks.push(`${what} ${since()}s`),
+      () => {},
+    );
+  mark("navlog-fuel", page.getByTestId("navlog-fuel").first().waitFor({ timeout: 0 }));
+  mark("Saving", page.getByText("Saving Charts Offline").waitFor({ timeout: 0 }));
+  mark("Saved", page.getByText("Charts Saved Offline").waitFor({ timeout: 0 }));
+  report = () => {
+    const rows = [...kinds].sort((a, b) => b[1].sum - a[1].sum).slice(0, 25);
+    const lines = rows.map(
+      ([k, v]) => `${k}  n=${v.n} first=${v.first}s last=${v.last}s sum=${Math.round(v.sum)}ms max=${Math.round(v.max)}ms`,
+    );
+    console.log(
+      [`[keep-clock] ${info.title.slice(0, 40)} (retry ${info.retry}) ended ${since()}s; ${marks.join(", ")}`, ...lines].join("\n  "),
+    );
+  };
+});
+test.afterEach(() => report());
+
 /**
  * What a pilot cannot be without in the air, in one journey (the owner,
  * 2026-11-09): a route planned, its nav log's figures, the emergency's
