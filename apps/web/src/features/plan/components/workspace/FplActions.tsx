@@ -77,7 +77,7 @@ export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
           with the sheet as the foot's figures fade out (PillHandover), a
           quiet copy till then, the pill's own being the one in sight. */}
       <div className="pt-2 pb-1">
-        <div ref={figures} className="relative data-pinned:-mx-4 data-pinned:bg-(--sheet) data-pinned:px-4">
+        <div ref={figures} className="relative data-pinned:z-30 data-pinned:-mx-4 data-pinned:bg-(--sheet) data-pinned:px-4">
           <FlightFigures vm={vm} grow={false} quiet={!vm.view.panelOpen} />
         </div>
       </div>
