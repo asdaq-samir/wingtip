@@ -507,7 +507,7 @@ test("the route's box is round, one line tall for a short route and the panel's 
   expect(await sideDrawer(page).getByTestId("add-stop").count()).toBe(0);
   // Round as the search bar's field is, one line tall for a route that
   // fits one (a second as one needs it, below), the panel's width to
-  // itself, at the pilot's ask; the ••• in FPL's bar over it and the tiles under it,
+  // itself, at the pilot's ask; the ••• in FPL's bar over it and the actions' bar below,
   // the airplane's strip, the sheet's first row (the owner, 2026-11-14:
   // "The route box just become a single row under it").
   const shape = await box.evaluate((el) => ({ radius: parseFloat(getComputedStyle(el).borderTopLeftRadius) }));

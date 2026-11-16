@@ -22,8 +22,8 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
         </Suspense>
       )}
       {/* At the row's end the route's ••• alone: the Brief, the Nav Log,
-          the Profile and Share are the tiles under the route (FplActions;
-          the owner's pick A, 2026-11-15). A round button at a fixed 32 in
+          the Profile and Share are the floating bar at the sheet's foot
+          (FplTabBar; the owner, 2026-11-16). A round button at a fixed 32 in
           points, as iOS's bar buttons keep their size at any text size
           (the FPL audit's A3). */}
       <div className="ml-auto flex shrink-0 items-center pl-3.5" data-testid="route-actions">

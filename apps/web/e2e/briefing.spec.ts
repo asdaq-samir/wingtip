@@ -118,9 +118,9 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   expect(await page.locator("header").getByTestId("account-button").count()).toBe(0);
 
   // The route's ••• at the end of the airplane's and the altitude's line;
-  // the Brief, the Nav Log, the Profile and Share a row of tiles under the
-  // route (the owner's pick A, 2026-11-15) -- printing in the Brief's and
-  // the nav log's own (below).
+  // the Brief, the Nav Log, the Profile and Share one floating bar at the
+  // sheet's foot (FplTabBar; the owner, 2026-11-16) -- printing in the
+  // Brief's and the nav log's own (below).
   const [briefBox, moreBox] = await Promise.all(
     ["route-brief", "share-route"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
   );

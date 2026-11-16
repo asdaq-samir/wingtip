@@ -300,8 +300,8 @@ test("the profile is a card from its button beside the AI brief's, no swipe at t
   await expect(panel.getByTestId("procedures")).toBeVisible({ timeout: slow(60_000) });
   await expect(panel.getByTestId("foot-pager")).toHaveCount(0);
   await expect(panel.getByTestId("mini-profile")).toHaveCount(0);
-  // The Profile and the Nav Log tiles side by side under the route
-  // (FplActions; the owner's pick A, 2026-11-15).
+  // The Profile and the Nav Log side by side in the floating bar at the
+  // sheet's foot (FplTabBar; the owner, 2026-11-16).
   await expect(panel.getByTestId("fpl-actions").getByTestId("route-navlog")).toBeVisible();
   const card = await openProfile(page);
   // Named Profile, its cruise and clearance verdict the short line under

@@ -166,8 +166,9 @@ button was until the owner swapped the two (2026-11-14: "Swap the fpl
 toggle and account buttons"); the account button rides the sheet's top
 under the 3D. FPL's first row is the same size: the airplane's strip
 (N-number, altitude, •••) with the toggle at its end, the route one row
-under it in whichever of its three layouts, and under the route the
-tiles Brief, Nav Log, Profile and Share (2026-11-15); Search's
+under it in whichever of its three layouts, under the route its figures,
+and at the sheet's foot the floating bar of Brief, Nav Log, Profile and
+Share, the figures alone and large at the pill (2026-11-16); Search's
 page under the search is the search's own page (with nothing typed, or
 the field in use). On a desktop the same in the
 side panel, ⌘K or Ctrl K focusing the field (the command palette it

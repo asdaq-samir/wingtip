@@ -475,8 +475,7 @@ test("plan page: an altitude of the pilot's own that breaks a rule is flown as s
   await controlsInSight(page);
   const chip = page.getByTestId("altitude-why");
   await expect(chip).toHaveAccessibleName(/5,500 feet.*caution/, { timeout: slow(60000) });
-  // Said under FPL's tiles, in words (FplFindings).
-  await expect(page.getByTestId("fpl-findings")).toContainText(/altitude/i);
+  await expect(page.getByTestId("fpl-findings")).toContainText(/altitude/i); // in words under the route (FplFindings)
   await openProfile(page);
   const cautions = page.getByTestId("own-altitude-cautions");
   await expect(cautions).toContainText("5,500 ft C81 → KDLH");

@@ -41,7 +41,7 @@ export default function PlanPage({ vm, navLog, share }: { vm: PlanWorkspaceModel
           owner, 2026-11-15: "What about the fpl drawer when pulling it up?"). */}
       <div className={cn("flex min-h-0 flex-col print:flex", depAlone ? "flex-none" : "flex-1", !hasPoints && "hidden")}>
         <div className="px-4 empty:hidden print:hidden">
-          <FplActions vm={vm} share={share} inFlight />
+          <FplActions vm={vm} share={share} />
         </div>
         {navLog}
       </div>

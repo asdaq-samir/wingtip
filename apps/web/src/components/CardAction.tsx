@@ -33,6 +33,7 @@ export function CardAction({
   testId,
   pressed,
   keys,
+  bar,
   ...trigger
 }: {
   icon: ReactNode;
@@ -59,6 +60,10 @@ export function CardAction({
   /** Its key on a desktop, shown beside its word (aria-keyshortcuts too):
    *  the airport card's Alt+F, Alt+D and Alt+S. */
   keys?: string;
+  /** In a floating glass bar (FPL's, FplTabBar): no pane of its own, the
+   *  bar's glass under it, its glyph Maps' 24 points, as the airport
+   *  card's tabs are drawn (CardTabBar). */
+  bar?: boolean;
 } & Omit<ComponentProps<"button">, "children" | "onClick" | "disabled">) {
   // Its sides four points in, not the stock button's ten: the room a
   // word needs to stay on its one line (below) at the text sizes a reader
@@ -66,12 +71,13 @@ export function CardAction({
   // The others the stock Button's glass, their glyph and word in the tint,
   // as Apple's Maps on the web draws a place's Call and Website (the
   // owner's screenshot, 2026-10-26).
-  const variant = filled ? ("default" as const) : ("glass" as const);
+  const variant = filled ? ("default" as const) : bar ? ("ghost" as const) : ("glass" as const);
   const look = cn(
     // No edge on any, Fly Here's filled one too: the stock button's
     // clear one inset its fill a point, out of line with the tiles beside
     // and under it (the sheet audit's F-B2).
     "h-auto min-w-0 flex-col gap-0.5 rounded-xl border-0 px-1 py-1.5 [&_svg:not([class*='size-'])]:size-[20px]",
+    bar && "h-full rounded-full px-3 py-0 hover:bg-foreground/10 aria-expanded:bg-foreground/10 [&_svg:not([class*='size-'])]:size-6",
     !filled &&
       cn(
         destructive ? "text-destructive-ink hover:text-destructive-ink" : "text-tint hover:text-tint",

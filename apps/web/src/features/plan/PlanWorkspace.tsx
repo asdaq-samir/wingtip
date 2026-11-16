@@ -375,8 +375,9 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     ],
   );
 
-  const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard | "send") => (
+  const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard | "send", bar?: boolean) => (
     <ShareMenu
+      bar={bar}
       align={align}
       testId={testId}
       card={card}
@@ -445,22 +446,18 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         flying,
         // The one search, the first page's first row, and at rest its pill (MapPanel).
         bar: <OneSearchField model={search} inputRef={vm.search.searchInput} />,
-        // FPL's alone ("Fpl can show calculations but other tabs should show something else").
-        // FPL's figures pinned at the sheet's foot at every height, the pill's
-        // too, growing as it comes up, at the owner's asks ("While dragging fpl
-        // keep the calculations pinned at the bottom"; "Why can't the half card
-        // have calculations pinned at the very bottom as the full card, just
-        // make them bigger smoothly as expanded").
-        // At the pill on FPL they are the pill's one row (MapPanel), the
-        // route's row from half up (the owner, 2026-11-11, the canvas's b).
-        // FPL's page's own (SheetParts), and the sheet's in flight; under the Profile, the card's foot (PlanCards), in flight too.
-        foot: !place && !heldPoint && !flight && !briefShown && !profileShown ? routed && <FlightFoot vm={vm} /> : undefined,
+        // FPL's foot (FlightFoot): from half up its actions' floating bar, at the pill its figures alone, large,
+        // under the route from half up (the owner, 2026-11-16); in flight the figures; under the Profile, its card's (PlanCards).
+        foot:
+          !place && !heldPoint && !flight && !briefShown && !profileShown
+            ? routed && <FlightFoot vm={vm} share={shareMenu("end", "share-plan", "send", true)} />
+            : undefined,
         // The route as one row under FPL's bar (MapPanel keeps it under the
         // others' heads). How it shows once whole is the pilot's pick from its
         // ••• menu's Show Route As (lib/preferences RouteEdit: the box, one
         // line, or the plan's own rows; the owner, 2026-11-05 and 2026-11-13);
-        // the box again while a stop is typed in or a problem shows. Under it FPL's tiles (FplActions).
-        route: <FplRoute vm={vm} share={shareMenu("end", "share-plan", "send")} />,
+        // the box again while a stop is typed in or a problem shows; the figures under it (FplRoute).
+        route: <FplRoute vm={vm} />,
         console: <PilotPanel />,
       })}
       {/* FPL's cards over the sheet, beside its pages, kept in flight (PlanCards). */}

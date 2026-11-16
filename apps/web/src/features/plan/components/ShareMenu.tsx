@@ -26,7 +26,7 @@ const SHARE_LABEL: Record<"route" | "send" | RouteCard, string> = {
   // share, call it more with the … as the text"): it holds the route's
   // other actions (save, file, plan again, clear), not sharing alone.
   route: "More",
-  // FPL's Share tile (FplActions): every way the plan leaves the app.
+  // FPL's Share (FplTabBar, FplActions in flight): every way the plan leaves the app.
   send: "Share",
   brief: "Share the briefing",
   navlog: "Share the nav log",
@@ -79,7 +79,10 @@ export default function ShareMenu({
   onShowFuel,
   onClear,
   showRouteAs,
+  bar,
 }: {
+  /** Share as a button of FPL's floating bar (FplTabBar), not a tile. */
+  bar?: boolean;
   /** How FPL shows its route, the route box's menu's view options (the
    *  owner, 2026-11-13: "I want to move fpl layout to the fpl page"). */
   showRouteAs?: { value: RouteEdit; onChange: (value: RouteEdit) => void };
@@ -208,7 +211,7 @@ export default function ShareMenu({
               // FPL's Share a tile of its row, as the airplane card's Alert
               // is a tile that opens its menu (AircraftAlertMenu).
               card === "send" ? (
-                <CardAction icon={<Share />} label={SHARE_LABEL.send} testId={testId} />
+                <CardAction icon={<Share />} label={SHARE_LABEL.send} testId={testId} bar={bar} />
               ) : (
                 <RoundButton
                   label={planAgain?.stale.length ? `${SHARE_LABEL[card]}: ${planAgain.stale.join(", ")}` : SHARE_LABEL[card]}

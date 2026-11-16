@@ -16,7 +16,7 @@ const SHOWN = 3;
  * reserve (14 CFR 91.151)"), red first; a tap opens the Brief, where it
  * unfolds to why, or the Profile for the altitude's own caution. Past three,
  * one row says how many more. Nothing found, nothing drawn. On the ground
- * only, as the tiles' row is under the route (FplActions).
+ * only, under the route and its figures (FplRoute).
  */
 export function FplFindings({ vm }: { vm: PlanWorkspaceModel }) {
   const items = useVerdict((v) => v.items);

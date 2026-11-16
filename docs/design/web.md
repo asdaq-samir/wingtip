@@ -690,11 +690,15 @@ the toggle): on Search the one search's field (`OneSearchField`), on FPL
 the airplane's strip (`features/plan/components/workspace/FplBar`, its
 `RouteControls`: the N-number, the altitude and the route's •••, on one
 line, the airplane and the altitude giving way first; the Brief, the Nav
-Log, the Profile and Share are tiles under the route, `FplActions`, the
-airport card's `CardAction`, Share the route's `ShareMenu` as `"send"`;
-under them `FplFindings`, the Brief's findings to act on in words, red
-first, from `lib/verdict` through `planWords`' `findingRows`, where the
-tiles had dots). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
+Log, the Profile and Share are the floating glass bar at the sheet's foot
+from half up, `FplTabBar` in `FlightFoot`, `CardAction`s in its `bar` look
+in `CardTabBar`'s capsule, each opening its card, Share the route's
+`ShareMenu` as `"send"`; at the pill the foot is the figures alone,
+large, `FlightFigures` with `grow`; in flight the tiles are `FplActions`
+at the top of the flying drawer. Under the route, `FplRoute`: the
+figures at their own size, then `FplFindings`, the Brief's findings to
+act on in words, red first, from `lib/verdict` through `planWords`'
+`findingRows`, where the tiles had dots). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
 a turn of the page moves nothing and the head's first row, and the map's
 room, stay the same. The route is the row under FPL's bar (`RouteHead`),
 in each of the three ways Show Route As picks: Route Box, the box of
