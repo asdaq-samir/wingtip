@@ -19,8 +19,7 @@ const EDGE_GAP = 8;
  * Only while a finger has the sheet and it settles (SheetDrawer's
  * usePanelDragging), a frame at a time, by the row's transform alone:
  * nothing is laid out again or built; data-pinned while held, for the
- * row's own backing. What it leaves at the end is the
- * size it settled at, none at half, so nothing is undone in sight.
+ * row's own backing. Nothing is left held once the sheet has settled.
  */
 export function usePinAtFoot(ref: RefObject<HTMLElement | null>, pill: string) {
   const dragging = usePanelDragging((d) => d.dragging);
@@ -41,6 +40,15 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, pill: string) {
       frame = requestAnimationFrame(step);
     };
     step();
-    return () => cancelAnimationFrame(frame);
+    // Let go once the sheet has settled: at half it is in place already,
+    // and at the pill it is out of sight by then. Left held, a tap on the
+    // pill raising the sheet to half (no drag, so no frame to undo it)
+    // showed the row's room empty, its figures held below it (the
+    // owner's iPhone, 2026-11-16).
+    return () => {
+      cancelAnimationFrame(frame);
+      row.style.transform = "";
+      row.removeAttribute("data-pinned");
+    };
   }, [dragging, pill, ref]);
 }
