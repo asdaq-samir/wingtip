@@ -21,7 +21,6 @@
   "services/planner/app/routers/offline.py": 1
  },
  "planner-http-by-hand-web": {
-  "apps/web/src/features/pilot/useExportAccount.ts": 1,
   "apps/web/src/lib/errorReports.ts": 1
  },
  "unit-constant-outside-units-module": {

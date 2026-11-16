@@ -6,15 +6,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -29,6 +26,7 @@ import app.wingtipmaps.android.api.readOrNone
 import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.ui.PlainListItem
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
@@ -118,7 +116,7 @@ fun FlightsCard(plan: Plan, exit: CardExit, onUsed: () -> Unit, model: FlightsMo
             }
             items(state.flights, key = { it.id }) { f ->
                 val route = FlightsModel.route(f)
-                ListItem(
+                PlainListItem(
                     onClick = {
                         plan.useLeg(f.departureIdent, f.destinationIdent, f.stops, f.cruiseAltitudeFt?.toDouble(), null)
                         onUsed()
@@ -126,7 +124,6 @@ fun FlightsCard(plan: Plan, exit: CardExit, onUsed: () -> Unit, model: FlightsMo
                     supportingContent = {
                         Text(listOfNotNull(route.takeIf { f.name != null }, FlightsModel.savedOn(f.createdAt)?.let { stringResource(R.string.saved_on, it) }, f.totalDistanceNm?.let(Format::distance)).joinToString(" · "))
                     },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     content = { Text(f.name ?: route, style = MaterialTheme.typography.titleMedium) },
                 )
             }
