@@ -3,6 +3,7 @@ import geodesic from "./fixtures/geodesic.json";
 import { angleBetween, deg, normalizeDeg, rad, signedTurn, geoLoaded } from "./geo";
 
 // The engine's geodesic rules, loaded by the setup file (vitestSetup).
+// (A scratch line, to measure a small web pull request in CI; not for merging.)
 const { bearingDeg, bestStopIndex, destination, distanceNm, legsNm } = await geoLoaded;
 
 describe("geo", () => {
