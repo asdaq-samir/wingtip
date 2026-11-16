@@ -694,7 +694,11 @@ Log, the Profile and Share are the floating glass bar at the sheet's foot
 from half up, `FplTabBar` in `FlightFoot`, `CardAction`s in its `bar` look
 in `CardTabBar`'s capsule, each opening its card, Share the route's
 `ShareMenu` as `"send"`; at the pill the foot is the figures alone,
-large, `FlightFigures` with `grow`; in flight the tiles are `FplActions`
+large, `FlightFigures` with `grow`, the two handed over by a cross-fade
+in `--motion-drawer`'s time as the sheet leaves or comes back to the pill
+(MapPanel's `atPill` is false while `usePanelDragging` says a finger has
+it, so the head is drawn from the drag's first frame; `feel("detent")` as
+it settles); in flight the tiles are `FplActions`
 at the top of the flying drawer. Under the route, `FplRoute`: the
 figures at their own size, the Routes' chips next. The Brief's findings
 to act on are counted on its button in the bar (`FplTabBar`'s `Count`,

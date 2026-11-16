@@ -106,7 +106,8 @@ export function SheetParts(p: PartsProps) {
     "--corner-line": "calc((2.875rem - 36px) / 2)",
     "--corner-inset": "calc(0.25rem + (2.875rem - 36px) / 2)",
   } as CSSProperties;
-  const pillFoot = size === "peek" && !!(p.bar || p.compact);
+  // The pill as drawn: not while a finger takes it up (MapPanel's atPill).
+  const pillFoot = atPill;
   // The route's figures the pill's one row on a phone's bottom sheet.
   const figuresPill = pillFoot && footShown && p.onPhone && fromBottom && !p.flying;
   const bandOnly = !!p.bar && p.barShown && !headerShown;

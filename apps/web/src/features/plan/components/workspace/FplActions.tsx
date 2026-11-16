@@ -66,7 +66,9 @@ export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
   return (
     <div className="flex w-full min-w-0 flex-1 flex-col">
       <RouteHead vm={vm} />
-      <div className="pt-2 pb-1">
+      {/* Fading in as the sheet leaves the pill, while the foot's large
+          figures fade out (FlightFoot), one strip handed over. */}
+      <div className="pt-2 pb-1 duration-(--motion-drawer) motion-safe:animate-in motion-safe:fade-in">
         <FlightFigures vm={vm} grow={false} />
       </div>
     </div>

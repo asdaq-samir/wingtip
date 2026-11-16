@@ -463,7 +463,13 @@ off by default (the owner, 2026-11-13).
    Show Route As, Clear) (the owner, 2026-11-16, "make those action
    buttons as tab bar again and move the calculations strip to where the
    action buttons are now", buttons not tabs at the owner's pick). At the
-   pill the figures alone, large: swiped down, they grow. In flight the
+   pill the figures alone, large: swiped down, they grow. Taken up from
+   the pill, the sheet is drawn as it is at half from the drag's first
+   frame, its bar, route and figures rising with the finger, and the
+   foot's large figures fade out as the bar fades in and the figures
+   under the route fade in, in the sheet's settle time; a light tick as
+   it settles where the browser has one (the owner's screen recording,
+   2026-11-16). In flight the
    four are a row of tiles at the top of the flying drawer and the foot
    the figures, large, with Done flying. Nothing between the figures
    and the Routes' chips (the owner, 2026-11-16). What the Brief found

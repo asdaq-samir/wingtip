@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { useIsMobile } from "../hooks/use-mobile";
@@ -6,7 +6,8 @@ import { useIsDesktop } from "../hooks/use-desktop";
 import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useSafeArea } from "../hooks/use-viewport";
-import { GLASS_SHEET, PILL_RADIUS, type MapInsets, type PanelState } from "../lib/mapChrome";
+import { GLASS_SHEET, PILL_RADIUS, usePanelDragging, type MapInsets, type PanelState } from "../lib/mapChrome";
+import { feel } from "../lib/haptics";
 import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
 import { FLOAT_PX, insetsOf, letGo, snapsOf } from "./sheet/insets";
@@ -131,7 +132,20 @@ export default function MapPanel(props: Props) {
   const size = onPhone ? props.state : front;
   const ready = useDrawn();
   const hasPill = !!bar || !!compact;
-  const atPill = size === "peek" && hasPill;
+  // A finger taking the sheet up from the pill: drawn as it is at half from
+  // the drag's first frame, its head and all, so the sheet rises with what
+  // it lands on, not the list alone with the head jumping in at the release
+  // (the owner's screen recording, 2026-11-16: "How can we make the
+  // transition better from small detent to medium detent?").
+  const dragging = usePanelDragging((d) => d.dragging);
+  const atPill = size === "peek" && hasPill && !dragging;
+  // A light tick as the sheet settles at another size, as iOS's sheet
+  // gives one (lib/haptics: Chrome on Android; Safari has none).
+  const settled = useRef(props.state);
+  useEffect(() => {
+    if (onPhone && settled.current !== props.state) feel("detent");
+    settled.current = props.state;
+  }, [props.state, onPhone]);
 
   // The sheet's element (the Drawer's popup, or the side panel), for what
   // it covers of the map.
