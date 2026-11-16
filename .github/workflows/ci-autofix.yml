@@ -82,7 +82,8 @@ jobs:
           QUIET_MINUTES: 30
         run: scripts/ci/autofix_format.sh plan
       # The commit that failed, beside main's script. format.sh fetches each
-      # formatter itself, or skips its language with a note; the Java's wants its JDK.
+      # formatter itself, or skips its language with a note; the Java's wants its JDK
+      # (main's .tool-versions, which the sparse checkout keeps at the root).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         if: steps.plan.outputs.langs != ''
         with:
@@ -93,7 +94,7 @@ jobs:
         if: contains(steps.plan.outputs.langs, 'java')
         with:
           distribution: temurin
-          java-version-file: branch/.tool-versions
+          java-version-file: .tool-versions
       - name: Format, commit the files that changed, and push
         if: steps.plan.outputs.langs != ''
         working-directory: branch

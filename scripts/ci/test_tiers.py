@@ -223,8 +223,11 @@ def tiers() -> list[str]:
     if own_specs and own_specs != {"e2e", "e2e-images"}:
         errors.append("ci.yml: e2e and e2e-images run a pull request's own specs together, or neither (the stack needs its images)")
     smoke = "\n".join(jobs["e2e"].body) if "e2e" in jobs else ""
-    if own_specs and not re.search(r"github\.event_name == 'pull_request' && format\('--project=mobile [^']*\{0\}', needs\.changes\.outputs\.specs\)", smoke):
-        errors.append("ci.yml: on a pull request e2e runs the changed specs alone (PROJECTS names needs.changes.outputs.specs), never the smoke set")
+    own_run = r"github\.event_name == 'pull_request' && format\('--project=mobile [^']*\{0\}', needs\.changes\.outputs\.specs\)"
+    if own_specs and not re.search(own_run, smoke):
+        errors.append(
+            "ci.yml: on a pull request e2e runs the changed specs alone (PROJECTS names needs.changes.outputs.specs), never the smoke set"
+        )
     errors += [
         f"ci.yml: {i} runs after merge (the owner, 2026-11-10): `if: github.event_name != 'pull_request'`"
         for i in sorted(AFTER_MERGE)
