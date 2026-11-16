@@ -68,7 +68,13 @@ const HANDED = "transition-opacity duration-(--motion-drawer) ease-(--motion-dra
  *  popup's data-risen, SheetDrawer), all in CSS (PillHandover), nothing
  *  built or swapped mid-drag -- the airport card's way, for every sheet
  *  (the owner, 2026-11-16: "can we make it a shared code for all cards?"). */
-export const PILL_FACE = `${HANDED} group-data-swiping/sheet:opacity-0 group-data-risen/sheet:opacity-0`;
+// Back at once, not faded in: the risen copy it takes over from (FPL's
+// figures held at the foot, usePinAtFoot) goes at once in the same place,
+// and a fade between left neither in sight, a flicker at the pill (the
+// owner, 2026-11-16: "The pull down flickers at the end"). A transition
+// is taken from the state gone to, so only the going out is faded.
+export const PILL_FACE =
+  "group-data-swiping/sheet:opacity-0 group-data-risen/sheet:opacity-0 group-data-swiping/sheet:transition-opacity group-data-swiping/sheet:duration-(--motion-drawer) group-data-swiping/sheet:ease-(--motion-drawer-ease) motion-reduce:transition-none";
 /** And what the sheet shows risen, laid out at the pill but out of sight
  *  (PILL_BODY), fading in as the finger takes it. */
 export const RISEN_FACE = `${PILL_BODY} ${HANDED} opacity-0 group-data-swiping/sheet:opacity-100 group-data-risen/sheet:visible group-data-risen/sheet:opacity-100`;
