@@ -28,6 +28,8 @@ test("no airplane picked: the strip is To and Dist, the nav log its courses and 
   await expect(strip).toContainText(/DIST/i, { timeout: slow(60000) });
   await expect(strip.getByTestId("navlog-ete")).toHaveCount(0);
   await expect(strip.getByTestId("navlog-fuel")).toHaveCount(0);
+  // The arrival's time asks for the airplane, not a bare dash (the owner, 2026-11-15).
+  await expect(sideDrawer(page).getByTestId("point-pick-airplane")).toHaveText("Pick an airplane");
   await openNavLog(page);
   // A desktop's table (docs/design/web.md §4): only the columns no
   // airplane changes -- no heading, groundspeed, time or fuel.

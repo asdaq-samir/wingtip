@@ -7,6 +7,7 @@ import { PointFigures, PointMenu } from "../PointControls";
 import { legOf, type NavLogRow } from "../navlog/rows";
 import type { ProceduresRouteModel } from "../../hooks/useProceduresRoute";
 import { PointGrip } from "./RouteGrid";
+import { TimeOrPick } from "./TimeOrPick";
 
 // The end of a point's row, at the owner's picks ("keep the format of
 // altitude (elev/published/cruising) and eta to the right side of each
@@ -62,12 +63,17 @@ export function pointEnd(
   // the field to itself: a local flight, not a direct (the audit's).
   const homeward = routePoints.length > 1 && sameField(routePoints[0]!, ident) && !positioned;
   const kind = own !== null ? "set" : at.waypoint ? "cruise" : "elev";
+  // The field the route ends at: its time the one asked for (TimeOrPick);
+  // the points between say none with no airplane, the departure its own.
+  const arrival = at.to && !at.waypoint && !at.stop;
   return {
     direct,
-    figures: <PointFigures time={at.time} altitude={shown === null ? null : altFt(shown)} kind={kind} />,
+    figures: (
+      <PointFigures time={arrival ? <TimeOrPick time={at.time} /> : at.time} altitude={shown === null ? null : altFt(shown)} kind={kind} />
+    ),
     // The two apart, for an airport's block: the time on its ident's
     // line, the elevation on its wind's.
-    time: <PointFigures time={at.time} altitude={null} kind={kind} />,
+    time: <PointFigures time={arrival ? <TimeOrPick time={at.time} /> : at.time} altitude={null} kind={kind} />,
     elevation: <PointFigures time={null} altitude={shown === null ? null : altFt(shown)} kind={kind} testId="point-elevation" />,
     // Behind the point's mark (`face`), at the owner's ask ("Use the
     // airport icon as the more button instead of having one to the right").

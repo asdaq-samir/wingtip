@@ -55,7 +55,9 @@ function railOf(rows: NavLogRow[]): { wind: string | null; airway: string | null
     const route = airwayOf(row);
     const joined = route !== null && route !== airwayBefore ? route : null;
     airwayBefore = route;
-    const field = row.kind === "departure" || row.kind === "destination" || (row.kind === "stop" && row.airport.kind !== "fix");
+    // A field's elevation only at an airport: a present position (POS0)
+    // is a "fix" there too, its "field — ft" said of no field.
+    const field = (row.kind === "departure" || row.kind === "destination" || row.kind === "stop") && row.airport.kind !== "fix";
     const legAltitude = isLegPoint(row) ? row.point.altitude_ft : (legOf(row)?.altitude_ft ?? null);
     const altitude = field
       ? `field ${altFt("airport" in row ? row.airport.elevation_ft : null)} ft`
