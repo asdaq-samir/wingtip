@@ -66,10 +66,11 @@ export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
   return (
     <div className="flex w-full min-w-0 flex-1 flex-col">
       <RouteHead vm={vm} />
-      {/* Fading in as the sheet leaves the pill, while the foot's large
-          figures fade out (FlightFoot), one strip handed over. */}
-      <div className="pt-2 pb-1 duration-(--motion-drawer) motion-safe:animate-in motion-safe:fade-in">
-        <FlightFigures vm={vm} grow={false} />
+      {/* At the pill out of sight with the rest of the route's row, rising
+          with the sheet as the foot's figures fade out (PillHandover), a
+          quiet copy till then, the pill's own being the one in sight. */}
+      <div className="pt-2 pb-1">
+        <FlightFigures vm={vm} grow={false} quiet={!vm.view.panelOpen} />
       </div>
     </div>
   );

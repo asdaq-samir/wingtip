@@ -1,6 +1,5 @@
-import { Suspense, useState, type ReactNode } from "react";
-import { usePanelDragging } from "../../../../lib/mapChrome";
-import { prefersReducedMotion } from "../../../../lib/motion";
+import { Suspense, type ReactNode } from "react";
+import { PillHandover } from "../../../../components/sheet/PillHandover";
 import { cn } from "cn";
 import { Button } from "../../../../components/ui/button";
 import { EngineGate } from "../../../../lib/engine/engineGate";
@@ -19,7 +18,7 @@ import { FplTabBar } from "./FplTabBar";
  *  .wasm (EngineGate), the rest of the page not (the owner's iPhone,
  *  2026-11-11: "Part of the app didn't load" on "strip_fuel cannot be
  *  worked out"). */
-export function FlightFigures({ vm, grow }: { vm: PlanWorkspaceModel; grow: boolean }) {
+export function FlightFigures({ vm, grow, quiet = false }: { vm: PlanWorkspaceModel; grow: boolean; quiet?: boolean }) {
   const { depart, directParam, planned } = vm.route;
   const { directToPoint, s } = vm.plan;
   const { firstFuelStop } = vm.stops;
@@ -29,12 +28,12 @@ export function FlightFigures({ vm, grow }: { vm: PlanWorkspaceModel; grow: bool
     <EngineGate>
       {/* Flown direct to a point: said over the figures, and Cancel. Put
           away in the pill, whose one row is the figures. */}
-      {directParam && (
+      {directParam && !quiet && (
         <div data-pill-hides="">
           <DirectStrip ident={directParam} onDevice={s.directOnDevice} onCancel={() => directToPoint(null)} />
         </div>
       )}
-      <div data-testid="flight-line">
+      <div data-testid={quiet ? undefined : "flight-line"}>
         <FlightLine
           totals={s.totals}
           estimate={estimate}
@@ -44,14 +43,12 @@ export function FlightFigures({ vm, grow }: { vm: PlanWorkspaceModel; grow: bool
           grow={grow}
           flying={flying}
           fuelStop={firstFuelStop}
+          quiet={quiet}
         />
       </div>
     </EngineGate>
   );
 }
-
-/** One face of the foot, in the one cell both share, in the sheet's own time. */
-const HANDOVER = "col-start-1 row-start-1 self-end duration-(--motion-drawer) ease-(--motion-drawer-ease)";
 
 /** What is pinned at FPL's foot (PlanWorkspace's `foot`): the dry run's
  *  figures while it plays; in flight the flight's figures and Done flying;
@@ -64,18 +61,6 @@ export default function FlightFoot({ vm, share }: { vm: PlanWorkspaceModel; shar
   const { doneFlying, dryRunning, flying } = vm.flight;
   const { estimate } = vm.brief;
   const { panelOpen } = vm.view;
-  // Open from the drag's first frame off the pill, as the sheet's head is
-  // (MapPanel's atPill), not only once it rests at half.
-  const open = usePanelDragging((d) => panelOpen || d.dragging);
-  // The face going, drawn over the one coming while it fades out, for the
-  // sheet's settle time, then taken away (its figures' names not said twice
-  // for long); none under Reduce Motion, where nothing fades.
-  const [face, setFace] = useState(open);
-  const [going, setGoing] = useState<boolean | null>(null);
-  if (face !== open) {
-    setFace(open);
-    setGoing(prefersReducedMotion() ? null : face);
-  }
   // In flight, the one way out of flying mode (useFlyingMode): a small
   // Done flying at the figures' foot, as the canvas has the line there;
   // the tabs come back on the ground by themselves.
@@ -94,32 +79,12 @@ export default function FlightFoot({ vm, share }: { vm: PlanWorkspaceModel; shar
     </div>
   );
   // The bar on FPL's page alone, not at the Profile card's foot (no
-  // `share`): from half up the bar, at the pill the figures, the one
-  // handed to the other as the sheet moves (the owner, 2026-11-16: the
-  // figures went from the foot to the route's row in one jump at the
-  // release), the one coming fading in as the one going fades out.
-  if (share && !dryRunning && !flying) {
-    const faceOf = (barShown: boolean) => (barShown ? <FplTabBar vm={vm} share={share} /> : <FlightFigures vm={vm} grow />);
-    return (
-      <div className="grid w-full">
-        <div key={String(open)} className={cn(HANDOVER, "motion-safe:animate-in motion-safe:fade-in")}>
-          {faceOf(open)}
-        </div>
-        {going !== null && (
-          <div
-            inert
-            aria-hidden
-            className={cn(HANDOVER, "pointer-events-none animate-out fade-out fill-mode-forwards")}
-            onAnimationEnd={(e) => {
-              if (e.target === e.currentTarget) setGoing(null);
-            }}
-          >
-            {faceOf(going)}
-          </div>
-        )}
-      </div>
-    );
-  }
+  // `share`): at the pill the figures, large, handed to the actions' bar as
+  // a finger takes the sheet, by CSS (PillHandover; the owner, 2026-11-16:
+  // the figures went from the foot to the route's row in one jump at the
+  // release); from half up the bar.
+  if (share && !dryRunning && !flying)
+    return <PillHandover atPill={!panelOpen} pill={<FlightFigures vm={vm} grow />} risen={<FplTabBar vm={vm} share={share} />} />;
   return (
     <div className="flex min-h-0 w-full flex-col">
       {dryRunning ? (

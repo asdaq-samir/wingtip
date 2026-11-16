@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { cn } from "cn";
 import { PanelSize, type PanelState } from "../../lib/mapChrome";
 import TabKept from "../TabKept";
-import { AT_PILL, PILL_BODY } from "./insets";
+import { AT_PILL, PILL_BODY, RISEN_FACE } from "./insets";
 import { SheetPage, type SheetPages } from "./SheetPages";
 
 /** The first row's room under the grabber: ten points, the grabber's bar
@@ -106,8 +106,7 @@ export function SheetParts(p: PartsProps) {
     "--corner-line": "calc((2.875rem - 36px) / 2)",
     "--corner-inset": "calc(0.25rem + (2.875rem - 36px) / 2)",
   } as CSSProperties;
-  // The pill as drawn: not while a finger takes it up (MapPanel's atPill).
-  const pillFoot = atPill;
+  const pillFoot = size === "peek" && !!(p.bar || p.compact);
   // The route's figures the pill's one row on a phone's bottom sheet.
   const figuresPill = pillFoot && footShown && p.onPhone && fromBottom && !p.flying;
   const bandOnly = !!p.bar && p.barShown && !headerShown;
@@ -122,12 +121,14 @@ export function SheetParts(p: PartsProps) {
   // A page's first row: the one search on Search, FPL's bar on FPL (its
   // twin, FplBar), one size on both, so a turn of the page moves nothing
   // and the map's room stays as it was (the owner, 2026-11-14).
-  const barRowOf = (bar: ReactNode, shown: boolean, hairline: boolean) => (
+  // `rises`: out of sight at the pill but laid out, coming into sight as a
+  // finger takes the sheet (RISEN_FACE), where it is not the pill's own.
+  const barRowOf = (bar: ReactNode, shown: boolean, hairline: boolean, rises = false) => (
     <div
       className={cn(
         "flex shrink-0 px-4",
         barRowPad(p.fromBottom),
-        !shown && "hidden",
+        !shown && (rises ? RISEN_FACE : "hidden"),
         // All the way up on a phone the search alone is pinned at the
         // top, a hairline under it, as Apple Maps' is.
         hairline && p.onPhone && size === "full" && "border-b border-border",
@@ -139,14 +140,19 @@ export function SheetParts(p: PartsProps) {
   const barRow = p.bar && barRowOf(p.bar, p.barShown, true);
   // The route's row (or a workspace's head) and the controls under it: under
   // the search, or paged under FPL's bar.
-  const headBlock = (shown: boolean, alone: boolean) => {
-    const keptHere = p.kept != null && shown && headContent === p.kept;
+  const headBlock = (shownAtRest: boolean, alone: boolean, rises = false) => {
+    // Drawn at the pill too where it rises with the sheet, as at half.
+    const risen = rises && !shownAtRest;
+    const shown = shownAtRest || risen;
+    const content = risen ? p.top : headContent;
+    const keptHere = p.kept != null && shown && content === p.kept;
     return (
       <div
         className={cn(
           "relative flex flex-col",
           p.bar && p.barShown && !atPill && SHEET_BELOW,
           ((!shown && p.kept == null) || alone) && "hidden",
+          risen && RISEN_FACE,
         )}
       >
         {(shown || p.kept != null) && (
@@ -156,7 +162,11 @@ export function SheetParts(p: PartsProps) {
                 ? "contents"
                 : cn(
                     "@container flex items-center gap-2 print:hidden",
-                    atPill ? cn("px-2.25 pb-3", ROW_PAD) : p.top == null ? undefined : cn("px-3 pb-1", p.barShown ? "pt-1" : ROW_PAD),
+                    atPill && !risen
+                      ? cn("px-2.25 pb-3", ROW_PAD)
+                      : p.top == null
+                        ? undefined
+                        : cn("px-3 pb-1", p.barShown ? "pt-1" : ROW_PAD),
                   )
             }
           >
@@ -168,10 +178,10 @@ export function SheetParts(p: PartsProps) {
                 {p.kept}
               </div>
             )}
-            {shown && !keptHere && headContent}
+            {shown && !keptHere && content}
           </header>
         )}
-        {shown && !atPill && p.controls && (
+        {shown && (!atPill || risen) && p.controls && (
           <div className={cn("flex flex-wrap items-center gap-x-2 gap-y-3 px-3 pt-1 print:hidden", "pb-1.5")}>{p.controls}</div>
         )}
       </div>
@@ -287,6 +297,11 @@ export function SheetParts(p: PartsProps) {
     const routeShown = !p.flying && !cardsUp && !atPill && p.top != null;
     const searchAlone = atPill && !p.flying && !p.barShown;
     const routeAlone = atPill && !p.flying && !planShown && !footShown;
+    // At the pill whose face is the foot's figures, FPL's bar and route are
+    // laid out out of sight and rise with the sheet (RISEN_FACE), the
+    // figures handed to the actions' bar (PillHandover): the airport card's
+    // way, nothing swapped as a finger takes it (the owner, 2026-11-16).
+    const rises = atPill && footShown && !p.flying && !cardsUp && p.top != null;
     // One page up at a time (SheetPage), turned by its toggle (PageToggle);
     // the other kept, inert.
     content = (
@@ -297,8 +312,8 @@ export function SheetParts(p: PartsProps) {
         <SheetPage at={1} up={at === 1}>
           {scroller(
             <>
-              {barRowOf(bar, planShown, false)}
-              {headBlock(routeShown, false)}
+              {barRowOf(bar, planShown, false, rises)}
+              {headBlock(routeShown, false, rises)}
             </>,
             second,
             routeAlone,

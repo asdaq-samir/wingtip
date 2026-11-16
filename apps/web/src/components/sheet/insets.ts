@@ -60,6 +60,18 @@ export const PILL_BODY = "invisible group-data-swiping/sheet:visible";
 /** And a body that is the pill's one surface: its title row kept in sight. */
 export const AT_PILL = `${PILL_BODY} [&_[data-sheet-head]]:visible`;
 
+const HANDED = "transition-opacity duration-(--motion-drawer) ease-(--motion-drawer-ease) motion-reduce:transition-none";
+/** What is the pill's own face while the sheet rests there (FPL's figures)
+ *  and is not at half: fading out the moment a finger takes the sheet, as
+ *  RISEN_FACE fades in, so what the pill shows is handed to what the sheet
+ *  shows risen in the sheet's own time, all in CSS (PillHandover), nothing
+ *  built or swapped mid-drag -- the airport card's way, for every sheet
+ *  (the owner, 2026-11-16: "can we make it a shared code for all cards?"). */
+export const PILL_FACE = `${HANDED} group-data-swiping/sheet:opacity-0`;
+/** And what the sheet shows risen, laid out at the pill but out of sight
+ *  (PILL_BODY), fading in as the finger takes it. */
+export const RISEN_FACE = `${PILL_BODY} ${HANDED} opacity-0 group-data-swiping/sheet:opacity-100`;
+
 /** A sheet's snap points and each size's, one constant per edge. */
 export function snapsOf(fromBottom: boolean) {
   return fromBottom ? { at: BOTTOM_SNAPS, points: BOTTOM_POINTS } : { at: TOP_SNAPS, points: TOP_POINTS };
