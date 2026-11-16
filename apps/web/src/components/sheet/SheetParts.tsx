@@ -338,7 +338,9 @@ export function SheetParts(p: PartsProps) {
             routeAlone,
             at !== 1,
             "0px",
-            footShown,
+            // Not cut at the foot where the page's top is its pill: the
+            // foot is out of sight there, and the cut took the figures.
+            footShown && !rises,
             rises,
           )}
           {foot}
