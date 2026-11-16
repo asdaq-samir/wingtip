@@ -1591,13 +1591,13 @@ jobs:
           persist-credentials: false
       - run: scripts/ci/backup_restore.sh
 
-  # This run's minutes, job by job, against docs/CI.md's budget, and the
-  # caches that missed, in the run's summary: warnings, never a failure
-  # (scripts/ci/ci_budget.py). Last, after every job; seconds.
+  # A red run's failures with the command for each (failure_summary.py), then
+  # its minutes against docs/CI.md's budget and the caches that missed
+  # (ci_budget.py): last, never failing, and on a run `halt` cancelled too.
   budget:
     name: CI budget
     needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, e2e, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, backup-restore, halt, passed]
-    if: ${{ !cancelled() }}
+    if: always()
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3
     continue-on-error: true
@@ -1611,10 +1611,10 @@ jobs:
         with:
           persist-credentials: false
           sparse-checkout: scripts/ci
-      - name: Minutes and cache misses, against the budget
+      - name: A red run's failures, then minutes and cache misses against the budget
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 scripts/ci/ci_budget.py
+        run: python3 scripts/ci/failure_summary.py && python3 scripts/ci/ci_budget.py
 
   # A red run ends when its Linux jobs do (decision 0044): each has said
   # what it found within about four minutes, and only the phones' builds
