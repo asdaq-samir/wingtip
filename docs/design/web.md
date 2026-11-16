@@ -688,9 +688,10 @@ after the bar. The bar before it is one size on both pages
 (`panelField`'s `SHEET_BAR`, 46 tall, round-ended, the row's room less
 the toggle): on Search the one search's field (`OneSearchField`), on FPL
 the airplane's strip (`features/plan/components/workspace/FplBar`, its
-`RouteControls`: the N-number, the altitude, the Profile, the Brief and
-the route's •••, on one line, the airplane and the altitude giving way
-first). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
+`RouteControls`: the N-number, the altitude and the route's •••, on one
+line, the airplane and the altitude giving way first; the Brief, the Nav
+Log, the Profile and Share are tiles under the route, `FplActions`, the
+airport card's `CardAction`, Share the route's `ShareMenu` as `"send"`). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
 a turn of the page moves nothing and the head's first row, and the map's
 room, stay the same. The route is the row under FPL's bar (`RouteHead`),
 in each of the three ways Show Route As picks: Route Box, the box of

@@ -1,7 +1,8 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { done } from "../../../lib/doneNote";
-import { Ellipsis, FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Share, ListOrdered, Trash2 } from "lucide-react";
+import { Ellipsis, FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Share, Trash2 } from "lucide-react";
 import RoundButton from "../../../components/RoundButton";
+import { CardAction } from "../../../components/CardAction";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../../components/ResponsivePopover";
 import {
   DropdownMenu,
@@ -20,11 +21,13 @@ import { refreshLive } from "../../../lib/liveRefresh";
 import type { RouteEdit } from "../../../lib/preferences";
 import ShowRouteAs, { RouteMapChoices } from "./ShowRouteAs";
 
-const SHARE_LABEL: Record<"route" | RouteCard, string> = {
+const SHARE_LABEL: Record<"route" | "send" | RouteCard, string> = {
   // The route box's is More, a "…", at the owner's ask ("Don't call it
   // share, call it more with the … as the text"): it holds the route's
   // other actions (save, file, plan again, clear), not sharing alone.
   route: "More",
+  // FPL's Share tile (FplActions): every way the plan leaves the app.
+  send: "Share",
   brief: "Share the briefing",
   navlog: "Share the nav log",
   profile: "Share the profile",
@@ -74,7 +77,6 @@ export default function ShareMenu({
   reviewSheet,
   planAgain,
   onShowFuel,
-  onNavLog,
   onClear,
   showRouteAs,
 }: {
@@ -83,8 +85,6 @@ export default function ShareMenu({
   showRouteAs?: { value: RouteEdit; onChange: (value: RouteEdit) => void };
   /** The suggested fuel stops taken out of the route box, put back. */
   onShowFuel?: () => void;
-  /** The route's nav log opened: the route box's, with a course drawn. */
-  onNavLog?: () => void;
   /** The route cleared: the route box's menu's last item (the owner,
    *  2026-11-11: "Instead of clear button, move that to the …"). */
   onClear?: () => void;
@@ -92,8 +92,9 @@ export default function ShareMenu({
   /** Its button's: the route box's, or the tab bar's over the Brief and
    *  the nav log (TabBar's `routeShare`). */
   testId?: string;
-  /** Whose Share it is: the route box's, or one of the route's cards'. */
-  card?: "route" | RouteCard;
+  /** Whose Share it is: the route box's •••, FPL's Share tile ("send"),
+   *  or one of the route's cards'. */
+  card?: "route" | "send" | RouteCard;
   planned: Planned;
   course: Course | null;
   selected: Candidate[];
@@ -204,107 +205,106 @@ export default function ShareMenu({
         <ResponsivePopoverAnchor asChild>
           <DropdownMenuTrigger
             render={
-              <RoundButton
-                label={planAgain?.stale.length ? `${SHARE_LABEL[card]}: ${planAgain.stale.join(", ")}` : SHARE_LABEL[card]}
-                className={card === "route" ? "size-[32px]" : undefined}
-                data-testid={testId}
-              />
+              // FPL's Share a tile of its row, as the airplane card's Alert
+              // is a tile that opens its menu (AircraftAlertMenu).
+              card === "send" ? (
+                <CardAction icon={<Share />} label={SHARE_LABEL.send} testId={testId} />
+              ) : (
+                <RoundButton
+                  label={planAgain?.stale.length ? `${SHARE_LABEL[card]}: ${planAgain.stale.join(", ")}` : SHARE_LABEL[card]}
+                  className={card === "route" ? "size-[32px]" : undefined}
+                  data-testid={testId}
+                />
+              )
             }
           >
-            {/* The route box's a size down, as the box's other buttons are. */}
-
-            <span className="relative">
-              {card === "route" ? <Ellipsis className="size-[18px]" strokeWidth={2.4} /> : <Share className="size-5" strokeWidth={2} />}
-              {!!planAgain?.stale.length && (
-                <span
-                  aria-hidden="true"
-                  data-testid="plan-again-mark"
-                  className="absolute -top-0.5 -right-1 size-2 rounded-full bg-caution"
-                />
-              )}
-            </span>
+            {/* The route box's a size down, as the box's other buttons are;
+                the tile its own glyph and word. */}
+            {card !== "send" && (
+              <span className="relative">
+                {card === "route" ? <Ellipsis className="size-[18px]" strokeWidth={2.4} /> : <Share className="size-5" strokeWidth={2} />}
+                {!!planAgain?.stale.length && (
+                  <span
+                    aria-hidden="true"
+                    data-testid="plan-again-mark"
+                    className="absolute -top-0.5 -right-1 size-2 rounded-full bg-caution"
+                  />
+                )}
+              </span>
+            )}
           </DropdownMenuTrigger>
         </ResponsivePopoverAnchor>
         <DropdownMenuContent align={align} className="min-w-56 print:hidden">
-          {/* The nav log, its button's place beside the Brief now the
-              Profile's (the owner, 2026-11-04: "Navlog can be moved to the
-              more button"). */}
-          {onNavLog && (
-            <DropdownMenuItem onClick={onNavLog} data-testid="route-navlog">
-              <ListOrdered />
-              Nav log
-            </DropdownMenuItem>
-          )}
           {routed && onShowFuel && (
             <DropdownMenuItem onClick={onShowFuel} data-testid="route-show-fuel">
               <Fuel />
               Show Fuel Stops
             </DropdownMenuItem>
           )}
-          {routed && (
+          {/* The route's own link in FPL's Share; each card's, its link. */}
+          {routed && card !== "route" && (
             <DropdownMenuItem onClick={() => void share()} data-testid="share-link">
               <Link2 />
               Share link
             </DropdownMenuItem>
           )}
-          {card === "route" && (
+          {card === "send" && routed && (
             <>
-              {routed && (
-                <>
-                  {/* ForeFlight sends the route on to the panel wirelessly
+              {/* ForeFlight sends the route on to the panel wirelessly
                       (Garmin's Connext, Avidyne, Dynon): the owner's pick
                       (2026-11-02), as most pilots have ForeFlight and not
                       Garmin Pilot, and no files for an SD card or a USB stick. */}
-                  {/* Links, not handlers: ForeFlight opens from a tap on its
+              {/* Links, not handlers: ForeFlight opens from a tap on its
                       own link, and a download needs one too. */}
-                  {points.length > 0 &&
-                    (packHref && !sentPack ? (
-                      <DropdownMenuItem
-                        data-testid="open-foreflight"
-                        render={
-                          <a href={openInForeFlight(new URL(packHref, packOrigin(window.location)).href)} onClick={sendPack}>
-                            <Send />
-                            Open in ForeFlight
-                          </a>
-                        }
-                      />
-                    ) : (
-                      <DropdownMenuItem
-                        data-testid="open-foreflight"
-                        render={
-                          <a href={foreflightRoute(points, altitudeFt, sentPack)}>
-                            <Send />
-                            Open in ForeFlight
-                          </a>
-                        }
-                      />
-                    ))}
-                  {/* Sent once and since deleted in ForeFlight: again. */}
-                  {packHref && sentPack && (
-                    <DropdownMenuItem
-                      data-testid="foreflight-pack"
-                      render={
-                        <a href={openInForeFlight(new URL(packHref, packOrigin(window.location)).href)}>
-                          <MapPinned />
-                          Send the checkpoints again
-                        </a>
-                      }
-                    />
-                  )}
-                  {packHref && (
-                    <DropdownMenuItem
-                      data-testid="export-foreflight"
-                      render={
-                        <a href={packHref} download>
-                          <FileArchive />
-                          Checkpoints for ForeFlight (.zip)
-                        </a>
-                      }
-                    />
-                  )}
-                  <DropdownMenuSeparator />
-                </>
+              {points.length > 0 &&
+                (packHref && !sentPack ? (
+                  <DropdownMenuItem
+                    data-testid="open-foreflight"
+                    render={
+                      <a href={openInForeFlight(new URL(packHref, packOrigin(window.location)).href)} onClick={sendPack}>
+                        <Send />
+                        Open in ForeFlight
+                      </a>
+                    }
+                  />
+                ) : (
+                  <DropdownMenuItem
+                    data-testid="open-foreflight"
+                    render={
+                      <a href={foreflightRoute(points, altitudeFt, sentPack)}>
+                        <Send />
+                        Open in ForeFlight
+                      </a>
+                    }
+                  />
+                ))}
+              {/* Sent once and since deleted in ForeFlight: again. */}
+              {packHref && sentPack && (
+                <DropdownMenuItem
+                  data-testid="foreflight-pack"
+                  render={
+                    <a href={openInForeFlight(new URL(packHref, packOrigin(window.location)).href)}>
+                      <MapPinned />
+                      Send the checkpoints again
+                    </a>
+                  }
+                />
               )}
+              {packHref && (
+                <DropdownMenuItem
+                  data-testid="export-foreflight"
+                  render={
+                    <a href={packHref} download>
+                      <FileArchive />
+                      Checkpoints for ForeFlight (.zip)
+                    </a>
+                  }
+                />
+              )}
+            </>
+          )}
+          {card === "route" && (
+            <>
               {/* Before there is a route, only what applies then: the
                   route's Show Route As (the owner, 2026-11-13), the rest
                   left out, not greyed. */}
@@ -343,7 +343,7 @@ export default function ShareMenu({
               Refresh
             </DropdownMenuItem>
           )}
-          {card === "navlog" && !local && (
+          {(card === "navlog" || card === "send") && !local && (
             <DropdownMenuItem
               disabled={!routed}
               data-testid="print-kneeboard"

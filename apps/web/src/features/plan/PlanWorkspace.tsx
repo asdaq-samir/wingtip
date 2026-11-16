@@ -25,7 +25,7 @@ import PlanSidebar from "./components/workspace/PlanSidebar";
 import PlanPage from "./components/workspace/PlanPage";
 import PlanCards from "./components/workspace/PlanCards";
 import FlightFoot from "./components/workspace/FlightFoot";
-import RouteHead from "./components/workspace/RouteHead";
+import { FplRoute } from "./components/workspace/FplActions";
 import RouteControls from "./components/workspace/RouteControls";
 import FplBar from "./components/workspace/FplBar";
 import OneSearchField from "./components/search/OneSearchField";
@@ -113,7 +113,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   } = vm.picks;
   const { fuelHidden, showFuelStops, tankFigures } = vm.stops;
   const { holdAsk, listEdit, routeLine } = vm.routeList;
-  const { briefShown, openNavLogCard, profileShown } = vm.fpl;
+  const { briefShown, profileShown } = vm.fpl;
   const { flying } = vm.flight;
   const { routeRows } = vm.leg;
   const {
@@ -375,7 +375,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     ],
   );
 
-  const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard) => (
+  const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard | "send") => (
     <ShareMenu
       align={align}
       testId={testId}
@@ -403,7 +403,6 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       // keep the route box's row on one line; Share marked where it is due.
       planAgain={card === undefined && routed && !s.local ? { stale, onPlan: () => setLoad((n) => n + 1) } : undefined}
       onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
-      onNavLog={card === undefined && routed && course ? openNavLogCard : undefined}
       // Nothing to clear on the empty page: its ✕ goes back (RouteControls).
       onClear={card === undefined && vm.route.hasPoints ? vm.routeList.clearRoute : undefined}
       showRouteAs={card === undefined ? { value: routeEdit, onChange: setRouteEdit } : undefined}
@@ -460,8 +459,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // others' heads). How it shows once whole is the pilot's pick from its
         // ••• menu's Show Route As (lib/preferences RouteEdit: the box, one
         // line, or the plan's own rows; the owner, 2026-11-05 and 2026-11-13);
-        // the box again while a stop is typed in or a problem shows.
-        route: <RouteHead vm={vm} />,
+        // the box again while a stop is typed in or a problem shows. Under it FPL's tiles (FplActions).
+        route: <FplRoute vm={vm} share={shareMenu("end", "share-plan", "send")} />,
         console: <PilotPanel />,
       })}
       {/* FPL's cards over the sheet, beside its pages, kept in flight (PlanCards). */}

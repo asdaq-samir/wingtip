@@ -35,9 +35,8 @@ test("the Nav Log opened over the sheet all the way up opens at half, as every c
   await settle(page);
   await grabberTo(page, "full");
   await sideDrawer(page)
-    .getByTestId("share-route")
+    .getByTestId("route-navlog")
     .click({ timeout: slow(60_000) });
-  await page.getByTestId("route-navlog").click();
   await expect(navLogSheet(page)).toBeVisible();
   // Medium, whatever it covers (the owner, 2026-11-11: "I thought stock was to open each card medium by default").
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");

@@ -165,8 +165,9 @@ trailing button, and the page toggle at its end, where the account
 button was until the owner swapped the two (2026-11-14: "Swap the fpl
 toggle and account buttons"); the account button rides the sheet's top
 under the 3D. FPL's first row is the same size: the airplane's strip
-(N-number, altitude, Profile, Brief, •••) with the toggle at its end, and
-the route one row under it in whichever of its three layouts; Search's
+(N-number, altitude, •••) with the toggle at its end, the route one row
+under it in whichever of its three layouts, and under the route the
+tiles Brief, Nav Log, Profile and Share (2026-11-15); Search's
 page under the search is the search's own page (with nothing typed, or
 the field in use). On a desktop the same in the
 side panel, ⌘K or Ctrl K focusing the field (the command palette it
@@ -187,8 +188,8 @@ list is where it was.
 | Plan: route box, route list, nav log rows | the sheet (with a route); the search's Your Flight card | 1 → **0** with a route, 1 from the search | Route pills drag to reorder; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; altitude and departure time chips open popovers; Undo bar under the route after a removal or clear |
 | Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; Dist opens the nav log |
 | Brief | plan → Brief; search → Do → Brief | 2 | Alternate filed or taken off (iOS too: the Brief's Alternate sections, and the plan's Alternate row under IFR, 1 tap); Ask chips apply changes |
-| Nav log card | plan → ••• → Nav log; Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
-| Profile | plan → Profile | 2 → **1** with a route | VFR/IFR, altitude in the side view, Dry run |
+| Nav log card | plan → Nav Log tile; Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
+| Profile | plan → Profile tile | 2 → **1** with a route | VFR/IFR, altitude in the side view, Dry run |
 | Search results (Airports, Waypoints and Navaids, Airplanes, Do, Ask) | the search field, typed | **new: 1** | -- |
 | Saved flights | search → Saved; account → Flights | 2 | Name and notes edited in the row; delete with a confirm |
 | Airport card | Tap a field; a search result; a route row's More Info; a nav log field | 1 (2 from the search) | **Fly Here, Depart From, Add as Stop at its top (new)**, favorite; frequencies copy |

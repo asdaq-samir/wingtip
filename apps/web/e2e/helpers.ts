@@ -418,13 +418,11 @@ export async function openTab(page: Page, name: keyof typeof PHASE_OF | PhaseTab
 export async function openNavLog(page: Page) {
   await openTab(page, "Nav Log");
   const sheet = navLogSheet(page);
-  // In the route's menu since the Profile took its button (the owner,
-  // 2026-11-04).
+  // A tile under the route (FplActions; the owner's pick A, 2026-11-15).
   if (!(await sheet.isVisible())) {
     await sideDrawer(page)
-      .getByTestId("share-route")
+      .getByTestId("route-navlog")
       .click({ timeout: slow(60_000) });
-    await page.getByTestId("route-navlog").click();
   }
   await expect(sheet).toBeVisible();
   return sheet;

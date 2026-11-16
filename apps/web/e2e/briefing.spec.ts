@@ -117,15 +117,18 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   ).toBe(1);
   expect(await page.locator("header").getByTestId("account-button").count()).toBe(0);
 
-  // The route's buttons, the Brief (where the Nav log was) and Share, at
-  // the end of the airplane's, the altitude's and the time's line, at the
-  // pilot's ask; Save, filing the flight plan and the route's close in
-  // Share -- printing in the Brief's and the nav log's own (below).
-  const [approachesBox, shareBox] = await Promise.all(
+  // The route's ••• at the end of the airplane's and the altitude's line;
+  // the Brief, the Nav Log, the Profile and Share a row of tiles under the
+  // route (the owner's pick A, 2026-11-15) -- printing in the Brief's and
+  // the nav log's own (below).
+  const [briefBox, moreBox] = await Promise.all(
     ["route-brief", "share-route"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
   );
-  expect(approachesBox.x).toBeLessThan(shareBox.x);
-  expect(Math.abs(approachesBox.y - shareBox.y)).toBeLessThan(2);
+  expect(briefBox.y).toBeGreaterThan(moreBox.y + moreBox.height);
+  const tiles = await Promise.all(
+    ["route-brief", "route-navlog", "route-profile", "share-plan"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
+  );
+  for (const tile of tiles) expect(Math.abs(tile.y - briefBox.y)).toBeLessThan(2);
   // The departure's time on its step in the route's list, not in this
   // line, at the owner's ask: the airplane's chip leads the line instead.
   const airplane = (await drawer.getByTestId("aircraft-select").boundingBox())!;

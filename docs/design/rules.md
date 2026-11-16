@@ -448,12 +448,18 @@ off by default (the owner, 2026-11-13).
 2. **FPL** (the second page): its first row the search's row's twin
    (the owner, 2026-11-14: "for all three fpl layouts, keep the n-number
    strip with buttons in the same size as search bar"): the airplane's
-   strip -- its N-number, the altitude, the Profile, the Brief and the
-   route's ••• -- in a bar exactly the search field's size, the page
-   toggle at its end, so a turn of the page changes only what is in the
-   bar; under it the route as one row, in whichever of the three ways
-   Show Route As picks (the box of pills, the line, or the cards' ends
-   and the Routes row), never in the bar; then the route in order, and
+   strip -- its N-number, the altitude and the route's ••• -- in a bar
+   exactly the search field's size, the page toggle at its end, so a turn
+   of the page changes only what is in the bar; under it the route as one
+   row, in whichever of the three ways Show Route As picks (the box of
+   pills, the line, or the cards' ends and the Routes row), never in the
+   bar; under the route, once there is one, a row of four tiles as the
+   airport card's actions are: Brief (a dot its worst page's colour), Nav
+   Log, Profile (a dot where the altitude is tight) and Share, one menu
+   for every way the plan leaves the app (its link, Open in ForeFlight,
+   the checkpoints for ForeFlight, Print the nav log), the ••• keeping the
+   plan's own (Save, File, Refresh, Show Route As, Clear) (the owner's pick
+   A of the FPL buttons canvas, 2026-11-15); then the route in order, and
    the route's figures pinned at the foot, which are FPL's alone; the
    Brief, the Nav Log, the Profile and the Stops are cards over it. With
    no route, the route's row stands empty and the bar keeps the airplane
