@@ -78,12 +78,14 @@ function FplActions({ vm, share }: { vm: PlanWorkspaceModel; share: ReactNode })
   );
 }
 
-/** FPL's route row and its tiles under it, the page's `route` (PlanWorkspace). */
+/** FPL's route row and its tiles under it, the page's `route`
+ *  (PlanWorkspace): a column the row's width, as the sheet lays the route
+ *  in a row (MapPage's routeRowOf), where a grid alone had no width. */
 export function FplRoute({ vm, share }: { vm: PlanWorkspaceModel; share: ReactNode }) {
   return (
-    <>
+    <div className="flex w-full min-w-0 flex-1 flex-col">
       <RouteHead vm={vm} />
       <FplActions vm={vm} share={share} />
-    </>
+    </div>
   );
 }
