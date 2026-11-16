@@ -49,7 +49,9 @@ export function FplTabBar({ vm, share }: { vm: PlanWorkspaceModel; share: ReactN
   const { altitudeMark, briefMark } = vm.brief;
   const found = findingRows(useVerdict((v) => v.items)).length;
   return (
-    <FloatingBar testId="fpl-actions">
+    // At the page's foot however short the plan, so it is at the sheet's
+    // edge from the pill's first move, as a card's pages keep its room.
+    <FloatingBar testId="fpl-actions" className="mt-auto">
       {/* The glass capsule, the airport card's bar's (CardTabBar): glass
           only on what floats (rules.md). Each button 56 tall in its
           columns, side by side, so their areas are over 44 points. */}

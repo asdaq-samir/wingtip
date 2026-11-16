@@ -21,10 +21,14 @@ const FLOATING =
  *  pill with the body it is in (PILL_BODY). In the flow at the pages' end,
  *  so its own room is the last row's room to clear it; only what is in it
  *  takes taps. */
-export function FloatingBar({ testId, children }: { testId?: string; children: ReactNode }) {
+export function FloatingBar({ testId, className, children }: { testId?: string; className?: string; children: ReactNode }) {
   return (
     <div
-      className={cn("pointer-events-none sticky bottom-0 z-10 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", FLOATING)}
+      className={cn(
+        "pointer-events-none sticky bottom-0 z-10 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]",
+        FLOATING,
+        className,
+      )}
       data-testid={testId}
     >
       {children}
