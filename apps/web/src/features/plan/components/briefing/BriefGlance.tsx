@@ -165,8 +165,8 @@ function Line({ line, onOpen }: { line: GlanceLine; onOpen: (tab: PanelTab) => v
     <AccordionItem value={line.key} className={ITEM} data-testid={`brief-line-${line.key}`} data-finding={line.finding}>
       <AccordionTrigger className={FOLD}>
         <FindingIcon finding={line.finding} className="mt-0.5 size-5 shrink-0" />
-        {/* One row, the finding alone; what to do first under its tap. */}
-        <span className="min-w-0 flex-1 truncate font-medium" data-testid="brief-line-words" aria-label={line.line}>
+        {/* Two rows at most, the finding alone; what to do first under its tap. */}
+        <span className="line-clamp-2 min-w-0 flex-1 font-medium" data-testid="brief-line-words" aria-label={line.line}>
           {line.lead}
         </span>
       </AccordionTrigger>

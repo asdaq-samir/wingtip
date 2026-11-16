@@ -218,20 +218,19 @@ interface GlanceLines {
  */
 export function glanceLines(items: VerdictItem[], glance: BriefGlance | null): GlanceLines {
   const acted = [...items.filter((i) => i.finding === "stop"), ...items.filter((i) => i.finding === "caution")];
-  const act = acted
-    .slice(0, LINES_MAX)
-    .map((i) => ({
-      key: i.key,
-      finding: i.finding,
-      tab: i.tab,
-      section: i.section,
-      line: sentence(lead(i, glance), ACTION[i.key][i.finding === "stop" ? "stop" : "caution"]),
-      lead: lead(i, glance).replace(/[.;:,\s]+$/, ""),
-      action: ACTION[i.key][i.finding === "stop" ? "stop" : "caution"].replace(/^./, (c) => c.toUpperCase()),
-      why: WHY[i.key].why,
-      cite: WHY[i.key].cite,
-      raw: sources(i.key, glance),
-    }));
+  const act = acted.slice(0, LINES_MAX).map((i) => ({
+    key: i.key,
+    finding: i.finding,
+    tab: i.tab,
+    section: i.section,
+    line: sentence(lead(i, glance), ACTION[i.key][i.finding === "stop" ? "stop" : "caution"]),
+    // The risk's detail is its level alone ("High · 16 points"): named.
+    lead: `${i.key === "risk" ? "Risk: " : ""}${lead(i, glance).replace(/[.;:,\s]+$/, "")}`,
+    action: ACTION[i.key][i.finding === "stop" ? "stop" : "caution"].replace(/^./, (c) => c.toUpperCase()),
+    why: WHY[i.key].why,
+    cite: WHY[i.key].cite,
+    raw: sources(i.key, glance),
+  }));
   const rest = items.filter((i) => !acted.slice(0, LINES_MAX).includes(i));
   const more = rest.filter((i) => i.finding !== "ok");
   const pending = rest.filter((i) => i.finding === "pending");

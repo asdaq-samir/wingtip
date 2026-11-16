@@ -123,4 +123,9 @@ describe("the Brief's lines at a glance", () => {
     expect(act[0]!.lead).toBe("2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)");
     expect(act[0]!.action).toBe("Add fuel, or plan a stop");
   });
+
+  it("names the risk on its row, whose detail is its level alone", () => {
+    const { act } = glanceLines(with_({ risk: ["stop", "High · 16 points"] }), null);
+    expect(act[0]!.lead).toBe("Risk: High · 16 points");
+  });
 });
