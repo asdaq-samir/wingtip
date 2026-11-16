@@ -468,7 +468,8 @@ off by default (the owner, 2026-11-13).
    the pill, FPL rises as the airport card does, one shared way for every
    sheet (the owner, 2026-11-16: "can we make it a shared code for all
    cards?"): what the sheet shows risen -- the bar, the route, the
-   actions' bar at the foot -- is laid out at the pill too, out of sight,
+   actions' bar, which floats as a card's tabs do -- is laid out at the
+   pill too, out of sight,
    and in sight by CSS the moment a finger takes the sheet until it has
    settled, nothing built or swapped while it moves. A light tick as it
    settles where the browser has one. In flight the

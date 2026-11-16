@@ -114,7 +114,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   const { fuelHidden, showFuelStops, tankFigures } = vm.stops;
   const { holdAsk, listEdit, routeLine } = vm.routeList;
   const { briefShown, profileShown } = vm.fpl;
-  const { flying } = vm.flight;
+  const { flying, dryRunning } = vm.flight;
   const { routeRows } = vm.leg;
   const {
     altitudeAt,
@@ -428,8 +428,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           at: view === "plan" ? 1 : 0,
           go: pickPage,
           bar: <FplBar strip={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />} />,
-          second: <PlanPage vm={vm} navLog={navLog} share={shareMenu("end", "share-plan", "send")} />,
-          figures: routed ? <FlightFigures vm={vm} grow /> : undefined,
+          second: <PlanPage vm={vm} navLog={navLog} share={shareMenu("end", "share-plan", "send", !flying)} />,
+          figures: routed && !dryRunning ? <FlightFigures vm={vm} grow /> : undefined,
         },
         // The one search's Autocomplete round the whole panel, so its field
         // (the first row) and its list (the body) are one combobox.
@@ -447,10 +447,10 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         flying,
         // The one search, the first page's first row, and at rest its pill (MapPanel).
         bar: <OneSearchField model={search} inputRef={vm.search.searchInput} />,
-        // FPL's foot (FlightFoot): its actions' bar, the figures being the page's top (pages' figures); in flight the figures.
+        // FPL's foot (FlightFoot): in flight and a dry run their figures; else the page's own top has them (pages' figures).
         foot:
           !place && !heldPoint && !flight && !briefShown && !profileShown
-            ? routed && <FlightFoot vm={vm} share={shareMenu("end", "share-plan", "send", true)} />
+            ? routed && (flying || !!dryRunning) && <FlightFoot vm={vm} />
             : undefined,
         // The route as one row under FPL's bar (MapPanel keeps it under the
         // others' heads). How it shows once whole is the pilot's pick from its

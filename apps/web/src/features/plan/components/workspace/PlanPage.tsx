@@ -4,6 +4,7 @@ import TabKept from "../../../../components/TabKept";
 import TabPage from "../../../../components/TabPage";
 import FplStrip from "../FplStrip";
 import { FplActions } from "./FplActions";
+import { FplTabBar } from "./FplTabBar";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 
 /**
@@ -45,6 +46,9 @@ export default function PlanPage({ vm, navLog, share }: { vm: PlanWorkspaceModel
         </div>
         {navLog}
       </div>
+      {/* The actions' floating bar at the foot of what is in sight, as an
+          airport card's tabs are (FplTabBar, FloatingBar), on the ground. */}
+      {vm.route.routed && !vm.flight.flying && <FplTabBar vm={vm} share={share} />}
       {/* A departure alone: under it the flights saved and the routes
           planned last, to pick from, where the sheet stood empty under
           the one field (the owner's screenshot, 2026-10-23). */}

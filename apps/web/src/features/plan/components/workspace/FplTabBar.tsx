@@ -4,6 +4,7 @@ import { TEXT } from "../../../../lib/text";
 import { useVerdict } from "../../../../lib/verdict";
 import { findingRows } from "../../hooks/planWords";
 import { CardAction as Action } from "../../../../components/CardAction";
+import { FloatingBar } from "../../../../components/CardTabBar";
 import { ICON } from "../../../../lib/icons";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 
@@ -33,7 +34,8 @@ function Count({ count, mark, testId }: { count: number; mark: "stop" | "caution
  * as the airport card's tabs are drawn (CardTabBar), but buttons, not tabs:
  * each opens its card over FPL as the tiles did (the owner's pick, "Bar
  * look, open cards"). Share is the plan's one Share menu (ShareMenu's
- * "send"). From half up; at the pill the figures alone, large (FlightFoot).
+ * "send"). In FPL's page as a card's tabs are in the card (FloatingBar),
+ * out of sight at the pill with the page, whose top is then the figures.
  * What the Brief found to act on is counted on its glyph's corner, red
  * where one is a stop, amber where all are cautions, as the airport card's
  * tabs carry their counts (CardTabBar's TabCount): the findings themselves
@@ -47,11 +49,11 @@ export function FplTabBar({ vm, share }: { vm: PlanWorkspaceModel; share: ReactN
   const { altitudeMark, briefMark } = vm.brief;
   const found = findingRows(useVerdict((v) => v.items)).length;
   return (
-    <div className="flex justify-center pt-2" data-testid="fpl-actions">
+    <FloatingBar testId="fpl-actions">
       {/* The glass capsule, the airport card's bar's (CardTabBar): glass
           only on what floats (rules.md). Each button 56 tall in its
           columns, side by side, so their areas are over 44 points. */}
-      <div className="liquid-glass grid h-16 max-w-full auto-cols-fr grid-flow-col rounded-full p-1 [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)]">
+      <div className="liquid-glass pointer-events-auto mx-auto grid h-16 w-fit max-w-full auto-cols-fr grid-flow-col rounded-full p-1 [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)]">
         <Action
           bar
           icon={
@@ -89,6 +91,6 @@ export function FplTabBar({ vm, share }: { vm: PlanWorkspaceModel; share: ReactN
         />
         {share}
       </div>
-    </div>
+    </FloatingBar>
   );
 }

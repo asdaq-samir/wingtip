@@ -1,5 +1,4 @@
-import { Suspense, type ReactNode } from "react";
-import { PILL_BODY } from "../../../../components/sheet/insets";
+import { Suspense } from "react";
 import { cn } from "cn";
 import { Button } from "../../../../components/ui/button";
 import { EngineGate } from "../../../../lib/engine/engineGate";
@@ -8,7 +7,6 @@ import FlightLine from "../FlightLine";
 import DirectStrip from "../DirectStrip";
 import { DryRunFigures } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
-import { FplTabBar } from "./FplTabBar";
 
 /** The flight's figures (FlightLine), and over them a Direct to's strip:
  *  under the route from half up, at their own size (FplRoute), and at the
@@ -50,16 +48,14 @@ export function FlightFigures({ vm, grow }: { vm: PlanWorkspaceModel; grow: bool
 }
 
 /** What is pinned at FPL's foot (PlanWorkspace's `foot`): the dry run's
- *  figures while it plays; in flight the flight's figures and Done flying;
- *  on the ground the actions' floating bar from half up (FplTabBar), and
- *  at the pill the figures alone, large, the figures being under the route
- *  from half up (FplRoute). */
-export default function FlightFoot({ vm, share }: { vm: PlanWorkspaceModel; share?: ReactNode }) {
+ *  figures while it plays; in flight the flight's figures and Done flying.
+ *  On the ground the figures are the page's top (pages' figures) and the
+ *  actions a floating bar in the page (FplTabBar). */
+export default function FlightFoot({ vm }: { vm: PlanWorkspaceModel }) {
   const { depart, planned } = vm.route;
   const { s } = vm.plan;
   const { doneFlying, dryRunning, flying } = vm.flight;
   const { estimate } = vm.brief;
-  const { panelOpen } = vm.view;
   // In flight, the one way out of flying mode (useFlyingMode): a small
   // Done flying at the figures' foot, as the canvas has the line there;
   // the tabs come back on the ground by themselves.
@@ -77,16 +73,6 @@ export default function FlightFoot({ vm, share }: { vm: PlanWorkspaceModel; shar
       </Button>
     </div>
   );
-  // The bar on FPL's page alone, not at the Profile card's foot (no
-  // `share`): at the pill out of sight, as the airport card's tab bar is,
-  // in sight the moment a finger takes the sheet (PILL_BODY), the figures
-  // being the page's top (the owner, 2026-11-16).
-  if (share && !dryRunning && !flying)
-    return (
-      <div className={cn("w-full", !panelOpen && PILL_BODY)}>
-        <FplTabBar vm={vm} share={share} />
-      </div>
-    );
   return (
     <div className="flex min-h-0 w-full flex-col">
       {dryRunning ? (

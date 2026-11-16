@@ -296,20 +296,20 @@ export function SheetParts(p: PartsProps) {
   let content: ReactNode;
   if (p.pages) {
     const { at, bar, second, figures } = p.pages;
-    // The second page's first row, its bar (FplBar), and the route's row
-    // under it from half up; at the pill the route's figures in the bar's
-    // place where there are some (the foot, MapPanel's footShown), else the
-    // bar, as Search's pill is its bar.
-    const planShown = !p.flying && !cardsUp && (!atPill || !footShown);
-    const routeShown = !p.flying && !cardsUp && !atPill && p.top != null;
-    const searchAlone = atPill && !p.flying && !p.barShown;
-    const routeAlone = atPill && !p.flying && !planShown && !footShown;
     // With a route the plan's figures are its top and its pill, as a card's
     // title is (the owner, 2026-11-16), the bar and the route laid out under
     // them out of sight at the pill and in sight the moment a finger takes
     // the sheet (PILL_BODY): the airport card's way, nothing swapped.
     const figuresRow = !!figures && !p.flying && !cardsUp;
     const rises = atPill && figuresRow;
+
+    // The second page's bar (FplBar) and the route's row under it from half
+    // up; at the pill its figures where there are some (the page's own, or
+    // the foot's in a dry run), else the bar, as Search's pill is its bar.
+    const planShown = !p.flying && !cardsUp && (!atPill || (!footShown && !figuresRow));
+    const routeShown = !p.flying && !cardsUp && !atPill && p.top != null;
+    const searchAlone = atPill && !p.flying && !p.barShown;
+    const routeAlone = atPill && !p.flying && !planShown && !footShown;
     // One page up at a time (SheetPage), turned by its toggle (PageToggle);
     // the other kept, inert.
     content = (
