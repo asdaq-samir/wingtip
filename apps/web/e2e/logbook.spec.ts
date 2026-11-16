@@ -153,3 +153,20 @@ test("a logged flight is changed in its own row, and one taken out comes back fr
   await expect.poll(() => asked.map((a) => a.method)).toEqual(["PUT", "DELETE", "POST"]);
   expect(asked[2]!.body).toMatchObject({ flownOn: "2026-11-03", route: "KMSN-KDLH", totalHours: 2.3 });
 });
+
+test("signed out, the logbook opened by a link is You's one Sign In, with nothing asked of the pilot's lists", async ({ page }) => {
+  await page.route("**/api/me", (route) => route.fulfill({ status: 401, contentType: "application/json", body: "{}" }));
+  // The pilot's own lists, none of which is asked for signed out (the web
+  // audit's WEB-40: five 401s and a red "could not be fetched").
+  const asked: string[] = [];
+  page.on("request", (r) => {
+    if (/\/api\/(training|logbook|paperwork)/.test(new URL(r.url()).pathname)) asked.push(r.url());
+  });
+  await page.goto("/app/plan?open=logbook");
+  const console = page.getByTestId("console-sheet");
+  await expect(console.getByTestId("logbook-signed-out")).toBeVisible();
+  await expect(console.getByRole("button", { name: "Sign In", exact: true })).toHaveCount(1);
+  await expect(console.getByText(/could not be fetched/)).toHaveCount(0);
+  await expect(console.getByText("Not current")).toHaveCount(0);
+  expect(asked).toEqual([]);
+});

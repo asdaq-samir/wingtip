@@ -27,6 +27,9 @@ pub struct RunwayWind {
     pub gust_crosswind_kt: Option<f64>,
     /// Calm now: the end the field's last wind favoured, the one in use.
     pub in_use: bool,
+    /// The crosswind, gusts' where more, before it was rounded for the
+    /// page: what a limit is judged against (None where not sent).
+    pub crosswind_exact_kt: Option<f64>,
 }
 
 /// Degrees to radians as the web's lib/geo turns them, (d × π) / 180.
@@ -75,6 +78,24 @@ pub fn steady_or_gust_kt(steady_kt: f64, gust_kt: Option<f64>) -> f64 {
 /// A runway's wind judged by steady_or_gust_kt (lib/wind runwayCrosswindKt).
 pub fn runway_crosswind_kt(wind: &RunwayWind) -> f64 {
     steady_or_gust_kt(wind.crosswind_kt, wind.gust_crosswind_kt)
+}
+
+/// The crosswind a limit is judged against: the unrounded one where the
+/// wind carries it, else the rounded. A 10.4 kt crosswind rounded to 10
+/// would never pass a 10 kt demonstrated crosswind (POH section 4,
+/// "maximum demonstrated crosswind velocity"; the aviation audit's AV-10).
+pub fn runway_crosswind_judged_kt(wind: &RunwayWind) -> f64 {
+    wind.crosswind_exact_kt.unwrap_or_else(|| runway_crosswind_kt(wind))
+}
+
+/// The crosswind as shown beside a limit: the whole knots it is rounded
+/// to, unless that would read within a limit the crosswind is past -- then
+/// to the tenth, so "10.4 kt, past 10" never reads "10 kt, past 10".
+pub fn crosswind_shown(judged_kt: f64, rounded_kt: f64, limit_kt: Option<f64>) -> f64 {
+    match limit_kt {
+        Some(limit) if judged_kt > limit && rounded_kt <= limit => (judged_kt * 10.0).round() / 10.0,
+        _ => rounded_kt,
+    }
 }
 
 /// Whether a reported or forecast wind is calm: a speed of nothing, which
@@ -130,6 +151,8 @@ pub struct Favoured {
     pub headwind_kt: f64,
     pub crosswind_kt: f64,
     pub gust_crosswind_kt: Option<f64>,
+    /// The crosswind, gusts' where more, unrounded (RunwayWind's).
+    pub crosswind_exact_kt: f64,
     pub calm: bool,
     pub in_use: bool,
 }
@@ -168,6 +191,7 @@ pub fn favoured_end(
         headwind_kt: 0.0,
         crosswind_kt: 0.0,
         gust_crosswind_kt: None,
+        crosswind_exact_kt: 0.0,
         calm: true,
         in_use,
     };
@@ -186,6 +210,7 @@ pub fn favoured_end(
         headwind_kt: headwind_kt(dir, speed, *heading).round_ties_even(),
         crosswind_kt: crosswind_kt(dir, speed, *heading).round_ties_even(),
         gust_crosswind_kt: gust.map(|g| crosswind_kt(dir, g, *heading).round_ties_even()),
+        crosswind_exact_kt: steady_or_gust_kt(crosswind_kt(dir, speed, *heading), gust.map(|g| crosswind_kt(dir, g, *heading))),
         calm: false,
         in_use: false,
     })

@@ -56,6 +56,20 @@ fn the_faas_capitals_in_sentence_case_keep_the_codes_and_figures() {
     assert!(call("faa_words", r#"{"text": 3}"#).is_err());
 }
 
+/// A NOTAM's codes and idents kept, and a NOTAM given whole read as sent,
+/// held to the shared cases (apps/web/src/lib/fixtures/faaWords.json),
+/// real NOTAMs from the other fixtures and the iPhone audit's two.
+#[test]
+fn a_notams_codes_and_idents_are_kept() {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/faaWords.json");
+    let fixture: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    for case in fixture["cases"].as_array().unwrap() {
+        let input = serde_json::json!({ "text": case["text"] }).to_string();
+        let got: serde_json::Value = serde_json::from_str(&call("faa_words", &input).unwrap()).unwrap();
+        assert_eq!(got, case["want"], "{}", case["about"]);
+    }
+}
+
 #[test]
 fn a_name_in_capitals_is_written_as_a_name() {
     assert_eq!(text("title_case", r#"{"text": "CHICAGO CLASS B"}"#), "Chicago Class B");
@@ -140,6 +154,22 @@ fn the_ctaf_and_the_kneeboards_list() {
     assert_eq!(knee(&[("UNIC", 123.0, "CTAF/UNICOM")]), r#"[["CTAF",123.0]]"#);
     assert_eq!(knee(&[("ATIS", 135.4, "ATIS"), ("TWR", 118.3, "TWR"), ("UNIC", 122.95, "UNIC")]), r#"[["ATIS",135.4],["TWR",118.3]]"#);
     assert_eq!(knee(&[("TWR", 118.3, "TWR")]), r#"[["TWR",118.3]]"#);
+    // In the order they are dialled: KDLH's file lists UNICOM, the tower
+    // and ground before its ATIS (the web audit's WEB-10).
+    let order = |l: &[(&str, f64, &str)]| call("frequencies_in_order", &format!("{{\"frequencies\": {}}}", freqs(l))).unwrap();
+    assert_eq!(
+        order(&[
+            ("UNIC", 122.95, "UNIC"),
+            ("TWR", 118.3, "TWR"),
+            ("GND", 121.9, "GND"),
+            ("APP", 125.0, "APP"),
+            ("ATIS", 124.1, "ATIS"),
+            ("CLD", 133.0, "CLD"),
+        ]),
+        "[4,5,2,1,3,0]"
+    );
+    assert_eq!(order(&[("UNIC", 123.0, "CTAF/UNICOM"), ("AWOS", 118.375, "AWOS"), ("MISC", 1.0, "")]), "[1,0,2]");
+    assert_eq!(order(&[]), "[]");
     let of = |types: &str| {
         call("frequency_of", &format!("{{\"frequencies\": {}, \"types\": {types}}}", freqs(&[("gnd", 121.7, ""), ("ASOS", 119.0, "")])))
             .unwrap()
@@ -202,9 +232,6 @@ fn a_vors_radial_its_morse_and_its_service_volume() {
     assert_eq!(call("fix_radial_distance", r#"{"at": {"lat": 41, "lon": -88}, "stations": []}"#).unwrap(), "null");
     assert_eq!(text("morse", r#"{"ident": "JOT"}"#), "·−−−  −−−  −");
     assert_eq!(text("morse", r#"{"ident": "k-9"}"#), "−·−  −−−−·");
-    assert_eq!(text("service_volume", r#"{"code": "T"}"#), "Terminal · 25 nm, 1,000–12,000 ft above it");
-    assert_eq!(text("service_volume", r#"{"code": "VL"}"#), "VOR Low · 40 nm under 5,000 ft above it, 70 nm to 18,000");
-    assert_eq!(call("service_volume", r#"{"code": "X"}"#).unwrap(), "null");
     assert_eq!(text("navaid_hours", r#"{"hours": "24"}"#), "Continuous");
     assert_eq!(call("navaid_hours", r#"{"hours": ""}"#).unwrap(), "null");
 }
@@ -227,4 +254,19 @@ fn the_variation_agrees_with_noaas_calculator() {
     assert!((at(42.3, -88.1, "2099-01-01") - at(42.3, -88.1, "2029-11-12")).abs() < 0.05);
     assert!(call("magnetic_variation", r#"{"lat": 1, "lon": 1, "date": "2026-02-30"}"#).is_err());
     assert!(call("magnetic_variation", r#"{"lat": 1, "lon": 1, "date": "today"}"#).is_err());
+}
+
+/// Each class's service volume held to the shared cases
+/// (apps/web/src/lib/fixtures/serviceVolume.json), written from AIM
+/// 1-1-8's TBL 1-1-1: VOR High's 130 nm from 18,000 to 45,000 ft above
+/// the station and its 100 nm on to 60,000, which the card left out.
+#[test]
+fn a_stations_service_volume_is_the_aims_table() {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/serviceVolume.json");
+    let fixture: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    for case in fixture["cases"].as_array().unwrap() {
+        let input = serde_json::json!({ "code": case["code"] }).to_string();
+        let answer: serde_json::Value = serde_json::from_str(&call("service_volume", &input).unwrap()).unwrap();
+        assert_eq!(answer, case["answer"], "{input}");
+    }
 }

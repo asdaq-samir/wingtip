@@ -8,6 +8,7 @@ use crate::json::{self, Value};
 use wingtip_core::ask::{strings, Ask};
 
 /// A checklist read, written, or a section found in it (checklist.rs).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn checklists(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();
@@ -75,6 +76,7 @@ fn sections(ask: &Ask) -> Result<Vec<checklist::Section>, String> {
 
 /// A CSV's rows, the logbook's CSV read and written, a POH page's
 /// figures (csv.rs, logbook.rs, handbook.rs).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn files(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();
@@ -106,6 +108,7 @@ pub fn files(name: &str, v: &Value) -> Result<String, String> {
 
 /// Endorsements (AC 61-65K, endorsements.rs) and currency (61.56, 61.57,
 /// currency.rs).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn endorsed(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let text = |key: &str| match v.get(key) {

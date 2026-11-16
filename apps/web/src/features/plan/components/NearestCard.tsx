@@ -3,7 +3,7 @@ import type { Drawer } from "@base-ui/react/drawer";
 import { useQuery } from "@tanstack/react-query";
 import { LocateFixed, MapPin, Navigation2 } from "lucide-react";
 import { cn } from "cn";
-import { Badge } from "../../../components/ui/badge";
+import StatusBadge from "../../../components/StatusBadge";
 import { ListPageHead } from "../../../components/Favorites";
 import { SheetCard } from "../../../components/SheetCard";
 import { SearchField } from "../../../components/PanelCapsule";
@@ -16,19 +16,20 @@ import type { NearestAirport, PlaceFound } from "../../../lib/api/types";
 import { compassPoint, saidPoint } from "../../../lib/compass";
 import { nmAway, nmFigure } from "../../../lib/useAway";
 import { mhzText } from "../../../lib/frequencies";
-import { chipFillOf, colourOf } from "../../../lib/map/marks/flightCategory";
+import { colourOf } from "../../../lib/map/marks/flightCategory";
 import { glideRangeNm, reachesField, underway } from "../../../lib/map/position/glide";
 import { useGlideRatio } from "../../../lib/map/position/useGlideRatio";
+import { nearestFrom } from "../../../lib/map/position/nearestFrom";
+import { useGeo } from "../../../lib/geo";
 import { AskFigure } from "../../../components/airplane/AskFigure";
 import { airportMarkSvg } from "../../../lib/map/marks/airportMark";
 import { positionNow, useOwnShip, useOwnFixShown } from "../../../lib/map/position/ownShip";
 import { nearestQuery } from "../../../lib/queryClient";
-import { inkOn } from "../../../lib/scoreScale";
 import { TEXT } from "../../../lib/text";
 import { useTabSearch } from "../lib/tabSearch";
 import { nearSearch } from "./workspace/listSearch";
 import { useDebounced } from "../../../lib/useDebounced";
-import { altFt } from "../../../lib/format";
+import { altFt, wholeNm } from "../../../lib/format";
 import { FINDING_TONE } from "../../../lib/findings";
 
 export interface NearFrom {
@@ -170,11 +171,11 @@ function NearestRow({
   const parts = [
     field.longest_runway_ft ? `${altFt(field.longest_runway_ft)} ft` : null,
     field.radio ? `${field.radio.kind} ${mhzText(field.radio.mhz)}` : null,
-    // Listed whoever owns it, and said: in an emergency the pilot in
-    // command lands where the emergency needs (14 CFR 91.3(b)), and a
-    // military or a private field may be it.
-    field.military === "military" ? "military" : field.military === "joint" ? "joint use" : field.private ? "private" : null,
   ].filter(Boolean);
+  // Listed whoever owns it, and said by a badge: in an emergency the pilot
+  // in command lands where the emergency needs (14 CFR 91.3(b)), and a
+  // military or a private field may be it.
+  const owner = field.military === "military" ? "military" : field.military === "joint" ? "joint" : field.private ? "private" : null;
   const point = compassPoint(field.bearing_deg);
   return (
     <ListRow
@@ -193,14 +194,8 @@ function NearestRow({
       // its parts and never inside one ("TWR 123.675" kept whole).
       description={
         <>
-          {category && (
-            <Badge
-              className={cn("mr-1.5 h-auto rounded-sm px-1.5 align-[0.05em] font-bold tracking-wide", TEXT.note)}
-              style={{ backgroundColor: chipFillOf(category), color: inkOn(chipFillOf(category)) }}
-            >
-              {category}
-            </Badge>
-          )}
+          {category && <StatusBadge category={category} className="mr-1.5" />}
+          {owner && <StatusBadge variant={owner} className="mr-1.5" data-testid="nearest-use" />}
           {parts.map((part, i) => (
             <span key={part}>
               {i > 0 && " · "}
@@ -272,7 +267,10 @@ export default function NearestCard({
   const fix = useOwnFixShown();
   const origin = from ?? fix;
   const nearestAsked = useQuery({ ...nearestQuery(origin?.lat ?? 0, origin?.lon ?? 0), enabled: !!origin });
-  const data = nearestAsked.data;
+  // From the point itself, not the rounded one the list is asked from
+  // (nearestFrom): the engine's great circles, once it is loaded.
+  const geo = useGeo();
+  const data = nearestAsked.data && origin && geo ? nearestFrom(nearestAsked.data, origin, geo) : nearestAsked.data;
   // Asked for the nearest fields, the position is wanted: own ship turned
   // on quietly where the browser already lets it be read (positionNow),
   // as Fly Here does; else the card offers to show it.
@@ -328,7 +326,7 @@ export default function NearestCard({
             // elevation (reachesField), so a field on higher ground inside
             // the ring may not be; each row its longest runway and its
             // listed tower, CTAF or UNICOM frequency.
-            title={from ? `Near ${from.label}` : glide != null ? `Within a glide: about ${Math.round(glide)} nm` : "Nearest to you"}
+            title={from ? `Near ${from.label}` : glide != null ? `Within a glide: about ${wholeNm(glide)}` : "Nearest to you"}
           >
             {(data ?? []).map((a) => (
               <NearestRow

@@ -98,9 +98,8 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   await expect(tip).toBeVisible();
   await expect(tip).toContainText("Your flight plan is one tap away");
   await expect(tip).toContainText("Tap here any time");
-  // Over the toggle, its arrow at it: wherever the toggle is (on a phone at
-  // the left under the 3D, the owner 2026-11-13), the tip's edge reaches
-  // over it, on the screen.
+  // Over the toggle, its arrow at it: at the search's row's end (the owner,
+  // 2026-11-14), the tip's edge reaches over it, on the screen.
   const [tipBox, toggleBox] = [await tip.boundingBox(), await toggle(page).boundingBox()];
   expect(tipBox!.y + tipBox!.height).toBeLessThanOrEqual(toggleBox!.y);
   expect(tipBox!.x).toBeLessThanOrEqual(toggleBox!.x + toggleBox!.width / 2);

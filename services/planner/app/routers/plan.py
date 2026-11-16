@@ -378,7 +378,7 @@ def navlog_stream(q: Annotated[PlanQuery, Depends()]) -> StreamingResponse:
         else:
             by_hop = [[] for _ in r.hops]
 
-        runs = fp.hop_runs(r, by_hop, asked.depart, asked.profile, asked.ground, asked.holds)
+        runs = fp.hop_runs(r, by_hop, asked.depart, asked.profile, asked.ground, asked.holds, asked.drawn, asked.leave_runways)
 
         # Each stage's words short enough for the one line the panel gives
         # them, at the pilot's ask: what is being worked on first.

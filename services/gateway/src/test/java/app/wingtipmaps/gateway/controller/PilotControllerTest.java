@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -14,7 +15,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.service.AccountService;
+import app.wingtipmaps.gateway.service.CheckpointNotesClient;
 import app.wingtipmaps.gateway.service.PilotService;
+import app.wingtipmaps.gateway.service.PlannerUnavailableException;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +29,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 /** The pilot's own contact for a flight plan's item 19 C/ (AIM Appendix
  *  4): 401 signed out, a number or a home base the form cannot take 400,
- *  and the pilot back with their name, number and home base. */
+ *  and the pilot back with their name, number and home base. And their
+ *  own checkpoint notes forgotten, the planner's internal route asked for
+ *  them with their id. */
 @WebMvcTest(PilotController.class)
 @Import(app.wingtipmaps.gateway.security.SecurityConfig.class)
 class PilotControllerTest {
@@ -39,6 +44,9 @@ class PilotControllerTest {
 
     @MockitoBean
     private AccountService accountService;
+
+    @MockitoBean
+    private CheckpointNotesClient notes;
 
     private static Pilot pilot() {
         Pilot pilot = new Pilot("pilot@example.com", "A. Pilot", "sub-1");
@@ -125,5 +133,35 @@ class PilotControllerTest {
                     .andExpect(jsonPath("$.errors[0]").value(org.hamcrest.Matchers.startsWith(c[1] + ":")));
         }
         verify(pilotService, never()).setContact(any(), any(), any());
+    }
+
+    @Test
+    void forgetNotes_returns401_whenSignedOut() throws Exception {
+        given(pilotService.current(any())).willReturn(Optional.empty());
+
+        mockMvc.perform(delete("/api/me/checkpoint-notes").with(oidcLogin()).with(csrf()))
+                .andExpect(status().isUnauthorized());
+        verify(notes, never()).forget(any());
+    }
+
+    @Test
+    void forgetNotes_saysHowManyOfTheirsWent() throws Exception {
+        Pilot pilot = pilot();
+        given(pilotService.current(any())).willReturn(Optional.of(pilot));
+        given(notes.forget(pilot)).willReturn(3);
+
+        mockMvc.perform(delete("/api/me/checkpoint-notes").with(oidcLogin()).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.removed").value(3));
+    }
+
+    @Test
+    void forgetNotes_returns502_whenThePlannerCannotBeAsked() throws Exception {
+        Pilot pilot = pilot();
+        given(pilotService.current(any())).willReturn(Optional.of(pilot));
+        given(notes.forget(pilot)).willThrow(new PlannerUnavailableException("the notes forgotten"));
+
+        mockMvc.perform(delete("/api/me/checkpoint-notes").with(oidcLogin()).with(csrf()))
+                .andExpect(status().isBadGateway());
     }
 }

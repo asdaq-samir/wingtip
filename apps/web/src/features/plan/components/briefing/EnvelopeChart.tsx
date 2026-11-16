@@ -2,6 +2,7 @@ import { CartesianGrid, ComposedChart, Line, ReferenceDot, XAxis, YAxis } from "
 import { ChartContainer, type ChartConfig } from "../../../../components/ui/chart";
 import ChartTick from "../../../../components/chartTick";
 import type { Condition } from "../../../../lib/weightBalance";
+import { TEXT } from "../../../../lib/text";
 
 const config = {
   envelope: { label: "Envelope", color: "var(--muted-foreground)" },
@@ -85,7 +86,7 @@ export default function EnvelopeChart({
             r={4.5}
             fill="var(--color-loaded)"
             stroke="white"
-            label={{ value: "Takeoff", position: "top", className: "text-xs", fill: "currentColor" }}
+            label={{ value: "Takeoff", position: "top", className: TEXT.note, fill: "currentColor" }}
           />
         )}
         {landing.armIn !== null && (
@@ -95,7 +96,7 @@ export default function EnvelopeChart({
             r={4.5}
             fill="var(--color-loaded)"
             stroke="white"
-            label={{ value: "Landing", position: "bottom", className: "text-xs", fill: "currentColor" }}
+            label={{ value: "Landing", position: "bottom", className: TEXT.note, fill: "currentColor" }}
           />
         )}
       </ComposedChart>

@@ -1,0 +1,57 @@
+{
+  "about": "Where an airplane is usually based, from its past flights (the engine's usual_base), for the airplane card's \"usually based at\" and the Aircraft tab's \"based at\" filter, held by the engine (engine/facade/tests/usual_base.rs) and the planner (services/planner/tests_wingtip/test_traffic.py). A field is the base with at least 3 of the takeoffs and landings, at least 0.4 of them and no tie (the owner's figures, 2026-10-13).",
+  "cases": [
+    {
+      "about": "Two round trips from Lawrence: its base",
+      "input": { "flights": [
+        { "origin": "LWM", "destination": "LCI", "landed": true },
+        { "origin": "LCI", "destination": "LWM", "landed": true },
+        { "origin": "LWM", "destination": "MHT", "landed": true },
+        { "origin": "MHT", "destination": "LWM", "landed": true }
+      ] },
+      "answer": { "ident": "LWM", "most": "LWM", "most_ends": 4, "ends": 8, "min_ends": 3, "min_share": 0.4 }
+    },
+    {
+      "about": "One round trip: too few to say",
+      "input": { "flights": [
+        { "origin": "LWM", "destination": "LCI", "landed": true },
+        { "origin": "LCI", "destination": "LWM", "landed": true }
+      ] },
+      "answer": { "ident": null, "most": "LWM", "most_ends": 2, "ends": 4, "min_ends": 3, "min_share": 0.4 }
+    },
+    {
+      "about": "A tour, a new field each leg: none",
+      "input": { "flights": [
+        { "origin": "LWM", "destination": "LCI", "landed": true },
+        { "origin": "MHT", "destination": "BOS", "landed": true },
+        { "origin": "ORH", "destination": "PVD", "landed": true }
+      ] },
+      "answer": { "ident": null, "most": "LWM", "most_ends": 1, "ends": 6, "min_ends": 3, "min_share": 0.4 }
+    },
+    {
+      "about": "Back and forth between two fields: a tie, not clear",
+      "input": { "flights": [
+        { "origin": "LWM", "destination": "LCI", "landed": true },
+        { "origin": "LCI", "destination": "LWM", "landed": true },
+        { "origin": "LWM", "destination": "LCI", "landed": true },
+        { "origin": "LCI", "destination": "LWM", "landed": true }
+      ] },
+      "answer": { "ident": null, "most": "LWM", "most_ends": 4, "ends": 8, "min_ends": 3, "min_share": 0.4 }
+    },
+    {
+      "about": "A landing not heard is no end, and an unknown field none",
+      "input": { "flights": [
+        { "origin": "LWM", "destination": "LCI", "landed": true },
+        { "origin": "LCI", "destination": "LWM", "landed": true },
+        { "origin": "LWM", "destination": "LWM", "landed": false },
+        { "origin": null, "destination": null, "landed": true }
+      ] },
+      "answer": { "ident": "LWM", "most": "LWM", "most_ends": 3, "ends": 5, "min_ends": 3, "min_share": 0.4 }
+    },
+    {
+      "about": "No flights",
+      "input": { "flights": [] },
+      "answer": { "ident": null, "most": null, "most_ends": 0, "ends": 0, "min_ends": 3, "min_share": 0.4 }
+    }
+  ]
+}

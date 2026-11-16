@@ -118,10 +118,6 @@ class Settings(BaseSettings):
     weather_store: Path = DATA_DIR / "raw" / "weather"
     #: wingtip.notams' SQLite store of NOTAMs.
     notam_store: Path = DATA_DIR / "raw" / "faa_notams" / "notams.sqlite"
-    #: SageMaker's channel folders and model folder, set only inside a Training Job (wingtip.pipeline).
-    sm_channel_features: str | None = None
-    sm_channel_labels: str | None = None
-    sm_model_dir: str | None = None
     #: ADS-B Exchange's RapidAPI key; None turns that source off (wingtip.traffic).
     adsbx_rapidapi_key: str | None = None
     #: ADS-B Exchange requests a month at most, short of the plan's 10,000.
@@ -144,6 +140,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     #: Whether the FAA aircraft registry is downloaded and read (0 on a test stack).
     registry_refresh: bool = True
+    #: The contact URL or email Planespotters.net's photo API asks a server
+    #: to name in its User-Agent (planespotters.net/photo/api); unset, an
+    #: airplane's photo is not asked for (wingtip.aircraft_photo).
+    planespotters_contact: str | None = None
     #: Whether the cycle pack is built once a cycle (0 on a test stack).
     cycle_pack: bool = True
     #: Whether the chart's landmark cells are read at start (0 in CI).

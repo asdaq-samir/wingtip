@@ -56,6 +56,8 @@ export type AltitudeChoice = AltitudeOption["kind"];
 /** An airplane's flights of the last seven days (wingtip.traffic.history). */
 export type PastFlights = Schemas["PastFlights"];
 export type PastFlightSummary = Schemas["PastFlightSummary"];
+export type AirplaneDetails = Schemas["AirplaneDetails"];
+export type AirplanePhoto = Schemas["AirplanePhoto"];
 /** One past flight's reports, for its track log and replay. */
 export type PastFlight = Schemas["PastFlight"];
 export type PastFlightPoint = Schemas["PastFlightPoint"];
@@ -184,7 +186,6 @@ export type DepartureEvent = Schemas["DepartureEvent"];
 export type AheadAlert = Schemas["AheadAlert"];
 /** The airplanes ADS-B receivers hear near a point (wingtip.traffic). */
 export type Traffic = Schemas["Traffic"];
-export type AircraftBases = Schemas["AircraftBases"];
 export type TrafficAircraft = Schemas["TrafficAircraft"];
 export type TrafficFound = Schemas["TrafficFound"];
 /** A tracked flight: its airplane, where it took off, its path today. */

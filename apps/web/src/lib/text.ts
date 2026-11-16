@@ -43,6 +43,9 @@ export const TEXT = {
   prose: TYPE_CLASS.prose,
   /** A section's line of help, a group's heading and its note, a key: 13, 12. */
   note: TYPE_CLASS.note,
+  /** A StatusBadge's word (Active, Closed, In the air), semibold: iOS's
+   *  Caption 1, 12 on 16, the same with a mouse. */
+  badge: TYPE_CLASS.badge,
   /** A chip's category inside a column the width of the star, with
    *  font-bold: iOS's Caption 2, 11 on 13, the same with a mouse. */
   caption: TYPE_CLASS.caption,

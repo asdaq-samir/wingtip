@@ -47,6 +47,27 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/aircraft/problems`.
     /// - Remark: Generated from `#/paths//api/aircraft/problems/post(check_airplane)`.
     func checkAirplane(_ input: Operations.CheckAirplane.Input) async throws -> Operations.CheckAirplane.Output
+    /// Airplane
+    ///
+    /// Everything public about a US airplane: its FAA registration in full,
+    /// its make and model's and its engine's reference records, its past
+    /// registrations, the documents filed against it, the N-number's
+    /// reservation, its NTSB accidents and incidents, and where it is usually
+    /// based (`based_pending` while that is looked up: ask again). A 422 for
+    /// what is not an N-number.
+    ///
+    /// - Remark: HTTP `GET /api/airplanes/{n_number}`.
+    /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/get(airplane)`.
+    func airplane(_ input: Operations.Airplane.Input) async throws -> Operations.Airplane.Output
+    /// Airplane Photo
+    ///
+    /// The newest photo of this very airplane on Planespotters.net, with its
+    /// photographer and its page, to be shown on their terms (AirplanePhoto);
+    /// null where it has none or it cannot be asked now.
+    ///
+    /// - Remark: HTTP `GET /api/airplanes/{n_number}/photo`.
+    /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/photo/get(airplane_photo)`.
+    func airplanePhoto(_ input: Operations.AirplanePhoto.Input) async throws -> Operations.AirplanePhoto.Output
     /// Airport Aerial
     ///
     /// The field's aerial photo from the USGS National Map's imagery
@@ -92,7 +113,7 @@ public protocol APIProtocol: Sendable {
     ///
     /// One US airport's card, by any ident it goes by (C81, KC81, KDLH).
     ///
-    /// `airspace_class` is the surface's class (wingtip.airspace.surface_class_at).
+    /// `airspace_class` is the surface's class, `surface_airspace` with its hours.
     /// `towered` is whether it lists a tower frequency. No reporting station,
     /// no `metar`; `weather_unavailable` only where the service was not asked.
     ///
@@ -183,18 +204,15 @@ public protocol APIProtocol: Sendable {
     func airportServices(_ input: Operations.AirportServices.Input) async throws -> Operations.AirportServices.Output
     /// Airports In View
     ///
-    /// The landing fields inside the map's view, the ones that report
-    /// first and then the biggest -- at most `limit` of them, since a whole
-    /// state holds thousands and the map only lays a tap target over each --
-    /// with each one's flight category from its METAR, for a weather chip on
-    /// the ones that report: the limit drops small fields with nothing to
-    /// show, never a chip a pilot saw a zoom further out -- and each one's
-    /// class of airspace at its surface, for its mark.
-    /// The METARs are the national cache already in memory; with the
-    /// weather service out the fields come back without, as fields with no
-    /// station do. With `reporting`, only the fields that report, before
-    /// the limit: what the map asks once for a whole route's box, so its
-    /// chips are there before the pilot zooms in on any of it.
+    /// The landing fields inside the map's view, the ones that report first
+    /// and then the biggest -- at most `limit`: a state holds thousands -- each
+    /// with its METAR's flight category, for a weather chip (the limit drops
+    /// small fields with nothing to show, never a chip seen further out), its
+    /// class of airspace at its surface, and its mark's order and size as the
+    /// overlay tiles carry them (wingtip.field_marks). The METARs are the
+    /// national cache in memory; with the weather service out the fields come
+    /// back without. With `reporting`, only the fields that report, before
+    /// the limit: the map asks so once for a whole route's box.
     ///
     /// - Remark: HTTP `GET /api/airports/in-view`.
     /// - Remark: Generated from `#/paths//api/airports/in-view/get(airports_in_view)`.
@@ -1116,7 +1134,7 @@ public protocol APIProtocol: Sendable {
     ///
     /// The public fields along a route with fuel, food, repair or a flight
     /// school, in route order, for the map's Stops while a course is drawn:
-    /// those no more than STOP_OFF_COURSE_NM off each flight's line, each
+    /// those no more than stop_corridor.STOP_OFF_COURSE_NM off each flight's line, each
     /// with its miles from its flight's departure, those it adds and how far
     /// off the course it is; what they have as round the pilot.
     ///
@@ -1357,6 +1375,20 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/traffic/flight/{hex_id}/status`.
     /// - Remark: Generated from `#/paths//api/traffic/flight/{hex_id}/status/get(traffic_status)`.
     func trafficStatus(_ input: Operations.TrafficStatus.Input) async throws -> Operations.TrafficStatus.Output
+    /// Traffic Registered
+    ///
+    /// The FAA's record of a US airplane named by its N-number or ICAO
+    /// address (wingtip.traffic.registered), null for any other name: the
+    /// registry is on this service's disk, so this answers in milliseconds,
+    /// where /api/traffic/find waits on the live sources, seconds at a time
+    /// when adsb.lol's API is busy. A page asks both at once, drawing the
+    /// record as soon as it is here and whether the airplane is in the air
+    /// when the find answers (the owner, 2026-11-14: "Why does looking up a
+    /// plane takes a long time?").
+    ///
+    /// - Remark: HTTP `GET /api/traffic/registered`.
+    /// - Remark: Generated from `#/paths//api/traffic/registered/get(traffic_registered)`.
+    func trafficRegistered(_ input: Operations.TrafficRegistered.Input) async throws -> Operations.TrafficRegistered.Output
     /// Traffic Route
     ///
     /// The route a flight number is scheduled to fly -- TJSJ to KORD for
@@ -1544,6 +1576,43 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// Airplane
+    ///
+    /// Everything public about a US airplane: its FAA registration in full,
+    /// its make and model's and its engine's reference records, its past
+    /// registrations, the documents filed against it, the N-number's
+    /// reservation, its NTSB accidents and incidents, and where it is usually
+    /// based (`based_pending` while that is looked up: ask again). A 422 for
+    /// what is not an N-number.
+    ///
+    /// - Remark: HTTP `GET /api/airplanes/{n_number}`.
+    /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/get(airplane)`.
+    public func airplane(
+        path: Operations.Airplane.Input.Path,
+        headers: Operations.Airplane.Input.Headers = .init()
+    ) async throws -> Operations.Airplane.Output {
+        try await airplane(Operations.Airplane.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Airplane Photo
+    ///
+    /// The newest photo of this very airplane on Planespotters.net, with its
+    /// photographer and its page, to be shown on their terms (AirplanePhoto);
+    /// null where it has none or it cannot be asked now.
+    ///
+    /// - Remark: HTTP `GET /api/airplanes/{n_number}/photo`.
+    /// - Remark: Generated from `#/paths//api/airplanes/{n_number}/photo/get(airplane_photo)`.
+    public func airplanePhoto(
+        path: Operations.AirplanePhoto.Input.Path,
+        headers: Operations.AirplanePhoto.Input.Headers = .init()
+    ) async throws -> Operations.AirplanePhoto.Output {
+        try await airplanePhoto(Operations.AirplanePhoto.Input(
+            path: path,
+            headers: headers
+        ))
+    }
     /// Airport Aerial
     ///
     /// The field's aerial photo from the USGS National Map's imagery
@@ -1621,7 +1690,7 @@ extension APIProtocol {
     ///
     /// One US airport's card, by any ident it goes by (C81, KC81, KDLH).
     ///
-    /// `airspace_class` is the surface's class (wingtip.airspace.surface_class_at).
+    /// `airspace_class` is the surface's class, `surface_airspace` with its hours.
     /// `towered` is whether it lists a tower frequency. No reporting station,
     /// no `metar`; `weather_unavailable` only where the service was not asked.
     ///
@@ -1780,18 +1849,15 @@ extension APIProtocol {
     }
     /// Airports In View
     ///
-    /// The landing fields inside the map's view, the ones that report
-    /// first and then the biggest -- at most `limit` of them, since a whole
-    /// state holds thousands and the map only lays a tap target over each --
-    /// with each one's flight category from its METAR, for a weather chip on
-    /// the ones that report: the limit drops small fields with nothing to
-    /// show, never a chip a pilot saw a zoom further out -- and each one's
-    /// class of airspace at its surface, for its mark.
-    /// The METARs are the national cache already in memory; with the
-    /// weather service out the fields come back without, as fields with no
-    /// station do. With `reporting`, only the fields that report, before
-    /// the limit: what the map asks once for a whole route's box, so its
-    /// chips are there before the pilot zooms in on any of it.
+    /// The landing fields inside the map's view, the ones that report first
+    /// and then the biggest -- at most `limit`: a state holds thousands -- each
+    /// with its METAR's flight category, for a weather chip (the limit drops
+    /// small fields with nothing to show, never a chip seen further out), its
+    /// class of airspace at its surface, and its mark's order and size as the
+    /// overlay tiles carry them (wingtip.field_marks). The METARs are the
+    /// national cache in memory; with the weather service out the fields come
+    /// back without. With `reporting`, only the fields that report, before
+    /// the limit: the map asks so once for a whole route's box.
     ///
     /// - Remark: HTTP `GET /api/airports/in-view`.
     /// - Remark: Generated from `#/paths//api/airports/in-view/get(airports_in_view)`.
@@ -3241,7 +3307,7 @@ extension APIProtocol {
     ///
     /// The public fields along a route with fuel, food, repair or a flight
     /// school, in route order, for the map's Stops while a course is drawn:
-    /// those no more than STOP_OFF_COURSE_NM off each flight's line, each
+    /// those no more than stop_corridor.STOP_OFF_COURSE_NM off each flight's line, each
     /// with its miles from its flight's departure, those it adds and how far
     /// off the course it is; what they have as round the pilot.
     ///
@@ -3667,6 +3733,28 @@ extension APIProtocol {
     ) async throws -> Operations.TrafficStatus.Output {
         try await trafficStatus(Operations.TrafficStatus.Input(
             path: path,
+            headers: headers
+        ))
+    }
+    /// Traffic Registered
+    ///
+    /// The FAA's record of a US airplane named by its N-number or ICAO
+    /// address (wingtip.traffic.registered), null for any other name: the
+    /// registry is on this service's disk, so this answers in milliseconds,
+    /// where /api/traffic/find waits on the live sources, seconds at a time
+    /// when adsb.lol's API is busy. A page asks both at once, drawing the
+    /// record as soon as it is here and whether the airplane is in the air
+    /// when the find answers (the owner, 2026-11-14: "Why does looking up a
+    /// plane takes a long time?").
+    ///
+    /// - Remark: HTTP `GET /api/traffic/registered`.
+    /// - Remark: Generated from `#/paths//api/traffic/registered/get(traffic_registered)`.
+    public func trafficRegistered(
+        query: Operations.TrafficRegistered.Input.Query,
+        headers: Operations.TrafficRegistered.Input.Headers = .init()
+    ) async throws -> Operations.TrafficRegistered.Output {
+        try await trafficRegistered(Operations.TrafficRegistered.Input(
+            query: query,
             headers: headers
         ))
     }

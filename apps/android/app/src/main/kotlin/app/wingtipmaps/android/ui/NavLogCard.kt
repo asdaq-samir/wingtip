@@ -39,6 +39,7 @@ import app.wingtipmaps.android.alternate.AlternateLegRow
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.route.LegPhase
@@ -146,7 +147,15 @@ internal fun RowScope.LegFigure(name: String, value: String) {
 /** The flight's totals, and the fuel the planner holds it to. */
 @Composable
 private fun TotalsRows(totals: NavLogTotals, airplane: AirplaneNow) {
-    val warn = (totals.fuelMarginGal ?: 0.0) < 0
+    // Short of fuel and its reserve on any flight of the route, the
+    // engine's strip_fuel as the strip asks it (the audit's AND-12), not
+    // a comparison here; a failed rule warns too.
+    val fuel = FlightModel.stripFuelOf(totals)
+    val warn = fuel.map { it.short.isNotEmpty() }.getOrDefault(true)
+    // Each short flight named by its two ends, found by its index in the
+    // hops (strip_fuel's `hop`, the code audit's CODE-13), not the engine's
+    // raw idents; a route with no stops has no flight to name.
+    val shortOn = fuel.getOrNull()?.short.orEmpty().mapNotNull { s -> s.hop?.let { totals.hops?.getOrNull(it) }?.let { "${it.departure} → ${it.destination}" } }
     Row(Modifier.fillMaxWidth()) {
         Figure(stringResource(R.string.figure_dist), Format.distance(totals.distanceNm), said = stringResource(R.string.leg_distance) + ", " + Spoken.distance(totals.distanceNm))
         // Time and fuel only with an airplane: the planner sends none
@@ -155,7 +164,10 @@ private fun TotalsRows(totals: NavLogTotals, airplane: AirplaneNow) {
         totals.fuelGal?.let { Figure(stringResource(R.string.figure_fuel), Format.fuel(it), warn = warn, said = stringResource(R.string.leg_fuel) + ", " + Spoken.fuel(it)) }
         totals.fuelRequiredGal?.let { Figure(stringResource(R.string.figure_required), Format.fuel(it), warn = warn, said = stringResource(R.string.said_fuel_required) + ", " + Spoken.fuel(it)) }
     }
-    if (warn) ProblemLine(stringResource(R.string.under_reserve), Modifier.padding(top = WingtipSpace.Xs))
+    if (warn) {
+        val line = if (shortOn.isEmpty()) stringResource(R.string.under_reserve) else stringResource(R.string.under_reserve_on, shortOn.joinToString(", "))
+        ProblemLine(line, Modifier.padding(top = WingtipSpace.Xs))
+    }
     // When it was planned and whose winds it flies, for use when.
     PlannedLine(totals, Modifier.padding(top = WingtipSpace.Xs))
     // An airplane whose profile has no start, taxi and takeoff allowance:

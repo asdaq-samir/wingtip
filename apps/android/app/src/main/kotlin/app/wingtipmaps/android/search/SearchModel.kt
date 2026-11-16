@@ -2,6 +2,7 @@ package app.wingtipmaps.android.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.airplane.InAir
 import app.wingtipmaps.android.airplane.OwnRecord
 import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.api.NearestAirport
@@ -9,7 +10,9 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.findAirplane
 import app.wingtipmaps.android.api.generated.AircraftProfileSummary
+import app.wingtipmaps.android.api.generated.AircraftRegistration
 import app.wingtipmaps.android.api.nearest
+import app.wingtipmaps.android.api.registered
 import app.wingtipmaps.android.api.searchWithFixes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -90,13 +93,27 @@ class SearchModel @Inject constructor() : ViewModel() {
         val found = attempt(problems) { Planner.searchWithFixes(q, near?.let { (lat, lon) -> String.format(Locale.US, "%.4f,%.4f", lat, lon) }) }.orEmpty()
         val (airports, waypoints) = SearchGroups.split(found)
         val stock = types ?: attempt(problems) { Planner.aircraftProfiles() }?.also { types = it }.orEmpty()
-        var airplanes = SearchGroups.airplanes(q, own, stock)
+        val airplanes = SearchGroups.airplanes(q, own, stock)
+        var registered: AircraftRegistration? = null
         if (SearchGroups.looksLikeTail(q)) {
-            val registered = attempt(problems) { Planner.findAirplane(SearchGroups.compact(q)).registered }
-            if (registered != null && !SearchGroups.isOwn(registered, own)) airplanes = listOf(AirplaneHit.Registered(registered)) + airplanes
+            // The FAA's record by itself, from the planner's disk, drawn at
+            // once; whether it is in the air follows from the live find,
+            // which waits on the live sources (the owner, 2026-11-14: "Why
+            // does looking up a plane takes a long time?").
+            registered = attempt(problems) { Planner.registered(SearchGroups.compact(q)) }?.takeUnless { SearchGroups.isOwn(it, own) }
         }
         _state.update {
-            it.copy(airports = airports, waypoints = waypoints, airplanes = airplanes, loading = false, problem = problems.firstOrNull())
+            it.copy(airports = airports, waypoints = waypoints, airplanes = listOfNotNull(registered?.let { r -> AirplaneHit.Registered(r) }) + airplanes, loading = false, problem = problems.firstOrNull())
+        }
+        if (registered != null) {
+            val inAir = try {
+                InAir.of(Planner.findAirplane(SearchGroups.compact(q)))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                InAir.Failed(Problems.say("Couldn't check whether it's in the air", e))
+            }
+            _state.update { s -> s.copy(airplanes = s.airplanes.map { if (it is AirplaneHit.Registered) it.copy(inAir = inAir) else it }) }
         }
     }
 

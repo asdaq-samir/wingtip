@@ -145,6 +145,7 @@ fn best_end(airplane: Option<&Airplane>, field: &Field, course_deg: f64) -> Opti
                 field.wind.as_ref(),
                 &field.report,
                 None,
+                Some(end),
             );
             let headwind = match (field.wind.and_then(|w| w.dir_true_deg), field.wind.and_then(|w| w.speed_kt), end.heading_true_deg) {
                 (Some(d), Some(kt), Some(h)) => Some(headwind_kt(d, kt, h)),

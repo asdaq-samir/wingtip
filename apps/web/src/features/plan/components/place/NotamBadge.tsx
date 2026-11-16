@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { cn } from "cn";
 import { Badge } from "../../../../components/ui/badge";
 import { SheetCard } from "../../../../components/SheetCard";
@@ -41,7 +42,7 @@ export function NotamBadge({ mark, kind, onOpen }: { mark: NotamMark; kind: stri
     <Badge
       {...props}
       className={cn(look, "relative overflow-visible after:absolute after:-inset-3 after:content-['']")}
-      render={<button type="button" onClick={onOpen} />}
+      render={<BaseButton onClick={onOpen} />}
     >
       {words}
     </Badge>

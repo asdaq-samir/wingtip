@@ -18,7 +18,7 @@ set -euo pipefail
 
 here=$(cd "$(dirname "$0")/../.." && pwd)
 # mise's release sums, for the OSes the repo is worked on.
-MISE_SUMS="2026.11.7 macos-arm64:0f7cb85b5c17208cb67088105bd1754c38314cb824cc97d109631b6df638f6fc macos-x64:2d5f8698529ab15d78526879ecd7d523d9c5c7f85bbcf24128a3e633b39a5661 linux-x64:8f5426d9971eaf713b37509749174ca69cf2f08b8b25e389168dcfcab9cd1a4d linux-arm64:e4392a51b1b99107b3dd0c8c1b1efa737b614e15950af34921067ce829929af8"
+MISE_SUMS="2026.11.8 macos-arm64:3e390ecbcf7f03e91e72c920a248a0f149f00d77ae95d37ea1736a1c7b42fee6 macos-x64:efedda14eb491af096dc27daaccfd5c57caaf77f1b79c5e387b8a091b8938f66 linux-x64:32b6abe844efa43d37d7ac4ed21d2ec41e9479d66feb19b0db8d2c548cd6e36d linux-arm64:0de1450dcc3f838e372e05e8c5231423760ad3f22d14275ef340bc0a250303ce"
 cache=${XDG_CACHE_HOME:-$HOME/.cache}/wingtip-tools
 
 sha256() { if command -v shasum > /dev/null; then shasum -a 256 "$1" | cut -d' ' -f1; else sha256sum "$1" | cut -d' ' -f1; fi; }

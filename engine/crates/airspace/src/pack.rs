@@ -79,6 +79,13 @@ impl<'a> Pack<'a> {
             return Err(PackError::Version(version));
         }
         let n = u32_at(bytes, 32).unwrap() as usize;
+        // The count is the file's word, read before any byte of the table
+        // is: a damaged pack on a phone's disk could say four billion, and
+        // an allocation that large aborts the app rather than panicking. A
+        // table cannot hold more entries than the bytes after the header.
+        if n > (bytes.len() - HEADER) / ENTRY {
+            return Err(PackError::CutShort);
+        }
         let mut sections = Vec::with_capacity(n);
         for k in 0..n {
             let at = HEADER + ENTRY * k;
@@ -231,5 +238,18 @@ pub(crate) mod tests {
         *bad.last_mut().unwrap() ^= 1;
         assert!(!Pack::read(&bad).unwrap().verify());
         assert_eq!(Pack::read(b"nope").err(), Some(PackError::NotAPack));
+    }
+
+    /// A header whose count of sections is more than its file could hold
+    /// is refused before anything is allocated for the table.
+    #[test]
+    fn a_count_past_the_file_is_cut_short() {
+        let mut bytes = tiny();
+        bytes[32..36].copy_from_slice(&u32::MAX.to_le_bytes());
+        assert_eq!(Pack::read(&bytes).err(), Some(PackError::CutShort));
+        // One more section than the table and its sections could hold.
+        let fits = (bytes.len() - HEADER) / ENTRY;
+        bytes[32..36].copy_from_slice(&(fits as u32 + 1).to_le_bytes());
+        assert_eq!(Pack::read(&bytes).err(), Some(PackError::CutShort));
     }
 }

@@ -14,7 +14,7 @@ enum CardTests {
         ("accessibility XXL", ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXL"]),
     ]
 
-    static let searchPrompt = "Search airports, airplanes, or ask"
+    static let searchPrompt = "Search airports and airplanes"
 
     /// A way into a card.
     enum Entry: CustomStringConvertible {

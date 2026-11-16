@@ -14,6 +14,7 @@ const pin = (w: Partial<PinWeather>): PinWeather => ({
   ceiling_cover: null,
   ceiling_unknown: false,
   crosswind_kt: null,
+  visibility_plus: false,
   ...w,
 });
 

@@ -364,6 +364,12 @@ targets:
         WKCompanionAppBundleIdentifier: $(WINGTIP_BUNDLE_ID)
         WKRunsIndependentlyOfCompanionApp: false
         NSLocationWhenInUseUsageDescription: Wingtip Maps finds the airports nearest you from where your watch is.
+    dependencies:
+      # Linked so the build's App Intents metadata step has its framework:
+      # without it the step warned "Metadata extraction skipped, no
+      # AppIntents.framework dependency found", the build's one warning
+      # (IOS-24, the zero-warnings rule).
+      - sdk: AppIntents.framework
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(WINGTIP_BUNDLE_ID).watchkitapp

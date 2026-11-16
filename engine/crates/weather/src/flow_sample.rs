@@ -214,6 +214,7 @@ fn size(name: &str, v: &Value, key: &str) -> Result<usize, String> {
 /// `{"pixels", "fx", "fy"}` or null; `flow_sample`: `{"pixels": [[r, g,
 /// a] x 4], "fx", "fy", "unscale", "vector", "ceiling"?, "field"?}` to
 /// `{"value", "from_deg", "calm", "no_ceiling"}` or null.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let mut out = String::new();
     match name {

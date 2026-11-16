@@ -103,7 +103,10 @@ export default function DepartPicker({
             aria-label={`${label}, ${date ? shortWhen(date) : "now"}: change`}
             data-testid={testId}
             className={cn(
-              "relative shrink-0 gap-0.5 font-semibold tabular-nums after:absolute after:-inset-2.5 after:content-['']",
+              // 44 tall round its 20 (12 over and under), so a tap just
+              // above or below "Now" picks the time, not the field's row
+              // toggle under it (the audit's WEB-5); 10 either side.
+              "relative shrink-0 gap-0.5 font-semibold tabular-nums after:absolute after:-inset-x-2.5 after:-inset-y-3 after:content-['']",
               TEXT.detail,
             )}
           >

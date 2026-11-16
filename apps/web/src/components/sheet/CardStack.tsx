@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
 import { closeTopCard } from "../../lib/openCards";
 import { cardOpening, coverCard, dropCard, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
-import { AT_PILL, sizeAt, snapsOf } from "./insets";
+import { AT_PILL, letGo, snapsOf } from "./insets";
 import { UNDER_INDICATOR } from "./SheetDrawer";
 import { cardSettled, frontOffset, sheetTopRef, useRidingCard } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
@@ -52,7 +52,8 @@ const EASE =
  * NOTAM -- mounted open, and came in at the top and dropped to half (the
  * owner's iPhone, 2026-11-12, TFR 6/2478; in WebKit at 390x844 its top at
  * 8 px in its first frame, then easing down to 476). So a card's drawer
- * opens the render after it mounts (CardDrawer's `open`).
+ * opens the render after its size is set (CardDrawer's `open`), and is
+ * never drawn anew after that (CardStack).
  */
 const RISE =
   "data-starting-style:[transform:translateY(calc(var(--card-from,var(--sheet-base,0px))_-_var(--sheet-base,0px)))] data-ending-style:opacity-0";
@@ -77,45 +78,95 @@ const RISE =
  * offset to its own. The keyboard's inset is the Drawer's own
  * (VirtualKeyboardProvider).
  *
- * Each card up is nested in the one under it, in React's tree, as Base
- * UI's nested drawers demo nests them: a Drawer tells its parent how many
- * drawers are open over it by setting, not adding, so one parent takes
- * one child (useDialogRoot's onNestedDialogOpen, DrawerPopup's presence;
- * @base-ui/react 1.9.0, the newest). Drawn side by side in the sheet, the
- * cards each set the sheet's count, the last to speak winning: a card
- * closed over another left the sheet thinking none was open, or one was
- * after all had gone -- its swipe the sheet's (DrawerViewport), its
- * content shown or hidden under the card (data-nested-drawer-open). Nested
- * one in another, each card counts those over it and the sheet hears the
- * one under them all. A card kept closed (under a page put away) tells
- * its parent nothing, and would cut the chain: it is drawn beside it.
+ * Every card's drawer has one place in React's tree for its life: side by
+ * side, by its id, in one Drawer of their own (`Cards`), whatever opens,
+ * closes, is kept or raised over or under it. They were nested each in
+ * the one under it, and a card kept was drawn beside them, so a card
+ * going from under another, or to or from kept, gave the drawers over it
+ * another parent, and React drew them anew: a card opened over another
+ * was drawn all the way up for a frame, and one kept was drawn anew
+ * closed, gone with no close, the map's buttons thrown off the screen's
+ * top (the flicker audit, 2026-11-14, FL-1 and FL-2). Side by side they
+ * cannot tell the sheet themselves: a Drawer tells its parent how many
+ * are open over it by setting, not adding (useDialogRoot's
+ * onNestedDialogOpen; @base-ui/react 1.9.0, the newest), and a closed one
+ * tells it nothing, so the last card to speak won and the sheet thought
+ * none was up with one still open -- its swipe the sheet's
+ * (DrawerViewport), its content shown under the card
+ * (data-nested-drawer-open). Their Drawer, open while any card is, is
+ * what the sheet hears: one nested drawer up. Raised, a card's portal is
+ * put last in the sheet's popup, over the rest (useStackOrder).
  */
 export function CardStack(p: StackProps & { host: HTMLElement | null }) {
   const stack = useSheetCards((s) => s.stack);
   const riding = useRidingCard();
+  useStackOrder(
+    p.host,
+    stack.map((entry) => entry.id),
+  );
   if (!p.host) return null;
   const host = p.host;
   const top = [...stack].reverse().find((entry) => entry.state === "open")?.id;
   const cover = coverCard(stack)?.id;
-  const drawer = (entry: CardEntry, over?: ReactNode) => (
-    <CardDrawer
-      key={entry.id}
-      entry={entry}
-      top={entry.id === top}
-      cover={entry.id === cover}
-      riding={entry.id === riding}
-      {...p}
-      host={host}
-    >
-      {over}
-    </CardDrawer>
-  );
-  const up = stack.filter((entry) => entry.state !== "kept");
   return (
-    <>
-      {stack.filter((entry) => entry.state === "kept").map((entry) => drawer(entry))}
-      {up.reduceRight<ReactNode>((over, entry) => drawer(entry, over), null)}
-    </>
+    <Cards open={top !== undefined}>
+      {stack.map((entry) => (
+        <CardDrawer
+          key={entry.id}
+          entry={entry}
+          top={entry.id === top}
+          cover={entry.id === cover}
+          riding={entry.id === riding}
+          {...p}
+          host={host}
+        />
+      ))}
+    </Cards>
+  );
+}
+
+/**
+ * The cards' portals in the sheet's popup in the stack's order, the top
+ * card's last, so it is drawn over the rest and is what the page finds
+ * last (the browser tests' front sheet): a portal stays where its drawer
+ * first put it, and a card raised -- You opened again from the Map card's
+ * gear -- came up under the cards opened after it. The portal's element
+ * moved, not its drawer: React draws nothing anew.
+ */
+function useStackOrder(host: HTMLElement | null, ids: string[]) {
+  const order = ids.join("\n");
+  useLayoutEffect(() => {
+    if (!host) return;
+    const portals = order.split("\n").map((id) => {
+      let node = [...host.querySelectorAll("[data-card-viewport]")].find((n) => n.getAttribute("data-card-viewport") === id) ?? null;
+      while (node && node.parentElement !== host) node = node.parentElement;
+      return node;
+    });
+    const placed = portals.filter((node): node is Element => !!node);
+    const now = [...host.children].filter((node) => placed.includes(node));
+    if (now.some((node, i) => node !== placed[i])) for (const node of placed) host.appendChild(node);
+  }, [host, order]);
+}
+
+/**
+ * The cards' own Drawer, nested in the sheet's: open while any card is, so
+ * the sheet hears one drawer up over it whichever cards open and close
+ * under its children (CardStack). It has no popup of its own, nothing to
+ * swipe or close: Escape, a tap outside, are its cards' (each card is its
+ * nested drawer, which Base UI gives them first) and refused here.
+ */
+function Cards({ open, children }: { open: boolean; children: ReactNode }) {
+  return (
+    <Drawer.Root
+      open={open}
+      modal={false}
+      disablePointerDismissal
+      onOpenChange={(next, details) => {
+        if (!next) details.cancel();
+      }}
+    >
+      {children}
+    </Drawer.Root>
   );
 }
 
@@ -125,11 +176,18 @@ function CardDrawer({
   cover,
   riding,
   host,
-  children,
   ...p
-}: StackProps & { entry: CardEntry; top: boolean; cover: boolean; riding: boolean; host: HTMLElement; children?: ReactNode }) {
+}: StackProps & { entry: CardEntry; top: boolean; cover: boolean; riding: boolean; host: HTMLElement }) {
   const { id, frame } = entry;
-  const slot = useCallback((node: HTMLElement | null) => setCard(id, { slot: node }), [id]);
+  // The card's own content box taken into this drawer's scroller (useCardFrame).
+  const content = entry.host;
+  const slot = useCallback(
+    (node: HTMLElement | null) => {
+      if (node && content.parentElement !== node) node.append(content);
+      setCard(id, { slot: node });
+    },
+    [id, content],
+  );
   const { onPhone, fromBottom } = p;
   // The sheet's own snap points, the same constant values (sheet/insets).
   const snaps = snapsOf(fromBottom);
@@ -144,17 +202,29 @@ function CardDrawer({
   const ask = useCallback((size: PanelState) => setCard(id, { at: size }), [id]);
   // Gone, it is no longer up (the map's room, map/cardRoom).
   useEffect(() => () => cardSettled(id, false), [id]);
-  // A drag let go: the size of the snap point the Drawer picked, one of ours.
-  const snapped = (point: Drawer.Root.SnapPoint | null) => {
-    if (point === null || !top) return;
-    const target = sizeAt(fromBottom, point);
-    if (target && target !== at) ask(target);
+  // A settings card swiped down closes from half or below; from all the way
+  // up it comes down to half, the Drawer's own next snap point, and stays
+  // open (the owner, 2026-11-14: "Settings cards should only close from a
+  // swipe down when in medium detents").
+  const swipeCloses = !!frame.onSwipeClose && at !== "full";
+  // A drag let go (letGo): the top card's alone; a card under it refuses a close.
+  const snapped = (point: Drawer.Root.SnapPoint | null, details: Drawer.Root.SnapPointChangeEventDetails) => {
+    if (top)
+      letGo(point, details, {
+        fromBottom,
+        at,
+        ask,
+        park: frame.onSwipeClose ? "half" : "peek",
+        close: swipeCloses ? frame.onSwipeClose : undefined,
+      });
+    else if (point === null) details.cancel();
   };
   const topSlot = onPhone && fromBottom && riding;
   return (
     <Drawer.Root
       // Mounted closed, opened once its size is set (the layout effect
-      // above, before the first paint): so it comes up from the front's top (RISE).
+      // above, before the first paint): so it comes up from the front's top
+      // (RISE) at its own size.
       open={entry.state === "open" && entry.at !== undefined}
       modal={false}
       swipeDirection={fromBottom ? "down" : "up"}
@@ -175,10 +245,16 @@ function CardDrawer({
         // open: it is no modal.
         if (!top || details.reason === "focus-out") return details.cancel();
         // A swipe past the pill is no close: the card stays at the pill
-        // with its title row (the card rule's 10).
+        // with its title row (the card rule's 10) -- but a settings card's
+        // at half, which closes, the Drawer's own close carrying it down;
+        // all the way up, it comes down to half.
+        if (details.reason === "swipe" && swipeCloses) {
+          frame.onSwipeClose?.();
+          return;
+        }
         if (details.reason === "swipe") {
           details.cancel();
-          ask("peek");
+          ask(frame.onSwipeClose ? "half" : "peek");
           return;
         }
         if (frame.dismiss) return frame.dismiss(details);
@@ -196,6 +272,7 @@ function CardDrawer({
           {/* Over the sheet's whole popup, above the keyboard while it is up,
               no target itself: the card is. */}
           <SheetViewport
+            data-card-viewport={id}
             className="pointer-events-none absolute inset-x-0 top-0 z-40 print:static"
             style={{ bottom: "var(--drawer-keyboard-inset, 0px)" }}
           >
@@ -212,8 +289,10 @@ function CardDrawer({
               // The card that covers the map most, not always the top one,
               // for what it covers of the map (useSheetCover, coverCard).
               data-cover={cover || undefined}
-              // The side panel's card does not swipe: no sizes to swipe between.
-              data-base-ui-swipe-ignore={onPhone ? undefined : ""}
+              // The side panel's card does not swipe: no sizes to swipe
+              // between. Nor does a card under the top one: the top card's
+              // nested drawers took that from it once (CardStack).
+              data-base-ui-swipe-ignore={onPhone && top ? undefined : ""}
               // Its corners the sheet's: drawn outside the sheet's clip, so it can stand over it.
               style={
                 onPhone
@@ -252,8 +331,6 @@ function CardDrawer({
           </SheetViewport>
         </Drawer.Portal>
       </Drawer.VirtualKeyboardProvider>
-      {/* The cards over it, nested in it (CardStack). */}
-      {children}
     </Drawer.Root>
   );
 }

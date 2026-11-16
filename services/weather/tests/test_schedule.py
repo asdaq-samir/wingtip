@@ -27,16 +27,26 @@ def _products(calls: list, fail: set = frozenset()):
 
 def test_every_product_is_due_on_a_start_and_each_at_its_own_pace_after(monkeypatch):
     schedule = main.Schedule(_products([]))
+    metars, radar_ = schedule.products["metars"], schedule.products["radar"]
     now = 1_000_000.0
-    assert [p.name for p in schedule.due(now)] == ["metars", "radar"]
+    assert schedule.due(metars, now) and schedule.due(radar_, now)
     schedule.tried = {"metars": now, "radar": now}
     settings = get_settings()
-    # Nobody planning: the slow pace.
-    assert schedule.due(now + settings.reports_every_s) == []
-    assert [p.name for p in schedule.due(now + settings.radar_idle_every_s)] == ["radar"]
-    # A pilot planning (the planner read the store just now): the full pace.
+    # Nobody planning: the slow pace, a turn of the job early or late.
+    assert not schedule.due(metars, now + settings.reports_every_s)
+    assert not schedule.due(radar_, now + settings.radar_idle_every_s - settings.radar_every_s)
+    assert schedule.due(radar_, now + settings.radar_idle_every_s - 1)
+    # A pilot planning (the planner read the store just now): every turn.
     monkeypatch.setattr(weather_store, "last_asked", lambda: now)
-    assert [p.name for p in schedule.due(now + settings.reports_every_s)] == ["metars", "radar"]
+    assert schedule.due(metars, now + settings.reports_every_s) and schedule.due(radar_, now + settings.radar_every_s)
+
+
+def test_each_product_is_a_job_at_its_planning_pace():
+    on = main.schedule.scheduler()
+    main.Schedule().jobs(on)
+    jobs = on.get_jobs()
+    assert [job.id for job in jobs] == [p.name for p in main.PRODUCTS]
+    assert jobs[0].trigger.interval.total_seconds() == get_settings().reports_every_s
 
 
 def test_the_pace_is_the_environments(monkeypatch):
@@ -58,7 +68,7 @@ def test_a_failure_is_written_beside_the_copy_it_leaves_and_the_planner_says_so(
     assert calls == ["metars", "radar"]
     assert weather_store.attempt("metars")["error"] is None
     assert weather_store.attempt("radar")["error"] == "radar down"
-    assert not schedule.running
+    assert set(schedule.tried) == {"metars", "radar"}
 
 
 def test_the_health_check_says_how_fresh_each_product_is(monkeypatch):

@@ -60,7 +60,11 @@ object ReadyDevice {
         val index = store.index ?: return EngineContract.ReadyToFlyInputPacks(edition = null, canUpdate = true)
         if (line.size < 2) return EngineContract.ReadyToFlyInputPacks(edition = index.cycle, canUpdate = true)
         val listed = index.regions.map { it.name }.toSet()
-        val wanted = runCatching { CyclePacks.regions(line) }.getOrDefault(emptySet()).filter { it in listed }
+        // Where the engine cannot say which regions the route crosses,
+        // nothing was checked: not held, so Ready to Fly says to download,
+        // never passed on an unknown (the audit's AND-3).
+        val wanted = CyclePacks.regions(line).getOrNull()?.filter { it in listed }
+            ?: return EngineContract.ReadyToFlyInputPacks(edition = null, canUpdate = true)
         val whole = wanted.all { store.path(index.cycle, it).isFile }
         return EngineContract.ReadyToFlyInputPacks(edition = if (whole) index.cycle else null, canUpdate = true)
     }

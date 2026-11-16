@@ -5,7 +5,8 @@ import Foundation
 /// the web app's ShareMenu, AirportCard and AirplaneCard write them --
 /// `/app/plan?dep=C81&stops=KJVL&dest=KDLH` a route shared, `?place=KDLH`
 /// a field's card, `?airplane=N3429J` an airplane's profile,
-/// `?flight=a1b2c3` an airplane tracked, `?open=logbook`
+/// `?flight=a1b2c3` an airplane tracked, `?tfr=6/4116` a TFR's card,
+/// `?navaid=OBK@42.2214,-87.9517` a VOR's, `?open=logbook`
 /// one of the app's screens (design/screens.json; the same from the app's
 /// own wingtipmaps://plan?open=logbook) -- and a track
 /// file (GPX, KML) handed over from Files or Mail, which the app is a
@@ -35,6 +36,10 @@ enum Links {
         if let place = ident(query["place"]) { return .weather(ident: place) }
         if let tail = ident(query[LinkKey.airplane.rawValue]) { return .airplane(tail: tail) }
         if let hex = query["flight"]?.trimmingCharacters(in: .whitespaces).lowercased(), !hex.isEmpty { return .aircraft(hex: hex) }
+        // A TFR's card by its FDC NOTAM number ("6/4116"), a VOR's by its
+        // ident and place ("OBK@42.2214,-87.9517"), as the web's address.
+        if let id = query[LinkKey.tfr.rawValue], id.wholeMatch(of: /\d{1,2}\/\d{3,5}/) != nil { return .card(.tfr(id)) }
+        if let key = query[LinkKey.navaid.rawValue].flatMap(NavaidKey.init) { return .card(.navaid(key.text)) }
         // The route as the web app's URL has it: idents, the stops
         // comma-separated; a link with only a destination plans from the
         // field nearest the airplane, as Siri's "plan a trip to" does.

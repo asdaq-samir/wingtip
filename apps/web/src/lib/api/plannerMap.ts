@@ -1,6 +1,9 @@
 import { planner, data } from "./http";
+
 import type {
-  AircraftBases,
+  AirplaneDetails,
+  AirplanePhoto,
+  AircraftRegistration,
   AirspaceAt,
   WeatherLoop,
   WeatherMap,
@@ -94,15 +97,23 @@ export const plannerMap = {
   traffic: (ask: { lat: number; lon: number; radius: number }) =>
     planner.GET("/api/traffic", { params: { query: ask } }).then(data<Traffic>),
 
-  /** Where airplanes are based, the field their last flights keep to; the
-   *  ones still being looked up pending (the Aircraft tab's "based at"). */
-  trafficBased: (hexes: string[]) =>
-    planner.GET("/api/traffic/based", { params: { query: { hex: hexes.join(",") } } }).then(data<AircraftBases>),
-
   /** The airplanes in the air a pilot names, by callsign, registration or
-   *  ICAO address, to track one (AircraftCard); with none in the air, the
-   *  FAA's record of the one named, to open its card all the same. */
+   *  ICAO address (lib/airplane/lookup, the one search's N-number); with
+   *  none in the air, the FAA's record of the one named. */
   trafficFind: (q: string) => planner.GET("/api/traffic/find", { params: { query: { q } } }).then(data<TrafficFound>),
+
+  /** Everything public about a US airplane by its N-number (the airplane card's Info). */
+  airplaneDetails: (tail: string) =>
+    planner.GET("/api/airplanes/{n_number}", { params: { path: { n_number: tail } } }).then(data<AirplaneDetails>),
+  /** Its newest Planespotters.net photo, on their terms; null where none. */
+  airplanePhoto: (tail: string) =>
+    planner.GET("/api/airplanes/{n_number}/photo", { params: { path: { n_number: tail } } }).then(data<AirplanePhoto | null>),
+
+  /** The FAA's record of a US airplane by its N-number or ICAO address,
+   *  null for any other name: off the planner's disk, at once, where the
+   *  find waits on the live sources (lib/airplane/lookup). */
+  trafficRegistered: (q: string) =>
+    planner.GET("/api/traffic/registered", { params: { query: { q } } }).then(data<AircraftRegistration | null>),
 
   /** A tracked flight's airplane, where it took off and its path today,
    *  and a US airplane's FAA registration. */

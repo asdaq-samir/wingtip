@@ -8,6 +8,7 @@ import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.checklist.ChecklistStore
 import app.wingtipmaps.android.flight.FlightSession
 import app.wingtipmaps.android.logbook.FlightRecorder
+import app.wingtipmaps.android.logbook.UnsentTracks
 import app.wingtipmaps.android.pilot.MinimumsStore
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.KeptPlan
@@ -65,6 +66,7 @@ class PhoneWipe(private val parts: List<Pair<String, suspend () -> Unit>>) {
                     "records" to { Records.database(app).erase() },
                     "path flown" to { flight.trail.wipe() },
                     "flight recorded" to { FlightRecorder.of(app).wipe() },
+                    "tracks unsent" to { UnsentTracks.of(app).wipe() },
                     "last position" to { flight.ownShip.forgetLastPosition() },
                     "own airplanes" to { OwnAirplanes.of(app).forget() },
                     "minimums" to { MinimumsStore.of(app).forget() },

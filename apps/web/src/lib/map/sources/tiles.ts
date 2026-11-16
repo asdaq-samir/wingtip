@@ -8,7 +8,9 @@ import { tileFraction } from "../tileMath";
  * area charts over the IFR enroute ones. Resolved here once, for every
  * reader: the Class B pin resolved its own, always the TAC's, and said
  * "Pin the Chicago TAC" on an IFR base while the map drew the IFR area
- * chart.
+ * chart. With the chart None, the map draws no chart (ChartGl), and what
+ * else asks -- a route kept for the air, a Class B chip's sheet -- is
+ * given the sectional's, the chart a pilot most likely turns back to.
  */
 export function chartPair(layers: ChartLayer[], base: string): { base: ChartLayer | null; overlay: ChartLayer | null } {
   const baseLayer = layers.find((l) => l.kind === base) ?? layers.find((l) => l.kind === "sec") ?? null;

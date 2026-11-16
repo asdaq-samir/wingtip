@@ -174,9 +174,8 @@ export function useTraining(dep: string, dest: string) {
 
   const [editsState, setEdits] = useState<Edits>(() => fresh(route));
   const edits = editsState.route === route ? editsState : fresh(route);
-  // The route on screen now, for the actions below: a save that lands
-  // after the route has changed belongs to the old one, and applying it
-  // used to reset the new route's edits.
+  // The route on screen now, for the actions below: a save that lands after the route changed belongs to the old one,
+  // and applying it used to reset the new route's edits.
   const routeNow = useRef(route);
   useEffect(() => {
     routeNow.current = route;
@@ -202,9 +201,8 @@ export function useTraining(dep: string, dest: string) {
     () => [...streamed.added, ...edits.added].filter((p) => !edits.removed.includes(pointKey(p))).map(apply),
     [streamed.added, edits.added, edits.removed, apply],
   );
-  // Every point on screen by its place, and what kind it is: the ends,
-  // then the detections, then the points added by hand. A detection
-  // keeps its kind where an added point sits on the same place.
+  // Every point on screen by its place, and its kind: the ends, the detections, then the points added by hand; a
+  // detection keeps its kind where an added point sits on the same place.
   const byKey = useMemo(() => {
     const map = new Map<string, { point: Point; kind: PointKind }>();
     for (const point of endpoints) map.set(pointKey(point), { point, kind: "endpoint" });
@@ -216,11 +214,8 @@ export function useTraining(dep: string, dest: string) {
   // rather than the selection sliding on to its neighbour.
   const selected = edits.selection === null ? null : (byKey.get(edits.selection)?.point ?? null);
 
-  // What the actions below read: the current course, points and
-  // selection, mirrored after every render so the actions themselves
-  // keep one identity -- the map's popup and the key handler hang on
-  // them, and a fresh function per render would rebuild both on every
-  // streamed-in block.
+  // What the actions below read (course, points, selection), mirrored after every render so the actions keep one identity:
+  // the map's popup and the key handler hang on them, and a fresh function per render rebuilt both at every streamed block.
   const current = { course: course.data ?? null, detections, added, byKey, edits, streamedAdded: streamed.added };
   const latest = useRef(current);
   useEffect(() => {
@@ -258,13 +253,13 @@ export function useTraining(dep: string, dest: string) {
     [update],
   );
 
-  // A rating has to feel instant while walking the route, so every
-  // call site fires these without waiting; a failed write is the
-  // query client's to report, and changes nothing here.
+  // A rating answers whether it was kept, so the page steps on only once it is; a point's failed one is said at its card
+  // (RatingCard) till one lands, where it was swallowed and the page stepped on anyway (WEB-37).
+  const [rateFailed, setRateFailed] = useState<string | null>(null);
   const rate = useCallback(
-    async (rating: Rating) => {
+    async (rating: Rating): Promise<boolean> => {
       const target = selectedPick();
-      if (!target) return;
+      if (!target) return false;
       const before = editOf(target.p);
       const key = pointKey(target.p);
       try {
@@ -277,8 +272,12 @@ export function useTraining(dep: string, dest: string) {
             undo: { key, kind: target.kind, before },
           };
         });
+        setRateFailed((was) => (was === key ? null : was));
+        return true;
       } catch {
         update((e) => ({ ...e, undo: null })); // nothing landed, so nothing to step back to
+        setRateFailed(key);
+        return false;
       }
     },
     [savePick, update],
@@ -407,6 +406,7 @@ export function useTraining(dep: string, dest: string) {
     selected,
     select,
     rate,
+    rateFailed: selected != null && rateFailed === pointKey(selected),
     setCategory,
     addPick,
     removeSelected,

@@ -6,10 +6,10 @@ import { useIsDesktop } from "../hooks/use-desktop";
 import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useSafeArea } from "../hooks/use-viewport";
-import { GLASS_SHEET, MATERIAL, PILL_RADIUS, type MapInsets, type PanelState } from "../lib/mapChrome";
-import { coverCard, useSheetCards } from "../lib/sheetCards";
+import { GLASS_SHEET, PILL_RADIUS, type MapInsets, type PanelState } from "../lib/mapChrome";
+import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
-import { FLOAT_PX, insetsOf, sizeAt, snapsOf } from "./sheet/insets";
+import { FLOAT_PX, insetsOf, letGo, snapsOf } from "./sheet/insets";
 import { useSheetCover } from "./sheet/useSheetCover";
 import { useDrawn } from "./sheet/useDrawn";
 import { SHEET_BELOW, SheetParts, type PartsProps } from "./sheet/SheetParts";
@@ -55,10 +55,10 @@ interface Props {
   /** The airplane flying the route (useFlyingMode): the first row, the top
    *  row and the controls put away, the pill its foot alone. */
   flying?: boolean;
-  /** The sheet's two pages, Search and FPL, turned by the round toggle
-   *  riding the sheet's top at the right (PageToggle; the owner,
-   *  2026-11-13): the first the search and `children`, the second the top
-   *  row and its own body (SheetPages). */
+  /** The sheet's two pages, Search and FPL, turned by the round toggle at
+   *  their first row's end (PageToggle): the first the search and
+   *  `children`, the second its own bar, the top row under it and its own
+   *  body (SheetPages). */
   pages?: SheetPages;
   state: PanelState;
   onStateChange: (state: PanelState) => void;
@@ -81,7 +81,7 @@ interface Props {
  * leaves to its user is a thin layer here: the parts held in sight at its
  * free edge (by the Drawer's own CSS variables, SheetParts), the room over
  * its top where the radio's and the map's buttons ride it (OnSheetTop), the room it
- * leaves the map (insetsOf, read from the Drawer by useSheetCover). The
+ * leaves the map (insetsOf, from its size by useSheetCover). The
  * cards over it are its own nested drawers, each with its own snap point
  * (CardStack); the keyboard's inset is the Drawer's
  * (VirtualKeyboardProvider), and a swipe moves one size however fast, by
@@ -126,7 +126,8 @@ export default function MapPanel(props: Props) {
   // and the rules over the map (all the way up, its buttons give way,
   // index.css), and for the side panel, which a card covers.
   const ask = props.onStateChange;
-  const front: PanelState = coverEntry ? (coverEntry.at ?? "half") : props.state;
+  // A card opening, the size it opens at (Emergency's all the way up), not half for its first render.
+  const front: PanelState = coverEntry ? (coverEntry.at ?? cardOpening(coverEntry)) : props.state;
   const size = onPhone ? props.state : front;
   const ready = useDrawn();
   const hasPill = !!bar || !!compact;
@@ -138,17 +139,15 @@ export default function MapPanel(props: Props) {
   const snaps = snapsOf(fromBottom);
 
   // The room the sheet in sight (the top card, else the sheet) leaves the
-  // map, read from the Drawer as its snap point is set: the map eases with
-  // the sheet (GlMapShell, in the Drawer's time).
-  const { cover, card: coverIsCard } = useSheetCover(sheetNode, front, onPhone, fromBottom);
+  // map, from the size it is set to: the map eases with the sheet
+  // (GlMapShell, in the Drawer's time).
+  const cover = useSheetCover(sheetNode, front, onPhone, fromBottom);
   // The pages, drawn whenever the workspace has them and is not flying: a
   // card alone over them (`layer` "card") is drawn from inside one, the
   // Brief from FPL's (PlanPage), so put away with them it never opened.
   const pages = props.pages && !flying ? props.pages : undefined;
-  // Turned by their toggle (PageToggle), a card over them or not: tapped
-  // with one up it closes the cards and turns the page (the owner,
-  // 2026-11-13: "airport card hides the fpl toggle"). Told to the toggle,
-  // drawn with the map's buttons, which ride the front card's top.
+  // Turned by their toggle (PageToggle), told them here: it is drawn in
+  // each page's first row, apart from the pages' own state.
   const pageAt = pages?.at;
   const pageGo = pages?.go;
   useEffect(() => {
@@ -157,8 +156,8 @@ export default function MapPanel(props: Props) {
   useEffect(() => () => usePageToggle.setState({ pages: null }), []);
   const tellInsets = props.onInsetsChange;
   const insetsNow = useMemo(
-    () => ({ ...insetsOf(front, cover, onPhone, fromBottom, safe.top, desktop), card: cardsUp || coverIsCard }),
-    [front, cover, onPhone, fromBottom, safe.top, desktop, cardsUp, coverIsCard],
+    () => ({ ...insetsOf(front, cover, onPhone, fromBottom, safe.top, desktop), card: cardsUp }),
+    [front, cover, onPhone, fromBottom, safe.top, desktop, cardsUp],
   );
   useEffect(() => tellInsets(insetsNow), [insetsNow, tellInsets]);
 
@@ -214,10 +213,13 @@ export default function MapPanel(props: Props) {
   // The sheet's grabber and each card's, the one plain bar.
   const grabberAt = bottomSheet ? "top" : "bottom";
   const sheetGrabber = <SheetGrabber label={label} size={size} ask={ask} at={grabberAt} />;
-  // On a phone the light grey of Apple Maps' web sheet (2026-11-10): the look's --sheet, Canvas in Native.
+  // Solid at every size, the look's --sheet (Canvas in Native), the light
+  // grey of Apple Maps' web sheet (2026-11-10): glass is only for what
+  // floats over the map (CLAUDE.md, owner decision 2026-11-10). The side
+  // panel was MATERIAL, the chart showing through it (the web audit's WEB-6).
   const look = onPhone
     ? GLASS_SHEET
-    : cn(MATERIAL, "w-(--size-panel) lg:w-(--size-panel-wide) ring-1 ring-inset ring-black/5 shadow-float dark:ring-white/10");
+    : cn(GLASS_SHEET, "w-(--size-panel) lg:w-(--size-panel-wide) ring-1 ring-inset ring-black/5 dark:ring-white/10");
   const common = {
     "data-slot": "map-panel",
     // The sheet's own size, under a card too; a card's is on its own
@@ -227,19 +229,10 @@ export default function MapPanel(props: Props) {
     "aria-label": label,
   };
 
-  // A drag let go at a snap point: its size, the point being one of ours.
-  // Let go past the pill, the Drawer reads a close, which is refused for
-  // the pill.
+  // A drag let go (letGo); a swipe past the pill lands on it. A card's drag
+  // is its own drawer's (CardStack).
   const snapped = (point: Drawer.Root.SnapPoint | null, details: Drawer.Root.SnapPointChangeEventDetails) => {
-    // A card's drag is its own drawer's (CardStack).
-    if (cardsUp) return;
-    if (point === null) {
-      details.cancel();
-      if (size !== "peek") ask("peek");
-      return;
-    }
-    const target = sizeAt(fromBottom, point);
-    if (target && target !== size) ask(target);
+    if (!cardsUp) letGo(point, details, { fromBottom, at: size, ask, park: "peek" });
   };
 
   // The cards over it, its nested drawers (CardStack), with its sizes.

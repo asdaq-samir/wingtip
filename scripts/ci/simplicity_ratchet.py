@@ -122,6 +122,17 @@ METRICS = {
         lambda: occurrences("apps/ios", ".swift", r"try\?\s*Engine\.[^\n]*\?\?"),
         "`try? Engine… ?? default` reads a failure as an answer: show the failure (lib/problems' way)",
     ),
+    # An airplane's own figure bounded by literals in a planner endpoint,
+    # where the engine states each figure's range once (airplane_figure_ranges,
+    # app.plan_query; the 2026-11-14 audit's CODE-10).
+    "planner_airplane_figure_literals": (
+        lambda: occurrences(
+            "services/planner/app",
+            ".py",
+            r"\b(\w*tas_kt|\w*ias_kt|\w*burn_gph|\w+_fuel_gal|cruise_power_pct|service_ceiling_ft|climb_rate_fpm|glide_ratio)\s*:\s*Annotated\[float[^\]]*Query\([^)]*\b[gl][te]=",
+        ),
+        "an airplane figure's bounds written by hand: take its range from app.plan_query (the engine's airplane_figure_ranges)",
+    ),
     # The gateway's own HTTP clients (finding 6).
     "gateway_http_client_builders": (
         lambda: occurrences("services/gateway/src/main", ".java", r"HttpClient\.new(Builder|HttpClient)\(|RestClient\.(builder|create)\("),

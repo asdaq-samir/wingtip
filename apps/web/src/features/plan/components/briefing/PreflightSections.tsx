@@ -19,6 +19,7 @@ import { phasesOf, type Phase } from "./sections";
 import { AirplaneLink } from "../../../../components/airplane/AirplaneLink";
 import { AskFigure } from "../../../../components/airplane/AskFigure";
 import { useNotInProfileSummary } from "./notInProfileSummary";
+import { NO_RUNWAYS } from "../../../../lib/emptyWords";
 
 /** The envelope's picture: Recharts, loaded with the section. */
 const EnvelopeChart = lazy(() => import("./EnvelopeChart"));
@@ -274,7 +275,7 @@ export function TakeoffLandingSection({
                     owner's pick of the redesign, each fact once). */}
                 <ListRow
                   media={c.crosswindOver ? <FindingIcon finding="caution" /> : undefined}
-                  title={c.runway ? `Runway ${c.end ?? c.runway.ends}` : <span className="text-muted-foreground">No runway data</span>}
+                  title={c.runway ? `Runway ${c.end ?? c.runway.ends}` : <span className="text-muted-foreground">{NO_RUNWAYS}</span>}
                   description={
                     !c.runway ? undefined : c.runway.wind ? (
                       <span className={cn(c.crosswindOver && FINDING_TONE.caution)} data-testid="runway-wind-check">

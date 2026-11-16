@@ -19,11 +19,13 @@
 //! - xml: the small XML reader the weather products share.
 
 pub mod ask;
+pub mod faa_case;
 pub mod flat;
 pub mod geo;
 pub mod geo_many;
 pub mod grid;
 pub mod json;
+mod notam_text;
 pub mod plate;
 pub mod sort;
 pub mod sums;

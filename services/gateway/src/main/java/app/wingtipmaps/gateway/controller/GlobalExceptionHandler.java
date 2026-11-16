@@ -119,10 +119,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return super.handleErrorResponseException(ex, headers, status, request);
     }
 
+    /** The one constraint a pilot can run into by what they typed: a tail
+     *  number they already have on file (V3's aircraft table). */
+    static final String TAIL_CONSTRAINT = "uq_aircraft_pilot_tail";
+
     /**
-     * Handles a unique-constraint violation -- in practice, registering
-     * an aircraft whose tail number the same pilot already has on file
-     * ({@code uq_aircraft_pilot_tail}).
+     * Handles a constraint the database refused. A tail number the pilot
+     * already has ({@value #TAIL_CONSTRAINT}) is said as that; any other --
+     * a nav log's checkpoint sequence, a foreign key, a missing value -- is
+     * no fault of what the pilot typed, and was answered "That tail number
+     * is already registered" all the same (the 6 Nov audit's S9).
      *
      * @param ex the underlying constraint failure, logged by the
      *     constraint's name only: the database's own text quotes the row's
@@ -132,11 +138,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        String constraint = ex.getCause() instanceof ConstraintViolationException violation
-                ? violation.getConstraintName()
-                : ex.getMostSpecificCause().getClass().getSimpleName();
-        log.warn("Data integrity violation: {}", constraint);
-        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "That tail number is already registered");
+        String constraint =
+                ex.getCause() instanceof ConstraintViolationException violation ? violation.getConstraintName() : null;
+        log.warn(
+                "Data integrity violation: {}",
+                constraint != null
+                        ? constraint
+                        : ex.getMostSpecificCause().getClass().getSimpleName());
+        String detail = TAIL_CONSTRAINT.equalsIgnoreCase(constraint)
+                ? "That tail number is already registered"
+                : "That could not be saved: it conflicts with what is already saved. Reload and try again.";
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, detail);
     }
 
     /**

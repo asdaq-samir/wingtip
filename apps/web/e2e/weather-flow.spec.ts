@@ -150,6 +150,8 @@ test("model weather is off by default, turned on from the Map menu, and its lege
   await openMapSettings(page);
   // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
   await grabberTo(page, "full");
+  // A submenu of the Weather tile's ••• menu (the four layers, 2026-11-14).
+  await page.getByTestId("weather-more").click();
   await page.getByTestId("weather-flow").click();
   await page.getByTestId("weather-flow-wind").click();
   await expect(async () => {

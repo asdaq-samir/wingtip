@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NO_AIRPLANE, forgetPilot, migratePreferences, usePreferences } from "./preferences";
+import { NO_AIRPLANE, forgetPilot, keptPreferences, migratePreferences, usePreferences } from "./preferences";
 import { NO_MINIMUMS } from "./minimums";
 
 describe("forgetPilot", () => {
@@ -64,7 +64,50 @@ describe("the settings taken out (2026-11-13)", () => {
     const kept = migratePreferences({ navBar: "top", terrain: "flat", ownShipLook: "arrow", base: "ifr_low" }, 8);
     expect(kept).not.toHaveProperty("navBar");
     expect(kept).not.toHaveProperty("terrain");
-    expect(kept).not.toHaveProperty("ownShipLook");
+    expect(kept).toMatchObject({ ownShipLook: "single" });
     expect(kept).toMatchObject({ base: "ifr_low" });
+  });
+});
+
+describe("own ship's look, the Map card's Own Ship (2026-11-14)", () => {
+  it("is the airplane for every browser coming to it, and kept from then on", () => {
+    expect(usePreferences.getInitialState()).toMatchObject({ ownShipLook: "single" });
+    // Let go at 9, and an old pick not brought back.
+    expect(migratePreferences({ ownShipLook: "arrow" }, 8)).toMatchObject({ ownShipLook: "single" });
+    expect(migratePreferences({}, 10)).toMatchObject({ ownShipLook: "single" });
+    expect(keptPreferences({ ...usePreferences.getInitialState(), ownShipLook: "jet" })).toMatchObject({ ownShipLook: "jet" });
+  });
+});
+
+describe("the Map card's four layers (2026-11-14)", () => {
+  it("fold the old switches into their groups, each on where any of its old ones was on", () => {
+    expect(usePreferences.getInitialState()).toMatchObject({
+      aeronautical: true,
+      weather: true,
+      traffic: false,
+      privateMilitary: false,
+      waypoints: false,
+      classB: false,
+    });
+    expect(migratePreferences({ airspace: false, navaids: true }, 9)).toMatchObject({ aeronautical: true });
+    expect(migratePreferences({ airspace: false, navaids: false }, 9)).toMatchObject({ aeronautical: false });
+    // The checkpoints and the Class B chips keep their own switches, now the route's ••• menu's.
+    expect(migratePreferences({ waypoints: true, classB: true }, 9)).toMatchObject({ waypoints: true, classB: true });
+    // Never kept: the defaults then, the airspace and the VORs on.
+    expect(migratePreferences({}, 9)).toMatchObject({ aeronautical: true, privateMilitary: false });
+    expect(migratePreferences({ military: false, privateFields: true }, 9)).toMatchObject({ privateMilitary: true });
+    // The fields' weather marks were drawn (Settings' Airport Weather not Off).
+    expect(migratePreferences({}, 9)).toMatchObject({ weather: true });
+    expect(migratePreferences({ traffic: true }, 9)).toMatchObject({ traffic: true });
+    const kept = migratePreferences({ airspace: true, tfrs: false, classB: true, military: true }, 9);
+    for (const old of ["airspace", "navaids", "tfrs", "military", "privateFields"]) expect(kept).not.toHaveProperty(old);
+  });
+});
+
+describe("what is kept", () => {
+  it("writes the map's overlay and its strength with the rest, and no functions", () => {
+    const kept = keptPreferences({ ...usePreferences.getState(), overlay: "usgs", overlayStrength: "full" }) as Record<string, unknown>;
+    expect(kept).toMatchObject({ overlay: "usgs", overlayStrength: "full", base: expect.any(String) });
+    expect(Object.values(kept).some((v) => typeof v === "function")).toBe(false);
   });
 });

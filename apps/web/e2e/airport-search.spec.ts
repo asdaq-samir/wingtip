@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { openPanel, sideDrawer, slow } from "./helpers";
+import { stopsAre } from "./stopsParam";
 
 /**
  * The route picker's search -- the one search, scoped to the field it
@@ -110,7 +111,7 @@ test("a stop at the route box's arrow and the route's ends are picked in the one
   expect(inSearch.height).toBeGreaterThanOrEqual(52);
   // Picked, it is the stop between the two.
   await typedRow.click();
-  await expect(page).toHaveURL(/[?&]stops=KMSN(&|$)/);
+  await expect(page).toHaveURL(stopsAre("KMSN"));
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
 
   // The airport picker asks the one search itself, scoped to it (the one card rule, 2026-11-10): one field.

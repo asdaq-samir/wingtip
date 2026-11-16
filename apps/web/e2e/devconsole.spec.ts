@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { consolePage, expandConsole, openConsole, showTabs } from "./helpers";
+import { consolePage, expandConsole, openConsole, showTabs, consoleSheet } from "./helpers";
 
 // A route's handler still running as the test ends -- the Recents and
 // Saved planned ahead at idle ask the planner then -- found the page
@@ -15,7 +15,6 @@ test.afterEach(async ({ page }) => {
  * answer. Each used to read "checking…" for ever.
  */
 
-const consoleSheet = (page: Page) => page.getByTestId("console-sheet");
 // A service's row on the Services page.
 const row = (page: Page, service: RegExp) => consoleSheet(page).locator('[data-slot="item"]').filter({ hasText: service });
 

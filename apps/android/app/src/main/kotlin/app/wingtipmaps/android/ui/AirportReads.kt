@@ -112,7 +112,7 @@ object AirportReads {
             EngineContract.Runway(
                 closed = closed[i], surface = r.surface, lengthFt = r.lengthFt?.toDouble(),
                 runwayEnds = r.runwayEnds?.map { EngineContract.RunwayRunwayEndsItem(it.ident, it.headingTrueDeg) },
-                wind = r.wind?.let { EngineContract.GonogoRunwayWind(it.end, it.headwindKt, it.crosswindKt, it.gustCrosswindKt, it.inUse) },
+                wind = r.wind?.let { EngineContract.GonogoRunwayWind(it.end, it.headwindKt, it.crosswindKt, it.gustCrosswindKt, crosswindExactKt = it.crosswindExactKt, inUse = it.inUse) },
             )
         }
         val inUse = if (asked.isEmpty()) null else Engine.gonogoRunwayInUse(asked).getOrNull()

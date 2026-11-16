@@ -22,10 +22,10 @@
 
 use crate::json;
 use crate::pack::Pack;
-use crate::sua_tab;
 use crate::view::{
     in_box, meets, oriented, reaches, representative, rings_of, round5, simplified, text_at, tolerance_for, Bbox, Polygon, Pt,
 };
+use crate::{sua_limit, sua_place, sua_tab};
 use wingtip_core::sort::StableSort;
 
 /// The special-use areas the map draws, by TYPE_CODE: those inked as
@@ -137,9 +137,10 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
             o.push_str(",\"tab\":");
             let code = |key: &str| codes.as_ref().and_then(|c| c.get(key)).and_then(json::Value::as_str);
             if codes.is_some() {
-                let floor = sua_tab::Limit { ft: f64_at(a, 8).filter(|v| !v.is_nan()), code: code("floor_ref"), desc: code("floor_desc") };
+                let floor =
+                    sua_limit::Limit { ft: f64_at(a, 8).filter(|v| !v.is_nan()), code: code("floor_ref"), desc: code("floor_desc") };
                 let ceiling =
-                    sua_tab::Limit { ft: f64_at(a, 16).filter(|v| !v.is_nan()), code: code("ceiling_ref"), desc: code("ceiling_desc") };
+                    sua_limit::Limit { ft: f64_at(a, 16).filter(|v| !v.is_nan()), code: code("ceiling_ref"), desc: code("ceiling_desc") };
                 tab(&mut o, &polygons, name, &kind, floor, ceiling, excluded);
             } else {
                 o.push_str("null");
@@ -156,8 +157,8 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
 }
 
 /// An area's tab (crate::sua_tab), or null.
-fn tab(o: &mut String, polygons: &[Polygon], name: &str, kind: &str, floor: sua_tab::Limit, ceiling: sua_tab::Limit, excluded: bool) {
-    let (Some(t), Some((at, angle, side))) = (sua_tab::tab(name, kind, floor, ceiling, excluded), sua_tab::edge_place(polygons)) else {
+fn tab(o: &mut String, polygons: &[Polygon], name: &str, kind: &str, floor: sua_limit::Limit, ceiling: sua_limit::Limit, excluded: bool) {
+    let (Some(t), Some((at, angle, side))) = (sua_tab::tab(name, kind, floor, ceiling, excluded), sua_place::edge_place(polygons)) else {
         o.push_str("null");
         return;
     };

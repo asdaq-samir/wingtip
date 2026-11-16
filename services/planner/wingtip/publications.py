@@ -35,11 +35,11 @@ import wingtip_native
 from PIL import Image
 from scipy import ndimage
 
-from . import data_cycles, outside
+from . import data_cycles, diagram_crops, outside
 from .atomic import atomic_path
 from .config import DATA_DIR
 from .config import FAA_HEADERS as HEADERS
-from .single_flight import once
+from .single_flight import once, one_at_a_time
 
 log = logging.getLogger(__name__)
 
@@ -57,9 +57,6 @@ DIAGRAM_SCALE = 5
 
 _LOCK = threading.Lock()
 _HELD: dict = {}
-#: One lock per diagram being drawn: two cards opened on the same field at
-#: once read its PDF once, and a draw does not hold up every other card.
-_DRAWING: dict = {}
 
 
 def dtpp_cycle(on: date | None = None) -> str:
@@ -221,9 +218,7 @@ def airport_diagram_png(ident: str, cycle: str, on: date | None = None) -> Path 
     path = CACHE_DIR / "diagrams" / cycle / f"{Path(url).stem}.png"
     if path.exists():
         return path
-    with _LOCK:
-        lock = _DRAWING.setdefault(path, threading.Lock())
-    with lock:
+    with one_at_a_time(path):
         if path.exists():
             return path
         try:
@@ -275,9 +270,7 @@ def _pdf_of(source: str, edition: str, name: str) -> bytes | None:
         return path.read_bytes()
     if (source, edition, name) in _ABSENT:
         return None
-    with _LOCK:
-        lock = _DRAWING.setdefault(path, threading.Lock())
-    with lock:
+    with one_at_a_time(path):
         if path.exists():
             return path.read_bytes()
         base = DTPP_BASE if source == "dtpp" else DCS_BASE
@@ -373,6 +366,17 @@ def chart_pages(url: str, ident: str | None = None, on: date | None = None) -> l
     return pages
 
 
+@once(maxsize=256)
+def _page_count(source: str, edition: str, name: str) -> int:
+    """How many pages a PDF `_pdf_of` has kept has, read once per edition."""
+    with _PDFIUM:
+        document = pypdfium2.PdfDocument(_pdf_of(source, edition, name))
+        try:
+            return len(document)
+        finally:
+            document.close()
+
+
 def chart_page_png(source: str, edition: str, name: str, page: int, on: date | None = None) -> Path | None:
     """One page of one of the FAA's charts in force as a picture on disk,
     drawn the first time it is asked for and kept for its edition, as the
@@ -386,11 +390,9 @@ def chart_page_png(source: str, edition: str, name: str, page: int, on: date | N
     if path.exists():
         return path
     data = _pdf_of(source, edition, name)
-    if data is None:
+    if data is None or page > _page_count(source, edition, name):  # no lock or draw for a page past the last
         return None
-    with _LOCK:
-        lock = _DRAWING.setdefault(path, threading.Lock())
-    with lock:
+    with one_at_a_time(path):
         if path.exists():
             return path
         try:
@@ -514,11 +516,7 @@ def airport_diagram_runways_png(ident: str, cycle: str, ends: list, on: date | N
     url = airport_diagram_url(ident, on)
     if not url:
         return None
-    # What is drawn depends on the ends: with none the sheet's strokes
-    # alone place the crop, and that must not stand in for the labels'
-    # once NASR's ends are there.
-    kind = "runways-wide" if ends else "runways-wide-noends"  # wider margin, 2026-11-13
-    path = CACHE_DIR / "diagrams" / cycle / f"{Path(url).stem}-{kind}.png"
+    path = diagram_crops.runways_path(CACHE_DIR, url, cycle, bool(ends))
     none = path.with_suffix(".none")
     if path.exists():
         return path
@@ -527,9 +525,7 @@ def airport_diagram_runways_png(ident: str, cycle: str, ends: list, on: date | N
     data = _pdf_of("dtpp", cycle, Path(url).name)
     if data is None:
         return None
-    with _LOCK:
-        lock = _DRAWING.setdefault(path, threading.Lock())
-    with lock:
+    with one_at_a_time(path):
         if path.exists():
             return path
         if none.exists():

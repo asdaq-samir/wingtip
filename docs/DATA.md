@@ -79,13 +79,20 @@ works them out on demand, the same for everyone.
 
 Backups: the owner's Mac dumps it every night ([LOCAL-DEV.md](LOCAL-DEV.md#the-nightly-database-backup));
 the server copies it to S3 ([README-AWS.md](README-AWS.md#backups-and-restore)).
+CI restores such a dump each night (`scripts/ci/backup_restore.sh`, the
+"Backup restores" job): a throwaway Postgres dumped by
+`scripts/dev/backup-db.sh` and restored whole into an empty one, its rows
+and grants counted, so a dump that cannot be restored is found then.
 
 ## The data folder
 
 `data/` at the repository's root, mounted into every Python service at
 `/workspace/data`. Git tracks `aircraft/` and one seed file each in
 `labels/` (`checkpoint_notes.csv`) and `processed/` (the C81 to KDLH
-candidates); the rest is fetched or made and is gitignored.
+candidates); the rest is fetched or made and is gitignored. The rest of
+`labels/` and `processed/` is the owner's ratings and features, never
+committed (CLAUDE.md, "Never"); the two seed files are the one exception,
+staged only when changing them is the commit's point.
 
 ```
 data/
@@ -94,7 +101,9 @@ data/
                 tiles (charts.nosync/, chart_tiles.nosync/), the cycle packs (raw/packs)
   processed/    feature tables made from it
   labels/       the owner's ratings (chart_picks.csv) and pilots' checkpoint notes
-  aircraft/     stock performance profiles (c172.json and others)
+  aircraft/     stock performance profiles (c172.json and others), each figure with
+                its handbook's page in a source field; one no handbook gives is left
+                out (the PA-28-140s' climb fuel flow), never filled from another airplane
   models/       the trained models: candidate/, current/, versions/<time>/, and run.json
 ```
 
@@ -104,6 +113,22 @@ owner's ratings and features live there and change locally on purpose.
 The live store (radar, NOTAMs, filed routes, the SWIM reports) is not in
 `data/` locally but on the `live-store` Docker volume
 ([ARCHITECTURE.md](ARCHITECTURE.md#the-shared-stores)).
+
+### An airplane's public record
+
+An airplane's card (`GET /api/airplanes/{n_number}`,
+`wingtip.aircraft_details`) is read from these, each free to use:
+
+| Part | Source and terms | Kept in | Field layout |
+|---|---|---|---|
+| Registration (every MASTER field but the street, zip code and county), the make and model's and the engine's reference records, past registrations, documents filed, an N-number's reservation | The FAA's Releasable Aircraft Database (registry.faa.gov/database/ReleasableAircraft.zip), public domain (17 U.S.C. 105); the FAA withholds owners who ask (49 U.S.C. 44114(b)) | `data/raw/faa_registry/registry.sqlite`, read by the planner once a day (`wingtip.registry`, `wingtip.registry_history`): 191 MB on 2026-11-14, from 79 MB, of which the deregistered file is 65 MB with its indexes | The FAA's `ardata.pdf` (5/8/2025): MASTER, ACFTREF, ENGINE, DEREG, DOCINDEX, RESERVED |
+| Accidents and incidents since 2008 | The NTSB's aviation database (data.ntsb.gov/avdata, avall.mdb monthly and weekly deltas), public domain | `ntsb.sqlite` on the `live-store` volume, written by ingest (`wingtip.history.ntsb`); its shape (`SCHEMA` 2) adds each case's kind and the airplane's damage, and a store of an older shape is made again from avall.zip | The NTSB's data dictionary (`eadmspub.pdf`, and the `eADMSPUB_DataDictionary` table) |
+| Usually based at | The engine's `usual_base` over the flights adsb.lol's traces show (ODbL 1.0) | Not kept beyond the planner's 12-hour memory | engine/crates/flight/src/based.rs |
+| A photo of the airplane | Planespotters.net's photo API (planespotters.net/photo/api): free, no key; the photographer credited next to the image, the image a link to its page, the image loaded by the app straight from the URL given, never stored or passed on, and the answer kept a day at most | Not kept beyond a day in the planner's memory; asked only where `PLANESPOTTERS_CONTACT` names a contact URL or email for its User-Agent | `wingtip.aircraft_photo` |
+
+The type certificate data sheet is given by its number and holder where
+ACFTREF has them (about one airplane in ten). There is no link: the FAA's
+DRS has no stable public address for a sheet by its number.
 
 ## The chart model
 

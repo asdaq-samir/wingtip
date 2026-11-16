@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { Detour, FuelStopSuggestion } from "../../../../lib/api/types";
 import type { AirspaceClass } from "../../../../lib/preferences";
 import type { TypedProcedure } from "../../../../lib/procedures";
@@ -51,11 +50,6 @@ export interface RouteBoxProps extends RouteParts {
   /** A suggested fuel stop taken out of the box, the pilot not wanting it
    *  (its menu's Remove); the route's menu or FPL's Routes put it back. */
   onHideFuelStop?: (ident: string) => void;
-  /** The route's buttons -- the airplane, the altitude, the Brief, the nav
-   *  log and Share -- in the box under its lines, as a message box has its
-   *  own under what is typed, at the owner's ask ("I want the route box
-   *  with the buttons below it like this", 2026-10-21). */
-  footer?: ReactNode;
   /** Where a stop asked for (`adding`) is typed in, before the point at
    *  this place: FPL's list's Add a Stop and Add a Stop After, where the
    *  list changes the route (lib/preferences RouteEdit). None, before the

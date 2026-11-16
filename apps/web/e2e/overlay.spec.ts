@@ -2,7 +2,8 @@ import { test, expect, type Page } from "@playwright/test";
 import { closeCard, grabberTo, openMapSettings, settle, slow } from "./helpers";
 
 /**
- * Over the chart, at the pilot's ask (the map's settings, OverlayTiles):
+ * The base map under the chart, at the pilot's ask (the Map card's "Base
+ * map" row, "Overlay" until 2026-11-14; the preference is still overlay):
  * the USGS's aerial imagery, or Google's map or satellite imagery where
  * the deployment has a key -- faint, half or full -- each credited in the
  * map's corner. The USGS's and Google's servers are stubbed: a tile is a
@@ -63,6 +64,7 @@ test("the USGS's imagery over the chart, credited, at the strength picked; no Go
   // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
   await grabberTo(page, "full");
   const overlay = page.getByTestId("overlay-select");
+  await expect(page.getByTestId("map-settings").getByRole("heading", { name: "Base map" })).toBeVisible();
   await expect(overlay.getByRole("button")).toHaveText(["None", "USGS"]);
   await overlay.getByRole("button", { name: "USGS" }).click();
   // The map's own layer, not the choice's picture of it.

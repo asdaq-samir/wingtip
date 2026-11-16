@@ -197,6 +197,7 @@ fn needs(name: &str, v: &Value) -> R<String> {
 }
 
 /// The rule `name` worked on `v`.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> R<String> {
     match name {
         "airplane_figures" => figures(name, v),

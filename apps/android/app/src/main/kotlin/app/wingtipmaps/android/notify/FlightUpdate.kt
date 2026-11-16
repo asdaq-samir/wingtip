@@ -92,7 +92,6 @@ data class FlightUpdate(
          *
          * @param airplaneChosen whether an airplane is picked; with none
          *   there is no fuel to show.
-         * @param usableFuelGal the plan's usable fuel at the start.
          * @param legsNm each leg's miles, for the bar's segments.
          */
         fun of(
@@ -101,17 +100,18 @@ data class FlightUpdate(
             dep: String,
             dest: String,
             airplaneChosen: Boolean,
-            usableFuelGal: Double?,
             nowMs: Long,
             legsNm: List<Double> = emptyList(),
         ): FlightUpdate? {
             if (!underway || progress == null || dest.isEmpty()) return null
             val next = progress.next
             val destination = progress.destination
-            // The fuel the plan expects left now: the usable fuel less the
-            // engine's planned burn to this point (in_flight's burnt_gal),
-            // planning data as the nav log's fuel column is.
-            val fuelLeft = if (airplaneChosen && usableFuelGal != null) maxOf(0.0, usableFuelGal - progress.burntGal) else null
+            // The fuel the plan expects in the tanks now, the engine's
+            // (in_flight's fuel_now_gal: from the last fuel stop passed, the
+            // tanks filled there, less the start and taxi allowance; the
+            // aviation audit's AV-4), planning data as the nav log's fuel
+            // column is. No subtraction here.
+            val fuelLeft = if (airplaneChosen) progress.fuelNowGal else null
             return FlightUpdate(
                 dep = dep,
                 dest = dest,

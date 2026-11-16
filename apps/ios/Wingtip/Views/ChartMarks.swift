@@ -115,6 +115,16 @@ final class ChartMarks {
         }
     }
 
+    /// Everything drawn taken off and nothing asked for (the Map card's
+    /// Aeronautical off), until the next move with it on.
+    func clear(_ map: MKMapView) {
+        take([], map: map)
+        showTabs(false, heading: map.camera.heading, map: map)
+        takeFixes([], map: map)
+        areaFetch.forget()
+        fixFetch.forget()
+    }
+
     private func take(_ areas: [Area], map: MKMapView) {
         let fresh = Dictionary(areas.map { ("\($0.type)|\($0.name)", $0) }, uniquingKeysWith: { a, _ in a })
         for key in lines.keys where fresh[key] == nil { map.removeOverlays(lines.removeValue(forKey: key) ?? []) }

@@ -81,7 +81,7 @@ final class FlowTests: XCTestCase {
         // The one search, up (what the Airport tab was), in the sheet or
         // the iPad's sidebar.
         let app = launch(screen: "airport")
-        let search = app.searchFields["Search airports, airplanes, or ask"]
+        let search = app.searchFields["Search airports and airplanes"]
         XCTAssertTrue(search.waitForExistence(timeout: 30), "no search field")
         search.tap()
         search.typeText("KDLH")

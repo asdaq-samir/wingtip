@@ -2,17 +2,21 @@
 //! from its contract file, crates/airspace/contract/<name>.json): the
 //! column over a point and the Mode C veil (rules.rs: 14 CFR 71, 91.215),
 //! the region a point's cycle pack covers (pack_query.rs) and the places
-//! a clearance named (spoken_ask.rs).
+//! a clearance named (spoken_ask.rs). The Class B band of a profile an
+//! altitude is in is class_b_band.rs's own call, so the web's module takes
+//! it without this table's rules.
 
 use crate::json::{self, Value};
 use wingtip_core::ask::Ask;
 
-/// `airspace_column`, `mode_c_veil`, `region_of` and `clearance_places`.
+/// `airspace_column`, `mode_c_veil`, `region_of`, `regions_ahead` and
+/// `clearance_places`.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     match name {
         "airspace_column" => crate::rules::column_json(v),
         "mode_c_veil" => crate::rules::veil_json(v),
         "clearance_places" => crate::spoken_ask::clearance_places(name, v),
+        "regions_ahead" => crate::regions_ahead::regions_ahead_rule(name, v),
         "region_of" => {
             let ask = Ask::new(name, v);
             let mut out = String::new();

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, type Dispatch, type SetStateAction } from "react";
 import type { RouteChip, RouteOptions } from "../../../lib/api/types";
 import { duration } from "../../../lib/format";
+import { callEngine } from "../../../lib/engine/engine";
 import type { RouteWay } from "../../../lib/map/route/routeWays";
 import { useRouteLineOpen } from "../lib/routeLine";
 import { gridScale, sameStops, wayTime } from "../lib/routeWays";
@@ -26,24 +27,16 @@ interface WayCard {
   gal: number | null;
 }
 
-/** What a chip's way meets, said on it in amber: the worst it meets
- *  first -- airspace a pilot may not enter, then storms and high ground,
- *  then weather -- each by its own name (a TFR was "Crosses weather"),
- *  or no field with fuel in reach (the planner's "fuel" hazard). */
-export function wayWarning(hazards: RouteOptions["hazards"], crosses: number[]): string | null {
-  const met = crosses.map((i) => hazards[i]).filter((h): h is NonNullable<typeof h> => !!h);
-  const rank = (kind: string) => ["prohibited", "tfr", "storm", "terrain", "sigmet", "fuel"].indexOf(kind) >>> 0;
-  const h = [...met].sort((a, b) => rank(a.kind) - rank(b.kind))[0];
-  if (!h) return null;
-  const words: Record<string, string> = {
-    fuel: "No fuel stop in reach",
-    prohibited: "Crosses a prohibited area",
-    tfr: "Crosses a TFR",
-    storm: "Crosses storms",
-    terrain: "Crosses high ground",
-    sigmet: "Crosses a SIGMET",
-  };
-  return words[h.kind] ?? "Crosses weather";
+/** What a chip's way meets, said on it: the worst it crosses, the
+ *  engine's words and ranking (route_way_warning, the same rule as each
+ *  route option's `warning`) -- a prohibited area or a TFR, a restricted
+ *  area, storms, high ground, a SIGMET, no fuel stop in reach, other
+ *  weather, then a warning area, a MOA and an alert area (14 CFR 91.133,
+ *  91.137-91.145; AIM 3-4). From the chip's own crossings, so the route
+ *  as typed says it too. The web ranked its own copy (wayWarning), which
+ *  named no restricted area or MOA. */
+function wayWarning(hazards: RouteOptions["hazards"], crosses: number[]): string | null {
+  return callEngine("route_way_warning", { kinds: crosses.flatMap((i) => (hazards[i] ? [hazards[i].kind] : [])) });
 }
 
 /**
@@ -124,6 +117,7 @@ export function wayCards({
  */
 export function useRouteLine({
   routeWays,
+  waysStale = false,
   browsing,
   setBrowsing,
   chosenKey,
@@ -139,6 +133,9 @@ export function useRouteLine({
   flightRules,
 }: {
   routeWays: RouteOptions | undefined;
+  /** The ways are the last airplane's or time's, kept while the new ones
+   *  come (useRouteWays): drawn dimmed, not to be picked. */
+  waysStale?: boolean;
   browsing: Browsing | null;
   setBrowsing: Dispatch<SetStateAction<Browsing | null>>;
   /** The route's ends the browsing is kept under (useRouteWays). */
@@ -208,8 +205,8 @@ export function useRouteLine({
       typedNm: browsing ? browsing.ownNm : ownNm,
       typedGal: browsing ? browsing.ownGal : ownGal,
     });
-    return cards ? { chips: cards, picked: lineKey, onPick: applyChip } : null;
-  }, [vfrRoute, chips, routeWays, lineKey, applyChip, browsing, ownMinutes, ownGround, ownNm, ownGal]);
+    return cards ? { chips: cards, picked: lineKey, onPick: applyChip, unchecked: routeWays?.unchecked ?? [], stale: waysStale } : null;
+  }, [vfrRoute, chips, routeWays, lineKey, applyChip, browsing, ownMinutes, ownGround, ownNm, ownGal, waysStale]);
 
   // The chips' ways on the chart beside the course while the line is open,
   // each its time on its chip, the one picked solid (the owner's "I want

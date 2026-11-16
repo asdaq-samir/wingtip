@@ -74,6 +74,10 @@ enum EngineContract {
         var descentIasKt: String?
         var descentFuelBurnGph: String?
         var usableFuelGal: String?
+        var serviceCeilingFt: String?
+        var climbRateFpm: String?
+        var taxiFuelGal: String?
+        var glideRatio: String?
         var equipment: String?
         var surveillance: String?
         var colour: String?
@@ -90,9 +94,49 @@ enum EngineContract {
         var descentIasKt: String?
         var descentFuelBurnGph: String?
         var usableFuelGal: String?
+        var serviceCeilingFt: String?
+        var climbRateFpm: String?
+        var taxiFuelGal: String?
+        var glideRatio: String?
         var equipment: String?
         var surveillance: String?
         var colour: String?
+    }
+
+    struct AirplaneFigureRangesAnswer: Codable, Equatable, Sendable {
+        var ranges: [EngineContract.AirplaneFigureRangesAnswerRangesItem]
+    }
+
+    struct AirplaneFigureRangesAnswerRangesItem: Codable, Equatable, Sendable {
+        /// The form's and the gateway's name, cruiseTasKt.
+        var field: String
+        /// The planner's query parameter, cruise_tas_kt.
+        var query: String
+        /// The field's name in the form's words, Cruise speed.
+        var label: String
+        /// kt, gal/h, gal, %, ft, fpm, or empty for a ratio.
+        var unit: String
+        var min: Double
+        /// min itself is inside; otherwise only above it.
+        var minInclusive: Bool
+        /// The highest inside.
+        var max: Double
+        /// The form needs it (the cruise speed and burn).
+        var required: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case field
+            case query
+            case label
+            case unit
+            case min
+            case minInclusive = "min_inclusive"
+            case max
+            case required
+        }
+    }
+
+    struct AirplaneFigureRangesInput: Codable, Equatable, Sendable {
     }
 
     struct AirplaneFiguresAnswer: Codable, Equatable, Sendable {
@@ -289,6 +333,33 @@ enum EngineContract {
         var `class`: String
     }
 
+    struct AirspaceShelfLabelAnswer: Codable, Equatable, Sendable {
+        /// The ceiling as the chart writes it: "100", "T", "-30".
+        var ceiling: String
+        /// The floor as the chart writes it, "30" or "SFC"; null for a Class D.
+        var floor: String?
+        /// The label as the map sets it: the ceiling, a line break and the floor; a Class D's ceiling alone.
+        var text: String
+    }
+
+    struct AirspaceShelfLabelInput: Codable, Equatable, Sendable {
+        var `class`: String
+        var floorFt: Double?
+        var floorRef: String?
+        /// Feet MSL.
+        var ceilingFt: Double?
+        /// The ceiling is to but not including its figure (NASR UPPER_DESC TNI).
+        var ceilingExcluded: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case `class`
+            case floorFt = "floor_ft"
+            case floorRef = "floor_ref"
+            case ceilingFt = "ceiling_ft"
+            case ceilingExcluded = "ceiling_excluded"
+        }
+    }
+
     struct AirspaceVolumeSpanAnswer: Codable, Equatable, Sendable {
         /// Feet MSL.
         var floorFt: Double
@@ -296,11 +367,14 @@ enum EngineContract {
         var ceilingFt: Double
         /// Whether the floor is the surface, drawn from the sea up.
         var surface: Bool
+        /// Whether any of altitudes_ft is inside the volume; only where altitudes_ft was given.
+        var holds: Bool?
 
         enum CodingKeys: String, CodingKey {
             case floorFt = "floor_ft"
             case ceilingFt = "ceiling_ft"
             case surface
+            case holds
         }
     }
 
@@ -309,6 +383,15 @@ enum EngineContract {
         var ceiling: EngineContract.SpecialUseTabLimit?
         /// The ground under the volume, ft MSL: its lowest and its highest. Null where the map has none in yet.
         var ground: EngineContract.AirspaceVolumeSpanInputGround?
+        /// The altitudes the plan flies, ft MSL: its cruise and each leg's own. Absent or null for no plan.
+        var altitudesFt: [Double]?
+
+        enum CodingKeys: String, CodingKey {
+            case floor
+            case ceiling
+            case ground
+            case altitudesFt = "altitudes_ft"
+        }
     }
 
     struct AirspaceVolumeSpanInputGround: Codable, Equatable, Sendable {
@@ -1610,6 +1693,8 @@ enum EngineContract {
         /// The ceiling layer's cover as a METAR writes the ceiling (OVC008, VV002; FMH-1 ch. 9): BKN, OVC or VV for an obscuration; null with no ceiling or one of unknown height.
         var ceilingCover: String?
         var visibilitySm: Double?
+        /// The visibility is at least visibility_sm: the feed's "10+", the report's P6SM or 10SM and more.
+        var visibilityPlus: Bool
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
         var windGustKt: Double?
@@ -1628,6 +1713,7 @@ enum EngineContract {
             case ceilingUnknown = "ceiling_unknown"
             case ceilingCover = "ceiling_cover"
             case visibilitySm = "visibility_sm"
+            case visibilityPlus = "visibility_plus"
             case windDirTrueDeg = "wind_dir_true_deg"
             case windSpeedKt = "wind_speed_kt"
             case windGustKt = "wind_gust_kt"
@@ -2093,6 +2179,28 @@ enum EngineContract {
             case traffic
             case lat
             case lon
+        }
+    }
+
+    struct ClassBAtAltitudeInput: Codable, Equatable, Sendable {
+        var bands: [EngineContract.ClassBAtAltitudeInputBandsItem]
+        var altitudeFt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case bands
+            case altitudeFt = "altitude_ft"
+        }
+    }
+
+    struct ClassBAtAltitudeInputBandsItem: Codable, Equatable, Sendable {
+        var `class`: String
+        var floorFt: Double
+        var ceilingFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case `class`
+            case floorFt = "floor_ft"
+            case ceilingFt = "ceiling_ft"
         }
     }
 
@@ -2718,6 +2826,11 @@ enum EngineContract {
         var effective: String?
         /// YYYY-MM-DD: the UTC day it is used on.
         var on: String
+    }
+
+    struct DatisRemarksInput: Codable, Equatable, Sendable {
+        /// The D-ATIS as the data link sent it.
+        var text: String
     }
 
     struct DebriefAirborneInput: Codable, Equatable, Sendable {
@@ -3653,6 +3766,48 @@ enum EngineContract {
         var count: Double?
     }
 
+    struct FieldMarkRankAnswer: Codable, Equatable, Sendable {
+        /// 0 towered, 1 public with a long hard runway, 2 other public, 3 private, 4 heliports and the rest: which zoom the mark is first drawn at.
+        var tier: Int
+        /// The mark's place where marks overlap, lower kept first: class (0 Class B primary, 1 Class C primary, then tier + 2) times 100,000, plus 99,999 less the longest hard runway in ft.
+        var order: Int
+        /// The step the mark is drawn at, the biggest fields the largest (the owner, 2026-11-14): largest for a Class B's primary field, larger for a Class C's, regular for the other towered fields and public ones with 3,000 ft of hard runway, small for the rest. How much larger each step is drawn is each app's own.
+        var size: String
+    }
+
+    struct FieldMarkRankInput: Codable, Equatable, Sendable {
+        /// NASR APT_BASE's SITE_TYPE_CODE (A airport, H heliport, C seaplane base, G gliderport, U ultralight, B balloonport).
+        var siteType: String?
+        /// NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
+        var use: String?
+        /// Whether NASR APT_BASE's TWR_TYPE_CODE names a tower (ATCT and its kinds; NON-ATCT is none).
+        var towered: Bool?
+        /// The field's longest hard-surfaced runway, ft (APT_RWY's RWY_LEN); 0 or null for none.
+        var hardFt: Double?
+        /// The class of airspace (B, C) the FAA's Class_Airspace file names the field the primary airport of (its IDENT), the highest where several; null for none. D and E count as none.
+        var primaryOf: String?
+
+        enum CodingKeys: String, CodingKey {
+            case siteType = "site_type"
+            case use
+            case towered
+            case hardFt = "hard_ft"
+            case primaryOf = "primary_of"
+        }
+    }
+
+    struct FieldMilitaryAnswer: Codable, Equatable, Sendable {
+        /// military, joint, or null for a field the services do not own.
+        var military: String?
+    }
+
+    struct FieldMilitaryInput: Codable, Equatable, Sendable {
+        /// NASR APT_BASE's OWNERSHIP_TYPE_CODE (PU, PR, MA, MN, MR, CG).
+        var ownership: String?
+        /// NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
+        var use: String?
+    }
+
     struct FieldRelationAnswer: Codable, Equatable, Sendable {
         var around: Bool
         var inbound: Bool
@@ -3874,6 +4029,33 @@ enum EngineContract {
             case ceilingFt = "ceiling_ft"
             case visibilitySm = "visibility_sm"
             case ceilingUnknown = "ceiling_unknown"
+        }
+    }
+
+    /// The bounding floor as it came, its lowest_ground_ft (where it has one) the least of all of them.
+    struct FloorAlongPathAnswer: Codable, Equatable, Sendable {
+        var floorFt: Double
+        var lowestGroundFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case floorFt = "floor_ft"
+            case lowestGroundFt = "lowest_ground_ft"
+        }
+    }
+
+    struct FloorAlongPathInput: Codable, Equatable, Sendable {
+        /// The leg's own floor first, then the floor under each piece of the path: vfr_floors' or ifr_floors' answers, as they came.
+        var floors: [EngineContract.FloorAlongPathInputFloorsItem]
+    }
+
+    struct FloorAlongPathInputFloorsItem: Codable, Equatable, Sendable {
+        var floorFt: Double
+        /// VFR's lowest ground under the piece; none under IFR.
+        var lowestGroundFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case floorFt = "floor_ft"
+            case lowestGroundFt = "lowest_ground_ft"
         }
     }
 
@@ -4269,6 +4451,34 @@ enum EngineContract {
     struct FreezingLevelInput: Codable, Equatable, Sendable {
         /// [[altitude_ft, temp_c], ...]
         var profile: [[Double]]?
+    }
+
+    struct FreezingPrecipAnswer: Codable, Equatable, Sendable {
+        var found: [EngineContract.FreezingPrecipAnswerFoundItem]
+        var line: String?
+    }
+
+    struct FreezingPrecipAnswerFoundItem: Codable, Equatable, Sendable {
+        var ident: String
+        var source: String
+        /// The group as sent, "-FZRA".
+        var group: String
+    }
+
+    struct FreezingPrecipInput: Codable, Equatable, Sendable {
+        var fields: [EngineContract.FreezingPrecipInputFieldsItem]
+    }
+
+    struct FreezingPrecipInputFieldsItem: Codable, Equatable, Sendable {
+        var ident: String
+        /// The METAR as sent.
+        var metar: String?
+        /// The TAF as sent.
+        var taf: String?
+    }
+
+    struct FrequenciesInOrderInput: Codable, Equatable, Sendable {
+        var frequencies: [EngineContract.FieldFrequency]
     }
 
     struct FrequencyLineAnswer: Codable, Equatable, Sendable {
@@ -4837,6 +5047,31 @@ enum EngineContract {
         }
     }
 
+    struct GonogoIcingUncheckedInput: Codable, Equatable, Sendable {
+        var selection: EngineContract.GonogoIcingUncheckedInputSelection?
+        /// The altitudes flown.
+        var flownFt: [Double]?
+
+        enum CodingKeys: String, CodingKey {
+            case selection
+            case flownFt = "flown_ft"
+        }
+    }
+
+    struct GonogoIcingUncheckedInputSelection: Codable, Equatable, Sendable {
+        var freezingLevelFt: Double?
+        /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
+        var icingPossible: Bool?
+        /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
+        var freezingLevelAtOrBelow: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case freezingLevelFt = "freezing_level_ft"
+            case icingPossible = "icing_possible"
+            case freezingLevelAtOrBelow = "freezing_level_at_or_below"
+        }
+    }
+
     struct GonogoInspections: Codable, Equatable, Sendable {
         /// yyyy-mm-dd, 14 CFR 91.409(a).
         var annualGoodThrough: String?
@@ -5106,6 +5341,68 @@ enum EngineContract {
         var score: Double
     }
 
+    struct GonogoRouteFiguresAnswer: Codable, Equatable, Sendable {
+        var leastMarginGal: Double?
+        var requiredGal: Double?
+        var reserveMin: Double?
+        var tfrsInForce: [String]
+        var tfrsNear: Double
+
+        enum CodingKeys: String, CodingKey {
+            case leastMarginGal = "least_margin_gal"
+            case requiredGal = "required_gal"
+            case reserveMin = "reserve_min"
+            case tfrsInForce = "tfrs_in_force"
+            case tfrsNear = "tfrs_near"
+        }
+    }
+
+    struct GonogoRouteFiguresInput: Codable, Equatable, Sendable {
+        /// The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.
+        var totals: EngineContract.GonogoRouteFiguresInputTotals?
+        /// How many TFRs the briefing lists along the route.
+        var tfrCount: Double?
+        /// The NOTAM ids of the TFRs the route crosses while they are in force.
+        var crossed: [String]
+
+        enum CodingKeys: String, CodingKey {
+            case totals
+            case tfrCount = "tfr_count"
+            case crossed
+        }
+    }
+
+    /// The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.
+    struct GonogoRouteFiguresInputTotals: Codable, Equatable, Sendable {
+        var fuelMarginGal: Double?
+        var fuelRequiredGal: Double?
+        var reserveMin: Double?
+        var hops: [EngineContract.GonogoRouteFiguresInputTotalsHopsItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case fuelMarginGal = "fuel_margin_gal"
+            case fuelRequiredGal = "fuel_required_gal"
+            case reserveMin = "reserve_min"
+            case hops
+        }
+    }
+
+    struct GonogoRouteFiguresInputTotalsHopsItem: Codable, Equatable, Sendable {
+        var totals: EngineContract.GonogoRouteFiguresInputTotalsHopsItemTotals?
+    }
+
+    struct GonogoRouteFiguresInputTotalsHopsItemTotals: Codable, Equatable, Sendable {
+        var fuelMarginGal: Double?
+        var fuelRequiredGal: Double?
+        var reserveMin: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case fuelMarginGal = "fuel_margin_gal"
+            case fuelRequiredGal = "fuel_required_gal"
+            case reserveMin = "reserve_min"
+        }
+    }
+
     struct GonogoRunwayChecksAnswerItem: Codable, Equatable, Sendable {
         /// Index into fields.
         var field: Int
@@ -5246,6 +5543,8 @@ enum EngineContract {
         var headwindKt: Double
         var crosswindKt: Double
         var gustCrosswindKt: Double?
+        /// The unrounded crosswind (RunwayWindOut's), judged against the limits where sent; the rounded one where not.
+        var crosswindExactKt: Double?
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var inUse: Bool?
 
@@ -5254,6 +5553,7 @@ enum EngineContract {
             case headwindKt = "headwind_kt"
             case crosswindKt = "crosswind_kt"
             case gustCrosswindKt = "gust_crosswind_kt"
+            case crosswindExactKt = "crosswind_exact_kt"
             case inUse = "in_use"
         }
     }
@@ -6186,6 +6486,16 @@ enum EngineContract {
         var trackErrorDeg: Double?
         var variationDeg: Double?
         var burntGal: Double
+        /// The fuel the plan leaves in the tanks here, from the last fuel stop passed; null without fuel_start_gal.
+        var fuelNowGal: Double?
+        /// Whether the start and taxi allowance was taken off the fuel figures (taxi_fuel_gal given).
+        var taxiCounted: Bool?
+        /// The hop flown: 0 the first, one more for each fuel stop (refuel_at) behind the airplane; arriving at a stop it is still the hop ending there. An index into the planner's totals' hops, strip_fuel's `hop`.
+        var hop: Int
+        /// The fuel the legs burn from the start of the hop flown to here, gallons: strip_fuel's `burnt_gal` for that hop. Planning figures from the nav log's legs, never the airplane's gauge.
+        var hopBurntGal: Double
+        /// The nav log's leg flown (legs[leg], from points[leg] to the next): the leg the next waypoint ends. Null with fewer than two points.
+        var leg: Int?
         var next: EngineContract.InFlightAnswerNext?
         var destination: EngineContract.InFlightAnswerDestination?
 
@@ -6202,6 +6512,11 @@ enum EngineContract {
             case trackErrorDeg = "track_error_deg"
             case variationDeg = "variation_deg"
             case burntGal = "burnt_gal"
+            case fuelNowGal = "fuel_now_gal"
+            case taxiCounted = "taxi_counted"
+            case hop
+            case hopBurntGal = "hop_burnt_gal"
+            case leg
             case next
             case destination
         }
@@ -6257,6 +6572,12 @@ enum EngineContract {
         var points: [EngineContract.InFlightInputPointsItem]?
         var legs: [EngineContract.InFlightInputLegsItem]?
         var fuelStartGal: Double?
+        /// What the tanks are filled to at a fuel stop; left out, fuel_start_gal.
+        var fuelFullGal: Double?
+        /// The airplane's start and taxi allowance, taken off at the start and at each fuel stop; left out where its profile gives none, and then nothing is taken off (taxi_counted false), never another airplane's figure.
+        var taxiFuelGal: Double?
+        /// The points (indices into points) the plan refuels at: the stops the planner's totals' hops begin at.
+        var refuelAt: [Int]?
         var nowS: Double?
 
         enum CodingKeys: String, CodingKey {
@@ -6265,6 +6586,9 @@ enum EngineContract {
             case points
             case legs
             case fuelStartGal = "fuel_start_gal"
+            case fuelFullGal = "fuel_full_gal"
+            case taxiFuelGal = "taxi_fuel_gal"
+            case refuelAt = "refuel_at"
             case nowS = "now_s"
         }
     }
@@ -6427,7 +6751,7 @@ enum EngineContract {
     struct LeastCrosswindAnswer: Codable, Equatable, Sendable {
         /// The end it is on, null for a variable wind or calm.
         var end: String?
-        /// Knots, unsigned, steady or gust whichever is more.
+        /// Knots, unsigned, steady or gust whichever is more, unrounded (to a millionth of a knot), so the map's arrow is judged against the demonstrated crosswind on the crosswind itself, not whole knots (AV-10).
         var crosswindKt: Double
 
         enum CodingKeys: String, CodingKey {
@@ -7595,10 +7919,13 @@ enum EngineContract {
         var fuelGal: Double?
         var tasKt: Double?
         var fuelBurnGph: Double?
+        /// The power flown; null where the profile names no cruise power (no power model: its TAS and burn as given at every altitude, no other airplane's power assumed).
         var powerPct: Double?
         var oatC: Double?
         var densityAltitudeFt: Double?
         var climbMin: Double?
+        /// True on a leg with climb minutes where the profile gives no climb fuel flow: the climb's gallons are not counted in its fuel, for the app to ask for the figure (no multiple of the cruise burn is assumed).
+        var climbFuelUnknown: Bool?
         /// The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
         var phase: String?
         var toc: EngineContract.NavLogTop?
@@ -7627,6 +7954,7 @@ enum EngineContract {
             case oatC = "oat_c"
             case densityAltitudeFt = "density_altitude_ft"
             case climbMin = "climb_min"
+            case climbFuelUnknown = "climb_fuel_unknown"
             case phase
             case toc
             case tod
@@ -8566,7 +8894,8 @@ enum EngineContract {
 
     struct PerformanceClimbAnswer: Codable, Equatable, Sendable {
         var minutes: Double
-        var gallons: Double
+        /// Null where the profile gives no climb fuel flow: not known, never a multiple of the cruise burn.
+        var gallons: Double?
     }
 
     struct PerformanceClimbInput: Codable, Equatable, Sendable {
@@ -8586,7 +8915,8 @@ enum EngineContract {
     struct PerformanceCruiseAnswer: Codable, Equatable, Sendable {
         var tasKt: Double
         var fuelBurnGph: Double
-        var powerPct: Double
+        /// Null where the profile names no cruise power: the TAS and burn as given, no power model.
+        var powerPct: Double?
         var densityAltitudeFt: Double
 
         enum CodingKeys: String, CodingKey {
@@ -10034,6 +10364,28 @@ enum EngineContract {
         var lon: Double
     }
 
+    struct RegionsAheadInput: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+        /// The track over the ground, degrees true; null or left out where there is none (standing still), and only the route is looked along.
+        var trackDeg: Double?
+        /// The route's line, [lat, lon] points in the order flown; left out, none.
+        var route: [[Double]]?
+        /// How far along the track and the route to look, nm: for the alerts ahead, the groundspeed over their five minutes.
+        var lookAheadNm: Double
+        /// Either side of each line, nm; 1 where left out.
+        var padNm: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case lat
+            case lon
+            case trackDeg = "track_deg"
+            case route
+            case lookAheadNm = "look_ahead_nm"
+            case padNm = "pad_nm"
+        }
+    }
+
     struct RegisteredProfileInput: Codable, Equatable, Sendable {
         var manufacturer: String?
         var model: String?
@@ -10194,8 +10546,11 @@ enum EngineContract {
         var groundMin: Double
         var fuelGal: Double?
         var landings: Int
+        /// The hazards it crosses, indices into hazards, in the order flown: what closes a cell, and the restricted, MOA, warning and alert areas it is flown through.
         var crosses: [Int]
         var marginal: [Int]
+        /// The card's one warning, the worst it crosses, in the engine's words: a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where it crosses nothing.
+        var warning: String?
         var bands: [EngineContract.RouteOptionsBand]
         var tailKt: Double
         var floorFt: Int
@@ -10216,6 +10571,7 @@ enum EngineContract {
             case landings
             case crosses
             case marginal
+            case warning
             case bands
             case tailKt = "tail_kt"
             case floorFt = "floor_ft"
@@ -10370,8 +10726,10 @@ enum EngineContract {
         var cols: Int
         var cellDeg: Double
         var perCell: Int
+        /// The highest VFR cruising altitude either way under the ceiling (the lower of the two), over which a cell's ground is closed where the ceiling is known.
         var topFt: Double
         var window: [Double]
+        /// Every VFR cruising altitude from 3,500 ft to the airplane's ceiling under 18,000 ft (none known: 17,500), the winds aloft wanted at each: each way tries its own half of 91.159 among them, so westbound reaches 12,500 under a 13,000 ft ceiling.
         var altitudesFt: [Double]
         var lowestCruiseFt: Double
         /// The true airspeed the ways are costed at: the airplane's cruise, else with none picked the still-air reference (100 kt), for the host's glide reach of dry land.
@@ -10399,6 +10757,7 @@ enum EngineContract {
     }
 
     struct RouteOptionsHazard: Codable, Equatable, Sendable {
+        /// What it is: prohibited, tfr, storm, terrain, sigmet, weather, marginal or fuel; or a special-use area a way is flown through and told of (AIM 3-4): restricted, moa, warning or alert.
         var kind: String
         var name: String
     }
@@ -10552,6 +10911,11 @@ enum EngineContract {
         }
     }
 
+    struct RouteWayWarningInput: Codable, Equatable, Sendable {
+        /// The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
+        var kinds: [String]
+    }
+
     /// A runway as the planner sends one.
     struct Runway: Codable, Equatable, Sendable {
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
@@ -10677,10 +11041,19 @@ enum EngineContract {
     }
 
     struct RunwayEndFitInputEnd: Codable, Equatable, Sendable {
+        /// The end's ident: a landing reads that end's displaced threshold and LDA from the runway's ends where the end does not send its own.
+        var ident: String?
         var headingTrueDeg: Double?
+        /// The threshold's displacement from the runway's end, feet (NASR APT_RWY_END). A landing on this end has the runway past it (AIM 2-3-3); a takeoff has the whole length.
+        var displacedThresholdFt: Double?
+        /// The landing distance available the airport declares for this end, feet (AC 150/5300-13B, declared distances); where given, a landing is judged against it.
+        var ldaFt: Double?
 
         enum CodingKeys: String, CodingKey {
+            case ident
             case headingTrueDeg = "heading_true_deg"
+            case displacedThresholdFt = "displaced_threshold_ft"
+            case ldaFt = "lda_ft"
         }
     }
 
@@ -10738,13 +11111,28 @@ enum EngineContract {
         }
     }
 
+    struct RunwayHardSurfaceAnswer: Codable, Equatable, Sendable {
+        var hard: Bool
+    }
+
+    struct RunwayHardSurfaceInput: Codable, Equatable, Sendable {
+        /// NASR APT_RWY's SURFACE_TYPE_CODE (ASPH, CONC, TURF, ASPH-TURF ...); null or "" for none.
+        var surface: String?
+    }
+
     struct RunwayRunwayEndsItem: Codable, Equatable, Sendable {
         var ident: String
         var headingTrueDeg: Double?
+        /// The threshold's displacement from the runway's end, feet (NASR APT_RWY_END). A landing on this end has the runway past it (AIM 2-3-3); a takeoff has the whole length.
+        var displacedThresholdFt: Double?
+        /// The landing distance available the airport declares for this end, feet (AC 150/5300-13B, declared distances); where given, a landing is judged against it.
+        var ldaFt: Double?
 
         enum CodingKeys: String, CodingKey {
             case ident
             case headingTrueDeg = "heading_true_deg"
+            case displacedThresholdFt = "displaced_threshold_ft"
+            case ldaFt = "lda_ft"
         }
     }
 
@@ -10767,6 +11155,8 @@ enum EngineContract {
         var headwindKt: Double
         var crosswindKt: Double
         var gustCrosswindKt: Double?
+        /// The crosswind, the gust's where more, unrounded: what a limit (the POH's demonstrated crosswind, the pilot's own) is judged against, so 10.4 kt is past 10 (AV-10). There only where the wind blew.
+        var crosswindExactKt: Double?
         /// There only where calm picked the runway in use.
         var inUse: String?
 
@@ -10775,6 +11165,7 @@ enum EngineContract {
             case headwindKt = "headwind_kt"
             case crosswindKt = "crosswind_kt"
             case gustCrosswindKt = "gust_crosswind_kt"
+            case crosswindExactKt = "crosswind_exact_kt"
             case inUse = "in_use"
         }
     }
@@ -11297,11 +11688,14 @@ enum EngineContract {
     }
 
     struct StripFuelAnswerShortItem: Codable, Equatable, Sendable {
-        /// "C81 → KMSN"; "" for a route with no stops.
+        /// The flight's index in `hops`, whose two ends an app names with its own point names (a pilot's own point is "@lat,lon" in the idents); null for a route with no stops.
+        var hop: Int?
+        /// The flight's idents as sent, "C81 → KMSN"; "" for a route with no stops. A pilot's own point shows here as its raw "@lat,lon": name the ends from `hop` instead.
         var name: String
         var shortGal: Double
 
         enum CodingKeys: String, CodingKey {
+            case hop
             case name
             case shortGal = "short_gal"
         }
@@ -11368,6 +11762,113 @@ enum EngineContract {
             case lat
             case lon
             case atS = "at_s"
+        }
+    }
+
+    struct SurfaceAirspaceAnswer: Codable, Equatable, Sendable {
+        var `class`: String
+        var partTime: Bool
+        /// The class at other times where it is part-time; null where it is not.
+        var otherwise: String?
+        /// That class is part-time too: G at the times neither is in effect.
+        var otherwisePartTime: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case `class`
+            case partTime = "part_time"
+            case otherwise
+            case otherwisePartTime = "otherwise_part_time"
+        }
+    }
+
+    struct SurfaceAirspaceInput: Codable, Equatable, Sendable {
+        /// The field's elevation, feet MSL (NASR APT_BASE ELEV).
+        var elevationFt: Double?
+        var volumes: [EngineContract.SurfaceAirspaceInputVolumesItem]
+
+        enum CodingKeys: String, CodingKey {
+            case elevationFt = "elevation_ft"
+            case volumes
+        }
+    }
+
+    struct SurfaceAirspaceInputVolumesItem: Codable, Equatable, Sendable {
+        var `class`: String
+        var floorFt: Double?
+        var floorRef: String
+        /// NASR's WKHR_CODE: H24, NOTAM or RMK.
+        var hours: String?
+
+        enum CodingKeys: String, CodingKey {
+            case `class`
+            case floorFt = "floor_ft"
+            case floorRef = "floor_ref"
+            case hours
+        }
+    }
+
+    struct SurfaceHoursAnswer: Codable, Equatable, Sendable {
+        var known: Bool
+        /// The class at other times, as the line names it.
+        var other: String?
+        var days: [EngineContract.SurfaceHoursAnswerDaysItem]
+        var inForce: Bool?
+        var change: EngineContract.SurfaceHoursAnswerChange?
+
+        enum CodingKeys: String, CodingKey {
+            case known
+            case other
+            case days
+            case inForce = "in_force"
+            case change
+        }
+    }
+
+    struct SurfaceHoursAnswerChange: Codable, Equatable, Sendable {
+        var at: Int
+        var nextDay: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case at
+            case nextDay = "next_day"
+        }
+    }
+
+    struct SurfaceHoursAnswerDaysItem: Codable, Equatable, Sendable {
+        var weekday: Int
+        var spans: [EngineContract.SurfaceHoursAnswerDaysItemSpansItem]?
+    }
+
+    struct SurfaceHoursAnswerDaysItemSpansItem: Codable, Equatable, Sendable {
+        var from: Int
+        var to: Int
+    }
+
+    struct SurfaceHoursInput: Codable, Equatable, Sendable {
+        /// NASR CLS_ARSP AIRSPACE_HRS as sent.
+        var hours: String?
+        var year: Int
+        /// The field's local month, 1-12.
+        var month: Int
+        var day: Int
+        /// The field's local weekday, Monday 0 to Sunday 6.
+        var weekday: Int
+        /// Minutes since the field's local midnight now.
+        var minute: Int
+        /// The field's offset from UTC now, minutes (UTC-6 is -360).
+        var utcOffsetMin: Int
+        /// Whether the field keeps daylight saving time now.
+        var dst: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case hours
+            case year
+            case month
+            case day
+            case weekday
+            case minute
+            case utcOffsetMin = "utc_offset_min"
+            case dst
         }
     }
 
@@ -11604,6 +12105,8 @@ enum EngineContract {
         var heading: String
         /// Its kind and the rule it is under: "Security TFR, 14 CFR 99.7".
         var what: String
+        /// The rule it is issued under in words with its section, the FAA's bare number said as the regulation: "Special security instructions, 14 CFR 99.7"; one it does not know as given, in sentence case; null where none is given.
+        var rule: String?
         /// "3,500 to 18,000 ft MSL, 4.8 nm east of the field"; null where neither is known.
         var `where`: String?
         /// Its place's name, its dates off: "San Angelo, TX".
@@ -11875,6 +12378,44 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case speedKt = "speed_kt"
         }
+    }
+
+    struct UsualBaseAnswer: Codable, Equatable, Sendable {
+        /// The base; null where the flights do not show one clearly.
+        var ident: String?
+        /// The field most of the ends are at (the first to reach the count, ties too); null with no ends.
+        var most: String?
+        /// How many of the ends are at `most`.
+        var mostEnds: Int
+        /// All the takeoffs and landings counted.
+        var ends: Int
+        /// The fewest ends at a field for it to be the base.
+        var minEnds: Int
+        /// The least share of all the ends at a field for it to be the base.
+        var minShare: Double
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case most
+            case mostEnds = "most_ends"
+            case ends
+            case minEnds = "min_ends"
+            case minShare = "min_share"
+        }
+    }
+
+    struct UsualBaseInput: Codable, Equatable, Sendable {
+        /// The airplane's past flights, any order; each field one identifier, as the host names it.
+        var flights: [EngineContract.UsualBaseInputFlightsItem]
+    }
+
+    struct UsualBaseInputFlightsItem: Codable, Equatable, Sendable {
+        /// The field it took off from; null where not known.
+        var origin: String?
+        /// The field it landed at; null where not known.
+        var destination: String?
+        /// Whether it was heard landing: a destination not landed at is no end.
+        var landed: Bool?
     }
 
     struct VelocityTrackAnswerItem: Codable, Equatable, Sendable {

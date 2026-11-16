@@ -7,6 +7,8 @@
   "fuel_burn_gph": 9.5,
   "cruise_power_pct": 75,
   "climb_tas_kt": 76,
+  "climb_fuel_burn_gph": 15.0,
+  "climb_fuel_source": "Piper PA-28-181 Cherokee Archer II POH (VB-790, 1976), figure 5-15, time, distance and fuel to climb (76 KIAS, full throttle, 2550 lb), its example: 2,000 ft to 6,000 ft in 8 min on 2 gal, so 15 GPH; the chart's start, taxi and takeoff allowance cancels in the difference. The Archer III POH (VB-2266, 2013), figure 5-17, gives 2 gal in 9 min (13.3 GPH); both round to whole gallons, and the higher burn is taken, erring toward more fuel",
   "usable_fuel_gal": 48,
   "crosswind": {
     "demonstrated_kt": 17,

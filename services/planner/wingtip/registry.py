@@ -7,6 +7,10 @@ when the copy on disk is a day old, into a SQLite file beside the
 download, so a lookup is one indexed read rather than the 195 MB master
 file held in the planner's memory.
 
+Beside the airplanes (MASTER.txt), the file keeps the FAA's reference
+files in full (ACFTREF.txt, ENGINE.txt) and its deregistered, document and
+reserved files (wingtip.registry_history), all from the one download.
+
 The FAA leaves out of it the names and addresses of owners who asked it
 to withhold them (49 U.S.C. 44114(b)); of the rest, the owner's name and
 town are given here, not the street.
@@ -17,6 +21,7 @@ from __future__ import annotations
 import contextlib
 import csv
 import io
+import json
 import logging
 import re
 import sqlite3
@@ -25,7 +30,8 @@ import time
 import zipfile
 from pathlib import Path
 
-from . import outside
+from . import outside, registry_history
+from . import registry_codes as codes
 from .atomic import atomic_path
 
 log = logging.getLogger(__name__)
@@ -45,188 +51,14 @@ DB_NAME = "registry.sqlite"
 #: written each night.
 MAX_AGE_S = 24 * 3600
 
-# The FAA's codes (ardata.pdf), in words.
-_REGISTRANT = {
-    "1": "Individual",
-    "2": "Partnership",
-    "3": "Corporation",
-    "4": "Co-owned",
-    "5": "Government",
-    "7": "LLC",
-    "8": "Non-citizen corporation",
-    "9": "Non-citizen co-owned",
-}
-_AIRCRAFT = {
-    "1": "Glider",
-    "2": "Balloon",
-    "3": "Blimp or dirigible",
-    "4": "Fixed wing single engine",
-    "5": "Fixed wing multi engine",
-    "6": "Rotorcraft",
-    "7": "Weight-shift-control",
-    "8": "Powered parachute",
-    "9": "Gyroplane",
-    "H": "Hybrid lift",
-    "O": "Other",
-}
-_ENGINE = {
-    "0": "None",
-    "1": "Reciprocating",
-    "2": "Turbo-prop",
-    "3": "Turbo-shaft",
-    "4": "Turbo-jet",
-    "5": "Turbo-fan",
-    "6": "Ramjet",
-    "7": "2 cycle",
-    "8": "4 cycle",
-    "9": "Unknown",
-    "10": "Electric",
-    "11": "Rotary",
-}
-#: The airworthiness certificate's class (the certification field's first
-#: position), and for the commonest the operation it is approved for.
-_CLASS = {
-    "1": "Standard",
-    "2": "Limited",
-    "3": "Restricted",
-    "4": "Experimental",
-    "5": "Provisional",
-    "6": "Multiple",
-    "7": "Primary",
-    "8": "Special flight permit",
-    "9": "Light sport",
-}
-_STANDARD = {
-    "N": "normal",
-    "U": "utility",
-    "A": "acrobatic",
-    "T": "transport",
-    "G": "glider",
-    "B": "balloon",
-    "C": "commuter",
-    "O": "other",
-}
-_EXPERIMENTAL = {
-    "0": "to show compliance with the FARs",
-    "1": "research and development",
-    "2": "amateur built",
-    "3": "exhibition",
-    "4": "racing",
-    "5": "crew training",
-    "6": "market survey",
-    "7": "operating kit built aircraft",
-    "8A": "registered before 01/31/08",
-    "8B": "operating light-sport kit-built",
-    "8C": "operating light-sport previously certificated under 21.190",
-}
-_LIGHT_SPORT = {"A": "airplane", "G": "glider", "L": "lighter than air", "P": "powered parachute", "W": "weight-shift-control"}
-#: The registration's status (ardata.pdf, Status Code), in the FAA's words.
-_STATUS = {
-    "A": "Triennial registration form mailed, not returned",
-    "D": "Expired dealer",
-    "E": "Certificate of registration revoked by enforcement action",
-    "M": "Valid: assigned to the manufacturer under its dealer certificate",
-    "N": "Non-citizen corporation that has not returned its flight hour reports",
-    "R": "Registration pending",
-    "S": "Second triennial registration form mailed, not returned",
-    "T": "Valid: a trainee's registration",
-    "V": "Valid",
-    "W": "Certificate of registration deemed ineffective or invalid",
-    "X": "Enforcement letter",
-    "Z": "Permanently reserved",
-    "1": "Triennial registration form returned as undeliverable",
-    "2": "N-number assigned, not yet registered",
-    "3": "N-number assigned to a non-type-certificated aircraft, not yet registered",
-    "4": "N-number assigned to an import, not yet registered",
-    "5": "Reserved N-number",
-    "6": "Administratively canceled",
-    "7": "Sale reported",
-    "8": "Second triennial registration form mailed, no response",
-    "9": "Certificate of registration revoked",
-    "10": "N-number assigned, not registered, pending cancellation",
-    "11": "N-number assigned to a non-type-certificated (amateur) aircraft, not registered, pending cancellation",
-    "12": "N-number assigned to an import, not registered, pending cancellation",
-    "13": "Registration expired",
-    "14": "First notice for re-registration or renewal",
-    "15": "Second notice for re-registration or renewal",
-    "16": "Registration expired, pending cancellation",
-    "17": "Sale reported, pending cancellation",
-    "18": "Sale reported, canceled",
-    "19": "Registration pending, pending cancellation",
-    "20": "Registration pending, canceled",
-    "21": "Revoked, pending cancellation",
-    "22": "Revoked, canceled",
-    "23": "Expired dealer, pending cancellation",
-    "24": "Third notice for re-registration or renewal",
-    "25": "First notice for registration renewal",
-    "26": "Second notice for registration renewal",
-    "27": "Registration expired",
-    "28": "Third notice for registration renewal",
-    "29": "Registration expired, pending cancellation",
-}
-#: The codes the FAA calls valid, and those of a registration not in
-#: effect -- expired, revoked, canceled, ineffective, or an N-number never
-#: registered; the rest (a form not returned, a sale reported, a renewal
-#: notice) are said as they are.
-_VALID = frozenset("VMT")
-_LAPSED = frozenset(
-    {"D", "E", "W", "Z", "2", "3", "4", "5", "6", "9", "10", "11", "12", "13", "16", "18", "20", "21", "22", "23", "27", "29"}
-)
+#: The file's shape: user_version, so a copy of an older shape is read
+#: again from the FAA's download rather than asked for columns it lacks
+#: (2: the reference files in full, every MASTER field and the
+#: deregistered, document and reserved files, 2026-11-14).
+SCHEMA = 2
 
 _LOCK = threading.Lock()
 _BUILDING = threading.Event()
-
-
-#: Words of a name kept in capitals: a company's form.
-_KEPT = frozenset({"LLC", "LLP", "LP", "PC", "PLLC", "USA", "US", "II", "III", "IV", "FBO", "DBA"})
-#: Words of three letters or fewer in a maker's name written as words,
-#: not as its initials.
-_WORDS = frozenset({"INC", "CO", "LTD", "AND", "THE", "OF", "DE", "LA", "Y", "DEL", "EL", "VAN", "VON"})
-
-
-def _name_case(text: str, maker: bool = False) -> str:
-    """A name in the FAA's capitals as a name is written: "ROCA ROJA Y
-    CABALLO GRIS DE IDAHO LLC" as "Roca Roja Y Caballo Gris De Idaho LLC",
-    "UNITED AIRLINES INC" as "United Airlines Inc"; a company's form and a
-    word with figures kept, and in a maker's name (`maker`) its initials
-    too ("IAE", "CFM"), which in a person's ("JOE") are a name."""
-
-    def word(w: str) -> str:
-        bare = w.strip(".,&")
-        if bare in _KEPT or any(c.isdigit() for c in w) or (maker and len(bare) <= 3 and bare.isalpha() and bare not in _WORDS):
-            return w
-        return w.capitalize()
-
-    return " ".join(word(w) for w in text.split())
-
-
-def _date(text: str) -> str | None:
-    """The FAA's YYYYMMDD as an ISO date."""
-    text = text.strip()
-    return f"{text[:4]}-{text[4:6]}-{text[6:8]}" if re.fullmatch(r"\d{8}", text) else None
-
-
-def _number(text: str) -> int | None:
-    text = text.strip()
-    return int(text) if text.isdigit() else None
-
-
-def _airworthiness(code: str) -> str | None:
-    """The certification field in words: "1NU" as "Standard (normal,
-    utility)", "42" as "Experimental (amateur built)"."""
-    code = code.strip()
-    if not code or code[0] not in _CLASS:
-        return None
-    kind, rest = _CLASS[code[0]], code[1:]
-    if code[0] == "1":
-        uses = [_STANDARD[c] for c in rest if c in _STANDARD]
-    elif code[0] == "4":
-        uses = [_EXPERIMENTAL[u] for u in re.findall(r"8[ABC]|9[A-E]|[0-7]", rest) if u in _EXPERIMENTAL]
-    elif code[0] == "9":
-        uses = [_LIGHT_SPORT[c] for c in rest[:1] if c in _LIGHT_SPORT]
-    else:
-        uses = []
-    return f"{kind} ({', '.join(uses)})" if uses else kind
 
 
 def _rows(archive: zipfile.ZipFile, name: str):
@@ -239,71 +71,153 @@ def _rows(archive: zipfile.ZipFile, name: str):
             yield dict(zip(header, (cell.strip() for cell in row)))
 
 
+_MODELS = """CREATE TABLE models (code TEXT PRIMARY KEY, manufacturer TEXT, model TEXT, aircraft_type TEXT,
+    engine_type TEXT, category TEXT, builder_certification TEXT, engines INTEGER, seats INTEGER, weight_class TEXT,
+    cruise_mph INTEGER, tc_data_sheet TEXT, tc_holder TEXT)"""
+_ENGINES = """CREATE TABLE engines (code TEXT PRIMARY KEY, manufacturer TEXT, model TEXT, engine_type TEXT,
+    horsepower INTEGER, thrust_lb INTEGER)"""
+_AIRCRAFT = """CREATE TABLE aircraft (n_number TEXT PRIMARY KEY, mode_s_hex TEXT, serial TEXT, manufacturer TEXT,
+    model TEXT, year INTEGER, aircraft_type TEXT, engines INTEGER, seats INTEGER, engine TEXT, engine_type TEXT,
+    horsepower INTEGER, thrust_lb INTEGER, owner TEXT, owner_type TEXT, co_owners INTEGER, city TEXT, state TEXT,
+    country TEXT, status_code TEXT, certificate_issued TEXT, expires TEXT, airworthiness TEXT,
+    airworthiness_date TEXT, kit TEXT, fractional INTEGER, model_code TEXT, engine_code TEXT, region TEXT,
+    last_action TEXT, mode_s_octal TEXT, unique_id TEXT, certification_code TEXT, co_owner_names TEXT)"""
+
+
+def _maker(text: str) -> str | None:
+    return codes.name_or_none(text if text and text != "NONE" else "", maker=True)
+
+
+def _reference(archive: zipfile.ZipFile, db: sqlite3.Connection) -> tuple[dict, dict]:
+    """ACFTREF and ENGINE in full into their tables (ardata.pdf, "Aircraft
+    Reference File" and "Engine Reference File"), and what each airplane's
+    row takes of them, as tuples: ACFTREF's ninety thousand models as
+    dicts were a hundred megabytes of the planner's."""
+    db.execute(_MODELS)
+    db.execute(_ENGINES)
+    models, engines = {}, {}
+    rows = []
+    for r in _rows(archive, "ACFTREF.txt"):
+        models[r["CODE"]] = (r["MFR"], r["MODEL"], r["NO-ENG"], r["NO-SEATS"])
+        rows.append(
+            (
+                r["CODE"],
+                _maker(r["MFR"]),
+                r["MODEL"] or None,
+                codes.AIRCRAFT.get(r.get("TYPE-ACFT", "")),
+                codes.ENGINE.get(r.get("TYPE-ENG", "")),
+                codes.CATEGORY.get(r.get("AC-CAT", "")),
+                codes.BUILDER.get(r.get("BUILD-CERT-IND", "")),
+                codes.number(r["NO-ENG"]),
+                codes.number(r["NO-SEATS"]),
+                codes.WEIGHT.get(r.get("AC-WEIGHT", "")),
+                # "Not present on all records": 0000 where it is not.
+                codes.number(r.get("SPEED")) or None,
+                r.get("TC-DATA-SHEET") or None,
+                _maker(r.get("TC-DATA-HOLDER", "")),
+            )
+        )
+    db.executemany(f"INSERT OR REPLACE INTO models VALUES ({','.join('?' * 13)})", rows)
+    rows = []
+    for r in _rows(archive, "ENGINE.txt"):
+        engines[r["CODE"]] = (r["MFR"], r["MODEL"], r["HORSEPOWER"], r["THRUST"])
+        rows.append(
+            (
+                r["CODE"],
+                _maker(r["MFR"]),
+                r["MODEL"] if r["MODEL"] and r["MODEL"] != "NONE" else None,
+                codes.ENGINE.get(r.get("TYPE", "")),
+                codes.number(r["HORSEPOWER"]) or None,
+                codes.number(r["THRUST"]) or None,
+            )
+        )
+    db.executemany(f"INSERT OR REPLACE INTO engines VALUES ({','.join('?' * 6)})", rows)
+    return models, engines
+
+
+def _airplane(r: dict, models: dict, engines: dict) -> tuple:
+    """A MASTER row as the aircraft table's: every field the readme gives
+    but the street, second street, zip code and county of the address,
+    which the app does not show (the owner's town, not the street)."""
+    maker, model, engine_count, seats = models.get(r.get("MFR MDL CODE", ""), ("", "", "", ""))
+    engine_maker, engine_model, horsepower, thrust = engines.get(r.get("ENG MFR MDL", ""), ("", "", "", ""))
+    kit = " ".join(p for p in (r.get("KIT MFR", ""), r.get("KIT MODEL", "")) if p)
+    engine_name = " ".join(p for p in (engine_maker, engine_model) if p and p != "NONE")
+    others = [codes.name_case(r[k]) for k in (f"OTHER NAMES({i})" for i in range(1, 6)) if r.get(k)]
+    return (
+        "N" + r["N-NUMBER"],
+        (r.get("MODE S CODE HEX") or "").lower() or None,
+        r.get("SERIAL NUMBER") or None,
+        _maker(maker),
+        model or None,
+        codes.number(r.get("YEAR MFR")),
+        codes.AIRCRAFT.get(r.get("TYPE AIRCRAFT", "")),
+        codes.number(engine_count),
+        codes.number(seats),
+        _maker(engine_name),
+        codes.ENGINE.get(r.get("TYPE ENGINE", "")),
+        codes.number(horsepower) or None,
+        codes.number(thrust) or None,
+        codes.name_or_none(r.get("NAME")),
+        codes.REGISTRANT.get(r.get("TYPE REGISTRANT", "")),
+        len(others),
+        codes.name_or_none(r.get("CITY")),
+        r.get("STATE") or None,
+        r.get("COUNTRY") or None,
+        r.get("STATUS CODE") or None,
+        codes.date(r.get("CERT ISSUE DATE")),
+        codes.date(r.get("EXPIRATION DATE")),
+        codes.airworthiness(r.get("CERTIFICATION")),
+        codes.date(r.get("AIR WORTH DATE")),
+        _maker(kit),
+        1 if r.get("FRACT OWNER") == "Y" else 0,
+        r.get("MFR MDL CODE") or None,
+        r.get("ENG MFR MDL") or None,
+        codes.REGION.get(r.get("REGION", "")),
+        codes.date(r.get("LAST ACTION DATE")),
+        r.get("MODE S CODE") or None,
+        r.get("UNIQUE ID") or None,
+        r.get("CERTIFICATION") or None,
+        json.dumps(others) if others else None,
+    )
+
+
 def build(zip_path: Path, db_path: Path) -> int:
     """The registry's SQLite file from the FAA's archive, written beside
     and then put in place whole; how many airplanes it holds."""
-    with zipfile.ZipFile(zip_path) as archive:
-        # What is used of the reference files, as tuples: ACFTREF's ninety
-        # thousand models as dicts were a hundred megabytes of the planner's.
-        models = {r["CODE"]: (r["MFR"], r["MODEL"], r["NO-ENG"], r["NO-SEATS"]) for r in _rows(archive, "ACFTREF.txt")}
-        engines = {r["CODE"]: (r["MFR"], r["MODEL"], r["HORSEPOWER"], r["THRUST"]) for r in _rows(archive, "ENGINE.txt")}
-        with atomic_path(db_path, suffix=".sqlite") as tmp:
-            db = sqlite3.connect(tmp)
-            db.execute("""CREATE TABLE aircraft (n_number TEXT PRIMARY KEY, mode_s_hex TEXT, serial TEXT, manufacturer TEXT,
-                model TEXT, year INTEGER, aircraft_type TEXT, engines INTEGER, seats INTEGER, engine TEXT, engine_type TEXT,
-                horsepower INTEGER, thrust_lb INTEGER, owner TEXT, owner_type TEXT, co_owners INTEGER, city TEXT, state TEXT,
-                country TEXT, status_code TEXT, certificate_issued TEXT, expires TEXT, airworthiness TEXT,
-                airworthiness_date TEXT, kit TEXT, fractional INTEGER)""")
+    insert = f"INSERT OR REPLACE INTO aircraft VALUES ({','.join('?' * 34)})"
+    with zipfile.ZipFile(zip_path) as archive, atomic_path(db_path, suffix=".sqlite") as tmp:
+        db = sqlite3.connect(tmp)
+        try:
+            models, engines = _reference(archive, db)
+            db.execute(_AIRCRAFT)
             count = 0
             batch = []
             for r in _rows(archive, "MASTER.txt"):
-                n = r.get("N-NUMBER", "")
-                if not n:
-                    continue
-                maker, model, engine_count, seats = models.get(r.get("MFR MDL CODE", ""), ("", "", "", ""))
-                engine_maker, engine_model, horsepower, thrust = engines.get(r.get("ENG MFR MDL", ""), ("", "", "", ""))
-                kit = " ".join(p for p in (r.get("KIT MFR", ""), r.get("KIT MODEL", "")) if p)
-                engine_name = " ".join(p for p in (engine_maker, engine_model) if p and p != "NONE")
-                batch.append(
-                    (
-                        "N" + n,
-                        (r.get("MODE S CODE HEX") or "").lower() or None,
-                        r.get("SERIAL NUMBER") or None,
-                        _name_case(maker, maker=True) if maker else None,
-                        model or None,
-                        _number(r.get("YEAR MFR", "")),
-                        _AIRCRAFT.get(r.get("TYPE AIRCRAFT", "")),
-                        _number(engine_count),
-                        _number(seats),
-                        _name_case(engine_name, maker=True) if engine_name else None,
-                        _ENGINE.get(r.get("TYPE ENGINE", "")),
-                        _number(horsepower) or None,
-                        _number(thrust) or None,
-                        _name_case(r["NAME"]) if r.get("NAME") else None,
-                        _REGISTRANT.get(r.get("TYPE REGISTRANT", "")),
-                        sum(1 for i in range(1, 6) if r.get(f"OTHER NAMES({i})")),
-                        _name_case(r["CITY"]) if r.get("CITY") else None,
-                        r.get("STATE") or None,
-                        r.get("COUNTRY") or None,
-                        r.get("STATUS CODE") or None,
-                        _date(r.get("CERT ISSUE DATE", "")),
-                        _date(r.get("EXPIRATION DATE", "")),
-                        _airworthiness(r.get("CERTIFICATION", "")),
-                        _date(r.get("AIR WORTH DATE", "")),
-                        _name_case(kit, maker=True) if kit else None,
-                        1 if r.get("FRACT OWNER") == "Y" else 0,
-                    )
-                )
+                if r.get("N-NUMBER"):
+                    batch.append(_airplane(r, models, engines))
                 if len(batch) >= 5000:
-                    db.executemany(f"INSERT OR REPLACE INTO aircraft VALUES ({','.join('?' * 26)})", batch)
+                    db.executemany(insert, batch)
                     count += len(batch)
                     batch = []
-            db.executemany(f"INSERT OR REPLACE INTO aircraft VALUES ({','.join('?' * 26)})", batch)
+            db.executemany(insert, batch)
             count += len(batch)
             db.execute("CREATE INDEX aircraft_mode_s ON aircraft (mode_s_hex)")
+            # DEREG, DOCINDEX and RESERVED, where the archive has them.
+            registry_history.build(archive, db, _rows)
+            db.execute(f"PRAGMA user_version = {SCHEMA}")
             db.commit()
+        finally:
             db.close()
     return count
+
+
+def schema(db_path: Path) -> int:
+    """The shape of the registry file on disk (SCHEMA), 0 where there is none."""
+    if not db_path.exists():
+        return 0
+    with contextlib.closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as db:
+        return db.execute("PRAGMA user_version").fetchone()[0]
 
 
 def refresh(directory: Path = DEFAULT_DIR, force: bool = False) -> bool:
@@ -312,7 +226,8 @@ def refresh(directory: Path = DEFAULT_DIR, force: bool = False) -> bool:
     caller while one reads it returns at once."""
     directory = Path(directory)
     db_path = directory / DB_NAME
-    if not force and db_path.exists() and time.time() - db_path.stat().st_mtime < MAX_AGE_S:
+    fresh = db_path.exists() and time.time() - db_path.stat().st_mtime < MAX_AGE_S
+    if not force and fresh and schema(db_path) == SCHEMA:
         return False
     with _LOCK:
         if _BUILDING.is_set():
@@ -361,7 +276,37 @@ def lookup(hex_id: str | None = None, n_number: str | None = None, directory: Pa
         return None
     found = dict(row)
     code = found.pop("status_code") or ""
-    found["standing"] = "valid" if code in _VALID else "lapsed" if code in _LAPSED else "other"
-    found["status"] = _STATUS.get(code) or (f"FAA status {code}" if code else None)
+    found["standing"] = codes.standing(code)
+    found["status"] = codes.status(code)
     found["fractional"] = bool(found["fractional"])
+    # A file of the older shape (SCHEMA 1) until the next read has none.
+    found["co_owner_names"] = json.loads(found.get("co_owner_names") or "[]")
     return found
+
+
+def _one(db_path: Path, table: str, code: str | None) -> dict | None:
+    if not code or not db_path.exists():
+        return None
+    with contextlib.closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as db:
+        db.row_factory = sqlite3.Row
+        try:
+            row = db.execute(f"SELECT * FROM {table} WHERE code = ?", (code,)).fetchone()
+        except sqlite3.OperationalError:
+            # A file of the older shape, without the table, until the next read.
+            return None
+    return dict(row) if row else None
+
+
+def model(code: str | None, directory: Path = DEFAULT_DIR) -> dict | None:
+    """The FAA's reference record of an airplane's make, model and series
+    (ACFTREF, by MASTER's MFR MDL CODE), as the models table keeps it;
+    None where there is none. Its cruise_mph is the FAA's "average cruising
+    speed" (ardata.pdf), a reference figure, not one to plan with."""
+    return _one(Path(directory) / DB_NAME, "models", code)
+
+
+def engine_model(code: str | None, directory: Path = DEFAULT_DIR) -> dict | None:
+    """The FAA's reference record of an engine (ENGINE, by MASTER's ENG MFR
+    MDL); horsepower for the piston and turbine-shaft types, thrust for
+    the jets (ardata.pdf)."""
+    return _one(Path(directory) / DB_NAME, "engines", code)

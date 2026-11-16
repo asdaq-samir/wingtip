@@ -520,8 +520,8 @@ def test_each_airport_landed_at_has_its_pattern_and_its_runway_ends(monkeypatch)
     body = client.get("/api/briefing", params={"dep": "C81", "dest": "KDLH"}).json()
 
     c81, dlh = body["airports"]["C81"], body["airports"]["KDLH"]
-    assert c81["pattern"] == {"agl_ft": 1000.0, "altitude_ft": 1900.0, "published": False}
-    assert dlh["pattern"] == {"agl_ft": 800.0, "altitude_ft": 1700.0, "published": True}
+    assert c81["pattern"] == {"agl_ft": 1000.0, "altitude_ft": 1900.0, "published": False, "remarks": []}
+    assert dlh["pattern"] == {"agl_ft": 800.0, "altitude_ft": 1700.0, "published": True, "remarks": []}
     assert [(e["ident"], e["traffic"]) for e in c81["runways"][0]["runway_ends"]] == [("09", "left"), ("27", "right")]
     assert c81["runways"][0]["runway_ends"][0]["heading_true_deg"] == 90.2
     assert (c81["airspace_class"], dlh["airspace_class"]) == ("E", "C")

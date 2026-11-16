@@ -9,6 +9,8 @@ import { RunwayRow } from "../RunwayRow";
 import { runwayInUse } from "../../lib/pattern";
 import { NotamBadge, NotamSheet } from "./NotamBadge";
 import { useNotamMarks, useNotamSheet } from "./notamBadges";
+import { NO_RUNWAYS } from "../../../../lib/emptyWords";
+import { longestOpen } from "./runwayPicks";
 
 /** An airport's card's Runways tab (PlaceCard): its pattern altitude, each
  *  runway, a NOTAM's badge by its name ("Closed") and a tap on it opening
@@ -22,7 +24,7 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
   // The longest runway open, what a pilot sizes a field by: a badge on its
   // row (it was a row of the Info tab's Details). None where the field has one.
   const open = runways.filter((r) => !r.closed && r.length_ft != null);
-  const longest = open.length > 1 ? runways.indexOf(open.reduce((a, b) => (b.length_ft! > a.length_ft! ? b : a))) : -1;
+  const longest = open.length > 1 ? runways.indexOf(longestOpen(runways)!) : -1;
   // The runway most nearly into the reported wind (AC 90-66C 11.5, the
   // engine's gonogo_runway_in_use over each runway's wind on the end it
   // favours): only where the wind chose it, not a calm field's most used.
@@ -40,8 +42,12 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
               </RowBadge>
             }
             title="Pattern altitude"
-            // 1,000 ft above the field where none is published (AIM 4-3-3).
-            description={place.pattern.published ? "As the FAA publishes it" : "1,000 ft above the field: none published"}
+            // 1,000 ft above the field where none is published (AIM 4-3-3a), and NASR's remarks on it after
+            // (APT_RMK's TPA: other aircraft's heights), which the facts' Pattern says differ.
+            description={[
+              place.pattern.published ? "As the FAA publishes it" : "1,000 ft above the field: none published",
+              ...(place.pattern.remarks ?? []),
+            ].join(" ")}
             value={<span className="font-semibold text-foreground">{feet(place.pattern.altitude_ft)}</span>}
             data-testid="place-pattern"
           />
@@ -61,7 +67,7 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
             );
           })
         ) : (
-          <ListRow title="None listed" />
+          <ListRow title={NO_RUNWAYS} />
         )}
       </ListGroup>
       {/* Each runway's RVR now, where the field reports it. */}

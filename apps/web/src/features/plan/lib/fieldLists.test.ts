@@ -70,6 +70,12 @@ describe("the flight's field lists", () => {
     });
   });
 
+  it("keep and rename a visit's own altitude by its point (WEB-2)", () => {
+    const lists = fieldListsOf(loadAddress("altitudes=ORD@2:2500,VPBNG@2:6500"));
+    expect(fieldListParams(renamedFieldLists(lists, "ORD", "KORD")).altitudes).toBe("KORD@2:2500,VPBNG@2:6500");
+    expect(fieldListParams(prunedFieldLists(lists, { dep: "C81", stops: ["VPBNG"], dest: "KDLH" })).altitudes).toBe("VPBNG@2:6500");
+  });
+
   it("drop a hold and a time on the ground with their point, and crossings with the last procedure", () => {
     const lists = fieldListsOf(
       loadAddress("procs=KMSN:I18&cross=BXCMB:3000&ground=KMSN:45,KORD:30&holds=KMSN:180:L:1M:2T,VPBNG:090:R:1M:1T"),

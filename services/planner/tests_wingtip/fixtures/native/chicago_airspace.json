@@ -12,7 +12,8 @@
     "ident": "",
     "floor_ft": 700.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    },
    {
     "class": "B",
@@ -21,7 +22,8 @@
     "ident": "ORD",
     "floor_ft": 3000.0,
     "floor_ref": "MSL",
-    "ceiling_ft": 10000.0
+    "ceiling_ft": 10000.0,
+    "hours": "H24"
    },
    {
     "class": "B",
@@ -30,7 +32,8 @@
     "ident": "ORD",
     "floor_ft": 0.0,
     "floor_ref": "SFC",
-    "ceiling_ft": 10000.0
+    "ceiling_ft": 10000.0,
+    "hours": "H24"
    },
    {
     "class": "E",
@@ -39,7 +42,8 @@
     "ident": "",
     "floor_ft": 1200.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    }
   ],
   "records": [
@@ -62,7 +66,8 @@
     "ident": "",
     "floor_ft": 700.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    },
    {
     "class": "D",
@@ -71,7 +76,8 @@
     "ident": "DPA",
     "floor_ft": 0.0,
     "floor_ref": "SFC",
-    "ceiling_ft": 3300.0
+    "ceiling_ft": 3300.0,
+    "hours": "H24"
    },
    {
     "class": "B",
@@ -80,7 +86,8 @@
     "ident": "ORD",
     "floor_ft": 4000.0,
     "floor_ref": "MSL",
-    "ceiling_ft": 10000.0
+    "ceiling_ft": 10000.0,
+    "hours": "H24"
    },
    {
     "class": "E",
@@ -89,7 +96,8 @@
     "ident": "",
     "floor_ft": 1200.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    }
   ],
   "records": [
@@ -112,7 +120,8 @@
     "ident": "",
     "floor_ft": 700.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    },
    {
     "class": "C",
@@ -121,7 +130,8 @@
     "ident": "MDW",
     "floor_ft": 0.0,
     "floor_ref": "SFC",
-    "ceiling_ft": 3600.0
+    "ceiling_ft": 3600.0,
+    "hours": "H24"
    },
    {
     "class": "B",
@@ -130,7 +140,8 @@
     "ident": "ORD",
     "floor_ft": 3000.0,
     "floor_ref": "MSL",
-    "ceiling_ft": 10000.0
+    "ceiling_ft": 10000.0,
+    "hours": "H24"
    },
    {
     "class": "E",
@@ -139,7 +150,8 @@
     "ident": "",
     "floor_ft": 1200.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    }
   ],
   "records": [
@@ -162,7 +174,8 @@
     "ident": "",
     "floor_ft": 700.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    },
    {
     "class": "C",
@@ -171,7 +184,8 @@
     "ident": "MDW",
     "floor_ft": 1900.0,
     "floor_ref": "MSL",
-    "ceiling_ft": 3600.0
+    "ceiling_ft": 3600.0,
+    "hours": "H24"
    },
    {
     "class": "B",
@@ -180,7 +194,8 @@
     "ident": "ORD",
     "floor_ft": 3600.0,
     "floor_ref": "MSL",
-    "ceiling_ft": 10000.0
+    "ceiling_ft": 10000.0,
+    "hours": "H24"
    },
    {
     "class": "E",
@@ -189,7 +204,8 @@
     "ident": "",
     "floor_ft": 1200.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    }
   ],
   "records": [
@@ -212,7 +228,8 @@
     "ident": "",
     "floor_ft": 700.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    },
    {
     "class": "B",
@@ -221,7 +238,8 @@
     "ident": "ORD",
     "floor_ft": 3000.0,
     "floor_ref": "MSL",
-    "ceiling_ft": 10000.0
+    "ceiling_ft": 10000.0,
+    "hours": "H24"
    },
    {
     "class": "E",
@@ -230,7 +248,8 @@
     "ident": "PWK",
     "floor_ft": 0.0,
     "floor_ref": "SFC",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "NOTAM"
    },
    {
     "class": "D",
@@ -239,7 +258,8 @@
     "ident": "PWK",
     "floor_ft": 0.0,
     "floor_ref": "SFC",
-    "ceiling_ft": 3000.0
+    "ceiling_ft": 3000.0,
+    "hours": "NOTAM"
    },
    {
     "class": "E",
@@ -248,7 +268,8 @@
     "ident": "",
     "floor_ft": 1200.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    }
   ],
   "records": [
@@ -272,7 +293,8 @@
     "ident": "",
     "floor_ft": 700.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    },
    {
     "class": "B",
@@ -281,7 +303,8 @@
     "ident": "ORD",
     "floor_ft": 3600.0,
     "floor_ref": "MSL",
-    "ceiling_ft": 10000.0
+    "ceiling_ft": 10000.0,
+    "hours": "H24"
    },
    {
     "class": "E",
@@ -290,7 +313,8 @@
     "ident": "",
     "floor_ft": 1200.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    }
   ],
   "records": [
@@ -312,7 +336,8 @@
     "ident": "RFD",
     "floor_ft": 0.0,
     "floor_ref": "SFC",
-    "ceiling_ft": 3200.0
+    "ceiling_ft": 3200.0,
+    "hours": "H24"
    },
    {
     "class": "E",
@@ -321,7 +346,8 @@
     "ident": "",
     "floor_ft": 1200.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    },
    {
     "class": "E",
@@ -330,7 +356,8 @@
     "ident": "",
     "floor_ft": 700.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    }
   ],
   "records": [
@@ -352,7 +379,8 @@
     "ident": "",
     "floor_ft": 700.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    },
    {
     "class": "D",
@@ -361,7 +389,8 @@
     "ident": "ARR",
     "floor_ft": 0.0,
     "floor_ref": "SFC",
-    "ceiling_ft": 3200.0
+    "ceiling_ft": 3200.0,
+    "hours": "NOTAM"
    },
    {
     "class": "E",
@@ -370,7 +399,8 @@
     "ident": "",
     "floor_ft": 1200.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    }
   ],
   "records": [
@@ -392,7 +422,8 @@
     "ident": "GYY",
     "floor_ft": 0.0,
     "floor_ref": "SFC",
-    "ceiling_ft": 3100.0
+    "ceiling_ft": 3100.0,
+    "hours": "NOTAM"
    },
    {
     "class": "E",
@@ -401,7 +432,8 @@
     "ident": "",
     "floor_ft": 700.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    },
    {
     "class": "E",
@@ -410,7 +442,8 @@
     "ident": "",
     "floor_ft": 700.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    },
    {
     "class": "E",
@@ -419,7 +452,8 @@
     "ident": "",
     "floor_ft": 1200.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    },
    {
     "class": "E",
@@ -428,7 +462,8 @@
     "ident": "",
     "floor_ft": 700.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    }
   ],
   "records": [
@@ -452,7 +487,8 @@
     "ident": "",
     "floor_ft": 700.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    },
    {
     "class": "E",
@@ -461,7 +497,8 @@
     "ident": "",
     "floor_ft": 1200.0,
     "floor_ref": "AGL",
-    "ceiling_ft": 18000.0
+    "ceiling_ft": 18000.0,
+    "hours": "H24"
    }
   ],
   "records": [

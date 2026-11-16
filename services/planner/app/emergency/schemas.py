@@ -31,6 +31,11 @@ class EmergencyMetar(BaseModel):
     gust_kt: float | None = None
     altimeter_in_hg: float | None = None
     temp_c: float | None = None
+    #: Statute miles, the engine's read of the report (awc_metars_read);
+    #: None where the report has none.
+    visibility_sm: float | None = None
+    #: At least visibility_sm: P6SM, the AWC's "10+" (FAA JO 7900.5).
+    visibility_plus: bool = False
     flight_category: str | None = None
     raw: str | None = None
 

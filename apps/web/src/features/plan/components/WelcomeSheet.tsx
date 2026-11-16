@@ -15,8 +15,13 @@ import { TEXT } from "../../../lib/text";
  *  that can be easily accessed"). */
 const ROWS = [
   { icon: Search, title: "Search, like Maps", line: "Find any airport, town or fix the way you would in Apple or Google Maps." },
-  // FPL's own glyph on the page toggle (PageToggle).
-  { icon: Route, title: "FPL, like your EFB", line: "The route, nav log, profile and brief, one tap away on the FPL button." },
+  // FPL's own glyph on the page toggle (PageToggle), a round route glyph
+  // at the search's end with no "FPL" word on it (the web audit's WEB-42).
+  {
+    icon: Route,
+    title: "FPL, like your EFB",
+    line: "The route, nav log, profile and brief, one tap away on the route button beside the search.",
+  },
   {
     icon: MapIcon,
     title: "FAA charts that move like Maps",
@@ -87,19 +92,25 @@ const TITLE_WORDS = (
 function Welcome({ title, onGo }: { title: ReactNode; onGo: () => void }) {
   return (
     <>
-      {title}
-      <ul className="mt-5 flex flex-col gap-3 px-2">
-        {ROWS.map(({ icon: Icon, title: name, line }) => (
-          <li key={name} className="flex items-start gap-4">
-            <Icon className="mt-0.5 size-8 shrink-0 text-tint" aria-hidden="true" />
-            <div className="min-w-0">
-              <p className={cn("font-semibold text-foreground", TEXT.row)}>{name}</p>
-              <p className={cn("text-muted-foreground", TEXT.prose)}>{line}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-      <LookRows />
+      {/* The title, the rows and the look held together in the middle of
+          the room over the foot, and the rows a column centred under the
+          title, as Apple's own welcome screens sit (the owner, 2026-11-14:
+          "Can the welcome be more centered?"). */}
+      <div className="my-auto flex flex-col">
+        {title}
+        <ul className="mx-auto mt-5 flex w-full max-w-sm flex-col gap-3 px-2">
+          {ROWS.map(({ icon: Icon, title: name, line }) => (
+            <li key={name} className="flex items-start gap-4">
+              <Icon className="mt-0.5 size-8 shrink-0 text-tint" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className={cn("font-semibold text-foreground", TEXT.row)}>{name}</p>
+                <p className={cn("text-muted-foreground", TEXT.prose)}>{line}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <LookRows />
+      </div>
       <Foot onGo={onGo} />
     </>
   );
@@ -176,7 +187,7 @@ function Foot({ onGo }: { onGo: () => void }) {
   };
   const button = "h-12 w-full rounded-(--radius-control) font-semibold";
   return (
-    <div className="mt-auto flex flex-col gap-2 pt-3">
+    <div className="flex flex-col gap-2 pt-3">
       {asking ? (
         <>
           <Button type="button" size="lg" className={button} onClick={turnOn} data-testid="first-flight-location">
@@ -207,11 +218,11 @@ function Foot({ onGo }: { onGo: () => void }) {
   );
 }
 
-/** Theme and Appearance as Settings' Look draws them (lookPicks' tiles,
- *  QuickControls' grid): the same two tiles, side by side. */
+/** Theme and Appearance as two tiles side by side (lookPicks' tiles; the
+ *  Map card's Look draws the same picks as rows). */
 function LookRows() {
   return (
-    <div className="mt-4 grid grid-cols-2 gap-2">
+    <div className="mx-auto mt-4 grid w-full max-w-sm grid-cols-2 gap-2">
       <ThemeTile />
       <AppearanceTile />
     </div>

@@ -6,6 +6,20 @@ export type AirportDataWordsAnswer = string | null;
 export type AirportNamesAnswer = string[];
 export type AirportNotamsNoneAnswer = string | null;
 export type AirspaceColumnAnswer = AirspaceBand[];
+export type AirspaceShelfLabelAnswer = {
+  /**
+   * The ceiling as the chart writes it: "100", "T", "-30".
+   */
+  ceiling: string;
+  /**
+   * The floor as the chart writes it, "30" or "SFC"; null for a Class D.
+   */
+  floor: string | null;
+  /**
+   * The label as the map sets it: the ceiling, a line break and the floor; a Class D's ceiling alone.
+   */
+  text: string;
+} | null;
 export type AirspaceVolumeSpanAnswer = {
   /**
    * Feet MSL.
@@ -19,6 +33,10 @@ export type AirspaceVolumeSpanAnswer = {
    * Whether the floor is the surface, drawn from the sea up.
    */
   surface: boolean;
+  /**
+   * Whether any of altitudes_ft is inside the volume; only where altitudes_ft was given.
+   */
+  holds?: boolean;
 } | null;
 export type AirwayFloorFtAnswer = number | null;
 /**
@@ -172,6 +190,7 @@ export type ChecklistPhasesAnswer = string[];
 export type ChecklistSectionAnswer = number | null;
 export type ChecklistWriteAnswer = string;
 export type CheckpointsSelectAnswer = number[];
+export type ClassBAtAltitudeAnswer = number | null;
 export type ClosestApproachAnswer = {
   in_min: number;
   nm: number;
@@ -200,6 +219,7 @@ export type CtafOfAnswer =
       description: "MULTICOM";
       frequency_mhz: number;
     };
+export type DatisRemarksAnswer = string[];
 export type DebriefAirborneAnswer = [number, number][];
 export type DensityAltitudeFtAnswer = number;
 export type DensityRatioAnswer = number;
@@ -355,6 +375,7 @@ export type FreezingLevelAnswer = {
   ft: number;
   at_or_below: boolean;
 } | null;
+export type FrequenciesInOrderAnswer = number[];
 export type FrequencyOfAnswer = number | null;
 export type FuelInTanksAnswer = ({
   gal: number;
@@ -388,6 +409,7 @@ export type GonogoIcingAnswer = {
   line: string;
 } | null;
 export type GonogoIcingLineAnswer = string;
+export type GonogoIcingUncheckedAnswer = string | null;
 export type GonogoPassMinutesAnswer = number | null;
 /**
  * The pilot's picked runway ends, landing (pattern) and takeoff.
@@ -591,6 +613,26 @@ export type InFlightAnswer = {
   track_error_deg: number | null;
   variation_deg: number | null;
   burnt_gal: number;
+  /**
+   * The fuel the plan leaves in the tanks here, from the last fuel stop passed; null without fuel_start_gal.
+   */
+  fuel_now_gal?: number | null;
+  /**
+   * Whether the start and taxi allowance was taken off the fuel figures (taxi_fuel_gal given).
+   */
+  taxi_counted?: boolean;
+  /**
+   * The hop flown: 0 the first, one more for each fuel stop (refuel_at) behind the airplane; arriving at a stop it is still the hop ending there. An index into the planner's totals' hops, strip_fuel's `hop`.
+   */
+  hop: number;
+  /**
+   * The fuel the legs burn from the start of the hop flown to here, gallons: strip_fuel's `burnt_gal` for that hop. Planning figures from the nav log's legs, never the airplane's gauge.
+   */
+  hop_burnt_gal: number;
+  /**
+   * The nav log's leg flown (legs[leg], from points[leg] to the next): the leg the next waypoint ends. Null with fewer than two points.
+   */
+  leg: number | null;
   next: {
     index: number;
     name: string;
@@ -646,7 +688,7 @@ export type LeastCrosswindAnswer = {
    */
   end: string | null;
   /**
-   * Knots, unsigned, steady or gust whichever is more.
+   * Knots, unsigned, steady or gust whichever is more, unrounded (to a millionth of a knot), so the map's arrow is judged against the demonstrated crosswind on the crosswind itself, not whole knots (AV-10).
    */
   crosswind_kt: number;
 } | null;
@@ -841,6 +883,10 @@ export type ReadTrackAnswer =
     };
 export type ReceiverTrafficAnswer = HeardPlane[];
 export type RegionOfAnswer = string;
+/**
+ * Region names ("n40w088"), the airplane's own first, each once.
+ */
+export type RegionsAheadAnswer = string[];
 export type RegisteredProfileAnswer = string | null;
 export type ReserveMinAnswer = number;
 export type RoutePositionAnswer = {
@@ -853,6 +899,7 @@ export type RoutePositionAnswer = {
   burnt_gal: number;
   on_route: boolean;
 } | null;
+export type RouteWayWarningAnswer = string | null;
 export type RunwayCalmAnswer = boolean;
 export type RunwayCrosswindAnswer = number;
 export type RunwayEndHeadingAnswer = number | null;
@@ -883,6 +930,10 @@ export type RunwayWindOut = {
   headwind_kt: number;
   crosswind_kt: number;
   gust_crosswind_kt: number | null;
+  /**
+   * The crosswind, the gust's where more, unrounded: what a limit (the POH's demonstrated crosswind, the pilot's own) is judged against, so 10.4 kt is past 10 (AV-10). There only where the wind blew.
+   */
+  crosswind_exact_kt?: number;
   /**
    * There only where calm picked the runway in use.
    */
@@ -1071,11 +1122,18 @@ export interface EngineContract {
     answer: AirborneNowAnswer;
   };
   /**
-   * What is wrong with the "Your Airplane" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's, the descent's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.
+   * What is wrong with the "Your Airplane" form's fields as typed, by field (the gateway's AircraftRequest and OwnFigures names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn required; every figure inside its range, airplane_figure_ranges' (sanity bounds, no regulation: cruise and climb speed above 0 and at most 1,000 kt, descent 30 to 300 kt and 1 to 150 gal/h, cruise power 40 to 100%, the cruise and climb burns above 0 and at most 150 gal/h, usable fuel above 0 and at most 2,000 gal, service ceiling 1,000 to 30,000 ft, climb rate above 0 and at most 5,000 fpm, start and taxi fuel 0 to 50 gal, glide ratio more than 1 and at most 80); equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.
    */
   aircraft_problems: {
     input: AircraftProblemsInput;
     answer: AircraftProblemsAnswer;
+  };
+  /**
+   * Every one of an airplane's own figures with the range it may take, in the form's order: the one statement of them (engine/crates/pilot/src/aircraft/form.rs), which aircraft_problems checks the "Your Airplane" form against and the planner builds its query parameters' bounds from, so a figure the form and the gateway take is one every plan takes. Each is a sanity bound that keeps a typo out of the plan, no regulation or handbook figure: above min (or at it where min_inclusive) and at most max.
+   */
+  airplane_figure_ranges: {
+    input: AirplaneFigureRangesInput;
+    answer: AirplaneFigureRangesAnswer;
   };
   /**
    * An airplane's figures, each with where it comes from: its pilot's own where they differ from the book's ("pilot"), else its photographed handbook page's ("handbook"), else its type's stock profile's ("book"); a figure none has is null, never another airplane's (the owner, 2026-11-09). The empty weight and moment are the pilot's alone (a stock profile's are its handbook's sample airplane's). `profile` is the book's with the picked figures over it, the airplane every other rule takes; null with no book, handbook or own figures (no airplane).
@@ -1134,7 +1192,14 @@ export interface EngineContract {
     answer: AirspaceEntryRulesAnswer;
   };
   /**
-   * How high a 3D map stands an airspace volume: its floor and top in feet MSL, from its limits as the FAA's data gives them (each its figure in feet, a flight level times 100, its CODE SFC, AGL, MSL, STD or UNLTD and its DESC TI, TNI or ANI), read as special_use_tab reads them: SFC above 0 is that height above the ground, a ceiling "to but not including" a foot under its figure (FL180 TNI 17,999 ft MSL), a floor "above but not including" a foot over it. A floor above the ground stands on the lowest of `ground`, a ceiling on its highest; the surface is 0 ft MSL with `surface` true; a flight level is drawn as if MSL; no ceiling, or one above it, is drawn to 18,000 ft MSL, where Class A begins (14 CFR 71.33(a)), a drawing bound. Null where nothing is left to draw, or where a limit above the ground has no `ground`.
+   * A Class B, C or D shelf's altitudes as the sectional writes them, for the label the 3D map stands at the shelf's top: the ceiling over the floor in hundreds of feet MSL, the last two zeros omitted, "SFC" for the surface ("100" over "30", "100" over "SFC"); a Class C ceiling to but not including the floor of the Class B over it "T"; a Class D its ceiling alone, with a minus where it is from the surface to but not including it ("-30"). FAA Aeronautical Chart User's Guide, 9 July 2026, VFR Terms and Symbols, Airspace (p. 16) and its legend Airspace Information (p. 52). The limits as the planner sends a NASR Class Airspace volume (floor_ft with floor_ref SFC, AGL or MSL; ceiling_ft MSL; ceiling_excluded for UPPER_DESC TNI). Null for another class, a Class E surface area among them, or a shelf with no ceiling.
+   */
+  airspace_shelf_label: {
+    input: AirspaceShelfLabelInput;
+    answer: AirspaceShelfLabelAnswer;
+  };
+  /**
+   * How high a 3D map stands an airspace volume: its floor and top in feet MSL, from its limits as the FAA's data gives them (each its figure in feet, a flight level times 100, its CODE SFC, AGL, MSL, STD or UNLTD and its DESC TI, TNI or ANI), read as special_use_tab reads them: SFC above 0 is that height above the ground, a ceiling "to but not including" a foot under its figure (FL180 TNI 17,999 ft MSL), a floor "above but not including" a foot over it. A floor above the ground stands on the lowest of `ground`, a ceiling on its highest; the surface is 0 ft MSL with `surface` true; a flight level is drawn as if MSL; no ceiling, or one above it, is drawn to 18,000 ft MSL, where Class A begins (14 CFR 71.33(a)), a drawing bound. Null where nothing is left to draw, or where a limit above the ground has no `ground`. Where `altitudes_ft` is given (ft MSL, the plan's cruise and each leg's own), `holds` says whether any of them is inside the volume, floor to ceiling both included as a Class B shelf's published altitudes are part of it (14 CFR 91.131(a)(1); class_b_at_altitude), against the FAA's own ceiling rather than the 18,000 ft drawing bound, an unlimited ceiling holding every altitude from the floor up, and a limit above the ground at the ground drawn under it: the larger volume, so the pilot is told an area may be at their altitude rather than that it is not.
    */
   airspace_volume_span: {
     input: AirspaceVolumeSpanInput;
@@ -1484,6 +1549,13 @@ export interface EngineContract {
     answer: CheckpointsSelectAnswer;
   };
   /**
+   * Which Class B band along a route's profile holds an altitude (14 CFR 91.131(a)(1): an ATC clearance before entering Class B): the index of the first band of class B whose floor is at or under altitude_ft and whose ceiling is at or over it, both ft MSL as the FAA's Class Airspace shapefile publishes them; null where none does. A band with no ceiling given holds every altitude from its floor up, so a clearance is said to be needed rather than not (Class B tops run from 7,000 ft at KMSY to 12,500 ft at KDEN, so no one figure stands in for it).
+   */
+  class_b_at_altitude: {
+    input: ClassBAtAltitudeInput;
+    answer: ClassBAtAltitudeAnswer;
+  };
+  /**
    * Named fixes to fly through so neither leg comes within a mile of the Class B whose floor is under below_ft (route/options/classb.rs): those adding the least distance first, a VFR waypoint before a GPS fix that saves under 10 nm, at most 5, none adding over 40 nm.
    */
   class_b_detours: {
@@ -1580,6 +1652,13 @@ export interface EngineContract {
   data_cycle: {
     input: DataCycleInput;
     answer: DataCycleAnswer;
+  };
+  /**
+   * A digital ATIS's remarks as the airport card shows them (STDDS TDES DATISData): the sentences after its weather (AIM 4-1-13), an item each, in the FAA's words in sentence case with RWY, TWY and the codes kept, the contractions of FAA Order JO 7340.2 written out, a figure said for the voice ('9 THSD 7 HND 25 FT') written as one (9,725 ft), and the sentences that say the same of several runways folded into one item listing them all. The heading, the closing 'ADVS YOU HAVE INFO' and a sentence whose approach or runways read_datis already shows are left out.
+   */
+  datis_remarks: {
+    input: DatisRemarksInput;
+    answer: DatisRemarksAnswer;
   };
   /**
    * The planner's /api/debrief answer (ACS PA.VI.A): the flight flown against the plan, each finding marked, and the tolerances it is held to.
@@ -1813,6 +1892,20 @@ export interface EngineContract {
     answer: FieldHoursAnswer;
   };
   /**
+   * What a field's map mark is first drawn at and kept by where marks would overlap, from the FAA's NASR APT_BASE.csv (SITE_TYPE_CODE, FACILITY_USE_CODE, TWR_TYPE_CODE), its longest hard runway (APT_RWY.csv, the FAA Aeronautical Chart User's Guide's hard-surfaced runways) and the class of airspace the FAA's Class_Airspace file names it the primary airport of (IDENT). `tier`: 0 towered, 1 public airport with a hard runway of 3,000 ft or more, 2 other public, 3 private, 4 heliports and the rest. `order`, lower first: the field a Class B is named for, then a Class C's, then each tier, and within each the longer hard runway first, so O'Hare's mark is kept before Chicago Executive's. `size`: the step the mark is drawn at. The cycle pack's overlay tiles carry `order` as each airport's `rank`, which every app's map sorts its marks by, and `size` as its `size`.
+   */
+  field_mark_rank: {
+    input: FieldMarkRankInput;
+    answer: FieldMarkRankAnswer;
+  };
+  /**
+   * Whether a field is the armed services' own, from the FAA's NASR APT_BASE.csv: OWNERSHIP_TYPE_CODE MA (Air Force), MN (Navy), MR (Army) or CG (Coast Guard) is; "joint" where FACILITY_USE_CODE is PU, open to the public as well (a civil airport on a military one, where a civil pilot may land), else "military", where a civil airplane lands only with the service's permission (for the Air Force a Civil Aircraft Landing Permit, 32 CFR part 855); null for any other owner. The one statement the planner, the cycle pack's overlays and the engine's map pins read.
+   */
+  field_military: {
+    input: FieldMilitaryInput;
+    answer: FieldMilitaryAnswer;
+  };
+  /**
    * Whether an airplane is around a field, inbound to it or departing it.
    */
   field_relation: {
@@ -1918,6 +2011,13 @@ export interface EngineContract {
     answer: FlightCategoryAnswer;
   };
   /**
+   * The floor of a leg flown along a path other than its own line -- a departure (SID), an arrival (STAR) or an approach flown in its place: of the leg's own floor and the floors under each piece of the path (vfr_floors' or ifr_floors' answers, the leg's own first), the highest, the leg's own on a tie, with the lowest ground under any of them. The airplane is over all of the path at its cruising altitude until it comes down, so 14 CFR 91.119's clearances (VFR) or 91.177(a)(2)'s (IFR) hold over all of it; a procedure's published altitudes (91.177(a)(1), Part 97) may be lower, so this errs high (the aviation audit's AV-2).
+   */
+  floor_along_path: {
+    input: FloorAlongPathInput;
+    answer: FloorAlongPathAnswer;
+  };
+  /**
    * What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.
    */
   floor_caution: {
@@ -1993,6 +2093,20 @@ export interface EngineContract {
   freezing_level: {
     input: FreezingLevelInput;
     answer: FreezingLevelAnswer;
+  };
+  /**
+   * Freezing rain and freezing drizzle (FZRA, FZDZ, any intensity) in the METAR or TAF of each field the flight takes off from, lands at or passes: AIM 7-1-20, freezing precipitation falls 'through or outside of visible cloud', so it ices an airplane clear of cloud and is a Go / No-Go caution on any flight (FAA-H-8083-28B ch. 20). Every TAF group is read, TEMPO and PROB included; a METAR's remarks are not. The line is null where none was found.
+   */
+  freezing_precip: {
+    input: FreezingPrecipInput;
+    answer: FreezingPrecipAnswer;
+  };
+  /**
+   * A field's frequencies in the order a pilot dials them -- its weather (ATIS, AWOS), clearance, ground, the tower or CTAF, approach and departure, then UNICOM and the rest (AIM 4-1-13, 4-1-11) -- as indices into frequencies, the file's order kept within a kind.
+   */
+  frequencies_in_order: {
+    input: FrequenciesInOrderInput;
+    answer: FrequenciesInOrderAnswer;
   };
   /**
    * A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name.
@@ -2156,6 +2270,13 @@ export interface EngineContract {
     answer: GonogoIcingLineAnswer;
   };
   /**
+   * Under IFR, whether icing could not be checked: icing possible (the moisture forecast) at the altitudes flown, but the freezing level not known, so no altitude can be held to it (FAA-H-8083-28B ch. 20: structural icing needs visible moisture at or below 0 °C). The line, "Icing not checked: freezing level not known", or null; gonogo_icing gives null in that case.
+   */
+  gonogo_icing_unchecked: {
+    input: GonogoIcingUncheckedInput;
+    answer: GonogoIcingUncheckedAnswer;
+  };
+  /**
    * Minutes after departure the flight passes a point along the route, or null.
    */
   gonogo_pass_minutes: {
@@ -2182,6 +2303,13 @@ export interface EngineContract {
   gonogo_risk_line: {
     input: GonogoRiskLineInput;
     answer: GonogoRiskLineAnswer;
+  };
+  /**
+   * The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_verdict_items' fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those).
+   */
+  gonogo_route_figures: {
+    input: GonogoRouteFiguresInput;
+    answer: GonogoRouteFiguresAnswer;
   };
   /**
    * The runway check at each field taken off from or landed at, fields and runways by index: the runway, pressure and density altitude, wind along and across it, and the POH's distances against its length (14 CFR 91.103(b)). Empty without both tables.
@@ -2436,7 +2564,7 @@ export interface EngineContract {
     answer: InEmergencyAnswer;
   };
   /**
-   * A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves from fuel_start_gal. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).
+   * A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves there (fuel_left): from fuel_start_gal less the start and taxi allowance (taxi_fuel_gal), and from each fuel stop passed (refuel_at) with the tanks filled again (fuel_full_gal, else fuel_start_gal) less another allowance, never from the first tank past a fuel stop; fuel_now_gal is what it leaves here. hop is the hop flown (0 the first, one more past each fuel stop, an index into the planner's totals' hops), hop_burnt_gal the legs' burn from that hop's start to here, and leg the nav log's leg flown, so the strip's fuel past a stop is strip_fuel's of that hop less its own burn, not the first tank's. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).
    */
   in_flight: {
     input: InFlightInput;
@@ -2681,7 +2809,7 @@ export interface EngineContract {
     answer: NavLogLegsAtAnswer;
   };
   /**
-   * The four altitude plans -- lowest and highest over the legal band, fastest by the winds, economical by the fuel, each paying its climbs -- and the route flown at each legal altitude (by_altitude). Empty where a leg has no legal altitude.
+   * The four altitude plans -- lowest and highest over the legal band, fastest by the winds, economical by the fuel (left out where the profile gives no climb fuel flow, whose climbs' fuel is not known), each paying its climbs -- and the route flown at each legal altitude (by_altitude). Empty where a leg has no legal altitude.
    */
   navlog_plans: {
     input: NavLogPlansInput;
@@ -3129,6 +3257,13 @@ export interface EngineContract {
     answer: RegionOfAnswer;
   };
   /**
+   * The phone packs' regions (region_of's 4-degree squares) ahead of the airplane, in the order it reaches them: its own first, then those its track over the ground and its route (from the point on it nearest the airplane) cross within look_ahead_nm, each line padded pad_nm either side (1 nm, the pad the alerts ahead read volumes within, where left out). A shell reads these packs for what is ahead rather than a fixed span of degrees round itself, which at 48 N fell short of five minutes at 200 kt (the iPhone audit's IOS-20). Geometry only, on the WGS-84 ellipsoid.
+   */
+  regions_ahead: {
+    input: RegionsAheadInput;
+    answer: RegionsAheadAnswer;
+  };
+  /**
    * The stock profile an airplane the FAA's registry names flies on, or null.
    */
   registered_profile: {
@@ -3178,6 +3313,13 @@ export interface EngineContract {
     answer: RoutePositionAnswer;
   };
   /**
+   * A way's one warning, the worst of the hazard kinds it crosses, in the words every app says it in (route_options' way `warning`; the route as typed, whose crossings come with its chips): a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where nothing is crossed.
+   */
+  route_way_warning: {
+    input: RouteWayWarningInput;
+    answer: RouteWayWarningAnswer;
+  };
+  /**
    * Whether a runway's wind is a calm one: no head-, cross- or gust's crosswind.
    */
   runway_calm: {
@@ -3192,7 +3334,7 @@ export interface EngineContract {
     answer: RunwayCrosswindAnswer;
   };
   /**
-   * Whether an end fits the airplane today for a takeoff or a landing: crosswind against the demonstrated, distance needed against the length with SAFO 19001's 15 per cent margin.
+   * Whether an end fits the airplane today for a takeoff or a landing: crosswind against the demonstrated, distance needed against the length with SAFO 19001's 15 per cent margin. A landing is judged against the landing distance available (the end's declared LDA, else the length past its displaced threshold, AIM 2-3-3), a takeoff against the whole length; `length_ft` is the one judged against.
    */
   runway_end_fit: {
     input: RunwayEndFitInput;
@@ -3218,6 +3360,13 @@ export interface EngineContract {
   runway_ends_traffic: {
     input: RunwayEndsTrafficInput;
     answer: RunwayEndsTrafficAnswer;
+  };
+  /**
+   * Whether a runway's surface is hard, as the sectional's airport symbol counts it (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports: "hard-surfaced runways"), from NASR APT_RWY.csv's SURFACE_TYPE_CODE: ASPH, CONC, PEM, PFC and BRICK are; a mixed surface ("ASPH-TURF") only where every part is hard; TRTD (treated) goes with a hard one and is not one alone. The longest hard runway is what field_mark_rank's hard_ft is: the cycle pack's overlays and the planner's map list both read it here.
+   */
+  runway_hard_surface: {
+    input: RunwayHardSurfaceInput;
+    answer: RunwayHardSurfaceAnswer;
   };
   /**
    * Each runway's favoured end, the planner's RunwayWind or null.
@@ -3262,7 +3411,7 @@ export interface EngineContract {
     answer: ServiceCeilingOnTheDayAnswer;
   };
   /**
-   * A VOR's standard service volume by NASR's ALT_CODE (AIM 1-1-8 TBL 1-1-1), or null for a code not in the table.
+   * A station's standard service volume by its class, NASR's ALT_CODE or DME_SSV (T, L, H, VL, VH, DL, DH; AIM 1-1-8 TBL 1-1-1), every band of it, or null for a code not in the table.
    */
   service_volume: {
     input: ServiceVolumeInput;
@@ -3344,6 +3493,20 @@ export interface EngineContract {
   sun_down: {
     input: SunDownInput;
     answer: SunDownAnswer;
+  };
+  /**
+   * The class of the airspace at a field's surface, from the NASR Class Airspace volumes whose shape holds it: B, C or D (14 CFR 71.41, 71.51, 71.61) or E (a surface area or an extension to one, 71.71(b), AIM 3-2-6e1 and e2) where a volume of that class reaches the ground (a floor at SFC, 0 ft AGL, or an MSL floor at or under the field's elevation), the most restrictive where they overlap; G where none does (AIM 3-3-1). A Class B or C shelf over the field is not its surface class. Part-time where every volume of that class is in effect by NOTAM or by remark (NASR WKHR_CODE NOTAM or RMK, not H24); then `otherwise` is the class at other times, the next class reaching the surface or G (AIM 3-2-5a1: "other times CLASS E" or "other times CLASS G"). A volume with no code is read as full-time.
+   */
+  surface_airspace: {
+    input: SurfaceAirspaceInput;
+    answer: SurfaceAirspaceAnswer;
+  };
+  /**
+   * When a part-time surface area is in effect, day by day from the field's today for a week, read from NASR's CLS_ARSP AIRSPACE_HRS, the Chart Supplement's AIRSPACE line ("CLASS D SVC 0600-2200 MON-FRI, 0700-2200 SAT-SUN; OTHER TIMES CLASS E"): the class at other times the one the line names (AIM 3-2-5a1; 14 CFR 71.61, 71.71(b)), never a guess. A time with no Z is the field's local time; Z is UTC at the offset now; Z++ is the Chart Supplement's double dagger, one hour earlier in daylight saving time, so the figure at the field's standard offset all year. Reads CONTINUOUS, time ranges, days (MON-FRI, SAT & SUN, WKEND) and seasons (16 MAR-31 OCT, OCT-MAR); anything else (holidays, BY NOTAM, SR-SS) leaves the hours not known (`known` false). Spans are local minutes from midnight, [from, to), a span past midnight carried into the next day. `in_force` and `change` are now's: in effect until `change.at`, or not until `change.at`, `next_day` where that is tomorrow; null where today's hours are not known. The engine has no clock: the host gives the field's local date, minute, UTC offset and whether in daylight saving time.
+   */
+  surface_hours: {
+    input: SurfaceHoursInput;
+    answer: SurfaceHoursAnswer;
   };
   /**
    * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
@@ -3477,6 +3640,13 @@ export interface EngineContract {
   underway: {
     input: UnderwayInput;
     answer: UnderwayAnswer;
+  };
+  /**
+   * Where an airplane is usually based: the field its past flights (as ADS-B receivers heard them) most often take off from or land at. Each flight's ends are its takeoff field and, where it was heard landing, its landing field. A field is the base where at least min_ends (3) of the ends are there, at least min_share (0.4) of all the ends are, and no other field has as many; otherwise `ident` is null and nothing is said. The figures are the owner's (2026-10-13), not the FAA's: no public data says where an airplane is kept.
+   */
+  usual_base: {
+    input: UsualBaseInput;
+    answer: UsualBaseAnswer;
   };
   /**
    * Velocities' east and north parts as tracks and speeds, for a surveillance report that sends its parts (the FAA's STDDS tracks, which the ingest service reads from SWIM): each track degrees true 0 to 360 toward where it goes, and its speed in the parts' own unit (knots for STDDS). The track is null where the speed is 0: what does not move has no track. A list, so a message's tracks cross into the engine once.
@@ -3737,6 +3907,10 @@ export interface AircraftProblemsInput {
   descentIasKt?: string | null;
   descentFuelBurnGph?: string | null;
   usableFuelGal?: string | null;
+  serviceCeilingFt?: string | null;
+  climbRateFpm?: string | null;
+  taxiFuelGal?: string | null;
+  glideRatio?: string | null;
   equipment?: string | null;
   surveillance?: string | null;
   colour?: string | null;
@@ -3752,9 +3926,48 @@ export interface AircraftProblemsAnswer {
   descentIasKt?: string;
   descentFuelBurnGph?: string;
   usableFuelGal?: string;
+  serviceCeilingFt?: string;
+  climbRateFpm?: string;
+  taxiFuelGal?: string;
+  glideRatio?: string;
   equipment?: string;
   surveillance?: string;
   colour?: string;
+}
+export interface AirplaneFigureRangesInput {}
+export interface AirplaneFigureRangesAnswer {
+  ranges: AirplaneFigureRange[];
+}
+export interface AirplaneFigureRange {
+  /**
+   * The form's and the gateway's name, cruiseTasKt.
+   */
+  field: string;
+  /**
+   * The planner's query parameter, cruise_tas_kt.
+   */
+  query: string;
+  /**
+   * The field's name in the form's words, Cruise speed.
+   */
+  label: string;
+  /**
+   * kt, gal/h, gal, %, ft, fpm, or empty for a ratio.
+   */
+  unit: string;
+  min: number;
+  /**
+   * min itself is inside; otherwise only above it.
+   */
+  min_inclusive: boolean;
+  /**
+   * The highest inside.
+   */
+  max: number;
+  /**
+   * The form needs it (the cruise speed and burn).
+   */
+  required: boolean;
 }
 export interface AirplaneFiguresInput {
   /**
@@ -3917,6 +4130,19 @@ export interface AirspaceEntryRulesAnswer {
    */
   call: ("APP" | "TWR")[];
 }
+export interface AirspaceShelfLabelInput {
+  class: string;
+  floor_ft?: number | null;
+  floor_ref?: string | null;
+  /**
+   * Feet MSL.
+   */
+  ceiling_ft?: number | null;
+  /**
+   * The ceiling is to but not including its figure (NASR UPPER_DESC TNI).
+   */
+  ceiling_excluded?: boolean | null;
+}
 export interface AirspaceVolumeSpanInput {
   floor?: SpecialUseTabLimit;
   ceiling?: SpecialUseTabLimit;
@@ -3927,6 +4153,10 @@ export interface AirspaceVolumeSpanInput {
     low_ft: number;
     high_ft: number;
   } | null;
+  /**
+   * The altitudes the plan flies, ft MSL: its cruise and each leg's own. Absent or null for no plan.
+   */
+  altitudes_ft?: number[] | null;
 }
 /**
  * One limit of a special-use area as the FAA's data gives it: its figure in feet (a flight level times 100), its CODE (SFC, MSL, STD, UNLTD) and its DESC (TI, TNI to but not including, ANI above but not including).
@@ -4860,6 +5090,10 @@ export interface AwcMetar {
    */
   ceiling_cover: "BKN" | "OVC" | "VV" | null;
   visibility_sm: number | null;
+  /**
+   * The visibility is at least visibility_sm: the feed's "10+", the report's P6SM or 10SM and more.
+   */
+  visibility_plus: boolean;
   wind_dir_true_deg: number | null;
   wind_speed_kt: number | null;
   wind_gust_kt: number | null;
@@ -5012,6 +5246,14 @@ export interface Runway {
     | {
         ident: string;
         heading_true_deg?: number | null;
+        /**
+         * The threshold's displacement from the runway's end, feet (NASR APT_RWY_END). A landing on this end has the runway past it (AIM 2-3-3); a takeoff has the whole length.
+         */
+        displaced_threshold_ft?: number | null;
+        /**
+         * The landing distance available the airport declares for this end, feet (AC 150/5300-13B, declared distances); where given, a landing is judged against it.
+         */
+        lda_ft?: number | null;
       }[]
     | null;
   wind?: GonogoRunwayWind | null;
@@ -5027,6 +5269,10 @@ export interface GonogoRunwayWind {
   headwind_kt: number;
   crosswind_kt: number;
   gust_crosswind_kt?: number | null;
+  /**
+   * The unrounded crosswind (RunwayWindOut's), judged against the limits where sent; the rounded one where not.
+   */
+  crosswind_exact_kt?: number | null;
   /**
    * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
    */
@@ -5215,6 +5461,14 @@ export interface CheckpointsSelectInput {
    */
   min_score?: number | null;
   length_nm?: number | null;
+}
+export interface ClassBAtAltitudeInput {
+  bands: {
+    class: string;
+    floor_ft: number;
+    ceiling_ft?: number | null;
+  }[];
+  altitude_ft: number;
 }
 export interface ClassBDetoursInput {
   /**
@@ -5697,6 +5951,12 @@ export interface DataCycleAnswer {
    * How many editions have come out since the one held; 0 unless expired.
    */
   behind: number;
+}
+export interface DatisRemarksInput {
+  /**
+   * The D-ATIS as the data link sent it.
+   */
+  text: string;
 }
 export interface DebriefInput {
   checkpoints: {
@@ -6616,6 +6876,58 @@ export interface FieldHour {
    */
   at_times_chance: boolean;
 }
+export interface FieldMarkRankInput {
+  /**
+   * NASR APT_BASE's SITE_TYPE_CODE (A airport, H heliport, C seaplane base, G gliderport, U ultralight, B balloonport).
+   */
+  site_type?: string | null;
+  /**
+   * NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
+   */
+  use?: string | null;
+  /**
+   * Whether NASR APT_BASE's TWR_TYPE_CODE names a tower (ATCT and its kinds; NON-ATCT is none).
+   */
+  towered?: boolean | null;
+  /**
+   * The field's longest hard-surfaced runway, ft (APT_RWY's RWY_LEN); 0 or null for none.
+   */
+  hard_ft?: number | null;
+  /**
+   * The class of airspace (B, C) the FAA's Class_Airspace file names the field the primary airport of (its IDENT), the highest where several; null for none. D and E count as none.
+   */
+  primary_of?: string | null;
+}
+export interface FieldMarkRankAnswer {
+  /**
+   * 0 towered, 1 public with a long hard runway, 2 other public, 3 private, 4 heliports and the rest: which zoom the mark is first drawn at.
+   */
+  tier: number;
+  /**
+   * The mark's place where marks overlap, lower kept first: class (0 Class B primary, 1 Class C primary, then tier + 2) times 100,000, plus 99,999 less the longest hard runway in ft.
+   */
+  order: number;
+  /**
+   * The step the mark is drawn at, the biggest fields the largest (the owner, 2026-11-14): largest for a Class B's primary field, larger for a Class C's, regular for the other towered fields and public ones with 3,000 ft of hard runway, small for the rest. How much larger each step is drawn is each app's own.
+   */
+  size: "largest" | "larger" | "regular" | "small";
+}
+export interface FieldMilitaryInput {
+  /**
+   * NASR APT_BASE's OWNERSHIP_TYPE_CODE (PU, PR, MA, MN, MR, CG).
+   */
+  ownership?: string | null;
+  /**
+   * NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
+   */
+  use?: string | null;
+}
+export interface FieldMilitaryAnswer {
+  /**
+   * military, joint, or null for a field the services do not own.
+   */
+  military: "military" | "joint" | null;
+}
 export interface FieldRelationInput {
   plane: {
     lat: number;
@@ -6811,6 +7123,36 @@ export interface FlightCategoryInput {
    * The lowest broken, overcast or obscured layer was sent with no height (OVC///): the ceiling is not known, and only a visibility under a mile says the category (14 CFR 1.1).
    */
   ceiling_unknown?: boolean | null;
+}
+export interface FloorAlongPathInput {
+  /**
+   * The leg's own floor first, then the floor under each piece of the path: vfr_floors' or ifr_floors' answers, as they came.
+   *
+   * @minItems 1
+   */
+  floors: [
+    {
+      floor_ft: number;
+      /**
+       * VFR's lowest ground under the piece; none under IFR.
+       */
+      lowest_ground_ft?: number | null;
+    },
+    ...{
+      floor_ft: number;
+      /**
+       * VFR's lowest ground under the piece; none under IFR.
+       */
+      lowest_ground_ft?: number | null;
+    }[]
+  ];
+}
+/**
+ * The bounding floor as it came, its lowest_ground_ft (where it has one) the least of all of them.
+ */
+export interface FloorAlongPathAnswer {
+  floor_ft: number;
+  lowest_ground_ft?: number | null;
 }
 export interface FloorCautionInput {
   /**
@@ -7047,6 +7389,33 @@ export interface FreezingLevelInput {
    * [[altitude_ft, temp_c], ...]
    */
   profile?: [number, number][];
+}
+export interface FreezingPrecipInput {
+  fields: {
+    ident: string;
+    /**
+     * The METAR as sent.
+     */
+    metar?: string | null;
+    /**
+     * The TAF as sent.
+     */
+    taf?: string | null;
+  }[];
+}
+export interface FreezingPrecipAnswer {
+  found: {
+    ident: string;
+    source: "METAR" | "TAF";
+    /**
+     * The group as sent, "-FZRA".
+     */
+    group: string;
+  }[];
+  line: string | null;
+}
+export interface FrequenciesInOrderInput {
+  frequencies: FieldFrequency[];
 }
 export interface FrequencyLineInput {
   type?: string | null;
@@ -7391,6 +7760,23 @@ export interface GonogoIcingLineInput {
     reports?: number | null;
   };
 }
+export interface GonogoIcingUncheckedInput {
+  selection?: {
+    freezing_level_ft?: number | null;
+    /**
+     * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
+     */
+    icing_possible?: boolean | null;
+    /**
+     * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
+     */
+    freezing_level_at_or_below?: boolean | null;
+  } | null;
+  /**
+   * The altitudes flown.
+   */
+  flown_ft?: number[] | null;
+}
 export interface GonogoPassMinutesInput {
   legs?:
     | {
@@ -7452,6 +7838,40 @@ export interface GonogoFactor {
 export interface GonogoRiskLineInput {
   level: string;
   score: number;
+}
+export interface GonogoRouteFiguresInput {
+  /**
+   * The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.
+   */
+  totals: {
+    fuel_margin_gal?: number | null;
+    fuel_required_gal?: number | null;
+    reserve_min?: number | null;
+    hops?:
+      | {
+          totals?: {
+            fuel_margin_gal?: number | null;
+            fuel_required_gal?: number | null;
+            reserve_min?: number | null;
+          };
+        }[]
+      | null;
+  } | null;
+  /**
+   * How many TFRs the briefing lists along the route.
+   */
+  tfr_count?: number | null;
+  /**
+   * The NOTAM ids of the TFRs the route crosses while they are in force.
+   */
+  crossed: string[];
+}
+export interface GonogoRouteFiguresAnswer {
+  least_margin_gal: number | null;
+  required_gal: number | null;
+  reserve_min: number | null;
+  tfrs_in_force: string[];
+  tfrs_near: number;
 }
 export interface GonogoRunwayChecksInput {
   aircraft?: {
@@ -8234,6 +8654,18 @@ export interface InFlightInput {
       }[]
     | null;
   fuel_start_gal?: number | null;
+  /**
+   * What the tanks are filled to at a fuel stop; left out, fuel_start_gal.
+   */
+  fuel_full_gal?: number | null;
+  /**
+   * The airplane's start and taxi allowance, taken off at the start and at each fuel stop; left out where its profile gives none, and then nothing is taken off (taxi_counted false), never another airplane's figure.
+   */
+  taxi_fuel_gal?: number | null;
+  /**
+   * The points (indices into points) the plan refuels at: the stops the planner's totals' hops begin at.
+   */
+  refuel_at?: number[] | null;
   now_s?: number | null;
 }
 export interface InspectionsDueInput {
@@ -9086,10 +9518,17 @@ export interface NavLogLeg {
   fuel_gal?: number | null;
   tas_kt?: number | null;
   fuel_burn_gph?: number | null;
+  /**
+   * The power flown; null where the profile names no cruise power (no power model: its TAS and burn as given at every altitude, no other airplane's power assumed).
+   */
   power_pct?: number | null;
   oat_c?: number | null;
   density_altitude_ft?: number | null;
   climb_min?: number | null;
+  /**
+   * True on a leg with climb minutes where the profile gives no climb fuel flow: the climb's gallons are not counted in its fuel, for the app to ask for the figure (no multiple of the cruise burn is assumed).
+   */
+  climb_fuel_unknown?: boolean | null;
   /**
    * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
    */
@@ -9151,10 +9590,17 @@ export interface NavLogLeg1 {
   fuel_gal?: number | null;
   tas_kt?: number | null;
   fuel_burn_gph?: number | null;
+  /**
+   * The power flown; null where the profile names no cruise power (no power model: its TAS and burn as given at every altitude, no other airplane's power assumed).
+   */
   power_pct?: number | null;
   oat_c?: number | null;
   density_altitude_ft?: number | null;
   climb_min?: number | null;
+  /**
+   * True on a leg with climb minutes where the profile gives no climb fuel flow: the climb's gallons are not counted in its fuel, for the app to ask for the figure (no multiple of the cruise burn is assumed).
+   */
+  climb_fuel_unknown?: boolean | null;
   /**
    * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
    */
@@ -9266,10 +9712,17 @@ export interface NavLogLeg2 {
   fuel_gal?: number | null;
   tas_kt?: number | null;
   fuel_burn_gph?: number | null;
+  /**
+   * The power flown; null where the profile names no cruise power (no power model: its TAS and burn as given at every altitude, no other airplane's power assumed).
+   */
   power_pct?: number | null;
   oat_c?: number | null;
   density_altitude_ft?: number | null;
   climb_min?: number | null;
+  /**
+   * True on a leg with climb minutes where the profile gives no climb fuel flow: the climb's gallons are not counted in its fuel, for the app to ask for the figure (no multiple of the cruise burn is assumed).
+   */
+  climb_fuel_unknown?: boolean | null;
   /**
    * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
    */
@@ -9844,7 +10297,10 @@ export interface PerformanceClimbInput {
 }
 export interface PerformanceClimbAnswer {
   minutes: number;
-  gallons: number;
+  /**
+   * Null where the profile gives no climb fuel flow: not known, never a multiple of the cruise burn.
+   */
+  gallons: number | null;
 }
 export interface PerformanceCruiseInput {
   profile: NavLogProfile;
@@ -9854,7 +10310,10 @@ export interface PerformanceCruiseInput {
 export interface PerformanceCruiseAnswer {
   tas_kt: number;
   fuel_burn_gph: number;
-  power_pct: number;
+  /**
+   * Null where the profile names no cruise power: the TAS and burn as given, no power model.
+   */
+  power_pct: number | null;
   density_altitude_ft: number;
 }
 export interface PilotCurrencyInput {
@@ -11125,6 +11584,26 @@ export interface RegionOfInput {
   lat: number;
   lon: number;
 }
+export interface RegionsAheadInput {
+  lat: number;
+  lon: number;
+  /**
+   * The track over the ground, degrees true; null or left out where there is none (standing still), and only the route is looked along.
+   */
+  track_deg?: number | null;
+  /**
+   * The route's line, [lat, lon] points in the order flown; left out, none.
+   */
+  route?: [number, number][] | null;
+  /**
+   * How far along the track and the route to look, nm: for the alerts ahead, the groundspeed over their five minutes.
+   */
+  look_ahead_nm: number;
+  /**
+   * Either side of each line, nm; 1 where left out.
+   */
+  pad_nm?: number | null;
+}
 export interface RegisteredProfileInput {
   manufacturer?: string | null;
   model?: string | null;
@@ -11346,8 +11825,15 @@ export interface RouteOption {
   ground_min: number;
   fuel_gal: number | null;
   landings: number;
+  /**
+   * The hazards it crosses, indices into hazards, in the order flown: what closes a cell, and the restricted, MOA, warning and alert areas it is flown through.
+   */
   crosses: number[];
   marginal: number[];
+  /**
+   * The card's one warning, the worst it crosses, in the engine's words: a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where it crosses nothing.
+   */
+  warning?: string | null;
   bands: RouteOptionsBand[];
   tail_kt: number;
   floor_ft: number;
@@ -11378,6 +11864,9 @@ export interface RouteOptionsAlong {
  * via the `definition` "RouteOptionsHazard".
  */
 export interface RouteOptionsHazard {
+  /**
+   * What it is: prohibited, tfr, storm, terrain, sigmet, weather, marginal or fuel; or a special-use area a way is flown through and told of (AIM 3-4): restricted, moa, warning or alert.
+   */
   kind: string;
   name: string;
 }
@@ -11393,12 +11882,18 @@ export interface RouteOptionsFrameAnswer {
   cols: number;
   cell_deg: number;
   per_cell: number;
+  /**
+   * The highest VFR cruising altitude either way under the ceiling (the lower of the two), over which a cell's ground is closed where the ceiling is known.
+   */
   top_ft: number;
   /**
    * @minItems 2
    * @maxItems 2
    */
   window: [number, number];
+  /**
+   * Every VFR cruising altitude from 3,500 ft to the airplane's ceiling under 18,000 ft (none known: 17,500), the winds aloft wanted at each: each way tries its own half of 91.159 among them, so westbound reaches 12,500 under a 13,000 ft ceiling.
+   */
   altitudes_ft: number[];
   lowest_cruise_ft: number;
   /**
@@ -11431,6 +11926,12 @@ export interface RoutePositionInput {
       }[]
     | null;
 }
+export interface RouteWayWarningInput {
+  /**
+   * The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
+   */
+  kinds: string[];
+}
 export interface RunwayCalmInput {
   wind: {
     end?: string | null;
@@ -11459,7 +11960,19 @@ export interface RunwayEndFitInput {
   } | null;
   runway: Runway;
   end?: {
+    /**
+     * The end's ident: a landing reads that end's displaced threshold and LDA from the runway's ends where the end does not send its own.
+     */
+    ident?: string | null;
     heading_true_deg?: number | null;
+    /**
+     * The threshold's displacement from the runway's end, feet (NASR APT_RWY_END). A landing on this end has the runway past it (AIM 2-3-3); a takeoff has the whole length.
+     */
+    displaced_threshold_ft?: number | null;
+    /**
+     * The landing distance available the airport declares for this end, feet (AC 150/5300-13B, declared distances); where given, a landing is judged against it.
+     */
+    lda_ft?: number | null;
   } | null;
   wind?: {
     dir_true_deg?: number | null;
@@ -11518,6 +12031,15 @@ export interface RunwayEndsTrafficInput {
    * Ends' keys flown with right traffic.
    */
   right?: string[] | null;
+}
+export interface RunwayHardSurfaceInput {
+  /**
+   * NASR APT_RWY's SURFACE_TYPE_CODE (ASPH, CONC, TURF, ASPH-TURF ...); null or "" for none.
+   */
+  surface?: string | null;
+}
+export interface RunwayHardSurfaceAnswer {
+  hard: boolean;
 }
 export interface RunwayWithWindsInput {
   runways?:
@@ -11867,7 +12389,11 @@ export interface StripFuelAnswer {
   required_gal: number | null;
   short: {
     /**
-     * "C81 → KMSN"; "" for a route with no stops.
+     * The flight's index in `hops`, whose two ends an app names with its own point names (a pilot's own point is "@lat,lon" in the idents); null for a route with no stops.
+     */
+    hop: number | null;
+    /**
+     * The flight's idents as sent, "C81 → KMSN"; "" for a route with no stops. A pilot's own point shows here as its raw "@lat,lon": name the ends from `hop` instead.
      */
     name: string;
     short_gal: number;
@@ -11896,6 +12422,82 @@ export interface SunDownInput {
    * UNIX seconds.
    */
   at_s: number;
+}
+export interface SurfaceAirspaceInput {
+  /**
+   * The field's elevation, feet MSL (NASR APT_BASE ELEV).
+   */
+  elevation_ft?: number | null;
+  volumes: {
+    class: "B" | "C" | "D" | "E";
+    floor_ft?: number | null;
+    floor_ref: "SFC" | "AGL" | "MSL";
+    /**
+     * NASR's WKHR_CODE: H24, NOTAM or RMK.
+     */
+    hours?: string | null;
+  }[];
+}
+export interface SurfaceAirspaceAnswer {
+  class: "B" | "C" | "D" | "E" | "G";
+  part_time: boolean;
+  /**
+   * The class at other times where it is part-time; null where it is not.
+   */
+  otherwise: ("C" | "D" | "E" | "G") | null;
+  /**
+   * That class is part-time too: G at the times neither is in effect.
+   */
+  otherwise_part_time: boolean;
+}
+export interface SurfaceHoursInput {
+  /**
+   * NASR CLS_ARSP AIRSPACE_HRS as sent.
+   */
+  hours?: string | null;
+  year: number;
+  /**
+   * The field's local month, 1-12.
+   */
+  month: number;
+  day: number;
+  /**
+   * The field's local weekday, Monday 0 to Sunday 6.
+   */
+  weekday: number;
+  /**
+   * Minutes since the field's local midnight now.
+   */
+  minute: number;
+  /**
+   * The field's offset from UTC now, minutes (UTC-6 is -360).
+   */
+  utc_offset_min: number;
+  /**
+   * Whether the field keeps daylight saving time now.
+   */
+  dst?: boolean | null;
+}
+export interface SurfaceHoursAnswer {
+  known: boolean;
+  /**
+   * The class at other times, as the line names it.
+   */
+  other: ("B" | "C" | "D" | "E" | "G") | null;
+  days: {
+    weekday: number;
+    spans:
+      | {
+          from: number;
+          to: number;
+        }[]
+      | null;
+  }[];
+  in_force: boolean | null;
+  change: {
+    at: number;
+    next_day: boolean;
+  } | null;
 }
 export interface TafWindowInput {
   fcsts: TafPeriod[];
@@ -12082,6 +12684,10 @@ export interface TfrReadAnswer {
    */
   what: string;
   /**
+   * The rule it is issued under in words with its section, the FAA's bare number said as the regulation: "Special security instructions, 14 CFR 99.7"; one it does not know as given, in sentence case; null where none is given.
+   */
+  rule: string | null;
+  /**
    * "3,500 to 18,000 ft MSL, 4.8 nm east of the field"; null where neither is known.
    */
   where: string | null;
@@ -12168,6 +12774,51 @@ export interface TurbulenceCategoryInput {
 }
 export interface UnderwayInput {
   speed_kt?: number | null;
+}
+export interface UsualBaseInput {
+  /**
+   * The airplane's past flights, any order; each field one identifier, as the host names it.
+   */
+  flights: {
+    /**
+     * The field it took off from; null where not known.
+     */
+    origin?: string | null;
+    /**
+     * The field it landed at; null where not known.
+     */
+    destination?: string | null;
+    /**
+     * Whether it was heard landing: a destination not landed at is no end.
+     */
+    landed?: boolean;
+  }[];
+}
+export interface UsualBaseAnswer {
+  /**
+   * The base; null where the flights do not show one clearly.
+   */
+  ident: string | null;
+  /**
+   * The field most of the ends are at (the first to reach the count, ties too); null with no ends.
+   */
+  most: string | null;
+  /**
+   * How many of the ends are at `most`.
+   */
+  most_ends: number;
+  /**
+   * All the takeoffs and landings counted.
+   */
+  ends: number;
+  /**
+   * The fewest ends at a field for it to be the base.
+   */
+  min_ends: number;
+  /**
+   * The least share of all the ends at a field for it to be the base.
+   */
+  min_share: number;
 }
 export interface VelocityTrackInput {
   velocities: {

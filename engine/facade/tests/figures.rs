@@ -435,7 +435,7 @@ fn the_strip_says_the_fuel_required_to_the_next_landing() {
         {"departure": "KMSN", "destination": "KDLH", "fuel_required_gal": 29.6, "fuel_margin_gal": -3.5}]});
     let a = ask("strip_fuel", route.clone());
     assert_eq!(a["required_gal"], json!(20.4));
-    assert_eq!(a["short"], json!([{"name": "KMSN → KDLH", "short_gal": 3.5}]));
+    assert_eq!(a["short"], json!([{"hop": 1, "name": "KMSN → KDLH", "short_gal": 3.5}]));
     // The second flight, 10 gal burnt; never below nothing.
     let mut flying = route.clone();
     flying["hop"] = json!(1);

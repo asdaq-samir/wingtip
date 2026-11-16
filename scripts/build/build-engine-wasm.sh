@@ -9,7 +9,7 @@
 #   scripts/build/build-engine-wasm.sh
 #
 # In Docker, so the bytes are the same on the owner's Mac and on GitHub's
-# runner: the Rust image pinned by digest (1.99.1, linux/amd64), the
+# runner: the Rust image pinned by digest (.tool-versions' rust, linux/amd64), the
 # workspace mounted at the same path, a fresh target directory, and
 # Cargo.lock as committed (--locked). The rustc that builds it is the
 # only thing that makes the code, and the paths it writes into panic
@@ -27,7 +27,7 @@ here=$(cd "$(dirname "$0")/../.." && pwd)
 # Docker Desktop's CLI, where a shell's PATH lacks it (an agent's, a
 # launchd job's). The Rust is all in the container: no cargo here.
 command -v docker >/dev/null || PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin
-image=${RUST_IMAGE:-rust:1.99-slim-trixie@sha256:f6c4a35d21dbb3c89d7a8d056c193e94fc09037f2b58dd858b09c39a47dd02d7}
+image=${RUST_IMAGE:-rust:1.100-slim-trixie@sha256:e9d95b74296f7126a83ae3d041aeaba1ff4c478f13abc5cc034fcf7c131c3d4a}
 binaryen=version_133
 binaryen_sha256=2dc9c7813f5375db93d96ead4b78222fcc3e2677bbb832297af4797782a37489
 out=apps/web/src/lib/engine/wingtip-engine.wasm

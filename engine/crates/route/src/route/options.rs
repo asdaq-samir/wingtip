@@ -58,10 +58,12 @@ pub mod fuel;
 pub mod grid;
 pub mod naming;
 pub mod read;
+pub mod special_use;
 pub mod stops;
 pub mod terrain;
 pub mod ways;
 pub mod words;
+pub mod wrap;
 
 use self::answer::{along_json, ints, path_json, strings, way_json};
 use self::ask::{Ask, Field, Reader};
@@ -320,7 +322,10 @@ fn named(grid: &Grid, mut found: Vec<Way>) -> Vec<Way> {
         best
     };
     let fastest = least(&|w| (minutes(w), 0.0, 0.0));
-    let weather = least(&|w| (w.crosses.iter().filter(|h| !is_fuel(h)).count() as f64, w.marginal.len() as f64, minutes(w)));
+    // The best weather's: what it crosses of the weather and the closed
+    // cells, not the special-use areas it is told of (special_use.rs).
+    let not_weather = |h: &&i64| is_fuel(h) || special_use::is_special_use(&grid.hazards[**h as usize].kind);
+    let weather = least(&|w| (w.crosses.iter().filter(|h| !not_weather(h)).count() as f64, w.marginal.len() as f64, minutes(w)));
     let fewest = least(&|w| (w.landings as f64, minutes(w), 0.0));
     let best = [("fastest", fastest), ("weather", weather), ("stops", fewest)];
     for (i, w) in found.iter_mut().enumerate() {
@@ -351,8 +356,13 @@ fn read_grid(a: &Ask, unchecked: &mut Vec<String>) -> Result<(Grid, Vec<f64>), S
     let ceiling = LEGAL_CEILING_FT.max(a.min_ceiling_ft.unwrap_or(0.0));
     let visibility = LEGAL_VISIBILITY_SM.max(a.min_visibility_sm.unwrap_or(0.0));
     let mut grid = Grid::new(start, end, &via(a));
+    // No ceiling known (no airplane, or none in its profile): no ground
+    // closed on it, and the pilot told (the owner, 2026-11-09).
+    if a.profile.ceiling_ft.is_none() {
+        unchecked.push("service ceiling".into());
+    }
     match &a.terrain_ft {
-        Some(h) => read::ground(&mut grid, h, top)?,
+        Some(h) => read::ground(&mut grid, h, a.profile.ceiling_ft.map(|_| top))?,
         // The tiles not to be had: the ways offered over level ground, and
         // the pilot told.
         None => unchecked.push("terrain".into()),
@@ -383,21 +393,27 @@ fn read_grid(a: &Ask, unchecked: &mut Vec<String>) -> Result<(Grid, Vec<f64>), S
         None => unchecked.push("G-AIRMETs".into()),
     }
     match &a.sua {
-        Some(s) => read::special_use(&mut grid, s),
+        Some(s) => special_use::special_use(&mut grid, s),
         None => unchecked.push("special-use airspace".into()),
     }
     match &a.tfrs {
         Some(t) => read::tfrs(&mut grid, t),
         None => unchecked.push("TFRs".into()),
     }
-    // East is least: magnetic = true - variation east, the grid's middle's
-    // (the World Magnetic Model, today's).
-    let mid_lat = grid.lats.iter().sum::<f64>() / grid.rows as f64;
-    let mid_lon = grid.lons.iter().sum::<f64>() / grid.cols as f64;
-    let variation = wmm::declination(mid_lat, mid_lon, naming::decimal_year(a.now_s));
-    // With no airplane the ways are the route's own, in still air.
+    // East is least: magnetic = true - variation east, each cell's (the
+    // World Magnetic Model, today's), read every half degree: it changes
+    // along a long east-west way, and so may its half of 91.159.
+    let year = naming::decimal_year(a.now_s);
+    let read = RefCell::new(std::collections::HashMap::new());
+    let variation = |lat: f64, lon: f64| {
+        let at = ((lat * 2.0).round() as i64, (lon * 2.0).round() as i64);
+        *read.borrow_mut().entry(at).or_insert_with(|| wmm::declination(at.0 as f64 / 2.0, at.1 as f64 / 2.0, year))
+    };
+    // With no airplane the ways are the route's own, in still air. Each
+    // way tries its own half's altitudes to the airplane's top.
     let winds = if a.profile.airplane { &a.winds[..] } else { &[] };
-    let gs = read::groundspeeds(&grid, winds, &read::cruising_altitudes(top), a.profile.tas_kt.max(1.0), variation);
+    let altitudes = read::cruising_altitudes(read::cruise_top_ft(a.profile.ceiling_ft));
+    let gs = read::groundspeeds(&grid, winds, &altitudes, a.profile.tas_kt.max(1.0), &variation);
     Ok((grid, gs))
 }
 
@@ -418,6 +434,14 @@ fn options(a: &Ask) -> Result<String, String> {
     if a.fields.is_none() {
         unchecked.push("fuel fields".into());
     }
+    // An airplane whose usable fuel or start and taxi allowance is not
+    // known: its fuel stops are not worked out, nor said to be needed or
+    // not, and none is assumed (the owner, 2026-11-09).
+    if a.profile.airplane && a.profile.usable_gal.is_none() {
+        unchecked.push("fuel".into());
+    } else if a.profile.airplane && a.profile.taxi_gal.is_none() {
+        unchecked.push("start and taxi fuel".into());
+    }
     // Not the route's own fields: a landing the pilot makes is not a stop
     // to add.
     let skip: Vec<&str> =
@@ -426,8 +450,8 @@ fn options(a: &Ask) -> Result<String, String> {
     let fuel = Fuel {
         tas_kt: a.profile.tas_kt,
         burn_gph: a.profile.burn_gph,
-        usable_gal: a.profile.usable_gal,
-        taxi_gal: a.profile.taxi_gal,
+        usable_gal: a.profile.usable_gal.unwrap_or(0.0),
+        taxi_gal: a.profile.taxi_gal.unwrap_or(0.0),
         reserve_gal,
         fields: table.as_deref(),
         food: a.food,
@@ -484,13 +508,13 @@ fn options(a: &Ask) -> Result<String, String> {
         if i > 0 {
             out.push(',');
         }
-        way_json(&mut out, w, a.profile.airplane);
+        way_json(&mut out, w, a.profile.airplane, &grid.hazards);
     }
     out.push_str("],\"own\":");
-    way_json(&mut out, &mine, a.profile.airplane);
+    way_json(&mut out, &mine, a.profile.airplane, &grid.hazards);
     out.push_str(",\"filed\":");
     match &filed {
-        Some(w) => way_json(&mut out, w, a.profile.airplane),
+        Some(w) => way_json(&mut out, w, a.profile.airplane, &grid.hazards),
         None => out.push_str("null"),
     }
     // The pilot's own route as it is flown, end to end, for the map to
@@ -548,7 +572,7 @@ fn options(a: &Ask) -> Result<String, String> {
         out.push_str(",\"lat\":");
         json::number(&mut out, *lat);
         out.push_str(",\"lon\":");
-        json::number(&mut out, *lon);
+        json::number(&mut out, wrap::normal(*lon));
         out.push('}');
     }
     out.push_str("]}");
@@ -580,7 +604,7 @@ fn frame(a: &Ask) -> String {
     out.push(',');
     json::number(&mut out, window.1);
     out.push_str("],\"altitudes_ft\":[");
-    for (i, alt) in read::cruising_altitudes(top).iter().enumerate() {
+    for (i, alt) in read::cruising_altitudes(read::cruise_top_ft(a.profile.ceiling_ft)).iter().enumerate() {
         if i > 0 {
             out.push(',');
         }
@@ -614,8 +638,10 @@ fn frame(a: &Ask) -> String {
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let r = Reader { name };
     match name {
-        "route_options_frame" => Ok(frame(&r.ask(v)?)),
-        "route_options" => options(&r.ask(v)?),
+        // Within 180 degrees of the departure's longitude (wrap.rs): the
+        // frame's lon0 and boxes may pass -180 or 180, the answer's do not.
+        "route_options_frame" => Ok(frame(&wrap::unwrapped(r.ask(v)?))),
+        "route_options" => options(&wrap::unwrapped(r.ask(v)?)),
         "terrain_way_frame" | "terrain_way_round" => terrain::call(name, v),
         "fuel_stops" | "fields_along" => fuel::call(name, v),
         "class_b_entered" | "class_b_detours" => classb::call(name, v),
@@ -642,42 +668,4 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn a_way(kind: &str, air_min: f64, stops: &[&str]) -> Way {
-        Way {
-            kind: kind.into(),
-            kinds: vec![kind.into()],
-            title: title(kind).into(),
-            stops: stops.iter().map(|s| s.to_string()).collect(),
-            fuel: Vec::new(),
-            food: Vec::new(),
-            path: Vec::new(),
-            distance_nm: 0.0,
-            air_min,
-            ground_min: 0.0,
-            fuel_gal: 0.0,
-            landings: 0,
-            crosses: Vec::new(),
-            marginal: Vec::new(),
-            along: Along { bands: Vec::new(), tail_kt: 0.0, floor_ft: 0, water_nm: 0 },
-        }
-    }
-
-    #[test]
-    fn the_fastest_is_the_way_that_is_fastest_whatever_search_found_it() {
-        // Two ways a search may find, the one called fastest the slower: the
-        // name goes to the quicker (KSEA to KSFO's "fastest" was 110
-        // minutes slower than the best weather's, out over the Pacific,
-        // 2026-10-25).
-        let grid = Grid::new((0.0, 0.0), (0.0, 4.0), &[]);
-        let found = named(&grid, vec![a_way("fastest", 600.0, &["A"]), a_way("weather", 490.0, &["B"])]);
-        assert_eq!(found.len(), 1);
-        assert_eq!(found[0].stops, vec!["B".to_string()]);
-        assert_eq!(found[0].kind, "weather");
-        let mut kinds = found[0].kinds.clone();
-        kinds.stable_sort();
-        assert_eq!(kinds, vec!["fastest", "stops", "weather"]);
-    }
-}
+mod tests;

@@ -38,7 +38,7 @@ final class ClearanceLookup {
         } catch {
             // No signal: found by the engine among the places of the
             // regions kept for the air, SIDs and STARs left as said.
-            if let offline = Self.offline(heard, near: nearPoints, dep: dep, stops: stops, dest: dest) {
+            if let offline = await Self.offline(heard, near: nearPoints, dep: dep, stops: stops, dest: dest) {
                 found = offline.found
                 foundFor = heard
                 problem = "No signal: places found among the regions kept for the air."
@@ -50,7 +50,10 @@ final class ClearanceLookup {
 
     /// What the engine hears in `heard` among the regions kept for the air
     /// (`clearance_hear`); nil with none kept or where it cannot read it.
-    static func offline(_ heard: String, near: [(Double, Double)], dep: String, stops: [String], dest: String) -> Engine.Heard? {
+    /// Off the main actor, as CyclePacks' own reads are: every kept pack is
+    /// read, which stalled the screen while a clearance was read in flight
+    /// (IOS-22, old N12b).
+    @concurrent nonisolated static func offline(_ heard: String, near: [(Double, Double)], dep: String, stops: [String], dest: String) async -> Engine.Heard? {
         let packs = CyclePacks.shared.keptPacks()
         guard !packs.isEmpty else { return nil }
         return Engine.hear(heard, tail: nil, packs: packs, near: near, dep: dep, stops: stops, dest: dest)

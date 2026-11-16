@@ -43,9 +43,9 @@ MEF's measurement buffer: a plan could cross a tower in a town at 100 ft
 over its top, where 91.119(b) asks 1,000.
 
 Like a sectional's Maximum Elevation Figure it is the highest of those,
-rounded up to the next 100 ft, but computed continuously along the actual
-route line (every cell of wingtip.ground_grid it crosses, else every
-SAMPLE_INTERVAL_NM), not gridded to a fixed 30-minute quadrangle, so it
+rounded up to the next 100 ft, but computed continuously under each leg
+flown, fix to fix (every cell of wingtip.ground_grid it crosses, else
+every SAMPLE_INTERVAL_NM), not gridded to a fixed 30-minute quadrangle, so it
 doesn't dilute a single tall feature across a whole quadrangle the way
 the printed chart figure does. It is what the planner suggests, never a
 limit: a pilot's own altitude under 91.119's minimum is flown with a
@@ -54,6 +54,7 @@ caution (the engine's floor_caution).
 
 import math
 import threading
+from itertools import pairwise
 from pathlib import Path
 
 import numpy as np
@@ -119,8 +120,28 @@ def floor_profile(
     breaks_nm: list,
     sample_interval_nm: float = SAMPLE_INTERVAL_NM,
     faa_cache_dir=DEFAULT_FAA_CACHE_DIR,
+    fixes: list | None = None,
 ) -> list:
-    """The MEF-style floor of each segment of the route, in feet MSL, with
+    """`_floors` of the route: with the nav log's `fixes`, each leg's own,
+    read under the leg flown from one fix to the next -- its ground and
+    the obstacles within the engine's corridor of its own course -- as
+    the IFR floor (wingtip.ifr) and the side view (wingtip.profile) read
+    them; `breaks_nm` is then not read. A leg off the direct line (a
+    dog-leg, a pass, a way round a Class B) took the direct line's ground,
+    a valley's floor for a leg over the ridge beside it (the aviation
+    audit's AV-2, 2026-11-14). Without them, the direct line split at
+    `breaks_nm`."""
+    if fixes and len(fixes) > 2:
+        return [
+            floor
+            for a, b in pairwise(fixes)
+            for floor in _floors(tuple(a), tuple(b), [0.0, geo.distance_nm(*a, *b)], sample_interval_nm, faa_cache_dir)
+        ]
+    return _floors(route_start, route_end, breaks_nm, sample_interval_nm, faa_cache_dir)
+
+
+def _floors(route_start: tuple, route_end: tuple, breaks_nm: list, sample_interval_nm: float, faa_cache_dir) -> list:
+    """The MEF-style floor of each segment of the line, in feet MSL, with
     the lowest ground under it and 91.119's own minimum (the engine's
     `vfr_floors` answer, a dict a segment): one per consecutive pair
     of `breaks_nm` (along-track distances from route_start, ascending,

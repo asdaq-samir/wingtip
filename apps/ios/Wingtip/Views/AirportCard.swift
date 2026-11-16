@@ -1,35 +1,39 @@
 import SwiftUI
 
-/// A field's card, built as Apple's Maps builds a place card on iOS 27
-/// (the owner's screenshot, 2026-11-09): the head (AirportPlaceHead) -- at
-/// full height the field's picture fading in, then its name, what and
-/// where it is, the four actions and the four facts -- the plan through
-/// it, the picture tiles, then four tabs: Info (the radio, the lights,
-/// what is on the ground), Weather, Runways and Charts; at its foot the
-/// system's floating glass toolbar (AirportCardToolbar).
+/// A field's card, laid out after Apple Maps' place card (the owner's C1,
+/// 2026-11-14, sending Maps' Teriyaki Madness card: "How can we make our
+/// airport card more similar to this? Can tabs be similar to that floating
+/// buttons group at the bottom?"; the web's PlaceCard): the head
+/// (AirportPlaceHead) -- at full height the field's picture fading in,
+/// then its name, "Towered" or "Non-towered" and where, the four actions
+/// and the sideways strip of facts -- then the pictures as large tiles
+/// over every tab (AirportTiles), then the tab's page; its tabs Info,
+/// Weather, Runways and Charts in the floating glass bar at the card's
+/// foot (CardTabBar), out of sight at the pill. Share is at the bar's
+/// start, the close at its end, as every card's head.
 struct AirportCard: View {
     let ident: String
     @Environment(Plan.self) private var plan
     @Environment(Verdict.self) private var verdict
-    @Environment(OwnShip.self) private var ownShip
-    /// Back to the plan once an action has set it (PlanSheet).
-    @Environment(\.showPlan) private var showPlan
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.cardExpanded) private var expanded
+    @Environment(\.cardAtPill) private var atPill
+    @Environment(\.lookAccent) private var accent
     @State private var place: AirportPlace?
     /// The field's live reports (D-ATIS, RVR, programs), the tabs' own.
     @State private var live = AirportLive()
     @State private var problem: String?
     @State private var notFound = false
     @State private var photos: AirportPhotos?
+    /// NASR's fuels for sale, for the facts' Fuel.
+    @State private var fuel: [String]?
     /// The field's own NOTAMs and the TFRs near it, read by the engine and
-    /// marked on what they address (FieldNotams), for the Info tab's list,
-    /// the badges and the tile's count.
+    /// marked on what they address (FieldNotams), for the Info tab's list
+    /// and the badges.
     @State private var notams = FieldNotams()
     @State private var tab: CardTab = .info
     @State private var shown: ShownPicture?
-    /// Scrolled past the head: its name in the bar and the section picker
-    /// pinned under it (the owner's scrolling rule, 2026-11-10).
+    /// Scrolled past the head: its name in the bar (the owner's scrolling
+    /// rule, 2026-11-10).
     @State private var pinned = false
     @Environment(AirportShelf.self) private var shelf
 
@@ -39,37 +43,21 @@ struct AirportCard: View {
         var id: String { rawValue }
     }
 
-    /// The card's sections, in the list under the tiles and pinned under
-    /// the bar once the head has scrolled away.
-    private var sectionPicker: some View {
-        Picker("Section", selection: $tab) {
-            ForEach(CardTab.allCases) { Text($0.rawValue).tag($0) }
-        }
-        .tabsPicker()
-    }
-
     var body: some View {
         List {
             if let place {
                 Section {
-                    AirportPlaceHead(place: place, photos: photos, shown: $shown)
+                    AirportPlaceHead(place: place, photos: photos, shown: $shown, fuel: fuel)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
-                AirportReadyCard(ident: place.ident)
-                Section {
-                    AirportTiles(place: place, photos: photos, shown: $shown, tab: $tab, notams: notams.ranked)
-                }
-                Section {
-                    sectionPicker
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets())
-                        .opacity(pinned ? 0 : 1)
-                }
+                Section { AirportTiles(place: place, photos: photos, shown: $shown) }
                 switch tab {
-                case .info: AirportInfoTab(place: place)
-                case .weather: AirportWeatherTab(place: place)
+                case .info:
+                    AirportReadyCard(ident: place.ident)
+                    AirportInfoTab(place: place)
+                case .weather: AirportWeatherTab(place: place, refresh: refresh)
                 case .runways: AirportRunwaysTab(place: place)
                 case .charts: AirportChartsTab(place: place, shown: $shown)
                 }
@@ -97,20 +85,15 @@ struct AirportCard: View {
         .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > 180 } action: { _, past in
             if past != pinned { pinned = past }
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if pinned, place != nil {
-                sectionPicker
-                    .padding(.horizontal, WingtipSpace.lg)
-                    .padding(.vertical, WingtipSpace.xs)
-                    .background(.bar)
-            }
-        }
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
         .toolbar {
             if let place {
-                AirportCardToolbar(place: place, plan: plan, fix: ownShip.fix) {
-                    if let showPlan { showPlan() } else { dismiss() }
+                ToolbarItem(placement: .topBarLeading) {
+                    ShareLink(item: URL(string: "https://\(Config.host)/app/plan?place=\(place.ident)")!, subject: Text(place.name)) {
+                        Label("Share", systemImage: WingtipIcon.share)
+                    }
                 }
+                CardTabBar(tab: $tab, items: Self.tabs(place), atPill: atPill, accent: accent)
             }
         }
         .environment(live)
@@ -118,16 +101,17 @@ struct AirportCard: View {
         .navigationDestination(item: $notams.opened) { NotamsOnPage(notams: notams, open: $0) }
         .onChange(of: place) { _, fresh in notams.attach(fresh) }
         .fullScreenCover(item: $shown) { PictureViewer(picture: $0) }
-        .refreshable { async let field: Void = load(); async let notices: Void = notams.load(ident, force: true); await live.loadDatis(ident); await live.loadRvr(ident, minimumSm: verdict.minimums.visibilitySm); await field; await notices } // pulled: the field's weather, the ATIS and the RVR again
         // The live reports, asked again while the card is open; the RVR
         // judged against the pilot's own visibility minimum.
         .task(id: "\(ident)|\(verdict.minimums.visibilitySm ?? -1)") { await live.watch(ident, minimumSm: verdict.minimums.visibilitySm) }
         .task(id: ident) {
             // The pictures are the card's look, not a figure: none where they can't be had.
             async let pictures = try? Planner.photos(ident)
+            async let services = try? Planner.services(ident)
             async let notices: Void = notams.load(ident)
             await load()
             photos = await pictures
+            fuel = await services?.fuelTypes
             await notices
             notams.attach(place)
             // The weather a report's freshness: asked again every five
@@ -138,6 +122,39 @@ struct AirportCard: View {
                 if let fresh = try? await KeptForAir.answer(.airports, key: ident, fetch: { try await Planner.place(ident) }) { place = fresh.value }
             }
         }
+    }
+
+    /// The tabs in the bar, each with why to open it beside its name:
+    /// Weather the field's own report's category (the engine's
+    /// flight_category, as the planner sends it), said for VoiceOver, as
+    /// the facts' badge shows it; Charts its count, none at 0.
+    static func tabs(_ place: AirportPlace) -> [CardTabBar<CardTab>.Item] {
+        CardTab.allCases.map { tab in
+            switch tab {
+            case .weather: .init(tab: tab, title: tab.rawValue, hint: place.metar?.flightCategory)
+            case .charts: .init(tab: tab, title: tab.rawValue, hint: chartCount(place).map(String.init), shown: true)
+            default: .init(tab: tab, title: tab.rawValue)
+            }
+        }
+    }
+
+    /// The charts the Charts tab lists: the d-TPP plates (the diagram's own
+    /// APD entry left out) and the diagram once; nil at 0.
+    static func chartCount(_ place: AirportPlace) -> Int? {
+        let count = (place.procedures ?? []).filter { $0.kind != "APD" }.count + (place.airportDiagramUrl != nil ? 1 : 0)
+        return count > 0 ? count : nil
+    }
+
+    /// The Weather tab's Refresh (no pull to refresh in a sheet, IOS-3;
+    /// rules.md: an airport card's refresh is in its Weather tab): the
+    /// field's weather, its NOTAMs, the ATIS and the RVR asked again.
+    private func refresh() async {
+        async let field: Void = load()
+        async let notices: Void = notams.load(ident, force: true)
+        await live.loadDatis(ident)
+        await live.loadRvr(ident, minimumSm: verdict.minimums.visibilitySm)
+        await field
+        await notices
     }
 
     private func load() async {
@@ -163,128 +180,6 @@ struct AirportCard: View {
         parts.queryItems = [URLQueryItem(name: "q", value: place.name)] + (place.address.map { [URLQueryItem(name: "address", value: $0)] }
             ?? [URLQueryItem(name: "ll", value: AirportWords.point(place.lat, place.lon))])
         return parts.url!
-    }
-}
-
-/// Weather: the report first, its age first of all, each figure with its
-/// glyph and the report as sent under them; for a field with no report,
-/// the weather modelled at it and the nearest station's report.
-struct AirportWeatherTab: View {
-    @Environment(ClearanceListener.self) private var listener
-    let place: AirportPlace
-
-    var body: some View {
-        if let metar = place.metar {
-            // Weather's layout: the takeaway, the TAF's periods, the
-            // modules and the reports as sent (FieldWeather).
-            FieldWeatherSection(place: place, metar: metar)
-        } else {
-            Section {
-                ReceiverReportRows(ident: place.ident, otherwise: place.weatherUnavailable == true ? "The weather service could not be reached" : "No weather station reports from this field")
-            }
-        }
-        // The National Weather Service's Gridded LAMP at the field for the
-        // hour (wingtip.glmp): planning guidance from a model, not a report.
-        if place.metar == nil, let modelled = place.modelledWeather {
-            Section("Modelled for \(AirportWords.date(modelled.validAt).map(Format.zulu) ?? modelled.validAt)") {
-                figure("cloud.sun", "Flight category", modelled.flightCategory, spoken: SpokenFigures.flightCategory(modelled.flightCategory))
-                // GLMP's most is 10 sm, as a METAR's "10SM" is.
-                figure("eye", "Visibility", modelled.visibilitySm >= 10 ? "10+ sm" : "\(AirportWords.plain(modelled.visibilitySm)) sm",
-                       spoken: modelled.visibilitySm >= 10 ? "ten statute miles or more" : SpokenFigures.statuteMiles(modelled.visibilitySm))
-                figure("cloud", "Ceiling", modelled.ceilingFt.map { Format.altitude($0) } ?? "None", spoken: modelled.ceilingFt.map(SpokenFigures.feet))
-            }
-        }
-        DigitalAtisSections()
-        if listener.canListen { AtisSection() } // heard on the iPhone or not offered
-        if place.metar == nil, let nearby = place.nearbyMetar {
-            Section("Nearest Report, \(Format.distance(nearby.distanceNm)) \(AirportWords.compassPoint(Double(nearby.bearingDeg)))") {
-                CardRow(title: nearby.ident, detail: nearby.metar.observedAt.flatMap { AirportWords.observed($0) }) {
-                    if let category = nearby.metar.flightCategory {
-                        Text(category).fontWeight(.semibold).accessibilityLabel(SpokenFigures.flightCategory(category))
-                    }
-                }
-                if let raw = nearby.metar.raw { Text(raw).font(.footnote.monospaced()).textSelection(.enabled) }
-            }
-        }
-    }
-
-    /// Listen to ATIS: one broadcast heard through the microphone
-    /// (ClearanceListener.hearBroadcast, the radio's recognizer), read by the
-    /// engine (Atis), and what matters at the hold-short line in one
-    /// line -- the runway in use and the altimeter -- with the figures
-    /// in a short table under it and the transcript folded away. A
-    /// failure is said in the row (ProblemLine), not an alert.
-    struct AtisSection: View {
-        @Environment(ClearanceListener.self) private var listener
-        @State private var listening = false
-        @State private var heard = ""
-        @State private var reading: Atis?
-        @State private var problem: String?
-        @State private var hearing: Task<Void, Never>?
-
-        var body: some View {
-            Section {
-                Button {
-                    if listening {
-                        listener.stop()
-                        return
-                    }
-                    listening = true
-                    problem = nil
-                    reading = nil
-                    heard = ""
-                    hearing = Task { @MainActor in
-                        let text = await listener.hearBroadcast { heard = $0 }
-                        listening = false
-                        guard let text else {
-                            problem = listener.problem ?? "Nothing could be heard."
-                            return
-                        }
-                        guard !text.isEmpty else {
-                            problem = "Nothing was heard. Tune the ATIS, hold the phone to the speaker and tap again."
-                            return
-                        }
-                        let read: Atis
-                        do { read = try Atis.read(text) } catch {
-                            problem = "The broadcast could not be read: \(error.localizedDescription)"
-                            return
-                        }
-                        reading = read
-                        if !read.heardAny { problem = "Nothing of a broadcast was heard in that." }
-                    }
-                } label: {
-                    CardRow(badge: RowBadge(systemImage: "dot.radiowaves.left.and.right", colour: Badge.weather),
-                            title: listening ? "Listening to the radio…" : "Listen to ATIS",
-                            detail: listening ? (heard.isEmpty ? "Tune the ATIS or AWOS and hold the phone to the speaker" : heard) : nil) {
-                        if listening { ProgressView() }
-                    }
-                }
-                .accessibilityLabel(listening ? "Stop listening" : "Listen to ATIS")
-                ProblemLine(problem)
-                if let reading, reading.heardAny {
-                    CardRow(title: reading.glance) {
-                        if let letter = reading.information { Text("Information \(letter)") }
-                    }
-                    ForEach(Array(reading.rows.enumerated()), id: \.offset) { _, row in
-                        LabeledContent(row.label, value: row.value)
-                    }
-                }
-                if let reading {
-                    DisclosureGroup("Transcript") {
-                        Text(reading.raw).font(.footnote.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
-                    }
-                }
-            }
-            .onDisappear { hearing?.cancel(); if listening { listener.stop() } }
-        }
-    }
-
-    /// One figure of the report; `spoken` is the figure as VoiceOver says
-    /// it (SpokenFigures), where "29.92 inHg" would be read as letters.
-    private func figure(_ symbol: String, _ title: String, _ value: String, spoken: String? = nil) -> some View {
-        CardRow(badge: RowBadge(systemImage: symbol, colour: Badge.weather), title: title) {
-            Text(value).fontWeight(.semibold).accessibilityLabel(spoken ?? value)
-        }
     }
 }
 

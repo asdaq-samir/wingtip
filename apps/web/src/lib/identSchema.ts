@@ -160,19 +160,34 @@ export const routeName = (dep: string, dest: string, stops: string[] = []) =>
 
 /** Points' own altitudes from the address, feet by ident -- "VPBNG:4500,
  *  KMSN:1900": a waypoint's flown to it, an airport's its pattern (the
- *  planner's `altitudes`). What is not one is left out, and so is a VFR
- *  altitude the engine does not allow (`altitude_allowed`: under Class A,
- *  14 CFR 71.33, 91.135; no lower than 500 ft, 91.119(c)). */
+ *  planner's `altitudes`). A point flown more than once keeps one a visit,
+ *  "VPBNG@2:5500" the second time the route is there (visitKey; the
+ *  planner's wingtip.own_altitude), a bare ident every visit. What is not
+ *  one is left out, and so is a VFR altitude the engine does not allow
+ *  (`altitude_allowed`: under Class A, 14 CFR 71.33, 91.135; no lower
+ *  than 500 ft, 91.119(c)). */
 export function altitudesOf(value: string | null | undefined): Record<string, number> {
   const out: Record<string, number> = {};
   for (const part of (value ?? "").split(",")) {
-    const [ident, feet] = part.split(":");
+    const [at, feet] = part.split(":");
+    const [ident, visit] = (at ?? "").split("@");
     const point = stopOf(ident),
       ft = Number(feet);
-    if (point && Number.isInteger(ft) && callEngine("altitude_allowed", { ft })) out[point] = ft;
+    const counted = visit === undefined || /^[1-9]\d{0,2}$/.test(visit);
+    if (point && counted && Number.isInteger(ft) && callEngine("altitude_allowed", { ft }))
+      out[visit === undefined ? point : visitKey(point, Number(visit))] = ft;
   }
   return out;
 }
+
+/** The key a point's own altitude is kept by in the address: its ident,
+ *  or at a point the route is at more than once, its `visit`'s, counted
+ *  from 1 ("VPBNG@2"), so a second visit's is not the first's (the web
+ *  audit's WEB-2). */
+export const visitKey = (ident: string, visit?: number) => (visit === undefined ? ident : `${ident}@${visit}`);
+
+/** The point a key of altitudesOf is for: "VPBNG@2" is VPBNG's. */
+export const pointOfKey = (key: string) => key.split("@")[0]!;
 
 /** Minutes on the ground at the route's stops, from the address's
  *  `ground` ("KJVL:45"): whole minutes, none to a day, by the stop's

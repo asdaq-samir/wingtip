@@ -62,8 +62,8 @@ export interface WorkspacePieces {
    *  row and top row put away and its foot grown (MapPanel's `flying`). */
   flying?: boolean;
   /** The sheet's two pages, Search (`bar` over `sidebar`) and FPL (`route`
-   *  over its own body), turned by the toggle on the sheet's top
-   *  (MapPanel's `pages`, PageToggle). */
+   *  under its bar, over its own body), turned by the toggle at their first
+   *  row's end (MapPanel's `pages`, PageToggle). */
   pages?: SheetPages;
 }
 

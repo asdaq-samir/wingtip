@@ -10,6 +10,7 @@ import { RunwayRow } from "../RunwayRow";
 import PatternRadio from "./PatternRadio";
 import { fieldPhases } from "../../lib/radio";
 import { useRunwayPicks } from "../../lib/useRunwayPicks";
+import { NO_FREQUENCIES, NO_RUNWAYS } from "../../../../lib/emptyWords";
 
 /**
  * The Brief's airports: a section for each field the flight leaves or
@@ -85,14 +86,14 @@ export default function AirportSections({
                     <FrequencyRow key={k} type={f.type} description={f.description} mhz={f.frequency_mhz} testId="airport-frequency" />
                   ))
                 ) : (
-                  <ListRow muted title={<>{info?.frequencies.length ? "None but those on the calls" : "No published frequencies"}</>} />
+                  <ListRow muted title={<>{info?.frequencies.length ? "None but those on the calls" : NO_FREQUENCIES}</>} />
                 )}
               </ListGroup>
               <ListGroup title={flown.size ? "Other runways" : "Runways"}>
                 {otherRunways.map((r, k) => (
                   <RunwayRow key={k} runway={r} />
                 ))}
-                {!info?.runways.length && <ListRow muted title="No published runway data" />}
+                {!info?.runways.length && <ListRow muted title={NO_RUNWAYS} />}
                 <PublicationRows
                   ident={ident}
                   diagram={info?.airport_diagram_url}

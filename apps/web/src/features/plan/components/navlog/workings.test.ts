@@ -49,6 +49,17 @@ describe("a leg worked out", () => {
     expect(w.climb!.min).toBeCloseTo(1.98, 1);
   });
 
+  test("with no climb fuel flow, the climb's fuel is missing, not nought (AV-8)", () => {
+    const w = workingsOf({ ...LEG, fuel_gal: 1.7, climb_fuel_unknown: true } as unknown as Leg)!;
+    expect(w.climb!.min).toBeCloseTo(1.98, 1);
+    expect(w.climb!.gal).toBeNull();
+  });
+
+  test("with no cruise power, the speed is the airplane's as given, still worked out", () => {
+    const w = workingsOf({ ...LEG, power_pct: null } as unknown as Leg)!;
+    expect(w.steps.find((s) => s.name === "True airspeed")!.sum).toBe("the airplane's cruise speed as given, at every altitude");
+  });
+
   test("a procedure's minutes are its own row, not the climb's", () => {
     // The same leg flown out by a pattern departure 3.4 nm and 2.3 min
     // longer than its line: 14.1 + 2.3 in the log, the climb still 2.
@@ -91,7 +102,7 @@ describe("a row flown all in the climb", () => {
   // The same leg climbed whole: the climb speed's own triangle in the same
   // wind (74 kt, 13.5 degrees left, 62 kt over the ground: the engine's
   // with_climbs), its time the miles at that speed and its fuel the
-  // climb's 10.5 gal/h, nothing added for a climb it already is.
+  // climb's 10.5 gph, nothing added for a climb it already is.
   const CLIMB = {
     ...LEG,
     tas_kt: 74,
@@ -107,7 +118,7 @@ describe("a row flown all in the climb", () => {
     const w = workingsOf(CLIMB, "climb")!;
     expect(w.phase).toBe("climb");
     expect(w.steps.find((s) => s.name === "True airspeed")).toMatchObject({ sum: "the airplane's climb speed", result: "74 kt" });
-    expect(w.steps.find((s) => s.name === "Fuel")?.sum).toContain("the climb's 10.5 gal/h");
+    expect(w.steps.find((s) => s.name === "Fuel")?.sum).toContain("the climb's 10.5 gph");
     expect(w.answers.ete).toBeCloseTo(CLIMB.ete_min!, 6);
     expect(w.climb).toBeNull();
   });

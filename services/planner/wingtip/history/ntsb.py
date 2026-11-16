@@ -54,15 +54,21 @@ DOCKET = "https://data.ntsb.gov/Docket/?NTSBNumber={ntsb_no}"
 _EADMS_ID = re.compile(r"^\d{8}(\d{4,})$")
 _N_BODY = re.compile(r"^[1-9][0-9A-Z]{0,4}$")
 _SCHEMA = """
-CREATE TABLE events (ev_id TEXT PRIMARY KEY, ntsb_no TEXT, date TEXT, city TEXT, state TEXT, country TEXT, highest_injury TEXT);
-CREATE TABLE aircraft (ev_id TEXT, aircraft_key TEXT, registration TEXT, phase TEXT, PRIMARY KEY (ev_id, aircraft_key));
+CREATE TABLE events (ev_id TEXT PRIMARY KEY, ntsb_no TEXT, date TEXT, city TEXT, state TEXT, country TEXT, highest_injury TEXT,
+    kind TEXT);
+CREATE TABLE aircraft (ev_id TEXT, aircraft_key TEXT, registration TEXT, phase TEXT, damage TEXT, PRIMARY KEY (ev_id, aircraft_key));
 CREATE INDEX aircraft_registration ON aircraft (registration);
 CREATE TABLE narratives (ev_id TEXT, aircraft_key TEXT, factual TEXT, final TEXT, cause TEXT, PRIMARY KEY (ev_id, aircraft_key));
 CREATE TABLE phases (phase_no TEXT PRIMARY KEY, words TEXT);
 """
 
 #: How many columns each case table has, as _SCHEMA makes them.
-_COLUMNS = {"events": 7, "aircraft": 4, "narratives": 5}
+_COLUMNS = {"events": 8, "aircraft": 5, "narratives": 5}
+#: The store's shape (PRAGMA user_version): ingest makes it again from
+#: avall.zip where the store on disk is of another (ingest.ntsb.due).
+#: 2 added the case's kind (events.ev_type) and the airplane's damage
+#: (aircraft.damage), for an airplane card's history, 2026-11-14.
+SCHEMA = 2
 
 Rows = Callable[[str], Iterable[dict]]
 
@@ -153,6 +159,11 @@ def _load(db: sqlite3.Connection, rows: Rows, known: dict[str, str], replace: bo
     aircraft were written."""
     meanings = _meanings(rows("eADMSPUB_DataDictionary"))
     injuries = meanings[("events", "ev_highest_injury")]
+    # The data dictionary's words for ev_type (ACC accident, INC incident)
+    # and aircraft.damage (DEST destroyed, SUBS substantial, MINR minor,
+    # NONE), the code itself where it has none.
+    kinds = meanings[("events", "ev_type")]
+    damages = meanings[("aircraft", "damage")]
     old_phases = meanings[("aircraft", "phase_flt_spec")]
     sequence = list(rows("Events_Sequence"))
     phases = {**phase_words(sequence), **known}
@@ -167,12 +178,14 @@ def _load(db: sqlite3.Connection, rows: Rows, known: dict[str, str], replace: bo
             _blank(r.get("ev_state")),
             _blank(r.get("ev_country")),
             injuries.get(r.get("ev_highest_injury") or "", _blank(r.get("ev_highest_injury"))),
+            kinds.get(r.get("ev_type") or "", _blank(r.get("ev_type"))),
         ),
         "aircraft": lambda r: (
             r["ev_id"],
             r["Aircraft_Key"],
             registration(r.get("regis_no") or ""),
             defining.get((r["ev_id"], r["Aircraft_Key"])) or old_phases.get(r.get("phase_flt_spec") or ""),
+            damages.get(r.get("damage") or "", _blank(r.get("damage"))),
         ),
         "narratives": lambda r: (
             r["ev_id"],
@@ -213,6 +226,7 @@ def build(rows: Rows, path: Path | None = None) -> int:
         try:
             db.executescript(_SCHEMA)
             count = _load(db, rows, {}, replace=False)
+            db.execute(f"PRAGMA user_version = {SCHEMA}")
             db.commit()
         finally:
             db.close()
@@ -291,4 +305,62 @@ def events(reg: str, day: str, path: Path | None = None) -> list[dict]:
     return out
 
 
-__all__ = ["CREDIT", "SOURCE", "apply", "build", "events", "phase_words", "registration", "store_path"]
+def schema(path: Path | None = None) -> int:
+    """The store's shape on disk (SCHEMA), 0 where there is none."""
+    path = path or store_path()
+    if not path.exists():
+        return 0
+    db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    try:
+        return db.execute("PRAGMA user_version").fetchone()[0]
+    finally:
+        db.close()
+
+
+def cases(reg: str, path: Path | None = None) -> list[dict]:
+    """Every accident and incident of the airplane `reg` the store has
+    (cases since 2008, avall.mdb), newest first: its NTSB number, local
+    date and place, kind, highest injury, the airplane's damage and phase,
+    and the links to its CAROL report and docket. [] where the store is not
+    built; the kind and damage None in a store of the older shape until
+    ingest makes it again."""
+    path = path or store_path()
+    if not path.exists():
+        return []
+    wanted = registration(reg)
+    names = sorted({wanted} | ({"N" + wanted} if _N_BODY.match(wanted) else set()))
+    newer = schema(path) >= 2
+    kind, damage = ("e.kind", "a.damage") if newer else ("NULL", "NULL")
+    db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    try:
+        rows = db.execute(
+            f"""
+            SELECT e.ev_id, e.ntsb_no, e.date, e.city, e.state, e.country, {kind}, e.highest_injury, {damage}, a.phase
+            FROM aircraft a JOIN events e ON e.ev_id = a.ev_id
+            WHERE a.registration IN ({",".join("?" * len(names))})
+            ORDER BY e.date DESC, e.ntsb_no
+            """,
+            names,
+        ).fetchall()
+    finally:
+        db.close()
+    return [
+        {
+            "ntsb_no": ntsb_no,
+            "ev_id": ev_id,
+            "date": date,
+            "city": city,
+            "state": state,
+            "country": country,
+            "kind": kind_words,
+            "highest_injury": injury,
+            "damage": damage_words,
+            "phase": phase,
+            "carol_url": _carol(ev_id),
+            "docket_url": DOCKET.format(ntsb_no=ntsb_no) if ntsb_no else None,
+        }
+        for ev_id, ntsb_no, date, city, state, country, kind_words, injury, damage_words, phase in rows
+    ]
+
+
+__all__ = ["CREDIT", "SCHEMA", "SOURCE", "apply", "build", "cases", "events", "phase_words", "registration", "schema", "store_path"]

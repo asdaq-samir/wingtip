@@ -64,6 +64,10 @@ pub struct Grid {
     pub marginal: Vec<i64>,
     /// What costs more to cross, for every way: special-use airspace.
     pub dear: Vec<f64>,
+    /// The special-use areas (hazards) over each cell that a way is told
+    /// it crosses but may fly: restricted, MOA, warning and alert areas
+    /// (special_use.rs). A cell may lie in more than one.
+    pub special: Vec<Vec<i64>>,
     /// Each cell's share out of glide of dry land, 0 to 1.
     pub offshore: Vec<f64>,
     /// Every water sample, PER_CELL a cell's side, true out of glide;
@@ -92,6 +96,7 @@ impl Grid {
             closed: vec![-1; n],
             marginal: vec![-1; n],
             dear: vec![0.0; n],
+            special: vec![Vec::new(); n],
             offshore: vec![0.0; n],
             far: None,
             floor: vec![0.0; n],
@@ -140,6 +145,19 @@ impl Grid {
         for &i in at {
             if self.closed[i] < 0 {
                 self.closed[i] = h;
+            }
+        }
+    }
+
+    /// The cells `at` in a special-use area a way may cross, said once.
+    pub fn mark_special(&mut self, at: &[usize], kind: &str, name: &str) {
+        if at.is_empty() {
+            return;
+        }
+        let h = self.hazard(kind, name);
+        for &i in at {
+            if !self.special[i].contains(&h) {
+                self.special[i].push(h);
             }
         }
     }

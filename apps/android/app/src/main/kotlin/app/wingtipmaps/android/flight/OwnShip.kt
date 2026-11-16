@@ -312,7 +312,7 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
             // The packs' answer is asked either way, for the ground under
             // the airplane the glide ring stands on, network or none: off
             // the main thread, as the engine reads nine regions' packs.
-            val offline = withContext(Dispatchers.Default) { CyclePacks.of(context).ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt) }
+            val offline = withContext(Dispatchers.Default) { CyclePacks.of(context).ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt, routeLine) }
             _groundFt.value = offline?.groundFt
             val alerts = try {
                 Planner.ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt)
@@ -328,6 +328,11 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
     }
 
     companion object {
+        /** The planned route's course line, [lat, lon] pairs, for the packs
+         *  ahead to follow as well as the track (the map's, as it draws it). */
+        @Volatile
+        var routeLine: List<List<Double>>? = null
+
         /** A fix as the flight pieces read it, its altitude above mean sea
          *  level or none (the callback's comment says why). */
         fun fixOf(location: Location): Fix =

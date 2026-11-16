@@ -1,4 +1,4 @@
-import { Suspense, type ReactNode } from "react";
+import { Suspense } from "react";
 import { placeName } from "../../lib/radio";
 import { SearchNear } from "../../../../lib/useAirportSearch";
 import { coverCard, useSheetCards } from "../../../../lib/sheetCards";
@@ -8,13 +8,15 @@ import { RouteBox } from "../../routeBoxChunk";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 
 /**
- * The route at FPL's head (PlanWorkspace's `route`): folded to its ends
- * and its controls once it is whole (RouteEdit), or the box of pills.
- * Folded and not yet whole, the controls wait for both ends, and the
- * route's ••• menu (`menu`) has a row of its own at their end, so its Show
- * Route As is there before a route (the owner, 2026-11-13).
+ * The route under FPL's first row (PlanWorkspace's `route`), one row in
+ * each of the three ways the pilot shows it (RouteEdit): the box of pills,
+ * the line split in three, or the cards' ends. The airplane's strip with
+ * the route's buttons is not here but the first row's bar over it, the
+ * same in all three (FplBar; the owner, 2026-11-14: "The route box just
+ * become a single row under it and same with other fpl layouts, they just
+ * go under the n-number strip with buttons and the toggle").
  */
-export default function RouteHead({ vm, controls, menu }: { vm: PlanWorkspaceModel; controls: ReactNode; menu: ReactNode }) {
+export default function RouteHead({ vm }: { vm: PlanWorkspaceModel }) {
   const { directParam, planned, routeEdit, routePoints, setPointAltitude, setRoute, wholeRoute } = vm.route;
   const { course, directToPoint, s } = vm.plan;
   const { selectPlace } = vm.cards;
@@ -27,24 +29,16 @@ export default function RouteHead({ vm, controls, menu }: { vm: PlanWorkspaceMod
   // sheet's head is inert (SheetParts, while a card is up), and the box's
   // focus as it was asked went nowhere (plans.spec, "no legal altitude").
   const covered = useSheetCards((c) => !!coverCard(c.stack));
-  // The menu alone at the row's end, where the controls' row ends once the
-  // route is whole (RouteControls' route-actions).
-  const menuRow = !wholeRoute && (
-    <div className="flex w-full items-center justify-end pr-0.5" data-testid="route-menu-row">
-      {menu}
-    </div>
-  );
   return routeFolded ? (
-    <div className="flex min-w-0 flex-1 flex-col gap-2.5" data-testid="route-folded">
-      {/* In the Plan, the owner's pick of the canvas's option 3 as
-          cards (2026-11-05): until the route is whole, its departure
-          and destination as two cards and nothing else -- no airplane,
-          no altitude; once it is, those over the plan, whose Routes
-          and cards follow (ProceduresRoute), with no title. */}
-      {/* Over the cards, where the route's group box sits once whole. */}
-      {routeEdit === "plan" && menuRow}
+    <div className="flex min-w-0 flex-1 flex-col" data-testid="route-folded">
       {routeEdit === "plan" ? (
-        !wholeRoute && (
+        // Route Cards, the owner's pick of the canvas's option 3
+        // (2026-11-05): until the route is whole its departure and
+        // destination as two cards; once it is, the Routes row in a white
+        // box of its own (the owner's pick B, "show the controls and
+        // routes grouped", the controls now the bar over it), the cards
+        // following in the plan (ProceduresRoute).
+        !wholeRoute ? (
           <Suspense fallback={<div className="h-[7.75rem]" />}>
             <RouteEnds
               dep={planned.dep}
@@ -53,9 +47,17 @@ export default function RouteHead({ vm, controls, menu }: { vm: PlanWorkspaceMod
               onDest={(dest) => setRoute({ dep: planned.dep, stops: planned.stops, dest })}
             />
           </Suspense>
+        ) : (
+          routeLine && (
+            <div className="mb-1 w-full rounded-2xl bg-card ring-1 ring-black/5 dark:ring-white/10" data-testid="route-group">
+              <Suspense fallback={<div className="h-11" />}>
+                <RouteLine line={routeLine} grouped />
+              </Suspense>
+            </div>
+          )
         )
       ) : (
-        // One Line, the owner's pick L1 of the canvas (2026-11-05): the
+        // Route Line, the owner's pick L1 of the canvas (2026-11-05): the
         // route split in three, each end its own tap, the stops between
         // them the box's.
         <Suspense fallback={<div className="h-[3.25rem] rounded-full bg-card" />}>
@@ -71,33 +73,6 @@ export default function RouteHead({ vm, controls, menu }: { vm: PlanWorkspaceMod
           />
         </Suspense>
       )}
-      {/* Under the line, where its controls' row comes once whole. */}
-      {routeEdit !== "plan" && menuRow}
-      {/* The airplane, the altitude and the route's buttons once the route
-          is whole, in either: none before, at the owner's ask ("no n
-          number or altitude" till both ends are in). */}
-      {/* In Route Cards, one white box of the flight's settings: the
-          airplane, the altitude and the route's buttons, and under a
-          hairline the Routes row, which was over the cards at the same
-          spacing as everything else and read as one more card (the
-          owner's pick B of the canvas, 2026-11-05: "show the controls
-          and routes grouped"). The cards follow, out of the box. */}
-      {wholeRoute &&
-        (routeEdit === "plan" ? (
-          <div className="mb-3 w-full rounded-2xl bg-card ring-1 ring-black/5 dark:ring-white/10" data-testid="route-group">
-            <div className="flex w-full items-center py-1.5 pr-1.5 pl-2">{controls}</div>
-            {routeLine && (
-              <>
-                <div className="ml-11 h-px bg-border" aria-hidden="true" />
-                <Suspense fallback={<div className="h-11" />}>
-                  <RouteLine line={routeLine} grouped />
-                </Suspense>
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="flex w-full items-center pr-0.5 pb-2 pl-1.5">{controls}</div>
-        ))}
     </div>
   ) : (
     <div className="min-w-0 flex-1">
@@ -129,7 +104,6 @@ export default function RouteHead({ vm, controls, menu }: { vm: PlanWorkspaceMod
             directTo={directParam}
             onDirectTo={directToPoint}
             unknownPoint={s.unknownPlace}
-            footer={controls}
             addAt={addAt}
             // Opened from its folded line: Done folds it again.
             onDone={routeEdit !== "box" && routeOpen ? () => setRouteOpen(false) : undefined}

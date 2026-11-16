@@ -34,7 +34,8 @@ The project is four layers, each with one job:
 - **Who the pilot is and what they saved** (accounts, sign-in, records,
   the public API, scheduled mail) is Spring Boot:
   [`services/gateway`](../services/gateway). It should hold no aviation logic and ask
-  the planner when it needs a figure; the currency rules are still Java (#482).
+  the planner when it needs a figure (`PlannerClient`): currency and AC
+  61-65K's endorsement texts are the engine's, asked through the planner.
 - **Each app** ([`apps/web`](../apps/web), [`apps/ios`](../apps/ios), [`apps/android`](../apps/android)) gets the
   data, keeps the state (a view model per screen) and draws, and asks the
   engine the rest by name. A rule copied into a component, a view, a Java

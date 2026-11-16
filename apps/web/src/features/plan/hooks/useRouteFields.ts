@@ -25,10 +25,7 @@ export function useRouteFields(dep: string, stops: readonly string[], dest: stri
       private: place?.private ?? null,
       military: place?.military ?? null,
       phone: place?.phone ?? null,
-      // The card carries NASR's closed label, not its code: a closed field
-      // is sent as a code that is not O, which the engine says is closed
-      // (field_status); an open one as O, and one not in yet as unknown.
-      status: !place ? null : place.closed ? "" : "O",
+      status: nasrStatus(place),
     };
   };
   const permission: VerdictItem | null =
@@ -38,4 +35,13 @@ export function useRouteFields(dep: string, stops: readonly string[], dest: stri
   // reading the ident.
   const icaoIds: Record<string, string | null> = Object.fromEntries([...places].map(([ident, p]) => [ident, p.icao_id ?? null]));
   return { permission, icaoIds };
+}
+
+/** NASR's ARPT_STATUS as a field's card carries it, CI or CP, for the
+ *  engine's field_status to word ("closed indefinitely (NASR)", not a
+ *  bare "closed"); where the card has no NASR record, its label alone:
+ *  closed as a code that is not O, open as O. A card not in yet, unknown. */
+export function nasrStatus(place: Pick<AirportPlace, "status" | "closed"> | undefined): string | null {
+  if (!place) return null;
+  return place.status ?? (place.closed ? "" : "O");
 }

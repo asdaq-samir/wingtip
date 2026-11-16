@@ -4,10 +4,13 @@ check that says how fresh each is.
 
     python -m app.main
 
-Each product is fetched as soon as the service starts, then every
-`every_s` while a pilot is planning (the planner read the store in the
-last WEATHER_IN_USE_S) and every `idle_every_s` otherwise (app.settings).
-A product being fetched is not started again; a failure is logged and
+Each product is a job on wingtip's scheduler (wingtip.schedule), fetched
+as soon as the service starts, then every `every_s` while a pilot is
+planning (the planner read the store in the last WEATHER_IN_USE_S) and
+every `idle_every_s` otherwise (app.settings): the job comes at the
+planning pace and lets turns go by while nobody plans. A product being
+fetched is not started again (the scheduler's one run at a time); a
+failure is logged and
 written beside the stored copy (weather_store.write_attempt), which the
 planner goes on serving while its product's own validity lasts, and the
 product is tried again at its next turn. Each source is asked as it asks
@@ -32,12 +35,12 @@ import signal
 import threading
 import time
 import xml.etree.ElementTree as ET
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from collections.abc import Callable
 
-from wingtip import tracing, weather_store
+from apscheduler.schedulers.base import BaseScheduler
+from wingtip import schedule, tracing, weather_store
 
 from . import aviationweather, fetch, flow, gfs, glmp, glmp_forecast, radar, satellite, spc, tfr
 from .settings import get_settings
@@ -100,32 +103,34 @@ def in_use(now: float | None = None) -> bool:
 
 
 class Schedule:
-    """When each product was last tried, and which are being fetched."""
+    """When each product was last tried, and its turns on the scheduler."""
 
     def __init__(self, products=PRODUCTS):
         self.products = {p.name: p for p in products}
         self.tried: dict[str, float] = {}
-        self.running: set[str] = set()
         self.lock = threading.Lock()
 
-    def due(self, now: float) -> list[Product]:
-        """The products whose turn has come and that are not being fetched."""
-        busy = in_use(now)
+    def due(self, product: Product, now: float) -> bool:
+        """Whether this turn of the product's job fetches it: on the first
+        turn, on every turn while a pilot is planning (the job's own pace is
+        the planning pace), and otherwise once the idle pace has come round,
+        to within half a turn, so a turn a moment early is not let go by."""
         with self.lock:
-            return [
-                p
-                for name, p in self.products.items()
-                if name not in self.running and now - self.tried.get(name, float("-inf")) >= p.every_s(busy)
-            ]
+            tried = self.tried.get(product.name)
+        if tried is None or in_use(now):
+            return True
+        return now - tried >= product.every_s(False) - product.every_s(True) / 2
+
+    def turn(self, product: Product) -> None:
+        """One turn of a product's job: fetched if it is due."""
+        if self.due(product, time.time()):
+            self.run(product)
 
     def run(self, product: Product) -> None:
         """One product fetched, its failure logged and written beside its copy."""
-        with self.lock:
-            if product.name in self.running:
-                return
-            self.running.add(product.name)
-            self.tried[product.name] = time.time()
         started = time.time()
+        with self.lock:
+            self.tried[product.name] = started
         try:
             # A trace of its own where tracing is on (wingtip.tracing): the
             # fetch, each source asked under it, each engine rule it reads with.
@@ -136,23 +141,15 @@ class Schedule:
         except FAILURES as err:
             log.warning("%s not fetched: %s", product.name, err)
             weather_store.write_attempt(product.name, started, str(err)[:500])
-        except Exception as err:  # noqa: BLE001 -- one product's bug must not stop the others' schedule
+        except Exception as err:  # noqa: BLE001 -- written beside the copy, so the planner's health line says why
             log.exception("%s failed", product.name)
             weather_store.write_attempt(product.name, started, f"{type(err).__name__}: {err}"[:500])
-        finally:
-            with self.lock:
-                self.running.discard(product.name)
 
-    def loop(self, stop: threading.Event) -> None:
-        settings = get_settings()
-        with ThreadPoolExecutor(max_workers=settings.workers, thread_name_prefix="fetch") as pool:
-            while not stop.is_set():
-                for product in self.due(time.time()):
-                    with self.lock:
-                        # Marked tried now, so the next tick does not queue it again.
-                        self.tried[product.name] = time.time()
-                    pool.submit(self.run, product)
-                stop.wait(settings.tick_s)
+    def jobs(self, on: BaseScheduler) -> None:
+        """Each product a job at its planning pace, the first turn now, in
+        the order a fresh start fetches them."""
+        for product in self.products.values():
+            schedule.every(on, product.every_s(True), self.turn, name=product.name, args=(product,))
 
 
 def health(now: float | None = None) -> dict:
@@ -214,7 +211,11 @@ def main() -> None:
     signal.signal(signal.SIGTERM, finish)
     signal.signal(signal.SIGINT, finish)
     log.info("weather service: storing into %s, health on :%d", weather_store.store_dir(), settings.port)
-    Schedule().loop(stop)
+    on = schedule.scheduler(workers=settings.workers)
+    Schedule().jobs(on)
+    on.start()
+    stop.wait()
+    on.shutdown(wait=False)
     server.shutdown()
 
 

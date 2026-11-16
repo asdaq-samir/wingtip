@@ -434,6 +434,7 @@
    "cruise_power_pct": 65,
    "cruise_tas_kt": 110,
    "fuel_burn_gph": 8.5,
+   "climb_fuel_burn_gph": 11.05,
    "service_ceiling_ft": 13500,
    "taxi_fuel_gal": 1.4,
    "type": "Cessna 172",

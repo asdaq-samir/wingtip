@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { inSheet, mapStill, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { stopsAre } from "./stopsParam";
 import { drawnMarks } from "./marks";
 import { noCheckpoints } from "./startState";
 
@@ -111,7 +112,7 @@ test("a suggested fuel stop can be taken out of the route box and put back, or a
   // And its menu's Add to Route makes it a stop of the route.
   await chip.click();
   await page.getByTestId("route-fuel-stop-add").click();
-  await expect(page).toHaveURL(/[?&]stops=KRPD(&|$)/);
+  await expect(page).toHaveURL(stopsAre("KRPD"));
 });
 
 /** What KRPD offers on the ground, as the planner answers it (wingtip.nearby,
@@ -164,7 +165,7 @@ test("a suggested stop's pin opens its card with its figures", async ({ page }) 
 
   // Kept from its card at its place, a fuel stop.
   await card.getByTestId("place-add-stop").click();
-  await expect(page).toHaveURL(/[?&]stops=KRPD(&|$)/);
+  await expect(page).toHaveURL(stopsAre("KRPD"));
   await expect(page).toHaveURL(/[?&]fuel=KRPD(&|$)/);
 });
 
@@ -210,6 +211,6 @@ test("a long flight the tanks hold is offered a break about half way, kept as th
   await expect(chip).toHaveAccessibleName("Suggested stop KRPD", { timeout: slow(60_000) });
   await chip.click();
   await page.getByTestId("route-fuel-stop-add").click();
-  await expect(page).toHaveURL(/[?&]stops=KRPD(&|$)/);
+  await expect(page).toHaveURL(stopsAre("KRPD"));
   await expect(page).not.toHaveURL(/[?&]fuel=/);
 });

@@ -8,7 +8,7 @@ import { NumberField } from "../../../../components/ui/number-field";
 import { WHOLE } from "../../../../components/ui/numberFormats";
 import { formText, personsOnBoard, withPersonsOnBoard, type FlightPlanForm } from "../../lib/flightPlanForm";
 import { showError } from "../../../../lib/problems";
-import { useCopied } from "../../../../lib/share";
+import { copyText, useCopied } from "../../../../lib/share";
 import { api, describeError } from "../../../../lib/api/client";
 import type { FlightPlanFilingRequest } from "../../../../lib/api/types";
 import { pilotQuery } from "../../../../lib/queryClient";
@@ -59,7 +59,7 @@ export default function FlightPlanSection({ forms, ifr }: { forms: FlightPlanFor
   });
   const copy = async (key: string, text: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      await copyText(text);
       setCopied(key);
     } catch (err) {
       showError("Could not copy the flight plan", (err as Error).message);

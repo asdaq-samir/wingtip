@@ -54,9 +54,14 @@ export default function ConsoleLayer({
     onClose();
   };
   return (
-    // Its drawer open while it is up (CardLayer reads lib/shown).
+    // Its drawer open while it is up (CardLayer's `open`), and each time it
+    // is opened at half, as every card opens: kept by lib/shown alone, it
+    // came back at the size it was put away at, the pill, its head alone
+    // (the owner's iPhone, 2026-11-14). A swipe down from half closes it,
+    // as Apple Maps' account sheet; from all the way up it comes to half
+    // (the owner, 2026-11-14).
     <Shown.Provider value={shown}>
-      <CardLayer label={label} dismiss={dismiss} finalFocus={finalFocus}>
+      <CardLayer label={label} dismiss={dismiss} onSwipeClose={onClose} finalFocus={finalFocus} open={shown}>
         <section
           aria-label={label}
           // Named for the suite only while it is up: put away it is there,
@@ -67,9 +72,15 @@ export default function ConsoleLayer({
           // ✕ in sight, not two (the owner's testing, 2026-11-10). Laid out
           // whole in its drawer's scroller (CardStack), its head row sticky
           // at the top over it.
+          // Its gear and close float over You's head, at the avatar's own
+          // level, with no frosted bar of their own (Apple Maps' account card,
+          // the owner's screenshot, 2026-11-14: "Look at this in comparison").
           className={cn(
-            "shrink-0 flex-col print:hidden [&:has([data-slot=console-page])>[data-slot=layer-head]]:hidden",
-            shown ? "flex" : "hidden",
+            // Drawn while its drawer closes too, so it fades out with its
+            // content, not an empty card; kept, the drawer is hidden
+            // (index.css, the kept cards).
+            "flex shrink-0 flex-col print:hidden [&:has([data-slot=console-page])>[data-slot=layer-head]]:hidden",
+            "[&>[data-slot=layer-head]]:bg-transparent! [&>[data-slot=layer-head]]:backdrop-blur-none!",
           )}
         >
           {/* Every card's one head row (PinnedHead, HeadGrid), at the

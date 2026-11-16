@@ -29,6 +29,15 @@ export function ctafOf(frequencies: Frequency[]): Frequency {
   return typeof ctaf === "number" ? frequencies[ctaf]! : ctaf;
 }
 
+/** A field's frequencies in the order a pilot dials them, the engine's
+ *  (frequencies_in_order): its ATIS or AWOS first, then clearance, ground,
+ *  the tower or CTAF, approach, and UNICOM last. The file's own order put
+ *  KDLH's UNICOM first and its ATIS out of sight (the web audit's WEB-10).
+ *  Indices into `frequencies`, so a NOTAM's mark by index still finds its row. */
+export function inUseOrder(frequencies: readonly Frequency[]): number[] {
+  return callEngine("frequencies_in_order", { frequencies: sent(frequencies) });
+}
+
 /** A field's radio as the kneeboard lists it (Kneeboard): each by its
  *  short name, with its frequency, the tower's before the CTAF's. */
 export function kneeboardRadio(frequencies: Frequency[]): [string, number][] {

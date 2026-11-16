@@ -184,6 +184,7 @@ fn places_json(points: &[Point]) -> String {
 }
 
 /// The rules by name, as the facade's call lists them.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> R<String> {
     match name {
         "logbook_track_places" => Ok(places_json(&points(name, v)?)),

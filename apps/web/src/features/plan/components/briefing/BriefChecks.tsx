@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { useContext } from "react";
 import { ExternalLink, Info } from "lucide-react";
 import { cn } from "cn";
@@ -112,7 +113,7 @@ export default function BriefChecks({
             </>
           );
           const look = cn(
-            "relative block h-full min-h-[4.75rem] w-full rounded-2xl bg-card px-3 pt-2.5 pb-3 text-left outline-none",
+            "relative block h-full min-h-[4.75rem] w-full rounded-(--radius-card) bg-card px-3 pt-2.5 pb-3 text-left outline-none",
             "shadow-float focus-visible:ring-2 focus-visible:ring-ring active:bg-foreground/8 pointer-coarse:active:opacity-70",
             looked[tile.key] && "bg-card/70",
           );
@@ -131,8 +132,7 @@ export default function BriefChecks({
                   {inner}
                 </a>
               ) : (
-                <button
-                  type="button"
+                <BaseButton
                   className={look}
                   onClick={() => open(tile.key, tile.at)}
                   data-testid={tile.testId}
@@ -140,7 +140,7 @@ export default function BriefChecks({
                   data-looked={looked[tile.key] || undefined}
                 >
                   {inner}
-                </button>
+                </BaseButton>
               )}
             </li>
           );

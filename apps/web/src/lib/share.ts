@@ -10,8 +10,15 @@ export async function shareOrCopy(item: { title: string; text?: string; url?: st
     await navigator.share(item);
     return "shared";
   }
-  await navigator.clipboard.writeText(item.url ?? item.text ?? "");
+  await copyText(item.url ?? item.text ?? "");
   return "copied";
+}
+
+/** Text copied, where a control says Copy rather than Share (a flight
+ *  plan's form for Flight Service's own site): the one place the app
+ *  writes to the clipboard. */
+export async function copyText(text: string): Promise<void> {
+  await navigator.clipboard.writeText(text);
 }
 
 /** The pilot closed the share sheet: nothing went wrong. */

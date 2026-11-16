@@ -122,7 +122,7 @@ test("the card's runways are a page of its pictures under its title and actions,
     "src",
     "/api/planner/airport-diagram/2610/runways/KDLH.png?v=2",
   );
-  await expect(card(page).getByTestId("place-elevation")).toContainText(/^Elevation[\d,]+ ft$/);
+  await expect(card(page).getByTestId("place-fact-elevation")).toContainText(/^Elev\.[\d,]+ ft$/);
   // The title, then the actions, then the pictures lower in the card.
   const [name, call, pictures] = await Promise.all(
     [card(page).getByTestId("place-name"), card(page).getByTestId("place-call"), card(page).getByTestId("place-pictures")].map(
@@ -140,11 +140,11 @@ test("where the diagram's picture cannot be had, the card links the FAA's PDF", 
   await withDiagram(page, "missing");
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
-  // On the Charts tab, the card's last.
-  await toCharts(page);
-  // And the card's own sketch of the runways where the crop is not had.
+  // Info's pictures, first on it (T4): the card's own sketch of the runways where the crop is not had.
   await expect(card(page).getByTestId("runway-sketch")).toBeVisible();
   await expect(card(page).getByTestId("place-diagram-runways")).toHaveCount(0);
+  // On the Charts tab, the card's last.
+  await toCharts(page);
   // A row that draws the FAA's PDF in the app instead, not a link out.
   const row = card(page).getByTestId("airport-diagram");
   await expect(row).not.toHaveAttribute("href", /.*/);
@@ -206,7 +206,7 @@ test("the Charts tab's charts and the Chart Supplement open in the app, the fiel
   await toCharts(page);
   const panel = card(page).getByTestId("place-charts");
   // No link out of the app in the tab.
-  await expect(panel.getByTestId("terminal-chart")).toHaveText(/TAKEOFF MINIMUMS/, { timeout: slow(15000) });
+  await expect(panel.getByTestId("terminal-chart")).toHaveText(/Takeoff minimums/, { timeout: slow(15000) });
   await expect(panel.locator("a[href^='http']")).toHaveCount(0);
 
   await panel.getByTestId("terminal-chart").click();

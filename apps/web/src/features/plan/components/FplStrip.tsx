@@ -5,6 +5,7 @@ import { useNavigate } from "react-router";
 import { PillStrip, SmallMark, SmallTile, StripNote, StripSection } from "../../../components/Favorites";
 import { planHrefOf } from "../../../lib/flightLink";
 import { placeOfPoint } from "../../../lib/identSchema";
+import { dayMonth } from "../../../lib/format";
 import { flightsQuery, pilotQuery } from "../../../lib/queryClient";
 import QueryState from "../../../components/QueryState";
 import { useStripShows } from "../hooks/useStripShows";
@@ -85,7 +86,7 @@ function SavedTiles({ signedIn }: { signedIn: boolean }) {
   return (
     <PillStrip testId="saved-strip">
       {shown.map((f) => {
-        const day = new Date(f.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        const day = dayMonth(new Date(f.createdAt));
         // A flight from a position by its coordinates as a GPS writes
         // them (pointName), cut short on the tile and whole to a screen
         // reader, at the owner's pick ("Coordinates, cut short").

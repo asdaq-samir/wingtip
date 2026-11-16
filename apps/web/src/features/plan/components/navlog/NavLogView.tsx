@@ -17,12 +17,14 @@ import { SectionPane } from "../../../../components/SectionPane";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../../../../components/ui/table";
 import type { Candidate, Leg, NavLogAltitude, Totals } from "../../../../lib/api/types";
-import { magneticVariation, windCorrection } from "../../../../lib/format";
+import { gal, magneticVariation, nm, weekdayDayMonthTime, windCorrection } from "../../../../lib/format";
+import { useAnnounce } from "../../../../lib/announce";
 import { routeName } from "../../../../lib/identSchema";
 import { revealRow } from "../../../../lib/revealRow";
 import { GROUP_HEADING, TEXT } from "../../../../lib/text";
+import SectionTitle from "../../../../components/SectionTitle";
 import { type Description, descriptionKey } from "../../hooks/useCheckpointNotes";
-import { altFt, bearing, clockTime, etaAt, feetBelowClouds, legsWithoutWind, one, plannedWords, windAloft } from "../../format";
+import { altFt, bearing, etaAt, feetBelowClouds, legsWithoutWind, one, plannedWords, windAloft } from "../../format";
 import type { BriefingPart } from "../briefing/sections";
 import { flownNmOf, isLegPoint, legOf, navLogRows, phaseOf, rowPoint, type NavLogRow, type RouteEnds } from "./rows";
 import LegWorkings from "./LegWorkings";
@@ -186,12 +188,12 @@ function LegLine({ leg, at, phase }: { leg: Leg; at: { name: string; lat: number
   const figures: [string, string][] = [
     ["TC", bearing(leg.true_course_deg)],
     ["Wind", leg.wind ? windAloft(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt) : "no data"],
-    ["WCA", leg.wca_deg != null ? windCorrection(leg.wca_deg, 1) : "—"],
+    ["WCA", leg.wca_deg != null ? windCorrection(leg.wca_deg) : "—"],
     ["TH", leg.true_heading_deg != null ? bearing(leg.true_heading_deg) : "—"],
-    ["Var", magneticVariation(leg.magnetic_variation_deg, 1)],
+    ["Var", magneticVariation(leg.magnetic_variation_deg)],
     ["TAS", tas(leg)],
     ["GS", leg.groundspeed_kt === null ? "—" : String(Math.round(leg.groundspeed_kt))],
-    ["Fuel", `${one(leg.fuel_gal)} gal`],
+    ["Fuel", gal(leg.fuel_gal)],
   ];
   return (
     // mb-5: the links' 44-point hit areas (index.css) reach 11 below them,
@@ -410,7 +412,7 @@ export default function NavLogView({
       id: "wca",
       header: () => <Heading name="WCA" unit="°" spoken="Wind correction angle" />,
       meta: PAPER,
-      cell: ({ row }) => (legOf(row.original)?.wca_deg != null ? windCorrection(legOf(row.original)!.wca_deg!, 1) : "—"),
+      cell: ({ row }) => (legOf(row.original)?.wca_deg != null ? windCorrection(legOf(row.original)!.wca_deg!) : "—"),
     },
     {
       id: "th",
@@ -422,7 +424,7 @@ export default function NavLogView({
       id: "var",
       header: () => <Heading name="Var" unit="°" spoken="Magnetic variation" />,
       meta: PAPER,
-      cell: ({ row }) => (legOf(row.original) ? magneticVariation(legOf(row.original)!.magnetic_variation_deg, 1) : "—"),
+      cell: ({ row }) => (legOf(row.original) ? magneticVariation(legOf(row.original)!.magnetic_variation_deg) : "—"),
     },
     {
       id: "mh",
@@ -501,7 +503,7 @@ export default function NavLogView({
   // where the airplane levels off is its climb's.
   const tableRows = useMemo(() => (onDesk && !airplane ? data.filter((r) => !isLegPoint(r)) : data), [onDesk, airplane, data]);
   const table = useTable({ features: navLogTableFeatures, data: tableRows, columns: shownColumns, getRowId: (row) => row.key });
-
+  useAnnounce(totals && data.length ? `Nav log ready, ${nm(totals.distance_nm)}` : null); // to VoiceOver, once (WEB-16)
   // The selected row as it is put in the page: the rows are drawn a moment
   // after the panel (PanelTabs' deferred draw), and on a busy page after
   // the drawer had opened, so a reveal asked for then found no row and the
@@ -718,9 +720,7 @@ export default function NavLogView({
     ) : (
       <>
         <div className="flex items-center justify-between pt-2 pl-1.5" data-testid="navlog-head">
-          <span className={GROUP_HEADING}>
-            {checkpointCount} checkpoint{checkpointCount === 1 ? "" : "s"}
-          </span>
+          <SectionTitle>{`${checkpointCount} Checkpoint${checkpointCount === 1 ? "" : "s"}`}</SectionTitle>
         </div>
         <NavLogList
           rows={data}
@@ -803,15 +803,14 @@ export default function NavLogView({
                   The panel's own head (the route form, the airplane and the
                   departure time) is print:hidden, so they are named here
                   instead, as a line of text. */}
-              <div className="hidden flex-col gap-1 border-b border-border px-4 py-3 text-sm print:flex">
+              <div className={cn("hidden flex-col gap-1 border-b border-border px-4 py-3 print:flex", TEXT.detail)}>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={cn("font-semibold", TEXT.title)}>Wingtip Maps</span>
                   <span className="text-muted-foreground">{title}</span>
                 </div>
                 <div className="text-muted-foreground">
                   {aircraftLabel}
-                  {depart &&
-                    ` · departing ${new Date(depart).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })} ${clockTime(new Date(depart))}`}
+                  {depart && ` · departing ${weekdayDayMonthTime(new Date(depart))}`}
                   {plannedWords(totals) && ` · ${plannedWords(totals)}`}
                 </div>
               </div>

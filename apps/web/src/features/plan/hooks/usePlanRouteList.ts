@@ -11,7 +11,6 @@ import { useRouteListEdit } from "./useRouteListEdit";
 import { useRouteLine } from "./useRouteLine";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
-import type { PlanCards } from "./usePlanCards";
 import type { PlanViewModel } from "./usePlanView";
 
 /**
@@ -23,12 +22,11 @@ import type { PlanViewModel } from "./usePlanView";
 export function usePlanRouteList(
   route: PlanRoute,
   { course, ways, own }: PlanAnswerModel,
-  { under, setUnder }: PlanCards,
   { setViewPick }: PlanViewModel,
   setPanel: (state: PanelState) => void,
 ) {
   "use no memo"; // As usePlanWorkspace, whose part this is: left to its own memos.
-  const { planned, routeEdit, routePoints, setRoute, setStops, setAddress, hasPoints, wholeRoute, fuelParam, flightRules } = route;
+  const { planned, routeEdit, routePoints, setRoute, setStops, setAddress, wholeRoute, fuelParam, flightRules } = route;
   // Add Stop open: from its own button, or from no legal altitude's --
   // "via", its Fly via round a Class B, the ways round suggested.
   const [addingStop, setAddingStop] = useState<false | "stop" | "via">(false);
@@ -81,29 +79,20 @@ export function usePlanRouteList(
     },
     [geo, course, setAddress, setPanel, setViewPick],
   );
-  // The route's close, at the pilot's ask: first it clears the route --
-  // the address keeps nothing of it, and its box, the controls and the
-  // tabs stay out, empty, for another -- and pressed again, with nothing
-  // left to clear, the route is put away for the layer under it, as
-  // Maps' directions are: the airport's card it was flown to from (Fly
-  // Here), or the search. The panel stays the height it was throughout,
-  // at the pilot's ask: all the way up is in the address (`view`), and
-  // clearing that with the route lowered it to its pill.
+  // Clear route, at the pilot's ask: the address keeps nothing of the
+  // route, and its box, the controls and the tabs stay out, empty, for
+  // another. The panel stays the height it was: all the way up is in the
+  // address (`view`), and clearing that with the route lowered it to its
+  // pill.
   const clearRoute = useCallback(() => {
-    // Every key taken out but the sheet's height, and the card to go back to.
-    const keeping = (place?: string) => ({ ...ADDRESS_CLEARED, view: undefined, place: place ?? null });
-    if (hasPoints) {
-      // Cleared: FPL's box empty to type another in.
-      void setAddress(keeping());
-      setViewPick("plan");
-      return;
-    }
-    // The empty box closed: the airport it was flown to from (Fly Here),
-    // or the search, on Airport.
-    setViewPick("search");
-    if (under) void setAddress(keeping(under));
-    setUnder(null);
-  }, [hasPoints, under, setAddress, setViewPick, setUnder]);
+    // Every key taken out but the sheet's height.
+    const keeping = () => ({ ...ADDRESS_CLEARED, view: undefined, place: null });
+    // Cleared: FPL's box empty to type another in; the page toggle goes
+    // back to the search (the owner, 2026-11-14: the empty box's own ✕
+    // did the same, and is gone).
+    void setAddress(keeping());
+    setViewPick("plan");
+  }, [setAddress, setViewPick]);
   // FPL's route line of the Routes' chips, and their ways on the chart
   // (useRouteLine).
   const line = useRouteLine({

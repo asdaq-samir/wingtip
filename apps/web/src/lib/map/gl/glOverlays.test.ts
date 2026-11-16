@@ -117,12 +117,21 @@ describe("the overlay tiles' layers", () => {
 
   it("hide the armed services' and private fields unless asked for, and the route's own fields", () => {
     const { map, set } = fakeMap(["airports", "vfr-waypoints", "airspace-B", "navaids"]);
-    usePreferences.setState({ military: false, privateFields: false, airspace: true, navaids: false });
+    usePreferences.setState({ privateMilitary: false, aeronautical: true });
     applyOverlayFilters(map);
     expect(set.state.get("showMilitary")).toBe(false);
     expect(set.state.get("showPrivate")).toBe(false);
     expect(set.layout.get("airspace-B.visibility")).toBe("visible");
+    expect(set.layout.get("navaids.visibility")).toBe("visible");
+    // Aeronautical off: the airspace and the VORs go together.
+    usePreferences.setState({ aeronautical: false });
+    applyOverlayFilters(map);
+    expect(set.layout.get("airspace-B.visibility")).toBe("none");
     expect(set.layout.get("navaids.visibility")).toBe("none");
+    usePreferences.setState({ privateMilitary: true });
+    applyOverlayFilters(map);
+    expect(set.state.get("showMilitary")).toBe(true);
+    expect(set.state.get("showPrivate")).toBe(true);
     setOverlayExclusion(map, "airports", ["KDLH", "C81", "KDLH"]);
     expect(set.state.get("routeAirports")).toEqual(["C81", "KDLH"]);
     setOverlayExclusion(map, "waypoints", ["VPXYZ"]);
@@ -139,14 +148,14 @@ describe("the overlay tiles' layers", () => {
 
   it("show the private and military fields while the emergency assistant is open, the switches theirs again once it closes", () => {
     const { map, set } = fakeMap(["airports"]);
-    usePreferences.setState({ military: false, privateFields: false });
+    usePreferences.setState({ privateMilitary: false });
     const stop = watchOverlayFilters(map);
     expect(set.state.get("showPrivate")).toBe(false);
     openEmergency("flying");
     expect(set.state.get("showPrivate")).toBe(true);
     expect(set.state.get("showMilitary")).toBe(true);
     // The pilot's switches are left as they were.
-    expect(usePreferences.getState().privateFields).toBe(false);
+    expect(usePreferences.getState().privateMilitary).toBe(false);
     closeEmergency();
     expect(set.state.get("showPrivate")).toBe(false);
     expect(set.state.get("showMilitary")).toBe(false);

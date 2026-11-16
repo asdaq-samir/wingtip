@@ -31,7 +31,7 @@ class InFlightWordsTest {
     fun offCourseIsSaidPastATenth() {
         val p = EngineContract.InFlightAnswer(
             onRoute = true, alongNm = 30.0, totalNm = 104.0, leftNm = 74.0, offNm = 2.2, offSide = "left",
-            desiredTrackDeg = 0.0, burntGal = 3.0,
+            desiredTrackDeg = 0.0, burntGal = 3.0, hop = 0, hopBurntGal = 3.0,
         )
         assertEquals("2.2 nm left of course", InstrumentsWords.offCourse(p))
         assertNull(InstrumentsWords.offCourse(p.copy(offNm = 0.04, offSide = null)))

@@ -81,9 +81,25 @@ class FlightModel @Inject constructor(private val session: FlightSession) : View
     fun hear(ahead: List<AheadAlert>) = session.spoken.hear(ahead)
 
     /** The strip's fuel from the planner's totals, as the engine works it for
-     *  the three apps (`strip_fuel`); a failure where the engine could not. */
-    fun stripFuel(totals: NavLogTotals?, burntGal: Double? = null): Result<EngineContract.StripFuelAnswer> =
-        Engine.stripFuel(fuelRequiredGal = totals?.fuelRequiredGal, fuelMarginGal = totals?.fuelMarginGal, burntGal = burntGal)
+     *  the three apps (`strip_fuel`): with stops, each flight's own figures
+     *  (`hops`, the tanks filled at each) and the one being flown (`hop`),
+     *  as the web's figures.ts sends them (the aviation audit's AV-3: the
+     *  route-wide figures are absent with a stop); a failure where the
+     *  engine could not. */
+    fun stripFuel(totals: NavLogTotals?, hop: Int = 0, burntGal: Double? = null): Result<EngineContract.StripFuelAnswer> =
+        stripFuelOf(totals, hop, burntGal)
+
+    companion object {
+        /** FlightModel.stripFuel's call, for a view with no model: the nav
+         *  log's totals ask whether any flight is short the same way. */
+        fun stripFuelOf(totals: NavLogTotals?, hop: Int = 0, burntGal: Double? = null): Result<EngineContract.StripFuelAnswer> = Engine.stripFuel(
+            fuelRequiredGal = totals?.fuelRequiredGal,
+            fuelMarginGal = totals?.fuelMarginGal,
+            hops = totals?.hops?.map { EngineContract.StripFuelInputHopsItem(it.departure, it.destination, it.totals.fuelRequiredGal, it.totals.fuelMarginGal) },
+            hop = hop,
+            burntGal = burntGal,
+        )
+    }
 
     /** Whether a field is within a still-air glide at pattern height, by the
      *  engine's glide_reaches over the field's own elevation, at the picked

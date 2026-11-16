@@ -109,8 +109,10 @@ struct MapSideButtons: View {
             Button {
                 terrain = (raised ? MapTerrain.flat : MapTerrain.raised).rawValue
             } label: {
+                // In the look's tint, as every tappable thing is (IOS-17).
                 Text(raised ? "2D" : "3D")
                     .font(.body.weight(.semibold))
+                    .foregroundStyle(.tint)
                     .frame(width: side, height: side)
                     .contentShape(Circle())
             }

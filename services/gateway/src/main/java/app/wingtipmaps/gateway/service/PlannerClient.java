@@ -109,6 +109,12 @@ public class PlannerClient {
         return rule("the notes", () -> planner.notes(String.valueOf(pilotId)), a -> a);
     }
 
+    /** The pilot's own checkpoint notes forgotten, the shared ones kept
+     *  (CheckpointNotesClient): how many went. */
+    int forgetNotes(Long pilotId) {
+        return rule("the notes forgotten", () -> planner.forgetNotes(String.valueOf(pilotId)), f -> f.getRemoved());
+    }
+
     /** The Studio's ready drafts nobody has been mailed about (CrashDraftMail). */
     List<PlannerStudioDraft> draftsToNotice() {
         return rule("the crash drafts", planner::draftsToNotice, a -> a);

@@ -10,6 +10,8 @@
 
 use wingtip_core::units::{HPA_PER_INHG, KT_PER_M_S, M_PER_SM};
 
+pub(crate) use crate::visibility::statute_miles;
+
 /// A wind group: "27015G25KT", "VRB03KT", "00000KT", "27015MPS".
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct Wind {
@@ -84,28 +86,6 @@ pub(crate) fn wind(group: &str) -> Option<Wind> {
         None => None,
     };
     Some(Wind { dir_true_deg, speed_kt, gust_kt })
-}
-
-/// A visibility in statute miles from "10SM", "1/2SM", "M1/4SM", "P6SM"
-/// (with the whole miles of "1 1/2SM" given as `whole`): the value and
-/// whether it is "at least".
-pub(crate) fn statute_miles(group: &str, whole: Option<f64>) -> Option<(f64, bool)> {
-    let body = group.strip_suffix("SM")?;
-    let (body, plus) = match body.strip_prefix('P') {
-        Some(b) => (b, true),
-        None => (body.strip_prefix('M').unwrap_or(body), false),
-    };
-    let value = match body.split_once('/') {
-        Some((n, d)) => {
-            let (n, d): (f64, f64) = (n.parse().ok()?, d.parse().ok()?);
-            if d == 0.0 {
-                return None;
-            }
-            n / d
-        }
-        None => body.parse().ok()?,
-    };
-    Some((value + whole.unwrap_or(0.0), plus))
 }
 
 /// A sky group: "BKN012", "OVC250CB", "VV002", "SKC", "CLR", "NSC".

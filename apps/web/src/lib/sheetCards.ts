@@ -24,6 +24,13 @@ export type CardFrame = {
    *  them, the card on top only; none for the frame's own way (CardStack):
    *  Escape a level back, the rest refused. */
   dismiss?: (details: Drawer.Root.ChangeEventDetails) => void;
+  /** Its close on a swipe down from half, for the cards that are settings
+   *  -- You, the Map card -- as Apple Maps closes its account and settings
+   *  sheets (the owner, 2026-11-14); from all the way up a swipe down brings
+   *  it to half, open ("Settings cards should only close from a swipe down
+   *  when in medium detents", the owner, 2026-11-14). None, and a swipe
+   *  past the pill parks the card there (the card rule's 10). */
+  onSwipeClose?: () => void;
   initialFocus?: Drawer.Popup.Props["initialFocus"];
   finalFocus?: Drawer.Popup.Props["finalFocus"];
 };
@@ -48,14 +55,18 @@ export type CardEntry = {
    *  goes (CardStack). */
   state: CardState;
   frame: CardFrame;
-  /** The drawer's scroller, where the content is put. */
+  /** The drawer's scroller, where the content's host is put. */
   slot: HTMLElement | null;
+  /** The card's own box its content is drawn in, the same for the card's
+   *  life (useCardFrame), put in its drawer's scroller: a card opened again
+   *  while its last drawer still closes keeps its content, not built again. */
+  host: HTMLElement;
 };
 
 /** The cards open, the last on top. */
 export const useSheetCards = create<{ stack: CardEntry[] }>(() => ({ stack: [] }));
 
-const REACH: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
+export const REACH: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
 
 /**
  * The card that covers the map most: of those open, the one at the
@@ -96,6 +107,16 @@ export function setCard(id: string, change: Partial<CardEntry>) {
   });
 }
 
+/** A card opened again by the pilot: on top of the stack, the newest card,
+ *  at the size a card opens at (cardOpening). */
+export function raiseCard(id: string) {
+  useSheetCards.setState((s) => {
+    const was = s.stack.find((entry) => entry.id === id);
+    if (!was || (s.stack.at(-1) === was && was.at === undefined)) return s;
+    return { stack: [...s.stack.filter((entry) => entry !== was), { ...was, at: undefined }] };
+  });
+}
+
 /** A card's entry taken away, once its drawer has closed (CardStack). */
 export function dropCard(id: string) {
   useSheetCards.setState((s) => ({ stack: s.stack.filter((entry) => entry.id !== id || entry.state !== "leaving") }));
@@ -106,6 +127,9 @@ export function dropCard(id: string) {
  *  takes, which names the card, and what the pill shows of it there. */
 export const SheetCardHead = createContext<{
   slot: HTMLElement | null;
+  /** The head row's start, where a map card puts its Share (MapCard's
+   *  `start`), as every other card's head has it. */
+  startSlot: HTMLElement | null;
   headingId: string;
   setPill: (pill: PillHead | undefined) => void;
 } | null>(null);

@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { Check } from "lucide-react";
 import { mhzText } from "../lib/frequencies";
 import { showError } from "../lib/problems";
@@ -35,8 +36,7 @@ export default function FrequencyButton({
   const [copied, setCopied] = useCopied();
   const shown = copied === text;
   const button = (
-    <button
-      type="button"
+    <BaseButton
       className="relative inline-flex items-center gap-1 font-semibold text-tint tabular-nums after:absolute after:-inset-x-2 after:-inset-y-3"
       aria-label={`${shown ? "Copied" : "Copy"} ${name ? `${name} ` : ""}${text}`}
       data-testid={testId}
@@ -52,7 +52,7 @@ export default function FrequencyButton({
     >
       {shown && <Check className="size-4" aria-hidden="true" />}
       {shown ? "Copied" : text}
-    </button>
+    </BaseButton>
   );
   return named && name ? (
     <>

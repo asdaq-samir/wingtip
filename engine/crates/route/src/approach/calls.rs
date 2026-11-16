@@ -128,6 +128,7 @@ fn number_json(n: f64) -> String {
 }
 
 /// The rule `name` worked on `v`.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> R<String> {
     match name {
         "approach_guidance" => Ok(opt_string_json(Some(debrief::guidance_of(&opt_str(name, v, "id")?.unwrap_or_default()).key()))),

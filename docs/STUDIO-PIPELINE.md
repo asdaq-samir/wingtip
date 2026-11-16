@@ -161,7 +161,7 @@ filmed slowly.
 
 ### One draft end to end, by hand
 
-1. The stack up (`scripts/dev/go-live.sh`) with ingest's history thread
+1. The stack up (`scripts/dev/go-live.sh`) with ingest's history jobs
    running (the NTSB store and the daily NOTAM snapshots).
 2. `docker compose run --rm crash-leads poll`: leads read, identities checked,
    kits made and filled. The Studio's Drafts list shows each.

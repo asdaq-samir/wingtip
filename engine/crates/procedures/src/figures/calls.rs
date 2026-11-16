@@ -11,6 +11,7 @@ use wingtip_core::ask::{opt_num_in, Ask};
 use wingtip_flight::limits;
 
 /// A hold (holding.rs, AIM 5-3-8).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn hold(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();
@@ -72,6 +73,7 @@ pub fn lost_comms(name: &str, v: &Value) -> Result<String, String> {
 }
 
 /// The diversion drill (diversion.rs, ACS PA.VI.C).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn diversion(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     match name {
@@ -129,6 +131,7 @@ pub fn diversion(name: &str, v: &Value) -> Result<String, String> {
 }
 
 /// The fuel strip's figures (strip.rs: 91.151, 91.167).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn fuel(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     match name {
@@ -184,7 +187,7 @@ pub fn fuel(name: &str, v: &Value) -> Result<String, String> {
 }
 
 /// The strip's fuel (strip::fuel_figure): `{"required_gal", "short":
-/// [{"name", "short_gal"}]}`.
+/// [{"hop", "name", "short_gal"}]}`.
 fn strip_fuel(ask: &Ask) -> Result<String, String> {
     let name = ask.name;
     let hops = match ask.v.get("hops") {
@@ -213,7 +216,9 @@ fn strip_fuel(ask: &Ask) -> Result<String, String> {
         if i > 0 {
             out.push(',');
         }
-        out.push_str("{\"name\":");
+        out.push_str("{\"hop\":");
+        out.push_str(&s.hop.map_or_else(|| "null".to_owned(), |h| h.to_string()));
+        out.push_str(",\"name\":");
         json::string(&mut out, &s.name);
         out.push_str(",\"short_gal\":");
         json::number(&mut out, s.short_gal);
@@ -227,6 +232,7 @@ fn strip_fuel(ask: &Ask) -> Result<String, String> {
 /// planner's words that are compared with the web's word for word; and an
 /// altitude as said (AIM 4-2-9: feet below 18,000 ft, a flight level from
 /// there up, limits.rs).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn written(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();

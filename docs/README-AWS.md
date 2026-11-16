@@ -37,7 +37,7 @@ pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                    ├─ /tiles/*        ──▶ S3 tiles bucket       serving.json and the archives, read by the planner
                    ├─ /api/planner/chart-tile/*
                    │                  ──▶ the server            a tile out of its archive, cached (cycle, revision in the address)
-                   ├─ /app/assets/*   ──▶ the server            cached a year (fingerprinted)
+                   ├─ /app/assets/*   ──▶ the server            cached a year (fingerprinted), Brotli where asked
                    ├─ the chart, the airport search, the stock aircraft
                    │                  ──▶ the server            cached by their own header: a minute, an hour
                    └─ everything else ──▶ the server            not cached: pages, /api, sign-in

@@ -15,22 +15,21 @@ table lookups and a point-in-polygon test.
 import logging
 from datetime import datetime, timezone
 
-import numpy as np
 from fastapi import APIRouter, HTTPException, Query, Response
 from fastapi.responses import FileResponse
 from wingtip import (
     airport_photos,
     approach_facts,
     airports,
-    airspace,
     airspace_primaries,
     altitude,
+    diagram_crops,
     faa_data,
     field_facts,
     field_forecast,
+    field_details,
+    field_marks,
     field_use,
-    fuelstops,
-    geo,
     geocode,
     glmp,
     map_weather,
@@ -44,7 +43,8 @@ from wingtip import (
     weather,
 )
 
-from ..router_basics import DIAGRAM_CACHE, load_route
+from .. import stop_corridor
+from ..router_basics import DIAGRAM_CACHE
 from ..schemas.airports_in_view import AirportsInView
 from ..schemas.airports import (
     AirportPhotos,
@@ -59,7 +59,7 @@ from ..schemas.airports import (
     WaypointsInView,
 )
 from ..gateway import PUBLIC, SHARED
-from ..field_marks import owners_of as _owners, surface_classes_of as _surface_classes
+from ..field_marks import owners_of as _owners, surface_airspace_of, surface_classes_of as _surface_classes
 from ..schemas.nearest import NearestAirports
 
 log = logging.getLogger(__name__)
@@ -76,18 +76,15 @@ def airports_in_view(
     limit: int = Query(default=300, ge=1, le=1000),
     reporting: bool = False,
 ) -> AirportsInView:
-    """The landing fields inside the map's view, the ones that report
-    first and then the biggest -- at most `limit` of them, since a whole
-    state holds thousands and the map only lays a tap target over each --
-    with each one's flight category from its METAR, for a weather chip on
-    the ones that report: the limit drops small fields with nothing to
-    show, never a chip a pilot saw a zoom further out -- and each one's
-    class of airspace at its surface, for its mark.
-    The METARs are the national cache already in memory; with the
-    weather service out the fields come back without, as fields with no
-    station do. With `reporting`, only the fields that report, before
-    the limit: what the map asks once for a whole route's box, so its
-    chips are there before the pilot zooms in on any of it."""
+    """The landing fields inside the map's view, the ones that report first
+    and then the biggest -- at most `limit`: a state holds thousands -- each
+    with its METAR's flight category, for a weather chip (the limit drops
+    small fields with nothing to show, never a chip seen further out), its
+    class of airspace at its surface, and its mark's order and size as the
+    overlay tiles carry them (wingtip.field_marks). The METARs are the
+    national cache in memory; with the weather service out the fields come
+    back without. With `reporting`, only the fields that report, before
+    the limit: the map asks so once for a whole route's box."""
     if south > north or west > east:
         raise HTTPException(422, "The box's south is above its north, or its west east of its east.")
     try:
@@ -105,6 +102,7 @@ def airports_in_view(
     classes = _surface_classes(places)
     primaries = airspace_primaries.primaries()
     towers = faa_data.towered_fields(altitude.DEFAULT_FAA_CACHE_DIR)
+    sites = field_marks.sites()
     return {
         "airports": [
             {
@@ -114,7 +112,8 @@ def airports_in_view(
                 "private": private,
                 "airspace_class": cls,
                 "primary_of": primaries.get(p.get("faa_id") or ""),
-                "towered": p["ident"].upper() in towers or p.get("source_ident", "").upper() in towers,
+                "towered": (tower := p["ident"].upper() in towers or p.get("source_ident", "").upper() in towers),
+                **field_marks.fields(p, tower, primaries.get(p.get("faa_id") or ""), sites),
                 "weather": map_weather.marks_of(p, metars.get(p["source_ident"])) or None,
             }
             for p, cls, (military, private) in zip(places, classes, _owners(places))
@@ -290,42 +289,15 @@ def stops_near(
     return StopFields(fields=out, pending=pending)
 
 
-def _off_course_nm(start: tuple, end: tuple, lat: float, lon: float) -> float:
-    """How far a point is off the straight course from start to end, nm:
-    its least distance to the line, read every hundredth of the way."""
-    t = np.linspace(0.0, 1.0, 101)
-    lats = start[0] + (end[0] - start[0]) * t
-    lons = start[1] + (end[1] - start[1]) * t
-    return float(np.min(geo.distance_nm(lats, lons, lat, lon)))
-
-
-#: How far off the course a field is offered along a route, nm: a short
-#: turn off the way for lunch, the owner's pick (2026-10-26, "10-15 nm off
-#: course"), where wingtip.fuelstops' corridor reached 30.
-STOP_OFF_COURSE_NM = 15.0
-
-
 @router.get("/api/stops/along", response_model=StopFields, openapi_extra=PUBLIC)
 def stops_along(dep: str, dest: str, stops: str = "") -> StopFields:
     """The public fields along a route with fuel, food, repair or a flight
     school, in route order, for the map's Stops while a course is drawn:
-    those no more than STOP_OFF_COURSE_NM off each flight's line, each
+    those no more than stop_corridor.STOP_OFF_COURSE_NM off each flight's line, each
     with its miles from its flight's departure, those it adds and how far
     off the course it is; what they have as round the pilot."""
-    r = load_route(dep, dest, stops)
-    flights = [(f.dep_ident, f.start, f.end) for f in r.flights]
-    found = fuelstops.along(flights, skip=set(r.idents))
     out, pending = [], 0
-    for field in found:
-        # Not the airline airports, as round the pilot: Detroit's food is
-        # past security, not a fly-in lunch (its first answer along a route).
-        if (airports.find_place(field["ident"]) or {}).get("kind") == "large":
-            continue
-        _, start, end = flights[field["flight"]]
-        # Off course first: a field too far off is not read for its places.
-        off = _off_course_nm(start, end, field["lat"], field["lon"])
-        if off > STOP_OFF_COURSE_NM:
-            continue
+    for field, off in stop_corridor.corridor(dep, dest, stops, datetime.now(timezone.utc).date().isoformat()):
         places = _places_of(field)
         pending += places is None
         stop = _stop(field, places)
@@ -406,7 +378,7 @@ def _with_turf(runways: list[dict], ident: str) -> list[dict]:
 def airport_place(ident: str) -> AirportPlace:
     """One US airport's card, by any ident it goes by (C81, KC81, KDLH).
 
-    `airspace_class` is the surface's class (wingtip.airspace.surface_class_at).
+    `airspace_class` is the surface's class, `surface_airspace` with its hours.
     `towered` is whether it lists a tower frequency. No reporting station,
     no `metar`; `weather_unavailable` only where the service was not asked."""
     place = airports.find_place(ident)
@@ -414,7 +386,6 @@ def airport_place(ident: str) -> AirportPlace:
         raise HTTPException(404, f"No US airport goes by {ident.strip().upper()!r}.")
     source = place["source_ident"]
     frequencies = airports.get_frequencies(source)
-    shp_path = airspace.ensure_class_airspace_shapefile(altitude.DEFAULT_FAA_CACHE_DIR)
     unavailable = False
     try:
         metar = weather.metar_for_idents([source]).get(source)
@@ -445,41 +416,47 @@ def airport_place(ident: str) -> AirportPlace:
             modelled = glmp.at(place["lat"], place["lon"])
         except glmp.GlmpUnavailable as err:
             log.warning("modelled weather at %s: %s", place["ident"], err)
+    # Calm now, the field's last wind for the runway in use.
+    runways = _with_turf(
+        pattern.with_traffic(
+            runway_wind.with_winds(
+                [r for r in airports.get_runways(source) if not r["closed"]],
+                metar,
+                place["lat"],
+                place["lon"],
+                weather.recent_wind(place["ident"]) if metar and metar.get("wind_speed_kt") == 0 else None,
+            ),
+            place["ident"],
+            place["lat"],
+            place["lon"],
+        ),
+        place["ident"],
+    )
     return {
         **{key: value for key, value in place.items() if key != "source_ident"},
-        "airspace_class": airspace.surface_class_at(place["lat"], place["lon"], shp_path),
+        **surface_airspace_of(place),  # the class at its surface, part-time or not (the engine's)
         "military": military,
         "private": private,
         "towered": any(f["type"] == "TWR" for f in frequencies),
         **_notes(place["ident"]),
         **{k: v for k, v in (field_use.record_of(source) or {}).items() if k not in ("name", "status")},  # NASR's record (AirportRecord)
         "pattern": pattern.pattern_at(place["ident"], place["elevation_ft"]),
-        # Calm now, the field's last wind for the runway in use.
-        "runways": _with_turf(
-            pattern.with_traffic(
-                runway_wind.with_winds(
-                    [r for r in airports.get_runways(source) if not r["closed"]],
-                    metar,
-                    place["lat"],
-                    place["lon"],
-                    weather.recent_wind(place["ident"]) if metar and metar.get("wind_speed_kt") == 0 else None,
-                ),
-                place["ident"],
-                place["lat"],
-                place["lon"],
-            ),
-            place["ident"],
-        ),
+        "runways": runways,
         "frequencies": frequencies,
         "metar": metar,
         "nearby_metar": nearby,
         "modelled_weather": modelled,
         "taf": taf,
         "weather_unavailable": unavailable,
-        # Its phone and street address, for the card's Call and Address.
-        **faa_data.airport_contact(place["ident"], altitude.DEFAULT_FAA_CACHE_DIR),
+        **field_details.of(place, altitude.DEFAULT_FAA_CACHE_DIR),  # its phones, address, airspace hours and zone
         "airport_diagram_url": publications.airport_diagram_url(place["ident"]),
         "airport_diagram_cycle": publications.airport_diagram_cycle(place["ident"]),
+        # Whether its diagram's crop to the runways is worth asking for: not
+        # where it is already known not to be found this cycle (WEB-41). The
+        # ends as airport_diagram_runways reads them.
+        "airport_diagram_runways": not diagram_crops.runways_missing(
+            place["ident"], any(e.get("lat") is not None for r in runways for e in r.get("runway_ends", []))
+        ),
         "chart_supplement_url": publications.chart_supplement_url(place["ident"]),
         "procedures": publications.terminal_charts(place["ident"]),
     }

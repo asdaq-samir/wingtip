@@ -8,7 +8,6 @@ all pruned on a schedule, whether or not ingest runs."""
 from __future__ import annotations
 
 import sqlite3
-import threading
 
 import pytest
 
@@ -80,15 +79,11 @@ def test_track_points_go_after_30_days_though_the_airplane_is_never_heard_again(
     assert [p["t"] for p in store.points("a3c858")] == [1791800600.0]
 
 
-def test_the_prune_thread_runs_until_stopped(wall, monkeypatch):
-    ran = threading.Event()
-    stop = threading.Event()
+def test_the_live_store_is_pruned_every_minute_by_a_job_on_the_scheduler():
+    from wingtip import schedule
 
-    def pruned():
-        ran.set()
-        stop.set()
-        return {}
-
-    monkeypatch.setattr(radar, "prune", pruned)
-    radar.prune_forever(stop)
-    assert ran.is_set()
+    on = schedule.scheduler()
+    schedule.every(on, radar.PRUNE_EVERY_S, radar.prune, name="live-store-prune")
+    job = on.get_job("live-store-prune")
+    assert job.func is radar.prune
+    assert job.trigger.interval.total_seconds() == 60.0

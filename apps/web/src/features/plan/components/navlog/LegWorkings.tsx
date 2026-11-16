@@ -10,6 +10,8 @@ import type { Leg } from "../../../../lib/api/types";
 import { ANSWERS, checks, workingsOf, written, type AnswerKey, type Phase, type Workings } from "./workings";
 import { TEXT } from "../../../../lib/text";
 import { FINDING_TONE } from "../../../../lib/findings";
+import { gal, nm } from "../../../../lib/format";
+import { AskFigure } from "../../../../components/airplane/AskFigure";
 
 function Worked({ workings }: { workings: Workings }) {
   return (
@@ -22,16 +24,19 @@ function Worked({ workings }: { workings: Workings }) {
       {workings.climb && (
         <ListRow
           title="Climb, added"
-          description="At climb speed and burn"
-          value={`${Math.round(workings.climb.min)} min · ${workings.climb.gal.toFixed(1)} gal`}
+          description={workings.climb.gal === null ? "At climb speed; its fuel not known" : "At climb speed and burn"}
+          value={`${Math.round(workings.climb.min)} min · ${workings.climb.gal === null ? "fuel —" : gal(workings.climb.gal)}`}
           data-testid="working-climb"
         />
       )}
+      {/* Asked for where it is needed, and kept (feedback: ask when needed):
+          the climb's fuel flow, with no assumed figure in its place. */}
+      {workings.climb && workings.climb.gal === null && <AskFigure figure="climb" what="The climb's fuel" testId="working-climb-ask" />}
       {workings.procedure && (
         <ListRow
           title={workings.procedure.landing ? "Pattern or approach, added" : "Departure, added"}
-          description={`${workings.procedure.nm.toFixed(1)} nm more than the leg's line, at its ground speed`}
-          value={`${Math.round(workings.procedure.min)} min · ${workings.procedure.gal.toFixed(1)} gal`}
+          description={`${nm(workings.procedure.nm)} more than the leg's line, at its ground speed`}
+          value={`${Math.round(workings.procedure.min)} min · ${gal(workings.procedure.gal)}`}
           data-testid="working-procedure"
         />
       )}

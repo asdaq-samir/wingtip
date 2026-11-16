@@ -5,7 +5,8 @@ import json
 
 import pytest
 from fastapi.testclient import TestClient
-from wingtip import airports, airspace, faa_data, fixes, pattern, planning, publications, tfr, weather
+from wingtip import airports, airspace, airspace_at, diagram_crops, faa_data, field_marks, fixes, pattern, planning, publications, remarks
+from wingtip import field_details, tfr, weather
 from wingtip.config import get_settings
 
 from app import chart_model, chart_scorer, detection, prefetch, checkpoint_scoring
@@ -136,8 +137,11 @@ def known_patterns(monkeypatch):
     monkeypatch.setattr(faa_data, "military_fields", lambda cache_dir: {})
     monkeypatch.setattr(faa_data, "private_fields", lambda cache_dir: frozenset())
     monkeypatch.setattr(faa_data, "towered_fields", lambda cache_dir: frozenset())
+    monkeypatch.setattr(field_marks, "sites", lambda cache_dir=None: {})  # no NASR runways: ranked on the tower alone
     monkeypatch.setattr(faa_data, "airport_contact", lambda ident, cache_dir: {"phone": None, "address": None})
     monkeypatch.setattr(pattern, "right_traffic_ends", lambda ident, cache_dir=None: set())
+    monkeypatch.setattr(remarks, "pattern_notes", lambda faa_id, cache_dir=None: [])
+    monkeypatch.setattr(field_details, "_table", lambda name, reader, cache_dir: {})  # no APT_CON or CLS_ARSP fetched
 
 
 @pytest.fixture(autouse=True)
@@ -147,6 +151,8 @@ def uncontrolled_fields(monkeypatch):
     monkeypatch.setattr(airspace, "ensure_class_airspace_shapefile", lambda cache_dir: "Class_Airspace.shp")
     monkeypatch.setattr(airspace, "surface_class_at", lambda lat, lon, shp: "G")
     monkeypatch.setattr(airspace, "surface_classes", lambda points, shp: ["G"] * len(points))
+    g = {"class": "G", "part_time": False, "otherwise": None, "otherwise_part_time": False}
+    monkeypatch.setattr(airspace_at, "surface_airspace", lambda lat, lon, elevation_ft, shp: {"airspace_class": "G", "surface_airspace": g})
 
 
 @pytest.fixture(autouse=True)
@@ -172,6 +178,7 @@ def no_publications(monkeypatch):
     indexes."""
     monkeypatch.setattr(publications, "airport_diagram_url", lambda ident: None)
     monkeypatch.setattr(publications, "airport_diagram_cycle", lambda ident: None)
+    monkeypatch.setattr(diagram_crops, "runways_missing", lambda ident, ends: False)
     monkeypatch.setattr(publications, "terminal_charts", lambda ident: [])
     monkeypatch.setattr(publications, "chart_supplement_url", lambda ident: None)
 
@@ -205,7 +212,17 @@ def select_cruise_altitude_stub(altitude: dict):
     recommendation, which is what makes a route unflyable."""
 
     def select(
-        start, end, profile, faa_cache_dir=None, fixes=None, fcst_hr="06", pending=None, window=None, class_b_cleared=False, rules="vfr"
+        start,
+        end,
+        profile,
+        faa_cache_dir=None,
+        fixes=None,
+        fcst_hr="06",
+        pending=None,
+        window=None,
+        class_b_cleared=False,
+        rules="vfr",
+        paths=(),
     ):
         candidates = [] if altitude["recommended_ft"] is None else [altitude["recommended_ft"]]
         segments = (

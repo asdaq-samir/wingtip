@@ -11,6 +11,15 @@
      night). */
   --shadow-float: var(--depth-float);
   --shadow-overlay: var(--depth-overlay);
+  /* The depth's three steps are card, float and overlay, from a card on
+     the sheet to a menu over everything, with the hairline ring beside
+     them; a sheet's shade and a map mark's drop are their own (feel.sheet,
+     feel.mark). Each a shadow-* utility, so no shadow is written by hand
+     (brand_guard's shadow check). */
+  --shadow-card: var(--depth-card);
+  --shadow-hairline: var(--depth-hairline);
+  --shadow-sheet: var(--depth-sheet);
+  --shadow-mark: var(--depth-mark);
 }
 
 /* The browser's own parts -- a field's caret and date picker, a scroll

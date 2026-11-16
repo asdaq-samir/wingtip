@@ -30,7 +30,8 @@
           "type": "integer"
         },
         "top_ft": {
-          "type": "number"
+          "type": "number",
+          "description": "The highest VFR cruising altitude either way under the ceiling (the lower of the two), over which a cell's ground is closed where the ceiling is known."
         },
         "window": {
           "type": "array",
@@ -44,7 +45,8 @@
           "type": "array",
           "items": {
             "type": "number"
-          }
+          },
+          "description": "Every VFR cruising altitude from 3,500 ft to the airplane's ceiling under 18,000 ft (none known: 17,500), the winds aloft wanted at each: each way tries its own half of 91.159 among them, so westbound reaches 12,500 under a 13,000 ft ceiling."
         },
         "lowest_cruise_ft": {
           "type": "number"

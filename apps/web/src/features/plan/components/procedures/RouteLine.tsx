@@ -1,9 +1,12 @@
 import { useAirplaneChosen } from "../../../../lib/preferences";
 import { ChevronDown, Route } from "lucide-react";
+import { Button } from "../../../../components/ui/button";
 import { cn } from "cn";
 import { ToggleGroup, ToggleGroupItem } from "../../../../components/ui/toggle-group";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { TEXT } from "../../../../lib/text";
+import { gal } from "../../../../lib/format";
+import { andList } from "../../../../lib/listWords";
 import { useRouteLineOpen } from "../../lib/routeLine";
 
 /** FPL's route line's choices (PlanWorkspace's routeLine): each chip's
@@ -14,6 +17,13 @@ export interface RouteLineChoices {
   chips: { key: string; label: string; warning: string | null; time: string | null; nm: number | null; gal: number | null }[];
   picked: string;
   onPick: (key: string) => void;
+  /** What the planner could not check the ways for, in the engine's words
+   *  ("service ceiling", "fuel", "start and taxi fuel"): said under them. */
+  unchecked?: string[];
+  /** The ways are the last airplane's or time's while the new ones come
+   *  (useRouteWays): the row kept in its place, dimmed, its cards not to be
+   *  picked till they are this airplane's. */
+  stale?: boolean;
 }
 
 /**
@@ -33,7 +43,7 @@ export interface RouteLineChoices {
  *  own; else a rounded row of its own over the list. */
 /** A card's miles and fuel, "105 nm · 10.3 gal", as far as they are known. */
 const figures = (c: RouteLineChoices["chips"][number]) =>
-  [c.nm != null ? `${Math.round(c.nm)} nm` : null, c.gal != null ? `${c.gal.toFixed(1)} gal` : null].filter(Boolean).join(" · ");
+  [c.nm != null ? `${Math.round(c.nm)} nm` : null, c.gal != null ? gal(c.gal) : null].filter(Boolean).join(" · ");
 
 export function RouteLine({ line: asked, grouped = false }: { line: RouteLineChoices; grouped?: boolean }) {
   const open = useRouteLineOpen((s) => s.open);
@@ -49,12 +59,19 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
     <Collapsible
       open={open}
       onOpenChange={(next) => useRouteLineOpen.setState({ open: next })}
-      className={grouped ? undefined : "mt-2 mb-1 rounded-xl bg-card"}
+      className={cn(
+        grouped ? undefined : "mt-2 mb-1 rounded-xl bg-card",
+        line.stale && "opacity-50 transition-opacity motion-reduce:transition-none",
+      )}
       data-testid="route-line"
+      data-stale={line.stale ? "" : undefined}
+      aria-busy={line.stale || undefined}
     >
       <CollapsibleTrigger
         render={
-          <button
+          <Button
+            variant="ghost"
+            size="inline"
             type="button"
             data-testid="route-line-toggle"
             data-disclosure=""
@@ -65,6 +82,7 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
                 : `${picked.label}${picked.time ? ` ${picked.time}` : ""}${others > 0 ? ` ${others} more` : ""}, Routes: ${words(picked)}`
             }
             className={cn(
+              "justify-start text-inherit hover:bg-transparent",
               "flex min-h-11 w-full items-center gap-2.5 px-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
               TEXT.row,
             )}
@@ -95,6 +113,7 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
             if (v[0]) line.onPick(v[0]);
           }}
           aria-label="Routes"
+          disabled={line.stale}
           className="flex w-full justify-start gap-2 overflow-x-auto overscroll-x-contain px-3 pb-3 [scrollbar-width:none]"
         >
           {line.chips.map((c) => (
@@ -112,17 +131,28 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
               {(airplane || c.time) && (
                 <span className={cn("font-semibold", TEXT.row, c.key === line.picked && "text-tint")}>{c.time ?? "—"}</span>
               )}
-              <span className={cn("whitespace-normal", TEXT.note, c.warning ? "text-amber-700 dark:text-amber-400" : "text-foreground")}>
-                {c.label}
-              </span>
+              <span className={cn("whitespace-normal", TEXT.note, c.warning ? "text-caution-ink" : "text-foreground")}>{c.label}</span>
               {figures(c) && (
                 <span className={cn("text-muted-foreground tabular-nums", TEXT.note)} data-testid="route-line-figures">
                   {figures(c)}
                 </span>
               )}
+              {/* What it crosses, the engine's words: warned, never refused. */}
+              {c.warning && (
+                <span className={cn("whitespace-normal font-semibold text-caution-ink", TEXT.note)} data-testid="route-line-warning">
+                  {c.warning}
+                </span>
+              )}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
+        {/* Said where the ways are, not left out: a way's fuel or ceiling
+            the planner could not check, the airplane's figure missing. */}
+        {line.unchecked && line.unchecked.length > 0 && (
+          <p className={cn("px-3 pb-3 text-muted-foreground", TEXT.note)} data-testid="route-line-unchecked">
+            {`Not checked: ${andList(line.unchecked)}`}
+          </p>
+        )}
       </CollapsibleContent>
     </Collapsible>
   );

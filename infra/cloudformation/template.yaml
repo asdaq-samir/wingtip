@@ -610,7 +610,9 @@ Resources:
   #                  the server, cached: a tile the planner read out of its
   #                  archive, its cycle and revision in its address.
   # - /app/assets/*  the server, cached: fingerprinted, a year, immutable
-  #                  (WebMvcConfig's own header).
+  #                  (WebMvcConfig's own header). CachingOptimized keys on
+  #                  Brotli and gzip, so the origin sends the web build's
+  #                  own .br (Brotli at 11) to a viewer that takes it.
   # - the chart, the airport search, the stock aircraft
   #                  the server, cached by their own Cache-Control: the
   #                  same for every pilot (SharedAnswersCachePolicy).

@@ -35,6 +35,32 @@ import type { LatLon } from "./geo";
 
 /** A key that is there ("1") or not: a card or a list open, a choice
  *  made. False takes it out of the address. */
+/** An FDC NOTAM's number as tfr.faa.gov lists a TFR: "6/4116". */
+const TFR_ID = /^\d{1,2}\/\d{3,5}$/;
+
+/** A TFR's own link, its card opened from the address (`tfr`), at
+ *  `origin` (the site's, for a link to share). */
+export const tfrLink = (notamId: string, origin = "") => `${origin}${SCREEN_LINK.path}?tfr=${encodeURIComponent(notamId)}`;
+
+/** A VOR as its link names it: its ident and where it is, as one ident
+ *  names navaids in more than one place ("AA", wingtip.fixes). */
+export type NavaidAt = LatLon & { ident: string };
+
+/** "OBK@42.2214,-87.9517": the ident, then its place to four places. */
+const navaidAt = createParser<NavaidAt>({
+  parse: (v) => {
+    const [ident = "", at = ""] = v.split("@");
+    const p = /^[A-Z0-9]{2,4}$/.test(ident) ? pointOf(at) : null;
+    return p && { ident, ...p };
+  },
+  serialize: (n) => `${n.ident}@${n.lat.toFixed(4)},${n.lon.toFixed(4)}`,
+  eq: (a, b) => a.ident === b.ident && a.lat === b.lat && a.lon === b.lon,
+});
+
+/** A VOR's own link, its card opened from the address (`navaid`), at
+ *  `origin` (the site's, for a link to share). */
+export const navaidLink = (n: NavaidAt, origin = "") => `${origin}${SCREEN_LINK.path}?navaid=${encodeURIComponent(navaidAt.serialize(n))}`;
+
 const flag = createParser<boolean>({ parse: (v) => (v === "1" ? true : null), serialize: () => "1" }).withDefault(false);
 
 /** A point on Earth, `42.3172,-88.0905`, to four places (11 m). */
@@ -53,9 +79,9 @@ export const addressPoint = (p: LatLon): LatLon => pointOf(point.serialize(p))!;
 export const LOCAL_MINUTES = [30, 45, 60, 90, 120, 150, 180, 240];
 
 /** A list in full, from its section's title (`?list=favorites`): the
- *  airports' Favorites and Recents, the routes planned, the airplanes'
- *  Favorites and Recents. Saved and Nearest have keys of their own. */
-export const PANEL_LISTS = ["favorites", "recents", "routes", "aircraft-favorites", "aircraft-recents"] as const;
+ *  Favorites and Recents, airports' and airplanes' together, and the
+ *  routes planned. Saved and Nearest have keys of their own. */
+export const PANEL_LISTS = ["favorites", "recents", "routes"] as const;
 
 const ALTITUDE_CHOICES = ["fastest", "lowest", "highest", "economical"] as const satisfies readonly AltitudeChoice[];
 
@@ -101,9 +127,10 @@ export const addressParsers = {
   view: parseAsStringLiteral(["briefing"] as const),
   // What is open over the sheet: an airport's card, the airspace over a
   // point held, an airplane tracked by its ICAO address and one of its past
-  // flights by its takeoff's time, the traffic, Nearest and the place it
-  // is from, Saved, a list in full, the Brief, a lesson, an airplane's
-  // profile by its N-number.
+  // flights by its takeoff's time, Nearest and the place it is from,
+  // Saved, a list in full, the Brief, a lesson, an airplane's profile by
+  // its N-number. `aircraft` is the traffic's page that was, read only so
+  // an old link lands on the one search (usePanelView).
   place: parseAsString,
   at: point,
   flight: createParser({ parse: (v) => (/^~?[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : null), serialize: (v: string) => v }),
@@ -117,6 +144,12 @@ export const addressParsers = {
   brief: flag,
   lesson: parseAsString,
   airplane: parseAsString,
+  // A TFR's card by its FDC NOTAM number, "6/4116" (FAA JO 7930.2's
+  // numbering: the year's last figure, a slash, its serial); anything else
+  // read as none.
+  tfr: createParser({ parse: (v) => (TFR_ID.test(v) ? v : null), serialize: (v: string) => v }),
+  // A VOR's card by its ident and place (navaidAt); anything else none.
+  navaid: navaidAt,
   // Read once and taken off: a screen a link opens (`open`,
   // lib/navigation's SCREEN_LINK), favorites a link brings, a sign-in the
   // gateway refused.
@@ -137,6 +170,10 @@ export const useAddress = () => useQueryStates(addressParsers);
 
 /** One key of the address, drawn again only when it changes. */
 export const useAddressKey = <K extends keyof AddressParsers>(key: K) => useQueryState(key, addressParsers[key]);
+
+/** The open VOR card's key (`navaid`), its parser's own type kept, which
+ *  useAddressKey's string overload loses for an object. */
+export const useNavaidKey = () => useQueryState("navaid", navaidAt);
 
 /** Every key of the address taken out: with a change spread over it, an
  *  address that is that change alone (a route cleared, Fly Here's). */

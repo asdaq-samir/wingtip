@@ -146,7 +146,7 @@ test("a search sent lists the fields round the place, its chips and Filters narr
   await sideDrawer(page).getByTestId("one-search-cancel").click();
   await expect(list).toHaveCount(0);
   await expect(page.getByTestId("search-airports")).toHaveValue("");
-  await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("sheet-page-toggle")).toBeVisible();
 });
 
 test("a search sent marks its fields on the map, and a mark opens its card", async ({ page }) => {
@@ -176,7 +176,7 @@ test("a search's fuel, approach, surface and VFR at… filters narrow its fields
   const rows = list.getByTestId("search-result");
   await expect(rows).toHaveCount(3);
   // The METAR's wind and visibility, and what the field has.
-  await expect(rows.first().getByTestId("search-result-weather")).toContainText("Wind 270° at 12 kt, gusts 18 · 10 SM");
+  await expect(rows.first().getByTestId("search-result-weather")).toContainText("Wind 270°T at 12 kt, gusts 18 · 10 SM");
   await expect(rows.first().getByTestId("search-result-facts")).toContainText("Paved, Turf · Approach · 100LL");
 
   // Jet A from the fuel chip's menu: Waukegan alone.

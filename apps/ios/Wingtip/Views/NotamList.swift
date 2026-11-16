@@ -54,7 +54,6 @@ struct NotamListView: View {
         .listStyle(.insetGrouped)
         .navigationTitle(source.title)
         .navigationBarTitleDisplayMode(.large)
-        .refreshable { await load(force: true) }
         .task(id: source) { await load(force: false) }
     }
 
@@ -212,7 +211,7 @@ struct NotamDetailView: View {
         .listStyle(.insetGrouped)
         .navigationTitle(notam.kind == "tfr" ? "TFR" : notam.id)
         .toolbar {
-            ToolbarItem(placement: .pinnedTrailing) {
+            ToolbarItem(placement: .topBarLeading) {
                 ShareLink(item: notam.raw) { Label("Share", systemImage: WingtipIcon.share) }
             }
         }

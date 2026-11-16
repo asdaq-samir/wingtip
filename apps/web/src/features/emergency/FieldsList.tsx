@@ -8,7 +8,7 @@ import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 import { spokenDistance, spokenHeadingMagnetic, spokenHeadingTrue, threeFigures } from "../../lib/format";
 import { announce } from "@react-aria/live-announcer";
-import type { EmergencyModel } from "./useEmergency";
+import { FIELDS, type EmergencyModel } from "./useEmergency";
 
 /**
  * The best fields from where the airplane is, the engine's order (reach,
@@ -45,7 +45,7 @@ function useBestFieldSaid(best: Field | undefined) {
 }
 
 export default function FieldsList({ vm }: { vm: EmergencyModel }) {
-  const { ranked, picked, pick, asked, fix, showPosition } = vm;
+  const { ranked, picked, pick, asked, fix, showPosition, visibility } = vm;
   useBestFieldSaid(ranked?.fields[0]);
   if (!fix) {
     return (
@@ -118,6 +118,14 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
                           </span>
                         );
                       })}
+                      {/* The field's reported visibility beside the
+                          engine's weather line; none where the report
+                          gives none. */}
+                      {visibility.has(f.ident) && (
+                        <span className="block" data-testid="emergency-field-visibility">
+                          Visibility {visibility.get(f.ident)}
+                        </span>
+                      )}
                     </span>
                   }
                 />
@@ -126,7 +134,14 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
           </ListChoices>
         )}
         {!ranked && (
-          <QueryState row query={asked} fetching="Fetching the fields round you…" failed="The fields could not be had. Try again." />
+          <QueryState
+            row
+            rows={FIELDS}
+            lines={2}
+            query={asked}
+            fetching="Fetching the fields round you…"
+            failed="The fields could not be had. Try again."
+          />
         )}
       </ListGroup>
       {/* Its glide ratio asked for in place, the fields listed anyway

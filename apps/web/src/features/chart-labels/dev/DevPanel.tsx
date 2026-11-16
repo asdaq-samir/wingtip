@@ -19,23 +19,22 @@ import RatingGuide from "../components/RatingGuide";
 import { TEXT } from "../../../lib/text";
 import { useRetrain } from "./useRetrain";
 import SpeedPage from "./SpeedPage";
-import { ago, grouped } from "../../../lib/format";
+import { ago, dayMonthYear, grouped } from "../../../lib/format";
 import { WINDS_MODELLED } from "../../../lib/windsAloft";
 
 const mae = (n: number) => n.toFixed(4);
 
-/** One formatter for every date the console shows: `toLocaleDateString`
- *  builds a new one per call, and was the console's costliest function. */
-const DATE = new Intl.DateTimeFormat();
 /** A date and a time, for the registry's versions. */
 const WHEN = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 
-/** "just now", "12m ago", "3h 5m ago" (lib/format ago), or the date past
- *  two days -- for a timestamp that may be missing altogether. */
+/** "just now", "12m ago", "3h 5m ago" (lib/format ago), or the day past
+ *  two days, "5 Jan 2026" (lib/format dayMonthYear, the app's one form of
+ *  a day; it was the browser's locale's) -- for a timestamp that may be
+ *  missing altogether. */
 function agoOrDate(iso: string | null | undefined): string {
   if (!iso) return "never";
   const since = Date.now() - new Date(iso).getTime();
-  return since < 48 * 3600_000 ? ago(since) : DATE.format(new Date(iso));
+  return since < 48 * 3600_000 ? ago(since) : dayMonthYear(new Date(iso));
 }
 
 const CHART_KIND_LABELS: Record<string, string> = {

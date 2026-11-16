@@ -2,7 +2,7 @@
 it and the class of airspace at its surface -- the fields in view's, a
 stop's and the nearest fields' (app.routers.airports)."""
 
-from wingtip import airspace, altitude, faa_data
+from wingtip import airspace, airspace_at, altitude, faa_data
 
 
 def owners_of(places: list[dict]) -> list[tuple]:
@@ -30,3 +30,16 @@ def surface_classes_of(places: list[dict]) -> list:
         return airspace.surface_classes([(p["lat"], p["lon"]) for p in places], shp_path)
     except (OSError, RuntimeError):
         return [None] * len(places)
+
+
+def surface_airspace_of(place: dict) -> dict:
+    """One field's class of airspace at its surface and, where it is
+    part-time, its class at other times, for its card
+    (wingtip.airspace_at.surface_airspace, the engine's rule), as
+    {"airspace_class", "surface_airspace"}; None for each where the FAA's
+    airspace cannot be had, the card's Airspace a dash."""
+    try:
+        shp_path = airspace.ensure_class_airspace_shapefile(altitude.DEFAULT_FAA_CACHE_DIR)
+        return airspace_at.surface_airspace(place["lat"], place["lon"], place.get("elevation_ft"), shp_path)
+    except (OSError, RuntimeError):
+        return {"airspace_class": None, "surface_airspace": None}

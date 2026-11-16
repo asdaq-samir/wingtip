@@ -165,34 +165,44 @@ test(
     // Emergency: fields ranked on the device, or No connection.
     await page.getByTestId("flying-emergency").click();
     const sheet = page.getByTestId("emergency-sheet");
+    // Either, or both: offline the fields ranked on the device come with a
+    // line saying they are the chart data kept, not the planner's.
     await expect(
       sheet
         .getByTestId("emergency-field")
         .first()
-        .or(sheet.getByText(/No connection/).first()),
+        .or(sheet.getByText(/No connection/).first())
+        .first(),
     ).toBeVisible({ timeout: slow(20_000) });
     await expect(sheet.getByTestId("emergency-squawk")).toContainText("7700");
     await sheet.getByTestId("sheet-card-close").click();
 
-    // Nearest: the fields from the device, or No connection -- never
-    // "Searching…" for good.
+    // Nearest, the card it is now (NearestCard), from the dry run's own
+    // ship: the fields, or No connection -- never "Show my position", which
+    // would say the dry run's position was lost, nor "Searching…" for good.
     await page.getByTestId("flying-nearest").click();
-    const results = sideDrawer(page).getByTestId("search-results");
+    const results = sideDrawer(page).getByTestId("nearest-card");
     await expect(results).toBeVisible({ timeout: slow(10_000) });
     await expect(results).toContainText(/ nm|No connection/, { timeout: slow(20_000) });
     await expect(results).not.toContainText("Searching…");
     await page.keyboard.press("Escape");
 
-    // Direct To: worked out on the device, or the route left as it was.
+    // Direct To, the dry run flying on: worked out on the device, the
+    // figure strip at the foot (the calculations, dry run too) its display,
+    // To the next landing and the distance left to it, the route's address
+    // holding the direct and the page still up.
+    const strip = sideDrawer(page).getByTestId("dry-run-figures");
+    await expect(strip.getByTestId("navlog-to")).toHaveText("KDLH");
     const direct = page.getByTestId("flying-direct");
-    if (await direct.isVisible()) {
-      await direct.click();
-      await expect(
-        sideDrawer(page)
-          .getByTestId("direct-on-device")
-          .or(page.getByTestId("problem-banner-title").getByText("Not changed: no connection")),
-      ).toBeVisible({ timeout: slow(10_000) });
-    }
+    await expect(direct).toBeVisible();
+    await direct.click();
+    await expect(page).toHaveURL(/[?&]direct=KDLH\b/, { timeout: slow(10_000) });
+    await expect(page.getByTestId("page-error")).toHaveCount(0);
+    await expect(strip.getByTestId("navlog-to")).toHaveText("KDLH");
+    await expect(strip).toContainText(/\d+(\.\d)? nm/);
+    // Its fuel required too, the engine's fuel plan over the direct's legs
+    // (navlog_fuel_plan), where it read "—" for want of the rule on the device.
+    await expect(strip.getByTestId("navlog-fuel")).toHaveText(/\d/);
     await context.setOffline(false);
   },
 );

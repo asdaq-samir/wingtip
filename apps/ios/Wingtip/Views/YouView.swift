@@ -77,7 +77,6 @@ struct YouView: View {
         // comes back to You.
         .navigationDestination(isPresented: $naming) { PilotDetailsView() }
         .sheet(isPresented: $signingIn) { SignInView().presentationDetents([.medium, .large]) }
-        .refreshable { await session.refresh() }
     }
 }
 

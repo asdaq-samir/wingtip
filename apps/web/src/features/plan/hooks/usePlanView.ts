@@ -7,8 +7,8 @@ import type { PlanCards } from "./usePlanCards";
 /**
  * The place up under the one search and the sheet's size (usePlanWorkspace):
  * what each place keeps open over it (usePanelView) -- the plan, the
- * route's box and its nav log; the search's own page and its results; the
- * traffic -- the places opened so far, and how far out the panel is.
+ * route's box and its nav log; the search's own page and its results --
+ * the places opened so far, and how far out the panel is.
  */
 export function usePlanView(
   { planned, load, routed, hasPoints, address, setAddress }: PlanRoute,

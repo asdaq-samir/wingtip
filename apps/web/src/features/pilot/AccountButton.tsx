@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { openYou } from "../../lib/openSettings";
@@ -6,7 +7,9 @@ import { AccountFace } from "./AccountFace";
 import { accountButton } from "./accountLook";
 
 /**
- * The account button at the sheet's title row: the pilot's initials on the
+ * The account button over the map, on a phone under the 3D where the page
+ * toggle was, the two swapped at the owner's ask (2026-11-14; MapControls'
+ * AccountCircle): the pilot's initials on the
  * tint, or a person's glyph in the tint on grey signed out, 36 points
  * round with a 44-point hit area (accountLook). A tap opens You
  * (PilotPanel), who the pilot is and what is theirs, Settings one of its
@@ -20,8 +23,7 @@ export default function AccountButton({ className }: { className?: string }) {
   const { data: pilot } = useQuery(pilotQuery);
   const name = pilot ? pilot.fullName || pilot.displayName : null;
   return (
-    <button
-      type="button"
+    <BaseButton
       aria-label={name ? `You, ${name}` : "You"}
       data-testid="account-button"
       data-console-button=""
@@ -29,6 +31,6 @@ export default function AccountButton({ className }: { className?: string }) {
       className={cn(accountButton(!!name), className)}
     >
       <AccountFace name={name} />
-    </button>
+    </BaseButton>
   );
 }

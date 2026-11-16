@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "../../../../components/ui/button";
 import { cn } from "cn";
 import { StripNote } from "../../../../components/Favorites";
 import { Carousel, CarouselContent, CarouselItem } from "../../../../components/ui/carousel";
@@ -25,7 +26,9 @@ const ZOOM = 10;
 export default function RecentCards({ onPick }: { onPick: (airport: RecentAirport) => void }) {
   const recents = usePreferences((s) => s.recentAirports);
   const away = useAway();
-  if (recents.length === 0) return <StripNote>None yet: the airports opened are kept here.</StripNote>;
+  // With none, the airplanes' tiles under it (SearchHome) say what is kept.
+  const planes = usePreferences((s) => s.recentAircraft.length);
+  if (recents.length === 0) return planes ? null : <StripNote>None yet: the airports and airplanes opened are kept here.</StripNote>;
   return (
     // A sideways drag the row's, an up or down one the sheet's (the one scrolling rule).
     <Carousel opts={{ align: "start", dragFree: true }} data-base-ui-swipe-ignore="x" data-testid="pill-airport-recents">
@@ -49,12 +52,17 @@ function RecentCard({ airport, detail, onClick }: { airport: RecentAirport; deta
       ? tileTemplate(chart, "sec").replace("{z}", String(ZOOM)).replace("{x}", String(at.x)).replace("{y}", String(at.y))
       : null;
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="inline"
       type="button"
       onClick={onClick}
       aria-label={`${airport.ident}, ${airport.name}`}
       data-testid="airport-recent"
-      className="relative flex h-44 w-36 shrink-0 flex-col justify-end overflow-hidden rounded-2xl bg-muted text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className={cn(
+        "text-inherit",
+        "relative flex h-44 w-36 shrink-0 flex-col justify-end overflow-hidden rounded-2xl bg-muted text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      )}
     >
       {src && (
         <img
@@ -78,6 +86,6 @@ function RecentCard({ airport, detail, onClick }: { airport: RecentAirport; deta
         <span className={cn("line-clamp-2 font-semibold", TEXT.detail)}>{airport.name}</span>
         {detail && <span className={cn("truncate opacity-85", TEXT.note)}>{detail}</span>}
       </span>
-    </button>
+    </Button>
   );
 }

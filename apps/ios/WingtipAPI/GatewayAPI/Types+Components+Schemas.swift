@@ -3349,6 +3349,21 @@ extension Components {
                 case email
             }
         }
+        /// - Remark: Generated from `#/components/schemas/NotesForgottenDto`.
+        public struct NotesForgottenDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/NotesForgottenDto/removed`.
+            public var removed: Swift.Int
+            /// Creates a new `NotesForgottenDto`.
+            ///
+            /// - Parameters:
+            ///   - removed:
+            public init(removed: Swift.Int) {
+                self.removed = removed
+            }
+            public enum CodingKeys: String, CodingKey {
+                case removed
+            }
+        }
         /// An airplane's own performance figures from its handbook; each null where not given
         ///
         /// - Remark: Generated from `#/components/schemas/OwnFigures`.

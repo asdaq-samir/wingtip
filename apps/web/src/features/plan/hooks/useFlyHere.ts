@@ -61,7 +61,6 @@ export function useFlyHere({
   aircraft,
   load,
   setLoad,
-  setUnder,
   showWaypoints,
   flightRules,
   setPanel,
@@ -75,8 +74,6 @@ export function useFlyHere({
   /** Load's count, the nav log's key (usePlanWorkspace). */
   load: number;
   setLoad: Dispatch<SetStateAction<number>>;
-  /** The card the route is a layer over (usePlaceCards' `under`). */
-  setUnder: (ident: string | null) => void;
   showWaypoints: boolean;
   flightRules: "vfr" | "ifr";
   setPanel: (state: PanelState) => void;
@@ -186,9 +183,7 @@ export function useFlyHere({
       const next: AddressChange = { ...ADDRESS_CLEARED, dest: to.ident };
       if (from) next.dep = from;
       if (depart) next.depart = depart;
-      // The route a layer over the card, at the height the card was, as
-      // Maps' directions are over a place's card: its close, the route
-      // cleared, goes back to the card (clearRoute).
+      // The route at the height the card was, as Maps' directions are.
       if (panelNow.current === "full") next.view = "briefing";
       // The route's own questions asked now, at the tap, not once the page
       // has drawn it: the draw is a second of a phone's (at 4x), and the
@@ -220,14 +215,13 @@ export function useFlyHere({
       // with the old one, the nav log was asked for twice, the first cancelled.
       flushSync(() => {
         setLoad((n) => n + 1);
-        setUnder(to.ident);
         // The route in sight: half way up from the pill, else where the
         // pilot left the sheet.
         riseToSee(setPanel);
         void setAddress(next);
       });
     },
-    [fromFor, depart, setAddress, setPanel, showWaypoints, aircraft, load, flightRules, setLoad, setUnder],
+    [fromFor, depart, setAddress, setPanel, showWaypoints, aircraft, load, flightRules, setLoad],
   );
   return { flyHere };
 }

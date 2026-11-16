@@ -22,29 +22,39 @@ from .checkpoint_scoring import route_checkpoints
 from .router_basics import Route
 from .schemas.common import AltitudeChoice, FlightRules
 
-# A pilot's own cruise speed: above zero, since every leg's time divides
-# by it -- zero was a ZeroDivisionError and a 500 rather than a 422.
-CruiseTas = Annotated[float | None, Query(gt=0, le=1000)]
-# The power a pilot's own cruise figures are at, in percent: from the
-# lowest a handbook's cruise table goes, about 40, to full power.
-CruisePower = Annotated[float | None, Query(ge=40, le=100)]
-#: An airplane's own service ceiling, ft, as the pilot sets it for their
-#: N-number: from a powered glider's to past a piston single's highest.
-ServiceCeiling = Annotated[float | None, Query(ge=1000, le=30000)]
-#: An airplane's own sea-level best rate of climb, fpm, from its
-#: handbook: above zero, and under any piston single's or twin's.
-ClimbRate = Annotated[float | None, Query(gt=0, le=5000)]
-#: Its own fuel for start, taxi and takeoff, gal, from its handbook.
-TaxiFuel = Annotated[float | None, Query(ge=0, le=50)]
-#: Its own still-air glide ratio, from its handbook's Section 3: a
-#: light airplane's is about 7 to 12 to 1, a glider's past 40.
-GlideRatio = Annotated[float | None, Query(gt=1, le=80)]
-#: Its own descent's indicated airspeed, kt, as a handbook gives it (the
-#: engine turns it to true at the altitudes the descent passes through),
-#: and the descent's fuel flow, gal/h: above zero, and in the range a
-#: light piston airplane's, a twin's or a single turboprop's descent covers.
-DescentIas = Annotated[float | None, Query(ge=30, le=300)]
-DescentBurn = Annotated[float | None, Query(ge=1, le=150)]
+# Each of an airplane's own figures, bounded by the range the engine
+# states for it (airplane_figure_ranges, engine/crates/pilot/src/aircraft/
+# form.rs) -- the one the "Your Airplane" form and the gateway check a
+# saved airplane with, so an airplane they take is never a 422 here. The
+# speeds above zero, since every leg's time divides by them (zero was a
+# ZeroDivisionError and a 500 rather than a 422).
+_RANGES = {r["query"]: r for r in engine("airplane_figure_ranges")["ranges"]}
+
+
+def _figure(query: str, *, needed: bool = False) -> object:
+    """The query parameter `query`: a number in its range, or none where
+    not `needed`."""
+    r = _RANGES[query]
+    # Whole bounds as whole numbers, as the API's document writes them.
+    low, high = (int(b) if float(b).is_integer() else b for b in (r["min"], r["max"]))
+    bound = {"ge": low} if r["min_inclusive"] else {"gt": low}
+    return Annotated[float if needed else float | None, Query(**bound, le=high)]
+
+
+CruiseTas = _figure("cruise_tas_kt")
+#: A true airspeed an endpoint cannot answer without.
+TasNeeded = _figure("cruise_tas_kt", needed=True)
+FuelBurn = _figure("fuel_burn_gph")
+UsableFuel = _figure("usable_fuel_gal")
+ClimbTas = _figure("climb_tas_kt")
+ClimbBurn = _figure("climb_fuel_burn_gph")
+DescentIas = _figure("descent_ias_kt")
+DescentBurn = _figure("descent_fuel_burn_gph")
+CruisePower = _figure("cruise_power_pct")
+ServiceCeiling = _figure("service_ceiling_ft")
+ClimbRate = _figure("climb_rate_fpm")
+TaxiFuel = _figure("taxi_fuel_gal")
+GlideRatio = _figure("glide_ratio")
 
 
 @dataclass
@@ -79,10 +89,10 @@ class PlanQuery:
     #: airplane profile, don't assume."
     aircraft: str | None = None
     cruise_tas_kt: CruiseTas = None
-    fuel_burn_gph: float | None = None
-    usable_fuel_gal: float | None = None
-    climb_tas_kt: CruiseTas = None
-    climb_fuel_burn_gph: float | None = None
+    fuel_burn_gph: FuelBurn = None
+    usable_fuel_gal: UsableFuel = None
+    climb_tas_kt: ClimbTas = None
+    climb_fuel_burn_gph: ClimbBurn = None
     descent_ias_kt: DescentIas = None
     descent_fuel_burn_gph: DescentBurn = None
     cruise_power_pct: CruisePower = None
@@ -109,10 +119,12 @@ class PlanQuery:
     #: Points' own altitudes, feet above sea level: "VPBNG:4500,KMSN:1900".
     #: A waypoint's is flown to it, the hop into it at that altitude (where
     #: a pilot crosses it); an airport's is its pattern, which a flight
-    #: landing there comes down to. The rest of the route as planned.
+    #: landing there comes down to. The rest of the route as planned. A
+    #: point flown more than once has one a visit, "VPBNG@2:5500" the
+    #: second time the route is there; a bare ident is every visit.
     altitudes: str = ""
     #: The waypoints among `altitudes` whose change of altitude begins at
-    #: them (Start At), "VPBNG,DLH090030"; the rest are reached by their
+    #: them (Start At), "VPBNG,DLH090030", or at one visit, "VPBNG@2"; the rest are reached by their
     #: point (Cross At). The profile's per-leg altitude on the web and the
     #: phones (the owner's pick, 2026-11-10).
     altitude_starts: str = ""
@@ -199,20 +211,22 @@ class PlanQuery:
         top = 41_000 if self.rules == "ifr" else 17_999
         out = {}
         for part in filter(None, (p.strip() for p in self.altitudes.split(","))):
-            ident, _, feet = part.partition(":")
-            if not point_figure(part) or not 0 < float(feet) <= top:
-                raise HTTPException(422, f"{part!r} is not a point's altitude: an ident and feet, as VPBNG:4500.")
-            out[point_key(ident)] = float(feet)
+            point, _, feet = part.partition(":")
+            ident, visit = visit_of(point)
+            if visit is None or not point_figure(f"{ident}:{feet}") or not 0 < float(feet) <= top:
+                raise HTTPException(422, f"{part!r} is not a point's altitude: an ident and feet, as VPBNG:4500 or VPBNG@2:4500.")
+            out[point_key(ident) + visit] = float(feet)
         return out
 
     def own_starts(self) -> frozenset[str]:
         """`altitude_starts` as idents (point_key); a 422 for one that is
         not a point of a route."""
         out = set()
-        for ident in filter(None, (p.strip() for p in self.altitude_starts.split(","))):
-            if not point_figure(f"{ident}:0"):
-                raise HTTPException(422, f"{ident!r} is not a point of the route for Start At: an ident, as VPBNG.")
-            out.add(point_key(ident))
+        for point in filter(None, (p.strip() for p in self.altitude_starts.split(","))):
+            ident, visit = visit_of(point)
+            if visit is None or not point_figure(f"{ident}:0"):
+                raise HTTPException(422, f"{point!r} is not a point of the route for Start At: an ident, as VPBNG or VPBNG@2.")
+            out.add(point_key(ident) + visit)
         return frozenset(out)
 
     def procedure_picks(self) -> list[tuple[str, str, str | None, str | None]]:
@@ -343,6 +357,15 @@ def point_figure(part: str) -> bool:
     on such a point was a 422 for the whole log -- and up to five figures."""
     ident, _, figure = part.partition(":")
     return ident.isascii() and engine("point_kind", text=ident.upper()) is not None and re.fullmatch(r"\d{1,5}", figure) is not None
+
+
+def visit_of(point: str) -> tuple[str, str | None]:
+    """ "VPBNG@2" as ("VPBNG", "@2"); a bare ident's visit "" (every visit),
+    None for one that is not a count from 1 (wingtip.own_altitude)."""
+    ident, at, visit = point.partition("@")
+    if not at:
+        return ident, ""
+    return ident, f"@{int(visit)}" if re.fullmatch(r"[1-9]\d{0,2}", visit) else None
 
 
 def point_key(ident: str) -> str:

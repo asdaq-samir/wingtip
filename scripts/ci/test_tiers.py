@@ -67,7 +67,7 @@ PHONES = {"native-android.yml": "", "native-ios.yml": "unit_only: true"}
 # rest of a run line (installs, builds, echo) may repeat freely.
 CHECKS = re.compile(
     r"^(?:npx |npm run )?(tsc|eslint|knip|vitest|prettier|format:check|ruff check|ruff format|pytest|lint-imports"
-    r"|cargo (?:test|clippy|fmt|machete)|mvn(?: -B)?(?: -q)? (?:test|verify|spotless:check)"
+    r"|cargo (?:test|clippy|fmt|machete)|(?:\./)?mvnw?(?: -B)?(?: -q)? (?:test|verify|spotless:check)"
     r"|python3? (?:\S*/)?scripts/(?:ci|build)/\S+|scripts/(?:dev|ci|build)/\S+ --check\S*|playwright test)\b"
 )
 
@@ -122,7 +122,7 @@ def ios() -> list[str]:
     skipped = set(re.findall(r"-skip-testing:WingtipUITests/(\w+)", workflow))
     # The night's run drops -only-testing (`only=()` when FULL), so it runs
     # every class the scheme's test targets hold.
-    full_runs_all = re.search(r'if \[ "\$FULL" = true \]; then\s+only=\(\)', workflow) is not None
+    full_runs_all = re.search(r'(if \[ "\$FULL" = true \]; then\s+|\[ "\$FULL" = true \] && )only=\(\)', workflow) is not None
     project = (ROOT / "apps/ios/project.yml").read_text()
     in_scheme = re.search(r"targets: \[[^\]]*WingtipUITests", project) is not None
     for path in sorted((ROOT / "apps/ios/WingtipUITests").glob("*.swift")):

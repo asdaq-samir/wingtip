@@ -6,29 +6,42 @@
 //! - pack: the cycle pack, one file per FAA cycle;
 //! - rules: the airspace over a point in bands, with the rules of each;
 //! - pack_query: the planner's airspace-at-a-point answer from a phone's pack;
-//! - view: the map's airspace, airports and VORs in view from the packs,
-//!   as the planner's in-view endpoints answer them;
+//! - regions_ahead: the phone packs' regions ahead of the airplane, in order;
+//! - view, view_airports: the map's airspace, airports and VORs in view
+//!   from the packs, as the planner's in-view endpoints answer them;
 //! - ahead: the alerts ahead of the airplane from the phone's packs;
 //! - spoken, spoken_ask: the places a clearance names, found among those
 //!   the planner gives or the phone's packs keep, and its SID and STAR;
-//! - view_marks, sua_tab: the special-use areas, their tabs and the fixes in view;
+//! - view_marks, sua_tab, sua_place: the special-use areas, their tabs and the fixes in view;
+//! - sua_limit: a special-use area's floor and ceiling, read from the FAA's codes;
 //! - volume_span: how high a 3D map stands a volume, from its limits;
-//! - drills: the oral's flash cards (91.125, 91.155) and 91.155 by name.
+//! - drills: the oral's flash cards (91.125, 91.155) and 91.155 by name;
+//! - class_b_band: which Class B band of a profile holds an altitude (91.131);
+//! - surface_class: the class of the airspace at a field's surface (14 CFR 71);
+//! - surface_hours: when a part-time surface area is in effect (AIM 3-2-5a1).
 
 pub mod ahead;
 pub mod airspace;
 pub mod calls;
+pub mod class_b_band;
 pub mod drills;
 pub mod field_name;
 pub mod pack;
 pub mod pack_query;
+pub mod regions_ahead;
 pub mod rules;
+pub mod shelf_label;
 pub mod spoken;
 pub mod spoken_ask;
 #[cfg(test)]
 mod spoken_closed_tests;
+pub mod sua_limit;
+pub mod sua_place;
 pub mod sua_tab;
+pub mod surface_class;
+pub mod surface_hours;
 pub mod view;
+pub mod view_airports;
 pub mod view_marks;
 pub mod volume_span;
 

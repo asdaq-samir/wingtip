@@ -599,7 +599,7 @@ test.describe("on the owner's phone's width, to a finger", () => {
     await grabberTo(page, "half");
     const box = sideDrawer(page).getByTestId("route-box");
     await expect(box.getByTestId("route-procedure")).toBeVisible({ timeout: slow(10000) });
-    // Its lines', the buttons under them in the box since the owner's ask.
+    // Its lines', the buttons over them in FPL's bar (the owner, 2026-11-14).
     expect((await box.getByTestId("route-slide").boundingBox())!.height).toBeLessThanOrEqual(48);
   });
 });

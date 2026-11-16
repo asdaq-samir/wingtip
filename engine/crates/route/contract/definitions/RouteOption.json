@@ -69,13 +69,21 @@
       "type": "array",
       "items": {
         "type": "integer"
-      }
+      },
+      "description": "The hazards it crosses, indices into hazards, in the order flown: what closes a cell, and the restricted, MOA, warning and alert areas it is flown through."
     },
     "marginal": {
       "type": "array",
       "items": {
         "type": "integer"
       }
+    },
+    "warning": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The card's one warning, the worst it crosses, in the engine's words: a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- \"Crosses a restricted area\", \"Crosses a MOA\" ...; null where it crosses nothing."
     },
     "bands": {
       "type": "array",

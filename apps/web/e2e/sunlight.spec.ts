@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { openSetup, pickControl, settle, slow } from "./helpers";
+import { openMapSettings, pickControl, settle, slow } from "./helpers";
 
 /**
- * The chart in sunlight (lib/sunlight, index.css): Sunlight On (Setup's
- * Layout tile, in FPL's place at the owner's ask of 2026-11-13) puts `data-chart-light="bright"` on <html>, under which
+ * The chart in sunlight (lib/sunlight, index.css): Sunlight On (the Map
+ * card's Look row, the owner, 2026-11-14) puts `data-chart-light="bright"` on <html>, under which
  * the chart's tiles are at more contrast, the course wider and black-cased
  * and the sheets solid white with black figures. Off takes it away. Auto
  * reads the phone's light sensor, which the test's browser has none of.
@@ -40,12 +40,12 @@ test("Sunlight On: the page is marked bright, the figure strip is solid white wi
   // data-chart-look).
   await expect.poll(() => page.getByTestId("gl-map").getAttribute("data-chart-look"), { timeout: slow(15_000) }).toBe("bright");
 
-  // Off, from Setup's Sunlight tile: the page as it was, and kept so.
-  await openSetup(page);
-  await expect(page.getByTestId("setup-page").getByTestId("sunlight-select")).toHaveAttribute("aria-label", "Sunlight: On");
+  // Off, from the Map card's Sunlight row: the page as it was, and kept so.
+  await openMapSettings(page);
+  await expect(page.getByTestId("map-look").getByTestId("sunlight-select")).toHaveAttribute("aria-label", "Sunlight: On");
   await pickControl(page, "sunlight-select", "sunlight-off");
   await expect(html).toHaveAttribute("data-chart-light", "normal");
-  await expect(page.getByTestId("setup-page").getByTestId("sunlight-select")).toHaveAttribute("aria-label", "Sunlight: Off");
+  await expect(page.getByTestId("map-look").getByTestId("sunlight-select")).toHaveAttribute("aria-label", "Sunlight: Off");
   await page.keyboard.press("Escape");
   expect(await strip.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgb(255, 255, 255)");
   await page.reload();

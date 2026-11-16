@@ -7,7 +7,7 @@ import { setMap3d } from "./mapCard";
  * from the map's round 3D button (ThreeDButton), the Class B, C and D, the special use
  * areas and the TFRs drawn whole with deck.gl between their floors and
  * ceilings (the planner's /api/airspace/volumes), each area named once at
- * its top. The container has no GPU to look at, so the map's own element
+ * its top and each Class B, C and D shelf's altitudes written there. The container has no GPU to look at, so the map's own element
  * says what is drawn: its data-layers (the names' layer) and
  * data-airspace3d, the volumes standing (AirspaceVolumesGl's
  * dataset.airspace3d: a digit takes no dash, so not data-airspace-3d).
@@ -58,9 +58,27 @@ test("in 3D the airspace stands between its floors and ceilings, and flat again 
   await settle(page);
   await expect(map(page)).toHaveAttribute("data-terrain", "3d", { timeout: slow(20_000) });
   await expect.poll(() => map(page).getAttribute("data-layers"), { timeout: slow(20_000) }).toContain("airspace-3d-labels");
+  // Each shelf's altitudes at its top, as the sectional writes them ("100" over "SFC").
+  await expect.poll(() => map(page).getAttribute("data-layers")).toContain("airspace-3d-shelves");
   await expect
     .poll(async () => Number((await map(page).getAttribute("data-airspace3d")) ?? 0), { timeout: slow(60_000) })
     .toBeGreaterThan(0);
+
+  // Panned, the volumes stand on through the terrain's tiles coming in:
+  // none dropped while the ground under them loads (airspaceHeights'
+  // keptGround, the owner's flicker of 2026-11-14).
+  // TODO(claude/stack-root): count the deck.gl overlay's rebuilds and the
+  // volumes' layer changes per pan with e2e/drawnOnce.ts once it lands.
+  const standing = Number(await map(page).getAttribute("data-airspace3d"));
+  const box = (await map(page).boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 - 60, box.y + box.height / 2 + 30, { steps: 10 });
+  await page.mouse.up();
+  for (let i = 0; i < 10; i++) {
+    expect(Number(await map(page).getAttribute("data-airspace3d"))).toBe(standing);
+    await page.waitForTimeout(200);
+  }
 
   await setMap3d(page, false);
   await page.goto("/app/plan?dep=KDPA&dest=KPWK");

@@ -29,17 +29,15 @@ interface Held {
 
 const held = new WeakMap<MlMap, Held>();
 
-function push(map: MlMap, h: Held) {
-  if (!h.sets.size) {
-    held.delete(map);
-    if (map.style) map.removeControl(h.overlay as unknown as IControl);
-    return;
-  }
-  h.overlay.setProps({ layers: [...h.sets.values()].flat() });
-}
+const draw = (h: Held) => h.overlay.setProps({ layers: [...h.sets.values()].flat() });
 
 /** `layers` drawn on the map while mounted, under `key`: a new array
- *  replaces the last, as deck.gl diffs layers by id. */
+ *  replaces the last, as deck.gl diffs layers by id. Registering a key and
+ *  updating its layers are two effects: the overlay is made when the first
+ *  key comes and taken off when the last goes, and a new array only sets
+ *  the living overlay's layers. Made anew on each update (as it was), the
+ *  overlay dropped every deck.gl layer for a frame and rebuilt its GPU
+ *  state, the 3D airspace's flicker after a pan (2026-11-14). */
 export function useDeckLayers(key: string, layers: Layer[]) {
   const { map } = useGlMap();
   useEffect(() => {
@@ -49,13 +47,19 @@ export function useDeckLayers(key: string, layers: Layer[]) {
       held.set(map, h);
       map.addControl(h.overlay as unknown as IControl);
     }
-    h.sets.set(key, layers);
-    push(map, h);
     const mine = h;
     return () => {
       mine.sets.delete(key);
-      push(map, mine);
+      if (mine.sets.size) return draw(mine);
+      held.delete(map);
+      if (map.style) map.removeControl(mine.overlay as unknown as IControl);
     };
+  }, [map, key]);
+  useEffect(() => {
+    const h = held.get(map);
+    if (!h) return;
+    h.sets.set(key, layers);
+    draw(h);
   }, [map, key, layers]);
 }
 

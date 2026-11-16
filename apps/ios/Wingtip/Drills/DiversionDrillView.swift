@@ -61,14 +61,7 @@ struct DiversionDrillView: View {
                                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     Text("\(field.ident) · \(field.name)").foregroundStyle(.primary)
                                     let detail = DiversionDrillModel.detail(field)
-                                    Group {
-                                        if let flag = DiversionDrillModel.flag(field) {
-                                            Text("\(Text(flag.words).foregroundStyle(flag.ink)) · \(detail)")
-                                        } else {
-                                            Text(detail)
-                                        }
-                                    }
-                                    .font(.subheadline).foregroundStyle(.secondary)
+                                    FieldFlagLine(flag: DiversionDrillModel.flag(field), detail: detail)
                                 }
                                 Spacer()
                                 if model.chosen == field.ident { Image(systemName: "checkmark").foregroundStyle(.tint) }

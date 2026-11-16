@@ -45,9 +45,17 @@ export default function DepartureWindowStrip() {
           Hours unavailable: {describeError(m.error, "the planner did not answer")}
         </FieldError>
       ) : m.pending ? (
-        <div className="flex gap-2" aria-busy="true" data-testid="departure-window-pending">
+        // Each tile the hour's own shape -- its hour's line, its mark and
+        // the night's row -- in the strip's own room under it (pb-1), so the
+        // hours come in where their shapes were and the Brief under them
+        // does not move (the flicker audit's FL-21).
+        <div className="flex gap-2 pb-1" aria-busy="true" data-testid="departure-window-pending">
           {Array.from({ length: 6 }, (_, i) => (
-            <Skeleton key={i} className="h-14 w-12 shrink-0 rounded-xl" />
+            <Skeleton key={i} className="flex w-12 shrink-0 flex-col items-center gap-0.5 rounded-xl py-1.5" aria-hidden="true">
+              <span className={TEXT.detail}>&nbsp;</span>
+              <span className="size-5" />
+              <span className="h-3" />
+            </Skeleton>
           ))}
         </div>
       ) : m.hours.length === 0 ? (
@@ -71,7 +79,9 @@ export default function DepartureWindowStrip() {
             value={m.selected ? [m.selected.depart] : []}
             onValueChange={(value) => m.pick(value[0] ?? null)}
             aria-label="Departure hours"
-            className="-mx-4 w-auto snap-x overflow-x-auto overscroll-x-contain px-4 pb-1"
+            // The last ask's hours, dimmed, while this one's come.
+            aria-busy={m.stale || undefined}
+            className={cn("-mx-4 w-auto snap-x overflow-x-auto overscroll-x-contain px-4 pb-1", m.stale && "opacity-50")}
             data-testid="departure-window-hours"
           >
             {m.hours.map((h) => {

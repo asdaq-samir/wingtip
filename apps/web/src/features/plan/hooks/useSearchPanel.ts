@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address, SetAddress } from "../../../lib/address";
 import { identOf } from "../../../lib/identSchema";
-import { usePreferences, type RecentAirport } from "../../../lib/preferences";
+import { usePreferences, type KeptAircraft, type RecentAirport } from "../../../lib/preferences";
 import { airportQuery, queryClient } from "../../../lib/queryClient";
 import { useTabSearch } from "../lib/tabSearch";
 import { useAirportSearch } from "../../../lib/useAirportSearch";
@@ -9,9 +9,10 @@ import type { PanelView } from "./usePanelView";
 
 /**
  * The planner's search fields (usePlanWorkspace): the one search, whose
- * airport opens its card or is made Home or a Favorite; the traffic's and
- * Nearest's, whose text lives in features/plan/lib/tabSearch; the Adds
- * that focus them; and Favorites brought in by a link. No field's focus
+ * airport opens its card or is made Home or a Favorite, and whose airplane
+ * opens its card or is made the pilot's Airplane or a Favorite; Nearest's,
+ * whose text lives in features/plan/lib/tabSearch; the Adds that focus
+ * them; and Favorites brought in by a link. No field's focus
  * or typing moves the sheet (the owner, 2026-11-11: "Whenever I try to
  * type on search bar it takes the card to full screen"): it stays where
  * the pilot put it, the keyboard placed by the Drawer's
@@ -32,7 +33,9 @@ export function useSearchPanel({
   setAddress: SetAddress;
 }) {
   const [query, setQuery] = useState("");
-  const [picking, setPicking] = useState<"place" | "home" | "favorite">("place");
+  // What the one search is asked for: a place to open, Home or a Favorite
+  // airport to keep, the pilot's Airplane or a Favorite airplane to keep.
+  const [picking, setPicking] = useState<"place" | "home" | "favorite" | "mine" | "airplane">("place");
   const searchInput = useRef<HTMLInputElement>(null);
   // The one search's airports and, with them, the waypoints and navaids
   // (its Waypoints and Navaids group), asked while it is the place up.
@@ -46,7 +49,7 @@ export function useSearchPanel({
       // A place's card: what was typed kept for the way back, as Apple
       // Maps' card closed goes back to its search with its words (the card
       // rule, 2026-11-10), as a waypoint's card already did.
-      if (picking === "place") {
+      if (picking !== "home" && picking !== "favorite") {
         addRecent(airport);
         selectPlace(airport.ident);
         return;
@@ -62,36 +65,35 @@ export function useSearchPanel({
     },
     [picking, addRecent, selectPlace, setHomeAirport, toggleFavoriteAirport, favorites],
   );
-  // Favorites' Add, Home's or another's: the search bar asks for the
-  // field, focused within the tap so the keyboard comes up.
-  const askFor = (what: "home" | "favorite") => {
+  // Favorites' Add, Home's or another's, an airport's or an airplane's: the
+  // one search asks for it, focused within the tap so the keyboard comes
+  // up, its words saying what for (lib/searchPlaceholder). The airplanes'
+  // had a search page of their own, the traffic's, gone for this one.
+  const askFor = (what: "home" | "favorite" | "mine" | "airplane") => {
     setPicking(what);
     listAway("favorites");
     searchInput.current?.focus();
   };
-  // Home's, My Airplane's or the airplane Favorites' Add on the pill: the
-  // search asked for it, focused within the tap.
-  const addFromPill = (what: "home" | "mine" | "airplane") => {
-    if (what === "home") {
-      askFor("home");
-      return;
-    }
-    useTabSearch.setState({ pickingMine: what === "mine", pickingFavorite: what === "airplane" });
-    useTabSearch.getState().focusAircraft?.();
-  };
-
-  // Aircraft's and Nearest's fields, the search bar's shape (SearchField) in
-  // the same place, what is typed kept in features/plan/lib/tabSearch for their lists.
-  const aircraftTyped = useTabSearch((t) => t.aircraft);
-  const pickingMine = useTabSearch((t) => t.pickingMine);
-  const pickingFavorite = useTabSearch((t) => t.pickingFavorite);
-  // An Add on the pill (addFromPill) focuses the field once the panel is
-  // up and the field is drawn.
-  const aircraftInput = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    useTabSearch.setState({ focusAircraft: () => aircraftInput.current?.focus() });
-    return () => useTabSearch.setState({ focusAircraft: null });
-  }, []);
+  // A kept airplane picked -- a Recent, a Favorite, one found -- kept as the
+  // pilot's Airplane or a Favorite where the search was asked for one, and
+  // otherwise opened: one rule wherever airplanes are picked from (the one
+  // search's rows, its page's tiles, the lists in full).
+  const pickAirplane = useCallback(
+    (kept: KeptAircraft, open: (hex: string) => void) => {
+      const prefs = usePreferences.getState();
+      if (picking === "mine") prefs.setMyAircraft(kept);
+      else if (picking === "airplane") {
+        if (!prefs.favoriteAircraft.some((a) => a.hex === kept.hex)) prefs.toggleFavoriteAircraft(kept);
+      } else {
+        open(kept.hex);
+        return;
+      }
+      setQuery("");
+      setPicking("place");
+      (document.activeElement as HTMLElement | null)?.blur();
+    },
+    [picking],
+  );
   const nearTyped = useTabSearch((t) => t.near);
 
   // A link that brings favorites with it -- ?favorites=KORD,KMKE&home=C81
@@ -128,11 +130,7 @@ export function useSearchPanel({
     search,
     pickPlace,
     askFor,
-    addFromPill,
-    aircraftTyped,
-    pickingMine,
-    pickingFavorite,
-    aircraftInput,
+    pickAirplane,
     nearTyped,
     home,
     favorites,

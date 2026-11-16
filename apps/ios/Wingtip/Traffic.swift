@@ -124,7 +124,11 @@ final class Traffic {
             near.insert(plane.hex)
             guard !nearHexes.contains(plane.hex) else { continue }
             if Notifications.inFront {
-                await Notifications.allow()
+                // Permission asked only in flight, when a warning of
+                // traffic is what the pilot would want, never at launch on
+                // the ground with airliners overhead (IOS-8; HIG, asked in
+                // the moment it is wanted). The engine's underway.
+                if (try? Flight.underway(fix.groundspeedKt)) == true { await Notifications.allow() }
                 continue
             }
             let name = plane.callsign ?? plane.registration ?? plane.hex

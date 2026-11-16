@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
 
@@ -45,9 +46,9 @@ export function PhotoSlide({
           {picture}
         </a>
       ) : onOpen ? (
-        <button type="button" onClick={onOpen} aria-label={label} className={tap} data-testid={testId}>
+        <BaseButton onClick={onOpen} aria-label={label} className={tap} data-testid={testId}>
           {picture}
-        </button>
+        </BaseButton>
       ) : (
         // In a card's head, whose tap shows it alone and whose full-screen
         // click opens it (CardPictures): a picture, not a control.

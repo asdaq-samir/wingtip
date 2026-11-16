@@ -1,4 +1,4 @@
-import type { ComponentPropsWithRef, ReactNode } from "react";
+import type { ComponentPropsWithRef, ElementType, ReactNode } from "react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
 
@@ -29,7 +29,11 @@ export function InlineField({
   inputClassName,
   button,
   endRoom = "w-[1.5625rem]",
+  field: Field = "input",
 }: {
+  /** The input's element: a list's own field where it suggests as it is typed (the airplane's,
+   *  Base UI's Autocomplete.Input through CommandField), else a plain input. */
+  field?: ElementType;
   /** Grey words after a fixed start the field keeps in its text (the
    *  airplane's "N-"), in the example's style, while nothing is typed
    *  after it: the input's own placeholder shows only while it is empty,
@@ -96,7 +100,7 @@ export function InlineField({
       )}
       <div className="col-start-1 row-start-1 flex h-full min-w-0 items-center">
         <label className="relative flex h-full min-w-0 flex-1 items-center pr-1 after:absolute after:-inset-y-2 after:-left-0.5 after:right-0 after:content-['']">
-          <input
+          <Field
             type="text"
             autoComplete="off"
             enterKeyHint="done"

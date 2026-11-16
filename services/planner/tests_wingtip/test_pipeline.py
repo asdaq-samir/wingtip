@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from wingtip.pipeline import _ensure_local_dir, _ensure_local_output_dir, _find_one, _publish, _reject_remote_uri
+from wingtip.pipeline import _ensure_local_dir, _ensure_local_output_dir, _publish, _reject_remote_uri
 
 
 def test_reject_remote_uri_rejects_uri_style_paths():
@@ -129,17 +129,6 @@ def test_collect_on_the_command_line_refreshes_only_when_asked(monkeypatch):
         monkeypatch.setattr(sys, "argv", argv)
         pipeline._cli()
     assert [c["refresh"] for c in calls] == [False, True]
-
-
-def test_find_one_resolves_a_glob_match(tmp_path):
-    (tmp_path / "whatever-sagemaker-named-it.parquet").write_text("not real data")
-    found = _find_one(tmp_path, "*.parquet")
-    assert found == tmp_path / "whatever-sagemaker-named-it.parquet"
-
-
-def test_find_one_raises_when_nothing_matches(tmp_path):
-    with pytest.raises(FileNotFoundError):
-        _find_one(tmp_path, "*.parquet")
 
 
 def test_chart_picks_are_training_labels_and_win_over_older_ratings(tmp_path):

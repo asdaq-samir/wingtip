@@ -1,60 +1,45 @@
 import { useLayoutEffect, useState } from "react";
 import type { PanelState } from "../../lib/mapChrome";
-import { halfPx } from "./insets";
-
-/** The Drawer's own offset of a popup from its snap point (Base UI's
- *  --drawer-snap-point-offset, negative for a sheet from the top). */
-const offsetOf = (popup: HTMLElement) => popup.style.getPropertyValue("--drawer-snap-point-offset");
+import { shownPx } from "./insets";
 
 /**
- * How much of the map the panel in sight covers, px, read from what the
- * stock Drawer has done rather than worked out beside it: on a phone the
- * front popup's height (the card that covers the map most, else the sheet's) less the
- * Drawer's own snap offset, half's height all the way up (what shows once
- * it comes down), and under a bottom sheet the room its viewport leaves
+ * How much of the map the panel in sight covers, px. On a phone, the
+ * height in sight of the front surface (the card that covers the map most,
+ * else the sheet) at the size the page holds for it, `front` -- half's all
+ * the way up, what shows once it comes down -- by the Drawer's own snap
+ * points (shownPx), and under a bottom sheet the room its viewport leaves
  * over the home indicator; from `md` up the side panel's own height, its
- * head alone at rest. Read again whenever the Drawer sets an offset or a
- * card's size changes (a MutationObserver on the popup) and when the popup
- * is resized (Safari's toolbar, a turn), never per frame of a drag.
- * With it, whether what it measured was a card's: a card put away is
- * measured gone a moment after the page says so, and till then the room is
- * still the card's (the map keeps still for both, GlMapShell).
+ * head alone at rest. The sheet measured again when it is resized
+ * (Safari's toolbar, the keyboard, a turn), never per frame of a drag.
+ *
+ * Worked out from the size, not read off the front popup's snap offset:
+ * Base UI writes that as 0 until the popup has measured itself, so each
+ * card's first frame read as the card all the way up, and the map's
+ * padding went 844 then 368 as every card opened, and through 0 as the
+ * phone turned (the flicker audit, 2026-11-14, FL-4 and FL-17).
  */
-export function useSheetCover(
-  sheet: HTMLElement | null,
-  front: PanelState,
-  onPhone: boolean,
-  fromBottom: boolean,
-): { cover: number; card: boolean } {
-  const [cover, setCover] = useState({ cover: 0, card: false });
+export function useSheetCover(sheet: HTMLElement | null, front: PanelState, onPhone: boolean, fromBottom: boolean): number {
+  // The sheet's height and, under a bottom sheet, the room its viewport
+  // leaves at the foot: measured as they change. The cover is worked out
+  // from them in the render the size changes in, so a card come or gone
+  // and its room reach the map together (GlMapShell keeps the chart still
+  // for that), never the room a render late, which the map eased to.
+  const [box, setBox] = useState({ height: 0, below: 0 });
   useLayoutEffect(() => {
     if (!sheet) return;
-    let last = "";
-    const read = (always: boolean) => {
-      if (!onPhone) return setCover({ cover: Math.round(sheet.offsetHeight), card: false });
-      const cards = sheet.querySelectorAll<HTMLElement>("[data-sheet-card][data-cover]");
-      const popup = cards[cards.length - 1] ?? sheet;
-      const offset = offsetOf(popup);
-      const key = `${cards.length}|${offset}|${popup.dataset.panel ?? ""}`;
-      if (!always && key === last) return;
-      last = key;
-      const height = popup.offsetHeight;
-      const shown = front === "full" ? halfPx(height) : Math.max(0, height - Math.abs(parseFloat(offset) || 0));
+    const read = () => {
       const viewport = sheet.parentElement;
-      const below = fromBottom && viewport ? parseFloat(getComputedStyle(viewport).bottom) || 0 : 0;
-      const next = Math.round(shown + below),
-        card = popup !== sheet;
-      setCover((was) => (was.cover === next && was.card === card ? was : { cover: next, card }));
+      const below = onPhone && fromBottom && viewport ? parseFloat(getComputedStyle(viewport).bottom) || 0 : 0;
+      const height = sheet.offsetHeight;
+      setBox((was) => (was.height === height && was.below === below ? was : { height, below }));
     };
-    read(true);
-    const changes = new MutationObserver(() => read(false));
-    changes.observe(sheet, { subtree: true, attributes: true, attributeFilter: ["style", "data-panel", "data-cover"] });
-    const resize = new ResizeObserver(() => read(true));
+    read();
+    const resize = new ResizeObserver(read);
     resize.observe(sheet);
-    return () => {
-      changes.disconnect();
-      resize.disconnect();
-    };
-  }, [sheet, front, onPhone, fromBottom]);
-  return cover;
+    return () => resize.disconnect();
+  }, [sheet, onPhone, fromBottom]);
+  if (!onPhone) return Math.round(box.height);
+  // Not yet laid out (hidden as the page opens): nothing to say yet.
+  if (!box.height) return 0;
+  return Math.round(shownPx(front === "full" ? "half" : front, fromBottom, box.height) + box.below);
 }

@@ -211,6 +211,7 @@ fn number(name: &str, v: &Value, key: &str) -> Result<f64, String> {
 
 /// The rules, JSON in and out (call.rs): flow_levels, aviation_grid_bands,
 /// icing_severity, turbulence_category and gfa_cloud_layers.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let mut out = String::new();
     match name {

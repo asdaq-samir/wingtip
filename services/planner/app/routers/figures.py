@@ -20,7 +20,7 @@ from ..figures.schemas import DebriefAnswer, DebriefAsk, Diversion, Holding, Los
 from wingtip.aircraft import aircraft_profile
 from wingtip.winds_aloft import winds_key_for
 from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
-from ..plan_query import CruisePower, CruiseTas
+from ..plan_query import CruisePower, CruiseTas, FuelBurn
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -73,7 +73,7 @@ def diversion(
     altitude_ft: Annotated[float, Query(gt=0, le=17_999)],
     aircraft: str | None = None,
     cruise_tas_kt: CruiseTas = None,
-    fuel_burn_gph: Annotated[float | None, Query(gt=0, le=100)] = None,
+    fuel_burn_gph: FuelBurn = None,
     cruise_power_pct: CruisePower = None,
     depart: datetime | None = None,
     mh: float | None = None,
@@ -139,7 +139,7 @@ def holding(
     inbound: Annotated[float, Query(ge=0, le=360)],
     heading: Annotated[float, Query(ge=0, le=360)],
     turns: Literal["right", "left"] = "right",
-    tas_kt: Annotated[float | None, Query(gt=0, le=1000)] = None,
+    tas_kt: CruiseTas = None,
     wind_from: Annotated[float | None, Query(ge=0, le=360)] = None,
     wind_kt: Annotated[float | None, Query(ge=0, le=300)] = None,
     altitude_ft: Annotated[float | None, Query(ge=0, le=60_000)] = None,

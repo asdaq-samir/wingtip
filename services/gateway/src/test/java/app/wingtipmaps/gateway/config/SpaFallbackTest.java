@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import app.wingtipmaps.gateway.controller.PilotController;
 import app.wingtipmaps.gateway.security.SecurityConfig;
 import app.wingtipmaps.gateway.service.AccountService;
+import app.wingtipmaps.gateway.service.CheckpointNotesClient;
 import app.wingtipmaps.gateway.service.PilotService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,9 @@ class SpaFallbackTest {
     @MockitoBean
     private AccountService accountService;
 
+    @MockitoBean
+    private CheckpointNotesClient checkpointNotes;
+
     @Test
     void aClientSideRouteIsTheIndex() throws Exception {
         mockMvc.perform(get("/app/label"))
@@ -59,6 +63,27 @@ class SpaFallbackTest {
         mockMvc.perform(get("/app/assets/app-abc123.js"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Cache-Control", containsString("immutable")));
+    }
+
+    @Test
+    void theEngineGoesAsTheBuildsBrotliToABrowserThatTakesIt() throws Exception {
+        // iPhone Safari's Accept-Encoding. The type stays the file's own,
+        // which WebAssembly.instantiateStreaming insists on.
+        mockMvc.perform(get("/app/assets/engine-abc123.wasm").header("Accept-Encoding", "gzip, deflate, br"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Encoding", "br"))
+                .andExpect(header().string("Content-Type", "application/wasm"))
+                .andExpect(header().string("Vary", containsString("Accept-Encoding")))
+                .andExpect(header().string("Cache-Control", containsString("immutable")))
+                .andExpect(content().string("brotli bytes"));
+    }
+
+    @Test
+    void andAsItIsToOneThatDoesNot() throws Exception {
+        mockMvc.perform(get("/app/assets/engine-abc123.wasm").header("Accept-Encoding", "gzip"))
+                .andExpect(status().isOk())
+                .andExpect(header().doesNotExist("Content-Encoding"))
+                .andExpect(header().string("Content-Type", "application/wasm"));
     }
 
     @Test

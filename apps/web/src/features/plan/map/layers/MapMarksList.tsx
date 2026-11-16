@@ -1,5 +1,6 @@
 import type { Map as MlMap } from "maplibre-gl";
 import { cn } from "cn";
+import { Button } from "../../../../components/ui/button";
 import type { AirportsInView } from "../../../../lib/api/types";
 import { TEXT } from "../../../../lib/text";
 import { useGlView } from "../../../../lib/map/gl/useGlView";
@@ -47,15 +48,21 @@ export default function MapMarksList({ fields, onSelect }: { fields: Field[]; on
   return (
     <nav
       aria-label="Airports on the map"
-      className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:top-2 focus-within:left-2 focus-within:z-[1100] focus-within:max-h-[50%] focus-within:overflow-y-auto focus-within:rounded-xl focus-within:bg-popover focus-within:p-2 focus-within:shadow-lg"
+      className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:top-2 focus-within:left-2 focus-within:z-[1100] focus-within:max-h-[50%] focus-within:overflow-y-auto focus-within:rounded-xl focus-within:bg-popover focus-within:p-2 focus-within:shadow-(--depth-overlay)"
       data-testid="map-marks-list"
     >
       <ul className="flex flex-col gap-2">
         {shown.map((f) => (
           <li key={f.ident}>
-            <button type="button" className={cn("text-left text-tint", TEXT.row)} onClick={() => onSelect(f.ident)}>
+            <Button
+              variant="ghost"
+              size="inline"
+              type="button"
+              className={cn("justify-start text-inherit hover:bg-transparent", "text-left text-tint", TEXT.row)}
+              onClick={() => onSelect(f.ident)}
+            >
               {fieldWords(f)}
-            </button>
+            </Button>
           </li>
         ))}
       </ul>

@@ -74,9 +74,14 @@ test(
     await openMapSettings(page);
     // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
     await grabberTo(page, "full");
-    await expect(page.getByTestId("weather-areas-toggle")).toHaveAttribute("aria-pressed", "false");
+    // Each in the Weather tile's ••• menu (the Map card's four layers,
+    // 2026-11-14), which a pick closes, as iOS's menus do.
+    await page.getByTestId("weather-more").click();
+    await expect(page.getByTestId("weather-areas-toggle")).toHaveAttribute("aria-checked", "false");
     await page.getByTestId("weather-areas-toggle").click();
+    await page.getByTestId("weather-more").click();
     await page.getByTestId("weather-pireps-toggle").click();
+    await page.getByTestId("weather-more").click();
     await page.getByTestId("weather-winds").click();
     await page.getByTestId("weather-winds-9000").click();
     // Put away, and gone before the map's button is tapped again. One
@@ -104,8 +109,10 @@ test(
     // was put away (runs 42219044827 and 42219994020).
     await openMapSettings(page);
     await grabberTo(page, "full");
+    await page.getByTestId("weather-more").click();
     await page.getByTestId("weather-areas-toggle").click();
     await expect.poll(async () => (await areas()).length).toBe(0);
+    await page.getByTestId("weather-more").click();
     await page.getByTestId("weather-areas-toggle").click();
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("map-settings")).toHaveCount(0);

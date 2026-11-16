@@ -77,3 +77,32 @@ struct RouteLineTests {
         #expect(plan.typedStops.isEmpty && plan.pickedChip == nil && plan.routes == nil)
     }
 }
+
+/// The strip's fuel on a route with stops (AV-3) and the short flight
+/// named by its ends (CODE-13), from the engine's strip_fuel.
+struct StripFuelHopsTests {
+    private func totals(hops: [(String, String, Double, Double)]) -> Totals {
+        var totals = Totals(distanceNm: 200, legsWithoutWind: 0, unflyableLegs: 0)
+        totals.hops = hops.map { dep, dest, required, margin in
+            var hop = Totals(distanceNm: 100, legsWithoutWind: 0, unflyableLegs: 0)
+            hop.fuelRequiredGal = required
+            hop.fuelMarginGal = margin
+            return APIHopTotals(departure: dep, destination: dest, totals: hop)
+        }
+        return totals
+    }
+
+    @Test func aRouteWithStopsKeepsItsFuelCheck() throws {
+        let fuel = try StripFuel.of(totals(hops: [("KDPA", "C81", 12, 20), ("C81", "KMSN", 40, -3.2)]))
+        #expect(fuel.requiredGal == 12)
+        #expect(fuel.short.count == 1)
+        #expect(fuel.short.first?.hop == 1)
+    }
+
+    /// In flight past the stop: the second flight's figure, less what the
+    /// hop has burnt (in_flight's hop and hop_burnt_gal), never the first tank's.
+    @Test func pastAStopTheHopsOwnBurnIsTakenOff() throws {
+        let fuel = try StripFuel.of(totals(hops: [("KDPA", "C81", 12, 20), ("C81", "KMSN", 40, 5)]), hop: 1, burntGal: 5)
+        #expect(fuel.requiredGal == 35)
+    }
+}

@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { House } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "cn";
@@ -39,7 +40,7 @@ export function FavoriteTiles({
       {(home || onAddHome) && (
         <PlaceTile
           icon={<House />}
-          className="bg-teal-600 text-white"
+          className="bg-(--badge-home) text-white"
           title="Home"
           detail={home ? away(home) : "Add"}
           tinted={!home}
@@ -72,7 +73,7 @@ function AirspaceTile({ airport, detail, onClick }: { airport: RecentAirport; de
 }
 
 /** A round tile and its words under it, as Maps' Favorites: the
- *  airports' here, and the Aircraft card's own (AircraftCard). */
+ *  airports' here, and the airplanes' own (features/plan AircraftTiles). */
 /** A strip's tile: its round mark over its name, a detail under it --
  *  Favorites' places. */
 function PlaceTile({
@@ -100,8 +101,7 @@ function PlaceTile({
   testId?: string;
 }) {
   return (
-    <button
-      type="button"
+    <BaseButton
       onClick={onClick}
       data-testid={testId}
       disabled={disabled}
@@ -118,6 +118,6 @@ function PlaceTile({
       )}
       {/* Named by its words, the rest after them (WCAG 2.5.3, Label in Name). */}
       {label && <span className="sr-only">, {label}</span>}
-    </button>
+    </BaseButton>
   );
 }

@@ -7,6 +7,7 @@ import { MapCard } from "../../../lib/map/cards/MapCard";
 import { isEndpoint, type Point, type Rating } from "../../../lib/api/types";
 import { inkOn } from "../../../lib/scoreScale";
 import { CATEGORIES, COLORS, RATINGS, compassPoint, modelNote, roleOf, sourceOf } from "../logic";
+import { nm } from "../../../lib/format";
 
 interface Props {
   point: Point;
@@ -128,11 +129,11 @@ export default function PointPopup({
       }
       subtitle={
         <>
-          {point.along_track_nm.toFixed(1)} nm {compassPoint(bearingDeg)} of {departureIdent}
+          {nm(point.along_track_nm)} {compassPoint(bearingDeg)} of {departureIdent}
           {/* DR points are on the line by definition (that's what makes
               them DR) -- the distance only means something for a visual
               point, which is picked precisely because it sits off it. */}
-          {roleOf(point) === "visual" && <> · {Math.abs(cross).toFixed(2)} nm off course</>}
+          {roleOf(point) === "visual" && <> · {nm(Math.abs(cross))} off course</>}
           {modelNote(point) && <> · {modelNote(point)}</>}
         </>
       }

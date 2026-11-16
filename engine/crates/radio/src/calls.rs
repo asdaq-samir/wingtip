@@ -10,6 +10,7 @@ use crate::json::{self, Value};
 use wingtip_core::ask::Ask;
 
 /// A clearance, an ATIS or a D-ATIS heard, read.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();
@@ -17,6 +18,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         "read_clearance" => return Ok(clearance::read(ask.str("text")?).to_json()),
         "read_atis" => return Ok(crate::atis::read(ask.str("text")?).to_json()),
         "read_datis" => return Ok(crate::datis::read_datis(ask.str("text")?).to_json()),
+        "datis_remarks" => crate::atis::strings(&mut out, &crate::datis_remarks::datis_remarks(ask.str("text")?)),
         "cleared_route" => return cleared_route(&ask),
         "our_call" => out.push_str(&clearance::our_call(ask.str("text")?, ask.str("tail")?).to_string()),
         "direct_of" => json::opt_string(&mut out, clearance::direct_of(ask.str("text")?).as_deref()),

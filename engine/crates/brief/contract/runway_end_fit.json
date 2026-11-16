@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_brief::runway::calls::call",
-  "description": "Whether an end fits the airplane today for a takeoff or a landing: crosswind against the demonstrated, distance needed against the length with SAFO 19001's 15 per cent margin.",
+  "description": "Whether an end fits the airplane today for a takeoff or a landing: crosswind against the demonstrated, distance needed against the length with SAFO 19001's 15 per cent margin. A landing is judged against the landing distance available (the end's declared LDA, else the length past its displaced threshold, AIM 2-3-3), a takeoff against the whole length; `length_ft` is the one judged against.",
   "type": "object",
   "properties": {
     "input": {
@@ -58,11 +58,32 @@
             "null"
           ],
           "properties": {
+            "ident": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The end's ident: a landing reads that end's displaced threshold and LDA from the runway's ends where the end does not send its own."
+            },
             "heading_true_deg": {
               "type": [
                 "number",
                 "null"
               ]
+            },
+            "displaced_threshold_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The threshold's displacement from the runway's end, feet (NASR APT_RWY_END). A landing on this end has the runway past it (AIM 2-3-3); a takeoff has the whole length."
+            },
+            "lda_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The landing distance available the airport declares for this end, feet (AC 150/5300-13B, declared distances); where given, a landing is judged against it."
             }
           }
         },

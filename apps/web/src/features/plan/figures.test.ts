@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Totals } from "../../lib/api/types";
 import { fitFigures } from "../../components/useFigureFit";
 import { shortFlights, tripFigures } from "./figures";
+import { nameOwnPoints } from "../../lib/identSchema";
 
 const totals = { distance_nm: 323.6, ete_min: 165, fuel_gal: 23.4, fuel_required_gal: 30.1, hops: [] } as unknown as Totals;
 const input = { totals, local: false, destination: "KLAS" };
@@ -115,6 +116,12 @@ describe("shortFlights", () => {
     // And the fuel figure red for it, though the next landing's flight is not short.
     expect(tripFigures({ ...input, totals: route }, false)[3]!.alert).toBe(true);
     expect(shortFlights({ ...totals, fuel_margin_gal: 4 } as Totals)).toEqual([]);
+  });
+  it("names a pilot's own point by its name, not the engine's raw ident (CODE-13)", () => {
+    const hop = (margin: number) => ({ ...totals, fuel_margin_gal: margin, hops: [] });
+    const route = { ...totals, hops: [{ departure: "C81", destination: "VPBNG/090/30", totals: hop(-2) }] } as unknown as Totals;
+    nameOwnPoints(["C81", "VPBNG/090/30", "KDLH"]);
+    expect(shortFlights(route)).toEqual([{ name: "C81 → POS1", shortGal: 2 }]);
   });
 
   it("says the same figures from where a dry run is: the hop it is on, what is left to it, and the fuel required less what is burnt", () => {

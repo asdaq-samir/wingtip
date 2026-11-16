@@ -1,74 +1,46 @@
 import type { ReactNode } from "react";
 import { cn } from "cn";
-import { TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Tabs, TabsContent } from "./ui/tabs";
+import { PINNED_BELOW } from "./PinnedHead";
 
 /**
- * A card's tabs: an airport's (PlaceCard), brought back under its actions
- * at the owner's ask (2026-10-29, "bring back the tabs after the
- * buttons") after a day as one scroll (A2). The airplane's card kept its
- * one scroll. The route's own pages are the same stock Tabs (PanelTabs).
+ * A card's tab pages, laid out after Apple Maps' place card (C1, the owner,
+ * 2026-11-14): the page of the tab picked, then the tabs in a glass bar
+ * floating at the card's foot (CardTabBar). The airport card's
+ * (PlaceCard), and the airplane cards' (AirplaneProfileSheet, FlightCard;
+ * the owner the same day: "make sure the airplane card looks similar to
+ * airport card"). The route's pages are the same stock Tabs (PanelTabs).
  *
- * - CardTabBar: a card's bar, its tabs from a list; tapped, the panel comes
- *   all the way up, and the open one tapped again up there takes it back
- *   half way, as the route's tabs do (PanelTabs).
+ * - CardTabPages: the stock Tabs round a card's pages and its bar.
  * - CardTabPanel: a tab's content, spaced as every card's is.
- * - useCardTab (features/plan/lib/cardTab): the tab picked, kept for each airport while
- *   the page is open: back from a card over it, the same tab.
+ * - useCardTab (lib/cardTab): the tab picked, kept for each airport or
+ *   airplane while the page is open: back from a card over it, the same tab.
+ * - useTabScroll (lib/tabScroll): each tab opening at its own top, under the actions.
  */
 
-/** A card's pages as iOS's segmented control, the stock Tabs' own look:
- *  an airport's Info, Weather, Runways and Charts, at the owner's pick of
- *  the redesign, where they were words over a hairline. 44 tall to a
- *  finger. */
-const SEGMENTED = "w-full group-data-[orientation=horizontal]/tabs:h-9 pointer-coarse:group-data-[orientation=horizontal]/tabs:h-11";
-
-interface CardTabSpec<T extends string> {
-  value: T;
-  label: ReactNode;
-}
-
-export function CardTabBar<T extends string>({
-  tabs,
+/** The stock Tabs round a card's pages and, last, its floating bar. `top`
+ *  is useTabScroll's setter: the mark where a page starts, sticky under the
+ *  card's head (PINNED_BELOW), where a tab not yet seen opens, which keeps
+ *  the pages tall enough for the bar to stay at the card's foot. */
+export function CardTabPages<T extends string>({
+  tab,
   onPick,
-  testIdPrefix,
-  disabled,
-  className,
-  activateOnFocus,
+  top,
+  bar,
+  children,
 }: {
-  tabs: readonly CardTabSpec<T>[];
-  value: T;
-  /** A tab picked, by a tap or the keyboard. */
+  tab: T;
   onPick: (tab: T) => void;
-  /** Each trigger's test id: `${prefix}-${value}`. */
-  testIdPrefix: string;
-  /** Greyed, as a card's actions are until its answer comes. */
-  disabled?: boolean;
-  className?: string;
-  /** The tab shown as the arrow keys reach it, where every tab's content
-   *  is already in hand (one answer fills them all): the APG's automatic
-   *  activation, for panels shown with no delay. Base UI's Tabs wait for
-   *  Enter or Space unless asked (docs/design/web.md, gap 5); the Tabs
-   *  root's onValueChange is then what picks it. */
-  activateOnFocus?: boolean;
+  top: (node: HTMLDivElement | null) => void;
+  bar: ReactNode;
+  children: ReactNode;
 }) {
   return (
-    <TabsList activateOnFocus={activateOnFocus} className={cn(SEGMENTED, className)}>
-      {tabs.map((t) => (
-        <TabsTrigger
-          key={t.value}
-          value={t.value}
-          className="pointer-coarse:text-(length:--type-detail)"
-          disabled={disabled}
-          data-testid={`${testIdPrefix}-${t.value}`}
-          // A tap picks the tab and nothing else: the sheet keeps the size it
-          // was dragged to (the owner, 2026-11-11, "Just let the drawer do
-          // what it does"; the open tab tapped again no longer lowers it).
-          onClick={() => onPick(t.value)}
-        >
-          {t.label}
-        </TabsTrigger>
-      ))}
-    </TabsList>
+    <Tabs value={tab} onValueChange={(next) => onPick(next as T)} className="gap-0">
+      <div ref={top} aria-hidden className={cn("sticky h-0", PINNED_BELOW)} />
+      {children}
+      {bar}
+    </Tabs>
   );
 }
 

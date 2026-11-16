@@ -23,6 +23,19 @@ def _tokens(group):
     return {k: v for k, v in group.items() if not k.startswith("$") and isinstance(v, dict) and "$value" in v}
 
 
+def material_css(mat):
+    """A material group's declarations, the look's own and the Native look's alike: the map buttons'
+    glass, the floating bar's denser glass (the airport card's tabs) and the sheet's frost."""
+    return [
+        ("glass-blur", "%gpx" % mat["glass-blur"]),
+        ("glass-fill-light", "%g%%" % (mat["glass-fill"] * 100)),
+        ("glass-fill-dark", "%g%%" % (mat["glass-fill-dark"] * 100)),
+        ("glass-bar-blur", "%gpx" % mat["bar-blur"]),
+        ("glass-bar-fill", "%g%%" % (mat["bar-fill"] * 100)),
+        ("sheet-blur", "%gpx" % mat["sheet-blur"]),
+    ]
+
+
 def css(tree):
     """The declarations for :root[data-brand="native"]."""
     g = tree["stock"]
@@ -30,13 +43,7 @@ def css(tree):
         ("radius-%s" % k, ("%grem" % (t["$value"] / 16)) if k == "card" else "%gpx" % t["$value"]) for k, t in _tokens(g["radius"]).items()
     ]
     out += [("depth-%s" % k, shadow_css(t["$value"])) for k, t in _tokens(g["depth"]).items()]
-    mat = {k: t["$value"] for k, t in _tokens(g["material"]).items()}
-    out += [
-        ("glass-blur", "%gpx" % mat["glass-blur"]),
-        ("glass-fill-light", "%g%%" % (mat["glass-fill"] * 100)),
-        ("glass-fill-dark", "%g%%" % (mat["glass-fill-dark"] * 100)),
-        ("sheet-blur", "%gpx" % mat["sheet-blur"]),
-    ]
+    out += material_css({k: t["$value"] for k, t in _tokens(g["material"]).items()})
     for k, t in _tokens(g["motion"]).items():
         v = t["$value"]
         out.append(("motion-%s" % k, "cubic-bezier(%s)" % ", ".join("%g" % x for x in v) if isinstance(v, list) else "%gs" % v))

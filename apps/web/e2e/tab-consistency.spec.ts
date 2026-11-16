@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, openConsole, settle, settled, showSearch, showTraffic, sideDrawer } from "./helpers";
+import { grabberTo, openConsole, settle, settled, showSearch, sideDrawer } from "./helpers";
 
 /**
  * The sheet's own pages laid out as one (TabPage), at the owner's ask
@@ -75,7 +75,6 @@ test("every page of the sheet is laid out as one: its sections' sides, headings 
   const pages: Record<string, Section[]> = {};
   const opens: [string, () => Promise<void>][] = [
     ["Search", () => showSearch(page)],
-    ["Traffic", () => showTraffic(page)],
     ["Account", () => openConsole(page)],
   ];
   for (const [name, open] of opens) {

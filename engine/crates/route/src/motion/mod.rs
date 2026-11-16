@@ -44,6 +44,7 @@ pub mod alerts;
 pub mod along;
 pub mod diagram;
 pub mod dry_run;
+pub mod fuel_left;
 pub mod glide;
 pub mod instruments;
 pub mod profile;
@@ -95,6 +96,7 @@ pub(crate) fn present(v: &Value, key: &str) -> bool {
 
 /// The rules of this module by name, as their contract files
 /// (crates/route/contract) name it to the dispatcher.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     match name {
         "traffic_marks" => traffic::marks_rule(v),
@@ -115,7 +117,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         "route_position" => along::position_rule(v),
         "in_flight" => instruments::in_flight_rule(v),
         "vertical_speed" => instruments::vertical_speed_rule(v),
-        "glide_ring" => instruments::glide_ring_rule(v),
+        "glide_ring" => glide::ring_rule(v),
         "diagram_labels" => diagram::labels_rule(v),
         "diagram_graticule" => diagram::graticule_rule(v),
         "diagram_point" => diagram::point_rule(v),

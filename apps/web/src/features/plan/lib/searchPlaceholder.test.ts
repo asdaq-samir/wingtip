@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { placeholderOf, shortPlaceholder } from "./searchPlaceholder";
+import { placeholderOf, searchWords } from "./searchPlaceholder";
 
 const pick = (label: string, fixes = false) => ({ label, fixes, onPick: () => {} });
 
@@ -11,13 +11,17 @@ describe("placeholderOf", () => {
     expect(placeholderOf(false, pick("Stop 1", true), "place")).toBe("Search airports and waypoints");
     expect(placeholderOf(false, null, "home")).toBe("Search for your home airport");
     expect(placeholderOf(false, null, "favorite")).toBe("Search for an airport to keep");
+    expect(placeholderOf(false, null, "mine")).toBe("Search for your airplane");
+    expect(placeholderOf(false, null, "airplane")).toBe("Search for an airplane to keep");
     expect(placeholderOf(false, null, "place")).toBe("Search airports and airplanes");
   });
 });
 
-describe("shortPlaceholder", () => {
-  it("cuts the default to what fits, the rest as they are", () => {
-    expect(shortPlaceholder("Search airports and airplanes")).toBe("Search airports");
-    expect(shortPlaceholder("Direct to which airport?")).toBe("Direct to which airport?");
+describe("searchWords", () => {
+  it("shows the default whole, as its name says it (the owner, 2026-11-14)", () => {
+    expect(searchWords(false, null, "place")).toEqual({
+      label: "Search airports and airplanes",
+      placeholder: "Search airports and airplanes",
+    });
   });
 });

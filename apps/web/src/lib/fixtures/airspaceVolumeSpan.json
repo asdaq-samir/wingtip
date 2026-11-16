@@ -50,6 +50,26 @@
       "about": "A floor at FL180: nothing left to draw",
       "input": { "floor": { "ft": 18000, "code": "STD" }, "ceiling": { "ft": 45000, "code": "STD" } },
       "answer": null
+    },
+    {
+      "about": "Chicago's 3,000-10,000 shelf at a plan's 4,500 and 2,500: holds the 4,500",
+      "input": { "floor": { "ft": 3000, "code": "MSL" }, "ceiling": { "ft": 10000, "code": "MSL" }, "altitudes_ft": [2500, 4500] },
+      "answer": { "floor_ft": 3000.0, "ceiling_ft": 10000.0, "surface": false, "holds": true }
+    },
+    {
+      "about": "The same shelf at 10,500: over its ceiling, outside",
+      "input": { "floor": { "ft": 3000, "code": "MSL" }, "ceiling": { "ft": 10000, "code": "MSL" }, "altitudes_ft": [10500] },
+      "answer": { "floor_ft": 3000.0, "ceiling_ft": 10000.0, "surface": false, "holds": false }
+    },
+    {
+      "about": "At the shelf's floor, 3,000 exactly: inside, as its published altitudes are part of it",
+      "input": { "floor": { "ft": 3000, "code": "MSL" }, "ceiling": { "ft": 10000, "code": "MSL" }, "altitudes_ft": [3000] },
+      "answer": { "floor_ft": 3000.0, "ceiling_ft": 10000.0, "surface": false, "holds": true }
+    },
+    {
+      "about": "R-4207 to FL450 holds FL240 above the 18,000 ft it is drawn to",
+      "input": { "floor": { "ft": 0, "code": "SFC" }, "ceiling": { "ft": 45000, "code": "STD" }, "altitudes_ft": [24000] },
+      "answer": { "floor_ft": 0.0, "ceiling_ft": 18000.0, "surface": true, "holds": true }
     }
   ]
 }

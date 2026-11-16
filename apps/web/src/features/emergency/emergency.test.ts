@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { EmergencyFields } from "../../lib/api/types";
-import { bestFields, checklistSection, maydayCall, positionWords } from "./emergency";
+import { bestFields, checklistSection, maydayCall, positionWords, visibilities } from "./emergency";
 import fixture from "../../lib/fixtures/emergency.json";
 
 /** The fixture's fields as the planner's /api/emergency/fields sends them. */
@@ -82,5 +82,24 @@ describe("the emergency assistant, by the engine", () => {
     expect(positionWords({ lat: 42.59, lon: -88.43 }, [], { name: "Grand Geneva Resort", distance_nm: 2.4, bearing_deg: 54 })).toBe(
       "2 nm SW of Grand Geneva Resort",
     );
+  });
+});
+
+describe("visibilities", () => {
+  test("a field's reported visibility as the pilot reads it, none where the report gives none", () => {
+    const data = planner();
+    const [first, second] = data.fields;
+    const metar = { raw: "", visibility_sm: null, visibility_plus: false };
+    const fields = [
+      { ...first!, ident: "KAAA", metar: { ...metar, visibility_sm: 10, visibility_plus: true } },
+      { ...second!, ident: "KBBB", metar: { ...metar, visibility_sm: 3 } },
+      { ...first!, ident: "KCCC", metar },
+      { ...second!, ident: "KDDD", metar: null },
+    ];
+    const read = visibilities({ ...data, fields });
+    expect([...read]).toEqual([
+      ["KAAA", "10+ sm"],
+      ["KBBB", "3 sm"],
+    ]);
   });
 });

@@ -9,7 +9,8 @@ import Observation
 /// logbook_from_track), and the pilot reviews it, changes what they like
 /// and logs it (the gateway's POST /api/logbook): never saved unasked.
 /// Logged, the currency is asked again (the engine's, from the logbook),
-/// and the track goes to the saved flight it was flown as, for its debrief.
+/// and the track goes to the saved flight it was flown as, for its debrief:
+/// kept on the phone (recorder.unsent) until that upload has gone through.
 @MainActor
 @Observable
 final class AutoLogbook {
@@ -44,8 +45,22 @@ final class AutoLogbook {
     /// What was logged, for the sheet's last word.
     private(set) var logged: LogbookEntryRequest?
 
-    init(recorder: FlightRecorder) {
+    /// The gateway's two writes, a test's own in their place.
+    @ObservationIgnored private let addEntry: (LogbookEntryRequest) async throws -> Void
+    @ObservationIgnored private let saveTrack: (Int, SavedTrack) async throws -> Void
+
+    init(recorder: FlightRecorder,
+         addEntry: @escaping (LogbookEntryRequest) async throws -> Void = { try await Gateway.addLogbookEntry($0) },
+         saveTrack: @escaping (Int, SavedTrack) async throws -> Void = { try await Gateway.saveTrack($0, $1) }) {
         self.recorder = recorder
+        self.addEntry = addEntry
+        self.saveTrack = saveTrack
+    }
+
+    /// Why a logged flight's track is not yet with its saved flight, while
+    /// it is kept on the phone to be sent; nil once it has gone.
+    var trackProblem: String? {
+        recorder.unsent.tracks.isEmpty ? nil : recorder.unsent.problem
     }
 
     /// Open while a flight has ended and not been let go, and once logged.
@@ -80,23 +95,45 @@ final class AutoLogbook {
     /// currency then asked again by `logbookChanged`.
     func log(logbookChanged: () -> Void) async {
         guard let draft else { return }
+        await log(Self.entryRequest(draft, edits: edits, byInstruments: byInstruments, flightId: linked), logbookChanged: logbookChanged)
+    }
+
+    /// The entry logged; its track sent to the saved flight, or, where that
+    /// fails, kept on the phone before the recorder lets its own copy go,
+    /// and sent again later (sendUnsent): a flown track is never erased
+    /// before it has arrived.
+    func log(_ request: LogbookEntryRequest, logbookChanged: () -> Void) async {
         logging = true
         defer { logging = false }
-        let request = Self.entryRequest(draft, edits: edits, byInstruments: byInstruments, flightId: linked)
         do {
-            try await Gateway.addLogbookEntry(request)
-            if let flight = request.flightId {
-                let track = SavedTrack(points: recorder.points.map { SavedTrackPoint(altFt: $0.altFt, lat: $0.lat, lon: $0.lon, t: Int($0.t)) },
-                                       source: "Recorded by Wingtip")
-                try? await Gateway.saveTrack(flight, track)
-            }
-            logged = request
-            logProblem = nil
-            reset()
-            logbookChanged()
+            try await addEntry(request)
         } catch {
             logProblem = error.localizedDescription
+            return
         }
+        if let flight = request.flightId {
+            let track = SavedTrack(points: recorder.points.map { SavedTrackPoint(altFt: $0.altFt, lat: $0.lat, lon: $0.lon, t: Int($0.t)) },
+                                   source: "Recorded by Wingtip")
+            do {
+                try await saveTrack(flight, track)
+            } catch {
+                await recorder.unsent.keep(flight, track, problem: error.localizedDescription)
+            }
+        }
+        logged = request
+        logProblem = nil
+        reset()
+        logbookChanged()
+    }
+
+    /// The tracks kept unsent sent again, now.
+    func sendUnsent() async {
+        await recorder.unsent.send(saveTrack)
+    }
+
+    /// The same once the phone has a network: as the app comes to the front.
+    func sendUnsentWhenOnline() async {
+        await recorder.unsent.sendWhenOnline(saveTrack)
     }
 
     /// Not now: kept, and not offered again until a later landing.

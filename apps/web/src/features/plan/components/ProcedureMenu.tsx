@@ -14,6 +14,9 @@ import { runwayNumber } from "../lib/pattern";
 import { usePreferences } from "../../../lib/preferences";
 import { transitionWords, type PickedProcedure } from "../../../lib/procedures";
 import { TEXT } from "../../../lib/text";
+import { faaWords } from "../../../lib/advisories";
+import QueryState from "../../../components/QueryState";
+import type { UseQueryResult } from "@tanstack/react-query";
 
 type Kind = ProcedureSummary["kind"];
 
@@ -23,12 +26,14 @@ const TITLE: Record<Kind, string> = { approach: "Approach", arrival: "Arrival", 
  *  Approach, Depart"). */
 const SHORT: Record<Kind, string> = { approach: "Approach", arrival: "Arrive", departure: "Depart" };
 const ALL: Record<Kind, string> = { approach: "All approaches…", arrival: "All arrivals…", departure: "All departures…" };
+/** The one failure both the pull-down and the procedures sheet say. */
+export const PROCEDURES_FAILED = "The FAA's procedures could not be fetched.";
 const NONE: Record<Kind, string> = { approach: "No approach", arrival: "No arrival", departure: "No departure" };
 
 /** An approach's name in its runway's group, the runway said by the group:
  *  "ILS RWY 09L" is "ILS", "RNAV (GPS) Y RWY 10R" is "RNAV (GPS) Y". */
 function shortName(p: ProcedureSummary): string {
-  return p.kind === "approach" ? p.name.replace(/\s*RWY\s*\S+$/i, "") || p.name : p.name;
+  return faaWords(p.kind === "approach" ? p.name.replace(/\s*RWY\s*\S+$/i, "") || p.name : p.name);
 }
 
 /**
@@ -45,7 +50,7 @@ export default function ProcedureMenu({
   ident,
   kind,
   list,
-  loading,
+  query,
   picked,
   label,
   runway,
@@ -61,7 +66,11 @@ export default function ProcedureMenu({
   kind: Kind;
   /** The field's procedures, once asked for (onOpen). */
   list: ProcedureList | undefined;
-  loading: boolean;
+  /** Its ask: while it comes the list's shape, and where it could not be
+   *  had, that it could not with Try again -- never "None published", which
+   *  told a pilot a field whose list failed has no approach (the audit's
+   *  CODE-4). */
+  query: UseQueryResult<ProcedureList> | undefined;
   /** The one of the kind in the route, and its name as the route's box
    *  says it. */
   picked: PickedProcedure | null;
@@ -151,7 +160,7 @@ export default function ProcedureMenu({
   const others = [...byRunway.keys()].filter((r) => r !== first).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   const title =
     page && "procedure" in page
-      ? page.procedure.name
+      ? faaWords(page.procedure.name)
       : page && "direct" in page
         ? "Direct to"
         : page
@@ -232,7 +241,7 @@ export default function ProcedureMenu({
       >
         {page && "procedure" in page ? (
           <ListPicks
-            label={`${page.procedure.name} transition`}
+            label={`${faaWords(page.procedure.name)} transition`}
             selected={picked?.id === page.procedure.id ? (picked.transition ?? NO_CHOICE) : null}
             picks={[null, ...page.procedure.transitions].map((t) => ({
               id: t ?? NO_CHOICE,
@@ -263,9 +272,12 @@ export default function ProcedureMenu({
           />
         ) : (
           <>
-            {all.length === 0 && (
+            {!list && query && (
+              <QueryState query={query} fetching={`Fetching the ${TITLE[kind].toLowerCase()}s…`} failed={PROCEDURES_FAILED} />
+            )}
+            {list && all.length === 0 && (
               <p role="status" className={cn("px-1 text-muted-foreground", TEXT.detail)}>
-                {loading ? "Fetching them…" : "None published"}
+                None published
               </p>
             )}
             {kind === "approach" && first !== null && (
@@ -293,7 +305,7 @@ export default function ProcedureMenu({
               </>
             )}
             {kind !== "approach" && all.length > 0 && (
-              <ListPicks label={TITLE[kind]} selected={picked?.id ?? null} picks={all.map((p) => item(p, p.name))} />
+              <ListPicks label={TITLE[kind]} selected={picked?.id ?? null} picks={all.map((p) => item(p, shortName(p)))} />
             )}
             {picked && fixes.length > 0 && (
               <ListGroup>

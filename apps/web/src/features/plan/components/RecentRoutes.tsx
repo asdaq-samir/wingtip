@@ -7,6 +7,7 @@ import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { ClearList } from "../../../components/RemovableRow";
 import { recentHrefOf } from "../../../lib/flightLink";
 import { placeOfPoint } from "../../../lib/identSchema";
+import { dayMonth } from "../../../lib/format";
 import { recentRouteKey, usePreferences, type RecentRoute } from "../../../lib/preferences";
 import { TEXT } from "../../../lib/text";
 import { whenGroups } from "../lib/whenGroups";
@@ -40,7 +41,7 @@ export function RecentRouteTiles() {
       {routes.slice(0, STRIP_MOST).map((route) => {
         const dep = placeOfPoint(route.dep),
           dest = placeOfPoint(route.dest);
-        const day = new Date(route.at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        const day = dayMonth(new Date(route.at));
         return (
           <SmallTile
             key={recentRouteKey(route)}
@@ -123,7 +124,7 @@ function RecentRouteRows({
         // (pointName), as Saved's tiles name it.
         const dep = placeOfPoint(route.dep),
           dest = placeOfPoint(route.dest);
-        const day = new Date(route.at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        const day = dayMonth(new Date(route.at));
         const name = `${dep} to ${dest}`;
         const shareLink = { title: `${dep} → ${dest}`, url: new URL(`/app${hrefOf(route)}`, location.origin).toString() };
         const share = () => {

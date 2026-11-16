@@ -5,6 +5,7 @@
 # end-to-end test @smoke (one per journey), or add it here. Paths are
 # relative to apps/web/e2e.
 a11y.spec.ts
+airplane-lookup.spec.ts
 airplane-mode.spec.ts
 airport-diagram.spec.ts
 airport-weather.spec.ts
@@ -13,6 +14,7 @@ airspace-lines.spec.ts
 approach-debrief.spec.ts
 approach-lesson.spec.ts
 brief-glance.spec.ts
+card-once.spec.ts
 card-scroll.spec.ts
 checkride.spec.ts
 coach.spec.ts
@@ -25,6 +27,7 @@ devswitch.spec.ts
 direct-to.spec.ts
 diversion.spec.ts
 dry-run-bar.spec.ts
+dry-run-follow.spec.ts
 export.spec.ts
 favorites-add.spec.ts
 field-lights.spec.ts
@@ -53,6 +56,7 @@ manifest-screenshots.spec.ts
 manifest.spec.ts
 map-mic.spec.ts
 nav-log-desk.spec.ts
+navaid-card.spec.ts
 navlog-fit.spec.ts
 navlog-winds.spec.ts
 night.spec.ts
@@ -62,6 +66,7 @@ pass-times.spec.ts
 passengers.spec.ts
 pattern-radio.spec.ts
 place-add-stop.spec.ts
+place-tabs.spec.ts
 plane-card.spec.ts
 plates-map.spec.ts
 practice.spec.ts
@@ -78,6 +83,7 @@ route-fit.spec.ts
 route-half.spec.ts
 route-leg.spec.ts
 route-line.spec.ts
+route-list-asks.spec.ts
 ruler.spec.ts
 saved-flight-edit.spec.ts
 search-desk.spec.ts
@@ -98,7 +104,9 @@ subscription.spec.ts
 sunlight.spec.ts
 switch.spec.ts
 tab-consistency.spec.ts
+tap-in-sight.spec.ts
 terrain.spec.ts
+tfr-card.spec.ts
 tiles.spec.ts
 tracking.spec.ts
 tv-signin.spec.ts

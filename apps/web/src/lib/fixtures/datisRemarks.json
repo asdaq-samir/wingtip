@@ -1,0 +1,34 @@
+{
+  "_note": "A D-ATIS's remarks as the airport card shows them (datis_remarks, engine/crates/radio/src/datis_remarks.rs): an item a sentence, the FAA's words in sentence case with RWY, TWY and the codes kept, the contractions of FAA Order JO 7340.2 written out, the voice's '9 THSD 7 HND 25 FT' as 9,725 ft, and the sentences saying the same of several runways folded into one item listing them all. Answers worked by hand from the text, not from the code. KORD is the owner's screenshot of 2026-11-14 put back into the data link's form (its words as the reader gave them back, verbatim; its weather groups and approach line stand in for the ones the screenshot does not show); KMSP is the feed's of 2026-11-09 0353Z (engine/crates/radio/src/datis.rs).",
+  "cases": [
+    {
+      "about": "KORD: LAHSO distances as figures, the closures and the twelve inner markers out of service each one item, the frequency as written",
+      "text": "ORD ARR INFO K 2251Z. 27012KT 10SM FEW250 07/M01 A3006 (THREE ZERO ZERO SIX). ILS RWY 27C APCH IN USE. SIMUL APCHS IN USE. LAND AND HOLD SHORT OPERATIONS ARE IN EFFECT. RWY 27C ARR PLAN TO H/S OF TWY V/V, 9 THSD 7 HND 25 FT AVBL. RWY 28C ARR PLAN TO H/S OF TWY Z, 9 THSD 6 HND 10 FT AVBL. DEPS EXP RWYS 22L, 28R FROM NOVEMBER 5, 9750 FT AVL. RWY 4L 22R CLSD. RWY 10R 28L CLSD. RWY 9L IM OTS. RWY 9C IM OTS. RWY 9R IM OTS. RWY 10L IM OTS. RWY 10C IM OTS. RWY 10R IM OTS. RWY 27L IM OTS. RWY 27C IM OTS. RWY 27R IM OTS. RWY 28L IM OTS. RWY 28C IM OTS. RWY 28R IM OTS. PILOTS USE CAUTION FOR BIRD ACTIVITY IN THE VICINITY OF THE ARPT. USE CAUTION FOR PERSONNEL AND EQUIP AT NUMEROUS SITES ON THE FIELD. AUTHORIZED DRONE ACTIVITY 2.5 MILES NORTHWEST OF FIELD 270 FEET. READBACK ALL RWY HOLD SHORT INSTRUCTIONS. WHEN READY TO TAXI CONTACT GND METERING ON FREQ 121.67. ...ADVS YOU HAVE INFO K.",
+      "answer": [
+        "Simultaneous approaches in use",
+        "Land and hold short operations are in effect",
+        "RWY 27C arrival plan to H/S of TWY V/V, 9,725 ft available",
+        "RWY 28C arrival plan to H/S of TWY Z, 9,610 ft available",
+        "Departures exp RWYS 22L, 28R from november 5, 9,750 ft avl",
+        "Closed: RWY 4L/22R, 10R/28L",
+        "IM out of service: RWY 9L, 9C, 9R, 10L, 10C, 10R, 27L, 27C, 27R, 28L, 28C, 28R",
+        "Pilots use caution for bird activity in the vicinity of the arpt",
+        "Use caution for personnel and equip at numerous sites on the field",
+        "Authorized drone activity 2.5 miles northwest of field 270 feet",
+        "Readback all RWY hold short instructions",
+        "When ready to taxi contact ground metering on frequency 121.67"
+      ]
+    },
+    {
+      "about": "KMSP: the approaches in use are the read's figures and the heading and closing line are no remark; one closure sentence of two runways stays as written; the field's own ident kept",
+      "text": "-  MSP ARR INFO I 0353Z. VRB03KT 10SM SCT250 07/03 A3006 (THREE ZERO ZERO SIX). VISUAL RWY 30L APCH IN USE, VISUAL RWY 30R APCH IN USE. NOTICE TO AIRMEN. RWYS 4, 22 CLSD. RWYS 12R AND 12L INNER MARKER OTS. CTN, BIRDS NEAR MSP. READ BACK HS AND ALT. ALL ACFT TAXI WITH TRANSPONDER AND ALTITUDE ENCODING ON. ...ADVS YOU HAVE INFO I.",
+      "answer": [
+        "RWYS 4, 22 closed",
+        "RWYS 12R and 12L inner marker out of service",
+        "Caution, birds near MSP",
+        "Read back HS and altitude",
+        "All aircraft taxi with transponder and altitude encoding on"
+      ]
+    }
+  ]
+}

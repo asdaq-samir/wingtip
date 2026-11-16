@@ -4,7 +4,7 @@ import { Button, GridList, GridListItem, useDragAndDrop } from "react-aria-compo
 
 // Apart from Favorites' strips and tiles, which the first load draws: the
 // lists in full that a pilot edits are loaded when one is opened
-// (FavoritesList, AircraftFavoritesList), and React Aria's drag and drop
+// (FavoritesList, with its AircraftFavoriteGroups), and React Aria's drag and drop
 // with them.
 
 /**

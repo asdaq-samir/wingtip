@@ -73,14 +73,19 @@ export function useDepartureWindow() {
     },
     currency: currency ? currencyInput(currency) : null,
   };
+  const route = routeKeyOf({ ...plan, depart: "" });
   const query = useQuery({
-    queryKey: ["departure-window", routeKeyOf({ ...plan, depart: "" }), JSON.stringify(ask)],
+    queryKey: ["departure-window", route, JSON.stringify(ask)],
     queryFn: ({ signal }) => api.departureWindow(ask, signal),
     // Signed in: the planner's heaviest ask, kept to pilots with an
     // account (the gateway's x-gateway mark). A local flight has no route
     // to judge along.
     enabled: plan.routed && !plan.local && !!plan.dep && !!plan.dest && !!pilot,
     staleTime: KEPT_MS,
+    // The hours before kept, dimmed, while the same route is asked again
+    // for another airplane or minimums: the strip went back to its
+    // skeleton and the Brief under it moved (the flicker audit's E).
+    placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[1] === route ? previous : undefined),
     meta: { silent: true },
   });
   const [picked, setPicked] = useState<string | null>(null);
@@ -91,6 +96,8 @@ export function useDepartureWindow() {
     shown: plan.routed && !plan.local,
     signedIn: !!pilot,
     pending: query.isPending && query.fetchStatus !== "idle",
+    /** The hours shown are the last ask's, the new ones coming. */
+    stale: query.isPlaceholderData,
     error: query.error,
     hours,
     best,

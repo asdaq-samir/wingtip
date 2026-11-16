@@ -12,7 +12,7 @@ import { usePreferences } from "../../preferences";
 import { BLUE } from "../../useAirspace";
 import { TOWERED_BLUE, UNTOWERED_MAGENTA } from "../marks/airportMark";
 import { stationPictures } from "../marks/stationModel";
-import { AIRPORT_WEATHER, TILE_AIRPORT_ICON, airportPictures, TOWERED } from "./airportIcons";
+import { AIRPORT_WEATHER, TILE_AIRPORT_ICON, airportIconSize, airportPictures, TOWERED } from "./airportIcons";
 import { overlaySource } from "../sources/overlayTiles";
 import { SLOTS, drawSvg, slotId, type DrawnImage, type Slot, type Stretch } from "./glLayer";
 import {
@@ -115,11 +115,12 @@ let drawn: Promise<Map<string, DrawnImage>> | null = null;
  *  as a tile first asks for one (MapLibre waits on it, so no symbol is
  *  laid out without its picture). */
 export function overlayPictures(): Promise<Map<string, DrawnImage>> {
-  drawn ??= Promise.all(
-    [...airportPictures(), ...stationPictures(), ...NAVAID_PICTURES, ...AIRSPACE_TAB_PICTURES, ...SUA_PICTURES].map(([id, svg, stretch]) =>
+  drawn ??= Promise.all([
+    ...airportPictures().map((p) => p.draw().then((d) => [p.id, d] as const)),
+    ...[...stationPictures(), ...NAVAID_PICTURES, ...AIRSPACE_TAB_PICTURES, ...SUA_PICTURES].map(([id, svg, stretch]) =>
       drawSvg(svg(), stretch).then((d) => [id, d] as const),
     ),
-  ).then((all) => new Map(all.filter((e): e is readonly [string, DrawnImage] => !!e[1])));
+  ]).then((all) => new Map(all.filter((e): e is readonly [string, DrawnImage] => !!e[1])));
   return drawn;
 }
 
@@ -127,15 +128,15 @@ export function overlayPictures(): Promise<Map<string, DrawnImage>> {
 
 /** The airports' zooms, in the app's levels: the farthest out any
  *  is drawn. Within it each field is in the tiles from its own zoom by
- *  its rank (AIRPORT_MIN_ZOOM in services/jobs/charts/overlays.py):
+ *  its tier (AIRPORT_MIN_ZOOM in services/jobs/charts/overlays.py):
  *  towered, then the long hard runways, other public fields, private
  *  ones, heliports. */
 const AIRPORTS_FARTHEST_ZOOM = 4;
 
-/** The airports' one symbol layer, from either source: the mark, its
- *  ident beside it in bold, the field's ink (the sectional sets an
- *  airport's name in the symbol's colour, Chart User's Guide, Airports),
- *  kept apart by MapLibre's collision in `rank` order. */
+/** The airports' one symbol layer, from either source: the mark (airportIcons), its ident beside it in bold in the field's
+ *  ink (the sectional sets an airport's name in its symbol's colour, Chart User's Guide, Airports), kept apart by MapLibre's
+ *  collision in `rank` order, the engine's field_mark_rank: lowest placed first and winning, so a Class B's field
+ *  (O'Hare), then a Class C's, then each tier by its longest hard runway. */
 function airportMarksLayer(from: { source: string; "source-layer"?: string }): SymbolLayerSpecification {
   return {
     id: "airports",
@@ -153,9 +154,8 @@ function airportMarksLayer(from: { source: string; "source-layer"?: string }): S
     ],
     layout: {
       "icon-image": TILE_AIRPORT_ICON,
-      // Smaller out at a state's width, a field's own size closer in: the
-      // small fields don't crowd the chart, and the size follows a pinch frame by frame (a zoom expression, not the page's state).
-      "icon-size": ["interpolate", ["linear"], ["zoom"], glZoom(AIRPORTS_FARTHEST_ZOOM), 0.7, glZoom(10), 1, glZoom(13), 1.25],
+      // Each field at its own size step, the biggest largest (airportIconSize).
+      "icon-size": airportIconSize(glZoom(AIRPORTS_FARTHEST_ZOOM), glZoom(10), glZoom(13)),
       "icon-allow-overlap": false,
       // Out at a few states, a mark keeps some 80 px from the next; closer in, its own: every field at a field's own scale.
       "icon-padding": ["step", ["zoom"], 27, glZoom(7), 2],
@@ -371,8 +371,8 @@ function setState(map: MlMap, key: string, value: unknown) {
   if (map.style) map.setGlobalStateProperty(key, value);
 }
 
-/** The settings on the tile layers: Airspace, VORs and Fixes on or off,
- *  and the armed services' own fields and private ones shown or not, or
+/** The Map card's layers on the tile layers: Aeronautical's airspace,
+ *  VORs and fixes on or off, and Private/Military's fields shown or not, or
  *  shown whatever the switches say in an emergency (overlayFilters). */
 export function applyOverlayFilters(map: MlMap, emergency = false) {
   if (!map.style) return;
@@ -380,10 +380,10 @@ export function applyOverlayFilters(map: MlMap, emergency = false) {
   const visible = (ids: string[], on: boolean) => {
     for (const id of ids) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
   };
-  visible(AIRSPACE_TILE_LAYERS, prefs.airspace);
-  visible(NAVAID_TILE_LAYERS, prefs.navaids);
-  setState(map, SHOW_MILITARY, prefs.military || emergency);
-  setState(map, SHOW_PRIVATE, prefs.privateFields || emergency);
+  visible(AIRSPACE_TILE_LAYERS, prefs.aeronautical);
+  visible(NAVAID_TILE_LAYERS, prefs.aeronautical);
+  setState(map, SHOW_MILITARY, prefs.privateMilitary || emergency);
+  setState(map, SHOW_PRIVATE, prefs.privateMilitary || emergency);
 }
 
 /** The idents the route draws itself (its fields' chips, its waypoints),
@@ -398,7 +398,7 @@ export function setSelectedAirport(map: MlMap, ident: string | null) {
   setState(map, SELECTED_AIRPORT, ident);
 }
 
-/** Each field's weather halo from its METAR (its flight category's colour,
+/** Each field's weather disc from its METAR (its flight category's colour,
  *  flightCategory colourOf), joined onto the tile airports by ident, with
  *  every one of Settings' Airport Weather. */
 export function setAirportWeather(map: MlMap, colours: Map<string, string>) {

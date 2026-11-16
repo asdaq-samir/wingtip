@@ -1,4 +1,5 @@
 import { LineLayer } from "@deck.gl/layers";
+import { useDrawnStretch } from "./heightStretch";
 import { useEffect, useMemo, useState } from "react";
 import { deckColour, deckSlot, useDeckLayers } from "../../../../lib/map/gl/deckLayers";
 import { EMPTY, useGlData, useGlLayer, useGlMap, useGlTap } from "../../../../lib/map/gl/glLayer";
@@ -37,7 +38,7 @@ const LAYERS = trafficLayers(IDS, { points: POINTS, trends: TRENDS });
  */
 export default function TrafficAloftGl() {
   const on = usePreferences((s) => s.traffic);
-  const tracking = useTracking((s) => !!s.hex || s.listing);
+  const tracking = useTracking((s) => !!s.hex);
   const geo = useGeo();
   return (on || tracking) && geo ? <Aloft geo={geo} /> : null;
 }
@@ -56,6 +57,7 @@ function Aloft({ geo }: { geo: Geo }) {
   const seen = useTracking((s) => s.seen);
   const hex = useTracking((s) => s.hex);
   const ownFt = useOwnFix()?.altitudeFt ?? null;
+  const stretch = useDrawnStretch();
   useGlLayer("top", SOURCES, LAYERS);
   useEffect(() => {
     addTrafficPictures(map);
@@ -79,7 +81,8 @@ function Aloft({ geo }: { geo: Geo }) {
       if (age > CARRY_S) continue;
       const { lat, lon } = carriedOn(geo, plane, age);
       const groundM = map.queryTerrainElevation([lon, lat]) ?? 0;
-      const altM = standAtM(plane.altitude_ft, groundM);
+      // The ground as drawn, stretched; the airplane stretched with it.
+      const altM = standAtM(plane.altitude_ft, groundM, stretch);
       const near = nearOwnHeight(plane, ownFt);
       const tracked = plane.hex === hex;
       const callsign = tracked ? (plane.callsign ?? plane.registration ?? "") : "";
@@ -98,7 +101,6 @@ function Aloft({ geo }: { geo: Geo }) {
             icon: trafficPicture(near, plane.track_deg != null, tracked),
             track: plane.track_deg ?? 0,
             tracked,
-            dim: false,
             label: trafficLabel(plane, ownFt),
             callsign,
             ink: near ? CHART.trafficNearText : CHART.casing,
@@ -108,7 +110,7 @@ function Aloft({ geo }: { geo: Geo }) {
       });
     }
     return out;
-  }, [geo, map, seen, ownFt, hex, now]);
+  }, [geo, map, seen, ownFt, hex, now, stretch]);
 
   useGlData(
     POINTS,

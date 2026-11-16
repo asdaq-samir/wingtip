@@ -4,7 +4,7 @@ import { Fragment, type CSSProperties, type KeyboardEvent, type ReactNode } from
 import { cn } from "cn";
 import { Button } from "../../../../components/ui/button";
 import { Badge } from "../../../../components/ui/badge";
-import { zoneName } from "../../../../lib/format";
+import { nm, zoneName } from "../../../../lib/format";
 import { placeName } from "../../lib/radio";
 import { wantPlace } from "../../../../lib/navigation/wanted";
 import { TEXT } from "../../../../lib/text";
@@ -259,7 +259,7 @@ export function NavLogList({
                             event.stopPropagation();
                             wantPlace(field);
                           }}
-                          className="relative justify-start text-left after:absolute after:-inset-y-2 after:inset-x-0 after:content-['']"
+                          className="relative justify-start text-left after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-['']"
                         >
                           {name}
                         </Button>
@@ -312,10 +312,13 @@ export function NavLogList({
                           {/* With a procedure's miles where the leg ends (procedureOf),
                             named, so the miles over the groundspeed come to the minutes. */}
                           <span role="cell" data-testid="navlog-row-dist">
-                            {leg ? `${one(flownNmOf(row)!)} nm` : "—"}
+                            {leg ? nm(flownNmOf(row)) : "—"}
                             {procedureOf(row) && <span className="whitespace-nowrap"> incl. {procedureOf(row)!.word}</span>}
                           </span>
-                          <span aria-hidden="true"> · </span>
+                          {/* A separator only between cells that say something: with
+                              no airplane there is no time, and the row read "334° ·
+                              6.0 nm · · 2,500 ft" (the audit's WEB-39). */}
+                          {airplane && <span aria-hidden="true"> · </span>}
                           <span role="cell">
                             {!airplane ? null : leg ? (leg.ete_min === null ? "unflyable" : `${one(leg.ete_min)} min`) : "—"}
                           </span>

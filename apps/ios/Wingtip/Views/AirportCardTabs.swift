@@ -14,7 +14,11 @@ struct AirportInfoTab: View {
         FlowProgramsSection()
         Section(place.airspaceClass.map { "Frequencies (Class \($0))" } ?? "Frequencies") {
             if place.frequencies.isEmpty { Text("None listed").foregroundStyle(.secondary) }
-            ForEach(Array(place.frequencies.enumerated()), id: \.offset) { i, f in
+            // In the order a pilot dials them, the weather first (the
+            // engine's frequencies_in_order, AIM 4-1-13); each keeps its
+            // index in the answer, which the NOTAM marks are keyed by.
+            ForEach(AirportWords.frequencyOrder(place.frequencies), id: \.self) { i in
+                let f = place.frequencies[i]
                 let mark = notams.marks.frequency[i]
                 NotamMarked(notams: notams, mark: mark) {
                     FrequencyRowView(frequency: f, mark: mark).appEntityIdentifier(SiriSaw.frequency(place.ident, f))
@@ -125,19 +129,8 @@ struct AirportRunwaysTab: View {
         RvrSection()
     }
 
-    /// The runway most nearly into the reported wind (AC 90-66C 11.5), the
-    /// engine's gonogo_runway_in_use over each runway's wind on the end it
-    /// favours: only where the wind chose it, not a calm field's most used.
-    static func bestWind(_ runways: [Runway]) -> Int? {
-        let asked = runways.map { r in
-            EngineContract.Runway(closed: r.closed, surface: r.surface, lengthFt: r.lengthFt.map(Double.init),
-                                  runwayEnds: r.runwayEnds?.map { .init(ident: $0.ident, headingTrueDeg: $0.headingTrueDeg) },
-                                  wind: r.wind.map { .init(end: $0.end, headwindKt: $0.headwindKt, crosswindKt: $0.crosswindKt,
-                                                           gustCrosswindKt: $0.gustCrosswindKt, inUse: $0.inUse) })
-        }
-        guard !asked.isEmpty, let flown = try? Engine.gonogoRunwayInUse(runways: asked), flown.byWind else { return nil }
-        return flown.runway
-    }
+    /// The runway most nearly into the reported wind (AirportWords.bestWind).
+    static func bestWind(_ runways: [Runway]) -> Int? { AirportWords.bestWind(runways) }
 
     /// The longest runway open, what a pilot sizes a field by; none where
     /// the field has only one open.

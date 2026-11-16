@@ -44,7 +44,10 @@ def web_class(name, role):
             out.append("text-(length:--type-%s)" % name)
         else:
             out.append(TAILWIND_SIZES.get(mouse, "text-[%s]" % rem(mouse)))
-            out.append("pointer-coarse:text-[%s]" % rem(size))
+            # Capped in px where the role says (a chip over the map), so
+            # it grows with the text size only so far.
+            cap = web.get("maxPx")
+            out.append("pointer-coarse:text-[%s]" % ("min(%s,%gpx)" % (rem(size), cap) if cap else rem(size)))
             if web.get("touchLeading") and lead:
                 out.append("pointer-coarse:leading-[%s]" % rem(lead))
     if styled:

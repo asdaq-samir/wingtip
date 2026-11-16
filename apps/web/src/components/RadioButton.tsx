@@ -15,6 +15,14 @@ const ClearanceCard = lazy(() => import("./ClearanceCard"));
 let listening: typeof import("../lib/atcListening") | null = null;
 const load = () => import("../lib/atcListening").then((m) => (listening = m));
 
+/** The listening code could not be fetched (offline): the pill says so in
+ *  place, not listening, where a tap did nothing and said nothing (the web
+ *  audit's WEB-35). */
+const unloaded = () =>
+  useAtcRadio.setState({
+    pill: { listening: false, text: "", error: "Comms assist could not be loaded. Check your connection and try again." },
+  });
+
 /**
  * Comms assist, the radio's button on the map, in the Stops button's
  * place at the owner's ask (2026-11-02): a tap listens to the radio once
@@ -36,7 +44,8 @@ export default function RadioButton() {
   const voice = useCanListen();
   const setOpen = (cardOpen: boolean) => useAtcRadio.setState({ cardOpen });
   useEffect(() => {
-    void load();
+    // Fetched ahead; a failure here is said only once the button is tapped.
+    load().catch(() => {});
   }, []);
   const tap = () => {
     if (!voice || mode === "radio") {
@@ -48,7 +57,7 @@ export default function RadioButton() {
       return;
     }
     if (listening) void listening.listenOnce([]);
-    else void load().then((m) => m.listenOnce([]));
+    else load().then((m) => void m.listenOnce([]), unloaded);
   };
   return (
     <ResponsivePopover open={open} onOpenChange={setOpen}>

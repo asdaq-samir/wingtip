@@ -74,6 +74,10 @@ object EngineContract {
         val descentIasKt: String? = null,
         val descentFuelBurnGph: String? = null,
         val usableFuelGal: String? = null,
+        val serviceCeilingFt: String? = null,
+        val climbRateFpm: String? = null,
+        val taxiFuelGal: String? = null,
+        val glideRatio: String? = null,
         val equipment: String? = null,
         val surveillance: String? = null,
         val colour: String? = null,
@@ -91,10 +95,59 @@ object EngineContract {
         val descentIasKt: String? = null,
         val descentFuelBurnGph: String? = null,
         val usableFuelGal: String? = null,
+        val serviceCeilingFt: String? = null,
+        val climbRateFpm: String? = null,
+        val taxiFuelGal: String? = null,
+        val glideRatio: String? = null,
         val equipment: String? = null,
         val surveillance: String? = null,
         val colour: String? = null,
     )
+
+    @Serializable
+    data class AirplaneFigureRangesAnswer(
+        val ranges: List<EngineContract.AirplaneFigureRangesAnswerRangesItem>,
+    )
+
+    @Serializable
+    data class AirplaneFigureRangesAnswerRangesItem(
+        /**
+         * The form's and the gateway's name, cruiseTasKt.
+         */
+        val field: String,
+        /**
+         * The planner's query parameter, cruise_tas_kt.
+         */
+        val query: String,
+        /**
+         * The field's name in the form's words, Cruise speed.
+         */
+        val label: String,
+        /**
+         * kt, gal/h, gal, %, ft, fpm, or empty for a ratio.
+         */
+        val unit: String,
+        val min: Double,
+        /**
+         * min itself is inside; otherwise only above it.
+         */
+        @SerialName("min_inclusive")
+        val minInclusive: Boolean,
+        /**
+         * The highest inside.
+         */
+        val max: Double,
+        /**
+         * The form needs it (the cruise speed and burn).
+         */
+        val required: Boolean,
+    )
+
+    @Serializable
+    class AirplaneFigureRangesInput {
+        override fun equals(other: Any?): Boolean = other is AirplaneFigureRangesInput
+        override fun hashCode(): Int = 0
+    }
 
     @Serializable
     data class AirplaneFiguresAnswer(
@@ -320,6 +373,41 @@ object EngineContract {
     )
 
     @Serializable
+    data class AirspaceShelfLabelAnswer(
+        /**
+         * The ceiling as the chart writes it: "100", "T", "-30".
+         */
+        val ceiling: String,
+        /**
+         * The floor as the chart writes it, "30" or "SFC"; null for a Class D.
+         */
+        val floor: String? = null,
+        /**
+         * The label as the map sets it: the ceiling, a line break and the floor; a Class D's ceiling alone.
+         */
+        val text: String,
+    )
+
+    @Serializable
+    data class AirspaceShelfLabelInput(
+        val `class`: String,
+        @SerialName("floor_ft")
+        val floorFt: Double? = null,
+        @SerialName("floor_ref")
+        val floorRef: String? = null,
+        /**
+         * Feet MSL.
+         */
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+        /**
+         * The ceiling is to but not including its figure (NASR UPPER_DESC TNI).
+         */
+        @SerialName("ceiling_excluded")
+        val ceilingExcluded: Boolean? = null,
+    )
+
+    @Serializable
     data class AirspaceVolumeSpanAnswer(
         /**
          * Feet MSL.
@@ -335,6 +423,10 @@ object EngineContract {
          * Whether the floor is the surface, drawn from the sea up.
          */
         val surface: Boolean,
+        /**
+         * Whether any of altitudes_ft is inside the volume; only where altitudes_ft was given.
+         */
+        val holds: Boolean? = null,
     )
 
     @Serializable
@@ -345,6 +437,11 @@ object EngineContract {
          * The ground under the volume, ft MSL: its lowest and its highest. Null where the map has none in yet.
          */
         val ground: EngineContract.AirspaceVolumeSpanInputGround? = null,
+        /**
+         * The altitudes the plan flies, ft MSL: its cruise and each leg's own. Absent or null for no plan.
+         */
+        @SerialName("altitudes_ft")
+        val altitudesFt: List<Double>? = null,
     )
 
     @Serializable
@@ -1614,6 +1711,11 @@ object EngineContract {
         val ceilingCover: String? = null,
         @SerialName("visibility_sm")
         val visibilitySm: Double? = null,
+        /**
+         * The visibility is at least visibility_sm: the feed's "10+", the report's P6SM or 10SM and more.
+         */
+        @SerialName("visibility_plus")
+        val visibilityPlus: Boolean,
         @SerialName("wind_dir_true_deg")
         val windDirTrueDeg: Double? = null,
         @SerialName("wind_speed_kt")
@@ -2074,6 +2176,22 @@ object EngineContract {
         val traffic: String? = null,
         val lat: Double? = null,
         val lon: Double? = null,
+    )
+
+    @Serializable
+    data class ClassBAtAltitudeInput(
+        val bands: List<EngineContract.ClassBAtAltitudeInputBandsItem>,
+        @SerialName("altitude_ft")
+        val altitudeFt: Double,
+    )
+
+    @Serializable
+    data class ClassBAtAltitudeInputBandsItem(
+        val `class`: String,
+        @SerialName("floor_ft")
+        val floorFt: Double,
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
     )
 
     @Serializable
@@ -2716,6 +2834,14 @@ object EngineContract {
          * YYYY-MM-DD: the UTC day it is used on.
          */
         val on: String,
+    )
+
+    @Serializable
+    data class DatisRemarksInput(
+        /**
+         * The D-ATIS as the data link sent it.
+         */
+        val text: String,
     )
 
     @Serializable
@@ -3644,6 +3770,69 @@ object EngineContract {
     )
 
     @Serializable
+    data class FieldMarkRankAnswer(
+        /**
+         * 0 towered, 1 public with a long hard runway, 2 other public, 3 private, 4 heliports and the rest: which zoom the mark is first drawn at.
+         */
+        val tier: Int,
+        /**
+         * The mark's place where marks overlap, lower kept first: class (0 Class B primary, 1 Class C primary, then tier + 2) times 100,000, plus 99,999 less the longest hard runway in ft.
+         */
+        val order: Int,
+        /**
+         * The step the mark is drawn at, the biggest fields the largest (the owner, 2026-11-14): largest for a Class B's primary field, larger for a Class C's, regular for the other towered fields and public ones with 3,000 ft of hard runway, small for the rest. How much larger each step is drawn is each app's own.
+         */
+        val size: String,
+    )
+
+    @Serializable
+    data class FieldMarkRankInput(
+        /**
+         * NASR APT_BASE's SITE_TYPE_CODE (A airport, H heliport, C seaplane base, G gliderport, U ultralight, B balloonport).
+         */
+        @SerialName("site_type")
+        val siteType: String? = null,
+        /**
+         * NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
+         */
+        val use: String? = null,
+        /**
+         * Whether NASR APT_BASE's TWR_TYPE_CODE names a tower (ATCT and its kinds; NON-ATCT is none).
+         */
+        val towered: Boolean? = null,
+        /**
+         * The field's longest hard-surfaced runway, ft (APT_RWY's RWY_LEN); 0 or null for none.
+         */
+        @SerialName("hard_ft")
+        val hardFt: Double? = null,
+        /**
+         * The class of airspace (B, C) the FAA's Class_Airspace file names the field the primary airport of (its IDENT), the highest where several; null for none. D and E count as none.
+         */
+        @SerialName("primary_of")
+        val primaryOf: String? = null,
+    )
+
+    @Serializable
+    data class FieldMilitaryAnswer(
+        /**
+         * military, joint, or null for a field the services do not own.
+         */
+        val military: String? = null,
+    )
+
+    @Serializable
+    data class FieldMilitaryInput(
+        /**
+         * NASR APT_BASE's OWNERSHIP_TYPE_CODE (PU, PR, MA, MN, MR, CG).
+         */
+        val ownership: String? = null,
+        /**
+         * NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
+         */
+        val use: String? = null,
+    )
+
+    @Serializable
     data class FieldRelationAnswer(
         val around: Boolean,
         val inbound: Boolean,
@@ -3869,6 +4058,36 @@ object EngineContract {
          */
         @SerialName("ceiling_unknown")
         val ceilingUnknown: Boolean? = null,
+    )
+
+    /**
+     * The bounding floor as it came, its lowest_ground_ft (where it has one) the least of all of them.
+     */
+    @Serializable
+    data class FloorAlongPathAnswer(
+        @SerialName("floor_ft")
+        val floorFt: Double,
+        @SerialName("lowest_ground_ft")
+        val lowestGroundFt: Double? = null,
+    )
+
+    @Serializable
+    data class FloorAlongPathInput(
+        /**
+         * The leg's own floor first, then the floor under each piece of the path: vfr_floors' or ifr_floors' answers, as they came.
+         */
+        val floors: List<EngineContract.FloorAlongPathInputFloorsItem>,
+    )
+
+    @Serializable
+    data class FloorAlongPathInputFloorsItem(
+        @SerialName("floor_ft")
+        val floorFt: Double,
+        /**
+         * VFR's lowest ground under the piece; none under IFR.
+         */
+        @SerialName("lowest_ground_ft")
+        val lowestGroundFt: Double? = null,
     )
 
     @Serializable
@@ -4246,6 +4465,45 @@ object EngineContract {
          * [[altitude_ft, temp_c], ...]
          */
         val profile: List<List<Double>>? = null,
+    )
+
+    @Serializable
+    data class FreezingPrecipAnswer(
+        val found: List<EngineContract.FreezingPrecipAnswerFoundItem>,
+        val line: String? = null,
+    )
+
+    @Serializable
+    data class FreezingPrecipAnswerFoundItem(
+        val ident: String,
+        val source: String,
+        /**
+         * The group as sent, "-FZRA".
+         */
+        val group: String,
+    )
+
+    @Serializable
+    data class FreezingPrecipInput(
+        val fields: List<EngineContract.FreezingPrecipInputFieldsItem>,
+    )
+
+    @Serializable
+    data class FreezingPrecipInputFieldsItem(
+        val ident: String,
+        /**
+         * The METAR as sent.
+         */
+        val metar: String? = null,
+        /**
+         * The TAF as sent.
+         */
+        val taf: String? = null,
+    )
+
+    @Serializable
+    data class FrequenciesInOrderInput(
+        val frequencies: List<EngineContract.FieldFrequency>,
     )
 
     @Serializable
@@ -4810,6 +5068,32 @@ object EngineContract {
     )
 
     @Serializable
+    data class GonogoIcingUncheckedInput(
+        val selection: EngineContract.GonogoIcingUncheckedInputSelection? = null,
+        /**
+         * The altitudes flown.
+         */
+        @SerialName("flown_ft")
+        val flownFt: List<Double>? = null,
+    )
+
+    @Serializable
+    data class GonogoIcingUncheckedInputSelection(
+        @SerialName("freezing_level_ft")
+        val freezingLevelFt: Double? = null,
+        /**
+         * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
+         */
+        @SerialName("icing_possible")
+        val icingPossible: Boolean? = null,
+        /**
+         * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
+         */
+        @SerialName("freezing_level_at_or_below")
+        val freezingLevelAtOrBelow: Boolean? = null,
+    )
+
+    @Serializable
     data class GonogoInspections(
         /**
          * yyyy-mm-dd, 14 CFR 91.409(a).
@@ -5116,6 +5400,66 @@ object EngineContract {
     )
 
     @Serializable
+    data class GonogoRouteFiguresAnswer(
+        @SerialName("least_margin_gal")
+        val leastMarginGal: Double? = null,
+        @SerialName("required_gal")
+        val requiredGal: Double? = null,
+        @SerialName("reserve_min")
+        val reserveMin: Double? = null,
+        @SerialName("tfrs_in_force")
+        val tfrsInForce: List<String>,
+        @SerialName("tfrs_near")
+        val tfrsNear: Double,
+    )
+
+    @Serializable
+    data class GonogoRouteFiguresInput(
+        /**
+         * The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.
+         */
+        val totals: EngineContract.GonogoRouteFiguresInputTotals? = null,
+        /**
+         * How many TFRs the briefing lists along the route.
+         */
+        @SerialName("tfr_count")
+        val tfrCount: Double? = null,
+        /**
+         * The NOTAM ids of the TFRs the route crosses while they are in force.
+         */
+        val crossed: List<String>,
+    )
+
+    /**
+     * The nav log's totals (NavLogTotals): fuel_margin_gal, fuel_required_gal, reserve_min, and each flight's own in hops[].totals. Null before the nav log.
+     */
+    @Serializable
+    data class GonogoRouteFiguresInputTotals(
+        @SerialName("fuel_margin_gal")
+        val fuelMarginGal: Double? = null,
+        @SerialName("fuel_required_gal")
+        val fuelRequiredGal: Double? = null,
+        @SerialName("reserve_min")
+        val reserveMin: Double? = null,
+        val hops: List<EngineContract.GonogoRouteFiguresInputTotalsHopsItem>? = null,
+    )
+
+    @Serializable
+    data class GonogoRouteFiguresInputTotalsHopsItem(
+        val totals: EngineContract.GonogoRouteFiguresInputTotalsHopsItemTotals? = null,
+    )
+
+    @Serializable
+    data class GonogoRouteFiguresInputTotalsHopsItemTotals(
+        @SerialName("fuel_margin_gal")
+        val fuelMarginGal: Double? = null,
+        @SerialName("fuel_required_gal")
+        val fuelRequiredGal: Double? = null,
+        @SerialName("reserve_min")
+        val reserveMin: Double? = null,
+    )
+
+    @Serializable
     data class GonogoRunwayChecksAnswerItem(
         /**
          * Index into fields.
@@ -5260,6 +5604,11 @@ object EngineContract {
         val crosswindKt: Double,
         @SerialName("gust_crosswind_kt")
         val gustCrosswindKt: Double? = null,
+        /**
+         * The unrounded crosswind (RunwayWindOut's), judged against the limits where sent; the rounded one where not.
+         */
+        @SerialName("crosswind_exact_kt")
+        val crosswindExactKt: Double? = null,
         /**
          * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
          */
@@ -6236,6 +6585,29 @@ object EngineContract {
         val variationDeg: Double? = null,
         @SerialName("burnt_gal")
         val burntGal: Double,
+        /**
+         * The fuel the plan leaves in the tanks here, from the last fuel stop passed; null without fuel_start_gal.
+         */
+        @SerialName("fuel_now_gal")
+        val fuelNowGal: Double? = null,
+        /**
+         * Whether the start and taxi allowance was taken off the fuel figures (taxi_fuel_gal given).
+         */
+        @SerialName("taxi_counted")
+        val taxiCounted: Boolean? = null,
+        /**
+         * The hop flown: 0 the first, one more for each fuel stop (refuel_at) behind the airplane; arriving at a stop it is still the hop ending there. An index into the planner's totals' hops, strip_fuel's `hop`.
+         */
+        val hop: Int,
+        /**
+         * The fuel the legs burn from the start of the hop flown to here, gallons: strip_fuel's `burnt_gal` for that hop. Planning figures from the nav log's legs, never the airplane's gauge.
+         */
+        @SerialName("hop_burnt_gal")
+        val hopBurntGal: Double,
+        /**
+         * The nav log's leg flown (legs[leg], from points[leg] to the next): the leg the next waypoint ends. Null with fewer than two points.
+         */
+        val leg: Int? = null,
         val next: EngineContract.InFlightAnswerNext? = null,
         val destination: EngineContract.InFlightAnswerDestination? = null,
     )
@@ -6284,6 +6656,21 @@ object EngineContract {
         val legs: List<EngineContract.InFlightInputLegsItem>? = null,
         @SerialName("fuel_start_gal")
         val fuelStartGal: Double? = null,
+        /**
+         * What the tanks are filled to at a fuel stop; left out, fuel_start_gal.
+         */
+        @SerialName("fuel_full_gal")
+        val fuelFullGal: Double? = null,
+        /**
+         * The airplane's start and taxi allowance, taken off at the start and at each fuel stop; left out where its profile gives none, and then nothing is taken off (taxi_counted false), never another airplane's figure.
+         */
+        @SerialName("taxi_fuel_gal")
+        val taxiFuelGal: Double? = null,
+        /**
+         * The points (indices into points) the plan refuels at: the stops the planner's totals' hops begin at.
+         */
+        @SerialName("refuel_at")
+        val refuelAt: List<Int>? = null,
         @SerialName("now_s")
         val nowS: Double? = null,
     )
@@ -6445,7 +6832,7 @@ object EngineContract {
          */
         val end: String? = null,
         /**
-         * Knots, unsigned, steady or gust whichever is more.
+         * Knots, unsigned, steady or gust whichever is more, unrounded (to a millionth of a knot), so the map's arrow is judged against the demonstrated crosswind on the crosswind itself, not whole knots (AV-10).
          */
         @SerialName("crosswind_kt")
         val crosswindKt: Double,
@@ -7622,6 +8009,9 @@ object EngineContract {
         val tasKt: Double? = null,
         @SerialName("fuel_burn_gph")
         val fuelBurnGph: Double? = null,
+        /**
+         * The power flown; null where the profile names no cruise power (no power model: its TAS and burn as given at every altitude, no other airplane's power assumed).
+         */
         @SerialName("power_pct")
         val powerPct: Double? = null,
         @SerialName("oat_c")
@@ -7630,6 +8020,11 @@ object EngineContract {
         val densityAltitudeFt: Double? = null,
         @SerialName("climb_min")
         val climbMin: Double? = null,
+        /**
+         * True on a leg with climb minutes where the profile gives no climb fuel flow: the climb's gallons are not counted in its fuel, for the app to ask for the figure (no multiple of the cruise burn is assumed).
+         */
+        @SerialName("climb_fuel_unknown")
+        val climbFuelUnknown: Boolean? = null,
         /**
          * The one phase a leg is flown in whole, where it is the climb or the descent, its figures then that phase's (with_climbs, with_descents): the app words its workings by it. Left out for a leg in the cruise or cut by a top of climb or descent, whose pieces are each one phase.
          */
@@ -8593,7 +8988,10 @@ object EngineContract {
     @Serializable
     data class PerformanceClimbAnswer(
         val minutes: Double,
-        val gallons: Double,
+        /**
+         * Null where the profile gives no climb fuel flow: not known, never a multiple of the cruise burn.
+         */
+        val gallons: Double? = null,
     )
 
     @Serializable
@@ -8613,8 +9011,11 @@ object EngineContract {
         val tasKt: Double,
         @SerialName("fuel_burn_gph")
         val fuelBurnGph: Double,
+        /**
+         * Null where the profile names no cruise power: the TAS and burn as given, no power model.
+         */
         @SerialName("power_pct")
-        val powerPct: Double,
+        val powerPct: Double? = null,
         @SerialName("density_altitude_ft")
         val densityAltitudeFt: Double,
     )
@@ -10166,6 +10567,31 @@ object EngineContract {
     )
 
     @Serializable
+    data class RegionsAheadInput(
+        val lat: Double,
+        val lon: Double,
+        /**
+         * The track over the ground, degrees true; null or left out where there is none (standing still), and only the route is looked along.
+         */
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        /**
+         * The route's line, [lat, lon] points in the order flown; left out, none.
+         */
+        val route: List<List<Double>>? = null,
+        /**
+         * How far along the track and the route to look, nm: for the alerts ahead, the groundspeed over their five minutes.
+         */
+        @SerialName("look_ahead_nm")
+        val lookAheadNm: Double,
+        /**
+         * Either side of each line, nm; 1 where left out.
+         */
+        @SerialName("pad_nm")
+        val padNm: Double? = null,
+    )
+
+    @Serializable
     data class RegisteredProfileInput(
         val manufacturer: String? = null,
         val model: String? = null,
@@ -10331,8 +10757,15 @@ object EngineContract {
         @SerialName("fuel_gal")
         val fuelGal: Double? = null,
         val landings: Int,
+        /**
+         * The hazards it crosses, indices into hazards, in the order flown: what closes a cell, and the restricted, MOA, warning and alert areas it is flown through.
+         */
         val crosses: List<Int>,
         val marginal: List<Int>,
+        /**
+         * The card's one warning, the worst it crosses, in the engine's words: a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where it crosses nothing.
+         */
+        val warning: String? = null,
         val bands: List<EngineContract.RouteOptionsBand>,
         @SerialName("tail_kt")
         val tailKt: Double,
@@ -10465,9 +10898,15 @@ object EngineContract {
         val cellDeg: Double,
         @SerialName("per_cell")
         val perCell: Int,
+        /**
+         * The highest VFR cruising altitude either way under the ceiling (the lower of the two), over which a cell's ground is closed where the ceiling is known.
+         */
         @SerialName("top_ft")
         val topFt: Double,
         val window: List<Double>,
+        /**
+         * Every VFR cruising altitude from 3,500 ft to the airplane's ceiling under 18,000 ft (none known: 17,500), the winds aloft wanted at each: each way tries its own half of 91.159 among them, so westbound reaches 12,500 under a 13,000 ft ceiling.
+         */
         @SerialName("altitudes_ft")
         val altitudesFt: List<Double>,
         @SerialName("lowest_cruise_ft")
@@ -10485,6 +10924,9 @@ object EngineContract {
 
     @Serializable
     data class RouteOptionsHazard(
+        /**
+         * What it is: prohibited, tfr, storm, terrain, sigmet, weather, marginal or fuel; or a special-use area a way is flown through and told of (AIM 3-4): restricted, moa, warning or alert.
+         */
         val kind: String,
         val name: String,
     )
@@ -10619,6 +11061,14 @@ object EngineContract {
         val fuelGal: Double? = null,
     )
 
+    @Serializable
+    data class RouteWayWarningInput(
+        /**
+         * The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
+         */
+        val kinds: List<String>,
+    )
+
     /**
      * A runway as the planner sends one.
      */
@@ -10738,8 +11188,22 @@ object EngineContract {
 
     @Serializable
     data class RunwayEndFitInputEnd(
+        /**
+         * The end's ident: a landing reads that end's displaced threshold and LDA from the runway's ends where the end does not send its own.
+         */
+        val ident: String? = null,
         @SerialName("heading_true_deg")
         val headingTrueDeg: Double? = null,
+        /**
+         * The threshold's displacement from the runway's end, feet (NASR APT_RWY_END). A landing on this end has the runway past it (AIM 2-3-3); a takeoff has the whole length.
+         */
+        @SerialName("displaced_threshold_ft")
+        val displacedThresholdFt: Double? = null,
+        /**
+         * The landing distance available the airport declares for this end, feet (AC 150/5300-13B, declared distances); where given, a landing is judged against it.
+         */
+        @SerialName("lda_ft")
+        val ldaFt: Double? = null,
     )
 
     @Serializable
@@ -10790,10 +11254,33 @@ object EngineContract {
     )
 
     @Serializable
+    data class RunwayHardSurfaceAnswer(
+        val hard: Boolean,
+    )
+
+    @Serializable
+    data class RunwayHardSurfaceInput(
+        /**
+         * NASR APT_RWY's SURFACE_TYPE_CODE (ASPH, CONC, TURF, ASPH-TURF ...); null or "" for none.
+         */
+        val surface: String? = null,
+    )
+
+    @Serializable
     data class RunwayRunwayEndsItem(
         val ident: String,
         @SerialName("heading_true_deg")
         val headingTrueDeg: Double? = null,
+        /**
+         * The threshold's displacement from the runway's end, feet (NASR APT_RWY_END). A landing on this end has the runway past it (AIM 2-3-3); a takeoff has the whole length.
+         */
+        @SerialName("displaced_threshold_ft")
+        val displacedThresholdFt: Double? = null,
+        /**
+         * The landing distance available the airport declares for this end, feet (AC 150/5300-13B, declared distances); where given, a landing is judged against it.
+         */
+        @SerialName("lda_ft")
+        val ldaFt: Double? = null,
     )
 
     @Serializable
@@ -10822,6 +11309,11 @@ object EngineContract {
         val crosswindKt: Double,
         @SerialName("gust_crosswind_kt")
         val gustCrosswindKt: Double? = null,
+        /**
+         * The crosswind, the gust's where more, unrounded: what a limit (the POH's demonstrated crosswind, the pilot's own) is judged against, so 10.4 kt is past 10 (AV-10). There only where the wind blew.
+         */
+        @SerialName("crosswind_exact_kt")
+        val crosswindExactKt: Double? = null,
         /**
          * There only where calm picked the runway in use.
          */
@@ -11334,7 +11826,11 @@ object EngineContract {
     @Serializable
     data class StripFuelAnswerShortItem(
         /**
-         * "C81 → KMSN"; "" for a route with no stops.
+         * The flight's index in `hops`, whose two ends an app names with its own point names (a pilot's own point is "@lat,lon" in the idents); null for a route with no stops.
+         */
+        val hop: Int? = null,
+        /**
+         * The flight's idents as sent, "C81 → KMSN"; "" for a route with no stops. A pilot's own point shows here as its raw "@lat,lon": name the ends from `hop` instead.
          */
         val name: String,
         @SerialName("short_gal")
@@ -11401,6 +11897,108 @@ object EngineContract {
          */
         @SerialName("at_s")
         val atS: Double,
+    )
+
+    @Serializable
+    data class SurfaceAirspaceAnswer(
+        val `class`: String,
+        @SerialName("part_time")
+        val partTime: Boolean,
+        /**
+         * The class at other times where it is part-time; null where it is not.
+         */
+        val otherwise: String? = null,
+        /**
+         * That class is part-time too: G at the times neither is in effect.
+         */
+        @SerialName("otherwise_part_time")
+        val otherwisePartTime: Boolean,
+    )
+
+    @Serializable
+    data class SurfaceAirspaceInput(
+        /**
+         * The field's elevation, feet MSL (NASR APT_BASE ELEV).
+         */
+        @SerialName("elevation_ft")
+        val elevationFt: Double? = null,
+        val volumes: List<EngineContract.SurfaceAirspaceInputVolumesItem>,
+    )
+
+    @Serializable
+    data class SurfaceAirspaceInputVolumesItem(
+        val `class`: String,
+        @SerialName("floor_ft")
+        val floorFt: Double? = null,
+        @SerialName("floor_ref")
+        val floorRef: String,
+        /**
+         * NASR's WKHR_CODE: H24, NOTAM or RMK.
+         */
+        val hours: String? = null,
+    )
+
+    @Serializable
+    data class SurfaceHoursAnswer(
+        val known: Boolean,
+        /**
+         * The class at other times, as the line names it.
+         */
+        val other: String? = null,
+        val days: List<EngineContract.SurfaceHoursAnswerDaysItem>,
+        @SerialName("in_force")
+        val inForce: Boolean? = null,
+        val change: EngineContract.SurfaceHoursAnswerChange? = null,
+    )
+
+    @Serializable
+    data class SurfaceHoursAnswerChange(
+        val at: Int,
+        @SerialName("next_day")
+        val nextDay: Boolean,
+    )
+
+    @Serializable
+    data class SurfaceHoursAnswerDaysItem(
+        val weekday: Int,
+        val spans: List<EngineContract.SurfaceHoursAnswerDaysItemSpansItem>? = null,
+    )
+
+    @Serializable
+    data class SurfaceHoursAnswerDaysItemSpansItem(
+        val from: Int,
+        val to: Int,
+    )
+
+    @Serializable
+    data class SurfaceHoursInput(
+        /**
+         * NASR CLS_ARSP AIRSPACE_HRS as sent.
+         */
+        val hours: String? = null,
+        val year: Int,
+        /**
+         * The field's local month, 1-12.
+         */
+        val month: Int,
+        val day: Int,
+        /**
+         * The field's local weekday, Monday 0 to Sunday 6.
+         */
+        val weekday: Int,
+        /**
+         * Minutes since the field's local midnight now.
+         */
+        val minute: Int,
+        /**
+         * The field's offset from UTC now, minutes (UTC-6 is -360).
+         */
+        @SerialName("utc_offset_min")
+        val utcOffsetMin: Int,
+        /**
+         * Whether the field keeps daylight saving time now.
+         */
+        val dst: Boolean? = null,
     )
 
     /**
@@ -11624,6 +12222,10 @@ object EngineContract {
          * Its kind and the rule it is under: "Security TFR, 14 CFR 99.7".
          */
         val what: String,
+        /**
+         * The rule it is issued under in words with its section, the FAA's bare number said as the regulation: "Special security instructions, 14 CFR 99.7"; one it does not know as given, in sentence case; null where none is given.
+         */
+        val rule: String? = null,
         /**
          * "3,500 to 18,000 ft MSL, 4.8 nm east of the field"; null where neither is known.
          */
@@ -11880,6 +12482,61 @@ object EngineContract {
     data class UnderwayInput(
         @SerialName("speed_kt")
         val speedKt: Double? = null,
+    )
+
+    @Serializable
+    data class UsualBaseAnswer(
+        /**
+         * The base; null where the flights do not show one clearly.
+         */
+        val ident: String? = null,
+        /**
+         * The field most of the ends are at (the first to reach the count, ties too); null with no ends.
+         */
+        val most: String? = null,
+        /**
+         * How many of the ends are at `most`.
+         */
+        @SerialName("most_ends")
+        val mostEnds: Int,
+        /**
+         * All the takeoffs and landings counted.
+         */
+        val ends: Int,
+        /**
+         * The fewest ends at a field for it to be the base.
+         */
+        @SerialName("min_ends")
+        val minEnds: Int,
+        /**
+         * The least share of all the ends at a field for it to be the base.
+         */
+        @SerialName("min_share")
+        val minShare: Double,
+    )
+
+    @Serializable
+    data class UsualBaseInput(
+        /**
+         * The airplane's past flights, any order; each field one identifier, as the host names it.
+         */
+        val flights: List<EngineContract.UsualBaseInputFlightsItem>,
+    )
+
+    @Serializable
+    data class UsualBaseInputFlightsItem(
+        /**
+         * The field it took off from; null where not known.
+         */
+        val origin: String? = null,
+        /**
+         * The field it landed at; null where not known.
+         */
+        val destination: String? = null,
+        /**
+         * Whether it was heard landing: a destination not landed at is no end.
+         */
+        val landed: Boolean? = null,
     )
 
     @Serializable

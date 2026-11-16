@@ -33,13 +33,14 @@ enum LiveWords {
 
     // MARK: Special activity airspace
 
-    /// An area's status for its row: "Active now until 2130Z (FAA SFDPS)",
-    /// "Cold now; next active 1400Z (FAA SFDPS)"; nil with no word of now.
-    static func saaWords(_ status: SaaStatus?) -> String? {
+    /// An area's status for its row, a badge and the words after it
+    /// (rules.md §9): Active, then "until 2130Z (FAA SFDPS)"; Cold, then
+    /// "next active 1400Z (FAA SFDPS)"; nil with no word of now.
+    static func saaBadge(_ status: SaaStatus?) -> (status: BadgeStatus, rest: String)? {
         guard let status, let active = status.active else { return nil }
-        let until = status.until.map { " until \(zulu($0))" } ?? ""
-        let next = !active ? (status.next.map { "; next active \(zulu($0))" } ?? "") : ""
-        return "\(active ? "Active" : "Cold") now\(until)\(next) (FAA SFDPS)"
+        let until = status.until.map { "until \(zulu($0)) " } ?? ""
+        let next = !active ? (status.next.map { "next active \(zulu($0)) " } ?? "") : ""
+        return (active ? .active : .cold, "\(until)\(next)(FAA SFDPS)")
     }
 
     // MARK: Tower departures

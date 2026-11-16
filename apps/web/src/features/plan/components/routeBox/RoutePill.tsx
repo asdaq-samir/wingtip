@@ -143,7 +143,14 @@ export default function RoutePill({
         // As wide as its ident, every gap the same: five letters wide, C81 sat
         // 14 points short of its arrow to KUGN's 6 (the owner, 2026-11-11:
         // "Look at the spacing of first airport in route").
-        className={cn("h-7 rounded-full px-0.75", TEXT.detail, "font-semibold", unknown && "text-destructive")}
+        // Its 44-point area 44 tall and half the row's gap-2 wider each
+        // side, meeting the arrows' beside it (RouteToken, WEB-4).
+        className={cn(
+          "h-7 rounded-full px-0.75 after:-inset-x-1 after:-inset-y-2",
+          TEXT.detail,
+          "font-semibold",
+          unknown && "text-destructive",
+        )}
         onChange={onChange}
         invalid={unknown || undefined}
         open={changing}

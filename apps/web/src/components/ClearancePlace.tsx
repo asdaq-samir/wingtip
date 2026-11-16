@@ -12,7 +12,7 @@ export default function ClearancePlace({ place }: { place: FoundPlace }) {
       </span>
     );
   return (
-    <span className={cn(!place.sure && "text-amber-600 dark:text-amber-400")} title={place.name ?? undefined}>
+    <span className={cn(!place.sure && "text-caution")} title={place.name ?? undefined}>
       {place.ident}
       {!place.sure && "?"}
     </span>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { declinationOf, fixRadialDistance, hoursOf, morseOf, radialOf, serviceVolume } from "./navaid";
 import { threeFigures } from "./format";
+import serviceVolumes from "./fixtures/serviceVolume.json";
 
 // Joliet's VOR/DME as NASR files it (NAV_BASE, 2026-10-29): 2° E.
 const JOT = { ident: "JOT", lat: 41.54641852, lon: -88.31841055, mag_var: 2 };
@@ -32,10 +33,9 @@ describe("navaid", () => {
     expect(morseOf("JOT")).toBe("·−−−  −−−  −");
   });
 
-  it("says the service volumes as AIM 1-1-8 bounds them", () => {
-    expect(serviceVolume("T")).toBe("Terminal · 25 nm, 1,000–12,000 ft above it");
-    expect(serviceVolume("VL")).toBe("VOR Low · 40 nm under 5,000 ft above it, 70 nm to 18,000");
-    expect(serviceVolume("X")).toBeNull();
+  it("says every band of each service volume as AIM 1-1-8's TBL 1-1-1 bounds it", () => {
+    // The shared cases the engine's own test holds it to too.
+    for (const { code, answer } of serviceVolumes.cases) expect(serviceVolume(code), String(code)).toBe(answer);
     expect(hoursOf("24")).toBe("Continuous");
     expect(declinationOf(-4)).toBe("4° W");
   });

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
+import { useWindPicks } from "../lib/windPicks";
 import { altitudesOf, altitudesParam, departureOf, groundOf, identOf, nameOwnPoints, routeOf, stopsOf } from "../../../lib/identSchema";
 import { useEngineWhen } from "../../../lib/engine/useEngineReady";
 import { usePreferences } from "../../../lib/preferences";
@@ -8,7 +9,7 @@ import { usePlanHistory } from "../../../hooks/use-plan-history";
 import { holdsOf, holdsParam } from "../lib/routeHolds";
 import { picksOf } from "../../../lib/flightLink";
 import { proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
-import { procedureQuery } from "../../../lib/queryClient";
+import { airportQuery, procedureQuery } from "../../../lib/queryClient";
 import type { PlanParams } from "./usePlan";
 import { departureRunways, landingRunways, namesRoute, type PlannedRoute } from "./planAddress";
 import { drawnOnly } from "./useProcedurePicks";
@@ -95,6 +96,30 @@ export function usePlanRoute() {
   );
   const pickQueries = useMemo(() => routePicks.map(procedureQuery), [routePicks]);
   const drawnPickList = useQueries({ queries: pickQueries, combine: drawnOnly });
+  // Each picked procedure's drawing in or given up on, and no runway into
+  // the wind still to be picked (useWindPicks): only then is the nav log
+  // asked for (usePlan's `settling`), once, not again for each as it came.
+  const picksComing = useQueries({ queries: pickQueries, combine: (rs) => rs.some((r) => r.isPending && r.fetchStatus !== "idle") });
+  const windPending = useWindPicks((w) => w.pending);
+  // Settled for this route only once a commit has gone by with nothing
+  // coming: the route list's wind picks are set in its effects, which run
+  // after the render that would otherwise have asked for the nav log
+  // without them (the store read here, after them). A route not settled
+  // yet -- each new one -- waits that one commit.
+  // The route's fields' cards too, whose reports the runways are picked
+  // into the wind from: the route list that picks them may be drawn after
+  // the plan is first asked for, and the cards are asked for with the
+  // route in any case.
+  const fieldIdents = routeFields.split(",").filter(Boolean);
+  const cardsComing = useQueries({
+    queries: fieldIdents.map((ident) => airportQuery(ident)),
+    combine: (rs) => rs.some((r) => r.isPending && r.fetchStatus !== "idle"),
+  });
+  const settlingNow = picksComing || windPending || cardsComing;
+  const settledFor = useWindPicks((w) => w.settledFor);
+  useEffect(() => {
+    useWindPicks.setState({ settledFor: !settlingNow && !useWindPicks.getState().pending ? routeFields : null });
+  }, [settlingNow, routeFields]);
   // Those the CIFP has, once drawn, each with the fix ATC sent the airplane
   // direct to where there is one: one string, so the plan's key changes
   // only as a procedure does.
@@ -165,6 +190,7 @@ export function usePlanRoute() {
     procedures,
     runways: runwaysText,
     patterns: landingsText,
+    settling: settlingNow || settledFor !== routeFields,
     crossings: altitudesParam(crossings),
     ground: altitudesParam(ground),
     holds: holdsParam(holds),

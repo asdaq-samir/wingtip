@@ -30,7 +30,9 @@ def sources(monkeypatch):
     monkeypatch.setattr(
         terrain,
         "floor_profile",
-        lambda start, end, breaks, faa_cache_dir=None: [{"floor_ft": 2000.0, "lowest_ground_ft": 1500.0}] * (len(breaks) - 1),
+        lambda start, end, breaks, faa_cache_dir=None, fixes=None: (
+            state.update(floor_fixes=fixes) or [{"floor_ft": 2000.0, "lowest_ground_ft": 1500.0}] * (len(breaks) - 1)
+        ),
     )
     monkeypatch.setattr(airspace, "airspace_ceiling_profile", lambda start, end, fixes, shp: [None] * (len(fixes) - 1))
     monkeypatch.setattr(airspace, "airspace_transits", lambda start, end, shp, fixes=None: [])
@@ -181,6 +183,13 @@ def test_special_use_unavailable_is_said_rather_than_treated_as_none(sources, mo
     result = altitude.select_cruise_altitude(DEP, DEST, PROFILE)
 
     assert "special_use" in result["weather_unavailable"]
+
+
+def test_the_vfr_floor_is_read_under_the_legs_flown(sources):
+    # The fixes go to the floor (wingtip.terrain reads each leg's own
+    # ground and obstacles), not only the direct line's breaks (AV-2).
+    altitude.select_cruise_altitude(DEP, DEST, PROFILE, fixes=[DEP, DOGLEG, DEST])
+    assert sources["floor_fixes"] == [DEP, DOGLEG, DEST]
 
 
 def test_no_fixes_is_the_direct_line_as_one_leg(sources, monkeypatch):
@@ -359,3 +368,22 @@ def test_under_ifr_along_an_airway_the_mea_is_the_floor_and_the_maa_a_ceiling(if
     # Under VFR the airway's altitudes are nobody's floor.
     vfr = altitude.select_cruise_altitude(DEP, DEST, profile, fixes=[DEP, DEST], airway=airway)
     assert "airway" not in vfr["segments"][0]
+
+
+def test_a_leg_flown_by_an_arrival_over_a_ridge_takes_the_ridges_floor(sources, monkeypatch):
+    # The leg's own line is over 1,500 ft ground (a 2,000 ft floor); the
+    # arrival flown in its place goes out over a ridge whose floor is
+    # 9,000 ft (the aviation audit's AV-2): the leg keeps 9,000, and the
+    # lowest ground stays the valley's.
+    ridge = (45.5, -89.5)
+    flat = {"floor_ft": 2000.0, "lowest_ground_ft": 1500.0}
+
+    def floors(start, end, breaks, faa_cache_dir=None, fixes=None):
+        pieces = list(zip(fixes, fixes[1:])) if fixes else [(start, end)]
+        return [{"floor_ft": 9000.0, "lowest_ground_ft": 7000.0} if ridge in piece else flat for piece in pieces]
+
+    monkeypatch.setattr(terrain, "floor_profile", floors)
+    (own,) = altitude.select_cruise_altitude(DEP, DEST, PROFILE, fixes=[DEP, DEST])["segments"]
+    (flown,) = altitude.select_cruise_altitude(DEP, DEST, PROFILE, fixes=[DEP, DEST], paths=((0, (DEP, ridge, DEST)),))["segments"]
+    assert own["floor_ft"] == 2000.0
+    assert flown["floor_ft"] == 9000.0 and min(flown["candidates_ft"]) >= 9000.0

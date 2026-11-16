@@ -59,21 +59,16 @@ export default function MenuPick<T extends string | number>({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={
-          <button
-            type="button"
-            aria-label={`${name}: ${label}`}
-            data-testid={testId}
-            className={cn(
-              "relative flex h-8 items-center gap-0.5 rounded-full bg-foreground/8 px-2.5 font-semibold text-tint outline-none after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-              TEXT.detail,
-            )}
-          >
-            {label}
-            <ChevronDown className="size-4" aria-hidden="true" />
-          </button>
-        }
-      />
+        aria-label={`${name}: ${label}`}
+        data-testid={testId}
+        className={cn(
+          "relative flex h-8 items-center gap-0.5 rounded-full bg-foreground/8 px-2.5 font-semibold text-tint outline-none after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+          TEXT.detail,
+        )}
+      >
+        {label}
+        <ChevronDown className="size-4" aria-hidden="true" />
+      </DropdownMenuTrigger>
       <PickItems value={value} choices={choices} onPick={onPick} testId={testId} />
     </DropdownMenu>
   );

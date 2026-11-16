@@ -1,0 +1,168 @@
+{
+  "x-call": "wingtip_airspace::surface_hours::call",
+  "description": "When a part-time surface area is in effect, day by day from the field's today for a week, read from NASR's CLS_ARSP AIRSPACE_HRS, the Chart Supplement's AIRSPACE line (\"CLASS D SVC 0600-2200 MON-FRI, 0700-2200 SAT-SUN; OTHER TIMES CLASS E\"): the class at other times the one the line names (AIM 3-2-5a1; 14 CFR 71.61, 71.71(b)), never a guess. A time with no Z is the field's local time; Z is UTC at the offset now; Z++ is the Chart Supplement's double dagger, one hour earlier in daylight saving time, so the figure at the field's standard offset all year. Reads CONTINUOUS, time ranges, days (MON-FRI, SAT & SUN, WKEND) and seasons (16 MAR-31 OCT, OCT-MAR); anything else (holidays, BY NOTAM, SR-SS) leaves the hours not known (`known` false). Spans are local minutes from midnight, [from, to), a span past midnight carried into the next day. `in_force` and `change` are now's: in effect until `change.at`, or not until `change.at`, `next_day` where that is tomorrow; null where today's hours are not known. The engine has no clock: the host gives the field's local date, minute, UTC offset and whether in daylight saving time.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "SurfaceHoursInput",
+      "type": "object",
+      "properties": {
+        "hours": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NASR CLS_ARSP AIRSPACE_HRS as sent."
+        },
+        "year": {
+          "type": "integer"
+        },
+        "month": {
+          "type": "integer",
+          "description": "The field's local month, 1-12."
+        },
+        "day": {
+          "type": "integer"
+        },
+        "weekday": {
+          "type": "integer",
+          "description": "The field's local weekday, Monday 0 to Sunday 6."
+        },
+        "minute": {
+          "type": "integer",
+          "description": "Minutes since the field's local midnight now."
+        },
+        "utc_offset_min": {
+          "type": "integer",
+          "description": "The field's offset from UTC now, minutes (UTC-6 is -360)."
+        },
+        "dst": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether the field keeps daylight saving time now."
+        }
+      },
+      "required": [
+        "year",
+        "month",
+        "day",
+        "weekday",
+        "minute",
+        "utc_offset_min"
+      ]
+    },
+    "answer": {
+      "title": "SurfaceHoursAnswer",
+      "type": "object",
+      "properties": {
+        "known": {
+          "type": "boolean"
+        },
+        "other": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "B",
+                "C",
+                "D",
+                "E",
+                "G"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The class at other times, as the line names it."
+        },
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "weekday": {
+                "type": "integer"
+              },
+              "spans": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "from": {
+                          "type": "integer"
+                        },
+                        "to": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "from",
+                        "to"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "weekday",
+              "spans"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "in_force": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "change": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "at": {
+                  "type": "integer"
+                },
+                "next_day": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "at",
+                "next_day"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "known",
+        "other",
+        "days",
+        "in_force",
+        "change"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

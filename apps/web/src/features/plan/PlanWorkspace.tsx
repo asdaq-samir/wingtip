@@ -23,10 +23,11 @@ import { usePlanWorkspace } from "./hooks/usePlanWorkspace";
 import PlanMap from "./components/workspace/PlanMap";
 import PlanSidebar from "./components/workspace/PlanSidebar";
 import PlanPage from "./components/workspace/PlanPage";
+import PlanCards from "./components/workspace/PlanCards";
 import FlightFoot from "./components/workspace/FlightFoot";
 import RouteHead from "./components/workspace/RouteHead";
 import RouteControls from "./components/workspace/RouteControls";
-import { listSearchOf } from "./components/workspace/listSearch";
+import FplBar from "./components/workspace/FplBar";
 import OneSearchField from "./components/search/OneSearchField";
 import { useOneSearch } from "./hooks/useOneSearch";
 
@@ -112,7 +113,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   } = vm.picks;
   const { fuelHidden, showFuelStops, tankFigures } = vm.stops;
   const { holdAsk, listEdit, routeLine } = vm.routeList;
-  const { briefShown, openNavLogCard } = vm.fpl;
+  const { briefShown, openNavLogCard, profileShown } = vm.fpl;
   const { flying } = vm.flight;
   const { routeRows } = vm.leg;
   const {
@@ -239,8 +240,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
             }
           }}
           chartsDisabled={!planned.dest || noApproaches}
-          // In Route Cards the Routes row is in the head's box with the
-          // controls (the route slot, below), not over the list.
+          // In Route Cards the Routes row is in the head's box under the
+          // bar (the route slot, below), not over the list.
           routeLine={routeEdit === "plan" ? null : routeLine}
           // The list changes the route too where the box is folded away once
           // the route is whole (RouteEdit, both of the owner's picks).
@@ -422,11 +423,12 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // an airport's, the airspace's, an airplane's -- over the tab it was
         // opened from, its close back to it.
         sidebar: <PlanSidebar vm={vm} model={search} />,
-        // The pages, turned by the round toggle on the sheet's top (PageToggle; the owner, 2026-11-13): Search over `sidebar`, FPL's `route` over the plan.
+        // The pages, turned by the toggle at the first row's end (PageToggle): Search over `sidebar`; FPL its bar (FplBar), `route` and the plan.
         pages: {
           at: view === "plan" ? 1 : 0,
           go: pickPage,
-          second: <PlanPage vm={vm} navLog={navLog} navLogCard={navLogCard} briefContents={briefContents} briefNotice={briefNotice} />,
+          bar: <FplBar strip={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />} />,
+          second: <PlanPage vm={vm} navLog={navLog} />,
         },
         // The one search's Autocomplete round the whole panel, so its field
         // (the first row) and its list (the body) are one combobox.
@@ -443,38 +445,27 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         toEdge: !!place,
         flying,
         // The one search, the first page's first row, and at rest its pill (MapPanel).
-        bar: <OneSearchField model={search} inputRef={vm.search.searchInput} list={listSearchOf(vm)} />,
+        bar: <OneSearchField model={search} inputRef={vm.search.searchInput} />,
         // FPL's alone ("Fpl can show calculations but other tabs should show something else").
         // FPL's figures pinned at the sheet's foot at every height, the pill's
         // too, growing as it comes up, at the owner's asks ("While dragging fpl
         // keep the calculations pinned at the bottom"; "Why can't the half card
         // have calculations pinned at the very bottom as the full card, just
         // make them bigger smoothly as expanded").
-        // A dry run's chart in the side view's place and its size, at every
-        // height: still as the sheet is dragged, the nav log coming out over it,
-        // as the side view is, at the owner's ask ("the dry run drags up instead
-        // of staying still like the profile"); all the way up the log scrolls
-        // over it and follows the run (NavLogView), at the owner's ask ("I wanna
-        // be able to do the dry run with navlog in full fpl"). It took the
-        // body's room half way, and grew with the sheet under a finger.
         // At the pill on FPL they are the pill's one row (MapPanel), the
         // route's row from half up (the owner, 2026-11-11, the canvas's b).
-        // FPL's page's own (SheetParts); under the Profile, its foot (PlanPage).
-        foot: !place && !heldPoint && !flight && !briefShown && !vm.fpl.profileShown ? routed && <FlightFoot vm={vm} /> : undefined,
-        // The route as one box of pills, the top row to itself (MapPanel keeps
-        // it under the others' heads). How it shows once whole is the pilot's
-        // pick from its ••• menu's Show Route As (lib/preferences RouteEdit:
-        // the box, one line, or the plan's own rows; the owner, 2026-11-05 and
-        // 2026-11-13); the box again while a stop is typed in or a problem shows.
-        route: (
-          <RouteHead
-            vm={vm}
-            controls={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />}
-            menu={shareMenu("end")}
-          />
-        ),
+        // FPL's page's own (SheetParts), and the sheet's in flight; under the Profile, the card's foot (PlanCards), in flight too.
+        foot: !place && !heldPoint && !flight && !briefShown && !profileShown ? routed && <FlightFoot vm={vm} /> : undefined,
+        // The route as one row under FPL's bar (MapPanel keeps it under the
+        // others' heads). How it shows once whole is the pilot's pick from its
+        // ••• menu's Show Route As (lib/preferences RouteEdit: the box, one
+        // line, or the plan's own rows; the owner, 2026-11-05 and 2026-11-13);
+        // the box again while a stop is typed in or a problem shows.
+        route: <RouteHead vm={vm} />,
         console: <PilotPanel />,
       })}
+      {/* FPL's cards over the sheet, beside its pages, kept in flight (PlanCards). */}
+      <PlanCards vm={vm} navLogCard={navLogCard} briefContents={briefContents} briefNotice={briefNotice} />
     </RouteShareMenu.Provider>
   );
 }

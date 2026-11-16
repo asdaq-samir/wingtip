@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from .aircraft_figures import DemonstratedCrosswind, DistanceTable, ShortField  # noqa: F401  (re-exported)
+from .altitude_plans import AltitudeFigure, AltitudeOption, AltitudeStep  # noqa: F401  (re-exported)
 from .common import AltitudeChoice, FlightRules, Hazard, Loading, SpecialUse, Wind
 
 from .leg_points import TopOfClimb, TopOfDescent
@@ -224,8 +225,9 @@ class Leg(BaseModel):
     altitude on a standard day, and the forecast temperature at this
     altitude gives the density altitude they are flown at, at the power
     it allows -- the cruise power, or less where full throttle cannot
-    make it. `oat_c` is None where no forecast temperature was near: a
-    standard day is assumed there."""
+    make it; `power_pct` None where the profile names no cruise power, its
+    TAS and burn then as given. `oat_c` is None where no forecast
+    temperature was near: a standard day is assumed there."""
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -254,6 +256,11 @@ class Leg(BaseModel):
     # leg, and up to a new level where a plan steps -- flown at climb
     # speed and burn, and already in `ete_min` and `fuel_gal`.
     climb_min: float = 0.0
+    # True where the leg has climb minutes and the airplane's profile gives
+    # no climb fuel flow: the climb's gallons are not in `fuel_gal`, and the
+    # app asks for the figure; no multiple of the cruise burn is assumed
+    # (the owner's rule of 2026-11-09). None or False otherwise.
+    climb_fuel_unknown: bool | None = None
     # The one phase the leg is flown in whole, the climb or the descent,
     # its figures then that phase's; None for the cruise or a leg cut by a
     # top of climb or descent (the engine's NavLogLeg `phase`).
@@ -575,54 +582,6 @@ class AltitudeBreakdown(BaseModel):
     mountainous: bool = False
 
 
-class AltitudeStep(BaseModel):
-    """Consecutive legs flown at one altitude."""
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    from_: str = Field(alias="from")
-    to: str
-    altitude_ft: float
-    distance_nm: float
-
-
-class AltitudeOption(BaseModel):
-    """One of the four plans -- lowest, highest, fastest, economical --
-    as its steps and what it costs. `ete_min` is the flying time with every climb
-    flown (`climb_penalty_min` is how many of those minutes are climb),
-    the figure the plans are compared on; `tailwind_kt` the
-    distance-weighted wind component along the course, positive helping,
-    over the legs that had wind data. With no airplane, the lowest and
-    highest alone, their times, fuel, climb and wind None."""
-
-    kind: AltitudeChoice
-    steps: list[AltitudeStep]
-    ete_min: float | None
-    fuel_gal: float | None
-    climb_penalty_min: float | None
-    tailwind_kt: float | None
-    unflyable_legs: int
-    legs_without_wind: int
-    # Whether any step is above 12,500 ft, where more than 30 minutes
-    # needs supplemental oxygen (14 CFR 91.211). A plan goes there only
-    # where a leg has no legal altitude under it, or the profile says
-    # the aeroplane carries oxygen or is pressurised.
-    needs_oxygen: bool
-
-
-class AltitudeFigure(BaseModel):
-    """The route flown at one altitude, for the altitude wheel (the owner's
-    pick, 2026-10-20): each leg at it where it is legal there, else at the
-    leg's nearest legal altitude (`everywhere` false then); the times and
-    fuel with the climbs, the wind along the legs, positive helping."""
-
-    altitude_ft: float
-    ete_min: float | None
-    fuel_gal: float | None
-    tailwind_kt: float | None
-    everywhere: bool
-
-
 class AircraftProfile(BaseModel):
     """The aircraft's name plus its performance profile -- every field a
     data/aircraft/*.json file carries, declared, so a page reads them as
@@ -649,8 +608,9 @@ class AircraftProfile(BaseModel):
     #: from the -140 to the -181.
     designator: str | None = None
     #: The power `cruise_tas_kt` and `fuel_burn_gph` are at, in percent,
-    #: at wingtip.performance's reference altitude on a standard day; its
-    #: default where None.
+    #: at wingtip.performance's reference altitude on a standard day. None:
+    #: no power model, its TAS and burn as given at every altitude and no
+    #: other airplane's power assumed (the engine's performance_cruise).
     cruise_power_pct: float | None = None
     climb_rate_fpm_sea_level: float | None = None
     climb_tas_kt: float | None = None

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openSetup, pickControl, settle, slow } from "./helpers";
+import { openMapSettings, pickControl, settle, slow } from "./helpers";
 
 /**
  * Night: in the dark theme the sheets are the cockpit palette's navy and
@@ -40,8 +40,8 @@ test("in the dark theme the page is the night's navy and only the chart's tiles 
 
   // Dark + Bright: the chart as printed, and kept so across a reload. The
   // browser's dark on System is read as System, not Dark.
-  await openSetup(page);
-  const appearance = page.getByTestId("setup-page").getByTestId("theme-select");
+  await openMapSettings(page);
+  const appearance = page.getByTestId("map-look").getByTestId("theme-select");
   await expect(appearance).toHaveAttribute("aria-label", "Appearance: System");
   await pickControl(page, "theme-select", "theme-dark-bright");
   await expect(appearance).toHaveAttribute("aria-label", "Appearance: Dark + Bright");
@@ -54,9 +54,9 @@ test("in the dark theme the page is the night's navy and only the chart's tiles 
   await expect.poll(() => lookOf(page)).toBe("normal");
 
   // Dark: the tiles dimmed again; then the light theme, which never dims.
-  await openSetup(page);
+  await openMapSettings(page);
   await pickControl(page, "theme-select", "theme-dark");
-  await expect(page.getByTestId("setup-page").getByTestId("theme-select")).toHaveAttribute("aria-label", "Appearance: Dark");
+  await expect(page.getByTestId("map-look").getByTestId("theme-select")).toHaveAttribute("aria-label", "Appearance: Dark");
   await expect(html).toHaveAttribute("data-chart-night", "dimmed");
   await expect.poll(() => lookOf(page)).toBe("dimmed");
   await pickControl(page, "theme-select", "theme-light");

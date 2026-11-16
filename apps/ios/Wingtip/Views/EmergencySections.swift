@@ -115,6 +115,9 @@ struct EmergencyFieldsSection: View {
                         .fontWeight(lead ? .semibold : .regular)
                         .foregroundStyle(Self.tone(reason.tone, plain: !lead))
                 }
+                if let visibility = model.visibility(field.ident) {
+                    Text(visibility).font(.body).foregroundStyle(.secondary)
+                }
             }
             Spacer(minLength: WingtipSpace.sm)
             VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {

@@ -67,7 +67,11 @@ export function endFit({
       ? { takeoff: aircraft.takeoff ?? null, landing: aircraft.landing ?? null, crosswind: aircraft.crosswind ?? null }
       : null,
     runway,
-    end: { heading_true_deg: end.heading_true_deg ?? null },
+    // The end by its ident, so a landing on it is judged against its own
+    // landing distance available or past its displaced threshold (NASR
+    // APT_RWY_END; AIM 2-3-3), the engine reading them from the runway's
+    // ends (the web audit's WEB-1).
+    end: { ident: end.ident, heading_true_deg: end.heading_true_deg ?? null },
     wind: wind ? { dir_true_deg: wind.dirTrueDeg ?? null, speed_kt: wind.speedKt ?? null, gust_kt: wind.gustKt ?? null } : null,
     elevation_ft: elevationFt,
     altimeter_in_hg: altimeterInHg ?? null,

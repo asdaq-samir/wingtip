@@ -9,13 +9,17 @@ import Observation
 final class Charts {
     private(set) var info: ChartInfo?
     private(set) var problem: String?
-    /// The chart picked on the Map card (Sectional, IFR Low, IFR High; the
-    /// web's preference `base`), kept on this device; the sectional until
-    /// one is picked.
+    /// The chart picked on the Map card (None, Sectional, IFR Low, IFR
+    /// High; the web's preference `base`), kept on this device; the
+    /// sectional until one is picked.
     var picked: String = UserDefaults.standard.string(forKey: Charts.pickedKey) ?? "sec" {
         didSet { UserDefaults.standard.set(picked, forKey: Self.pickedKey) }
     }
     nonisolated static let pickedKey = "base"
+    /// Chart None (the owner, 2026-11-14: "chart should also have none
+    /// option"): no FAA chart drawn or asked for, Apple's muted map under
+    /// the airports, airspace, route, weather and traffic.
+    nonisolated static let none = "none"
 
     private nonisolated static let kept = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appending(path: "chart.json")
@@ -54,7 +58,7 @@ final class Charts {
     /// The chart the map draws: the one picked, else the sectional, else
     /// the first base layer (apps/web/src/lib/map/tiles.ts chartPair).
     var base: ChartLayer? {
-        guard let layers = info?.chartLayers else { return nil }
+        guard picked != Self.none, let layers = info?.chartLayers else { return nil }
         return layers.first { $0.kind == picked && $0.base } ?? layers.first { $0.kind == "sec" } ?? layers.first { $0.base }
     }
 

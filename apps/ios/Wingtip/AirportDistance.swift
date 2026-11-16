@@ -34,4 +34,16 @@ struct AirportDistance: Equatable {
         }
         return nil
     }
+
+    /// Fly Here's time, "≈ 38m" (the owner's C1, 2026-11-14, after Apple
+    /// Maps' "9 min" on its Directions tile; the web's flyHereTime): the
+    /// minutes the engine works from the airplane's book alone
+    /// (fuel_estimate: this great-circle distance at its cruise true
+    /// airspeed, no wind, no climb), so an estimate and said as one. Nil
+    /// with no cruise speed (nothing assumed, the owner, 2026-11-09), under
+    /// half a mile, or where the engine cannot say.
+    func minutes(cruiseTasKt: Double?) -> Double? {
+        guard let cruiseTasKt, cruiseTasKt > 0, nm >= 0.5 else { return nil }
+        return try? Engine.fuelEstimate(distanceNm: nm, cruiseTasKt: cruiseTasKt).minutes
+    }
 }

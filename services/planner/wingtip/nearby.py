@@ -83,7 +83,7 @@ TRAINING = {"flight_school"}
 #: Each field's answer's file name after its ident: ".6.json" since it
 #: holds the flight schools too (and places to eat and schools say whether
 #: they are on the field), so those kept before are read again.
-KEPT_SUFFIX = ".6.json"
+KEPT_SUFFIX = ".7.json"
 #: A place to eat is on the field inside Overture's outline of the airport
 #: (its base theme's infrastructure, subtype airport: OpenStreetMap's
 #: aerodrome); where the field has no outline, this near its reference
@@ -250,9 +250,19 @@ def _read(lat: float, lon: float, release: str) -> dict:
         log.warning("Overture's airport outline could not be read at %.3f,%.3f", lat, lon, exc_info=True)
         outline = None
     found: dict[str, list[dict]] = {kind: [] for kind in MOST}
+    sites: list[tuple[float, str]] = []
     for row in rows:
         if (row.get("confidence") or 0.0) < MIN_CONFIDENCE or row.get("operating_status") in ("permanently_closed", "temporarily_closed"):
             continue
+        # The airport's own listing, for its card's Website: filed as an
+        # airport and on the field, inside its outline (the owner, 2026-11-14:
+        # "we can add phone numbers, website and address in details").
+        if row.get("websites") and "airport" in ((row.get("taxonomy") or {}).get("primary"), row.get("basic_category")):
+            box = row["bbox"]
+            at = ((box["ymin"] + box["ymax"]) / 2, (box["xmin"] + box["xmax"]) / 2)
+            metres = float(distance_nm(lat, lon, *at)) * M_PER_NM
+            if _on_field(outline, *at, metres):
+                sites.append((metres, row["websites"][0]))
         kind = _kind_of(row.get("taxonomy"), row.get("basic_category"))
         name = ((row.get("names") or {}).get("primary") or "").strip()
         if not kind or not name or (kind == "food" and _COMPANY.search(name.rstrip(" ,"))):
@@ -287,6 +297,7 @@ def _read(lat: float, lon: float, release: str) -> dict:
             seen.add(place["name"].lower())
             kept.append(place)
         out[kind] = kept[: MOST[kind]]
+    out["website"] = min(sites)[1] if sites else None
     return out
 
 

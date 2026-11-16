@@ -2,8 +2,7 @@
 //! it, held to the planner's own tests from before the move
 //! (services/planner/tests_wingtip/test_navlog.py, test_altitude_plans.py)
 //! and to the recorded routes the planner's golden test replays
-//! (services/planner/tests_wingtip/golden/*.json): the same fixes, legal
-//! altitudes, airplane and air, the same plans and legs.
+//! (services/planner/tests_wingtip/golden/*.json): the same inputs and plans.
 
 use serde_json::{json, Value};
 use std::path::PathBuf;
@@ -33,7 +32,7 @@ fn leg_with_wind(wind_dir: f64, wind_kt: f64, oat_c: Option<f64>) -> Value {
         "wind": {"wind_dir_true_deg": wind_dir, "wind_speed_kt": wind_kt}, "oat_c": oat_c}]}]);
     ask(
         "navlog_legs",
-        json!({"fixes": [a, b], "altitude_ft": 6000.0, "profile": {"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.5}, "air": air}),
+        json!({"fixes": [a, b], "altitude_ft": 6000.0, "profile": {"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.5, "cruise_power_pct": 65.0}, "air": air}),
     )[0]
     .clone()
 }
@@ -45,7 +44,7 @@ fn leg_with_variation(a: (f64, f64), b: (f64, f64), variation_deg: f64) -> Value
     ask(
         "navlog_legs",
         json!({"fixes": [fix("A", a), fix("B", b)], "altitude_ft": 6000.0,
-        "profile": {"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.5}, "air": air}),
+        "profile": {"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.5, "cruise_power_pct": 65.0}, "air": air}),
     )[0]
     .clone()
 }
@@ -156,7 +155,8 @@ fn the_alternate_leg_falls_back_to_still_air() {
 // --- The four plans (test_altitude_plans.py) ---------------------------
 
 fn profile() -> Value {
-    json!({"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.0, "climb_rate_fpm_sea_level": 800.0, "climb_tas_kt": 70.0, "service_ceiling_ft": 14000.0})
+    json!({"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.0, "climb_rate_fpm_sea_level": 800.0, "climb_tas_kt": 70.0, "service_ceiling_ft": 14000.0,
+        "cruise_power_pct": 65.0, "climb_fuel_burn_gph": 10.4})
 }
 
 /// A standard day's climb for `profile()`, worked by hand: the rate falls
@@ -231,7 +231,7 @@ fn fastest_climbs_for_a_tailwind_and_lowest_stays_low() {
 #[test]
 fn economical_climbs_for_a_tailwind_only_when_it_pays_for_the_climbs_fuel() {
     let own = json!({"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.0, "climb_rate_fpm_sea_level": 800.0, "climb_tas_kt": 70.0,
-        "service_ceiling_ft": 14000.0, "climb_fuel_burn_gph": 14.0});
+        "service_ceiling_ft": 14000.0, "climb_fuel_burn_gph": 14.0, "cruise_power_pct": 65.0});
     let both: &[f64] = &[3500.0, 9500.0];
     let p = plans(&[both, both], &[(3500.0, 0.0), (9500.0, 4.0)], own, Some(500.0));
     assert_eq!(steps(&p, "fastest"), [9500.0]);
@@ -267,7 +267,7 @@ fn climbs(legs: Value, start: Option<f64>, p: Value) -> Value {
 #[test]
 fn a_climb_burns_the_airplanes_own_climb_fuel_flow() {
     let own = json!({"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.0, "climb_rate_fpm_sea_level": 800.0, "climb_tas_kt": 70.0,
-        "service_ceiling_ft": 14000.0, "climb_fuel_burn_gph": 14.0});
+        "service_ceiling_ft": 14000.0, "climb_fuel_burn_gph": 14.0, "cruise_power_pct": 65.0});
     let legs = climbs(json!([cruise_leg(60.0, 3500.0)]), Some(500.0), own.clone());
     let climb = ask("performance_climb", json!({"profile": own, "from_ft": 500.0, "to_ft": 3500.0}));
     let cruise_min = (60.0 - 70.0 * f(&climb["minutes"]) / 60.0) / 100.0 * 60.0;

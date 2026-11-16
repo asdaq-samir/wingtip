@@ -1,5 +1,5 @@
 import type { AltitudeOption, Leg, Runway, Totals } from "../../lib/api/types";
-import { altFt, bearing, flightLevel, one } from "../../lib/format";
+import { altFt, bearing, flightLevel, gal, miles, one } from "../../lib/format";
 import { clockTime, duration, zuluTime } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 import { calmOnRunway, isCalm } from "./lib/wind";
@@ -103,7 +103,7 @@ export function describeTime(option: AltitudeOption): string {
 /** One altitude plan's fuel, its climbs' included -- what the
  *  economical plan is chosen on. "—" while a leg cannot be flown. */
 export function describeFuel(option: AltitudeOption): string {
-  return option.fuel_gal === null ? "—" : `${one(option.fuel_gal)} gal`;
+  return gal(option.fuel_gal);
 }
 
 /** A figure over several legs: "112", or its range, "111–113". */
@@ -155,6 +155,14 @@ export function cruiseByAltitude(legs: Leg[], cruisePowerPct: number | null | un
 /** A clock time, "09:05", 24-hour in the browser's own zone -- an ETA
  *  (lib/format, where the app's times are written). */
 export { clockTime };
+
+/** How the Altitude Advisor's reasoning says the economical plan: none
+ *  where the airplane has no climb fuel flow, as the engine then leaves it
+ *  out rather than assume one (navlog_plans, the aviation audit's AV-8). */
+export const economicalWords = (plans: { kind: string }[]) =>
+  plans.some((o) => o.kind === "economical")
+    ? "economical for the least fuel, every climb counted"
+    : "no economical plan (no climb fuel flow)";
 
 /** When a leg ends: the departure instant plus the minutes flown to
  *  it -- "—" while the minutes are unknown (a leg not yet in, or one
@@ -236,19 +244,23 @@ export function windOnRunway(wind: NonNullable<Runway["wind"]>): string {
   return `${along}, ${cross.kt} kt crosswind${cross.side ? ` from the ${cross.side}` : ""}${cross.gustKt != null ? `, ${cross.gustKt} in the gusts` : ""}`;
 }
 
-/** The wind as a METAR reports it, true: "240° at 15 kt, gusts 25",
- *  "Calm" (00000KT, features/plan/lib/wind's isCalm), "Variable at 4 kt" (VRB) --
- *  FAA Order JO 7900.5's codes as the planner reads them; "Not reported"
- *  with no speed. The airport's card's and the Brief's. */
+/** The wind as a METAR reports it, true and marked so: "240°T at 15 kt,
+ *  gusts 25", "Calm" (00000KT, features/plan/lib/wind's isCalm),
+ *  "Variable at 4 kt" (VRB) -- FAA Order JO 7900.5's codes as the planner
+ *  reads them; "Not reported" with no speed. The airport's card's and the
+ *  Brief's, built from reportedWind so the two forms agree: it wrote
+ *  "240° at 15 kt" beside the runways' magnetic numbers and the hourly
+ *  row's "240°T" (the code audit's CODE-11, the web audit's WEB-44). */
 export function windLine(metar: {
   wind_speed_kt?: number | null;
   wind_dir_true_deg?: number | null;
   wind_gust_kt?: number | null;
 }): string {
-  if (metar.wind_speed_kt == null) return "Not reported";
-  if (isCalm(metar.wind_speed_kt)) return "Calm";
-  const from = metar.wind_dir_true_deg == null ? "Variable" : bearing(metar.wind_dir_true_deg);
-  return `${from} at ${Math.round(metar.wind_speed_kt)} kt${metar.wind_gust_kt ? `, gusts ${Math.round(metar.wind_gust_kt)}` : ""}`;
+  const said = reportedWind(metar.wind_dir_true_deg, metar.wind_speed_kt, metar.wind_gust_kt);
+  if (said === null) return "Not reported";
+  if (said === "calm") return "Calm";
+  const gust = metar.wind_gust_kt ? `, gusts ${Math.round(metar.wind_gust_kt)}` : "";
+  return `${said.dir === "VRB" ? "Variable" : said.dir} at ${Math.round(metar.wind_speed_kt!)} kt${gust}`;
 }
 
 /** A wind reported or forecast at a field, as FPL's list writes it on the
@@ -281,7 +293,13 @@ export function windAloft(dirTrueDeg: number, speedKt: number): string {
   return `${bearing(dirTrueDeg)}/${Math.round(speedKt)}`;
 }
 
-/** Ceiling and visibility the way a briefer says them. */
-export function ceilingAndVisibility(ceilingFt: number | null | undefined, visibilitySm: number | null | undefined): string {
-  return `${ceilingFt == null ? "no ceiling" : `${altFt(ceilingFt)} ft`} · ${visibilitySm == null ? "—" : `${visibilitySm} sm`}`;
+/** Ceiling and visibility the way a briefer says them, a report's "more
+ *  than" visibility as such ("6+ sm", P6SM: FAA JO 7900.5; lib/format's
+ *  miles, the code audit's CODE-12). */
+export function ceilingAndVisibility(
+  ceilingFt: number | null | undefined,
+  visibilitySm: number | null | undefined,
+  visibilityPlus = false,
+): string {
+  return `${ceilingFt == null ? "no ceiling" : `${altFt(ceilingFt)} ft`} · ${miles(visibilitySm, visibilityPlus)}`;
 }

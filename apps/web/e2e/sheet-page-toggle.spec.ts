@@ -1,21 +1,24 @@
 import { test, expect } from "@playwright/test";
-import { consoleSheet, grabberTo, openMapSettings, settle, settled, sideDrawer, frontSheet } from "./helpers";
+import { consoleSheet, grabberTo, settle, settled, sideDrawer, frontSheet } from "./helpers";
 import { expectPage, expectShown, openAirport, toggle } from "./sheetPages";
 
 /**
- * The sheet's two pages, Search and FPL, turned by one round glass button
- * riding the sheet's top at the right (the owner, 2026-11-13: "Why not
- * make the same tab on the right toggle between search and fpl";
- * docs/design/rules.md "One search"), under the map's buttons, the same
- * circle as the 3D one at the left. It shows the page a tap goes to, as
- * Apple Maps' 2D/3D button does: FPL's route glyph on Search, the
- * magnifier on FPL. No bar under the sheet: its sizes stand on the
- * screen's foot. No sideways swipe turns a page; the grabber is the one
- * plain bar. With no route FPL is its empty box, a route made goes to FPL,
- * and a drag up or down still sizes the sheet on either page. With a card
- * open it stays in sight, riding the front card's top, and a tap closes
- * the cards and turns the page (the owner, 2026-11-13: "airport card hides
- * the fpl toggle"). The cards over the pages: sheet-pages-cards.spec.
+ * The sheet's two pages, Search and FPL, turned by one round button at
+ * the end of their first row (the owner, 2026-11-13: "Why not make the
+ * same tab on the right toggle between search and fpl"; 2026-11-14: "Swap
+ * the fpl toggle and account buttons ... toggling between search and fpl
+ * keeps the same-size component with a toggle replacing account";
+ * docs/design/rules.md "One search"): on Search after the one search's
+ * field, on FPL after the airplane's strip, the bar between the same size
+ * on both, so a turn moves nothing. The account button is where the
+ * toggle rode, the sheet's top at the left under the 3D. It shows the page
+ * a tap goes to, as Apple Maps' 2D/3D button does: FPL's route glyph on
+ * Search, the magnifier on FPL. No bar under the sheet: its sizes stand on
+ * the screen's foot. No sideways swipe turns a page; the grabber is the
+ * one plain bar. With no route FPL is its empty box, a route made goes to
+ * FPL, and a drag up or down still sizes the sheet on either page. A card
+ * open covers the row, the toggle with it; its close brings it back. The
+ * cards over the pages: sheet-pages-cards.spec.
  */
 
 test("Search to FPL and back by the toggle, the sheet's size kept", { tag: "@smoke" }, async ({ page }) => {
@@ -46,48 +49,53 @@ test("Search to FPL and back by the toggle, the sheet's size kept", { tag: "@smo
   await expectPage(page, 0);
 });
 
-test("the toggle rides the sheet's top at the left, under the 3D, the radio over the map's buttons at the right, and the sheet stands on the screen's foot", async ({
+test("the toggle ends the first row on both pages, the bar before it one size, and the account button rides the sheet's top under the 3D", async ({
   page,
 }) => {
   test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  for (const size of ["peek", "half"] as const) {
-    await grabberTo(page, size);
-    await settled(sideDrawer(page));
-    const m = await page.evaluate(() => {
-      const box = (sel: string) => document.querySelector(sel)!.getBoundingClientRect();
-      const glass = document.querySelector('[data-testid="sheet-page-toggle"]')!.parentElement!.getBoundingClientRect();
-      // The map's buttons' group: the Map button's card of glass.
-      const group = document
-        .querySelector('[data-map-controls] [data-testid="map-settings-button"]')!
-        .closest(".rounded-2xl")!
-        .getBoundingClientRect();
+  await grabberTo(page, "half");
+  await settled(sideDrawer(page));
+  const measure = () =>
+    page.evaluate(() => {
+      const box = (sel: string) => {
+        const r = document.querySelector(sel)!.getBoundingClientRect();
+        return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, w: r.width, h: r.height };
+      };
+      const up = document.querySelector('[data-testid="sheet-pages"]')!.getAttribute("data-page");
+      // The page's bar: the search's field on Search, the strip on FPL.
+      const bar = up === "0" ? '[data-sheet-page="0"] label:has([data-testid="search-airports"])' : '[data-testid="route-strip"]';
       return {
         sheet: box('[data-slot="map-panel"]'),
-        glass: { top: glass.top, bottom: glass.bottom, left: glass.left, w: glass.width, h: glass.height },
-        group: { top: group.top, bottom: group.bottom },
-        mic: box("[data-map-controls] [data-testid='mic-circle']"),
-        // The 3D button's glass circle, over the toggle at the left.
+        bar: box(bar),
+        toggle: box('[data-testid="sheet-page-toggle"]'),
+        account: box('[data-map-controls] [data-testid="account-button"], [data-testid="account-button"]'),
         threeD: document.querySelector('[data-testid="map-3d-button"]')!.parentElement!.getBoundingClientRect(),
-        viewport: { w: innerWidth, h: innerHeight },
+        viewport: innerWidth,
       };
     });
-    // Over the sheet's top, at the left, nearest the sheet, under the 3D.
-    expect(m.glass.bottom, `at ${size}`).toBeLessThanOrEqual(m.sheet.top);
-    expect(m.sheet.top - m.glass.bottom, `at ${size}`).toBeLessThanOrEqual(32);
-    expect(m.glass.left, `at ${size}`).toBeLessThanOrEqual(16);
-    expect(m.glass.top - m.threeD.bottom, `at ${size}`).toBeCloseTo(8, 0);
-    expect(m.threeD.left).toBeCloseTo(m.glass.left, 0);
-    // The 3D circle's size.
-    expect(m.glass.w).toBeCloseTo(m.threeD.width, 0);
-    expect(m.glass.h).toBeCloseTo(m.threeD.height, 0);
-    // The radio's circle over the map's buttons at the right, the group
-    // nearest the sheet, level with the toggle.
-    expect(m.mic.bottom, `at ${size}`).toBeLessThanOrEqual(m.group.top);
-    expect(m.viewport.w - m.mic.right, `at ${size}`).toBeLessThanOrEqual(16);
-    expect(m.group.bottom).toBeCloseTo(m.glass.bottom, 0);
+  const fpl = await measure();
+  await toggle(page).click();
+  await expectPage(page, 0);
+  const search = await measure();
+  for (const m of [fpl, search]) {
+    // The toggle at the row's end, sixteen in from the sheet's edge, level
+    // with the bar, eight after it.
+    expect(m.viewport - m.toggle.right).toBeCloseTo(16, 0);
+    expect(m.toggle.left - m.bar.right).toBeCloseTo(8, 0);
+    expect(m.toggle.top + m.toggle.h / 2).toBeCloseTo(m.bar.top + m.bar.h / 2, 0);
+    // The account button over the sheet's top at the left, under the 3D.
+    expect(m.account.bottom).toBeLessThanOrEqual(m.sheet.top);
+    expect(m.account.left).toBeLessThanOrEqual(20);
+    expect(m.account.top).toBeGreaterThan(m.threeD.bottom);
   }
+  // One bar, one place: nothing moved or resized on the turn.
+  for (const k of ["top", "left", "w", "h"] as const) {
+    expect(search.bar[k], `the bar's ${k}`).toBeCloseTo(fpl.bar[k], 0);
+    expect(search.toggle[k], `the toggle's ${k}`).toBeCloseTo(fpl.toggle[k], 0);
+  }
+  expect(search.bar.h).toBeCloseTo(46, 0);
   // No bar under the sheet: the pill is the search's own 4.25 rem off the
   // screen's foot (no home indicator here), its 44 points back.
   await grabberTo(page, "peek");
@@ -117,7 +125,7 @@ test("the toggle is 44 points to a finger without growing, and the grabber is on
     const grabber = document.querySelector('[data-slot="map-panel"] [data-testid="sidebar-trigger-button"]')!;
     return {
       toggle: hit(button),
-      // The finger finds the toggle at its glass's edge, not the map.
+      // The finger finds the toggle past its disc's edge.
       edge: document.elementFromPoint(box.right + 3, box.top + box.height / 2)?.closest('[data-testid="sheet-page-toggle"]') != null,
       grabber: hit(grabber),
       bar: grabber.querySelector("span")!.getBoundingClientRect(),
@@ -126,7 +134,7 @@ test("the toggle is 44 points to a finger without growing, and the grabber is on
   });
   expect(sizes.toggle.hitH).toBeGreaterThanOrEqual(44);
   expect(sizes.toggle.hitW).toBeGreaterThanOrEqual(44);
-  // The 3D button's 36 inside its glass, not grown past it.
+  // A 36-point disc, the account button's size, not grown.
   expect(sizes.toggle.h).toBeLessThanOrEqual(36);
   expect(sizes.edge).toBe(true);
   expect(sizes.grabber.hitH).toBeGreaterThanOrEqual(44);
@@ -136,16 +144,19 @@ test("the toggle is 44 points to a finger without growing, and the grabber is on
   expect(sizes.bar.height).toBeCloseTo(5, 0);
 });
 
-test("the toggle gives way all the way up, as the map's buttons do, and the deep links still name the pages", async ({ page }) => {
+test("all the way up the toggle stays in the row and the account button gives way, and the deep links still name the pages", async ({
+  page,
+}) => {
   test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "full");
-  // As the map's buttons do (index.css): only a sliver showed past the
-  // edge. The fade is its glass's, the button's parent (data-map-food).
-  await expect(toggle(page).locator("..")).toHaveCSS("opacity", "0");
+  // The row is the sheet's, pinned at its top; the account button gives
+  // way as the map's buttons do (index.css), its glass the button's parent.
+  await expect(toggle(page)).toBeVisible();
+  await expect(page.getByTestId("account-button").locator("..")).toHaveCSS("opacity", "0");
   await grabberTo(page, "half");
-  await expect(toggle(page).locator("..")).toHaveCSS("opacity", "1");
+  await expect(page.getByTestId("account-button").locator("..")).toHaveCSS("opacity", "1");
   // The deep links still name the pages.
   await page.goto("/app/plan?open=fpl");
   await settle(page);
@@ -173,8 +184,9 @@ test("a route made goes to FPL; Search puts FPL's figures away with its page", a
   await expect(page.getByTestId("panel-foot")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeHidden();
-  // Half way up, the route's row is back over the list.
+  // Half way up, FPL's bar is back with the route's row under it.
   await grabberTo(page, "half");
+  await expect(sideDrawer(page).getByTestId("route-strip")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeVisible();
   await toggle(page).click();
   await expectPage(page, 0);
@@ -226,9 +238,12 @@ test("a sideways drag on the Nearest row is the row's, and no page turns", async
   await expectPage(page, 0);
 });
 
-test("with a card open the toggle stays in sight on its top, and a tap closes the cards and turns the page", async ({ page }) => {
-  // The owner, 2026-11-13: "airport card hides the fpl toggle". As
-  // Android's SheetNav.show closes the cards over the search first.
+test("a card open covers the row and its toggle, the account button riding its top, and its close brings the toggle back", async ({
+  page,
+}) => {
+  // The toggle is the sheet's own row's since the owner swapped it with
+  // the account button (2026-11-14); the account button rides the front
+  // card's top, as the map's buttons do.
   const phone = page.viewportSize()!.width < 768;
   const openCards = page.locator("[data-sheet-card][data-open]");
   await page.goto("/app/plan");
@@ -236,43 +251,25 @@ test("with a card open the toggle stays in sight on its top, and a tap closes th
   await grabberTo(page, "half");
   await expectPage(page, 0);
 
-  // An airport's card over Search: the toggle in sight, riding the card's top.
   await openAirport(page, "KOSH");
-  await expect(toggle(page)).toBeVisible();
-  await expect(toggle(page).locator("..")).toHaveCSS("opacity", "1");
+  // The sheet's row is put away under the card, the toggle with it.
+  await expect(toggle(page)).toBeHidden();
   if (phone) {
     const card = (await frontSheet(page).boundingBox())!;
-    const glass = (await toggle(page).locator("..").boundingBox())!;
+    const glass = (await page.getByTestId("account-button").locator("..").boundingBox())!;
     expect(glass.y + glass.height).toBeLessThanOrEqual(card.y + 1);
     expect(card.y - (glass.y + glass.height)).toBeLessThanOrEqual(32);
   }
-  await toggle(page).click();
-  await expect(page).not.toHaveURL(/[?&]place=/);
+  await page.getByTestId("place-close").last().click();
   await expect(openCards).toHaveCount(0);
-  await expectShown(page, 1);
-  // Turned back, the card it closed does not come back with its page.
-  await toggle(page).click();
-  await expectShown(page, 0);
-  await expect(openCards).toHaveCount(0);
-
-  // The Map card the same.
-  await openMapSettings(page);
   await expect(toggle(page)).toBeVisible();
   await toggle(page).click();
-  await expect(page.getByTestId("map-settings")).toHaveCount(0);
   await expectShown(page, 1);
 
-  // And You, from the avatar on Search.
-  await toggle(page).click();
-  await expectShown(page, 0);
-  // The search typed into under the airport's card kept as it was left.
-  const cancel = sideDrawer(page).getByRole("button", { name: "Cancel", exact: true });
-  if (await cancel.isVisible()) await cancel.click();
+  // You, from the account button, over FPL: put away, FPL is as it was.
   await page.getByTestId("account-button").click();
   await expect(consoleSheet(page)).toBeVisible();
-  await expect(toggle(page)).toBeVisible();
-  await toggle(page).click();
+  await page.keyboard.press("Escape");
   await expect(consoleSheet(page)).toHaveCount(0);
-  await expect(openCards).toHaveCount(0);
   await expectShown(page, 1);
 });

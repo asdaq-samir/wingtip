@@ -246,6 +246,7 @@ fn write_rule(out: &mut String, r: &Rule) {
 }
 
 /// The rule `name` worked on `v`.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     match name {
         // 91.155(a) for a class at an altitude: `{"class", "altitude_ft",

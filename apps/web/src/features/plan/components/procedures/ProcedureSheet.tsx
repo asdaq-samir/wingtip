@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
@@ -10,13 +10,15 @@ import { useGeo } from "../../../../lib/geo";
 import { runwayNumber, type WindPick } from "../../lib/pattern";
 import { transitionWords, type PickedProcedure } from "../../../../lib/procedures";
 import { TEXT } from "../../../../lib/text";
-import { altFt } from "../../../../lib/format";
+import { altFt, nm } from "../../../../lib/format";
+import { faaWords } from "../../../../lib/advisories";
 import type { ProcedureKind } from "../../hooks/useProceduresRoute";
 import { procedureQuery } from "../../../../lib/queryClient";
 import { Chips, NONE } from "./PatternChips";
 import { CHIP } from "../routeListStyle";
 import { KIND_TITLE } from "./procedureWords";
-import { FieldError } from "../../../../components/ui/field";
+import QueryState from "../../../../components/QueryState";
+import { PROCEDURES_FAILED } from "../ProcedureMenu";
 
 // The procedures sheet's pages (ProceduresRoute): a kind's list, and one
 // procedure's own page.
@@ -32,7 +34,7 @@ type Kind = ProcedureKind;
 export function ProcedurePicker({
   kind,
   list,
-  failed,
+  query,
   chosen,
   stale,
   wind,
@@ -40,21 +42,14 @@ export function ProcedurePicker({
 }: {
   kind: Kind;
   list: ProcedureList | undefined;
-  /** The FAA's file could not be had. */
-  failed: boolean;
+  /** Its ask, said in place as the pull-down says it (ProcedureMenu). */
+  query: UseQueryResult<ProcedureList> | undefined;
   chosen: PickedProcedure | null;
   stale: string | null;
   wind: WindPick | null;
   onOpen: (procedure: ProcedureSummary) => void;
 }) {
-  if (failed)
-    return <FieldError className={cn("px-1 text-muted-foreground", TEXT.prose)}>The FAA's procedures could not be had</FieldError>;
-  if (!list)
-    return (
-      <p role="status" className="px-1 text-muted-foreground">
-        Fetching the procedures…
-      </p>
-    );
+  if (!list) return query ? <QueryState query={query} fetching="Fetching the procedures…" failed={PROCEDURES_FAILED} /> : null;
   const of = list.procedures.filter((p) => p.kind === kind);
   if (of.length === 0)
     return <p className="px-1 text-muted-foreground" data-testid="procedures-none">{`No ${KIND_TITLE[kind].toLowerCase()} published`}</p>;
@@ -84,7 +79,7 @@ export function ProcedurePicker({
         return (
           <ListRow
             key={p.id}
-            title={p.name}
+            title={faaWords(p.name)}
             chevron
             onClick={() => onOpen(p)}
             data-testid="procedure-option"
@@ -218,7 +213,7 @@ function FixLadder({ drawing }: { drawing: ProcedureDrawing }) {
             {from && (
               <li aria-hidden="true" className="grid grid-cols-[2.75rem_1fr] items-center gap-x-2.5">
                 <span className="mx-auto h-5 w-0.5 rounded-full bg-tint" />
-                <span className={cn("text-muted-foreground", TEXT.note)}>{geo ? `${geo.distanceNm(from, f).toFixed(1)} nm` : ""}</span>
+                <span className={cn("text-muted-foreground", TEXT.note)}>{geo ? nm(geo.distanceNm(from, f)) : ""}</span>
               </li>
             )}
             <li className="grid min-h-10 grid-cols-[2.75rem_1fr_auto] items-center gap-x-2.5">

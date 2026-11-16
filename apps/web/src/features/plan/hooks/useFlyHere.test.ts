@@ -49,7 +49,6 @@ const props = (place: string | null) => ({
   aircraft: { profile: "c172", label: "Cessna 172" },
   load: 0,
   setLoad: vi.fn(),
-  setUnder: vi.fn(),
   showWaypoints: true,
   flightRules: "vfr" as const,
   setPanel: vi.fn(),

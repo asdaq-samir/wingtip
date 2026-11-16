@@ -51,8 +51,15 @@ struct FieldWeatherHead: View {
             }
             let wind = metar.windSpeedKt != nil
                 ? "Wind " + AirportWords.windLine(dirTrueDeg: metar.windDirTrueDeg, speedKt: metar.windSpeedKt, gustKt: metar.windGustKt) : nil
-            let line = [wind, metar.observedAt.flatMap { AirportWords.observed($0) }].compactMap { $0 }.joined(separator: " · ")
-            if !line.isEmpty { Text(line).font(.subheadline).foregroundStyle(.secondary) }
+            if let wind { Text(wind).font(.subheadline).foregroundStyle(.secondary) }
+            // When it was observed and its age, in the caution colour and
+            // said as old once it no longer counts (IOS-2, the engine's
+            // weather_in_force), so a held report is never read as current.
+            if let at = metar.observedAt, let said = AirportWords.observedSaid(at) {
+                let old = AirportWords.reportInForce(at) == false
+                Text(said).font(.subheadline.weight(old ? .semibold : .regular))
+                    .foregroundStyle(old ? AnyShapeStyle(WingtipInk.caution) : AnyShapeStyle(.secondary))
+            }
         }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
@@ -111,8 +118,8 @@ struct WeatherModules: View {
                 module("Wind", "wind", AirportWords.windLine(dirTrueDeg: metar.windDirTrueDeg, speedKt: metar.windSpeedKt, gustKt: metar.windGustKt),
                        line: "From true north, as reported")
             }
-            module("Visibility", "eye", metar.visibilitySm.map { "\(AirportWords.plain($0)) sm" } ?? "—", line: nil,
-                   spoken: metar.visibilitySm.map(SpokenFigures.statuteMiles))
+            module("Visibility", "eye", AirportWords.miles(metar.visibilitySm, plus: metar.visibilityPlus) ?? "—", line: nil,
+                   spoken: metar.visibilitySm.map { SpokenFigures.statuteMiles($0) + (metar.visibilityPlus == true ? " or more" : "") })
             module("Ceiling", "cloud", metar.ceilingFt.map { Format.altitude($0) } ?? "None", line: metar.ceilingFt == nil ? "No broken or overcast layer" : "Above the field",
                    spoken: metar.ceilingFt.map(SpokenFigures.feet))
             if let altimeter = metar.altimeterInHg {

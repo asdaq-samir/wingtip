@@ -124,6 +124,13 @@ struct MapExtrasInput {
         /// (the owner, 2026-10-27: "Make private airports hidden by default").
         static let military = "map.military"
         static let privateFields = "map.private"
+        /// The Map card's Aeronautical and Weather layers (the owner,
+        /// 2026-11-14: "can we just have four layers aeronautical,
+        /// weather, traffic, private/military"), on at first: the
+        /// airspace, special-use areas, VORs and fixes; the fields' weather
+        /// marks, the radar loop and the model weather.
+        static let aeronautical = "map.aeronautical"
+        static let weather = "map.weather"
     }
 }
 

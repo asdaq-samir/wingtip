@@ -27,10 +27,11 @@ import { flightPlanForms, type FiledProcedure } from "../lib/flightPlanForm";
 import { alternateFinding, useAlternate } from "./useAlternate";
 import { useRouteFields } from "./useRouteFields";
 import { flowQuery, itwsLines, itwsQuery, liveWhen, programLines, saaQuery } from "../../../lib/liveReports";
-import { icingAtAltitude, icingLine } from "../lib/icing";
+import { icingFindings } from "../lib/icing";
 import { useIcingForecast } from "./useIcingForecast";
 import { assess, riskLine, useRisk } from "../../../lib/frat";
 import type { BriefingPart } from "../components/briefing/sections";
+import { callEngine } from "../../../lib/engine/engine";
 
 /** What each weather source is called when a pilot is told it could
  *  not be checked. */
@@ -205,26 +206,25 @@ export function useFlightBriefing({
   const flownOwn = flyingId == null ? undefined : ownAircraft?.find((a) => a.id === flyingId);
   const ticked = useRisk((s) => s.ticked);
   const setAssessment = useRisk((s) => s.setAssessment);
-  const margins = [totals?.fuel_margin_gal, ...(totals?.hops ?? []).map((h) => h.totals.fuel_margin_gal)].filter(
-    (n): n is number => n != null,
-  );
-  // The least margin of the route's flights: one figure, for the risk
-  // assessment, the Go / No-Go's fuel and the glance alike.
-  const leastMarginGal = margins.length ? Math.min(...margins) : null;
-  // Under IFR, in cloud at or above the freezing level (features/plan/lib/icing).
-  const icing =
-    ifr && nav && briefing
-      ? icingAtAltitude(
-          nav.altitude_selection,
-          legs.map((l) => l.altitude_ft),
-          briefing.pireps,
-        )
-      : null;
+  // The engine's fuel and TFR figures, the planner's verdict's too (AV-12).
+  const routeFigures = callEngine("gonogo_route_figures", {
+    totals: totals ?? null,
+    tfr_count: briefing?.tfrs.length ?? null,
+    crossed: tfrsCrossed.map((t) => t.notam_id),
+  });
+  const leastMarginGal = routeFigures.least_margin_gal;
   // Under IFR, the AWC's forecast icing (CIP and FIP) on each leg at the
-  // altitude flown (useIcingForecast): its line joins the one above in the
-  // Go / No-Go, and a forecast that could not be had is said unchecked.
+  // altitude flown (useIcingForecast); a forecast not had is said unchecked.
   const icingForecast = useIcingForecast({ ifr, briefing, legs, depart });
-  const icingLines = [icing && icingLine(icing), ifr ? icingForecast.data?.line : null].filter((l): l is string => !!l);
+  // The icing finding's lines, the engine's, in its order (lib/icing).
+  const { icing, lines: icingLines } = icingFindings({
+    ifr,
+    nav,
+    legs,
+    briefing,
+    fields: landings,
+    forecastLine: icingForecast.data?.line,
+  });
   const hazardNames = briefing
     ? [...briefing.hazards.map((h) => sigmetHazard(h.hazard, h.type ?? "SIGMET")), ...briefing.gairmets.map(gairmetTitle)]
     : [];
@@ -263,11 +263,9 @@ export function useFlightBriefing({
     },
     [setAssessment, publish],
   );
-
   // The runway check at each field (features/plan/lib/runwayCheck), for the
   // Performance tab and the Go / No-Go.
   const checks = runwayChecks(nav?.aircraft, briefing, course, loaded?.takeoff.weightLb ?? null, loaded?.landing.weightLb ?? null, picks);
-  const hops = totals?.hops ?? [];
   // Under IFR, the alternate (AlternateSection): its ETA the nav log's.
   const etaIso = totals?.ete_min != null ? new Date(new Date(depart || opened).getTime() + totals.ete_min * 60_000).toISOString() : null;
   const alternateWhere = { dest, eta: ifr ? etaIso : null, tasKt: nav?.aircraft?.cruise_tas_kt ?? null };
@@ -296,8 +294,8 @@ export function useFlightBriefing({
     airspace: {
       pending: !briefing && !failed,
       unchecked: !!failed || unchecked("tfrs"),
-      inForce: tfrsCrossed.map((t) => t.notam_id),
-      near: (briefing?.tfrs.length ?? 0) - tfrsCrossed.length,
+      inForce: routeFigures.tfrs_in_force,
+      near: routeFigures.tfrs_near,
       specialUse: specialUse.map(({ area, when }) => ({ name: area.name, when })),
     },
     altitude: {
@@ -313,8 +311,8 @@ export function useFlightBriefing({
     fuel: {
       pending: !totals,
       marginGal: leastMarginGal,
-      requiredGal: totals?.fuel_required_gal ?? (hops.length ? Math.max(...hops.map((h) => h.totals.fuel_required_gal ?? 0)) : null),
-      reserveMin: totals?.reserve_min ?? hops[0]?.totals.reserve_min ?? null,
+      requiredGal: routeFigures.required_gal,
+      reserveMin: routeFigures.reserve_min,
       ifr,
     },
     runways: {

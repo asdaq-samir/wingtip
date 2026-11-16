@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { altitudesOf } from "../../../lib/identSchema";
+import { altitudesOf, visitKey } from "../../../lib/identSchema";
 import { cruiseTasOf, shortName, taxiFuelOf } from "../../../lib/aircraftChoice";
 import { clockTime, flightLevel } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
@@ -96,13 +96,15 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   const airspaceOf = useCallback((ident: string) => routeAirport(ident)?.airspace_class ?? undefined, [routeAirport]);
   // The altitude at a point, as its menu offers it: the pilot's own, else
   // a waypoint's cruise -- the leg flown to it -- or an airport's pattern.
+  // At a point flown more than once, its `visit`'s own first (visitKey).
   const altitudeAt = useCallback(
-    (ident: string, waypoint: boolean): PointAltitude => {
+    (ident: string, waypoint: boolean, visit?: number): PointAltitude => {
       const ownAltitudes = altitudesOf(altitudes);
+      const key = visit !== undefined && visitKey(ident, visit) in ownAltitudes ? visitKey(ident, visit) : ident;
       const planned = waypoint ? s.legs.find((leg) => leg.to === ident)?.altitude_ft : routeAirport(ident)?.pattern_altitude_ft;
       // A waypoint's own altitude, flown to it, as the planner found it.
       const caution = waypoint ? s.nav?.cautions.find((c) => c.to_ident === ident)?.reasons : undefined;
-      return { feet: ownAltitudes[ident] ?? planned ?? null, own: ident in ownAltitudes, caution };
+      return { feet: ownAltitudes[key] ?? planned ?? null, own: key in ownAltitudes, caution };
     },
     [altitudes, s.legs, s.nav, routeAirport],
   );

@@ -13,7 +13,7 @@ extension Plan {
     func flyHere(_ ident: String, near fix: OwnShip.Fix?) async {
         dest = ident
         if dep.isEmpty, let at = fix?.coordinate,
-           let nearest = try? await Planner.nearest(lat: at.latitude, lon: at.longitude, limit: 1).first,
+           let nearest = try? await Planner.nearestOrPacks(lat: at.latitude, lon: at.longitude, limit: 1).fields.first,
            nearest.ident != ident {
             dep = nearest.ident
         }

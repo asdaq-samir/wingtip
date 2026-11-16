@@ -69,6 +69,8 @@ final class FlightMapLayer: NSObject {
     private var ring: TrackedRing?
     private var lines: [String: [MKPolyline]] = [:]
     private var drawn: [String: [PathPoint]] = [:]
+    /// The tracked airplane's last place, followed or not, for the next
+    /// report's move (MapCamera.keepOnScreen).
     private var centred: CLLocationCoordinate2D?
     private var glideLine: GlidePolyline?
     private var glideDrawn: [CLLocationCoordinate2D] = []
@@ -104,11 +106,12 @@ final class FlightMapLayer: NSObject {
             let at = CLLocationCoordinate2D(latitude: plane.lat, longitude: plane.lon)
             let ring = ring ?? { let mark = TrackedRing(); self.ring = mark; map.addAnnotation(mark); return mark }()
             ring.coordinate = at
-            // Kept in the middle while followed, as Maps follows a position.
+            // Kept where it is on the screen while followed, the map moved
+            // by what it moved (MapCamera.keepOnScreen; the web's camera).
             if next.follow, centred?.latitude != at.latitude || centred?.longitude != at.longitude {
-                centred = at
-                map.setCenter(at, animated: MapMotion.animated)
+                MapCamera.keepOnScreen(from: centred, to: at, on: map)
             }
+            centred = at
         } else if let ring {
             map.removeAnnotation(ring)
             self.ring = nil

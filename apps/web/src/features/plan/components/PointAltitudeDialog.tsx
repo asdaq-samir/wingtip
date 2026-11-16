@@ -24,6 +24,9 @@ export interface PointAltitude {
  *  known, the altitude it has without one there. */
 export interface EditedPoint {
   ident: string;
+  /** What its altitude is kept by in the address: the ident, or at a point
+   *  the route is at more than once, its visit's ("VPBNG@2", visitKey). */
+  key?: string;
   waypoint: boolean;
   altitude: PointAltitude;
   elevationFt?: number | null;

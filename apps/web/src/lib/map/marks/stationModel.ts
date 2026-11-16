@@ -13,8 +13,8 @@ import { CHART } from "../../tokens";
  */
 
 /** How far from the field a barb's stem begins, and the calm circle's
- *  radius: outside the airport symbol's halo (airportMark's
- *  sectionalAirportSvg, up to 17 px out), so neither covers it. */
+ *  radius: outside an ordinary field's mark (airportMarkSvg, its ticks'
+ *  casing some 15 px out), so neither covers it. */
 const CLEAR = 15;
 /** A barb's stem ends this far out. */
 const REACH = 36;

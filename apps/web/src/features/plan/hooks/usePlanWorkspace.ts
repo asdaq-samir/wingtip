@@ -63,7 +63,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   usePlanAhead({ planSettled, planned, aircraft: plan.aircraft, load, showWaypoints, flightRules });
   useRecentRoute(route, plan.course);
   const view = usePlanView(route, cards, panel, setPanel);
-  const routeList = usePlanRouteList(route, plan, cards, view, setPanel);
+  const routeList = usePlanRouteList(route, plan, view, setPanel);
   const fpl = usePlanFpl(route, plan, cards, picks, map, stops.fuelStopPins, view, setPanel);
   const search = usePlanSearch(route, cards, map, view);
   const flight = usePlanFlight(route, plan, fpl, view);

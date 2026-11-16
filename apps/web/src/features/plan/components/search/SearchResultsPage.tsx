@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { cn } from "cn";
+import { Button } from "../../../../components/ui/button";
 import { useScrollPlace } from "../../../../lib/scrollPlace";
 import { ChartMark } from "../../../../components/Favorites";
 import { USE_WORDS } from "../../../../lib/airportIndex";
@@ -54,10 +55,15 @@ function ResultRow({ field, onOpen }: { field: NearestAirport; onOpen: () => voi
   const forecast = field.forecast?.category ?? null;
   const forecastAt = field.forecast ? clockTime(new Date(field.forecast.at * 1000)) : null;
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="inline"
       type="button"
       onClick={onOpen}
-      className="flex w-full items-center gap-3 px-4 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+      className={cn(
+        "justify-start text-inherit hover:bg-transparent",
+        "flex w-full items-center gap-3 px-4 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+      )}
       data-testid="search-result"
       data-ident={field.ident}
     >
@@ -87,7 +93,7 @@ function ResultRow({ field, onOpen }: { field: NearestAirport; onOpen: () => voi
       <span className="grid size-16 shrink-0 place-items-center rounded-xl bg-muted" aria-hidden="true">
         <ChartMark space={field.airspace_class ?? null} category={field.flight_category} use={use} size={40} />
       </span>
-    </button>
+    </Button>
   );
 }
 

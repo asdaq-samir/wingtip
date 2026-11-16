@@ -1,10 +1,12 @@
 package app.wingtipmaps.android.logbook
 
 import app.wingtipmaps.android.MainRule
+import app.wingtipmaps.android.api.SavedTrack
 import app.wingtipmaps.android.api.generated.DraftTrackPoint
 import app.wingtipmaps.android.api.generated.LogbookDraft
 import app.wingtipmaps.android.api.generated.LogbookDraftAsk
 import app.wingtipmaps.android.api.generated.gateway.CurrencyDto
+import app.wingtipmaps.android.api.generated.gateway.FlightSummaryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
 import app.wingtipmaps.android.flight.OwnShip
@@ -51,9 +53,27 @@ class LogbookDraftModelTest {
         fun points(n: Int) { recorded.value = recorded.value.copy(points = (0 until n).map { DraftTrackPoint(lat = 42.0, lon = -88.0, t = it * 5_000.0) }) }
     }
 
-    private class Servers : LogbookSource {
+    private class Shelf : TrackShelf {
+        override val unsent = MutableStateFlow<List<Unsent>>(emptyList())
+        override val problem = MutableStateFlow<String?>(null)
+        override suspend fun keep(item: Unsent, problem: String) { unsent.value += item; this.problem.value = problem }
+        override suspend fun send(upload: suspend (Long, SavedTrack) -> Unit) {
+            for (item in unsent.value) runCatching { upload(item.flight, item.track) }.onSuccess { unsent.value -= item }
+            if (unsent.value.isEmpty()) problem.value = null
+        }
+    }
+
+    private class Servers(var signal: Boolean = true) : LogbookSource {
         var asked: LogbookDraftAsk? = null
         var added: LogbookEntryRequest? = null
+        val tracks = mutableMapOf<Long, SavedTrack>()
+        override suspend fun flights() = listOf(
+            FlightSummaryDto(createdAt = "2026-11-09T12:00:00Z", departureIdent = "KDPA", destinationIdent = "KMSN", id = 42, stops = emptyList()),
+        )
+        override suspend fun saveTrack(flight: Long, track: SavedTrack) {
+            if (!signal) throw java.io.IOException("No signal")
+            tracks[flight] = track
+        }
         override suspend fun draft(ask: LogbookDraftAsk): LogbookDraft { asked = ask; return DRAFT }
         override suspend fun add(entry: LogbookEntryRequest): LogbookEntryDto {
             added = entry
@@ -79,7 +99,7 @@ class LogbookDraftModelTest {
     fun aFlightEndedIsDrawnChangedAndLoggedOnlyOnLog() {
         val flight = Flight()
         val servers = Servers()
-        val model = LogbookDraftModel(flight, landed, servers) { -360.0 }
+        val model = LogbookDraftModel(flight, Shelf(), landed, servers) { -360.0 }
         model.context(signedIn = true, tail = "N123AB", type = "c172")
         // Under a minute of points: not read yet.
         flight.points(11)
@@ -111,9 +131,33 @@ class LogbookDraftModelTest {
     }
 
     @Test
+    fun theTrackGoesToItsSavedFlightAndWithNoSignalIsKeptUntilSent() {
+        val flight = Flight()
+        val shelf = Shelf()
+        val servers = Servers(signal = false)
+        val model = LogbookDraftModel(flight, shelf, landed, servers) { 0.0 }
+        model.context(signedIn = true, tail = "N123AB", type = "c172")
+        flight.points(150)
+        model.log()
+        // Linked to the saved flight whose ends are the route's.
+        assertEquals(42L, servers.added!!.flightId)
+        // No signal: the entry logged, the track kept before the recorder let it go.
+        assertTrue(flight.recorded.value.points.isEmpty())
+        assertEquals(1, shelf.unsent.value.size)
+        assertEquals(150, shelf.unsent.value.single().track.points.size)
+        assertNotNull(model.trackProblem.value)
+        // A network again: sent whole, and let go.
+        servers.signal = true
+        model.sendUnsent()
+        assertEquals(150, servers.tracks[42L]!!.points.size)
+        assertTrue(shelf.unsent.value.isEmpty())
+        assertNull(model.trackProblem.value)
+    }
+
+    @Test
     fun laterAndNotAFlightLetItGo() {
         val flight = Flight()
-        val model = LogbookDraftModel(flight, landed, Servers()) { 0.0 }
+        val model = LogbookDraftModel(flight, Shelf(), landed, Servers()) { 0.0 }
         flight.points(150)
         assertTrue(model.state.value.open)
         // Signed out: no draft asked.
@@ -122,7 +166,7 @@ class LogbookDraftModelTest {
         assertFalse(model.state.value.open)
         assertEquals(150, flight.recorded.value.points.size)
         // Still in the air by the engine: nothing offered.
-        val flying = LogbookDraftModel(flight, { TrackReading(1, endsAirborne = true, blockTo = 600_000.0) }, Servers()) { 0.0 }
+        val flying = LogbookDraftModel(flight, Shelf(), { TrackReading(1, endsAirborne = true, blockTo = 600_000.0) }, Servers()) { 0.0 }
         flight.asked(0.0)
         assertFalse(flying.state.value.open)
         model.discard()

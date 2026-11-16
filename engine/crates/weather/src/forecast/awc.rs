@@ -11,6 +11,7 @@
 //! fails (`held_until`), by each product's own validity.
 
 use crate::json::{self, Value};
+use crate::visibility::feed_visibility;
 use crate::xml::{self, Element};
 use crate::{metar, sort::StableSort, time, validity};
 use wingtip_core::units::FT_PER_M;
@@ -59,11 +60,6 @@ fn unix(text: Option<&str>) -> Option<i64> {
     text.and_then(time::parse_iso)
 }
 
-/// A visibility as the feed writes it, "10+" or "1.5", in statute miles.
-fn visibility(text: Option<&str>) -> Option<f64> {
-    num(text.map(|t| t.trim().trim_end_matches('+')))
-}
-
 /// The ceiling (14 CFR 1.1, metar::sky_ceiling_of) of a METAR's or a TAF
 /// period's sky_condition elements and vert_vis_ft: a layer the station
 /// could not measure comes with no cloud_base_ft_agl, which as the lowest
@@ -97,7 +93,7 @@ pub fn metars(text: &str) -> Result<String, String> {
             continue;
         }
         let (ceiling, unknown, cover) = crate::sky::sky(el);
-        let vis = visibility(el.text_at(&["visibility_statute_mi"]));
+        let (vis, vis_plus) = el.text_at(&["visibility_statute_mi"]).and_then(feed_visibility).unzip();
         // The AWC's own category takes a layer it has no height for as no
         // ceiling, and calls "OVC/// 10SM" VFR; the ceiling is not known
         // (14 CFR 1.1), so the category is only what the visibility settles.
@@ -124,6 +120,7 @@ pub fn metars(text: &str) -> Result<String, String> {
         json::opt_string(&mut r, cover);
         r.push_str(",\"visibility_sm\":");
         json::opt_number(&mut r, vis);
+        r.push_str(&format!(",\"visibility_plus\":{}", vis_plus.unwrap_or(false)));
         for (key, tag) in [
             ("wind_dir_true_deg", "wind_dir_degrees"),
             ("wind_speed_kt", "wind_speed_kt"),
@@ -205,7 +202,7 @@ pub fn tafs(text: &str) -> Result<String, String> {
                 json::opt_number(&mut p, num(f.text_at(&[tag])));
             }
             p.push_str(",\"visibility_sm\":");
-            json::opt_number(&mut p, visibility(f.text_at(&["visibility_statute_mi"])));
+            json::opt_number(&mut p, f.text_at(&["visibility_statute_mi"]).and_then(feed_visibility).map(|(v, _)| v));
             p.push_str(",\"ceiling_ft\":");
             whole(&mut p, ceiling);
             p.push_str(",\"ceiling_unknown\":");
@@ -487,8 +484,10 @@ mod tests {
         assert_eq!(x.get("ceiling_unknown"), Some(&Value::Bool(true)));
         assert_eq!(x.get("flight_category"), Some(&Value::Null));
         assert_eq!(x.get("visibility_sm").and_then(Value::as_f64), Some(10.0));
+        assert_eq!(x.get("visibility_plus"), Some(&Value::Bool(true)));
         let a = v.get("KABC").unwrap();
         assert_eq!(a.get("ceiling_ft").and_then(Value::as_f64), Some(800.0));
+        assert_eq!(a.get("visibility_plus"), Some(&Value::Bool(false)));
         assert_eq!(a.get("wind_dir_true_deg"), Some(&Value::Null));
     }
 

@@ -60,8 +60,10 @@ def _read(dep: str, dest: str, stops: str) -> None:
         except Exception:  # noqa: BLE001 -- the checkpoints' own request reports a failed read
             log.warning("prefetch: the chart along %s -> %s", hop.dep_ident, hop.dest_ident, exc_info=True)
     for hop in hops:
-        # The same samples the altitude selection reads (wingtip.terrain), so
-        # its read finds them on disk.
+        # The direct line's samples (wingtip.terrain), so the altitude
+        # selection finds them on disk where its legs keep to the line; a
+        # leg off it is read under the leg itself then (its fixes are not
+        # known yet here).
         try:
             terrain.floor_profile(hop.start, hop.end, [0.0, hop.length_nm])
         except Exception:  # noqa: BLE001 -- the nav log's own read reports it

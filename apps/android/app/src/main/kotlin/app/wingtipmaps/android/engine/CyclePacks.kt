@@ -11,6 +11,7 @@ import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.engine.ffi.packVerify
 import app.wingtipmaps.android.engine.generated.distanceNm
 import app.wingtipmaps.android.engine.generated.regionOf
+import app.wingtipmaps.android.engine.generated.regionsAhead
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -187,13 +188,14 @@ class CyclePacks(private val root: File) {
      *  round the airplane. Null where no pack round the point was ever
      *  kept. The obstacles are the planner's alone and the TFRs are not
      *  kept on the phone yet: both are said to be missing, never clear. */
-    fun ahead(lat: Double, lon: Double, trackDeg: Double, groundspeedKt: Double, altitudeFt: Double?, nowMs: Long = AppClock.nowMs()): Ahead? {
-        // The regions within a third of a degree: five minutes' track at
-        // 200 kt is 17 nm, a quarter of a degree.
-        val names = HashSet<String>()
-        for (dlat in listOf(-0.3, 0.0, 0.3)) {
-            for (dlon in listOf(-0.3, 0.0, 0.3)) names += Engine.regionOf(lat + dlat, lon + dlon).getOrThrow()
-        }
+    fun ahead(lat: Double, lon: Double, trackDeg: Double, groundspeedKt: Double, altitudeFt: Double?, route: List<List<Double>>? = null, nowMs: Long = AppClock.nowMs()): Ahead? {
+        // The regions the next five minutes reach, in the order reached: the
+        // engine's regions_ahead along the track and the route's line, 1 nm
+        // either side (the pad the alerts ahead read volumes within), where
+        // a fixed box of 0.3 degrees fell short of five minutes at 200 kt
+        // (17 nm) at 48 N and missed the region ahead near an edge (IOS-20).
+        val lookAheadNm = groundspeedKt * AHEAD_S / 3600.0
+        val names = Engine.regionsAhead(lat, lon, trackDeg, route?.takeIf { it.size >= 2 }, lookAheadNm, padNm = 1.0).getOrNull()?.toSet() ?: return null
         val packs = packs(names)
         if (packs.isEmpty()) return null
         val json = packsAhead(packs, lat, lon, trackDeg, groundspeedKt, altitudeFt, 0.0, nowMs / 1000, null, null)
@@ -201,6 +203,10 @@ class CyclePacks(private val root: File) {
     }
 
     companion object {
+        /** How far ahead the alerts look, seconds of flight: five minutes
+         *  along the track, as the planner's wingtip.alerts. */
+        const val AHEAD_S = 300.0
+
         /** The crc32 a pack on disk was written with: its header's, at byte
          *  36, little-endian (wingtip.cycle_pack's write_phone, which lists
          *  the same figure in /api/cycle-packs). Null where there is no
@@ -231,15 +237,18 @@ class CyclePacks(private val root: File) {
         /** The regions a route's corridor crosses: the region of each point
          *  along it, two nm apart, and of points a tenth of a degree (6 nm)
          *  either side, as its chart is kept five nm either side. The line
-         *  is pairs of latitude and longitude, as /api/course gives it. */
-        fun regions(line: List<List<Double>>): Set<String> {
+         *  is pairs of latitude and longitude, as /api/course gives it. A
+         *  failure where the engine could not say (Engine.rule has logged
+         *  why), never an empty set read as "nothing to keep" (the audit's
+         *  AND-3 and AND-5). */
+        fun regions(line: List<List<Double>>): Result<Set<String>> = runCatching {
             val names = HashSet<String>()
             for ((lat, lon) in samples(line, everyNm = 2.0).getOrThrow()) {
                 for (dlat in listOf(-0.1, 0.0, 0.1)) {
                     for (dlon in listOf(-0.1, 0.0, 0.1)) names += Engine.regionOf(lat + dlat, lon + dlon).getOrThrow()
                 }
             }
-            return names
+            names
         }
 
         /** Points along a line every so many nm, with both its ends: the

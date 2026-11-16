@@ -5,6 +5,7 @@ import { routeOf } from "../../../lib/identSchema";
 import { usePreferences } from "../../../lib/preferences";
 import { queryClient, routeOptionsQuery } from "../../../lib/queryClient";
 import { sameStops } from "../lib/routeWays";
+import { sameRoute } from "./planMessages";
 import type { PlannedRoute } from "./planAddress";
 
 /** The route with the fuel stops it needs put in (RouteOptions.own), for
@@ -108,8 +109,22 @@ export function useRouteWays({
       visibilitySm,
     }),
     enabled: vfrRoute,
+    // The ways before kept on the row while the same route is asked for
+    // again -- another airplane, departure time or minimums -- so FPL's
+    // Routes row stays where it is, dimmed, till the new ones come: it
+    // went for half a second at every change of airplane, and the list
+    // under it jumped up and back (the flicker audit's FL-12). Not under a
+    // new route, whose ways are other ways (keyed [_, dep, dest, via]).
+    placeholderData: (previous, previousQuery) =>
+      previousQuery && sameRoute(previousQuery.queryKey, [planned.dep, `${planned.dest ?? ""}`, baseStops.join(",")])
+        ? previous
+        : undefined,
   });
   const routeWays = routeWaysQuery.data;
+  // The ways shown are the last airplane's or time's while the new ones
+  // come: drawn dimmed and not to be picked (useRouteLine), as their
+  // fuel and fuel stops are another airplane's.
+  const waysStale = routeWaysQuery.isPlaceholderData;
   // The route with the fuel stops it needs put in, the planner's grid's
   // (RouteOptions.own), for its card before anything is planned.
   const own = routeWays?.own;
@@ -120,5 +135,5 @@ export function useRouteWays({
         : null,
     [own],
   );
-  return { browsing, setBrowsing, chosenKey, vfrRoute, routeWays, ownWithFuel };
+  return { browsing, setBrowsing, chosenKey, vfrRoute, routeWays, waysStale, ownWithFuel };
 }

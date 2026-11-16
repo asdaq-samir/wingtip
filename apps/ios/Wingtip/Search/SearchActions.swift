@@ -10,6 +10,9 @@ enum SearchAction: Hashable, Identifiable, Sendable {
     case directTo(String)
     case open(Screen)
     case ask(String)
+    /// The traffic on the map turned on (the web's Show Traffic, where its
+    /// Traffic Nearby opened the retired traffic page).
+    case showTraffic
 
     var id: String {
         switch self {
@@ -17,6 +20,7 @@ enum SearchAction: Hashable, Identifiable, Sendable {
         case .directTo(let ident): "direct:\(ident)"
         case .open(let screen): "open:\(screen.rawValue)"
         case .ask(let words): "ask:\(words)"
+        case .showTraffic: "traffic"
         }
     }
 
@@ -27,6 +31,7 @@ enum SearchAction: Hashable, Identifiable, Sendable {
         case .directTo(let ident): "Direct To \(ident)"
         case .open(let screen): screen.title
         case .ask(let words): "Ask: “\(words)”"
+        case .showTraffic: "Show Traffic"
         }
     }
 
@@ -36,6 +41,7 @@ enum SearchAction: Hashable, Identifiable, Sendable {
         case .directTo: WingtipIcon.directTo
         case .open(let screen): SearchActions.glyph(screen)
         case .ask: WingtipIcon.ask
+        case .showTraffic: WingtipIcon.airplane
         }
     }
 }
@@ -92,6 +98,7 @@ enum SearchActions {
         }
         var seen = Set<Screen>()
         rows += screens.filter { seen.insert($0).inserted }.prefix(4).map(SearchAction.open)
+        if lower.count >= 3, "show traffic".hasPrefix(lower) || "traffic".hasPrefix(lower) || lower.contains("traffic") { rows.append(.showTraffic) }
         rows.append(.ask(words))
         return rows
     }

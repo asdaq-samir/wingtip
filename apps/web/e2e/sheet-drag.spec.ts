@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { firstRow, frontSheet, grabberTo, openBrief, panelTabs, settle, settled, sideDrawer } from "./helpers";
+import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
 /**
  * The map's panel is Base UI's stock Drawer on a phone (MapPanel): a
@@ -195,4 +196,47 @@ test("a touch on the sheet that does not move leaves it where it is", async ({ p
   expect(Math.abs((await panel.boundingBox())!.y - before)).toBeLessThanOrEqual(1);
   await cdp.send("Input.dispatchTouchEvent", { type: "touchCancel", touchPoints: [] });
   await cdp.detach();
+});
+
+// The flicker audit, 2026-11-14, FL-3: an airport's card dragged from half
+// past its pill faded out and dropped off the screen's foot, then faded in
+// again at the pill: the Drawer had begun its close before the card took
+// it back. Now the close is refused where the Drawer asks (letGo), and the
+// card goes from where it was let go to the pill, in sight throughout;
+// tapped there, its title row brings it back to half, drawn once. By a
+// pointer's drag, which both engines take (card-once.spec's swipes).
+test.describe("by a pointer's drag", () => {
+  test.use({ hasTouch: false });
+  test("an airport's card dragged past its pill goes to the pill in sight, never fading, and its pill raises it", async ({ page }) => {
+    test.skip(page.viewportSize()!.width >= 768, "a phone's cards");
+    await installFrameRecorder(page);
+    await page.goto("/app/plan?place=KDLH");
+    await settle(page);
+    const card = page.locator("[data-sheet-card]").filter({ has: page.getByTestId("place-card") });
+    await expect(card).toHaveAttribute("data-panel", "half");
+    await settled(card);
+    const box = (await card.getByTestId("sidebar-trigger-button").boundingBox())!;
+    const x = box.x + box.width / 2;
+    await page.mouse.move(x, box.y + 6);
+    await page.mouse.down();
+    // 500 down, past the pill and the screen's foot, as the audit's drag
+    // went (330 lands on the pill without the Drawer reading a close);
+    // watched from the let-go.
+    await page.mouse.move(x, box.y + 6 + 500, { steps: 16 });
+    await expectDrawnOnce(page, () => page.mouse.up().then(() => expect(card).toHaveAttribute("data-panel", "peek")), {
+      card: "place-card",
+      maxMoves: 0,
+    });
+    await expect(page.getByTestId("place-card")).toHaveCount(1);
+    await expectDrawnOnce(
+      page,
+      () =>
+        card
+          .getByTestId("place-name")
+          .first()
+          .click()
+          .then(() => expect(card).toHaveAttribute("data-panel", "half")),
+      { card: "place-card", maxMoves: 0 },
+    );
+  });
 });

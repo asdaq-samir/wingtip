@@ -14,7 +14,13 @@ struct FlightLoggedSheet: View {
             if let logged = model.logged {
                 Section {
                     Text("\(logged.route ?? "") · \(Format.hours(logged.totalHours)), in your logbook; your currency is worked out again from it.")
-                    if logged.flightId != nil { Text("The track is with the saved flight too: its debrief is there in Flights.") }
+                    if let problem = model.trackProblem {
+                        // Where the logged flight shows, the error where it happened.
+                        ProblemLine("The track couldn't be sent to the saved flight: \(problem). It's kept on this iPhone and sent when you're next online.")
+                        Button("Try Again") { Task { await model.sendUnsent() } }
+                    } else if logged.flightId != nil {
+                        Text("The track is with the saved flight too: its debrief is there in Flights.")
+                    }
                 }
             } else {
                 draftSections

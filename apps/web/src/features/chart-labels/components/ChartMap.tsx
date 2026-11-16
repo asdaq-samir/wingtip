@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { SheetCard } from "../../../components/SheetCard";
 import type { Course, Point, Rating } from "../../../lib/api/types";
 import { isEndpoint } from "../../../lib/api/types";
@@ -86,16 +86,14 @@ export default function ChartMap({
   );
   // The route's two fields wear their own marks, not a Class B one too.
   const routeIdents = useMemo(() => ends.map((e) => e.ident), [ends]);
-  // A Class B field hovered shows its terminal sheet (ChartGl's previewing).
-  const [previewing, setPreviewing] = useState(false);
   return (
     <GlMapShell course={course} focus={flyTo} focusZoom={flyZoom} place={null}>
       <LandWaterGl />
-      <ChartGl course={course} previewing={previewing} />
+      <ChartGl course={course} />
       <OverlayGl />
       <AirspaceGl />
       <NavaidsGl />
-      {course && <ClassBGl chart={course} route={routeIdents} onPreview={setPreviewing} />}
+      {course && <ClassBGl chart={course} route={routeIdents} />}
       <RouteGl course={course} checkpoints={[]} candidates={candidates} endpoints={ends} />
       <AddOnCourse onAddAt={onAddAt} />
       <PickedGl focus={selected} held={null} onHold={NO_HOLD} />

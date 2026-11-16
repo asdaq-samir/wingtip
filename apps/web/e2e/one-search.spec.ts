@@ -13,6 +13,7 @@ import {
   sideDrawer,
   slow,
 } from "./helpers";
+import { stopsAre } from "./stopsParam";
 import { showPage } from "./oneSearch";
 
 /**
@@ -34,15 +35,20 @@ test(
   async ({ page }) => {
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
-    // With a route the plan is the sheet's main content, the one search over
-    // it, no tabs.
+    // With a route the sheet opens on FPL, the plan; the one search is its
+    // other page, by the toggle riding the sheet's top (PageToggle, the
+    // owner's 2026-11-13), with no tabs.
     await grabberTo(page, "half");
+    await showPage(page, 0);
     const row = firstRow(page);
     // Short in sight, so it fits beside the mic and Cancel at larger text;
     // the whole sentence its name (the sheet audit's F-S2).
-    await expect(row.getByTestId("search-airports")).toHaveAttribute("placeholder", "Search airports");
+    await expect(row.getByTestId("search-airports")).toHaveAttribute("placeholder", "Search airports and airplanes");
     await expect(row.getByTestId("search-airports")).toHaveAttribute("aria-label", "Search airports and airplanes");
-    await expect(row.getByTestId("account-button")).toBeVisible();
+    // The page toggle at the row's end, where the account button was (the
+    // owner, 2026-11-14: "Swap the fpl toggle and account buttons").
+    await expect(row.getByTestId("sheet-page-toggle")).toBeVisible();
+    await expect(row.getByTestId("account-button")).toHaveCount(0);
     await expect(sideDrawer(page).getByTestId("sheet-title")).toHaveCount(0);
     await expect(sideDrawer(page).getByRole("tablist", { name: "Tabs" })).toHaveCount(0);
     await expect(sideDrawer(page).getByLabel(/^(\S+, )?Departure$/)).toContainText("C81");
@@ -58,7 +64,7 @@ test(
     await expect(home.getByTestId("flight-summary-route")).toHaveCount(0);
     await expect(home.getByTestId("pill-section-favorites")).toBeVisible();
     await expect(row.getByTestId("one-search-cancel")).toBeVisible();
-    await expect(row.getByTestId("account-button")).toHaveCount(0);
+    await expect(row.getByTestId("sheet-page-toggle")).toHaveCount(0);
 
     // Typed: one list, grouped as Apple Maps' results are (the owner's
     // screenshot, 2026-11-10): the top hit with its quick actions, then the
@@ -81,15 +87,15 @@ test(
 
     // Add Stop: KOSH a landing on the way, both ends kept.
     await card.getByTestId("place-add-stop").click();
-    await expect(page).toHaveURL(/[?&]stops=KOSH(&|$)/);
+    await expect(page).toHaveURL(stopsAre("KOSH"));
     await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
     await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
     // The plan up (FPL, the sheet's second page), and the search, its own
-    // page now (its toggle, PageToggle), let go: back on it, the account
-    // button in Cancel's place.
+    // page now (its toggle, PageToggle), let go: back on it, the toggle
+    // in Cancel's place.
     await expect(sideDrawer(page).getByTestId("sheet-pages")).toHaveAttribute("data-page", "1");
     await showPage(page, 0);
-    await expect(row.getByTestId("account-button")).toBeVisible();
+    await expect(row.getByTestId("sheet-page-toggle")).toBeVisible();
   },
 );
 
@@ -127,12 +133,12 @@ test("the account button opens the account page itself, no menu first, and its c
   await account.getByTestId("console-page-close").click();
   await account.getByTestId("console-close").click();
   await expect(account).toHaveCount(0);
-  // Its button at the search's end, which comes back as the sheet comes down.
+  // Its button over the map, which comes back as the sheet comes down.
   await grabberTo(page, "half");
   await expect(page.getByTestId("account-button")).toBeVisible();
 });
 
-test("the search's Do runs a screen by its name, and the Traffic Nearby", async ({ page }) => {
+test("the search's Do runs a screen by its name, and Show Traffic", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
   await showSearch(page);
@@ -145,10 +151,14 @@ test("the search's Do runs a screen by its name, and the Traffic Nearby", async 
   await expect(page.getByTestId("console-sheet")).toHaveCount(0);
   await search.fill("traffic");
   await sideDrawer(page).getByTestId("search-do-traffic").click();
-  await expect(page).toHaveURL(/[?&]aircraft=1/);
-  // One search field (the one card rule, 2026-11-10): the traffic's is the one search's, scoped, not a second.
-  await expect(sideDrawer(page).getByTestId("aircraft-search")).toBeVisible();
+  // The traffic on the map, and no page of its own with a second field
+  // (the owner, 2026-11-14): the one search finds the airplanes it hears.
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("wingtip.preferences") ?? "{}").state?.traffic)).toBe(true);
+  await expect(page).not.toHaveURL(/[?&]aircraft=1/);
   await expect(sideDrawer(page).getByRole("search")).toHaveCount(1);
+  // On, it is not offered again.
+  await search.fill("traffic");
+  await expect(sideDrawer(page).getByTestId("search-do-traffic")).toHaveCount(0);
 });
 
 test("⌘K or Ctrl K focuses the one search from anywhere on a desktop", async ({ page }) => {

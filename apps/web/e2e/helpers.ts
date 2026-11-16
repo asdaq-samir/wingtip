@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from "@playwright/test";
 
 export { closeProfile, openProfile, pressDryRunStart } from "./dryRun";
 import { planFromSearch, showPage } from "./oneSearch";
-export { emptyPlan, firstRow, searchAirports, showPlan, showSearch, showTraffic } from "./oneSearch";
+export { emptyPlan, findAirplane, firstRow, searchAirports, showPlan, showSearch, trafficOnMap } from "./oneSearch";
 
 /**
  * What the browser suite's specs share: the two pages, the waits CI
@@ -51,9 +51,9 @@ export const frontSheet = (page: Page) => page.locator('[data-slot="map-panel"],
 
 /** The first row in sight: the sheet's, static over a card, at the pill too. */
 export async function showTabs(page: Page) {
-  // From the sheet at rest. The first row: the one search, scoped to the traffic or Nearest where one is up; or the developer's places.
+  // From the sheet at rest. The first row: the one search, or Nearest's field where its card is up; or the developer's places.
   await settled(sideDrawer(page));
-  const first = page.getByTestId("search-airports").or(page.getByTestId("aircraft-search")).or(page.getByTestId("nearest-from"));
+  const first = page.getByTestId("search-airports").or(page.getByTestId("nearest-from"));
   if (!(await first.or(page.getByTestId("dev-tabs")).first().isVisible())) await grabberTo(page, "half");
 }
 
@@ -190,11 +190,11 @@ async function panelFull(page: Page) {
   await settled(panel);
 }
 
-/** The console out, all the way up: the account button (in the title row,
- *  gone all the way up) opens the account page (Setup) itself. At the pill,
- *  where the developer's page rests, the page is under the pill's edge. */
+/** The console out, all the way up: the account button (over the map, on
+ *  either page, gone all the way up) opens the account page (Setup) itself.
+ *  At the pill, where the developer's page rests, the page is under the
+ *  pill's edge. */
 export async function openConsole(page: Page) {
-  await showPage(page, 0); // the account button is the Search page's (PageToggle)
   await showTabs(page);
   if (!(await page.getByTestId("account-button").isVisible())) await grabberTo(page, "half");
   await page.getByTestId("account-button").click();
@@ -202,18 +202,17 @@ export async function openConsole(page: Page) {
   await expandConsole(page);
 }
 
-/** Settings, You's row, all the way out, its Look tiles on top
- *  (QuickControls; the owner's option A, 2026-11-13). Escape closes it. */
+/** Settings, You's row, all the way out. Escape closes it. */
 export async function openSetup(page: Page) {
   await openConsole(page);
   await page.getByTestId("settings-row").click();
-  await expect(page.getByTestId("quick-controls").first()).toBeVisible();
+  await expect(page.getByTestId("settings-page").first()).toBeVisible();
   await expandConsole(page);
 }
 
-/** One of Settings' Look tiles set from its menu: its tile, then the item. */
-export async function pickControl(page: Page, control: "theme-select" | "sunlight-select", item: string) {
-  await page.getByTestId("settings-page").getByTestId(control).click();
+/** A look row set from its menu: Theme, Appearance and Sunlight in the Map card's Look (LookChoice). */
+export async function pickControl(page: Page, control: "theme-select" | "brand-select" | "sunlight-select", item: string) {
+  await page.getByTestId("map-look").getByTestId(control).click();
   await page.getByTestId(item).click();
 }
 
@@ -684,9 +683,9 @@ export async function consolePage(scope: Page | Locator, name: "Account" | "Guid
   }
 }
 
-/** A strip set to show one of its lists -- the flights' Saved or Recents, the traffic's Favorites,
- *  Recents or a question -- from the filter menu at its heading's right (StripSection). */
-export async function stripShows(page: Page, menu: "fpl-strip-shows" | "aircraft-question", item: string) {
+/** A strip set to show one of its lists -- the flights' Saved or Recents -- from the filter menu
+ *  at its heading's right (StripSection). */
+export async function stripShows(page: Page, menu: "fpl-strip-shows", item: string) {
   await sideDrawer(page).getByTestId(menu).click();
   await page.getByTestId(item).click();
 }

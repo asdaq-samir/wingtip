@@ -9,15 +9,17 @@ Profile before guessing. Every speed claim needs a before number, an after numbe
 
 ## Method
 - **Measure the production build,** not vite's dev server. The web-dev setup (`WEB_DIST_MOUNT`, docker-compose.yml) serves `apps/web/dist`, which `web-build` keeps current.
-- **Throttle the CPU to look like a phone:** CDP `Emulation.setCPUThrottlingRate` at 4 for interactions, 6 for a cold load. This Mac is a 2016 i7 in Docker, so at 4x it is slower than an iPhone. Compare runs with each other, not with a phone.
+- **Throttle the CPU to look like a phone:** CDP `Emulation.setCPUThrottlingRate` at 4 for interactions, 6 for a cold load. The factors were chosen on the 2016 i7 MacBook; the dev Mac has been an Apple-silicon Mac mini since 2026-11-05, with Docker given 12 CPUs; Chromium there has no GPU, so frame gaps and "(program)" include software compositing, and at 4x it may be faster than an iPhone. The factors have not been measured against a phone on it yet: compare runs with each other, never with a phone, until they are.
 - **Take the median of five or six runs.** Single samples of the same build spread by about 20%, which is enough to invent an improvement that isn't there.
-- **Keep it quiet:** nothing heavy beside the measurement, such as a chart re-render, an image build or the test suite.
+- **Keep it quiet:** nothing heavy beside the measurement, such as a chart re-render, an image build or the test suite: run it through `scripts/dev/one-at-a-time.sh --alone`, which waits until no other turn is held.
 
 ## Tools
 - **The trend:** the developer console's Speed page (System, then Speed) charts pilots' Core Web Vitals (75th percentile, by device) beside the nightly lab run, for 400 days (SpeedController). Look there first for when something got slower and at which commit. The lab is `e2e/speed-lab.spec.ts` (`SPEED_LAB=1`, phone project); run it the same way to compare a change locally.
 - **Bundle:**
   - Build into a throwaway directory, never into the `dist` the phone is being served: `docker run --rm -v "$PWD":/repo -w /repo/apps/web node:26-slim npx vite build --outDir /tmp/out`. It prints the chunk table.
-  - The first load was 1.12 MB of JavaScript in October 2026. Re-measure after anything that adds an import to `MapPage`, `PlanWorkspace` or what they reach.
+  - The first load was 1,041,552 bytes (97 chunks) on 2026-11-14 at b81400c15; CI's budget is 1,100,000 (ci.yml, first-load.mjs). Re-measure after anything that adds an import to `MapPage`, `PlanWorkspace` or what they reach.
+  - The engine's WebAssembly: `python3 scripts/ci/wasm_size.py` gives raw, gzip (budgeted) and Brotli (said only; it needs the brotli CLI or node, so run it in `node:26-slim` on the Mac). On 2026-11-14 it was 1,099,029 bytes, 492,654 gzipped, 397,838 in Brotli. For what is in it, build unstripped (`CARGO_PROFILE_WASM_STRIP=none`, a scratch `CARGO_TARGET_DIR`, `cargo build -p wingtip-wasm --target wasm32-unknown-unknown --profile wasm` in engine/) and read `twiggy top`. A crate function answering several rules that the web reaches without the wasm-only `inline(always)` carries every arm (engine/README.md); that was 195 KB on 2026-11-14.
+  - Bytes on the wire: every build writes a `.br` (Brotli at 11) and a `.gz` beside each file, and the gateway sends the `.br` to Safari, which asks for it. Sum the `.br` of what index.html names: 713,841 bytes on 2026-11-14, against 950,599 in gzip at 9 for the same files before the engine was trimmed.
   - To find what pulls a module in, walk the static imports (`from"./x.js"`) from `dist/index.html` and `MapPage`. For bytes per source module, decode a `--sourcemap` build's mappings (source-map-explorer fails on it).
 - **A tap's time:** use a scratch Playwright spec in the Playwright image (see the `checks` skill). Throttle, tap, and time until the result is visible. Add a `longtask` PerformanceObserver for main-thread blocking, and `browser.startTracing` when a trace is needed.
 - **React render cost:**

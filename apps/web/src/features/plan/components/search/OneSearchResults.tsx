@@ -2,6 +2,7 @@ import { Fragment, type ReactNode } from "react";
 import { BookOpenCheck, Diamond, LocateFixed, MoveUpRight, Navigation, Plane, Search, Siren, SquareArrowOutUpRight } from "lucide-react";
 import { cn } from "cn";
 import { AirportDetail } from "../../../../components/AirportResults";
+import { StatusLine } from "../../../../components/StatusBadge";
 import { CommandEmpty, CommandList, CommandShortcut } from "../../../../components/ui/command";
 import { TEXT } from "../../../../lib/text";
 import { PreviewCard, PreviewCardContent, PreviewCardTrigger } from "../../../../components/ui/preview-card";
@@ -122,12 +123,28 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
           <Matched text={a.title} typed={typed} />
         </span>
       }
-      detail={a.detail}
+      detail={
+        <>
+          {a.detail}
+          {/* Whether it is in the air, in place under its type as the live find answers. */}
+          {a.live && (
+            <span
+              role="status"
+              className={cn("block truncate", a.live.problem && "text-destructive-ink")}
+              data-testid="search-airplane-live"
+            >
+              <StatusLine words={a.live} />
+            </span>
+          )}
+        </>
+      }
       onSelect={a.pick}
       testId="search-airplane"
       actions={
         top && a.fly ? (
           <QuickAction label="Fly This Airplane" onClick={() => model.flyAirplane(a)} testId="search-top-fly-airplane" />
+        ) : a.track ? (
+          <QuickAction label="Track" onClick={a.track} testId="search-airplane-track" wide />
         ) : undefined
       }
     />

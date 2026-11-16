@@ -49,7 +49,11 @@ export const CHART = {
   skyHorizonNight: "#26354a",
   centreline: "#ffffff",
   glidepath: "#00b4e6",
+  airspaceFloorLow: "#0a141c",
+  airspaceFloorHigh: "#ffffff",
   obstacle: "#7a1f1f",
+  mapGround: "#f1f5f9",
+  mapGroundNight: "#0f172a",
 };
 
 /** The FAA's flight categories (AIM 7-1-7). */
@@ -102,6 +106,19 @@ export const BADGE = {
   stopFood: "#dc2626",
   stopRepair: "#0f766e",
   stopTraining: "#0369a1",
+  home: "#0d9488",
+  airplane: "#0284c7",
+  air: "#0f766e",
+  statusActive: "#b42318",
+  statusLater: "#b45309",
+  statusCold: "#6b7280",
+  statusClosed: "#991b1b",
+  statusOutOfService: "#9a3412",
+  statusPrivate: "#475569",
+  statusMilitary: "#4d7c0f",
+  statusJoint: "#3f6212",
+  statusEmergency: "#dc2626",
+  statusGround: "#52525b",
 };
 
 export const WEATHER = {
@@ -192,7 +209,9 @@ export const TYPE_CLASS = {
   note: "text-(length:--type-note) leading-(--lead-note)",
   tab: "text-(length:--type-tab) leading-(--lead-tab)",
   tabBar: "text-(length:--type-tab-bar) leading-(--lead-tab-bar)",
+  badge: "text-(length:--type-badge) leading-(--lead-badge)",
   caption: "text-(length:--type-caption) leading-(--lead-caption)",
+  chip: "text-xs pointer-coarse:text-[min(0.8125rem,14px)]",
   label: "font-display text-(length:--type-label) leading-(--lead-label) font-semibold uppercase native:normal-case tracking-[0.1em] native:tracking-normal",
   figure: "text-(length:--type-figure) leading-(--lead-figure) font-bold tabular-nums",
   word: "font-display font-semibold uppercase native:normal-case tracking-[0.08em] native:tracking-normal",
@@ -210,7 +229,9 @@ export const TYPE_POINTS = {
   note: 13,
   tab: 13,
   tabBar: 12,
+  badge: 12,
   caption: 11,
+  chip: 13,
   label: 13,
   figure: 26,
 } as const;
@@ -241,7 +262,7 @@ export const HAPTIC = {
 /** The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees. */
 export const MAP = {
   pitchOpen: 50,
-  pitchMax: 75,
+  pitchMax: 85,
   pitchFlatMax: 60,
   zoomStationClose: 10,
   zoomStationAlways: 7,
@@ -249,6 +270,11 @@ export const MAP = {
   zoomBarbFull: 9,
   zoomWorldWind: 4,
   zoomStreakNear: 7,
+  airspaceShadeMix: 0.45,
+  airspaceShadeTopFt: 10000,
+  airspaceFaded: 0.35,
+  airspaceHeld: 1.8,
+  airspaceLabelFaded: 0.6,
 } as const;
 
 /** A colour-ramp stop: the value in the field's unit and its colour as [r, g, b, 255ths], as weatherlayers-gl takes it. */

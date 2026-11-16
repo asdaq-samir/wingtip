@@ -1,0 +1,315 @@
+{
+  "about": "When a part-time surface area is in effect (the engine's surface_hours), from NASR's CLS_ARSP AIRSPACE_HRS, for the airport card's Airspace fact and its Airspace hours, held by the engine (engine/facade/tests/surface_hours.rs) and the web (features/plan/components/place/surfaceHoursWords.test.ts). Local minutes from midnight; AIM 3-2-5a1, the Chart Supplement legend's Time Conversion.",
+  "cases": [
+    {
+      "about": "KPWK on a Saturday at noon, CST: Class D until 22:00, then E (the Chart Supplement's AIRSPACE line)",
+      "input": {
+        "hours": "CLASS D SVC 0600-2200 MON-FRI, 0700-2200 SAT-SUN; OTHER TIMES CLASS E",
+        "year": 2026,
+        "month": 11,
+        "day": 14,
+        "weekday": 5,
+        "minute": 720,
+        "utc_offset_min": -360,
+        "dst": false
+      },
+      "answer": {
+        "known": true,
+        "other": "E",
+        "days": [
+          {
+            "weekday": 5,
+            "spans": [
+              {
+                "from": 420,
+                "to": 1320
+              }
+            ]
+          },
+          {
+            "weekday": 6,
+            "spans": [
+              {
+                "from": 420,
+                "to": 1320
+              }
+            ]
+          },
+          {
+            "weekday": 0,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1320
+              }
+            ]
+          },
+          {
+            "weekday": 1,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1320
+              }
+            ]
+          },
+          {
+            "weekday": 2,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1320
+              }
+            ]
+          },
+          {
+            "weekday": 3,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1320
+              }
+            ]
+          },
+          {
+            "weekday": 4,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1320
+              }
+            ]
+          }
+        ],
+        "in_force": true,
+        "change": {
+          "at": 1320,
+          "next_day": false
+        }
+      }
+    },
+    {
+      "about": "KPWK on a Saturday at 23:00: E now, Class D from 07:00 Sunday",
+      "input": {
+        "hours": "CLASS D SVC 0600-2200 MON-FRI, 0700-2200 SAT-SUN; OTHER TIMES CLASS E",
+        "year": 2026,
+        "month": 11,
+        "day": 14,
+        "weekday": 5,
+        "minute": 1380,
+        "utc_offset_min": -360,
+        "dst": false
+      },
+      "answer": {
+        "known": true,
+        "other": "E",
+        "days": [
+          {
+            "weekday": 5,
+            "spans": [
+              {
+                "from": 420,
+                "to": 1320
+              }
+            ]
+          },
+          {
+            "weekday": 6,
+            "spans": [
+              {
+                "from": 420,
+                "to": 1320
+              }
+            ]
+          },
+          {
+            "weekday": 0,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1320
+              }
+            ]
+          },
+          {
+            "weekday": 1,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1320
+              }
+            ]
+          },
+          {
+            "weekday": 2,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1320
+              }
+            ]
+          },
+          {
+            "weekday": 3,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1320
+              }
+            ]
+          },
+          {
+            "weekday": 4,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1320
+              }
+            ]
+          }
+        ],
+        "in_force": false,
+        "change": {
+          "at": 420,
+          "next_day": true
+        }
+      }
+    },
+    {
+      "about": "KOSH's seasons on 31 October at 21:30 CDT: 06:00-22:00 to the 31st, 06:00-21:00 from 1 November",
+      "input": {
+        "hours": "CLASS D SVC 16 MAR-31 OCT 0600-2200, 1 NOV-15 MAR 0600-2100; OTHER TIMES CLASS G",
+        "year": 2026,
+        "month": 10,
+        "day": 31,
+        "weekday": 5,
+        "minute": 1290,
+        "utc_offset_min": -300,
+        "dst": true
+      },
+      "answer": {
+        "known": true,
+        "other": "G",
+        "days": [
+          {
+            "weekday": 5,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1320
+              }
+            ]
+          },
+          {
+            "weekday": 6,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1260
+              }
+            ]
+          },
+          {
+            "weekday": 0,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1260
+              }
+            ]
+          },
+          {
+            "weekday": 1,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1260
+              }
+            ]
+          },
+          {
+            "weekday": 2,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1260
+              }
+            ]
+          },
+          {
+            "weekday": 3,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1260
+              }
+            ]
+          },
+          {
+            "weekday": 4,
+            "spans": [
+              {
+                "from": 360,
+                "to": 1260
+              }
+            ]
+          }
+        ],
+        "in_force": true,
+        "change": {
+          "at": 1320,
+          "next_day": false
+        }
+      }
+    },
+    {
+      "about": "Closed on holidays, which the engine cannot know: not known, the class at other times still G",
+      "input": {
+        "hours": "CLASS D SVC 0600-2200 MON-FRI, CLSD HOL; OTHER TIMES CLASS G",
+        "year": 2026,
+        "month": 11,
+        "day": 16,
+        "weekday": 0,
+        "minute": 720,
+        "utc_offset_min": -360,
+        "dst": false
+      },
+      "answer": {
+        "known": false,
+        "other": "G",
+        "days": [
+          {
+            "weekday": 0,
+            "spans": null
+          },
+          {
+            "weekday": 1,
+            "spans": null
+          },
+          {
+            "weekday": 2,
+            "spans": null
+          },
+          {
+            "weekday": 3,
+            "spans": null
+          },
+          {
+            "weekday": 4,
+            "spans": null
+          },
+          {
+            "weekday": 5,
+            "spans": null
+          },
+          {
+            "weekday": 6,
+            "spans": null
+          }
+        ],
+        "in_force": null,
+        "change": null
+      }
+    }
+  ]
+}

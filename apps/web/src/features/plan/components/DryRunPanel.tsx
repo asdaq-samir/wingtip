@@ -13,7 +13,7 @@ import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, usePastFlig
 import { toggleReplay } from "../../replay";
 import { routeProfileQuery } from "../../../lib/queryClient";
 import { TEXT } from "../../../lib/text";
-import { altFt, feet } from "../../../lib/format";
+import { altFt, feet, wholeNm } from "../../../lib/format";
 import FlightLine from "./FlightLine";
 import { dryRunFlown, runNmAt, type DryRun, type Flown } from "./navlog/dryRun";
 import type { RouteEnds } from "./navlog/rows";
@@ -232,7 +232,7 @@ export function DryRunControls({
             "aria-valuetext":
               nowNm === null
                 ? undefined
-                : `${Math.round(nowNm)} nm${here ? `, ${altFt(here.alt_ft)} feet, ${here.gs_kt != null ? `${Math.round(here.gs_kt)} knots` : "no ground speed"}` : ""}`,
+                : `${wholeNm(nowNm)}${here ? `, ${altFt(here.alt_ft)} feet, ${here.gs_kt != null ? `${Math.round(here.gs_kt)} knots` : "no ground speed"}` : ""}`,
             className: "opacity-0",
           }}
           data-testid="dry-run-scrub"

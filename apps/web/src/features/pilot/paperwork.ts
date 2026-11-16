@@ -48,3 +48,7 @@ export function dueFinding(due: Pick<Due, "daysLeft" | "hoursLeft">): Finding {
 export function dueTitle(due: Pick<Due, "title" | "tailNumber">): string {
   return due.tailNumber ? `${due.tailNumber} · ${due.title}` : due.title;
 }
+
+/** A figure's key as a test id's words, kebab-case as every other id is
+ *  ("annualOn" is "annual-on"; the web audit's WEB-34). */
+export const kebab = (key: string) => key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);

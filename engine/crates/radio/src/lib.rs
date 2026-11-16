@@ -15,6 +15,8 @@
 //!   into its figures;
 //! - datis: a digital ATIS as the tower's data link sends it, read into
 //!   the same figures (its weather by wingtip-weather's METAR reader);
+//! - datis_remarks: a D-ATIS's remarks as the airport card lists them,
+//!   an item a sentence in the FAA's words, like runways folded into one;
 //! - mayday: the distress call in AIM 6-3-2's order, the code (6-2-2) and
 //!   the frequencies to call on;
 //! - guidance: what to do in an emergency with no airplane picked, the
@@ -26,6 +28,7 @@ pub mod calls;
 pub mod callsign;
 pub mod clearance;
 pub mod datis;
+pub mod datis_remarks;
 pub mod guidance;
 pub mod instruction;
 pub mod mayday;

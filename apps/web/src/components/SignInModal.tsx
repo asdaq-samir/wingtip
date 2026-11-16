@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Mail } from "lucide-react";
@@ -87,13 +88,12 @@ export default function SignInModal({
       description="Save your airplanes and filed flights to your own account."
       trigger={
         inline ? (
-          <button
-            type="button"
+          <BaseButton
             data-testid="sign-in-inline"
             className="relative font-semibold text-tint outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring"
           >
             Sign in
-          </button>
+          </BaseButton>
         ) : hero ? (
           <Button
             variant="link"

@@ -41,6 +41,12 @@ warnings = "deny"
 [profile.release]
 lto = true
 codegen-units = 1
+# Rust's default, said aloud because the phones depend on it: the iPhone's
+# and Android's libraries are built with this profile, and their every
+# call catches a panic and answers it as a refusal (bindings/ffi's
+# `guarded`), which only unwinding allows; with "abort" one bug in one
+# rule would end the app.
+panic = "unwind"
 
 # CI's tests build this rather than the release profile: a quicker
 # compile, the same answers.

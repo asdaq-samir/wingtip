@@ -182,7 +182,7 @@ src/
   index.css                The theme's tokens, Sunlight's high-contrast rules, print rules
   components/              Shared UI, one level above any single page
     IconButton.tsx           Every icon-only button: a stock shadcn Button + Tooltip + accessible name, one size
-    MapHeader.tsx, RouteForm.tsx, RouteInputGroup.tsx, AirportPicker.tsx   The route form both pages share
+    MapHeader.tsx, RouteForm.tsx, AirportPicker.tsx   The route form both pages share
     MapControls.tsx          The map's own corner stack: the layers popover, the zoom toggle, full screen
     ChartLayers.tsx           The layers popover's contents: base chart, TAC pin, Class B, marker zoom
     ConsoleTabs.tsx, DevSwitch.tsx, ThemeToggle.tsx, FullscreenButton.tsx, KeepRoute.tsx, SelectableRows.tsx

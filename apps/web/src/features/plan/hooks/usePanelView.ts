@@ -15,12 +15,13 @@ import { riseToSee } from "./panelNow";
  * route the workspace plans (PlanWorkspace).
  */
 
-/** The sheet's three places under the search: the plan (the route, its
- *  figures and its nav log, the sheet's main content); the search's own
- *  page (nothing typed: the flight, Favorites, Recents and Nearest; typed:
- *  the results, grouped); and the traffic about, opened from the search's
- *  Do or an airplane tapped on the map. */
-export type PanelView = "plan" | "search" | "traffic";
+/** The sheet's two places under the search: the plan (the route, its
+ *  figures and its nav log, the sheet's main content) and the search's own
+ *  page (nothing typed: Nearest, Favorites and Recents, airports' and
+ *  airplanes'; typed: the results, grouped). The traffic's page that was a
+ *  third, with a field of its own, went for the one search, which finds
+ *  airplanes too (the owner, 2026-11-14: "Do we have older dead code?"). */
+export type PanelView = "plan" | "search";
 
 /** The address's keys of what is open over the sheet: an airport's card,
  *  the airspace over a point held, an airplane, its past flight, Nearest's
@@ -35,8 +36,8 @@ export type PanelList = (typeof PANEL_LISTS)[number];
 /**
  * The cards the address holds, so a link or Back lands on them: an
  * airport's (`place`), the airspace over a point held (`at`), Nearest's list
- * (`near`) and the place it is from (`nearAt`, `nearName`), Aircraft's
- * list (`aircraft`), an airplane tracked (`flight`) and one of its past
+ * (`near`) and the place it is from (`nearAt`, `nearName`), an airplane
+ * tracked (`flight`) and one of its past
  * flights (`past`) -- and the ways to open and put away the airplane's
  * and its past flight's; the airport's is the workspace's (selectPlace),
  * which the route's Approaches ask for too.
@@ -47,7 +48,7 @@ export function useAddressCards(address: Address, setAddress: SetAddress, setPan
   // Setup, and a link to it lands on it, at the owner's pick ("Yes to
   // both": lists keep their place as cards do), where four were the
   // workspace's own state, put away at any tab picked, and one the
-  // Aircraft card's. A reload starts clean, cards and lists alike
+  // traffic page's. A reload starts clean, cards and lists alike
   // (features/shell/freshLoad).
   const list = address.list;
   const openList = useCallback(
@@ -77,11 +78,8 @@ export function useAddressCards(address: Address, setAddress: SetAddress, setPan
   // them, at the pilot's ask. An airport opened from it
   // is a layer over it, its close back to the list.
   const nearOpen = address.near;
-  // Or the aircraft about and a search for one (AircraftCard), the tab
-  // bar's Aircraft: `?aircraft=1`; and one airplane tracked
-  // (FlightCard), by its ICAO address: `?flight=a0b7d8` -- a layer over
-  // the list where it was picked from it, as an airport's over Nearest.
-  const aircraftOpen = address.aircraft;
+  // Or one airplane tracked (FlightCard), by its ICAO address:
+  // `?flight=a0b7d8`, a card over the place it was opened from.
   const flight = address.flight;
   // And one of its past flights (PastFlightCard), by its takeoff's time:
   // `?past=1791723840` -- a layer over the airplane's card, its close back
@@ -124,41 +122,16 @@ export function useAddressCards(address: Address, setAddress: SetAddress, setPan
   useEffect(() => {
     track(flight);
   }, [flight]);
-  // Each put back on its own: `pick` changes with the panel's setter, and
-  // putting `listing` back with it hid the traffic while the list was up.
-  // Not while Setup is up over the Airplane tab: the list is out of sight,
-  // and the traffic asked for it every few seconds with it (lib/shown).
-  const setupUp = useConsoleOpen((st) => st.open);
-  const listing = aircraftOpen && !setupUp;
-  useEffect(() => {
-    useTracking.setState({ listing });
-    return () => useTracking.setState({ listing: false });
-  }, [listing]);
   useEffect(() => {
     useTracking.setState({ pick: (hex, plane) => selectFlight(hex, plane) });
     return () => useTracking.setState({ pick: null });
   }, [selectFlight]);
-  return {
-    place,
-    heldPoint,
-    nearOpen,
-    aircraftOpen,
-    flight,
-    past,
-    nearFrom,
-    setNearFrom,
-    selectFlight,
-    selectPast,
-    list,
-    openList,
-    closeList,
-  };
+  return { place, heldPoint, nearOpen, flight, past, nearFrom, setNearFrom, selectFlight, selectPast, list, openList, closeList };
 }
 
 /**
- * The place up under the search and the ways to change it. The traffic
- * and an airplane's card are the address's (`aircraft`, `flight`), and so
- * are the search's lists in full (`list`, `saved`, `near`), so a link or
+ * The place up under the search and the ways to change it. An airplane's
+ * card is the address's (`flight`), and so are the search's lists in full (`list`, `saved`, `near`), so a link or
  * Back lands on them; the plan and the search are picked. With a route the
  * plan is up, the sheet's main content, and a new route -- Fly Here, a
  * link, one typed -- brings it back to the front; with none, the search's
@@ -183,7 +156,7 @@ export function usePanelView({
   address: Address;
   setAddress: SetAddress;
 }) {
-  const { place, heldPoint, flight, past, aircraftOpen, nearOpen, list } = cards;
+  const { place, heldPoint, flight, past, nearOpen, list } = cards;
   const savedOpen = address.saved;
   const [viewPick, setViewPick] = useState<PanelView | null>(null);
   const [routeSeen, setRouteSeen] = useState(route);
@@ -202,21 +175,19 @@ export function usePanelView({
   });
   // Once per card opened, not as the page opens over one already open.
   useLayoutEffect(() => closeConsole(), [opened]);
-  // The traffic by the address; the search's lists in full are the
-  // search's; else the place picked, the plan where there is a route and
-  // the search's page where there is none.
-  const view: PanelView =
-    flight || aircraftOpen
-      ? "traffic"
-      : nearOpen || savedOpen || list === "favorites" || list === "recents" || list === "routes"
-        ? "search"
-        : (viewPick ?? (hasRoute ? "plan" : "search"));
+  // An old link to the traffic's page (`?aircraft=1`) lands on the search,
+  // the flag let go once read.
+  const oldTraffic = address.aircraft;
+  if (oldTraffic && viewPick !== "search") setViewPick("search");
+  useEffect(() => {
+    if (oldTraffic) void setAddress({ aircraft: null });
+  }, [oldTraffic, setAddress]);
+  // The search's lists in full are the search's; else the place picked, the
+  // plan where there is a route and the search's page where there is none.
+  // An airplane's card is over whichever is up, as an airport's is.
+  const view: PanelView = oldTraffic || nearOpen || savedOpen || list !== null ? "search" : (viewPick ?? (hasRoute ? "plan" : "search"));
 
   const keptCards = useRef<Partial<Record<PanelView, AddressChange>>>({});
-  // What the search's page was when it was left, the traffic or the search
-  // itself: picked again by its tab, it is that again (the sheet audit, 2026-11-12:
-  // the traffic came back as the plain search).
-  const firstPage = useRef<PanelView>("search");
   const keptReplay = useRef<{ hex: string; id: number; at: number | null; playing: boolean } | null>(null);
   // The address's past flight drawn on the map (features/plan/map/pastFlight), and
   // let go with its card; back on its place, the replay where it was,
@@ -230,14 +201,12 @@ export function usePanelView({
     } else clearPastFlight();
   }, [flight, past]);
 
-  // A place picked -- the flight's card, the search focused, the traffic
-  // from the search's Do -- the card open over the one it was on kept for
+  // A place picked -- the flight's card, the search focused -- the card open over the one it was on kept for
   // it and the one kept for the place picked opened again. The place up
   // picked again puts its card away. At the height the panel is.
   const pickView = useCallback(
     (next: PanelView, forget = false) => {
       const leaving = next !== view;
-      if (leaving && view !== "plan") firstPage.current = view;
       // The page toggle's turn forgets the cards it closed (PageToggle):
       // none comes back as its page is turned to again.
       if (forget) keptCards.current = {};
@@ -254,7 +223,7 @@ export function usePanelView({
       // once, not in a router's transition after it, where the sheet drew
       // the place the address still had for a frame.
       setViewPick(next);
-      void setAddress({ ...cleared, aircraft: next === "traffic", ...back });
+      void setAddress({ ...cleared, ...back });
     },
     [setAddress, address, view, flight, past],
   );
@@ -263,10 +232,10 @@ export function usePanelView({
   // route cleared) come with an address change -- a card put away, a list
   // opened -- which nuqs makes at once, not in a transition: the pick at
   // once too, so the two land in one commit.
-  // A page of the sheet picked (its toggle, PageToggle): FPL's
-  // the plan, the first the search's page as it was left; the cards over
-  // either closed by the toggle and not kept.
-  const pickPage = useCallback((page: number) => pickView(page ? "plan" : firstPage.current, true), [pickView]);
+  // A page of the sheet picked (its toggle, PageToggle): FPL's the plan,
+  // the first the search's page; the cards over either closed by the
+  // toggle and not kept.
+  const pickPage = useCallback((page: number) => pickView(page ? "plan" : "search", true), [pickView]);
   const pickLater = useCallback((next: PanelView) => setViewPick(next), []);
   // "Pick an airplane" asked from a screen that needs one (lib/pickAirplane).
   usePickAirplaneRequest(pickView);

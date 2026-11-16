@@ -9,8 +9,11 @@ Python, Rust, Swift, Kotlin, Java -- is at most BUDGET lines, except those in
 scripts/ci/file_sizes_allow.txt, each listed at the lines it had when it was
 listed, which it may not pass. A new file over the budget, or a listed one
 that grew, fails: split it (or take what grew out). A listed file that
-shrank is said, and `--write` lowers its count (and drops it once it is
-within the budget), so the list only shrinks. With `--base REF` (CI passes
+shrank fails too, until `--write` lowers its count (and drops it once it is
+within the budget), so the list only shrinks and a file cannot grow back
+unseen into room it gave up: it was a hint, and 20 allowances sat up to 130
+lines above their files (the audit of 2026-11-14, CODE-43). The edit-time
+hook (files given) only says so. With `--base REF` (CI passes
 main's), an entry added to the list or raised against REF's list fails too:
 the list is not a way round the budget. With `--base`, a file that is new
 against REF is held to NEW_BUDGET (300 lines), the owner's target; the
@@ -138,10 +141,17 @@ def main(argv: list) -> int:
                     f"take what grew into a file of its own",
                 )
             )
-    for path, count in sorted(allowed.items()):
-        n = sizes.get(path, 0)
-        if n < count:
-            notes.append(f"{path}: {n} lines now, {count} allowed: `python3 scripts/ci/file_sizes.py --write` lowers it")
+    shrank = [(path, n, count, "") for path, count in sorted(allowed.items()) if (n := sizes.get(path, 0)) < count] + [
+        (path, sizes[path], count, " (file_sizes_new_allow.txt)")
+        for path, count in sorted(new_allowed.items())
+        if path in sizes and sizes[path] < count
+    ]
+    for path, n, count, which in shrank:
+        why = f"{n} lines now, {count} allowed{which}: run `python3 scripts/ci/file_sizes.py --write` and commit the lower count"
+        if given:
+            notes.append(f"{path}: {why}")
+        else:
+            errors.append((path, why))
 
     # A new file: the owner's 300. Against REF where one is given, else (the
     # edit-time hook) against the last commit, so a file not yet committed

@@ -5,8 +5,8 @@ from typing import Literal
 from pydantic import BaseModel
 
 from .airport_lights import LightingNote, LightingSystem
-from .airport_record import AirportRecord
-from .common import Frequency, Metar, Runway, TrafficPattern
+from .airport_record import AirportDetails, AirportRecord
+from .field import Frequency, Metar, Runway, SurfaceAirspace, TrafficPattern
 from .plates import ApproachFacts
 
 
@@ -304,12 +304,10 @@ class ChartPages(BaseModel):
     pages: list[ChartPage]
 
 
-class AirportPlace(AirportRecord):
-    """One airport the way the map's card shows it: its name and place,
-    the class of the airspace over it, whether it has a tower, its
-    runways and radio, and the weather there now. `metar` is None for a
-    field with no reporting station, and `weather_unavailable` says the
-    weather service could not be asked at all -- not the same thing."""
+class AirportPlace(AirportRecord, AirportDetails):
+    """One airport the way the map's card shows it: its name and place, the class of the airspace at
+    its surface, its tower, runways and radio, and the weather now. `metar` is None for a field with
+    no reporting station; `weather_unavailable`, the weather service could not be asked at all."""
 
     ident: str
     name: str
@@ -320,6 +318,7 @@ class AirportPlace(AirportRecord):
     elevation_ft: float | None = None
     kind: Literal["large", "medium", "small", "other"]
     airspace_class: Literal["B", "C", "D", "E", "G"] | None = None
+    surface_airspace: SurfaceAirspace | None = None  # the same, with its part-time hours
     #: A field the armed services own, as AirportPin's.
     military: Literal["military", "joint"] | None = None
     #: Closed to the public, as AirportPin's (ask the owner first); and where
@@ -359,11 +358,11 @@ class AirportPlace(AirportRecord):
     # (faa_data.airport_contact): the manager's, else the owner's; None if none.
     phone: str | None = None
     address: str | None = None
-    # The FAA's airport diagram and Chart Supplement page for the current
-    # editions (wingtip.publications); None where the field has none. The
-    # diagram's picture is /api/airport-diagram/{airport_diagram_cycle}/{ident}.png.
+    # The FAA's airport diagram and Chart Supplement page for the current editions (wingtip.publications); None where the field
+    # has none. Its picture is /api/airport-diagram/{airport_diagram_cycle}/{ident}.png, the runways' .../runways/{ident}.png (WEB-41).
     airport_diagram_url: str | None = None
     airport_diagram_cycle: str | None = None
+    airport_diagram_runways: bool = True
     chart_supplement_url: str | None = None
     # And all of the field's charts in this cycle's d-TPP, the diagram among
     # them: what the card's Diagrams tab lists.
@@ -411,12 +410,10 @@ class AirportPhotos(BaseModel):
 
 
 class AirportServices(BaseModel):
-    """What a field offers a pilot who lands there: from its Chart
-    Supplement entry (NASR's APT_BASE and its remarks) the fuel, fees,
-    parking, repair and oxygen, and from Overture Maps (wingtip.nearby) the
-    places to eat, sleep and hire a car within five miles.
-    `nearby_unavailable` where Overture could not be read: not the same
-    as nothing near."""
+    """What a field offers a pilot who lands there: from its Chart Supplement entry (NASR's APT_BASE and
+    its remarks) the fuel, fees, parking, repair and oxygen, and from Overture Maps (wingtip.nearby) the
+    places to eat, sleep and hire a car within five miles and the airport's own website (its listing on
+    the field). `nearby_unavailable` where Overture could not be read: not the same as nothing near."""
 
     ident: str
     fuel_types: list[str] = []
@@ -436,6 +433,7 @@ class AirportServices(BaseModel):
     food: list[NearbyPlace] = []
     lodging: list[NearbyPlace] = []
     cars: list[NearbyPlace] = []
+    website: str | None = None
     nearby_unavailable: bool = False
 
 

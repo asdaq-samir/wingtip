@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import { cn } from "cn";
 import { OTPField } from "@base-ui/react/otp-field";
 import { TV_CODE_LENGTH } from "./tvCode";
+import { TEXT } from "../../lib/text";
 
 /** Upper case, as the TV shows it: the same however often it is applied,
  *  as OTP Field asks of a normaliser. */
@@ -45,7 +46,7 @@ export default function TvCodeField({
       {Array.from({ length: TV_CODE_LENGTH }, (_, i) => (
         <Fragment key={i}>
           {i === TV_CODE_LENGTH / 2 && (
-            <span aria-hidden="true" className="px-0.5 text-xl text-muted-foreground">
+            <span aria-hidden="true" className={cn("px-0.5 text-muted-foreground", TEXT.heading)}>
               -
             </span>
           )}
@@ -56,8 +57,9 @@ export default function TvCodeField({
             autoCorrect="off"
             spellCheck={false}
             className={cn(
-              "h-11 max-w-10 min-w-0 flex-1 rounded-md border border-input bg-transparent text-center font-mono text-xl font-semibold uppercase outline-none",
+              "h-11 max-w-10 min-w-0 flex-1 rounded-md border border-input bg-transparent text-center font-mono font-semibold uppercase outline-none",
               "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring aria-invalid:border-destructive dark:bg-input/30",
+              TEXT.heading,
             )}
           />
         </Fragment>

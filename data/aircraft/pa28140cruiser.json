@@ -8,5 +8,5 @@
   "cruise_power_pct": 75,
   "cruise_altitude_ft": 7000,
   "usable_fuel_gal": 48,
-  "source": "Piper Cherokee Cruiser/Flite Liner Pilot's Operating Manual (761 555, 1973), general specifications: service ceiling 10,950 ft, climb 631 fpm, 75% best economy at 7000 ft 126 mph TAS (109 kt), 8.4 GPH, 48 gal usable. No climb speed or burn and no demonstrated crosswind in it: the planner's climb defaults stand. For a PA-28-140 of 1973 on (the Cruiser and Flite Liner)"
+  "source": "Piper Cherokee Cruiser/Flite Liner Pilot's Operating Manual (761 555, 1973), general specifications: service ceiling 10,950 ft, climb 631 fpm, 75% best economy at 7000 ft 126 mph TAS (109 kt), 8.4 GPH, 48 gal usable. No climb speed, no time, fuel and distance to climb and no demonstrated crosswind in it: the climb's fuel is shown as not known and no economical plan is made, as no other airplane's figure is assumed. For a PA-28-140 of 1973 on (the Cruiser and Flite Liner)"
 }

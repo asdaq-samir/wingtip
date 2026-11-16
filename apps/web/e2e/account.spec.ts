@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { closeConsole, library, openConsole, controlsInSight } from "./helpers";
+import { closeConsole, library, openConsole, controlsInSight, consoleSheet } from "./helpers";
 import { NO_OWN_FIGURES } from "./airplaneMocks";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
@@ -30,8 +30,6 @@ function held() {
   });
   return { gate, release: () => release() };
 }
-
-const consoleSheet = (page: Page) => page.getByTestId("console-sheet");
 
 async function openPlannerConsole(page: Page) {
   await page.goto("/app/plan");

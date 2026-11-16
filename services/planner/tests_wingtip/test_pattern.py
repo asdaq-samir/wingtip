@@ -1,6 +1,6 @@
 import pytest
 
-from wingtip import faa_data, pattern
+from wingtip import faa_data, pattern, remarks
 
 RWY_END = (
     '"ARPT_ID","RWY_ID","RWY_END_ID","RIGHT_HAND_TRAFFIC_PAT_FLAG","LAT_DECIMAL","LONG_DECIMAL"\n'
@@ -14,6 +14,9 @@ RWY_END = (
 def _files(tmp_path, apt_base="ARPT_ID,ICAO_ID,TPA\nUGN,KUGN,\nRFD,KRFD,800\n"):
     (tmp_path / "APT_RWY_END.csv").write_text(RWY_END)
     (tmp_path / "APT_BASE.csv").write_text(apt_base)
+    # NASR's TPA remark: the heights for other aircraft than APT_BASE's TPA.
+    (tmp_path / "APT_RMK.csv").write_text('ARPT_ID,REF_COL_NAME,REMARK\nRFD,TPA,"TPA FOR LARGE ACFT 1300 FT AGL."\n')
+    remarks._remarks_of.cache_clear()
     pattern._ends_of.cache_clear()
     faa_data._patterns_of.cache_clear()
     faa_data._read_apt_base_cached.cache_clear()
@@ -42,8 +45,12 @@ def test_each_runway_end_carries_its_heading_and_its_side(tmp_path):
 
 def test_the_pattern_is_the_faas_where_published_and_1000_ft_where_not(tmp_path):
     _files(tmp_path)
-    assert pattern.pattern_at("KRFD", 742.0, tmp_path) == {"agl_ft": 800.0, "altitude_ft": 1542, "flown_ft": 1500, "published": True}
-    assert pattern.pattern_at("UGN", 727.0, tmp_path) == {"agl_ft": 1000.0, "altitude_ft": 1727, "flown_ft": 1700, "published": False}
+    rfd = pattern.pattern_at("KRFD", 742.0, tmp_path)
+    assert {k: v for k, v in rfd.items() if k != "remarks"} == {"agl_ft": 800.0, "altitude_ft": 1542, "flown_ft": 1500, "published": True}
+    # Its remark in words, the large aircraft's height kept.
+    assert len(rfd["remarks"]) == 1 and "1300" in rfd["remarks"][0]
+    ugn = {"agl_ft": 1000.0, "altitude_ft": 1727, "flown_ft": 1700, "published": False, "remarks": []}
+    assert pattern.pattern_at("UGN", 727.0, tmp_path) == ugn
     assert pattern.pattern_at("UGN", None, tmp_path)["altitude_ft"] is None
 
 

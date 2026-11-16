@@ -41,7 +41,8 @@ import re
 import threading
 import time
 
-from wingtip import datis, departures, filed_routes, flow, geo, itws, notams, rvr, saa, traffic
+from apscheduler.schedulers.base import BaseScheduler
+from wingtip import datis, departures, filed_routes, flow, geo, itws, notams, rvr, saa, schedule, traffic
 
 from .radar_tracks import tracks
 from .settings import get_settings
@@ -391,21 +392,20 @@ def _run(feed: str, stop: threading.Event) -> None:
         pause = min(RETRY_MOST_S, pause * 2)
 
 
-def _want(stop: threading.Event) -> None:
-    """What of the radar is wanted, read from the store each second."""
-    while not stop.is_set():
-        try:
-            WANTED[0] = traffic.radar_wanted()
-        except Exception:  # noqa: BLE001 -- the store busy: the last answer stands
-            log.warning("What the map looks at was not read", exc_info=True)
-        stop.wait(WANTED_EVERY_S)
+def _want() -> None:
+    """What of the radar is wanted, read from the store: a job each WANTED_EVERY_S."""
+    try:
+        WANTED[0] = traffic.radar_wanted()
+    except Exception:  # noqa: BLE001 -- the store busy: the last answer stands, a warning where the scheduler's would be a traceback a second
+        log.warning("What the map looks at was not read", exc_info=True)
 
 
-def start(stop: threading.Event) -> list[str]:
-    """Each configured feed read on a thread of its own; the feeds started."""
+def start(stop: threading.Event, on: BaseScheduler) -> list[str]:
+    """Each configured feed read on a thread of its own, and what of the
+    radar is wanted a job on `on`; the feeds started."""
     feeds = [feed for feed in FEEDS if configured(feed)]
     if "STDDS" in feeds:
-        threading.Thread(target=_want, args=(stop,), name="swim-wanted", daemon=True).start()
+        schedule.every(on, WANTED_EVERY_S, _want, name="swim-wanted")
     for feed in feeds:
         threading.Thread(target=_run, args=(feed, stop), name=f"swim-{feed.lower()}", daemon=True).start()
     return feeds

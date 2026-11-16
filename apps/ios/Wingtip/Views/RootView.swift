@@ -50,7 +50,7 @@ struct RootView: View {
     /// The sheet's lowest size, the pill: the page's first row (the
     /// search's on Search, the route's on FPL), as Maps' pill is its search
     /// row; 132 points for the row, no page dots over it since 2026-11-13.
-    static let pill = PresentationDetent.height(132)
+    nonisolated static let pill = PresentationDetent.height(132)
 
     var layout: RootLayout { .of(sizeClass, verticalSizeClass) }
 

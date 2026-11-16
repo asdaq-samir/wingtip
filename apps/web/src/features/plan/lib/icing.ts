@@ -52,3 +52,57 @@ export function icingLine(icing: IcingAtAltitude): string {
     },
   });
 }
+
+/** Under IFR, icing that could not be checked: icing possible at the
+ *  altitudes flown but the freezing level not known (the engine's
+ *  gonogo_icing_unchecked, FAA-H-8083-28B ch. 20): "Icing not checked:
+ *  freezing level not known", or null. */
+function icingUncheckedLine(selection: AltitudeBreakdown, flownFt: number[]): string | null {
+  return callEngine("gonogo_icing_unchecked", {
+    selection: {
+      freezing_level_ft: selection.freezing_level_ft ?? null,
+      icing_possible: selection.icing_possible ?? null,
+      freezing_level_at_or_below: selection.freezing_level_at_or_below ?? null,
+    },
+    flown_ft: flownFt,
+  });
+}
+
+/** Freezing rain or drizzle (FZRA, FZDZ) in the METAR or TAF of a field
+ *  the flight takes off from or lands at, on any flight, VFR too: it
+ *  falls clear of cloud (AIM 7-1-20; the engine's freezing_precip). Its
+ *  line, or null. */
+function freezingPrecipLine(briefing: Briefing, fields: string[]): string | null {
+  return callEngine("freezing_precip", {
+    fields: fields.map((ident) => ({
+      ident,
+      metar: briefing.metars[ident]?.raw ?? null,
+      taf: briefing.forecast.stations.find((s) => s.icaoId === ident)?.raw ?? null,
+    })),
+  }).line;
+}
+
+/** The Go / No-Go's icing finding, its lines in engine/README.md's order:
+ *  under IFR, icing at the altitude flown (gonogo_icing) or that it could
+ *  not be checked (gonogo_icing_unchecked), then the AWC's forecast icing;
+ *  freezing rain or drizzle at the route's fields on any flight
+ *  (freezing_precip). The icing at the altitude too. */
+export function icingFindings(a: {
+  ifr: boolean;
+  nav: { altitude_selection: AltitudeBreakdown } | null | undefined;
+  legs: { altitude_ft: number }[];
+  briefing: Briefing | null | undefined;
+  forecastLine: string | null | undefined;
+  /** The route's fields, for their reports' freezing rain or drizzle. */
+  fields: string[];
+}): { icing: IcingAtAltitude | null; lines: string[] } {
+  const flown = a.legs.map((l) => l.altitude_ft);
+  const icing = a.ifr && a.nav && a.briefing ? icingAtAltitude(a.nav.altitude_selection, flown, a.briefing.pireps) : null;
+  const lines = [
+    icing && icingLine(icing),
+    a.ifr && a.nav ? icingUncheckedLine(a.nav.altitude_selection, flown) : null,
+    a.ifr ? a.forecastLine : null,
+    a.briefing ? freezingPrecipLine(a.briefing, a.fields) : null,
+  ].filter((l): l is string => !!l);
+  return { icing, lines };
+}

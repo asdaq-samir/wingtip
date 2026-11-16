@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { cn } from "cn";
 import { BrainCircuit, Ellipsis, Eraser, ListFilter, Undo2 } from "lucide-react";
@@ -21,6 +22,7 @@ import { inkOn } from "../../../lib/scoreScale";
 import { TEXT } from "../../../lib/text";
 import FilterBar from "./FilterBar";
 import { capitalised } from "../../../lib/advisories";
+import { nm } from "../../../lib/format";
 
 interface Props {
   /** Every point the walk can land on, in flight order: the endpoints
@@ -127,8 +129,8 @@ export default function WaypointPanel({ entries, selected, onFocus, departureIde
             // means something for a visual point, picked because it sits
             // off it.
             const detail = [
-              `${p.along_track_nm.toFixed(1)} nm out`,
-              roleOf(p) === "visual" && `visual, ${Math.abs(cross).toFixed(1)} nm off course`,
+              `${nm(p.along_track_nm)} out`,
+              roleOf(p) === "visual" && `visual, ${nm(Math.abs(cross))} off course`,
               sourceOf(p) === "added" && "added by hand",
               // What the chart model makes of it, beside where it is: in
               // the line under, not the rating's place at the end, as it
@@ -187,9 +189,8 @@ function WaypointRow({
   rowRef?: Ref<HTMLButtonElement>;
 }) {
   return (
-    <button
+    <BaseButton
       ref={rowRef}
-      type="button"
       onClick={onSelect}
       data-waypoint-row
       data-selected={selected || undefined}
@@ -217,7 +218,7 @@ function WaypointRow({
       {end && (
         <span className={cn("shrink-0 tabular-nums", TEXT.detail, selected ? "text-foreground/70" : "text-muted-foreground")}>{end}</span>
       )}
-    </button>
+    </BaseButton>
   );
 }
 

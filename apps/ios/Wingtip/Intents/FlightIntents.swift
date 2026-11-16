@@ -102,7 +102,7 @@ struct DirectToNearestIntent: AppIntent {
         guard let here = await SiriPosition.now() else {
             return .result(opensIntent: OpenWingtipIntent(), dialog: "I can't tell where you are, so here are the nearest airports.")
         }
-        guard let field = try? await Planner.nearest(lat: here.latitude, lon: here.longitude, limit: 1).first else {
+        guard let field = try? await Planner.nearestOrPacks(lat: here.latitude, lon: here.longitude, limit: 1).fields.first else {
             return .result(opensIntent: OpenWingtipIntent(), dialog: "The nearest airport couldn't be found; here's the list.")
         }
         let said = "\(field.ident), \(Format.spokenDistance(field.distanceNm)), \(Format.spokenHeadingTrue(field.bearingDeg))"

@@ -11,8 +11,9 @@ import UIKit
 /// a device's sysdiagnose show them, with the figures the owner steers
 /// by: the launch time at the 50th and 95th percentile, the hang time
 /// and the energy (the owner's ask for a fast app, measured, 2026-11-03).
-/// The owner's Mac cannot run a current Xcode, so these and the runner's
-/// performance tests are the numbers, not Instruments traces. Each
+/// MetricKit's payloads from the phones are the field numbers; on the Mac,
+/// the "Launch to map" and engine signposts are read from a simulator with
+/// `log stream --signpost` or Instruments. Each
 /// payload is also sent to the gateway (DiagnosticsReporter), with nothing
 /// of the pilot's, so the owner sees the phones' faults and speed beside
 /// the web's without a device in hand.

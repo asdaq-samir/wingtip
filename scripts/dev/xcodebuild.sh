@@ -55,6 +55,17 @@ if [ ! -d "$engine" ]; then
   echo "xcodebuild.sh: no $engine; run engine/bindings/ffi/build-xcframework.sh first" >&2
   exit 1
 fi
+# Nor with a framework built from another engine than this checkout's: the
+# app asks its rules by name, so it would link and build without a word
+# and every screen asking a newer rule would say "the engine has no rule
+# called ..." (IOS-11: a phone build from wingtip-live's older framework,
+# 2026-11-14). build-xcframework.sh stamps the engine's hash beside it.
+# shellcheck source=scripts/build/shared-cache.sh
+. "$here/scripts/build/shared-cache.sh"
+if ! engine_stamp_check "$(dirname "$engine")" engine/bindings/ffi/build-xcframework.sh; then
+  echo "xcodebuild.sh: not building against a stale engine" >&2
+  exit 1
+fi
 for d in "$dd"/Build/Intermediates.noindex/XCBuildData/*.xcbuilddata; do
   if grep -qs "There is no XCFramework found" "$d/description.msgpack"; then rm -rf "$d"; fi
 done

@@ -1,0 +1,16 @@
+name: PR caches
+# A closed pull request's caches deleted, so main's are not evicted (scripts/ci/pr_caches.sh).
+on: {pull_request: {types: [closed]}}
+permissions: {contents: read}
+jobs:
+  delete:
+    # A fork's token may not delete; its few caches age out.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions: {contents: read, actions: write}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with: {persist-credentials: false}
+      - run: scripts/ci/pr_caches.sh
+        env: {GH_TOKEN: "${{ github.token }}", GH_REPO: "${{ github.repository }}", PR: "${{ github.event.number }}"}

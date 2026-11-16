@@ -7,7 +7,7 @@ import { FieldError } from "../../../components/ui/field";
 import { Progress } from "../../../components/ui/progress";
 import { Slider } from "../../../components/ui/slider";
 import { Switch } from "../../../components/ui/switch";
-import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-group";
+import Segmented from "../../../components/Segmented";
 import { TEXT } from "../../../lib/text";
 import { usePastFlight } from "../../../lib/replay/clock";
 import { frameCount } from "../../../lib/replay/frameLoop";
@@ -22,8 +22,10 @@ import { useRenderEntry } from "./useRenderEntry";
 import { useVideoExport } from "./useVideoExport";
 
 /** A segmented control of a few choices (decision 0017: menus or
- *  segmented controls, not sliders, for a discrete setting). */
-function Segmented<T extends string | number>({
+ *  segmented controls, not sliders, for a discrete setting): the app's one
+ *  Segmented across the column, its numbers carried as words. This panel
+ *  had its own copy on the same ToggleGroup, a look of its own (CODE-39). */
+function Choice<T extends string | number>({
   label,
   value,
   choices,
@@ -35,21 +37,16 @@ function Segmented<T extends string | number>({
   onPick: (v: T) => void;
 }) {
   return (
-    <ToggleGroup
-      value={[String(value)]}
-      onValueChange={(v) => {
-        const picked = choices.find((c) => String(c.value) === v[0]);
+    <Segmented
+      label={label}
+      value={String(value)}
+      options={choices.map((c) => ({ value: String(c.value), label: c.label }))}
+      onChange={(v) => {
+        const picked = choices.find((c) => String(c.value) === v);
         if (picked) onPick(picked.value);
       }}
-      aria-label={label}
-      className="w-full"
-    >
-      {choices.map((c) => (
-        <ToggleGroupItem key={String(c.value)} value={String(c.value)} className="flex-1">
-          {c.label}
-        </ToggleGroupItem>
-      ))}
-    </ToggleGroup>
+      className="w-full [&>*]:flex-1"
+    />
   );
 }
 
@@ -93,7 +90,7 @@ export function ExportPanel({
   const seconds = Math.round(frames / choice.fps);
   return (
     <div className="flex flex-col gap-4" data-testid="studio-export">
-      <Segmented
+      <Choice
         label="Size"
         value={choice.resolution}
         choices={[
@@ -102,7 +99,7 @@ export function ExportPanel({
         ]}
         onPick={(resolution) => pick({ resolution })}
       />
-      <Segmented
+      <Choice
         label="Shape"
         value={choice.aspect}
         choices={[
@@ -112,7 +109,7 @@ export function ExportPanel({
         ]}
         onPick={(aspect) => pick({ aspect })}
       />
-      <Segmented
+      <Choice
         label="Frame rate"
         value={choice.fps}
         choices={[
@@ -121,7 +118,7 @@ export function ExportPanel({
         ]}
         onPick={(fps) => pick({ fps })}
       />
-      <Segmented
+      <Choice
         label="What to make"
         value={choice.kind}
         choices={[
@@ -131,7 +128,7 @@ export function ExportPanel({
         onPick={(kind) => pick({ kind })}
       />
       {choice.kind === "layers" && (
-        <Segmented
+        <Choice
           label="Overlays as"
           value={choice.overlayAs}
           choices={[

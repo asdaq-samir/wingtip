@@ -88,6 +88,14 @@ final class DepartureWindow {
         BriefLegs.clock(iso, zone: zone) ?? iso
     }
 
+    /// The clock time with its zone, "07:00 CST", for a time said in a
+    /// sentence: a bare "07:00" beside reports in Z could be read as
+    /// either (the web audit's WEB-9).
+    static func zoned(_ iso: String, zone: TimeZone = .current) -> String {
+        let at = AirportWords.date(iso) ?? Date()
+        return clock(iso, zone: zone) + (zone.abbreviation(for: at).map { " \($0)" } ?? "")
+    }
+
     /// The weekday an hour falls on where it is not today's, "Tue".
     static func dayOf(_ iso: String, now: Date, zone: TimeZone = .current) -> String? {
         guard let at = AirportWords.date(iso) else { return nil }

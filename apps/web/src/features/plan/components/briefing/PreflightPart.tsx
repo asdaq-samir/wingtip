@@ -1,4 +1,5 @@
 import { cn } from "cn";
+import { wholeNm } from "../../../../lib/format";
 import { hoverTfr, mouseHover } from "../../../../lib/map/marks/mapHover";
 import AccordionSection from "../../../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
@@ -9,7 +10,7 @@ import { ceilingAndVisibility } from "../../format";
 import { identOf } from "../../../../lib/identSchema";
 import { WeightBalanceSection } from "./PreflightSections";
 import OnRouteRow from "./OnRouteRow";
-import { faaWords, suaAltitudes, tfrAltitudes, tfrPage, tfrTimes } from "../../../../lib/advisories";
+import { faaWords, suaAltitudes, tfrAltitudes, tfrPage, tfrPurpose, tfrTimes } from "../../../../lib/advisories";
 import { passLine, tfrWhen } from "../../lib/passTimes";
 import { FINDING_TONE } from "../../../../lib/findings";
 import BriefChecks from "./BriefChecks";
@@ -24,6 +25,7 @@ import RiskAssessment from "./RiskAssessment";
 import FindingIcon from "../../../../components/FindingIcon";
 import { Flag, PassNote, Pending } from "./BriefingBits";
 import { SUA_FINDING, SUA_WORDS } from "./briefingWords";
+import StatusBadge from "../../../../components/StatusBadge";
 
 /** Preflight's sections its checks' tiles open (BriefChecks): the
  *  airspace's, the risk's and the loading's. */
@@ -94,7 +96,11 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Pr
               weather: briefing?.metars[dest]
                 ? [
                     briefing.metars[dest]!.flight_category,
-                    ceilingAndVisibility(briefing.metars[dest]!.ceiling_ft ?? null, briefing.metars[dest]!.visibility_sm ?? null),
+                    ceilingAndVisibility(
+                      briefing.metars[dest]!.ceiling_ft ?? null,
+                      briefing.metars[dest]!.visibility_sm ?? null,
+                      briefing.metars[dest]!.visibility_plus,
+                    ),
                   ]
                     .filter(Boolean)
                     .join(", ")
@@ -171,17 +177,20 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
                           {/* When the flight gets there, in the planner's words
                             on the row under where it placed it. */}
                           {!t.on_route?.legs.length && <PassNote when={pass && { pass, state: tfrWhen(t, pass) }} />}
-                          {(t.purpose ?? t.rule) && <span className="block">{faaWords(t.purpose ?? t.rule)}</span>}
+                          {tfrPurpose(t) && <span className="block">{tfrPurpose(t)}</span>}
                         </>
                       }
-                      value={t.crosses ? "On the route" : `${Math.round(t.along_track_nm)} nm along`}
+                      value={t.crosses ? "On the route" : `${wholeNm(t.along_track_nm)} along`}
                       href={tfrPage(t.notam_id)}
                       // A mouse on it lights its area on the map (web.md §5).
                       {...mouseHover(
                         () => hoverTfr(t.notam_id),
                         () => hoverTfr(null),
                       )}
-                    />,
+                    >
+                      {/* In force when the flight passes: the TFR's Active badge. */}
+                      {inForce && <StatusBadge variant="active" data-testid="tfr-state" />}
+                    </ListRow>,
                     t.on_route?.legs.length ? (
                       <OnRouteRow key={`${t.notam_id}-on`} on={t.on_route} briefing={briefing} hazardKey={`tfr-${t.notam_id}`} />
                     ) : null,
@@ -205,7 +214,7 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
                     // there it left the FAA's times of use three words a line.
                     description={
                       <>
-                        <span className="block">{`${suaAltitudes(area)} · ${Math.round(area.along_track_nm)} nm along`}</span>
+                        <span className="block">{`${suaAltitudes(area)} · ${wholeNm(area.along_track_nm)} along`}</span>
                         {area.times_of_use && <span className="block">In use: {faaWords(area.times_of_use)}</span>}
                         {pass && (
                           <span className="block" data-testid="sua-pass">{`You pass about ${passLine(pass)}: ${SUA_WORDS[when]}`}</span>
@@ -213,7 +222,9 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
                       </>
                     }
                     data-testid="special-use-area"
-                  />
+                  >
+                    <SuaPassBadge when={when} />
+                  </ListRow>
                 ))}
               </ListGroup>
             </div>
@@ -222,4 +233,21 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
       )}
     </AccordionSection>
   );
+}
+
+/** A special-use area's status when the flight passes, as a badge
+ *  (docs/design/rules.md 9): Active where its times of use or SFDPS have it
+ *  in use then, Cold where SFDPS says so, "Not scheduled" out of its
+ *  hours (a NOTAM can still activate it, so never Cold); none where only a
+ *  NOTAM or the pilot's own reading can say (the line under it does). */
+function SuaPassBadge({ when }: { when: keyof typeof SUA_WORDS }) {
+  if (when === "active" || when === "active-now") return <StatusBadge variant="active" data-testid="sua-state" />;
+  if (when === "cold-now") return <StatusBadge variant="cold" data-testid="sua-state" />;
+  if (when === "not-scheduled")
+    return (
+      <StatusBadge variant="cold" data-testid="sua-state">
+        Not scheduled
+      </StatusBadge>
+    );
+  return null;
 }

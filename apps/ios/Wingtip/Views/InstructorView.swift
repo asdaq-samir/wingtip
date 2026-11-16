@@ -88,7 +88,6 @@ struct InstructorView: View {
             Text("Your students are let go. What you signed stays on record.")
         }
         .task(id: session.signedIn) { await act { try await Gateway.instructor() } }
-        .refreshable { await act { try await Gateway.instructor() } }
     }
 
     static func studentLine(_ s: StudentRow) -> String {
@@ -200,7 +199,6 @@ struct StudentView: View {
         }
         .navigationTitle(row.name)
         .task { await load() }
-        .refreshable { await load() }
     }
 
     // Each signed in AC 61-65K's words, which name the student as on their

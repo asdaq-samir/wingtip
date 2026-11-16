@@ -94,6 +94,12 @@ describe("the chart pair", () => {
     expect(pair.overlay?.kind).toBe("tac");
   });
 
+  it("gives the sectional to what asks with the chart None, which the map draws none of", () => {
+    const pair = chartPair(LAYERS, "none");
+    expect(pair.base?.kind).toBe("sec");
+    expect(pair.overlay?.kind).toBe("tac");
+  });
+
   it("finds the sheet under a point, and none away from every sheet", () => {
     const ord = [41.98, -87.9] as const;
     expect(sheetAt(chartPair(LAYERS, "sec").overlay, ...ord)?.label).toBe("Chicago TAC");

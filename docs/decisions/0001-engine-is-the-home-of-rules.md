@@ -18,3 +18,9 @@ Adding or changing a rule means the Rust in the lowest crate that can hold it, i
 ## Source
 
 CLAUDE.md, Architecture; issue #482; commit e980530e (Rules boundary job).
+
+Consequence, 2026-11-14 (the Android audit's AND-11): the Decision's
+"`wt_call` on iOS, a JNI shim on Android" is no longer so. Both phones ask
+the engine through the UniFFI bindings generated from engine/bindings/ffi
+(`call(name, json)` and the typed EngineCalls); there is no JNI shim. The
+web asks through `callEngine`, the planner through `wingtip_native.call`.

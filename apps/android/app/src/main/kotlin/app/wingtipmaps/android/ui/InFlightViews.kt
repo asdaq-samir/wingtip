@@ -169,7 +169,10 @@ fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit) {
                 }
                 val dest = progress.destination
                 if (dest?.etaS != null) {
-                    Text(InstrumentsWords.arrival(dest, dest.etaS), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        InstrumentsWords.arrival(dest, dest.etaS), style = MaterialTheme.typography.bodySmall,
+                        color = if (InstrumentsWords.short(dest)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
@@ -251,9 +254,15 @@ object InstrumentsWords {
         return "${Format.distance(p.offNm)} $side of course"
     }
 
-    /** The destination's arrival and the fuel the plan leaves there. */
+    /** The destination's arrival and the fuel the plan leaves there; a
+     *  plan that runs dry says by how much it is short rather than "0.0
+     *  gal left" (the audit's AND-7: warn, never hide, 14 CFR 91.151). */
     fun arrival(dest: EngineContract.InFlightAnswerDestination, etaS: Double): String {
         val line = "${dest.name} at ${zulu(etaS)}, ${dest.distanceNm.roundToInt()} nm"
-        return dest.fuelLeftGal?.let { "$line, about ${Format.fuel(maxOf(0.0, it))} left by the plan" } ?: line
+        val left = dest.fuelLeftGal ?: return line
+        return if (left < 0) "$line, short by ${Format.fuel(-left)} by the plan" else "$line, about ${Format.fuel(left)} left by the plan"
     }
+
+    /** Whether the plan runs dry before the destination. */
+    fun short(dest: EngineContract.InFlightAnswerDestination): Boolean = (dest.fuelLeftGal ?: 0.0) < 0
 }

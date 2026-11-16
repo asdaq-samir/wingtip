@@ -9,3 +9,8 @@ export { BootMap } from "./routeMapChunk";
 export const loadTerrainGl = () => import("./map/terrain/TerrainGl");
 export const loadReplayLayers = () => import("./map/layers/ReplayTrackGl");
 export const loadProfileChart = () => import("./components/navlog/ProfileChart");
+
+/** What the map-settings and settings features draw with. */
+export { trafficCredit } from "./map/trafficCredit";
+export { useTerrainView } from "./map/terrain/useTerrainView";
+export { useTrueHeightView } from "./map/terrain/heightStretch";

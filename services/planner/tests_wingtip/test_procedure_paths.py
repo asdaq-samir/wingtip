@@ -102,7 +102,7 @@ def test_from_vectors_the_final_is_joined_30_degrees_off_its_course_outside_its_
 
 def test_from_vectors_with_the_field_between_flies_a_downwind_abeam_the_first_fix():
     # Eastbound from 43 N 88.2 W to the runway at 88 W, the airplane south
-    # of the runway: a downwind four miles or more south, abeam the first
+    # of the runway: a downwind as far south as it is, abeam the first
     # fix, then the join.
     final = [(43.0, -88.2), (43.0, -88.1), (43.0, -88.0)]
     join = vectors_join(final, (42.8, -88.0))
@@ -110,6 +110,17 @@ def test_from_vectors_with_the_field_between_flies_a_downwind_abeam_the_first_fi
     abeam = join[1]
     assert abeam[1] == pytest.approx(-88.2, abs=0.002)
     assert abeam[0] < 42.95
+
+
+def test_from_vectors_on_the_centreline_the_downwind_is_as_far_out_as_the_join():
+    # Ahead of the first fix on the final's own line: no side of its own,
+    # the downwind 3 nm x sin 30 = 1.5 nm off (JO 7110.65 5-9-1a1, Table
+    # 5-9-1; the P/CG's approach gate), as far out as the join is.
+    final = [(43.0, -88.2), (43.0, -88.1), (43.0, -88.0)]
+    join = vectors_join(final, (43.0, -87.9))
+    abeam, last = join[1], join[-1]
+    assert geo.distance_nm(*abeam, *final[0]) == pytest.approx(1.5, abs=0.01)
+    assert geo.distance_nm(*last, *final[0]) == pytest.approx(3.0, abs=0.01)
 
 
 def test_a_departure_is_left_by_its_first_runway_transition_then_on_to_the_route():

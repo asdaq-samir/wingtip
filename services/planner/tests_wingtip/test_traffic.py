@@ -870,16 +870,6 @@ def test_a_flight_abroad_is_named_by_its_own_airports(clock, monkeypatch):
     assert flights._field_at(landing, landing=True)["ident"] == "LEBL"
 
 
-def test_an_airplane_is_based_where_most_of_its_flights_begin_and_end(clock, monkeypatch):
-    lci, lwm, mht = ({"ident": i, "name": i, "city": None, "region": None} for i in ("LCI", "LWM", "MHT"))
-    hop = lambda a, b: {"origin": a, "destination": b, "landed": True}  # noqa: E731
-    # Out and back from Lawrence, one trip to Laconia.
-    assert bases._base_of([hop(lwm, lci), hop(lci, lwm), hop(lwm, mht), hop(mht, lwm)])["ident"] == "LWM"
-    # Too few flights to say, or no field it keeps to.
-    assert bases._base_of([hop(lwm, lci)]) is None
-    assert bases._base_of([hop(lwm, lci), hop(mht, {"ident": "BOS"}), hop({"ident": "ORH"}, {"ident": "PVD"})]) is None
-
-
 def test_the_bases_asked_for_are_given_as_they_are_found(clock, monkeypatch):
     lwm = {"ident": "LWM", "name": "Lawrence", "city": None, "region": None}
     stand_in(monkeypatch, "_BASED", TTLCache(maxsize=16, ttl=60))

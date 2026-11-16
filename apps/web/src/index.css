@@ -651,6 +651,15 @@ html:not([data-brand="native"])::view-transition-new(.page-back) {
   inherits: false;
 }
 
+/* A row of a long list drawn only once it nears the screen (a logbook of
+   hundreds of flights rendered every row: the web audit's WEB-27), its
+   room held at about one two-line row's height until then so the scroll
+   bar does not jump. */
+@utility row-lazy {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 4rem;
+}
+
 /* Every card's head in the sheet, one row pinned at its top from the
    start, the content scrolling on under it blurred through its frost (the
    owner, 2026-11-10: "just keep the title on top and content moves under

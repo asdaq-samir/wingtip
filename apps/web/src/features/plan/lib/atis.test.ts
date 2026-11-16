@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { atisRows, glanceWords, heardAny, readAtis, skyWords, visibilityWords, windWords } from "./atis";
+import { atisRows, datisRemarks, glanceWords, heardAny, readAtis, skyWords, visibilityWords, windWords } from "./atis";
 import fixture from "../../../lib/fixtures/atis.json";
+import remarksFixture from "../../../lib/fixtures/datisRemarks.json";
 
 describe("an ATIS heard", () => {
   test("the fixture holds a dozen broadcasts at least", () => {
@@ -50,5 +51,17 @@ describe("an ATIS heard", () => {
       ]),
     ).toBe("Scattered 1,200 ft · Broken 2,500 ft (ceiling) · Overcast 4,000 ft");
     expect(skyWords([{ cover: "clear", base_ft: null }])).toBe("Clear");
+  });
+});
+
+describe("a D-ATIS's remarks", () => {
+  test.each(remarksFixture.cases)("are listed an item each in the FAA's words: $about", ({ text, answer }) => {
+    expect(datisRemarks(text)).toEqual(answer);
+  });
+
+  test("a D-ATIS's figures leave its remarks to the list", () => {
+    const r = { ...readAtis(fixture.cases[0]!.heard), remarks: ["simultaneous approaches in use"] };
+    expect(atisRows(r, { remarks: false }).some((row) => row.label === "Remarks")).toBe(false);
+    expect(atisRows(r).some((row) => row.label === "Remarks")).toBe(true);
   });
 });

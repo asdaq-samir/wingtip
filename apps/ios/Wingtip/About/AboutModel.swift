@@ -56,6 +56,7 @@ enum AboutCredits {
         Credit(what: "FAA NASR: airports, runways, navaids, fixes and airspace", terms: publicDomain),
         Credit(what: "FAA CIFP procedures, d-TPP plates and the Digital Obstacle File", terms: publicDomain),
         Credit(what: "FAA aircraft registry", terms: publicDomain),
+        Credit(what: "NTSB aviation accident database: accident and incident records", terms: publicDomain),
         Credit(what: "FAA SWIM: NOTAMs, flow programs, terminal data and airspace status", terms: publicDomain),
         Credit(what: "NOAA Aviation Weather Center: METARs, TAFs, PIREPs, SIGMETs and G-AIRMETs", terms: publicDomain),
         Credit(what: "NOAA models: GFS winds and temperatures aloft, GLMP, magnetic declination", terms: publicDomain),
@@ -63,12 +64,14 @@ enum AboutCredits {
         Credit(what: "NOAA GOES East and West satellite loop, via NOAA nowCOAST; not for navigation, check official weather", terms: publicDomain),
         Credit(what: "USGS The National Map imagery", terms: publicDomain),
         Credit(what: "US Census Bureau geocoder and gazetteer", terms: publicDomain),
-        Credit(what: "OurAirports: runways, frequencies and fields abroad", terms: publicDomain),
+        Credit(what: "OurAirports: fields abroad, fields NASR does not list, and field sizes", terms: publicDomain),
         Credit(what: "Overture Maps places: services near a field", terms: "CDLA Permissive 2.0"),
         Credit(what: "adsb.lol ADS-B traffic", terms: "ODbL 1.0"),
         Credit(what: "ADS-B Exchange traffic", terms: "ADS-B Exchange's API terms"),
         Credit(what: "adsb.fi ADS-B traffic", terms: "Personal, non-commercial use, credited and linked"),
         Credit(what: "Virtual Radar Server flight routes", terms: "CC0"),
+        // Its terms ask for the photographer's name next to each photo.
+        Credit(what: "Planespotters.net aircraft photos, each credited to its photographer beside it", terms: "Planespotters.net's photo API terms"),
     ]
 
     static let software: [Credit] = [

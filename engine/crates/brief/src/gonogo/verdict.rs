@@ -242,7 +242,7 @@ fn airspace(a: &Airspace) -> (&'static str, String) {
     } else if let Some((name, _)) = active {
         ("caution", format!("{name} scheduled in use when you pass"))
     } else if let Some((name, _)) = maybe {
-        ("caution", format!("{name}: ask whether it is active"))
+        ("caution", format!("{name} may be active"))
     } else if a.near != 0.0 || !a.special_use.is_empty() {
         let mut parts = Vec::new();
         if a.near != 0.0 {

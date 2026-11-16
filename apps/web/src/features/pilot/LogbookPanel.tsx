@@ -15,9 +15,11 @@ import LogbookFile from "./LogbookFile";
 import { localDay } from "../../lib/format";
 import { said } from "../../lib/endorsements";
 import { FINDING_TONE } from "../../lib/findings";
-import { currencyQuery, trainingQuery } from "../../lib/queryClient";
+import { currencyQuery, pilotQuery, trainingQuery } from "../../lib/queryClient";
 import LogbookFlights from "./logbook/LogbookFlights";
 import { refreshLogbook } from "./logbook/logbookEntry";
+
+const SignInModal = lazy(() => import("../../components/SignInModal"));
 
 const today = () => localDay();
 // Its own chunk: it reads the saved flights' debriefs only when opened.
@@ -72,6 +74,25 @@ function DateField({
  * (logbook/LogbookFlights: each changed in its own row).
  */
 export function LogbookPanel({ aircraft }: { aircraft?: string }) {
+  // Signed out, the logbook is You's Sign In, said once, and nothing of it
+  // is asked for: opened by a link (?open=logbook) past You's greyed row it
+  // fetched five of the pilot's lists to 401s and read "could not be
+  // fetched" in red and "Not current" from no data (the web audit's WEB-40).
+  const { data: pilot, isPending } = useQuery(pilotQuery);
+  if (isPending) return null;
+  if (!pilot)
+    return (
+      <div className="flex min-h-11 items-center justify-center" data-testid="logbook-signed-out">
+        <Suspense fallback={null}>
+          <SignInModal hero />
+        </Suspense>
+      </div>
+    );
+  return <SignedInLogbook aircraft={aircraft} />;
+}
+
+/** The logbook itself, mounted only for a pilot signed in. */
+function SignedInLogbook({ aircraft }: { aircraft?: string }) {
   const queryClient = useQueryClient();
   // The file's export reads the flights too (LogbookFlights' own query).
   const { data: entries } = useQuery({ queryKey: ["logbook"], queryFn: api.logbook.list, meta: { silent: true } });

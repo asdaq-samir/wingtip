@@ -138,14 +138,16 @@ extension Planner {
         let note = APICheckpointNoteRequest(departureIdent: dep, description: text, destinationIdent: dest, lat: lat, lon: lon, stops: stops)
         _ = try await call { try await $0.saveCheckpointNote(body: .json(note)) }
     }
-
-    /// Every note of the pilot's own forgotten; how many.
-    static func forgetNotes() async throws -> Int {
-        try await call { try await $0.forgetPilotsNotes().ok.body.json.removed }
-    }
 }
 
 extension Gateway {
+    /// Every note of the pilot's own forgotten; how many. The gateway's
+    /// DELETE /api/me/checkpoint-notes, which knows who the pilot is
+    /// (CODE-1): the planner's DELETE through the proxy never reached it.
+    static func forgetNotes() async throws -> Int {
+        try await call { try await $0.forgetNotes().ok.body.json.removed }
+    }
+
     /// Flight Service's state; nil where it cannot be asked (signed out).
     static func flightService() async throws -> FlightServiceStatus? {
         try await read { try await $0.status().ok.body.json }

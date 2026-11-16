@@ -50,11 +50,13 @@ docker compose up -d --build gateway
 ```bash
 # The JUnit suite, including Testcontainers' real Postgres. No native
 # Maven needed; the Docker socket is passed through so Testcontainers can
-# start a sibling container.
+# start a sibling container. With a JDK at hand, `./mvnw -B test` runs the
+# same Maven, fetched once by the Maven Wrapper (.mvn/wrapper), as CI does;
+# its sha256 is the .zip's, which the wrapper takes where `unzip` is.
 docker run --rm -v "$PWD/services/gateway":/build -v /build/target \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
-  -w /build maven:3.10-eclipse-temurin-25 mvn -B test
+  -w /build maven:4.0.0-rc-7-eclipse-temurin-25 mvn -B test
 ```
 
 Three details in that command each fix a real failure, not a style

@@ -106,8 +106,16 @@ enum WingtipColor {
         static let centreline = rgb(0xFFFFFF)
         /// The glidepath in the air to a runway's threshold in the 3D view: the final approach segment's cyan, as it is the same descent.
         static let glidepath = rgb(0x00B4E6)
+        /// What a 3D airspace volume's class ink is mixed toward the lower its floor (features/plan/map/terrain/airspaceShelves): a surface area darkest, so a Class B's shelves step up in shade as they do in altitude.
+        static let airspaceFloorLow = rgb(0x0A141C)
+        /// And toward the higher its floor: the highest shelf lightest.
+        static let airspaceFloorHigh = rgb(0xFFFFFF)
         /// An obstacle under 1,000 ft AGL in the 3D view; a taller one is in the warning red.
         static let obstacle = rgb(0x7A1F1F)
+        /// The map's ground before its first tiles are drawn, by day (Tailwind slate-100, as it was).
+        static let mapGround = rgb(0xF1F5F9)
+        /// And at night (slate-900).
+        static let mapGroundNight = rgb(0x0F172A)
     }
     enum Category {
         static let vfr = rgb(0x1A7F37)
@@ -161,6 +169,32 @@ enum WingtipColor {
         static let stopFood = rgb(0xDC2626)
         static let stopRepair = rgb(0x0F766E)
         static let stopTraining = rgb(0x0369A1)
+        /// Home's mark, a Favorite tile's and a row's (Tailwind teal-600, as it was drawn).
+        static let home = rgb(0x0D9488)
+        /// An airplane's own mark on a tile or a row: its profile's, a Favorite's (Tailwind sky-600, as it was drawn).
+        static let airplane = rgb(0x0284C7)
+        /// A tracked airplane's "In the air" badge on its card, white on it (Tailwind teal-700, as it was drawn).
+        static let air = rgb(0x0F766E)
+        /// StatusBadge's fills, one per status a pilot scans for (the owner, 2026-11-14: "Use badges where we can for example tfr active etc."), each under white words at 4.5:1 or more in both schemes (WCAG 1.4.3; looksContrast.test.ts): in force now, the hazard's red (6.6:1).
+        static let statusActive = rgb(0xB42318)
+        /// In force later, not yet: amber-700 (5.0:1).
+        static let statusLater = rgb(0xB45309)
+        /// Scheduled but not in use now (a cold special-use area): grey-500 (4.8:1).
+        static let statusCold = rgb(0x6B7280)
+        /// A field or runway NASR or a NOTAM closes (decision 0043): red-800 (8.3:1), a step past Active's so the two are told apart.
+        static let statusClosed = rgb(0x991B1B)
+        /// A navaid or a service out of service: orange-800 (7.3:1).
+        static let statusOutOfService = rgb(0x9A3412)
+        /// A private-use field (NASR's use PR): slate-600 (7.6:1).
+        static let statusPrivate = rgb(0x475569)
+        /// A military field (NASR's ownership MA, MN, MR, CG): lime-700, an olive drab (5.0:1).
+        static let statusMilitary = rgb(0x4D7C0F)
+        /// A joint civil-military field: lime-800 (7.1:1).
+        static let statusJoint = rgb(0x3F6212)
+        /// An emergency's squawk on a tracked airplane (AIM 6-2-2): the light gun's red, red-600 (4.8:1).
+        static let statusEmergency = rgb(0xDC2626)
+        /// A tracked airplane on the ground: iOS's dark grey, zinc-600 (7.7:1).
+        static let statusGround = rgb(0x52525B)
     }
     enum Weather {
         static let convective = rgb(0xC2410C)
@@ -869,6 +903,8 @@ enum WingtipType {
     static let tab: Font = Font.system(.footnote, weight: .regular)
     /// The tab bar's words (iOS Caption 1, 12/16; the iOS audit's P3).
     static let tabBar: Font = Font.system(.caption, weight: .regular)
+    /// A StatusBadge's word (Active, Closed, In the air): iOS's Caption 1 in semibold, 12 on 16, the same with a mouse.
+    static let badge: Font = Font.system(.caption, weight: .semibold)
     /// A chip's category in a narrow column (iOS Caption 2).
     static let caption: Font = Font.system(.caption2, weight: .bold)
     /// A figure's name, an ident, a chip's word: the display face's capitals, spaced a tenth of an em (letterSpacing in em).
@@ -937,7 +973,7 @@ enum WingtipHaptic {
 /// The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees.
 enum WingtipMap {
     static let pitchOpen: Double = 50
-    static let pitchMax: Double = 75
+    static let pitchMax: Double = 85
     static let pitchFlatMax: Double = 60
     static let zoomStationClose: Double = 10
     static let zoomStationAlways: Double = 7
@@ -945,6 +981,11 @@ enum WingtipMap {
     static let zoomBarbFull: Double = 9
     static let zoomWorldWind: Double = 4
     static let zoomStreakNear: Double = 7
+    static let airspaceShadeMix: Double = 0.45
+    static let airspaceShadeTopFt: Double = 10000
+    static let airspaceFaded: Double = 0.35
+    static let airspaceHeld: Double = 1.8
+    static let airspaceLabelFaded: Double = 0.6
 }
 
 /// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.

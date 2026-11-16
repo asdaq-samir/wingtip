@@ -1,6 +1,6 @@
 """What the emergency assistant ranks, gathered in one answer: the fields
 nearest the airplane with their runways (each end's true heading), their
-METAR's wind, altimeter and temperature, their ATC and CTAF frequencies,
+METAR's wind, visibility, altimeter and temperature, their ATC and CTAF frequencies,
 phone and owner, and the wind aloft at the airplane's altitude. Nothing is
 ranked or judged here: the engine's best_fields does that in the app
 (the web's callEngine, the phones' `call`), so it works on what the
@@ -54,6 +54,12 @@ def _metar(report: dict | None) -> dict | None:
         "gust_kt": report.get("wind_gust_kt"),
         "altimeter_in_hg": report.get("altimeter_in_hg"),
         "temp_c": report.get("temp_c"),
+        # The prevailing visibility in statute miles as the engine read it
+        # (awc_metars_read), and whether it was "more than" (P6SM, the
+        # AWC's "10+"; FAA JO 7900.5): the pilot's own to judge, never
+        # guessed where the report has none.
+        "visibility_sm": report.get("visibility_sm"),
+        "visibility_plus": bool(report.get("visibility_plus")),
         "flight_category": report.get("flight_category"),
         "raw": report.get("raw"),
     }

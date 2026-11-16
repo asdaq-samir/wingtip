@@ -3,12 +3,14 @@ package app.wingtipmaps.android.map
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.DashPathEffect
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
+import app.wingtipmaps.android.design.generated.WingtipColors
 import org.maplibre.android.maps.ImageContent
 import org.maplibre.android.maps.ImageStretches
 import org.maplibre.android.maps.Style
@@ -17,9 +19,8 @@ import org.maplibre.android.maps.Style
  * The pictures the overlay layers wear (MapStyle's icon ids), drawn once
  * a style at the screen's density, the web's own (glOverlays
  * NAVAID_PICTURES, AIRSPACE_TAB_PICTURE, airportMark's
- * sectionalAirportSvg) drawn with Android's Canvas in place of an SVG:
- * the sectional's airport symbols (FAA Aeronautical Chart User's Guide,
- * VFR Terms and Symbols, Airports) as ForeFlight rings them, the VOR's
+ * airportMarkSvg) drawn with Android's Canvas in place of an SVG: the
+ * planner's airport mark, its ring the airspace at the field, the VOR's
  * hexagon, a fix's blue four-point star, a VFR waypoint's green triangle,
  * the VOR's blue ident tag and the airspace's dark altitude tab, the last
  * two stretched to their text, and the special-use areas' hatch and tabs.
@@ -29,13 +30,12 @@ object OverlayPictures {
      *  symbol is laid out without its picture. [density] is the screen's
      *  pixels to a dp. */
     fun addTo(builder: Style.Builder, density: Float) {
-        // 2 inks, 4 sizes, 6 pips and 4 uses: 192 small pictures.
-        for (towered in listOf(true, false)) {
-            for (size in MapStyle.SIZES) {
-                for (pip in AirportWeatherMarks.PIPS) {
-                    for (use in MapStyle.USES) {
-                        builder.withImage(MapStyle.airportMarkId(towered, size, pip, use), airport(towered, size, pip, use, density))
-                    }
+        // 6 rings, 6 weathers and 4 uses: 144 small pictures; the size
+        // steps are the layer's icon-size, not more pictures.
+        for (space in MapStyle.SPACES) {
+            for (pip in AirportWeatherMarks.PIPS) {
+                for (use in MapStyle.USES) {
+                    builder.withImage(MapStyle.airportMarkId(space, pip, use), airport(space, pip, use, density))
                 }
             }
         }
@@ -97,51 +97,88 @@ object OverlayPictures {
         strokeJoin = Paint.Join.ROUND
     }
 
-    /** How big a field's symbol is drawn by its size (the web's
-     *  SECTIONAL_RADIUS): the big fields the biggest. */
-    private val RADIUS = mapOf("large" to 8.5f, "medium" to 7.5f, "small" to 6.5f, "other" to 6f)
+    /** An airport mark's symbol across, dp (the web's AIRPORT_MARK), and
+     *  the room round it for its ticks' white casing, which reaches past
+     *  its box; no more, as the box is what MapLibre keeps apart. */
+    private const val AIRPORT_MARK = 26f
+    private const val ROOM = 3f
 
-    /** A field's mark (the web's sectionalAirportSvg), as ForeFlight
-     *  draws it (the owner's screenshot over Madison, 2026-11-08): a ring
-     *  in the airport's ink, blue towered and magenta not, round a white
-     *  disc with a dot of the ink in its middle, inside a white halo; a
-     *  private field the guide's circle with an "R", a military one with
-     *  an "M", a heliport with an "H". Its weather (AirportWeatherMarks,
-     *  `pip`) a ring in its flight category's colour round the white halo,
-     *  WEATHER_RING dp wide so it holds in sunlight. */
-    private fun airport(towered: Boolean, size: String, pip: String, use: String, density: Float): Bitmap {
-        val colour = ink(if (towered) MapStyle.BLUE else MapStyle.MAGENTA)
+    /** Drawn this much denser than the screen, so the largest size step
+     *  (MapStyle.MARK_SIZE, 1.5) is as sharp as the chart under it. */
+    private const val SHARP = 2f
+
+    /**
+     * A field's mark, the planner's one airport mark (the web's
+     * airportMarkSvg, as Nearest, the route and the stops wear it; the
+     * owner's pick of 2026-11-14, option I): a ring that is the airspace at
+     * the field's surface in the sectional's own code -- Class B and D
+     * blue, C and E magenta, D and E dashed as their boundaries are drawn
+     * (FAA Aeronautical Chart User's Guide, Airspace), B's ring the
+     * thickest and C's next, G the magenta thin and faded, an unknown
+     * class the chart's grey -- with its four ticks, white inside it, and
+     * a large disc in the field's weather colour (AirportWeatherMarks,
+     * `pip`; the no-report grey with none or with the setting Off). A
+     * private field is the R disc, a military one the M and a heliport the
+     * H, with its weather dot at the lower right.
+     */
+    private fun airport(space: String, pip: String, use: String, density: Float): Bitmap {
+        val casing = ink(WingtipColors.Chart.CASING_HEX)
+        val weather = ink(AirportWeatherMarks.inkOf(pip) ?: WingtipColors.Chart.FIELD_UNKNOWN_HEX)
         val letter = when (use) {
             "private" -> "R"
             "military" -> "M"
             "heliport" -> "H"
             else -> null
         }
-        val r = if (letter != null) 7f else RADIUS[size] ?: 6f
-        val weather = AirportWeatherMarks.inkOf(pip)?.let(::ink)
-        return picture(30f, density, origin = 15f) {
-            // The halo: white, 1.2 dp past the ring, and the weather's ring
-            // round it.
-            drawCircle(0f, 0f, r + if (weather != null) 1.2f else 2.5f, fill(Color.WHITE))
-            if (weather != null) drawCircle(0f, 0f, r + 1.2f + WEATHER_RING / 2, stroke(weather, WEATHER_RING))
+        val box = AIRPORT_MARK + 2 * ROOM
+        val sharp = density * SHARP
+        return picture(box, sharp, origin = box / 2) {
             if (letter != null) {
-                drawCircle(0f, 0f, r, stroke(colour, 2f))
-                val type = fill(colour).apply {
+                drawCircle(0f, 0f, 10f, fill(ink(if (use == "military") MapStyle.BLUE else MapStyle.MAGENTA)))
+                drawCircle(0f, 0f, 10f, stroke(casing, 2f))
+                val type = fill(casing).apply {
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                    textSize = 9.5f
+                    textSize = 11f
                     textAlign = Paint.Align.CENTER
                 }
-                drawText(letter, 0f, 3.5f, type)
-            } else {
-                drawCircle(0f, 0f, r, stroke(colour, 2.6f))
-                drawCircle(0f, 0f, r * 0.42f, fill(colour))
+                drawText(letter, 0f, 4f, type)
+                drawCircle(7.5f, 7.5f, 4.6f, fill(weather))
+                drawCircle(7.5f, 7.5f, 4.6f, stroke(casing, 1.4f))
+                return@picture
             }
+            val ringInk = when (space) {
+                "B", "D" -> ink(MapStyle.BLUE)
+                "C", "E", "G" -> ink(MapStyle.MAGENTA)
+                else -> ink(WingtipColors.Chart.FIELD_UNKNOWN_HEX)
+            }
+            val alpha = if (space == "G") (0.45f * 255).toInt() else 255
+            val ticks = Path().apply {
+                moveTo(0f, -9f); lineTo(0f, -12.2f)
+                moveTo(9f, 0f); lineTo(12.2f, 0f)
+                moveTo(0f, 9f); lineTo(0f, 12.2f)
+                moveTo(-9f, 0f); lineTo(-12.2f, 0f)
+            }
+            fun round(p: Paint) = p.apply { strokeCap = Paint.Cap.ROUND }
+            // The white casing round ticks and ring, then the ticks, the
+            // ring over a white disc, and the weather's disc.
+            drawPath(ticks, round(stroke(casing, 5.5f)))
+            drawCircle(0f, 0f, 8.5f, stroke(casing, 5.5f))
+            drawPath(ticks, round(stroke(ringInk, 2.5f)).apply { this.alpha = alpha })
+            drawCircle(0f, 0f, 8.5f, fill(casing))
+            val width = when (space) {
+                "B" -> 3.2f
+                "C" -> 2.8f
+                "G", "" -> 1.6f
+                else -> 2.2f
+            }
+            val ring = stroke(ringInk, width).apply {
+                this.alpha = alpha
+                if (space == "D" || space == "E") pathEffect = DashPathEffect(floatArrayOf(3.4f, 2.1f), 0f)
+            }
+            drawCircle(0f, 0f, 8.5f, ring)
+            drawCircle(0f, 0f, 6f, fill(weather))
         }
     }
-
-    /** The weather's ring round a symbol, dp: about 4.5 points, the
-     *  owner's pick (2026-11-10), wide enough to read in sunlight. */
-    private const val WEATHER_RING = 4.5f
 
     /** How big a traffic airplane is drawn, dp (the web's TRAFFIC_MARK, 16
      *  at the owner's ask, 2026-10-28), the chevron in its 22-unit box. */

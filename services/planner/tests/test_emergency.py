@@ -55,6 +55,9 @@ def stand_in(monkeypatch, wind=None):
                 "wind_gust_kt": None,
                 "altimeter_in_hg": 30.01,
                 "temp_c": 8,
+                # The AWC's "10+" for 10SM, as the engine reads it (awc_metars_read).
+                "visibility_sm": 10.0,
+                "visibility_plus": True,
             },
             "WI89": None,
         },
@@ -84,6 +87,7 @@ def test_the_fields_come_as_the_engine_reads_them(monkeypatch):
     assert 30 < wi89["runways"][0]["runway_ends"][0]["heading_true_deg"] < 40
     assert len(wi89["runways"]) == 1, "a closed runway is left out"
     assert c02["metar"]["dir_true_deg"] == 250 and c02["metar"]["raw"].startswith("KC02")
+    assert (c02["metar"]["visibility_sm"], c02["metar"]["visibility_plus"]) == (10.0, True)
     assert [f["kind"] for f in c02["frequencies"]] == ["CTAF"], "the weather broadcast is not called"
     assert (c02["phone"], wi89["phone"]) == ("262-555-0100", None)
     assert (wi89["private"], c02["private"]) == (True, False)
@@ -109,3 +113,9 @@ def test_no_airplane_and_no_wind_are_none_not_guesses(monkeypatch):
     body = client.get("/api/emergency/fields", params={"lat": 42.5917, "lon": -88.4334, "aircraft": "../c172"}).json()
     assert body["airplane"] is None and body["wind"] is None
     assert len(body["fields"]) == 2
+
+
+def test_a_report_with_no_visibility_says_none():
+    # A report the engine read no visibility from gives none, not a guess.
+    read = emergency._metar({"raw": "KXYZ 091250Z AUTO 25010KT CLR 08/M02 A3001"})
+    assert (read["visibility_sm"], read["visibility_plus"]) == (None, False)

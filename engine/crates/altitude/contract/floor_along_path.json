@@ -1,0 +1,63 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::floor_along_path",
+  "description": "The floor of a leg flown along a path other than its own line -- a departure (SID), an arrival (STAR) or an approach flown in its place: of the leg's own floor and the floors under each piece of the path (vfr_floors' or ifr_floors' answers, the leg's own first), the highest, the leg's own on a tie, with the lowest ground under any of them. The airplane is over all of the path at its cruising altitude until it comes down, so 14 CFR 91.119's clearances (VFR) or 91.177(a)(2)'s (IFR) hold over all of it; a procedure's published altitudes (91.177(a)(1), Part 97) may be lower, so this errs high (the aviation audit's AV-2).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FloorAlongPathInput",
+      "type": "object",
+      "properties": {
+        "floors": {
+          "type": "array",
+          "minItems": 1,
+          "description": "The leg's own floor first, then the floor under each piece of the path: vfr_floors' or ifr_floors' answers, as they came.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "floor_ft": {
+                "type": "number"
+              },
+              "lowest_ground_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "VFR's lowest ground under the piece; none under IFR."
+              }
+            },
+            "required": [
+              "floor_ft"
+            ]
+          }
+        }
+      },
+      "required": [
+        "floors"
+      ]
+    },
+    "answer": {
+      "title": "FloorAlongPathAnswer",
+      "type": "object",
+      "description": "The bounding floor as it came, its lowest_ground_ft (where it has one) the least of all of them.",
+      "properties": {
+        "floor_ft": {
+          "type": "number"
+        },
+        "lowest_ground_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "floor_ft"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -100,9 +100,11 @@ export function useGlProbe(name: string, layers: string[], fields: (f: MapGeoJSO
 
 /** The map's layers bottom to top on `el` (data-layers), for the browser
  *  tests alone: the whole style copied at every idle (getStyle) is a cost
- *  a pilot's phone need not pay (GlMapShell). */
+ *  a pilot's phone need not pay (GlMapShell). And the map itself on
+ *  window.__wingtipMaps, for e2e/drawnOnce to count the camera's moves. */
 export function probeLayers(map: GlMap, el: HTMLElement) {
   if (!testDriven()) return;
+  ((window as unknown as { __wingtipMaps?: GlMap[] }).__wingtipMaps ??= []).push(map);
   map.on("idle", () => {
     el.dataset.layers = map
       .getStyle()

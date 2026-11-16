@@ -13,7 +13,11 @@ straight into a screen drifts from it, so this finds the shapes one takes:
   among them); an arbitrary text size the type roles or Tailwind's scale
   has (text-[13px]); an arbitrary padding, margin or gap in whole pixels,
   which Tailwind's 4-point scale always has a step for (p-[7px] is
-  p-1.75); an arbitrary corner (rounded-[10px]).
+  p-1.75); an arbitrary corner (rounded-[10px]); a shadow written by
+  hand (shadow-[...]: the feel tokens' shadow-card, -float, -overlay and
+  -hairline are the depths); and, outside components/ui (shadcn's stock
+  parts, which keep Tailwind's own steps), Tailwind's named text sizes
+  (text-xs to text-3xl), where lib/text's TEXT roles say the size.
 - iOS (apps/ios, .swift): Color(red:), Color(white:), Color(hex:),
   UIColor(red:), UIColor(white:), UIColor(hex:), hex(0xRRGGBB);
   .font(.system(size:));
@@ -74,16 +78,25 @@ HEX = re.compile(r"(?<![A-Za-z0-9&/-])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA
 FUNC = re.compile(r"(?<![A-Za-z0-9])(?:rgba?|hsla?|oklch|oklab|hwb)\((?!\s*(?:from\b|var\())")
 # Tailwind's text sizes and the type roles', in px.
 TEXT_SIZES = {11, 12, 13, 14, 15, 16, 17, 18, 20, 22, 24, 26, 28, 30, 36}
+# A shadow written out by hand rather than a depth token's utility.
+SHADOW = re.compile(r"(?<![\w-])(?:[\w-]+:)*shadow-\[")
+# Tailwind's named text sizes, which the TEXT roles stand for outside
+# components/ui; not text-(length:...) or a colour (text-xs-foo is none).
+NAMED_TEXT = re.compile(r"(?<![\w-])(?:[\w-]+:)*text-(?:xs|sm|base|lg|xl|2xl|3xl)(?![\w-])")
 ARBITRARY = re.compile(
     r"(?<![\w-])(?:[\w-]+:)*(?P<kind>text|p[xytrblse]?|m[xytrblse]?|gap(?:-[xy])?|space-[xy]|rounded(?:-[a-z]+)?)"
     r"-\[(?P<n>-?\d*\.?\d+)(?P<unit>px|rem)\]"
 )
 
 
-def web_hits(line: str) -> list:
+def web_hits(line: str, stock: bool = False) -> list:
     out = []
     if HEX.search(line) or FUNC.search(line):
         out.append("colour")
+    if SHADOW.search(line):
+        out.append("shadow")
+    if not stock:
+        out += ["type size"] * len(NAMED_TEXT.findall(line))
     for m in ARBITRARY.finditer(line):
         px = float(m["n"]) * (16 if m["unit"] == "rem" else 1)
         kind = m["kind"]
@@ -183,6 +196,8 @@ def strip_comment(line: str, in_block: bool):
 
 def scan_file(path: Path, platform: str) -> list:
     hits_of = {"web": web_hits, "ios": swift_hits, "android": kotlin_hits}[platform]
+    if platform == "web" and "/components/ui/" in path.as_posix():
+        hits_of = lambda line: web_hits(line, stock=True)  # noqa: E731 -- shadcn's own parts keep Tailwind's steps
     found = []
     in_block = False
     preview_depth = None

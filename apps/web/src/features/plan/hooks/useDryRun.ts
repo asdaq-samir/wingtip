@@ -26,7 +26,7 @@ export function useDryRun({
   legs,
   depart,
   routed,
-  profileShown,
+  profileOpen,
 }: {
   course: (RouteEnds & { course_line?: [number, number][] }) | null;
   selected: Candidate[];
@@ -34,8 +34,9 @@ export function useDryRun({
   /** The departure time picked, ISO; empty for now. */
   depart: string;
   routed: boolean;
-  /** The Profile card is in sight: the run is its, and goes with it. */
-  profileShown: boolean;
+  /** The Profile card is open, in sight or under a page over it: the run
+   *  is its, and goes with it when it is closed. */
+  profileOpen: boolean;
 }) {
   // Not compiled: the React Compiler dropped the useMemo round the run
   // (flownFrom) here, so each render made a new run, which the
@@ -104,9 +105,14 @@ export function useDryRun({
   // still see dry run in fpl after I play it in profile card once") -- it
   // stayed at FPL's foot, over the route, once the card was closed. The
   // replay let go; the run's own start with it, as with another replay's.
+  // Closed, not merely out of sight: the flying screen's NRST puts Nearest
+  // over it (Search's page, usePlanFlight's flyNearest), and the run going
+  // with the card's sight took own ship's simulated fix with it, so Nearest
+  // offered "Show my position" in a dry run (flight-critical.spec). It
+  // flies on under Nearest, as a GPS would, and is there as it comes back.
   useEffect(() => {
-    if (running && !profileShown) clearPastFlight();
-  }, [running, profileShown]);
+    if (running && !profileOpen) clearPastFlight();
+  }, [running, profileOpen]);
   if (runFrom !== null && !dryRunHeld) setRunFrom(null);
   return { running, goMissed, ready, start, stop, goMissedNow };
 }

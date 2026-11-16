@@ -147,14 +147,14 @@ object MapStyle {
     /** The pictures the layers ask for, by id (OverlayPictures draws them). */
     fun airspaceTab(cls: String) = "airspace|tab|$cls"
     const val NAV_TAG = "nav|tag"
-    val SIZES = listOf("large", "medium", "small", "other")
+    /** The tiles' `airspace`, the surface class (charts/airports.py); "" for an older archive's, the grey ring. */
+    val SPACES = listOf("B", "C", "D", "E", "G", "")
     val USES = listOf("", "private", "military", "heliport")
 
-    /** A field's symbol's picture by what it is drawn as: towered or not,
-     *  its size, its weather pip (AirportWeatherMarks, "" for none) and
-     *  its use (the web's airportMarkId). */
-    fun airportMarkId(towered: Boolean, size: String, pip: String, use: String): String =
-        "apt|${if (towered) "t" else "u"}|$size|$pip|$use"
+    /** A field's mark's picture by what it is drawn as: its ring (the
+     *  surface airspace's class), its weather pip (AirportWeatherMarks, ""
+     *  for none) and its use (the web's airportIcons). */
+    fun airportMarkId(space: String, pip: String, use: String): String = "apt|$space|$pip|$use"
 
     // ---- The style ----------------------------------------------------
 
@@ -531,10 +531,9 @@ object MapStyle {
         return listOf(mark, idents)
     }
 
-    /** A field's size from its longest runway (NASR APT_RWY RWY_LEN), the
-     *  symbol's size: 8,000 ft and more, then 5,000 and 2,000. Only how
-     *  big the disc is drawn. */
-    private val AIRPORT_SIZE = e("step", e("coalesce", e("get", "longest_ft"), 0), "other", 2000, "small", 5000, "medium", 8000, "large")
+    /** Each of the engine's size steps (field_mark_rank's `size`, the tiles'), as the web's MARK_SIZE
+     *  (option I, 2026-11-14): a Class B's field 1.5, a Class C's 1.2, small 0.82, else 1. */
+    private val MARK_SIZE = e("match", e("get", "size"), "largest", 1.5, "larger", 1.2, "small", 0.82, 1)
     private val AIRPORT_USE = e(
         "case",
         e("==", e("get", "military"), "military"), "military",
@@ -565,13 +564,13 @@ object MapStyle {
         return e("match", e("get", "ident"), *branches.toTypedArray(), "")
     }
 
-    /** The airports' symbol's picture by its ink, size, weather and use
+    /** The airports' mark's picture by its ring, weather and use
      *  (airportMarkId), an expression on the tile's fields. */
     fun airportIcon(colours: Map<String, String>): JsonArray =
-        e("concat", "apt|", e("case", TOWERED, "t", "u"), "|", AIRPORT_SIZE, "|", weatherExpression(colours), "|", AIRPORT_USE)
+        e("concat", "apt|", e("coalesce", e("get", "airspace"), ""), "|", weatherExpression(colours), "|", AIRPORT_USE)
 
     /** The airports' one symbol layer (the web's airportMarksLayer): the
-     *  mark by its ink, size, weather and use, its ident beside it in bold
+     *  mark by its ring, weather and use, sized by the field, its ident beside it in bold
      *  in the field's ink (the sectional sets an airport's name in the
      *  symbol's colour, Chart User's Guide, Airports), kept apart by
      *  MapLibre's collision in `rank` order, the fields the switches hide
@@ -585,9 +584,8 @@ object MapStyle {
         put("filter", airportsFilter(layers))
         putJsonObject("layout") {
             put("icon-image", airportIcon(weather))
-            // Smaller out at a state's width, a field's own size closer in,
-            // following a pinch frame by frame.
-            put("icon-size", e("interpolate", e("linear"), e("zoom"), farthest, 0.7, glZoom(10.0), 1, glZoom(13.0), 1.25))
+            // Smaller out at a state's width, larger closer in, each times its field's step (MARK_SIZE).
+            put("icon-size", e("interpolate", e("linear"), e("zoom"), farthest, e("*", 0.7, MARK_SIZE), glZoom(10.0), MARK_SIZE, glZoom(13.0), e("*", 1.25, MARK_SIZE)))
             put("icon-allow-overlap", false)
             // Out at a few states a mark's room is 27 px; closer in, its own.
             put("icon-padding", e("step", e("zoom"), 27, glZoom(7.0), 2))

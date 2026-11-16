@@ -9,5 +9,7 @@ describe("traffic stood at its height", () => {
     // high-pressure day, a geometric height on the runway) stands on it.
     expect(standAtM(500, 300)).toBe(300);
     expect(standAtM(null, 300)).toBe(300);
+    // Stretched three times with the ground drawn under it.
+    expect(standAtM(4500, 900, 3)).toBeCloseTo(3 * 1371.6, 6);
   });
 });

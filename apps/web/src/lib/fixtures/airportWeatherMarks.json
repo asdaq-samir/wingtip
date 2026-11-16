@@ -2,13 +2,22 @@
   "about": "The airport weather marks on the map (the owner's pick, 2026-11-10): a field's least crosswind on its runways (least_crosswind), whether its wind earns an arrow and whether the arrow is red (wind_arrow), the station model's barb (wind_barb, FAA-H-8083-28B 25.2.3.4.5), and the getting-worse badge, a route field's METAR now against its TAF for the flight's time there (weather_worse, AIM 7-1-7). Read by the engine's tests (engine/facade/tests/weather_marks.rs), the web's (lib/map/marks/airportWeather.test.ts) and the phones'.",
   "leastCrosswind": [
     {
-      "why": "220 at 18 gusting 26 over 18/36 and 27/09: 40 degrees off runway 18, the gust's 26 sin 40 = 16.7, 17 kt; 27 leaves more (50 degrees off).",
+      "why": "220 at 18 gusting 26 over 18/36 and 27/09: 40 degrees off runway 18, the gust's 26 sin 40 = 16.71 kt, unrounded (to a millionth); 27 leaves more (50 degrees off).",
       "input": {
         "runways": [{ "end_headings": [["18", 180], ["36", 360]] }, { "end_headings": [["27", 270], ["09", 90]] }],
         "metar": { "wind_dir_true_deg": 220, "wind_speed_kt": 18, "wind_gust_kt": 26 },
         "variation_deg": 0
       },
-      "answer": { "end": "18", "crosswind_kt": 17 }
+      "answer": { "end": "18", "crosswind_kt": 16.712478 }
+    },
+    {
+      "why": "270 at 10.4 straight across 18/36: 10.4 kt, unrounded, so it is past a 10 kt demonstrated crosswind where whole knots would read 10 (the aviation audit's AV-10).",
+      "input": {
+        "runways": [{ "end_headings": [["18", 180], ["36", 360]] }],
+        "metar": { "wind_dir_true_deg": 270, "wind_speed_kt": 10.4, "wind_gust_kt": null },
+        "variation_deg": 0
+      },
+      "answer": { "end": "18", "crosswind_kt": 10.4 }
     },
     {
       "why": "A runway's number turned true with the variation where its end has no true heading: 36 with 10 degrees east is 010 true, so a wind from 010 is straight down it.",
@@ -49,6 +58,11 @@
     {
       "why": "17 kt across against a 15 kt demonstrated crosswind: red.",
       "input": { "speed_kt": 18, "gust_kt": 26, "crosswind_kt": 17, "demonstrated_kt": 15 },
+      "answer": { "shown": true, "over": true }
+    },
+    {
+      "why": "10.4 kt across against a 10 kt demonstrated crosswind: red, judged unrounded (AV-10).",
+      "input": { "speed_kt": 10.4, "gust_kt": null, "crosswind_kt": 10.4, "demonstrated_kt": 10 },
       "answer": { "shown": true, "over": true }
     },
     {

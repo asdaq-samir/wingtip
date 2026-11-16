@@ -1,5 +1,6 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { grabberTo, inSheet, settle, showSearch, sideDrawer, slow, frontSheet } from "./helpers";
+import { stopsAre } from "./stopsParam";
 import { drawnMarks } from "./marks";
 
 const origin = new URL(process.env.BASE_URL ?? "http://localhost:8080").origin;
@@ -187,7 +188,7 @@ test("with a course drawn, the Stops along it, each with a line for each kind it
   // Add Stop puts the field in the route (the owner's "On course, have a
   // button to add stop", 2026-10-26).
   await rows.nth(1).getByTestId("stops-add-stop").click();
-  await expect(page).toHaveURL(/[?&]stops=KBBB(&|$)/);
+  await expect(page).toHaveURL(stopsAre("KBBB"));
 });
 
 test("with no route the Stops look round the pilot, 25 nm at first, the distance and the kind picked from the sheet", async ({

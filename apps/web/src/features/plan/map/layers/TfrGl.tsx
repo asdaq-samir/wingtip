@@ -2,11 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import type { FeatureCollection, Geometry } from "geojson";
 import type { FillLayerSpecification, LineLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo } from "react";
-import { usePreferences } from "../../../../lib/preferences";
 import { useMapHover } from "../../../../lib/map/marks/mapHover";
 import { CHART } from "../../../../lib/tokens";
 import { tfrsQuery } from "../../../../lib/queryClient";
-import { TfrCard } from "../TfrCard";
+import { useAddressKey } from "../../../../lib/address";
+import { SheetCard } from "../../../../components/SheetCard";
+import { TfrCard, TfrGone } from "../TfrCard";
 import { TFR_RED, inForce } from "../tfrMarks";
 import { useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../../../../lib/map/gl/glLayer";
 import { TAP } from "../../../../lib/map/gl/layers/common";
@@ -70,19 +71,24 @@ const HOVER: LineLayerSpecification = {
 const DRAWN = [...ALL, HOVER];
 
 /**
- * The temporary flight restrictions (tfrsQuery), at the settings' TFRs:
+ * The temporary flight restrictions (tfrsQuery), always: a hazard a pilot
+ * must know of near the route (14 CFR 91.103), with no switch to lose it
+ * by (the owner, 2026-11-14):
  * each area a fill and its edge, all of them in one source rather than a
  * shape each. A tap inside one opens its card.
  */
 export function TfrGl() {
-  const show = usePreferences((s) => s.tfrs);
-  const { data, dataUpdatedAt: now } = useQuery({ ...tfrsQuery, enabled: show });
+  // The TFR whose card is open, in the address (`tfr`), so a link opens it
+  // as a tap does (the owner's rule: every card reached by a link). TFRs
+  // are always drawn, a hazard with no switch (the owner, 2026-11-14).
+  const [open, setOpen] = useAddressKey("tfr");
+  const { data, isError, dataUpdatedAt: now } = useQuery(tfrsQuery);
   useGlLayer("areas", SOURCES, DRAWN);
   // Faded in as the first answer comes, not snapped on over the chart.
   useGlFadeIn(ALL, !!data);
   const features = useMemo<FeatureCollection | null>(
     () =>
-      show && data
+      data
         ? {
             type: "FeatureCollection",
             features: data.map((tfr) => ({
@@ -92,7 +98,7 @@ export function TfrGl() {
             })),
           }
         : null,
-    [show, data, now],
+    [data, now],
   );
   useGlData(SOURCE, features);
   // The one under the mouse in the Brief, lit by its feature state; none
@@ -108,8 +114,28 @@ export function TfrGl() {
     };
   }, [map, hovered, features]);
   useGlTap(["tfrs-fill", "tfrs-fill-later"], 1, TAP.rank.area, (feature) => {
-    const tfr = data?.find((t) => t.notam_id === feature.properties.id);
-    if (tfr) openCard(<TfrCard key={tfr.notam_id} tfr={tfr} active={inForce(tfr, now)} />);
+    const id = feature.properties.id;
+    if (typeof id !== "string" || !data?.some((t) => t.notam_id === id)) return;
+    // The map's own card (a checkpoint's) put away, as a tap on another
+    // thing does, and this one opened by its address.
+    openCard(null);
+    void setOpen(id);
   });
-  return null;
+  if (!open) return null;
+  const tfr = data?.find((t) => t.notam_id === open);
+  const close = () => void setOpen(null);
+  if (tfr)
+    return (
+      <SheetCard onClose={close}>
+        <TfrCard key={tfr.notam_id} tfr={tfr} active={inForce(tfr, now)} />
+      </SheetCard>
+    );
+  // A link to one no longer listed, or the list not come in: said in its
+  // card, where it was asked for (lib/problems' rule: errors in place).
+  if (!data && !isError) return null;
+  return (
+    <SheetCard onClose={close}>
+      <TfrGone notamId={open} failed={isError && !data} />
+    </SheetCard>
+  );
 }

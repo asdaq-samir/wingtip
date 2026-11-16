@@ -61,7 +61,7 @@ struct FieldRunner {
     func route(dep typedDep: String?, stops: [String], dest: String) async -> String? {
         var dep = typedDep ?? plan.dep
         if dep.isEmpty {
-            if let at = ownShip.fix?.coordinate, let near = try? await Planner.nearest(lat: at.latitude, lon: at.longitude, limit: 1).first {
+            if let at = ownShip.fix?.coordinate, let near = try? await Planner.nearestOrPacks(lat: at.latitude, lon: at.longitude, limit: 1).fields.first {
                 dep = near.ident
             }
             if dep.isEmpty, let home = session.pilot?.homeBase ?? FirstFlightModel.savedHome(), !home.isEmpty { dep = home.uppercased() }
@@ -140,7 +140,7 @@ struct FieldRunner {
             return "The place could not be looked up: \(error.localizedDescription)"
         }
         guard let place = found.first else { return "“\(words)” was not found." }
-        guard let fields = try? await Planner.nearest(lat: place.lat, lon: place.lon, limit: 5), !fields.isEmpty else {
+        guard let fields = try? await Planner.nearestOrPacks(lat: place.lat, lon: place.lon, limit: 5).fields, !fields.isEmpty else {
             return "No field was found near \(place.label)."
         }
         let biggest = fields.max { ($0.longestRunwayFt ?? 0) < ($1.longestRunwayFt ?? 0) } ?? fields[0]

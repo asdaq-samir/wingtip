@@ -1,5 +1,5 @@
 import { runwayNumber } from "../../lib/pattern";
-import { altFt } from "../../../../lib/format";
+import { altFt, dayMonthYear } from "../../../../lib/format";
 import type { ProcedureAirport, ProcedureKind } from "../../hooks/useProceduresRoute";
 import type { Landing } from "./PatternChips";
 
@@ -27,4 +27,12 @@ export function patternNote(a: ProcedureAirport, chosen: string | null, landing:
   // Left unless the FAA flags it right (14 CFR 91.126(b)(1)).
   const side = end ? `Runway ${chosen}, ${end.traffic === "right" ? "right" : "left"} traffic` : `Runway ${chosen}`;
   return [side, a.patternAltitudeFt != null ? `${altFt(a.patternAltitudeFt)} ft` : null].filter(Boolean).join(" · ");
+}
+
+/** A CIFP cycle's first day, "261001" as "1 Oct 2026" (lib/format's
+ *  dayMonthYear, the app's one form, CODE-33): a calendar day, made in the
+ *  device's own time so it is not read a day early west of Greenwich. */
+export function cycleDate(cycle: string): string {
+  const at = new Date(2000 + Number(cycle.slice(0, 2)), Number(cycle.slice(2, 4)) - 1, Number(cycle.slice(4, 6)));
+  return Number.isNaN(at.getTime()) ? cycle : dayMonthYear(at);
 }

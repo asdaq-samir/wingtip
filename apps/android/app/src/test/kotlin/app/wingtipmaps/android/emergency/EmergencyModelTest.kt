@@ -4,6 +4,7 @@ import app.wingtipmaps.android.MainRule
 import app.wingtipmaps.android.api.generated.EmergencyField
 import app.wingtipmaps.android.api.generated.EmergencyFields
 import app.wingtipmaps.android.api.generated.EmergencyFrequency
+import app.wingtipmaps.android.api.generated.EmergencyMetar
 import app.wingtipmaps.android.checklist.ChecklistSection
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
@@ -45,10 +46,10 @@ class EmergencyModelTest {
             return Result.success(EngineContract.MaydayCallAnswer(lines = listOf("MAYDAY MAYDAY MAYDAY"), words = "", missing = emptyList(), squawk = "7700", squawkWords = "", channels = emptyList()))
         }
         override fun checklistSection(titles: List<String>) = titles.indexOfFirst { it.startsWith("Engine failure in flight") }.takeIf { it >= 0 }
-        override fun sections(text: String) = if (text.isEmpty()) emptyList() else listOf(
+        override fun sections(text: String) = if (text == "unreadable") Result.failure(IllegalArgumentException("no")) else Result.success(if (text.isEmpty()) emptyList() else listOf(
             ChecklistSection("Engine fire", emptyList()),
             ChecklistSection("Engine failure in flight", listOf(EngineContract.ChecklistReadSectionsItemItemsItem("Airspeed", "68 KIAS"))),
-        )
+        ))
         override fun compassWord(bearingDeg: Double) = if (bearingDeg in 180.0..270.0) "SW" else "NE"
         override fun guidance() = listOf(EngineContract.EmergencyGuidanceAnswerItemsItem(title = "Squawk 7700", detail = "Then talk to ATC", source = "AIM 6-2-2"))
     }
@@ -60,7 +61,7 @@ class EmergencyModelTest {
         var asks = 0
         var askedAircraft: String? = "?"
         val rules = Rules()
-        val model = EmergencyModel({ _, _, alt, aircraft, _ -> asks++; askedAircraft = aircraft; assertEquals(4500.0, alt!!, 0.0); EmergencyFields(fields = listOf(field("KUGN", 6.2, 30.0), field("C81", 3.4, 45.0))) }, rules)
+        val model = EmergencyModel({ _, _, alt, aircraft, _ -> asks++; askedAircraft = aircraft; assertEquals(4500.0, alt!!, 0.0); EmergencyFields(fields = listOf(field("KUGN", 6.2, 30.0).copy(metar = EmergencyMetar(visibilitySm = 10.0, visibilityPlus = true)), field("C81", 3.4, 45.0))) }, rules)
         model.start(aircraft = "c172", airplaneName = "C172", callsign = null, checklist = "# x")
         model.took(fix, trackMagDeg = 304.0)
         val s = model.state.value
@@ -68,6 +69,8 @@ class EmergencyModelTest {
         assertEquals("c172", askedAircraft)
         assertEquals("C81", s.picked!!.ident)
         assertEquals("555-0100", s.phone)
+        // The report's visibility, "more than" kept; none where no report says one.
+        assertEquals(mapOf("KUGN" to "10+ sm"), s.visibility)
         // The checklist opened at the engine failure, the section the call names.
         assertEquals(1, s.section)
         val facts = rules.facts!!
@@ -148,5 +151,14 @@ class EmergencyModelTest {
         assertTrue(EmergencyOpen.asked("I have an emergency"))
         assertFalse(EmergencyOpen.asked("KDPA to KMSN"))
         assertFalse(EmergencyOpen.asked("engine start"))
+    }
+
+    @Test
+    fun aChecklistTheEngineCannotReadIsSaidAndTheGuidanceShown() {
+        val model = EmergencyModel({ _, _, _, _, _ -> EmergencyFields(fields = emptyList()) }, Rules())
+        model.start(aircraft = "c172", airplaneName = "C172", callsign = null, checklist = "unreadable")
+        val s = model.state.value
+        assertEquals("Your checklist could not be read", s.checklistProblem)
+        assertEquals("Squawk 7700", s.guidance.single().title)
     }
 }

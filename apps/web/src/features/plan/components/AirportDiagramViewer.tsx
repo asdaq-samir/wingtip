@@ -8,6 +8,7 @@ import { Button } from "../../../components/ui/button";
 import { api } from "../../../lib/api/client";
 import { chartPagePicture, type PageMark } from "../../../lib/diagram";
 import { ownShipHtml } from "../../../lib/map/marks/icons";
+import { usePreferences } from "../../../lib/preferences";
 import { drawOwnShip, ownShipMarker } from "../../../lib/map/gl/layers/ownShipMarker";
 import { TEXT } from "../../../lib/text";
 import { cn } from "cn";
@@ -73,6 +74,8 @@ function Pages({ placed, all, mark }: ReturnType<typeof laidOut> & { mark: PageM
   // The mark's markup as last written, so a fix a second moves the
   // element rather than building it again (OwnShipGl's way).
   const drawn = useRef("");
+  // Drawn as on the chart, the Map card's Own Ship.
+  const look = usePreferences((s) => s.ownShipLook);
   useEffect(() => {
     if (!box.current) return;
     const style: StyleSpecification = {
@@ -128,7 +131,7 @@ function Pages({ placed, all, mark }: ReturnType<typeof laidOut> & { mark: PageM
     }
     marker.current ??= ownShipMarker("chart-own-ship");
     // Nose up in its markup, turned by the marker to the track on the page.
-    drawOwnShip(marker.current, drawn, ownShipHtml(mark.rotationDeg == null ? null : 0, false, mark.moving));
+    drawOwnShip(marker.current, drawn, ownShipHtml(mark.rotationDeg == null ? null : 0, false, look, mark.moving));
     // The page's fractions in its box's degrees: across from its west
     // edge, down from its north one.
     const [west, , , north] = page.box;
@@ -136,7 +139,7 @@ function Pages({ placed, all, mark }: ReturnType<typeof laidOut> & { mark: PageM
       .setLngLat([west + mark.x * page.width * K, north - mark.y * page.height * K])
       .setRotation(mark.rotationDeg ?? 0)
       .addTo(map);
-  }, [placed, mark]);
+  }, [placed, mark, look]);
   // Black at night where it is drawn white on black: the canvas inverted.
   return <div ref={box} data-pages={placed.length} className="min-h-0 flex-1 bg-white dark:bg-black dark:[&_canvas]:invert" />;
 }

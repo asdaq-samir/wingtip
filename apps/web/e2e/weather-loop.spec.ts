@@ -51,9 +51,12 @@ async function turnOnRadar(page: Page) {
   await openMapSettings(page);
   // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
   await grabberTo(page, "full");
+  // A submenu of the Weather tile's ••• menu (the four layers, 2026-11-14).
+  await page.getByTestId("weather-more").click();
   await page.getByTestId("weather-loop").click();
   await page.getByTestId("weather-loop-radar").click();
-  // With a loop on, its speed is a second group of the tile's menu.
+  // With a loop on, its speed is a second group of the submenu.
+  await page.getByTestId("weather-more").click();
   await page.getByTestId("weather-loop").click();
   await expect(page.getByTestId("weather-loop-speed")).toBeVisible();
   await expect(async () => {

@@ -8,7 +8,7 @@ import { WHOLE } from "./ui/numberFormats";
 import { procedureQuery, proceduresQuery } from "../lib/queryClient";
 import type { ProcedureDrawing, ProcedureList } from "../lib/api/types";
 import { findApproaches, withMinimums, withTransition, type ApproachDebrief as Debriefed, type Tone } from "./approachDebriefModel";
-import { clockTime } from "../lib/format";
+import { clockTime, wholeNm } from "../lib/format";
 import { rad } from "../lib/geo";
 import { sameField, transitionWords, type PickedProcedure } from "../lib/procedures";
 import { FINDING_TONE } from "../lib/findings";
@@ -408,7 +408,7 @@ function ProfileView({ d }: { d: Debriefed }) {
         ))}
       </div>
       <p className={cn("text-muted-foreground tabular-nums", TEXT.note)}>
-        {feet(low)} · {far.toFixed(0)} nm to the MAP
+        {feet(low)} · {wholeNm(far)} to the MAP
       </p>
     </figure>
   );

@@ -10,6 +10,7 @@ airport_data_words
 airport_notams_none
 airport_use_words
 airspace_entry_rules
+airspace_shelf_label
 airspace_volume_span
 alert_fires
 altitude_advisor
@@ -45,6 +46,7 @@ checklist_phases
 checklist_read
 checklist_section
 checklist_write
+class_b_at_altitude
 cleared_route
 closest_approach
 cloud_clearance_at_ft
@@ -55,6 +57,7 @@ copilot_watch
 csv_rows
 ctaf_of
 data_cycle
+datis_remarks
 debrief
 debrief_airborne
 departure_pattern
@@ -76,7 +79,6 @@ endorsements_in_force
 endurance
 faa_words
 field_hours
-field_relation
 field_taf
 filed_dof
 filed_duration
@@ -95,6 +97,8 @@ flow_levels
 flow_sample
 frd_read
 frd_write
+freezing_precip
+frequencies_in_order
 frequency_line
 fuel_estimate
 fuel_in_tanks
@@ -111,10 +115,12 @@ gonogo_end_distance
 gonogo_field_permission
 gonogo_icing
 gonogo_icing_line
+gonogo_icing_unchecked
 gonogo_pass_minutes
 gonogo_picked_end
 gonogo_risk
 gonogo_risk_line
+gonogo_route_figures
 gonogo_runway_checks
 gonogo_runway_flown
 gonogo_runway_in_use
@@ -136,7 +142,6 @@ holding
 holding_leg_minutes
 holds_read
 icing_severity
-in_emergency
 kept_age
 kneeboard_radio
 least_crosswind
@@ -150,8 +155,10 @@ model_weather_bands
 morse
 n_number
 navaid_hours
+navlog_fuel_plan
 navlog_leg
 navlog_totals
+night_at_either_end
 notam_read
 notam_subject
 our_call
@@ -185,6 +192,7 @@ ready_to_fly
 registered_profile
 replay_track
 route_position
+route_way_warning
 runway_calm
 runway_crosswind
 runway_end_fit
@@ -200,16 +208,14 @@ squawk_meaning
 strip_fuel
 sua_altitudes
 sun_down
+surface_hours
 terrain_view_bands
 tfr_read
 thin_track
 title_case
 tokens
-traffic_kind
 traffic_marks
-traffic_matches
 traffic_pattern
-traffic_reach
 turbulence_category
 underway
 vfr_basic_minimums

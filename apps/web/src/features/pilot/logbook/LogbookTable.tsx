@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { Fragment, useState } from "react";
 import { ArrowDown, ArrowUp, CircleMinus } from "lucide-react";
 import { cn } from "cn";
@@ -64,8 +65,7 @@ export default function LogbookTable({ entries, vm }: { entries: LogbookEntry[];
       const on = sort.column === c.id;
       const Arrow = sort.order === "ascending" ? ArrowUp : ArrowDown;
       return (
-        <button
-          type="button"
+        <BaseButton
           onClick={() => setSort(nextSort(sort, c.id))}
           className={cn(
             "relative inline-flex items-center gap-1 rounded-sm outline-none after:absolute after:-inset-2 focus-visible:ring-2 focus-visible:ring-ring",
@@ -76,7 +76,7 @@ export default function LogbookTable({ entries, vm }: { entries: LogbookEntry[];
         >
           {c.header}
           <Arrow className={cn("size-3.5", !on && "invisible")} aria-hidden="true" />
-        </button>
+        </BaseButton>
       );
     },
     cell: ({ row }) => {
@@ -84,15 +84,14 @@ export default function LogbookTable({ entries, vm }: { entries: LogbookEntry[];
       if (c.id !== "date") return text;
       // The date opens the flight: a real button, so Tab reaches each row.
       return (
-        <button
-          type="button"
+        <BaseButton
           onClick={() => (vm.changing === row.original.id ? vm.stopChanging() : vm.change(row.original.id))}
           aria-expanded={vm.changing === row.original.id}
           className="relative font-semibold text-tint outline-none after:absolute after:-inset-2 focus-visible:ring-2 focus-visible:ring-ring"
           data-testid="logbook-entry-open"
         >
           {text}
-        </button>
+        </BaseButton>
       );
     },
     meta: { className: cn(c.figure && "text-right tabular-nums", c.id === "remarks" && "max-w-32 truncate") },

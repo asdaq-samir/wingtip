@@ -26,9 +26,10 @@ pub struct Profile {
     pub airplane: bool,
     pub tas_kt: f64,
     pub burn_gph: f64,
-    pub usable_gal: f64,
-    pub taxi_gal: f64,
-    pub ceiling_ft: f64,
+    /// None where not known: no figure is assumed (the owner, 2026-11-09).
+    pub usable_gal: Option<f64>,
+    pub taxi_gal: Option<f64>,
+    pub ceiling_ft: Option<f64>,
 }
 
 /// A field's weather: a TAF's worst over the flight with every group's
@@ -202,9 +203,9 @@ impl Reader<'_> {
                     airplane: false,
                     tas_kt: REFERENCE_TAS_KT,
                     burn_gph: 0.0,
-                    usable_gal: 0.0,
-                    taxi_gal: 0.0,
-                    ceiling_ft: 12000.0,
+                    usable_gal: None,
+                    taxi_gal: None,
+                    ceiling_ft: None,
                 });
             }
             Some(p) => p,
@@ -213,10 +214,9 @@ impl Reader<'_> {
             airplane: true,
             tas_kt: self.num(p, "cruise_tas_kt")?,
             burn_gph: self.num(p, "fuel_burn_gph")?,
-            usable_gal: self.opt_num(p, "usable_fuel_gal")?.unwrap_or(0.0),
-            taxi_gal: self.opt_num(p, "taxi_fuel_gal")?.unwrap_or(0.0),
-            // The planner's default ceiling where a profile gives none.
-            ceiling_ft: self.opt_num(p, "service_ceiling_ft")?.filter(|c| *c > 0.0).unwrap_or(12000.0),
+            usable_gal: self.opt_num(p, "usable_fuel_gal")?.filter(|g| *g > 0.0),
+            taxi_gal: self.opt_num(p, "taxi_fuel_gal")?,
+            ceiling_ft: self.opt_num(p, "service_ceiling_ft")?.filter(|c| *c > 0.0),
         })
     }
 

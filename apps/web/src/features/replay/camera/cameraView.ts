@@ -1,8 +1,8 @@
 import type { Map as MlMap } from "maplibre-gl";
 import { positionAt, usePastFlight } from "../../../lib/replay/clock";
 import { poseOf, type Pose } from "./cameraPose";
-import { useReplayCamera, type CameraKind } from "./cameraStore";
-import { keyedView, type View } from "./keyframes";
+import { useReplayCamera, type CameraKind } from "../../../lib/replay/camera/cameraStore";
+import { keyedView, type View } from "../../../lib/replay/camera/keyframes";
 
 /** A camera's pose as the map's view: an eye in space through MapLibre's
  *  own conversion, straight down at the map's zoom now. */

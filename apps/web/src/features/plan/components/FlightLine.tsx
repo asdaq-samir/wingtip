@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { useAirplaneChosen } from "../../../lib/preferences";
 import { Suspense, lazy, useState } from "react";
 import { zoneName } from "../../../lib/format";
@@ -184,8 +185,7 @@ export default function FlightLine({
                     {/* The figure itself the button, in the tint as what is
                         tapped is; its 44-point area round it, the figure
                         not grown to make it (index.css's after). */}
-                    <button
-                      type="button"
+                    <BaseButton
                       data-testid="fuel-breakdown-open"
                       data-alert={f.alert || undefined}
                       aria-label={`${seen(f)}, ${f.said}: what it is made of`}
@@ -208,7 +208,7 @@ export default function FlightLine({
                           {f.unit}
                         </span>
                       )}
-                    </button>
+                    </BaseButton>
                   </ResponsivePopoverTrigger>
                   <ResponsivePopoverContent title={`Fuel to ${breakdown.to}`} className="w-72 p-3" side="top" align="end">
                     <Suspense fallback={null}>

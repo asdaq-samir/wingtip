@@ -52,15 +52,15 @@ table, and its why below, in the same commit.
 
 | Crate | Modules | Uses |
 |---|---|---|
-| `core` | geo, flat (nm east and north of a point, the small flat frame), wmm, grid, sums, time, json, xml, sort, text (a whole number with its thousands grouped, "12,500"), units (the SI's foot, nautical mile and kelvin, one copy), ask (a rule's input read by its name, for every crate's `call`) | nothing |
-| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy), field (whether a field is open: NASR's ARPT_STATUS, O alone; decision 0043) | core |
+| `core` | geo, flat (nm east and north of a point, the small flat frame), wmm, grid, sums, time, json, xml, sort, text (a whole number with its thousands grouped, "12,500"), units (the SI's foot, nautical mile and kelvin, one copy), ask (a rule's input read by its name, for every crate's `call`), faa_case (the FAA's capitals in sentence case with its codes kept, the one copy: wording's `faa_words` and a TFR's purpose) | nothing |
+| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy), field (whether a field is open: NASR's ARPT_STATUS, O alone; decision 0043; and whether it is military or joint; mark_rank: which field's map mark is kept first) | core |
 | `weather` | metar, sky (a report's ceiling and its cover, for the station model), taf, winds, forecast (with run: the dry run against the forecast), validity, notam, notam_read (a NOTAM as a pilot reads it: its keyword as a heading, its words written out, its window) over contractions (the FAA's contractions, the one table, which the radio's D-ATIS reads by too), notam_rank (the NOTAMs that matter to a flight, best first), tfr, cycles, rvr (RVR against a minimum, 91.175(h)'s table), ready (ready to fly: what the device holds against the cycles and the weather's age; kept: a kept answer's age), worse (a route's weather worse since the briefing) | core, flight |
 | `procedures` | figures (debrief, diversion, endurance (91.151(a) and 91.167(a)(3)'s reserve kept back), holding, lost comms, words), paths (a procedure's legs as drawn: arcs, CIFP holds, procedure turns), occurrence (an accident report, the registry and an ADS-B track as one airplane: the Studio's crash drafts) | core, flight |
-| `radio` | clearance, callsign (our call sign and where it was said, AIM 4-2-3 c, 4-2-4), instruction (an instruction heard in flight read into its items), readback (AIM 4-4-7 b), atc (the ATC copilot's `atc_call` and `readback_check`), atis, datis (a digital ATIS as the tower's data link writes it), mayday (the distress call, AIM 6-3-2), guidance (an emergency's general good practice with no airplane picked) | core, flight, weather, procedures |
+| `radio` | clearance, callsign (our call sign and where it was said, AIM 4-2-3 c, 4-2-4), instruction (an instruction heard in flight read into its items), readback (AIM 4-4-7 b), atc (the ATC copilot's `atc_call` and `readback_check`), atis, datis (a digital ATIS as the tower's data link writes it), datis_remarks (its remarks as the card lists them, an item a sentence in the FAA's words, like runways folded), mayday (the distress call, AIM 6-3-2), guidance (an emergency's general good practice with no airplane picked) | core, flight, weather, procedures |
 | `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171), autolog (a logbook entry drawn from a flown track: 1.1, 61.1(b), 61.57), aircraft (with figures: an airplane's figures and where each comes from, and what a figure lacks), documents (a photographed page's figures checked before the pilot sees them), coach (a pilot's proficiency plan: what is due under 61.56 and 61.57, the weak areas their debriefs show, the sessions) | core, flight, procedures, route (without its options) |
 | `brief` | gonogo, runway (with marks: a field's wind on the map), alternates (91.169's IFR alternate), fields (the best fields to land at: a glide or a diversion), icing_forecast (the AWC's forecast icing on an IFR route), passengers (the passengers' SAFETY briefing, 91.107(a)) | core, flight, procedures |
-| `route` | route (and its options: route options' grid and ways, fuel stops, the way round high ground, Class B detours), motion (with along: where the airplane is on the route), approach, navlog | core, flight, weather, procedures |
-| `airspace` | airspace, pack, rules, pack_query, view, spoken (with spoken_ask: the places a clearance names and its SID and STAR, `clearance_places`), ahead, drills (91.125's light signals and 91.155's minimums as cards and by name) | core, flight, procedures, radio |
+| `route` | route (and its options: route options' grid and ways, fuel stops, the way round high ground, Class B detours), motion (with along: where the airplane is on the route; fuel_left: the fuel the plan leaves in flight, from the last fuel stop, less each start and taxi, and the hop flown and its burn, which the strip's fuel takes off that hop's), approach, navlog | core, flight, weather, procedures |
+| `airspace` | airspace, pack, rules, pack_query, view, spoken (with spoken_ask: the places a clearance names and its SID and STAR, `clearance_places`), ahead, drills (91.125's light signals and 91.155's minimums as cards and by name), surface_class and surface_hours (the class at a field's surface and a part-time one's hours, `surface_airspace`, `surface_hours`) | core, flight, procedures, radio |
 | `wording` | wording (with script: the radio calls' words) | core, procedures, airspace, brief, route (without its options) |
 | `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words, the cautions on a pilot's own altitude, 91.119(b)'s congested areas) | core, flight, weather, procedures |
 | `inflight` | watch, checks, message (`copilot_watch`: the in-flight copilot's ranked messages), fields (its alternative: brief's best_fields in diversion mode, held to its weather and fuel checks) | core, flight, weather, procedures, brief |
@@ -240,13 +240,33 @@ Then the callers switch to the name and the old copy is deleted.
   planner's very answers from `call` (`debrief`, `diversion`,
   `holding`, `lost_comms`).
 - The Brief's Go / No-Go is the engine's too (`crates/brief`): the seven
-  findings and the line over them, the pilot's minimums, icing under IFR,
-  the risk assessment and the airplane's airworthiness, the runway check,
+  findings and the line over them, the pilot's minimums, icing under IFR
+  (and `gonogo_icing_unchecked` where the freezing level is not known),
+  freezing rain and drizzle in a field's METAR or TAF on any flight
+  (`crates/weather`'s `freezing_precip`, AIM 7-1-20), the risk assessment and the airplane's airworthiness, the runway check,
   the weight and balance and the pass times (the web's lib/verdict and
-  the modules it is fed from). Each is a name in `call.rs`
+  the modules it is fed from), and the route's fuel and TFR figures the
+  findings are put together from (`gonogo_route_figures`: the least fuel
+  margin, the fuel required, the reserve, the TFRs in force and near), so
+  neither shell works them out. Each is a name in `call.rs`
   (`gonogo_verdict_items`, `gonogo_risk`, `gonogo_runway_checks` ...), asked by
   the web app (callEngine), the planner's app.gonogo (wingtip_native.call)
-  and the phones (the generated `call`).
+  and the phones (the generated `call`). Which Class B band of a route's
+  profile holds an altitude is `class_b_at_altitude` (crates/airspace,
+  14 CFR 91.131), the Profile card's "clearance needed".
+- The 3D map's airspace is the engine's too (`crates/airspace`): how high
+  a volume stands (`airspace_volume_span`) and, given the plan's
+  altitudes, whether it holds any of them (its `holds`, for the volumes at
+  the pilot's altitude to stand out), and a Class B, C or D shelf's
+  altitudes as the sectional writes them, ceiling over floor in hundreds
+  of feet MSL (`airspace_shelf_label`, the FAA's Chart User's Guide: "100"
+  over "30", "T", "-30"), held to the web's fixtures
+  `airspaceVolumeSpan.json` and `airspaceShelfLabel.json`.
+- Where an airplane is usually based is the engine's too (`crates/flight`,
+  `usual_base`): the field its heard flights most often start or end at,
+  said only with at least 3 of their takeoffs and landings, 0.4 of them
+  and no tie (the owner's figures), for the planner's airplane card and the
+  Aircraft tab's "based at"; held to the web's fixture `usualBase.json`.
 - Runways, the wind on them and the traffic pattern are the engine's too
   (`crates/brief`): a wind along and across a runway and the end it favours,
   the runway flown (the pilot's pick, else into the wind, AC 90-66C
@@ -256,7 +276,14 @@ Then the callers switch to the name and the old copy is deleted.
   lib/wind, lib/pattern, lib/runwayFit, lib/takeoffLanding and
   lib/trafficPattern; wingtip.runway_wind and wingtip.pattern), each a name in
   `call.rs` (`wind_pick`, `runway_end_fit`, `traffic_pattern` ...). The
-  Go / No-Go's runway check goes by the same.
+  Go / No-Go's runway check goes by the same. A crosswind is rounded to
+  the knot for the page only: a limit (the POH's demonstrated crosswind,
+  the pilot's own) is judged against the unrounded one, which a
+  runway's wind carries as `crosswind_exact_kt`, and one past its limit
+  that rounds within it is shown to the tenth. A landing's distance is
+  held to the runway available on its end (`displaced_threshold_ft`,
+  `lda_ft` on each of a runway's ends: the declared LDA, else the length
+  past a displaced threshold, AIM 2-3-3), a takeoff's to the whole length.
 - The nav log is the engine's too (`crates/route`'s navlog, over
   `crates/flight`'s performance; #482 phase 4): each leg's wind triangle,
   headings, ground speed, time and fuel with the airplane flown in the
@@ -265,7 +292,13 @@ Then the callers switch to the name and the old copy is deleted.
   approach's fix), the four altitude plans and the altitude wheel's
   figures, a route with stops' plans joined, the fuel plan (14 CFR
   91.151, 91.167) and the IFR alternate's leg, and a pilot's hold flown
-  on its leg (AIM 5-3-8). The planner looks up the air -- the winds and
+  on its leg (AIM 5-3-8). A figure the airplane's profile lacks is never
+  filled with another's (the owner, 2026-11-09): no cruise power, no
+  power model (`power_pct` null, the TAS and burn as given); no climb
+  fuel flow, the climb's gallons not counted (`climb_fuel_unknown` on the
+  leg) and no economical plan; and route options with no service ceiling,
+  usable fuel or start and taxi fuel close no ground on a ceiling and say
+  in `unchecked` what was not worked out. The planner looks up the air -- the winds and
   temperatures aloft at each leg's midpoint, at every altitude the plans
   may fly (`navlog_candidates`), and the variation -- and asks
   `navlog_plans`, `navlog_legs`, `navlog_with_descents` ... by name;
@@ -296,12 +329,22 @@ Then the callers switch to the name and the old copy is deleted.
   endpoints answered (the airports' still does; the web's map draws the
   airspace and navaids from the overlay tiles) (`wt_airspace_in_view`, `wt_airports_in_view`,
   `wt_navaids_in_view`), with what a pack cannot hold -- a live METAR's
-  flight category, a navaid's remarks -- answered null or empty.
+  flight category, a navaid's remarks -- answered null or empty. Each
+  field carries the overlay tiles' mark, `mark_order` and `mark_size`
+  (`field_mark_rank`, its longest hard runway the pack's HARD_FT
+  column), so a phone ranks its marks offline as the tiles rank them.
+  Which packs to read for what is ahead is the engine's as well
+  (`regions_ahead`): the airplane's own region, then those its track and
+  its route cross within a look-ahead distance, in the order reached.
 - The altitude a flight is planned at is the engine's too (`crates/altitude`,
   #482 phase 3): each leg's floor -- the terrain and DOF obstacles with
-  14 CFR 91.119's clearances (`vfr_floors`), or 91.177(a)'s minimum IFR
+  14 CFR 91.119's clearances (`vfr_floors`, asked once a leg with the
+  ground and obstacles under that leg as flown, wingtip.terrain), or 91.177(a)'s minimum IFR
   altitude over Part 95's mountainous areas (`ifr_floors`, the areas drawn
-  in `mountainous.rs`), or an airway's MEA -- the band under the Class B
+  in `mountainous.rs`), or an airway's MEA; a leg flown by a departure, an
+  arrival or an approach keeps the highest of its own floor and the floors
+  under the procedure's path (`floor_along_path`, the aviation audit's
+  AV-2) -- the band under the Class B
   shelf (only Class B bounds it: Class B takes a clearance, 91.131(a)(1),
   while Class C and D take two-way radio communication, 91.130(c)(1) and
   91.129(c)(1), so they are calls to make, not airspace to fly under), 91.155's distance under the forecast clouds and the service
@@ -333,7 +376,8 @@ Then the callers switch to the name and the old copy is deleted.
 - The map's airport weather marks are the engine's too (`crates/brief`'s
   runway::marks, the owner's pick of 2026-11-10): `least_crosswind` (of a
   field's runways, each on the end the wind favours, the least
-  crosswind, steady or gust; a variable wind all crosswind, AIM 7-1-28),
+  crosswind, steady or gust, unrounded so the arrow is judged on the
+  crosswind itself, AV-10; a variable wind all crosswind, AIM 7-1-28),
   `wind_arrow` (whether the wind earns its arrow, 10 kt or more or
   gusting, and whether it is red: past the picked airplane's maximum
   demonstrated crosswind, the POH's, never with no airplane or no
@@ -359,7 +403,33 @@ Then the callers switch to the name and the old copy is deleted.
   figure needs that the profile lacks, so the app asks for them where the
   figure is) and `endurance` (`crates/procedures`: usable fuel over the
   cruise burn, and what is left once 91.151(a)'s or 91.167(a)(3)'s
-  reserve is kept back, a warning below it, never a refusal).
+  reserve is kept back, a warning below it, never a refusal). Each
+  figure's range is stated once, `airplane_figure_ranges` (`crates/pilot`'s
+  aircraft form, sanity bounds, no regulation): `aircraft_problems` checks
+  the "Your Airplane" form and the gateway's save against it, and the
+  planner builds its query parameters' bounds from it (app.plan_query),
+  so an airplane the form takes is one every plan takes.
+- Whether a field is the armed services' own is the engine's too:
+  `field_military` (`crates/flight`'s field, NASR APT_BASE's
+  OWNERSHIP_TYPE_CODE and FACILITY_USE_CODE: "military", "joint" or
+  null), asked by the planner (wingtip.field_status), the cycle pack's
+  overlays (services/jobs) and the engine's own map pins.
+- Which airport mark the map keeps where marks would overlap is the
+  engine's too: `field_mark_rank` (`crates/flight`'s field, from NASR
+  APT_BASE's site type, use and tower, the longest hard runway, and the
+  class of airspace the FAA's Class_Airspace file names the field the
+  primary of): its `tier` (towered, public with 3,000 ft of hard runway,
+  other public, private, heliports), the zoom its mark is first drawn at,
+  its `order`, a Class B's field, then a Class C's, then each tier,
+  the longer hard runway first in each, and its `size`, the step the mark
+  is drawn at (largest for a Class B's field, larger for a Class C's). The overlays job asks it for
+  every field and the tiles carry `order` as `rank`, the key every app's
+  map sorts its marks by, and `size`; the planner's /api/airports/in-view,
+  which the iPhone draws its marks from, carries the same as `mark_order`
+  and `mark_size` (wingtip.field_marks). Which runway is hard is
+  `runway_hard_surface` (NASR APT_RWY's SURFACE_TYPE_CODE, the Chart
+  User's Guide's hard-surfaced runways), one copy for both. The web never
+  asks either, so its WebAssembly has none of it.
 - `emergency_guidance` (`crates/radio`): with no airplane picked, an
   emergency's general good practice only, each item with its source
   (FAA-H-8083-3C ch. 18; AIM 6-1-1, 6-1-2, 6-2-1, 6-2-2, 6-3-1, 6-3-2;
@@ -368,7 +438,16 @@ Then the callers switch to the name and the old copy is deleted.
 - Route options (`crates/route`'s options) are a cargo feature, `options`
   (the facade's `route-options`), on for the planner and the phones and
   off in the web's WebAssembly, which never asks them: they were 150 KB of
-  the module.
+  the module. A way's `crosses` names, besides what closes a cell, each
+  restricted area, MOA, warning and alert area it is flown through (never
+  closed: warn, never limit; AIM 3-4), and each way's `warning` is its
+  card's one warning in the engine's words, the worst first ("Crosses a
+  restricted area" before "Crosses a MOA").
+  Across the antimeridian (Adak to Shemya) everything a route's options
+  read is moved within 180 degrees of the departure's longitude before
+  the grid is framed (`options/wrap.rs`), so the frame's boxes may pass
+  -180 or 180 (the planner reads them as two boxes) and every longitude
+  handed back is between -180 and 180.
 - The web's WebAssembly is built with only the rules the web asks
   (`facade/build.rs`, wherever the facade is built for wasm32, which only
   `bindings/wasm` is; the planner's wheel and the phones build every rule,
@@ -382,8 +461,22 @@ Then the callers switch to the name and the old copy is deleted.
   with `--check`, and `engine.test.ts` asks every listed rule of the
   module. The 143 rules left out were 194 KB (2026-11-10); the module's
   size is held to a budget (`scripts/ci/wasm_size.py`).
+- In that module each rule is its own small call: the table `build.rs`
+  writes for wasm32 holds a closure per rule that asks the crate's function
+  with the rule's name as a constant. A function answering more than one
+  rule carries `#[cfg_attr(target_arch = "wasm32", inline(always))]`, so it
+  is inlined into each closure and the constant folds its `match name` to
+  the one arm; the arms of rules the web never asks are then reached from
+  nothing and left out. It took the module from 1,293,813 bytes (563,754
+  gzipped) to 1,099,029 (492,654) on 2026-11-14. A new function answering
+  several rules takes the same line; without it the module still works,
+  only carrying every arm. The planner's wheel and the phones are built as
+  before, the table naming the function itself.
 - The planner's own copies are going (#482 phase 0): the airspace column
-  and the Mode C veil (`airspace_column`, `mode_c_veil`), an FNS message's
+  (its bands split at 1,500 ft above the surface, where 71.71(a)(2)'s
+  14,500 ft Class E stops, and 91.215(b)'s general arms asked before a
+  Class D's own radio) and the Mode C veil (`airspace_column`,
+  `mode_c_veil`), an FNS message's
   NOTAMs (`notams_fns`), a report's ceiling and category (`ceiling_ft`,
   `flight_category`, `vfr_basic_minimums`), a hazard's window
   (`gonogo_hazard_window`), the reserve, the atmosphere and the descent
@@ -401,6 +494,22 @@ Then the callers switch to the name and the old copy is deleted.
   (`bindings/ffi/bindgen`, at the `uniffi` crate's own version) from the
   built library each time it is built, and never committed or edited
   (`bindings/ffi/uniffi.toml` names their modules).
+  Every exported function runs its rule under `catch_unwind`
+  (`guarded`), so a panic in the engine comes back as the call's
+  refusal (`EngineError::Refused`, Swift's `Engine.Refused`, Kotlin's
+  `EngineException`) and the app goes on; UniFFI catches a panic too, but
+  hands it to the generated Swift of a function that cannot fail as a
+  `try!`, a crash. It needs the release profile's `panic = "unwind"`
+  (`Cargo.toml`, said aloud there); only the WebAssembly's own profile
+  aborts. A cycle pack's header is read with its count of sections held
+  to what the file can hold before anything is allocated (`pack.rs`), as
+  an allocation too large aborts rather than panics.
+  The phones' builds write the engine's hash (the engine store's,
+  `scripts/build/shared-cache.sh`) beside what they build, `engine.hash`:
+  `scripts/dev/xcodebuild.sh` refuses to build against an XCFramework
+  from another engine, and `scripts/dev/go-live.sh` builds the live
+  tree's again, since an app linked against an older engine builds and
+  only says "the engine has no rule called …" on a screen.
   `bindings/ffi/build-xcframework.sh` builds a static library for the
   iPhone and the simulator into
   `apps/ios/Frameworks/WingtipEngine/WingtipEngineFFI.xcframework` with
@@ -435,6 +544,11 @@ warm-up once a cycle, to `data/raw/packs/wingtip-<cycle>.pack` (not
 committed); the phones' packs of it, one a 4-degree region with the rings
 simplified (`wingtip.cycle_pack.write_phone`), to `data/raw/packs/phone/<cycle>/`,
 served at `/api/cycle-packs` and `/api/cycle-pack/<cycle>/<region>.pack`.
+The airports table carries `wingtip.pack_airports`' SIZE and HARD_FT
+columns after NASR's, read by name, so an older pack still reads. A change
+to what the tables hold bumps `cycle_pack.TABLES` (2 since HARD_FT,
+2026-11-14), in the pack's meta and the phones' index: the planner builds
+both again, and a phone, seeing a region's new crc32, fetches it again.
 `services/planner/tests_wingtip/test_phone_pack.py` holds the engine's answer from them to the
 planner's own code; the iOS app's `CyclePackTests` read the Chicago ones
 in `services/planner/tests_wingtip/fixtures/native/phone`.

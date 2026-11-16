@@ -3,19 +3,20 @@ import PlaceAge from "./PlaceAge";
 import { Radio } from "lucide-react";
 import { PillSection } from "../../../../components/Favorites";
 import { FirstFew } from "../../../../components/FirstFew";
-import { ListGroup, ListRow } from "../../../../components/GroupedList";
+import { ListRow } from "../../../../components/GroupedList";
 import { RowBadge } from "../../../../components/RowBadge";
 import type { AirportPlace } from "../../../../lib/api/types";
 import { BADGE } from "../../../../lib/rowBadges";
-import { feet } from "../../../../lib/format";
 import { callEngine } from "../../../../lib/engine/engine";
+import { inUseOrder } from "../../../../lib/frequencies";
 import { FrequencyRow } from "../FrequencyRow";
 import { StopServices } from "../StopServices";
-import { mapsLink } from "./mapsLink";
+import { PlaceDetails } from "./PlaceDetails";
 import { PlaceLights } from "./PlaceLights";
 import { PlaceNotamsSection } from "./PlaceNotams";
 import { NotamBadge, NotamSheet } from "./NotamBadge";
 import { useNotamMarks, useNotamSheet } from "./notamBadges";
+import { NO_FREQUENCIES } from "../../../../lib/emptyWords";
 
 /** A section of the Info tab, which has several: its title over its rows
  *  (PillSection), the title the way to its list in full where it has more. */
@@ -42,8 +43,10 @@ function CardSection({
 }
 
 /**
- * An airport's card's Info tab (PlaceCard): its details first --
- * elevation, airspace, distance, the address -- then its frequencies, its
+ * An airport's card's Info tab (PlaceInfoPage), under the facts, the
+ * pictures: its frequencies, then a part-time surface area's hours and its
+ * Details, its phones, website and address (PlaceDetails; the elevation,
+ * airspace and distance are the facts'; the owner, 2026-11-14) -- then its
  * NOTAMs, its lights, and what it offers on the ground. A frequency, a
  * light or the fuel a NOTAM addresses has its badge by its name, and a tap
  * opens that NOTAM over the card (notamBadges).
@@ -51,13 +54,13 @@ function CardSection({
 export function PlaceInfoTab({
   place,
   where,
-  distance,
+  hours,
 }: {
   place: AirportPlace;
   /** Its town and state, for the address where the FAA lists none. */
   where: string | null;
-  /** How far it is ("18 nm NE of C81"); null with nothing to measure from. */
-  distance: string | null;
+  /** A part-time surface area's hours (AirspaceHours), after the frequencies. */
+  hours?: ReactNode;
 }) {
   const marks = useNotamMarks(place.ident, place);
   const sheet = useNotamSheet();
@@ -76,45 +79,8 @@ export function PlaceInfoTab({
   return (
     <>
       <PlaceAge ident={place.ident} kind="airports" />
-      {/* The Details first, then the radio (the owner, 2026-11-11:
-          "move the details before frequency"). */}
-      <CardSection title="Details" testId="place-details">
-        <ListGroup>
-          <ListRow
-            title="Elevation"
-            data-testid="place-elevation"
-            value={<span className="font-semibold text-foreground">{feet(place.elevation_ft)}</span>}
-          />
-          {/* The class of the airspace it sits in (its airspace_class,
-              from the FAA's NASR), the class alone: its radio is in
-              Frequencies under it (the owner, 2026-11-11). */}
-          {place.airspace_class && (
-            <ListRow
-              title="Airspace"
-              data-testid="place-airspace"
-              value={<span className="font-semibold text-foreground">Class {place.airspace_class}</span>}
-            />
-          )}
-          {/* How far it is, from own ship's fix or else the route's
-              departure (PlaceCard's distanceOf), moved here from the head
-              (the owner, 2026-11-11: "Add distance to details"). */}
-          {distance && (
-            <ListRow
-              title="Distance"
-              data-testid="place-distance"
-              value={<span className="font-semibold text-foreground">{distance}</span>}
-            />
-          )}
-          {/* Where it is on the ground, in Maps: an action of the
-              card's until the star took its place (A2). */}
-          {/* The address written out, the way to it in Maps, at the
-              owner's ask (2026-10-29: "write the address in
-              details"); the town where the FAA lists none. */}
-          <ListRow title="Address" description={place.address ?? where ?? undefined} href={mapsLink(place)} data-testid="place-address" />
-          {data && <ListRow muted title={data} data-testid="place-data-source" />}
-        </ListGroup>
-      </CardSection>
-      {/* The first few frequencies, the title the way to every one, as
+      {/* The first few frequencies, in the order they are dialled (the
+          engine's, lib/frequencies inUseOrder), the title the way to every one, as
           every section's title is the way to its list in full
           (PillSection); how many of how many at its right. */}
       <div className="pt-5 first:pt-0">
@@ -124,7 +90,8 @@ export function PlaceInfoTab({
           testId="place-frequencies"
           rows={
             place.frequencies.length
-              ? place.frequencies.map((f, i) => {
+              ? inUseOrder(place.frequencies).map((i) => {
+                  const f = place.frequencies[i]!;
                   const mark = marks.frequency.get(i);
                   return (
                     <FrequencyRow
@@ -137,7 +104,7 @@ export function PlaceInfoTab({
                     />
                   );
                 })
-              : [<ListRow key="none" title="None listed" />]
+              : [<ListRow key="none" title={NO_FREQUENCIES} />]
           }
           // What some fields read out on so many clicks of the mic on
           // the CTAF: the weather, a radio check (wingtip.remarks).
@@ -155,6 +122,12 @@ export function PlaceInfoTab({
         />
       </div>
 
+      {/* After the radio, the airspace's hours and the Details (the owner, 2026-11-14:
+          "Details and airspace section can move after frequency"). */}
+      {hours}
+      <CardSection title="Details" testId="place-details">
+        <PlaceDetails place={place} where={where} data={data} />
+      </CardSection>
       {/* The field's own NOTAMs and the TFRs near it, the engine's order
           (PlaceNotams), after its radio, before its details. */}
       <PlaceNotamsSection ident={place.ident} none={noNotams} />

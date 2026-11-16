@@ -8,17 +8,18 @@ import { CardHead } from "../../../components/CardHead";
 import { SheetCard } from "../../../components/SheetCard";
 import { RowBadge } from "../../../components/RowBadge";
 import type { PastFlightPoint, PastFlights, PastFlightSummary } from "../../../lib/api/types";
-import { clockTime } from "../../../lib/format";
+import { clockTime, wholeNm } from "../../../lib/format";
 import { compassPoint } from "../../../lib/compass";
 import { useGeo } from "../../../lib/geo";
 import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight } from "../map/pastFlight";
 import { usePreferences } from "../../../lib/preferences";
-import { CameraMenu, ReplayTimeline, setReplayCamera } from "../../replay";
+import { CameraMenu, ReplayTimeline } from "../../replay";
+import { setReplayCamera } from "../../../lib/replay/camera/cameraStore";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
 import { altFt, bearing, grouped } from "../../../lib/format";
-import { dayOf, lasted, legOf, statusOf, when } from "./pastFlightFormat";
-import { pastFlightsQuery } from "./pastFlightsQuery";
+import { dayOf, lasted, legOf, statusOf, when } from "../../../components/airplane/pastFlightFormat";
+import { pastFlightsQuery } from "../../../lib/airplane/pastFlightsQuery";
 
 /** The track log's rows shown before "All reports" is asked for. */
 const LOG_ROWS = 60;
@@ -127,7 +128,7 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
               </RowBadge>
             }
             title="Flown"
-            value={value(`${Math.round(flown)} nm`)}
+            value={value(`${wholeNm(flown)}`)}
             data-testid="past-flight-flown"
           />
           <ListRow

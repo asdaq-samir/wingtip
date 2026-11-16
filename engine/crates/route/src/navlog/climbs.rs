@@ -106,6 +106,12 @@ pub fn with_climbs(legs: &[Obj], start_altitude_ft: Option<f64>, profile: &Profi
                 leg.set("toc", toc.value());
             }
             leg.set_num("climb_min", py_round(climb_min, 1));
+            // No climb fuel flow in the profile: the climb's gallons are
+            // not counted and the leg says so, for the app to ask for it
+            // (the owner, 2026-11-09: no other airplane's figure fills it).
+            if !climber.burn_known() {
+                leg.set("climb_fuel_unknown", Value::Bool(true));
+            }
             leg.set_num("ete_min", climb_min + cruise_min);
             leg.set_num("fuel_gal", (climb_min / 60.0) * climb_burn_gph + (cruise_min / 60.0) * leg.num("fuel_burn_gph")?);
         }
@@ -335,5 +341,20 @@ mod tests {
         assert!((lost - climb.minutes * 0.375).abs() < 1e-9);
         let gal = climb_fuel_penalty_gal(500.0, 3500.0, &p, &climber, Some(&l)).unwrap();
         assert!((gal - (climb.gallons - climb.minutes / 60.0 * 8.0 * 0.625)).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_climb_with_no_climb_fuel_flow_counts_no_gallons_and_says_so() {
+        // The owner's rule (2026-11-09): no 1.3 times the cruise burn, or
+        // any other airplane's figure, for a profile that gives none.
+        let mut p = profile();
+        p.airplane.climb_fuel_burn_gph = None;
+        let out = with_climbs(&[leg(20.0, (360.0, 20.0), 80.0, 0.0)], Some(500.0), &p, &Climber::new(&p.airplane)).unwrap();
+        assert_eq!(out[0].get("climb_fuel_unknown"), Some(&Value::Bool(true)));
+        assert!(out[0].num("climb_min").unwrap() > 0.0);
+        // With it, nothing is said.
+        let q = profile();
+        let out = with_climbs(&[leg(20.0, (360.0, 20.0), 80.0, 0.0)], Some(500.0), &q, &Climber::new(&q.airplane)).unwrap();
+        assert_eq!(out[0].get("climb_fuel_unknown"), None);
     }
 }

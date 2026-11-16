@@ -7,7 +7,8 @@
 # static framework target of apps/ios/project.yml). Generated from the library each time, never
 # edited: the Rust's #[uniffi::export] functions are the one source.
 # Run on a Mac with Xcode and rustup (GitHub's macOS runner, native-ios.yml);
-# writes apps/ios/Frameworks/WingtipEngine/, which is not committed.
+# writes apps/ios/Frameworks/WingtipEngine/, which is not committed, with
+# engine.hash, the engine it was built from.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 engine=$(cd "$here/../.." && pwd)
@@ -20,7 +21,9 @@ command -v cargo >/dev/null || PATH=$PATH:$HOME/.cargo/bin
 # docs/LOCAL-DEV.md); 53 s of three targets saved each time (2026-11-10).
 # shellcheck source=scripts/build/shared-cache.sh
 . "$engine/../scripts/build/shared-cache.sh"
-if engine_store_restore ios-engine "$out"; then exit 0; fi
+# The engine's hash written beside the framework (engine_stamp), which
+# scripts/dev/xcodebuild.sh holds to the checkout's engine before it builds.
+if engine_store_restore ios-engine "$out"; then engine_stamp "$out"; exit 0; fi
 targets=(aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios)
 rustup target add "${targets[@]}"
 for target in "${targets[@]}"; do
@@ -49,5 +52,6 @@ xcodebuild -create-xcframework \
 # In a Generated folder, which the Swift formatter and linters pass over.
 mkdir -p "$out/Generated"
 cp "$gen/WingtipEngine.swift" "$out/Generated/WingtipEngine.swift"
+engine_stamp "$out"
 engine_store_publish ios-engine "$out"
 echo "built $out"

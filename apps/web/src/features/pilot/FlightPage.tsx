@@ -15,10 +15,9 @@ import { TEXT } from "../../lib/text";
 import { keepTrack, keptTrack, readTrack, thin, TrackError, type TrackPoint } from "../../lib/track";
 import { useFlownTrack } from "../../lib/map/position/flownTrack";
 import { routeName } from "../../lib/identSchema";
-import { altFt, bearing, feet, gal, grouped, nm } from "../../lib/format";
 import { mayUse, useEntitlement } from "../../lib/subscription";
 import PaidPrompt from "../../components/PaidPrompt";
-import { dayMonthTime, dayMonthYear, hm, localDay } from "../../lib/format";
+import { altFt, bearing, dayMonthTime, dayMonthYear, feet, gal, grouped, hm, localDay, nm, wholeNm } from "../../lib/format";
 import { reviewState, said } from "../../lib/endorsements";
 import { ReviewAskForm, type ReviewAsk } from "../../components/ReviewAsk";
 import { FINDING_TONE } from "../../lib/findings";
@@ -100,7 +99,7 @@ function Profile({ d }: { d: Debrief }) {
       </svg>
       <div className={cn("flex justify-between text-muted-foreground tabular-nums", TEXT.note)}>
         <span>{feet(low)} · 0 nm</span>
-        <span>{end.toFixed(0)} nm</span>
+        <span>{wholeNm(end)}</span>
       </div>
     </figure>
   );
@@ -154,7 +153,7 @@ function Findings({ d }: { d: Debrief }) {
                     <span className="block">
                       Course: {Math.round(leg.courseWithin * 100)}% within {t.courseDeg}° of {bearing(leg.courseDeg)}
                       {leg.worstOffNm != null &&
-                        `, at most ${Math.abs(leg.worstOffNm).toFixed(1)} nm ${leg.worstOffNm >= 0 ? "right" : "left"} of the line`}
+                        `, at most ${nm(Math.abs(leg.worstOffNm))} ${leg.worstOffNm >= 0 ? "right" : "left"} of the line`}
                     </span>
                   )}
                 </>
@@ -179,7 +178,7 @@ function Findings({ d }: { d: Debrief }) {
                 p.passedMin != null
                   ? `${landed ? "landed" : "passed"} ${hm(p.passedMin)}${late != null ? ` (${signed(late, " min")})` : ""}`
                   : "not reached",
-                !landed && p.closestNm != null && `${p.closestNm.toFixed(1)} nm from it at closest`,
+                !landed && p.closestNm != null && `${nm(p.closestNm)} from it at closest`,
               ]
                 .filter(Boolean)
                 .join(" · ")}
@@ -422,7 +421,8 @@ function InstructorReview({ summary }: { summary: FlightSummary }) {
  * at its altitude, and its debrief.
  */
 export default function FlightPage({ summary, planHref }: { summary: FlightSummary; planHref: string }) {
-  const { data: flight, isPending, error } = useQuery({ queryKey: ["flight", summary.id], queryFn: () => api.flights.get(summary.id) });
+  const asked = { queryKey: ["savedFlight", summary.id], queryFn: () => api.flights.get(summary.id) }; // not "flight", the traffic card's (WEB-30)
+  const { data: flight, isPending, error } = useQuery(asked);
   // The debrief comes with the subscription: without it, its place says so.
   const entitlement = useEntitlement();
   return (

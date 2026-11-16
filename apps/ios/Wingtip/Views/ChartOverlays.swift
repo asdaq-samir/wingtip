@@ -78,16 +78,6 @@ struct AirspaceVolume: Decodable, Equatable, Sendable {
     let lines: [[[Double]]]
 }
 
-/// A VOR, VOR/DME or VORTAC in view (VorPin).
-struct VorPin: Decodable, Equatable, Sendable {
-    let ident: String
-    var name: String?
-    let kind: String
-    var freq: String?
-    let lat: Double
-    let lon: Double
-}
-
 // MARK: - Airspace
 
 /// From which Leaflet zoom each class is drawn, the web map's
@@ -316,82 +306,6 @@ final class AirspaceTabView: MKAnnotationView {
     }
 }
 
-// MARK: - VORs
-
-final class VorAnnotation: NSObject, MKAnnotation {
-    let vor: VorPin
-    let coordinate: CLLocationCoordinate2D
-
-    init(_ vor: VorPin) {
-        self.vor = vor
-        coordinate = CLLocationCoordinate2D(latitude: vor.lat, longitude: vor.lon)
-    }
-
-    /// Its ident and frequency as ForeFlight writes them: "GCO (108.25)".
-    var tag: String { vor.freq.map { "\(vor.ident) (\($0))" } ?? vor.ident }
-}
-
-/// A VOR: the chart's hexagon in the sectional's blue, with its ident and
-/// frequency on a blue tag beside it (FAA Aeronautical Chart User's Guide,
-/// Radio Aids to Navigation; the web map's NAVAID_PICTURES and navaidMarks).
-final class VorMarkView: MKAnnotationView {
-    static let reuse = "vor"
-    private static let hexagon: UIImage = UIGraphicsImageRenderer(size: CGSize(width: 16, height: 16)).image { context in
-        let cg = context.cgContext
-        let points = [(15.0, 8.0), (11.5, 14.06), (4.5, 14.06), (1.0, 8.0), (4.5, 1.94), (11.5, 1.94)]
-        cg.move(to: CGPoint(x: points[0].0, y: points[0].1))
-        for p in points.dropFirst() { cg.addLine(to: CGPoint(x: p.0, y: p.1)) }
-        cg.closePath()
-        cg.setFillColor(UIColor.white.cgColor)
-        cg.setStrokeColor(SectionalInk.blue.cgColor)
-        cg.setLineWidth(2)
-        cg.drawPath(using: .fillStroke)
-        cg.setFillColor(SectionalInk.blue.cgColor)
-        cg.fillEllipse(in: CGRect(x: 6.4, y: 6.4, width: 3.2, height: 3.2))
-    }
-    private let mark = UIImageView(image: VorMarkView.hexagon)
-    private let tagLabel = UILabel()
-
-    override init(annotation: (any MKAnnotation)?, reuseIdentifier: String?) {
-        super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
-        tagLabel.font = UIFont.systemFont(ofSize: 11, weight: .bold)
-        tagLabel.textColor = .white
-        tagLabel.backgroundColor = SectionalInk.blue
-        tagLabel.textAlignment = .center
-        tagLabel.layer.cornerRadius = 3
-        tagLabel.layer.masksToBounds = true
-        addSubview(mark)
-        addSubview(tagLabel)
-        canShowCallout = false
-        isEnabled = false
-        isAccessibilityElement = true
-        accessibilityTraits = .staticText
-        collisionMode = .rectangle
-        displayPriority = MKFeatureDisplayPriority(rawValue: 550)
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { nil }
-
-    override var annotation: (any MKAnnotation)? {
-        didSet { show() }
-    }
-
-    private func show() {
-        guard let vor = annotation as? VorAnnotation else { return }
-        tagLabel.text = vor.tag
-        tagLabel.sizeToFit()
-        let tagSize = CGSize(width: tagLabel.bounds.width + 8, height: tagLabel.bounds.height + 2)
-        let height = max(16, tagSize.height)
-        mark.frame = CGRect(x: 0, y: (height - 16) / 2, width: 16, height: 16)
-        tagLabel.frame = CGRect(x: 20, y: (height - tagSize.height) / 2, width: tagSize.width, height: tagSize.height)
-        frame.size = CGSize(width: 20 + tagSize.width, height: height)
-        // The hexagon's middle on the VOR.
-        centerOffset = CGPoint(x: frame.width / 2 - 8, y: 0)
-        accessibilityLabel = "\(vor.vor.kind) \(vor.vor.ident)\(vor.vor.freq.map { ", \($0)" } ?? "")"
-    }
-}
-
 // MARK: - Runways
 
 /// A runway's surface: the rectangle between its two surveyed ends at its
@@ -505,6 +419,10 @@ final class RunwayEndView: MKAnnotationView {
     private var runwayEnds: [String: [RunwayEndAnnotation]] = [:]
     private var runwaysKept: [String: [RunwayShape]] = [:]
     private var runwaysAsking: Set<String> = []
+    /// The Map card's Aeronautical layer: off, the airspace and its tabs,
+    /// the special-use areas, the VORs and the fixes are taken off and not
+    /// asked for; the fields' runways stay, as the fields do.
+    private(set) var aeronautical = true
     /// Told once, the first time the airspace is answered (or cannot be): the map shows itself with its rings on (ChartMap's reveal).
     var onFirstAnswer: (() -> Void)?
     private var answered = false
@@ -581,20 +499,44 @@ final class RunwayEndView: MKAnnotationView {
 
     /// The view moved (during a gesture with `live`, or at its rest): what is drawn for its zoom, and a new
     /// answer where it wants one -- from the packs at once, from the planner only once it rests.
+    /// The Aeronautical layer turned on or off: off, everything it draws
+    /// taken off at once; on, asked for again where the map is.
+    func show(aeronautical on: Bool, on map: MKMapView, chart: (any MKOverlay)?) {
+        guard on != aeronautical else { return }
+        aeronautical = on
+        if on {
+            moved(map, chart: chart, live: false)
+            return
+        }
+        map.removeOverlays(volumes.values.flatMap { kept in (kept.band.map { [$0 as any MKOverlay] } ?? []) + kept.lines })
+        volumes = [:]
+        map.removeAnnotations(Array(tabs.values))
+        tabs = [:]
+        map.removeAnnotations(Array(vors.values))
+        vors = [:]
+        airspaceFetch.forget()
+        vorFetch.forget()
+        marks.clear(map)
+        // Nothing of it to wait for before the map shows.
+        firstAnswer()
+    }
+
     func moved(_ map: MKMapView, chart: (any MKOverlay)?, live: Bool) {
         guard map.bounds.width > 0 else { return }
         let view = ViewBox(map.region)
         let zoom = MapExtras.zoom(longitudeDelta: map.region.span.longitudeDelta, width: Double(map.bounds.width))
-        marks.moved(map, view: view, zoom: zoom)
-        if airspaceFetch.wants(view, zoom: zoom) { askAirspace(map, view: view, zoom: zoom, chart: chart, live: live) }
-        if zoom >= VorZoom.from, vorFetch.wants(view, zoom: zoom) { askVors(map, view: view, zoom: zoom, live: live) }
-        if zoom < VorZoom.from, !vors.isEmpty {
-            map.removeAnnotations(Array(vors.values))
-            vors = [:]
-            vorFetch.forget()
+        if aeronautical {
+            marks.moved(map, view: view, zoom: zoom)
+            if airspaceFetch.wants(view, zoom: zoom) { askAirspace(map, view: view, zoom: zoom, chart: chart, live: live) }
+            if zoom >= VorZoom.from, vorFetch.wants(view, zoom: zoom) { askVors(map, view: view, zoom: zoom, live: live) }
+            if zoom < VorZoom.from, !vors.isEmpty {
+                map.removeAnnotations(Array(vors.values))
+                vors = [:]
+                vorFetch.forget()
+            }
+            drawAirspace(map, zoom: zoom, chart: chart)
+            if !live { placeTabs(map, zoom: zoom) }
         }
-        drawAirspace(map, zoom: zoom, chart: chart)
-        if !live { placeTabs(map, zoom: zoom) }
         for case let end as RunwayEndView in runwayEnds.values.flatMap({ $0 }).compactMap({ map.view(for: $0) }) {
             end.turn(mapHeading: map.camera.heading)
         }

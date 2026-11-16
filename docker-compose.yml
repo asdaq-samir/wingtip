@@ -189,8 +189,8 @@ services:
   # the FAA's statements and notices read into the Studio's crash leads,
   # each checked against the FAA's registry and an ADS-B track, and a kit
   # made for each confirmed one, into the live-store volume the planner
-  # reads (wingtip.crash_drafts). It keeps its own schedule (`every`): a
-  # run each CRASH_LEADS_EVERY_MIN, none with CRASH_LEADS_AUTO=0, which
+  # reads (wingtip.crash_drafts). It keeps its own schedule (`every`, on
+  # wingtip.schedule): a run each CRASH_LEADS_EVERY_MIN, none with CRASH_LEADS_AUTO=0, which
   # ends it and leaves it ended. One run by hand, `docker compose run
   # --rm crash-leads poll` (or `parse-check`).
   crash-leads:

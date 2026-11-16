@@ -61,14 +61,14 @@ test("an airplane's inspections say how long each is good for, and are saved tog
   const console = page.getByTestId("console-sheet");
   await library(console, "Airplanes");
   await console.getByRole("button", { name: "Edit N12345" }).click();
-  await expect(page.getByTestId("inspection-annualOn")).toHaveText("Past due since 2021-01-31");
-  await expect(page.getByTestId("inspection-eltInspectedOn")).toHaveText("To 2099-02-28");
-  await expect(page.getByTestId("inspection-eltBattery")).toHaveText("By 2099-06-01");
-  await expect(page.getByTestId("inspection-hundredHour")).toHaveText(", 50.5 h to go");
+  await expect(page.getByTestId("inspection-annual-on")).toHaveText("Past due since 2021-01-31");
+  await expect(page.getByTestId("inspection-elt-inspected-on")).toHaveText("To 2099-02-28");
+  await expect(page.getByTestId("inspection-elt-battery")).toHaveText("By 2099-06-01");
+  await expect(page.getByTestId("inspection-hundred-hour")).toHaveText(", 50.5 h to go");
 
-  await fillDate(page.getByTestId("inspection-annualOn-date"), "2026-09-20");
-  await fillDate(page.getByTestId("inspection-transponderCheckOn-date"), "2025-03-02");
-  await page.getByTestId("inspection-hoursNow").fill("1262.3");
+  await fillDate(page.getByTestId("inspection-annual-on-date"), "2026-09-20");
+  await fillDate(page.getByTestId("inspection-transponder-check-on-date"), "2025-03-02");
+  await page.getByTestId("inspection-hours-now").fill("1262.3");
   await page.getByTestId("inspections-save").click();
   await expect
     .poll(() => saved.at(-1))
@@ -84,8 +84,8 @@ test("an airplane's inspections say how long each is good for, and are saved tog
     });
   // Not flown for hire, the 100-hour is not owed (91.409(b)): its standing
   // goes, and the toggle's word is saved with the rest.
-  await page.getByTestId("inspection-forHire").click();
-  await expect(page.getByTestId("inspection-hundredHour")).toHaveCount(0);
+  await page.getByTestId("inspection-for-hire").click();
+  await expect(page.getByTestId("inspection-hundred-hour")).toHaveCount(0);
   await page.getByTestId("inspections-save").click();
   await expect.poll(() => saved.at(-1)).toMatchObject({ forHire: false });
 });

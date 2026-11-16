@@ -68,6 +68,36 @@ struct AutoLogbookTests {
         #expect(flown.approaches == draft.instrument.approaches && flown.holding == draft.instrument.holding && flown.flightId == nil)
     }
 
+    /// No signal after landing: the entry is logged, the track's upload
+    /// fails, and the track is kept on the phone -- on the disk, said where
+    /// the logged flight shows -- until a later send goes through (IOS-1).
+    @Test func aTrackThatCouldNotBeSentIsKeptUntilItIs() async throws {
+        let points = try trackFixture().points
+        let file = FileManager.default.temporaryDirectory.appending(path: "recorder-\(UUID().uuidString).json")
+        let unsentFile = file.deletingPathExtension().appendingPathExtension("unsent.json")
+        defer { for f in [file, unsentFile] { try? FileManager.default.removeItem(at: f) } }
+        try JSONEncoder().encode(FlightRecorder.Kept(points: points, askedTo: nil, flown: true)).write(to: file)
+        let recorder = FlightRecorder(file: file)
+        let gateway = FakeGateway()
+        let logbook = AutoLogbook(recorder: recorder, addEntry: { gateway.entries.append($0) },
+                                  saveTrack: { flight, track in try gateway.save(flight, track) })
+        let draft = try Planner.json.decode(AutoLogbook.Draft.self, from: Engine.encoder.encode(Engine.logbookFromTrack(points: points)))
+        var changed = 0
+        await logbook.log(AutoLogbook.entryRequest(draft, edits: .init(), byInstruments: false, flightId: 40)) { changed += 1 }
+        #expect(gateway.entries.count == 1 && changed == 1 && logbook.logged != nil)
+        // The recorder let its copy go only once the track was kept.
+        #expect(recorder.points.isEmpty)
+        #expect(recorder.unsent.tracks.map(\.flight) == [40] && recorder.unsent.tracks.first?.track.points.count == points.count)
+        #expect(logbook.trackProblem != nil)
+        // Kept on the disk: a relaunch still has it.
+        #expect(FlightRecorder(file: file).unsent.tracks.count == 1)
+        // A later send with a network goes through, and the track is let go.
+        gateway.online = true
+        await logbook.sendUnsent()
+        #expect(gateway.saved.map(\.0) == [40] && gateway.saved.first?.1.points.count == points.count)
+        #expect(recorder.unsent.tracks.isEmpty && logbook.trackProblem == nil)
+    }
+
     @Test func theLikelySavedFlightIsTheNewestWithTheRoutesEnds() {
         func flight(_ id: Int, _ from: String, _ to: String) -> SavedFlight {
             SavedFlight(aircraftTailNumber: nil, altitudes: nil, createdAt: "2026-11-09T12:00:00Z", cruiseAltitudeFt: nil, departureIdent: from,
@@ -76,5 +106,19 @@ struct AutoLogbookTests {
         let flights = [flight(3, "KMSN", "KDLH"), flight(2, "C81", "KDLH"), flight(1, "C81", "KDLH")]
         #expect(AutoLogbook.likelyFlight(flights, route: "C81 KRFD KDLH")?.id == 2)
         #expect(AutoLogbook.likelyFlight(flights, route: "C81 KUGN") == nil && AutoLogbook.likelyFlight(flights, route: "") == nil)
+    }
+}
+
+/// The gateway's two writes as the logbook makes them, with no signal
+/// until `online`.
+@MainActor
+private final class FakeGateway {
+    var online = false
+    var entries: [LogbookEntryRequest] = []
+    var saved: [(Int, SavedTrack)] = []
+
+    func save(_ flight: Int, _ track: SavedTrack) throws {
+        guard online else { throw URLError(.notConnectedToInternet) }
+        saved.append((flight, track))
     }
 }

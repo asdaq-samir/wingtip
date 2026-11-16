@@ -10,8 +10,9 @@ import type { EmergencyModel } from "./useEmergency";
  *  (maydayCall's channels, AIM 6-3-1(d)), as the iPhone finds it: its
  *  figure is the engine's, not written again here. */
 const GUARD = "Guard";
-/** The two figures a pilot reads first, large. */
-const FIGURE = "text-2xl";
+/** The two figures a pilot reads first, large: a card's name's size
+ *  (TEXT.card, 22), the type scale's own (WEB-22). */
+const FIGURE = TEXT.card;
 
 /**
  * What to do on the radio and the transponder, the engine's (features/emergency/emergency

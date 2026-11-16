@@ -84,6 +84,7 @@ fn str<'a>(name: &str, v: &'a Value, key: &str) -> Result<&'a str, String> {
 }
 
 /// The rule `name` worked on `v`.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     match name {
         "atc_call" => {

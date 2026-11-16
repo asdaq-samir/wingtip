@@ -537,7 +537,7 @@ def test_a_departure_is_flown_by_its_transition_for_the_runway_left_from(monkeyp
     monkeypatch.setattr(fp.procedure_paths, "flown", lambda *a, **k: asked.append(k.get("runway")) or real(*a, **k))
     params = {"dep": "C81", "dest": "KDLH", "procedures": "C81:DEP1", "runways": "C81:27,KDLH:9"}
     assert client.get("/api/plan", params=params).status_code == 200
-    assert asked == ["27"]
+    assert set(asked) == {"27"}  # the floor's read of the path (AV-2) and the path flown alike
     # By the FAA's ident, as the procedures are (_bare_field).
     assert plan_query.PlanQuery(dep="C81", dest="KDLH", runways="kstl:30r").departure_runways() == {"STL": "30R"}
     assert client.get("/api/plan", params={**params, "runways": "C81:west"}).status_code == 422

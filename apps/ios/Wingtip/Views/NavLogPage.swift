@@ -27,7 +27,7 @@ struct NavLogPage: View {
         .navigationTitle("Nav Log")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItem(placement: .pinnedTrailing) { ShareMenu() }
+            ToolbarItem(placement: .topBarLeading) { ShareMenu() }
         }
         // Why its Share sent nothing, under the bar it was asked from.
         .safeAreaInset(edge: .top, spacing: 0) {

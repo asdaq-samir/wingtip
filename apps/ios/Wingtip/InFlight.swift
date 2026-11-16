@@ -127,7 +127,23 @@ final class InFlight {
             points: RouteShare.points(plan).map { .init(name: $0.name, lat: $0.lat, lon: $0.lon) },
             legs: plan.legs.map { .init(distanceNm: $0.distanceNm, fuelGal: $0.fuelGal) },
             fuelStartGal: plan.totals?.usableFuelGal,
+            // The tanks filled again at each stop, less the profile's start
+            // and taxi allowance there and at the start, by the engine
+            // (AV-4); with no allowance given none is taken off.
+            fuelFullGal: plan.totals?.usableFuelGal,
+            taxiFuelGal: plan.totals?.taxiGal,
+            refuelAt: refuelAt(plan),
             nowS: now.timeIntervalSince1970)
+    }
+
+    /// The points (indices into RouteShare.points) the plan refuels at:
+    /// each stop, where the planner's hops begin (the tanks filled at each,
+    /// app.planning.route_totals); none on a route without stops.
+    static func refuelAt(_ plan: Plan) -> [Int]? {
+        guard (plan.totals?.hops ?? []).count > 1 else { return nil }
+        let points = RouteShare.points(plan)
+        let ends = points.indices.filter { points[$0].checkpoint == nil }
+        return ends.count > 2 ? Array(ends.dropFirst().dropLast()) : nil
     }
 
     /// The nearest field's elevation for the ring's ground, asked at most
@@ -138,9 +154,10 @@ final class InFlight {
         fieldAskedAt = now
         fieldAsking?.cancel()
         fieldAsking = Task { [weak self] in
-            guard let field = try? await Planner.nearest(lat: at.latitude, lon: at.longitude, limit: 1).first,
+            guard let field = try? await Planner.nearestOrPacks(lat: at.latitude, lon: at.longitude, limit: 1).fields.first,
                   !Task.isCancelled else { return }
-            self?.fieldFt = field.elevationFt
+            // A pack's field has no elevation: the last one stands then.
+            if let ft = field.elevationFt { self?.fieldFt = ft }
         }
     }
 }

@@ -225,7 +225,10 @@ test("the airport card's tabs, the bar pinned, open each at its top and keep the
     const panel = (await card.getByRole("tabpanel").boundingBox())!;
     const b = (await bar.boundingBox())!;
     expect(Math.abs(b.y - pinnedY), `the bar stays pinned on ${testId}`).toBeLessThanOrEqual(2);
-    expect(Math.abs(panel.y - (b.y + b.height)), `${testId} opens at its top, under the bar`).toBeLessThanOrEqual(16);
+    // Under the bar, or under the field's report in its line where it has one (the owner's T4, 2026-11-14).
+    const report = card.getByTestId("place-weather-line");
+    const line = (await report.count()) ? (await report.boundingBox())! : b;
+    expect(Math.abs(panel.y - (line.y + line.height)), `${testId} opens at its top, under the bar`).toBeLessThanOrEqual(16);
   };
   await card.getByTestId("place-tab-radio").click();
   await expect(async () => underBar("Info")).toPass({ timeout: slow(5_000) });

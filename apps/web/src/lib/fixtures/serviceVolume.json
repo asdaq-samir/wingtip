@@ -1,0 +1,14 @@
+{
+  "_note": "A station's standard service volume by its class, as AIM 1-1-8's TBL 1-1-1 (VOR/DME/TACAN Standard Service Volumes; AIM Change 3, effective 9 July 2026) gives each, written as the card says it. The engine's service_volume (engine/crates/wording/src/wording/navaid.rs) and the web's lib/navaid are held to these; each answer was written from the table, not from the code.",
+  "cases": [
+    { "code": "T", "answer": "Terminal · 25 nm, 1,000–12,000 ft above it" },
+    { "code": "L", "answer": "Low · 40 nm, 1,000–18,000 ft above it" },
+    { "code": "H", "answer": "High · 40 nm to 14,500 ft above it, 100 nm to 18,000, 130 nm to 45,000, 100 nm to 60,000" },
+    { "code": "VL", "answer": "VOR Low · 40 nm under 5,000 ft above it, 70 nm to 18,000" },
+    { "code": "VH", "answer": "VOR High · 40 nm under 5,000 ft above it, 70 nm to 14,500, 100 nm to 18,000, 130 nm to 45,000, 100 nm to 60,000" },
+    { "code": "DL", "answer": "DME Low · line of sight under 12,900 ft above it, 130 nm to 18,000" },
+    { "code": "DH", "answer": "DME High · line of sight under 12,900 ft above it, 130 nm to 45,000, 100 nm to 60,000" },
+    { "code": "X", "answer": null },
+    { "code": null, "answer": null }
+  ]
+}

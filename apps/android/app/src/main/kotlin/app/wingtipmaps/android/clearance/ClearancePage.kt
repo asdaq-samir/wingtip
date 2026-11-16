@@ -131,32 +131,6 @@ fun ClearancePage(plan: Plan, fix: OwnShip.Fix?, exit: CardExit, onEntered: () -
                 }
             }
         },
-        bottomBar = {
-            if (state.clearance != null && state.heard) {
-                // The card's actions at its foot, out of the scroll, as wide as
-                // the sheet; the sheet itself clears the gesture bar.
-                Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm),
-                        horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
-                    ) {
-                        if (radio != null) {
-                            OutlinedButton(onClick = { withMic(model::readBackAgain) }, modifier = Modifier.weight(1f)) {
-                                Text(stringResource(R.string.clearance_read_back_again))
-                            }
-                        }
-                        Button(
-                            onClick = {
-                                model.entry()?.let { e -> plan.useLeg(e.dep, e.dest, e.stops, e.altitudeFt ?: planned.altitudeFt, planned.depart) }
-                                onEntered()
-                            },
-                            enabled = state.ready,
-                            modifier = Modifier.weight(1f),
-                        ) { Text(stringResource(R.string.clearance_enter)) }
-                    }
-                }
-            }
-        },
     ) { padding ->
         Column(
             Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Md),
@@ -165,6 +139,26 @@ fun ClearancePage(plan: Plan, fix: OwnShip.Fix?, exit: CardExit, onEntered: () -
             // The flight the clearance is for, as the canvas heads it.
             val head = listOfNotNull(if (planned.dep.isEmpty()) null else "${planned.dep} → ${planned.dest}", "IFR", tail).joinToString(" · ")
             Text(head, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (state.clearance != null && state.heard) {
+                // The card's actions under its head, in sight at half (the
+                // Android audit's AND-1): at the foot of the sheet's full
+                // height they sat below the window at half.
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+                    if (radio != null) {
+                        OutlinedButton(onClick = { withMic(model::readBackAgain) }, modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.clearance_read_back_again))
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            model.entry()?.let { e -> plan.useLeg(e.dep, e.dest, e.stops, e.altitudeFt ?: planned.altitudeFt, planned.depart) }
+                            onEntered()
+                        },
+                        enabled = state.ready,
+                        modifier = Modifier.weight(1f),
+                    ) { Text(stringResource(R.string.clearance_enter)) }
+                }
+            }
             Steps(state.steps)
             val clearance = state.clearance
             if (clearance == null || !state.heard) WordsField(state.text, model::type, voice)

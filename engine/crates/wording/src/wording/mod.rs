@@ -94,6 +94,7 @@ fn station(name: &str, v: &Value) -> Result<navaid::Station, String> {
 }
 
 /// The rule `name` worked on `v`, as its contract file (crates/wording/contract) names it.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn answer(name: &str, v: &Value) -> Result<String, String> {
     match name {
         // Each of `texts` where it is given, else `text`: a list's rows in
@@ -180,6 +181,10 @@ pub fn answer(name: &str, v: &Value) -> Result<String, String> {
                 out
             }
         }),
+        "frequencies_in_order" => {
+            let order = radio::frequencies_in_order(&frequencies(name, v)?);
+            Ok(format!("[{}]", order.iter().map(usize::to_string).collect::<Vec<_>>().join(",")))
+        }
         "kneeboard_radio" => {
             let mut out = String::from("[");
             for (i, (called, mhz)) in radio::kneeboard_radio(&frequencies(name, v)?).iter().enumerate() {

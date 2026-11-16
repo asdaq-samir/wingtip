@@ -34,6 +34,8 @@ class KeepForAirModel @Inject constructor(app: Application) : AndroidViewModel(a
         val keeping: Boolean = false,
         /** What the route's answers take on the phone once kept, MB. */
         val keptMb: Double? = null,
+        /** What could not be kept, said under the row. */
+        val problem: String? = null,
     )
 
     private val _state = MutableStateFlow(State())
@@ -48,6 +50,7 @@ class KeepForAirModel @Inject constructor(app: Application) : AndroidViewModel(a
         val route = ReadyFacts.flightKey(s)
         _state.value = State(route = route, keeping = true)
         return viewModelScope.launch {
+            var packsProblem: String? = null
             val app = getApplication<Application>()
             val line = s.course?.courseLine.orEmpty().filter { it.size == 2 }
             withContext(Dispatchers.IO) {
@@ -59,11 +62,12 @@ class KeepForAirModel @Inject constructor(app: Application) : AndroidViewModel(a
                     charts.load().join()
                     charts.downloadBox(line.minOf { it[1] } - PAD_DEG, line.minOf { it[0] } - PAD_DEG, line.maxOf { it[1] } + PAD_DEG, line.maxOf { it[0] } + PAD_DEG).join()
                 }
-                val regions = withContext(Dispatchers.Default) { runCatching { CyclePacks.regions(line) }.getOrDefault(emptySet()) }
-                if (regions.isNotEmpty()) CyclePacks.of(app).keep(regions)
+                val regions = withContext(Dispatchers.Default) { CyclePacks.regions(line) }
+                regions.getOrNull()?.takeIf { it.isNotEmpty() }?.let { CyclePacks.of(app).keep(it) }
+                packsProblem = regions.exceptionOrNull()?.let { "The route's chart packs could not be worked out, so none were kept" }
             }
             val bytes = withContext(Dispatchers.IO) { KeepForAir.bytes(store, s) }
-            _state.value = State(route = route, keeping = false, keptMb = bytes / 1e6)
+            _state.value = State(route = route, keeping = false, keptMb = bytes / 1e6, problem = packsProblem)
         }
     }
 

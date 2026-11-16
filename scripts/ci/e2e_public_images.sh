@@ -23,10 +23,10 @@ echo "T0=$T0" >> "$GITHUB_ENV"
 nohup vmstat -n 1 180 > /tmp/e2e-out/vmstat.log 2>&1 < /dev/null &
 echo "0 the runner's disk: $(lsblk -e 7 -dno NAME,MODEL | xargs)" >> /tmp/e2e-out/timeline
 cat > /tmp/e2e-out/playwright.sh <<'EOF'
-digest=$(docker buildx imagetools inspect --raw "$PLAYWRIGHT_IMAGE" | sha256sum | cut -c1-16)
+read -r slim _ < <(scripts/ci/playwright_slim_key.sh)
 until [ -f /tmp/e2e-out/small.pulled ]; do sleep 0.5; done
-if [ -z "$FULL_BROWSERS" ] && docker pull -q "$REGISTRY/e2e-playwright:$digest" > /dev/null 2>&1; then
-  docker tag "$REGISTRY/e2e-playwright:$digest" "$PLAYWRIGHT_IMAGE" && echo "its slim copy"
+if [ -z "$FULL_BROWSERS" ] && docker pull -q "$REGISTRY/e2e-playwright:$slim" > /dev/null 2>&1; then
+  docker tag "$REGISTRY/e2e-playwright:$slim" "$PLAYWRIGHT_IMAGE" && echo "its slim copy"
 else
   docker pull -q "$PLAYWRIGHT_IMAGE" > /dev/null && echo "the image itself"
 fi

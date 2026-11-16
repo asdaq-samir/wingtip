@@ -2,4 +2,4 @@
 # the sheets read, the tiles drawn), the same file the planner draws a
 # tile on request with, so a tile looks the same whoever drew it.
 -r ../../planner/requirements-wingtip-charts.txt
-boto3==1.43.127      # wingtip.charts' S3 publish: the AWS task's
+boto3==1.44.3      # wingtip.charts' S3 publish: the AWS task's

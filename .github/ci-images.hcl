@@ -103,10 +103,13 @@ target "weather" {
 }
 
 # The image the suite's tests run in: the Playwright image (PLAYWRIGHT_FROM,
-# by its digest) without the three browsers the suite never launches --
-# Chromium itself, Firefox and WebKit; the suite's headless Chromium is
-# the headless shell -- as one layer, so their 1.1 of its 2.6 GB are not
-# pulled, unpacked and written on every shard. Every other file is the
+# by its digest) without the two browsers the suite never launches --
+# Chromium itself and Firefox; the suite's headless Chromium is the
+# headless shell -- as one layer, so they are not pulled, unpacked and
+# written on every shard. WebKit stays: main's push runs the webkit-phone
+# smoke in it (sheet-webkit.spec.ts), and the iPhone's bugs are WebKit's;
+# deleting it failed that test in 2 ms on every push (run 43552072818).
+# Its tag is keyed on this target's text too (scripts/ci/playwright_slim_key.sh). Every other file is the
 # image's own, byte for byte; the same page drawn in both came out the
 # same, pixel for pixel. FROM scratch carries none of the image's
 # settings, so its four are set again, as `docker image inspect` gives
@@ -122,7 +125,7 @@ variable "PLAYWRIGHT_TAG" {
 target "playwright" {
   dockerfile-inline = <<-EOT
     FROM ${PLAYWRIGHT_FROM} AS full
-    RUN rm -rf /ms-playwright/chromium-[0-9]* /ms-playwright/firefox-* /ms-playwright/webkit-*
+    RUN rm -rf /ms-playwright/chromium-[0-9]* /ms-playwright/firefox-*
     FROM scratch
     COPY --from=full / /
     ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \

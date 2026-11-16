@@ -355,7 +355,7 @@ class Plan @Inject constructor(app: Application) : AndroidViewModel(app) {
         keepingPacks?.cancel()
         keepingPacks = viewModelScope.launch {
             val regions = withContext(Dispatchers.Default) { CyclePacks.regions(line) }
-            packs.keep(regions)
+            regions.getOrNull()?.let { packs.keep(it) } ?: java.util.logging.Logger.getLogger("Wingtip").warning("No route packs: ${regions.exceptionOrNull()?.message}")
         }
     }
 

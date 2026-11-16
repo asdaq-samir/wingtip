@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy } from "react";
 import type { ChartInfo, Course, Leg, ProcedureDrawing } from "../../../lib/api/types";
 import type { StopKind } from "../../../lib/stopKinds";
 import type { TrafficPattern } from "../../../lib/trafficPattern";
@@ -35,14 +35,17 @@ import { FlowGl } from "../../weather-flow";
 import { PlatesGl } from "../../plates";
 import { FaaChart } from "../components/AirportDiagram";
 import { useWeatherLayers } from "../../../lib/map/sources/weatherLayers";
+import { usePreferences } from "../../../lib/preferences";
 import { useGlFit } from "./useGlFit";
 import type { AloftPoint } from "./terrain/geometry";
 import { useTerrainView } from "./terrain/useTerrainView";
+import ReliefGl from "./terrain/ReliefGl";
 
-/** The relief, the 3D ground and the pilot's-eye view (features/plan/map/terrain):
- *  a chunk of its own, loaded after the map's first script; the relief is
- *  always shaded under the 2D chart since the owner took Flat out
- *  (2026-11-13). */
+/** The 3D ground and the pilot's-eye view (features/plan/map/terrain): a
+ *  chunk of its own, deck.gl with it, loaded only once 3D is on; the
+ *  relief shaded under the 2D chart is the map's own (ReliefGl), since
+ *  the owner took Flat out (2026-11-13) and loading this chunk for it
+ *  fetched deck.gl at every open (PERF-2). */
 const TerrainGl = lazy(() => import("./terrain/TerrainGl"));
 
 export type { GlCandidate, GlCheckpoint, GlEndpoint, GlLeg };
@@ -137,7 +140,6 @@ export function GlBootMap() {
 
 function Layers(p: GlRouteMapProps) {
   const { course } = p;
-  const [previewing, setPreviewing] = useState(false);
   // The chart and the cycle's overlays from their tiles, which ask the
   // engine nothing, at once; every layer that works out a figure or a
   // colour with it (the fields' flight categories, the glide ring, the
@@ -147,10 +149,10 @@ function Layers(p: GlRouteMapProps) {
   return (
     <>
       <LandWaterGl />
-      <ChartGl course={course} previewing={previewing} />
+      <ChartGl course={course} />
       <OverlayGl />
       <EngineGate>
-        <EngineLayers {...p} onPreview={setPreviewing} />
+        <EngineLayers {...p} />
       </EngineGate>
     </>
   );
@@ -158,7 +160,7 @@ function Layers(p: GlRouteMapProps) {
 
 /** The layers the engine works out a figure or a colour for, and the
  *  map's fits to what is picked: drawn once it is there (Layers). */
-function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void }) {
+function EngineLayers(p: GlRouteMapProps) {
   const { course } = p;
   const dryRunning = usePastFlight((s) => s.hex === DRY_RUN);
   // The map fitted to what was just picked, once a pick: a lone
@@ -176,28 +178,33 @@ function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void })
   const route = course ? [course.departure.ident, ...(course.stops ?? []).map((s) => s.ident), course.destination.ident] : [];
   const worse = useWorseByArrival(p.briefing, course);
   const terrain = useTerrainView();
-  // The radar and satellite loop under the advisories, while one is on.
-  const loop = useWeatherLayers((s) => s.loop !== "off");
-  // The model weather's flow layer, its own chunk, while a field is picked.
-  const flow = useWeatherLayers((s) => s.flow !== "off");
+  // The weather picked, only while the Map card's Weather is on (the
+  // owner, 2026-11-14): the radar and satellite loop under the advisories,
+  // and the model weather's flow layer, its own chunk.
+  const weather = usePreferences((s) => s.weather);
+  const loop = useWeatherLayers((s) => s.loop !== "off") && weather;
+  const flow = useWeatherLayers((s) => s.flow !== "off") && weather;
   return (
     <>
-      <Suspense fallback={null}>
-        <TerrainGl
-          mode={terrain.mode}
-          pilot={terrain.pilot}
-          aloft={course ? (p.aloft ?? null) : null}
-          field={p.place?.ident ?? course?.destination.ident ?? null}
-          procedures={p.procedures}
-        />
-      </Suspense>
+      <ReliefGl />
+      {terrain.mode === "3d" && (
+        <Suspense fallback={null}>
+          <TerrainGl
+            mode={terrain.mode}
+            pilot={terrain.pilot}
+            aloft={course ? (p.aloft ?? null) : null}
+            field={p.place?.ident ?? course?.destination.ident ?? null}
+            procedures={p.procedures}
+          />
+        </Suspense>
+      )}
       {loop && <WeatherLoopGl />}
       {flow && (
         <Suspense fallback={null}>
           <FlowGl />
         </Suspense>
       )}
-      <WeatherGl line={p.courseLine} altitudeFt={p.cruiseFt} />
+      {weather && <WeatherGl line={p.courseLine} altitudeFt={p.cruiseFt} />}
       <TfrGl />
       {/* A search sent, its fields marked (the one search's results). */}
       <SearchResultsGl />
@@ -205,7 +212,7 @@ function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void })
       <NavaidsGl />
       <WaypointsGl exclude={p.chippedIdents} />
       <AirportsGl selected={p.place} onSelect={p.onSelectPlace} others={p.chipped} route={p.routeBox} worse={worse} />
-      {p.chart && <ClassBGl chart={p.chart} route={route} onPreview={p.onPreview} onSelectPlace={p.onSelectPlace} />}
+      {p.chart && <ClassBGl chart={p.chart} route={route} onSelectPlace={p.onSelectPlace} />}
       <StopFieldsGl fields={p.stopFields} onSelect={p.onPickStopField ?? p.onSelectPlace} />
       {course && (
         <>

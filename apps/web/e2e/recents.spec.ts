@@ -151,25 +151,28 @@ test("the airports' Recents are tiles with their chart's symbols, newest first, 
   await expect(all).toHaveText("Recents");
   await all.click();
   await expect(panel.getByTestId("airport-recents-page")).toBeVisible();
-  await expect(panel.getByTestId("row-more")).toHaveCount(5);
+  // The five airports' rows, then the two airplanes' after them.
+  await expect(panel.getByTestId("row-more")).toHaveCount(7);
   await panel.getByTestId("airport-recents-page-close").click();
   await expect(tiles).toHaveCount(5);
 });
 
-test("the airplanes' Recents: a long press or a right click offers the Delete too, and Clear takes them all", async ({ page }) => {
+test("the airplanes' Recents follow the airports' on the search's page and in full: a long press offers the Delete too, and Clear takes them all", async ({
+  page,
+}) => {
   await seed(page);
-  await page.goto("/app/plan?aircraft=1");
+  await page.goto("/app/plan");
   await settle(page);
+  await airportSearch(page);
   await grabberTo(page, "full");
   const panel = sideDrawer(page);
-  const card = page.getByTestId("aircraft-card");
-  // Tiles as the Favorites' are, from the strip's filter, the list in full
-  // their title.
-  await stripShows(page, "aircraft-question", "question-recents");
-  await expect(card.getByTestId("pill-aircraft-recents").getByTestId("aircraft-recent")).toHaveCount(2);
-  await card.getByTestId("aircraft-recents-more").click();
-  await expect(panel.getByTestId("aircraft-recents-page")).toBeVisible();
-  const recents = panel.getByTestId("aircraft-recents-list").getByTestId("aircraft-recent");
+  // Tiles under the airports' in the one Recents (the traffic's own page,
+  // with its own Recents, went for the one search, 2026-11-14); the
+  // section's title the list in full, airports' and airplanes'.
+  await expect(panel.getByTestId("airport-recents").getByTestId("pill-aircraft-recents").getByTestId("aircraft-recent")).toHaveCount(2);
+  await panel.getByTestId("airport-recents-more").click();
+  await expect(panel.getByTestId("airport-recents-page")).toBeVisible();
+  const recents = panel.getByTestId("aircraft-recent");
   await expect(recents).toHaveCount(2);
 
   // A long press (a right click here) offers Share and Remove, as every
@@ -180,9 +183,10 @@ test("the airplanes' Recents: a long press or a right click offers the Delete to
   await expect(recents).toHaveCount(1);
   await expect(recents.first()).toContainText("N200XY");
 
-  await panel.getByTestId("aircraft-recents-clear").click();
+  await panel.getByTestId("recents-clear").click();
   await page.getByRole("button", { name: "Clear", exact: true }).last().click();
   await expect(recents).toHaveCount(0);
+  await expect(panel.getByTestId("airport-recent")).toHaveCount(0);
 });
 
 test("FPL's strip shows Saved or, from its filter, the latest routes planned as tiles, their title the rest, a tap plans one again and it comes first", async ({

@@ -4,10 +4,21 @@ each with what it has of the four and its phone."""
 
 from types import SimpleNamespace
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app import stop_corridor
 from app.routers import airports as router
+
+
+@pytest.fixture(autouse=True)
+def fresh_corridor():
+    """Each test its own corridor: one route's is kept for the day."""
+    stop_corridor.corridor.cache_clear()
+    yield
+    stop_corridor.corridor.cache_clear()
+
 
 FIELDS = [
     {
@@ -140,7 +151,7 @@ def test_near_the_pilot_within_the_radius_asked_twenty_five_at_first(monkeypatch
 
 def test_along_a_route_in_route_order_with_how_far_off_course(monkeypatch):
     flight = SimpleNamespace(dep_ident="C81", start=(42.3, -88.1), end=(46.8, -92.2))
-    monkeypatch.setattr(router, "load_route", lambda dep, dest, stops="": SimpleNamespace(flights=[flight], idents=("C81", "KDLH")))
+    monkeypatch.setattr(stop_corridor, "load_route", lambda dep, dest, stops="": SimpleNamespace(flights=[flight], idents=("C81", "KDLH")))
     along = [
         {
             "ident": "KAAA",
@@ -177,7 +188,7 @@ def test_along_a_route_in_route_order_with_how_far_off_course(monkeypatch):
             "flight": 0,
         },
     ]
-    monkeypatch.setattr(router.fuelstops, "along", lambda flights, skip=None: along)
+    monkeypatch.setattr(stop_corridor.fuelstops, "along", lambda flights, skip=None: along)
     monkeypatch.setattr(router.nearby, "kept", lambda ident: {"food": [DINER] if ident in ("KBBB", "KFAR") else [ACROSS]})
     monkeypatch.setattr(router.airports, "find_place", lambda ident: {"kind": "small"})
     _quiet(monkeypatch, services={"KAAA": {"powerplant_repair": "major"}})
@@ -188,12 +199,12 @@ def test_along_a_route_in_route_order_with_how_far_off_course(monkeypatch):
     ]
     # KAAA for its engine shop alone, its food across the road.
     assert answer["fields"][0]["food"] == [] and answer["fields"][0]["powerplant_repair"] == "major"
-    assert all(0 <= f["off_nm"] <= router.STOP_OFF_COURSE_NM for f in answer["fields"])
+    assert all(0 <= f["off_nm"] <= stop_corridor.STOP_OFF_COURSE_NM for f in answer["fields"])
 
 
 def test_no_airline_airport_along_a_route(monkeypatch):
     flight = SimpleNamespace(dep_ident="C81", start=(42.3, -88.1), end=(42.2, -83.0))
-    monkeypatch.setattr(router, "load_route", lambda dep, dest, stops="": SimpleNamespace(flights=[flight], idents=("C81", "KDET")))
+    monkeypatch.setattr(stop_corridor, "load_route", lambda dep, dest, stops="": SimpleNamespace(flights=[flight], idents=("C81", "KDET")))
     along = [
         {
             "ident": "KDTW",
@@ -207,8 +218,38 @@ def test_no_airline_airport_along_a_route(monkeypatch):
             "flight": 0,
         }
     ]
-    monkeypatch.setattr(router.fuelstops, "along", lambda flights, skip=None: along)
+    monkeypatch.setattr(stop_corridor.fuelstops, "along", lambda flights, skip=None: along)
     monkeypatch.setattr(router.nearby, "kept", lambda ident: {"food": [DINER]})
     monkeypatch.setattr(router.airports, "find_place", lambda ident: {"kind": "large"})
     _quiet(monkeypatch, services={"KDTW": {"fuel_types": ["100LL", "A"]}})
     assert TestClient(app).get("/api/stops/along?dep=C81&dest=KDET").json()["fields"] == []
+
+
+def test_the_corridor_is_worked_out_once_per_route_and_the_places_each_time(monkeypatch):
+    # Asked again (an Overture read finished, a filter changed), the route's
+    # corridor is not searched again; the places near each field are read
+    # afresh (the web audit's WEB-31).
+    flight = SimpleNamespace(dep_ident="C81", start=(42.3, -88.1), end=(46.8, -92.2))
+    monkeypatch.setattr(stop_corridor, "load_route", lambda dep, dest, stops="": SimpleNamespace(flights=[flight], idents=("C81", "KDLH")))
+    searched = []
+    field = {
+        "ident": "KBBB",
+        "name": "B",
+        "city": "B",
+        "lat": 42.5,
+        "lon": -88.3,
+        "departure": "C81",
+        "from_nm": 15.0,
+        "added_nm": 1.0,
+        "flight": 0,
+    }
+    monkeypatch.setattr(stop_corridor.fuelstops, "along", lambda flights, skip=None: searched.append(1) or [field])
+    food = {"KBBB": []}
+    monkeypatch.setattr(router.nearby, "kept", lambda ident: {"food": food[ident]})
+    monkeypatch.setattr(router.airports, "find_place", lambda ident: {"kind": "small"})
+    _quiet(monkeypatch, services={})
+    client = TestClient(app)
+    assert client.get("/api/stops/along?dep=C81&dest=KDLH").json()["fields"] == []
+    food["KBBB"] = [DINER]
+    assert [f["ident"] for f in client.get("/api/stops/along?dep=C81&dest=KDLH").json()["fields"]] == ["KBBB"]
+    assert len(searched) == 1

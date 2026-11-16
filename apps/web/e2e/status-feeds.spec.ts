@@ -1,13 +1,11 @@
-import { test, expect, type Page } from "@playwright/test";
-import { consolePage, expandConsole, openConsole, showTabs } from "./helpers";
+import { test, expect } from "@playwright/test";
+import { consolePage, expandConsole, openConsole, showTabs, consoleSheet } from "./helpers";
 
 // A route's handler still running as the test ends found the page closed
 // and failed the test (devconsole.spec): taken off, errors let go.
 test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
-
-const consoleSheet = (page: Page) => page.getByTestId("console-sheet");
 
 /**
  * A feed that stops coming in reads as nothing at all -- no NOTAM, no

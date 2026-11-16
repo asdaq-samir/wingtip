@@ -453,6 +453,20 @@ interface GatewayApi {
     suspend fun flightWatchGet(@Path("id") id: kotlin.Long): Response<app.wingtipmaps.android.api.generated.gateway.FlightWatchDto>
 
     /**
+     * DELETE api/me/checkpoint-notes
+     * Forget the signed-in pilot&#39;s own checkpoint notes
+     * Every note they wrote for themselves, which the planner keeps; the shared notes stay. The planner&#39;s own route for it is internal (no x-gateway mark): this names the pilot from the session, as the account&#39;s deletion does.
+     * Responses:
+     *  - 200: How many went
+     *  - 401: No session
+     *  - 502: The planner could not be asked; nothing went
+     *
+     * @return [app.wingtipmaps.android.api.generated.gateway.NotesForgottenDto]
+     */
+    @DELETE("api/me/checkpoint-notes")
+    suspend fun forgetNotes(): Response<app.wingtipmaps.android.api.generated.gateway.NotesForgottenDto>
+
+    /**
      * PUT api/aircraft/{id}/handbook
      *
      *

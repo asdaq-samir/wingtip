@@ -12,10 +12,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
@@ -91,6 +93,17 @@ internal fun PhoneSheetLayout(
         // sheet first (MapSheet), then goes back a page.
         pages(Modifier.weight(1f).padding(bottom = navigationBar), nav.covered || sheet.atPeek) {
             Box(Modifier.onSizeChanged { searchRowPx = it.height }) { searchRow() }
+        }
+    }
+    // Swiped away under a card that closes on a swipe (SheetPage.swipeCloses,
+    // which alone lets the sheet hide): the cards closed and the sheet back
+    // at its peek with the search.
+    LaunchedEffect(sheet, nav) {
+        snapshotFlow { sheet.hidden }.collect { gone ->
+            if (gone) {
+                nav.closeAll()
+                sheet.lower()
+            }
         }
     }
     // The first flight's welcome, once on this phone (WelcomeSheet); its

@@ -27,11 +27,19 @@ private struct CardHost: ViewModifier {
         content
             .sheet(item: $nav.presented) { card in
                 CardStack(card: card, search: search)
-                    .presentationDetents([.half, .large], selection: $nav.cardDetent)
+                    .presentationDetents(card.page.detents, selection: $nav.cardDetent)
+                    // A swipe down closes a settings card from half (You,
+                    // Settings, the Map card), and only brings a content
+                    // card down to its pill: a drag past the pill leaves it
+                    // there, as the web's sheet refuses it (the flicker
+                    // audit's FL-3, the owner's card rule 10), so a content
+                    // card closes by its ✕, and Emergency by its ✕ alone.
+                    .interactiveDismissDisabled(!card.page.swipeCloses)
                     // The map usable above a card up to half height; a
                     // question or a form stays modal (the scrolling rule).
                     .presentationBackgroundInteraction(card.page.modal ? .disabled : .enabled(upThrough: .half))
                     .environment(\.cardExpanded, nav.cardDetent == .large)
+                    .environment(\.cardAtPill, nav.cardDetent == RootView.pill)
                     // The map's buttons ride the card's top while it is up,
                     // as they ride the plan's (MapButtonsDock).
                     .onGeometryChange(for: CGFloat.self) { $0.size.height + $0.safeAreaInsets.bottom } action: { sheetEdge.card = $0 }

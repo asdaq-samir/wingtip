@@ -84,7 +84,27 @@ fn obstacle_at(name: &str, o: &Value) -> R<((f64, f64), f64)> {
     Ok(((num(name, o, "lat")?, num(name, o, "lon")?), num(name, o, "amsl_ft")?))
 }
 
+/// `floor_along_path`: a leg's floor over the path flown in its place
+/// (floor::along_path), the bounding floor as it came, its lowest ground
+/// the least of all. Its own entry, not `call`'s: the planner's alone, so
+/// the web's WebAssembly, which dispatches `call`, carries none of it.
+pub fn floor_along_path(name: &str, v: &Value) -> R<String> {
+    let floors = list(name, v, "floors")?;
+    let figures = floors.iter().map(|f| Ok((num(name, f, "floor_ft")?, opt_num(name, f, "lowest_ground_ft")?))).collect::<R<Vec<_>>>()?;
+    let Some((bound, lowest)) = floor::along_path(&figures) else { return Err(format!("{name}: \"floors\" is empty")) };
+    let mut out = floors[bound].clone();
+    if let (Value::Object(members), Some(low)) = (&mut out, lowest) {
+        for (key, value) in members.iter_mut() {
+            if key == "lowest_ground_ft" {
+                *value = Value::Number(low);
+            }
+        }
+    }
+    Ok(written(&out))
+}
+
 /// The rule `name` worked on `v`.
+#[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> R<String> {
     match name {
         "legal_cruising_altitudes" => {

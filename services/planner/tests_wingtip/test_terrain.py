@@ -116,6 +116,38 @@ def test_an_obstacle_just_behind_the_start_counts_for_the_first_leg(ground, tmp_
     assert _floors(START, END, [0.0, 20.0, TOTAL_NM], faa_cache_dir=tmp_path) == [3400, 2000]
 
 
+#: A dog-leg: north from START to a waypoint 15 nm off the direct line at
+#: its middle, then back down to END (the aviation audit's AV-2).
+DOGLEG = [START, _at(TOTAL_NM / 2, cross_nm=15.0), END]
+RIDGE_M = 1500.0  # 4,921 ft: a floor of 6,000 ft over it
+#: The ridge's south edge: north of the direct line by about 6 nm, so the
+#: direct line keeps to the valley and both legs cross the ridge.
+RIDGE_LAT = 45.1
+
+
+def test_a_dog_leg_over_a_ridge_takes_the_ridges_floor_not_the_valleys(ground, monkeypatch, tmp_path):
+    ground()
+    monkeypatch.setattr(elevation, "get_elevations_m", lambda points: {p: RIDGE_M if p[0] > RIDGE_LAT else GROUND_M for p in points})
+    # The direct line is all valley: 1,000 ft over its 984 ft ground.
+    assert _floors(START, END, [0.0, TOTAL_NM], faa_cache_dir=tmp_path) == [2000]
+    # The legs flown climb over the ridge: each leg its own floor over it,
+    # where the line's breaks gave each the valley's 2,000.
+    floors = terrain.floor_profile(START, END, [0.0, TOTAL_NM / 2, TOTAL_NM], faa_cache_dir=tmp_path, fixes=DOGLEG)
+    assert [s["floor_ft"] for s in floors] == [6000, 6000]
+    assert all(s["highest_ft"] == round(RIDGE_M * terrain.M_TO_FT) for s in floors)
+
+
+def test_a_tower_beside_a_dog_leg_counts_though_far_off_the_direct_line(ground, tmp_path):
+    # 3 nm beside the second leg near the waypoint, about 12 nm off the
+    # direct line: past the engine's 5 nm corridor of the line, inside
+    # the leg's.
+    tower = geo.destination_point(*DOGLEG[1], geo.bearing_deg(*DOGLEG[1], *END), 5.0)
+    tower = geo.destination_point(*tower, 180.0 + 45.0, 3.0)
+    ground(_dof_line(*tower, amsl_ft=2350))
+    assert _floors(START, END, [0.0, TOTAL_NM], faa_cache_dir=tmp_path) == [2000]
+    assert _floors(START, END, [0.0, TOTAL_NM / 2, TOTAL_NM], faa_cache_dir=tmp_path, fixes=DOGLEG)[1] == 3400
+
+
 @pytest.fixture
 def towns(monkeypatch):
     """Over a town (14 CFR 91.119(b)) wherever `town(lat, lon)` says so,

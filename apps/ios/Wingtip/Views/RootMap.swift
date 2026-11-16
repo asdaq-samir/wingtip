@@ -69,6 +69,8 @@ struct RootMap: View {
             // A field tapped on the chart opens its card, half way up, as
             // the web app does.
             onAirport: { ident in open(ident) },
+            // A VOR tapped opens its card, as its link does.
+            onNavaid: { key in nav.open(.navaid(key)) },
             following: $following, routeAway: $routeAway, fitRequest: fitRequest,
             flight: flightLayer,
             extras: MapExtrasInput(

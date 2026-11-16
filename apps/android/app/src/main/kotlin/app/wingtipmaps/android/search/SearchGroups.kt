@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.search
 
+import app.wingtipmaps.android.airplane.InAir
 import app.wingtipmaps.android.airplane.OwnRecord
 import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.api.generated.AircraftProfileSummary
@@ -14,7 +15,9 @@ import app.wingtipmaps.android.ui.OpenScreen
 sealed interface AirplaneHit {
     data class Own(val record: OwnRecord) : AirplaneHit
 
-    data class Registered(val registration: AircraftRegistration) : AirplaneHit
+    /** The FAA's record, drawn at once, and whether it is in the air,
+     *  checking until the live find answers (the owner, 2026-11-14). */
+    data class Registered(val registration: AircraftRegistration, val inAir: InAir = InAir.Checking) : AirplaneHit
 
     data class Type(val profile: AircraftProfileSummary) : AirplaneHit
 }

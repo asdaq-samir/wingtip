@@ -34,7 +34,7 @@ struct AirplaneRow: View {
 
     /// The line as VoiceOver says it: the height and speed in words.
     static func spoken(_ plane: TrafficAircraft) -> String {
-        [plane.type, plane.altitudeFt.map { SpokenFigures.feet(($0 / 100).rounded() * 100) }, plane.speedKt.map(SpokenFigures.knots)]
+        [plane.type, plane.altitudeFt.map { SpokenFigures.feet(Format.trafficFeet($0)) }, plane.speedKt.map(SpokenFigures.knots)]
             .compactMap { $0 }.joined(separator: ", ")
     }
 
@@ -42,9 +42,25 @@ struct AirplaneRow: View {
     static func line(_ plane: TrafficAircraft) -> String {
         var parts: [String] = []
         if let type = plane.type { parts.append(type) }
-        if let ft = plane.altitudeFt { parts.append(Format.altitude((ft / 100).rounded() * 100)) }
+        if let ft = plane.altitudeFt { parts.append(Format.trafficAltitude(ft)) }
         if let kt = plane.speedKt { parts.append(Format.speed(kt)) }
         return parts.joined(separator: " · ")
+    }
+}
+
+/// A kept airplane in a list: its name and its type.
+struct KeptRow: View {
+    let kept: KeptAirplane
+
+    var body: some View {
+        HStack {
+            Image(systemName: "airplane").foregroundStyle(.tint).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                Text(kept.name).font(.headline)
+                if let type = kept.type { Text(type).font(.footnote).foregroundStyle(.secondary) }
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -53,5 +69,12 @@ struct AirplaneRow: View {
         AirplaneRow(plane: TrafficAircraft(altitudeFt: 4500, callsign: "N3429J", hex: "a8c2e1", lat: 46.84, lon: -92.19, registration: "N3429J",
                                            speedKt: 112, trackDeg: 215, type: "P28A"))
         AirplaneRow(plane: TrafficAircraft(altitudeFt: 3000, hex: "a1b2c3", lat: 46.90, lon: -92.30, registration: "N172SP", speedKt: 98, trackDeg: 40, type: "C172"))
+    }
+}
+
+#Preview("KeptRow") {
+    List {
+        KeptRow(kept: KeptAirplane(hex: "a1b2c3", name: "N174HA", type: "C172"))
+        KeptRow(kept: KeptAirplane(hex: "a93f1e", name: "UAL2088"))
     }
 }

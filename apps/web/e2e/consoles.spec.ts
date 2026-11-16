@@ -7,8 +7,8 @@ import {
   library,
   openConsole,
   openAccount,
-  openSetup,
   openSidebar,
+  openMapSettings,
   pickControl,
   settle,
   settled,
@@ -169,14 +169,14 @@ test("You is a card over the map's sheet as every card is: its nested drawer, ha
   }
 });
 
-test("Setup's Appearance control is system, light, dark or dark with the chart bright, a menu of all four, and the choice survives a reload", async ({
+test("The Map card's Appearance control is system, light, dark or dark with the chart bright, a menu of all four, and the choice survives a reload", async ({
   page,
 }) => {
   await page.goto("/app/plan");
   await settle(page);
-  await openSetup(page);
+  await openMapSettings(page);
   const html = page.locator("html");
-  const theme = page.getByTestId("setup-page").getByTestId("theme-select");
+  const theme = page.getByTestId("map-look").getByTestId("theme-select");
   await expect(theme).toHaveAccessibleName("Appearance: System");
   await expect(html).not.toHaveClass(/dark/); // "system", and the test browser prefers light
   await pickControl(page, "theme-select", "theme-dark");
@@ -187,7 +187,29 @@ test("Setup's Appearance control is system, light, dark or dark with the chart b
   await expect(theme).toHaveAccessibleName("Appearance: Dark");
   await page.reload();
   await expect(html).toHaveClass(/dark/);
-  await openSetup(page);
+  await openMapSettings(page);
   await pickControl(page, "theme-select", "theme-light");
   await expect(html).not.toHaveClass(/dark/);
+});
+
+test("The Map card's Look is four tiles in the layers' grid, each its value under its name, Own Ship's pick drawn on the map", async ({
+  page,
+}) => {
+  // The owner, 2026-11-14: "every section should have 4 tiles like Layers one"; "Maybe replace the position with the choice of own ship?"
+  await page.goto("/app/plan");
+  await settle(page);
+  await openMapSettings(page);
+  const look = page.getByTestId("map-look");
+  await expect(look.getByTestId("brand-select")).toHaveAccessibleName(/^Theme: /);
+  await expect(look.getByTestId("theme-select")).toHaveAccessibleName(/^Appearance: /);
+  await expect(look.getByTestId("sunlight-select")).toHaveAccessibleName(/^Sunlight: /);
+  const ownShip = look.getByTestId("own-ship-select");
+  await expect(ownShip).toHaveAccessibleName("Own Ship: Airplane");
+  await ownShip.click();
+  await page.getByTestId("own-ship-jet").click();
+  await expect(ownShip).toHaveAccessibleName("Own Ship: Jet");
+  await page.reload();
+  await settle(page);
+  await openMapSettings(page);
+  await expect(page.getByTestId("map-look").getByTestId("own-ship-select")).toHaveAccessibleName("Own Ship: Jet");
 });

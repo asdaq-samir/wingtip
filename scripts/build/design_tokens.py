@@ -188,12 +188,7 @@ def gen_css(tree):
     root += [("lead-%s" % k, rem(t["$value"]["lineHeight"])) for k, t in tokens(tree["type"]).items() if fixed(t)]
     # The named colours too, for a class on the page (fill-(--chart-casing)) where lib/tokens' values cannot reach.
     root += [("%s-%s" % (g, k), hex6(c)) for g in SHARED for k, c in flat_colours(tree, "color." + g).items()]
-    root += [
-        ("glass-blur", "%gpx" % mat["glass-blur"]),
-        ("glass-fill-light", "%g%%" % (mat["glass-fill"] * 100)),
-        ("glass-fill-dark", "%g%%" % (mat["glass-fill-dark"] * 100)),
-        ("sheet-blur", "%gpx" % mat["sheet-blur"]),
-    ]
+    root += stock.material_css(mat)
     root += [("motion-%s" % k, bezier(v) if isinstance(v, list) else "%gs" % v) for k, v in motion.items()]
     day_feel, night_feel = feel.css(tokens(tree["feel"]))
     root += day_feel

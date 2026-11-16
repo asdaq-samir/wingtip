@@ -7,6 +7,7 @@ import { fieldPhases, type RadioCall, type RadioPhase } from "../../lib/radio";
 import { useRunwayPicks } from "../../lib/useRunwayPicks";
 import { altFt } from "../../format";
 import { Mhz } from "../FrequencyRow";
+import { TEXT } from "../../../../lib/text";
 
 type Facilities = Briefing["airports"][string];
 
@@ -44,7 +45,7 @@ function PatternDiagram({ end, opposite, fromDeg }: { end: RunwayEnd; opposite: 
       aria-label={label}
       data-testid="pattern-diagram"
     >
-      <g className="text-xs text-muted-foreground" fill="currentColor" textAnchor="middle">
+      <g className={cn("text-muted-foreground", TEXT.note)} fill="currentColor" textAnchor="middle">
         <text x={xd + side * 12} y={150} transform={`rotate(${-90 * side} ${xd + side * 12} 150)`}>
           Downwind
         </text>
@@ -66,7 +67,7 @@ function PatternDiagram({ end, opposite, fromDeg }: { end: RunwayEnd; opposite: 
       {/* The runway with its numbers painted at its ends, as it is:
           each read from its own approach. */}
       <rect x={110} y={80} width={20} height={80} rx={1.5} fill="currentColor" />
-      <g className="fill-background text-xs" fontWeight={700} textAnchor="middle">
+      <g className={cn("fill-background", TEXT.note)} fontWeight={700} textAnchor="middle">
         <text x={120} y={155}>
           {runwayNumber(end.ident)}
         </text>
@@ -79,14 +80,14 @@ function PatternDiagram({ end, opposite, fromDeg }: { end: RunwayEnd; opposite: 
       <g className="text-tint">
         <path d={`M${xd + side * 50} 70 L${xd} 120`} stroke="currentColor" strokeWidth={2} fill="none" />
         <Chevron x={xd + side * 6} y={114} deg={right ? 225 : 135} />
-        <text x={right ? 236 : 4} y={62} className="text-xs" textAnchor={right ? "end" : "start"} fill="currentColor">
+        <text x={right ? 236 : 4} y={62} className={TEXT.note} textAnchor={right ? "end" : "start"} fill="currentColor">
           45° entry
         </text>
       </g>
       {/* North, turned to the runway: the page's up is its heading. */}
       <g transform={`translate(${120 - side * 96} 26) rotate(${-heading})`} className="text-muted-foreground">
         <path d="M0 -11 L4 5 L0 2 L-4 5 Z" fill="currentColor" />
-        <text y={-14} className="text-xs" textAnchor="middle" fill="currentColor" transform={`rotate(${heading} 0 -17)`}>
+        <text y={-14} className={TEXT.note} textAnchor="middle" fill="currentColor" transform={`rotate(${heading} 0 -17)`}>
           N
         </text>
       </g>
@@ -102,7 +103,7 @@ function PatternDiagram({ end, opposite, fromDeg }: { end: RunwayEnd; opposite: 
           <text
             x={120 + 107 * Math.sin(rel) + 12 * Math.cos(rel)}
             y={120 - 107 * Math.cos(rel) + 12 * Math.sin(rel) + 3}
-            className="text-xs"
+            className={TEXT.note}
             textAnchor="middle"
             fill="currentColor"
           >

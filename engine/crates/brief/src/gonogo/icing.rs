@@ -6,11 +6,17 @@
 //! (structural icing needs visible moisture at or below 0 °C, the Aviation
 //! Weather Handbook, FAA-H-8083-28B ch. 20, Icing). Under VFR the flight stays
 //! clear of cloud (14 CFR 91.155), and the freezing level is the altitude
-//! reasoning's line alone -- though freezing rain or drizzle (FZRA, FZDZ)
-//! ices an airplane out of cloud, which this does not read.
+//! reasoning's line alone. Freezing rain or drizzle (FZRA, FZDZ), which
+//! ices an airplane out of cloud on any flight (AIM 7-1-20), is the weather
+//! crate's `freezing_precip`, read from the METARs and TAFs.
+//!
+//! Where icing is possible but the freezing level is not known, the
+//! flight's altitudes cannot be held to it: `gonogo_icing_unchecked` says
+//! so, rather than nothing (the aviation audit's AV-7).
 
+use super::calls::{truth, In};
 use crate::figures::words::{feet, js_num};
-use crate::json;
+use crate::json::{self, Value};
 
 /// The altitude selection's say on icing: the freezing level (None not
 /// known), whether the forecast is below freezing at its lowest altitude
@@ -77,4 +83,51 @@ pub fn icing_json(icing: Option<&Icing>) -> String {
     json::string(&mut out, &icing_line(i));
     out.push('}');
     out
+}
+
+/// The altitude selection's say on icing, from its JSON (`selection`, the
+/// planner's AltitudeBreakdown members); nothing said where it is missing.
+pub(crate) fn selection_of(i: In, v: &Value) -> Result<Selection, String> {
+    Ok(match i.obj(v, "selection")? {
+        None => Selection::default(),
+        Some(s) => Selection {
+            freezing_level_ft: i.opt_num(s, "freezing_level_ft")?,
+            possible: truth(s, "icing_possible"),
+            at_or_below: truth(s, "freezing_level_at_or_below"),
+        },
+    })
+}
+
+/// Why icing was not checked, where it was not: the moisture is forecast
+/// (`possible`) and altitudes are flown, but the freezing level is not
+/// known, so no altitude can be held to it. Structural icing needs
+/// visible moisture at or below 0 °C (FAA-H-8083-28B ch. 20); with no
+/// level, the safer word is that it was not checked, never nothing.
+pub fn icing_unchecked(selection: &Selection, flown_ft: &[f64]) -> Option<&'static str> {
+    (selection.possible && selection.freezing_level_ft.is_none() && !flown_ft.is_empty())
+        .then_some("Icing not checked: freezing level not known")
+}
+
+/// `gonogo_icing_unchecked`: its line, or null.
+pub fn call(name: &str, v: &Value) -> Result<String, String> {
+    let i = In { name };
+    let mut out = String::new();
+    json::opt_string(&mut out, icing_unchecked(&selection_of(i, v)?, &i.nums(v, "flown_ft")?));
+    Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn icing_possible_with_no_freezing_level_is_said_not_checked() {
+        let unknown = Selection { freezing_level_ft: None, possible: true, at_or_below: false };
+        assert_eq!(icing_unchecked(&unknown, &[8000.0]), Some("Icing not checked: freezing level not known"));
+        assert_eq!(icing_at_altitude(&unknown, &[8000.0], &[]), None);
+        // No moisture, or a level known, or nothing flown: nothing to say here.
+        assert_eq!(icing_unchecked(&Selection { possible: false, ..unknown }, &[8000.0]), None);
+        assert_eq!(icing_unchecked(&Selection { freezing_level_ft: Some(6000.0), ..unknown }, &[8000.0]), None);
+        assert_eq!(icing_unchecked(&unknown, &[]), None);
+    }
 }

@@ -7,6 +7,8 @@
   "fuel_burn_gph": 8.5,
   "cruise_power_pct": 65,
   "climb_tas_kt": 74,
+  "climb_fuel_burn_gph": 13.2,
+  "climb_fuel_source": "Cessna 172S POH (1998), figure 5-7, time, fuel and distance to climb at 2550 lb (flaps up, full throttle, standard temperature): sea level to 6,000 ft in 10 min on 2.2 gal, so 13.2 GPH (its note 1, 1.4 gal for engine start, taxi and takeoff, is taxi_fuel_gal)",
   "usable_fuel_gal": 40,
   "crosswind": {
     "demonstrated_kt": 15,

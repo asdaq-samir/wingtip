@@ -57,7 +57,7 @@ filled:
 |---|---|
 | Airport | Fly Here, Depart From, Add as Stop, Call, Address |
 | A point held on the map (the airspace card) | Direct To, Add to Route, Hold Here |
-| A VOR, a fix or a VFR waypoint | Direct To, Add to Route, Copy |
+| A VOR, a fix or a VFR waypoint | Direct To, Add to Route, Copy (the first two greyed with no route) |
 
 - **Fly Here**: a new route from the airplane to this field.
 - **Direct To**: from the airplane to the point, then on along the route.

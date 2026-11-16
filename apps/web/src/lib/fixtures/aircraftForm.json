@@ -1,5 +1,5 @@
 {
-  "about": "The \"Your Airplane\" form's fields as typed and what is wrong with them, by field, in the words shown under each (the engine's aircraft_problems, which the gateway asks through the planner before a save: services/planner/tests/test_aircraft_form.py holds that to these cases). Web: features/pilot/AccountPanels. iOS: AircraftForm in PilotLogic. Android: aircraft/AircraftForm.",
+  "about": "The \"Your Airplane\" form's fields as typed and what is wrong with them, by field, in the words shown under each (the engine's aircraft_problems, each figure inside its range from airplane_figure_ranges, the bounds the planner's queries take too, which the gateway asks through the planner before a save: services/planner/tests/test_aircraft_form.py holds that to these cases). Web: features/pilot/AccountPanels. iOS: AircraftForm in PilotLogic. Android: aircraft/AircraftForm.",
   "cases": [
     {
       "form": {
@@ -280,6 +280,41 @@
       "problems": {
         "colour": "At most 40 characters"
       }
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "1200",
+        "fuelBurnGph": "151",
+        "cruisePowerPct": "",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "",
+        "surveillance": "",
+        "colour": ""
+      },
+      "problems": {
+        "cruiseTasKt": "Cruise speed must be at most 1,000 kt",
+        "fuelBurnGph": "Cruise fuel burn must be at most 150 gal/h"
+      }
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "1000",
+        "fuelBurnGph": "150",
+        "cruisePowerPct": "100",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "2000",
+        "equipment": "",
+        "surveillance": "",
+        "colour": ""
+      },
+      "problems": {}
     }
   ]
 }

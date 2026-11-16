@@ -25,6 +25,12 @@ time, the cruising altitudes the winds are asked at):
 
 A source not to be had is sent as nothing, and the engine says it was not
 checked. It only suggests: a way picked is planned as any route is.
+
+Across the antimeridian (Adak to Shemya) the engine's frame lies within
+180 degrees of the departure's longitude, so its west edge may be under
+-180 or its east over 180: the samples are read at their longitudes put
+back between -180 and 180, and each box is read as the one or two boxes
+it is on the data's side (`_boxes`); the engine moves what it is sent.
 """
 
 from __future__ import annotations
@@ -59,12 +65,24 @@ def _samples(frame: dict) -> tuple[np.ndarray, np.ndarray]:
     step = frame["cell_deg"] / frame["per_cell"]
     lats = frame["lat0"] + (np.arange(frame["rows"] * frame["per_cell"]) + 0.5) * step
     lons = frame["lon0"] + (np.arange(frame["cols"] * frame["per_cell"]) + 0.5) * step
+    # A frame past the antimeridian: the data's own longitudes.
+    lons = (lons + 180.0) % 360.0 - 180.0
     return np.meshgrid(lats, lons, indexing="ij")
 
 
+def _boxes(box) -> list[tuple]:
+    """A (south, west, north, east) box as the one or two boxes it is
+    between -180 and 180: a frame past the antimeridian is split there."""
+    s, w, n, e = (float(v) for v in box)
+    if w < -180.0:
+        return [(s, w + 360.0, n, 180.0), (s, -180.0, n, e)]
+    if e > 180.0:
+        return [(s, w, n, 180.0), (s, -180.0, n, e - 360.0)]
+    return [(s, w, n, e)]
+
+
 def _in(box, lat, lon) -> bool:
-    s, w, n, e = box
-    return lat is not None and lon is not None and s <= lat <= n and w <= lon <= e
+    return lat is not None and lon is not None and any(s <= lat <= n and w <= lon <= e for s, w, n, e in _boxes(box))
 
 
 def _tafs(frame: dict) -> list[dict]:
@@ -127,10 +145,10 @@ def _advisories(name: str) -> list[dict]:
 def _special_use(frame: dict) -> list[dict]:
     from . import sua
 
-    s, w, n, e = frame["bbox"]
     return [
         {"type": area.get("type") or "", "name": str(area.get("name") or ""), "rings": _rings(geometry)}
-        for area, geometry in sua.areas_in((s, w, n, e))
+        for box in _boxes(frame["bbox"])
+        for area, geometry in sua.areas_in(box)
     ]
 
 
@@ -155,7 +173,8 @@ def _winds(frame: dict, fcst_hr: str) -> list[dict]:
     the frame, at the departure's time: the map's grid where its timeline
     holds it, the GFS stations past it (wingtip.winds_aloft.wind_points)."""
     try:
-        return winds_aloft.wind_points(tuple(frame["data_box"]), fcst_hr, [float(a) for a in frame["altitudes_ft"]])
+        altitudes = [float(a) for a in frame["altitudes_ft"]]
+        return [p for box in _boxes(frame["data_box"]) for p in winds_aloft.wind_points(box, fcst_hr, altitudes)]
     except weather.WeatherServiceError:
         return []
 
@@ -163,13 +182,14 @@ def _winds(frame: dict, fcst_hr: str) -> list[dict]:
 def _fields(frame: dict, table, food) -> list[dict]:
     """The fields with fuel in the frame's reach, their longest paved
     runway (wingtip.fuelstops) and whether there is somewhere to eat."""
-    s, w, n, e = frame["data_box"]
-    near = table[(table["lat"] >= s) & (table["lat"] <= n) & (table["lon"] >= w) & (table["lon"] <= e)]
-    return [{**row, "food": food(row["ident"]) if food else None} for row in fuelstops._table(near)]
+    out = []
+    for s, w, n, e in _boxes(frame["data_box"]):
+        near = table[(table["lat"] >= s) & (table["lat"] <= n) & (table["lon"] >= w) & (table["lon"] <= e)]
+        out += [{**row, "food": food(row["ident"]) if food else None} for row in fuelstops._table(near)]
+    return out
 
 
 def _fixes(box) -> list[dict]:
-    s, w, n, e = box
     return [
         {
             "ident": f["ident"],
@@ -180,6 +200,7 @@ def _fixes(box) -> list[dict]:
             "kind": f.get("kind") or "",
             "mag_var": f.get("mag_var"),
         }
+        for s, w, n, e in _boxes(box)
         for f in fixes.within(s, w, n, e)
     ]
 

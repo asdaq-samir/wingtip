@@ -6,7 +6,7 @@ military "military") agree on every app; a joint-use field is public use."""
 
 import json
 
-from charts import overlays
+from charts import airports
 
 
 def test_a_military_field_is_military_use_not_private(tmp_path):
@@ -23,7 +23,7 @@ def test_a_military_field_is_military_use_not_private(tmp_path):
         ["3", "A", "IL11", "", "DONALD ALFRED GADE", "O", "42.45", "-88.12", "PR", "PR"],
     ]
     path.write_text("\n".join(",".join(f'"{v}"' for v in r) for r in [columns, *rows]) + "\n")
-    found = {f["properties"]["faa_id"]: f["properties"] for f in (json.loads(line) for line in overlays.airport_features(path, None, None))}
+    found = {f["properties"]["faa_id"]: f["properties"] for f in (json.loads(line) for line in airports.airport_features(path, None, None))}
     assert {k: (p["use"], p.get("military")) for k, p in found.items()} == {
         "MXF": ("military", "military"),
         "FHU": ("public", "joint"),

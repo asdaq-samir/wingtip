@@ -12,12 +12,13 @@ import { useOwnShip } from "../../../../lib/map/position/ownShip";
 import { usePastFlight } from "../pastFlight";
 import { CARRY_S, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, trafficLabel, trendSeconds } from "../traffic";
 import { trafficCredit } from "../trafficCredit";
-import { reported, useTracking, useTrafficFocus, type Report } from "../../../../lib/map/position/tracking";
+import { reported, useTracking, type Report } from "../../../../lib/map/position/tracking";
 import { EMPTY, useGlLayer, useGlMap, useGlTap } from "../../../../lib/map/gl/glLayer";
 import { TAP } from "../../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
 import { useMapCredit } from "../../../../lib/map/gl/creditStore";
 import { appZoomOf, glZoom } from "../../../../lib/map/gl/glStyle";
+import { cameraOf } from "../../../../lib/map/gl/camera";
 import { useTerrainView } from "../terrain/useTerrainView";
 import { addTrafficPictures, trafficLayers, trafficPicture, type TrafficMarkProps } from "./trafficMarks";
 import { PastFlightGl, TrackedPathGl } from "./TracksGl";
@@ -47,7 +48,7 @@ interface Target {
   /** Where it is drawn now, carried on (null until it is first drawn). */
   pos: { lat: number; lon: number } | null;
   /** How it looks, from its report, own ship's height and the map's zoom. */
-  look: { near: boolean; tracked: boolean; dim: boolean; label: string; callsign: string; trendS: number } | null;
+  look: { near: boolean; tracked: boolean; label: string; callsign: string; trendS: number } | null;
 }
 
 /**
@@ -60,13 +61,12 @@ interface Target {
  */
 export function TrafficGl() {
   const on = usePreferences((s) => s.traffic);
-  const tracking = useTracking((s) => !!s.hex || s.listing);
+  const tracking = useTracking((s) => !!s.hex);
   const hex = useTracking((s) => s.hex);
   const past = usePastFlight((s) => (s.hex === hex ? s.id : null));
-  const focused = useTrafficFocus((s) => s.on);
   // Carried on along their tracks by the engine (lib/geo): drawn once it is there.
   const geo = useGeo();
-  if (!on && !tracking && !focused) return null;
+  if (!on && !tracking) return null;
   return (
     <>
       {geo && <Traffic geo={geo} />}
@@ -93,16 +93,12 @@ function Traffic({ geo }: { geo: Geo }) {
   const follow = useTracking((s) => s.follow);
   const followed = useTracking((s) => (s.hex && s.follow && s.latest ? s.latest.plane : null));
   const [view, setView] = useState(() => viewOf(map));
+  // A drag ends the follow (the camera's owner, lib/map/gl/camera).
   useEffect(() => {
     const rest = () => setView(viewOf(map));
-    const drag = () => {
-      if (useTracking.getState().follow) useTracking.setState({ follow: false });
-    };
     map.on("moveend", rest);
-    map.on("dragstart", drag);
     return () => {
       map.off("moveend", rest);
-      map.off("dragstart", drag);
     };
   }, [map]);
   const at = followed ? { lat: followed.lat, lon: followed.lon } : view;
@@ -138,6 +134,10 @@ function Traffic({ geo }: { geo: Geo }) {
     const tapped = String(feature.properties.hex);
     const { pick, seen } = useTracking.getState();
     pick?.(tapped, seen.find((r) => r.plane.hex === tapped)?.plane);
+    // Followed again: the map's tap, a pick, ended every follow just
+    // before (the camera's tapped), and tracking the airplane already
+    // tracked sets nothing.
+    useTracking.setState({ follow: true });
   });
   // Where each is, for the browser tests (useGlProbe).
   useGlProbe("traffic-marks", [IDS.marks], (f) => ({
@@ -195,7 +195,6 @@ function Traffic({ geo }: { geo: Geo }) {
     useTracking.setState({ seen: reports });
   }, [geo, merged]);
 
-  const only = useTrafficFocus((s) => (s.on ? s.only : null));
   useEffect(() => {
     const heights = view.zoom >= HEIGHT_ZOOM,
       callsigns = view.zoom >= CALLSIGN_ZOOM;
@@ -209,16 +208,18 @@ function Traffic({ geo }: { geo: Geo }) {
       target.look = {
         near: nearOwnHeight(plane, ownFt),
         tracked,
-        dim: !!only && !only.has(plane.hex) && !tracked,
         label: heights || tracked ? trafficLabel(plane, ownFt) : "",
         callsign: callsigns || tracked ? (plane.callsign ?? plane.registration ?? "") : "",
         trendS: plane.track_deg != null ? trendSeconds(plane.speed_kt, plane.lat, view.zoom) : 0,
       };
     }
     drawTargets(geo, map, targets.current);
-  }, [geo, map, merged, ownFt, view.zoom, hex, only]);
+  }, [geo, map, merged, ownFt, view.zoom, hex]);
 
-  // The airplane tracked, followed: flown to as its first report comes.
+  // The airplane tracked, followed: brought into sight as its first report
+  // comes if it is out of sight, a pick that keeps the tracking's follow on; the follow's steps
+  // (drawTargets) wait behind it (the camera's owner), where its jump
+  // every frame stopped this flight 124 ms in (the flicker audit's FL-7).
   const heard = useTracking((s) => !!s.hex && s.latest?.plane.hex === s.hex);
   useEffect(() => {
     if (!hex || !follow) return;
@@ -226,7 +227,13 @@ function Traffic({ geo }: { geo: Geo }) {
     if (ownShip.follow && ownShip.enabled) ownShip.setFollow(false);
     const latest = useTracking.getState().latest;
     if (!heard || !latest) return;
-    map.flyTo({ center: [latest.plane.lon, latest.plane.lat], zoom: Math.max(map.getZoom(), glZoom(9)), duration: 800 });
+    // Only if it is out of the room: one tapped on the chart is in sight.
+    cameraOf(map).pick([latest.plane.lon, latest.plane.lat], {
+      onlyIfHidden: true,
+      zoom: Math.max(map.getZoom(), glZoom(9)),
+      duration: 800,
+      keeps: "track",
+    });
   }, [map, hex, follow, heard]);
 
   // The frames stop while the page is hidden (the app put away, the phone
@@ -292,7 +299,6 @@ function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
         icon: trafficPicture(look.near, plane.track_deg != null, look.tracked),
         track: plane.track_deg ?? 0,
         tracked: look.tracked,
-        dim: look.dim,
         label: look.label,
         callsign: look.callsign,
         ink: look.near ? CHART.trafficNearText : CHART.casing,
@@ -310,7 +316,7 @@ function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
             [ahead.lon + shift.lon, ahead.lat + shift.lat],
           ],
         },
-        properties: { colour, dim: look.dim },
+        properties: { colour },
       });
     }
   }
@@ -319,7 +325,10 @@ function drawTargets(geo: Geo, map: MlMap, targets: Map<string, Target>) {
   const { follow } = useTracking.getState();
   const replaying = usePastFlight.getState().hex === tracked;
   const target = tracked && follow && !replaying ? targets.get(tracked) : undefined;
-  if (target?.pos) map.jumpTo({ center: [target.pos.lon, target.pos.lat] });
+  // One linear ease a frame, lasting till the next, not a jump, keeping
+  // the airplane where it is on the screen: the camera's follow, which
+  // waits behind a pick and the pilot's hand.
+  if (target?.pos) cameraOf(map).follow("track", [target.pos.lon, target.pos.lat], { keep: "place" });
 }
 
 /** Own ship's fix while it is on, read once (useOwnFix's, not followed). */

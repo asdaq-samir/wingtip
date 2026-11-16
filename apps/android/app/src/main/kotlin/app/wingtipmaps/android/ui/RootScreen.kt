@@ -89,7 +89,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val dryRun: DryRun = hiltViewModel()
     val map: MapViewModel = hiltViewModel()
     val ownShip = rememberOwnShipControl()
-    val sheet = rememberMapSheetState()
+    val sheet = rememberMapSheetState(canHide = { map.top.swipeCloses })
     // The screen's Snackbars: a route edit's Undo (RouteUndoSnackbar).
     val snackbars = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()

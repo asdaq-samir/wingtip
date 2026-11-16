@@ -17,8 +17,11 @@ ANSWER = {
             "ground_min": 30.0,
             "fuel_gal": 31.7,
             "landings": 1,
-            "crosses": [],
+            # Through a MOA, which it stays open across (AIM 3-4-5), with
+            # the card's warning in the engine's words.
+            "crosses": [1],
             "marginal": [],
+            "warning": "Crosses a MOA",
             "bands": [{"kind": "vfr", "min": 190.0}],
             "tail_kt": 6.0,
             "floor_ft": 2200,
@@ -32,8 +35,8 @@ ANSWER = {
     "current": [],
     "current_marginal": [],
     "current_along": {"bands": [{"kind": "storm", "min": 20.0}], "tail_kt": 2.0, "floor_ft": 2000, "water_nm": 0},
-    "hazards": [{"kind": "storm", "name": "Thunderstorms forecast at KCID"}],
-    "unchecked": [],
+    "hazards": [{"kind": "storm", "name": "Thunderstorms forecast at KCID"}, {"kind": "moa", "name": "Howard West MOA"}],
+    "unchecked": ["start and taxi fuel"],
 }
 
 
@@ -69,7 +72,7 @@ def test_the_ways_with_the_airplanes_figures_and_the_pilots_minimums(monkeypatch
     # by what it is, its stops not in its name (the owner, 2026-10-28).
     assert [(c["key"], c["label"], c["stops"], c["crosses"]) for c in answer["chips"]] == [
         ("none", "As typed", [], [0]),
-        ("weather", "Avoid Weather & Fastest", ["KDSM"], []),
+        ("weather", "Avoid Weather & Fastest", ["KDSM"], [1]),
     ]
     dep, dest, profile, given = asked[0]
     assert dep == {"ident": "C81", "lat": 1.0, "lon": 2.0} and dest["ident"] == "KOMA"
@@ -150,6 +153,8 @@ def test_the_most_filed_route_is_the_last_chip_its_airway_named(monkeypatch):
         "title": "Most Filed",
         "stops": ["BAE", "P1", "P2", "OBH"],
         "fuel": [],
+        "crosses": [],
+        "warning": None,
     }
 
     def options(dep, dest, profile, **given):

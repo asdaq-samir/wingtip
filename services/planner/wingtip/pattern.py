@@ -28,7 +28,7 @@ from pathlib import Path
 
 import wingtip_native
 
-from . import faa_data
+from . import faa_data, remarks
 from .config import DATA_DIR
 from .magnetic import magnetic_variation_deg
 from .single_flight import once
@@ -125,7 +125,9 @@ def with_traffic(runways: list, ident: str, lat: float, lon: float, cache_dir=FA
     with its `runway_ends`: each end's ident, its true heading
     (wingtip.runway_wind; None for a helipad), which way its pattern is flown,
     and where it is -- NASR's surveyed threshold, else OurAirports' (its
-    `end_positions`), else None -- for the card's sketch of the field."""
+    `end_positions`), else None -- for the card's sketch of the field; and
+    its `displaced_threshold_ft` and `lda_ft`, NASR's, None where NASR
+    gives none."""
     variation = magnetic_variation_deg(lat, lon)
     right = sorted(right_traffic_ends(ident, cache_dir))
     at = end_positions(ident, cache_dir)
@@ -134,24 +136,38 @@ def with_traffic(runways: list, ident: str, lat: float, lon: float, cache_dir=FA
         found = at.get(end_key(end["ident"])) or (runway.get("end_positions") or {}).get(end["ident"])
         return (round(found[0], 6), round(found[1], 6)) if found else (None, None)
 
+    def distances(runway: dict, end: dict) -> dict:
+        # NASR's displaced threshold and landing distance available at the
+        # end (APT_RWY_END's DISPLACED_THR_LEN and LNDG_DIST_AVBL,
+        # wingtip.nasr_fields); None for OurAirports' runways.
+        by_key = {end_key(k): v for k, v in (runway.get("end_distances") or {}).items()}
+        return by_key.get(end_key(end["ident"])) or {"displaced_threshold_ft": None, "lda_ft": None}
+
     out = []
     for r in runways:
         headings = [[end, None if heading is None or heading != heading else heading] for end, heading in r.get("end_headings", [])]
         ends = _ask("runway_ends_traffic", end_headings=headings, variation_deg=variation, right=right)
-        out.append({**r, "runway_ends": [{**e, **dict(zip(("lat", "lon"), position(r, e)))} for e in ends]})
+        out.append({**r, "runway_ends": [{**e, **dict(zip(("lat", "lon"), position(r, e))), **distances(r, e)} for e in ends]})
     return out
 
 
 def pattern_at(ident: str, elevation_ft: float | None, cache_dir=FAA_CACHE_DIR) -> dict:
     """How high the pattern is flown: `agl_ft` above the field, the FAA's
-    own where `published`, else AC 90-66C's 1,000 ft; and `altitude_ft`,
-    above sea level, where the field's elevation is known."""
+    own where `published`, else AC 90-66C's and AIM 4-3-3a's 1,000 ft; and
+    `altitude_ft`, above sea level, where the field's elevation is known.
+    With `remarks`, the FAA's remarks on it in words (remarks.pattern_notes),
+    where it gives other aircraft other heights; none where the remarks
+    file cannot be had."""
     published = None
     for faa_id in faa_ids(ident):
         published = faa_data.published_pattern_agl_ft(faa_id, cache_dir)
         if published is not None:
             break
-    return _ask("pattern_altitude", elevation_ft=elevation_ft, published_agl_ft=published)
+    try:
+        notes = next((found for faa_id in faa_ids(ident) if (found := remarks.pattern_notes(faa_id, cache_dir))), [])
+    except (OSError, RuntimeError):
+        notes = []
+    return {**_ask("pattern_altitude", elevation_ft=elevation_ft, published_agl_ft=published), "remarks": notes}
 
 
 def _circuit_runway(runway: dict) -> dict:

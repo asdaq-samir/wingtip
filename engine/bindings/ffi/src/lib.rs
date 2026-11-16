@@ -8,7 +8,8 @@
 //! as the web app and the planner ask it; and the readers of the cycle
 //! packs kept on the phone, which take the packs by their files' paths and
 //! map each for the one call, so a pan reads only the pages it needs and
-//! nothing is copied across.
+//! nothing is copied across. Every one comes back an error, never a
+//! crash, where the engine panics (`guarded`).
 
 use std::fs::File;
 use wingtip_engine::{ahead, clearance::Route, pack::Pack, pack_query, spoken, view, view_marks};
@@ -37,7 +38,30 @@ impl std::fmt::Display for EngineError {
 /// object, its answer JSON.
 #[uniffi::export]
 pub fn call(name: &str, input: &str) -> Result<String, EngineError> {
-    wingtip_engine::call::call(name, input).map_err(EngineError::Refused)
+    guarded(name, || wingtip_engine::call::call(name, input))?.map_err(EngineError::Refused)
+}
+
+/// What `f` answers, or, where the engine panicked (a rule's bug, an index
+/// past a slice's end), the panic as the call's refusal, so the app shows
+/// what it shows for any refused rule and goes on rather than dying with
+/// it (old audit N7, IOS-12). UniFFI's scaffolding catches a panic too,
+/// but hands it to Swift as UniffiInternalError, which the generated
+/// Swift of a function that cannot fail meets with `try!`: a crash. This
+/// needs the unwinding the release profile keeps (engine/Cargo.toml); a
+/// build with `panic = "abort"` would end the process before here.
+///
+/// AssertUnwindSafe: each closure only reads its inputs and the packs it
+/// maps for the one call; the engine keeps no state between calls that a
+/// half-done one could leave broken.
+fn guarded<T>(what: &str, f: impl FnOnce() -> T) -> Result<T, EngineError> {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).map_err(|panic| {
+        let why = panic
+            .downcast_ref::<&str>()
+            .map(|s| s.to_string())
+            .or_else(|| panic.downcast_ref::<String>().cloned())
+            .unwrap_or_else(|| "no message".to_string());
+        EngineError::Refused(format!("{what}: the engine failed ({why})"))
+    })
 }
 
 /// Whether every byte of a pack is as the planner wrote it: false too for
@@ -45,8 +69,8 @@ pub fn call(name: &str, input: &str) -> Result<String, EngineError> {
 /// copied (a Swift Data, a direct Kotlin ByteBuffer): a pack just fetched,
 /// checked before it is kept.
 #[uniffi::export]
-pub fn pack_verify(pack: &[u8]) -> bool {
-    Pack::read(pack).is_ok_and(|p| p.verify())
+pub fn pack_verify(pack: &[u8]) -> Result<bool, EngineError> {
+    guarded("pack_verify", || Pack::read(pack).is_ok_and(|p| p.verify()))
 }
 
 /// A pack file mapped read-only, or None where it cannot be opened.
@@ -75,15 +99,15 @@ fn read(maps: &[memmap2::Mmap]) -> Vec<Pack<'_>> {
 /// the file is no pack the engine reads. `ground_ft` None where the
 /// caller does not know the ground's height.
 #[uniffi::export]
-pub fn airspace_at(pack: Option<String>, lat: f64, lon: f64, ground_ft: Option<f64>) -> Option<String> {
-    match pack {
+pub fn airspace_at(pack: Option<String>, lat: f64, lon: f64, ground_ft: Option<f64>) -> Result<Option<String>, EngineError> {
+    guarded("airspace_at", || match pack {
         None => pack_query::airspace_at(None, lat, lon, ground_ft),
         Some(path) => {
             let map = mapped(&path)?;
             let pack = Pack::read(&map).ok()?;
             pack_query::airspace_at(Some(&pack), lat, lon, ground_ft)
         }
-    }
+    })
 }
 
 /// The alerts ahead with no network (wingtip_engine::ahead), as the
@@ -96,9 +120,11 @@ pub fn airspace_at(pack: Option<String>, lat: f64, lon: f64, ground_ft: Option<f
 pub fn ahead(
     packs: Vec<String>, lat: f64, lon: f64, track_deg: f64, gs_kt: f64, alt_ft: Option<f64>, vs_fpm: f64, now: i64, tfrs: Option<String>,
     tfrs_at: Option<i64>,
-) -> String {
-    let maps = mapped_all(&packs);
-    ahead::ahead(&read(&maps), lat, lon, track_deg, gs_kt, alt_ft, vs_fpm, now, tfrs.as_deref(), tfrs_at)
+) -> Result<String, EngineError> {
+    guarded("ahead", || {
+        let maps = mapped_all(&packs);
+        ahead::ahead(&read(&maps), lat, lon, track_deg, gs_kt, alt_ft, vs_fpm, now, tfrs.as_deref(), tfrs_at)
+    })
 }
 
 // The map's view with no network (wingtip_engine::view, view_marks): the
@@ -110,38 +136,38 @@ pub fn ahead(
 /// The planner's AirspaceInView: the Class B, C and D reaching into the
 /// box, each whole.
 #[uniffi::export]
-pub fn airspace_in_view(packs: Vec<String>, south: f64, west: f64, north: f64, east: f64) -> String {
-    view::airspace_in_view(&read(&mapped_all(&packs)), south, west, north, east)
+pub fn airspace_in_view(packs: Vec<String>, south: f64, west: f64, north: f64, east: f64) -> Result<String, EngineError> {
+    guarded("airspace_in_view", || view::airspace_in_view(&read(&mapped_all(&packs)), south, west, north, east))
 }
 
 /// The planner's AirportsInView: the landing fields inside the box, the
 /// biggest first, at most its default 300; the live fields (a METAR's
 /// flight category) null.
 #[uniffi::export]
-pub fn airports_in_view(packs: Vec<String>, south: f64, west: f64, north: f64, east: f64) -> String {
-    view::airports_in_view(&read(&mapped_all(&packs)), south, west, north, east)
+pub fn airports_in_view(packs: Vec<String>, south: f64, west: f64, north: f64, east: f64) -> Result<String, EngineError> {
+    guarded("airports_in_view", || view::airports_in_view(&read(&mapped_all(&packs)), south, west, north, east))
 }
 
 /// The planner's NavaidsInView: the VORs inside the box by ident, at most
 /// its default 500, with no remarks and no fixes.
 #[uniffi::export]
-pub fn navaids_in_view(packs: Vec<String>, south: f64, west: f64, north: f64, east: f64) -> String {
-    view::navaids_in_view(&read(&mapped_all(&packs)), south, west, north, east)
+pub fn navaids_in_view(packs: Vec<String>, south: f64, west: f64, north: f64, east: f64) -> Result<String, EngineError> {
+    guarded("navaids_in_view", || view::navaids_in_view(&read(&mapped_all(&packs)), south, west, north, east))
 }
 
 /// {"areas": [...]}: the special-use areas reaching into the box, the
 /// MOAs and alert areas first and the prohibited, restricted, warning and
 /// danger areas over them, each ring with the area on its left.
 #[uniffi::export]
-pub fn special_use_in_view(packs: Vec<String>, south: f64, west: f64, north: f64, east: f64) -> String {
-    view_marks::special_use_in_view(&read(&mapped_all(&packs)), south, west, north, east)
+pub fn special_use_in_view(packs: Vec<String>, south: f64, west: f64, north: f64, east: f64) -> Result<String, EngineError> {
+    guarded("special_use_in_view", || view_marks::special_use_in_view(&read(&mapped_all(&packs)), south, west, north, east))
 }
 
 /// {"fixes": [...]}: the Enroute Low chart's fixes and the charted VFR
 /// waypoints inside the box, by ident.
 #[uniffi::export]
-pub fn fixes_in_view(packs: Vec<String>, south: f64, west: f64, north: f64, east: f64) -> String {
-    view_marks::fixes_in_view(&read(&mapped_all(&packs)), south, west, north, east)
+pub fn fixes_in_view(packs: Vec<String>, south: f64, west: f64, north: f64, east: f64) -> Result<String, EngineError> {
+    guarded("fixes_in_view", || view_marks::fixes_in_view(&read(&mapped_all(&packs)), south, west, north, east))
 }
 
 /// What the radio said, all the phone can make of it with no signal, as
@@ -155,10 +181,47 @@ pub fn fixes_in_view(packs: Vec<String>, south: f64, west: f64, north: f64, east
 pub fn clearance_hear(
     heard: &str, tail: Option<String>, packs: Vec<String>, near_lat: Vec<f64>, near_lon: Vec<f64>, dep: String, stops: Vec<String>,
     dest: String,
-) -> String {
-    let maps = mapped_all(&packs);
-    let places = read(&maps).iter().flat_map(spoken::places_of).collect();
-    let near: Vec<(f64, f64)> = near_lat.into_iter().zip(near_lon).collect();
-    let stops = stops.into_iter().filter(|s| !s.is_empty()).collect();
-    spoken::hear(heard, tail.as_deref(), places, &near, &Route { dep, stops, dest })
+) -> Result<String, EngineError> {
+    guarded("clearance_hear", || {
+        let maps = mapped_all(&packs);
+        let places = read(&maps).iter().flat_map(spoken::places_of).collect();
+        let near: Vec<(f64, f64)> = near_lat.into_iter().zip(near_lon).collect();
+        let stops = stops.into_iter().filter(|s| !s.is_empty()).collect();
+        spoken::hear(heard, tail.as_deref(), places, &near, &Route { dep, stops, dest })
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A rule that panics comes back as the call's refusal, with the
+    /// panic's words, and the next call is answered as before.
+    #[test]
+    fn a_panic_is_a_refusal() {
+        let got = guarded("boom", || -> String { panic!("index out of bounds") });
+        let Err(EngineError::Refused(why)) = got else { panic!("a panic came back as an answer") };
+        assert_eq!(why, "boom: the engine failed (index out of bounds)");
+        let formatted = guarded("boom", || -> String { panic!("{} past the end", 3) });
+        let Err(EngineError::Refused(why)) = formatted else { panic!("a panic came back as an answer") };
+        assert_eq!(why, "boom: the engine failed (3 past the end)");
+        assert!(call("region_of", r#"{"lat": 42, "lon": -88}"#).is_ok());
+    }
+
+    /// A rule's own refusal is still the refusal it gave.
+    #[test]
+    fn a_refusal_stays_a_refusal() {
+        let Err(EngineError::Refused(why)) = call("no_such_rule", "{}") else { panic!("an unknown rule was answered") };
+        assert!(!why.contains("the engine failed"), "{why}");
+    }
+
+    /// A damaged pack on the disk is no pack, not a crash.
+    #[test]
+    fn a_damaged_pack_is_not_verified() {
+        let mut bytes = vec![0u8; 64];
+        bytes[..4].copy_from_slice(b"WTPK");
+        bytes[4..8].copy_from_slice(&1u32.to_le_bytes());
+        bytes[32..36].copy_from_slice(&u32::MAX.to_le_bytes());
+        assert!(!pack_verify(&bytes).unwrap());
+    }
 }

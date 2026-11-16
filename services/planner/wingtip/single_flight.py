@@ -30,7 +30,8 @@ build had returned.
 """
 
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Hashable, Iterator
+from contextlib import contextmanager
 from typing import ParamSpec, TypeVar
 
 from cachetools import LRUCache, cached
@@ -48,3 +49,28 @@ def once(maxsize: int | None = 128) -> Callable[[Callable[P, R]], Callable[P, R]
         return cached(cache, condition=threading.Condition(), info=True)(build)
 
     return decorate
+
+
+#: The keys being worked on by `one_at_a_time`, each with its lock and how
+#: many hold or wait for it: a key goes when its last asker is done, so this
+#: holds only what is under way (wingtip.publications kept a lock for every
+#: chart page ever asked for: the 2026-11-14 audit's CODE-24).
+_WORKING: dict[Hashable, tuple[threading.Lock, int]] = {}
+_WORKING_LOCK = threading.Lock()
+
+
+@contextmanager
+def one_at_a_time(key: Hashable) -> Iterator[None]:
+    """Held while `key` (a file being fetched or drawn) is worked on: one
+    thread at a time for one key, any number for different keys."""
+    with _WORKING_LOCK:
+        lock, askers = _WORKING.get(key, (threading.Lock(), 0))
+        _WORKING[key] = (lock, askers + 1)
+    try:
+        with lock:
+            yield
+    finally:
+        with _WORKING_LOCK:
+            lock, askers = _WORKING.pop(key)
+            if askers > 1:
+                _WORKING[key] = (lock, askers - 1)

@@ -12,6 +12,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.resource.EncodedResourceResolver;
 import org.springframework.web.servlet.resource.PathResourceResolver;
 
 /**
@@ -105,10 +106,22 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // one file that names them -- is served through the handler
         // below and keeps Spring Security's no-store. Without this every
         // page load re-downloaded a megabyte of JavaScript.
+        // And each sent as the .br or .gz the web's build wrote beside it
+        // (vite.config.ts's compression plugin) where the browser accepts
+        // it: Spring's own EncodedResourceResolver, which keeps the
+        // file's own Content-Type (application/wasm for the engine, which
+        // instantiateStreaming needs), sets Content-Encoding and adds Vary:
+        // Accept-Encoding. Brotli at 11 is 19% under gzip for the engine
+        // and too slow to make per request, so Tomcat's own gzip (the
+        // server.compression in application.yml) stays for the rest, and
+        // Caddy's zstd and gzip pass an encoded answer through as it is.
+        // Not cached (resourceChain(false)), for the reason given below.
         registry.addResourceHandler("/app/assets/**")
                 .addResourceLocations(staticLocation + "assets/")
                 .setCacheControl(
-                        CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable());
+                        CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable())
+                .resourceChain(false)
+                .addResolver(new EncodedResourceResolver());
         // resourceChain(false): a chain that caches wraps the resolver in
         // a map from request path to resource with no bound -- and as
         // every path under /app resolves (to the index, failing a file),

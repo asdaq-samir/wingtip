@@ -55,5 +55,6 @@ Verify any of these against the source before changing code that uses it.
 | ADS-B Out | 14 CFR 91.225 |
 | Traffic patterns | AIM 4-3-3 |
 | Operations at non-towered airports | AC 90-66C |
+| Field position, elevation, runways, displaced thresholds and LDA | NASR APT_BASE, APT_RWY, APT_RWY_END, APT_RMK (`wingtip/nasr_fields.py`); OurAirports only for a field NASR does not list, and never from a row more than 3 nm from NASR's ARP |
 
 Never edit `services/planner/app/detection.py`: a kept read is hashed against it.

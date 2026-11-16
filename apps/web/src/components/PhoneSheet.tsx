@@ -12,8 +12,9 @@ import { keepOpenOn, TOAST } from "./ui/dismiss";
  * is, MapPanel), up from the screen's foot and swiped back down to it,
  * where a phone's sheet always is (the owner, 2026-11-13). The Drawer follows the finger, from the grabber, the title row or
  * the content scrolled to its start, reads the throw and closes or eases
- * back on its own curve. What is the app's is the look: Liquid Glass
- * eight points in from the screen's sides and its edge, the half sheet's
+ * back on its own curve. What is the app's is the look: the solid sheet
+ * (the look's --sheet, GLASS_SHEET; glass is only for what floats over the
+ * map) eight points in from the screen's sides and its edge, the half sheet's
  * corners and its grabber, the dimming every sheet has (D1 of the sheets
  * audit, 2026-10-17; the sheet consolidation, 2026-10-27).
  */
@@ -60,7 +61,8 @@ export function PhoneSheetContent({ className, style, children, onPointerDown, .
             data-side="bottom"
             data-floating=""
             className={cn(
-              "pointer-events-auto absolute inset-x-2 flex max-h-[min(calc(85dvh-1rem),calc(100%-1rem))] flex-col overflow-hidden text-sm text-foreground outline-none",
+              "pointer-events-auto absolute inset-x-2 flex max-h-[min(calc(85dvh-1rem),calc(100%-1rem))] flex-col overflow-hidden text-foreground outline-none",
+              TEXT.detail,
               GLASS_SHEET,
               SHEET_CORNERS,
               "bottom-2",

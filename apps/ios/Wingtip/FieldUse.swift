@@ -47,24 +47,38 @@ enum FieldUse {
     /// What a row says of a field before its name: closed first, then who
     /// may use it; nil for an open public field.
     static func flag(closed: String?, use: String?) -> Flag? {
-        if let closed, !closed.isEmpty { return Flag(words: closed, kind: .closed) }
-        return mark(use).map { Flag(words: $0, kind: use == "joint" ? .joint : .permission) }
+        if let closed, !closed.isEmpty { return Flag(words: closed, status: .closed) }
+        let status: BadgeStatus? = switch use {
+        case "private": .privateUse
+        case "military": .military
+        case "joint": .joint
+        default: nil
+        }
+        guard let words = mark(use), let status else { return nil }
+        return Flag(words: words, status: status)
     }
 
-    /// A row's flag: its words and the ink they are set in.
+    /// A row's flag: its words and the badge they are set in (rules.md
+    /// §9: a status is a badge), Closed, Private, Military or Joint use.
     struct Flag: Equatable {
-        enum Kind: Equatable { case closed, permission, joint }
         let words: String
-        let kind: Kind
+        let status: BadgeStatus
+    }
+}
 
-        /// Closed in the problem's ink, a field to ask leave of in the
-        /// caution's; joint use, open to any civil pilot, as plain detail.
-        var ink: Color {
-            switch kind {
-            case .closed: WingtipInk.problem
-            case .permission: WingtipInk.caution
-            case .joint: .secondary
-            }
+/// A row's line under its name: its flag as a badge (FieldUse), then the
+/// row's detail, as the web's AirportResults writes it.
+struct FieldFlagLine: View {
+    let flag: FieldUse.Flag?
+    let detail: String
+
+    var body: some View {
+        HStack(spacing: WingtipSpace.sm) {
+            if let flag { StatusBadge(flag.status, words: flag.words) }
+            if !detail.isEmpty { Text(detail).lineLimit(1) }
         }
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .combine)
     }
 }

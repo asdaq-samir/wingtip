@@ -94,7 +94,7 @@ final class StoreShotsTests: XCTestCase {
     @MainActor
     func testAirportCard() throws {
         let app = launch(screen: "airport")
-        let search = app.searchFields["Search airports, airplanes, or ask"]
+        let search = app.searchFields["Search airports and airplanes"]
         XCTAssertTrue(search.waitForExistence(timeout: 30))
         search.tap()
         search.typeText("KORD")

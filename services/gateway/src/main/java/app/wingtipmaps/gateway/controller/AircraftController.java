@@ -124,6 +124,7 @@ public class AircraftController {
     @PutMapping("/{id}/figures")
     public ResponseEntity<AircraftDto> figures(
             Pilot pilot, @PathVariable Long id, @Valid @RequestBody OwnFigures request) {
+        limits.checkFigures(request);
         return ResponseEntity.of(aircraftService.addFigures(pilot, id, request).map(this::toDto));
     }
 

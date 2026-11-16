@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { wcagContrast as contrast, type Color } from "culori";
 import { lookTokens, over, parseColour, type Look } from "./contrast";
-import { CATEGORY, CATEGORY_CHIP } from "./tokens";
+import { BADGE, CATEGORY, CATEGORY_CHIP } from "./tokens";
 
 /**
  * Every look the pilot can pick, by day, at night and in sunlight, held to
@@ -133,5 +133,14 @@ describe("the flight categories' colours", () => {
    *  (lib/map/marks/airportMark): 3:1, a graphic that carries meaning. */
   it.each(Object.entries(CATEGORY))("%s's disc marks 3:1 or more on white", (_, disc) => {
     expect(contrast(colour(disc, "disc"), colour("#ffffff", "white"))).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("the status badges' fills", () => {
+  /** White words on each StatusBadge's fill (components/StatusBadge), the
+   *  same in every look and scheme: 4.5:1, a badge's words being text. */
+  const fills = Object.entries(BADGE).filter(([name]) => name.startsWith("status") || name === "air");
+  it.each(fills)("white words read 4.5:1 or more on %s", (_, fill) => {
+    expect(contrast(colour("#ffffff", "white"), colour(fill, "fill"))).toBeGreaterThanOrEqual(4.5);
   });
 });

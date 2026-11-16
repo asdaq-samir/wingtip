@@ -15,6 +15,7 @@ import {
   mapStill,
 } from "./helpers";
 import { drawnMarks, markWith, tapMark } from "./marks";
+import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
 /**
  * On a phone, what a control opens (ResponsivePopover) and what a tap on
@@ -25,8 +26,10 @@ import { drawnMarks, markWith, tapMark } from "./marks";
  * nested drawer with its own snap point, half way at the least, the panel
  * under it left where it was (the owner, 2026-11-11: "Just let the drawer
  * do what it does"); its close, Escape and a device's Back put it away,
- * back to what was under it.
+ * back to what was under it. Each opens and closes drawn once (drawnOnce):
+ * no drawer drawn anew, the map's buttons never off the screen.
  */
+test.beforeEach(({ page }) => installFrameRecorder(page));
 
 test("the Map settings open as a card in the map's sheet, and its close goes back to what was under it", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's sheet and its heights; the side panel's card is in layout.spec");
@@ -37,7 +40,7 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
   await expect(panel).toHaveAttribute("data-panel", "peek");
 
   // From the pill: the card half way up over it, the panel left at the pill.
-  await openMapSettings(page);
+  await expectDrawnOnce(page, () => openMapSettings(page), { card: "map-settings", maxMoves: 0 });
   const card = panel.getByRole("region", { name: "Map", exact: true });
   await expect(card).toBeVisible();
   await expect(card).toHaveAttribute("data-testid", "map-settings");
@@ -56,8 +59,7 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
   await expect(card.getByRole("heading", { name: "Map", level: 2 })).toBeVisible();
   await expect(firstRow(page)).toBeHidden();
   await expect(panelTabs(page)).toHaveCount(0);
-  await closeCard(page, "sheet-card-close");
-  await expect(card).toHaveCount(0);
+  await expectDrawnOnce(page, () => closeCard(page, "sheet-card-close").then(() => expect(card).toHaveCount(0)), { maxMoves: 0 });
   await expect(panel).toHaveAttribute("data-panel", "peek");
 
   // From half, over the route's box: the box out of sight under it, and
@@ -117,14 +119,21 @@ test("the Map card's gear opens Settings over it at Map, and Settings' close goe
   // At the head's start, left of the name, as a card's Share is.
   const name = card.getByRole("heading", { name: "Map", level: 2 });
   expect((await gear.boundingBox())!.x).toBeLessThan((await name.boundingBox())!.x);
-  await gear.click();
   const settings = page.getByTestId("console-sheet");
-  await expect(settings).toBeVisible();
+  await expectDrawnOnce(page, () => gear.click().then(() => expect(settings).toBeVisible()), { card: "console-sheet", maxMoves: 0 });
   await expect(settings.getByRole("heading", { name: "Settings", level: 3 })).toBeVisible();
   // Raised all the way, its Map group in sight.
   await expect(settings.getByTestId("airport-weather-look")).toBeInViewport();
-  await settings.getByRole("button", { name: "Back to the map", exact: true }).click();
-  await expect(settings).toHaveCount(0);
+  // Settings' close: it closes where it is, the Map card under it the same drawer.
+  await expectDrawnOnce(
+    page,
+    () =>
+      settings
+        .getByRole("button", { name: "Back to the map", exact: true })
+        .click()
+        .then(() => expect(settings).toHaveCount(0)),
+    { maxMoves: 0 },
+  );
   await expect(card).toBeVisible();
   await expect(card.getByTestId("map-settings-more")).toHaveCount(0);
 });

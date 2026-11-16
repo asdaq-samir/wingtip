@@ -31,7 +31,7 @@ CLAUDE.md says what to run for each part of the repo; this says how to run it he
 It is fast because nothing starts cold after the first run on the Mac, in any worktree:
 - `wingtip-check-web:<hash of the Node version (.tool-versions), package.json and package-lock>`: node with web's packages at `/node_modules`, found by walking up from `/repo/apps/web`. A worktree's own `apps/web/node_modules`, if it has one, is hidden behind an empty one.
 - `wingtip-check-py-<dir>:<hash>`: python with that directory's requirements-dev (followed through `-r`) and the wingtip_native wheel built from this `engine/`, rebuilt when either changes.
-- Volumes: `wingtip-cargo-registry`, `wingtip-cargo-git`, `wingtip-cargo-target-tests-1.99-<arch>` (the engine tests' build; each worktree is mounted at its own path, so its own crates are never taken for another's), `wingtip-check-raw` (the FAA files the Python tests fetch into `data/raw`), `fp-m2`. BuildKit's caches `wingtip-npm`, `wingtip-uv` and the wheel's target.
+- Volumes: `wingtip-cargo-registry`, `wingtip-cargo-git`, `wingtip-cargo-target-tests-<rust>-<arch>` (the engine tests' build; each worktree is mounted at its own path, so its own crates are never taken for another's), `wingtip-check-raw` (the FAA files the Python tests fetch into `data/raw`), `fp-m2`. BuildKit's caches `wingtip-npm`, `wingtip-uv` and the wheel's target.
 - The engine for each app (wasm, xcframework, Android's `app/engine`, the planner's wheel) in the engine store, `~/Library/Caches/wingtip/engine/<hash>`, keyed by the engine's files; Rust through sccache; Xcode's compilation cache; Gradle's build cache in `~/.gradle` (docs/LOCAL-DEV.md, "Shared build caches").
 
 `scripts/build/build-engine-wasm.sh` stays apart: a clean build in its pinned image, so the committed `.wasm` is reproducible. Run it after an engine change, as before. Removing any image or volume above costs one cold run, nothing more.
@@ -53,7 +53,7 @@ The planner's OpenAPI document comes from the same container: `python -m app.ope
 
 **Java.** Java 25 is required. The socket mount and the host override are what let Testcontainers start Postgres. The anonymous `target` volume keeps any stray host build output out of the run. `fp-m2` caches Maven's downloads, so never prune it.
 ```sh
-docker run --rm -v "$PWD/services/gateway":/build -v /build/target -v fp-m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal -w /build maven:3.10-eclipse-temurin-25 mvn -B test
+docker run --rm -v "$PWD/services/gateway":/build -v /build/target -v fp-m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal -w /build maven:4.0.0-rc-7-eclipse-temurin-25 mvn -B test
 ```
 To rewrite `services/gateway/openapi.json`, run the same command with `-e WRITE_OPENAPI=1 … mvn -B test -Dtest=OpenApiDocumentTest`.
 

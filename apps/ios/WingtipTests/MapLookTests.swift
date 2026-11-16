@@ -85,12 +85,26 @@ struct MapLookTests {
         #expect(SectionalInk.airport(towered: nil) == UIColor(hex: 0x6B7280))
     }
 
-    @Test func theSymbolGrowsAsTheWebMapsDo() throws {
-        #expect(SectionalSymbol.scale(zoom: 3) == 0.7)
-        #expect(SectionalSymbol.scale(zoom: 10) == 1)
-        #expect(SectionalSymbol.scale(zoom: 13) == 1.25)
-        #expect(SectionalSymbol.scale(zoom: 7) > 0.7 && SectionalSymbol.scale(zoom: 7) < 1)
-        #expect(SectionalSymbol.radius("large") > SectionalSymbol.radius("small"))
+    @Test func theMarkGrowsAsTheWebMapsDo() throws {
+        #expect(FieldMark.scale(zoom: 3) == 0.7)
+        #expect(FieldMark.scale(zoom: 10) == 1)
+        #expect(FieldMark.scale(zoom: 13) == 1.25)
+        #expect(FieldMark.scale(zoom: 7) > 0.7 && FieldMark.scale(zoom: 7) < 1)
+        // The engine's size steps, drawn as the web draws them (option I).
+        #expect(FieldMark.step("largest") == 1.5 && FieldMark.step("larger") == 1.2)
+        #expect(FieldMark.step("regular") == 1 && FieldMark.step("small") == 0.82 && FieldMark.step(nil) == 1)
+    }
+
+    @Test func aMarkIsOrderedAndSizedByThePlannersAnswer() throws {
+        var ohare = AirportPin(ident: "KORD", kind: "large", lat: 41.98, lon: -87.9, name: "O'Hare")
+        ohare.markOrder = 99_999 - 13_000
+        ohare.markSize = "largest"
+        var executive = AirportPin(ident: "KPWK", kind: "medium", lat: 42.11, lon: -87.9, name: "Chicago Executive")
+        executive.markOrder = 200_000 + 99_999 - 5_000
+        executive.markSize = "regular"
+        let (a, b) = (AirportAnnotation(ohare), AirportAnnotation(executive))
+        #expect(a.priority.rawValue > b.priority.rawValue)
+        #expect(a.step == 1.5 && b.step == 1)
     }
 
     @Test func aPrivateOrMilitaryFieldWearsItsLetter() throws {
@@ -120,6 +134,20 @@ struct MapLookTests {
         #expect(pins.first { $0.ident == "KORD" }?.towered == true)
         #expect(pins.first { $0.ident == "KPWK" }?.towered == true)
         #expect(pins.contains { $0.towered == false })
+    }
+
+    @Test func thePacksOrderAndSizeTheMarksAsThePlannerDoes() throws {
+        let packs = try ["n40w088", "n40w092"].map { name -> String in
+            try #require(Bundle(for: LookBundle.self).url(forResource: name, withExtension: "pack")).path
+        }
+        let pins = try #require(CyclePacks.airportsInView(packs: packs, south: 41.8, west: -88.2, north: 42.2, east: -87.6))
+        // O'Hare, the Class B's own field, is the largest and kept first,
+        // with no field_mark_rank asked on the phone.
+        let ohare = try #require(pins.first { $0.ident == "KORD" })
+        #expect(ohare.markSize == "largest")
+        let ordered = pins.compactMap(\.markOrder)
+        #expect(ordered.count == pins.count)
+        #expect(ohare.markOrder == ordered.min())
     }
 
     // MARK: Airspace tabs

@@ -161,9 +161,21 @@ object WingtipColors {
         /** The glidepath in the air to a runway's threshold in the 3D view: the final approach segment's cyan, as it is the same descent. */
         val Glidepath = Color(0xFF00B4E6)
         const val GLIDEPATH_HEX = "#00b4e6"
+        /** What a 3D airspace volume's class ink is mixed toward the lower its floor (features/plan/map/terrain/airspaceShelves): a surface area darkest, so a Class B's shelves step up in shade as they do in altitude. */
+        val AirspaceFloorLow = Color(0xFF0A141C)
+        const val AIRSPACE_FLOOR_LOW_HEX = "#0a141c"
+        /** And toward the higher its floor: the highest shelf lightest. */
+        val AirspaceFloorHigh = Color(0xFFFFFFFF)
+        const val AIRSPACE_FLOOR_HIGH_HEX = "#ffffff"
         /** An obstacle under 1,000 ft AGL in the 3D view; a taller one is in the warning red. */
         val Obstacle = Color(0xFF7A1F1F)
         const val OBSTACLE_HEX = "#7a1f1f"
+        /** The map's ground before its first tiles are drawn, by day (Tailwind slate-100, as it was). */
+        val MapGround = Color(0xFFF1F5F9)
+        const val MAP_GROUND_HEX = "#f1f5f9"
+        /** And at night (slate-900). */
+        val MapGroundNight = Color(0xFF0F172A)
+        const val MAP_GROUND_NIGHT_HEX = "#0f172a"
     }
     object Category {
         val Vfr = Color(0xFF1A7F37)
@@ -250,6 +262,45 @@ object WingtipColors {
         const val STOP_REPAIR_HEX = "#0f766e"
         val StopTraining = Color(0xFF0369A1)
         const val STOP_TRAINING_HEX = "#0369a1"
+        /** Home's mark, a Favorite tile's and a row's (Tailwind teal-600, as it was drawn). */
+        val Home = Color(0xFF0D9488)
+        const val HOME_HEX = "#0d9488"
+        /** An airplane's own mark on a tile or a row: its profile's, a Favorite's (Tailwind sky-600, as it was drawn). */
+        val Airplane = Color(0xFF0284C7)
+        const val AIRPLANE_HEX = "#0284c7"
+        /** A tracked airplane's "In the air" badge on its card, white on it (Tailwind teal-700, as it was drawn). */
+        val Air = Color(0xFF0F766E)
+        const val AIR_HEX = "#0f766e"
+        /** StatusBadge's fills, one per status a pilot scans for (the owner, 2026-11-14: "Use badges where we can for example tfr active etc."), each under white words at 4.5:1 or more in both schemes (WCAG 1.4.3; looksContrast.test.ts): in force now, the hazard's red (6.6:1). */
+        val StatusActive = Color(0xFFB42318)
+        const val STATUS_ACTIVE_HEX = "#b42318"
+        /** In force later, not yet: amber-700 (5.0:1). */
+        val StatusLater = Color(0xFFB45309)
+        const val STATUS_LATER_HEX = "#b45309"
+        /** Scheduled but not in use now (a cold special-use area): grey-500 (4.8:1). */
+        val StatusCold = Color(0xFF6B7280)
+        const val STATUS_COLD_HEX = "#6b7280"
+        /** A field or runway NASR or a NOTAM closes (decision 0043): red-800 (8.3:1), a step past Active's so the two are told apart. */
+        val StatusClosed = Color(0xFF991B1B)
+        const val STATUS_CLOSED_HEX = "#991b1b"
+        /** A navaid or a service out of service: orange-800 (7.3:1). */
+        val StatusOutOfService = Color(0xFF9A3412)
+        const val STATUS_OUT_OF_SERVICE_HEX = "#9a3412"
+        /** A private-use field (NASR's use PR): slate-600 (7.6:1). */
+        val StatusPrivate = Color(0xFF475569)
+        const val STATUS_PRIVATE_HEX = "#475569"
+        /** A military field (NASR's ownership MA, MN, MR, CG): lime-700, an olive drab (5.0:1). */
+        val StatusMilitary = Color(0xFF4D7C0F)
+        const val STATUS_MILITARY_HEX = "#4d7c0f"
+        /** A joint civil-military field: lime-800 (7.1:1). */
+        val StatusJoint = Color(0xFF3F6212)
+        const val STATUS_JOINT_HEX = "#3f6212"
+        /** An emergency's squawk on a tracked airplane (AIM 6-2-2): the light gun's red, red-600 (4.8:1). */
+        val StatusEmergency = Color(0xFFDC2626)
+        const val STATUS_EMERGENCY_HEX = "#dc2626"
+        /** A tracked airplane on the ground: iOS's dark grey, zinc-600 (7.7:1). */
+        val StatusGround = Color(0xFF52525B)
+        const val STATUS_GROUND_HEX = "#52525b"
     }
     object Weather {
         val Convective = Color(0xFFC2410C)
@@ -1071,7 +1122,7 @@ val WingtipTypography = Typography(
     bodyLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 24.sp),
     bodyMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp),
     bodySmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp),
-    labelMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp),
+    labelMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, lineHeight = 16.sp),
     labelSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp),
     labelLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.007.em),
     headlineMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 26.sp, lineHeight = 31.sp, fontFeatureSettings = "tnum"),
@@ -1082,7 +1133,7 @@ val WingtipTypography = Typography(
     bodyLargeEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp),
     bodyMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp),
     bodySmallEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
-    labelMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
+    labelMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 16.sp),
     labelSmallEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.ExtraBold, fontSize = 11.sp, lineHeight = 16.sp),
     labelLargeEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.007.em),
     headlineMediumEmphasized = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.ExtraBold, fontSize = 26.sp, lineHeight = 31.sp, fontFeatureSettings = "tnum"),
@@ -1143,7 +1194,7 @@ object WingtipHaptic {
 /** The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees. */
 object WingtipMap {
     const val PITCH_OPEN = 50
-    const val PITCH_MAX = 75
+    const val PITCH_MAX = 85
     const val PITCH_FLAT_MAX = 60
     const val ZOOM_STATION_CLOSE = 10
     const val ZOOM_STATION_ALWAYS = 7
@@ -1151,6 +1202,11 @@ object WingtipMap {
     const val ZOOM_BARB_FULL = 9
     const val ZOOM_WORLD_WIND = 4
     const val ZOOM_STREAK_NEAR = 7
+    const val AIRSPACE_SHADE_MIX = 0.45
+    const val AIRSPACE_SHADE_TOP_FT = 10000
+    const val AIRSPACE_FADED = 0.35
+    const val AIRSPACE_HELD = 1.8
+    const val AIRSPACE_LABEL_FADED = 0.6
 }
 
 /** Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers. */

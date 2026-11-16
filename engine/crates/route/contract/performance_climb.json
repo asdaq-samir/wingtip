@@ -37,7 +37,11 @@
           "type": "number"
         },
         "gallons": {
-          "type": "number"
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Null where the profile gives no climb fuel flow: not known, never a multiple of the cruise burn."
         }
       },
       "required": [

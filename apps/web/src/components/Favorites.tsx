@@ -1,3 +1,4 @@
+import { Button as BaseButton } from "@base-ui/react/button";
 import { CircleMinus, House, ListFilter } from "lucide-react";
 import type { ComponentProps, CSSProperties, ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -69,8 +70,8 @@ export function RemoveMinus({ label, onClick, testId }: { label: string; onClick
 
 /**
  * A tile for a pill's strip (PillStrip): a round mark, a name and a line
- * under it -- the Airport and Aircraft tabs' Favorites, Airport's nearest
- * fields -- at the full card's Favorites' size (PlaceTile), at the owner's
+ * under it -- the one search's Favorites and Recents, airports' and
+ * airplanes', and the nearest fields -- at the full card's Favorites' size (PlaceTile), at the owner's
  * ask ("make the fav icons the same size as the full card").
  */
 export function SmallTile({
@@ -93,8 +94,7 @@ export function SmallTile({
   wide?: boolean;
 }) {
   return (
-    <button
-      type="button"
+    <BaseButton
       {...rest}
       onClick={onClick}
       data-testid={testId}
@@ -108,7 +108,7 @@ export function SmallTile({
       {/* 4.5:1 on the pill's glass, as the tab bar's words are. */}
       {detail && <span className={cn("-mt-1.5 w-full truncate text-center text-foreground/65 tabular-nums", TEXT.note)}>{detail}</span>}
       {label && <span className="sr-only">, {label}</span>}
-    </button>
+    </BaseButton>
   );
 }
 
@@ -356,7 +356,7 @@ export function FavoriteStrip({
   return (
     <PillStrip testId="pill-favorites">
       <SmallTile
-        mark={<SmallMark icon={<House />} className="bg-teal-600 text-white" />}
+        mark={<SmallMark icon={<House />} className="bg-(--badge-home) text-white" />}
         title="Home"
         detail={home ? away(home) : "Add"}
         label={home ? `Home, ${home.ident}` : "Add Home"}

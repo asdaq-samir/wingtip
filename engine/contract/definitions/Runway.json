@@ -37,6 +37,20 @@
               "number",
               "null"
             ]
+          },
+          "displaced_threshold_ft": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "The threshold's displacement from the runway's end, feet (NASR APT_RWY_END). A landing on this end has the runway past it (AIM 2-3-3); a takeoff has the whole length."
+          },
+          "lda_ft": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "The landing distance available the airport declares for this end, feet (AC 150/5300-13B, declared distances); where given, a landing is judged against it."
           }
         },
         "required": [

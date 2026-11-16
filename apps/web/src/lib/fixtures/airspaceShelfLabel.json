@@ -1,0 +1,40 @@
+{
+  "about": "A Class B, C or D shelf's altitudes as the sectional writes them (the engine's airspace_shelf_label), for the 3D map's label at each shelf's top, held by the engine (engine/facade/tests/airspace_shelf_label.rs) and the web (features/plan/map/terrain/airspaceShelves.test.ts). FAA Aeronautical Chart User's Guide, 9 July 2026, VFR Terms and Symbols, Airspace (p. 16) and Airspace Information (p. 52): MSL ceiling over floor in hundreds of feet, SFC for the surface, T for a Class C ceiling to but not including the Class B's floor, a Class D's ceiling alone with a minus for to but not including. The limits as the planner sends NASR's Class Airspace volumes.",
+  "cases": [
+    {
+      "about": "A Chicago Class B shelf, 3,000 to 10,000 MSL",
+      "input": { "class": "B", "floor_ft": 3000, "floor_ref": "MSL", "ceiling_ft": 10000, "ceiling_excluded": false },
+      "answer": { "ceiling": "100", "floor": "30", "text": "100\n30" }
+    },
+    {
+      "about": "Chicago's Class B surface area, to 10,000 MSL",
+      "input": { "class": "B", "floor_ft": 0, "floor_ref": "SFC", "ceiling_ft": 10000 },
+      "answer": { "ceiling": "100", "floor": "SFC", "text": "100\nSFC" }
+    },
+    {
+      "about": "A Class C shelf, 1,500 to 4,000 MSL",
+      "input": { "class": "C", "floor_ft": 1500, "floor_ref": "MSL", "ceiling_ft": 4000 },
+      "answer": { "ceiling": "40", "floor": "15", "text": "40\n15" }
+    },
+    {
+      "about": "A Class C to but not including the Class B over it: T",
+      "input": { "class": "C", "floor_ft": 0, "floor_ref": "SFC", "ceiling_ft": 3000, "ceiling_excluded": true },
+      "answer": { "ceiling": "T", "floor": "SFC", "text": "T\nSFC" }
+    },
+    {
+      "about": "A Class D to 2,500 MSL: its ceiling alone",
+      "input": { "class": "D", "floor_ft": 0, "floor_ref": "SFC", "ceiling_ft": 2500 },
+      "answer": { "ceiling": "25", "floor": null, "text": "25" }
+    },
+    {
+      "about": "A Class D to but not including 3,000 under a Class B shelf: -30",
+      "input": { "class": "D", "floor_ft": 0, "floor_ref": "SFC", "ceiling_ft": 3000, "ceiling_excluded": true },
+      "answer": { "ceiling": "-30", "floor": null, "text": "-30" }
+    },
+    {
+      "about": "A Class E surface area: no figures on the chart",
+      "input": { "class": "E", "floor_ft": 0, "floor_ref": "SFC", "ceiling_ft": 2500 },
+      "answer": null
+    }
+  ]
+}

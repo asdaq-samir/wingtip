@@ -176,9 +176,17 @@ enum Planner {
         try await call { try await $0.clearanceWords(query: .init(near: near.isEmpty ? nil : near, dep: dep.isEmpty ? nil : dep)).ok.body.json.words }
     }
 
-    /// An airplane by its N-number in the FAA's registry (/api/traffic/find).
+    /// An airplane by its N-number in the FAA's registry, at once
+    /// (/api/traffic/registered: the registry alone, never the live
+    /// sources, which /api/traffic/find waits on for seconds); nil for a
+    /// name the registry does not know, which the planner answers with a
+    /// bare null.
     static func registered(_ tail: String) async throws -> AircraftRegistration? {
-        try await call { try await $0.trafficFind(query: .init(q: tail)).ok.body.json.registered }
+        do {
+            return try await call { try await $0.trafficRegistered(query: .init(q: tail)).ok.body.json }
+        } catch is DecodingError {
+            return nil
+        }
     }
 
     /// The planner's airplane types (/api/aircraft-profiles): each the

@@ -5,10 +5,10 @@ import app.wingtipmaps.android.design.generated.WingtipColors
 /**
  * What a reporting field's symbol wears for its weather, by the airport
  * weather setting (AirportWeather): the "pip" part of its picture's id
- * (MapStyle.airportMarkId), which OverlayPictures draws. "" is the bare
- * symbol; "h" and a colour a ring in that colour round the symbol (every
- * choice but Off; the station model sits beside the ring). The ring is
- * part of the symbol's own picture, so a field the
+ * (MapStyle.airportMarkId), which OverlayPictures draws. "" is the
+ * no-report grey disc; "h" and a colour the mark's centre disc in that
+ * colour (every choice but Off; the station model sits beside the mark).
+ * The disc is part of the mark's own picture, so a field the
  * chart's give-way hides (MapLibre's collision in `rank` order) hides its
  * weather with it.
  */

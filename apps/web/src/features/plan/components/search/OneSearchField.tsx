@@ -1,9 +1,10 @@
-import { useEffect, useEffectEvent, type ComponentProps } from "react";
+import { useEffect, useEffectEvent } from "react";
 import { Search } from "lucide-react";
+import { Button } from "../../../../components/ui/button";
 import { cn } from "cn";
 import ClearButton from "../../../../components/ClearButton";
-import { PANEL_FIELD } from "../../../../components/panelField";
-import { SearchField } from "../../../../components/PanelCapsule";
+import { SHEET_BAR } from "../../../../components/panelField";
+import PageToggle from "../../../../components/PageToggle";
 import { CommandClear, CommandField } from "../../../../components/ui/command";
 import { Kbd } from "../../../../components/ui/kbd";
 import { isSearchKey } from "../../../../hooks/use-shortcuts";
@@ -11,7 +12,6 @@ import { useIsDesktop } from "../../../../hooks/use-desktop";
 import { askSearch, searchKeys, useSearchPick } from "../../../../lib/oneSearch";
 import { TEXT } from "../../../../lib/text";
 import { useVoice, VoiceButton } from "../../../voice";
-import { AccountButton } from "../../../pilot";
 import type { OneSearchModel } from "../../hooks/useOneSearch";
 
 /**
@@ -25,23 +25,16 @@ import type { OneSearchModel } from "../../hooks/useOneSearch";
  * dictation types them, as the field's own trailing button; and Cancel
  * beside it while the field is in use -- a search sent let go with it too,
  * as Apple Maps' Cancel does -- as iOS's search fields have it. The
- * account button at the row's end while the field is not in use, as on
- * iOS and Android: the title row that held it over the field, with the
- * app's mark and name, went for the map's room (the owner, 2026-11-10);
- * the name stays the page's heading, for a screen reader alone. ⌘K or Ctrl K focuses it from anywhere, its keys
+ * page toggle at the row's end while the field is not in use (PageToggle),
+ * where the account button was until the owner swapped the two
+ * (2026-11-14): the field the same size as FPL's strip in its place
+ * (SHEET_BAR), so a turn changes only what is in the bar. The title row
+ * that was over the field went for the map's room (the owner,
+ * 2026-11-10); the app's name stays the page's heading, for a screen
+ * reader alone. ⌘K or Ctrl K focuses it from anywhere, its keys
  * shown in it on a desktop: the command palette it replaced.
  */
-export default function OneSearchField({
-  model,
-  inputRef,
-  list,
-}: {
-  model: OneSearchModel;
-  inputRef: React.RefObject<HTMLInputElement | null>;
-  /** The field scoped to a list up (listSearchOf: the traffic's airplane,
-   *  Nearest's place), where that list had a second field of its own. */
-  list?: ComponentProps<typeof SearchField> | null;
-}) {
+export default function OneSearchField({ model, inputRef }: { model: OneSearchModel; inputRef: React.RefObject<HTMLInputElement | null> }) {
   const desktop = useIsDesktop();
   // What is said typed in the field once a pause ends it, the field
   // focused to go on from there.
@@ -71,9 +64,6 @@ export default function OneSearchField({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [model, inputRef]);
-  // A list's scope: the same place and shape, its words and its own keys,
-  // until a picker asks for an airport or Direct To does.
-  if (list && !model.pick && !model.direct) return <SearchField {...list} />;
   return (
     <div className="flex w-full items-center gap-2" role="search">
       <h1 className="sr-only">Wingtip Maps</h1>
@@ -82,8 +72,8 @@ export default function OneSearchField({
           the same height). */}
       <label
         className={cn(
-          "relative flex h-[2.875rem] min-w-0 flex-1 items-center gap-2 rounded-full pr-0.5 pl-3.5 text-muted-foreground",
-          PANEL_FIELD,
+          "relative flex items-center gap-2 pr-0.5 pl-3.5 text-muted-foreground",
+          SHEET_BAR,
           // Focused, a fine ring in the tint round it, as Apple's field has.
           "focus-within:ring-1 focus-within:ring-tint",
           TEXT.row,
@@ -166,17 +156,23 @@ export default function OneSearchField({
         )}
       </label>
       {using && (
-        <button
+        <Button
+          variant="ghost"
+          size="inline"
           type="button"
           onClick={model.cancel}
           data-testid="one-search-cancel"
           // Its 44-point hit area the pseudo-element's (index.css), not its own height.
-          className={cn("relative shrink-0 px-1 text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring", TEXT.row)}
+          className={cn(
+            "justify-start text-inherit hover:bg-transparent",
+            "relative shrink-0 px-1 text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            TEXT.row,
+          )}
         >
           Cancel
-        </button>
+        </Button>
       )}
-      {!using && <AccountButton />}
+      {!using && <PageToggle page={0} />}
     </div>
   );
 }

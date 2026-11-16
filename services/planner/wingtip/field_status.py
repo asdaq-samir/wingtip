@@ -11,6 +11,11 @@ engine; nothing here decides.
 
 None is no NASR record of the field (a test's airports file with no FAA
 file beside it): the engine leaves that to the caller's own source.
+
+Whether a field is the armed services' own, "military" or "joint" (open
+to the public as well), is the engine's `field_military` from the same
+file's OWNERSHIP_TYPE_CODE and FACILITY_USE_CODE (`military`): the
+planner's lists and the cycle pack's overlays (services/jobs) both ask it.
 """
 
 from __future__ import annotations
@@ -56,6 +61,26 @@ def open_mask(codes: pd.Series) -> pd.Series:
     """`is_open` for each of a column of codes, asked once per distinct
     code rather than once per row."""
     return codes.map(lambda c: is_open(c)).astype(bool)
+
+
+@lru_cache(maxsize=64)
+def _military(ownership: str | None, use: str | None) -> str | None:
+    """The engine's answer for one pair of codes: NASR has a dozen, so
+    each pair is asked once per process."""
+    return engine("field_military", ownership=ownership, use=use)["military"]
+
+
+def military(ownership, use) -> str | None:
+    """The word "military" for a field the armed services own (NASR APT_BASE's
+    OWNERSHIP_TYPE_CODE MA, MN, MR or CG) that is not open to the public,
+    "joint" for one that is (FACILITY_USE_CODE PU), None for any other."""
+    return _military(_code(ownership), _code(use))
+
+
+def military_column(ownership: pd.Series, use: pd.Series) -> pd.Series:
+    """`military` for each row of the two columns, None (never NaN) for a
+    field the services do not own."""
+    return pd.Series([military(o, u) for o, u in zip(ownership, use)], index=ownership.index, dtype=object)
 
 
 def labels(codes: pd.Series) -> pd.Series:

@@ -15,7 +15,8 @@
 # ndk/<version> ($ANDROID_HOME, ~/Library/Android/sdk on a Mac,
 # ~/Android/Sdk on Linux). The NDK's linker lays out every 64-bit library
 # on 16 KB pages, as Google Play asks (scripts/ci/android_16k.py).
-# Writes apps/android/app/engine/, which is not committed.
+# Writes apps/android/app/engine/, which is not committed, with engine.hash,
+# the engine it was built from.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 engine=$(cd "$here/../.." && pwd)
@@ -50,7 +51,9 @@ echo "build-android.sh: using the NDK at $ndk" >&2
 # The NDK is .tool-versions', part of the store's key.
 # shellcheck source=scripts/build/shared-cache.sh
 . "$engine/../scripts/build/shared-cache.sh"
-if engine_store_restore android-engine "$out"; then exit 0; fi
+# The engine's hash written beside the libraries (engine_stamp), which
+# go-live.sh holds to the checkout's engine.
+if engine_store_restore android-engine "$out"; then engine_stamp "$out"; exit 0; fi
 # The NDK's prebuilt clang for the machine building, and the API level
 # the app's minSdk names (apps/android/app/build.gradle.kts): the engine is
 # linked against the same Android libc the app runs on.
@@ -88,5 +91,6 @@ done
 # in a generated folder, which ktlint and detekt pass over.
 (cd "$engine" && cargo run -p wingtip-ffi-bindgen -- generate --no-format \
   --library "$out/jniLibs/arm64-v8a/$lib" --language kotlin --out-dir "$out/generated")
+engine_stamp "$out"
 engine_store_publish android-engine "$out"
 echo "built $out"

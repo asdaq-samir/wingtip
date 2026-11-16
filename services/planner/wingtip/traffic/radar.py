@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import logging
 import math
-import threading
 
 from ..geo import box_around, distance_nm
 from . import store
@@ -87,23 +86,12 @@ def prune() -> dict[str, int]:
     }
 
 
-#: How often the planner prunes the live store, s: the regions are kept a
-#: minute (LOOKED_S), so a minute.
+#: How often the planner prunes the live store, s (a job on wingtip.schedule,
+#: registered in app.main), so that the store keeps the privacy policy's
+#: promises (a minute for the regions, 30 days for the followed airplanes and
+#: the tracks) whether or not ingest runs or a pilot asks: the regions are
+#: kept a minute (LOOKED_S), so a minute.
 PRUNE_EVERY_S = 60.0
-
-
-def prune_forever(stop: threading.Event | None = None) -> None:
-    """The thread app.main starts: prune() each PRUNE_EVERY_S until `stop`,
-    so the store keeps the privacy policy's promises (a minute for the
-    regions, 30 days for the followed airplanes and the tracks) whether or
-    not ingest runs or a pilot asks."""
-    stop = stop or threading.Event()
-    while not stop.is_set():
-        try:
-            prune()
-        except Exception:  # noqa: BLE001 -- the next minute tries again
-            log.warning("live store not pruned", exc_info=True)
-        stop.wait(PRUNE_EVERY_S)
 
 
 def radar_wanted() -> tuple[list[tuple[float, float, float]], set[str]]:

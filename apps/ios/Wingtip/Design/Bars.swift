@@ -2,15 +2,6 @@ import SwiftUI
 
 /// iOS 27's bars and controls (docs/ios-27.md has the sources), one helper
 /// each, so a screen asks for the behaviour by name.
-extension ToolbarItemPlacement {
-    /// The trailing end of the navigation bar, pinned there
-    /// (topBarPinnedTrailing): a pinned item stays in the bar when the
-    /// window narrows (iPhone apps resize on iOS 27, in iPhone Mirroring
-    /// and on iPad) rather than going to the overflow menu, as Apple's own
-    /// example keeps Share.
-    static var pinnedTrailing: ToolbarItemPlacement { .topBarPinnedTrailing }
-}
-
 extension View {
     /// A long list's navigation bar folds away while it scrolls down and
     /// comes back on the way up (toolbarMinimizationBehavior): more of the
