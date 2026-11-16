@@ -18,7 +18,8 @@ const EDGE_GAP = 8;
  *
  * Only while a finger has the sheet and it settles (SheetDrawer's
  * usePanelDragging), a frame at a time, by the row's transform alone:
- * nothing is laid out again or built. What it leaves at the end is the
+ * nothing is laid out again or built; data-pinned while held, for the
+ * row's own backing. What it leaves at the end is the
  * size it settled at, none at half, so nothing is undone in sight.
  */
 export function usePinAtFoot(ref: RefObject<HTMLElement | null>, pill: string) {

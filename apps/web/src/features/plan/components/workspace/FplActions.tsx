@@ -66,7 +66,8 @@ export function FplActions({ vm, share }: { vm: PlanWorkspaceModel; share: React
 export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
   // The figures stop at the screen's foot as the sheet goes down, where
   // the pill's own are, and stay there while the route slides on under
-  // them (usePinAtFoot): frosted while held, as the head's band is.
+  // them (usePinAtFoot): on the sheet's solid colour while held, the sheet's
+  // width, so what slides under does not show through.
   const figures = useRef<HTMLDivElement>(null);
   usePinAtFoot(figures, PILL_FIGURES);
   return (
@@ -76,7 +77,7 @@ export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
           with the sheet as the foot's figures fade out (PillHandover), a
           quiet copy till then, the pill's own being the one in sight. */}
       <div className="pt-2 pb-1">
-        <div ref={figures} className="relative data-pinned:frost-head">
+        <div ref={figures} className="relative data-pinned:-mx-4 data-pinned:bg-(--sheet) data-pinned:px-4">
           <FlightFigures vm={vm} grow={false} quiet={!vm.view.panelOpen} />
         </div>
       </div>
