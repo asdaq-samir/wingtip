@@ -55,8 +55,14 @@ const SIZES: PanelState[] = ["peek", "half", "full"];
  * iPhone, 2026-11-12, KORD's card; in WebKit at 390x844 none of its 23
  * parts in sight painted at any step of the drag). `visibility` keeps it
  * laid out and its pictures loaded, so there is nothing to build mid-drag.
+ * Nothing in it is eased while the sheet is at the pill: a stock Button
+ * eases all its properties (transition-all), visibility too, so hidden at
+ * the settle it stayed in sight for its transition's time, FPL's ••• over
+ * the pill's figures (the owner's screen recording, 2026-11-16: "Better
+ * but just a bit left at the end"). Up from the pill the class is gone and
+ * its controls ease as they do.
  */
-export const PILL_BODY = "invisible group-data-swiping/sheet:visible";
+export const PILL_BODY = "invisible group-data-swiping/sheet:visible [&_*]:transition-none";
 /** And a body that is the pill's one surface: its title row kept in sight. */
 export const AT_PILL = `${PILL_BODY} [&_[data-sheet-head]]:visible`;
 
