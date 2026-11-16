@@ -187,7 +187,7 @@ export function SheetDrawer({
  *  (usePanelDragging): what is drawn under the pill is drawn as it comes.
  *  Held from the finger's first move until the sheet has settled, the
  *  Drawer's own time after the lift (MOTION.drawer), and marked on the
- *  popup (data-risen) for sheet/insets' faces: Base UI's data-swiping goes
+ *  popup (data-risen) for sheet/insets' PILL_BODY: Base UI's data-swiping goes
  *  the moment the finger lifts, a frame before the sheet's new size is
  *  told, and what had risen with it dipped out and back (the owner,
  *  2026-11-16: "still not as seamless as the airport/search card"). */

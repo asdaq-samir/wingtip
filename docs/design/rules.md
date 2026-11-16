@@ -453,9 +453,10 @@ off by default (the owner, 2026-11-13).
    of the page changes only what is in the bar; under it the route as one
    row, in whichever of the three ways Show Route As picks (the box of
    pills, the line, or the cards' ends and the Routes' chips), never in the
-   bar; under the route, once there is one, the route's figures (To,
-   Dist, ETE, Fuel req) at their own size, and at the sheet's foot from
-   half up a floating glass bar, the airport card's tab bar's capsule,
+   bar. Once there is a route, its figures (To, Dist, ETE, Fuel req) are
+   FPL's top, over the bar, and its pill, as a card's title is (the owner,
+   2026-11-16: "let's try putting the figures on top of fpl card", "only
+   after putting a route"); and at the sheet's foot a floating glass bar, the airport card's tab bar's capsule,
    of four buttons: Brief, Nav Log and Profile, each opening its card
    over FPL, and Share, one menu for every way the plan leaves the app
    (its link, Open in ForeFlight, the checkpoints for ForeFlight, Print
@@ -466,15 +467,13 @@ off by default (the owner, 2026-11-13).
    pill the figures alone, large: swiped down, they grow. Taken up from
    the pill, FPL rises as the airport card does, one shared way for every
    sheet (the owner, 2026-11-16: "can we make it a shared code for all
-   cards?"): what the sheet shows risen is laid out at the pill too, out
-   of sight, and comes into sight by CSS the moment a finger takes the
-   sheet, nothing built or swapped while it moves; where the pill's face
-   is not the sheet's top (FPL's figures at the foot), it fades out as
-   the risen face (the actions' bar) fades in, in the sheet's settle
-   time. A light tick as it settles where the browser has one. In flight the
+   cards?"): what the sheet shows risen -- the bar, the route, the
+   actions' bar at the foot -- is laid out at the pill too, out of sight,
+   and in sight by CSS the moment a finger takes the sheet until it has
+   settled, nothing built or swapped while it moves. A light tick as it
+   settles where the browser has one. In flight the
    four are a row of tiles at the top of the flying drawer and the foot
-   the figures, large, with Done flying. Nothing between the figures
-   and the Routes' chips (the owner, 2026-11-16). What the Brief found
+   the figures, large, with Done flying. What the Brief found
    to act on is the Brief's, which opens with it, not a list on FPL
    (the owner, 2026-11-16: "isn't there a better place for them? Like
    brief"): the Brief's button carries their count on its glyph's

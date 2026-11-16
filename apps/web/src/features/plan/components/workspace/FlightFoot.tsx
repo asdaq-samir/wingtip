@@ -1,5 +1,5 @@
 import { Suspense, type ReactNode } from "react";
-import { PillHandover } from "../../../../components/sheet/PillHandover";
+import { PILL_BODY } from "../../../../components/sheet/insets";
 import { cn } from "cn";
 import { Button } from "../../../../components/ui/button";
 import { EngineGate } from "../../../../lib/engine/engineGate";
@@ -18,7 +18,7 @@ import { FplTabBar } from "./FplTabBar";
  *  .wasm (EngineGate), the rest of the page not (the owner's iPhone,
  *  2026-11-11: "Part of the app didn't load" on "strip_fuel cannot be
  *  worked out"). */
-export function FlightFigures({ vm, grow, quiet = false }: { vm: PlanWorkspaceModel; grow: boolean; quiet?: boolean }) {
+export function FlightFigures({ vm, grow }: { vm: PlanWorkspaceModel; grow: boolean }) {
   const { depart, directParam, planned } = vm.route;
   const { directToPoint, s } = vm.plan;
   const { firstFuelStop } = vm.stops;
@@ -28,12 +28,12 @@ export function FlightFigures({ vm, grow, quiet = false }: { vm: PlanWorkspaceMo
     <EngineGate>
       {/* Flown direct to a point: said over the figures, and Cancel. Put
           away in the pill, whose one row is the figures. */}
-      {directParam && !quiet && (
+      {directParam && (
         <div data-pill-hides="">
           <DirectStrip ident={directParam} onDevice={s.directOnDevice} onCancel={() => directToPoint(null)} />
         </div>
       )}
-      <div data-testid={quiet ? undefined : "flight-line"}>
+      <div data-testid="flight-line">
         <FlightLine
           totals={s.totals}
           estimate={estimate}
@@ -43,7 +43,6 @@ export function FlightFigures({ vm, grow, quiet = false }: { vm: PlanWorkspaceMo
           grow={grow}
           flying={flying}
           fuelStop={firstFuelStop}
-          quiet={quiet}
         />
       </div>
     </EngineGate>
@@ -79,12 +78,15 @@ export default function FlightFoot({ vm, share }: { vm: PlanWorkspaceModel; shar
     </div>
   );
   // The bar on FPL's page alone, not at the Profile card's foot (no
-  // `share`): at the pill the figures, large, handed to the actions' bar as
-  // a finger takes the sheet, by CSS (PillHandover; the owner, 2026-11-16:
-  // the figures went from the foot to the route's row in one jump at the
-  // release); from half up the bar.
+  // `share`): at the pill out of sight, as the airport card's tab bar is,
+  // in sight the moment a finger takes the sheet (PILL_BODY), the figures
+  // being the page's top (the owner, 2026-11-16).
   if (share && !dryRunning && !flying)
-    return <PillHandover atPill={!panelOpen} pill={<FlightFigures vm={vm} grow />} risen={<FplTabBar vm={vm} share={share} />} />;
+    return (
+      <div className={cn("w-full", !panelOpen && PILL_BODY)}>
+        <FplTabBar vm={vm} share={share} />
+      </div>
+    );
   return (
     <div className="flex min-h-0 w-full flex-col">
       {dryRunning ? (

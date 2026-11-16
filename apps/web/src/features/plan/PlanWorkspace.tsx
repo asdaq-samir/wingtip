@@ -24,7 +24,7 @@ import PlanMap from "./components/workspace/PlanMap";
 import PlanSidebar from "./components/workspace/PlanSidebar";
 import PlanPage from "./components/workspace/PlanPage";
 import PlanCards from "./components/workspace/PlanCards";
-import FlightFoot from "./components/workspace/FlightFoot";
+import FlightFoot, { FlightFigures } from "./components/workspace/FlightFoot";
 import { FplRoute } from "./components/workspace/FplActions";
 import RouteControls from "./components/workspace/RouteControls";
 import FplBar from "./components/workspace/FplBar";
@@ -429,6 +429,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           go: pickPage,
           bar: <FplBar strip={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />} />,
           second: <PlanPage vm={vm} navLog={navLog} share={shareMenu("end", "share-plan", "send")} />,
+          figures: routed ? <FlightFigures vm={vm} grow /> : undefined,
         },
         // The one search's Autocomplete round the whole panel, so its field
         // (the first row) and its list (the body) are one combobox.
@@ -446,8 +447,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         flying,
         // The one search, the first page's first row, and at rest its pill (MapPanel).
         bar: <OneSearchField model={search} inputRef={vm.search.searchInput} />,
-        // FPL's foot (FlightFoot): from half up its actions' floating bar, at the pill its figures alone, large,
-        // under the route from half up (the owner, 2026-11-16); in flight the figures; under the Profile, its card's (PlanCards).
+        // FPL's foot (FlightFoot): its actions' bar, the figures being the page's top (pages' figures); in flight the figures.
         foot:
           !place && !heldPoint && !flight && !briefShown && !profileShown
             ? routed && <FlightFoot vm={vm} share={shareMenu("end", "share-plan", "send", true)} />

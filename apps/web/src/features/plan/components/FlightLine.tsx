@@ -64,12 +64,7 @@ export default function FlightLine({
   flown = null,
   flying = false,
   fuelStop = null,
-  quiet = false,
 }: {
-  /** A copy laid out out of sight, under FPL's route at the pill, risen
-   *  with the sheet (SheetParts' RISEN_FACE): no test ids, so the one in
-   *  sight, the pill's, is the one found. */
-  quiet?: boolean;
   totals: Totals | null;
   /** Before the nav log's totals, at the pilot's ask for the figures as
    *  soon as can be: the course's distance at once, and the time and fuel
@@ -134,7 +129,6 @@ export default function FlightLine({
   const ours = (fs: typeof exact) => (airplane ? fs : fs.filter((f) => f.name === "To" || f.name === "Dist"));
   const { room, shown, sized, fitted, probes } = useFigureFit(ours(exact), ours(rounded), valueType, unitType);
   // Which figures are buttons (below), each its 44-point area round it.
-  const id = (testId: string | undefined) => (quiet ? undefined : testId);
   const tapped = (name: string) =>
     (name === "Fuel" && !!breakdown) ||
     (name === "To" && stops && !local) ||
@@ -183,7 +177,7 @@ export default function FlightLine({
             <dd
               ref={i === 0 ? room : undefined}
               className={cn(valueType, "truncate font-semibold tabular-nums", tapped(f.name) && "overflow-visible")}
-              data-testid={id(f.testId)}
+              data-testid={f.testId}
             >
               {f.name === "Fuel" && breakdown ? (
                 <ResponsivePopover open={breakdownOpen} onOpenChange={setBreakdownOpen}>
@@ -192,7 +186,7 @@ export default function FlightLine({
                         tapped is; its 44-point area round it, the figure
                         not grown to make it (index.css's after). */}
                     <BaseButton
-                      data-testid={id("fuel-breakdown-open")}
+                      data-testid="fuel-breakdown-open"
                       data-alert={f.alert || undefined}
                       aria-label={`${seen(f)}, ${f.said}: what it is made of`}
                       className={cn(
@@ -201,9 +195,7 @@ export default function FlightLine({
                       )}
                     >
                       {/* Short said by a mark too, not the red alone (WCAG 1.4.1). */}
-                      {f.alert && (
-                        <TriangleAlert className="mr-0.5 size-[0.8em] self-center" aria-hidden data-testid={id("fuel-short-mark")} />
-                      )}
+                      {f.alert && <TriangleAlert className="mr-0.5 size-[0.8em] self-center" aria-hidden data-testid="fuel-short-mark" />}
                       <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
                         {f.value}
                       </span>
@@ -226,7 +218,7 @@ export default function FlightLine({
                       <Button
                         type="button"
                         variant="ghost"
-                        data-testid={id("fuel-short-add-stop")}
+                        data-testid="fuel-short-add-stop"
                         // Its 44-point area made by the after, the button not grown to it;
                         // the popover put away as the stop is kept, so a second tap cannot
                         // keep it again over figures that are changing.
@@ -246,7 +238,7 @@ export default function FlightLine({
                   variant="link"
                   size="inline"
                   onClick={() => setToDestination(!toDestination)}
-                  data-testid={id("to-toggle")}
+                  data-testid="to-toggle"
                   aria-label={`${f.said}: show the ${toDestination ? "next stop" : "destination"}`}
                   className="relative max-w-full after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
@@ -261,7 +253,7 @@ export default function FlightLine({
                   variant="link"
                   size="inline"
                   onClick={() => wantScreen("navlog")}
-                  data-testid={id("dist-navlog")}
+                  data-testid="dist-navlog"
                   aria-label={`${seen(f)}, ${f.said}: open the nav log`}
                   className="relative max-w-full items-baseline after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
@@ -280,7 +272,7 @@ export default function FlightLine({
                   variant="link"
                   size="inline"
                   onClick={() => setArrival(!arrival)}
-                  data-testid={id("ete-eta-toggle")}
+                  data-testid="ete-eta-toggle"
                   aria-label={`${seen(f)}, ${f.said}: show the ${f.name === "ETE" ? "arrival" : "time en route"}`}
                   className="relative max-w-full after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
