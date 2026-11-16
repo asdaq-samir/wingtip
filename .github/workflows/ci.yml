@@ -313,6 +313,8 @@ jobs:
       sim: ${{ steps.plan.outputs.sim }}
       deps: ${{ steps.plan.outputs.deps }}
       docs-only: ${{ steps.docsonly.outputs.code == 'false' }}
+      specs: ${{ steps.plan.outputs.specs }}
+      spec-shards: ${{ steps.plan.outputs.spec-shards }}
     steps:
       # The filter block below is generated from scripts/areas.yml (the
       # guards job checks it is).
@@ -348,6 +350,7 @@ jobs:
         with:
           # Ignored on a pull request, which diffs against its base.
           base: ${{ steps.base.outputs.sha }}
+          list-files: shell
           filters: |
               # BEGIN generated from scripts/areas.yml by scripts/areas.py: edit that file, then `python3 scripts/areas.py write`
               global:
@@ -364,6 +367,8 @@ jobs:
                 - scripts/areas.py
                 - scripts/ci/changes_since.sh
                 - scripts/dev/format.sh
+              specs:
+                - apps/web/e2e/**/*.spec.ts
               deps:
                 - apps/web/package-lock.json
                 - engine/Cargo.lock
@@ -613,6 +618,8 @@ jobs:
           CHANGED: ${{ steps.filter.outputs.changes }}
           ALL: ${{ steps.base.outputs.all }}
           EVENT: ${{ github.event_name }}
+          SPEC_FILES: ${{ steps.filter.outputs.specs_files }}
+          FORK: ${{ github.event.pull_request.head.repo.fork }}
         run: python3 scripts/ci/plan.py
 
   # The browser suite (apps/web/e2e, Playwright) against the stack a pilot
@@ -630,7 +637,8 @@ jobs:
   # the moment it is pushed.
   e2e:
     name: e2e (${{ matrix.shard }}/${{ strategy.job-total }})
-    if: github.event_name != 'pull_request'
+    needs: [changes]
+    if: github.event_name != 'pull_request' || needs.changes.outputs.specs != ''
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
     # images go to AWS's x86 machines, and e2e tests the same images.
     runs-on: ubuntu-26.04
@@ -646,8 +654,9 @@ jobs:
       fail-fast: false
       matrix:
         # The smoke set over two shards on main's push (5-9 min of tests on
-        # one, 2026-11-10); everything over ten at night or by hand.
-        shard: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]' || '[1, 2]') }}
+        # one, 2026-11-10); everything over ten at night or by hand; on a
+        # pull request, the specs it adds or changes, three a shard (plan.py).
+        shard: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]' || github.event_name == 'pull_request' && needs.changes.outputs.spec-shards || '[1, 2]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -850,9 +859,10 @@ jobs:
         env:
           IOS_AUDIT: ${{ (github.event_name == 'schedule' || inputs.standards) && '1' || '' }}
           SCREENSHOTS: /out/screens
-          # Every project at night or by hand, the smoke set otherwise. (`cond && '' || x`
-          # is x whatever cond is: '' is false, so it is written the other way round.)
-          PROJECTS: ${{ !(github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '--project=mobile --project=webkit-phone --grep "@smoke|@flight-critical"' || '' }}
+          # Every project at night or by hand, the smoke set on main's push, and on a pull request the
+          # specs it adds or changes on the phone project. (`cond && '' || x` is x whatever cond is:
+          # '' is false, so it is written the other way round.)
+          PROJECTS: ${{ github.event_name == 'pull_request' && format('--project=mobile --pass-with-no-tests {0}', needs.changes.outputs.specs) || !(github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '--project=mobile --project=webkit-phone --grep "@smoke|@flight-critical"' || '' }}
           SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
           # The JSON report, for the flaky tests below (those that passed
           # on their retry): listed in the nightly issue, not failing the run.
@@ -999,8 +1009,9 @@ jobs:
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
     # images go to AWS's x86 machines, and e2e tests the same images.
     runs-on: ubuntu-26.04
-    # After merge, with e2e (above).
-    if: github.event_name != 'pull_request'
+    # After merge, with e2e (above), and for a pull request's own specs.
+    needs: [changes]
+    if: github.event_name != 'pull_request' || needs.changes.outputs.specs != ''
     permissions:
       contents: read
       packages: write
@@ -1650,7 +1661,7 @@ jobs:
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, android, ios]
+    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, android, ios, e2e]
     if: always()
     steps:
       - name: Every job passed or was not needed
