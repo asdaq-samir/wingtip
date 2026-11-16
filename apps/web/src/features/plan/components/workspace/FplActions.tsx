@@ -59,8 +59,8 @@ export function FplActions({ vm, share }: { vm: PlanWorkspaceModel; share: React
 }
 
 /** FPL's route row, the flight's figures under it at their own size (the
- *  owner, 2026-11-16: the calculations strip where the action tiles were),
- *  and what the Brief found under them: the page's `route` (PlanWorkspace),
+ *  owner, 2026-11-16: the calculations strip where the action tiles were):
+ *  the page's `route` (PlanWorkspace),
  *  a column the row's width, as the sheet lays the route in a row
  *  (MapPage's routeRowOf), where a grid alone had no width. */
 export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
@@ -70,7 +70,9 @@ export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
       <div className="pt-2 pb-1">
         <FlightFigures vm={vm} grow={false} />
       </div>
-      <FplFindings vm={vm} />
+      {/* Under the figures only where the chips are over them (Route
+          Cards' head, RouteHead); else after the chips (AfterRouteLine). */}
+      {vm.route.routeEdit === "plan" && <FplFindings vm={vm} />}
     </div>
   );
 }

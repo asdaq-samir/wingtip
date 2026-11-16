@@ -696,7 +696,10 @@ in `CardTabBar`'s capsule, each opening its card, Share the route's
 `ShareMenu` as `"send"`; at the pill the foot is the figures alone,
 large, `FlightFigures` with `grow`; in flight the tiles are `FplActions`
 at the top of the flying drawer. Under the route, `FplRoute`: the
-figures at their own size, then `FplFindings`, the Brief's findings to
+figures at their own size; right after the Routes' chips, nothing
+between them and the figures, `FplFindings` (in the route's list through
+`AfterRouteLine`, provided by `PlanPage`; in Route Cards, whose chips are
+over the figures, under them in `FplRoute`), the Brief's findings to
 act on in words, red first, from `lib/verdict` through `planWords`'
 `findingRows`, where the tiles had dots). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
 a turn of the page moves nothing and the head's first row, and the map's

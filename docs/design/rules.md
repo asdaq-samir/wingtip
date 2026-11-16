@@ -465,7 +465,8 @@ off by default (the owner, 2026-11-13).
    action buttons are now", buttons not tabs at the owner's pick). At the
    pill the figures alone, large: swiped down, they grow. In flight the
    four are a row of tiles at the top of the flying drawer and the foot
-   the figures, large, with Done flying. Under the figures, what the
+   the figures, large, with Done flying. Nothing between the figures
+   and the Routes' chips (the owner, 2026-11-16); after the chips, what the
    Brief found to act on, in words, red first: a row each, its label and
    the engine's line ("Fuel: 6.2 gal short of the fuel and its 45 min
    reserve (14 CFR 91.151)"), three at most and one more row for the

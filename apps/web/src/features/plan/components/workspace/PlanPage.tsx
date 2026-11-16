@@ -4,6 +4,8 @@ import TabKept from "../../../../components/TabKept";
 import TabPage from "../../../../components/TabPage";
 import FplStrip from "../FplStrip";
 import { FplActions } from "./FplActions";
+import { FplFindings } from "./FplFindings";
+import { AfterRouteLine } from "../../lib/afterRouteLine";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 
 /**
@@ -43,7 +45,9 @@ export default function PlanPage({ vm, navLog, share }: { vm: PlanWorkspaceModel
         <div className="px-4 empty:hidden print:hidden">
           <FplActions vm={vm} share={share} />
         </div>
-        {navLog}
+        {/* The Brief's findings right after the Routes' chips in the
+            route's list (AfterRouteLine), where the list draws them. */}
+        <AfterRouteLine.Provider value={<FplFindings vm={vm} />}>{navLog}</AfterRouteLine.Provider>
       </div>
       {/* A departure alone: under it the flights saved and the routes
           planned last, to pick from, where the sheet stood empty under

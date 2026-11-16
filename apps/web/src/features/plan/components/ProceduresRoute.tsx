@@ -1,4 +1,5 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useContext } from "react";
+import { AfterRouteLine } from "../lib/afterRouteLine";
 import CloseButton from "../../../components/CloseButton";
 import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } from "../../../components/ResponsivePopover";
 import { sameField } from "../../../lib/procedures";
@@ -57,6 +58,11 @@ const ApproachLesson = lazy(() => import("./ApproachLesson"));
  * The view: its state, its asks and the runways picked into the wind are
  * its view model's (useProceduresRoute).
  */
+/** FPL's findings after the chips (AfterRouteLine), drawn again alone as they change. */
+function AfterLine() {
+  return useContext(AfterRouteLine);
+}
+
 export default function ProceduresRoute(props: ProceduresRouteProps) {
   const vm = useProceduresRoute(props);
   const {
@@ -285,6 +291,7 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
         </Suspense>
       )}
       {lineRow}
+      {lineRow && <AfterLine />}
       {/* On a phone its card opens at half whatever it covers, the
             procedure on the map over it in sight. */}
       <ResponsivePopover
