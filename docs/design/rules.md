@@ -466,13 +466,13 @@ off by default (the owner, 2026-11-13).
    pill the figures alone, large: swiped down, they grow. In flight the
    four are a row of tiles at the top of the flying drawer and the foot
    the figures, large, with Done flying. Nothing between the figures
-   and the Routes' chips (the owner, 2026-11-16); after the chips, what the
-   Brief found to act on, in words, red first: a row each, its label and
-   the engine's line ("Fuel: 6.2 gal short of the fuel and its 45 min
-   reserve (14 CFR 91.151)"), three at most and one more row for the
-   rest, a tap opening the Brief, or the Profile for the altitude's own
-   caution; no dots on the buttons, which said there was something but
-   not what. The Routes are one row of chips, each a way's name and time, the
+   and the Routes' chips (the owner, 2026-11-16). What the Brief found
+   to act on is the Brief's, which opens with it, not a list on FPL
+   (the owner, 2026-11-16: "isn't there a better place for them? Like
+   brief"): the Brief's button carries their count on its glyph's
+   corner, red where one is a stop, amber where all are cautions, as
+   the airport card's tabs carry theirs, and the Profile's a 1 for the
+   altitude's own caution; no bare dots, which said nothing of how many. The Routes are one row of chips, each a way's name and time, the
    one flown filled, a swipe for more; their miles and fuel are the
    figures' and in each chip's spoken name. On the
    map the way flown is solid magenta and the others thin dotted lines

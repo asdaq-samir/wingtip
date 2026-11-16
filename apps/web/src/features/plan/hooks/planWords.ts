@@ -67,7 +67,7 @@ export function briefMarkOf(marks: Partial<Record<string, Mark>>): Mark | null {
   return all.includes("stop") ? "stop" : all.includes("caution") ? "caution" : null;
 }
 
-/** A finding FPL says under its tiles (FplFindings). */
+/** A finding to act on, counted on FPL's Brief button (FplTabBar). */
 export interface FindingRow {
   key: string;
   finding: Mark;

@@ -1,7 +1,29 @@
 import type { ReactNode } from "react";
+import { cn } from "cn";
+import { TEXT } from "../../../../lib/text";
+import { useVerdict } from "../../../../lib/verdict";
+import { findingRows } from "../../hooks/planWords";
 import { CardAction as Action } from "../../../../components/CardAction";
 import { ICON } from "../../../../lib/icons";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
+
+/** A count over a glyph's corner, in its finding's colour. */
+function Count({ count, mark, testId }: { count: number; mark: "stop" | "caution"; testId: string }) {
+  return (
+    <span
+      aria-hidden
+      data-testid={testId}
+      data-finding={mark}
+      className={cn(
+        "pointer-events-none absolute -top-2 left-full -ml-2 min-w-4 rounded-full px-1 text-center leading-4 font-semibold tabular-nums",
+        mark === "stop" ? "bg-destructive text-white" : "bg-caution text-black",
+        TEXT.caption,
+      )}
+    >
+      {count}
+    </span>
+  );
+}
 
 /**
  * FPL's actions as a floating glass bar at the sheet's foot (the owner,
@@ -12,13 +34,18 @@ import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
  * each opens its card over FPL as the tiles did (the owner's pick, "Bar
  * look, open cards"). Share is the plan's one Share menu (ShareMenu's
  * "send"). From half up; at the pill the figures alone, large (FlightFoot).
- * What the Brief and the Profile have found is said under the route
- * (FplFindings), and in their spoken names here.
+ * What the Brief found to act on is counted on its glyph's corner, red
+ * where one is a stop, amber where all are cautions, as the airport card's
+ * tabs carry their counts (CardTabBar's TabCount): the findings themselves
+ * are the Brief's, which opens with them (the owner, 2026-11-16: "isn't
+ * there a better place for them? Like brief"), not a list on FPL. The
+ * Profile's own altitude caution the same, a 1. Both said in their names.
  */
 export function FplTabBar({ vm, share }: { vm: PlanWorkspaceModel; share: ReactNode }) {
   const { course } = vm.plan;
   const { openBrief, openNavLogCard, openProfile, profileReady } = vm.fpl;
   const { altitudeMark, briefMark } = vm.brief;
+  const found = findingRows(useVerdict((v) => v.items)).length;
   return (
     <div className="flex justify-center pt-2" data-testid="fpl-actions">
       {/* The glass capsule, the airport card's bar's (CardTabBar): glass
@@ -27,9 +54,14 @@ export function FplTabBar({ vm, share }: { vm: PlanWorkspaceModel; share: ReactN
       <div className="liquid-glass grid h-16 max-w-full auto-cols-fr grid-flow-col rounded-full p-1 [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)]">
         <Action
           bar
-          icon={<ICON.brief />}
+          icon={
+            <span className="relative flex">
+              <ICON.brief />
+              {briefMark && found > 0 && <Count count={found} mark={briefMark} testId="route-brief-count" />}
+            </span>
+          }
           label="Brief"
-          spoken={briefMark ? `Brief, ${briefMark === "stop" ? "warning" : "caution"}` : undefined}
+          spoken={briefMark && found > 0 ? `Brief, ${found} ${found === 1 ? "finding" : "findings"} to look at` : undefined}
           onClick={openBrief}
           testId="route-brief"
           data-finding={briefMark ?? undefined}
@@ -37,7 +69,12 @@ export function FplTabBar({ vm, share }: { vm: PlanWorkspaceModel; share: ReactN
         <Action bar icon={<ICON.navLog />} label="Nav Log" onClick={openNavLogCard} disabled={!course} testId="route-navlog" />
         <Action
           bar
-          icon={<ICON.profile />}
+          icon={
+            <span className="relative flex">
+              <ICON.profile />
+              {altitudeMark && <Count count={1} mark="caution" testId="route-profile-count" />}
+            </span>
+          }
           label="Profile"
           spoken={
             altitudeMark === "caution"

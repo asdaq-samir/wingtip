@@ -3,7 +3,6 @@ import { CardAction as Action } from "../../../../components/CardAction";
 import { ICON } from "../../../../lib/icons";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 import RouteHead from "./RouteHead";
-import { FplFindings } from "./FplFindings";
 import { FlightFigures } from "./FlightFoot";
 
 /**
@@ -70,9 +69,6 @@ export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
       <div className="pt-2 pb-1">
         <FlightFigures vm={vm} grow={false} />
       </div>
-      {/* Under the figures only where the chips are over them (Route
-          Cards' head, RouteHead); else after the chips (AfterRouteLine). */}
-      {vm.route.routeEdit === "plan" && <FplFindings vm={vm} />}
     </div>
   );
 }
