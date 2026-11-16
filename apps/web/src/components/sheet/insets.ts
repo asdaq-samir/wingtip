@@ -78,6 +78,12 @@ export const PILL_FACE =
 /** And what the sheet shows risen, laid out at the pill but out of sight
  *  (PILL_BODY), fading in as the finger takes it. */
 export const RISEN_FACE = `${PILL_BODY} ${HANDED} opacity-0 group-data-swiping/sheet:opacity-100 group-data-risen/sheet:visible group-data-risen/sheet:opacity-100`;
+/** And a risen face drawn over the pill's own (PillHandover's FPL actions'
+ *  bar over the pill's figures): in sight only while a finger has the
+ *  sheet, not held while it settles, so settled at the pill it does not
+ *  show over the figures for the settle's frames (the owner's screen
+ *  recording, 2026-11-16: "Still see the flicker at the end"). */
+export const RISEN_OVER = `${PILL_BODY} ${HANDED} opacity-0 group-data-swiping/sheet:opacity-100`;
 
 /** A sheet's snap points and each size's, one constant per edge. */
 export function snapsOf(fromBottom: boolean) {
