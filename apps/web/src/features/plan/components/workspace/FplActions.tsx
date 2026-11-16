@@ -3,6 +3,7 @@ import { CardAction as Action } from "../../../../components/CardAction";
 import { ICON } from "../../../../lib/icons";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 import RouteHead from "./RouteHead";
+import { FlightFigures } from "./FlightFoot";
 
 /**
  * FPL's actions in flight, one row of four tiles at the top of the flying
@@ -56,14 +57,21 @@ export function FplActions({ vm, share }: { vm: PlanWorkspaceModel; share: React
   );
 }
 
-/** FPL's route row, the page's `route` (PlanWorkspace): a column the
- *  row's width, as the sheet lays the route in a row (MapPage's
- *  routeRowOf), where a grid alone had no width. The flight's figures are
- *  the page's top, over its bar (pages' figures; the owner, 2026-11-16). */
+/** FPL's route row, the flight's figures under it at their own size (the
+ *  owner, 2026-11-16: the calculations strip where the action tiles were):
+ *  the page's `route` (PlanWorkspace),
+ *  a column the row's width, as the sheet lays the route in a row
+ *  (MapPage's routeRowOf), where a grid alone had no width. */
 export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
   return (
     <div className="flex w-full min-w-0 flex-1 flex-col">
       <RouteHead vm={vm} />
+      {/* At the pill out of sight with the rest of the route's row, rising
+          with the sheet as the foot's figures fade out (PillHandover), a
+          quiet copy till then, the pill's own being the one in sight. */}
+      <div className="pt-2 pb-1">
+        <FlightFigures vm={vm} grow={false} quiet={!vm.view.panelOpen} />
+      </div>
     </div>
   );
 }

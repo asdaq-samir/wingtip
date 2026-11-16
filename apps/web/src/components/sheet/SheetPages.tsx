@@ -16,11 +16,6 @@ export interface SheetPages {
   bar: ReactNode;
   /** The second page's body: the plan. */
   second: ReactNode;
-  /** The plan's figures over its bar once there is a route: its first row
-   *  and its pill, the sheet's top as a card's title is (the owner,
-   *  2026-11-16: "let's try putting the figures on top of fpl card", "only
-   *  after putting a route"). */
-  figures?: ReactNode;
 }
 
 /** A page's body, kept when the other is up: skipped by its data-hidden

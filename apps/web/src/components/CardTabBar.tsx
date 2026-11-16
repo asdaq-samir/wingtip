@@ -13,29 +13,6 @@ import { TEXT } from "../lib/text";
 const FLOATING =
   "[transform:translateY(calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
 
-/** A sheet's floating bar at the foot of what is in sight -- a card's tabs
- *  (CardTabBar), FPL's actions (FplTabBar) -- one way for all: sticky at the
- *  foot of the sheet's scroller, the page scrolling under it, and held at
- *  the sheet's free edge by the Drawer's offset and the finger's movement
- *  (FLOATING), so it rides a drag as the card does, out of sight at the
- *  pill with the body it is in (PILL_BODY). In the flow at the pages' end,
- *  so its own room is the last row's room to clear it; only what is in it
- *  takes taps. */
-export function FloatingBar({ testId, className, children }: { testId?: string; className?: string; children: ReactNode }) {
-  return (
-    <div
-      className={cn(
-        "pointer-events-none sticky bottom-0 z-10 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]",
-        FLOATING,
-        className,
-      )}
-      data-testid={testId}
-    >
-      {children}
-    </div>
-  );
-}
-
 /** Each trigger's hit area, the trigger itself, 56 tall in the 64-point bar
  *  (the stacked icon and word, the same on every tab so nothing moves on a
  *  switch), the triggers meeting side by side, so over 44 points: controls
@@ -107,7 +84,13 @@ export function CardTabBar<T extends string>({
   tabTestId: string;
 }) {
   return (
-    <FloatingBar testId={testId}>
+    // Sticky at the foot of the card's scroller, the page scrolling under it;
+    // in the flow at the pages' end, so its own room is the last row's room
+    // to clear it. Only the capsule takes taps.
+    <div
+      className={cn("pointer-events-none sticky bottom-0 z-10 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", FLOATING)}
+      data-testid={testId}
+    >
       {/* The capsule of glass round the stock list, the list itself clear on it. */}
       <div className="liquid-glass pointer-events-auto [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)] mx-auto w-fit max-w-full rounded-full p-1">
         <TabsList
@@ -142,6 +125,6 @@ export function CardTabBar<T extends string>({
           ))}
         </TabsList>
       </div>
-    </FloatingBar>
+    </div>
   );
 }

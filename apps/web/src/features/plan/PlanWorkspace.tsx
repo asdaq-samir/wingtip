@@ -24,7 +24,7 @@ import PlanMap from "./components/workspace/PlanMap";
 import PlanSidebar from "./components/workspace/PlanSidebar";
 import PlanPage from "./components/workspace/PlanPage";
 import PlanCards from "./components/workspace/PlanCards";
-import FlightFoot, { FlightFigures } from "./components/workspace/FlightFoot";
+import FlightFoot from "./components/workspace/FlightFoot";
 import { FplRoute } from "./components/workspace/FplActions";
 import RouteControls from "./components/workspace/RouteControls";
 import FplBar from "./components/workspace/FplBar";
@@ -114,7 +114,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   const { fuelHidden, showFuelStops, tankFigures } = vm.stops;
   const { holdAsk, listEdit, routeLine } = vm.routeList;
   const { briefShown, profileShown } = vm.fpl;
-  const { flying, dryRunning } = vm.flight;
+  const { flying } = vm.flight;
   const { routeRows } = vm.leg;
   const {
     altitudeAt,
@@ -428,8 +428,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           at: view === "plan" ? 1 : 0,
           go: pickPage,
           bar: <FplBar strip={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />} />,
-          second: <PlanPage vm={vm} navLog={navLog} share={shareMenu("end", "share-plan", "send", !flying)} />,
-          figures: routed && !dryRunning ? <FlightFigures vm={vm} grow /> : undefined,
+          second: <PlanPage vm={vm} navLog={navLog} share={shareMenu("end", "share-plan", "send")} />,
         },
         // The one search's Autocomplete round the whole panel, so its field
         // (the first row) and its list (the body) are one combobox.
@@ -447,10 +446,11 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         flying,
         // The one search, the first page's first row, and at rest its pill (MapPanel).
         bar: <OneSearchField model={search} inputRef={vm.search.searchInput} />,
-        // FPL's foot (FlightFoot): in flight and a dry run their figures; else the page's own top has them (pages' figures).
+        // FPL's foot (FlightFoot): from half up its actions' floating bar, at the pill its figures alone, large,
+        // under the route from half up (the owner, 2026-11-16); in flight the figures; under the Profile, its card's (PlanCards).
         foot:
           !place && !heldPoint && !flight && !briefShown && !profileShown
-            ? routed && (flying || !!dryRunning) && <FlightFoot vm={vm} />
+            ? routed && <FlightFoot vm={vm} share={shareMenu("end", "share-plan", "send", true)} />
             : undefined,
         // The route as one row under FPL's bar (MapPanel keeps it under the
         // others' heads). How it shows once whole is the pilot's pick from its

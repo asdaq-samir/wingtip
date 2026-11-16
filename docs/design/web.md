@@ -691,17 +691,19 @@ the airplane's strip (`features/plan/components/workspace/FplBar`, its
 `RouteControls`: the N-number, the altitude and the route's •••, on one
 line, the airplane and the altitude giving way first; the Brief, the Nav
 Log, the Profile and Share are the floating glass bar at the sheet's foot
-`FplTabBar` in FPL's page (`PlanPage`) in `CardTabBar`'s `FloatingBar`, the one floating bar every card's tabs use, sticky at the foot of what is in sight and riding a drag by the Drawer's own offset, `CardAction`s in its `bar` look
+from half up, `FplTabBar` in `FlightFoot`, `CardAction`s in its `bar` look
 in `CardTabBar`'s capsule, each opening its card, Share the route's
-`ShareMenu` as `"send"`; once there is a route the figures are the
-page's top over the bar and its pill (`SheetPages`' `figures`,
-`FlightFigures` with `grow`, `fpl-figures`), and at the pill the bar,
-the route and the actions' bar are laid out out of sight with
-sheet/insets' `PILL_BODY`, in sight on Base UI's `data-swiping` and the
-popup's `data-risen` (SheetDrawer, held till the sheet has settled), the
-cards' and Search's one way, CSS alone; `feel("detent")` as the sheet
-settles (MapPanel); in flight the tiles are `FplActions` at the top of
-the flying drawer. Under the route, `FplRoute`, the Routes' chips. The Brief's findings
+`ShareMenu` as `"send"`; at the pill the foot is the figures alone,
+large, `FlightFigures` with `grow`, the two handed over by `PillHandover`
+(components/sheet), the shared way a pill hands over to the sheet risen:
+sheet/insets' `PILL_FACE` fades out and `RISEN_FACE` fades in on Base UI's
+`data-swiping`, CSS alone, as the cards' bodies come into sight
+(`PILL_BODY`); FPL's bar and route are laid out at the pill with
+`RISEN_FACE` (SheetParts' `rises`), the figures under the route a quiet
+copy there with no test ids (`FlightFigures`' `quiet`); `feel("detent")`
+as the sheet settles (MapPanel); in flight the tiles are `FplActions`
+at the top of the flying drawer. Under the route, `FplRoute`: the
+figures at their own size, the Routes' chips next. The Brief's findings
 to act on are counted on its button in the bar (`FplTabBar`'s `Count`,
 from `lib/verdict` through `planWords`' `findingRows`), the findings
 themselves the Brief's). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
