@@ -165,7 +165,7 @@ trailing button, and the page toggle at its end, where the account
 button was until the owner swapped the two (2026-11-14: "Swap the fpl
 toggle and account buttons"); the account button rides the sheet's top
 under the 3D. FPL's first row is the same size: the airplane's strip
-(N-number, altitude, Profile, Brief, •••) with the toggle at its end, and
+(N-number, altitude, •••) with the toggle at its end, and
 the route one row under it in whichever of its three layouts; Search's
 page under the search is the search's own page (with nothing typed, or
 the field in use). On a desktop the same in the
@@ -186,9 +186,9 @@ list is where it was.
 |---|---|---|---|
 | Plan: route box, route list, nav log rows | the sheet (with a route); the search's Your Flight card | 1 → **0** with a route, 1 from the search | Route pills drag to reorder; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; altitude and departure time chips open popovers; Undo bar under the route after a removal or clear |
 | Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; Dist opens the nav log |
-| Brief | plan → Brief; search → Do → Brief | 2 | Alternate filed or taken off (iOS too: the Brief's Alternate sections, and the plan's Alternate row under IFR, 1 tap); Ask chips apply changes |
-| Nav log card | plan → ••• → Nav log; Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
-| Profile | plan → Profile | 2 → **1** with a route | VFR/IFR, altitude in the side view, Dry run |
+| Brief | plan → the Brief tab in FPL's floating bar; search → Do → Brief | 2 | Alternate filed or taken off (iOS too: the Brief's Alternate sections, and the plan's Alternate row under IFR, 1 tap); Ask chips apply changes |
+| Nav Log tab | plan → the Nav Log tab (FPL's first, picked by default); Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
+| Profile | plan → the Profile tab | 2 → **1** with a route | VFR/IFR, altitude in the side view, Dry run |
 | Search results (Airports, Waypoints and Navaids, Airplanes, Do, Ask) | the search field, typed | **new: 1** | -- |
 | Saved flights | search → Saved; account → Flights | 2 | Name and notes edited in the row; delete with a confirm |
 | Airport card | Tap a field; a search result; a route row's More Info; a nav log field | 1 (2 from the search) | **Fly Here, Depart From, Add as Stop at its top (new)**, favorite; frequencies copy |
@@ -240,7 +240,7 @@ Flights, Share and Undo, which were the bar's, are in the route card's
 | Airport card | Tap a field; a search row; a list's row (Nearest, Favorites, Recents); hold for its preview; a link's `place=` | 1 | The one card from every way in: Fly Here (the flight's time when planned), Depart, Add Stop, Diagram; the floating bar's Add to Plan, Favorite, Share, •••; its sections' picker pinned under the bar once its head scrolls away; frequencies copy on hold |
 | Airplane profile | any N-number or airplane figure; the search's N-number or own airplane; a link's `airplane=` | 1–2 | **One profile card**: its own card from the plan or the search, pushed in the card it was tapped in; Fly This Airplane; every figure edited in place (an inline ask's Edit opens it at that figure) |
 | Airplane (was the tab) | the plan's Airplane button; the search's types; Pick an Airplane and Ready to Fly's fix (pushed in their card, with Back) | 2 | N-number typed, No Airplane |
-| Route Leg | a tap on the map's course; a nav log row (pushed in the Nav Log card) | 1 / 3 | **One card** from both: Direct To, Remove, then the leg's figures |
+| Route Leg | a tap on the map's course; a nav log row (the Nav Log tab) | 1 / 3 | **One card** from both: Direct To, Remove, then the leg's figures |
 | Figures strip | the sheet's foot, with a route | 0 | Tapped, the nav log |
 | Nav Log | the route card's Nav Log; the strip | 2 → **1** / 1 | -- |
 | Brief | the route card's Brief; the search's Do | 2 → **1** | the Brief's one foot bar, Start Flight |

@@ -176,7 +176,7 @@ export default function AltitudeGroup({
       endRoom="w-0"
       // No button of its own at its end, at the owner's ask (2026-10-27: "No
       // need for a separate profile button"), and no caution's dot there
-      // either: that is on the route's Profile button now, as the AI
+      // either: that is on FPL's Profile tab now, as the AI
       // brief's is on its own (the owner, 2026-11-05: "The red dot can be
       // on profile (like brief) instead of the altitude"; PlanWorkspace's
       // altitudeMark). What the altitude is and why stays in its name for

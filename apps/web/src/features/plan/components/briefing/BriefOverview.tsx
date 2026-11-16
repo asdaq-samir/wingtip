@@ -5,7 +5,7 @@ import BriefGlance from "./BriefGlance";
 import FlightWatch from "./FlightWatch";
 
 /**
- * The Brief as it opens (BriefCard's overview): the verdict and its
+ * The Brief as it opens (BriefPage's overview): the verdict and its
  * lines first, at the owner's word ("Verdict first", 2026-11-08), then
  * when to go hour by hour (features/departureWindow), the four glance
  * cards (BriefGlance, the owner's D′), then the NOTAMs that matter,

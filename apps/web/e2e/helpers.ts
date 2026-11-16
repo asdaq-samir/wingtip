@@ -144,38 +144,42 @@ export async function inSheet(page: Page, locator: Locator) {
 export async function controlsInSight(page: Page) {
   const panel = sideDrawer(page);
   await panel.waitFor();
-  // The Brief, a card over FPL, has them out of sight: put away.
-  await closeBrief(page);
   await grabberTo(page, "full");
   await settled(panel);
+  // FPL's own page, the Nav Log's tab, as a route opens on it.
+  await backToNavLog(page);
   // With no route the search's page is up: Plan a Flight, the empty box.
   await planFromSearch(page);
 }
 
-/** FPL's Brief, a card over the route (BriefCard), from the chips' Brief:
- *  its pages -- Preflight, Depart, En route and Arrive -- are its. */
-export async function openBrief(page: Page) {
-  const card = sideDrawer(page).getByTestId("brief-card");
-  if (await card.isVisible().catch(() => false)) return;
+/** FPL's tabs under its route (FplTabs), in the floating glass bar at the
+ *  sheet's foot once a route is planned (FplTabBar), Share and ForeFlight
+ *  after them. */
+export type FplTab = "navlog" | "brief" | "profile";
+export const fplTabBar = (page: Page) => sideDrawer(page).getByTestId("fpl-tab-bar");
+
+/** One of FPL's tabs picked from its bar, the sheet raised off the pill
+ *  first, where the bar is hidden. Not tapped when it is up already. */
+export async function pickFplTab(page: Page, tab: FplTab) {
   await openPanel(page);
-  await sideDrawer(page)
-    .getByTestId("route-brief")
-    .click({ timeout: slow(30000) });
-  await expect(card).toBeVisible();
+  const trigger = sideDrawer(page).getByTestId(`route-${tab}`);
+  await trigger.waitFor({ timeout: slow(60_000) });
+  if ((await trigger.getAttribute("aria-selected")) !== "true") await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-selected", "true");
 }
 
-/** The Brief put away, by its own close (closeCard), which goes back
- *  one at a time: from a page to the
- *  Brief's cards (BriefGlance), then FPL's route and nav log again. */
-async function closeBrief(page: Page) {
-  const card = sideDrawer(page).getByTestId("brief-card");
-  if (!(await card.isVisible().catch(() => false))) return;
-  if (!(await card.getByTestId("brief-glance").isVisible())) {
-    await closeCard(page, "brief-close");
-    await expect(card.getByTestId("brief-glance")).toBeVisible();
-  }
-  await closeCard(page, "brief-close");
-  await expect(card).toHaveCount(0);
+/** FPL's Brief, a tab under the route: its pages -- Preflight, Depart, En
+ *  route and Arrive -- are its. */
+export async function openBrief(page: Page) {
+  await pickFplTab(page, "brief");
+  await expect(sideDrawer(page).getByTestId("brief-page")).toBeVisible();
+}
+
+/** Back on the Nav Log's tab, FPL's own, where there is a bar to pick it
+ *  from: before a route there is only the Nav Log; called with the sheet
+ *  up, as the bar is hidden at the pill. */
+async function backToNavLog(page: Page) {
+  if (await sideDrawer(page).getByTestId("route-navlog").isVisible()) await pickFplTab(page, "navlog");
 }
 
 /** The panel all the way out, as a finger takes it: a drag on its
@@ -394,8 +398,8 @@ type PhaseTab = "Preflight" | "Depart" | "En route" | "Arrive";
  *  itself), or one of the Brief's pages. */
 export async function openTab(page: Page, name: keyof typeof PHASE_OF | PhaseTab | "Nav Log" | "Local") {
   if (name === "Nav Log" || name === "Local") {
-    await closeBrief(page);
     await panelFull(page);
+    await backToNavLog(page);
     return;
   }
   await openBrief(page);
@@ -412,39 +416,20 @@ export async function openTab(page: Page, name: keyof typeof PHASE_OF | PhaseTab
   await expect(tab).toHaveAttribute("aria-selected", "true");
 }
 
-/** The Nav Log, its own card from the route's ••• menu (PlanPage), FPL all
- *  the way up under it: FPL lists the route in order (ProceduresRoute), at
- *  the owner's ask. */
+/** The Nav Log, FPL's first tab (FplTabs): the route in order
+ *  (ProceduresRoute), then its legs, FPL all the way up. */
 export async function openNavLog(page: Page) {
-  await openTab(page, "Nav Log");
-  const sheet = navLogSheet(page);
-  // In the route's menu since the Profile took its button (the owner,
-  // 2026-11-04).
-  if (!(await sheet.isVisible())) {
-    await sideDrawer(page)
-      .getByTestId("share-route")
-      .click({ timeout: slow(60_000) });
-    await page.getByTestId("route-navlog").click();
-  }
-  await expect(sheet).toBeVisible();
-  return sheet;
+  await pickFplTab(page, "navlog");
+  await panelFull(page);
+  const log = navLogSheet(page);
+  await expect(log).toBeVisible();
+  return log;
 }
 
-/** The nav log's card over FPL (the owner's "make Navlog open like brief
- *  does"), and what scrolls in it. */
-export const navLogSheet = (page: Page) => page.getByTestId("navlog-sheet");
-export const navLogScroller = (page: Page) => page.getByTestId("navlog-card-scroller");
-
-/** The nav log's card put away, FPL under it again: its close, kept for a
- *  keyboard and a screen reader (CardClose), the tab bar's Back's twin. */
-export async function closeNavLog(page: Page) {
-  if (await navLogSheet(page).isVisible()) {
-    await page.getByTestId("navlog-close").focus();
-    await page.keyboard.press("Enter");
-  }
-  // Kept between its openings, closed (CardLayer's `open`).
-  await expect(navLogSheet(page)).toBeHidden();
-}
+/** The Nav Log's page, and what scrolls it: the sheet's one scroller
+ *  (SheetParts), the route's row sticky at its top. */
+export const navLogSheet = (page: Page) => page.getByTestId("navlog-page");
+export const navLogScroller = (page: Page) => navLogSheet(page).locator("xpath=ancestor::*[@data-sheet-scroll][1]");
 
 /** The planning panel's own tabs. */
 export const panelTabs = (page: Page) => sideDrawer(page).getByTestId("panel-tabs");

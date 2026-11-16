@@ -35,8 +35,8 @@ Compose. Nothing here is built by hand where a stock part does it.
    everything a nested drawer except the welcome one?"): You with
    Settings and its pages inside it, the Map card, an airport's, an
    airspace's, a fix's, a route leg's, an airplane's, a past flight's,
-   Nearest, the airplane's profile, the Brief, Nav Log, Profile and
-   Stops, and Emergency (at full, 4) -- each Base UI's own nested Drawer
+   Nearest, the airplane's profile, the Stops (and the Profile's card
+   while a dry run plays, 4a), and Emergency (at full, 4) -- each Base UI's own nested Drawer
    (`components/sheet/CardStack`), with the sheet's sizes, grabber and
    swipe and the map's buttons on its top. The welcome (`WelcomeSheet`)
    stays its own sheet; questions stay the stock alert (7), menus
@@ -56,10 +56,11 @@ Compose. Nothing here is built by hand where a stock part does it.
    card sizes its own sheet (the owner, 2026-11-11): on the web its own
    nested drawer's snap point, asked through `useCardSize`, the sheet
    under it left at its own size.
-3. **Pages are cards too.** Brief, Nav Log, Profile, Stops, Nearest, Ask,
+3. **Pages are cards too.** Stops, Nearest, Ask,
    Settings and its pages, the Logbook, Checklists and Saved Flights
    cover the search the same way: ✕ closes, Back steps through the levels
-   inside. The Nav Log, the Profile and the Stops are cards of their own,
+   inside. The Brief, the Nav Log and the Profile are FPL's tabs since
+   2026-11-14 (§4a), not cards. The Stops are a card of their own,
    not pages of the sheet's body (the owner, 2026-11-11): each its own
    size, grabber, ✕ and Back, kept built between its openings so opening
    it again is at once. The route's figures that sat at the sheet's foot
@@ -448,14 +449,32 @@ off by default (the owner, 2026-11-13).
 2. **FPL** (the second page): its first row the search's row's twin
    (the owner, 2026-11-14: "for all three fpl layouts, keep the n-number
    strip with buttons in the same size as search bar"): the airplane's
-   strip -- its N-number, the altitude, the Profile, the Brief and the
-   route's ••• -- in a bar exactly the search field's size, the page
+   strip -- its N-number, the altitude and the route's ••• -- in a bar exactly the search field's size, the page
    toggle at its end, so a turn of the page changes only what is in the
    bar; under it the route as one row, in whichever of the three ways
    Show Route As picks (the box of pills, the line, or the cards' ends
-   and the Routes row), never in the bar; then the route in order, and
-   the route's figures pinned at the foot, which are FPL's alone; the
-   Brief, the Nav Log, the Profile and the Stops are cards over it. With
+   and the Routes row), never in the bar; then the page of FPL's tab, and
+   the route's figures pinned at the foot, which are FPL's alone. **FPL's
+   tabs** (the owner, 2026-11-14: "Can we have the same tab bar appear
+   with brief, navlog, profile and share, and open in ForeFlight?"): once
+   the route is planned, the airport card's floating glass bar (§2) rides
+   FPL's foot, just over the figures, hidden at the pill -- Nav Log
+   (ListOrdered), Brief (ClipboardCheck) and Profile (Mountain; not for a
+   local flight) as tabs, then Share (the route's link) and ForeFlight
+   (Open in ForeFlight) as actions in the same icon-over-word form, never
+   picked, in equal columns. Nav Log is picked first: the route in order,
+   as FPL always showed it, and its legs under it. The Brief is its
+   overview and pages, the Profile its VFR/IFR switch, its cruise and
+   clearance line, its cautions and the side view. Each opens at its own
+   top under the route's row and nothing jumps on a switch; the Brief's
+   mark and the altitude's flag ride their tabs' icons as Weather's dot
+   does. The strip's Profile and Brief buttons and the •••'s Nav log, Share
+   link and Open in ForeFlight went with them; the ••• adds the tab's own
+   items (Print the briefing and Refresh the briefing with the Brief, Print
+   the nav log with the Nav Log). A link (`open=brief`, `navlog`,
+   `profile`, `brief=1`) picks the tab. A dry run started from the Profile
+   plays in the Profile's card over the sheet, which the flying screen
+   keeps in sight; its ✕ stops it. The Stops are a card over it. With
    no route, the route's row stands empty and the bar keeps the airplane
    and the menu, with a Close that goes back to the card or Search it came from
    (the owner, 2026-11-11: "We don't need plan a flight either with two

@@ -12,7 +12,6 @@
  "engine/crates/airspace/src/ahead.rs | engine/crates/altitude/src/altitude/calls.rs": 1,
  "engine/crates/airspace/src/airspace.rs | engine/crates/airspace/src/airspace.rs": 1,
  "engine/crates/airspace/src/airspace.rs | engine/crates/airspace/src/pack_query.rs": 1,
- "engine/crates/airspace/src/airspace.rs | engine/crates/airspace/src/view.rs": 1,
  "engine/crates/airspace/src/pack.rs | engine/crates/airspace/src/view_marks.rs": 1,
  "engine/crates/brief/src/gonogo/calls.rs | engine/crates/pilot/src/pilot/logbook.rs": 1,
  "engine/crates/pilot/src/aircraft/calls.rs | engine/crates/pilot/src/autolog/mod.rs": 1,

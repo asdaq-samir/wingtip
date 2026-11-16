@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { TabsList, TabsTrigger } from "./ui/tabs";
+import { Button } from "./ui/button";
 import { TEXT } from "../lib/text";
 
 /** Held at the foot of the part of the card in sight: a phone's card is laid
@@ -20,12 +21,40 @@ const FLOATING =
  *  its underline. */
 const TRIGGER_AREA = "before:absolute before:inset-0 before:content-['']";
 
+/** Equal columns, each the widest word's, side by side. */
+const COLUMNS = "inline-grid max-w-full auto-cols-fr grid-flow-col";
+
 /** One tab of the bar: its value, its word and its icon (required, so none
  *  is bare), and why to open it where there is a reason -- `hint` said in
  *  its name ("Weather, MVFR", "Flights, 10"), as the mark (`badge`) drawn
  *  over the icon's corner is not words. Every tab's name is its aria-label,
  *  as only the picked tab shows its word. */
 export type CardTab<T extends string> = { value: T; label: string; icon: LucideIcon; hint?: string | null; badge?: ReactNode };
+
+/** An action after the tabs, in the same icon-over-word form and the same
+ *  column, never picked: a tap does it (`onClick`) or follows its link
+ *  (`href`, for an app's own link, which opens only from a tap on one);
+ *  `name` its name to a screen reader where the word is short. */
+export type CardTabAction = { label: string; name?: string; icon: LucideIcon; testId: string; onClick?: () => void; href?: string };
+
+/** A tab's or an action's stacked icon and word, the same on both. */
+const ITEM = "h-full min-w-0 flex-col gap-0.5 rounded-full";
+
+/** The icon, its badge over its corner, and the word under it. */
+function IconWord({ icon: Icon, label, badge }: { icon: LucideIcon; label: string; badge?: ReactNode }) {
+  return (
+    <>
+      {/* The icon's own box carries the badge over its corner. */}
+      <span className="relative flex shrink-0">
+        <Icon aria-hidden className="size-6" />
+        {badge}
+      </span>
+      {/* Every tab's word under its icon, the bar's columns equal; cut
+          short, never spilling into the next, where five crowd a phone. */}
+      <span className={cn("h-4 max-w-full truncate leading-4", TEXT.badge)}>{label}</span>
+    </>
+  );
+}
 
 /** A count over an icon's corner (the airport's charts, the airplane's flights). */
 export function TabCount({ count, testId }: { count: number; testId?: string }) {
@@ -65,6 +94,14 @@ export function TabCount({ count, testId }: { count: number; testId?: string }) 
  * (design/tokens.json material.bar-*) in place of the glass's own, so the
  * words read on the frost over a photo, 4.5:1 or more by day and night.
  * Put last in the card's CardTabPages, which pins its pages under the head.
+ *
+ * `actions` follow the tabs in the same capsule, each its own column as
+ * wide as a tab's, never picked: FPL's Share and ForeFlight (the owner,
+ * 2026-11-14: "the same tab bar ... with brief, navlog, profile and share,
+ * and open in ForeFlight"). The tabs stay the stock tab list, the actions
+ * buttons beside it, not in it (a tab list holds only tabs), the two
+ * sharing the capsule's columns by a subgrid. Five or more are padded
+ * less, so they fit across a phone.
  */
 export function CardTabBar<T extends string>({
   tabs,
@@ -72,8 +109,11 @@ export function CardTabBar<T extends string>({
   disabled = false,
   testId,
   tabTestId,
+  actions = [],
 }: {
   tabs: CardTab<T>[];
+  /** Actions after the tabs, in their form, never picked. */
+  actions?: CardTabAction[];
   /** A tab picked, by a tap or the arrow keys (the APG's automatic
    *  activation: one answer fills every tab, so each shows at once). */
   onPick: (tab: T) => void;
@@ -83,6 +123,9 @@ export function CardTabBar<T extends string>({
   /** Each trigger's test id, from its value: "place-tab-" gives "place-tab-radio". */
   tabTestId: string;
 }) {
+  // Five or more padded less, so the five of FPL fit across a phone; the
+  // airport's and the airplanes' four as they were.
+  const pad = tabs.length + actions.length > 4 ? "px-1.5" : "px-3";
   return (
     // Sticky at the foot of the card's scroller, the page scrolling under it;
     // in the flow at the pages' end, so its own room is the last row's room
@@ -91,39 +134,57 @@ export function CardTabBar<T extends string>({
       className={cn("pointer-events-none sticky bottom-0 z-10 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", FLOATING)}
       data-testid={testId}
     >
-      {/* The capsule of glass round the stock list, the list itself clear on it. */}
+      {/* The capsule of glass round the stock list, the list itself clear on
+          it; with actions, one grid of equal columns round the list and them. */}
       <div className="liquid-glass pointer-events-auto [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)] mx-auto w-fit max-w-full rounded-full p-1">
-        <TabsList
-          activateOnFocus
-          className="inline-grid max-w-full auto-cols-fr grid-flow-col rounded-full bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-14"
-        >
-          {tabs.map((t) => (
-            <TabsTrigger
-              key={t.value}
-              value={t.value}
-              className={cn(
-                // The picked tab in the tint on a soft lighter pill, as iOS 26's tab bar, not a solid fill.
-                "group/tab h-full min-w-0 flex-none flex-col gap-0.5 rounded-full px-3 data-active:bg-foreground/10 data-active:text-primary data-active:shadow-none dark:data-active:border-transparent dark:data-active:bg-foreground/15 dark:data-active:text-primary group-data-[variant=default]/tabs-list:data-active:shadow-none",
-                TEXT.row,
-                TRIGGER_AREA,
-              )}
-              disabled={disabled}
-              aria-label={t.hint ? `${t.label}, ${t.hint}` : t.label}
-              data-testid={`${tabTestId}${t.value}`}
-              // A tap picks the tab and nothing else: the sheet keeps the size
-              // it was dragged to (the owner, 2026-11-11).
-              onClick={() => onPick(t.value)}
+        <div className={cn(actions.length > 0 && cn(COLUMNS, "h-14"))}>
+          <TabsList
+            activateOnFocus
+            className={cn(
+              "rounded-full bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-14",
+              actions.length > 0 ? "grid grid-cols-subgrid" : COLUMNS,
+            )}
+            style={actions.length > 0 ? { gridColumn: `span ${tabs.length}` } : undefined}
+          >
+            {tabs.map((t) => (
+              <TabsTrigger
+                key={t.value}
+                value={t.value}
+                className={cn(
+                  // The picked tab in the tint on a soft lighter pill, as iOS 26's tab bar, not a solid fill.
+                  "group/tab flex-none data-active:bg-foreground/10 data-active:text-primary data-active:shadow-none dark:data-active:border-transparent dark:data-active:bg-foreground/15 dark:data-active:text-primary group-data-[variant=default]/tabs-list:data-active:shadow-none",
+                  ITEM,
+                  pad,
+                  TEXT.row,
+                  TRIGGER_AREA,
+                )}
+                disabled={disabled}
+                aria-label={t.hint ? `${t.label}, ${t.hint}` : t.label}
+                data-testid={`${tabTestId}${t.value}`}
+                // A tap picks the tab and nothing else: the sheet keeps the size
+                // it was dragged to (the owner, 2026-11-11).
+                onClick={() => onPick(t.value)}
+              >
+                <IconWord icon={t.icon} label={t.label} badge={t.badge} />
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {actions.map((a) => (
+            <Button
+              key={a.testId}
+              variant="ghost"
+              // As an unpicked tab: the foreground on the glass, the soft
+              // pill under a pointer.
+              className={cn("relative text-foreground hover:bg-foreground/10 native:text-foreground", ITEM, pad, TEXT.row, TRIGGER_AREA)}
+              aria-label={a.name ?? a.label}
+              data-testid={a.testId}
+              onClick={a.onClick}
+              {...(a.href ? { nativeButton: false, render: <a href={a.href} aria-label={a.name ?? a.label} /> } : {})}
             >
-              {/* The icon's own box carries the badge over its corner. */}
-              <span className="relative flex shrink-0">
-                <t.icon aria-hidden className="size-6" />
-                {t.badge}
-              </span>
-              {/* Every tab's word under its icon, the bar's columns equal. */}
-              <span className={cn("h-4 leading-4 whitespace-nowrap", TEXT.badge)}>{t.label}</span>
-            </TabsTrigger>
+              <IconWord icon={a.icon} label={a.label} />
+            </Button>
           ))}
-        </TabsList>
+        </div>
       </div>
     </div>
   );

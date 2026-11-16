@@ -37,7 +37,7 @@ const PAGE_ORDER: (PanelTab | null)[] = [null, ...TABS.map((t) => t.value)];
 const PRINTED: PanelTab[] = TABS.map((t) => t.value);
 
 /**
- * The Brief's pages and what is under them (BriefCard's, and the printed
+ * The Brief's pages and what is under them (BriefPage's, and the printed
  * briefing's, NavLogView's), with the page up kept here: a switch draws
  * this and nothing else -- the pages' contents come in as elements made by
  * the panel, unchanged by a switch, so React leaves them be. Each tab is kept once opened, hidden, and back

@@ -1,30 +1,27 @@
 import { Suspense, useMemo, type ReactNode } from "react";
-import { CardHead } from "../../../../components/CardHead";
 import type { BriefingPart } from "../briefing/sections";
 import { BriefingNotices, FlightBriefingView, NavLogView } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 import { EngineGate } from "../../../../lib/engine/engineGate";
-import FiguresLine from "./FiguresLine";
 
 /**
- * The plan's two nav logs (PlanWorkspace): FPL's own list -- the route in
- * order, with on paper the whole briefing and, out of sight, what the
- * briefing publishes and the kneeboard -- and the Nav Log card's legs
- * (PlanPage's NavLogCard), each made once for the same plan.
+ * The plan's nav log (PlanWorkspace), the Nav Log's tab (FplTabs): the
+ * route in order and its legs under it, with on paper the whole briefing
+ * and, out of sight, what the briefing publishes and the kneeboard; made
+ * once for the same plan.
  */
-export function useNavLogs(
+export function useNavLog(
   vm: PlanWorkspaceModel,
   { tabContent, routeList, kneeboard }: { tabContent: (part: BriefingPart) => ReactNode; routeList: ReactNode; kneeboard: ReactNode },
 ) {
   const { drawerOpen } = vm.view;
   const { depart, planned, routeEdit } = vm.route;
   const { aircraft, course, s } = vm.plan;
-  const { briefShown, closeNavLogCard, navLogShown } = vm.fpl;
+  const { navLogShown } = vm.fpl;
   const { dryRunning } = vm.flight;
   const { deselectPoint, selectPointAt, selectedPoint } = vm.leg;
-  const { briefLine, estimate, landedStops, marks, metarColour, unflyableBrief } = vm.brief;
+  const { landedStops, marks, metarColour, unflyableBrief } = vm.brief;
 
-  // What the Nav Log under the route and the Nav Log card both show.
   const shared = useMemo(
     () => ({
       totals: s.totals,
@@ -75,9 +72,9 @@ export function useNavLogs(
       <Suspense fallback={<div className="min-h-0 flex-1" />}>
         <NavLogView
           {...shared}
-          // In sight all the way up, the Brief not over it: a row picked is
-          // brought into sight as it comes back.
-          drawerOpen={drawerOpen && !briefShown}
+          // In sight all the way up, its tab up: a row picked is brought
+          // into sight as it comes back.
+          drawerOpen={drawerOpen && navLogShown}
           // Route Cards with one end only: its card is the end's own (RouteEnds),
           // not again under it as the list's row (the owner's screenshot,
           // 2026-11-05: C81 typed as the departure, there twice).
@@ -122,43 +119,10 @@ export function useNavLogs(
       unflyableBrief,
       kneeboard,
       drawerOpen,
-      briefShown,
+      navLogShown,
       routeList,
       routeEdit,
     ],
   );
-  // The Nav Log, a card of its own over FPL (the owner, 2026-11-11), its
-  // legs in it: drawn from its first opening on and kept between its
-  // openings (PlanPage's NavLogCard), so it is built once.
-  const navLogCard = useMemo(
-    () => (
-      <Suspense fallback={<div className="min-h-0 flex-1" />}>
-        <NavLogView
-          {...shared}
-          // A row picked is brought into sight while the card is open.
-          drawerOpen={navLogShown}
-          cardHead={
-            <CardHead
-              // Its own name, and at its smallest size too the totals under
-              // it (the canvas's Nav Log card): the line the route's figures
-              // carried at the sheet's foot.
-              name="Nav Log"
-              sub={
-                <EngineGate>
-                  <FiguresLine input={{ totals: s.totals, estimate, local: s.local, destination: `${planned.dest}`, depart }} />
-                </EngineGate>
-              }
-              line={briefLine}
-              nameTestId="navlog-name"
-              onClose={closeNavLogCard}
-              onShare="navlog"
-              closeTestId="navlog-close"
-            />
-          }
-        />
-      </Suspense>
-    ),
-    [shared, estimate, s.totals, s.local, planned.dest, depart, navLogShown, briefLine, closeNavLogCard],
-  );
-  return { navLog, navLogCard };
+  return navLog;
 }

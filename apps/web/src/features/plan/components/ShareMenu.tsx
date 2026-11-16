@@ -1,6 +1,5 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { done } from "../../../lib/doneNote";
-import { Ellipsis, FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Share, ListOrdered, Trash2 } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Ellipsis, FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Share, Trash2 } from "lucide-react";
 import RoundButton from "../../../components/RoundButton";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../../components/ResponsivePopover";
 import {
@@ -12,9 +11,7 @@ import {
 } from "../../../components/ui/dropdown-menu";
 import type { Candidate, Course } from "../../../lib/api/types";
 import type { RouteCard } from "../../../lib/openCards";
-import { foreflightRoute, type PlanPoint } from "../../../lib/flightPlanFiles";
-import { markPackSent, openInForeFlight, packOrigin, packPath, packSent } from "../lib/foreflightPack";
-import { navLogRows } from "./navlog/rows";
+import { useForeFlight } from "../hooks/useForeFlight";
 import { useShareLink } from "../hooks/useShareLink";
 import { refreshLive } from "../../../lib/liveRefresh";
 import type { RouteEdit } from "../../../lib/preferences";
@@ -47,11 +44,12 @@ interface Planned {
  *
  * Each card's own, at the owner's asks ("every share button needs to be
  * specific to that card. So printing briefing should only be in brief
- * card"; "printing navlog should be in navlog"): the route box's has the
- * route -- its link, files, ForeFlight, Save and the review, filing and its
- * clear; the Brief's, its link, Print the briefing and Refresh; the nav log's, its
- * link and the nav log printed (the kneeboard card); the profile's, its
- * link.
+ * card"; "printing navlog should be in navlog"): the route's ••• has the
+ * ForeFlight checkpoints, Save and the review, filing and its clear, and
+ * the tab up's own (`page`): with the Brief's, Print the briefing and its
+ * Refresh, with the Nav Log's, the nav log printed (the kneeboard card).
+ * The route's Share and Open in ForeFlight are FPL's tab bar's (the owner,
+ * 2026-11-14; FplTabBar). The profile's, a dry run's card, its link.
  *
  * Out of the workspace (PlanWorkspace), which only says what the route is
  * and hands in what the lazy route panel draws: Save and the review's item
@@ -74,7 +72,7 @@ export default function ShareMenu({
   reviewSheet,
   planAgain,
   onShowFuel,
-  onNavLog,
+  page,
   onClear,
   showRouteAs,
 }: {
@@ -83,8 +81,9 @@ export default function ShareMenu({
   showRouteAs?: { value: RouteEdit; onChange: (value: RouteEdit) => void };
   /** The suggested fuel stops taken out of the route box, put back. */
   onShowFuel?: () => void;
-  /** The route's nav log opened: the route box's, with a course drawn. */
-  onNavLog?: () => void;
+  /** FPL's tab up under the route (FplTabs), whose own items join the
+   *  route's menu: the Brief's print and Refresh, the Nav Log's print. */
+  page?: RouteCard;
   /** The route cleared: the route box's menu's last item (the owner,
    *  2026-11-11: "Instead of clear button, move that to the …"). */
   onClear?: () => void;
@@ -125,60 +124,11 @@ export default function ShareMenu({
   // (Safari on an iPhone), otherwise copied.
   const { share } = useShareLink(planned, altitudeFt);
 
-  // The route as the files and ForeFlight's link take it: the departure,
-  // each checkpoint, stop and the destination, as the nav log lists them
-  // (lib/flightPlanFiles).
-  const points = useMemo(
-    (): PlanPoint[] =>
-      !course
-        ? []
-        : navLogRows(course, selected, []).flatMap((row): PlanPoint[] => {
-            if (row.kind === "checkpoint")
-              return [
-                {
-                  ident: "",
-                  name: row.cp.name || row.cp.category,
-                  kind: "checkpoint",
-                  lat: row.cp.lat,
-                  lon: row.cp.lon,
-                  waypoint: row.cp.waypoint,
-                },
-              ];
-            if (row.kind === "toc" || row.kind === "tod") return [];
-            return [
-              {
-                ident: row.airport.ident,
-                name: row.airport.name ?? row.airport.ident,
-                kind: row.airport.kind === "fix" ? "fix" : "airport",
-                lat: row.airport.lat,
-                lon: row.airport.lon,
-              },
-            ];
-          }),
-    [course, selected],
-  );
-
-  // The checkpoints as a ForeFlight content pack, built by the planner
-  // (features/plan/lib/foreflightPack): each a waypoint with its own page, and the course
-  // drawn on its map, for ForeFlight's own link or to download.
-  const packHref = selected.length ? packPath(planned.dep, planned.dest, planned.stops) : null;
-  // Open in ForeFlight is one button for the two hand-offs ForeFlight
-  // needs: the pack first, the first time a route goes there from this
-  // device, then the route itself, its checkpoints by their names in the
-  // pack (CONTPACK@LAKE_ZURICH) -- ForeFlight takes no route and pack in
-  // one. The pilot asked for one step; it is one button, tapped twice the
-  // first time and once after.
-  const packRoute = [planned.dep, ...planned.stops, planned.dest].join("-");
-  const packNames = selected.map((c) => c.waypoint ?? "");
-  const [, packChanged] = useState(0);
-  const sentPack = packHref !== null && packSent(packRoute, packNames);
-  const sendPack = () => {
-    markPackSent(packRoute, packNames);
-    // The button's own link changes after the tap has followed it: changed
-    // at once, the tap followed the new one, the route's.
-    window.setTimeout(() => packChanged((n) => n + 1), 0);
-    done("Sent to ForeFlight", { detail: "Then tap Open in ForeFlight again" });
-  };
+  // The checkpoints sent again and their .zip, ForeFlight itself FPL's tab
+  // bar's (useForeFlight).
+  const foreflight = useForeFlight(planned, course, selected, altitudeFt);
+  // Whose own items show: a card's, or the route's with the tab up.
+  const own = card === "route" ? page : card;
 
   return (
     // The review's sheet, from the menu's item, placed by the Share
@@ -226,22 +176,15 @@ export default function ShareMenu({
           </DropdownMenuTrigger>
         </ResponsivePopoverAnchor>
         <DropdownMenuContent align={align} className="min-w-56 print:hidden">
-          {/* The nav log, its button's place beside the Brief now the
-              Profile's (the owner, 2026-11-04: "Navlog can be moved to the
-              more button"). */}
-          {onNavLog && (
-            <DropdownMenuItem onClick={onNavLog} data-testid="route-navlog">
-              <ListOrdered />
-              Nav log
-            </DropdownMenuItem>
-          )}
           {routed && onShowFuel && (
             <DropdownMenuItem onClick={onShowFuel} data-testid="route-show-fuel">
               <Fuel />
               Show Fuel Stops
             </DropdownMenuItem>
           )}
-          {routed && (
+          {/* The route's own Share is FPL's tab bar's (FplTabBar); a card's
+              link stays in its menu. */}
+          {routed && card !== "route" && (
             <DropdownMenuItem onClick={() => void share()} data-testid="share-link">
               <Link2 />
               Share link
@@ -251,58 +194,32 @@ export default function ShareMenu({
             <>
               {routed && (
                 <>
-                  {/* ForeFlight sends the route on to the panel wirelessly
-                      (Garmin's Connext, Avidyne, Dynon): the owner's pick
-                      (2026-11-02), as most pilots have ForeFlight and not
-                      Garmin Pilot, and no files for an SD card or a USB stick. */}
-                  {/* Links, not handlers: ForeFlight opens from a tap on its
-                      own link, and a download needs one too. */}
-                  {points.length > 0 &&
-                    (packHref && !sentPack ? (
-                      <DropdownMenuItem
-                        data-testid="open-foreflight"
-                        render={
-                          <a href={openInForeFlight(new URL(packHref, packOrigin(window.location)).href)} onClick={sendPack}>
-                            <Send />
-                            Open in ForeFlight
-                          </a>
-                        }
-                      />
-                    ) : (
-                      <DropdownMenuItem
-                        data-testid="open-foreflight"
-                        render={
-                          <a href={foreflightRoute(points, altitudeFt, sentPack)}>
-                            <Send />
-                            Open in ForeFlight
-                          </a>
-                        }
-                      />
-                    ))}
-                  {/* Sent once and since deleted in ForeFlight: again. */}
-                  {packHref && sentPack && (
+                  {/* Open in ForeFlight is FPL's tab bar's (FplTabBar); its
+                      checkpoints here: sent once and since deleted in
+                      ForeFlight, again, and their file. */}
+                  {foreflight.again && (
                     <DropdownMenuItem
                       data-testid="foreflight-pack"
                       render={
-                        <a href={openInForeFlight(new URL(packHref, packOrigin(window.location)).href)}>
+                        <a href={foreflight.again}>
                           <MapPinned />
                           Send the checkpoints again
                         </a>
                       }
                     />
                   )}
-                  {packHref && (
+                  {foreflight.zip && (
                     <DropdownMenuItem
                       data-testid="export-foreflight"
                       render={
-                        <a href={packHref} download>
+                        <a href={foreflight.zip} download>
                           <FileArchive />
                           Checkpoints for ForeFlight (.zip)
                         </a>
                       }
                     />
                   )}
-                  <DropdownMenuSeparator />
+                  {(foreflight.again || foreflight.zip) && <DropdownMenuSeparator />}
                 </>
               )}
               {/* Before there is a route, only what applies then: the
@@ -328,7 +245,7 @@ export default function ShareMenu({
               whole briefing from the Brief, and from the nav log the
               kneeboard card -- the nav log, radio and patterns on one
               half-letter page to fly with. */}
-          {card === "brief" && (
+          {own === "brief" && (
             <DropdownMenuItem disabled={!routed} onClick={afterMenu(() => window.print())} data-testid="print-briefing">
               <Printer />
               Print the briefing
@@ -337,13 +254,14 @@ export default function ShareMenu({
           {/* The Brief's live reports asked again now, as the route's
               Refresh is in its own menu: the head keeps its two buttons
               (rules.md). Kept fresh by themselves besides (useLiveRefresh). */}
-          {card === "brief" && (
+          {own === "brief" && (
             <DropdownMenuItem onClick={() => void refreshLive("brief")} data-testid="brief-refresh">
               <RotateCw />
-              Refresh
+              {/* Beside the route's own Refresh in its menu, named apart. */}
+              {card === "route" ? "Refresh the briefing" : "Refresh"}
             </DropdownMenuItem>
           )}
-          {card === "navlog" && !local && (
+          {own === "navlog" && !local && (
             <DropdownMenuItem
               disabled={!routed}
               data-testid="print-kneeboard"

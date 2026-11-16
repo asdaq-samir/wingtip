@@ -45,8 +45,8 @@ test("the panel follows a finger from its grabber out to the top, and down from 
   // The Brief's pages, half way as it opens: its tabs' bar and a page.
   await openBrief(page);
   const panel = sideDrawer(page);
-  // The Brief is a card, the stock Drawer's nested drawer over the sheet
-  // (CardStack): its own size is its drawer's, the sheet's under it.
+  // The Brief is FPL's tab (FplTabs), no card over the sheet: its size is
+  // the sheet's.
   const brief = frontSheet(page);
   await expect(brief).toHaveAttribute("data-panel", "half");
   const middleOf = async (locator: Locator) => {
@@ -64,8 +64,8 @@ test("the panel follows a finger from its grabber out to the top, and down from 
   // A page of the Brief's, long enough to scroll: Preflight, by its card.
   await panel.getByTestId("brief-glance-preflight").click();
   await expect(page.getByTestId("brief-scroller")).toBeVisible();
-  // The card's own drawer scrolls it (CardStack's data-sheet-scroll, the
-  // one scroller a card has), not the page's box.
+  // The sheet's one scroller scrolls it (SheetParts' data-sheet-scroll),
+  // not the page's box.
   const tab = page
     .locator("[data-sheet-scroll]")
     .filter({ has: page.getByTestId("brief-scroller") })

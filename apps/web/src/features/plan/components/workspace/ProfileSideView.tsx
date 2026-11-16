@@ -11,7 +11,7 @@ import { bookOf, ownOf } from "../../../../lib/airplane/figures";
 // first load as the lists are.
 const MiniProfile = lazy(() => import("../navlog/MiniProfile"));
 
-/** The Profile card's body (AltitudeProfile): the side view with the
+/** The Profile tab's body (AltitudeProfile): the side view with the
  *  altitude's wheel in its corner, its dry run at its top right, and under
  *  it the altitude's figures, Class B, the rules and why. */
 export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
@@ -31,7 +31,7 @@ export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
   } = vm.route;
   const { aircraft, changeAltitudeChoice, course, s, selected } = vm.plan;
   const { setAddingStop, setNewStopVia, typeStopAt, waypointStops } = vm.routeList;
-  const { closeProfileCard } = vm.fpl;
+  const { openNavLog } = vm.fpl;
   const { dryRunReady, dryRunning, startDryRun } = vm.flight;
   const { tightLeg, unflyable } = vm.brief;
   // The airplane as the engine reads it, for a leg's climb or descent
@@ -70,12 +70,12 @@ export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
             <RouteProblem
               problem={unflyable}
               onAddStop={() => {
-                closeProfileCard();
+                openNavLog();
                 if (routeEdit === "plan") typeStopAt(routePoints.length - 1);
                 else setAddingStop("stop");
               }}
               onFlyVia={() => {
-                closeProfileCard();
+                openNavLog();
                 if (routeEdit !== "plan") return setAddingStop("via");
                 // Between the points the ways round go between, as the box
                 // put them (its `asked`).
@@ -85,7 +85,7 @@ export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
               }}
               onAcceptClassB={() => acceptClassB(true)}
               onGoRound={(via, at) => {
-                closeProfileCard();
+                openNavLog();
                 setStops([...planned.stops.slice(0, at), ...via, ...planned.stops.slice(at)]);
               }}
             />
@@ -96,7 +96,7 @@ export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
         onAvoidClassB={avoidClassB}
         onAllowClassB={() => acceptClassB(true)}
         onGoRound={(via, at) => {
-          closeProfileCard();
+          openNavLog();
           setStops([...planned.stops.slice(0, at), ...via, ...planned.stops.slice(at)]);
         }}
         onAltitudeChoiceChange={changeAltitudeChoice}
