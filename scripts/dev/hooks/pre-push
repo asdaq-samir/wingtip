@@ -13,7 +13,11 @@
 #
 # Installed by scripts/dev/install-hooks.sh. Skipped with `git push
 # --no-verify` or SKIP_HOOKS=1. A check whose tool is not on this machine
-# is skipped with a note rather than failing the push.
+# is skipped with a note rather than failing the push. The web's are the
+# exception where Docker runs: without node here, Prettier and ESLint run on
+# the web files the push changes, in scripts/dev/check.sh's image (seconds).
+# PRE_PUSH_WEB_DOCKER=0 leaves them to CI for a push; =1 adds tsc and the
+# layers over the whole project, in the same image.
 set -uo pipefail
 
 if [ -n "${SKIP_HOOKS:-}" ]; then
@@ -122,31 +126,32 @@ has_area() { grep -qx "$1" <<<"$areas"; }
 
 # --- web: tsc over the project, ESLint over the files changed ---------------
 web_files=$(grep -E '^apps/web/.*\.(ts|tsx|js|jsx|mjs|cjs)$' <<<"$changed" | grep -v '^apps/web/src/lib/engine/pkg/' || true)
-if has_area web; then
-  lint=()
-  while IFS= read -r f; do [ -n "$f" ] && lint+=("${f#apps/web/}"); done <<<"$web_files"
-  # The API and engine types are generated, not committed: tsc needs them.
-  # The files are the script's own arguments ("$@"), after `--`, not text.
-  # And the feature layers (dependency-cruiser, .dependency-cruiser.cjs).
-  web_cmd='npm run -s types >/dev/null && npx tsc --noEmit && { [ "$#" -eq 0 ] || npx eslint --max-warnings 0 --no-warn-ignored -- "$@"; } && npm run -s layers'
-  if command -v npx >/dev/null && [ -d "$here/apps/web/node_modules" ]; then
-    note "web: tsc${lint[0]:+, eslint}"
-    (cd "$here/apps/web" && sh -c "$web_cmd" sh "${lint[@]+"${lint[@]}"}") || fail "web"
-  elif [ -z "${PRE_PUSH_WEB_DOCKER:-}" ]; then
-    # In Docker the web check took about 12 minutes on a loaded Mac
-    # (2026-11-07), and the owner wants no check to hold up a push: without
-    # node on the host it is left to CI unless PRE_PUSH_WEB_DOCKER=1 asks.
-    note "web: left to CI (no node here; PRE_PUSH_WEB_DOCKER=1 runs it in Docker)"
-  elif command -v docker >/dev/null && docker info >/dev/null 2>&1; then
-    # scripts/dev/check.sh's image, with web's packages installed for this lock,
-    # if a check has built it; the newest one otherwise (a lock a commit or
-    # two older types the same nearly always); else it is built here, once,
-    # the way check.sh builds it, and both share it from then on.
+# Node on this machine, with the web's packages: its checks run here.
+web_host=""
+if command -v npx >/dev/null && [ -d "$here/apps/web/node_modules" ]; then web_host=1; fi
+
+# Without it, scripts/dev/check.sh's image, with the web's packages installed
+# for the pushed tree's lock, looked for once a push. Where no check has
+# built that one, the newest there is: a lock a commit or two older lints
+# and formats the same nearly always, and an image kept for every lock
+# filled the disk (check.sh's prune_tags). With none at all it is built
+# here, once, the way check.sh builds it, and both share it from then on.
+# $web_tag is left empty, with a note, where there is no image to run in.
+web_image() {
+  [ -z "${web_tag+set}" ] || return 0
+  web_tag=""
+  if [ "${PRE_PUSH_WEB_DOCKER:-}" = 0 ]; then
+    note "web: Prettier and ESLint left to CI (no node here, and PRE_PUSH_WEB_DOCKER=0)"
+  elif ! command -v docker >/dev/null || ! docker info >/dev/null 2>&1; then
+    note "web: skipped, neither node nor Docker is running here"
+  else
+    local node tag newest ctx
     node=$("$here/scripts/build/toolchain.sh" get nodejs)
     tag=wingtip-check-web:$({ echo "node $node"; cat "$here/apps/web/package.json" "$here/apps/web/package-lock.json"; } | shasum -a 256 | cut -c1-16)
     if ! docker image inspect "$tag" >/dev/null 2>&1; then
       newest=$(docker image ls wingtip-check-web --format '{{.CreatedAt}}|{{.Repository}}:{{.Tag}}' | sort -r | head -1 | cut -d'|' -f2)
       if [ -n "$newest" ]; then
+        note "web: no image for this lock, so the newest one, another lock's (scripts/dev/check.sh web builds this one's)"
         tag=$newest
       else
         note "web: building $tag once (npm ci, a minute or two)"
@@ -163,16 +168,46 @@ EOF
         rm -rf "$ctx"
       fi
     fi
-    if [ -n "$tag" ]; then
-      note "web: tsc${lint[0]:+, eslint} in $tag"
-      hide=()
-      [ -d "$here/apps/web/node_modules" ] && hide=(--tmpfs /repo/apps/web/node_modules)
-      docker run --rm -v "$here:/repo" "${hide[@]+"${hide[@]}"}" -w /repo/apps/web "$tag" sh -c "$web_cmd" sh "${lint[@]+"${lint[@]}"}" || fail "web"
-    else
-      note "web: skipped, the wingtip-check-web image would not build"
-    fi
+    if [ -n "$tag" ]; then web_tag=$tag; else note "web: skipped, the wingtip-check-web image would not build"; fi
+  fi
+}
+# web_docker <what it runs> <script> [file...]: the script in that image, in
+# the pushed tree's apps/web, with the files as its arguments ("$@", never
+# text in it). With no image nothing runs, and that is no failure.
+web_docker() {
+  local what=$1 script=$2 hide=()
+  shift 2
+  web_image
+  [ -n "$web_tag" ] || return 0
+  note "web: $what in $web_tag"
+  # A checkout's own node_modules (macOS binaries) is hidden from the image's.
+  [ -d "$here/apps/web/node_modules" ] && hide=(--tmpfs /repo/apps/web/node_modules)
+  docker run --rm -e NPM_CONFIG_UPDATE_NOTIFIER=false -v "$here:/repo" "${hide[@]+"${hide[@]}"}" -w /repo/apps/web "$web_tag" sh -c "$script" sh "$@"
+}
+
+if has_area web; then
+  lint=()
+  while IFS= read -r f; do [ -n "$f" ] && lint+=("${f#apps/web/}"); done <<<"$web_files"
+  # The API and engine types are generated, not committed: tsc needs them.
+  # The files are the script's own arguments ("$@"), after `--`, not text.
+  # And the feature layers (dependency-cruiser, .dependency-cruiser.cjs).
+  web_cmd='npm run -s types >/dev/null && npx tsc --noEmit && { [ "$#" -eq 0 ] || npx eslint --max-warnings 0 --no-warn-ignored -- "$@"; } && npm run -s layers'
+  if [ -n "$web_host" ]; then
+    note "web: tsc${lint[0]:+, eslint}"
+    (cd "$here/apps/web" && sh -c "$web_cmd" sh "${lint[@]+"${lint[@]}"}") || fail "web"
+  elif [ "${PRE_PUSH_WEB_DOCKER:-0}" != 0 ]; then
+    web_docker "tsc${lint[0]:+, eslint}" "$web_cmd" "${lint[@]+"${lint[@]}"}" || fail "web"
   else
-    note "web: skipped, neither node nor Docker is running here"
+    # In Docker the whole check took about 12 minutes on a loaded Mac
+    # (2026-11-07), and the owner wants no check to hold up a push: tsc and
+    # the layers, which read the whole project, are CI's unless
+    # PRE_PUSH_WEB_DOCKER=1 asks. ESLint on the files changed is seconds, so
+    # it runs (the owner, 2026-11-15), after the types `npm run lint`
+    # generates first, though its config reads none of them today.
+    note "web: tsc and the layers left to CI (no node here; PRE_PUSH_WEB_DOCKER=1 runs them in Docker)"
+    if [ ${#lint[@]} -gt 0 ]; then
+      web_docker "eslint on ${#lint[@]} file(s)" 'npm run -s types >/dev/null && eslint --max-warnings 0 --no-warn-ignored --no-error-on-unmatched-pattern -- "$@"' "${lint[@]}" || fail "web: eslint"
+    fi
   fi
 fi
 
@@ -227,11 +262,30 @@ fi
 
 # --- the formatters, for the languages the push changes ----------------------
 # scripts/dev/format.sh --check, each language's tool at its pinned version,
-# over that language's whole tree (seconds each). Nothing here runs in
-# Docker: Prettier without node on this machine, and the Java without mvn,
-# are left to CI, as the web's tsc is.
+# over that language's whole tree (seconds each). format.sh runs nothing in
+# Docker here: the Java without mvn is left to CI. Prettier without node on
+# this machine runs in the web's image, on the files the push changes: four
+# files Prettier would have refused reached CI in the wave of 12-15 November
+# 2026, each at the cost of a run, because this Mac has no node. A change to
+# Prettier's settings checks every file, as format.sh does.
 fmt=()
-grep -qE '^(apps/web/.*\.(ts|tsx|js|jsx|mjs|cjs|css|json|jsonc|md)|scripts/build/.*\.mjs|\.prettierrc\.yaml)$' <<<"$changed" && fmt+=(web)
+pretty=$(grep -E '^(apps/web/.*\.(ts|tsx|js|jsx|mjs|cjs|css|json|jsonc|md)|scripts/build/.*\.mjs|\.prettierrc\.yaml)$' <<<"$changed" || true)
+if [ -n "$pretty" ] && [ -n "$web_host" ]; then
+  fmt+=(web)
+elif [ -n "$pretty" ]; then
+  # Paths as Prettier takes them from apps/web, where its ignore file is.
+  files=(. '../../scripts/build/*.mjs')
+  what="prettier on every file (its settings changed)"
+  if ! grep -qxF .prettierrc.yaml <<<"$pretty"; then
+    files=()
+    while IFS= read -r f; do
+      case $f in apps/web/*) files+=("${f#apps/web/}") ;; *) files+=("../../$f") ;; esac
+    done <<<"$pretty"
+    what="prettier on ${#files[@]} file(s)"
+  fi
+  web_docker "$what" 'prettier --check --log-level warn --no-error-on-unmatched-pattern -- "$@"' "${files[@]}" \
+    || fail "format (scripts/dev/format.sh web formats them)"
+fi
 grep -qE '(\.py$|^\.ruff\.toml$)' <<<"$changed" && fmt+=(python)
 grep -qE '^engine/.*(\.rs|rustfmt\.toml)$' <<<"$changed" && fmt+=(rust)
 grep -qE '^apps/ios/(.*\.swift|\.swiftformat)$' <<<"$changed" && fmt+=(swift)
