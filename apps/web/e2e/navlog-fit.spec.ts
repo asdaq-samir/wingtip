@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, settle, sideDrawer, slow, openNavLog, navLogSheet, navLogScroller } from "./helpers";
+import { controlsInSight, settle, sideDrawer, slow, openNavLog, navLogSheet, navLogScroller, closeNavLog } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -84,6 +84,7 @@ test("the nav log fits a phone's panel with long names, five-figure altitudes an
   const overflow = await scroller.evaluate((el) => el.scrollWidth - el.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
   await expect(scroller.locator('[data-testid="section-tabs"]')).toHaveCount(0);
+  await closeNavLog(page);
   await controlsInSight(page);
 });
 
@@ -182,12 +183,12 @@ test("each row's miles over its groundspeed come to its minutes, a pattern's mil
     expect(Math.abs((row.nm / row.gs) * 60 - row.min), JSON.stringify(row)).toBeLessThanOrEqual(0.3);
   }
   expect(rows.some((r) => /incl\. (departure|pattern)/.test(r.said))).toBe(true);
+  await closeNavLog(page);
 });
 
-test("the route's ••• stays on the airplane and altitude's line at the owner's 19.65 px text", async ({ page }) => {
+test("the route's Profile, AI brief and ••• stay on the airplane and altitude's line at the owner's 19.65 px text", async ({ page }) => {
   // The FPL audit's A3 (2026-11-08): at 19.65 px the three round buttons
-  // wrapped onto a line of their own under N-_____ and FL-0xx; the Profile
-  // and the Brief are FPL's tabs now (2026-11-14), the ••• alone there.
+  // wrapped onto a line of their own under N-_____ and FL-0xx.
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/app/plan?dep=C81&dest=KDLH");

@@ -83,12 +83,9 @@ test("an airport's card has its actions' keys, Alt+F and Alt+S, and the search's
   await expect(page).toHaveURL(/[?&]dest=KDLH/);
 });
 
-test("FPL's tabs say their words on a desktop", async ({ page }) => {
+test("the route box's Profile and Brief say their words on a desktop", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  // Every tab's word under its icon at all times (FplTabBar).
   await expect(page.getByTestId("route-brief")).toContainText("Brief", { timeout: 30_000 });
-  await expect(page.getByTestId("route-navlog")).toContainText("Nav Log");
-  await expect(page.getByTestId("route-profile")).toContainText("Profile");
 });

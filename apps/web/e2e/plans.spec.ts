@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import {
-  closeProfile,
+  closeCard,
+  closeNavLog,
   controlsInSight,
   expectDrawerOpen,
   grabberTo,
@@ -44,9 +45,9 @@ test(
     // Hundreds of feet after "FL", at the owner's pick: FL045 for 4,500 ft.
     await expect(input).toHaveValue(/^FL-\d{3}$/);
     await openProfile(page);
-    // The Profile tab: the side view with its slider, the Altitude Advisor
+    // The Profile card: the side view with its slider, the Altitude Advisor
     // under it (Fastest marked), the flight rules, and how it was chosen, folded.
-    const popover = page.getByTestId("profile-page");
+    const popover = page.getByTestId("profile-card");
     await expect(popover).toBeVisible();
     const wheel = popover.getByRole("slider", { name: "Cruise altitude" }); // the stock Slider, a step each altitude
     await expect(wheel).toHaveAttribute("aria-valuetext", /feet, .*(terrain|clear).*Fastest/);
@@ -67,8 +68,8 @@ test(
     await expect(page).not.toHaveURL(/[?&](altitude_ft|altitude_choice)=/);
     await popover.getByTestId("altitude-set").click();
     await expect(page).toHaveURL(/[?&](altitude_ft|altitude_choice)=/, { timeout: slow(10000) });
-    await closeProfile(page);
-    await expect(popover).toBeHidden(); // kept, hidden, while another tab is up (FplTabs)
+    await closeCard(page, "profile-close");
+    await expect(popover).toBeHidden(); // kept, closed, between openings (CardLayer's `open`)
 
     // An altitude typed beside the airplane, three figures of hundreds of
     // feet: the whole log at it. Cleared first, as a pilot types over it: the
@@ -84,6 +85,7 @@ test(
     // or the first leg's ("3,500 ft" in a phone's list, under a desk's Alt).
     await openNavLog(page);
     await expect(navLogSheet(page).getByTestId(/^navlog-(list|table)$/)).toContainText(/3,500/, { timeout: slow(30000) });
+    await closeNavLog(page);
     // No altitude box over FPL's list: the altitude is beside the airplane.
     await expect(sideDrawer(page).getByTestId("navlog-scroller")).not.toContainText("Cruise altitude");
     // Back to the default plan from the Advisor's Fastest row: no altitude or choice.
@@ -92,7 +94,7 @@ test(
     await popover.getByTestId("altitude-advisor-row").filter({ hasText: "Fastest" }).click();
     await expect(page).not.toHaveURL(/[?&]altitude_ft=/, { timeout: slow(10000) });
     await expect(page).not.toHaveURL(/[?&]altitude_choice=/);
-    await closeProfile(page);
+    await closeCard(page, "profile-close");
     // Planned again as the plan, whatever its altitude: with CI's winds
     // Fastest cruises at the very 3,500 ft typed above, so the figure alone
     // cannot tell the two apart -- the plan's name in the Brief can.
@@ -160,6 +162,7 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   await expect(page.getByTestId("navlog-ete")).toHaveText(/^(\d+h( \d+m)?|\d+m)$/);
   // Every later row has a time once its leg is in.
   await expect.poll(async () => (await times.last().textContent())?.trim(), { timeout: slow(60000) }).toMatch(/^\d\d:\d\d$/);
+  await closeNavLog(page);
   // The time en route tapped, the arrival in its place, and back.
   await page.getByTestId("ete-eta-toggle").click();
   await expect(page.getByTestId("navlog-eta")).toHaveText(/^\d\d:\d\d$/);
@@ -309,11 +312,11 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
   ]);
   await expect(problem.getByRole("button", { name: "Try again" })).toHaveCount(0);
   await expect(navLog).toBeAttached();
-  await expect(sideDrawer(page).getByTestId("brief-page")).toHaveCount(0);
+  await expect(sideDrawer(page).getByTestId("brief-card")).toHaveCount(0);
 
   // An altitude of the pilot's own, typed beside the airplane: planned
   // anyway, at it.
-  await closeProfile(page);
+  await closeCard(page, "profile-close");
   await page.getByTestId("altitude-input").fill("125");
   await page.getByTestId("altitude-input").press("Enter");
   await expect(page).toHaveURL(/[?&]altitude_ft=12500/);
@@ -414,9 +417,9 @@ test("plan page: Class B avoided with no legal altitude offers the waypoint roun
   // The two ways past it, and no altitude of the pilot's own: under a
   // Class B to the ground there is none.
   await expect(problem.getByTestId("unflyable-fly-via")).toBeVisible();
-  // The tab left, the field beside the airplane still takes a figure,
+  // The card put away, the field beside the airplane still takes a figure,
   // at the owner's ask ("altitude should not be disabled").
-  await closeProfile(page);
+  await closeCard(page, "profile-close");
   await expect(page.getByTestId("altitude-input")).toBeEnabled();
   // Allowed: planned through it, the address back to its default.
   await openProfile(page);

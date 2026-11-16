@@ -1,5 +1,16 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, navLogSheet, openNavLog, openPanel, openProfile, pressDryRunStart, settle, sideDrawer, slow } from "./helpers";
+import {
+  closeNavLog,
+  grabberTo,
+  navLogSheet,
+  openNavLog,
+  openPanel,
+  openProfile,
+  pressDryRunStart,
+  settle,
+  sideDrawer,
+  slow,
+} from "./helpers";
 import { closeMapSettings, openSettingsPage } from "./mapCard";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
@@ -35,6 +46,7 @@ test(
     await expect(log.locator('[role="row"][data-kind="destination"]')).toBeVisible({ timeout: slow(60_000) });
     if (!desk) await expect(log.getByTestId("navlog-row-dist").first()).toContainText(/nm/);
     await expect(timed).toContainText(desk ? /^\d+\.\d$/ : /\d min\b/);
+    await closeNavLog(page);
 
     // The route's charts kept, where a service worker can keep them (a secure
     // context: https, or localhost); the suite's plain-http stack has none.
@@ -57,6 +69,7 @@ test(
     const offline = navLogSheet(page).getByTestId(desk ? "navlog-table" : "navlog-list");
     await expect(offline.locator('[role="row"][data-kind="destination"]')).toBeVisible();
     await expect(desk ? offline.getByTestId("navlog-row-ete").last() : offline).toContainText(desk ? /^\d+\.\d$/ : /\d min\b/);
+    await closeNavLog(page);
     if (keeping) {
       const kept = await page.evaluate(async () => (await (await caches.open("chart-tiles")).keys()).length);
       expect(kept).toBeGreaterThan(0);
@@ -139,6 +152,7 @@ test(
         .locator('[role="row"][data-kind="destination"]')
         .or(log.getByText(/No connection/)),
     ).toBeVisible({ timeout: slow(20_000) });
+    await closeNavLog(page);
 
     // In flight, offline: the dry run flies own ship from the legs in hand.
     await grabberTo(page, "half");

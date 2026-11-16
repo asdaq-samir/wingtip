@@ -12,8 +12,7 @@ async function routeWithCheckpoints(page: Page) {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await expect.poll(markWith(page, "route-marks", "1"), { timeout: slow(30000) }).not.toBeNull();
-  // All the way up, FPL's tab bar at its foot with Share and ForeFlight
-  // after the tabs (FplTabBar).
+  // Share is a round button in the chips' row, all the way up.
   await controlsInSight(page);
 }
 
@@ -21,9 +20,8 @@ test("the route goes to the panel through ForeFlight, with no Garmin Pilot item 
   page,
 }) => {
   await routeWithCheckpoints(page);
-  await expect(page.getByTestId("open-foreflight")).toBeVisible();
-  // The rest of the files in the route's ••• menu, none of them a GPS's.
   await page.getByTestId("share-route").click();
+  await expect(page.getByTestId("open-foreflight")).toBeVisible();
   // The owner's calls (2026-11-02): wireless through ForeFlight, which
   // most pilots have; no Garmin Pilot, no SD card or USB stick.
   for (const id of ["open-garmin-pilot", "export-fpl", "export-gfp", "export-gpx", "export-user-wpt", "export-dynon"])
@@ -34,6 +32,7 @@ test("the route goes to ForeFlight in one button: its checkpoints' pack the firs
   page,
 }) => {
   await routeWithCheckpoints(page);
+  await page.getByTestId("share-route").click();
   // The first time, ForeFlight's content-pack link, to the pack on this server.
   const open = page.getByTestId("open-foreflight");
   const packLink = new URL((await open.getAttribute("href"))!);
@@ -49,10 +48,9 @@ test("the route goes to ForeFlight in one button: its checkpoints' pack the firs
   // Back, and the same button opens the route, each checkpoint by its
   // name in the pack.
   await routeWithCheckpoints(page);
+  await page.getByTestId("share-route").click();
   const routeLink = (await page.getByTestId("open-foreflight").getAttribute("href"))!;
   expect(routeLink).toMatch(/^foreflightmobile:\/\/maps\/search\?q=C81\+(CONTPACK@[A-Z0-9_]{3,}\+)+KDLH(\+\d+ft)?$/);
-  // The checkpoints again, and their file, in the route's ••• menu.
-  await page.getByTestId("share-route").click();
   await expect(page.getByTestId("foreflight-pack")).toHaveText("Send the checkpoints again");
 
   const download = page.waitForEvent("download");

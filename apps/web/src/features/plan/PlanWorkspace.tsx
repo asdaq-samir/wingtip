@@ -5,7 +5,7 @@ import { MAX_STOPS } from "../../lib/identSchema";
 import type { WorkspaceProps } from "../shell";
 import { ShareMenu } from "./ShareMenuLazy";
 import { RouteShareMenu, type RouteCard } from "../../lib/openCards";
-import { useNavLog } from "./components/workspace/useNavLog";
+import { useNavLogs } from "./components/workspace/useNavLogs";
 import type { BriefingPart } from "./components/briefing/sections";
 import {
   PilotPanel,
@@ -23,7 +23,6 @@ import { usePlanWorkspace } from "./hooks/usePlanWorkspace";
 import PlanMap from "./components/workspace/PlanMap";
 import PlanSidebar from "./components/workspace/PlanSidebar";
 import PlanPage from "./components/workspace/PlanPage";
-import FplTabs from "./components/workspace/FplTabs";
 import PlanCards from "./components/workspace/PlanCards";
 import FlightFoot from "./components/workspace/FlightFoot";
 import RouteHead from "./components/workspace/RouteHead";
@@ -114,8 +113,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   } = vm.picks;
   const { fuelHidden, showFuelStops, tankFigures } = vm.stops;
   const { holdAsk, listEdit, routeLine } = vm.routeList;
-  const { fplTab, profileShown } = vm.fpl;
-  const { dryRunning, flying } = vm.flight;
+  const { briefShown, openNavLogCard, profileShown } = vm.fpl;
+  const { flying } = vm.flight;
   const { routeRows } = vm.leg;
   const {
     altitudeAt,
@@ -298,10 +297,10 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     ],
   );
 
-  const navLog = useNavLog(vm, { tabContent, routeList, kneeboard: kneeboardLater });
+  const { navLog, navLogCard } = useNavLogs(vm, { tabContent, routeList, kneeboard: kneeboardLater });
 
-  // The Brief's pages (BriefPage): En route's without the legs, which are
-  // the Nav Log's; and its warnings over them.
+  // The Brief's pages (BriefCard): En route's without the legs, which are
+  // FPL's own; and its warnings over them.
   const briefContents = useMemo(
     () => ({
       preflight: tabContent("preflight"),
@@ -404,7 +403,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       // keep the route box's row on one line; Share marked where it is due.
       planAgain={card === undefined && routed && !s.local ? { stale, onPlan: () => setLoad((n) => n + 1) } : undefined}
       onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
-      page={card === undefined && routed ? fplTab : undefined}
+      onNavLog={card === undefined && routed && course ? openNavLogCard : undefined}
       // Nothing to clear on the empty page: its ✕ goes back (RouteControls).
       onClear={card === undefined && vm.route.hasPoints ? vm.routeList.clearRoute : undefined}
       showRouteAs={card === undefined ? { value: routeEdit, onChange: setRouteEdit } : undefined}
@@ -429,7 +428,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           at: view === "plan" ? 1 : 0,
           go: pickPage,
           bar: <FplBar strip={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />} />,
-          second: <PlanPage vm={vm} tabs={<FplTabs vm={vm} navLog={navLog} briefContents={briefContents} briefNotice={briefNotice} />} />,
+          second: <PlanPage vm={vm} navLog={navLog} />,
         },
         // The one search's Autocomplete round the whole panel, so its field
         // (the first row) and its list (the body) are one combobox.
@@ -438,10 +437,11 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
             {panel}
           </CommandRoot>
         ),
-        // A card over the page it was opened from: its card alone, the page's head gone while it is open, at the
+        // A card over the page: its card alone, the page's head gone while it is open, at the pilot's ask.
+        alone: cardOpen || briefShown,
+        // Any card over the page it was opened from, its bar its name with Back and the close, at the
         // owner's asks ("the back button should get it back to fpl"; "replace tabs with a back close button").
-        alone: cardOpen,
-        cardOver: cardOpen,
+        cardOver: cardOpen || briefShown,
         toEdge: !!place,
         flying,
         // The one search, the first page's first row, and at rest its pill (MapPanel).
@@ -454,8 +454,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // make them bigger smoothly as expanded").
         // At the pill on FPL they are the pill's one row (MapPanel), the
         // route's row from half up (the owner, 2026-11-11, the canvas's b).
-        // FPL's page's own (SheetParts), and the sheet's in flight; under a dry run's card, the card's foot (PlanCards), in flight too.
-        foot: !place && !heldPoint && !flight && !(profileShown && dryRunning) ? routed && <FlightFoot vm={vm} /> : undefined,
+        // FPL's page's own (SheetParts), and the sheet's in flight; under the Profile, the card's foot (PlanCards), in flight too.
+        foot: !place && !heldPoint && !flight && !briefShown && !profileShown ? routed && <FlightFoot vm={vm} /> : undefined,
         // The route as one row under FPL's bar (MapPanel keeps it under the
         // others' heads). How it shows once whole is the pilot's pick from its
         // ••• menu's Show Route As (lib/preferences RouteEdit: the box, one
@@ -465,7 +465,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         console: <PilotPanel />,
       })}
       {/* FPL's cards over the sheet, beside its pages, kept in flight (PlanCards). */}
-      <PlanCards vm={vm} />
+      <PlanCards vm={vm} navLogCard={navLogCard} briefContents={briefContents} briefNotice={briefNotice} />
     </RouteShareMenu.Provider>
   );
 }

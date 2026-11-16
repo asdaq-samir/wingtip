@@ -3,6 +3,8 @@ package app.wingtipmaps.android.dryrun
 import app.wingtipmaps.android.api.Course
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.flight.ReportEnd
+import app.wingtipmaps.android.flight.fixBetween
 
 /**
  * The flight flown on paper, the engine's dry_run answer, and where the
@@ -35,11 +37,7 @@ data class DryRunPath(val answer: EngineContract.DryRunAnswer, val course: Cours
         val a = points[lo]
         val b = points[hi]
         val f = if (b.t > a.t) (t - a.t) / (b.t - a.t) else 0.0
-        val alt = if (!heights) null else if (a.altFt != null && b.altFt != null) a.altFt + (b.altFt - a.altFt) * f else a.altFt
-        return OwnShip.Fix(
-            lat = a.lat + (b.lat - a.lat) * f, lon = a.lon + (b.lon - a.lon) * f, altitudeFt = alt,
-            trackDeg = a.trackDeg, groundspeedKt = a.gsKt, accuracyM = 0.0, atMs = (t * 1000).toLong(),
-        )
+        return fixBetween(a.end(), b.end(), f, t, heights)
     }
 
     /** The nav log's row the run is flying to at `t`: the first it has not
@@ -52,3 +50,5 @@ data class DryRunPath(val answer: EngineContract.DryRunAnswer, val course: Cours
         return if (next < 0) rowT.lastIndex else next
     }
 }
+
+private fun EngineContract.DryRunAnswerPointsItem.end() = ReportEnd(lat, lon, altFt, trackDeg, gsKt)

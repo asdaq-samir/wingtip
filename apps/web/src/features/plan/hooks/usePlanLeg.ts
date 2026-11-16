@@ -11,7 +11,7 @@ import type { PlanFpl } from "./usePlanFpl";
 export function usePlanLeg(
   { routeKey, directParam, removeStop }: PlanRoute,
   { s, course, directToPoint }: PlanAnswerModel,
-  { briefShown, openNavLog }: PlanFpl,
+  { briefShown, closeBrief }: PlanFpl,
   dryRunning: Parameters<typeof useLegSheet>[0]["dryRunning"],
 ) {
   "use no memo"; // As usePlanWorkspace, whose part this is: left to its own memos.
@@ -26,14 +26,14 @@ export function usePlanLeg(
     removeStop,
   });
   const { selectPointAt } = leg;
-  // A checkpoint picked on the chart with the Brief up: the Nav Log's tab
-  // picked, where the pick is shown.
+  // A checkpoint picked on the chart with the Brief open: the Brief put
+  // away for the nav log the pick is shown in.
   const pickPoint = useCallback(
     (lat: number, lon: number) => {
-      if (briefShown) openNavLog();
+      if (briefShown) closeBrief();
       selectPointAt(lat, lon);
     },
-    [briefShown, openNavLog, selectPointAt],
+    [briefShown, closeBrief, selectPointAt],
   );
   return { ...leg, pickPoint };
 }

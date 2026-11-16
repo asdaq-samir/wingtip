@@ -45,8 +45,8 @@ export function useOpenScreen({
   setViewPick,
   setPanel,
   openBrief,
-  openNavLog,
-  openProfileTab,
+  openNavLogCard,
+  openProfileCard,
   openNearest,
 }: {
   routed: boolean;
@@ -55,8 +55,8 @@ export function useOpenScreen({
   setViewPick: (view: PanelView) => void;
   setPanel: (state: PanelState) => void;
   openBrief: () => void;
-  openNavLog: () => void;
-  openProfileTab: () => void;
+  openNavLogCard: () => void;
+  openProfileCard: () => void;
   openNearest: () => void;
 }) {
   // The link's own word, taken off the address so a reload or Back does
@@ -116,8 +116,8 @@ export function useOpenScreen({
         setViewPick("plan");
         if (!routed) return;
         if (screen === "brief") openBrief();
-        else if (screen === "navlog") openNavLog();
-        else openProfileTab();
+        else if (screen === "navlog") openNavLogCard();
+        else openProfileCard();
         return;
       case "favorites":
         void setAddress({ list: "favorites" });
@@ -147,5 +147,5 @@ export function useOpenScreen({
       default:
         screen satisfies never;
     }
-  }, [wanted, routed, setAddress, setViewPick, setPanel, openBrief, openNavLog, openProfileTab, openNearest]);
+  }, [wanted, routed, setAddress, setViewPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest]);
 }

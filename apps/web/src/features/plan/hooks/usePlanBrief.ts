@@ -78,14 +78,13 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   // The route's fields' chips' colours (useFieldColours).
   const { metarColour } = useFieldColours({ briefing: s.briefing, planned, waypointStops });
   // A caution on the pilot's own altitude, or one tight in its band, marked
-  // on the Profile's tab where the caution is said, as the Brief's mark is
-  // on its own (the owner, 2026-11-05: "The red dot can be on profile
+  // on the Profile button where the caution is said, as the AI brief's mark
+  // is on its own (the owner, 2026-11-05: "The red dot can be on profile
   // (like brief) instead of the altitude"); not for a route with no legal
   // altitude, which the altitude's field says in red itself.
-  const altitudeMark: "caution" | "tight" | null =
-    !profileReady || s.unflyable || !s.nav ? null : s.nav.cautions?.length ? "caution" : tightLeg ? "tight" : null;
-  // The cautions' reasons, each once, for the Profile's tab, where the mark
-  // above points (FplTabs), and a dry run's card (ProfileCard).
+  const altitudeMark = !profileReady || s.unflyable || !s.nav ? null : s.nav.cautions?.length ? "caution" : tightLeg ? "tight" : null;
+  // The cautions' reasons, each once, for the Profile card's head, where
+  // the mark above points (ProfileCard).
   const profileCautions = useMemo(() => [...new Set((s.nav?.cautions ?? []).flatMap((c) => c.reasons))], [s.nav]);
   // The route's airports' airspace classes, as the course came with them:
   // the pills coloured the moment it is in. Each made again only when what

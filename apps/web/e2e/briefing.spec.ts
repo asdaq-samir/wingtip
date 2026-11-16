@@ -4,6 +4,7 @@ import {
   settle,
   tapTheChart,
   settled,
+  closeCard,
   sideDrawer,
   expectDrawerClosed,
   expectDrawerOpen,
@@ -17,6 +18,7 @@ import {
   grabberTo,
   controlsInSight,
   openNavLog,
+  closeNavLog,
   navLogSheet,
   briefPage,
 } from "./helpers";
@@ -85,11 +87,12 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
     expect(box.x + box.width).toBeLessThanOrEqual(tabsBox.x + tabsBox.width + 1);
   }
   await expect(panelTabs(page).getByRole("tab", { name: "Preflight" })).toHaveAttribute("aria-selected", "true");
-  // FPL all the way up on the Nav Log's tab: the route in order, its legs under it.
+  // FPL all the way up, the route in order; the nav log in its own sheet.
   await openTab(page, "Nav Log");
   await expect(drawer.getByTestId("procedures")).toBeVisible();
   await openNavLog(page);
   await expect(navLogSheet(page).getByRole("table", { name: /Navigation log from/i })).toBeVisible();
+  await closeNavLog(page);
   // The altitude, its chip beside the airplane in the pill, once the log
   // has streamed in.
   await controlsInSight(page);
@@ -114,17 +117,19 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   ).toBe(1);
   expect(await page.locator("header").getByTestId("account-button").count()).toBe(0);
 
-  // The route's ••• alone at the end of the airplane's, the altitude's and
-  // the time's line: the Brief and the Profile are FPL's tabs at its foot
-  // (fpl-tabs.spec); Save, filing the flight plan and the route's close in
-  // the •••, with the print of the tab up (below).
-  const actions = drawer.getByTestId("route-actions");
-  await expect(actions.locator("[data-testid=route-brief], [data-testid=route-profile]")).toHaveCount(0);
-  const shareBox = (await drawer.getByTestId("share-route").boundingBox())!;
+  // The route's buttons, the Brief (where the Nav log was) and Share, at
+  // the end of the airplane's, the altitude's and the time's line, at the
+  // pilot's ask; Save, filing the flight plan and the route's close in
+  // Share -- printing in the Brief's and the nav log's own (below).
+  const [approachesBox, shareBox] = await Promise.all(
+    ["route-brief", "share-route"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
+  );
+  expect(approachesBox.x).toBeLessThan(shareBox.x);
+  expect(Math.abs(approachesBox.y - shareBox.y)).toBeLessThan(2);
   // The departure's time on its step in the route's list, not in this
   // line, at the owner's ask: the airplane's chip leads the line instead.
   const airplane = (await drawer.getByTestId("aircraft-select").boundingBox())!;
-  expect(shareBox.x).toBeGreaterThan(airplane.x);
+  expect(approachesBox.x).toBeGreaterThan(airplane.x);
   expect(Math.abs(shareBox.y + shareBox.height / 2 - (airplane.y + airplane.height / 2))).toBeLessThan(12);
   await expect(drawer.getByTestId("procedures").getByTestId("depart-date")).toBeVisible();
   await drawer.getByTestId("share-route").click();
@@ -136,35 +141,36 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   await page.keyboard.press("Escape");
 });
 
-test("the route's ••• takes the tab up's own items: the Brief's print and Refresh, the Nav Log's print", async ({ page }) => {
+test("each card's Share is its own: the Brief's prints the briefing, the nav log's the nav log, and neither has the route's", async ({
+  page,
+}) => {
   // The owner's asks ("every share button needs to be specific to that
   // card. So printing briefing should only be in brief card"; "printing
-  // navlog should be in navlog"): the Brief and the Nav Log are FPL's tabs
-  // since 2026-11-14, and the route's ••• carries the items of the tab up.
+  // navlog should be in navlog").
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "full");
   const drawer = sideDrawer(page);
   const menu = page.getByRole("menu");
   await openBrief(page);
-  await drawer.getByTestId("share-route").click();
+  await page.getByTestId("card-share").click();
   await expect(menu.getByTestId("print-briefing")).toBeVisible();
-  // Named apart from the route's own Refresh beside it.
-  await expect(menu.getByTestId("brief-refresh")).toHaveText("Refresh the briefing");
+  // Its Refresh in its menu, the head keeping Share and ✕ alone (rules.md).
+  await expect(menu.getByTestId("brief-refresh")).toHaveText("Refresh");
+  await expect(page.getByTestId("brief-card").locator("[data-sheet-head] [data-testid=brief-refresh]")).toHaveCount(0);
   await expect(menu.getByTestId("print-kneeboard")).toHaveCount(0);
-  // The route's link and ForeFlight are the tab bar's, not the menu's.
-  await expect(menu.getByTestId("share-link")).toHaveCount(0);
-  await expect(menu.getByTestId("open-foreflight")).toHaveCount(0);
+  await expect(menu.getByTestId("route-clear")).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(menu).toHaveCount(0);
   await settled(drawer);
+  await closeCard(page, "brief-close");
+  await expect(drawer.getByTestId("brief-card")).toHaveCount(0);
   await openNavLog(page);
-  await drawer.getByTestId("share-route").click();
+  await page.getByTestId("card-share").click();
   await expect(menu.getByTestId("print-kneeboard")).toHaveText("Print the nav log");
   await expect(menu.getByTestId("print-briefing")).toHaveCount(0);
   await expect(menu.getByTestId("brief-refresh")).toHaveCount(0);
-  // The Nav Log is the bar's tab, no longer an item here.
-  await expect(menu.getByTestId("route-navlog")).toHaveCount(0);
+  await expect(menu.getByTestId("route-clear")).toHaveCount(0);
   await page.keyboard.press("Escape");
 });
 
@@ -178,8 +184,8 @@ test("plan page: the nav log and the summary on screen, the 'planning aid only' 
   await expect(sideDrawer(page).getByTestId("planning-aid-note")).toHaveCount(0);
   await expect(page.locator("[data-slot=toast]", { hasText: "planning aid for VFR and IFR flight" })).toHaveCount(0);
 
-  // FPL's route in order with its legs under it, the Nav Log's tab, and
-  // the briefing in the Brief's pages. No "Flight Plan Summary": the line at the foot
+  // FPL's route in order, the nav log a sheet of its own, and the briefing
+  // in the Brief's pages. No "Flight Plan Summary": the line at the foot
   // carries the totals, its chip beside the airplane the altitude.
   const drawer = sideDrawer(page);
   await openTab(page, "Nav Log");
@@ -188,6 +194,7 @@ test("plan page: the nav log and the summary on screen, the 'planning aid only' 
   await expect(drawer.getByText("Flight Plan Summary")).toHaveCount(0);
   await openNavLog(page);
   await expect(navLogSheet(page).getByRole("table", { name: /Navigation log from/i })).toBeVisible();
+  await closeNavLog(page);
   // Another tab takes its place, and back.
   await openTab(page, "Brief");
   await openSection(page, "C81 · Departure");
@@ -214,11 +221,14 @@ test("plan page: the drawer closes the way the stock components close, and nothi
   // No toggle to a narrower nav log: the drawer has the one width.
   expect(await drawer.getByTestId("sidebar-expand-toggle").count()).toBe(0);
 
-  // The Weather is a page of the Brief, FPL's tab: every close goes back
-  // one (the card rule), so the stock Escape takes the page back to the
-  // Brief's cards (PanelTabs), then lowers the sheet, no card over it.
+  // The Weather is a page of the Brief's card over FPL, the Drawer's own
+  // nested drawer: every close goes back one (the card rule), so the stock
+  // Escape takes the page back to the Brief's cards (PanelTabs), then puts
+  // the card away, then lowers the sheet.
   await closeSidebarWithTheStockKey(page);
   await expect(drawer.getByTestId("brief-glance")).toBeVisible();
+  await expect(page.locator("[data-sheet-card][data-open]")).toHaveCount(1);
+  await closeSidebarWithTheStockKey(page);
   await expect(page.locator("[data-sheet-card][data-open]")).toHaveCount(0);
   await closeSidebarWithTheStockKey(page);
   await expectDrawerClosed(page);

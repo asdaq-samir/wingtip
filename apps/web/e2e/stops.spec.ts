@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import {
   clearTheRoute,
+  closeNavLog,
   controlsInSight,
   emptyPlan,
   grabberTo,
@@ -58,6 +59,7 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   await openNavLog(page);
   const landing = navLogSheet(page).locator('[role="row"][data-kind]', { hasText: "KMSN" });
   await expect(landing).toBeVisible({ timeout: slow(30000) });
+  await closeNavLog(page);
   // And FPL's route lists it as a step of its own, with its procedures.
   // Landed at and left again, each with its own runway (the owner's
   // "arrival first with a runway and a separate departure with a runway").
@@ -492,7 +494,7 @@ test("a flight saved with a stop is filed with it and the altitude set there, an
   expect(filed[0]!.checkpoints.filter((c) => c.category === "stop").map((c) => c.name)).toEqual(["KMSN"]);
 });
 
-test("the route's box is round, one line tall for a short route and the panel's width, the route's ••• over it, no words after its destination, a tap on its empty room the field at its end, and Enter takes the first airport offered for what is typed", async ({
+test("the route's box is round, one line tall for a short route and the panel's width, the Nav log and Share inside it under its line, no words after its destination, a tap on its empty room the field at its end, and Enter takes the first airport offered for what is typed", async ({
   page,
 }) => {
   await recordedStops(page);
@@ -505,7 +507,7 @@ test("the route's box is round, one line tall for a short route and the panel's 
   expect(await sideDrawer(page).getByTestId("add-stop").count()).toBe(0);
   // Round as the search bar's field is, one line tall for a route that
   // fits one (a second as one needs it, below), the panel's width to
-  // itself, at the pilot's ask; the route's ••• in FPL's bar over it,
+  // itself, at the pilot's ask; the Brief and Share in FPL's bar over it,
   // the airplane's strip, the sheet's first row (the owner, 2026-11-14:
   // "The route box just become a single row under it").
   const shape = await box.evaluate((el) => ({ radius: parseFloat(getComputedStyle(el).borderTopLeftRadius) }));
@@ -516,8 +518,10 @@ test("the route's box is round, one line tall for a short route and the panel's 
   const boxAt = (await box.boundingBox())!,
     panelAt = (await sideDrawer(page).boundingBox())!;
   expect(panelAt.x + panelAt.width - (boxAt.x + boxAt.width)).toBeLessThanOrEqual(16);
+  const procedures = (await sideDrawer(page).getByTestId("route-brief").boundingBox())!;
   const share = (await sideDrawer(page).getByTestId("share-route").boundingBox())!;
-  expect(share.y + share.height).toBeLessThanOrEqual(boxAt.y);
+  expect(procedures.y + procedures.height).toBeLessThanOrEqual(boxAt.y);
+  expect(share.x).toBeGreaterThan(procedures.x);
   // No "Add stop" after the destination, at the pilot's ask: a reader is
   // told what typing there does.
   const end = sideDrawer(page).getByTestId("route-type");

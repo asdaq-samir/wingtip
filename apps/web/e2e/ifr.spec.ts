@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeProfile, controlsInSight, emptyPlan, openNavLog, openProfile, openSection, openTab, settle, slow } from "./helpers";
+import { closeCard, closeNavLog, controlsInSight, emptyPlan, openNavLog, openProfile, openSection, openTab, settle, slow } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -32,18 +32,18 @@ test("under IFR the altitude is chosen from the minimum IFR altitude by directio
   const why = page.getByTestId("altitude-why");
   await expect(why).toHaveAccessibleName(/\d,\d{3} feet|FL\d{3}/, { timeout: slow(60000) });
   await openProfile(page);
-  const popover = page.getByTestId("profile-page");
+  const popover = page.getByTestId("profile-card");
   const rules = popover.getByTestId("flight-rules");
   await expect(rules.getByRole("button", { name: "VFR" })).toHaveAttribute("aria-pressed", "true");
   await expect(popover).toContainText("14 CFR 91.159");
 
   await rules.getByRole("button", { name: "IFR" }).click();
   await expect.poll(() => asked.at(-1)).toBe("ifr");
-  // Back on the Nav Log to read the chip beside the airplane.
-  await closeProfile(page);
+  // Put away to read the chip beside the airplane, which the card covers.
+  await closeCard(page, "profile-close");
   await expect(popover).toBeHidden();
   // No IFR word beside the altitude, at the owner's ask: the rules are the
-  // Profile tab's switch, and the altitude's name says them.
+  // Profile card's switch, and the altitude's name says them.
   await expect(page.getByTestId("ifr-flag")).toHaveCount(0);
   // The re-plan's altitude: whole thousands, west of north out of C81
   // (even thousands, 91.179(b)(1)(ii)).
@@ -57,7 +57,7 @@ test("under IFR the altitude is chosen from the minimum IFR altitude by directio
   await popover.getByText("How the Altitude Was Chosen").click();
   await popover.getByRole("button", { name: /Minimum IFR altitude/ }).click();
   await expect(popover).toContainText("14 CFR 91.177");
-  await closeProfile(page);
+  await closeCard(page, "profile-close");
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(60000) });
   await openSection(page, "Fuel");
   await expect(page.getByTestId("fuel-detail")).toContainText("45 min IFR reserve (14 CFR 91.167)", { timeout: slow(60000) });
@@ -117,6 +117,7 @@ test("under IFR an airway in the route is flown fix by fix, its published MEA th
   // The airway and its published altitudes on the rail where it is
   // joined, as a paper IFR log's route column has them.
   await expect(log.getByTestId("navlog-airway").first()).toContainText(/^V191 · (GNSS )?MEA [\d,]+/);
+  await closeNavLog(page);
   await controlsInSight(page);
   const why = page.getByTestId("altitude-why");
   // Whole thousands, but either parity: the group names the highest leg,
@@ -128,12 +129,12 @@ test("under IFR an airway in the route is flown fix by fix, its published MEA th
   // the first leg's.
   await expect(why).toHaveAccessibleName(/under IFR, (\d+,000 feet|FL\d\d0)/, { timeout: slow(90000) });
   await openProfile(page);
-  const popover = page.getByTestId("profile-page");
+  const popover = page.getByTestId("profile-card");
   // How it was chosen, folded under the altitude's figures.
   await popover.getByText("How the Altitude Was Chosen").click();
   await popover.getByRole("button", { name: /Minimum IFR altitude/ }).click();
   await expect(popover).toContainText(/Along V191 from BAE the published MEA, [\d,]+ ft/);
-  await closeProfile(page);
+  await closeCard(page, "profile-close");
 
   // The flight plan's form (FAA Form 7233-4): the airway between the
   // fixes it is joined and left at, the departure and the arrival picked
