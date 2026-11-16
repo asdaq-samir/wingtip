@@ -699,7 +699,10 @@ jobs:
         run: scripts/ci/e2e_stack.sh
       # The planner's two caches first, since it starts once they are in.
       # data/raw's entries, not data/raw itself, so the charts are not archived
-      # twice; the same list is in the step that saves it.
+      # twice; the same list is in the step that saves it. Not the weather,
+      # fetched afresh at every start: a download in flight there is a .part
+      # only root can read, and tar then saved nothing at all (main's push
+      # 43729892948, whose next run had no FAA data when nfdc refused it).
       - name: Restore the planner's reference data
         id: data
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -708,6 +711,7 @@ jobs:
             data/raw/*
             !data/raw/charts.nosync
             !data/raw/chart_tiles.nosync
+            !data/raw/weather
           key: planner-data-v1-${{ hashFiles('data/processed/candidates_*.csv', 'services/planner/wingtip/faa_data.py', 'services/planner/wingtip/airports.py', 'services/planner/wingtip/elevation.py', 'services/planner/wingtip/charts.py') }}
           restore-keys: planner-data-v1-
       # The corridor's charts, tiles and detections (a minute of a shard's
@@ -977,6 +981,7 @@ jobs:
             data/raw/*
             !data/raw/charts.nosync
             !data/raw/chart_tiles.nosync
+            !data/raw/weather
           key: ${{ steps.data.outputs.cache-primary-key }}
       # The charts and tiles, once per FAA cycle and reader, this cycle's only,
       # after the tests (the tiles are theirs) and with the corridor's
