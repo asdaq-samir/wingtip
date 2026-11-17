@@ -20,7 +20,12 @@ not timed on a device.
 
 - **Tap what you see.** Anything shown that is explained or changed
   somewhere opens that place: a field's name its card, the figures their
-  nav log, a waypoint its menu. Closing goes back to where the pilot was
+  nav log, a waypoint its menu. In FPL's route list an airport's ident
+  (the departure, a stop, the destination) is a link in the tint to its
+  card, as the nav log's names are; the rest of its row folds its runways
+  and procedures open, its one disclosure, and its symbol is its menu,
+  where Change asks the one search for another airport (in the Plan's
+  cards too, where the ident was a text box; the owner, 2026-11-17). Closing goes back to where the pilot was
   (one level: `lib/openCards` on the web, the card's
   close and the stack's Back on iOS (`Navigation/Navigator`); on Android
   the card's ← and system Back, its ✕ closing every card, since the card

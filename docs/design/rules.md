@@ -496,7 +496,15 @@ off by default (the owner, 2026-11-13).
    neutral look: a way that meets something says so by its amber
    warning mark alone, its name in the text's colour (the owner's list,
    2026-11-17); their miles and fuel are the
-   figures' and in each chip's spoken name. On the
+   figures' and in each chip's spoken name. In the route's list an
+   airport's ident is a link in the tint to its card (the nav log's
+   `navlog-field-open`, the owner, 2026-11-17: "Can we make the
+   airports/stops tappable as the navlog does?"), the rest of its lines
+   folding its runways and procedures open, one disclosure with no
+   chevron beside the symbol (the UI audit's C14), the symbol its menu;
+   a waypoint's or a fix's stays plain. In the Plan's cards the ident is
+   the same link, and Change in the menu asks the one search for the
+   airport to put in its place. On the
    map the way flown is solid magenta and the others thin dotted lines
    in the chart's ink, each chip named, the others' chips left out where
    they would overlap (the owner's pick of the routes canvas, board 5,

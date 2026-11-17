@@ -12,6 +12,7 @@ describe("how far, as the app says it", () => {
     // 9.96 is 10.0 to a tenth: said as 10, not "10.0".
     expect(nmFigure(9.96)).toBe("10");
     expect(nmAway(12.3)).toBe("12 nm");
+    expect(nmAway(1317.4)).toBe("1,317 nm");
   });
 
   it("which way, as a compass point", () => {
