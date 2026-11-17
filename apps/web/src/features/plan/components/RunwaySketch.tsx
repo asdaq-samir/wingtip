@@ -159,6 +159,29 @@ export function RunwaySketch({
           ))}
         </g>
       ))}
+      {/* A closed runway crossed out, as the FAA's airport diagrams mark
+          one (Chart Supplement legend, "Closed runway"), in the red of the
+          Runways tab's Closed badge: faded alone it read as open
+          (UI audit A5, 2026-11-17). An X a quarter in from each end,
+          clear of the crossings that are most often at a field's middle. */}
+      {drawn?.strips
+        .filter((s) => s.closed)
+        .flatMap((s) =>
+          [0.25, 0.75].map((f) => {
+            const [x, y] = [s.ax + (s.bx - s.ax) * f, s.ay + (s.by - s.ay) * f];
+            const arm = Math.max(6, s.width);
+            return (
+              <path
+                key={`${s.ends.join("/")}-x-${f}`}
+                data-closed-runway={s.ends.join("/")}
+                d={`M${x - arm} ${y - arm}L${x + arm} ${y + arm}M${x - arm} ${y + arm}L${x + arm} ${y - arm}`}
+                className="stroke-destructive"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+              />
+            );
+          }),
+        )}
       {/* Each end's number past it, upright, over every strip, in the
           strips' ink with a casing of the box's ground so a crossing
           runway does not cut through it. */}

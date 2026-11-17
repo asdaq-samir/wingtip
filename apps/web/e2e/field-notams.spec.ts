@@ -71,6 +71,14 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   await expect(opened).toHaveCount(0);
 
   await card(page).getByRole("tab", { name: "Info" }).click();
+  // The runway the Runways tab says is Closed is crossed out on the
+  // pictures' sketch, an X a quarter in from each end, and only it: the
+  // FAA's diagram knows nothing of the NOTAM, so the sketch stands in for
+  // it while the closure is in force (UI audit A5).
+  const sketch = card(page).getByTestId("runway-sketch");
+  await expect(sketch.locator('[data-closed-runway="09/27"]')).toHaveCount(2);
+  await expect(sketch.locator("[data-closed-runway]")).toHaveCount(2);
+  await expect(card(page).getByTestId("place-runway-sketch")).toHaveAttribute("aria-label", /09\/27 closed/);
   const notams = card(page).getByTestId("place-notams");
   await expect(notams).toBeVisible();
   const one = notams.getByTestId("place-notam");
@@ -83,7 +91,7 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   // Labelled as ForeFlight's list: since its start, its end and how long is left.
   // Duluth keeps Central Standard Time in November, UTC-6, whatever the
   // device's own zone.
-  await expect(one.getByTestId("place-notam-when")).toHaveText(/^Since11\/10 06:00 \(1200Z\)Ends11\/12 08:32 local \(1432Z\)/);
+  await expect(one.getByTestId("place-notam-when")).toHaveText(/^Since11\/10 06:00 local \(1200Z\)Ends11\/12 08:32 local \(1432Z\)/);
   await expect(one.getByTestId("place-notam-condition")).toHaveText("closed");
   // No where for a runway's: its what names it (the owner, 2026-11-11).
   await expect(one.getByTestId("place-notam-where")).toHaveCount(0);

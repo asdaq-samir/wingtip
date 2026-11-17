@@ -168,7 +168,7 @@ function cornerIn(zone: string): Intl.DateTimeFormat | null {
 
 const utcDay = (at: Date) => `${twoFigures(at.getUTCMonth() + 1)}/${twoFigures(at.getUTCDate())}`;
 
-/** "11/10 06:00 (1200Z)", with " local" where `local`: month/day and the
+/** "11/10 06:00 local (1200Z)": month/day and the
  *  24-hour clock in the field's own time zone (the planner's, `zone`), as
  *  a pilot writes it on a kneeboard, the zone not named (the owner,
  *  2026-11-11: "No need to mention time zone, just say local"), and UTC
@@ -176,9 +176,9 @@ const utcDay = (at: Date) => `${twoFigures(at.getUTCMonth() + 1)}/${twoFigures(a
  *  2026-11-12: "airport's local time with UTC beside"). Where the field's
  *  zone is not known, UTC alone with its day ("11/10 1200Z"): never the
  *  device's own time called the field's. */
-export function corner(at: Date, zone: string | null, local: boolean): string {
+export function corner(at: Date, zone: string | null): string {
   const format = zone ? cornerIn(zone) : null;
   if (!format) return `${utcDay(at)} ${zuluTime(at)}`;
   const part = Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value]));
-  return `${part.month}/${part.day} ${part.hour}:${part.minute}${local ? " local" : ""} (${zuluTime(at)})`;
+  return `${part.month}/${part.day} ${part.hour}:${part.minute} local (${zuluTime(at)})`;
 }

@@ -19,8 +19,9 @@ export function span(ms: number): string {
 
 /**
  * A NOTAM's times on lines of their own, labelled, in the field's own
- * time (`zone`, the planner's) with "local" once and UTC beside each
- * (corner), as ForeFlight's NOTAM list gives them
+ * time (`zone`, the planner's) with "local" on each and UTC beside it
+ * (corner; once alone, Since read as UTC beside Ends' local: UI audit
+ * C11, 2026-11-17), as ForeFlight's NOTAM list gives them
  * (the owner's screenshots, 2026-11-11): one in force "Since" its start and
  * "Ends" with how long is left ("(in 18d)"); one to come "Starts" with how
  * soon, "Ends", and how long it lasts. An estimated end "(est.)", PERM
@@ -33,8 +34,8 @@ export function timeLines(n: FieldNotam, read: NotamReading, zone: string | null
   const active = n.in_force !== false;
   const soon = (at: Date) => (at.getTime() > now ? ` (in ${span(at.getTime() - now)})` : "");
   const lines: TimeLine[] = [];
-  if (starts) lines.push({ label: active ? "Since" : "Starts", value: `${corner(starts, zone, !ends)}${active ? "" : soon(starts)}` });
-  if (ends) lines.push({ label: "Ends", value: `${corner(ends, zone, true)}${read.estimated ? " (est.)" : ""}${soon(ends)}` });
+  if (starts) lines.push({ label: active ? "Since" : "Starts", value: `${corner(starts, zone)}${active ? "" : soon(starts)}` });
+  if (ends) lines.push({ label: "Ends", value: `${corner(ends, zone)}${read.estimated ? " (est.)" : ""}${soon(ends)}` });
   else if (read.permanent) lines.push({ label: "Ends", value: "Permanent" });
   if (!active && starts && ends) lines.push({ label: "Duration", value: span(ends.getTime() - starts.getTime()) });
   return lines;
