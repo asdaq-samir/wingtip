@@ -141,28 +141,29 @@ export default function CardIdent({
       }}
       onBlur={commit}
       onKeyDown={(e) => {
-        // Return takes the lit suggestion (the list's own Enter, after
-        // this), as every other search does: "KMS" and Return is KMSN, not
-        // KMS. What is typed where no list is open or it is a row's ident.
+        // Return takes the lit suggestion, the list's own Enter (Base
+        // UI's), as every other search does: "KMS" and Return is KMSN, not
+        // KMS. The first is lit by itself as the rows come (autoHighlight
+        // "always"), rows that answer after the typing too since Base UI
+        // 1.9 (#5818), where this took the first shown by hand.
         if (e.key === "Enter") {
           const typed = draft.trim().toUpperCase();
-          if (open && !rows.some((r) => r.ident === typed)) {
-            if (lit.current) return;
-            // Typed key by key, the rows can come with none lit yet: the
-            // first shown, as RouteBox takes it.
-            const first = rows.find((r) => r.kind !== "fix") ?? rows[0]!;
-            e.preventDefault();
-            e.preventBaseUIHandler();
-            if (first.kind === "fix") pick(first.ident);
-            else pick(first.ident, { ident: first.ident, name: first.name, municipality: first.municipality });
-            return;
-          }
+          if (open && lit.current && !rows.some((r) => r.ident === typed)) return;
+          // What is typed, where no list is open or it is a row's own
+          // ident: Base UI's Enter would take the lit row instead, and it
+          // has no prop that puts the words typed before a lit row, so its
+          // handler is kept from running (its documented way,
+          // preventBaseUIHandler).
           e.preventBaseUIHandler();
           e.stopPropagation();
           e.currentTarget.blur();
         }
+        // Escape puts it back. Base UI has nothing of its own on the key
+        // here: its list is inline and always open, so the field's Escape
+        // (clearing it while closed) never runs. The blur after it puts in
+        // nothing (`picked`): it read the half typed and committed it.
         if (e.key === "Escape") {
-          e.preventBaseUIHandler();
+          picked.current = true;
           setDraft(value);
           setTyping(false);
           e.currentTarget.blur();

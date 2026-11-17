@@ -58,6 +58,7 @@ logbook-table.spec.ts
 manifest-screenshots.spec.ts
 manifest.spec.ts
 map-mic.spec.ts
+map-rotation.spec.ts
 nav-log-desk.spec.ts
 navaid-card.spec.ts
 navlog-fit.spec.ts

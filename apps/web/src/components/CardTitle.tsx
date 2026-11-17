@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Share } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
-import RoundButton from "./RoundButton";
+import IconButton from "./IconButton";
 import { CardHeadRow } from "./CardHead";
 import { closeTopCard, useHeldCard, type PillHead } from "../lib/openCards";
 import { TEXT } from "../lib/text";
@@ -65,9 +65,9 @@ export function CardTitle({
         {/* Its Share at the row's start, as Apple Maps' place card has it
             (the owner, 2026-11-11), the close alone at its end. */}
         {onShare && (
-          <RoundButton label={`Share ${title}`} onClick={onShare} data-testid={shareTestId}>
+          <IconButton round label={`Share ${title}`} onClick={onShare} data-testid={shareTestId}>
             <Share className="size-5" strokeWidth={2} />
-          </RoundButton>
+          </IconButton>
         )}
       </CardHeadRow>
       {(subtitle != null || line != null) && (

@@ -272,9 +272,9 @@ export function airspaceLayers(font: string[], labelPoints = true): LayerSpecifi
         filter: ["in", ["get", "class"], ["literal", ["B", "C", "D"]]],
         layout: {
           ...tab,
-          // Along the ring where it sits: the tiles' turn, upright already;
-          // the map never turns (GlMapShell), so the chart's north is the
-          // screen's.
+          // Along the ring where it sits: the tiles' turn, upright on a
+          // north-up chart, and turned with the chart when the pilot
+          // turns the map, as the sectional's own printed tabs are.
           "text-rotate": ["get", "angle"],
           "icon-rotate": ["get", "angle"],
           "text-rotation-alignment": "map",

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Square } from "lucide-react";
 import { cn } from "cn";
-import RoundButton from "../../components/RoundButton";
+import IconButton from "../../components/IconButton";
 import { PlaybackButton, PlaybackToolbar, PlayToggle, SpeedMenu } from "../../components/PlaybackBar";
 import { keepSliderKeys } from "../../components/playbackKeys";
 import { Slider, THUMB_HIT } from "../../components/ui/slider";
@@ -57,9 +57,9 @@ export function ReplayTimeline({
         {onStop && (
           <PlaybackButton
             render={
-              <RoundButton label="Stop" onClick={onStop} disabled={replay.second === null} data-testid={`${testId}-stop`}>
+              <IconButton round label="Stop" onClick={onStop} disabled={replay.second === null} data-testid={`${testId}-stop`}>
                 <Square className="size-5" aria-hidden />
-              </RoundButton>
+              </IconButton>
             }
           />
         )}

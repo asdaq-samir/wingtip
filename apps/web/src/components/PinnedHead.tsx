@@ -15,7 +15,7 @@ import { cn } from "cn";
  * search's row, a fixed height). Its frost reaches up over its scroller's
  * own room over the first line (--pinned-room, which the scroller sets: the
  * grabber's in a card), so it starts where it sticks. Its row is the round
- * buttons' height (RoundButton's size-9), so the whole of it is that room
+ * buttons' height (a round IconButton's size-9), so the whole of it is that room
  * and 3rem (PINNED_BELOW), where what pins under it sticks: an airport
  * card's tabs (PlaceCard). At the sheet's smallest size with
  * a card open it is all of the card in sight (data-sheet-head, SheetParts).

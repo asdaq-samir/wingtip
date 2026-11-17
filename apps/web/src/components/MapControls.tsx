@@ -1,6 +1,8 @@
 import { lazy, Suspense } from "react";
+import type { Map as GlMap } from "maplibre-gl";
 import { cn } from "cn";
 import { Button } from "./ui/button";
+import CompassButton from "./CompassButton";
 import FlownTrackButton from "./FlownTrackButton";
 import FullscreenButton from "./FullscreenButton";
 import MyPositionButton from "./MyPositionButton";
@@ -21,7 +23,8 @@ import { TEXT } from "../lib/text";
 /**
  * The map's buttons, in one group floating over the chart, as Maps
  * stacks its own: the map's settings, the pilot's own position (the
- * location arrow), and full screen where it works. A zoom toggle, between the whole route and the
+ * location arrow), the compass while the map is turned (CompassButton),
+ * and full screen where it works. A zoom toggle, between the whole route and the
  * selected point, went: picking a waypoint brings the map to it. On a
  * phone's bottom sheet at the right just over its top edge, the search's
  * row, riding it as the 3D and the page toggle do at the left (the owner,
@@ -54,15 +57,15 @@ const RadioPill = lazy(() => import("./RadioLayer").then((m) => ({ default: m.Ra
 
 /** Drawn once the shared engine is there (lib/engine/engineGate), which
  *  it asks as it draws: the chart under it draws at once (MapPage). */
-export default function MapControls() {
+export default function MapControls({ map }: { map: GlMap | null }) {
   return (
     <EngineGate>
-      <MapControlsDrawn />
+      <MapControlsDrawn map={map} />
     </EngineGate>
   );
 }
 
-function MapControlsDrawn() {
+function MapControlsDrawn({ map }: { map: GlMap | null }) {
   const flying = useFlying((s) => s.flying);
   const nearest = useFlying((s) => s.nearest);
   const direct = useFlying((s) => s.direct);
@@ -161,12 +164,16 @@ function MapControlsDrawn() {
             (the owner's yes to the run's own controls back,
             2026-11-04). */}
           <MyPositionButton />
+          <CompassButton map={map} />
         </>
       ) : (
         <>
           {/* The map's settings first, as Maps' map button is. */}
           <MapSettingsButton />
           <MyPositionButton />
+          {/* While the map is turned off north up, as Apple Maps' compass
+            is (the owner, 2026-11-17). */}
+          <CompassButton map={map} />
           {/* While a saved flight's flown track is on the chart. */}
           <FlownTrackButton />
           {/* Draws itself only where full screen actually works: a desktop

@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { ArrowLeftRight, ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import { CAPSULE_HIT } from "../../lib/mapChrome";
-import RoundButton from "../../components/RoundButton";
+import IconButton from "../../components/IconButton";
 import CloseButton from "../../components/CloseButton";
 import { Button } from "../../components/ui/button";
 import { ListGroup, ListRow } from "../../components/GroupedList";
@@ -186,7 +186,8 @@ export default function ProcedureMenu({
         {look === "button" ? (
           // The one picked's name kept in it for a reader, unseen: the
           // branch's head shows it.
-          <RoundButton
+          <IconButton
+            round
             label={`${ident} ${TITLE[kind].toLowerCase()}: ${label ?? "none picked"}, pick another`}
             data-testid="procedure-kind"
             data-kind={kind}
@@ -194,7 +195,7 @@ export default function ProcedureMenu({
           >
             <ArrowLeftRight className="size-5" strokeWidth={2} />
             <span className="sr-only">{label ?? SHORT[kind]}</span>
-          </RoundButton>
+          </IconButton>
         ) : (
           // The stock Button's glass, a kind to add as one picked, at the
           // owner's pick of the sketches ("B"): it was a dashed outline.

@@ -7,22 +7,25 @@ import { usePopups } from "./popupsChunk";
 type Props = ComponentProps<typeof Button> & {
   /** Names the button once: the tooltip's text and the accessible name. */
   label: string;
+  /** A round pane of glass, as Maps' buttons are on iOS 26: the console's
+   *  gear, every panel's close (CloseButton), Share, Refresh, a row's
+   *  "⋯". The stock Button's glass variant at its icon size (36 points),
+   *  made round, with a finger's 44 round it (index.css's pseudo-element),
+   *  the glyph the caller's at 20 (`size-5`). */
+  round?: boolean;
 };
 
 /**
- * Every icon-only button in this app: a stock shadcn Button at
- * `size="icon"` unless told otherwise, ghost unless told otherwise,
- * inside a Tooltip that shows the same text the accessible name
- * carries.
+ * Every icon-only button in this app, the one wrapper over the stock
+ * shadcn Button (ui/button): `size="icon"` unless told otherwise, ghost
+ * unless told otherwise or `round`, inside a Tooltip that shows the same
+ * text the accessible name carries. RoundButton was a second wrapper for
+ * the glass circles; it is this one's `round` now (the owner, 2026-11-17).
  *
- * `size` used to be omitted from the props on purpose, which read as
- * "this component decides the size" and worked out as "anyone who
- * needs another size writes their own button instead" -- which is what
- * the training map's popup did with three of them. A shared component
- * that is rigid about the wrong thing is not shared for long. It
- * composes like the Button itself -- `render` with a Link inside, a
- * `PopoverTrigger`/`SheetTrigger render` outside -- because every
- * other prop, `ref` included, lands on the Button.
+ * It composes like the Button itself -- `render` with a Link inside, a
+ * `PopoverTrigger`/`SheetTrigger render` outside -- because every other
+ * prop, `ref` included, lands on the Button, `size` among them: a shared
+ * component rigid about its size had callers writing their own.
  *
  * A button that has opened something -- `aria-expanded` true: a
  * console, the drawer -- carries a ring for as long as it stays open,
@@ -34,7 +37,8 @@ type Props = ComponentProps<typeof Button> & {
  * label was the screen reader's alone: a sparkle or a wand meant
  * nothing to a sighted pilot on a phone.
  */
-export default function IconButton(props: Props) {
+export default function IconButton({ round = false, ...given }: Props) {
+  const props = round ? { variant: "glass" as const, ...given, className: cn("shrink-0 rounded-full", given.className) } : given;
   // Its tooltip is on the popups' chunk (popupsChunk): until that is in,
   // the button alone, named the same.
   const popups = usePopups();

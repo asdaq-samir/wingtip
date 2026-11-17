@@ -1,5 +1,6 @@
 import { Cloud, CloudLightning, CloudRain, CloudSnow, CloudSun, Sun } from "lucide-react";
 import { cn } from "cn";
+import { Carousel, CarouselContent, CarouselItem } from "../../components/ui/carousel";
 import { colourOf } from "../../lib/map/marks/flightCategory";
 import { clockTime, zoneName } from "../../lib/format";
 import { altFt } from "../../lib/format";
@@ -47,8 +48,10 @@ function spokenOf(hour: Hour, label: string, wind: ReturnType<typeof reportedWin
  * a bar in the flight category's colour (the FAA's, lib/map/marks/flightCategory)
  * with the weather at times a lighter one under it, the ceiling in feet,
  * and the wind, true, as FPL's list writes it on a field (reportedWind).
- * The row alone scrolls sideways, not the page: the panel's swipe back
- * leaves a row that scrolls its finger (TabBar). The hour a planned
+ * The row alone slides sideways, not the page: shadcn's Carousel (Embla),
+ * as CardPictures and RecentCards are, its sideways drag the row's and an
+ * up or down one the sheet's (the one scrolling rule), its arrow keys
+ * the keyboard's way along it. The hour a planned
  * flight lands in is outlined, with "You" and the time at its foot.
  */
 export function HourlyForecast({
@@ -60,75 +63,82 @@ export function HourlyForecast({
   arrival: { index: number; at: number } | null;
 }) {
   return (
-    <div
-      // Focusable so the keyboard can scroll the row (axe's
-      // scrollable-region-focusable, WCAG 2.1.1), which the iPhone audit checks.
-      role="list"
-      // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- a scroller is what a keyboard needs to reach
+    <Carousel
+      opts={{ align: "start", dragFree: true }}
+      // Focusable so the keyboard can move along the row (the Carousel's
+      // own arrow keys), its ring the app's (index.css).
       tabIndex={0}
       aria-label="Hour by hour"
       data-slides=""
+      data-base-ui-swipe-ignore="x"
       data-testid="place-hours"
-      className="flex snap-x rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none overflow-x-auto overscroll-x-contain px-1.5 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="rounded-lg"
     >
-      {hours.map((hour, i) => {
-        const label = hour.now ? "Now" : clockTime(new Date(hour.at));
-        // The clock's zone once, under the first hour after Now, as the nav
-        // log heads its ETAs (the web audit's WEB-9: "05:00" beside
-        // "Observed 0355Z" read as either); a blank line under the rest so
-        // the columns line up, as the wind's speed line does.
-        const zone = !hour.now && (i === 0 || hours[i - 1]!.now) ? zoneName(new Date(hour.at)) : null;
-        const wind = reportedWind(hour.windDirTrueDeg, hour.windSpeedKt, hour.windGustKt);
-        const landing = arrival?.index === i ? clockTime(new Date(arrival.at)) : null;
-        return (
-          <div
-            key={hour.now ? "now" : hour.at}
-            role="listitem"
-            data-testid="place-hour"
-            data-arrival={landing ? "" : undefined}
-            // About 52 points a column, in rem so it grows with the text;
-            // relative, so its sr-only words (absolute) are placed in it and
-            // clipped with the row: placed by the card, the last hour's sat
-            // 648 px past its edge and the whole card scrolled sideways.
-            className={cn(
-              "relative flex w-13 shrink-0 snap-start flex-col items-center gap-1.5 rounded-lg py-1.5 tabular-nums",
-              landing && "ring-1 ring-foreground/40 ring-inset",
-            )}
-          >
-            {/* The column in words for VoiceOver, its figures hidden from it. */}
-            <span className="sr-only">{spokenOf(hour, hour.now ? label : `${label} ${zoneName(new Date(hour.at))}`, wind, landing)}</span>
-            <span
-              aria-hidden
-              className={cn("flex flex-col items-center", TEXT.note, hour.now ? "font-semibold text-foreground" : "text-muted-foreground")}
+      <CarouselContent role="list" className="ml-0 py-2">
+        {hours.map((hour, i) => {
+          const label = hour.now ? "Now" : clockTime(new Date(hour.at));
+          // The clock's zone once, under the first hour after Now, as the nav
+          // log heads its ETAs (the web audit's WEB-9: "05:00" beside
+          // "Observed 0355Z" read as either); a blank line under the rest so
+          // the columns line up, as the wind's speed line does.
+          const zone = !hour.now && (i === 0 || hours[i - 1]!.now) ? zoneName(new Date(hour.at)) : null;
+          const wind = reportedWind(hour.windDirTrueDeg, hour.windSpeedKt, hour.windGustKt);
+          const landing = arrival?.index === i ? clockTime(new Date(arrival.at)) : null;
+          return (
+            <CarouselItem
+              key={hour.now ? "now" : hour.at}
+              role="listitem"
+              aria-roledescription={undefined}
+              data-testid="place-hour"
+              data-arrival={landing ? "" : undefined}
+              // About 52 points a column, in rem so it grows with the text;
+              // relative, so its sr-only words (absolute) are placed in it and
+              // clipped with the row: placed by the card, the last hour's sat
+              // 648 px past its edge and the whole card scrolled sideways.
+              className={cn(
+                "relative flex w-13 basis-auto flex-col items-center gap-1.5 rounded-lg py-1.5 pl-0 tabular-nums first:ml-1.5 last:mr-1.5",
+                landing && "ring-1 ring-foreground/40 ring-inset",
+              )}
             >
-              <span>{label}</span>
-              <span className={TEXT.caption}>{zone ?? "\u00a0"}</span>
-            </span>
-            <Glyph hour={hour} />
-            {/* The category's bar, and the weather at times (a TEMPO's or
+              {/* The column in words for VoiceOver, its figures hidden from it. */}
+              <span className="sr-only">{spokenOf(hour, hour.now ? label : `${label} ${zoneName(new Date(hour.at))}`, wind, landing)}</span>
+              <span
+                aria-hidden
+                className={cn(
+                  "flex flex-col items-center",
+                  TEXT.note,
+                  hour.now ? "font-semibold text-foreground" : "text-muted-foreground",
+                )}
+              >
+                <span>{label}</span>
+                <span className={TEXT.caption}>{zone ?? "\u00a0"}</span>
+              </span>
+              <Glyph hour={hour} />
+              {/* The category's bar, and the weather at times (a TEMPO's or
                 a PROB's) a thinner, lighter one under it. One height for
                 every column, so the figures under them line up. */}
-            <span aria-hidden className="flex h-3 w-8 flex-col gap-0.5">
-              <span className="h-1.5 rounded-full" style={{ backgroundColor: colourOf(hour.category) }} />
-              {hour.atTimes && <span className="h-1 rounded-full opacity-50" style={{ backgroundColor: colourOf(hour.atTimes) }} />}
-            </span>
-            <span aria-hidden className={cn("font-semibold text-foreground", TEXT.note)}>
-              {hour.ceilingFt == null ? "—" : altFt(hour.ceilingFt)}
-            </span>
-            <span aria-hidden className={cn("flex flex-col items-center text-muted-foreground", TEXT.note)}>
-              <span>{wind === "calm" ? "Calm" : wind ? wind.dir : "—"}</span>
-              {/* The speed's line kept where there is none, so the rows line up. */}
-              <span>{wind && wind !== "calm" ? wind.speed : " "}</span>
-            </span>
-            {landing && (
-              <span aria-hidden className={cn("flex flex-col items-center font-bold text-foreground", TEXT.caption)}>
-                <span>You</span>
-                <span>{landing}</span>
+              <span aria-hidden className="flex h-3 w-8 flex-col gap-0.5">
+                <span className="h-1.5 rounded-full" style={{ backgroundColor: colourOf(hour.category) }} />
+                {hour.atTimes && <span className="h-1 rounded-full opacity-50" style={{ backgroundColor: colourOf(hour.atTimes) }} />}
               </span>
-            )}
-          </div>
-        );
-      })}
-    </div>
+              <span aria-hidden className={cn("font-semibold text-foreground", TEXT.note)}>
+                {hour.ceilingFt == null ? "—" : altFt(hour.ceilingFt)}
+              </span>
+              <span aria-hidden className={cn("flex flex-col items-center text-muted-foreground", TEXT.note)}>
+                <span>{wind === "calm" ? "Calm" : wind ? wind.dir : "—"}</span>
+                {/* The speed's line kept where there is none, so the rows line up. */}
+                <span>{wind && wind !== "calm" ? wind.speed : " "}</span>
+              </span>
+              {landing && (
+                <span aria-hidden className={cn("flex flex-col items-center font-bold text-foreground", TEXT.caption)}>
+                  <span>You</span>
+                  <span>{landing}</span>
+                </span>
+              )}
+            </CarouselItem>
+          );
+        })}
+      </CarouselContent>
+    </Carousel>
   );
 }

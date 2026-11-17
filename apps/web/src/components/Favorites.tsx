@@ -144,7 +144,6 @@ export function StripSection<V extends string>({
   onShow,
   menuTestId,
   menuClassName,
-  menuTop,
   beside,
   right,
   children,
@@ -155,10 +154,6 @@ export function StripSection<V extends string>({
   onShow: (value: V) => void;
   menuTestId?: string;
   menuClassName?: string;
-  /** At the menu's top, a line under it: Aircraft's Show on map, at the
-   *  owner's ask ("Can the aircraft map toggle be part of the filter,
-   *  maybe on top?", 2026-10-23). */
-  menuTop?: ReactNode;
   beside?: ReactNode;
   /** After the menu, at the row's right. */
   right?: ReactNode;
@@ -179,7 +174,6 @@ export function StripSection<V extends string>({
             onChange={onShow}
             testId={menuTestId}
             className={menuClassName}
-            top={menuTop}
             options={lists.map((l) => ({ value: l.value, label: l.item ?? l.label, testId: l.testId, apart: l.apart }))}
           />
           {right}
@@ -218,7 +212,6 @@ function PillMenu<V extends string>({
   onChange,
   testId,
   className,
-  top,
 }: {
   /** Its name, to a screen reader and a long press: what it shows now. */
   label: string;
@@ -227,8 +220,6 @@ function PillMenu<V extends string>({
   onChange: (value: V) => void;
   testId?: string;
   className?: string;
-  /** Before the choices, a line under it (StripSection's menuTop). */
-  top?: ReactNode;
 }) {
   return (
     <PullDown
@@ -236,7 +227,6 @@ function PillMenu<V extends string>({
       value={value}
       onChange={onChange}
       options={options}
-      top={top}
       contentClassName={cn("min-w-44", className)}
       trigger={
         // The app's one icon-only button, 36 with a 20 glyph (the iOS

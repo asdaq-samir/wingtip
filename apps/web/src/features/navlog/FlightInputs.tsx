@@ -181,19 +181,19 @@ export default function FlightInputs({
               // red as it is typed, by the engine's own test (N_NUMBER),
               // where it was taken in silence and nothing came of it.
               "aria-invalid": wrong || undefined,
+              // Base UI's own keys on the field, none overridden: its list is
+              // inline and always open (CommandRoot), so its Enter acts only
+              // on a lit row and its Escape not at all.
               onKeyDown: (e) => {
-                const base = e as typeof e & { preventBaseUIHandler?: () => void };
                 // Enter on a suggestion lit by the arrows is the list's (it picks it); else
                 // what is typed, committed as before.
                 if (e.key === "Enter" && !(suggest.open && lit.current)) {
                   e.preventDefault();
-                  base.preventBaseUIHandler?.();
                   commit();
                   (e.target as HTMLInputElement).blur();
                 }
                 // Escape closes the list first, then lets go of what is typed.
                 if (e.key === "Escape") {
-                  base.preventBaseUIHandler?.();
                   if (suggest.open) suggest.dismiss();
                   else setTyped(null);
                 }

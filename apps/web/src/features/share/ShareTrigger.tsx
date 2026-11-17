@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 import { Ellipsis, Share } from "lucide-react";
-import RoundButton from "../../components/RoundButton";
+import IconButton from "../../components/IconButton";
 import { CardAction } from "../../components/CardAction";
 import type { RouteCard } from "../../lib/openCards";
 
@@ -57,7 +57,8 @@ export function TriggerButton({
   // owner's list, 2026-11-17), where it was a grey disc with a black glyph
   // beside the tinted toggle.
   return (
-    <RoundButton
+    <IconButton
+      round
       label={stale.length ? `${SHARE_LABEL[card]}: ${stale.join(", ")}` : SHARE_LABEL[card]}
       {...(card === "route" ? { variant: "ghost" as const, className: "size-[32px]" } : {})}
       data-testid={testId}

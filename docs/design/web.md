@@ -185,6 +185,18 @@ close does.
   pattern (named in each screen below). Focus is always visible and
   distinct from selection; it never drops to `body`
   ([APG keyboard interface][apg-keyboard]).
+  Whatever puts the app's outline away (`outline-none`) draws its own
+  ring or has one drawn round it (the audit of 2026-11-17, every one of
+  them checked with Full Keyboard Access in mind): a stock control's
+  `focus-visible:ring`, React Aria's `data-focus-visible` ring on a list's
+  row and a grip, a field's ring on the group round it (the stock
+  InputGroup's on the N-number, the altitude and the route box; a fine
+  ring in the tint on the search fields, as Apple's field has), a banner's
+  underline. Left without one only what the keyboard never lands on: the
+  sheets' and the dialogs' own boxes and a card's name (focused by the app
+  so a screen reader starts there), a list held by its field's virtual
+  focus (its row lit instead), and the weather loop's hour labels (out of
+  the tab order, the slider beside them the keyboard's).
 - Shortcuts are a second way in, never the only one: "Do not use keyboard
   shortcuts as a substitute for access via navigation." Avoid the OS's,
   assistive technology's and the browser's own keys (address bar, reload,
@@ -295,6 +307,12 @@ close does.
   (`SheetViewport`): Base UI 1.9 gives the viewport its touchstart,
   touchend and pointerdown as React props, and React sends a portal's
   events to its React parents, not to the viewport it sits in on the page.
+- A tap's feedback is each part's own pressed state, as on iOS: the
+  stock Button dims under a finger (`pointer-coarse:active:opacity-60`),
+  a menu's or a list's row is highlighted, a Toggle fills. Safari's grey
+  tap highlight, a box over the whole hit area on top of it, is off on
+  every control (`-webkit-tap-highlight-color: transparent`, index.css's
+  base layer; the owner's "Yes to all recs", 2026-11-17).
 - The keyboard: `Drawer.VirtualKeyboardProvider` on the sheet, each card
   and each question (`PhoneSheet`), its `--drawer-keyboard-inset` the
   viewport's bottom, in place of a `visualViewport` reading.
@@ -341,6 +359,16 @@ close does.
 - **Base UI 1.9.0** (9 October 2026) has 37 components, Drawer, Toast,
   Autocomplete, Combobox, Preview Card, Toolbar and OTP Field among them
   ([Base UI releases][bui-releases], [catalogue][bui-drawer]).
+- **Every pick-one is Base UI's Select** (shadcn's, `components/ui/select`;
+  the owner, 2026-11-17), behind `PullDown`, the app's one pull-down: a
+  listbox of the choices in the app's one menu look (`ui/menuLook`, the
+  picked one's tick on the left), its value in its trigger
+  (`Select.Value`), the tinted words and the up-and-down chevron, or a
+  caller's own trigger (a chip, a tile, a glyph). Its own placing: over
+  the trigger with the picked row on it from a mouse, beside it from a
+  finger (Base UI drops `alignItemWithTrigger` on touch). It was a
+  DropdownMenu's radio items; the Select is on the popups' chunk with
+  the menus, so the first load does not carry it.
 - **shadcn/ui** made Base UI the default for new projects in July 2026,
   added React Aria as a third choice, rebuilt its Drawer on Base UI instead
   of vaul, and its `/sonner` page now opens a Base UI Toast
@@ -429,8 +457,21 @@ the results for both the field and the dialog.
 
 **Primary action.** Enter opens the highlighted row's card (Raycast's
 primary action), the first row highlighted as the results come
-(`autoHighlight="always"`). A second action on ⌘Enter was dropped on
-2026-11-10 with the stock component's own keys kept.
+(`autoHighlight="always"`), rows that answer after the typing too since
+Base UI 1.9 fixed it for asynchronous results (#5818). A second action on
+⌘Enter was dropped on 2026-11-10 with the stock component's own keys kept.
+Base UI's handler is kept from running (`preventBaseUIHandler`, its own
+documented way) in three places only, where no prop says what is wanted
+(the owner, 2026-11-17: each checked against Base UI 1.9): a picker's
+Enter while the rows are not yet the answer to what is typed (the one
+search, the airport search), the typed ident going through rather than
+an older answer's lit row; and a card's ident (`CardIdent`) on Enter where
+what is typed is a row's own ident or no list is open. The rest went: the
+first row taken by hand where the rows came late (Base UI's now), an
+Escape and an Enter with nothing of Base UI's to stop (its inline list,
+always open, has none), and the route pill's tap over its popover's
+trigger (the pill is the popover's anchor now, `ResponsivePopoverAnchor`,
+the search opened from its menu).
 
 **Keyboard and hover.** The APG combobox: focus stays in the field and
 `aria-activedescendant` moves through the options; Down opens and moves
@@ -627,7 +668,13 @@ whether it is in the air under it, so the card opens on answers already
 in hand. The FPL's airplane field suggests from the same rows as it is typed
 (`navlog/useAirplaneSuggestions` over `features/plan/useAirplaneHits`, Base UI's
 Autocomplete through `CommandRoot` and `CommandField` in `InlineField`,
-the list in a Popover under the field), the record alone, no live find. No airplane picked shows "No airplane
+the list in a Popover under the field). `InlineField`, the N-number's and
+the cruise altitude's pill, is shadcn's `InputGroup` round its
+`InputGroupInput` since 2026-11-17 (Base UI's Autocomplete input drawn as
+the stock input by its `render`), the stock group's focus ring round the
+pill while it has the keyboard's focus, the owner's rules for it kept
+(28 tall, one width, the fixed "N-" and "FL-" in the text with their
+grey blanks, the airplane giving way first, never under 16 px), the record alone, no live find. No airplane picked shows "No airplane
 picked" and Pick Airplane, never a default type (decision 0011).
 
 **Structure, a tracked flight's card** (`FlightCard`), the same way (C1,
@@ -1175,7 +1222,7 @@ than its METAR now (`weather_worse`). The weather comes on the map's own
 `/api/airports/in-view` answer (`weather`), the same for every app; the
 shared fixture is `apps/web/src/lib/fixtures/airportWeatherMarks.json`. A
 screen reader says each field's category and wind ("KJVL, IFR, wind 220
-at 18 gusting 26"). Settings' Airport Weather is one menu (`PullDown`,
+at 18 gusting 26"). Settings' Airport Weather is one pull-down (`PullDown`, Base UI's Select,
 `airport-weather-look`) of Flight Category, With Wind (the default) and
 Station Model (`lib/map/marks/airportWeatherPrefs`); the getting-worse
 badge is always drawn (the owner, 2026-11-13).
@@ -1579,7 +1626,10 @@ sheet scrolls one way on a phone:
   size the pilot left it. Nothing sits below the screen to be scrolled to
   at half.
 - Sideways rows scroll sideways only: the Embla carousels (`CardPictures`,
-  `RecentCards`) and the route's pills carry `data-base-ui-swipe-ignore="x"`
+  `RecentCards`, the weather's hours `HourlyForecast` and the Brief's
+  departure hours `DepartureWindowStrip`, shadcn's Carousel since
+  2026-11-17, where the two were rows of our own with scroll snapping)
+  and the route's pills carry `data-base-ui-swipe-ignore="x"`
   (an up or down drag the sheet's), and every native sideways row
   `overscroll-x-contain`. The upright altitude Slider and the sortable
   rows' grips keep `""`: their own drag is up and down.
@@ -1724,7 +1774,14 @@ Enter, the search's hidden native clear, its first-row and ⌘Enter
 fallbacks (`autoHighlight="always"`), its numbered map marks and Alt+Down
 override, the toasts' sonner-shaped calls (Base UI's `add` and `close`
 directly) and their switched-off swipe, `joinProps` (Base UI's
-`mergeProps`), and the route rows' drag image. What is left, each with
+`mergeProps`), and the route rows' drag image. The fields' clear went
+the same way (the owner, 2026-11-17): React Aria's SearchField and its
+clear Button on Nearest's field (`components/ui/search-field`, its
+Escape clearing what is typed before it puts the field away), that clear
+alone on the route box (React Aria's TokenField has no clear of its own),
+and Base UI's `Autocomplete.Clear` on the one search (ui/command's
+`CommandClear`), all three iOS's grey disc (`ui/field-clear`); the
+hand-styled `ClearButton` is gone. What is left, each with
 its reason:
 
 - **`PhoneSheet` (components/PhoneSheet.tsx):** a phone's sheet for the

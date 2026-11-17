@@ -43,15 +43,15 @@ export function PlaybackToolbar({
   );
 }
 
-/** A round glass button of the bar (RoundButton's look), in the toolbar's
- *  roving focus: `render` is the button itself (RoundButton, CloseButton). */
+/** A round glass button of the bar (a round IconButton's look), in the toolbar's
+ *  roving focus: `render` is the button itself (a round IconButton, CloseButton). */
 export function PlaybackButton({ render, ...props }: { render: ReactElement } & ComponentProps<typeof Toolbar.Button>) {
   return <Toolbar.Button render={render} {...props} />;
 }
 
 /** One of the bar's on-or-off buttons -- Play, the pilot's view, forecast
  *  mode -- as the stock Toggle (aria-pressed) in the toolbar's roving
- *  focus, in its glass variant, round as RoundButton is: filled in the
+ *  focus, in its glass variant, round as IconButton's round one is: filled in the
  *  tint while it is on, the variant's own pressed look. */
 export function PlaybackToggle({
   pressed,

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
-import RoundButton from "../../components/RoundButton";
+import IconButton from "../../components/IconButton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 import { DROPDOWN, useAfterMenu, type MenuKit } from "./pointMenu";
 import { TEXT } from "../../lib/text";
@@ -204,7 +204,7 @@ export function PointMenuItems({
  * pill's (PointMenuItems). Behind the point's own mark in FPL's list
  * (`face`), at the owner's ask ("Use the airport icon as the more button
  * instead of having one to the right", 2026-10-22): the mark a button,
- * its 44 points a pseudo-element round its 28; else the "⋯" (RoundButton,
+ * its 44 points a pseudo-element round its 28; else the "⋯" (IconButton round,
  * 36 with a 20-point glyph, as every icon button is).
  */
 export function PointMenu({ testId = "point-menu", face, ...actions }: PointActions & { testId?: string; face?: ReactNode }) {
@@ -236,9 +236,9 @@ export function PointMenu({ testId = "point-menu", face, ...actions }: PointActi
               {face}
             </Button>
           ) : (
-            <RoundButton label={`${actions.ident}: more`} className="shrink-0" data-testid={testId}>
+            <IconButton round label={`${actions.ident}: more`} className="shrink-0" data-testid={testId}>
               <Ellipsis className="size-5" aria-hidden="true" />
-            </RoundButton>
+            </IconButton>
           )
         }
       />

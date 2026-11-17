@@ -3,12 +3,12 @@ import { Autocomplete, Token, TokenField, TokenInput } from "react-aria-componen
 import { TriangleAlert } from "lucide-react";
 import { ScrollArea } from "@base-ui/react/scroll-area";
 import { cn } from "cn";
-import ClearButton from "../../components/ClearButton";
 import { PANEL_FIELD } from "../../components/panelField";
 import { Button } from "../../components/ui/button";
 import { Alert, AlertAction, AlertDescription } from "../../components/ui/alert";
 import { InputGroup } from "../../components/ui/input-group";
 import { Popover, PopoverContent } from "../../components/ui/popover";
+import { SearchFieldClear } from "../../components/ui/search-field";
 import type { FuelStopSuggestion } from "../../lib/api/types";
 import { useKeyboardInset } from "../../hooks/use-viewport";
 import { fromChunk } from "../../lib/fromChunk";
@@ -239,6 +239,11 @@ export default function RouteBox({
                         finger, a row's, and 14 from md up. Idents in capitals, as they go in. */}
                     <TokenInput
                       ref={field}
+                      // The group's control, so the stock InputGroup draws its
+                      // focus ring round the box while it is typed in, as the
+                      // N-number's and the altitude's do (InlineField): the
+                      // line's own outline is put away, and none showed.
+                      data-slot="input-group-control"
                       onPointerDown={onPress}
                       onClick={onFieldClick}
                       data-testid="route-type"
@@ -267,8 +272,10 @@ export default function RouteBox({
                 </ScrollArea.Content>
               </ScrollArea.Viewport>
             </ScrollArea.Root>
-            {/* What is typed cleared, the field kept, as iOS's fields clear. */}
-            {typed.text && <ClearButton label="Clear what is typed" onClear={clearTyped} className="mt-1 mr-1" />}
+            {/* What is typed cleared, the field kept, as iOS's fields clear:
+                React Aria's field clear (ui/search-field), its press keeping
+                the focus in the box; the TokenField has no clear slot. */}
+            {typed.text && <SearchFieldClear aria-label="Clear what is typed" onPress={clearTyped} className="mt-1 mr-1" />}
             {/* The route is cleared from its ••• menu, not a ✕ here (the
                 owner, 2026-11-11, ShareMenu's Clear route). Folded again, as
                 iOS's Done ends an edit: the box's first line at its end.

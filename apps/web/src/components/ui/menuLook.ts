@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import { cn } from "cn";
 import { MATERIAL } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
 
@@ -38,3 +40,33 @@ export const MENU_SEPARATOR = "mx-0 my-0 h-2 bg-foreground/8 native:-mx-1 native
 
 /** A group's heading in a menu. */
 export const MENU_LABEL = `px-4 pt-2 pb-1 font-medium text-muted-foreground ${TEXT.note} native:px-2 native:py-1.5`;
+
+/** A pull-down's trigger (PullDown): the tinted words, its 44-point
+ *  area a pseudo-element round the words, never a bigger button
+ *  (index.css's rule for every control):
+ *  eleven over and under the words' 22. The stand-in's until the popups'
+ *  chunk is in, and the Select's trigger's (PullDownSelect, which puts the
+ *  stock trigger's field look away). */
+export const PULL_DOWN_WORDS = cn(
+  "relative inline-flex min-w-0 items-center gap-1 rounded-sm text-tint outline-none",
+  "after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+  "[&_svg]:shrink-0",
+  TEXT.row,
+);
+
+/** The words picked, said with the pull-down's name ("Time aloft: 1 h"). */
+export function pullDownName({
+  label,
+  value,
+  options,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: ReactNode; text?: string }[];
+  placeholder?: string;
+}) {
+  const picked = options.find((o) => o.value === value);
+  const words = picked ? (picked.text ?? (typeof picked.label === "string" ? picked.label : picked.value)) : (placeholder ?? "");
+  return `${label}: ${words}`;
+}

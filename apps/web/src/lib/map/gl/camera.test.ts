@@ -13,7 +13,7 @@ type Listener = (e: { originalEvent?: unknown }) => void;
 function fakeMap() {
   const listeners = new Map<string, Set<Listener>>();
   const calls: { name: string; options: Record<string, unknown> }[] = [];
-  const state = { center: { lng: 0, lat: 0 }, zoom: 8, moving: false };
+  const state = { center: { lng: 0, lat: 0 }, zoom: 8, moving: false, bearing: 0, terrain: false };
   const record =
     (name: string) =>
     (a: unknown, b?: unknown): void => {
@@ -27,6 +27,8 @@ function fakeMap() {
     getPadding: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
     getCenter: () => ({ ...state.center, toArray: () => [state.center.lng, state.center.lat] }),
     getZoom: () => state.zoom,
+    getBearing: () => state.bearing,
+    getTerrain: () => (state.terrain ? {} : null),
     isMoving: () => state.moving,
     project: (p: [number, number] | { lng: number; lat: number }) => {
       const [lng, lat] = Array.isArray(p) ? p : [p.lng, p.lat];
@@ -39,6 +41,8 @@ function fakeMap() {
     jumpTo: record("jumpTo"),
     fitBounds: record("fitBounds"),
     setPadding: record("setPadding"),
+    resetNorth: record("resetNorth"),
+    resetNorthPitch: record("resetNorthPitch"),
   } as unknown as GlMap;
   const fire = (type: string, e: { originalEvent?: unknown } = {}) => listeners.get(type)?.forEach((f) => f(e));
   return { map, calls, state, fire };
@@ -75,6 +79,36 @@ describe("the camera's one owner", () => {
     camera.follow("track", [1.5, 1]);
     nextFrame();
     expect(calls).toHaveLength(1);
+  });
+
+  it("fits at the bearing the pilot turned the map to, not north up", () => {
+    const { map, calls, state } = fakeMap();
+    state.bearing = -35;
+    cameraOf(map).fit(
+      [
+        [0, 0],
+        [2, 1],
+      ],
+      { margin: { top: 8, bottom: 8, left: 8, right: 8 }, duration: 0 },
+    );
+    expect(calls.at(-1)).toMatchObject({ name: "fitBounds", options: { bearing: -35 } });
+  });
+
+  it("turns north up on the compass's tap, a follow waiting behind it and kept on", () => {
+    const { map, calls, state } = fakeMap();
+    state.bearing = 40;
+    const camera = cameraOf(map);
+    camera.northUp();
+    // The flat chart's tilt too, where MapLibre's keyboard tilted it.
+    expect(calls.map((c) => c.name)).toEqual(["resetNorthPitch"]);
+    camera.follow("track", [1.5, 1]);
+    nextFrame();
+    expect(calls).toHaveLength(1);
+    expect(useTracking.getState().follow).toBe(true);
+    // In 3D the tilt is the view's: the bearing alone.
+    state.terrain = true;
+    camera.northUp();
+    expect(calls.at(-1)!.name).toBe("resetNorth");
   });
 
   it("gives the camera to a fit asked in the same frame as a follow's step (FL-22)", () => {

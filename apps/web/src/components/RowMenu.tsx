@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Ellipsis } from "lucide-react";
-import RoundButton from "./RoundButton";
+import IconButton from "./IconButton";
 import { loadPopups, usePopups } from "./popupsChunk";
 import { SwipeRow } from "./SwipeRow";
 
@@ -69,7 +69,8 @@ function RowMenuRow(props: RowMenuProps) {
   return (
     <div className={ROW_LIFT}>
       <div className="min-w-0 flex-1">{props.children}</div>
-      <RoundButton
+      <IconButton
+        round
         label={props.label}
         className={ROW_MORE}
         data-testid={props.testId}
@@ -79,7 +80,7 @@ function RowMenuRow(props: RowMenuProps) {
         }}
       >
         <Ellipsis className="size-5" aria-hidden="true" />
-      </RoundButton>
+      </IconButton>
     </div>
   );
 }

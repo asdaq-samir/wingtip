@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { Play } from "lucide-react";
-import RoundButton from "../../../components/RoundButton";
+import IconButton from "../../../components/IconButton";
 import { AltitudeProfile, RouteProblem } from "../routePanelParts";
 import { useQuery } from "@tanstack/react-query";
 import type { PlanSlices } from "../vm/planSlices";
@@ -42,7 +42,8 @@ export default function ProfileSideView({ vm }: { vm: PlanSlices<"brief" | "flig
           </Suspense>
         )}
         corner={
-          <RoundButton
+          <IconButton
+            round
             label="Dry run"
             onClick={startDryRun}
             disabled={!dryRunReady}
@@ -50,7 +51,7 @@ export default function ProfileSideView({ vm }: { vm: PlanSlices<"brief" | "flig
             data-testid="dry-run-start"
           >
             <Play className="size-5" />
-          </RoundButton>
+          </IconButton>
         }
         wheelHidden={!!dryRunning}
         problem={

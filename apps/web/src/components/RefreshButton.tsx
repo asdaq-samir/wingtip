@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
-import RoundButton from "./RoundButton";
+import IconButton from "./IconButton";
 import { Spinner } from "./ui/spinner";
 import { refreshLive, type LiveCard } from "../lib/liveRefresh";
 
@@ -17,7 +17,8 @@ import { refreshLive, type LiveCard } from "../lib/liveRefresh";
 export function RefreshNow({ card, label = "Refresh", className }: { card: LiveCard; label?: string; className?: string }) {
   const [busy, setBusy] = useState(false);
   return (
-    <RoundButton
+    <IconButton
+      round
       label={label}
       aria-busy={busy || undefined}
       className={className}
@@ -33,6 +34,6 @@ export function RefreshNow({ card, label = "Refresh", className }: { card: LiveC
       ) : (
         <RefreshCw className="size-5" strokeWidth={2} />
       )}
-    </RoundButton>
+    </IconButton>
   );
 }

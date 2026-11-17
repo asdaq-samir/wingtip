@@ -6,6 +6,7 @@ import { cn } from "cn";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
+import { FIELD_CLEAR, FieldClearGlyph } from "@/components/ui/field-clear";
 import { SearchIcon } from "lucide-react";
 
 /**
@@ -115,8 +116,15 @@ const CommandField = AutocompletePrimitive.Input;
 
 /** The field's clear: Base UI's own, shown while something is typed,
  *  clearing it through the root's `onValueChange` and keeping the focus
- *  in the field (drawn as the app's ClearButton by its `render`). */
-const CommandClear = AutocompletePrimitive.Clear;
+ *  in the field, drawn as every field's clear is (ui/field-clear's
+ *  FIELD_CLEAR, iOS's grey disc). */
+function CommandClear({ className, ...props }: AutocompletePrimitive.Clear.Props) {
+  return (
+    <AutocompletePrimitive.Clear data-slot="clear-button" className={cn(FIELD_CLEAR, className)} {...props}>
+      <FieldClearGlyph />
+    </AutocompletePrimitive.Clear>
+  );
+}
 
 function CommandList({ className, ...props }: AutocompletePrimitive.List.Props) {
   return (

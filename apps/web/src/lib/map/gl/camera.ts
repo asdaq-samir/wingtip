@@ -139,7 +139,28 @@ class Camera {
     endFollows();
     this.running = { intent: "fit", aim: { bounds, margin: o.margin, ...(o.maxZoom !== undefined ? { maxZoom: o.maxZoom } : {}) } };
     log("fit", "fitBounds", o);
-    this.map.fitBounds(bounds, { padding: o.margin, duration: o.duration, ...(o.maxZoom !== undefined ? { maxZoom: o.maxZoom } : {}) });
+    // At the bearing the pilot turned the map to: MapLibre's fit turns it
+    // north up unless told (its cameraForBounds' bearing, 0 by default).
+    this.map.fitBounds(bounds, {
+      padding: o.margin,
+      duration: o.duration,
+      bearing: this.map.getBearing(),
+      ...(o.maxZoom !== undefined ? { maxZoom: o.maxZoom } : {}),
+    });
+  }
+
+  /** North up again, as Apple Maps' compass turns its map back (the
+   *  compass among the map's buttons, CompassButton): the bearing alone in
+   *  3D, where the tilt is the 3D view's, and the bearing and any tilt on
+   *  the flat chart (MapLibre's keyboard tilts as it turns). Held as a pick
+   *  is, so a follow under way waits for it rather than cutting it short,
+   *  and goes on after it: the compass ends no follow. MapLibre's own
+   *  ease, which Reduce Motion makes a jump. */
+  northUp() {
+    this.running = { intent: "pick", aim: null };
+    log("pick", "resetNorth");
+    if (this.map.getTerrain()) this.map.resetNorth();
+    else this.map.resetNorthPitch();
   }
 
   /**
@@ -268,6 +289,7 @@ class Camera {
           right: pad.right + margin.right,
         },
         absolutePadding: true,
+        bearing: map.getBearing(),
         ...(aim.maxZoom !== undefined ? { maxZoom: aim.maxZoom } : {}),
       });
       if (camera) {
