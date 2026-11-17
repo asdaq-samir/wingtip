@@ -200,7 +200,7 @@ export interface ProceduresRouteProps {
  * place and page, the dialogs open, each field's procedures, card and
  * forecast wind asked for, the runways picked into the wind for the pilot,
  * and the fuel in the tanks at each point. The list itself is drawn by
- * ProceduresRoute and its parts (components/procedures).
+ * ProceduresRoute and its parts (features/procedures).
  */
 export function useProceduresRoute(props: ProceduresRouteProps) {
   const {

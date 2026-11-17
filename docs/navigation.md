@@ -29,7 +29,7 @@ not timed on a device.
   screen gets a way in from a list that already holds its kind, never a new
   place on the screen; moving a panel or a control is the owner's call.
 - **One way in per platform.** Every screen opens by its name from one place:
-  the web's `useOpenScreen` (`features/plan/hooks`) through
+  the web's `useOpenScreen` (`features/fpl/vm`) through
   `lib/navigation/wanted`, iOS's `RootView.openScreen` (through
   `AppCommand.open`, a card's through the environment's `appCommand`;
   the strip's `ScreenAsk`), which opens the card

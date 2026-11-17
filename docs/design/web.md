@@ -600,7 +600,7 @@ address with a ▶ on each row (`play`), each opening `PastFlightCard`
 (`useOneSearch`) reads the same two queries, its type at once and
 whether it is in the air under it, so the card opens on answers already
 in hand. The FPL's airplane field suggests from the same rows as it is typed
-(`navlog/useAirplaneSuggestions` over `hooks/useAirplaneHits`, Base UI's
+(`navlog/useAirplaneSuggestions` over `features/plan/useAirplaneHits`, Base UI's
 Autocomplete through `CommandRoot` and `CommandField` in `InlineField`,
 the list in a Popover under the field), the record alone, no live find. No airplane picked shows "No airplane
 picked" and Pick Airplane, never a default type (decision 0011).
@@ -806,7 +806,7 @@ by clicking the map, typing an address or a name, up to 9 stops in all
    the foot: To, Dist, ETE, Fuel (ETE and Fuel only with an airplane).
    One strip in every state, FPL's route row on the ground, a dry run and
    in flight, and the training page's too: `components/FigureStrip`, the
-   plan's figures and their taps given it by `features/plan`'s
+   plan's figures and their taps given it by `features/navlog`'s
    `TripFigures` (`FlightLine` until 2026-11-17). In flight the head over
    the map gives the next checkpoint only while the engine's `in_flight`
    says the airplane is on the route (`on_route`), as the iPhone's

@@ -219,12 +219,23 @@ src/
                            another feature or a shared component reaches it only through its index.ts
     shell/MapPage.tsx  The shell both pages mount into (the contract a workspace hands it is lib/workspace.ts);
                                       the page's start (dynamicType, freshLoad) that main.tsx runs
-    plan/PlanWorkspace.tsx           The pilot's workspace: hooks/usePlan.ts (state), components/: RouteMap,
-                                      BuildNotice, AltitudeReasoning, navlog/, briefing/, procedures/
-    plan/lib/                        The plan's own rules and readings: pattern, wind, radio, routeHolds,
-                                      runwayCheck, passTimes, hourly, glance, flightPlanForm, …
-    plan/map/                        The planner's own map: GlRouteMap, layers/ only it draws (traffic, TFRs,
-                                      weather, tracks, marks), terrain/ (the 3D view), its traffic and TFR cards
+    fpl/PlanWorkspace.tsx            The pilot's workspace, FPL, which composes the planner's features:
+                                      vm/ (its view model, usePlanWorkspace, a hook per concern), workspace/
+                                      (the sheet's parts), search/ (the one search), routePanel (the cards' chunk)
+    plan/                            The plan's core, which every planner feature stands on: the address
+                                      (planAddress), the queries (usePlan), the nav log's rows, format, pattern,
+                                      wind, radio, routeHolds, passTimes, the sheet's state (usePanelView)
+    plan-map/                        The planner's own map: GlRouteMap, layers/ only it draws (TFRs, weather,
+                                      tracks, marks), terrain/ (the 3D view), forecastRun/, its TFR and weather cards
+    navlog/                          The nav log and the profile: NavLogView, altitude/, FlightInputs, the kneeboard
+    brief/                           The Brief: FlightBriefingView and its parts, glance, the go / no-go, Save
+    place/                           The airport card: PlaceCard and its tabs, NOTAMs, runways, the airspace's card
+    procedures/                      The route's fields and points in FPL's list: ProceduresRoute, FieldStep, holds
+    route/                           The route box (RouteBox), its pills and edits, a point's altitude and controls
+    flying/                          The dry run, the head in flight, a flight flown's card
+    search/                          Search's results and filters, Nearest, Recents
+    share/, stops/, traffic/,        The Share menu; the Stops card; a traffic airplane's card; the Aircraft
+      aircraft-pick/, first-flight/   tab's lists; the first open's welcome
     chart-labels/TrainWorkspace.tsx  The developer's workspace: hooks/useTraining.ts (state), logic.ts (pure,
                                       tested), components/: ChartMap, WaypointPanel, PointPopup, FilterBar
     pilot/PilotPanel.tsx             The pilot console: AccountPanels.tsx (sign-in, aircraft, flights),
@@ -242,12 +253,18 @@ another feature's files; what two need moves to `lib/` (or `components/`
 for a screen), and what a feature offers the rest is its `index.ts`, with a
 loader (`loadPilotPanel = () => import("./PilotPanel")`) for a part on a
 chunk of its own, so naming the entry never pulls the chunk into a first
-load.
+load. A feature whose parts other features draw only inside their own
+lazily loaded chunks (the route panel's cards, the Brief's airport rows)
+offers those from a second entry, `lazy.ts`, which nothing on the first
+load imports: the bundler keeps every module an imported entry re-exports
+in the importer's chunk, so the plan's cards named in an `index.ts` would
+load with the page (the plan's split measured 2.23 MB against 1.04 MB).
 
 dependency-cruiser holds the layers (`.dependency-cruiser.cjs`, `npm run
 layers`): `lib/` and `hooks/` import neither `components/` nor
 `features/`; `components/` import a feature only through its `index.ts`;
-a feature imports another only through its `index.ts`; `main.tsx`, which
+a feature imports another only through its `index.ts` or its `lazy.ts`,
+and no `index.ts` reaches a `lazy.ts` (`index-not-lazy`); `main.tsx`, which
 wires them, may name any. Every way a module is named counts: `import`,
 `export ... from`, `import()`, a type-only import. No file reaches itself
 through its imports (`no-circular`), a type-only import included; a lazy
@@ -421,7 +438,7 @@ covers, eased in the sheet's own time, so what was in the middle of the
 room left stays there.
 
 **The first flight.** The first time the planner opens with no route on
-a device, `FirstFlight` (its view model `hooks/useFirstFlight.ts`) is a
+a device, `FirstFlight` (its view model `features/first-flight/useFirstFlight.ts`) is a
 card over the map: a destination from the same airport search the
 route's box uses (`useAirportSearch`, through `PanelCapsule`'s field and
 results), and Plan it, which plans from own ship's nearest field, else

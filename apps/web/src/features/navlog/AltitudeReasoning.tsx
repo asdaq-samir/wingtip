@@ -8,17 +8,8 @@ import { TEXT } from "../../lib/text";
 import { feet, flightLevel } from "../../lib/format";
 import { WINDS_MODELLED, windsSource } from "../../lib/windsAloft";
 import { capitalised, faaWords, suaAltitudes } from "../../lib/advisories";
-import {
-  altFt,
-  bearing,
-  cruiseByAltitude,
-  describeFuel,
-  describeSteps,
-  describeTime,
-  feetBelowClouds,
-  PLAN_NAME,
-  economicalWords,
-} from "../plan";
+import { altFt, bearing, cruiseByAltitude, describeFuel, describeSteps, describeTime, feetBelowClouds, PLAN_NAME } from "../plan";
+import { economicalWords } from "../plan";
 import { callEngine } from "../../lib/engine/engine";
 import { andList } from "../../lib/listWords";
 

@@ -1,16 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
-import {
-  useWindPicks,
-  holdsOf,
-  holdsParam,
-  type PlanParams,
-  departureRunways,
-  landingRunways,
-  namesRoute,
-  type PlannedRoute,
-  type PlanCourse,
-} from "../../plan";
+import { useWindPicks, holdsOf, holdsParam, type PlanParams, departureRunways, landingRunways, namesRoute } from "../../plan";
+import type { PlannedRoute, PlanCourse } from "../../plan";
 import { altitudesOf, altitudesParam, departureOf, groundOf, identOf, nameOwnPoints, routeOf, stopsOf } from "../../../lib/identSchema";
 import { useEngineWhen } from "../../../lib/engine/useEngineReady";
 import { usePreferences } from "../../../lib/preferences";

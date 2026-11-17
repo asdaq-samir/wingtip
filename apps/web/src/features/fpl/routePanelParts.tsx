@@ -3,7 +3,7 @@ import { fromChunk } from "../../lib/fromChunk";
 import { loadPilotPanel } from "../pilot";
 
 // The planner's parts drawn from chunks of their own (PlanWorkspace and its
-// sub-views, components/workspace): the pilot console and the route's panel.
+// sub-views, workspace/): the pilot console and the route's panel.
 
 // The pilot console on a chunk of its own: the account forms (react-hook-
 // form, zod), the flights, the logbook and the guide are no part of a

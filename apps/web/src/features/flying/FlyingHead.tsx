@@ -6,18 +6,8 @@ import { openEmergency } from "../../lib/emergencyStore";
 import { clockTime, duration } from "../../lib/format";
 import { useEngineReady } from "../../lib/engine/useEngineReady";
 import { useOwnShip } from "../../lib/map/position/ownShip";
-import {
-  DRY_RUN,
-  usePastFlight,
-  dryRunAt,
-  type DryRun,
-  dryRunNext,
-  gpsAhead,
-  type CourseLine,
-  isLegPoint,
-  rowPoint,
-  type NavLogRow,
-} from "../plan";
+import { DRY_RUN, usePastFlight, dryRunAt, type DryRun, dryRunNext, gpsAhead, type CourseLine, isLegPoint, rowPoint } from "../plan";
+import type { NavLogRow } from "../plan";
 import { GROUP_HEADING, TEXT } from "../../lib/text";
 
 /**

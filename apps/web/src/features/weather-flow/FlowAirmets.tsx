@@ -17,7 +17,7 @@ const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollectio
 const CONUS = { south: 18, west: -130, north: 56, east: -61 };
 
 /** Each outline dashed in its hazard's colour, as the map's own weather
- *  areas draw a G-AIRMET (plan/map/layers/WeatherGl), and its label along
+ *  areas draw a G-AIRMET (plan-map/layers/WeatherGl), and its label along
  *  it, as aviationweather.gov's Winds map labels its own ("SfcWind"). */
 const LAYERS: (LineLayerSpecification | SymbolLayerSpecification)[] = [
   {

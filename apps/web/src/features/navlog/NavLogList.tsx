@@ -6,20 +6,8 @@ import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import type { Leg } from "../../lib/api/types";
 import { feet, nm, zoneName } from "../../lib/format";
-import {
-  placeName,
-  altFt,
-  bearing,
-  etaAt,
-  one,
-  windText,
-  flownNmOf,
-  isLegPoint,
-  legOf,
-  procedureOf,
-  rowPoint,
-  type NavLogRow,
-} from "../plan";
+import { placeName, altFt, bearing, etaAt, one, windText, flownNmOf, isLegPoint, legOf, procedureOf, rowPoint } from "../plan";
+import type { NavLogRow } from "../plan";
 import { wantPlace } from "../../lib/navigation/wanted";
 import { TEXT } from "../../lib/text";
 import { PointMark } from "./PointMark";

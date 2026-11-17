@@ -84,7 +84,7 @@ Compose. Nothing here is built by hand where a stock part does it.
    registry once the N-number is whole (its type and year, or "Not
    registered"; "Type the rest to look it up" while it is not), and Types
    flown by the book -- built from the one search's own airplane rows
-   (the web's `hooks/useAirplaneHits`), so the two never differ. Enter or
+   (the web's `features/plan/useAirplaneHits`), so the two never differ. Enter or
    leaving the field still takes a whole N-number as typed; arrows and
    Enter pick a row, Escape closes the list.
 6. **Back and Escape close the top card first**, then go back a level.
@@ -418,7 +418,7 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
 
 | Web | iPhone | Android |
 |---|---|---|
-| Base UI Autocomplete with groups (`OneSearchField`, `OneSearchResults`, `hooks/useOneSearch`), Base UI Menu, list rows | `.searchable` with `.searchSuggestions` in the sheet's `NavigationStack` (`Search/OneSearch`, `OneSearchModel`), `Menu`, `List` | Material 3 `SearchBar` with its expanded results (`search/OneSearch`), `DropdownMenu`, `ListItem` |
+| Base UI Autocomplete with groups (`OneSearchField`, `OneSearchResults`, `features/fpl/search/useOneSearch`), Base UI Menu, list rows | `.searchable` with `.searchSuggestions` in the sheet's `NavigationStack` (`Search/OneSearch`, `OneSearchModel`), `Menu`, `List` | Material 3 `SearchBar` with its expanded results (`search/OneSearch`), `DropdownMenu`, `ListItem` |
 
 Tests: [`e2e/one-search.spec.ts`](../../apps/web/e2e/one-search.spec.ts)
 (`@smoke`: an airport picked from the search), `WingtipTests/OneSearchTests`,

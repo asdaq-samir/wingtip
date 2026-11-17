@@ -46,7 +46,7 @@ import { useOneSearch } from "./search/useOneSearch";
  *
  * The view (MVVM): what the screen shows and every handler that changes
  * it are the view model's (usePlanWorkspace); this draws it, its parts in
- * components/workspace, and keeps the parts made once for the same plan
+ * workspace/, and keeps the parts made once for the same plan
  * (useMemo), as the route panel's are drawn again only when their props
  * change (routePanelParts' memo).
  */

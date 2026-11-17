@@ -4,7 +4,7 @@ import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
- * The dry run played against the forecast (features/plan/forecastRun):
+ * The dry run played against the forecast (features/plan-map/forecastRun):
  * forecast mode on among the run's controls, the run is sent once to the
  * planner (stubbed here: the weather on CI's runner is whatever the day
  * brings) and its strip shows each leg's hour and forecast category, what

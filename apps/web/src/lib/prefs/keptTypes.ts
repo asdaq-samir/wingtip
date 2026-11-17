@@ -50,7 +50,7 @@ export interface KeptSlice {
   homeAirport: RecentAirport | null;
   favoriteAirports: RecentAirport[];
   /** The airplanes whose cards were opened last, newest first, and the
-   *  ones the pilot starred, as the airports' are (features/plan AircraftTiles). */
+   *  ones the pilot starred, as the airports' are (features/aircraft-pick AircraftTiles). */
   recentAircraft: KeptAircraft[];
   favoriteAircraft: KeptAircraft[];
   /** The pilot's own airplane, first among the airplanes' Favorites as

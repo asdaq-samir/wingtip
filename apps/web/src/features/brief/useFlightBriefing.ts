@@ -3,18 +3,8 @@ import { useEffect, useState, useEffectEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { aircraftListQuery, currencyQuery, pilotQuery } from "../../lib/queryClient";
 import type { Briefing, Course, Leg, NavLogAltitude, Totals } from "../../lib/api/types";
-import {
-  type BriefingState,
-  ceilingAndVisibility,
-  PLAN_NAME,
-  windLine,
-  windText,
-  useLoad,
-  runwayNumber,
-  callSign,
-  fieldPhases,
-  type BriefingPart,
-} from "../plan";
+import { type BriefingState, ceilingAndVisibility, PLAN_NAME, windLine, windText, useLoad, runwayNumber, callSign } from "../plan";
+import { fieldPhases, type BriefingPart } from "../plan";
 import { feetRange, flightLevel, grouped, localDay } from "../../lib/format";
 import { isAirwayToken } from "../../lib/identSchema";
 import { armText } from "../../lib/weightBalance";

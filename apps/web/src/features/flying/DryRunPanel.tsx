@@ -9,18 +9,8 @@ import RoundButton from "../../components/RoundButton";
 import { Slider } from "../../components/ui/slider";
 import { PlaybackButton, PlaybackToggle, PlaybackToolbar, PlayToggle, SpeedMenu } from "../../components/PlaybackBar";
 import { playbackKey } from "../../components/playbackKeys";
-import {
-  REPLAY_SPEEDS,
-  pausePastFlight,
-  playPastFlight,
-  positionAt,
-  usePastFlight,
-  dryRunFlown,
-  runNmAt,
-  type DryRun,
-  type Flown,
-  type RouteEnds,
-} from "../plan";
+import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, usePastFlight, dryRunFlown, runNmAt, type DryRun } from "../plan";
+import type { Flown, RouteEnds } from "../plan";
 import { toggleReplay } from "../replay";
 import { routeProfileQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";

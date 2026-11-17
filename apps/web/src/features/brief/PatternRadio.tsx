@@ -2,19 +2,8 @@ import { Fragment } from "react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import type { Briefing, Leg } from "../../lib/api/types";
-import {
-  compassWord,
-  entryFor,
-  exitFor,
-  patternSideDeg,
-  runwayNumber,
-  type RunwayEnd,
-  fieldPhases,
-  type RadioCall,
-  type RadioPhase,
-  altFt,
-  feet,
-} from "../plan";
+import { compassWord, entryFor, exitFor, patternSideDeg, runwayNumber, type RunwayEnd, fieldPhases, type RadioCall } from "../plan";
+import { type RadioPhase, altFt, feet } from "../plan";
 import { useRunwayPicks } from "../plan/lazy";
 import { Mhz } from "../place/lazy";
 import { TEXT } from "../../lib/text";

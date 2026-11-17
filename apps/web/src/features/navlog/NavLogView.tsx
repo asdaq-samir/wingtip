@@ -12,33 +12,9 @@ import {
 import { NoteRow, SelectableRow } from "../../components/SelectableRows";
 import PanelTabs from "./PanelTabs";
 import { usePrinting } from "../plan/lazy";
-import {
-  LEGS,
-  type PanelTab,
-  type Description,
-  descriptionKey,
-  altFt,
-  bearing,
-  etaAt,
-  feetBelowClouds,
-  legsWithoutWind,
-  one,
-  plannedWords,
-  windAloft,
-  type BriefingPart,
-  flownNmOf,
-  isLegPoint,
-  legOf,
-  navLogRows,
-  phaseOf,
-  rowPoint,
-  type NavLogRow,
-  type RouteEnds,
-  dryRunRow,
-  type DryRun,
-  DRY_RUN,
-  usePastFlight,
-} from "../plan";
+import { LEGS, type PanelTab, type Description, descriptionKey, altFt, bearing, etaAt, feetBelowClouds, legsWithoutWind } from "../plan";
+import { one, plannedWords, windAloft, type BriefingPart, flownNmOf, isLegPoint, legOf, navLogRows, phaseOf, rowPoint } from "../plan";
+import { type NavLogRow, type RouteEnds, dryRunRow, type DryRun, DRY_RUN, usePastFlight } from "../plan";
 import { SectionPane } from "../../components/SectionPane";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";

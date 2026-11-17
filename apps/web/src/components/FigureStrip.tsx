@@ -37,7 +37,7 @@ const TYPE: Record<StripSize, { value: string; unit: string; name?: string }> = 
 /**
  * The one strip of figures pinned at a sheet's foot, in every state:
  * FPL's flight figures on the ground, in a dry run and in flight
- * (features/plan's TripFigures, which makes some of them buttons), and the
+ * (features/navlog's TripFigures, which makes some of them buttons), and the
  * training page's (how far the rating has got, the model's error), at the
  * owner's pick of the dev page's redesign ("redesign the dev similar
  * way"). Each figure its name over its value, centred in its column at the
