@@ -191,9 +191,11 @@ function guess({ distanceNm, cruiseTasKt, fuelBurnGph, taxiFuelGal }: NonNullabl
  *  head says them under its name at every size ("65.3 nm · 35m · 9.0 gal",
  *  the owner's pick, 2026-11-11): the same figures, exact, the To left to
  *  the strip. */
-export function figuresLine(input: TripInput): string {
-  return tripFigures(input, false)
-    .filter((f) => f.name !== "To")
-    .map((f) => (f.unit ? `${f.value} ${f.unit}` : f.value))
-    .join(" · ");
+export function figuresLine(input: TripInput, noAirplane = false): string {
+  const figures = tripFigures(input, false).filter((f) => f.name !== "To");
+  const said = figures.map((f) => (f.unit ? `${f.value} ${f.unit}` : f.value));
+  // With no airplane the time and the fuel are none of the planner's (the
+  // owner, 2026-11-09: "don't assume"): said why, not two dashes ("1334.1
+  // nm · — · —", the UI audit's C4).
+  return (noAirplane && figures.slice(1).every((f) => f.value === "—") ? [said[0], "no airplane picked"] : said).join(" · ");
 }

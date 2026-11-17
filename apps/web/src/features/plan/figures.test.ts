@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Totals } from "../../lib/api/types";
 import { fitFigures } from "../../components/useFigureFit";
-import { shortFlights, tripFigures } from "./figures";
+import { figuresLine, shortFlights, tripFigures } from "./figures";
 import { nameOwnPoints } from "../../lib/identSchema";
 
 const totals = { distance_nm: 323.6, ete_min: 165, fuel_gal: 23.4, fuel_required_gal: 30.1, hops: [] } as unknown as Totals;
@@ -99,6 +99,13 @@ describe("tripFigures", () => {
     // rounded on their own read "1h 60m".
     const est = { totals: null, local: false, destination: "KDLH", estimate: { distanceNm: 199.33, cruiseTasKt: 100, fuelBurnGph: 10 } };
     expect(tripFigures(est, false)[2]!.value).toBe("≈2h");
+  });
+
+  it("says why the Nav Log's line has no time or fuel with no airplane, not two dashes (UI audit C4)", () => {
+    const none = { ...input, totals: { ...totals, ete_min: null, fuel_required_gal: null } as unknown as Totals };
+    expect(figuresLine(none, true)).toBe("323.6 nm · no airplane picked");
+    expect(figuresLine(none, false)).toBe("323.6 nm · — · —");
+    expect(figuresLine(input, true)).toBe("323.6 nm · 2h 45m · 30.1 gal");
   });
 });
 

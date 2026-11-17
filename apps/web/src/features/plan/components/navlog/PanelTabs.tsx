@@ -70,7 +70,7 @@ export default function PanelTabs({
    *  the right or a device's Back (lib/openCards); its tabs stay over it
    *  for going from page to page. Without one, Preflight is up to begin
    *  with. */
-  overview?: ComponentType<{ onOpen: (tab: PanelTab) => void }>;
+  overview?: ComponentType<{ onOpen: (tab: PanelTab) => void; notice?: ReactNode }>;
   /** Over the tabs: the printed title. */
   before: ReactNode;
   contents: Record<PanelTab, ReactNode>;
@@ -251,8 +251,10 @@ export default function PanelTabs({
           className="flight-briefing @container pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))] print:h-auto print:pb-0"
           data-testid="brief-scroller"
         >
-          {notice}
-          {tab === null && !printing && Overview && <Overview onOpen={openPage} />}
+          {/* The notice over every page, but under the verdict on the
+              overview, which says first whether to go (decision 0012; the
+              UI audit's C6, 2026-11-17). */}
+          {tab === null && !printing && Overview ? <Overview onOpen={openPage} notice={notice} /> : notice}
           <SectionsOpen.Provider value>
             <GoToTab.Provider value={goTo}>
               {/* Every page's sections one under another, each under its

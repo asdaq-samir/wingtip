@@ -1,4 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { Button } from "../../../../../components/ui/button";
@@ -17,6 +18,12 @@ import ProfileNotes from "./ProfileNotes";
 import { pointsAlong, waypointsAlong } from "./points";
 import { useAltitudePreview } from "./useAltitudePreview";
 import { coursePoints } from "../../../../../lib/course";
+import { sideViewTop } from "../profile";
+
+/** What the side view is drawn for: the altitude previewed (null while
+ *  the one flown is in sight), the cruise flown, its height in feet, and
+ *  where the slider goes on it. */
+type SideView = { preview: number | null; cruise: number | null; top: number | null; wheelSlot: (el: HTMLElement | null) => void };
 
 const LEVEL_INK: Record<string, string> = { red: "text-destructive-ink", yellow: "text-caution-ink" };
 
@@ -57,7 +64,7 @@ export function AltitudeProfile({
   ends: RouteEnds | null;
   /** The side view, its line at `preview` while the slider is on another
    *  altitude than the one flown. */
-  chart: (preview: number | null) => ReactNode;
+  chart: (view: SideView) => ReactNode;
   corner?: ReactNode;
   wheelHidden?: boolean;
   problem?: ReactNode;
@@ -109,15 +116,17 @@ export function AltitudeProfile({
   });
   const { nav, legs, flown, rows, rising, shownAt, clearance } = vm;
   const [sliding, setSliding] = useState<number | null>(null);
-  const stepOf = (altitude: number | null) => {
-    if (altitude === null || !rising.length) return 0;
-    // The nearest row: Auto's GPS altitude is between them.
-    let best = 0;
-    rising.forEach((ft, i) => {
-      if (Math.abs(ft - altitude) < Math.abs(rising[best]! - altitude)) best = i;
-    });
-    return best;
-  };
+  // The slider's place in the side view's plot (MiniProfile's), and the
+  // plot's height in feet: the slider is laid on the chart's own scale, so
+  // its knob sits at the altitude its tag says. It sat a step a row down
+  // the graph's whole height, and FL-145 was drawn at about 9,500 on a
+  // ruler topping at 12,000 (the UI audit's A1, 2026-11-17).
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  const preview = shownAt !== null && shownAt !== flown ? shownAt : null;
+  const top = profile ? sideViewTop(profile, [flown ?? 0, preview ?? 0]) : null;
+  // The engine's row nearest the feet the slider is at: its steps are
+  // every 500 ft, as the rows are, and Auto's GPS altitude is between them.
+  const rowNear = (ft: number) => rising.reduce((best, row) => (Math.abs(row - ft) < Math.abs(best - ft) ? row : best), rising[0] ?? ft);
   const marks = profile && waypoints && onLegAltitude ? waypointsAlong(legs, profile.length_nm, routePoints, waypoints) : [];
   // The waypoint's own altitude, its change begun there (Start At) or done
   // by it (Cross At): the planner's `altitudes` and `altitude_starts`.
@@ -125,35 +134,42 @@ export function AltitudeProfile({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-3">
       <div ref={graph} className="relative h-56 max-h-full min-h-16 shrink-0">
-        {chart(shownAt !== null && shownAt !== flown ? shownAt : null)}
-        {/* The stock Slider, upright down the graph's left, a step each of
-            the engine's altitudes: to VoiceOver and the keyboard an
-            adjustable control saying the altitude and what it clears. Its
-            drags its own, not the sheet's (data-base-ui-swipe-ignore). */}
-        {!wheelHidden && shownAt !== null && rising.length > 1 && (
-          <Slider
-            orientation="vertical"
-            min={0}
-            max={rising.length - 1}
-            step={1}
-            largeStep={4}
-            value={sliding ?? stepOf(shownAt)}
-            onValueChange={(step) => {
-              setSliding(step as number);
-              const ft = rising[step as number];
-              if (ft !== undefined) vm.live(ft);
-            }}
-            onValueCommitted={(step) => {
-              setSliding(null);
-              const ft = rising[step as number];
-              if (ft !== undefined) vm.rest(ft);
-            }}
-            className="absolute top-2 bottom-6 left-1 w-11"
-            data-testid="altitude-wheel"
-            data-base-ui-swipe-ignore=""
-            thumb={{ "aria-label": "Cruise altitude", getAriaValueText: (_w, step) => vm.spoken(rising[step] ?? shownAt) }}
-          />
-        )}
+        {chart({ preview, cruise: flown, top, wheelSlot: setSlot })}
+        {/* The stock Slider, upright down the plot's left on its scale in
+            feet, a step each of the engine's altitudes: to VoiceOver and
+            the keyboard an adjustable control saying the altitude and what
+            it clears. Its drags its own, not the sheet's
+            (data-base-ui-swipe-ignore). */}
+        {!wheelHidden &&
+          slot &&
+          top !== null &&
+          shownAt !== null &&
+          rising.length > 1 &&
+          createPortal(
+            <Slider
+              orientation="vertical"
+              min={0}
+              max={top}
+              step={500}
+              largeStep={2000}
+              thumbAlignment="center"
+              value={sliding ?? shownAt}
+              onValueChange={(ft) => {
+                const row = rowNear(ft as number);
+                setSliding(row);
+                vm.live(row);
+              }}
+              onValueCommitted={(ft) => {
+                setSliding(null);
+                vm.rest(rowNear(ft as number));
+              }}
+              className="h-full w-11"
+              data-testid="altitude-wheel"
+              data-base-ui-swipe-ignore=""
+              thumb={{ "aria-label": "Cruise altitude", getAriaValueText: (_w, ft) => vm.spoken(rowNear(ft)) }}
+            />,
+            slot,
+          )}
         {!wheelHidden && marks.map((p) => <LegAltitude key={p.ident} point={p} profile={airplaneProfile} onSet={setLeg} />)}
         {corner}
       </div>

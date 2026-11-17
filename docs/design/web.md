@@ -929,11 +929,14 @@ cluttered at the owner's word, 2026-11-16, "How do we make brief less
 cluttered?" then "Do it").
 1. The verdict, as the engine words it, and at most three findings, each
    two rows at most, the finding alone (the engine's `gonogo_glance_lines`' `lead`, the risk
-   named, "Risk: High · 16 points"); under its tap
+   in plain words, "High risk, 16 points on the PAVE and IMSAFE checklist"); under its tap
    what to do first (`action`), then why it matters with its rule, the
    reports as sent and the way to its page. No "nothing to fix" row: the
-   verdict says the rest is fine. When to go only when signed in.
-2. The part cards, each with only the figures it has: no Risk on Before
+   verdict says the rest is fine. What the briefing could not check
+   (`BriefingNotices`) under them, not over the verdict (the UI audit,
+   2026-11-17). When to go only when signed in.
+2. The part cards, each named by a `SectionTitle` (a span in the card's
+   button), its figures' names in sentence case, each with only the figures it has: no Risk on Before
    you go (a finding already), no dashes where there is no airplane or
    runway, no copy of the weather finding's line in En route.
 3. The NOTAMs folded into one row, "NOTAMs · 3 that matter, 44 more",

@@ -711,16 +711,16 @@ export default function NavLogView({
     </div>
   );
 
-  // On screen the log a line a point (NavLogList), under a heading of its
-  // own; the table above is the printed page's.
+  // On screen the log a line a point (NavLogList), under its count of
+  // checkpoints, none over a direct leg ("0 Checkpoints"); the table, paper's.
   const checkpointCount = data.filter((r) => r.kind === "checkpoint").length;
   const navLogList =
     data.length === 0 ? (
       <p className={cn("py-3", TEXT.detail)}>No route planned yet</p>
     ) : (
       <>
-        <div className="flex items-center justify-between pt-2 pl-1.5" data-testid="navlog-head">
-          <SectionTitle>{`${checkpointCount} Checkpoint${checkpointCount === 1 ? "" : "s"}`}</SectionTitle>
+        <div className="flex items-center justify-between pt-2 pl-1.5 empty:hidden" data-testid="navlog-head">
+          {checkpointCount > 0 && <SectionTitle>{`${checkpointCount} Checkpoint${checkpointCount === 1 ? "" : "s"}`}</SectionTitle>}
         </div>
         <NavLogList
           rows={data}

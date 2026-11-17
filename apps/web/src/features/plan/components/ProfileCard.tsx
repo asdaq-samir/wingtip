@@ -16,20 +16,18 @@ import { TEXT } from "../../../lib/text";
 export default function ProfileCard({
   name,
   sub,
-  line,
   rules,
   cautions = [],
   onClose,
   children,
 }: {
-  /** Its head, as the Brief's is: the route's name, and under it where
-   *  from and to, the airplane, the altitude and when -- the tab bar over
-   *  it says "Profile" already (the owner's "titles appear twice"). */
   name: ReactNode;
   /** Under its name at every size, the smallest too: the cruise and the
-   *  clearance's verdict (ProfileLine). */
+   *  clearance's verdict (ProfileLine). The Brief's line of the plan
+   *  (where from and to, the airplane, the altitude, when) is not said
+   *  again under it: it said the cruise twice and the card scrolled over
+   *  it under the pinned head (the UI audit's B2, 2026-11-17). */
   sub?: ReactNode;
-  line: ReactNode;
   /** The flight rules, VFR or IFR, a segmented control at the top of the
    *  card's content, with no label of its own (the owner's "don't need the
    *  label flight rules"): the head keeps its two buttons, Share and ✕
@@ -58,15 +56,7 @@ export default function ProfileCard({
       className="flex min-h-0 flex-1 flex-col px-4 pt-[var(--corner-inset,0.75rem)] in-data-[panel=half]:max-h-[calc(100%-max(var(--sheet-offset,0px),-1*var(--sheet-offset,0px)))] print:hidden"
       data-testid="profile-card"
     >
-      <CardHead
-        name={name}
-        sub={sub}
-        line={line}
-        nameTestId="profile-name"
-        onClose={onClose}
-        onShare="profile"
-        closeTestId="profile-close"
-      />
+      <CardHead name={name} sub={sub} nameTestId="profile-name" onClose={onClose} onShare="profile" closeTestId="profile-close" />
       {rules && <div className="mt-2 flex shrink-0 justify-center">{rules}</div>}
       {cautions.length > 0 && (
         <ul className={cn("mt-2 shrink-0 space-y-1 rounded-lg bg-caution-wash px-2.5 py-2 text-caution-ink", TEXT.detail)}>

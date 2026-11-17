@@ -25,13 +25,14 @@ import CategoryBadge from "./CategoryBadge";
 import { CARD, TRIGGER } from "../../../../components/glanceLook";
 import { ReadyToFly } from "../../../readyToFly";
 import { Skeleton } from "../../../../components/ui/skeleton";
+import SectionTitle from "../../../../components/SectionTitle";
 import { SkeletonLine } from "../../../../components/QueryState";
 
 /** One figure of a card: its name over it, the figure at a glance's size. */
 function Stat({ label, value, finding }: { label: string; value: ReactNode; finding?: Finding }) {
   return (
     <div className="min-w-0 flex-1">
-      <div className={cn("truncate text-muted-foreground uppercase tracking-wide", TEXT.caption)}>{label}</div>
+      <div className={cn("truncate text-muted-foreground", TEXT.note)}>{label}</div>
       <div className={cn("truncate font-semibold tabular-nums", TEXT.heading, finding && finding !== "ok" && FINDING_TONE[finding])}>
         {value}
       </div>
@@ -87,7 +88,7 @@ function Card({
       className={cn("flex w-full flex-col gap-1.5 px-3.5 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring", CARD)}
     >
       <span className="flex w-full items-center gap-2">
-        <span className={cn("text-muted-foreground uppercase tracking-wide", TEXT.note)}>{label}</span>
+        <SectionTitle as="span">{label}</SectionTitle>
         {ident && <span className={cn("font-bold", TEXT.row)}>{ident}</span>}
         <CategoryBadge category={category} />
         {marked && <FindingIcon finding={finding} className="size-4" />}

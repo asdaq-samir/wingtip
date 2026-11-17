@@ -108,7 +108,6 @@ export default function PlanCards({
           <ProfileCard
             name="Profile"
             sub={<ProfileLine vm={vm} />}
-            line={briefLine}
             onClose={closeProfileCard}
             cautions={profileCautions}
             rules={

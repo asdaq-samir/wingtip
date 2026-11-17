@@ -646,9 +646,14 @@ The cruise and each waypoint's altitude are set on the route's profile,
 as ForeFlight's profile view sets them; the wheel and the plan's menu are
 gone on every platform.
 
-1. **The slider previews; Set flies.** An upright slider beside the side
-   view steps through the engine's altitudes (`altitude_advisor`'s rows,
-   the altitude wheel's). As it moves, the ground and the DOF's obstacles
+1. **The slider previews; Set flies.** An upright slider down the side
+   view's left steps through the engine's altitudes (`altitude_advisor`'s
+   rows, the altitude wheel's), laid on the chart's own scale in feet, so
+   its knob is level with the altitude's tag and the ruler; the chart's top
+   is 1,000 ft over the cruise (`sideViewTop`), and the ruler's figures sit
+   beside the slider's track. It starts at the cruise flown, and with no
+   airplane, where no climb is worked out, the cruise is drawn level and
+   dashed (the UI audit's A1, 2026-11-17). As it moves, the ground and the DOF's obstacles
    within a mile of the line turn red within 100 ft of the altitude or
    above it and yellow within 1,000 ft (`profile_clearance`; ForeFlight's
    display defaults, not a rule: the legal margins are 14 CFR 91.119 and
@@ -678,7 +683,7 @@ gone on every platform.
 | Slider | Base UI Slider, upright (`features/plan/components/navlog/altitude/AltitudeProfile`, its view model `useAltitudePreview`) | See [ios.md](ios.md) | See [android.md](android.md) |
 | Waypoint | Base UI Popover from a tablet's width up, `SheetDialog` on a phone (`altitude/LegAltitude`) | | |
 | Advisor | shadcn Item rows (`altitude/AltitudeAdvisor`) | | |
-| Tests | `altitude/altitude.test.ts`; `e2e/plans.spec.ts` | | |
+| Tests | `altitude/altitude.test.ts`, `navlog/profile.test.ts`; `e2e/plans.spec.ts`, `e2e/plan-cards-heads.spec.ts` | | |
 
 ## 7. What rides the sheet, and the map's small print (the owner, 2026-11-11)
 

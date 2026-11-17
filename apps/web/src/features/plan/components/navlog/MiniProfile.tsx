@@ -1,5 +1,5 @@
 import { memo, useId, useMemo, type CSSProperties } from "react";
-import { AIRSPACE, ceilingOverFloor, ceilings, nameFits, namedPieces } from "./profile";
+import { AIRSPACE, ceilingOverFloor, nameFits, namedPieces, sideViewTop } from "./profile";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import type { Candidate, Leg } from "../../../../lib/api/types";
@@ -71,6 +71,9 @@ export default memo(function MiniProfile({
   selected,
   legs,
   preview = null,
+  cruise: cruiseFt = null,
+  top: topFt = null,
+  wheelSlot,
   ruler = false,
 }: {
   ends: RouteEnds;
@@ -84,6 +87,17 @@ export default memo(function MiniProfile({
    *  the ruler"); none in FPL's own, at the owner's earlier ask ("y axis is
    *  not needed"). */
   ruler?: boolean;
+  /** The cruise the plan flies (the Profile card's): with no airplane
+   *  picked the legs have no top of climb, the line runs field to field,
+   *  and its highest point is the destination's elevation, not the cruise
+   *  -- the tag read "FL-022" on a plan at FL-145 and the ground went red
+   *  against it (the UI audit's A1, 2026-11-17). */
+  cruise?: number | null;
+  /** Its height in feet, the Profile card's slider's scale (sideViewTop). */
+  top?: number | null;
+  /** Where the Profile card puts its slider: down the plot's left, its
+   *  height the plot's, so a step is the feet the ruler says. */
+  wheelSlot?: (el: HTMLElement | null) => void;
 }) {
   // An id a url(#…) takes as it is: React's has colons in it.
   const tintId = `tint${useId().replace(/[^A-Za-z0-9_-]/g, "")}`;
@@ -92,7 +106,12 @@ export default memo(function MiniProfile({
   const stops = (ends.stops ?? []).map((s) => s.ident);
   const { data: profile } = useQuery(routeProfileQuery(dep, dest, stops));
   const plan = useMemo(() => planProfile(navLogRows(ends, selected, legs)), [ends, selected, legs]);
-  const cruise = Math.max(0, ...plan.points.map((p) => p.plan_ft));
+  const drawnTop = Math.max(0, ...plan.points.map((p) => p.plan_ft));
+  const cruise = cruiseFt ?? drawnTop;
+  // A line that never reaches the cruise has no climb worked out (no
+  // airplane): the cruise drawn level and dashed instead, as a preview is,
+  // not a ramp from field to field under the ground.
+  const level = drawnTop + 50 < cruise ? cruise : null;
   // The miles flown by patterns and procedures past the chart's line,
   // which the strip's distance (the totals' `procedure_nm`) and the nav
   // log's rows count and the ground under the line cannot: said at the
@@ -109,14 +128,11 @@ export default memo(function MiniProfile({
   );
   if (!profile) return <ProfileSkeleton look={look} />;
   const scale = plan.length_nm > 0 ? profile.length_nm / plan.length_nm : 1;
-  // The airspace's ceilings over the plan's line, at the owner's ask
-  // ("Profile view should show the airspace ceilings above the altitude
-  // trace"): a Class B's shelf at 10,000 was cut at the chart's top.
-  const highest = Math.max(0, ...profile.terrain.map((t) => t.ground_ft), cruise, preview ?? 0, ...ceilings(profile.airspace));
-  // Just over the highest of the ground, the plan and the ceilings, to the
-  // next 500 ft: a thousand and a half over it left the top third of the
-  // chart empty, at the owner's notice ("y axis has extra white space").
-  const top = Math.ceil((highest + 300) / 500) * 500;
+  // Over the ground, the airspace's ceilings (the owner's "Profile view
+  // should show the airspace ceilings above the altitude trace") and the
+  // altitudes flown and previewed: the Profile card's own scale where it
+  // gives one, which its slider is laid on.
+  const top = topFt ?? sideViewTop(profile, [Math.max(cruise, drawnTop), preview ?? 0]);
   // The ground tinted against the altitude shown, as ForeFlight's profile
   // does: red under 500 ft of it or above (14 CFR 91.119(c)), yellow within
   // 1,000 ft (91.119(b)), else the ground's own -- the engine's
@@ -150,7 +166,11 @@ export default memo(function MiniProfile({
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block h-full w-full" aria-hidden="true">
           <defs>
             <linearGradient id={tintId} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={0} y2={H}>
-              <stop offset={tintOffset(tint?.red_from_ft)} stopColor={CHART.warning} data-tint="red" />
+              {/* The theme's red, not the chart's: the chart's #d70015 at
+                  55% on the night's navy card was a murky maroon the ground
+                  read through (the UI audit's B11); the theme's is a step
+                  lighter at night (tokens.json theme.dark.destructive). */}
+              <stop offset={tintOffset(tint?.red_from_ft)} style={{ stopColor: "var(--destructive)" }} data-tint="red" />
               <stop offset={tintOffset(tint?.red_from_ft)} stopColor={CHART.caution} data-tint="red-end" />
               <stop offset={tintOffset(tint?.yellow_from_ft)} stopColor={CHART.caution} data-tint="amber" />
               <stop offset={tintOffset(tint?.yellow_from_ft)} stopColor={CHART.terrain} data-tint="amber-end" />
@@ -186,13 +206,20 @@ export default memo(function MiniProfile({
               );
             })}
             <path d={ground} fill={`url(#${tintId})`} fillOpacity={0.55} />
-            <path d={line} fill="none" stroke="var(--primary)" strokeWidth={2.5} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-            {preview !== null && (
+            <path
+              d={level === null ? line : ""}
+              fill="none"
+              stroke="var(--primary)"
+              strokeWidth={2.5}
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+            {(preview ?? level) !== null && (
               <line
                 x1={0}
                 x2={W}
-                y1={y(preview)}
-                y2={y(preview)}
+                y1={y(preview ?? level!)}
+                y2={y(preview ?? level!)}
                 stroke="var(--primary)"
                 strokeWidth={2}
                 strokeDasharray="6 4"
@@ -218,7 +245,7 @@ export default memo(function MiniProfile({
             data-roll-label=""
             className={cn(
               "absolute rounded bg-background px-1 font-semibold text-foreground after:content-[attr(data-label)]",
-              ruler ? "left-0 -translate-y-1/2 ring-[1.5px] ring-primary" : "top-[3px] left-1/2 -translate-x-1/2 bg-background/80",
+              ruler ? "left-11 -translate-y-1/2 ring-[1.5px] ring-primary" : "top-[3px] left-1/2 -translate-x-1/2 bg-background/80",
             )}
           />
         </span>
@@ -230,7 +257,7 @@ export default memo(function MiniProfile({
             <span
               key={ft}
               aria-hidden="true"
-              className="pointer-events-none absolute left-0 -translate-y-1/2 pl-0.5 text-muted-foreground opacity-[calc(1-var(--roll-on,0)*0.4)]"
+              className="pointer-events-none absolute left-11 -translate-y-1/2 pl-0.5 text-muted-foreground opacity-[calc(1-var(--roll-on,0)*0.4)]"
               style={{ top: `calc((1 - ${ft} / var(--scale-top, var(--base-top))) * 100%)` }}
             >
               {altFt(ft)}
@@ -267,9 +294,10 @@ export default memo(function MiniProfile({
             // over the cruise there is no room above it.
             // Out of sight while the ruler's own line is (--roll-on).
             className={cn(
-              "absolute rounded px-1 font-semibold text-foreground opacity-[calc(1-var(--roll-on,0))]",
-              // Boxed on the ruler where there is one, as the drag's is.
-              ruler ? "left-0 -translate-y-1/2 bg-background ring-[1.5px] ring-primary" : "left-1/2 -translate-x-1/2 bg-background/80",
+              "pointer-events-none absolute rounded px-1 font-semibold text-foreground opacity-[calc(1-var(--roll-on,0))]",
+              // Boxed on the ruler where there is one, as the drag's is,
+              // beside the slider's knob, not under its track.
+              ruler ? "left-11 -translate-y-1/2 bg-background ring-[1.5px] ring-primary" : "left-1/2 -translate-x-1/2 bg-background/80",
             )}
             style={{ top: ruler ? `${(y(preview ?? cruise) / H) * 100}%` : `calc(${(y(preview ?? cruise) / H) * 100}% + 3px)` }}
             aria-hidden="true"
@@ -280,6 +308,7 @@ export default memo(function MiniProfile({
             {flightLevel(preview ?? cruise)}
           </span>
         )}
+        {wheelSlot && <span ref={wheelSlot} className="absolute inset-y-0 left-0 w-11" />}
       </span>
       {/* The distance along, in nautical miles, under the chart's start,
           middle and end. */}

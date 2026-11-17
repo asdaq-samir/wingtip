@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Airport, Leg } from "../../../../lib/api/types";
-import { planProfile, ceilingOverFloor, ceilings, nameFits, namedPieces } from "./profile";
+import { planProfile, ceilingOverFloor, ceilings, nameFits, namedPieces, sideViewTop } from "./profile";
 import { navLogRows } from "./rows";
 
 const airport = (ident: string, elevation: number): Airport =>
@@ -129,5 +129,15 @@ describe("the airspace's ceilings on the side views", () => {
     expect(nameFits({ from_nm: 0, to_nm: 3.82 }, 74.2)).toBe(false);
     expect(nameFits({ from_nm: 64.18, to_nm: 74.17 }, 74.2)).toBe(true);
     expect(nameFits({ from_nm: 0, to_nm: 10 }, 0)).toBe(false);
+  });
+});
+
+describe("sideViewTop", () => {
+  it("covers the cruise by 1,000 ft, the ground by 300, to the next 500 (UI audit A1)", () => {
+    // KPWK to KLAS at FL-145 over 11,948 ft: the ruler topped at 12,000, under the cruise.
+    const route = { terrain: [{ ground_ft: 645 }, { ground_ft: 11_948 }], airspace: [{ class: "B", ceiling_ft: 10_000 }] };
+    expect(sideViewTop(route, [14_500, 0])).toBe(15_500);
+    expect(sideViewTop(route, [3_500, 0])).toBe(12_500);
+    expect(sideViewTop(route, [14_500, 16_500])).toBe(17_500);
   });
 });

@@ -5,6 +5,6 @@ import { figuresLine } from "../../figures";
  *  first paint (keepMounted), before the .wasm, and asking it then threw
  *  "The engine is not loaded yet" -- "Part of the app didn't load" on the
  *  owner's iPhone, 2026-11-11. */
-export default function FiguresLine({ input }: { input: Parameters<typeof figuresLine>[0] }) {
-  return <>{figuresLine(input)}</>;
+export default function FiguresLine({ input, noAirplane }: { input: Parameters<typeof figuresLine>[0]; noAirplane: boolean }) {
+  return <>{figuresLine(input, noAirplane)}</>;
 }
