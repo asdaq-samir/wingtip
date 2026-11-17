@@ -8,6 +8,7 @@ import { AT_PILL, letGo, snapsOf } from "./insets";
 import { UNDER_INDICATOR } from "./SheetDrawer";
 import { cardSettled, frontOffset, sheetTopRef, useRidingCard } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
+import { PointerTapDiv } from "./PointerTapDiv";
 
 export interface StackProps {
   /** A phone's sheet: the cards are drawers with its sizes and its swipe.
@@ -349,8 +350,7 @@ function CardScroller({
   below,
 }: StackProps & { slot: (node: HTMLElement | null) => void; pill: boolean; raise: () => void }) {
   return (
-    // eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to raise the sheet, and the card's own buttons stay focusable
-    <div
+    <PointerTapDiv
       onClick={
         pill
           ? (event) => {
@@ -367,6 +367,6 @@ function CardScroller({
         data-panel-body=""
         className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible", below, pill && AT_PILL)}
       />
-    </div>
+    </PointerTapDiv>
   );
 }
