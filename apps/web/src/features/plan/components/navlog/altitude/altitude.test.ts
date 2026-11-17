@@ -48,6 +48,6 @@ describe("the profile's altitude", () => {
     expect(at(6500)).toMatchObject({ fastest: true, flown: true, legal: true });
     expect(at(4500).economical).toBe(true);
     expect(at(5000).legal).toBe(false);
-    expect(at(5000).warning).toMatch(/Outside/);
+    expect(at(5000).warning).toMatch(/legal altitudes/);
   });
 });
