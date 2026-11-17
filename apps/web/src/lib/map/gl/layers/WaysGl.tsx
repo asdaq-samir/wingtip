@@ -37,13 +37,19 @@ const wayChipLayer = (id: string, how: Parameters<typeof chipLayer>[2], shown: b
   filter: ["==", ["get", "shown"], shown],
 });
 
+/** The shown way's chip's layer, which the route's own marks are drawn
+ *  under (RouteGl) so they give way to it. */
+export const WAY_SHOWN_LAYER = "route-way-chips";
+
 /** The one shown always drawn, and in the way of the others; the others
  *  left out where they would fall on it or on each other, so no two chips
  *  pile up (MapLibre's collision). The shown one's layer is last, on top,
- *  and placed first. */
+ *  and placed first: over the route's own marks too, whose names give way
+ *  to it, where they were drawn over it and cut its words ("Avc FAINS
+ *  ther", the UI audit's B6, 2026-11-17). */
 const WAY_LAYERS: SymbolLayerSpecification[] = [
   wayChipLayer("route-way-chips-others", { collide: true, sort: 0 }, false, {}),
-  wayChipLayer("route-way-chips", {}, true, { "icon-ignore-placement": false, "text-ignore-placement": false }),
+  wayChipLayer(WAY_SHOWN_LAYER, {}, true, { "icon-ignore-placement": false, "text-ignore-placement": false }),
 ];
 
 /** FPL's Routes' ways beside the route: the one shown solid magenta, the
