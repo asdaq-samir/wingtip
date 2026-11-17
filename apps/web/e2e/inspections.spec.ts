@@ -289,7 +289,7 @@ test("a squawk is written with its 91.213(d) deferral, and fixed", async ({ page
   await console.getByTestId("squawk-text").fill("Landing light out");
   await console.getByTestId("squawk-inoperative").click();
   await console.getByTestId("squawk-deferred").click();
-  await page.getByRole("menuitemradio", { name: "Deferred for VFR by day" }).click();
+  await page.getByRole("option", { name: "Deferred for VFR by day" }).click();
   await console.getByTestId("squawk-add").click();
   await expect
     .poll(() => written[0])

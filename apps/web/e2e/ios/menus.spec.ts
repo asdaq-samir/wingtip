@@ -11,11 +11,11 @@ test("a menu's rows are 44 points tall to a finger", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
   // The flights' strip's filter on the one search's own page: Saved or
-  // Recents.
+  // Recents (the pull-down, a Select's options in the menu look).
   await showSearch(page);
   await grabberTo(page, "full");
   await sideDrawer(page).getByTestId("fpl-strip-shows").click();
-  const items = page.getByRole("menuitemradio");
+  const items = page.getByRole("option");
   await expect(items).toHaveCount(2);
   // Each row's own height, as laid out: the menu scales in as it opens,
   // and its box measured mid-way was 43.8.

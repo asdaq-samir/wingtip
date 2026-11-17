@@ -313,6 +313,9 @@ describe("Listen through, in the Hear row", () => {
     fireEvent.click(menu);
     const options = await screen.findAllByTestId("listen-input-option");
     expect(options.map((o) => o.textContent)).toEqual(["iPhone Microphone", "GMA 350c"]);
+    // A press as a finger makes it: the pull-down (Base UI's Select) takes
+    // a click on a row only after its press began there.
+    fireEvent.pointerDown(options[1]!);
     fireEvent.click(options[1]!);
     expect(audioInput.pick).toHaveBeenCalledWith("gma");
   });

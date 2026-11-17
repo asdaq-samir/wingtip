@@ -347,6 +347,16 @@ close does.
 - **Base UI 1.9.0** (9 October 2026) has 37 components, Drawer, Toast,
   Autocomplete, Combobox, Preview Card, Toolbar and OTP Field among them
   ([Base UI releases][bui-releases], [catalogue][bui-drawer]).
+- **Every pick-one is Base UI's Select** (shadcn's, `components/ui/select`;
+  the owner, 2026-11-17), behind `PullDown`, the app's one pull-down: a
+  listbox of the choices in the app's one menu look (`ui/menuLook`, the
+  picked one's tick on the left), its value in its trigger
+  (`Select.Value`), the tinted words and the up-and-down chevron, or a
+  caller's own trigger (a chip, a tile, a glyph). Its own placing: over
+  the trigger with the picked row on it from a mouse, beside it from a
+  finger (Base UI drops `alignItemWithTrigger` on touch). It was a
+  DropdownMenu's radio items; the Select is on the popups' chunk with
+  the menus, so the first load does not carry it.
 - **shadcn/ui** made Base UI the default for new projects in July 2026,
   added React Aria as a third choice, rebuilt its Drawer on Base UI instead
   of vaul, and its `/sonner` page now opens a Base UI Toast
@@ -1183,7 +1193,7 @@ than its METAR now (`weather_worse`). The weather comes on the map's own
 `/api/airports/in-view` answer (`weather`), the same for every app; the
 shared fixture is `apps/web/src/lib/fixtures/airportWeatherMarks.json`. A
 screen reader says each field's category and wind ("KJVL, IFR, wind 220
-at 18 gusting 26"). Settings' Airport Weather is one menu (`PullDown`,
+at 18 gusting 26"). Settings' Airport Weather is one pull-down (`PullDown`, Base UI's Select,
 `airport-weather-look`) of Flight Category, With Wind (the default) and
 Station Model (`lib/map/marks/airportWeatherPrefs`); the getting-worse
 badge is always drawn (the owner, 2026-11-13).
