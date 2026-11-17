@@ -122,16 +122,9 @@ fn members(v: Option<&Value>) -> &[(String, Value)] {
 pub fn call(name: &str, v: &Value) -> R<String> {
     let i = In { name };
     match name {
-        "gonogo_verdict_items" => verdict_input(i, v).map(|input| verdict::items_json(&verdict::verdict_items(&input))),
         "departure_window" => {
             super::window_calls::read(i, v).map(|input| super::window_calls::answer_json(&super::window::departure_window(&input)))
         }
-        "gonogo_verdict_line" => items(i, v, "items").map(|items| {
-            let (finding, words) = verdict::verdict_line(&items);
-            line_json(finding, &words)
-        }),
-        "gonogo_alternate_finding" => alternates(i, v.get("data")).map(|a| verdict::finding_json(verdict::alternate_finding(a.as_ref()))),
-        "gonogo_with_alternate" => with_alternate_rule(i, v),
         "gonogo_under_minimums" => under_minimums_rule(i, v),
         "gonogo_icing" => icing_rule(i, v),
         "gonogo_icing_line" => icing_line_rule(i, v),

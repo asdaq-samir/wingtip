@@ -1087,17 +1087,6 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/retrain`.
     /// - Remark: Generated from `#/paths//api/retrain/post(retrain)`.
     func retrain(_ input: Operations.Retrain.Input) async throws -> Operations.Retrain.Output
-    /// Route Check
-    ///
-    /// Whether a route would plan, checked as a typed one is (load_route):
-    /// a 404 naming an ident that is not one, a 422 for a stop at the point
-    /// before it or too many stops. With an end missing, each ident given is
-    /// checked alone. Nothing is read or planned. The gateway forwards
-    /// no app here.
-    ///
-    /// - Remark: HTTP `GET /api/route-check`.
-    /// - Remark: Generated from `#/paths//api/route-check/get(route_check)`.
-    func routeCheck(_ input: Operations.RouteCheck.Input) async throws -> Operations.RouteCheck.Output
     /// Route Options
     ///
     /// The ways to fly from `dep` to `dest` in the airplane, at the owner's
@@ -1471,58 +1460,6 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/words/changes/sources`.
     /// - Remark: Generated from `#/paths//api/words/changes/sources/post(changes_sources)`.
     func changesSources(_ input: Operations.ChangesSources.Input) async throws -> Operations.ChangesSources.Output
-    /// Coach Sources
-    ///
-    /// A proficiency plan's lines, each a source a sentence can cite.
-    ///
-    /// - Remark: HTTP `POST /api/words/coach/sources`.
-    /// - Remark: Generated from `#/paths//api/words/coach/sources/post(coach_sources)`.
-    func coachSources(_ input: Operations.CoachSources.Input) async throws -> Operations.CoachSources.Output
-    /// Debrief Sources
-    ///
-    /// A flown flight's debrief as sources (POST /api/debrief: the time in
-    /// the air, each leg's altitude and course held, each checkpoint's time,
-    /// each pattern entry, its notes, and the ACS tolerances they are marked
-    /// against). A 422 where there is no debrief: the track never flew.
-    ///
-    /// - Remark: HTTP `POST /api/words/debrief/sources`.
-    /// - Remark: Generated from `#/paths//api/words/debrief/sources/post(debrief_sources)`.
-    func debriefSources(_ input: Operations.DebriefSources.Input) async throws -> Operations.DebriefSources.Output
-    /// Notam Sources
-    ///
-    /// The NOTAMs and TFRs of a flight as sources, with the flight itself
-    /// first: the NOTAMs in force or to come at every field the route lands
-    /// at, as the FAA's NOTAM feed gave them (wingtip.notams, SWIM's FNS),
-    /// and the TFRs near the route over the briefing's hours
-    /// (wingtip.tfr.along_route, as GET /api/briefing asks them: two hours of
-    /// flight and an hour past, the route's own time not being known here).
-    /// None at all where there is no NOTAM and no TFR: nothing to say.
-    /// `coverage_since`, the day the NOTAM feed was first heard (UTC); `unchecked`, "tfrs"
-    /// where tfr.faa.gov did not answer.
-    ///
-    /// - Remark: HTTP `POST /api/words/notams/sources`.
-    /// - Remark: Generated from `#/paths//api/words/notams/sources/post(notam_sources)`.
-    func notamSources(_ input: Operations.NotamSources.Input) async throws -> Operations.NotamSources.Output
-    /// Risk Sources
-    ///
-    /// The Go / No-Go as sources (POST /api/go-no-go's line, each
-    /// finding's line, the risk assessment's level and every factor it
-    /// counted) and the pilot's own record as the client sends it.
-    ///
-    /// - Remark: HTTP `POST /api/words/risk/sources`.
-    /// - Remark: Generated from `#/paths//api/words/risk/sources/post(risk_sources)`.
-    func riskSources(_ input: Operations.RiskSources.Input) async throws -> Operations.RiskSources.Output
-    /// Weather Sources
-    ///
-    /// The briefing of a flight as sources (GET /api/briefing, asked here
-    /// with the same parameters: its METARs, its TAF stations at the flight's
-    /// time there, its hazards, G-AIRMETs, pilot reports and TFRs, the fields
-    /// below VFR and its own "VFR flight not recommended"), the flight first.
-    /// A briefing that cannot be had fails as it does there (a 502).
-    ///
-    /// - Remark: HTTP `POST /api/words/weather/sources`.
-    /// - Remark: Generated from `#/paths//api/words/weather/sources/post(weather_sources)`.
-    func weatherSources(_ input: Operations.WeatherSources.Input) async throws -> Operations.WeatherSources.Output
 }
 
 /// Convenience overloads for operation inputs.
@@ -3249,25 +3186,6 @@ extension APIProtocol {
     public func retrain(headers: Operations.Retrain.Input.Headers = .init()) async throws -> Operations.Retrain.Output {
         try await retrain(Operations.Retrain.Input(headers: headers))
     }
-    /// Route Check
-    ///
-    /// Whether a route would plan, checked as a typed one is (load_route):
-    /// a 404 naming an ident that is not one, a 422 for a stop at the point
-    /// before it or too many stops. With an end missing, each ident given is
-    /// checked alone. Nothing is read or planned. The gateway forwards
-    /// no app here.
-    ///
-    /// - Remark: HTTP `GET /api/route-check`.
-    /// - Remark: Generated from `#/paths//api/route-check/get(route_check)`.
-    public func routeCheck(
-        query: Operations.RouteCheck.Input.Query = .init(),
-        headers: Operations.RouteCheck.Input.Headers = .init()
-    ) async throws -> Operations.RouteCheck.Output {
-        try await routeCheck(Operations.RouteCheck.Input(
-            query: query,
-            headers: headers
-        ))
-    }
     /// Route Options
     ///
     /// The ways to fly from `dep` to `dest` in the airplane, at the owner's
@@ -3905,98 +3823,6 @@ extension APIProtocol {
         body: Operations.ChangesSources.Input.Body
     ) async throws -> Operations.ChangesSources.Output {
         try await changesSources(Operations.ChangesSources.Input(
-            headers: headers,
-            body: body
-        ))
-    }
-    /// Coach Sources
-    ///
-    /// A proficiency plan's lines, each a source a sentence can cite.
-    ///
-    /// - Remark: HTTP `POST /api/words/coach/sources`.
-    /// - Remark: Generated from `#/paths//api/words/coach/sources/post(coach_sources)`.
-    public func coachSources(
-        headers: Operations.CoachSources.Input.Headers = .init(),
-        body: Operations.CoachSources.Input.Body
-    ) async throws -> Operations.CoachSources.Output {
-        try await coachSources(Operations.CoachSources.Input(
-            headers: headers,
-            body: body
-        ))
-    }
-    /// Debrief Sources
-    ///
-    /// A flown flight's debrief as sources (POST /api/debrief: the time in
-    /// the air, each leg's altitude and course held, each checkpoint's time,
-    /// each pattern entry, its notes, and the ACS tolerances they are marked
-    /// against). A 422 where there is no debrief: the track never flew.
-    ///
-    /// - Remark: HTTP `POST /api/words/debrief/sources`.
-    /// - Remark: Generated from `#/paths//api/words/debrief/sources/post(debrief_sources)`.
-    public func debriefSources(
-        headers: Operations.DebriefSources.Input.Headers = .init(),
-        body: Operations.DebriefSources.Input.Body
-    ) async throws -> Operations.DebriefSources.Output {
-        try await debriefSources(Operations.DebriefSources.Input(
-            headers: headers,
-            body: body
-        ))
-    }
-    /// Notam Sources
-    ///
-    /// The NOTAMs and TFRs of a flight as sources, with the flight itself
-    /// first: the NOTAMs in force or to come at every field the route lands
-    /// at, as the FAA's NOTAM feed gave them (wingtip.notams, SWIM's FNS),
-    /// and the TFRs near the route over the briefing's hours
-    /// (wingtip.tfr.along_route, as GET /api/briefing asks them: two hours of
-    /// flight and an hour past, the route's own time not being known here).
-    /// None at all where there is no NOTAM and no TFR: nothing to say.
-    /// `coverage_since`, the day the NOTAM feed was first heard (UTC); `unchecked`, "tfrs"
-    /// where tfr.faa.gov did not answer.
-    ///
-    /// - Remark: HTTP `POST /api/words/notams/sources`.
-    /// - Remark: Generated from `#/paths//api/words/notams/sources/post(notam_sources)`.
-    public func notamSources(
-        headers: Operations.NotamSources.Input.Headers = .init(),
-        body: Operations.NotamSources.Input.Body
-    ) async throws -> Operations.NotamSources.Output {
-        try await notamSources(Operations.NotamSources.Input(
-            headers: headers,
-            body: body
-        ))
-    }
-    /// Risk Sources
-    ///
-    /// The Go / No-Go as sources (POST /api/go-no-go's line, each
-    /// finding's line, the risk assessment's level and every factor it
-    /// counted) and the pilot's own record as the client sends it.
-    ///
-    /// - Remark: HTTP `POST /api/words/risk/sources`.
-    /// - Remark: Generated from `#/paths//api/words/risk/sources/post(risk_sources)`.
-    public func riskSources(
-        headers: Operations.RiskSources.Input.Headers = .init(),
-        body: Operations.RiskSources.Input.Body
-    ) async throws -> Operations.RiskSources.Output {
-        try await riskSources(Operations.RiskSources.Input(
-            headers: headers,
-            body: body
-        ))
-    }
-    /// Weather Sources
-    ///
-    /// The briefing of a flight as sources (GET /api/briefing, asked here
-    /// with the same parameters: its METARs, its TAF stations at the flight's
-    /// time there, its hazards, G-AIRMETs, pilot reports and TFRs, the fields
-    /// below VFR and its own "VFR flight not recommended"), the flight first.
-    /// A briefing that cannot be had fails as it does there (a 502).
-    ///
-    /// - Remark: HTTP `POST /api/words/weather/sources`.
-    /// - Remark: Generated from `#/paths//api/words/weather/sources/post(weather_sources)`.
-    public func weatherSources(
-        headers: Operations.WeatherSources.Input.Headers = .init(),
-        body: Operations.WeatherSources.Input.Body
-    ) async throws -> Operations.WeatherSources.Output {
-        try await weatherSources(Operations.WeatherSources.Input(
             headers: headers,
             body: body
         ))

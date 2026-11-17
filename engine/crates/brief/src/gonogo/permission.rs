@@ -11,15 +11,14 @@
 //! phone is NASR APT_CON's, the manager's or else the owner's, as the
 //! planner gives it.
 //!
-//! A row of its own after the seven (`gonogo_field_permission`), which
-//! the hosts add to `gonogo_verdict_items`' list before its line
-//! (`gonogo_brief` puts the two together for them); none
+//! A row of its own after the seven, which `gonogo_brief` puts in before
+//! the line over them; none
 //! where every field is public use. A caution, never a stop: the pilot
 //! may well have the permission already (the owner's "warn, never
 //! limit").
 
 use super::calls::In;
-use super::verdict::{item_json, Item};
+use super::verdict::Item;
 use crate::airport_use::{self, Use};
 use crate::json::Value;
 use wingtip_flight::field;
@@ -80,19 +79,6 @@ pub(crate) fn read_fields(i: In, v: &Value, key: &str) -> R<Vec<Used>> {
             })
         })
         .collect()
-}
-
-/// `gonogo_field_permission` by name.
-pub fn call(name: &str, v: &Value) -> R<String> {
-    let fields = read_fields(In { name }, v, "fields")?;
-    Ok(match permission_item(&fields) {
-        Some(item) => {
-            let mut out = String::new();
-            item_json(&mut out, &item);
-            out
-        }
-        None => "null".into(),
-    })
 }
 
 #[cfg(test)]

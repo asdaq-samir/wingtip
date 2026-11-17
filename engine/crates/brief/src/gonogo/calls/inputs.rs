@@ -2,15 +2,6 @@ use super::*;
 
 // --- verdict ----------------------------------------------------------------
 
-pub(super) fn line_json(finding: &str, words: &str) -> String {
-    let mut out = String::from("{\"finding\":");
-    json::string(&mut out, finding);
-    out.push_str(",\"words\":");
-    json::string(&mut out, words);
-    out.push('}');
-    out
-}
-
 pub(crate) fn verdict_input(i: In, v: &Value) -> R<verdict::Input> {
     let part = |key: &str| -> R<&Value> { i.obj(v, key)?.map_or_else(|| i.err(key, "is missing"), Ok) };
     let (w, a, t, f, r, b) = (part("weather")?, part("airspace")?, part("altitude")?, part("fuel")?, part("runways")?, part("balance")?);
@@ -109,15 +100,6 @@ pub(crate) fn alternates(i: In, data: Option<&Value>) -> R<Option<Alternates>> {
         }),
     };
     Ok(Some(Alternates { required, alternate }))
-}
-
-pub(super) fn with_alternate_rule(i: In, v: &Value) -> R<String> {
-    let list = items(i, v, "items")?;
-    let found = match i.obj(v, "found")? {
-        None => None,
-        Some(f) => Some((i.str(f, "finding")?, i.str(f, "detail")?)),
-    };
-    Ok(verdict::items_json(&verdict::with_alternate(list, found.as_ref().map(|(f, d)| (f.as_str(), d.as_str())))))
 }
 
 // --- minimums ---------------------------------------------------------------

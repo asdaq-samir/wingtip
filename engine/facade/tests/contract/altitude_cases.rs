@@ -16,7 +16,6 @@ pub(super) fn cases(c: &mut Checker) {
     }
     c.ask("highest_under_clouds_ft", json!({ "cloud_base_ft": 6000 }));
     c.ask("cloud_clearance_at_ft", json!({ "altitude_ft": 10500 }));
-    c.ask("altitude_wheel", json!({ "legal_ft": [4500, 6500], "flown_ft": 3300 }));
     c.ask("ifr_obstacle_radius_nm", json!({}));
     c.ask("airway_floor_ft", json!({ "mea_ft": null, "gnss_mea_ft": 4000 }));
     let (dep, mid, dest) = (json!([45.0, -90.0]), json!([45.5, -89.85]), json!([46.0, -90.0]));
@@ -133,6 +132,4 @@ pub(super) fn cases(c: &mut Checker) {
     let approach = json!([{ "ident": "ANDOE", "lat": 42.25, "lon": -89.1, "min_ft": 3000, "max_ft": null, "missed": false }]);
     c.ask("navlog_approach_end", json!({ "fixes": approach, "cruise_ft": 5500, "field": { "lat": 42.195, "lon": -89.097 } }));
     c.ask("navlog_approach_end", json!({ "fixes": approach, "cruise_ft": 2500, "field": { "lat": 42.195, "lon": -89.097 } }));
-    c.ask("performance_cruise", json!({ "profile": profile, "altitude_ft": 8500, "oat_c": 2 }));
-    c.ask("performance_climb", json!({ "profile": profile, "from_ft": 800, "to_ft": 5500, "isa_dev_c": 5 }));
 }

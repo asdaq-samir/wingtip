@@ -304,16 +304,6 @@ fn bad_asks_are_errors() {
     assert!(call("endorsement_render", r#"{"template": "x", "fields": []}"#).is_err());
 }
 
-#[test]
-fn a_figure_typed_in_is_held_to_the_bounds_the_page_is_read_by() {
-    let within = |key: &str, value: f64| ask("handbook_within", json!({"key": key, "value": value}));
-    assert_eq!(within("cruiseTasKt", 30.0), json!(true));
-    assert_eq!(within("cruiseTasKt", 29.9), json!(false));
-    assert_eq!(within("climbFuelBurnGph", 150.0), json!(true));
-    assert_eq!(within("serviceCeilingFt", 30001.0), json!(false));
-    assert!(call("handbook_within", r#"{"key": "wingspan", "value": 3}"#).is_err());
-}
-
 // --- Currency and 61.109 -----------------------------------------------------
 
 /// A pilot's currency (14 CFR 61.56, 61.57) and a student's 61.109(a)

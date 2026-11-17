@@ -22,11 +22,6 @@ def to_fixed(n: float, digits: int = 1) -> str:
     return ask("words_to_fixed", n=n, digits=digits)
 
 
-def one(n: float) -> float:
-    """To a tenth, as lib/verdict's `one`."""
-    return ask("words_one", n=n)
-
-
 def grouped(n: float) -> str:
     """A whole number with a comma between each three figures, "12,500",
     as the FAA writes altitudes and weights (lib/format grouped)."""

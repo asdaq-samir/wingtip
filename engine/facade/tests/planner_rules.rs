@@ -100,8 +100,10 @@ fn a_figure_in_the_webs_words() {
         let n = &c["n"];
         let mut want = vec![("words_num", json!({ "n": n }), &c["num"]), ("words_alt_ft", json!({ "ft": n }), &c["alt_ft"])];
         if !n.is_null() {
+            // To a tenth, as the verdict's words write a figure (figures::words::one).
+            let tenth = wingtip_engine::figures::words::one(n.as_f64().unwrap());
+            assert!(same(&json!(tenth), &c["one"]), "one {n}: got {tenth}, want {}", c["one"]);
             want.extend([
-                ("words_one", json!({ "n": n }), &c["one"]),
                 ("words_to_fixed", json!({ "n": n }), &c["to_fixed"]),
                 ("words_to_fixed", json!({ "n": n, "digits": 0 }), &c["to_fixed0"]),
                 ("words_to_fixed", json!({ "n": n, "digits": 2 }), &c["to_fixed2"]),

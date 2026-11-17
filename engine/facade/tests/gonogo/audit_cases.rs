@@ -87,9 +87,11 @@ fn the_runways_finding_is_a_caution_past_the_tables_and_unknown_where_not_checke
     assert_eq!(finding(&quiet(), "runways").detail, "Takeoff and landing within each runway");
 }
 
+/// The findings as the Brief puts them together (gonogo_brief), for an
+/// airplane picked: every row the verdict makes.
 pub(super) fn verdict_call(input: Value) -> Vec<Value> {
-    let out = wingtip_engine::call::call("gonogo_verdict_items", &input.to_string()).unwrap();
-    serde_json::from_str::<Value>(&out).unwrap().as_array().unwrap().clone()
+    let out = wingtip_engine::call::call("gonogo_brief", &serde_json::json!({ "verdict": input, "airplane": true }).to_string()).unwrap();
+    serde_json::from_str::<Value>(&out).unwrap()["items"].as_array().unwrap().clone()
 }
 
 pub(super) fn found(items: &[Value], key: &str) -> (String, String) {

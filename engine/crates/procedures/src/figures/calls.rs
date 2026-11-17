@@ -238,10 +238,6 @@ pub fn written(name: &str, v: &Value) -> Result<String, String> {
     let mut out = String::new();
     let text = match name {
         "words_num" => words::js_opt(ask.opt_num("n")?),
-        "words_one" => {
-            json::number(&mut out, words::one(ask.num("n")?));
-            return Ok(out);
-        }
         "words_to_fixed" => {
             let digits = ask.opt_num("digits")?.unwrap_or(1.0);
             if !(0.0..=20.0).contains(&digits) || digits.fract() != 0.0 {

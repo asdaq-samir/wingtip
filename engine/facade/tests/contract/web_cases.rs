@@ -26,14 +26,12 @@ pub(super) fn cases(c: &mut Checker) {
     for case in web["terrainViewBands"].as_array().unwrap() {
         c.ask("terrain_view_bands", json!({ "altitude_ft": case["altitude_ft"] }));
     }
-    c.ask("traffic_reach", json!({}));
     c.ask("checklist_phases", json!({ "kind": "normal" }));
     c.ask("checklist_phases", json!({ "kind": "emergency" }));
     // A procedure's legs drawn (paths.rs), as the planner asks them.
     c.ask("procedure_arc", json!({ "center": [34.0, -118.0], "start": [34.08, -118.0], "end": [34.0, -117.9], "turn": "R" }));
     c.ask("procedure_hold", json!({ "fix": [34.2, -118.36], "inbound_deg": 80, "turn": "L", "leg_nm": 2 }));
     c.ask("procedure_turn", json!({ "fix": [33.2, -92.8], "inbound_deg": 220, "pt_course_deg": 355 }));
-    c.ask("procedure_climb_nm", json!({ "altitude_ft": 3000, "known_ft": 2600 }));
     c.ask("procedure_hold_leg_nm", json!({ "minutes": null, "distance_nm": 4 }));
 
     // Night, the checkpoints and 91.155's basic minimums (planning.json).
@@ -43,9 +41,6 @@ pub(super) fn cases(c: &mut Checker) {
             "night_on_the_way",
             json!({ "start": case["start"], "end": case["end"], "depart_s": case["depart_s"], "minutes": case["minutes"] }),
         );
-    }
-    for case in planning["passenger_night"].as_array().unwrap() {
-        c.ask("passenger_night", json!({ "lat": case["lat"], "lon": case["lon"], "at_s": case["at_s"] }));
     }
     c.ask(
         "passenger_night_on_the_way",

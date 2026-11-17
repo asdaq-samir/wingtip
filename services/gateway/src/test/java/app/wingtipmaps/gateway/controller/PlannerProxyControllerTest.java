@@ -278,10 +278,9 @@ class PlannerProxyControllerTest {
         // A route's notes as the pilot sees them.
         assertThat(forwarded("POST", "/api/checkpoint-notes/route")).isTrue();
         // What only the stack asks the planner for, and nobody else.
-        assertThat(forwarded("POST", "/api/words/weather/sources")).isFalse();
+        assertThat(forwarded("POST", "/api/words/changes/sources")).isFalse();
         assertThat(forwarded("GET", "/api/checkpoint-notes/mine")).isFalse();
         assertThat(forwarded("POST", "/api/engine/wind_triangle")).isFalse();
-        assertThat(forwarded("GET", "/api/route-check")).isFalse();
         assertThat(forwarded("GET", "/api/airport/KDLH")).isTrue();
         assertThat(forwarded("GET", "/api/airports/in-view")).isTrue();
         assertThat(forwarded("GET", "/api/waypoints/in-view")).isTrue();

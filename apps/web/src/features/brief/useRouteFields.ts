@@ -6,7 +6,7 @@ import { airportQuery } from "../../lib/queryClient";
  * The NASR facts of the fields a flight lands at, from each one's card
  * (airportQuery, the answer the airport card reads, so asked once): for
  * the Go / No-Go's fields row (`uses`, which the engine's gonogo_brief
- * words as gonogo_field_permission does: a closed, private or
+ * words in its fields row: a closed, private or
  * military-only departure, stop or destination, 14 CFR 91.103) and for the flight plan's ZZZZ (NASR's ICAO_ID, the engine's
  * filed_zzzz, AIM Appendix 4). A field whose card is not in yet says
  * nothing until it is.

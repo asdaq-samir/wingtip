@@ -43,9 +43,9 @@ fn night_and_night_on_the_way() {
 #[test]
 fn the_61_57_b_period_is_its_own_window() {
     for case in fixture()["passenger_night"].as_array().unwrap() {
-        let at = json!({ "lat": case["lat"], "lon": case["lon"], "at_s": case["at_s"] });
-        assert_eq!(ask("passenger_night", at.clone()), case["passenger_night"], "{}", case["why"]);
-        let night = sun::is_night(case["lat"].as_f64().unwrap(), case["lon"].as_f64().unwrap(), case["at_s"].as_f64().unwrap());
+        let (lat, lon, at) = (case["lat"].as_f64().unwrap(), case["lon"].as_f64().unwrap(), case["at_s"].as_f64().unwrap());
+        assert_eq!(json!(sun::passenger_night(lat, lon, at)), case["passenger_night"], "{}", case["why"]);
+        let night = sun::is_night(lat, lon, at);
         assert_eq!(json!(night), case["night"], "{}", case["why"]);
     }
     // A flight out of Anchorage to Kenai at 01:00 AKDT on 22 June (09:00

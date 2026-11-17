@@ -166,11 +166,6 @@ def wind_half(answer: dict) -> dict[str, np.ndarray]:
     return out
 
 
-def wind_grids(answer: dict) -> dict[str, np.ndarray]:
-    """wind_half's grids on the output's quarter degree, as drawn."""
-    return {k: flow_grid.upsample(v) for k, v in wind_half(answer).items()}
-
-
 def cloud_grids(answer: dict) -> dict[str, np.ndarray]:
     """AWC's cloud points on the output grid: "cloud", the cover as a
     percent the engine's cloud_cover reads back as AWC's word, and

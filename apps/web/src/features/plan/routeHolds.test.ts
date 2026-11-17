@@ -1,15 +1,15 @@
 import { describe, expect, test } from "vitest";
-import { holdOf, holdText, holdWords, holdsOf, holdsParam, lengthCode, lengthOfCode, lengthWords } from "./routeHolds";
+import { holdText, holdWords, holdsOf, holdsParam, lengthCode, lengthOfCode, lengthWords } from "./routeHolds";
 import { legMinutes } from "../../lib/holdEntry";
 import holdsFixture from "../../lib/fixtures/holds.json";
 
 describe("the pilot's holds in the address", () => {
   test("are read and written as the planner's wingtip.holds reads them", () => {
-    const hold = holdOf("vpbng/090/30:270:R:1M:2T")!;
+    const hold = holdsOf("vpbng/090/30:270:R:1M:2T")[0]!;
     expect(hold).toEqual({ fix: "VPBNG/090/30", inbound: 270, right: true, leg: { min: 1 }, length: { turns: 2 } });
     expect(holdText(hold)).toBe("VPBNG/090/30:270:R:1M:2T");
-    expect(holdOf("KMSN:400:L:1M:2T")).toBeNull();
-    expect(holdWords(holdOf("KMSN:090:L:4N:10M")!)).toBe("Left turns · 090° inbound · 4 nm legs · 10 min");
+    expect(holdsOf("KMSN:400:L:1M:2T")).toEqual([]);
+    expect(holdWords(holdsOf("KMSN:090:L:4N:10M")[0]!)).toBe("Left turns · 090° inbound · 4 nm legs · 10 min");
   });
 
   test("several at once", () => {
@@ -21,7 +21,7 @@ describe("the pilot's holds in the address", () => {
 
 describe("a hold's course and length", () => {
   test("north is said as 360 and written 000 for the planner", () => {
-    const north = holdOf("KMSN:360:R:1M:1T")!;
+    const north = holdsOf("KMSN:360:R:1M:1T")[0]!;
     expect(north.inbound).toBe(0);
     expect(holdWords(north)).toBe("Right turns · 360° inbound · 1 min legs · 1 turn");
     expect(holdText(north)).toBe("KMSN:000:R:1M:1T");
@@ -43,7 +43,7 @@ describe("a hold's course and length", () => {
 // against too (WingtipTests/SharedFixturesTests.swift): a copy that reads
 // or writes a hold otherwise fails CI (docs/NATIVE.md).
 describe("the shared holds fixture", () => {
-  const flat = (h: ReturnType<typeof holdOf>) =>
+  const flat = (h: ReturnType<typeof holdsOf>[number] | null) =>
     h && {
       fix: h.fix,
       inbound: h.inbound,
@@ -55,7 +55,7 @@ describe("the shared holds fixture", () => {
     };
 
   test.each(holdsFixture.parse)("$text", ({ text, hold, written, words }) => {
-    const read = holdOf(text);
+    const read = holdsOf(text)[0] ?? null;
     expect(flat(read)).toEqual(hold);
     expect(read && holdText(read)).toBe(written);
     expect(read && holdWords(read)).toBe(words);

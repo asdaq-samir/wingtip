@@ -4,9 +4,9 @@ too (`service_ceiling_on_the_day`, which wingtip.altitude asks).
 
 The airplane's performance in the day's air -- its cruise at an altitude,
 its climbs, the reference altitude its figures are at -- moved into the
-engine with the nav log (wingtip_flight::performance, #482 phase 4):
-`performance_cruise` and `performance_climb` by name, the reference
-altitude in `planning_figures`.
+engine with the nav log (wingtip_flight::performance, #482 phase 4),
+which the nav log's rules fly; the reference altitude is in
+`planning_figures`.
 """
 
 from .engine import ask as engine

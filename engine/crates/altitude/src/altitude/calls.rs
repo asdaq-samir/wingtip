@@ -119,7 +119,6 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         "highest_under_clouds_ft" => Ok(number(Some(clouds::highest_under_ft(num(name, v, "cloud_base_ft")?)))),
         "cloud_clearance_at_ft" => Ok(number(Some(clouds::clearance_at_ft(num(name, v, "altitude_ft")?)))),
         "congested_points" => congested_points(name, v),
-        "altitude_wheel" => Ok(numbers(&cruising::wheel(&nums(name, v, "legal_ft")?, opt_num(name, v, "flown_ft")?))),
         "profile_clearance" => profile_calls::profile_clearance(name, v),
         "altitude_advisor" => profile_calls::altitude_advisor(name, v),
         "ifr_obstacle_radius_nm" => Ok(number(Some(IFR_OBSTACLE_RADIUS_NM))),

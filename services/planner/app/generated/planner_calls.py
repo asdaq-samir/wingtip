@@ -442,11 +442,6 @@ async def retrain() -> Any:
     return await _send('POST', '/api/retrain', query={}, body=None, headers={})
 
 
-async def route_check(*, dep: str | None = None, dest: str | None = None, stops: str | None = None) -> Any:
-    """GET /api/route-check: Route Check"""
-    return await _send('GET', '/api/route-check', query={'dep': dep, 'dest': dest, 'stops': stops}, body=None, headers={})
-
-
 async def route_options(*, dep: str, dest: str, stops: str | None = None, aircraft: str | None = None, cruise_tas_kt: float | None = None, fuel_burn_gph: float | None = None, usable_fuel_gal: float | None = None, service_ceiling_ft: float | None = None, taxi_fuel_gal: float | None = None, glide_ratio: float | None = None, depart: str | None = None, min_ceiling_ft: float | None = None, min_visibility_sm: float | None = None, altitude_ft: float | None = None) -> Any:
     """GET /api/route-options: Route Options"""
     return await _send('GET', '/api/route-options', query={'dep': dep, 'dest': dest, 'stops': stops, 'aircraft': aircraft, 'cruise_tas_kt': cruise_tas_kt, 'fuel_burn_gph': fuel_burn_gph, 'usable_fuel_gal': usable_fuel_gal, 'service_ceiling_ft': service_ceiling_ft, 'taxi_fuel_gal': taxi_fuel_gal, 'glide_ratio': glide_ratio, 'depart': depart, 'min_ceiling_ft': min_ceiling_ft, 'min_visibility_sm': min_visibility_sm, 'altitude_ft': altitude_ft}, body=None, headers={})
@@ -630,28 +625,3 @@ async def weather_on_the_map(*, south: float, west: float, north: float, east: f
 async def changes_sources(*, body: dict[str, Any]) -> Any:
     """POST /api/words/changes/sources: Changes Sources"""
     return await _send('POST', '/api/words/changes/sources', query={}, body=body, headers={})
-
-
-async def coach_sources(*, body: dict[str, Any]) -> Any:
-    """POST /api/words/coach/sources: Coach Sources"""
-    return await _send('POST', '/api/words/coach/sources', query={}, body=body, headers={})
-
-
-async def debrief_sources(*, body: dict[str, Any]) -> Any:
-    """POST /api/words/debrief/sources: Debrief Sources"""
-    return await _send('POST', '/api/words/debrief/sources', query={}, body=body, headers={})
-
-
-async def notam_sources(*, body: dict[str, Any]) -> Any:
-    """POST /api/words/notams/sources: Notam Sources"""
-    return await _send('POST', '/api/words/notams/sources', query={}, body=body, headers={})
-
-
-async def risk_sources(*, body: dict[str, Any]) -> Any:
-    """POST /api/words/risk/sources: Risk Sources"""
-    return await _send('POST', '/api/words/risk/sources', query={}, body=body, headers={})
-
-
-async def weather_sources(*, body: dict[str, Any]) -> Any:
-    """POST /api/words/weather/sources: Weather Sources"""
-    return await _send('POST', '/api/words/weather/sources', query={}, body=body, headers={})
