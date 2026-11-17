@@ -3,7 +3,7 @@ import { create } from "zustand";
 import type { Course, Leg, NavLogAltitude, NavLogMessage, Totals } from "../../lib/api/types";
 import { callEngine, type EngineInput } from "../../lib/engine/engine";
 import { flatDeg2 } from "../../lib/geo";
-import { positionIdent } from "../../lib/identSchema";
+import { POSITION_NAME, positionIdent } from "../../lib/identSchema";
 import { sameField } from "../../lib/procedures";
 import { clearProblem, noConnection, raiseProblem } from "../../lib/problems";
 
@@ -150,7 +150,7 @@ export function directOnDevice(
     line.forEach((p, i) => {
       if (apart(p, target) < apart(line[from]!, target)) from = i;
     });
-    const departure = { ident: dep, name: "Present position", lat: fix.lat, lon: fix.lon, kind: "fix" as const };
+    const departure = { ident: dep, name: POSITION_NAME, lat: fix.lat, lon: fix.lon, kind: "fix" as const };
     const messages: NavLogMessage[] = [
       ...(nav ? [{ type: "altitude" as const, ...nav }] : []),
       ...flown.map((leg) => ({ type: "leg" as const, ...leg })),

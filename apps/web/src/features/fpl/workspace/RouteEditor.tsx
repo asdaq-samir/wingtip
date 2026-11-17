@@ -1,7 +1,6 @@
-import { Suspense, useEffectEvent, useLayoutEffect, useRef } from "react";
+import { Suspense } from "react";
 import { SearchNear } from "../../../lib/useAirportSearch";
 import { coverCard, useSheetCards } from "../../../lib/sheetCards";
-import { useIsMobile } from "../../../hooks/use-mobile";
 import { RouteEnds } from "../routePanelParts";
 // The route's field, on a chunk of its own: the first screen draws it.
 import { RouteBox } from "../../route";
@@ -16,8 +15,8 @@ import { FlightFigures } from "./FlightFoot";
  * paste a whole route in, read by the engine's route_read as it always was
  * (RouteBox), where a stop asked for from the list (Add a Stop) is typed
  * in; and once the route is whole its figures under all of it, changing
- * as it is edited. Opened from the folded line with more than the sheet
- * shows, the sheet goes all the way up (makeRoom), and Done takes it back.
+ * as it is edited. On a phone it is open while the sheet is all the way
+ * up (usePlanRouteList).
  */
 export default function RouteEditor({
   vm,
@@ -29,26 +28,13 @@ export default function RouteEditor({
   const { selectPlace } = vm.cards;
   const { openProcedures, routeProcedures, typeProcedures } = vm.picks;
   const { fuelStops, hideFuelStop, keepFuelStops } = vm.stops;
-  const { addAt, addingChange, addingStop, makeRoom, setEditorFocused, waypointStops } = vm.routeList;
+  const { addAt, addingChange, addingStop, setEditorFocused, waypointStops } = vm.routeList;
   const { airspaceOf, altitudeAt, metarColour, searchNear } = vm.brief;
   // A stop asked for from a card (the profile's no-legal-altitude problem,
   // its Add a Stop): asked of the field once the card has gone. Under it the
   // sheet is inert (SheetParts, while a card is up), and the field's focus
   // as it was asked went nowhere (plans.spec, "no legal altitude").
   const covered = useSheetCards((c) => !!coverCard(c.stack));
-  // Opened on a phone's sheet with its end under the sheet's edge (the
-  // floating bar's top, or the screen's foot): raised all the way up, once,
-  // as it opens.
-  const onPhone = useIsMobile();
-  const end = useRef<HTMLDivElement>(null);
-  const fit = useEffectEvent(() => {
-    const el = end.current;
-    if (!onPhone || !wholeRoute || !el) return;
-    const foot = document.querySelector<HTMLElement>('[data-testid="panel-foot"]');
-    const edge = foot && foot.getClientRects().length ? foot.getBoundingClientRect().top : window.innerHeight;
-    if (el.getBoundingClientRect().bottom > edge) makeRoom();
-  });
-  useLayoutEffect(() => fit(), []);
   return (
     <div
       className="flex flex-col px-4 pb-2"
@@ -113,7 +99,6 @@ export default function RouteEditor({
           <FlightFigures vm={vm} grow={false} />
         </div>
       )}
-      <div ref={end} />
     </div>
   );
 }

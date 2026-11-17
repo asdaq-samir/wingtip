@@ -59,11 +59,10 @@ test.describe("on the owner's phone's width, to a finger", () => {
     );
     await page.goto("/app/plan?dep=C81&stops=KDLH&dest=KRFD&procs=KDLH:I09:DLH");
     await settle(page);
-    // Half way, the sheet in from the screen's sides, its box the narrower.
+    // Half way, then opened to edit, which raises the sheet all the way up
+    // (the one layout: at half the route is folded, its box not drawn).
     await grabberTo(page, "half");
-    // Opened to edit, which raises the sheet for its room, and back at half.
     await openRoute(page);
-    await grabberTo(page, "half");
     const box = sideDrawer(page).getByTestId("route-box");
     await expect(box.getByTestId("route-procedure")).toBeVisible({ timeout: slow(10000) });
     // Its lines', the buttons over them in FPL's bar (the owner, 2026-11-14).

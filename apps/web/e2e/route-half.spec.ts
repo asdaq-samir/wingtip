@@ -88,5 +88,5 @@ test("the box's Departure asks for it in the search, where the airplane is first
   await expect(here).toBeVisible({ timeout: slow(10_000) });
   await here.click();
   await expect(page).toHaveURL(/dep=%40|dep=@/);
-  await expect(sideDrawer(page).getByTestId("route-dep")).toContainText("POS0");
+  await expect(sideDrawer(page).getByTestId("route-dep")).toContainText("Present position");
 });

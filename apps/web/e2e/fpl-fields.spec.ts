@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, grabberTo, settle, sideDrawer, slow, openRoute } from "./helpers";
+import { controlsInSight, grabberTo, settle, sideDrawer, slow } from "./helpers";
 import { pickAirplane } from "./startState";
 
 /**
@@ -69,9 +69,9 @@ test("the fuel's breakdown opened and closed leaves FPL as it was: the strip its
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "half");
-  await openRoute(page);
+  // At half the route is folded, its line over the strip (the one layout).
   const strip = sideDrawer(page).locator("[data-pin-foot]");
-  const departure = sideDrawer(page).locator('[data-testid="route-field"]').first();
+  const departure = sideDrawer(page).getByTestId("route-summary");
   const fuel = page.getByTestId("fuel-breakdown-open");
   await expect(fuel).toBeVisible({ timeout: slow(60_000) });
   const before = (await strip.boundingBox())!;

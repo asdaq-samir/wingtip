@@ -480,10 +480,13 @@ off by default (the owner, 2026-11-13).
    tap on it opens it to edit: a head, "Route" and Done (iOS's Edit and
    Done), over the airport cards, Add a Stop, the route's field to type or
    paste a whole route, and the figures under all of them, the Routes'
-   chips put away; Done or a tap on "Route" folds it, and so does the
-   sheet coming down to the pill; opened with more than the sheet shows,
-   the sheet goes all the way up, and Done takes it back; under the folded
-   route the route's figures (To,
+   chips put away; on a phone the sheet's height drives it, as Apple Maps
+   shows more as its sheet rises: folded at half and the pill, open all
+   the way up, so a full sheet is never blank; the tap raises the sheet to
+   full and Done (or a tap on "Route") folds it back to half, never while
+   its field has the focus; a present position is "Present position"
+   wherever the route shows it, never an ident (decision 0046); under the
+   folded route the route's figures (To,
    Distance, Time, Fuel: short words in sentence case, the distance whole
    miles, "1,334 nm", the owner's list, 2026-11-17) at their own size, always
    exact and one column each, never wrapped; where the widest does not fit

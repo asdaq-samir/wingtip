@@ -39,7 +39,7 @@ test.describe("/app/plan", () => {
 
     // Opened: the head, the cards with their roles, the field, the figures
     // under the last card, and the chips put away. The focus on the head's
-    // toggle; the sheet raised all the way up for the room.
+    // toggle; the sheet raised all the way up.
     await expect(drawer).toHaveAttribute("data-panel", "half");
     await line.click();
     const head = drawer.getByTestId("route-head");
@@ -71,12 +71,41 @@ test.describe("/app/plan", () => {
     await page.keyboard.press("Enter");
     await expect(line).toBeFocused();
 
-    // Down at the pill it folds, and comes up folded.
+    // The sheet's height drives it on a phone: all the way up it opens (a
+    // full sheet is never blank), back at half it folds.
+    if (test.info().project.name === "mobile") {
+      await grabberTo(page, "full");
+      await expect(drawer.getByTestId("route-done")).toBeVisible();
+      await expect(drawer.getByTestId("route-field").first()).toBeVisible();
+      await grabberTo(page, "half");
+      await expect(line).toBeVisible();
+      await expect(drawer.getByTestId("route-field")).toHaveCount(0);
+    }
+  });
+
+  test('a Direct To from where the airplane is reads "Present position", its Direct to line and Cancel folded and open', async ({
+    page,
+  }) => {
+    // The owner's iPhone, 2026-11-17: the folded line read "POS0" over
+    // "Present position". One name, the pilot's words, everywhere.
+    await page.goto("/app/plan?dep=@42.2333,-87.9883&dest=KUGN&direct=KUGN&was=C81%7C%7CKUGN");
+    await settle(page);
+    await fromRest(page);
+    await openPanel(page);
+    const drawer = sideDrawer(page);
+    const line = drawer.getByTestId("route-summary");
+    await expect(line.getByTestId("route-summary-end").first()).toHaveText("Present position", { timeout: slow(30_000) });
+    await expect(line).not.toContainText("POS0");
+    // The Direct to line over the figures, folded and open.
+    const direct = drawer.getByTestId("direct-strip");
+    await expect(direct).toBeVisible();
     await line.click();
-    await expect(drawer.getByTestId("route-done")).toBeVisible();
-    await grabberTo(page, "peek");
-    await grabberTo(page, "half");
-    await expect(line).toBeVisible();
+    await expect(direct).toBeVisible();
+    await expect(drawer).not.toContainText("POS0");
+    // Cancel gives the route back as it was.
+    await direct.getByRole("button", { name: /Cancel/ }).click();
+    await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
+    await expect(page).not.toHaveURL(/[?&]direct=/);
   });
 
   test("a new plan opens to edit, its two ends' cards to fill and the route's field, no Done", async ({ page }) => {

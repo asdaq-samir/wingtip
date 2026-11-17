@@ -33,23 +33,39 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    end; the route's field to type or paste a whole route (RouteBox, read
    by the engine's `route_read` as before); and the figures under all of
    it, changing as it is edited. The Routes' chips are put away while it
-   is open: they change the route rather than edit it. Opened with more
-   than the sheet shows, the sheet goes to its full detent, and Done
-   takes it back to the detent it was at (Base UI Drawer's snap points,
-   set by the panel's state, nothing mirrored in CSS). Done, or a tap on
-   "Route", folds it; so does the sheet coming down to the pill.
-3. **A new plan opens to edit**: with no route, the departure's and the
+   is open: they change the route rather than edit it.
+3. **On a phone the sheet's height drives it** (the coordinator's rule
+   after the owner's iPhone screenshot of a Direct To folded at full, the
+   sheet blank under the strip, 2026-11-17), as Apple Maps shows more as
+   its sheet rises: at half and the pill the route is folded; raised to
+   full it opens; lowered to half it folds again, so a full sheet is never
+   blank. A tap on the line opens it and raises the sheet to full; Done,
+   or a tap on "Route", folds it and lowers it to half (Base UI Drawer's
+   snap points, set by the panel's state, nothing mirrored in CSS). It
+   never folds while its field has the focus, what is typed not yet sent.
+   From md up, where the panel is beside the map, the tap and Done alone.
+4. **A new plan opens to edit**: with no route, the departure's and the
    destination's cards to fill and the route's field. Half a route lists
    its fields over the field, the field saying the end it lacks. A route
    made whole a point at a time, or typed or pasted into the field, stays
    open till Done; one that arrives whole from elsewhere (Fly Here, a
-   link, a Saved flight) arrives folded.
-4. **Labels C**: "Airplane" over the N-number and "Cruise" over the
+   link, a Saved flight) arrives folded, or open where the sheet is all
+   the way up.
+5. **One name for a present position**: "Present position", in the
+   pilot's words, wherever the route shows it -- the folded line (on two
+   lines where one has no room, nothing under it), the cards, the pills,
+   the strip, the Nav Log, the Brief, the map (identSchema's
+   `POSITION_NAME`, through `pointName`); it was "POS0" at the owner's earlier ask ("Let's call current position as POS0"),
+   which the screenshot showed over "Present position".
+   Told after the flight (a saved flight, a shared briefing), a present
+   position stays its coordinates (`placeOfPoint`), as "Present position"
+   says nowhere to someone else. The pilot's own points stay POS1 on.
+6. **Labels C**: "Airplane" over the N-number and "Cruise" over the
    altitude, inside their fields (`InlineField`'s `caption`, its words
    the start of the field's name for VoiceOver); each card's role over its
    ident; "Suggested routes" over the chips. The figures keep their own
    short names and explain on tap.
-5. **Gone**: Show Route As and the `routeEdit` preference (persisted
+7. **Gone**: Show Route As and the `routeEdit` preference (persisted
    preferences are read as they are and the key is no longer written),
    Route Line's split (`RouteSplit`), Route Cards' new-stop card
    (`NewStopCard`), the cards' ident text boxes and their second card look

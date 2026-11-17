@@ -28,13 +28,15 @@ export const SCREENS: Screen[] = [
     },
   },
   {
-    // All the way up: the route folded to its one line, the Routes chips,
-    // the side view and the figures (FPL's own, the nav log a sheet of its
-    // own, the Brief a card of its own).
+    // All the way up: the route open to edit (on a phone the sheet's
+    // height opens it, decision 0046), its cards, its field and the figures
+    // (FPL's own, the nav log a sheet of its own, the Brief a card of its own).
     name: "flight planning drawer",
     ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}&view=briefing`);
-      await expect(sideDrawer(page).getByTestId("route-summary")).toBeVisible({ timeout: slow(30000) });
+      await expect(sideDrawer(page).getByTestId("route-head").or(sideDrawer(page).getByTestId("route-summary")).first()).toBeVisible({
+        timeout: slow(30000),
+      });
       await expect(sideDrawer(page).getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
     },
   },

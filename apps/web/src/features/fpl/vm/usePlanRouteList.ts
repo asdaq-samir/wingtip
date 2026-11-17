@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
+import { useIsMobile } from "../../../hooks/use-mobile";
 import { positionIdent, stopsOf } from "../../../lib/identSchema";
 import { useGeo, type LatLon } from "../../../lib/geo";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
@@ -21,7 +22,7 @@ import { coursePoints } from "../../../lib/course";
 export function usePlanRouteList(
   route: PlanRoute,
   { course, ways, own }: PlanAnswerModel,
-  { setViewPick, panelOpen }: PlanViewModel,
+  { setViewPick, panel, panelOpen }: PlanViewModel,
   { proceduresAt }: Pick<PlanPicks, "proceduresAt">,
   setPanel: (state: PanelState) => void,
 ) {
@@ -106,12 +107,20 @@ export function usePlanRouteList(
     flightRules,
   });
   // Folded to its one line once whole, and open to edit (its airport
-  // cards, Add a Stop, the route's field and the figures under them) at
-  // a tap on the line, till its Done (the owner, 2026-11-17, decision
-  // 0046). Before it is whole it is always open, its two ends' cards to
-  // fill. Made whole a point at a time, or typed or pasted into its field,
-  // it stays open for the pilot to go on; arriving whole at once from
-  // elsewhere -- Fly Here, a link, a Saved flight -- it folds, to be read.
+  // cards, Add a Stop, the route's field and the figures under them)
+  // (decision 0046). On a phone the sheet's height drives it, as Apple
+  // Maps shows more as its sheet rises (the coordinator's rule after the
+  // owner's iPhone screenshot of a blank full sheet, 2026-11-17): at half
+  // and the pill it is folded, all the way up it is open, so a full sheet
+  // is never blank. A tap on the line opens it and raises the sheet; Done
+  // folds it and lowers it to half. Before it is whole it is always open,
+  // its two ends' cards to fill. Made whole a point at a time, or typed or
+  // pasted into its field, it stays open for the pilot to go on; arriving
+  // whole at once from elsewhere -- Fly Here, a link, a Saved flight -- it
+  // folds, unless the sheet is all the way up. Never folded while its field
+  // has the focus (what is typed is not yet sent).
+  const onPhone = useIsMobile();
+  const full = onPhone && panel === "full";
   const [wasWhole, setWasWhole] = useState(wholeRoute);
   const [hadPoints, setHadPoints] = useState(hasPoints);
   // Whether the focus is in the open route (RouteEditor), its field typed in.
@@ -119,15 +128,17 @@ export function usePlanRouteList(
   if (wholeRoute !== wasWhole || hasPoints !== hadPoints) {
     setWasWhole(wholeRoute);
     setHadPoints(hasPoints);
-    if (wholeRoute && !wasWhole) edit.setRouteOpen(hadPoints || editorFocused);
+    if (wholeRoute && !wasWhole) edit.setRouteOpen(hadPoints || editorFocused || full);
     if (!hasPoints) edit.setRouteOpen(false);
   }
-  // The sheet's size before it was raised to make room for the open
-  // route (makeRoom), to go back to at its Done.
-  const raisedFrom = useRef<PanelState | null>(null);
-  // Down at the pill, it folds: the pill's face is the folded route's
-  // figures (FplRoute), and it comes up folded, as it was left to read.
-  if (!panelOpen && wholeRoute && edit.routeOpen) edit.setRouteOpen(false);
+  // The sheet's height, as last seen: a move to full opens the route, a
+  // move down from it folds it (on a phone).
+  const [heightWas, setHeightWas] = useState<boolean | null>(null);
+  if (onPhone && heightWas !== full) {
+    setHeightWas(full);
+    if (full && wholeRoute) edit.setRouteOpen(true);
+    else if (!full && heightWas !== null && !editorFocused) edit.setRouteOpen(false);
+  }
   // A hold or a procedure asked for from elsewhere (the map's Hold Here, a
   // voice's "the ILS one nine right at Milwaukee") opens the route, whose
   // list draws them: once for each ask, once the sheet is up.
@@ -139,27 +150,18 @@ export function usePlanRouteList(
   }
   const routeFolded = wholeRoute && !edit.routeOpen && !addingStop;
   const { setRouteOpen } = edit;
+  // The line tapped: open, and on a phone all the way up for its room.
   const openRoute = useCallback(() => {
-    raisedFrom.current = null;
     setRouteOpen(true);
-  }, [setRouteOpen]);
-  // Done: folded again, the sheet back to the size it was at before it
-  // was raised for the room the open route took, if it is still there.
+    if (onPhone && panelNow.current !== "full") setPanel("full");
+  }, [setRouteOpen, setPanel, onPhone]);
+  // Done: folded again, and on a phone back down to half, where it reads.
   const foldRoute = useCallback(() => {
     setRouteOpen(false);
     setAddingStop(false);
     setAddAt(null);
-    const before = raisedFrom.current;
-    raisedFrom.current = null;
-    if (before && panelNow.current === "full") setPanel(before);
-  }, [setRouteOpen, setAddAt, setPanel]);
-  // The open route wants more room than the sheet shows: all the way up,
-  // as iOS raises a sheet for its editor, kept to go back to at Done.
-  const makeRoom = useCallback(() => {
-    if (panelNow.current === "full") return;
-    raisedFrom.current = panelNow.current;
-    setPanel("full");
-  }, [setPanel]);
+    if (onPhone && panelNow.current === "full") setPanel("half");
+  }, [setRouteOpen, setAddAt, setPanel, onPhone]);
   return {
     ...edit,
     ...line,
@@ -172,7 +174,6 @@ export function usePlanRouteList(
     routeFolded,
     openRoute,
     foldRoute,
-    makeRoom,
     setEditorFocused,
   };
 }

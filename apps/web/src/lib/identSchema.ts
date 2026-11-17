@@ -80,10 +80,14 @@ export function departureOf(value: string | null | undefined): string {
   return identOf(value) || positionOf(value);
 }
 
-/** A present position's name in the route, at the owner's ask ("Let's
- *  call current position as POS0"): short as an ident is, where its
- *  coordinates filled the route's box and FPL's line. */
-const POSITION_NAME = "POS0";
+/** A present position's one name wherever the route shows it -- its line,
+ *  its cards, its pills, the strip, the Nav Log, the Brief, the map -- in
+ *  the pilot's words: "Present position" (the coordinator's fix of the
+ *  owner's iPhone screenshot, 2026-11-17, where the folded line read
+ *  "POS0" over "Present position"; it was "POS0" at the owner's ask
+ *  "Let's call current position as POS0", where its coordinates filled the
+ *  route's box). The pilot's own points stay POS1 on. */
+export const POSITION_NAME = "Present position";
 
 /** The pilot's own points in the route now -- one off a fix (frdOf), made
  *  by a long press on the map or Create a fix -- by the name each goes by,
@@ -101,7 +105,8 @@ export function nameOwnPoints(stops: readonly string[]) {
   ownPointNames = new Map(own.map((stop, i) => [stop, `POS${i + 1}`]));
 }
 
-/** A point's name as the route shows it: a present position as POS0, the
+/** A point's name as the route shows it: a present position as "Present
+ *  position" (POSITION_NAME), the
  *  pilot's own points POS1 on (nameOwnPoints), the rest by their idents. */
 export function pointName(ident: string): string {
   return isPosition(ident) ? POSITION_NAME : (ownPointNames.get(ident) ?? ident);

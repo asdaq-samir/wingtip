@@ -99,8 +99,10 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+/);
 
   // Taken off again from its menu -- a right-click with a mouse, a press
-  // and hold on a phone: the route as it was.
+  // and hold on a phone: the route as it was, opened again to edit (at half
+  // it folds).
   await openPanel(page);
+  await openRoute(page);
   await stop.click({ button: "right" });
   await page.getByRole("menuitem", { name: "Remove", exact: true }).click();
   await expect(page).not.toHaveURL(/[?&]stops=/);

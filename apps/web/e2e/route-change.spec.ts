@@ -71,16 +71,16 @@ test("a stop taken out fits the map to the course again, above the half sheet", 
   await page.goto("/app/plan?dep=C81&stops=KDPA&dest=KPWK");
   await settle(page);
   await openPanel(page);
-  // Opened to edit, which raises the sheet for its room, and back at half.
+  // Opened to edit, all the way up, the stop taken out, and back at half,
+  // where the route folds (the one layout).
   await openRoute(page);
-  await grabberTo(page, "half");
   await settled(sideDrawer(page));
-  await mapStill(page);
   // The same two ends: the fit was once per departure and destination,
   // and a stop put in or taken out left the map where it was.
   await sideDrawer(page).getByRole("group", { name: "Stop 1 KDPA" }).focus();
   await page.keyboard.press("Delete");
   await expect(page).not.toHaveURL(/[?&]stops=/);
+  await grabberTo(page, "half");
   await mapStill(page);
   await centredAboveSheet(page);
 });

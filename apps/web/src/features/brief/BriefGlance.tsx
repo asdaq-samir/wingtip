@@ -16,7 +16,7 @@ import { FINDING_TONE, type Finding } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 import { grouped } from "../../lib/format";
 import { mhzText } from "../../lib/frequencies";
-import { isPosition } from "../../lib/identSchema";
+import { POSITION_NAME, isPosition } from "../../lib/identSchema";
 import { useAirplaneChosen } from "../../lib/preferences";
 import { useVerdict } from "../../lib/verdict";
 import { useAnnounce } from "../../lib/announce";
@@ -121,7 +121,7 @@ function FieldCard({
     <Card
       tab={tab}
       label={label}
-      ident={here ? "Present position" : field.ident}
+      ident={here ? POSITION_NAME : field.ident}
       category={field.category}
       at={time(field.at)}
       finding={field.finding}

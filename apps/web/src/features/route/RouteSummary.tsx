@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import { PANEL_FIELD_FILL } from "../../components/panelField";
-import { pointName } from "../../lib/identSchema";
+import { isPosition, pointName } from "../../lib/identSchema";
 import { TEXT } from "../../lib/text";
 
 /** The course's magenta, as the plan's line and its marks. */
@@ -37,7 +37,7 @@ export default function RouteSummary({
 }) {
   const many = stops.length;
   const via = many ? `, ${many} ${many === 1 ? "stop" : "stops"}: ${stops.map(pointName).join(", ")}` : "";
-  const named = (ident: string, name?: string | null) => `${pointName(ident)}${name ? ` ${name}` : ""}`;
+  const named = (ident: string, name?: string | null) => `${pointName(ident)}${name && !isPosition(ident) ? ` ${name}` : ""}`;
   return (
     <BaseButton
       onClick={onOpen}
@@ -71,12 +71,22 @@ export default function RouteSummary({
 }
 
 function End({ ident, name, end = false, children }: { ident: string; name?: string | null; end?: boolean; children: ReactNode }) {
+  // A present position is said in the pilot's words, "Present position",
+  // with nothing under it (its name the same words), on two lines where one
+  // has no room (the owner's 19.65 px text beside "1 stop"); an airport by
+  // its ident in capitals over its name.
+  const here = isPosition(ident);
   return (
     <span aria-hidden="true" className={cn("flex min-w-0 items-center gap-2", end && "justify-end")}>
       {!end && children}
-      <span className={cn("flex min-w-0 flex-col leading-tight", end && "items-end")}>
-        <span className={cn("max-w-full truncate font-mono font-semibold uppercase", TEXT.row)}>{pointName(ident)}</span>
-        {name && <span className={cn("max-w-full truncate text-muted-foreground", TEXT.note)}>{name}</span>}
+      <span className={cn("flex min-w-0 flex-col leading-tight", end && "items-end text-right")}>
+        <span
+          className={cn("max-w-full font-semibold", here ? "line-clamp-2" : "truncate font-mono uppercase", TEXT.row)}
+          data-testid="route-summary-end"
+        >
+          {pointName(ident)}
+        </span>
+        {name && !here && <span className={cn("max-w-full truncate text-muted-foreground", TEXT.note)}>{name}</span>}
       </span>
       {end && children}
     </span>

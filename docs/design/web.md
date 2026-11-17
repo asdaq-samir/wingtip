@@ -812,9 +812,12 @@ true) and Done, the focus kept on the toggle and the change said by
 React Aria's live announcer, over the page's airport cards
 (`ProceduresRoute`, its edits `useRouteListEdit`), then `RouteEditor`:
 with no route the two ends' cards (`RouteEnds`), the route's field
-(`RouteBox`) and the figures. Opened with its end under the sheet's
-edge on a phone, the sheet goes to its full snap point (usePlanRouteList's
-`makeRoom`) and Done sets it back (`foldRoute`); at the pill it folds.
+(`RouteBox`) and the figures. On a phone the sheet's height drives it
+(usePlanRouteList): open at the full snap point, folded at half and the
+pill, never while the field has the focus (`editorFocused`); the line's
+tap sets the full snap point (`openRoute`) and Done sets half
+(`foldRoute`). A present position is `POSITION_NAME`, "Present
+position", through `pointName` everywhere.
 The Routes' chips (`route-group`, `RouteLine`: one row of
 the search's pill, each way's name and time, the one flown filled; on the
 map `WaysGl` draws it solid magenta and the others dotted, their chips
