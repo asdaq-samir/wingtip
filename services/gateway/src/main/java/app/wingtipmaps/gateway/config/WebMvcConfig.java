@@ -85,10 +85,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // a separate landing page one hop removed from it.
         registry.addRedirectViewController("/app", "/app/plan");
         registry.addRedirectViewController("/app/", "/app/plan");
-        // The address a TV shows for signing it in (DeviceSignInController),
-        // short to type on a phone: the planner, opening the box for the
-        // TV's code.
-        registry.addRedirectViewController("/tv", "/app/plan?tv-link=1");
         // The short addresses App Store Connect, Google Play and the apps'
         // About screens give for the privacy policy, the terms and support:
         // the pages the web build renders from docs/legal (apps/web's

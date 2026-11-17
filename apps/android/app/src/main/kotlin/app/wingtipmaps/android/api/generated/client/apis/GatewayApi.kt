@@ -121,22 +121,6 @@ interface GatewayApi {
     suspend fun aircraftUpdate(@Path("id") id: kotlin.Long, @Body appWingtipmapsAndroidApiGeneratedGatewayAircraftRequest: app.wingtipmaps.android.api.generated.gateway.AircraftRequest): Response<app.wingtipmaps.android.api.generated.gateway.AircraftDto>
 
     /**
-     * POST api/auth/device/approve
-     * Sign in the TV showing this code as the pilot signed in here
-     * From the phone, signed in. 404 for a code no TV is showing now (mistyped, used or ten minutes old); 429 past ten tries in ten minutes.
-     * Responses:
-     *  - 204: The TV will be signed in at its next ask
-     *  - 401: Not signed in on this phone
-     *  - 404: No TV is showing that code now
-     *  - 429: Too many tries
-     *
-     * @param appWingtipmapsAndroidApiGeneratedGatewayApproval
-     * @return [Unit]
-     */
-    @POST("api/auth/device/approve")
-    suspend fun approve(@Body appWingtipmapsAndroidApiGeneratedGatewayApproval: app.wingtipmaps.android.api.generated.gateway.Approval): Response<Unit>
-
-    /**
      * POST api/training/instructors
      *
      *
@@ -922,19 +906,6 @@ interface GatewayApi {
     suspend fun squawks(@Path("id") id: kotlin.Long): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.gateway.SquawkDto>>
 
     /**
-     * POST api/auth/device
-     * A code for a TV to sign in with
-     * The TV shows &#x60;userCode&#x60; and the address &#x60;verificationPath&#x60; on this site, and asks /api/auth/device/token with &#x60;deviceCode&#x60; every &#x60;interval&#x60; seconds until a pilot signed in on a phone types the code in. 429 past twenty an hour from one place.
-     * Responses:
-     *  - 200: OK
-     *  - 429: Too many codes asked for from here
-     *
-     * @return [app.wingtipmaps.android.api.generated.gateway.DeviceCode]
-     */
-    @POST("api/auth/device")
-    suspend fun start(): Response<app.wingtipmaps.android.api.generated.gateway.DeviceCode>
-
-    /**
      * POST api/subscription/trial
      * Start the free month
      * Once an account: 409 once it has been started, even after it ended. On the website; in the iOS and Android apps the free month is the store&#39;s introductory offer.
@@ -982,21 +953,6 @@ interface GatewayApi {
      */
     @GET("api/subscription")
     suspend fun subscriptionGet(): Response<app.wingtipmaps.android.api.generated.gateway.SubscriptionDto>
-
-    /**
-     * POST api/auth/device/token
-     * The TV asking whether its code has been typed in
-     * 202 while not yet; 200 once it has, the TV then signed in on this session, the code spent; 410 for a code ten minutes old or unknown, for which the TV asks for a new one.
-     * Responses:
-     *  - 200: Signed in; `next` is where to go
-     *  - 202: Not yet; ask again in `interval` seconds
-     *  - 410: The code is spent, too old or unknown
-     *
-     * @param appWingtipmapsAndroidApiGeneratedGatewayTokenRequest
-     * @return [app.wingtipmaps.android.api.generated.gateway.SignedIn]
-     */
-    @POST("api/auth/device/token")
-    suspend fun token(@Body appWingtipmapsAndroidApiGeneratedGatewayTokenRequest: app.wingtipmaps.android.api.generated.gateway.TokenRequest): Response<app.wingtipmaps.android.api.generated.gateway.SignedIn>
 
     /**
      * GET api/flights/{id}/track

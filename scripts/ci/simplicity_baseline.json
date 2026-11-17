@@ -20,9 +20,9 @@
  "search_box_formulas": 0,
  "haversine_formulas": 0,
  "degree_margin_formulas": 0,
- "copy_paste_clones": 36,
+ "copy_paste_clones": 35,
  "one_home_findings": 16,
  "rules_outside_engine": 22,
- "hand_built_web_controls": 57,
- "files_over_400_lines": 130
+ "hand_built_web_controls": 5,
+ "files_over_400_lines": 124
 }

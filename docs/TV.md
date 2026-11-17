@@ -12,8 +12,12 @@ apps/web/src/features/pilot/TvCodeField.tsx apps/web/src/features/pilot/tvCode.t
 apps/web/e2e/tv.spec.ts apps/web/e2e/tv-signin.spec.ts` brings them back,
 with the spatial navigation polyfill, the `html[data-tv]` focus ring in
 index.css and their hooks in main.tsx, GlMapShell, SignInModal and
-MapPage. The gateway's half of the sign-in (`DeviceSignInController`,
-the `/tv` redirect) is still there.
+MapPage. The gateway's half of the sign-in went too
+(`DeviceSignInController` and its test, the `/tv` redirect and the
+permits for them in `SecurityConfig`; the codes were held in memory, so no
+table): `git checkout 117248d02 -- services/gateway` brings back the whole
+gateway as it was before, so check out only the files you need and then
+regenerate `services/gateway/openapi.json` and the clients.
 
 Wingtip Maps on Samsung's TVs (Tizen) and LG's (webOS) is the site in the
 TV's own web engine. It is for planning on the big screen: the chart, the
@@ -45,11 +49,11 @@ route, the nav log, the weather and the brief.
   internet, and the site registers ChannelUp and ChannelDown
   (`tizen.tvinputdevice`), which a page is not sent otherwise; OK and the
   + and − buttons zoom without them.
-- **Sign-in** is a code (`DeviceSignInController`, `TvCode`). The TV
-  shows a code such as `BCDF-GHJK` and the address `<the domain>/tv`. On
-  a phone signed in to Wingtip Maps, open that address and type the code
-  (`TvLink`); within a few seconds the TV signs in as you. The code is
-  good for ten minutes, works once, and a new one replaces it on the TV.
+- **Sign-in** was a code (deleted: see the top of this page). The TV
+  showed a code such as `BCDF-GHJK` and the address `<the domain>/tv`. On
+  a phone signed in to Wingtip Maps, you opened that address and typed the
+  code (`TvLink`); within a few seconds the TV signed in as you. The code
+  was good for ten minutes, worked once, and a new one replaced it.
 - **The TV has no GPS**, so own ship finds no position there.
 
 ## The build

@@ -829,11 +829,6 @@ data class AppleToken (
 )
 
 @Serializable
-data class Approval (
-    val userCode: String
-)
-
-@Serializable
 data class AskInstructorRequest (
     val email: String
 )
@@ -888,15 +883,6 @@ data class CurrencyDatesRequest (
 @Serializable
 data class DeclineRequest (
     val note: String
-)
-
-@Serializable
-data class DeviceCode (
-    val deviceCode: String,
-    val expiresIn: Int,
-    val interval: Int,
-    val userCode: String,
-    val verificationPath: String
 )
 
 @Serializable
@@ -1303,11 +1289,6 @@ data class SubscriptionDto (
 )
 
 @Serializable
-data class TokenRequest (
-    val deviceCode: String
-)
-
-@Serializable
 data class UpdateFlightRequest (
     val name: String? = null,
     val notes: String? = null
@@ -1319,12 +1300,6 @@ data class VorCheckRequest (
     val errorDeg: Double,
     val kind: String,
     val place: String? = null
-)
-
-@Serializable
-data class Waiting (
-    val interval: Int,
-    val status: String
 )
 
 @Serializable
