@@ -1,16 +1,24 @@
 import type { ReactNode } from "react";
 import { cn } from "cn";
-import { GLASS } from "../../../lib/mapChrome";
-import { Button } from "../../../components/ui/button";
-import { openEmergency } from "../../../lib/emergencyStore";
-import { clockTime, duration } from "../../../lib/format";
-import { useEngineReady } from "../../../lib/engine/useEngineReady";
-import { useOwnShip } from "../../../lib/map/position/ownShip";
-import { DRY_RUN, usePastFlight } from "../map/pastFlight";
-import { GROUP_HEADING, TEXT } from "../../../lib/text";
-import { dryRunAt, type DryRun } from "./navlog/dryRun";
-import { dryRunNext, gpsAhead, type CourseLine } from "./navlog/flyingTo";
-import { isLegPoint, rowPoint, type NavLogRow } from "./navlog/rows";
+import { GLASS } from "../../lib/mapChrome";
+import { Button } from "../../components/ui/button";
+import { openEmergency } from "../../lib/emergencyStore";
+import { clockTime, duration } from "../../lib/format";
+import { useEngineReady } from "../../lib/engine/useEngineReady";
+import { useOwnShip } from "../../lib/map/position/ownShip";
+import {
+  DRY_RUN,
+  usePastFlight,
+  dryRunAt,
+  type DryRun,
+  dryRunNext,
+  gpsAhead,
+  type CourseLine,
+  isLegPoint,
+  rowPoint,
+  type NavLogRow,
+} from "../plan";
+import { GROUP_HEADING, TEXT } from "../../lib/text";
 
 /**
  * The next checkpoint, over the map in flight (useFlyingMode), as the

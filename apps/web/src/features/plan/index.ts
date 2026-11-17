@@ -21,9 +21,10 @@ export { default as TripFigures } from "./components/TripFigures";
 export type { BriefingPart } from "./components/briefing/sections";
 export { loadFlightChart } from "./components/loadFlightChart";
 export { clearanceAt } from "./components/navlog/altitude/clearance";
-export { dryRunFlown } from "./components/navlog/dryRun";
+export { type DryRun, type Flown, dryRunAt, dryRunFlown, dryRunOf, runNmAt } from "./components/navlog/dryRun";
+export { type CourseLine, dryRunNext, gpsAhead } from "./components/navlog/flyingTo";
 export { GoToTab, LEGS, type PanelTab, useTabAsk } from "./components/navlog/panelTab";
-export { navLogRows, savedCheckpoints } from "./components/navlog/rows";
+export { type NavLogRow, type RouteEnds, isLegPoint, legOf, navLogRows, rowPoint, savedCheckpoints } from "./components/navlog/rows";
 export { figuresLine, nextLanding } from "./figures";
 export {
   PLAN_NAME,
@@ -52,10 +53,7 @@ export {
 } from "./hooks/planAddress";
 export type { PlanAnswer, PlanCourse } from "./hooks/planTypes";
 export { type AirplaneRow, useAirplaneHits } from "./hooks/useAirplaneHits";
-export { useCopilotPublish } from "./hooks/useCopilotPublish";
-export { useDryRun } from "./hooks/useDryRun";
 export { useFieldPatterns } from "./hooks/useFieldPatterns";
-export { useFlyingMode } from "./hooks/useFlyingMode";
 export { useLegSheet } from "./hooks/useLegSheet";
 export { useLoad } from "./hooks/useLoad";
 export { useMapActions } from "./hooks/useMapActions";
@@ -81,8 +79,18 @@ export { useStopsAlong } from "./lib/stopsAlong";
 export { useTabSearch } from "./lib/tabSearch";
 export { useWindPicks } from "./lib/windPicks";
 export { useKeepOffline } from "./map/keepStatus";
-export { DRY_RUN, usePastFlight } from "./map/pastFlight";
+export {
+  DRY_RUN,
+  REPLAY_SPEEDS,
+  clearPastFlight,
+  pausePastFlight,
+  playPastFlight,
+  positionAt,
+  stopPastFlight,
+  usePastFlight,
+} from "./map/pastFlight";
 export { useTrueHeightView } from "./map/terrain/heightStretch";
+export { setPilotView, usePilotView } from "./map/terrain/pilotView";
 export { useTerrainView } from "./map/terrain/useTerrainView";
 export { RouteBox } from "./routeBoxChunk";
 export { BootMap, RouteMap } from "./routeMapChunk";
@@ -95,6 +103,9 @@ export const loadFixCard = () => import("./components/FixCard");
 
 /** NearestCard, on a chunk of its own, as its importer loads it. */
 export const loadNearestCard = () => import("./components/NearestCard");
+
+/** PastFlightChart, on a chunk of its own, as its importer loads it. */
+export const loadPastFlightChart = () => import("./components/PastFlightChart");
 
 /** RouteLegCard, on a chunk of its own, as its importer loads it. */
 export const loadRouteLegCard = () => import("./components/RouteLegCard");

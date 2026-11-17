@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { loadFlightChart, nextLanding, useDryRun, useFlyingMode, useCopilotPublish } from "../../plan";
+import { loadFlightChart, nextLanding } from "../../plan";
+import { useDryRun, useFlyingMode, useCopilotPublish } from "../../flying";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanFpl } from "./usePlanFpl";

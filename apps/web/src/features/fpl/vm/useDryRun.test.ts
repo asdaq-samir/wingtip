@@ -16,7 +16,8 @@ import type { Address } from "../../../lib/address";
 import type { Airport, Leg } from "../../../lib/api/types";
 import { endSimulation, simulateFix } from "../../../lib/map/position/dryRun";
 import { useOwnFixShown } from "../../../lib/map/position/ownShip";
-import { DRY_RUN, usePastFlight, type PanelView, useDryRun } from "../../plan";
+import { DRY_RUN, usePastFlight, type PanelView } from "../../plan";
+import { useDryRun } from "../../flying";
 import { useFplCards } from "./useFplCards";
 
 const airport = (ident: string, lat: number, elevation: number): Airport =>

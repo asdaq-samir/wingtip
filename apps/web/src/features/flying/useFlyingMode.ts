@@ -1,8 +1,8 @@
 import { useEffect } from "react";
-import { useFlying } from "../../../lib/mapChrome";
-import { underway } from "../../../lib/map/position/glide";
-import { useOwnShip } from "../../../lib/map/position/ownShip";
-import { DRY_RUN, usePastFlight } from "../map/pastFlight";
+import { useFlying } from "../../lib/mapChrome";
+import { underway } from "../../lib/map/position/glide";
+import { useOwnShip } from "../../lib/map/position/ownShip";
+import { DRY_RUN, usePastFlight } from "../plan";
 
 /**
  * Flying mode, the canvas's Flying screen (the owner's "Do it all",

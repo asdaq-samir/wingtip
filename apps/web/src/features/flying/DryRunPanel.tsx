@@ -1,24 +1,34 @@
 import { Suspense, lazy, memo, useEffect, useMemo, useRef, type ComponentProps, type KeyboardEvent, type PointerEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Mountain } from "lucide-react";
-import { callEngine } from "../../../lib/engine/engine";
-import { setPilotView, usePilotView } from "../map/terrain/pilotView";
+import { callEngine } from "../../lib/engine/engine";
+import {
+  setPilotView,
+  usePilotView,
+  REPLAY_SPEEDS,
+  pausePastFlight,
+  playPastFlight,
+  positionAt,
+  usePastFlight,
+  TripFigures,
+  dryRunFlown,
+  runNmAt,
+  type DryRun,
+  type Flown,
+  type RouteEnds,
+  loadFlightChart,
+} from "../plan";
 import { cn } from "cn";
-import CloseButton from "../../../components/CloseButton";
-import RoundButton from "../../../components/RoundButton";
-import { Slider } from "../../../components/ui/slider";
-import { PlaybackButton, PlaybackToggle, PlaybackToolbar, PlayToggle, SpeedMenu } from "../../../components/PlaybackBar";
-import { playbackKey } from "../../../components/playbackKeys";
-import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, usePastFlight } from "../map/pastFlight";
-import { toggleReplay } from "../../replay";
-import { routeProfileQuery } from "../../../lib/queryClient";
-import { TEXT } from "../../../lib/text";
-import { altFt, feet, wholeNm } from "../../../lib/format";
-import TripFigures from "./TripFigures";
-import { dryRunFlown, runNmAt, type DryRun, type Flown } from "./navlog/dryRun";
-import type { RouteEnds } from "./navlog/rows";
-import { loadFlightChart } from "./loadFlightChart";
-import { ForecastStrip, ForecastToggle } from "../forecastRun/ForecastStrip";
+import CloseButton from "../../components/CloseButton";
+import RoundButton from "../../components/RoundButton";
+import { Slider } from "../../components/ui/slider";
+import { PlaybackButton, PlaybackToggle, PlaybackToolbar, PlayToggle, SpeedMenu } from "../../components/PlaybackBar";
+import { playbackKey } from "../../components/playbackKeys";
+import { toggleReplay } from "../replay";
+import { routeProfileQuery } from "../../lib/queryClient";
+import { TEXT } from "../../lib/text";
+import { altFt, feet, wholeNm } from "../../lib/format";
+import { ForecastStrip, ForecastToggle } from "./ForecastStrip";
 
 const FlightChart = lazy(loadFlightChart);
 

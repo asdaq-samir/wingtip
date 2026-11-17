@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import type { AircraftProfile, Totals } from "../../../lib/api/types";
-import { publishCopilotFlight } from "../../../lib/copilot/flight";
-import { useLoad } from "./useLoad";
+import type { AircraftProfile, Totals } from "../../lib/api/types";
+import { publishCopilotFlight } from "../../lib/copilot/flight";
+import { useLoad } from "../plan";
 
 /**
  * The planned flight handed to the in-flight copilot (lib/copilot/flight,

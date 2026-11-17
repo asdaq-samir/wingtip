@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Candidate, Leg } from "../../../lib/api/types";
-import { DRY_RUN, clearPastFlight, usePastFlight } from "../map/pastFlight";
-import { dryRunOf, type DryRun } from "../components/navlog/dryRun";
-import { legOf, navLogRows, type RouteEnds } from "../components/navlog/rows";
+import type { Candidate, Leg } from "../../lib/api/types";
+import { DRY_RUN, clearPastFlight, usePastFlight, dryRunOf, type DryRun, legOf, navLogRows, type RouteEnds } from "../plan";
 
 /**
  * The flight flown on paper (dryRunOf), the planner screen's view model

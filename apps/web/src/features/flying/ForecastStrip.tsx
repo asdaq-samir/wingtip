@@ -1,17 +1,14 @@
 import { CloudSun, TriangleAlert } from "lucide-react";
 import { cn } from "cn";
-import { PlaybackToggle } from "../../../components/PlaybackBar";
-import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
-import { describeError } from "../../../lib/api/client";
-import type { ForecastRun } from "../../../lib/api/types";
-import { grouped } from "../../../lib/format";
-import { windText } from "../format";
-import { TEXT } from "../../../lib/text";
-import { CATEGORY_CHIP, CATEGORY_UNKNOWN } from "../../../lib/tokens";
-import type { DryRun } from "../components/navlog/dryRun";
-import type { RouteEnds } from "../components/navlog/rows";
-import { hourZ, unavailableWords, zulu } from "./forecastRun";
-import { setForecastMode, useForecastMode, useForecastRun } from "./useForecastRun";
+import { PlaybackToggle } from "../../components/PlaybackBar";
+import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
+import { describeError } from "../../lib/api/client";
+import type { ForecastRun } from "../../lib/api/types";
+import { grouped } from "../../lib/format";
+import { windText, type DryRun, type RouteEnds } from "../plan";
+import { TEXT } from "../../lib/text";
+import { CATEGORY_CHIP, CATEGORY_UNKNOWN } from "../../lib/tokens";
+import { hourZ, unavailableWords, zulu, setForecastMode, useForecastMode, useForecastRun } from "../plan/lazy";
 
 /** Forecast mode's switch, among the dry run's own controls: the run
  *  played against the forecast for the hours it flies, or not -- the

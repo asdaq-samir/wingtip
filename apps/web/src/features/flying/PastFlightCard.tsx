@@ -1,25 +1,25 @@
 import { Suspense, lazy, memo, useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { Gauge, MoveVertical, PlaneLanding, PlaneTakeoff, Route, Timer } from "lucide-react";
 import { cn } from "cn";
-import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { CardHead } from "../../../components/CardHead";
-import { SheetCard } from "../../../components/SheetCard";
-import { RowBadge } from "../../../components/RowBadge";
-import type { PastFlightPoint, PastFlights, PastFlightSummary } from "../../../lib/api/types";
-import { clockTime, feet, knots, wholeNm } from "../../../lib/format";
-import { compassPoint } from "../../../lib/compass";
-import { useGeo } from "../../../lib/geo";
-import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight } from "../map/pastFlight";
-import { usePreferences } from "../../../lib/preferences";
-import { CameraMenu, ReplayTimeline } from "../../replay";
-import { setReplayCamera } from "../../../lib/replay/camera/cameraStore";
-import { BADGE } from "../../../lib/rowBadges";
-import { TEXT } from "../../../lib/text";
-import { altFt, bearing, grouped } from "../../../lib/format";
-import { dayOf, lasted, legOf, statusOf, when } from "../../../components/airplane/pastFlightFormat";
-import { pastFlightsQuery } from "../../../lib/airplane/pastFlightsQuery";
+import { ListGroup, ListRow } from "../../components/GroupedList";
+import { CardHead } from "../../components/CardHead";
+import { SheetCard } from "../../components/SheetCard";
+import { RowBadge } from "../../components/RowBadge";
+import type { PastFlightPoint, PastFlights, PastFlightSummary } from "../../lib/api/types";
+import { clockTime, feet, knots, wholeNm } from "../../lib/format";
+import { compassPoint } from "../../lib/compass";
+import { useGeo } from "../../lib/geo";
+import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight, loadPastFlightChart } from "../plan";
+import { usePreferences } from "../../lib/preferences";
+import { CameraMenu, ReplayTimeline } from "../replay";
+import { setReplayCamera } from "../../lib/replay/camera/cameraStore";
+import { BADGE } from "../../lib/rowBadges";
+import { TEXT } from "../../lib/text";
+import { altFt, bearing, grouped } from "../../lib/format";
+import { dayOf, lasted, legOf, statusOf, when } from "../../components/airplane/pastFlightFormat";
+import { pastFlightsQuery } from "../../lib/airplane/pastFlightsQuery";
 
 /** The track log's rows shown before "All reports" is asked for. */
 const LOG_ROWS = 60;
@@ -205,9 +205,9 @@ function ReplayChart({ points }: { points: PastFlightPoint[] }) {
   );
 }
 
-const FlightChart = lazy(() => import("./PastFlightChart"));
+const FlightChart = lazy(() => loadPastFlightChart());
 // Its own chunk, as the chart's: asked for only when the approach is.
-const ApproachDebriefs = lazy(() => import("../../../components/ApproachDebrief"));
+const ApproachDebriefs = lazy(() => import("../../components/ApproachDebrief"));
 
 /**
  * The flight's approach into the field it landed at, debriefed against
