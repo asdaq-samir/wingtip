@@ -131,10 +131,10 @@ export const FIXED_FIGURE = {
 };
 
 /** The strip's one size, as iOS shrinks a label to fit its width
- *  (UILabel's adjustsFontSizeToFitWidth, minimumScaleFactor 0.8): the
+ *  (UILabel's adjustsFontSizeToFitWidth, minimumScaleFactor 0.7, the owner's pick, 2026-11-17): the
  *  value's own size (`--fig`) while the strip's widest figure fits its
  *  column, else the column's width (100cqi, each column a container)
  *  over the room that figure takes (`--fit-room` digits, figureRoom, of
- *  the face's `--figure-digit` ems, index.css), never under 0.8 of its
+ *  the face's `--figure-digit` ems, index.css), never under 0.7 of its
  *  size; past that cut short. */
-export const FIT = "text-[length:clamp(calc(var(--fig)*0.8),calc(100cqi/(var(--fit-room,7)*var(--figure-digit,0.6))),var(--fig))]";
+export const FIT = "text-[length:clamp(calc(var(--fig)*0.7),calc(100cqi/(var(--fit-room,7)*var(--figure-digit,0.6))),var(--fig))]";

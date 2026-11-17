@@ -126,8 +126,9 @@ test("the dry run waits for the legs: no way to it until the plan is in, and the
 
 test("the dry run keeps the flight's own figures at the foot, counting down from where the airplane is", async ({ page }) => {
   // The owner's "Dry run should keep the calculations as in the profile":
-  // To, Dist, ETE and Fuel, their taps the same, where the run had its own
-  // (Dist left, Time left, ETA, To burn).
+  // Dist, ETE and Fuel, their taps the same, where the run had its own
+  // (Dist left, Time left, ETA, To burn); no To, which the flying head
+  // over the map names (the owner, 2026-11-17).
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -157,11 +158,11 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
 
   await pressDryRunStart(page, start);
   const figures = sideDrawer(page).getByTestId("dry-run-figures");
-  await expect(figures.locator("dt > [aria-hidden]")).toHaveText(planned);
-  await expect(figures.getByTestId("navlog-to")).toHaveText("KDLH");
+  await expect.poll(async () => (await figures.locator("dt > [aria-hidden]").allTextContents()).slice(0, 3)).toEqual(planned.slice(1));
+  await expect(figures.getByTestId("navlog-to")).toHaveCount(0);
   await expect(figures.getByTestId("ete-eta-toggle")).toBeVisible();
   await expect(figures.getByTestId("fuel-breakdown-open")).toBeVisible();
-  const leftNm = async () => parseFloat(await figures.locator("dd").nth(1).innerText());
+  const leftNm = async () => parseFloat((await figures.locator("dd").nth(0).innerText()).replace(/,/g, ""));
   expect(await leftNm()).toBeLessThanOrEqual(Math.ceil(plannedNm));
   await expect.poll(leftNm, { timeout: slow(15_000) }).toBeLessThan(plannedNm - 1);
 });

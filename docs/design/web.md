@@ -850,9 +850,9 @@ by clicking the map, typing an address or a name, up to 9 stops in all
    plan's figures and their taps given it by `features/navlog`'s
    `TripFigures` (`FlightLine` until 2026-11-17). The figures are always
    exact and fitted as iOS fits a label to its width
-   (`adjustsFontSizeToFitWidth`, `minimumScaleFactor` 0.8): all of them
+   (`adjustsFontSizeToFitWidth`, `minimumScaleFactor` 0.7, the owner's pick of 2026-11-17): all of them
    set smaller together where the widest does not fit its column, never
-   under 0.8 of their size, and past that cut with "…" -- CSS alone
+   under 0.7 of their size, and past that cut with "…" -- CSS alone
    (lib/text's `FIT`: each column a container, its `100cqi` over the
    widest figure's room from `components/figureRoom`), where until the
    trial of 2026-11-17 they were measured in the page and the one too

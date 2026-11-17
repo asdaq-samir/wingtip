@@ -461,7 +461,13 @@ off by default (the owner, 2026-11-13).
    pills, the line, or the cards' ends and the Routes' chips), never in the
    bar; under the route, once there is one, the route's figures (To,
    Distance, Time, Fuel: short words in sentence case, the distance whole
-   miles, "1,334 nm", the owner's list, 2026-11-17) at their own size, and at the sheet's foot from
+   miles, "1,334 nm", the owner's list, 2026-11-17) at their own size, always
+   exact and one column each, never wrapped; where the widest does not fit
+   its column all of them are set smaller together, as iOS fits a label
+   (minimumScaleFactor 0.7), and past 0.7 cut with "…", never a rounded
+   form in their place (the owner's pick of the stock fit, 2026-11-17); in
+   flight and in a dry run no To, which the flying head names, so Distance,
+   Time, Fuel and the GPS altitude are its four columns; and at the sheet's foot from
    half up a floating glass bar, the airport card's tab bar's capsule,
    of four buttons: Brief, Nav Log and Profile, each opening its card
    over FPL, and the route's •••, "More", its one menu -- undo and redo,

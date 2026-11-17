@@ -34,7 +34,7 @@ const FuelBreakdown = lazy(() => import("./FuelBreakdown"));
  * trip's "13h 38m" at a larger text size, which the app follows
  * (features/shell/dynamicType), an iPhone SE's narrow columns), all of
  * them set smaller together, as iOS shrinks a label to fit its width,
- * down to 0.8 of their size, and only past that cut short (FigureStrip).
+ * down to 0.7 of their size, and only past that cut short (FigureStrip).
  *
  * Drawn by the one FigureStrip, in every state -- FPL's route row, a dry
  * run and in flight -- this saying only what the figures are and which of
@@ -165,7 +165,11 @@ export default function TripFigures({
       // An airplane's figure before the nav log's totals and with no
       // estimate is still coming: its shape, the dash kept for "needs an
       // airplane" (decision 0044).
-      .map((f) => (airplane && !totals && f.value === "—" && f.name !== "To" ? { ...f, waiting: true } : f)),
+      .map((f) => (airplane && !totals && f.value === "—" && f.name !== "To" ? { ...f, waiting: true } : f))
+      // In flight (a dry run too) no To: the flying head over the map names
+      // the next point, and the strip keeps four columns for the distance,
+      // the time, the fuel and the GPS altitude (the owner, 2026-11-17).
+      .filter((f) => !(flying || flown) || f.name !== "To"),
     ...(gps === null ? [] : [gps]),
   ];
   // The fuel required tapped, what it is made of (FuelBreakdown), at the

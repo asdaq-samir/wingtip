@@ -156,4 +156,16 @@ test("in flight the strip gives the phone's GPS altitude, to the nearest 10 ft",
   await settle(page);
   const gps = page.getByTestId("strip-gps-alt").first();
   await expect(gps).toContainText("3,000", { timeout: slow(60_000) });
+  // No To in flight (the head over the map names the next point): the
+  // distance, time, fuel and GPS altitude, four columns on one row, where
+  // the altitude, a fifth in four, went onto a row of its own (the owner,
+  // 2026-11-17).
+  const strip = page
+    .locator("dl")
+    .filter({ has: page.getByTestId("strip-gps-alt") })
+    .first();
+  await expect(strip.getByTestId("navlog-to")).toHaveCount(0);
+  const tops = await strip.locator("dd").evaluateAll((dds) => dds.map((dd) => Math.round(dd.getBoundingClientRect().top)));
+  expect(tops).toHaveLength(4);
+  expect(new Set(tops).size).toBe(1);
 });

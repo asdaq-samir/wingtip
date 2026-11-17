@@ -55,7 +55,7 @@ const TYPE: Record<StripSize, { value: string; unit: string; name?: string; unit
  * 17.88 and 19.65 keep four), as the iPhone's and Android's strips stack:
  * four columns then cut the figures. Fitted as iOS fits a label to its
  * width: all of them set smaller together where the widest does not fit
- * its column, down to 0.8 of their size, and past that cut short with
+ * its column, down to 0.7 of their size, and past that cut short with
  * "…" -- the figures always exact, never a rounded form in their place
  * (lib/text's FIT, each column a container; the trial of 2026-11-17,
  * where they were measured in the page and the one too wide rounded,
@@ -81,15 +81,14 @@ export default function FigureStrip({
   tap?: (figure: StripFigure, face: ReactNode) => ReactNode;
 }) {
   const type = TYPE[size];
-  const room = { "--fit-room": figureRoom(figures, type.unitScale) } as CSSProperties;
+  // As many columns as figures, so none ever wraps onto a row of its own
+  // (in flight the GPS altitude, a fifth figure in four columns, went under
+  // the rest, and the pill showed that row alone).
+  const room = { "--fit-room": figureRoom(figures, type.unitScale), "--cols": figures.length } as CSSProperties;
   return (
     <div className="@container/figures relative" data-slot="section-summary">
       <dl
-        className={cn(
-          "grid gap-3",
-          figures.length === 2 ? "grid-cols-2" : figures.length === 3 ? "grid-cols-3" : "grid-cols-4",
-          "@max-[16rem]/figures:grid-cols-2",
-        )}
+        className={cn("grid gap-3", "grid-cols-[repeat(var(--cols),minmax(0,1fr))]", "@max-[16rem]/figures:grid-cols-2")}
         style={room}
         data-testid={testId}
       >

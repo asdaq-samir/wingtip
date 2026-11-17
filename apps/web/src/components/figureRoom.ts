@@ -39,7 +39,7 @@ function digits(text: string): number {
  * FigureStrip's CSS divides each column's width (100cqi) by, in the face's
  * own digits, to set the strip's one size, as iOS shrinks a label to fit
  * its width (UILabel's adjustsFontSizeToFitWidth) -- every figure the same
- * size, never over its own and never under 0.8 of it, and past that the
+ * size, never over its own and never under 0.7 of it, and past that the
  * figure cut short with "…". Worked out from the words alone, nothing
  * measured in the page: a figure laid out and read back cost a layout at
  * each new figure (a dry run's strip counting down did it at every frame).
