@@ -6,14 +6,14 @@ import type { Candidate, Leg } from "../../lib/api/types";
 import { Skeleton } from "../../components/ui/skeleton";
 import { routeProfileQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
-import { altFt, flightLevel } from "../../lib/format";
-import { one, navLogRows, type RouteEnds } from "../plan";
+import { altFt, flightLevel, grouped, wholeNm } from "../../lib/format";
+import { navLogRows, type RouteEnds } from "../plan";
 import { planProfile } from "./profile";
 import { CHART } from "../../lib/tokens";
 import { clearanceAt } from "./altitude/clearance";
 const W = 340,
   H = 64;
-const miles = (nm: number) => `${Math.round(nm)}`;
+const miles = (nm: number) => grouped(nm);
 /** The ruler's heights for a chart `top` feet tall, up to three times it
  *  for the drag's zoom out: every 1,000 ft to 6,000, 2,000 to 12,000, then
  *  every 4,000 -- five or six in sight. */
@@ -113,13 +113,13 @@ export default memo(function MiniProfile({
   const level = drawnTop + 50 < cruise ? cruise : null;
   // The miles flown by patterns and procedures past the chart's line,
   // which the strip's distance (the totals' `procedure_nm`) and the nav
-  // log's rows count and the ground under the line cannot: said at the
-  // axis's end, so its 99 nm and the strip's 105.1 read as one figure
-  // (the FPL audit's A5, 2026-11-08).
+  // log's rows count and the ground under the line cannot: put into the
+  // axis's end, so it reads the strip's own figure (the FPL audit's A5,
+  // 2026-11-08) in the strip's own words, "1,334 nm", where it read
+  // "1317 nm + 17.2 pattern" (the owner's list, 2026-11-17: one distance
+  // format everywhere). The patterns are flown at the ends, so the line's
+  // end is still the landing.
   const procedureNm = legs.reduce((nm, l) => nm + (l.procedure?.more_nm ?? 0), 0);
-  const procedureWord = legs.every((l) => !l.procedure || (l.procedure.final_at == null && l.procedure.missed == null))
-    ? "pattern"
-    : "procedures";
   const look = cn(
     "grid h-24 w-full shrink-0 grid-rows-[1fr_auto] overflow-hidden rounded-xl bg-background/70 px-2 pt-1.5 pb-1",
     "text-muted-foreground tabular-nums",
@@ -315,7 +315,7 @@ export default memo(function MiniProfile({
         <span>0</span>
         <span>{miles(profile.length_nm / 2)}</span>
         <span>
-          {miles(profile.length_nm)} nm{procedureNm >= 0.5 && ` + ${one(procedureNm)} ${procedureWord}`}
+          {wholeNm(profile.length_nm + procedureNm)}
         </span>
       </span>
     </>

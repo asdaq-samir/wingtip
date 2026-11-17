@@ -14,23 +14,28 @@ const TRIGGER_AREA = "before:absolute before:inset-0 before:content-['']";
 
 /** One tab of the bar: its value, its word and its icon (required, so none
  *  is bare), and why to open it where there is a reason -- `hint` said in
- *  its name ("Weather, MVFR", "Flights, 10"), as the mark (`badge`) drawn
+ *  its name ("Weather, MVFR", "Charts, 14"), as the mark (`badge`) drawn
  *  over the icon's corner is not words. Every tab's name is its aria-label,
  *  as only the picked tab shows its word. */
 export type CardTab<T extends string> = { value: T; label: string; icon: LucideIcon; hint?: string | null; badge?: ReactNode };
 
-/** A count over an icon's corner (the airport's charts, the airplane's
- *  flights), in a finding's colour where it counts findings (`mark`: FPL's
- *  Brief, red where one is a stop, amber where all are cautions). */
-export function TabCount({ count, testId, mark }: { count: number; testId?: string; mark?: "stop" | "caution" }) {
+/** A count of findings over an icon's corner (FPL's Brief and Profile):
+ *  red where one is a stop, amber where all are cautions, the one meaning
+ *  of each colour wherever a badge is drawn (the owner's list, 2026-11-17).
+ *  Its figure in the ground's colour, which reads on either -- dark on the
+ *  night's light red and amber, light on the day's deep ones -- where white
+ *  on the night's red and black on the day's amber did not. A plain count
+ *  (an airport's charts, an airplane's flights) is no badge: it is said in
+ *  the tab's name, and a black disc over a tab read as one more alert. */
+export function TabCount({ count, testId, mark }: { count: number; testId?: string; mark: "stop" | "caution" }) {
   return (
     <span
       aria-hidden
       data-testid={testId}
       data-finding={mark}
       className={cn(
-        "pointer-events-none absolute -top-2 left-full -ml-2 min-w-4 rounded-full px-1 text-center leading-4 font-semibold tabular-nums",
-        mark === "stop" ? "bg-destructive text-white" : mark === "caution" ? "bg-caution text-black" : "bg-foreground text-background",
+        "pointer-events-none absolute -top-2 left-full -ml-2 min-w-4 rounded-full px-1 text-center leading-4 font-semibold tabular-nums text-background",
+        mark === "stop" ? "bg-destructive" : "bg-caution",
         TEXT.caption,
       )}
     >

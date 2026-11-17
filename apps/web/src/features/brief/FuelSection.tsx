@@ -2,7 +2,7 @@ import AccordionSection from "../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import type { Totals } from "../../lib/api/types";
 import { routeName } from "../../lib/identSchema";
-import { nm } from "../../lib/format";
+import { wholeNm } from "../../lib/format";
 import { one } from "../plan";
 
 /**
@@ -32,7 +32,7 @@ export default function FuelSection({ totals }: { totals: Totals | null }) {
               <ListRow
                 key={`${departure}-${destination}`}
                 title={routeName(departure, destination)}
-                description={`${nm(hop.distance_nm)}, with a ${hop.reserve_min} min reserve`}
+                description={`${wholeNm(hop.distance_nm)}, with a ${hop.reserve_min} min reserve`}
                 value={
                   hop.fuel_required_gal == null ? (
                     "—"

@@ -11,7 +11,7 @@ import { RemovableRow } from "../../../components/RemovableRow";
 import type { FlightSummary } from "../../../lib/api/types";
 import { planHrefOf } from "../../../lib/flightLink";
 import { sharedPlanLink } from "../../../lib/sharedFlight";
-import { dayMonthYear, feet, nm } from "../../../lib/format";
+import { dayMonthYear, feet, wholeNm } from "../../../lib/format";
 import { LEVEL_TONE, riskLine, type RiskLevel } from "../../../lib/frat";
 import { routeName } from "../../../lib/identSchema";
 import FlightPage from "../FlightPage";
@@ -55,7 +55,7 @@ function rowOf(f: FlightSummary) {
       <span className="tabular-nums">
         {f.name && <span className="block font-mono">{route}</span>}
         {feet(f.cruiseAltitudeFt)}
-        {f.totalDistanceNm != null && ` · ${nm(f.totalDistanceNm)}`} · saved {dayMonthYear(new Date(f.createdAt))}
+        {f.totalDistanceNm != null && ` · ${wholeNm(f.totalDistanceNm)}`} · saved {dayMonthYear(new Date(f.createdAt))}
         {/* The risk assessment it was saved with (lib/frat). */}
         {f.risk && <span className={cn("block", LEVEL_TONE[f.risk.level as RiskLevel])}>Risk {riskLine(f.risk).toLowerCase()}</span>}
         {f.notes && (

@@ -8,18 +8,19 @@ const totals = { distance_nm: 323.6, ete_min: 165, fuel_gal: 23.4, fuel_required
 const input = { totals, local: false, destination: "KLAS" };
 
 describe("fitFigures", () => {
-  it("rounds only the figure too wide, up, and leaves the rest exact", () => {
+  it("writes the distance in whole miles either way, as the route's chips do", () => {
     const exact = tripFigures(input, false);
     const shown = fitFigures(exact, tripFigures(input, true), (f) => f.name !== "Dist");
-    expect(exact[1]!.value).toBe("323.6");
-    expect(shown.map((f) => f.value)).toEqual([exact[0]!.value, "324", exact[2]!.value, exact[3]!.value]);
-    expect(shown[3]!.value).toBe("30.1");
+    expect(exact[1]!.value).toBe("324");
+    expect(shown.map((f) => f.value)).toEqual(exact.map((f) => f.value));
+    const long = tripFigures({ ...input, totals: { ...totals, distance_nm: 1334.1 } as unknown as Totals }, false);
+    expect(long[1]!.value).toBe("1,334");
   });
 
   it("rounds the time to decimal hours and the fuel up when those are too wide", () => {
     const shown = fitFigures(tripFigures(input, false), tripFigures(input, true), (f) => f.name !== "ETE" && f.name !== "Fuel");
     expect([shown[2]!.value, shown[3]!.value]).toEqual(["2.8h", "31"]);
-    expect(shown[1]!.value).toBe("323.6");
+    expect(shown[1]!.value).toBe("324");
   });
 
   it("changes nothing when everything fits", () => {
@@ -43,8 +44,8 @@ describe("tripFigures", () => {
   it("says the next landing, and the distance, time and fuel required to it", () => {
     const hop = { ...totals, distance_nm: 41.2, ete_min: 25, fuel_required_gal: 9.4, hops: [] };
     const stops = { ...input, totals: { ...totals, hops: [{ departure: "C81", destination: "KJVL", totals: hop }] } as unknown as Totals };
-    expect(tripFigures(stops, false).map((f) => f.value)).toEqual(["KJVL", "41.2", "25m", "9.4"]);
-    expect(tripFigures(input, false).map((f) => f.value)).toEqual(["KLAS", "323.6", "2h 45m", "30.1"]);
+    expect(tripFigures(stops, false).map((f) => f.value)).toEqual(["KJVL", "41", "25m", "9.4"]);
+    expect(tripFigures(input, false).map((f) => f.value)).toEqual(["KLAS", "324", "2h 45m", "30.1"]);
   });
 
   it("says each figure in full words to a screen reader, the exact one where the shown is rounded", () => {
@@ -71,7 +72,7 @@ describe("tripFigures", () => {
       toDestination: true,
       totals: { ...totals, hops: [{ departure: "C81", destination: "KJVL", totals: hop }] } as unknown as Totals,
     };
-    expect(tripFigures(stops, false).map((f) => f.value)).toEqual(["KLAS", "323.6", "2h 45m", "9.4"]);
+    expect(tripFigures(stops, false).map((f) => f.value)).toEqual(["KLAS", "324", "2h 45m", "9.4"]);
   });
 
   it("keeps all four names, as dashes, with no totals yet, so the strip holds its place", () => {
@@ -80,11 +81,11 @@ describe("tripFigures", () => {
     expect(figures.every((f) => f.value === "—")).toBe(true);
   });
 
-  it("marks an estimate's time and fuel with ≈ and rounds the distance up", () => {
+  it("marks an estimate's time and fuel with ≈, the distance in whole miles as every summary's", () => {
     const book = { distanceNm: 100.2, cruiseTasKt: 100, fuelBurnGph: 10, taxiFuelGal: 1.4 };
     const est = { totals: null, local: false, destination: "KDLH", estimate: book };
     const [, dist, ete, fuel] = tripFigures(est, true);
-    expect(dist!.value).toBe("101");
+    expect(dist!.value).toBe("100");
     expect(ete!.value.startsWith("≈")).toBe(true);
     // The trip's 10.0 gal, the profile's 1.4 to start and taxi, and the 45
     // minutes' reserve's 7.5, the most the rules ask: 18.9, up to 19.
@@ -103,9 +104,9 @@ describe("tripFigures", () => {
 
   it("says why the Nav Log's line has no time or fuel with no airplane, not two dashes (UI audit C4)", () => {
     const none = { ...input, totals: { ...totals, ete_min: null, fuel_required_gal: null } as unknown as Totals };
-    expect(figuresLine(none, true)).toBe("323.6 nm · no airplane picked");
-    expect(figuresLine(none, false)).toBe("323.6 nm · — · —");
-    expect(figuresLine(input, true)).toBe("323.6 nm · 2h 45m · 30.1 gal");
+    expect(figuresLine(none, true)).toBe("324 nm · no airplane picked");
+    expect(figuresLine(none, false)).toBe("324 nm · — · —");
+    expect(figuresLine(input, true)).toBe("324 nm · 2h 45m · 30.1 gal");
   });
 });
 
@@ -139,10 +140,10 @@ describe("shortFlights", () => {
     });
     const stops = { ...input, totals: { ...totals, hops: [hop("KJVL", 9.4), hop("KLAS", 12)] } as unknown as Totals };
     const flown = { hop: 1, now: 1_000, next: { nm: 30, min: 18, at: 2_080 }, last: { nm: 30, min: 18, at: 2_080 }, burntGal: 2.5 };
-    expect(tripFigures({ ...stops, flown }, false).map((f) => f.value)).toEqual(["KLAS", "30.0", "18m", "9.5"]);
+    expect(tripFigures({ ...stops, flown }, false).map((f) => f.value)).toEqual(["KLAS", "30", "18m", "9.5"]);
     expect(tripFigures({ ...stops, flown, arrival: true }, false)[2]!.value).toMatch(/^\d\d:\d\d$/);
     // At its start, the plan's own.
     const start = { hop: 0, now: 1_000, next: { nm: 60, min: 36, at: 3_160 }, last: { nm: 120, min: 72, at: 5_320 }, burntGal: 0 };
-    expect(tripFigures({ ...stops, flown: start }, false).map((f) => f.value)).toEqual(["KJVL", "60.0", "36m", "9.4"]);
+    expect(tripFigures({ ...stops, flown: start }, false).map((f) => f.value)).toEqual(["KJVL", "60", "36m", "9.4"]);
   });
 });

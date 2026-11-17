@@ -6,7 +6,7 @@ import { TEXT } from "../../lib/text";
 import { gal, wholeNm } from "../../lib/format";
 
 /** FPL's route line's choices (PlanWorkspace's routeLine): each chip's
- *  key and words, and what its way meets, in amber; the one picked. */
+ *  key and words, and what its way meets; the one picked. */
 export interface RouteLineChoices {
   /** Each way: its key, name, what it meets, its whole time ("2h 59m"),
    *  and its miles and fuel. */
@@ -29,8 +29,10 @@ export interface RouteLineChoices {
  * the strip's (the owner's pick of the routes canvas, board 5, 2026-11-16,
  * Hr6eKFhyFBLjAAAmEaq8HB): the miles and fuel of the way flown are the
  * figures' at the sheet's foot, each way's said in its chip's name to a
- * screen reader. A way that meets something says so in amber, its name
- * too: the planner warns, never refuses. What the planner could not check
+ * screen reader. A way that meets something says so by its warning mark
+ * alone, in amber, every chip's words one look (the owner's list,
+ * 2026-11-17, where the name went amber too): the planner warns, never
+ * refuses. What the planner could not check
  * the ways for is not said under them (the owner, 2026-11-16: "Why am I
  * seeing the not checked line?", then "Ok"): a weather source down is the
  * Brief's to say, counted on FPL's Brief button, and an airplane's figure
@@ -38,7 +40,7 @@ export interface RouteLineChoices {
  */
 /** A way's miles and fuel, "105 nm, 10.3 gal", as far as they are known. */
 const figures = (c: RouteLineChoices["chips"][number]) =>
-  [c.nm != null ? `${Math.round(c.nm)} nm` : null, c.gal != null ? gal(c.gal) : null].filter(Boolean).join(", ");
+  [c.nm != null ? wholeNm(c.nm) : null, c.gal != null ? gal(c.gal) : null].filter(Boolean).join(", ");
 
 /** A way's name on its chip: the planner's first kind, and how many more
  *  it is the best of ("Avoid Weather +2"), where "Avoid Weather & Fastest &
@@ -97,7 +99,7 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
             )}
           >
             <Route className="size-4 shrink-0" aria-hidden />
-            <span className={cn(c.warning && "text-caution-ink in-data-pressed:text-inherit")}>{shortLabel(c.label)}</span>
+            <span>{shortLabel(c.label)}</span>
             {chipFigure(c) && <span className="font-semibold tabular-nums">{chipFigure(c)}</span>}
             {c.warning && <TriangleAlert className="size-4 shrink-0 text-caution in-data-pressed:text-inherit" aria-hidden />}
           </ToggleGroupItem>

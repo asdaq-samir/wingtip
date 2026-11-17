@@ -35,13 +35,17 @@ test("the departure's picker on a phone has its close and its pick in sight at h
   await controlsInSight(page);
   await page.getByTestId("depart-date").click();
   await expect(page.locator('[data-slot="calendar"]')).toBeVisible();
-  // At half, where Done is under the calendar, out of sight: the card's ✕
-  // in its head and the time picked under its name.
+  // At half: Done at the top, as an iOS sheet puts it, and the time
+  // picked under its name. Leaving now already, no Now to go back to: a
+  // greyed one did nothing (the owner's list, 2026-11-17).
   await expect(page.getByText(/^Leaving now$/)).toBeInViewport();
-  const close = page.getByTestId("sheet-card-close").last();
-  await expect(close).toBeInViewport();
-  await close.click();
+  await expect(page.getByTestId("depart-clear")).toHaveCount(0);
+  const done = page.getByTestId("depart-done");
+  await expect(done).toBeInViewport();
+  await done.click();
   await expect(page.locator('[data-slot="calendar"]')).toHaveCount(0);
+  // The time in the tint alone, no chevron after it.
+  await expect(page.getByTestId("depart-date").locator("svg")).toHaveCount(0);
 });
 
 test("FPL's actions float over a fade to the sheet's colour, taking taps on the capsule alone", async ({ page }) => {

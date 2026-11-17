@@ -1,7 +1,7 @@
 import type { Totals } from "../../lib/api/types";
 import type { Flown } from "./dryRun";
 import { decimalHours, etaAt, one } from "./format";
-import { duration, NOT_KNOWN, spokenDistance, spokenDuration, spokenFuel } from "../../lib/format";
+import { duration, grouped, NOT_KNOWN, spokenDistance, spokenDuration, spokenFuel } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 import { pointName } from "../../lib/identSchema";
 
@@ -74,8 +74,12 @@ function stripFuel(totals: Totals | null, hop = 0, burntGal: number | null = nul
 /** The strip's figures, at the owner's ask ("To, Dist, ETE, Fuel. To is
  *  the next stop, fuel is the fuel required"): the next landing, and the
  *  distance, time and fuel required to it -- exact or (`whole`) each
- *  rounded as far as it goes: distance and fuel up to whole ones, the
- *  time in decimal hours. Up, so none is ever said short of what it is. */
+ *  rounded as far as it goes: fuel up to whole gallons, the time in
+ *  decimal hours, up so neither is ever said short of what it is. The
+ *  distance is whole miles with their thousands' comma either way,
+ *  "1,334 nm", as the route's chips and the Profile's axis write a
+ *  summary's (the owner's list, 2026-11-17: "one distance format
+ *  everywhere"); its tenths are the nav log's legs'. */
 export function tripFigures(
   { totals, estimate, local, destination, depart = "", arrival = false, toDestination = false, flown = null }: TripInput,
   whole: boolean,
@@ -86,12 +90,7 @@ export function tripFigures(
     const { distanceNm, minutes, required } = guessed;
     return [
       { name: "To", value: destination || "—", testId: "navlog-to", said: `To ${destination || NOT_KNOWN}` },
-      {
-        name: "Dist",
-        value: whole ? `${Math.ceil(distanceNm)}` : one(distanceNm),
-        unit: "nm",
-        said: `Distance, ${spokenDistance(distanceNm)}`,
-      },
+      { name: "Dist", value: grouped(distanceNm), unit: "nm", said: `Distance, ${spokenDistance(distanceNm)}` },
       arrival
         ? { name: "ETA", value: etaAt(from, minutes), testId: "navlog-eta", said: `Arrival, ${etaAt(from, minutes)}` }
         : {
@@ -147,7 +146,7 @@ export function tripFigures(
   return [
     to,
     distance !== null
-      ? { name: "Dist", value: whole ? `${Math.ceil(distance)}` : one(distance), unit: "nm", said: `Distance, ${spokenDistance(distance)}` }
+      ? { name: "Dist", value: grouped(distance), unit: "nm", said: `Distance, ${spokenDistance(distance)}` }
       : { name: "Dist", value: "—", said: `Distance, ${NOT_KNOWN}` },
     arrival
       ? { name: "ETA", value: eta, testId: "navlog-eta", said: `Arrival, ${eta === "—" ? NOT_KNOWN : eta}` }
@@ -188,14 +187,14 @@ function guess({ distanceNm, cruiseTasKt, fuelBurnGph, taxiFuelGal }: NonNullabl
 }
 
 /** The strip's distance, time and fuel on one line, as the Nav Log card's
- *  head says them under its name at every size ("65.3 nm · 35m · 9.0 gal",
+ *  head says them under its name at every size ("65 nm · 35m · 9.0 gal",
  *  the owner's pick, 2026-11-11): the same figures, exact, the To left to
  *  the strip. */
 export function figuresLine(input: TripInput, noAirplane = false): string {
   const figures = tripFigures(input, false).filter((f) => f.name !== "To");
   const said = figures.map((f) => (f.unit ? `${f.value} ${f.unit}` : f.value));
   // With no airplane the time and the fuel are none of the planner's (the
-  // owner, 2026-11-09: "don't assume"): said why, not two dashes ("1334.1
+  // owner, 2026-11-09: "don't assume"): said why, not two dashes ("1,334
   // nm · — · —", the UI audit's C4).
   return (noAirplane && figures.slice(1).every((f) => f.value === "—") ? [said[0], "no airplane picked"] : said).join(" · ");
 }

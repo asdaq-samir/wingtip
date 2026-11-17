@@ -116,12 +116,14 @@ export function InlineField({
           />
           {hint && input.value === hint.start && (
             // Over the input, after its text (laid out unseen beside it),
-            // never in a tap's way. Grey, but the text's own colour faded
+            // never in a tap's way, cut at the field's end where the field
+            // gives way in a full row (it ran under the altitude beside it
+            // at 19.65 px). Grey, but the text's own colour faded
             // rather than the muted grey, which fell to 3.9:1 (and at 60% 4.4:1) on the
             // field's fill in dark (the iOS audit's P15 asks 4.5).
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center overflow-hidden whitespace-pre pl-2.5"
+              className="pointer-events-none absolute inset-y-0 right-0 left-0 z-10 flex items-center overflow-hidden whitespace-pre pl-2.5"
               data-testid={testId ? `${testId}-hint` : undefined}
             >
               <span className="invisible font-semibold">{hint.start}</span>

@@ -2,7 +2,7 @@ import QueryState from "../../components/QueryState";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import SheetDialog from "../../components/SheetDialog";
 import { Button } from "../../components/ui/button";
-import { bearing, clockTime, feet, gal, hm, knots, localDay, nm, zuluTime } from "../../lib/format";
+import { bearing, clockTime, feet, gal, hm, knots, localDay, wholeNm, zuluTime } from "../../lib/format";
 import { routeName } from "../../lib/identSchema";
 import type { SharedLink, SharedPlan } from "../../lib/sharedFlight";
 import { TEXT } from "../../lib/text";
@@ -42,7 +42,7 @@ function NavLogRows({ vm }: { vm: SharedFlightPreview }) {
     <ListGroup
       title="Nav Log"
       footer={
-        vm.totals ? `${nm(vm.totals.nm)} · ${vm.totals.minutes != null ? hm(vm.totals.minutes) : "—"} · ${gal(vm.totals.gal)}` : undefined
+        vm.totals ? `${wholeNm(vm.totals.nm)} · ${vm.totals.minutes != null ? hm(vm.totals.minutes) : "—"} · ${gal(vm.totals.gal)}` : undefined
       }
     >
       {vm.navLog.map((c) => (
