@@ -944,8 +944,9 @@ less cluttered". Decision [0044](../decisions/0044-fpl-for-every-pilot.md).
    placeholder shape (`components/FigureWait`).
 6. **One Undo.** Every FPL edit is undone and redone from the first items
    of the route's ••• menu, named by what they put back, kept across a
-   reload (`lib/planUndo`, `hooks/planHistory`); the removal toast and the
-   keyboard's Cmd-Z do the same.
+   reload (`lib/planUndo`, `hooks/planHistory`). A removal also offers Undo
+   in its toast, where the pilot acted, and Cmd-Z undoes on a keyboard;
+   every other edit is undone from ••• alone (the owner, 2026-11-17).
 7. **One surface.** No box in a box, fewer borders and pills; spacing
    groups, colour only for meaning.
 

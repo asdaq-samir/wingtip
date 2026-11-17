@@ -49,14 +49,16 @@ a reload lost it.
    procedures and stops, the departure time and the airplane -- is in one
    history, undone and redone from the first items of the route's •••
    menu, named by what they put back ("Undo Altitude"), kept in the tab's
-   session across a reload. The removal toast and Cmd-Z stay (2026-11-10).
+   session across a reload. The removal toast and Cmd-Z stay (2026-11-10): a removal's Undo is offered
+   where the pilot acted, every other edit's from ••• alone (the owner,
+   2026-11-17, taking the recommendation).
 7. **One surface.** No box in a box, fewer borders and pills: spacing
    groups, colour only for meaning.
 
-Panels and controls stay where they are; the four moves the owner has
-not decided (one Flight card for Brief, Nav Log and Profile; Share into
+Panels and controls stay where they are. Four moves were offered and the
+owner set them aside (2026-11-17, "don't worry about the 4 decisions"): one Flight card for Brief, Nav Log and Profile; Share into
 •••; the Go / No-Go verdict on the strip; "To" off the strip on the
-ground) are not part of this.
+ground). They are not part of this.
 
 ## Consequences
 
