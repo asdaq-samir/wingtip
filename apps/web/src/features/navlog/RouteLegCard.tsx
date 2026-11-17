@@ -1,13 +1,12 @@
-import { ArrowRight, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
 import { CardAction } from "../../components/CardAction";
 import DirectToIcon from "../../lib/glyphs/DirectToIcon";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { SheetCard } from "../../components/SheetCard";
-import { Badge } from "../../components/ui/badge";
+import FigureWait from "../../components/FigureWait";
 import { threeFigures } from "../../lib/format";
-import { TEXT } from "../../lib/text";
 import { nm } from "../../lib/format";
 
 /** A leg of the route the pilot tapped on the map, as its sheet shows it
@@ -46,8 +45,13 @@ export interface RouteLegView {
 export default function RouteLegCard({ open, onClose }: { open: RouteLegView | null; onClose: () => void }) {
   if (!open) return null;
   return (
+    // The leg's ends, and Active while it is the one flown, the head's line
+    // under its name, as every card's head says what the card is (the one
+    // drawer contract, 2026-11-17): they were a grey row and a pill of
+    // their own under the head.
     <SheetCard
       title="Route Leg"
+      description={`${open.from} → ${open.to}${open.active ? " · Active leg" : ""}`}
       onClose={onClose}
       testId="route-leg-card"
       action={<CloseButton onClick={onClose} data-testid="route-leg-close" />}
@@ -61,18 +65,6 @@ function RouteLegBody({ leg }: { leg: RouteLegView }) {
   const actions = [leg.direct, leg.remove].filter(Boolean).length;
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2 px-1">
-        <p className={cn("flex min-w-0 items-center gap-1.5 font-semibold text-muted-foreground", TEXT.row)} data-testid="route-leg-ends">
-          <span className="truncate">{leg.from}</span>
-          <ArrowRight className="size-4 shrink-0" aria-label="to" />
-          <span className="truncate">{leg.to}</span>
-        </p>
-        {leg.active && (
-          <Badge variant="secondary" className="shrink-0" data-testid="route-leg-active">
-            Active Leg
-          </Badge>
-        )}
-      </div>
       {actions > 0 && (
         <div className={cn("grid gap-2", actions === 2 ? "grid-cols-2" : "grid-cols-1")}>
           {leg.direct && (
@@ -90,10 +82,10 @@ function RouteLegBody({ leg }: { leg: RouteLegView }) {
         </div>
       )}
       <ListGroup>
-        <ListRow title="Distance" value={leg.distanceNm === null ? "—" : nm(leg.distanceNm)} data-testid="route-leg-distance" />
+        <ListRow title="Distance" value={leg.distanceNm === null ? <FigureWait /> : nm(leg.distanceNm)} data-testid="route-leg-distance" />
         <ListRow
           title="Course"
-          value={leg.courseMagDeg === null ? "—" : `${threeFigures(leg.courseMagDeg)}°M`}
+          value={leg.courseMagDeg === null ? <FigureWait /> : `${threeFigures(leg.courseMagDeg)}°M`}
           data-testid="route-leg-course"
         />
       </ListGroup>
