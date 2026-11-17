@@ -73,16 +73,31 @@ changed_paths() {
 
 sha() { shasum -a 256 | cut -c1-16; }
 
-# Keeps an image's newest tag alone. It kept three, so a lock that changed
-# back and forth between branches stayed warm; but with an agent's worktree
-# per branch, each lock a few hundred MB to a few GB, the old tags filled
-# the disk faster than they saved time (2026-11-10), and a rebuild from
-# BuildKit's cache mounts (npm's, uv's, Cargo's downloads) takes a minute
-# or two. A tag a running check still uses is left: `docker image rm`
-# without -f refuses an image a container holds.
+# Keeps a check image's tags used lately, and always the one just built.
+# It once kept only the newest tag by creation time, which broke two ways
+# (2026-11-17): the name is shared by every worktree, so one worktree's build
+# deleted the image another was about to run; and a rebuild that came wholly
+# from BuildKit's cache keeps its old creation time, so the image just built
+# looked oldest and was deleted, and the run fell back to a stale image with
+# an older engine wheel. Creation time says nothing about use, so each use
+# stamps the tag (use_tag) and a tag goes only when it is not the one just
+# built and unused for WINGTIP_CHECK_IMAGE_HOURS (24). Disk stays bounded,
+# the reason this prunes (old tags filled it, 2026-11-10), while a worktree
+# that used a tag a few hours ago still finds it. A tag a running container
+# holds is left too: `docker image rm` without -f refuses it.
+stamp_dir=${WINGTIP_CHECK_STAMPS:-$HOME/Library/Caches/wingtip/check-images}
+use_tag() {
+  mkdir -p "$stamp_dir" && touch "$stamp_dir/$(echo "$1" | tr '/:' '__')" || true
+}
 prune_tags() {
-  docker image ls "$1" --format '{{.CreatedAt}}|{{.Repository}}:{{.Tag}}' \
-    | sort -r | tail -n +2 | cut -d'|' -f2 | xargs -r docker image rm >/dev/null 2>&1 || true
+  local name=$1 keep=$2 tag stamp
+  use_tag "$keep"
+  docker image ls "$name" --format '{{.Repository}}:{{.Tag}}' | while read -r tag; do
+    [ "$tag" = "$keep" ] && continue
+    stamp="$stamp_dir/$(echo "$tag" | tr '/:' '__')"
+    [ -n "$(find "$stamp" -mmin "-$(( ${WINGTIP_CHECK_IMAGE_HOURS:-24} * 60 ))" 2>/dev/null)" ] && continue
+    docker image rm "$tag" >/dev/null 2>&1 || true
+  done
 }
 
 web_image() {
@@ -102,8 +117,9 @@ RUN --mount=type=cache,id=wingtip-npm,target=/root/.npm \
 ENV PATH=/node_modules/.bin:$PATH
 EOF
     rm -rf "$ctx"
-    prune_tags wingtip-check-web
+    prune_tags wingtip-check-web "$tag"
   fi
+  use_tag "$tag"
   echo "$tag"
 }
 
@@ -197,8 +213,9 @@ EOF
   if [ -n "${CHECK_NO_CACHE:-}" ] || ! docker image inspect "$tag" >/dev/null 2>&1; then
     echo "check: building $tag ($dir's requirements or engine/ changed${CHECK_NO_CACHE:+, or CHECK_NO_CACHE})" >&2
     docker build -q ${CHECK_NO_CACHE:+--no-cache} -t "$tag" "$ctx" >/dev/null
-    prune_tags "$name"
+    prune_tags "$name" "$tag"
   fi
+  use_tag "$tag"
   rm -rf "$ctx"
   echo "$tag"
 }
