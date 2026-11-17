@@ -284,8 +284,8 @@ function timeAt(run: DryRun, nm: number): number {
 export function DryRunFigures({ run, ...line }: { run: DryRun } & Omit<ComponentProps<typeof TripFigures>, "flown" | "grow">) {
   // As far as the figures say it -- a tenth of a mile and of a gallon, a
   // minute -- so the strip is drawn again only when one changes, not at
-  // each of the run's frames: it measures its figures to fit them
-  // (useFigureFit), and the map's own frames came second to it.
+  // each of the run's frames: the strip and its engine calls at every
+  // frame, and the map's own frames came second to them.
   const key = usePastFlight((s) => {
     const flown = dryRunFlown(run, s.at ?? run.points[0]?.t ?? 0);
     if (!flown) return "";

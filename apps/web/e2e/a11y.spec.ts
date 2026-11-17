@@ -159,7 +159,7 @@ test("at twice the text size the route's panel reflows: nothing sideways, the fi
   });
   await atRest(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  // The flight's figures shrink to fit rather than cut (useFigureFit): the
+  // The flight's figures shrink to fit rather than cut (FigureStrip): the
   // fuel's whole figure is still in its box.
   const fuel = page.getByTestId("navlog-fuel");
   expect(await fuel.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);

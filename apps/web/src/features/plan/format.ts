@@ -23,14 +23,6 @@ export function feetBelowClouds(ceilingFt: number | null | undefined): number {
  * testable while they have no map and no DOM attached.
  */
 
-/** Total time in decimal hours, as a logbook keeps it: "19.9h", where
- *  the flight's line has no room for "19h 50m" (TripFigures). Up to the
- *  next tenth, so the time is never said short of what it is; whole
- *  minutes first, as lib/format's duration's are. */
-export function decimalHours(minutes: number): string {
-  return `${(Math.ceil(Math.round(minutes) / 6) / 10).toFixed(1)}h`;
-}
-
 /** The nav log's warning that some legs were worked out with no wind:
  *  "3 legs without wind data", or null with every leg's. (Its totals'
  *  distance, time and fuel were made here too, and read nowhere.) */

@@ -88,7 +88,7 @@ test("the nav log fits a phone's panel with long names, five-figure altitudes an
   await controlsInSight(page);
 });
 
-test("a long trip's figures are set smaller to fit the strip, not cut short", async ({ page }) => {
+test("a long trip's figures are set smaller together to fit the strip, exact, never under 0.8 of their size", async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
   // The pilot's iPhone, 393 points wide.
   await page.setViewportSize({ width: 393, height: 852 });
@@ -126,30 +126,22 @@ test("a long trip's figures are set smaller to fit the strip, not cut short", as
   // At the default text size and the two above it, as an iPhone sets the
   // root from Settings' text size (features/shell/dynamicType, which a test browser
   // does not run): a 19-point Body, 17.88 px; a 21-point one, held to the
-  // 393-point screen's 19.65. Every figure whole in its column, none
-  // overflowing into an ellipsis.
+  // 393-point screen's 19.65. As iOS fits a label to its width
+  // (adjustsFontSizeToFitWidth, minimumScaleFactor 0.8): every figure the
+  // same size, none set under 0.8 of the default's, the figures exact
+  // (no rounded "16.0h"), and nothing past the screen's side; past 0.8 a
+  // figure may be cut with "…" (the trial of 2026-11-17, FigureStrip).
   for (const root of ["", "17.88px", "19.65px"]) {
     await page.evaluate((size) => {
       document.documentElement.style.fontSize = size;
     }, root);
-    await expect
-      .poll(
-        // A figure that is a button (Dist, ETE, Fuel) is cut in its own
-        // truncated words, its dd left to overflow for the button's 44-point
-        // area (TripFigures), which a measure of the dd took for a cut figure.
-        () =>
-          figures.evaluateAll((dds) =>
-            dds
-              .filter((dd) =>
-                dd.querySelector("button")
-                  ? [...dd.querySelectorAll<HTMLElement>("button .truncate")].some((el) => el.scrollWidth > el.clientWidth)
-                  : dd.scrollWidth > dd.clientWidth,
-              )
-              .map((dd) => dd.textContent),
-          ),
-        { message: `at a root of ${root || "16px"}` },
-      )
-      .toEqual([]);
+    const sizes = () =>
+      figures.evaluateAll((dds) => dds.map((dd) => parseFloat(getComputedStyle(dd.querySelector(".figure-roll") ?? dd).fontSize)));
+    await expect.poll(async () => new Set(await sizes()).size, { message: `one size at a root of ${root || "16px"}` }).toBe(1);
+    const [size] = await sizes();
+    expect(size, `at a root of ${root || "16px"}`).toBeGreaterThanOrEqual(0.8 * 20 * (parseFloat(root || "16px") / 16) - 0.1);
+    await expect(sideDrawer(page).getByTestId("navlog-ete")).not.toHaveText(/\d\.\dh$/);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
 });
 

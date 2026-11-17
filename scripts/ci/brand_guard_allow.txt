@@ -12,4 +12,4 @@ apps/web/src/index.css 1 The installed app's scrim under the iPhone's status bar
 apps/ios/Wingtip/Views/Kneeboard.swift 6 The printed kneeboard page: fixed point sizes on paper, where Dynamic Type has no reader to follow.
 apps/ios/Wingtip/Strip/ChartInk.swift 1 The Native look's strip card: the 10-point corner iOS's own grouped box has (GroupBox, an inset grouped cell), the system's value stated as it is, not a look of the app's.
 # Tailwind's named text sizes left when the check came in (WEB-22, 2026-11-14), each to move onto a TEXT role and leave this list.
-apps/web/src/lib/text.ts 2 The Flying screen's figure's unit and name (FLYING_FIGURE): fixed sizes read at arm's length, stated with the roles themselves.
+apps/web/src/lib/text.ts 1 The Flying screen's figure's name (FLYING_FIGURE): a fixed size read at arm's length, stated with the roles themselves; its unit is now a share of the figure (FIT).

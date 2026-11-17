@@ -5,7 +5,6 @@ import {
   bearing,
   clockTime,
   cruiseByAltitude,
-  decimalHours,
   legsWithoutWind,
   one,
   plannedWords,
@@ -60,15 +59,6 @@ describe("one", () => {
     expect(one(undefined)).toBe("—");
   });
   it("keeps a zero as a number", () => expect(one(0)).toBe("0.0"));
-});
-
-describe("decimalHours", () => {
-  it("rounds up to the next tenth, never short", () => {
-    expect(decimalHours(1190)).toBe("19.9h");
-    expect(decimalHours(61)).toBe("1.1h");
-  });
-  it("keeps a whole tenth as it is", () => expect(decimalHours(90)).toBe("1.5h"));
-  it("rounds to whole minutes first", () => expect(decimalHours(179.6)).toBe("3.0h"));
 });
 
 describe("legsWithoutWind", () => {

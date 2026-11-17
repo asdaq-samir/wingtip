@@ -1,6 +1,6 @@
 import type { Totals } from "../../lib/api/types";
 import type { Flown } from "./dryRun";
-import { decimalHours, etaAt, one } from "./format";
+import { etaAt, one } from "./format";
 import { duration, grouped, NOT_KNOWN, spokenDistance, spokenDuration, spokenFuel, spokenStatute } from "../../lib/format";
 import { SM_PER_NM } from "../../lib/geo";
 import { callEngine } from "../../lib/engine/engine";
@@ -84,17 +84,22 @@ function distanceFigure(nm: number, statute: boolean): Figure {
 
 /** The strip's figures, at the owner's ask ("To, Dist, ETE, Fuel. To is
  *  the next stop, fuel is the fuel required"): the next landing, and the
- *  distance, time and fuel required to it -- exact or (`whole`) each
- *  rounded as far as it goes: fuel up to whole gallons, the time in
- *  decimal hours, up so neither is ever said short of what it is. The
- *  distance is whole miles with their thousands' comma either way,
+ *  distance, time and fuel required to it, exact (FigureStrip sets them
+ *  smaller to fit rather than rounding them). The distance is whole miles with their thousands' comma either way,
  *  "1,334 nm", as the route's chips and the Profile's axis write a
  *  summary's (the owner's list, 2026-11-17: "one distance format
  *  everywhere"); its tenths are the nav log's legs'. */
-export function tripFigures(
-  { totals, estimate, local, destination, depart = "", arrival = false, toDestination = false, flown = null, statute = false }: TripInput,
-  whole: boolean,
-): Figure[] {
+export function tripFigures({
+  totals,
+  estimate,
+  local,
+  destination,
+  depart = "",
+  arrival = false,
+  toDestination = false,
+  flown = null,
+  statute = false,
+}: TripInput): Figure[] {
   const guessed = !totals && !local && estimate ? guess(estimate) : null;
   const from = depart || new Date().toISOString();
   if (guessed) {
@@ -106,13 +111,13 @@ export function tripFigures(
         ? { name: "ETA", value: etaAt(from, minutes), testId: "navlog-eta", said: `Arrival, ${etaAt(from, minutes)}` }
         : {
             name: "ETE",
-            value: minutes == null ? "—" : `≈${whole ? decimalHours(minutes) : guessed.time}`,
+            value: minutes == null ? "—" : `≈${guessed.time}`,
             testId: "navlog-ete",
             said: `Time en route, ${minutes == null ? NOT_KNOWN : `about ${spokenDuration(minutes)}`}`,
           },
       {
         name: "Fuel",
-        value: required == null ? "—" : `≈${whole ? Math.ceil(required) : one(required)}`,
+        value: required == null ? "—" : `≈${one(required)}`,
         unit: required == null ? undefined : "gal",
         said: `Fuel required, ${required == null ? NOT_KNOWN : `about ${spokenFuel(required)}`}`,
       },
@@ -130,11 +135,11 @@ export function tripFigures(
   const left = flown ? (toDestination ? flown.last : flown.next) : null;
   const distance = left ? left.nm : (leg?.distance_nm ?? null);
   const minutes = left ? left.min : (leg?.ete_min ?? null);
-  const time = minutes === null ? "—" : whole ? decimalHours(minutes) : duration(minutes);
+  const time = minutes === null ? "—" : duration(minutes);
   const strip = stripFuel(totals, flown?.hop ?? 0, flown ? flown.burntGal : null);
   const required = strip.required_gal;
   const start = flown ? new Date(flown.now * 1000).toISOString() : from;
-  const fuel = required == null ? null : whole ? `${Math.ceil(required)}` : one(required);
+  const fuel = required == null ? null : one(required);
   // Red where the tanks do not hold it on any flight of the route -- a
   // later stop's included, which the per-flight lines under the route
   // caught before the owner took them out ("Remove fuel required at the
@@ -200,7 +205,7 @@ function guess({ distanceNm, cruiseTasKt, fuelBurnGph, taxiFuelGal }: NonNullabl
  *  the owner's pick, 2026-11-11): the same figures, exact, the To left to
  *  the strip. */
 export function figuresLine(input: TripInput, noAirplane = false): string {
-  const figures = tripFigures(input, false).filter((f) => f.name !== "To");
+  const figures = tripFigures(input).filter((f) => f.name !== "To");
   const said = figures.map((f) => (f.unit ? `${f.value} ${f.unit}` : f.value));
   // With no airplane the time and the fuel are none of the planner's (the
   // owner, 2026-11-09: "don't assume"): said why, not two dashes ("1,334

@@ -30,18 +30,11 @@ const FuelBreakdown = lazy(() => import("./FuelBreakdown"));
  * / No-Go, red) and the altitude chip's, at the pilot's ask: in red in the
  * strip's place, it hid the distance, the time and the fuel.
  *
- * Each figure as it is while it fits its column; where one does not (a
- * long trip's "2636.8 nm" at a large text size, an iPhone SE's narrow
- * columns), that one rounded: the distance and the fuel up to whole ones,
- * the time en route in decimal hours, at the pilot's ask -- up, so none
- * is ever said short of what it is. Where a rounded one still does not
- * fit (Chicago to Las Vegas, over 1,300 nm, its distance, time and fuel
- * cut to "131…", "≈12.…" and "≈10…" on an iPhone set to a larger text
- * size, which the app follows (features/shell/dynamicType), 2026-10-11), the four
- * are set smaller together, figures and units, as iOS shrinks a label to
- * fit its width (UILabel's adjustsFontSizeToFitWidth), down to three
- * quarters -- 15 points at the default size, the body's -- and only past
- * that cut short (useFigureFit, a dry run's strip's too).
+ * Each figure exact; where the widest does not fit its column (a long
+ * trip's "13h 38m" at a larger text size, which the app follows
+ * (features/shell/dynamicType), an iPhone SE's narrow columns), all of
+ * them set smaller together, as iOS shrinks a label to fit its width,
+ * down to 0.8 of their size, and only past that cut short (FigureStrip).
  *
  * Drawn by the one FigureStrip, in every state -- FPL's route row, a dry
  * run and in flight -- this saying only what the figures are and which of
@@ -124,9 +117,6 @@ export default function TripFigures({
   const [breakdownOpen, setBreakdownOpen] = useState(false);
   const stops = (totals?.hops.length ?? 0) > 0;
   const input = { totals, estimate, local, destination, depart, arrival, toDestination: stops && toDestination, flown, statute };
-  // A dry run's figures keep the strip's own format, set smaller to fit
-  // rather than rounded ("1.2h", "102 nm" in the run against "1h 14m",
-  // "105.1 nm" in the plan, the FPL audit's A20; the owner's one strip).
   // No airplane picked: the route's own figures alone, To and Dist --
   // the time and the fuel are an airplane's, and none is assumed (the
   // owner, 2026-11-08: "only show the distance and the things you can
@@ -155,8 +145,8 @@ export default function TripFigures({
           testId: "strip-gps-alt",
           said: `GPS altitude, ${grouped(gpsFt)} feet`,
         };
-  const ours = (whole: boolean): StripFigure[] => [
-    ...tripFigures(input, whole)
+  const ours: StripFigure[] = [
+    ...tripFigures(input)
       .map((f) => (airplane || f.name === "To" || f.name === "Dist" ? f : wantsAirplane(f)))
       // The destination the planner does not know, said on the figure in
       // red with its mark, the pill too, where the pill read "ZZZZ" over
@@ -283,5 +273,5 @@ export default function TripFigures({
   // the pilot's ask: the strip keeps the figures, as soon as there are
   // any, and with none yet their names over dashes -- it keeps its place,
   // as the panel's controls do.
-  return <FigureStrip figures={ours(false)} rounded={ours(!flown)} size={flying ? "flying" : grow ? "grow" : "fixed"} tap={tap} />;
+  return <FigureStrip figures={ours} size={flying ? "flying" : grow ? "grow" : "fixed"} tap={tap} />;
 }

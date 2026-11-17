@@ -847,7 +847,15 @@ by clicking the map, typing an address or a name, up to 9 stops in all
    One strip in every state, FPL's route row on the ground, a dry run and
    in flight, and the training page's too: `components/FigureStrip`, the
    plan's figures and their taps given it by `features/navlog`'s
-   `TripFigures` (`FlightLine` until 2026-11-17). In flight the head over
+   `TripFigures` (`FlightLine` until 2026-11-17). The figures are always
+   exact and fitted as iOS fits a label to its width
+   (`adjustsFontSizeToFitWidth`, `minimumScaleFactor` 0.8): all of them
+   set smaller together where the widest does not fit its column, never
+   under 0.8 of their size, and past that cut with "…" -- CSS alone
+   (lib/text's `FIT`: each column a container, its `100cqi` over the
+   widest figure's room from `components/figureRoom`), where until the
+   trial of 2026-11-17 they were measured in the page and the one too
+   wide rounded ("13h 38m" read "13.6h"). In flight the head over
    the map gives the next checkpoint only while the engine's `in_flight`
    says the airplane is on the route (`on_route`), as the iPhone's
    instruments do; off it, the head is Emergency alone (`FlyingHead`).

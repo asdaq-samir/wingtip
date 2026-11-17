@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import { cn } from "cn";
-import { FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE, TEXT } from "../lib/text";
-import { useFigureFit } from "./useFigureFit";
+import { FIT, FIXED_FIGURE, FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE } from "../lib/text";
+import { figureRoom } from "./figureRoom";
 import Explain from "./Explain";
 import FigureWait from "./FigureWait";
 import type { ExplainedTerm } from "../lib/explain";
@@ -15,7 +15,7 @@ export interface StripFigure {
   unit?: string;
   testId?: string;
   /** Short of what it must be (the fuel past the tanks), or wrong (a
-   *  destination not known): a warning mark before it, which useFigureFit
+   *  destination not known): a warning mark before it, which figureRoom
    *  leaves room for, and red where it is not a button. */
   alert?: boolean;
   /** The figure as a screen reader says it, name and all ("Distance, one
@@ -36,8 +36,8 @@ export interface StripFigure {
  *  size whatever the sheet's (FLYING_FIGURE, useFlyingMode). */
 export type StripSize = "fixed" | "grow" | "flying";
 
-const TYPE: Record<StripSize, { value: string; unit: string; name?: string }> = {
-  fixed: { value: TEXT.heading, unit: TEXT.note },
+const TYPE: Record<StripSize, { value: string; unit: string; name?: string; unitScale: number }> = {
+  fixed: FIXED_FIGURE,
   grow: GROW_FIGURE,
   flying: FLYING_FIGURE,
 };
@@ -53,9 +53,14 @@ const TYPE: Record<StripSize, { value: string; unit: string; name?: string }> = 
  * where the strip is under 16 rem wide, which with every rem grown is an
  * accessibility text size (24 px a rem and up on a phone; the owner's
  * 17.88 and 19.65 keep four), as the iPhone's and Android's strips stack:
- * four columns then cut the figures. Each fitted to its column, rounded or
- * set smaller together where it does not fit (useFigureFit). It was two
- * components, FlightLine and this, each with its own grid and type.
+ * four columns then cut the figures. Fitted as iOS fits a label to its
+ * width: all of them set smaller together where the widest does not fit
+ * its column, down to 0.8 of their size, and past that cut short with
+ * "…" -- the figures always exact, never a rounded form in their place
+ * (lib/text's FIT, each column a container; the trial of 2026-11-17,
+ * where they were measured in the page and the one too wide rounded,
+ * "13h 38m" read "13.6h"). It was two components, FlightLine and this,
+ * each with its own grid and type.
  *
  * `tap` makes a figure a button: given the figure and its face (the mark,
  * the value and the unit, sized to fit), it returns the button round the
@@ -66,52 +71,57 @@ const TYPE: Record<StripSize, { value: string; unit: string; name?: string }> = 
  */
 export default function FigureStrip({
   figures,
-  rounded = figures,
   size = "grow",
   testId,
   tap,
 }: {
   figures: StripFigure[];
-  /** Each figure rounded, for the one too wide for its column (useFigureFit). */
-  rounded?: StripFigure[];
   size?: StripSize;
   testId?: string;
   tap?: (figure: StripFigure, face: ReactNode) => ReactNode;
 }) {
   const type = TYPE[size];
-  const { room, shown, sized, fitted, probes } = useFigureFit(figures, rounded, type.value, type.unit);
+  const room = { "--fit-room": figureRoom(figures, type.unitScale) } as CSSProperties;
   return (
     <div className="@container/figures relative" data-slot="section-summary">
       <dl
         className={cn(
           "grid gap-3",
-          shown.length === 2 ? "grid-cols-2" : shown.length === 3 ? "grid-cols-3" : "grid-cols-4",
+          figures.length === 2 ? "grid-cols-2" : figures.length === 3 ? "grid-cols-3" : "grid-cols-4",
           "@max-[16rem]/figures:grid-cols-2",
         )}
+        style={room}
         data-testid={testId}
       >
-        {shown.map((f, i) => {
+        {figures.map((f) => {
           const button = tap?.(
             f,
             <>
               {/* Short said by a mark too, not the red alone (WCAG 1.4.1). */}
-              {f.alert && <TriangleAlert className="mr-0.5 size-[0.8em] self-center" aria-hidden data-testid="fuel-short-mark" />}
-              <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
-                {f.waiting ? <FigureWait /> : f.value}
-              </span>
-              {/* Its space a no-break one: a flex item drops a leading
-                  plain one, and it read "16.6gal" (the owner's screenshot,
-                  2026-11-06). */}
-              {f.unit && (
-                <span className={cn(type.unit, "font-normal")} style={sized("unit")} data-fitted={fitted}>
-                  {" "}
-                  {f.unit}
+              {f.alert && <TriangleAlert className="mr-0.5 size-[0.8em] shrink-0 self-center" aria-hidden data-testid="fuel-short-mark" />}
+              {/* The value and its unit one run, cut at its end as iOS cuts
+                  a label ("114.2 g…"), the figure kept whole the longest,
+                  where the value alone was cut before its unit ("11… gal"). */}
+              <span className="min-w-0 truncate">
+                <span key={f.value} className="figure-roll" data-fitted="">
+                  {f.waiting ? <FigureWait /> : f.value}
                 </span>
-              )}
+                {/* Its space a no-break one: a flex item drops a leading
+                    plain one, and it read "16.6gal" (the owner's screenshot,
+                    2026-11-06). */}
+                {f.unit && (
+                  <span className={cn(type.unit, "font-normal")} data-fitted="">
+                    {" "}
+                    {f.unit}
+                  </span>
+                )}
+              </span>
             </>,
           );
           return (
-            <div key={f.name} className="min-w-0 text-center">
+            // Each column a container, so the figure's size is worked out
+            // from its own width (FIT's 100cqi), the same in every column.
+            <div key={f.name} className="@container min-w-0 text-center">
               {/* Its names and units a grey that reads on the pill's glass
                   over any chart (WCAG's 4.5:1), where the muted one did not;
                   its names in sentence case, short words ("Distance"), not a
@@ -129,9 +139,9 @@ export default function FigureStrip({
                 {f.said && !button && <span className="sr-only">{f.said}</span>}
               </dt>
               <dd
-                ref={i === 0 ? room : undefined}
                 className={cn(
                   type.value,
+                  FIT,
                   "truncate font-semibold tabular-nums",
                   button && "overflow-visible",
                   // A figure that is not a button said wrong in red, its
@@ -146,26 +156,21 @@ export default function FigureStrip({
                     {f.alert && (
                       <TriangleAlert className="mr-0.5 size-[0.8em] shrink-0 self-center" aria-hidden data-testid="figure-alert-mark" />
                     )}
-                    <span
-                      key={f.value}
-                      aria-hidden={f.said ? true : undefined}
-                      className="figure-roll"
-                      style={sized("value")}
-                      data-fitted={fitted}
-                    >
-                      {f.waiting ? <FigureWait /> : f.value}
-                    </span>
-                    {f.unit && (
-                      <span
-                        aria-hidden={f.said ? true : undefined}
-                        className={cn(type.unit, "font-normal text-foreground/65")}
-                        style={sized("unit")}
-                        data-fitted={fitted}
-                      >
-                        {" "}
-                        {f.unit}
+                    <span className={cn(f.alert && "min-w-0 truncate")}>
+                      <span key={f.value} aria-hidden={f.said ? true : undefined} className="figure-roll" data-fitted="">
+                        {f.waiting ? <FigureWait /> : f.value}
                       </span>
-                    )}
+                      {f.unit && (
+                        <span
+                          aria-hidden={f.said ? true : undefined}
+                          className={cn(type.unit, "font-normal text-foreground/65")}
+                          data-fitted=""
+                        >
+                          {" "}
+                          {f.unit}
+                        </span>
+                      )}
+                    </span>
                   </>
                 )}
               </dd>
@@ -173,7 +178,6 @@ export default function FigureStrip({
           );
         })}
       </dl>
-      {probes}
     </div>
   );
 }
