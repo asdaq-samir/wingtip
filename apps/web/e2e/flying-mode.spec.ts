@@ -147,3 +147,13 @@ test("from the GPS, the head gives the next checkpoint on the route and only Eme
   await expect(head.getByTestId("flying-next-figures")).toHaveCount(0);
   await expect(head.getByTestId("flying-emergency")).toBeVisible();
 });
+
+test("in flight the strip gives the phone's GPS altitude, to the nearest 10 ft", async ({ page }) => {
+  // The fake fix is 914 m up: 2,998.7 ft, written 3,000 (the owner,
+  // 2026-11-17: "true altitude of the phone from gps").
+  await gpsFlying(page);
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  const gps = page.getByTestId("strip-gps-alt").first();
+  await expect(gps).toContainText("3,000", { timeout: slow(60_000) });
+});

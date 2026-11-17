@@ -192,7 +192,7 @@ list is where it was.
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
 | Plan: route box, route list, nav log rows | the sheet (with a route); the search's Your Flight card | 1 → **0** with a route, 1 from the search | Route pills drag to reorder; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; altitude and departure time chips open popovers; Undo bar under the route after a removal or clear |
-| Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; Distance switches nm and sm (the owner, 2026-11-17) |
+| Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; Distance switches nm and sm; in flight the phone's GPS altitude ends the strip, "GPS alt", to 10 ft (the owner, 2026-11-17) |
 | Brief | plan → Brief; search → Do → Brief | 2 | Alternate filed or taken off (iOS too: the Brief's Alternate sections, and the plan's Alternate row under IFR, 1 tap); Ask chips apply changes |
 | Nav log card | plan → Nav Log tile; Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
 | Profile | plan → Profile tile | 2 → **1** with a route | altitude in the side view, Dry run (VFR/IFR is FPL's first row's, beside the altitude, 2026-11-17) |

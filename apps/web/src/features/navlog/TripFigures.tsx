@@ -1,7 +1,8 @@
 import { Button as BaseButton } from "@base-ui/react/button";
 import { useAirplaneChosen } from "../../lib/preferences";
 import { Suspense, lazy, useState, type ReactNode } from "react";
-import { zoneName } from "../../lib/format";
+import { grouped, zoneName } from "../../lib/format";
+import { useOwnFix } from "../../lib/map/position/ownShip";
 import { cn } from "cn";
 import type { Totals } from "../../lib/api/types";
 import FigureStrip, { type StripFigure } from "../../components/FigureStrip";
@@ -130,8 +131,27 @@ export default function TripFigures({
   // went and the strip said nothing of why (the UI audit's C2,
   // 2026-11-17): what the airplane would make of the route, none assumed.
   const airplane = useAirplaneChosen();
-  const ours = (whole: boolean): StripFigure[] =>
-    tripFigures(input, whole)
+  // The phone's own GPS altitude at the strip's end while flying (or a dry
+  // run flies own ship), the owner's ask (2026-11-17: "true altitude of the
+  // phone from gps"): MSL as iOS's location gives it, to the nearest 10 ft,
+  // since a GPS height wanders by tens of feet. Named "GPS" so it is never
+  // read as the altimeter, which is what altitudes are flown and assigned by
+  // (14 CFR 91.121); none on the ground or with no altitude in the fix.
+  const fix = useOwnFix();
+  const gpsFt = (flying || flown) && fix?.altitudeFt != null ? Math.round(fix.altitudeFt / 10) * 10 : null;
+  const gps: StripFigure | null =
+    gpsFt === null
+      ? null
+      : {
+          name: "GPS",
+          label: "GPS alt",
+          value: grouped(gpsFt),
+          unit: "ft",
+          testId: "strip-gps-alt",
+          said: `GPS altitude, ${grouped(gpsFt)} feet`,
+        };
+  const ours = (whole: boolean): StripFigure[] => [
+    ...tripFigures(input, whole)
       .map((f) => (airplane || f.name === "To" || f.name === "Dist" ? f : wantsAirplane(f)))
       // The destination the planner does not know, said on the figure in
       // red with its mark, the pill too, where the pill read "ZZZZ" over
@@ -146,7 +166,9 @@ export default function TripFigures({
       // ETE / FUEL REQ" were capitals and shorthand; the fuel is still the
       // fuel required, said so in its name to a screen reader and in its
       // breakdown (FuelBreakdown).
-      .map((f) => ({ ...f, label: LABEL[f.name] ?? (f.name === "ETA" ? `Arrival ${zoneName()}` : f.name) }));
+      .map((f) => ({ ...f, label: LABEL[f.name] ?? (f.name === "ETA" ? `Arrival ${zoneName()}` : f.name) })),
+    ...(gps === null ? [] : [gps]),
+  ];
   // The fuel required tapped, what it is made of (FuelBreakdown), at the
   // owner's ask ("fuel is the fuel required which gives a breakdown when
   // tapped"): once the nav log's figures are in.
