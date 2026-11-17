@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { LIMIT, diagnosticsOf, reportOf, resetReports, sendReport } from "./errorReports";
+import type { DiagnosticsReport } from "./diagnostics";
 
 describe("error reports", () => {
   beforeEach(resetReports);
@@ -20,8 +21,8 @@ describe("error reports", () => {
   });
 
   it("send each different error once, and ten at most a load", () => {
-    const sent: string[] = [];
-    const send = (body: string) => {
+    const sent: DiagnosticsReport[] = [];
+    const send = (body: DiagnosticsReport) => {
       sent.push(body);
       return true;
     };
