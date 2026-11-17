@@ -295,6 +295,12 @@ close does.
   (`SheetViewport`): Base UI 1.9 gives the viewport its touchstart,
   touchend and pointerdown as React props, and React sends a portal's
   events to its React parents, not to the viewport it sits in on the page.
+- A tap's feedback is each part's own pressed state, as on iOS: the
+  stock Button dims under a finger (`pointer-coarse:active:opacity-60`),
+  a menu's or a list's row is highlighted, a Toggle fills. Safari's grey
+  tap highlight, a box over the whole hit area on top of it, is off on
+  every control (`-webkit-tap-highlight-color: transparent`, index.css's
+  base layer; the owner's "Yes to all recs", 2026-11-17).
 - The keyboard: `Drawer.VirtualKeyboardProvider` on the sheet, each card
   and each question (`PhoneSheet`), its `--drawer-keyboard-inset` the
   viewport's bottom, in place of a `visualViewport` reading.

@@ -347,6 +347,16 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
     cursor: pointer;
   }
 
+  /* No grey flash over what a finger taps, as no iOS control has one:
+     Safari's tap highlight drew a dark box over a button's whole hit
+     area, its pseudo-element too, on top of the stock pressed state.
+     The press is each part's own -- the Button's dimming
+     (pointer-coarse:active:opacity-60), a menu's or a list's highlighted
+     row, a Toggle's pressed fill -- so this takes nothing away. */
+  :is(a, button, input, select, textarea, label, summary, [role="button"], [role="option"], [role="menuitem"], [role="tab"], [tabindex]) {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   * {
     @apply border-border outline-ring;
   }
