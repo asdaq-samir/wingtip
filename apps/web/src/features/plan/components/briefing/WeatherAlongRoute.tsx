@@ -14,7 +14,7 @@ import { ceilingAndVisibility, clockTime, windLine } from "../../format";
 import CategoryBadge from "./CategoryBadge";
 import Observed from "../../../../components/Observed";
 import { phasesOf, type Phase } from "./sections";
-import { categoryAt, nearestStation, ownStation, placesOf, tafReachNm, type Station } from "./fieldWeather";
+import { categoryAt, nearestStation, ownStation, placesOf, tafReachNm, type Station } from "../../../../lib/fieldWeather";
 import { FINDING_TONE } from "../../../../lib/findings";
 import OnRouteRow from "./OnRouteRow";
 import { useGeo } from "../../../../lib/geo";

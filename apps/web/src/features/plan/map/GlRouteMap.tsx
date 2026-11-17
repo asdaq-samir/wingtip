@@ -35,7 +35,7 @@ import { WeatherGl } from "./layers/WeatherGl";
 import { WeatherLoopGl } from "../../weather-loop";
 import { FlowGl } from "../../weather-flow";
 import { PlatesGl } from "../../plates";
-import { FaaChart } from "../components/AirportDiagram";
+import { FaaChart } from "../../../components/AirportDiagram";
 import { useWeatherLayers } from "../../../lib/map/sources/weatherLayers";
 import { usePreferences } from "../../../lib/preferences";
 import { useGlFit } from "./useGlFit";

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { ReplayPoint } from "../../../../lib/replay/clock";
 import { useGlLines, type GlRun } from "../../../../lib/map/gl/useGlLines";
 import { CHART } from "../../../../lib/tokens";
-import { colourLines } from "../traffic";
+import { colourLines } from "../../../../lib/traffic";
 import { useGlFit } from "../useGlFit";
 import { ReplayGl } from "./TracksGl";
 

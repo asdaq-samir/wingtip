@@ -9,7 +9,7 @@ import { PreviewCard, PreviewCardContent, PreviewCardTrigger } from "../../../..
 import { usePointerHover } from "../../../../hooks/use-pointer-hover";
 import { keyHint } from "../../../../lib/shortcutKeys";
 import type { AirportSearchRow } from "../../../../lib/airportIndex";
-import AirportPreview from "../preview/AirportPreview";
+import AirportPreview from "../../../../components/AirportPreview";
 import type { AirplaneHit, DoHit, OneSearchModel } from "../../hooks/useOneSearch";
 import { useVoiceInput } from "../../../voice";
 import { AirportIcon, Matched, QuickAction, ResultGroup, ResultRow, RoundIcon, RowLine } from "./ResultRows";

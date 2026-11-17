@@ -1,19 +1,19 @@
 import { Map as GlMap, type Marker, type LngLatBoundsLike, type StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 // The worker MapLibre parses its sources in (lib/map/gl/worker).
-import "../../../lib/map/gl/worker";
+import "../lib/map/gl/worker";
 import { useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "../../../components/ui/button";
-import { api } from "../../../lib/api/client";
-import { chartPagePicture, type PageMark } from "../../../lib/diagram";
-import { ownShipHtml } from "../../../lib/map/marks/icons";
-import { usePreferences } from "../../../lib/preferences";
-import { drawOwnShip, ownShipMarker } from "../../../lib/map/gl/layers/ownShipMarker";
-import { TEXT } from "../../../lib/text";
+import { Button } from "./ui/button";
+import { api } from "../lib/api/client";
+import { chartPagePicture, type PageMark } from "../lib/diagram";
+import { ownShipHtml } from "../lib/map/marks/icons";
+import { usePreferences } from "../lib/preferences";
+import { drawOwnShip, ownShipMarker } from "../lib/map/gl/layers/ownShipMarker";
+import { TEXT } from "../lib/text";
 import { cn } from "cn";
 import FullScreenViewer from "./FullScreenViewer";
-import { CHART } from "../../../lib/tokens";
+import { CHART } from "../lib/tokens";
 
 /** Between one page and the next, in the pages' own pixels. */
 const GAP = 60;

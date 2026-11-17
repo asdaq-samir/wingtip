@@ -119,7 +119,7 @@ export default defineConfig(
       "src/lib/map/gl/cameraParts.ts",
       "src/features/plan/map/terrain/**",
       "src/features/replay/**",
-      "src/features/plan/components/AirportDiagramViewer.tsx",
+      "src/components/AirportDiagramViewer.tsx",
       "src/**/*.test.{ts,tsx}",
     ],
     rules: {

@@ -4,7 +4,7 @@ import { Progress } from "../../../components/ui/progress";
 import { useGeo, type LatLon } from "../../../lib/geo";
 import { useClock } from "../../../lib/useMinuteClock";
 import { type Fix } from "../../../lib/map/position/ownShip";
-import { carriedOn, closestApproach, nearInHeight } from "../map/traffic";
+import { carriedOn, closestApproach, nearInHeight } from "../../../lib/traffic";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { TEXT } from "../../../lib/text";
 import { altFt, bearing, clockTime, knots, reportedAltitude } from "../../../lib/format";

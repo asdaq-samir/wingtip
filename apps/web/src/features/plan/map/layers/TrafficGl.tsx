@@ -10,7 +10,7 @@ import { TRAFFIC_COLOURS } from "../../../../lib/map/marks/icons";
 import { CHART } from "../../../../lib/tokens";
 import { useOwnShip } from "../../../../lib/map/position/ownShip";
 import { usePastFlight } from "../pastFlight";
-import { CARRY_S, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, trafficLabel, trendSeconds } from "../traffic";
+import { CARRY_S, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, trafficLabel, trendSeconds } from "../../../../lib/traffic";
 import { trafficCredit } from "../../../../components/dataSources";
 import { reported, useTracking, type Report } from "../../../../lib/map/position/tracking";
 import { EMPTY, useGlLayer, useGlMap, useGlTap } from "../../../../lib/map/gl/glLayer";

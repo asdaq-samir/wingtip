@@ -5,11 +5,11 @@
  * (`field_taf`, 25 nm), and the flight category for when the flight is
  * there.
  */
-import type { Briefing, Course } from "../../../../lib/api/types";
-import type { Geo } from "../../../../lib/geo";
-import { categoryOf } from "../../../../lib/map/marks/flightCategory";
-import { callEngine } from "../../../../lib/engine/engine";
-import { coursePoints, courseFields } from "../../../../lib/course";
+import type { Briefing, Course } from "./api/types";
+import type { Geo } from "./geo";
+import { categoryOf } from "./map/marks/flightCategory";
+import { callEngine } from "./engine/engine";
+import { coursePoints, courseFields } from "./course";
 
 export type Station = Briefing["forecast"]["stations"][number];
 

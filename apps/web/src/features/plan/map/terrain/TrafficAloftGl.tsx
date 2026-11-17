@@ -10,7 +10,7 @@ import { useTracking } from "../../../../lib/map/position/tracking";
 import { usePreferences } from "../../../../lib/preferences";
 import { CHART } from "../../../../lib/tokens";
 import { addTrafficPictures, trafficLayers, trafficPicture, type TrafficMarkProps } from "../layers/trafficMarks";
-import { CARRY_S, carriedOn, markTraffic, nearOwnHeight, trafficLabel } from "../traffic";
+import { CARRY_S, carriedOn, markTraffic, nearOwnHeight, trafficLabel } from "../../../../lib/traffic";
 import { standAtM } from "./trafficAloft";
 import { useGeo, type Geo } from "../../../../lib/geo";
 

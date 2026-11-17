@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
-import { feet, grouped } from "../../../../lib/format";
-import { airportQuery } from "../../../../lib/queryClient";
-import { colourOf } from "../../../../lib/map/marks/flightCategory";
-import { TEXT } from "../../../../lib/text";
+import { feet, grouped } from "../lib/format";
+import { airportQuery } from "../lib/queryClient";
+import { colourOf } from "../lib/map/marks/flightCategory";
+import { TEXT } from "../lib/text";
 
 /**
  * What a hover preview shows of an airport (a search row's, a chart

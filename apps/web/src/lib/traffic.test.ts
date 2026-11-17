@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { TrafficAircraft } from "../../../lib/api/types";
+import type { TrafficAircraft } from "./api/types";
 import {
   agedBy,
   carriedOn,
@@ -12,9 +12,9 @@ import {
   trendPx,
   trendSeconds,
 } from "./traffic";
-import type { Fix } from "../../../lib/map/position/ownShip";
-import trafficFixture from "../../../lib/fixtures/traffic.json";
-import { geoLoaded } from "../../../lib/geo";
+import type { Fix } from "./map/position/ownShip";
+import trafficFixture from "./fixtures/traffic.json";
+import { geoLoaded } from "./geo";
 
 // The engine's geodesic rules, loaded by the setup file (vitestSetup).
 const geo = await geoLoaded;

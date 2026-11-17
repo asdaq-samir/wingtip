@@ -1,7 +1,7 @@
 import type { Runway } from "../../../lib/api/types";
 import { TEXT, TEXT_POINTS } from "../../../lib/text";
 import { cn } from "cn";
-import FullScreenViewer from "./FullScreenViewer";
+import FullScreenViewer from "../../../components/FullScreenViewer";
 import { RunwaySketch } from "./RunwaySketch";
 
 /**

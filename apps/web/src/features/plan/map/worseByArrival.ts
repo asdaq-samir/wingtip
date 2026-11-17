@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { Briefing, Course } from "../../../lib/api/types";
 import type { BriefingState } from "../hooks/usePlan";
 import { callEngine } from "../../../lib/engine/engine";
-import { ownStation, placesOf } from "../components/briefing/fieldWeather";
+import { ownStation, placesOf } from "../../../lib/fieldWeather";
 import { useGeo, type Geo } from "../../../lib/geo";
 
 /** A field's ceiling and visibility as weather_worse reads one. */

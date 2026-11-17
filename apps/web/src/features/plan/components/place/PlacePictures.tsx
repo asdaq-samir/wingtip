@@ -4,13 +4,13 @@ import { CardPictures, type CardSlide } from "../../../../components/CardPicture
 import { PhotoSlide } from "../../../../components/PictureSlides";
 import type { AirportPhotos, AirportPlace } from "../../../../lib/api/types";
 import { TEXT } from "../../../../lib/text";
-import { FaaChart } from "../AirportDiagram";
+import { FaaChart } from "../../../../components/AirportDiagram";
 import { RunwaySketch } from "../RunwaySketch";
 import { useNotamMarks } from "./notamBadges";
 import { runwaysPictureOf, withNotamClosures } from "./runwayPicks";
 
 const SketchViewer = lazy(() => import("../SketchViewer"));
-const PictureViewer = lazy(() => import("../AirportDiagramViewer")); // the pictures behind the diagram, full screen to pinch in on
+const PictureViewer = lazy(() => import("../../../../components/AirportDiagramViewer")); // the pictures behind the diagram, full screen to pinch in on
 
 /**
  * The airport card's pictures, a sideways row of large rounded tiles under

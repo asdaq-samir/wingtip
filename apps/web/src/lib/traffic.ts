@@ -1,9 +1,9 @@
-import type { TrafficAircraft } from "../../../lib/api/types";
-import { callEngine, type EngineAnswer } from "../../../lib/engine/engine";
-import { M_PER_NM, type Geo, type LatLon } from "../../../lib/geo";
-import type { GlRun } from "../../../lib/map/gl/useGlLines";
-import type { Fix } from "../../../lib/map/position/ownShip";
-import { WORLD_WIDTH_M } from "../../../lib/map/tileMath";
+import type { TrafficAircraft } from "./api/types";
+import { callEngine, type EngineAnswer } from "./engine/engine";
+import { M_PER_NM, type Geo, type LatLon } from "./geo";
+import type { GlRun } from "./map/gl/useGlLines";
+import type { Fix } from "./map/position/ownShip";
+import { WORLD_WIDTH_M } from "./map/tileMath";
 
 /*
  * The rules here -- the height under an airplane as TCAS writes it, whether

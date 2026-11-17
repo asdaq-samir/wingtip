@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { LatLon } from "../lib/onRoute";
+import type { LatLon } from "./onRoute";
 
 /**
  * The legs a hazard in the Brief is on, shown on the map at the pilot's

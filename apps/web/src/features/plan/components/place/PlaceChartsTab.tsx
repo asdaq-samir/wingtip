@@ -6,7 +6,7 @@ import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { ChartBadge, RowBadge } from "../../../../components/RowBadge";
 import type { AirportPlace, TerminalChart } from "../../../../lib/api/types";
 import { BADGE } from "../../../../lib/rowBadges";
-import { ChartRow } from "../AirportDiagram";
+import { ChartRow } from "../../../../components/AirportDiagram";
 import { PublicationRows } from "../PublicationRows";
 import { NotamBadge } from "./NotamBadge";
 import { useNotamMarks, type NotamMark } from "./notamBadges";

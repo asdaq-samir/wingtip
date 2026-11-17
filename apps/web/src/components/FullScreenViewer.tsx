@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import CloseButton from "../../../components/CloseButton";
-import { Dialog, DialogClose, DialogContent, DialogTitle } from "../../../components/ui/dialog";
-import { TEXT } from "../../../lib/text";
+import CloseButton from "./CloseButton";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "./ui/dialog";
+import { TEXT } from "../lib/text";
 import { cn } from "cn";
 
 /**

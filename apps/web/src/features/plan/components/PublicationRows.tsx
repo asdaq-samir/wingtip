@@ -2,7 +2,7 @@ import { lazy, Suspense, useState } from "react";
 import { ListRow } from "../../../components/GroupedList";
 import { ItemSeparator } from "../../../components/ui/item";
 import type { Runway } from "../../../lib/api/types";
-import { ChartRow, DiagramRow } from "./AirportDiagram";
+import { ChartRow, DiagramRow } from "../../../components/AirportDiagram";
 import { ChartBadge } from "../../../components/RowBadge";
 
 const SketchViewer = lazy(() => import("./SketchViewer"));

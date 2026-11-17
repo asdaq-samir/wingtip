@@ -22,7 +22,7 @@ import { callSign, fieldPhases } from "../lib/radio";
 import { useGlance, type BriefGlance, type FieldGlance } from "../lib/glance";
 import { shortName } from "../../../lib/aircraftChoice";
 import { usePrinting } from "../lib/usePrinting";
-import { fieldCategory } from "../components/briefing/fieldWeather";
+import { fieldCategory } from "../../../lib/fieldWeather";
 import { flightPlanForms, type FiledProcedure } from "../lib/flightPlanForm";
 import { useAlternate } from "./useAlternate";
 import { useRouteFields } from "./useRouteFields";
