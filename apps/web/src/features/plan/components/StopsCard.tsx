@@ -5,7 +5,7 @@ import { cn } from "cn";
 import { CardClose, CardHeadRow } from "../../../components/CardHead";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import QueryState from "../../../components/QueryState";
-import { ADD_CAPSULE } from "../../../lib/mapChrome";
+import { ADD_CAPSULE, CAPSULE_HIT, GLASS_PICKED } from "../../../lib/mapChrome";
 import PullDown from "../../../components/PullDown";
 import StopKindGlyph from "../../../components/StopKindGlyph";
 import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-group";
@@ -28,11 +28,12 @@ import { Skeleton } from "../../../components/ui/skeleton";
  *  set back to the pill's: the fill stays the tint under a mouse, as the
  *  route's chips do (GLASS_PICKED), and the focus ring sits on its edge. */
 const PILL = cn(
-  "relative inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full font-semibold whitespace-nowrap outline-none",
-  "after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+  CAPSULE_HIT,
+  "inline-flex h-8 shrink-0 items-center gap-1.5 font-semibold whitespace-nowrap outline-none",
+  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
   TEXT.detail,
   "bg-foreground/8 text-foreground hover:bg-foreground/8 hover:text-foreground",
-  "data-pressed:bg-primary data-pressed:text-primary-foreground hover:data-pressed:bg-primary hover:data-pressed:text-primary-foreground",
+  GLASS_PICKED,
 );
 
 /** What none of the fields has, for the empty list's line. */

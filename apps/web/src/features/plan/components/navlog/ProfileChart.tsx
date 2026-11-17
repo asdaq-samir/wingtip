@@ -4,7 +4,7 @@ import { ChartContainer, type ChartConfig } from "../../../../components/ui/char
 import ChartTick from "../../../../components/chartTick";
 import type { RouteProfile } from "../../../../lib/api/types";
 import { altFt } from "../../../../lib/format";
-import { AIRSPACE, ceilingOverFloor, ceilings, type planProfile } from "./profile";
+import { AIRSPACE, airspaceArea, ceilings, type planProfile } from "./profile";
 
 /** A line over the ground: the plan's altitudes (planProfile), or a
  *  flown track's (the Studio's), a null height a break in it -- a gap in
@@ -106,27 +106,12 @@ export default memo(function ProfileChart({
           return (
             <ReferenceArea
               key={i}
-              x1={a.from_nm}
-              x2={a.to_nm}
-              y1={a.floor_ft}
-              y2={Math.min(a.ceiling_ft ?? top, top)}
-              stroke={look.stroke}
-              strokeDasharray={look.dashed ? "5 4" : undefined}
-              strokeOpacity={0.8}
-              fill={look.stroke}
-              fillOpacity={0.08}
-              ifOverflow="hidden"
-              label={
-                widest
-                  ? {
-                      value: `${label} ${ceilingOverFloor(a)}`.trim(),
-                      position: "insideTop",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      fill: look.text,
-                    }
-                  : undefined
-              }
+              {...airspaceArea(
+                a,
+                look,
+                { x1: a.from_nm, x2: a.to_nm, y2: Math.min(a.ceiling_ft ?? top, top) },
+                widest ? { text: label, position: "insideTop" } : undefined,
+              )}
             />
           );
         })}

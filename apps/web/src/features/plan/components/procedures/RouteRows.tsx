@@ -66,14 +66,13 @@ export function NewStopCard({
           {via.map((d) => (
             <li key={d.ident}>
               <Button
-                variant="ghost"
+                variant="plain"
                 size="inline"
                 type="button"
                 onPointerDown={(e) => e.preventDefault()}
                 onClick={() => onCommit(d.ident)}
                 data-testid="picker-suggestion"
                 className={cn(
-                  "justify-start text-inherit hover:bg-transparent",
                   "flex min-h-11 w-full items-center gap-2 pr-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 )}
               >

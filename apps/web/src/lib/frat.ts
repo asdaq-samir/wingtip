@@ -25,25 +25,10 @@ import { create } from "zustand";
 import { localDay } from "./format";
 import { persist } from "zustand/middleware";
 import type { Currency, Inspections, Squawk } from "./api/types";
-import { inspectionsInput, riskFactor, squawksInput } from "./airworthiness";
+import { inspectionsInput, riskFactor, squawksInput, type RiskFactor } from "./airworthiness";
 import { callEngine, type EngineAnswer } from "./engine/engine";
 
 export type RiskLevel = EngineAnswer<"gonogo_risk">["level"];
-
-export interface RiskFactor {
-  key: string;
-  label: string;
-  /** Why it counts: the rule or the reason. */
-  why?: string;
-  points: number;
-  /** A factor that makes the flight unlawful as planned: high, whatever
-   *  the points. */
-  stop?: boolean;
-  /** Its mark beside what the briefing raised, the engine's: a stop
-   *  where it makes the flight unlawful or is high on its own, else a
-   *  caution; none for a self check. */
-  finding?: "stop" | "caution" | null;
-}
 
 let selfChecksAsked: (RiskFactor & { group: string })[] | null = null;
 

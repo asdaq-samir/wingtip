@@ -12,7 +12,7 @@ import { transitionWords, type PickedProcedure } from "../../../../lib/procedure
 import { TEXT } from "../../../../lib/text";
 import { altFt, feet, nm } from "../../../../lib/format";
 import { faaWords } from "../../../../lib/advisories";
-import type { ProcedureKind } from "../../hooks/useProceduresRoute";
+import type { ProcedureKind } from "../../hooks/procedureTypes";
 import { procedureQuery } from "../../../../lib/queryClient";
 import { Chips, NONE } from "./PatternChips";
 import { CHIP } from "../routeListStyle";

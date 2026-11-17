@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { ChevronDown, Ellipsis, Pin } from "lucide-react";
+import { Ellipsis, Pin } from "lucide-react";
 import { cn } from "cn";
 import RoundButton from "../../components/RoundButton";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
+import { NotamAsSent } from "../../components/NotamAsSent";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 import type { RankedNotam } from "./engineRanking";
 import { TEXT } from "../../lib/text";
@@ -32,27 +32,7 @@ export default function NotamLine({ notam, testId }: { notam: RankedNotam; testI
         >
           {notam.why}
         </p>
-        <Collapsible open={open} onOpenChange={setOpen}>
-          <CollapsibleTrigger
-            className={cn(
-              "group relative inline-flex items-center gap-1 self-start font-medium text-tint outline-none after:absolute after:-inset-y-3 after:inset-x-0 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-              TEXT.note,
-            )}
-            data-testid={`${testId}-source`}
-          >
-            {notam.label}
-            <ChevronDown className="size-4 transition-transform group-data-panel-open:rotate-180" aria-hidden="true" />
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            {/* As sent: the FAA's own text, its line breaks kept. */}
-            <pre
-              className={cn("mt-1 rounded-md bg-muted/60 p-2 font-mono break-words whitespace-pre-wrap", TEXT.note)}
-              data-testid={`${testId}-raw`}
-            >
-              {notam.raw}
-            </pre>
-          </CollapsibleContent>
-        </Collapsible>
+        <NotamAsSent label={notam.label} raw={notam.raw} open={open} onOpenChange={setOpen} testId={testId} />
       </div>
       {pinned && <Pin className="mt-1 size-4 shrink-0 text-tint" aria-label="Pinned" />}
       <DropdownMenu>

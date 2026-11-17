@@ -2,44 +2,24 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { AircraftChoice } from "./api/types";
 import { NO_MINIMUMS } from "./minimums";
-import { AIRPLANE_KEPT, airplaneChosen, airplaneSlice, isStockDefault, NO_AIRPLANE, type AirplaneSlice } from "./prefs/airplaneSlice";
-import { ALERTS_KEPT, alertsSlice, type AlertsSlice } from "./prefs/alertsSlice";
-import { KEPT_KEPT, keptSlice, type KeptSlice, type RecentAirport } from "./prefs/keptSlice";
-import { LOOK_KEPT, lookSlice, type LookSlice } from "./prefs/lookSlice";
-import { MAP_KEPT, mapSlice, type MapSlice } from "./prefs/mapSlice";
+import { AIRPLANE_KEPT, airplaneChosen, airplaneSlice, isStockDefault, NO_AIRPLANE } from "./prefs/airplaneSlice";
+import { ALERTS_KEPT, alertsSlice } from "./prefs/alertsSlice";
+import { KEPT_KEPT, keptSlice } from "./prefs/keptSlice";
+import type { RecentAirport } from "./prefs/keptTypes";
+import { LOOK_KEPT, lookSlice } from "./prefs/lookSlice";
+import { MAP_KEPT, mapSlice } from "./prefs/mapSlice";
+import type { Preferences } from "./prefs/state";
 import { useAirportWeatherPrefs } from "./map/marks/airportWeatherPrefs";
 import { useWeatherLayers } from "./map/sources/weatherLayers";
 
-export {
-  BASE_CHARTS,
-  HEIGHT_STRETCHES,
-  type BaseChart,
-  type HeightStretch,
-  type ChartLight,
-  type ChartNight,
-  type MapOverlay,
-  type OverlayStrength,
-} from "./prefs/mapSlice";
-export type { Brand, FlightRules, NavEdge, OwnShipLook, RouteEdit } from "./prefs/lookSlice";
-export { airplaneChosen, NO_AIRPLANE, STOCK_C172, type RouteWeather } from "./prefs/airplaneSlice";
-export { recentRouteKey, type AirspaceClass, type KeptAircraft, type RecentAirport, type RecentRoute } from "./prefs/keptSlice";
-
-/**
- * Everything remembered per browser, in one zustand store persisted to
- * localStorage by its own middleware under one key, made of zustand's stock
- * slices, one file each (lib/prefs): what the map draws (mapSlice), the
- * app's look (lookSlice), the airplane and the pilot's limits
- * (airplaneSlice), the places and airplanes kept (keptSlice) and what is
- * said in the air (alertsSlice). It was one 614-line store changed by
- * every feature (the code audit's CODE-22). Components read a part with
- * the hook (`usePreferences(s => s.base)`); code outside React -- the
- * map's chart layers -- reads `getState()` and `subscribe()`.
- *
- * localStorage is a convenience only: unavailable (a private window,
- * blocked site data) the store simply starts from its defaults each
- * visit, which the middleware handles on its own.
- */
-export interface Preferences extends MapSlice, LookSlice, AirplaneSlice, KeptSlice, AlertsSlice {}
+export { BASE_CHARTS, HEIGHT_STRETCHES } from "./prefs/mapSlice";
+export type { BaseChart, HeightStretch, ChartLight, ChartNight, MapOverlay, OverlayStrength } from "./prefs/mapTypes";
+export type { Brand, FlightRules, NavEdge, OwnShipLook, RouteEdit } from "./prefs/lookTypes";
+export { airplaneChosen, NO_AIRPLANE, STOCK_C172 } from "./prefs/airplaneSlice";
+export type { RouteWeather } from "./prefs/airplaneTypes";
+export { recentRouteKey } from "./prefs/keptSlice";
+export type { AirspaceClass, KeptAircraft, RecentAirport, RecentRoute } from "./prefs/keptTypes";
+export type { Preferences } from "./prefs/state";
 
 /** What is written to storage: the values, not the functions. */
 const KEPT = [...MAP_KEPT, ...LOOK_KEPT, ...AIRPLANE_KEPT, ...KEPT_KEPT, ...ALERTS_KEPT] as const;

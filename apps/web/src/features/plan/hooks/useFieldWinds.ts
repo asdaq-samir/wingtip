@@ -8,7 +8,7 @@ import { sameField } from "../../../lib/procedures";
 import { windPick, type WindPick } from "../lib/pattern";
 import { reportedWind, type ReportedWind } from "../format";
 import type { NavLogRow } from "../components/navlog/rows";
-import type { ProcedureAirport } from "./useProceduresRoute";
+import type { ProcedureAirport } from "./procedureTypes";
 
 /** How far off a field's time must be for its runway to be picked into
  *  the forecast wind rather than the wind now, ms: an hour. */

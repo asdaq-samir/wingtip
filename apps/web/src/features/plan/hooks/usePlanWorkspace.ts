@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { WorkspaceProps } from "../../shell";
+import type { WorkspaceProps } from "../../../lib/workspace";
 import { prefetchPilotPanel } from "../routePanelParts";
 import { panelNow } from "./panelNow";
 import { usePlanAhead } from "./usePlanAhead";

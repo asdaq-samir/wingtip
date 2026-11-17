@@ -15,6 +15,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import NumberRow from "./NumberRow";
 import SpeedAndBurnGroups from "./SpeedAndBurnGroups";
+import { aircraftSchema, EMPTY_AIRCRAFT_FORM, type AircraftFormValues } from "./aircraftForm";
 import { useAirplanes } from "./airplanes/useAirplanes";
 import { Spinner } from "../../components/ui/spinner";
 import { ListChoices, ListGroup, ListRow } from "../../components/GroupedList";
@@ -34,7 +35,6 @@ import { FINDING_TONE } from "../../lib/findings";
 import { aircraftProfilesQuery } from "../../lib/queryClient";
 import TogglePill from "../../components/TogglePill";
 import { daysBetween, daysWords, dueFinding, kebab } from "./paperwork";
-import { callEngine } from "../../lib/engine/engine";
 import DueItemsGroup from "./DueItemsGroup";
 import { VorCheckGroup } from "./VorCheckGroup";
 import { FieldError } from "../../components/ui/field";
@@ -42,52 +42,6 @@ import { FieldError } from "../../components/ui/field";
 /** A form field as the request carries it: blank is null. */
 const orNull = (value: string) => (value.trim() ? Number(value) : null);
 
-const AIRCRAFT_FIELDS = [
-  "tailNumber",
-  "typeDesignator",
-  "cruiseTasKt",
-  "fuelBurnGph",
-  "cruisePowerPct",
-  "climbTasKt",
-  "climbFuelBurnGph",
-  "descentIasKt",
-  "descentFuelBurnGph",
-  "usableFuelGal",
-  "equipment",
-  "surveillance",
-  "colour",
-] as const;
-
-// The fields stay strings through validation (what a plain <input> holds),
-// each checked by the engine's aircraft_problems -- the gateway's own
-// AircraftRequest limits, the same on every app -- so a bad value is caught
-// before the round trip, its words under its field. The numbers are made
-// once, building the request body in onSubmit below.
-const aircraftSchema = z
-  .object(Object.fromEntries(AIRCRAFT_FIELDS.map((f) => [f, z.string()])) as Record<(typeof AIRCRAFT_FIELDS)[number], z.ZodString>)
-  .superRefine((form, ctx) => {
-    const problems = callEngine("aircraft_problems", form);
-    for (const field of AIRCRAFT_FIELDS) {
-      const message = problems[field];
-      if (message) ctx.addIssue({ code: "custom", path: [field], message });
-    }
-  });
-export type AircraftFormValues = z.infer<typeof aircraftSchema>;
-const EMPTY_AIRCRAFT_FORM: AircraftFormValues = {
-  tailNumber: "",
-  typeDesignator: "",
-  cruiseTasKt: "",
-  fuelBurnGph: "",
-  cruisePowerPct: "",
-  climbTasKt: "",
-  climbFuelBurnGph: "",
-  descentIasKt: "",
-  descentFuelBurnGph: "",
-  usableFuelGal: "",
-  equipment: "",
-  surveillance: "",
-  colour: "",
-};
 const typed = (v: number | null | undefined) => (v == null ? "" : String(v));
 /** An airplane's figures in the form's fields: one saved, or one sent and
  *  refused. */

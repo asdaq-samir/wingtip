@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
+import { CollapsibleContent } from "../../../../components/ui/collapsible";
 import { cn } from "cn";
 import { PillSection } from "../../../../components/Favorites";
 import { SheetCard } from "../../../../components/SheetCard";
 import StatusBadge from "../../../../components/StatusBadge";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
+import { NotamAsSent } from "../../../../components/NotamAsSent";
 import { TEXT } from "../../../../lib/text";
 import { useMinuteClock } from "../../../../lib/useMinuteClock";
 import {
@@ -88,20 +88,7 @@ export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
       </p>
       {ours && <p className={cn("text-muted-foreground", TEXT.note)}>{read.words}</p>}
       {n.kind === "tfr" && <TfrDetails n={n} />}
-      <Collapsible>
-        <CollapsibleTrigger
-          className={cn(
-            "group relative inline-flex items-center gap-1 self-start font-medium text-tint outline-none after:absolute after:-inset-y-3 after:inset-x-0 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-            TEXT.note,
-          )}
-        >
-          {n.kind === "tfr" ? "TFR as Sent" : "As Sent"}
-          <ChevronDown className="size-4 transition-transform group-data-panel-open:rotate-180" aria-hidden="true" />
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <pre className={cn("mt-1 rounded-md bg-muted/60 p-2 font-mono break-words whitespace-pre-wrap", TEXT.note)}>{n.raw}</pre>
-        </CollapsibleContent>
-      </Collapsible>
+      <NotamAsSent label={n.kind === "tfr" ? "TFR as Sent" : "As Sent"} raw={n.raw} />
     </div>
   );
 }

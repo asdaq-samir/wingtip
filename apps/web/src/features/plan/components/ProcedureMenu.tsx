@@ -2,6 +2,7 @@ import { useId, useLayoutEffect, useRef } from "react";
 import { create } from "zustand";
 import { ArrowLeftRight, ChevronDown } from "lucide-react";
 import { cn } from "cn";
+import { CAPSULE_HIT } from "../../../lib/mapChrome";
 import RoundButton from "../../../components/RoundButton";
 import CloseButton from "../../../components/CloseButton";
 import { Button } from "../../../components/ui/button";
@@ -203,8 +204,8 @@ export default function ProcedureMenu({
             data-kind={kind}
             data-look={look}
             className={cn(
-              "relative h-8 justify-start gap-0.5 rounded-full text-left font-semibold",
-              "after:absolute after:-inset-1.5 after:content-['']",
+              CAPSULE_HIT,
+              "h-8 justify-start gap-0.5 text-left font-semibold",
               // A kind to add whole, "+ Approach", the row wrapping it under
               // where it has no room: shrunk, it read "+ A…" at the owner's
               // text size (2026-11-13). A picked one's name kept to a chip.

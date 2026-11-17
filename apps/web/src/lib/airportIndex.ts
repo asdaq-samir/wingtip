@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./api/client";
 import { flatDeg2 } from "./geo";
-import type { AirportSearchRow } from "./useAirportSearch";
+
+/** One answer: an airport, or with `fixes` a waypoint (`kind` "fix"). */
+export type AirportSearchRow = Awaited<ReturnType<typeof api.airportSearch>>[number];
 
 /** One airport of the planner's index (wingtip.airports.search_index): the
  *  ident pilots use, its name, town and state, its size rank (0 large to

@@ -7,7 +7,7 @@ import { clockTime, feet, grouped, knots, wholeNm } from "../../../lib/format";
 import { when } from "../../../components/airplane/pastFlightFormat";
 import { distanceTicks } from "./distanceTicks";
 import { TRACES } from "./flightTraces";
-import { AIRSPACE, ceilingOverFloor, ceilings, nameFits, namedPieces } from "./navlog/profile";
+import { AIRSPACE, airspaceArea, ceilings, nameFits, namedPieces } from "./navlog/profile";
 
 // Green height and amber speed (flightTraces): the theme's chart greys
 // read as one line.
@@ -129,27 +129,12 @@ const FlightChart = memo(function FlightChart({
             <ReferenceArea
               key={i}
               yAxisId="alt"
-              x1={runAt(a.from_nm)}
-              x2={runAt(a.to_nm)}
-              y1={a.floor_ft}
-              y2={a.ceiling_ft ?? undefined}
-              stroke={look.stroke}
-              strokeDasharray={look.dashed ? "5 4" : undefined}
-              strokeOpacity={0.8}
-              fill={look.stroke}
-              fillOpacity={0.08}
-              ifOverflow="hidden"
-              label={
-                named.has(a)
-                  ? {
-                      value: `${a.ident || `Class ${a.class}`} ${ceilingOverFloor(a)}`.trim(),
-                      position: placed(a),
-                      fontSize: 11,
-                      fontWeight: 600,
-                      fill: look.text,
-                    }
-                  : undefined
-              }
+              {...airspaceArea(
+                a,
+                look,
+                { x1: runAt(a.from_nm), x2: runAt(a.to_nm), y2: a.ceiling_ft ?? undefined },
+                named.has(a) ? { text: a.ident || `Class ${a.class}`, position: placed(a) } : undefined,
+              )}
             />
           );
         })}

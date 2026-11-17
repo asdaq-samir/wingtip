@@ -102,6 +102,9 @@ export default defineConfig(
     ignores: ["src/components/ui/**", "src/**/*.test.tsx", ...HAND_BUILT_KEPT],
     rules: { "no-restricted-syntax": ["error", ...STOCK_BANS, ...GEO_BANS] },
   },
+  // The kept hand-built parts above are out of the stock-component bans but
+  // not the map-maths ones: they are held to GEO_BANS like every other file.
+  { files: HAND_BUILT_KEPT, ignores: ["src/**/*.test.tsx"], rules: { "no-restricted-syntax": ["error", ...GEO_BANS] } },
   { files: ["src/**/*.ts"], ignores: ["src/lib/geo.ts", "src/**/*.test.ts"], rules: { "no-restricted-syntax": ["error", ...GEO_BANS] } },
   // The map's camera has one owner (lib/map/gl/camera, the flicker audit's
   // cause D): every mover asks it with an intent, none moves the map itself

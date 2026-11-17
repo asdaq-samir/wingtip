@@ -157,17 +157,13 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
       </label>
       {using && (
         <Button
-          variant="ghost"
+          variant="plain"
           size="inline"
           type="button"
           onClick={model.cancel}
           data-testid="one-search-cancel"
           // Its 44-point hit area the pseudo-element's (index.css), not its own height.
-          className={cn(
-            "justify-start text-inherit hover:bg-transparent",
-            "relative shrink-0 px-1 text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            TEXT.row,
-          )}
+          className={cn("relative shrink-0 px-1 text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring", TEXT.row)}
         >
           Cancel
         </Button>

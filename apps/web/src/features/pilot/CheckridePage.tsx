@@ -18,6 +18,7 @@ import { TEXT } from "../../lib/text";
 import { FINDING_TONE } from "../../lib/findings";
 import { inForce, reviewRoute, reviewState, said } from "../../lib/endorsements";
 import { GoodTo, SignedRow } from "./Endorsements";
+import { NameFieldRow } from "./NameFieldRow";
 import ConsoleClose from "../../components/ConsoleClose";
 import { dueWords, lessonStatus } from "../../lib/assignedLessons";
 import { lessonHref } from "../../lib/lessonLink";
@@ -169,23 +170,18 @@ function Instructors({ training }: { training: Training }) {
           knowledge test codes here, reviews the solo cross-countries (14 CFR
           61.93(c)(3)) and signs the endorsements; either can end it. */}
       <ListGroup title="Your instructor">
-        <ListRow id={nameId} title="Your name" description="As on your student pilot certificate">
-          <FieldHit htmlFor={nameId}>
-            <Input
-              id={nameId}
-              value={name}
-              placeholder="Avery B. Student"
-              maxLength={120}
-              className="h-8 w-44 sm:w-56"
-              autoComplete="name"
-              onChange={(e) => setName(e.target.value)}
-              data-testid="student-name"
-              onBlur={() => {
-                if (name.trim() && name.trim() !== training.fullName) saveName.mutate(name.trim());
-              }}
-            />
-          </FieldHit>
-        </ListRow>
+        <NameFieldRow
+          id={nameId}
+          title="Your name"
+          description="As on your student pilot certificate"
+          placeholder="Avery B. Student"
+          value={name}
+          saved={training.fullName}
+          onChange={setName}
+          onSave={saveName.mutate}
+          testId="student-name"
+          className="h-8 w-44 sm:w-56"
+        />
         {training.instructors.map((l) => (
           <ListRow
             key={l.id}

@@ -1,16 +1,7 @@
 import type { AircraftChoice } from "../api/types";
-import type { OwnFigureValues } from "../airplane/figures";
-import { NO_MINIMUMS, type Minimums } from "../minimums";
-import type { Load } from "../weightBalance";
+import { NO_MINIMUMS } from "../minimums";
 import type { Slice } from "./slice";
-
-/** What FPL's Routes hold the weather to (routeWeather). */
-export type RouteWeather = "personal" | "legal";
-
-/** An airplane's own figures, set by the pilot for its N-number on this
- *  device while signed out (the airplane's profile, features/airplane):
- *  any of them, the type's book the rest; offered to the account at sign-in. */
-type TailFigures = OwnFigureValues;
+import type { AirplaneSlice } from "./airplaneTypes";
 
 /** The stock Cessna 172 as a pilot picks it, and as the demo flight
  *  picks it on purpose (lib/demoFlight). Never a default: nothing falls
@@ -38,27 +29,6 @@ export function isStockDefault(a: AircraftChoice | undefined): boolean {
       a.aircraftId === undefined &&
       a.cruiseTasKt === undefined)
   );
-}
-
-/** The airplane flown and the pilot's own limits for it. */
-export interface AirplaneSlice {
-  aircraft: AircraftChoice;
-  /** The figures the pilot set for an N-number (the airplane's profile), by it:
-   *  flown on whenever the N-number is, over its type's profile. */
-  tailFigures: Record<string, TailFigures>;
-  /** Each airplane's load as last set (lib/weightBalance), by its name. */
-  loads: Record<string, Load>;
-  /** The pilot's personal minimums (lib/minimums), each off until set. */
-  minimums: Minimums;
-  /** The weather FPL's Routes keep to (lib/routeOptions): the pilot's own
-   *  minimums, or 14 CFR 91.155's alone; thunderstorms are kept clear of
-   *  either way. The owner's "This can be a setting" (2026-10-23). */
-  routeWeather: RouteWeather;
-  setAircraft: (aircraft: AircraftChoice) => void;
-  setTailFigures: (tail: string, figures: TailFigures) => void;
-  setLoad: (aircraft: string, load: Load) => void;
-  setMinimum: (key: keyof Minimums, value: number | null) => void;
-  setRouteWeather: (weather: RouteWeather) => void;
 }
 
 export const AIRPLANE_KEPT = ["aircraft", "tailFigures", "loads", "minimums", "routeWeather"] as const;

@@ -272,14 +272,13 @@ export default function RouteBox({
                 Pressed, the field keeps the focus till it goes. */}
             {onDone && (
               <Button
-                variant="ghost"
+                variant="plain"
                 size="inline"
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={done}
                 data-testid="route-box-done"
                 className={cn(
-                  "justify-start text-inherit hover:bg-transparent",
                   "relative mt-1 ml-1 h-7 shrink-0 rounded-full px-1.5 font-semibold text-tint outline-none after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
                   TEXT.row,
                 )}

@@ -6,7 +6,7 @@ import type { Detour } from "../../../../lib/api/types";
 import { bearing } from "../../../../lib/format";
 import { frdOf } from "../../../../lib/identSchema";
 import type { RecentAirport } from "../../../../lib/preferences";
-import type { AirportSearchRow } from "../../../../lib/useAirportSearch";
+import type { AirportSearchRow } from "../../../../lib/airportIndex";
 import { TEXT } from "../../../../lib/text";
 
 /**

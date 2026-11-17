@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
-import { DIM, GLASS_SHEET, SHEET_CORNERS } from "../lib/mapChrome";
+import { DIM, GLASS_SHEET, GRABBER_BAR, SHEET_CORNERS } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 import { keepOpenOn, TOAST } from "./ui/dismiss";
 
@@ -91,7 +91,7 @@ export function PhoneSheetContent({ className, style, children, onPointerDown, .
               data-swipe-handle=""
               className="absolute inset-x-0 top-0 z-10 flex h-4 items-start justify-center pt-1.25"
             >
-              <span className="h-[5px] w-9 rounded-full bg-muted-foreground/40" />
+              <span className={GRABBER_BAR} />
             </div>
             {children}
           </Drawer.Popup>

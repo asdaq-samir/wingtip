@@ -4,7 +4,7 @@ import { ADDRESS_CLEARED, useAddress } from "../../lib/address";
 import { identOf, routeOf } from "../../lib/identSchema";
 import { statusQuery } from "../../lib/queryClient";
 import { useProgressToast } from "../../lib/useProgressToast";
-import type { WorkspaceProps } from "../shell";
+import type { WorkspaceProps } from "../../lib/workspace";
 import { loadPilotPanel } from "../pilot";
 import DevBar from "./DevBar";
 import { useDevTab } from "./devTab";

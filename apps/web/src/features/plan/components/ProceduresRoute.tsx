@@ -8,7 +8,8 @@ import { PointMark } from "./navlog/PointMark";
 import { PointFigures } from "./PointControls";
 import { FuelGauge } from "./FuelGauge";
 import { legOf, rowPoint, type NavLogRow } from "./navlog/rows";
-import { useProceduresRoute, type ProcedureAirport, type ProceduresRouteProps } from "../hooks/useProceduresRoute";
+import { useProceduresRoute, type ProceduresRouteProps } from "../hooks/useProceduresRoute";
+import type { ProcedureAirport } from "../hooks/procedureTypes";
 import { RouteLine } from "./procedures/RouteLine";
 import { FieldStep } from "./procedures/FieldStep";
 import { pointEnd } from "./procedures/pointEnd";
@@ -21,7 +22,8 @@ import { plateTitle } from "../../plates";
 
 // The list's types and its Routes row, where PlanWorkspace and the
 // routePanel chunk import them from.
-export type { FitInputs, ProcedureAirport, ProceduresAt } from "../hooks/useProceduresRoute";
+export type { ProcedureAirport } from "../hooks/procedureTypes";
+export type { FitInputs, ProceduresAt } from "../hooks/useProceduresRoute";
 export { RouteLine } from "./procedures/RouteLine";
 
 // Opened only from a point's menu, so fetched as one first is: in the

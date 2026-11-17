@@ -1,4 +1,7 @@
-import type { CameraKind } from "./cameraStore";
+/** The replay's cameras on the 3D view (ReplayCameraGl): behind the
+ *  airplane, from its seat, round it, from a fixed point on the ground,
+ *  and straight down. */
+export type CameraKind = "chase" | "cockpit" | "orbit" | "tower" | "top";
 
 /** Where the map's camera is, as MapLibre's jumpTo takes it. */
 export interface View {

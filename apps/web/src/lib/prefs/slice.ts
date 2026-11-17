@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { Preferences } from "../preferences";
+import type { Preferences } from "./state";
 
 /** A part of the one preferences store (lib/preferences), zustand's stock
  *  slice pattern under its persist middleware: each part made on its own,

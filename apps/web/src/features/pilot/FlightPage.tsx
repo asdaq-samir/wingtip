@@ -12,6 +12,7 @@ import type { Flight, FlightSummary } from "../../lib/api/types";
 import { debrief, type Debrief } from "./debrief";
 import { LEVEL_TONE, riskLine, type RiskLevel } from "../../lib/frat";
 import { TEXT } from "../../lib/text";
+import { AltitudeLegend } from "../../components/AltitudeLegend";
 import { keepTrack, keptTrack, readTrack, thin, TrackError, type TrackPoint } from "../../lib/track";
 import { useFlownTrack } from "../../lib/map/position/flownTrack";
 import { routeName } from "../../lib/identSchema";
@@ -59,19 +60,13 @@ function Profile({ d }: { d: Debrief }) {
   const flown = d.profile.map((p, i) => `${i ? "L" : "M"}${x(p.alongNm).toFixed(1)} ${y(p.altFt).toFixed(1)}`).join(" ");
   return (
     <figure className="space-y-1 px-3 py-3" data-testid="debrief-profile">
-      <div className={cn("flex justify-between text-muted-foreground tabular-nums", TEXT.note)}>
-        <span>{feet(high)}</span>
-        <span className="flex gap-3">
-          <span>
-            <span className="mr-1 inline-block h-0.5 w-4 bg-tint align-middle" />
-            Planned
-          </span>
-          <span>
-            <span className="mr-1 inline-block h-0.5 w-4 bg-foreground align-middle" />
-            Flown
-          </span>
-        </span>
-      </div>
+      <AltitudeLegend
+        high={high}
+        keys={[
+          { colour: "bg-tint", label: "Planned" },
+          { colour: "bg-foreground", label: "Flown" },
+        ]}
+      />
       <svg
         viewBox="0 0 300 100"
         preserveAspectRatio="none"

@@ -3,6 +3,12 @@
 import { cn } from "cn";
 import { Slider as SliderPrimitive } from "@base-ui/react/slider";
 
+/** A thumb's 44-point reach round its 16, a pseudo-element's, so the thumb
+ *  is not grown to be caught by a finger (the scrubbers'). Not the default:
+ *  the dry run's, the altitude wheel's and the plate's sliders are laid out
+ *  without it. */
+export const THUMB_HIT = "relative after:absolute after:-inset-3.5 after:content-['']";
+
 function Slider({
   className,
   defaultValue,

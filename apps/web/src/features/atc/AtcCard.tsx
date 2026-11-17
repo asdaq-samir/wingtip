@@ -1,7 +1,7 @@
 import { Check, CircleAlert, Radio } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
-import { GLASS } from "../../lib/mapChrome";
+import { CAPSULE_HIT, GLASS } from "../../lib/mapChrome";
 import { Button } from "../../components/ui/button";
 import { useAnnounce } from "../../lib/announce";
 import { TEXT } from "../../lib/text";
@@ -11,7 +11,7 @@ import { ACTION_LABEL, itemWords, type ItemAction } from "./atcWords";
 
 /** A chip's 32 points made 44 to a finger without growing (the app's
  *  rule): a pseudo-element round it, the rows gap-2 so the areas meet. */
-const CHIP = "relative shrink-0 rounded-full text-tint after:absolute after:-inset-1.5 after:content-['']";
+const CHIP = `${CAPSULE_HIT} shrink-0 text-tint`;
 
 /** The readback's lines: a tick where it matched, else each item missed
  *  or said differently, those AIM 4-4-7 b asks be read back first. */

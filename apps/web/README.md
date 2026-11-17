@@ -37,7 +37,7 @@ component (`MapPage`) in two modes:
   pilot console.
 
 Both pages are one `MapPage` component (`features/shell/MapPage.tsx`)
-around a different `WorkspacePieces` (`features/shell/workspace.ts`):
+around a different `WorkspacePieces` (`lib/workspace.ts`):
 the workspace owns its own data and hands back a map, a sidebar, a
 console and a submit action; the page owns the shell around them — the
 header, the sidebar panel, the console sheet — so the two pages cannot
@@ -217,7 +217,7 @@ src/
     problems.ts, text.ts, tokens.ts, geo.ts, storage.ts, …   The rest every feature leans on
   features/                One folder per feature; a file used by one feature lives in it, not in lib/;
                            another feature or a shared component reaches it only through its index.ts
-    shell/MapPage.tsx, workspace.ts  The shell both pages mount into, and the contract a workspace hands it;
+    shell/MapPage.tsx  The shell both pages mount into (the contract a workspace hands it is lib/workspace.ts);
                                       the page's start (dynamicType, freshLoad, storageRename) that main.tsx runs
     plan/PlanWorkspace.tsx           The pilot's workspace: hooks/usePlan.ts (state), components/: RouteMap,
                                       BuildNotice, AltitudeReasoning, navlog/, briefing/, procedures/
@@ -249,7 +249,10 @@ layers`): `lib/` and `hooks/` import neither `components/` nor
 `features/`; `components/` import a feature only through its `index.ts`;
 a feature imports another only through its `index.ts`; `main.tsx`, which
 wires them, may name any. Every way a module is named counts: `import`,
-`export ... from`, `import()`, a type-only import.
+`export ... from`, `import()`, a type-only import. No file reaches itself
+through its imports (`no-circular`), a type-only import included; a lazy
+chunk's `import()` back to what loads it is how a chunk is split and does
+not count, nor does a cycle through the popups' loader (`popupsChunk`).
 
 ## Architecture
 

@@ -3,10 +3,12 @@ import { cn } from "cn";
 import { PanelSize, type PanelState } from "../../lib/mapChrome";
 import TabKept from "../TabKept";
 import { AT_PILL, HOLD_AT_EDGE, PILL_BODY, RISEN_FACE } from "./insets";
-import { SheetPage, type SheetPages } from "./SheetPages";
+import { SheetPage } from "./SheetPages";
+import type { SheetPages } from "../../lib/sheetPages";
 
 /** The first row's room under the grabber: ten points, the grabber's bar
  *  in it four from the edge. */
+import { PointerTapDiv } from "./PointerTapDiv";
 const ROW_PAD = "pt-2.5";
 /** The one search's row, its 46-point field (OneSearchField) sixteen in
  *  from either side as everything in the sheet is (the sheet audit's
@@ -209,8 +211,7 @@ export function SheetParts(p: PartsProps) {
       style={{ "--sheet-head": head, scrollPaddingTop: head } as CSSProperties}
       className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible", p.onPhone && fromBottom && cut && CUT_BOTTOM)}
     >
-      {/* eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to raise the sheet, and the row's own buttons stay focusable */}
-      <div
+      <PointerTapDiv
         data-head-band=""
         style={vars}
         // Risen from a pill that is a row of it (FPL's figures, held at the
@@ -222,9 +223,8 @@ export function SheetParts(p: PartsProps) {
         className={cn("sticky top-0 flex shrink-0 flex-col", !atPill ? "frost-head z-20" : rises && RISEN_BAND)}
       >
         {band}
-      </div>
-      {/* eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to raise the sheet, and the card's own buttons stay focusable */}
-      <div
+      </PointerTapDiv>
+      <PointerTapDiv
         className={cn(
           "flex min-h-0 flex-1 flex-col",
           size !== "peek" && !fromBottom && "pb-4",
@@ -244,15 +244,14 @@ export function SheetParts(p: PartsProps) {
             drawn in it (SheetCard, the Brief, Settings) and opens while it
             is in sight (lib/shown). */}
         <TabKept away={false}>{body}</TabKept>
-      </div>
+      </PointerTapDiv>
     </div>
   );
 
   // The route's figures pinned at the sheet's foot. Paged, FPL's own, at
   // its page's foot, put away with it while Search is up.
   const foot = !!p.foot && (footShown || cardsUp) && (
-    // eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to open the sheet, and the figures' own buttons stay focusable
-    <div
+    <PointerTapDiv
       data-testid="panel-foot"
       className={cn(
         // One box at the pill and all the way up, the figures centred
@@ -287,7 +286,7 @@ export function SheetParts(p: PartsProps) {
       onClick={pillFoot ? p.onFootTap : undefined}
     >
       {p.foot}
-    </div>
+    </PointerTapDiv>
   );
 
   let content: ReactNode;

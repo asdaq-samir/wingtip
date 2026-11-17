@@ -1,13 +1,12 @@
 import { Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Eye, Radio } from "lucide-react";
-import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../components/ui/collapsible";
 import { RowBadge } from "../../../components/RowBadge";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
-import { atisRows, datisRemarks, glanceWords, heardAny, type AtisReading } from "../lib/atis";
+import { AtisRawFold, AtisReadingRows } from "./AtisRows";
+import { datisRemarks, glanceWords, heardAny, type AtisReading } from "../lib/atis";
 import { datisQuery, rvrQuery } from "../../../lib/liveReports";
 import { usePreferences } from "../../../lib/preferences";
 import { rvrRows } from "../lib/rvrRows";
@@ -38,18 +37,7 @@ export function DigitalAtisRows({ ident }: { ident: string }) {
         // remarks where it has any.
         const foot = (
           <>
-            <Collapsible>
-              <CollapsibleTrigger render={<ListRow title="As sent" chevron data-testid="place-datis-sent" />} />
-              <CollapsibleContent>
-                <ListRow
-                  title={
-                    <span className={cn("font-mono break-words text-muted-foreground", TEXT.detail)} data-testid="place-datis-raw">
-                      {b.text}
-                    </span>
-                  }
-                />
-              </CollapsibleContent>
-            </Collapsible>
+            <AtisRawFold title="As sent" text={b.text} testId="place-datis-sent" rawTestId="place-datis-raw" />
             <ListRow muted title={<span className={TEXT.note}>FAA D-ATIS</span>} />
           </>
         );
@@ -67,15 +55,7 @@ export function DigitalAtisRows({ ident }: { ident: string }) {
                   data-testid="place-datis-glance"
                 />
               )}
-              {heardAny(reading) &&
-                atisRows(reading, { remarks: false }).map((row, k) => (
-                  <ListRow
-                    key={`${row.label}-${k}`}
-                    title={row.label}
-                    value={<span className="text-foreground">{row.value}</span>}
-                    data-testid="place-datis-row"
-                  />
-                ))}
+              <AtisReadingRows reading={reading} rowTestId="place-datis-row" remarks={false} />
               {!remarks.length && foot}
             </ListGroup>
             {remarks.length > 0 && (

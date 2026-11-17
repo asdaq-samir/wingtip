@@ -19,15 +19,9 @@ import DepartPicker from "../navlog/DepartPicker";
 import ProcedureMenu from "../ProcedureMenu";
 import { FuelGauge } from "../FuelGauge";
 import { groundMinAt, type NavLogRow } from "../navlog/rows";
-import {
-  DAY_MIN,
-  toggleField,
-  useOpenRunwayLines,
-  type ProcedureAirport,
-  type ProcedureKind,
-  type ProceduresRouteModel,
-} from "../../hooks/useProceduresRoute";
-import { PatternChips, TRAY_HEAD, type Landing } from "./PatternChips";
+import { DAY_MIN, toggleField, useOpenRunwayLines, type ProceduresRouteModel } from "../../hooks/useProceduresRoute";
+import type { Landing, ProcedureAirport, ProcedureKind } from "../../hooks/procedureTypes";
+import { PatternChips, TRAY_HEAD } from "./PatternChips";
 import { KIND_WORD, patternNote } from "./procedureWords";
 import { pointEnd } from "./pointEnd";
 

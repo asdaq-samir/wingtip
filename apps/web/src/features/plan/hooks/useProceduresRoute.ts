@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 import { useQueries } from "@tanstack/react-query";
 import { useWindPicks } from "../lib/windPicks";
-import type { AircraftProfile, Detour, ProcedureList, ProcedureSummary, Runway } from "../../../lib/api/types";
+import type { AircraftProfile, Detour, ProcedureList, ProcedureSummary } from "../../../lib/api/types";
 import { plateQuery, proceduresQuery } from "../../../lib/queryClient";
 import { approachRunway, sameField, type BranchFix, type PickedProcedure } from "../../../lib/procedures";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
@@ -14,10 +14,9 @@ import { cycleDate } from "../components/procedures/procedureWords";
 import { useRouteSheets } from "./useRouteSheets";
 import { useFieldWinds } from "./useFieldWinds";
 import { tanksAt } from "./routeTanks";
-import type { Landing } from "../components/procedures/PatternChips";
+import type { Landing, ProcedureAirport, ProcedureKind } from "./procedureTypes";
 import type { RouteLineChoices } from "../components/procedures/RouteLine";
 
-export type ProcedureKind = ProcedureSummary["kind"];
 type Kind = ProcedureKind;
 
 /** The FAA's chart codes in a field's d-TPP for each kind (its card's
@@ -52,15 +51,6 @@ interface RouteListEdit {
   cards?: boolean;
   /** A point changed, from its menu's Change: the route's box opened. */
   onChange?: () => void;
-}
-
-export interface ProcedureAirport {
-  ident: string;
-  role: "Departure" | "Stop" | "Destination";
-  runways: Runway[] | null;
-  patternAltitudeFt: number | null;
-  /** The field's elevation, for its runways' distances (runwayFit). */
-  elevationFt: number | null;
 }
 
 /** What a runway's fit is worked from (features/plan/components/procedures/runwayFit): the airplane's

@@ -3,7 +3,7 @@ import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { PlaybackButton, PlaybackToolbar, PlayToggle } from "../../components/PlaybackBar";
 import { keepSliderKeys } from "../../components/playbackKeys";
-import { Slider } from "../../components/ui/slider";
+import { Slider, THUMB_HIT } from "../../components/ui/slider";
 import { GLASS } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
 import { frameTime } from "./loopFrames";
@@ -94,7 +94,7 @@ export function LoopBar() {
                 thumb={{
                   "aria-label": `${name} frame`,
                   "aria-valuetext": time ? `${time.zulu}, ${time.age}` : undefined,
-                  className: "relative after:absolute after:-inset-3.5 after:content-['']",
+                  className: THUMB_HIT,
                 }}
                 data-testid="weather-loop-scrubber"
               />
@@ -124,11 +124,10 @@ export function LoopBar() {
       <PlaybackButton
         render={
           <Button
-            variant="ghost"
+            variant="plain"
             size="inline"
             type="button"
             className={cn(
-              "justify-start text-inherit hover:bg-transparent",
               "relative h-9 shrink-0 rounded-full px-2.5 font-semibold text-tint outline-none after:absolute after:-inset-1 after:content-[''] hover:bg-foreground/8 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
               TEXT.detail,
             )}

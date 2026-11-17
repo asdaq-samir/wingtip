@@ -1,6 +1,6 @@
 import { Mic } from "lucide-react";
 import { cn } from "cn";
-import { GLASS } from "../../lib/mapChrome";
+import { CAPSULE_HIT, GLASS } from "../../lib/mapChrome";
 import { Button } from "../../components/ui/button";
 import { TEXT } from "../../lib/text";
 import AtcCard from "./AtcCard";
@@ -52,7 +52,7 @@ export default function AtcCopilot() {
         <Button
           size="sm"
           variant="secondary"
-          className="relative shrink-0 rounded-full text-tint after:absolute after:-inset-1.5 after:content-['']"
+          className={`${CAPSULE_HIT} shrink-0 text-tint`}
           onClick={atc.listen}
           data-testid="atc-listen-start"
         >

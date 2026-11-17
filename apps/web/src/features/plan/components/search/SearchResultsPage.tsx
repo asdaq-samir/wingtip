@@ -56,12 +56,11 @@ function ResultRow({ field, onOpen }: { field: NearestAirport; onOpen: () => voi
   const forecastAt = field.forecast ? clockTime(new Date(field.forecast.at * 1000)) : null;
   return (
     <Button
-      variant="ghost"
+      variant="plain"
       size="inline"
       type="button"
       onClick={onOpen}
       className={cn(
-        "justify-start text-inherit hover:bg-transparent",
         "flex w-full items-center gap-3 px-4 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
       )}
       data-testid="search-result"

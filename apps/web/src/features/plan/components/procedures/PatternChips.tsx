@@ -8,7 +8,8 @@ import type { Runway } from "../../../../lib/api/types";
 import { runwayNumber, type RunwayEnd, type WindPick } from "../../lib/pattern";
 import { trafficPattern } from "../../../../lib/trafficPattern";
 import type { EndFit } from "./runwayFit";
-import { useOpenRunwayLines, type ProcedureAirport } from "../../hooks/useProceduresRoute";
+import { useOpenRunwayLines } from "../../hooks/useProceduresRoute";
+import type { Landing, ProcedureAirport } from "../../hooks/procedureTypes";
 import { CHIP } from "../routeListStyle";
 import { centre } from "./centreChip";
 
@@ -159,16 +160,6 @@ const FOLDED_ARROW = <ChevronRight className="-mr-1 size-3.5 shrink-0" strokeWid
  * The side its traffic is flown on and the pattern's altitude are said
  * at the head's end for the runway picked.
  */
-/** How the route lands at a field it flies an approach to: the
- *  approach's runway (none for one circling only), whether its plate
- *  publishes circling minimums (undefined until the plate is in), and the
- *  approach as the route's box names it. */
-export interface Landing {
-  runway: string | null;
-  circling: boolean | undefined;
-  name: string;
-}
-
 export function PatternChips({
   airport: a,
   wind,
