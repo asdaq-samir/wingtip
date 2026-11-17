@@ -4,7 +4,6 @@ import { fieldListParams, fieldListsOf, renamedFieldLists } from "../lib/fieldLi
 import { positionIdent, stopsOf } from "../../../lib/identSchema";
 import { proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
 import { patternsOf } from "../../../lib/trafficPattern";
-import type { SuggestedStop } from "../components/StopServices";
 
 /**
  * The planner's address read and written, with nothing of React in it:
@@ -15,6 +14,18 @@ import type { SuggestedStop } from "../components/StopServices";
  * (planAddress.test.ts). Each key's parser is lib/address's; a change
  * returned here is the keys it names, null taking one out.
  */
+
+/** A stop the planner suggests, as the airport's card opened on it shows
+ *  it (PlaceCard's `stop`): why, from where, and what the airplane lands
+ *  there with. */
+export type SuggestedStop = {
+  reason: "fuel" | "break";
+  /** The field the flight to it leaves, and its minutes from there. */
+  from: string;
+  minutes: number;
+  landsWithGal: number;
+  addedNm: number;
+};
 
 /** The address's keys that name a route or a pick on it, each read by the
  *  shared engine (lib/identSchema, lib/procedures, lib/routeHolds). */

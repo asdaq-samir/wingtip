@@ -15,6 +15,9 @@ import { servicesQuery } from "../../../lib/queryClient";
 import { BADGE } from "../../../lib/rowBadges";
 import { TEXT } from "../../../lib/text";
 import { duration, wholeNm } from "../../../lib/format";
+import type { SuggestedStop } from "../hooks/planAddress";
+
+export type { SuggestedStop };
 
 const GLANCE_ICONS: Record<GlanceItem["key"], ReactNode> = { fuel: <Fuel />, food: <Utensils />, bed: <BedDouble />, car: <CarFront /> };
 
@@ -294,18 +297,6 @@ export function StopServices({
     </div>
   );
 }
-
-/** A stop the planner suggests, as the airport's card opened on it shows
- *  it (PlaceCard's `stop`): why, from where, and what the airplane lands
- *  there with. */
-export type SuggestedStop = {
-  reason: "fuel" | "break";
-  /** The field the flight to it leaves, and its minutes from there. */
-  from: string;
-  minutes: number;
-  landsWithGal: number;
-  addedNm: number;
-};
 
 /** The suggested stop's figures, at the top of its airport's card, at the
  *  owner's pick of the canvas's stop card: when it is reached, the fuel
