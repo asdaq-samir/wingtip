@@ -7,7 +7,6 @@ import { PointFigures, PointMenu } from "../route/lazy";
 import { legOf, type NavLogRow } from "../plan";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 import { PointGrip } from "./RouteGrid";
-import { TimeOrPick } from "./TimeOrPick";
 
 // The end of a point's row, at the owner's picks ("keep the format of
 // altitude (elev/published/cruising) and eta to the right side of each
@@ -63,17 +62,18 @@ export function pointEnd(
   // the field to itself: a local flight, not a direct (the audit's).
   const homeward = routePoints.length > 1 && sameField(routePoints[0]!, ident) && !positioned;
   const kind = own !== null ? "set" : at.waypoint ? "cruise" : "elev";
-  // The field the route ends at: its time the one asked for (TimeOrPick);
-  // the points between say none with no airplane, the departure its own.
-  const arrival = at.to && !at.waypoint && !at.stop;
+  // With no airplane picked every time is a dash: the one ask for an
+  // airplane is the N-number field and the strip's dashes, where the
+  // arrival's row had a "Pick an airplane" of its own (the UI audit's C3,
+  // the owner's word 2026-11-17).
   return {
     direct,
     figures: (
-      <PointFigures time={arrival ? <TimeOrPick time={at.time} /> : at.time} altitude={shown === null ? null : altFt(shown)} kind={kind} />
+      <PointFigures time={at.time} altitude={shown === null ? null : altFt(shown)} kind={kind} />
     ),
     // The two apart, for an airport's block: the time on its ident's
     // line, the elevation on its wind's.
-    time: <PointFigures time={arrival ? <TimeOrPick time={at.time} /> : at.time} altitude={null} kind={kind} />,
+    time: <PointFigures time={at.time} altitude={null} kind={kind} />,
     elevation: <PointFigures time={null} altitude={shown === null ? null : altFt(shown)} kind={kind} />,
     // Behind the point's mark (`face`), at the owner's ask ("Use the
     // airport icon as the more button instead of having one to the right").

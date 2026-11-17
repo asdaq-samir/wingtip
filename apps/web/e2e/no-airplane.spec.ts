@@ -38,17 +38,9 @@ test("no airplane picked: the strip is To and Dist, the nav log its courses and 
   await asks.first().click();
   await expect(page.getByTestId("aircraft-input")).toBeFocused();
   await page.getByTestId("aircraft-input").blur();
-  // The arrival's time asks for the airplane, not a bare dash (the owner, 2026-11-15).
-  await expect(sideDrawer(page).getByTestId("point-pick-airplane")).toHaveText("Pick an airplane");
-  // Its tap 44 points tall round its line, the words not grown (the UI audit's T1).
-  const box = (await sideDrawer(page).getByTestId("point-pick-airplane").first().boundingBox())!;
-  for (const dy of [-21, 21])
-    expect(
-      await page.evaluate(
-        ([x, y]) => !!document.elementFromPoint(x!, y!)?.closest('[data-testid="point-pick-airplane"]'),
-        [box.x + box.width / 2, box.y + box.height / 2 + dy],
-      ),
-    ).toBe(true);
+  // The arrival's time a dash like the rest: the airplane is asked for in
+  // the N-number field alone (the UI audit's C3, the owner, 2026-11-17).
+  await expect(sideDrawer(page).getByTestId("point-pick-airplane")).toHaveCount(0);
   await openNavLog(page);
   // A desktop's table (docs/design/web.md §4): only the columns no
   // airplane changes -- no heading, groundspeed, time or fuel.

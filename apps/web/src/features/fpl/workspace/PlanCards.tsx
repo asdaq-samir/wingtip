@@ -65,7 +65,7 @@ export default function PlanCards({
     stopsRoute,
     stopsScope,
   } = vm.fpl;
-  const { dryRunning, goMissed, goMissedNow, stopDryRun } = vm.flight;
+  const { dryRunning, flying, goMissed, goMissedNow, stopDryRun } = vm.flight;
   const { briefLine, marks, profileCautions } = vm.brief;
   // Each card drawn from its first opening on, then kept (CardLayer).
   const navLogDrawn = useOpenedOnce(navLogShown);
@@ -137,8 +137,11 @@ export default function PlanCards({
                   Done flying -- at the foot of the card in sight, not left on
                   FPL's foot under it: the native pattern, as Apple Maps'
                   navigation card carries its arrival figures and End (the
-                  owner, 2026-11-12: "Just do it the native way"). */}
-            {profileShown && (
+                  owner, 2026-11-12: "Just do it the native way"). On the
+                  ground, planning, none: the strip is FPL's, under the card,
+                  and it said again what the line under the name and FPL say
+                  (the UI audit's L2, the owner's word 2026-11-17). */}
+            {profileShown && (dryRunning || flying) && (
               <div className="shrink-0 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                 <FlightFoot vm={vm} />
               </div>

@@ -169,7 +169,7 @@ Compose. Nothing here is built by hand where a stock part does it.
     Saved, Favorites, a link), and a card put away leaves it where it is. Cards keep their own
     opening sizes (2, and the Detents row below): each card's drawer is
     its own, the sheet under it untouched.
-12. **A flight's figures and its way out sit at the foot of the card in sight**, never on a sheet under it: the dry run's figures and Done flying are the Profile card's foot while it is up, the native pattern of Apple Maps' navigation card with its arrival figures and End (the owner, 2026-11-12: "Just do it the native way").
+12. **A flight's figures and its way out sit at the foot of the card in sight**, never on a sheet under it: the dry run's figures and Done flying are the Profile card's foot while it is up, the native pattern of Apple Maps' navigation card with its arrival figures and End (the owner, 2026-11-12: "Just do it the native way"). On the ground, planning, the Profile has no foot strip: FPL's strip under it says the same (the UI audit's L2, 2026-11-17).
 13. **Every thing's card is laid out alike**, the native pattern of Apple Maps' place card: its name, the short line under it (an airport's town, an airplane's type), then its row of action tiles (`CardAction`), then its content (the owner, 2026-11-12: "Just do it the native way").
 
 | | Web | iPhone (Apple Maps' way) | Android (Google Maps' way) |
@@ -348,9 +348,10 @@ toggle beside it (on the phones still the account button, until the owner's word
 on the web over the map under the 3D, opens You, who the pilot is and what is
 theirs, with Settings one of its rows (§8), where Setup was. The approved canvas: <https://claude.ai/artifact/XmbNqJTLRwwzebouLbXzCV>.
 
-- **Nothing typed:** the current flight as a card at the top (route,
-  distance, ETE, fuel, altitude, airplane; a tap goes to the plan), then
-  Favorites (airports and airplanes), Recents and Nearest.
+- **Nothing typed:** Nearest and Find Nearby, then Favorites (airports
+  and airplanes) and Recents. The current flight is the FPL page's, one
+  toggle away, not a card here (the owner, 2026-11-11: "We can remove plan
+  button and saved from search"; kept so 2026-11-17, less cluttered).
 - **Typing:** one list in groups: Airports; Waypoints and Navaids;
   Airplanes (your own, an N-number from the FAA registry, a type; an
   N-number's registry row shows its type at once and, under it, whether

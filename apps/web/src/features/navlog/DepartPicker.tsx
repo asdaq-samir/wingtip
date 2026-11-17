@@ -64,7 +64,7 @@ function shortWhen(date: Date): string {
 /**
  * When the flight leaves: one compact field, "Now" or "Sat 18:00", that
  * opens shadcn's own date picker -- the calendar in a popover, a sheet on
- * a phone -- with the time under it and Leave Now to go back to about
+ * a phone -- with the time over it and Now to go back to about
  * now, instead of the browser's `datetime-local` control, which every
  * browser draws its own way. The day and the time are one value to the
  * caller, an ISO instant: a new day keeps the time (or takes the next
@@ -129,19 +129,64 @@ export default function DepartPicker({
           </Button>
         )}
       </ResponsivePopoverTrigger>
-      {/* A sheet from the bottom on a phone, the calendar centred in it.
-          Its ✕ in its head as every card's (rules.md §1), Done at the
-          foot as well: at half the foot is under the calendar, out of
-          sight, and the card had no way out in view; the time picked said
-          under the name, so the choice is in view at half too (the UI
-          audit's B7, 2026-11-17). */}
+      {/* A sheet from the bottom on a phone. Done at the top, as an iOS
+          sheet puts it, and Now at its start where there is a "now" to go
+          back to; the time above the calendar, so at half both the way
+          out and the time picked are in view, and the calendar may run on
+          under the fold (the UI audit's B7, the owner's word 2026-11-17). */}
       <ResponsivePopoverContent
         title={label}
         description={date ? `Leaving ${shortWhen(date)}` : "Leaving now"}
         className="w-auto p-0"
         align="start"
+        closeButton={false}
+        leading={
+          leavesNow ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-tint"
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+              }}
+              disabled={!date}
+              data-testid="depart-clear"
+            >
+              Now
+            </Button>
+          ) : undefined
+        }
+        action={
+          <Button type="button" size="sm" onClick={() => setOpen(false)} data-testid="depart-done">
+            Done
+          </Button>
+        }
       >
         <div className="flex flex-col items-center gap-3 pb-3" data-testid="depart-picker">
+          {/* The time once a day is picked -- picking one gives it the
+              next whole hour: React Aria's time field, hours and minutes
+              on the 24-hour clock, 16px below md so a phone does not zoom
+              on it, its 44 a band round it (ui/date-field). */}
+          {date && (
+            <Suspense fallback={<div className="h-8 w-28" />}>
+              <TimeField
+                value={time}
+                onChange={(hhmm) => {
+                  if (hhmm) onChange(instantAt(date, hhmm));
+                }}
+                aria-label={`${label} time`}
+                className="h-8 w-28 bg-background"
+                data-testid="depart-time"
+              />
+            </Suspense>
+          )}
+          {held && earliest != null && latest != null && (
+            <p className={cn("px-3 text-caution-ink", TEXT.note)} role="status" data-testid="depart-range">
+              From landing, {clockTime(new Date(earliest))}, to a day after.
+            </p>
+          )}
           {/* Sized like the grid it stands in for, so the popover does
               not jump once it arrives. */}
           <Suspense fallback={<div className="h-[21rem] w-[17rem]" />}>
@@ -154,50 +199,6 @@ export default function DepartPicker({
               onChange={(day) => onChange(instantAt(new Date(`${day}T00:00`), time || nextHour()))}
             />
           </Suspense>
-          {/* The time once a day is picked -- picking one gives it the
-              next whole hour -- and the way back to about now: React
-              Aria's time field, hours and minutes on the 24-hour clock,
-              16px below md so a phone does not zoom on it, its 44 a band
-              round it (ui/date-field). */}
-          <div className="flex items-center gap-2 px-3">
-            {date && (
-              <Suspense fallback={<div className="h-8 w-28" />}>
-                <TimeField
-                  value={time}
-                  onChange={(hhmm) => {
-                    if (hhmm) onChange(instantAt(date, hhmm));
-                  }}
-                  aria-label={`${label} time`}
-                  className="h-8 w-28 bg-background"
-                  data-testid="depart-time"
-                />
-              </Suspense>
-            )}
-            {leavesNow && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-tint"
-                onClick={() => {
-                  onChange("");
-                  setOpen(false);
-                }}
-                disabled={!date}
-                data-testid="depart-clear"
-              >
-                Leave now
-              </Button>
-            )}
-            <Button type="button" size="sm" onClick={() => setOpen(false)} data-testid="depart-done">
-              Done
-            </Button>
-          </div>
-          {held && earliest != null && latest != null && (
-            <p className={cn("px-3 text-caution-ink", TEXT.note)} role="status" data-testid="depart-range">
-              From landing, {clockTime(new Date(earliest))}, to a day after.
-            </p>
-          )}
         </div>
       </ResponsivePopoverContent>
     </ResponsivePopover>
