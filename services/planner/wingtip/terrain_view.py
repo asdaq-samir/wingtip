@@ -11,6 +11,7 @@ from pathlib import Path
 
 from . import elevation, faa_data, terrain, terrain_fine
 from .atomic import atomic_path
+from .engine import ask as engine
 
 #: The finest terrain tile served: one finer than the planner's own
 #: (TERRAIN_TILE_ZOOM, about 38 m a pixel), the zoom-13 tiles built ahead
@@ -19,10 +20,10 @@ from .atomic import atomic_path
 #: they are drawn from. The map draws closer in from them.
 MAX_ZOOM = terrain_fine.FINE_ZOOM
 
-#: The obstacles' least height by default: 14 CFR 77.9(a)'s 200 ft above
-#: the ground, past which construction is noticed to the FAA, and
-#: faa_data.load_obstacles' own threshold for an obstacle that counts.
-OBSTACLE_MIN_AGL_FT = 200
+#: The obstacles' least height by default, ft AGL: the engine's
+#: ground_figures (obstacle_shown_agl_ft, the height past which
+#: construction is noticed to the FAA).
+OBSTACLE_MIN_AGL_FT = int(engine("ground_figures")["obstacle_shown_agl_ft"])
 #: The widest box asked at once, in degrees each way: a tilted map's view
 #: close in (the map asks only from zoom 9 in), not the country.
 MAX_BOX_DEG = 2.0
@@ -64,7 +65,7 @@ def tile_png(z: int, x: int, y: int) -> bytes:
 def _cleaned_dir() -> Path | None:
     """Where the cleaned tiles are kept, written once each rather than
     decoded, cleaned and encoded again at every ask: a folder named by
-    wingtip.elevation's own source, so a change to how a tile is cleaned
+    wingtip.elevation's own source and its sea floor's figure, so a change to how a tile is cleaned
     (terrarium_m, _filled, terrarium_rgb) is a new folder and never a tile
     cleaned the old way. None where the source cannot be read: no copies
     kept then."""
@@ -72,6 +73,8 @@ def _cleaned_dir() -> Path | None:
         source = inspect.getsource(elevation)
     except (OSError, TypeError):
         return None
+    # And the sea floor's figure the cleaning takes from the engine.
+    source += repr(elevation.LOWEST_GROUND_M)
     return elevation.TERRAIN_TILE_DIR.parent / "terrain-tiles-cleaned" / hashlib.sha256(source.encode()).hexdigest()[:12]
 
 

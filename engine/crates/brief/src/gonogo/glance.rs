@@ -6,7 +6,7 @@
 //! with why it matters and the rule it rests on, and every other finding
 //! folded into one row. The findings and their figures are the Go /
 //! No-Go's (brief::assemble); this words them for a look. The web wrote
-//! these words itself (features/plan/lib/glance); they state the rules,
+//! these words itself (features/brief/glance); they state the rules,
 //! so they are here once for every app; `glance_calls` reads and
 //! writes them by name.
 

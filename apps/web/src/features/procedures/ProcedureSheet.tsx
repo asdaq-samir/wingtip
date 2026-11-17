@@ -13,7 +13,7 @@ import { TEXT } from "../../lib/text";
 import { altFt, feet, nm } from "../../lib/format";
 import { faaWords } from "../../lib/advisories";
 import { procedureQuery } from "../../lib/queryClient";
-import { Chips, NONE } from "./PatternChips";
+import { Chips, NONE } from "./RunwayChips";
 import { CHIP } from "./routeListStyle";
 import { KIND_TITLE } from "./procedureWords";
 import QueryState from "../../components/QueryState";

@@ -1013,6 +1013,15 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/pilot/experience`.
     /// - Remark: Generated from `#/paths//api/pilot/experience/post(experience)`.
     func experience(_ input: Operations.Experience.Input) async throws -> Operations.Experience.Output
+    /// Instructor Records Since
+    ///
+    /// The first day an instructor's page lists what they signed: 3 years
+    /// before `today`, as 14 CFR 61.189(c) has them keep the records (the
+    /// engine's instructor_records_since).
+    ///
+    /// - Remark: HTTP `GET /api/pilot/instructor-records-since`.
+    /// - Remark: Generated from `#/paths//api/pilot/instructor-records-since/get(instructor_records_since)`.
+    func instructorRecordsSince(_ input: Operations.InstructorRecordsSince.Input) async throws -> Operations.InstructorRecordsSince.Output
     /// Places Search
     ///
     /// Where a place typed is, for Nearest to find the fields near it
@@ -3138,6 +3147,23 @@ extension APIProtocol {
         try await experience(Operations.Experience.Input(
             headers: headers,
             body: body
+        ))
+    }
+    /// Instructor Records Since
+    ///
+    /// The first day an instructor's page lists what they signed: 3 years
+    /// before `today`, as 14 CFR 61.189(c) has them keep the records (the
+    /// engine's instructor_records_since).
+    ///
+    /// - Remark: HTTP `GET /api/pilot/instructor-records-since`.
+    /// - Remark: Generated from `#/paths//api/pilot/instructor-records-since/get(instructor_records_since)`.
+    public func instructorRecordsSince(
+        query: Operations.InstructorRecordsSince.Input.Query,
+        headers: Operations.InstructorRecordsSince.Input.Headers = .init()
+    ) async throws -> Operations.InstructorRecordsSince.Output {
+        try await instructorRecordsSince(Operations.InstructorRecordsSince.Input(
+            query: query,
+            headers: headers
         ))
     }
     /// Places Search

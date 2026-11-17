@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-from .test_airports import DULUTH, stub_place
+from .airport_world import DULUTH, stub_place
 
 client = TestClient(app)
 

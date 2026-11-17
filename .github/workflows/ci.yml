@@ -768,7 +768,7 @@ jobs:
         id: cycle
         if: matrix.shard == 1
         env:
-          READER: ${{ hashFiles('services/planner/wingtip/chartvision.py', 'services/planner/app/detection.py') }}
+          READER: ${{ hashFiles('services/planner/wingtip/chartvision.py', 'services/planner/wingtip/chartpalette.py', 'services/planner/wingtip/chartmosaic.py', 'services/planner/wingtip/chartlines.py', 'services/planner/wingtip/chart_line_mask.py', 'services/planner/app/detection.py') }}
           RESTORED: ${{ steps.charts.outputs.cache-matched-key || 'no chart cache' }}
         run: |
           cycle=$(curl -sf http://localhost:8084/api/status | python3 -c 'import json, sys; print(json.load(sys.stdin)["charts"]["cycle"])')

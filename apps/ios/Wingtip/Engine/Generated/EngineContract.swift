@@ -2545,6 +2545,23 @@ enum EngineContract {
         var candidates: [[Int]]?
     }
 
+    struct CongestedReachAnswer: Codable, Equatable, Sendable {
+        /// The search's reach, ft.
+        var searchFt: Double
+        /// The reach in degrees, never short of search_ft in any direction.
+        var reachDeg: Double
+
+        enum CodingKeys: String, CodingKey {
+            case searchFt = "search_ft"
+            case reachDeg = "reach_deg"
+        }
+    }
+
+    struct CongestedReachInput: Codable, Equatable, Sendable {
+        /// The farthest latitude of the points asked, degrees (either sign).
+        var lat: Double
+    }
+
     /// The best alternative: best_fields' first diversion pick that the copilot's weather and fuel checks find good.
     struct CopilotAlternative: Codable, Equatable, Sendable {
         var ident: String
@@ -2829,6 +2846,16 @@ enum EngineContract {
         var effective: String?
         /// YYYY-MM-DD: the UTC day it is used on.
         var on: String
+    }
+
+    struct DatisEndsAnswer: Codable, Equatable, Sendable {
+        /// When it is no longer the airport's, Unix seconds.
+        var ends: Double
+    }
+
+    struct DatisEndsInput: Codable, Equatable, Sendable {
+        /// When it was heard, Unix seconds.
+        var heard: Double
     }
 
     struct DatisRemarksInput: Codable, Equatable, Sendable {
@@ -5793,6 +5820,23 @@ enum EngineContract {
         var lon2: [Double]
     }
 
+    struct GroundFiguresAnswer: Codable, Equatable, Sendable {
+        var lowestGroundFt: Double
+        var obstacleShownAglFt: Double
+        var profileObstacleNm: Double
+        var fineTerrainRadiusNm: Double
+
+        enum CodingKeys: String, CodingKey {
+            case lowestGroundFt = "lowest_ground_ft"
+            case obstacleShownAglFt = "obstacle_shown_agl_ft"
+            case profileObstacleNm = "profile_obstacle_nm"
+            case fineTerrainRadiusNm = "fine_terrain_radius_nm"
+        }
+    }
+
+    struct GroundFiguresInput: Codable, Equatable, Sendable {
+    }
+
     struct GroundspeedKtInput: Codable, Equatable, Sendable {
         var trueCourseDeg: Double
         var windFromDeg: Double
@@ -6786,6 +6830,11 @@ enum EngineContract {
         }
     }
 
+    struct InstructorRecordsSinceInput: Codable, Equatable, Sendable {
+        /// YYYY-MM-DD, UTC: the engine has no clock.
+        var today: String
+    }
+
     struct IsaTempCInput: Codable, Equatable, Sendable {
         var altitudeFt: Double
 
@@ -6976,6 +7025,24 @@ enum EngineContract {
         var lighting: [String]
         /// Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
         var beacon: [String]?
+    }
+
+    struct LiveFeedRefreshAnswer: Codable, Equatable, Sendable {
+        /// How long an answer is fresh, seconds.
+        var freshS: Double
+        /// How often a screen showing it asks again, seconds; null where it is not polled.
+        var pollS: Double?
+        var source: String
+
+        enum CodingKeys: String, CodingKey {
+            case freshS = "fresh_s"
+            case pollS = "poll_s"
+            case source
+        }
+    }
+
+    struct LiveFeedRefreshInput: Codable, Equatable, Sendable {
+        var feed: String
     }
 
     struct LogbookCsvReadAnswer: Codable, Equatable, Sendable {
@@ -9440,6 +9507,32 @@ enum EngineContract {
         }
     }
 
+    struct ProcedureLegNmInput: Codable, Equatable, Sendable {
+        var path: String
+        var distanceNm: Double?
+        var altitudeFt: Double?
+        var knownFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case path
+            case distanceNm = "distance_nm"
+            case altitudeFt = "altitude_ft"
+            case knownFt = "known_ft"
+        }
+    }
+
+    struct ProcedureReversalInput: Codable, Equatable, Sendable {
+        var turnDeg: Double
+        var coded: Bool?
+        var firstFix: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case turnDeg = "turn_deg"
+            case coded
+            case firstFix = "first_fix"
+        }
+    }
+
     struct ProceduresReadAnswerItem: Codable, Equatable, Sendable {
         var part: String
         var pick: EngineContract.ProceduresReadAnswerItemPick?
@@ -10572,6 +10665,26 @@ enum EngineContract {
         }
     }
 
+    struct ReportNearAnswer: Codable, Equatable, Sendable {
+        var near: Bool
+        /// How near is near, statute miles.
+        var withinSm: Double
+
+        enum CodingKeys: String, CodingKey {
+            case near
+            case withinSm = "within_sm"
+        }
+    }
+
+    struct ReportNearInput: Codable, Equatable, Sendable {
+        /// The station's distance from the field, nm.
+        var distanceNm: Double
+
+        enum CodingKeys: String, CodingKey {
+            case distanceNm = "distance_nm"
+        }
+    }
+
     struct ReserveMinInput: Codable, Equatable, Sendable {
         var ifr: Bool?
         var night: Bool?
@@ -11006,6 +11119,32 @@ enum EngineContract {
         }
     }
 
+    struct RouteReadAnswer: Codable, Equatable, Sendable {
+        var points: [String]
+        /// The cruise's altitude, feet MSL; null where none was given or it is VFR's.
+        var cruiseFt: Double?
+        /// The cruise's true airspeed, knots, where given in knots.
+        var tasKt: Double?
+        var changes: [EngineContract.RouteReadAnswerChangesItem]
+
+        enum CodingKeys: String, CodingKey {
+            case points
+            case cruiseFt = "cruise_ft"
+            case tasKt = "tas_kt"
+            case changes
+        }
+    }
+
+    struct RouteReadAnswerChangesItem: Codable, Equatable, Sendable {
+        var at: String
+        var ft: Double
+    }
+
+    struct RouteReadInput: Codable, Equatable, Sendable {
+        /// The route as typed or pasted: "KPWK DCT OBK V100 KLAS".
+        var text: String
+    }
+
     struct RouteWayWarningInput: Codable, Equatable, Sendable {
         /// The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
         var kinds: [String]
@@ -11343,6 +11482,23 @@ enum EngineContract {
             case midpointFt = "midpoint_ft"
             case rolloutFt = "rollout_ft"
         }
+    }
+
+    struct RvrReadingsAnswer: Codable, Equatable, Sendable {
+        /// Each reading, in the order given.
+        var readings: [EngineContract.RvrReadingsAnswerReadingsItem]
+    }
+
+    struct RvrReadingsAnswerReadingsItem: Codable, Equatable, Sendable {
+        /// The reading, ft; null where the part reports none.
+        var ft: Int?
+        /// The system's most, 6,000 ft or more (AIM 7-1-13).
+        var more: Bool
+    }
+
+    struct RvrReadingsInput: Codable, Equatable, Sendable {
+        /// Each part's reading as sent (touchdown, midpoint, rollout ...), in any order.
+        var readings: [String?]
     }
 
     struct SameFieldInput: Codable, Equatable, Sendable {
@@ -12254,6 +12410,23 @@ enum EngineContract {
         var text: String
     }
 
+    struct TrackLeftFromAnswer: Codable, Equatable, Sendable {
+        /// The track starts at its takeoff from the field.
+        var left: Bool
+    }
+
+    struct TrackLeftFromInput: Codable, Equatable, Sendable {
+        /// The first point's distance from the nearest field, nm.
+        var distanceNm: Double
+        /// Its altitude over the field's elevation, ft.
+        var aboveFt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case distanceNm = "distance_nm"
+            case aboveFt = "above_ft"
+        }
+    }
+
     /// A flown track's point.
     struct TrackPoint: Codable, Equatable, Sendable {
         /// ms since 1970.
@@ -12698,6 +12871,9 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case fromFt = "from_ft"
         }
+    }
+
+    struct VfrAtHoursInput: Codable, Equatable, Sendable {
     }
 
     struct VfrBasicMinimumsAnswer: Codable, Equatable, Sendable {

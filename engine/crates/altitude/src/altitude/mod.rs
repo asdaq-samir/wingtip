@@ -10,10 +10,14 @@
 //! - clouds: 91.155's distance under a cloud base, and each leg's lowest
 //!   forecast base from the TAFs near it;
 //! - congested: whether a point is over a congested area, or within
-//!   91.119(b)'s 2,000 ft of one, from the towns the planner reads;
+//!   91.119(b)'s 2,000 ft of one, from the towns the planner reads, and
+//!   how far round a point it looks for them (`congested_reach`);
 //! - floor: the terrain and obstacle floor of each leg under VFR (91.119)
 //!   and the minimum IFR altitude (91.177(a)), over Part 95's mountainous
 //!   areas (`mountainous`);
+//! - ground: the figures the planner's readers of the ground and the
+//!   obstacles take: where a tile's height is the sea's, the obstacles
+//!   drawn (77.9(a)), the side view's width, the finer terrain's reach;
 //! - select: the band of each leg -- the floor up to the lowest of the
 //!   Class B shelf, the clouds and the service ceiling, nothing in
 //!   prohibited airspace -- and the recommendation;
@@ -38,8 +42,10 @@ pub mod cautions;
 pub mod clearance;
 pub mod clouds;
 pub mod congested;
+pub mod congested_reach;
 pub mod cruising;
 pub mod floor;
+pub mod ground;
 pub mod mountainous;
 pub mod profile_calls;
 pub mod select;

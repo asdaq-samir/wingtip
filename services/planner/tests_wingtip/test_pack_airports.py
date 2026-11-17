@@ -6,7 +6,7 @@ built again."""
 
 import json
 
-from wingtip import cycle_pack, faa_data, field_marks, pack_airports
+from wingtip import cycle_pack, faa_data, field_marks, pack_airports, pack_format, phone_pack, phone_pack_shapes
 
 
 def _rwy(tmp_path):
@@ -38,7 +38,7 @@ def test_the_airports_table_carries_hard_ft_by_either_ident(tmp_path):
     apt = tmp_path / "APT_BASE.csv"
     apt.write_text("ARPT_ID,ICAO_ID,SITE_TYPE_CODE\nORD,KORD,A\nIGQ,KIGQ,A\nLL22,,A\n")
     table = json.loads(
-        cycle_pack._table(
+        pack_format.table(
             apt, ("ARPT_ID", "ICAO_ID", "SITE_TYPE_CODE"), {"SIZE": {"KORD": "large"}, "HARD_FT": {"ORD": "13000", "IGQ": "4002"}}
         )
     )
@@ -61,21 +61,21 @@ def test_older_tables_are_built_again(tmp_path, monkeypatch):
         meta = {"sources": {}}
 
     monkeypatch.setattr(cycle_pack, "current", lambda pack_dir=None: Pack())
-    monkeypatch.setattr(cycle_pack, "ground_grid_version", lambda: None)
+    monkeypatch.setattr(phone_pack, "ground_grid_version", lambda: None)
     written = []
-    monkeypatch.setattr(cycle_pack, "write_phone", lambda pack, out, veil: written.append(out) or {"regions": []})
+    monkeypatch.setattr(phone_pack, "write_phone", lambda pack, out, veil: written.append(out) or {"regions": []})
     old = {
         "cycle": "2026-10-29",
-        "tolerance_deg": cycle_pack.PHONE_TOLERANCE_DEG,
-        "terrain_pool": cycle_pack.TERRAIN_POOL,
+        "tolerance_deg": phone_pack_shapes.PHONE_TOLERANCE_DEG,
+        "terrain_pool": phone_pack_shapes.TERRAIN_POOL,
         "ground_grid": None,
         "sources": {},
     }
-    monkeypatch.setattr(cycle_pack, "phone_index", lambda pack_dir=None: old)
+    monkeypatch.setattr(phone_pack, "phone_index", lambda pack_dir=None: old)
     from wingtip import airspace_at
 
     monkeypatch.setattr(airspace_at, "mode_c_airports", lambda: [])
-    assert cycle_pack.ensure_phone(tmp_path) is not None and written
+    assert phone_pack.ensure_phone(tmp_path) is not None and written
     written.clear()
-    monkeypatch.setattr(cycle_pack, "phone_index", lambda pack_dir=None: {**old, "tables": cycle_pack.TABLES})
-    assert cycle_pack.ensure_phone(tmp_path) is None and not written
+    monkeypatch.setattr(phone_pack, "phone_index", lambda pack_dir=None: {**old, "tables": pack_format.TABLES})
+    assert phone_pack.ensure_phone(tmp_path) is None and not written

@@ -175,7 +175,7 @@ function Line({ line, onOpen }: { line: GlanceLine; onOpen: (tab: PanelTab) => v
         <p className={cn("font-semibold", TEXT.detail)} data-testid="brief-line-action">
           {line.action}
         </p>
-        <p className={cn("rounded-lg bg-muted px-3 py-2", TEXT.detail)}>
+        <p className={TEXT.detail}>
           <span className="font-semibold">Why it matters: </span>
           {line.why} <span className="text-muted-foreground">({line.cite})</span>
         </p>

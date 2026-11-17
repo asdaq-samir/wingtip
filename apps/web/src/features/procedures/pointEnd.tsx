@@ -68,9 +68,7 @@ export function pointEnd(
   // the owner's word 2026-11-17).
   return {
     direct,
-    figures: (
-      <PointFigures time={at.time} altitude={shown === null ? null : altFt(shown)} kind={kind} />
-    ),
+    figures: <PointFigures time={at.time} altitude={shown === null ? null : altFt(shown)} kind={kind} />,
     // The two apart, for an airport's block: the time on its ident's
     // line, the elevation on its wind's.
     time: <PointFigures time={at.time} altitude={null} kind={kind} />,

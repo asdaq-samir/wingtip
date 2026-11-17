@@ -698,7 +698,7 @@ gone on every platform.
 | Slider | Base UI Slider, upright (`features/navlog/altitude/AltitudeProfile`, its view model `useAltitudePreview`) | See [ios.md](ios.md) | See [android.md](android.md) |
 | Waypoint | Base UI Popover from a tablet's width up, `SheetDialog` on a phone (`altitude/LegAltitude`) | | |
 | Advisor | shadcn Item rows (`altitude/AltitudeAdvisor`) | | |
-| Tests | `altitude/altitude.test.ts`, `navlog/profile.test.ts`; `e2e/plans.spec.ts`, `e2e/plan-cards-heads.spec.ts` | | |
+| Tests | `altitude/altitude.test.ts`, `navlog/profile.test.ts`; `e2e/plans.spec.ts`, `e2e/plans-altitude.spec.ts`, `e2e/plan-cards-heads.spec.ts` | | |
 
 ## 7. What rides the sheet, and the map's small print (the owner, 2026-11-11)
 
@@ -927,6 +927,40 @@ tested by `routeTurns.test.ts` and `e2e/stops-waypoints.spec.ts` (the
 on MapKit's `MKMapPoint`, `RoutePointMarkView` turned with the map's
 heading, `RouteMarksLayer`), tested by `RouteTurnsTests` (2026-11-14).
 Android follows on the owner's word.
+
+## 11. FPL for every pilot (the owner, 2026-11-17)
+
+The owner: make FPL and its nested drawers easier for every pilot, new and
+experienced, "no redundancies and less clutter", "Do it all but keep it
+less cluttered". Decision [0044](../decisions/0044-fpl-for-every-pilot.md).
+
+1. **One drawer head.** Every card, and every form a card opens, has the
+   one head of the card rule's 8: the title centred at a card's size, one
+   line under it, ✕ at its end, or a form's Cancel and Done; the same
+   detents, a swipe down going back one level. What a card is goes in that
+   line (a route leg's ends and "Active leg"), never a row or a pill under
+   the head. Web: `CardHeadRow`, and `PhoneSheetHeader` laid out by the
+   same `HeadGrid`.
+2. **One route field.** The route takes its points step by step or a
+   route typed whole ("KPWK V100 KLAS", "N0110A065 KPWK DCT OBK V100
+   KLAS"), the engine reading the words (`route_read`, AIM Appendix 4);
+   the empty field says what it takes ("From, to, or a whole route").
+3. **Explain on tap.** An abbreviation (MH, MC, ETE, TOC, TOD, FL, the VFR
+   and IFR levels ...) is a tap on the word itself, in the tint, which
+   opens one plain sentence with its source in the stock Popover; nothing
+   is added beside it. Web: `components/Explain` over `lib/explain`.
+4. **Ages where read.** A live figure (a METAR, the winds aloft, the
+   NOTAMs, traffic) says its age in a few characters ("12m") where it is
+   read, greyed once the engine says it is stale, "offline" in its row.
+   Web: `components/LiveAge` (`lib/kept/liveAge`).
+5. **A dash only means "needs an airplane".** A figure still coming is a
+   placeholder shape (`components/FigureWait`).
+6. **One Undo.** Every FPL edit is undone and redone from the first items
+   of the route's ••• menu, named by what they put back, kept across a
+   reload (`lib/planUndo`, `hooks/planHistory`); the removal toast and the
+   keyboard's Cmd-Z do the same.
+7. **One surface.** No box in a box, fewer borders and pills; spacing
+   groups, colour only for meaning.
 
 ## Changing a rule
 

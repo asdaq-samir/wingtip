@@ -658,6 +658,10 @@ export type InFlightAnswer = {
     fuel_left_gal: number | null;
   } | null;
 } | null;
+/**
+ * YYYY-MM-DD.
+ */
+export type InstructorRecordsSinceAnswer = string;
 export type IsEastboundAnswer = boolean;
 export type IsaTempCAnswer = number;
 /**
@@ -796,6 +800,8 @@ export type ProcedureArcAnswer = [number, number][];
 export type ProcedureClimbNmAnswer = number;
 export type ProcedureHoldAnswer = [number, number][];
 export type ProcedureHoldLegNmAnswer = number | null;
+export type ProcedureLegNmAnswer = number;
+export type ProcedureReversalAnswer = "coded" | "teardrop" | null;
 export type ProcedureTurnAnswer = [number, number][];
 export type ProceduresReadAnswer = {
   part: string;
@@ -1038,6 +1044,7 @@ export type VelocityTrackAnswer = {
 }[];
 export type VerticalSpeedAnswer = number | null;
 export type VfrAltitudesAnswer = number[];
+export type VfrAtHoursAnswer = number[];
 export type VfrFloorsAnswer = {
   floor_ft: number;
   lowest_ground_ft: number;
@@ -1630,6 +1637,13 @@ export interface EngineContract {
     answer: CongestedPointsAnswer;
   };
   /**
+   * How far round a point the host looks for towns before congested_points measures it against them: 2,500 ft, a quarter past 14 CFR 91.119(b)'s 'horizontal radius of 2,000 feet', so a town at the radius's edge is always a candidate; in degrees of latitude (sixty nautical miles each), divided by the cosine of the farthest latitude asked (held to 0.2 and over, the latitude to 89 degrees) so it is short in no direction.
+   */
+  congested_reach: {
+    input: CongestedReachInput;
+    answer: CongestedReachAnswer;
+  };
+  /**
    * The in-flight copilot: from own ship and the live data, the messages that change what the pilot should do, most pressing first (warning, caution, advisory; then the kinds' order), each with the words to show and speak and its sources. Warns, never limits.
    */
   copilot_watch: {
@@ -1656,6 +1670,13 @@ export interface EngineContract {
   data_cycle: {
     input: DataCycleInput;
     answer: DataCycleAnswer;
+  };
+  /**
+   * When a digital ATIS broadcast heard at a time stops being the airport's: two hours after it was heard, two of the updates AIM 4-1-13 asks ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.
+   */
+  datis_ends: {
+    input: DatisEndsInput;
+    answer: DatisEndsAnswer;
   };
   /**
    * A digital ATIS's remarks as the airport card shows them (STDDS TDES DATISData): the sentences after its weather (AIM 4-1-13), an item each, in the FAA's words in sentence case with RWY, TWY and the codes kept, the contractions of FAA Order JO 7340.2 written out, a figure said for the voice ('9 THSD 7 HND 25 FT') written as one (9,725 ft), and the sentences that say the same of several runways folded into one item listing them all. The heading, the closing 'ADVS YOU HAVE INFO' and a sentence whose approach or runways read_datis already shows are left out.
@@ -2421,6 +2442,13 @@ export interface EngineContract {
     answer: GreatCirclesAnswer;
   };
   /**
+   * The figures the planner's readers of the ground and its obstacles take: the lowest ground in North America, Badwater Basin's 282 ft below sea level (USGS; NPS), below which a terrain tile's height is the sea floor and the surface 14 CFR 91.159 and 91.119 measure from is the sea's, 0 ft; the obstacles the map stands up, 14 CFR 77.9(a)'s more than 200 ft AGL; how far either side of each hop the side view draws obstacles, 1 nm, a display width (the legal margins are 91.119(b)'s and 91.177(a)(2)'s, which the floors keep); and how far round a public-use airport the finer terrain is kept, 5 nm, where a 3° path (AIM 1-1-9) is 1,500 ft up.
+   */
+  ground_figures: {
+    input: GroundFiguresInput;
+    answer: GroundFiguresAnswer;
+  };
+  /**
    * The nav log's ground speed once the heading holds the course: the airspeed's share along it less the wind's.
    */
   groundspeed_kt: {
@@ -2596,6 +2624,13 @@ export interface EngineContract {
     answer: InspectionsDueAnswer;
   };
   /**
+   * The first day an instructor's page lists what they signed: the same day 3 years before today, as 14 CFR 61.189(c) has an instructor keep their records "for at least 3 years" (a 29 February the 28th in a year without one).
+   */
+  instructor_records_since: {
+    input: InstructorRecordsSinceInput;
+    answer: InstructorRecordsSinceAnswer;
+  };
+  /**
    * Whether a magnetic course is eastbound, 0 to 179 degrees (14 CFR 91.159(a)).
    */
   is_eastbound: {
@@ -2643,6 +2678,13 @@ export interface EngineContract {
   lighting_read: {
     input: LightingReadInput;
     answer: LightingReadAnswer;
+  };
+  /**
+   * How long an answer from one of the FAA's SWIM feeds (the planner's /api/live/*) is fresh and how often a screen showing it asks again: a runway's RVR each minute, as it is updated (AIM 7-1-13), the ITWS alerts and special activity airspace's SFDPS status as often (the app's choice), the Command Center's programs every five minutes, and the D-ATIS and a flight's tower departures fresh for five minutes and not polled (the app's choice).
+   */
+  live_feed_refresh: {
+    input: LiveFeedRefreshInput;
+    answer: LiveFeedRefreshAnswer;
   };
   /**
    * A logbook CSV (ForeFlight's export or this logbook's own) read into the gateway's LogbookEntryRequest entries, camelCase, and the lines skipped with why; landings as 14 CFR 61.57(a) and (b) count them. Air time (not a 61.51(b) column) is this logbook's AirTime, else ForeFlight's TimeOff to TimeOn, else 0 (not known); an entry read from a file is never from a track.
@@ -3121,6 +3163,20 @@ export interface EngineContract {
     answer: ProcedureHoldLegNmAnswer;
   };
   /**
+   * How far a procedure's leg with no fix of its own to end at is drawn, nm (ARINC 424-18 5.21): an FC leg its coded distance from its fix; a leg flown to an altitude (FA, CA, VA) from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; any other (to a DME distance, a radial, an intercept, a manual termination) 2 nm.
+   */
+  procedure_leg_nm: {
+    input: ProcedureLegNmInput;
+    answer: ProcedureLegNmAnswer;
+  };
+  /**
+   * The course reversal flown where a procedure's path turns `turn_deg` at a fix (AIM 5-4-9): "coded" -- the chart's hold in lieu of a procedure turn or its procedure turn there, entered -- where one is coded at the fix and the path turns more than 90° there, come to from its far side (from the near side a pilot is lined up already and makes none, as on a NoPT route, 14 CFR 91.175(j)); else "teardrop" where the path doubles back more than 120° at a fix past the procedure's first; else null.
+   */
+  procedure_reversal: {
+    input: ProcedureReversalInput;
+    answer: ProcedureReversalAnswer;
+  };
+  /**
    * A 45°/180° procedure turn at its fix (AIM 5-4-9): 4 nm out on the final's reciprocal, 2 nm on the barb's true course, a standard-rate 180° turn at 120 kt toward the final's side, back to meet the final within 10 nm, and in to the fix.
    */
   procedure_turn: {
@@ -3303,6 +3359,13 @@ export interface EngineContract {
     answer: ReplayTrackAnswer;
   };
   /**
+   * Whether a station's report is near enough to a field with none of its own to say the field's weather by it, approximately: within 10 statute miles, the top of a METAR's vicinity (FAA-H-8083-28B 24.4.3.8.2, 'between 5–10 SM ... coded as in the vicinity (VC)'). A design choice: no FAA source says a station's flight category holds at another field.
+   */
+  report_near: {
+    input: ReportNearInput;
+    answer: ReportNearAnswer;
+  };
+  /**
    * The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).
    */
   reserve_min: {
@@ -3329,6 +3392,13 @@ export interface EngineContract {
   route_position: {
     input: RoutePositionInput;
     answer: RoutePositionAnswer;
+  };
+  /**
+   * A route typed as a pilot writes one, read back as item 15 of FAA Form 7233-4 has it (AIM Appendix 4), for the route's one field: split on spaces and commas, DCT (direct) taken out; a cruising speed and level group or a level alone before the first point the cruise's ("N0110A065": 110 kt true, 6,500 ft; "A" and hundreds of feet in three figures, "F" a flight level, 14 CFR 1.1 and 91.121(a)(2); "VFR" a VFR level, no figure; metric speeds and levels give no figure); a point with a group after its stroke ("LEXOR/N0467F380") the point, its level a change from there. The rest are the route's points, airways and procedures in order, upper case, as typed: which is which is the caller's.
+   */
+  route_read: {
+    input: RouteReadInput;
+    answer: RouteReadAnswer;
   };
   /**
    * A way's one warning, the worst of the hazard kinds it crosses, in the words every app says it in (route_options' way `warning`; the route as typed, whose crossings come with its chips): a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where nothing is crossed.
@@ -3406,6 +3476,13 @@ export interface EngineContract {
   rvr_check: {
     input: RvrCheckInput;
     answer: RvrCheckAnswer;
+  };
+  /**
+   * An RVR system's readings as STDDS's APDS feed sends them, two figures in hundreds of feet ("35" is 3,500 ft; "00", "FF" or blank none), each with whether it is the system's most: AIM 7-1-13's readouts run 'to a maximum value of 6,000 feet', so a reading of 6,000 is '6,000 or more'.
+   */
+  rvr_readings: {
+    input: RvrReadingsInput;
+    answer: RvrReadingsAnswer;
   };
   /**
    * Whether a and b name one field (KSTL and STL).
@@ -3604,6 +3681,13 @@ export interface EngineContract {
     answer: TokensAnswer;
   };
   /**
+   * Whether a recorded ADS-B track whose first point is distance_nm from the nearest field and above_ft over its elevation starts at its takeoff from that field: within 2 nm and 500 ft. From AC 90-66C: no turn to crosswind until 'within 300 feet below traffic pattern altitude' (11.7), the pattern 'usually ... 1,000 feet above the elevation of the airport surface' (Appendix A), and the departure leg 'at least 1/2 mile beyond the departure end of the runway'; the figures are this check's judgment, not a rule.
+   */
+  track_left_from: {
+    input: TrackLeftFromInput;
+    answer: TrackLeftFromAnswer;
+  };
+  /**
    * Whether each airplane heard is drawn: its position, seen_s old when the answer was made and the answer age_s old now, within 30 s (wingtip.traffic's STALE_S); older, it is somewhere else by now.
    */
   traffic_fresh: {
@@ -3686,6 +3770,13 @@ export interface EngineContract {
   vfr_altitudes: {
     input: VfrAltitudesInput;
     answer: VfrAltitudesAnswer;
+  };
+  /**
+   * The hours ahead a search's "VFR at…" menu offers, in order: each within the 24 hours a TAF covers (FAA-H-8083-28B 27.4.1), the steps the app's choice.
+   */
+  vfr_at_hours: {
+    input: VfrAtHoursInput;
+    answer: VfrAtHoursAnswer;
   };
   /**
    * The surface-area minimums (14 CFR 91.155(c), (d)), which the planner holds every route to: no VFR under a 1,000 ft ceiling or in under 3 statute miles within a surface area of controlled airspace. Not the least VFR ever asks (Class G at or below 1,200 ft above the surface by day: 1 sm and clear of clouds, 91.155(a)).
@@ -5752,6 +5843,22 @@ export interface CongestedPointsInput {
    */
   candidates?: number[][] | null;
 }
+export interface CongestedReachInput {
+  /**
+   * The farthest latitude of the points asked, degrees (either sign).
+   */
+  lat: number;
+}
+export interface CongestedReachAnswer {
+  /**
+   * The search's reach, ft.
+   */
+  search_ft: number;
+  /**
+   * The reach in degrees, never short of search_ft in any direction.
+   */
+  reach_deg: number;
+}
 export interface CopilotWatchInput {
   now_s: number;
   own: CopilotOwn;
@@ -5969,6 +6076,18 @@ export interface DataCycleAnswer {
    * How many editions have come out since the one held; 0 unless expired.
    */
   behind: number;
+}
+export interface DatisEndsInput {
+  /**
+   * When it was heard, Unix seconds.
+   */
+  heard: number;
+}
+export interface DatisEndsAnswer {
+  /**
+   * When it is no longer the airport's, Unix seconds.
+   */
+  ends: number;
 }
 export interface DatisRemarksInput {
   /**
@@ -8189,6 +8308,13 @@ export interface GreatCirclesAnswer {
   distance_nm: number[];
   bearing_deg: number[];
 }
+export interface GroundFiguresInput {}
+export interface GroundFiguresAnswer {
+  lowest_ground_ft: number;
+  obstacle_shown_agl_ft: number;
+  profile_obstacle_nm: number;
+  fine_terrain_radius_nm: number;
+}
 export interface GroundspeedKtInput {
   true_course_deg: number;
   wind_from_deg: number;
@@ -8851,6 +8977,12 @@ export interface InspectionsDueAnswer {
     until: string;
   } | null;
 }
+export interface InstructorRecordsSinceInput {
+  /**
+   * YYYY-MM-DD, UTC: the engine has no clock.
+   */
+  today: string;
+}
 export interface IsEastboundInput {
   magnetic_course_deg: number;
 }
@@ -8993,6 +9125,20 @@ export interface LightingNote {
    */
   words: string;
   as_written: string;
+}
+export interface LiveFeedRefreshInput {
+  feed: "rvr" | "itws" | "saa" | "flow" | "atis" | "departures";
+}
+export interface LiveFeedRefreshAnswer {
+  /**
+   * How long an answer is fresh, seconds.
+   */
+  fresh_s: number;
+  /**
+   * How often a screen showing it asks again, seconds; null where it is not polled.
+   */
+  poll_s: number | null;
+  source: string;
 }
 export interface LogbookCsvReadInput {
   text: string;
@@ -10741,6 +10887,17 @@ export interface ProcedureHoldLegNmInput {
   minutes?: number | null;
   distance_nm?: number | null;
 }
+export interface ProcedureLegNmInput {
+  path: string;
+  distance_nm?: number | null;
+  altitude_ft?: number | null;
+  known_ft?: number | null;
+}
+export interface ProcedureReversalInput {
+  turn_deg: number;
+  coded?: boolean | null;
+  first_fix?: boolean | null;
+}
 export interface ProcedureTurnInput {
   /**
    * [lat, lon]
@@ -11796,6 +11953,19 @@ export interface ReplayGap {
   from: number;
   to: number;
 }
+export interface ReportNearInput {
+  /**
+   * The station's distance from the field, nm.
+   */
+  distance_nm: number;
+}
+export interface ReportNearAnswer {
+  near: boolean;
+  /**
+   * How near is near, statute miles.
+   */
+  within_sm: number;
+}
 export interface ReserveMinInput {
   ifr?: boolean | null;
   night?: boolean | null;
@@ -12061,6 +12231,27 @@ export interface RoutePositionInput {
       }[]
     | null;
 }
+export interface RouteReadInput {
+  /**
+   * The route as typed or pasted: "KPWK DCT OBK V100 KLAS".
+   */
+  text: string;
+}
+export interface RouteReadAnswer {
+  points: string[];
+  /**
+   * The cruise's altitude, feet MSL; null where none was given or it is VFR's.
+   */
+  cruise_ft: number | null;
+  /**
+   * The cruise's true airspeed, knots, where given in knots.
+   */
+  tas_kt: number | null;
+  changes: {
+    at: string;
+    ft: number;
+  }[];
+}
 export interface RouteWayWarningInput {
   /**
    * The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
@@ -12220,6 +12411,27 @@ export interface RvrCheckAnswer {
      * The visibility the table pairs with the reading.
      */
     comparable_sm: number | null;
+  }[];
+}
+export interface RvrReadingsInput {
+  /**
+   * Each part's reading as sent (touchdown, midpoint, rollout ...), in any order.
+   */
+  readings: (string | null)[];
+}
+export interface RvrReadingsAnswer {
+  /**
+   * Each reading, in the order given.
+   */
+  readings: {
+    /**
+     * The reading, ft; null where the part reports none.
+     */
+    ft: number | null;
+    /**
+     * The system's most, 6,000 ft or more (AIM 7-1-13).
+     */
+    more: boolean;
   }[];
 }
 export interface SameFieldInput {
@@ -12842,6 +13054,22 @@ export interface TitleCaseInput {
 export interface TokensInput {
   text: string;
 }
+export interface TrackLeftFromInput {
+  /**
+   * The first point's distance from the nearest field, nm.
+   */
+  distance_nm: number;
+  /**
+   * Its altitude over the field's elevation, ft.
+   */
+  above_ft: number;
+}
+export interface TrackLeftFromAnswer {
+  /**
+   * The track starts at its takeoff from the field.
+   */
+  left: boolean;
+}
 export interface TrafficFreshInput {
   age_s?: number | null;
   planes: {
@@ -12970,6 +13198,7 @@ export interface VerticalSpeedInput {
 export interface VfrAltitudesInput {
   from_ft?: number | null;
 }
+export interface VfrAtHoursInput {}
 export interface VfrBasicMinimumsInput {}
 export interface VfrBasicMinimumsAnswer {
   ceiling_ft: number;

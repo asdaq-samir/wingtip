@@ -1,5 +1,5 @@
 {
-  "about": "The rules the services ask the engine as they read a feed (the weather service's model winds, app.gfs; the ingest service's STDDS tracks, ingest.swim; the planner's briefing exposure, app.exposure), held by the engine (engine/facade/tests/service_rules.rs).",
+  "about": "The rules the services ask the engine as they read a feed (the weather service's model winds, app.gfs; the ingest service's STDDS tracks, ingest.swim; the planner's briefing exposure, app.exposure; the planner as it keeps a live feed or reads a kept one: wingtip.rvr's RVR readings, wingtip.datis's D-ATIS, wingtip.weather's nearest report, wingtip.congested's search for towns, wingtip.traffic's track start), held by the engine (engine/facade/tests/service_rules.rs).",
   "model_wind_levels": [
     {
       "about": "A GFS level in feet, knots and Celsius: 3,048 m is 10,000 ft (0.3048 m a foot), 10 kt east in m/s blows from the west, 263.15 K is -10 C; no wind at all is from 360; a level with a figure missing is left out",
@@ -32,6 +32,126 @@
       "about": "AIM 7-1-6: the 03Z snapshot stands for 00Z to 06Z, as a hazard at 03 and none at 00 or 06 exists from 0001 to 0559",
       "input": { "valid": 1794452400 },
       "answer": { "valid_from": 1794441600.0, "valid_to": 1794463200.0 }
+    }
+  ],
+  "rvr_readings": [
+    {
+      "about": "Hundreds of feet as sent: 35 is 3,500 ft; 60 is the system's most, 6,000 or more (AIM 7-1-13); 00, FF and a blank are no reading",
+      "input": {
+        "readings": [
+          "35",
+          "60",
+          "00",
+          "FF",
+          "",
+          null
+        ]
+      },
+      "answer": {
+        "readings": [
+          {
+            "ft": 3500,
+            "more": false
+          },
+          {
+            "ft": 6000,
+            "more": true
+          },
+          {
+            "ft": null,
+            "more": false
+          },
+          {
+            "ft": null,
+            "more": false
+          },
+          {
+            "ft": null,
+            "more": false
+          },
+          {
+            "ft": null,
+            "more": false
+          }
+        ]
+      }
+    }
+  ],
+  "datis_ends": [
+    {
+      "about": "A broadcast heard at 0000Z is the airport's until 0200Z: two of AIM 4-1-13's hourly updates",
+      "input": {
+        "heard": 1763337600
+      },
+      "answer": {
+        "ends": 1763344800.0
+      }
+    }
+  ],
+  "report_near": [
+    {
+      "about": "8.6 nm is under 10 statute miles (8.69 nm), a METAR's vicinity (FAA-H-8083-28B 24.4.3.8.2)",
+      "input": {
+        "distance_nm": 8.6
+      },
+      "answer": {
+        "near": true,
+        "within_sm": 10.0
+      }
+    },
+    {
+      "about": "8.7 nm is past 10 statute miles",
+      "input": {
+        "distance_nm": 8.7
+      },
+      "answer": {
+        "near": false,
+        "within_sm": 10.0
+      }
+    }
+  ],
+  "congested_reach": [
+    {
+      "about": "At the equator, 2,500 ft (a quarter past 91.119(b)'s 2,000) in degrees of 60 nm: 2500 x 0.3048 / (60 x 1852)",
+      "input": {
+        "lat": 0
+      },
+      "answer": {
+        "search_ft": 2500.0,
+        "reach_deg": 0.0068574514038876894
+      }
+    }
+  ],
+  "track_left_from": [
+    {
+      "about": "A first point 1.5 nm from the field and 400 ft over it is on its takeoff climb (AC 90-66C)",
+      "input": {
+        "distance_nm": 1.5,
+        "above_ft": 400
+      },
+      "answer": {
+        "left": true
+      }
+    },
+    {
+      "about": "One at pattern altitude, 1,000 ft over the field, is not",
+      "input": {
+        "distance_nm": 1.5,
+        "above_ft": 1000
+      },
+      "answer": {
+        "left": false
+      }
+    },
+    {
+      "about": "Nor one 3 nm off",
+      "input": {
+        "distance_nm": 3,
+        "above_ft": 200
+      },
+      "answer": {
+        "left": false
+      }
     }
   ]
 }

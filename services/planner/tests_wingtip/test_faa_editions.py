@@ -1,4 +1,4 @@
-"""wingtip.faa_data.refresh_editions: the planner's FAA files fetched again
+"""wingtip.faa_editions.refresh_editions: the planner's FAA files fetched again
 when the FAA has a newer edition, a zip's files together, and a file on
 disk of the current cycle left alone."""
 
@@ -6,7 +6,7 @@ from datetime import date
 from pathlib import Path
 
 import pytest
-from wingtip import faa_data
+from wingtip import faa_data, faa_editions
 
 
 def _csv(path: Path, eff_date: str) -> None:
@@ -48,17 +48,17 @@ def test_a_file_of_the_current_cycle_is_left_and_an_old_one_fetched_with_its_zip
     _csv(folder / "APT_BASE.csv", "2026/09/03")
     _csv(folder / "APT_RMK.csv", "2026/10/01")
 
-    refreshed = faa_data.refresh_editions(folder)
+    refreshed = faa_editions.refresh_editions(folder)
 
     assert "01_Oct_2026_NAV_CSV.zip" not in fetched and "01_Oct_2026_FIX_CSV.zip" not in fetched
     assert {"APT_BASE.csv", "APT_RMK.csv", "APT_RWY_END.csv"} <= set(refreshed)
-    assert faa_data._effective_date(folder / "APT_BASE.csv") == "2026/10/01"
+    assert faa_editions._effective_date(folder / "APT_BASE.csv") == "2026/10/01"
     # No record of the shapes' or the obstacles' edition: fetched once.
     assert (folder / "Shape_Files" / "Class_Airspace.shp").read_text() == "new Class_Airspace.shp"
     assert (folder / "DOF.DAT").read_text() == "new DOF.DAT"
     # And not again while the FAA's are the same.
     fetched.clear()
-    assert faa_data.refresh_editions(folder) == [] and fetched == []
+    assert faa_editions.refresh_editions(folder) == [] and fetched == []
 
 
 def test_one_edition_failing_leaves_the_rest_to_refresh_and_itself_for_next_time(faa):
@@ -66,10 +66,10 @@ def test_one_edition_failing_leaves_the_rest_to_refresh_and_itself_for_next_time
     failing.add("DOF")
     (folder / "DOF.DAT").write_text("old")
 
-    refreshed = faa_data.refresh_editions(folder)
+    refreshed = faa_editions.refresh_editions(folder)
 
     assert "DOF.DAT" not in refreshed and (folder / "DOF.DAT").read_text() == "old"
     assert "NAV_BASE.csv" in refreshed
     failing.clear()
     fetched.clear()
-    assert faa_data.refresh_editions(folder) == ["DOF.DAT"] and fetched == ["DOF_261001.zip"]
+    assert faa_editions.refresh_editions(folder) == ["DOF.DAT"] and fetched == ["DOF_261001.zip"]

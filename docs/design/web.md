@@ -827,7 +827,14 @@ by clicking the map, typing an address or a name, up to 9 stops in all
    its altitude, Start At or Cross At (a Popover, a sheet on a phone); the
    Altitude Advisor list under it chooses the cruise, the plan's menu gone.
 5. A toast with Undo after a change that takes something away
-   (`toast.undo`).
+   (`toast.undo`); and every edit -- the route, the altitude, the
+   procedures and stops, the departure time, the airplane -- undone and
+   redone from the first items of the route's ••• menu ("Undo Altitude",
+   `features/share/PlanUndoItems` over `lib/planUndo`), the history kept
+   in the tab's session across a reload (rules.md §11).
+6. The empty route box says what it takes ("From, to, or a whole
+   route"); a route typed whole is read by the engine's `route_read`
+   (DCT out, item 15's speed and level group the cruise).
 
 **Stock parts.** The rows: React Aria GridList with `useDragAndDrop` and
 `onReorder`, a `<Button slot="drag">` handle per typed point, keyboard
@@ -918,6 +925,13 @@ leg on the map and shows the point's mark. Sticky headers use
 experimental, [MDN][mdn-interpolate-size]; use Base UI's
 `data-starting-style` / `data-ending-style` transitions instead,
 [Base UI animation][bui-animation]).
+
+**Explained and dated.** The phone list's MH and MC are each a tap on the
+word for its meaning (`components/Explain`, rules.md §11); the log says
+its winds' age over its lines ("Winds aloft 12m", `NavLogAge` on
+`components/LiveAge`), greyed once stale; a leg still coming is a
+placeholder shape, not a dash (`components/FigureWait`); the wind changes
+and airways on its rail are words, no pills.
 
 **Avoid.** Tabular figures in a proportional font (use `tabular-nums`);
 a horizontally scrolling table on desktop; columns filled with assumed

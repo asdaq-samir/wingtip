@@ -1,4 +1,5 @@
 import { originOf, type DiagnosticsReport } from "./diagnostics";
+import { sendDiagnostics } from "./api/diagnostics";
 
 /**
  * What goes wrong on a pilot's device, sent to the gateway's diagnostics
@@ -64,18 +65,13 @@ export function diagnosticsOf(
   return { ...origin, faults: [{ kind: "error", signature: `${report.kind}: ${report.message}`, detail, at: now.toISOString() }] };
 }
 
-function beacon(body: string): boolean {
-  return (
-    typeof navigator.sendBeacon === "function" && navigator.sendBeacon("/api/diagnostics", new Blob([body], { type: "application/json" }))
-  );
-}
-
-/** Sends a report unless the same error has gone already, or ten have. */
-export function sendReport(report: ClientErrorReport, send: (body: string) => boolean = beacon): boolean {
+/** Sends a report through the diagnostics door (lib/api's sendDiagnostics)
+ *  unless the same error has gone already, or ten have. */
+export function sendReport(report: ClientErrorReport, send: (sent: DiagnosticsReport) => boolean = sendDiagnostics): boolean {
   const key = `${report.kind}:${report.message}`;
   if (sent.has(key) || sent.size >= LIMIT) return false;
   sent.add(key);
-  return send(JSON.stringify(diagnosticsOf(report)));
+  return send(diagnosticsOf(report));
 }
 
 /** Listens for what nothing else caught. */

@@ -1,26 +1,28 @@
 import { Button as BaseButton } from "@base-ui/react/button";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Mic, Square, TriangleAlert } from "lucide-react";
+import { Mic, Square } from "lucide-react";
 import { cn } from "cn";
 import IconButton from "./IconButton";
 import { Toggle } from "@base-ui/react/toggle";
 import ListenThrough from "./ListenThrough";
 import { ClearanceElements, Line } from "./ClearanceRead";
-import { ListGroup, ListRow } from "./GroupedList";
+import { ListGroup } from "./GroupedList";
 import { Button } from "./ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { FieldError } from "./ui/field";
 import { Textarea } from "./ui/textarea";
 import { api } from "../lib/api/client";
 import { clearedRoute, heardAny, placesAsked, readClearance, routeDifference, type Found } from "../lib/clearance";
 import { useCanListen } from "../lib/speechLocal";
-import { heardThrough, useAtcRadio, useRadioActions, type PlannedRoute } from "../lib/atcRadio";
-import { listenOnce, startRadio, stopRadio } from "../lib/atcListening";
+import { heardThrough, useAtcRadio, useRadioActions } from "../lib/atcRadio";
+import { startRadio, stopRadio } from "../lib/atcListening";
 import { callPattern } from "../lib/heardCall";
 import { altitudeWords, clearanceParts, readbackCheck, readbackLines } from "../lib/readback";
 import { TEXT } from "../lib/text";
 import { useSettled } from "../hooks/use-settled";
+import { useReadback } from "./useReadback";
+import { NotYet, Step, Verdict } from "./ClearanceSteps";
+import { ROW_BUTTON, ROW_MIC, routeLine } from "../lib/clearanceRows";
 
 const time = (at: number) => new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -30,77 +32,6 @@ const time = (at: number) => new Date(at).toLocaleTimeString([], { hour: "2-digi
 const EXAMPLE =
   "“Cleared to the Duluth airport via Gopher then as filed, maintain three thousand, departure one two five point three five, squawk four five two one.”";
 const EXAMPLE_READBACK = "“Duluth, Gopher, three thousand, one two five point three five, four five two one, Skyhawk three alpha bravo.”";
-
-/** A route as one line: its ends and the points between. */
-const routeLine = (r: PlannedRoute) => [r.dep, ...r.stops, r.dest].filter(Boolean).join(" → ") || "none";
-
-/**
- * One of the card's four rows: its name at the left, where it stands at the right, a control of its own
- * beside it (a microphone, Use This Route) and its detail folded under, opened by a tap on the row (shadcn's
- * Collapsible on a ListRow, as the airport card folds its fuel remarks). The row's own height is its hit
- * area (a ListRow is 44 at the least); the control beside it gets its 44 from a pseudo-element.
- */
-function Step({
-  id,
-  title,
-  state,
-  open,
-  onOpenChange,
-  control,
-  children,
-}: {
-  id: string;
-  title: string;
-  state: ReactNode;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  control?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <Collapsible open={open} onOpenChange={onOpenChange}>
-      <div className="flex items-center gap-2 pr-2">
-        <CollapsibleTrigger
-          render={
-            <ListRow
-              title={title}
-              value={<span data-testid={`clearance-state-${id}`}>{state}</span>}
-              chevron
-              data-testid={`clearance-row-${id}`}
-              className="min-w-0 flex-1"
-            />
-          }
-        />
-        {control}
-      </div>
-      <CollapsibleContent className={cn("flex flex-col gap-2 px-3 pb-3", TEXT.detail)} data-testid={`clearance-detail-${id}`}>
-        {children}
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
-
-/** A tick for what was read back or matches, a mark for what was not,
- *  each named for VoiceOver as the iPhone names them. */
-function Verdict({ ok, said, children }: { ok: boolean; said: [ok: string, notOk: string]; children: ReactNode }) {
-  return (
-    <div className={cn("flex items-start gap-2", !ok && "text-caution-ink")}>
-      {ok ? (
-        <Check className="mt-0.5 size-4 shrink-0 text-go-ink" aria-label={said[0]} />
-      ) : (
-        <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-label={said[1]} />
-      )}
-      <span>{children}</span>
-    </div>
-  );
-}
-
-/** The microphone beside a row, in the tint, its 44-point hit area a
- *  pseudo-element round the stock 36; and the small button's round its
- *  32. */
-const ROW_MIC = "relative shrink-0 after:absolute after:-inset-1 after:content-['']";
-const ROW_BUTTON = "relative shrink-0 after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']";
-const NOT_YET = <span className="text-muted-foreground">Not yet</span>;
 
 /**
  * The clearance step as one card, the way the iPhone has it (ClearanceSheet,
@@ -170,71 +101,11 @@ export default function ClearanceCard({
     }
   };
 
-  // The pilot's read back, heard or typed, checked against the clearance.
-  // Read back again listens for it: with the radio listened to on and on,
-  // the next transmission settled is it; otherwise the microphone opens
-  // for this one read back (listenOnce, the pill over the map typing it),
-  // and the card takes the words as it ends. The wait is a subscription
-  // to the radio's store, started by the tap and ended at every end the
-  // listening has, or with the card.
-  const [readback, setReadback] = useState("");
-  const [readingBack, setReadingBack] = useState(false);
-  const [readbackProblem, setReadbackProblem] = useState<string | null>(null);
-  const waiting = useRef<(() => void) | null>(null);
-  useEffect(() => {
-    const wait = waiting;
-    return () => {
-      wait.current?.();
-      wait.current = null;
-    };
-  }, []);
-  const readBackAgain = () => {
-    waiting.current?.();
-    setFollowing(false);
-    setReadback("");
-    setReadbackProblem(null);
-    setReadingBack(true);
-    const clearedText = text;
-    const radio = useAtcRadio.getState();
-    const after = radio.heard.at(-1)?.id ?? -1;
-    const fromRadio = radio.listening && radio.mode === "radio";
-    const done = (said: string, problem: string | null) => {
-      waiting.current?.();
-      waiting.current = null;
-      setReadback(said);
-      setReadbackProblem(problem);
-      setReadingBack(false);
-    };
-    waiting.current = useAtcRadio.subscribe((s) => {
-      if (fromRadio) {
-        const next = s.heard.find((t) => t.final && t.id > after);
-        if (next) done(next.text, null);
-        else if (!s.listening) done("", s.error);
-      } else if (s.pill?.readbackOf === clearedText) {
-        if (!s.pill.listening) {
-          done(s.pill.text, s.pill.text ? null : s.pill.error);
-          useAtcRadio.setState({ pill: null });
-        }
-      } else if (!s.listening) {
-        done("", null);
-      }
-    });
-    if (!fromRadio) void listenOnce([], clearedText);
-  };
-  const readbackTap = () => {
-    if (!readingBack) {
-      readBackAgain();
-      return;
-    }
-    // A second tap ends it: the microphone's listening, or the wait for
-    // the radio's next transmission.
-    if (useAtcRadio.getState().mode === "once") stopRadio();
-    else {
-      waiting.current?.();
-      waiting.current = null;
-      setReadingBack(false);
-    }
-  };
+  // The pilot's read back, heard or typed, checked against the clearance
+  // (useReadback listens for it).
+  const { readback, setReadback, readingBack, readbackProblem, setReadbackProblem, readbackTap } = useReadback(text, () =>
+    setFollowing(false),
+  );
   const check = useMemo(() => (heardIt && readback.trim() ? readbackCheck(settled, readback) : null), [heardIt, settled, readback]);
   const parts = clearanceParts(clearance);
   const readCount = check ? Math.max(0, parts.length - check.items.length) : 0;
@@ -261,11 +132,11 @@ export default function ClearanceCard({
     error ?? readbackProblem ?? (found.isError ? "The places in it could not be looked up; check the connection and try again." : null);
   const mic = useCanListen();
 
-  const hearState = onRadio ? "Listening to the radio…" : heardIt ? (heardAt ? `Heard ${time(heardAt)}` : "Heard") : NOT_YET;
+  const hearState = onRadio ? "Listening to the radio…" : heardIt ? heardAt ? `Heard ${time(heardAt)}` : "Heard" : <NotYet />;
   const readbackState = readingBack ? (
     "Listening for your read back…"
   ) : !check ? (
-    NOT_YET
+    <NotYet />
   ) : check.items.length === 0 ? (
     "Read back in full"
   ) : (
@@ -276,7 +147,7 @@ export default function ClearanceCard({
   const enterState = isEntered ? (
     "Route entered"
   ) : !heardIt ? (
-    NOT_YET
+    <NotYet />
   ) : settled !== text ? (
     <span className="text-muted-foreground">Reading…</span>
   ) : found.isError ? (
@@ -287,7 +158,7 @@ export default function ClearanceCard({
     `${cleared.route.dest || route.dest || "the route"}${cleared.route.stops.length ? ` via ${cleared.route.stops.join(" ")}` : ""}${altitudeFt ? `, fly ${altitudeWords(altitudeFt)}` : ""}`
   );
   const compareState = !difference ? (
-    NOT_YET
+    <NotYet />
   ) : difference.same ? (
     "Same as filed"
   ) : (

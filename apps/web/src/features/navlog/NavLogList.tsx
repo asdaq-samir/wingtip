@@ -1,9 +1,10 @@
 import NavLogAge from "./NavLogAge";
+import Explain from "../../components/Explain";
+import FigureWait from "../../components/FigureWait";
 import { useAirplaneChosen } from "../../lib/preferences";
 import { Fragment, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
 import type { Leg } from "../../lib/api/types";
 import { feet, nm, zoneName } from "../../lib/format";
 import { placeName, altFt, bearing, etaAt, one, windText, flownNmOf, isLegPoint, legOf, procedureOf, rowPoint } from "../plan";
@@ -24,9 +25,18 @@ const MARK_MIDDLE = "1.25rem";
  *  the great circle's at the leg's start less the leg's variation (the
  *  engine's navlog legs), as a pilot sets out on it; a bare
  *  "258°" read as either, and as true (the UI audit's A4). */
-function courseWords(leg: Leg, airplane: boolean): string {
+function courseWords(leg: Leg, airplane: boolean): ReactNode {
   const heading = airplane ? leg.magnetic_heading_deg : null;
-  return heading != null ? `MH ${bearing(heading)}` : `MC ${bearing(leg.magnetic_course_deg)}`;
+  // The abbreviation says what it means on a tap (Explain), nothing added.
+  return heading != null ? (
+    <>
+      <Explain term="MH" /> {bearing(heading)}
+    </>
+  ) : (
+    <>
+      <Explain term="MC" /> {bearing(leg.magnetic_course_deg)}
+    </>
+  );
 }
 
 /** The wind a leg was worked out in, as the nav log says it (true, as the
@@ -211,13 +221,12 @@ export function NavLogList({
                 {wind && !first && (
                   <div aria-hidden="true" className="relative flex h-7 items-center pl-12.5">
                     <span className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
-                    <Badge
-                      variant="outline"
-                      className={cn("h-auto bg-background font-semibold", TEXT.note)}
-                      data-testid="navlog-wind-change"
-                    >
+                    {/* Words on the rail, no pill round them: spacing groups
+                        them, colour only for meaning (the FPL redesign's look,
+                        2026-11-17). */}
+                    <span className={cn("font-semibold text-muted-foreground", TEXT.note)} data-testid="navlog-wind-change">
                       Wind {wind}
-                    </Badge>
+                    </span>
                   </div>
                 )}
                 {airway && (
@@ -225,13 +234,9 @@ export function NavLogList({
                   // altitudes change: the route column of a paper IFR log.
                   <div aria-hidden="true" className="relative flex h-7 items-center pl-12.5">
                     <span className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
-                    <Badge
-                      variant="outline"
-                      className={cn("h-auto bg-background font-semibold tabular-nums", TEXT.note)}
-                      data-testid="navlog-airway"
-                    >
+                    <span className={cn("font-semibold text-muted-foreground tabular-nums", TEXT.note)} data-testid="navlog-airway">
                       {airway}
-                    </Badge>
+                    </span>
                   </div>
                 )}
                 <div className="relative">
@@ -324,13 +329,13 @@ export function NavLogList({
                                 <path d="M8 1.5 12.5 13 8 10.5 3.5 13z" fill="currentColor" />
                               </svg>
                             )}
-                            {leg ? courseWords(leg, airplane) : "—"}
+                            {leg ? courseWords(leg, airplane) : <FigureWait />}
                           </span>
                           <span aria-hidden="true"> · </span>
                           {/* With a procedure's miles where the leg ends (procedureOf),
                             named, so the miles over the groundspeed come to the minutes. */}
                           <span role="cell" data-testid="navlog-row-dist">
-                            {leg ? nm(flownNmOf(row)) : "—"}
+                            {leg ? nm(flownNmOf(row)) : <FigureWait />}
                             {procedureOf(row) && <span className="whitespace-nowrap"> incl. {procedureOf(row)!.word}</span>}
                           </span>
                           {/* A separator only between cells that say something: with
@@ -338,7 +343,7 @@ export function NavLogList({
                               6.0 nm · · 2,500 ft" (the audit's WEB-39). */}
                           {airplane && <span aria-hidden="true"> · </span>}
                           <span role="cell">
-                            {!airplane ? null : leg ? (leg.ete_min === null ? "unflyable" : `${one(leg.ete_min)} min`) : "—"}
+                            {!airplane ? null : leg ? (leg.ete_min === null ? "unflyable" : `${one(leg.ete_min)} min`) : <FigureWait />}
                           </span>
                           {altitude && <span aria-hidden="true"> · </span>}
                           <span role="cell">{altitude}</span>

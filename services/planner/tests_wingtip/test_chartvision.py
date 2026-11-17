@@ -184,7 +184,8 @@ def test_a_missing_tile_is_not_read_as_black_linework():
     does not exist: 75 of 463 detections on one real route.
     """
     import numpy as np
-    from wingtip.chartvision import Mosaic, _dark_line
+    from wingtip.chartmosaic import Mosaic
+    from wingtip.chartpalette import _dark_line
 
     # Half the canvas is a real (white) chart, half was never filled.
     pixels = np.zeros((16, 16, 3), dtype=np.uint8)

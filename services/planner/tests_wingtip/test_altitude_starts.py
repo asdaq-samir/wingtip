@@ -6,13 +6,14 @@ change begins there."""
 
 from types import SimpleNamespace
 
+from wingtip import flight_hops
 from wingtip import flight_plan as fp
 from wingtip import own_altitude
 
 
 def _altitudes(monkeypatch, starts, own=None, route=("C81", "VPBNG", "KDLH")):
     flown = []
-    monkeypatch.setattr(fp, "resolve_altitude", lambda hop, fixes, profile, key, altitude_ft, *a, **k: flown.append(altitude_ft))
+    monkeypatch.setattr(flight_hops, "resolve_altitude", lambda hop, fixes, profile, key, altitude_ft, *a, **k: flown.append(altitude_ft))
     asked = fp.Asked(profile=None, aircraft_key="", own_altitudes=own or {"VPBNG": 4500.0}, altitude_starts=frozenset(starts))
     seen = own_altitude.visits(route)
     for i, (dep, dest) in enumerate(zip(route, route[1:])):

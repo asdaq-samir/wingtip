@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { describeEdit, LIMIT, observed, planStateOf, redone, restored, SETTLE_MS, started, undone } from "./planHistory";
+import {
+  describeEdit,
+  editName,
+  LIMIT,
+  observed,
+  planStateOf,
+  redone,
+  restored,
+  resumed,
+  SETTLE_MS,
+  started,
+  stepNames,
+  undone,
+} from "./planHistory";
 
 const route = { dep: "KMSN", stops: "KJVL,KRFD", dest: "KDPA" };
 
@@ -66,5 +79,39 @@ describe("planHistory", () => {
     // Adding is not taking away: no bar, the keyboard still undoes it.
     expect(describeEdit(route, { ...route, stops: "KJVL,KRFD,KUES" })).toBeNull();
     expect(describeEdit({ dep: "KMSN" }, { dep: "KMSN", dest: "KDPA" })).toBeNull();
+  });
+
+  it("keeps the departure time and the airplane, and puts back only the address's keys", () => {
+    const params = new URLSearchParams({ ...route, depart: "2026-11-17T15:00:00Z", airplane: '{"profile":"c172"}' });
+    expect(planStateOf(params)).toEqual({ ...route, depart: "2026-11-17T15:00:00Z", airplane: '{"profile":"c172"}' });
+    const back = restored(new URLSearchParams(), { ...route, depart: "2026-11-17T15:00:00Z", airplane: "{}" });
+    expect(Object.fromEntries(back)).toEqual({ ...route, depart: "2026-11-17T15:00:00Z" });
+  });
+
+  it("names each step by what it puts back, for the one place's Undo and Redo", () => {
+    expect(editName(route, { ...route, altitude_ft: "5500" })).toBe("Altitude");
+    expect(editName(route, { ...route, depart: "2026-11-17T15:00:00Z" })).toBe("Departure Time");
+    expect(editName(route, { ...route, airplane: "{}" })).toBe("Airplane");
+    expect(editName(route, { ...route, procs: "KDPA:R02R" })).toBe("Procedures");
+    expect(editName(route, { ...route, stops: "KJVL" })).toBe("Route");
+    let h = started(route, 0);
+    expect(stepNames(h)).toEqual({ undoName: null, redoName: null });
+    h = observed(h, { ...route, altitude_ft: "5500" }, 5_000).history;
+    expect(stepNames(h)).toEqual({ undoName: "Altitude", redoName: null });
+    h = undone(h, 6_000)!;
+    expect(stepNames(h)).toEqual({ undoName: null, redoName: "Altitude" });
+  });
+
+  it("takes a kept history up after a reload where the plan is the same, else starts anew", () => {
+    let h = started(route, 0);
+    h = observed(h, { ...route, altitude_ft: "5500" }, 5_000).history;
+    const kept = JSON.parse(JSON.stringify({ past: h.past, now: h.now, future: h.future }));
+    const again = resumed(kept, { ...route, altitude_ft: "5500" }, 9_000);
+    expect(again.past).toEqual([route]);
+    expect(undone(again, 10_000)!.now).toEqual(route);
+    // Another plan in the address (a link opened): nothing to undo.
+    expect(resumed(kept, { dep: "KORD" }, 9_000).past).toEqual([]);
+    // Whatever the browser kept, never a throw.
+    for (const junk of [null, "x", { past: 3 }, { past: [], future: [], now: null }]) expect(resumed(junk, route, 0).past).toEqual([]);
   });
 });

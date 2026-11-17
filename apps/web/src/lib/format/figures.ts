@@ -1,4 +1,5 @@
 import { normalizeDeg } from "../geo";
+import { callEngine } from "../engine/engine";
 /** How an altitude, a distance, a speed or a direction is written
  *  everywhere in the app: one formatter each, so a nav log, a briefing
  *  and a map card never write the same figure two ways, each held to the
@@ -36,10 +37,10 @@ export function feet(ft: number | null | undefined): string {
 /** A cruising altitude as the pilot asked it written: hundreds of feet in
  *  three figures, "FL-045" for 4,500 ft (the owner, 2026-10-27: "make it
  *  in the format FL-***"), and "FL-___" with none yet, a blank for each figure (the owner,
- *  2026-11-04: "FL should have three underscores"). */
-export function flightLevel(ft: number | null | undefined): string {
-  return ft === null || ft === undefined ? "FL-___" : `FL-${hundreds(ft)}`;
-}
+ *  2026-11-04: "FL should have three underscores"). The engine's
+ *  (words_flight_level), as the phones and the planner write it, asked
+ *  only where a route or its altitude is drawn, which waits for it. */
+export const flightLevel = (ft: number | null | undefined): string => callEngine("words_flight_level", { ft: ft ?? null });
 
 /**
  * A wind correction as it is applied to a course: "+3°" to the right,

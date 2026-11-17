@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, test } from "vitest";
 import type { Leg } from "../../lib/api/types";
-import { windStretches } from "./useFlightBriefing";
+import { windStretches } from "./briefingFigures";
 
 const leg = (from: string, to: string, altitude_ft: number, dir: number | null, speed = 10, oat_c: number | null = 5): Leg =>
   ({ from, to, altitude_ft, oat_c, wind: dir == null ? null : { wind_dir_true_deg: dir, wind_speed_kt: speed } }) as Leg;

@@ -5,9 +5,10 @@ its own report, the pilot's picks kept, the rest left for the page."""
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
-from wingtip import planning
+from wingtip import airports, planning
 from app import plan_query
 from wingtip import flight_plan as fp
+from wingtip import flight_procedures, pattern, runway_wind, weather
 
 NOW = datetime(2026, 10, 28, 18, 0, tzinfo=timezone.utc)
 
@@ -26,18 +27,18 @@ def _flight(dep, dest, lands=True):
 
 def _stubbed(monkeypatch, favoured, forecast=(), nearby=()):
     monkeypatch.setattr(planning, "now", lambda: NOW)
-    monkeypatch.setattr(fp.weather, "metar_for_idents", lambda idents: {i: {"wind_speed_kt": 10} for i in idents if i in favoured})
-    monkeypatch.setattr(fp.airports, "get_runways", lambda ident: [ident])
-    monkeypatch.setattr(fp.runway_wind, "with_winds", lambda runways, metar, lat, lon: runways)
-    monkeypatch.setattr(fp.pattern, "with_traffic", lambda ways, ident, lat, lon: ways)
-    monkeypatch.setattr(fp.runway_wind, "runway_in_use", lambda ways: favoured.get(ways[0]))
+    monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {i: {"wind_speed_kt": 10} for i in idents if i in favoured})
+    monkeypatch.setattr(airports, "get_runways", lambda ident: [ident])
+    monkeypatch.setattr(runway_wind, "with_winds", lambda runways, metar, lat, lon: runways)
+    monkeypatch.setattr(pattern, "with_traffic", lambda ways, ident, lat, lon: ways)
+    monkeypatch.setattr(runway_wind, "runway_in_use", lambda ways: favoured.get(ways[0]))
 
     def picked(ways, wind):
         return wind and (f"{ways[0]}@{wind['at']}" if "at" in wind else f"{ways[0]} by {wind['by']}")
 
-    monkeypatch.setattr(fp.runway_wind, "wind_pick", picked)
-    monkeypatch.setattr(fp, "_wind_of", lambda report, airport, source: {"by": "KUGN"} if source in nearby else None)
-    monkeypatch.setattr(fp.weather, "forecast_wind", lambda lat, lon, at, ident: {"at": at} if ident in forecast else None)
+    monkeypatch.setattr(runway_wind, "wind_pick", picked)
+    monkeypatch.setattr(flight_procedures, "_wind_of", lambda report, airport, source: {"by": "KUGN"} if source in nearby else None)
+    monkeypatch.setattr(weather, "forecast_wind", lambda lat, lon, at, ident: {"at": at} if ident in forecast else None)
 
 
 def test_each_field_within_the_hour_by_its_report_the_pilots_own_kept(monkeypatch):

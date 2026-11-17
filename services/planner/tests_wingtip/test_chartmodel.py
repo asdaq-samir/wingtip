@@ -77,7 +77,7 @@ def test_the_holdout_is_the_same_ratings_from_one_run_to_the_next_and_never_empt
 
 def test_retrain_scores_the_model_against_the_palettes_constants_on_the_same_held_out_ratings(tmp_path):
     pytest.importorskip("sklearn")
-    from wingtip.pipeline import InsufficientLabelsError
+    from wingtip.pipeline_shared import InsufficientLabelsError
 
     # A power line read as a road is a 0, a real crossing a 4: the
     # palette gives both 3.6, and the model can tell them by their ink.

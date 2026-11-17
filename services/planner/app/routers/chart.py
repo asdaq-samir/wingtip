@@ -11,8 +11,10 @@ from wingtip import chartlabels, charts, chartvision, geo
 
 from .. import chart_model
 from ..chart_model import TRAINING_HALF_WIDTH_NM
-from ..router_basics import line, load_route, ndjson, route_key
+from ..chart_summary import chart_summary
+from ..router_basics import CHART_CACHE, line, load_route, ndjson, route_key
 from ..detection import detect_job, faa_airports
+from ..schemas.plan import ChartInfo
 from ..schemas.chart import Classification, DetectBlock, DetectDone, DetectError, Detection, DetectStart, PickDeleted, PickSaved
 from ..gateway import DEVELOPER, SHARED
 
@@ -24,6 +26,16 @@ router = APIRouter()
 # The gateway forwards Cache-Control only for routes marked SHARED
 # (app.gateway), as the tiles' are.
 _CHART_TILE_MAX_AGE_S = 28 * 24 * 3600
+
+
+@router.get("/api/chart", openapi_extra=SHARED)
+def chart_info(response: Response) -> ChartInfo:
+    """The chart the map draws, for a map with no route on it yet: the
+    planner's page opens on a search bar over the chart, as Maps does.
+    The map asks for no tile before this answers, so it may be kept
+    (CHART_CACHE) and served from the CDN's edge."""
+    response.headers["Cache-Control"] = CHART_CACHE
+    return ChartInfo(**chart_summary())
 
 
 def _chart_tile(kind: charts.ChartKind, z: int, x: int, y: int, scale: int = 1) -> Response:

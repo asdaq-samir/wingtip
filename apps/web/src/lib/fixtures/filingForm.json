@@ -1,5 +1,5 @@
 {
-  "about": "A flight plan's item 15 and 16 as FAA Form 7233-4 writes them (AIM Appendix 4; FL at and above 18,000 ft, 14 CFR 91.121(a)(2)). Route cases name which stops are airways; no procedures. Web: features/brief/flightPlanForm.ts. iOS: FilingForm in InFlightViews.swift.",
+  "about": "A flight plan's item 15 and 16 as FAA Form 7233-4 writes them (AIM Appendix 4; FL at and above 18,000 ft, 14 CFR 91.121(a)(2)). Route cases name which stops are airways; no procedures. routeRead: a route typed as item 15's words, read back (DCT out, the speed and level groups read). Web: features/brief/flightPlanForm.ts. iOS: FilingForm in InFlightViews.swift.",
   "cruisingSpeed": [
     {
       "tasKt": 0,
@@ -200,6 +200,79 @@
     {
       "airways": [],
       "rnav": false
+    }
+  ],
+  "routeRead": [
+    {
+      "text": "KPWK V100 KLAS",
+      "points": [
+        "KPWK",
+        "V100",
+        "KLAS"
+      ],
+      "cruise_ft": null,
+      "tas_kt": null,
+      "changes": []
+    },
+    {
+      "text": "kpwk dct obk dct klas",
+      "points": [
+        "KPWK",
+        "OBK",
+        "KLAS"
+      ],
+      "cruise_ft": null,
+      "tas_kt": null,
+      "changes": []
+    },
+    {
+      "text": "N0110A065 KPWK OBK V100 KLAS",
+      "points": [
+        "KPWK",
+        "OBK",
+        "V100",
+        "KLAS"
+      ],
+      "cruise_ft": 6500,
+      "tas_kt": 110,
+      "changes": []
+    },
+    {
+      "text": "N0105VFR KMSN KDPA",
+      "points": [
+        "KMSN",
+        "KDPA"
+      ],
+      "cruise_ft": null,
+      "tas_kt": 105,
+      "changes": []
+    },
+    {
+      "text": "N0450F350 KORD LEXOR/N0467F380 KDEN",
+      "points": [
+        "KORD",
+        "LEXOR",
+        "KDEN"
+      ],
+      "cruise_ft": 35000,
+      "tas_kt": 450,
+      "changes": [
+        {
+          "at": "LEXOR",
+          "ft": 38000
+        }
+      ]
+    },
+    {
+      "text": "A04 F35 KA045",
+      "points": [
+        "A04",
+        "F35",
+        "KA045"
+      ],
+      "cruise_ft": null,
+      "tas_kt": null,
+      "changes": []
     }
   ]
 }

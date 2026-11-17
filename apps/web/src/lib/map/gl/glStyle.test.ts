@@ -12,12 +12,9 @@ import {
   DAY_CONTRAST,
   DAY_SATURATION,
   glZoom,
-  legPiece,
-  routeFeature,
-  routeLayers,
-  selectedLegFilter,
   specialUseLayers,
 } from "./glStyle";
+import { legPiece, routeFeature, routeLayers, selectedLegFilter } from "./glRoute";
 import { CLOSE_MAX_ZOOM, chartFade, imageryFade, imageryForExport, imageryFrom, useCloseImageryDrawn } from "./closeZoom";
 
 const chart = {

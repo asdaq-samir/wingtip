@@ -1,0 +1,57 @@
+{
+  "x-call": "wingtip_weather::live_feeds::call",
+  "description": "How long an answer from one of the FAA's SWIM feeds (the planner's /api/live/*) is fresh and how often a screen showing it asks again: a runway's RVR each minute, as it is updated (AIM 7-1-13), the ITWS alerts and special activity airspace's SFDPS status as often (the app's choice), the Command Center's programs every five minutes, and the D-ATIS and a flight's tower departures fresh for five minutes and not polled (the app's choice).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "LiveFeedRefreshInput",
+      "type": "object",
+      "properties": {
+        "feed": {
+          "type": "string",
+          "enum": [
+            "rvr",
+            "itws",
+            "saa",
+            "flow",
+            "atis",
+            "departures"
+          ]
+        }
+      },
+      "required": [
+        "feed"
+      ]
+    },
+    "answer": {
+      "title": "LiveFeedRefreshAnswer",
+      "type": "object",
+      "properties": {
+        "fresh_s": {
+          "type": "number",
+          "description": "How long an answer is fresh, seconds."
+        },
+        "poll_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "How often a screen showing it asks again, seconds; null where it is not polled."
+        },
+        "source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "fresh_s",
+        "poll_s",
+        "source"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

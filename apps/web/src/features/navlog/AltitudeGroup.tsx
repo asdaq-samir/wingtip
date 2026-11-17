@@ -16,7 +16,7 @@ import { cruiseOf } from "./altitude/plans";
 // altitudes were still being planned).
 /** With no altitude, "FL-" kept in the field as the airplane's "N-" is,
  *  and its three blanks after it in grey (flightLevel(null), "FL-___"). */
-const HINT = { start: "FL-", words: flightLevel(null).slice(3) };
+const hint = () => ({ start: "FL-", words: flightLevel(null).slice(3) });
 /** An altitude as said: feet under 18,000 ft, a flight level from there
  *  up, where altimeters are set to 29.92 (the engine's `altitude_said`;
  *  14 CFR 91.121(a)(2), AIM 4-2-9), its "ft" said in full as "feet", as
@@ -129,7 +129,7 @@ export default function AltitudeGroup({
       tabular
       shrink
       placeholder=""
-      hint={HINT}
+      hint={hint()}
       input={{
         // "FL-" in the field's own text, not a label beside it: iOS keeps
         // a few points inside an input's edge, which set the figures apart

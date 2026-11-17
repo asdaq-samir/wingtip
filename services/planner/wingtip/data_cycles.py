@@ -105,9 +105,9 @@ def entry(key: str, name: str, kind: str, effective: date | None, on: date | Non
 
 def _nasr_edition(cache_dir: Path) -> date | None:
     """The oldest of the NASR CSVs' own editions on disk: they come from
-    separate zips (wingtip.faa_data's _EDITIONS), and one left behind is
+    separate zips (wingtip.faa_editions's _EDITIONS), and one left behind is
     enough for the frequencies or the navaids to be wrong."""
-    from .faa_data import _effective_date
+    from .faa_editions import _effective_date
 
     days = [
         nasr_effective(_effective_date(cache_dir / name))
@@ -161,7 +161,7 @@ def status(on: date | None = None) -> list[dict]:
     pyramid on disk. The d-TPP and the Chart Supplement
     are not here: they are fetched for the cycle in force on the day they
     are asked for (wingtip.publications), never kept past it."""
-    from . import charts, cycle_pack
+    from . import charts, phone_pack
     from .terrain import DEFAULT_FAA_CACHE_DIR
 
     out = []
@@ -179,7 +179,7 @@ def status(on: date | None = None) -> list[dict]:
         if (base / "DOF.DAT").exists():
             out.append(entry("dof", "Obstacles", "dof", _dof_edition(base), on))
             break
-    phone = cycle_pack.phone_index()
+    phone = phone_pack.phone_index()
     if phone and phone.get("cycle"):
         try:
             held = date.fromisoformat(phone["cycle"])

@@ -1,4 +1,5 @@
-import { beacon, originOf, type DiagnosticsReport } from "./diagnostics";
+import { originOf, type DiagnosticsReport } from "./diagnostics";
+import { sendDiagnostics } from "./api/diagnostics";
 import { pageOf } from "./speed";
 
 /**
@@ -26,7 +27,7 @@ export function startLongTaskReports(win: Window = window) {
   }).observe({ type: "longtask", buffered: true });
   win.document.addEventListener("visibilitychange", () => {
     if (win.document.visibilityState !== "hidden" || seen.length === 0) return;
-    beacon(longTaskReport(seen.splice(0), pageOf(win.location.pathname), originOf(win)));
+    sendDiagnostics(longTaskReport(seen.splice(0), pageOf(win.location.pathname), originOf(win)));
   });
 }
 

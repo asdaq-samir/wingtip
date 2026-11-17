@@ -27,14 +27,14 @@ def airport_sizes() -> dict[str, str]:
     it goes by, for the airports table's SIZE: what the phone's map sizes
     a pin by, as the planner's /api/airports/in-view does. Empty where
     OurAirports cannot be had, and every pin is then drawn alike."""
-    from . import airports
+    from . import airport_places, airport_us, airports
 
     try:
-        us = airports._us_airports(airports.DEFAULT_CACHE_PATH)
+        us = airport_us._us_airports(airports.DEFAULT_CACHE_PATH)
     except Exception:
         log.warning("No OurAirports table for the pack's airport sizes; none written", exc_info=True)
         return {}
-    kinds = us["type"].map(airports._FIELD_KINDS)
+    kinds = us["type"].map(airport_places._FIELD_KINDS)
     found: dict[str, str] = {}
     for column in ("ident", "local_code", "icao_code", "gps_code"):
         if column in us.columns:

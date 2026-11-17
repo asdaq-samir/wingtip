@@ -5836,6 +5836,48 @@
       ],
       "additionalProperties": false
     },
+    "congested_reach": {
+      "description": "How far round a point the host looks for towns before congested_points measures it against them: 2,500 ft, a quarter past 14 CFR 91.119(b)'s 'horizontal radius of 2,000 feet', so a town at the radius's edge is always a candidate; in degrees of latitude (sixty nautical miles each), divided by the cosine of the farthest latitude asked (held to 0.2 and over, the latitude to 89 degrees) so it is short in no direction.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CongestedReachInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number",
+              "description": "The farthest latitude of the points asked, degrees (either sign)."
+            }
+          },
+          "required": [
+            "lat"
+          ]
+        },
+        "answer": {
+          "title": "CongestedReachAnswer",
+          "type": "object",
+          "properties": {
+            "search_ft": {
+              "type": "number",
+              "description": "The search's reach, ft."
+            },
+            "reach_deg": {
+              "type": "number",
+              "description": "The reach in degrees, never short of search_ft in any direction."
+            }
+          },
+          "required": [
+            "search_ft",
+            "reach_deg"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "copilot_watch": {
       "description": "The in-flight copilot: from own ship and the live data, the messages that change what the pilot should do, most pressing first (warning, caution, advisory; then the kinds' order), each with the words to show and speak and its sources. Warns, never limits.",
       "type": "object",
@@ -6339,6 +6381,43 @@
             "behind"
           ],
           "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "datis_ends": {
+      "description": "When a digital ATIS broadcast heard at a time stops being the airport's: two hours after it was heard, two of the updates AIM 4-1-13 asks ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DatisEndsInput",
+          "type": "object",
+          "properties": {
+            "heard": {
+              "type": "number",
+              "description": "When it was heard, Unix seconds."
+            }
+          },
+          "required": [
+            "heard"
+          ]
+        },
+        "answer": {
+          "title": "DatisEndsAnswer",
+          "type": "object",
+          "properties": {
+            "ends": {
+              "type": "number",
+              "description": "When it is no longer the airport's, Unix seconds."
+            }
+          },
+          "required": [
+            "ends"
+          ]
         }
       },
       "required": [
@@ -14275,6 +14354,48 @@
       ],
       "additionalProperties": false
     },
+    "ground_figures": {
+      "description": "The figures the planner's readers of the ground and its obstacles take: the lowest ground in North America, Badwater Basin's 282 ft below sea level (USGS; NPS), below which a terrain tile's height is the sea floor and the surface 14 CFR 91.159 and 91.119 measure from is the sea's, 0 ft; the obstacles the map stands up, 14 CFR 77.9(a)'s more than 200 ft AGL; how far either side of each hop the side view draws obstacles, 1 nm, a display width (the legal margins are 91.119(b)'s and 91.177(a)(2)'s, which the floors keep); and how far round a public-use airport the finer terrain is kept, 5 nm, where a 3\u00b0 path (AIM 1-1-9) is 1,500 ft up.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GroundFiguresInput",
+          "type": "object",
+          "properties": {},
+          "required": []
+        },
+        "answer": {
+          "title": "GroundFiguresAnswer",
+          "type": "object",
+          "properties": {
+            "lowest_ground_ft": {
+              "type": "number"
+            },
+            "obstacle_shown_agl_ft": {
+              "type": "number"
+            },
+            "profile_obstacle_nm": {
+              "type": "number"
+            },
+            "fine_terrain_radius_nm": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lowest_ground_ft",
+            "obstacle_shown_agl_ft",
+            "profile_obstacle_nm",
+            "fine_terrain_radius_nm"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "groundspeed_kt": {
       "description": "The nav log's ground speed once the heading holds the course: the airspeed's share along it less the wind's.",
       "type": "object",
@@ -16664,6 +16785,35 @@
       ],
       "additionalProperties": false
     },
+    "instructor_records_since": {
+      "description": "The first day an instructor's page lists what they signed: the same day 3 years before today, as 14 CFR 61.189(c) has an instructor keep their records \"for at least 3 years\" (a 29 February the 28th in a year without one).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "InstructorRecordsSinceInput",
+          "type": "object",
+          "properties": {
+            "today": {
+              "type": "string",
+              "description": "YYYY-MM-DD, UTC: the engine has no clock."
+            }
+          },
+          "required": [
+            "today"
+          ]
+        },
+        "answer": {
+          "title": "InstructorRecordsSinceAnswer",
+          "type": "string",
+          "description": "YYYY-MM-DD."
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "is_eastbound": {
       "description": "Whether a magnetic course is eastbound, 0 to 179 degrees (14 CFR 91.159(a)).",
       "type": "object",
@@ -17132,6 +17282,62 @@
             "systems",
             "notes",
             "standard_keying"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "live_feed_refresh": {
+      "description": "How long an answer from one of the FAA's SWIM feeds (the planner's /api/live/*) is fresh and how often a screen showing it asks again: a runway's RVR each minute, as it is updated (AIM 7-1-13), the ITWS alerts and special activity airspace's SFDPS status as often (the app's choice), the Command Center's programs every five minutes, and the D-ATIS and a flight's tower departures fresh for five minutes and not polled (the app's choice).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "LiveFeedRefreshInput",
+          "type": "object",
+          "properties": {
+            "feed": {
+              "type": "string",
+              "enum": [
+                "rvr",
+                "itws",
+                "saa",
+                "flow",
+                "atis",
+                "departures"
+              ]
+            }
+          },
+          "required": [
+            "feed"
+          ]
+        },
+        "answer": {
+          "title": "LiveFeedRefreshAnswer",
+          "type": "object",
+          "properties": {
+            "fresh_s": {
+              "type": "number",
+              "description": "How long an answer is fresh, seconds."
+            },
+            "poll_s": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "How often a screen showing it asks again, seconds; null where it is not polled."
+            },
+            "source": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "fresh_s",
+            "poll_s",
+            "source"
           ]
         }
       },
@@ -22966,6 +23172,98 @@
       ],
       "additionalProperties": false
     },
+    "procedure_leg_nm": {
+      "description": "How far a procedure's leg with no fix of its own to end at is drawn, nm (ARINC 424-18 5.21): an FC leg its coded distance from its fix; a leg flown to an altitude (FA, CA, VA) from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; any other (to a DME distance, a radial, an intercept, a manual termination) 2 nm.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureLegNmInput",
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "distance_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "known_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "path"
+          ]
+        },
+        "answer": {
+          "title": "ProcedureLegNmAnswer",
+          "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "procedure_reversal": {
+      "description": "The course reversal flown where a procedure's path turns `turn_deg` at a fix (AIM 5-4-9): \"coded\" -- the chart's hold in lieu of a procedure turn or its procedure turn there, entered -- where one is coded at the fix and the path turns more than 90\u00b0 there, come to from its far side (from the near side a pilot is lined up already and makes none, as on a NoPT route, 14 CFR 91.175(j)); else \"teardrop\" where the path doubles back more than 120\u00b0 at a fix past the procedure's first; else null.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureReversalInput",
+          "type": "object",
+          "properties": {
+            "turn_deg": {
+              "type": "number"
+            },
+            "coded": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "first_fix": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "turn_deg"
+          ]
+        },
+        "answer": {
+          "title": "ProcedureReversalAnswer",
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "coded",
+            "teardrop",
+            null
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "procedure_turn": {
       "description": "A 45\u00b0/180\u00b0 procedure turn at its fix (AIM 5-4-9): 4 nm out on the final's reciprocal, 2 nm on the barb's true course, a standard-rate 180\u00b0 turn at 120 kt toward the final's side, back to meet the final within 10 nm, and in to the fix.",
       "type": "object",
@@ -25389,6 +25687,47 @@
       ],
       "additionalProperties": false
     },
+    "report_near": {
+      "description": "Whether a station's report is near enough to a field with none of its own to say the field's weather by it, approximately: within 10 statute miles, the top of a METAR's vicinity (FAA-H-8083-28B 24.4.3.8.2, 'between 5\u201310 SM ... coded as in the vicinity (VC)'). A design choice: no FAA source says a station's flight category holds at another field.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ReportNearInput",
+          "type": "object",
+          "properties": {
+            "distance_nm": {
+              "type": "number",
+              "description": "The station's distance from the field, nm."
+            }
+          },
+          "required": [
+            "distance_nm"
+          ]
+        },
+        "answer": {
+          "title": "ReportNearAnswer",
+          "type": "object",
+          "properties": {
+            "near": {
+              "type": "boolean"
+            },
+            "within_sm": {
+              "type": "number",
+              "description": "How near is near, statute miles."
+            }
+          },
+          "required": [
+            "near",
+            "within_sm"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "reserve_min": {
       "description": "The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).",
       "type": "object",
@@ -25777,6 +26116,80 @@
             {
               "type": "null"
             }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "route_read": {
+      "description": "A route typed as a pilot writes one, read back as item 15 of FAA Form 7233-4 has it (AIM Appendix 4), for the route's one field: split on spaces and commas, DCT (direct) taken out; a cruising speed and level group or a level alone before the first point the cruise's (\"N0110A065\": 110 kt true, 6,500 ft; \"A\" and hundreds of feet in three figures, \"F\" a flight level, 14 CFR 1.1 and 91.121(a)(2); \"VFR\" a VFR level, no figure; metric speeds and levels give no figure); a point with a group after its stroke (\"LEXOR/N0467F380\") the point, its level a change from there. The rest are the route's points, airways and procedures in order, upper case, as typed: which is which is the caller's.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RouteReadInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The route as typed or pasted: \"KPWK DCT OBK V100 KLAS\"."
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "answer": {
+          "title": "RouteReadAnswer",
+          "type": "object",
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "cruise_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The cruise's altitude, feet MSL; null where none was given or it is VFR's."
+            },
+            "tas_kt": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The cruise's true airspeed, knots, where given in knots."
+            },
+            "changes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "at": {
+                    "type": "string"
+                  },
+                  "ft": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "at",
+                  "ft"
+                ]
+              }
+            }
+          },
+          "required": [
+            "points",
+            "cruise_ft",
+            "tas_kt",
+            "changes"
           ]
         }
       },
@@ -26542,6 +26955,69 @@
             "minimum_ft",
             "judged",
             "runways"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "rvr_readings": {
+      "description": "An RVR system's readings as STDDS's APDS feed sends them, two figures in hundreds of feet (\"35\" is 3,500 ft; \"00\", \"FF\" or blank none), each with whether it is the system's most: AIM 7-1-13's readouts run 'to a maximum value of 6,000 feet', so a reading of 6,000 is '6,000 or more'.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RvrReadingsInput",
+          "type": "object",
+          "properties": {
+            "readings": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "description": "Each part's reading as sent (touchdown, midpoint, rollout ...), in any order."
+            }
+          },
+          "required": [
+            "readings"
+          ]
+        },
+        "answer": {
+          "title": "RvrReadingsAnswer",
+          "type": "object",
+          "properties": {
+            "readings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ft": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "The reading, ft; null where the part reports none."
+                  },
+                  "more": {
+                    "type": "boolean",
+                    "description": "The system's most, 6,000 ft or more (AIM 7-1-13)."
+                  }
+                },
+                "required": [
+                  "ft",
+                  "more"
+                ]
+              },
+              "description": "Each reading, in the order given."
+            }
+          },
+          "required": [
+            "readings"
           ]
         }
       },
@@ -28992,6 +29468,48 @@
       ],
       "additionalProperties": false
     },
+    "track_left_from": {
+      "description": "Whether a recorded ADS-B track whose first point is distance_nm from the nearest field and above_ft over its elevation starts at its takeoff from that field: within 2 nm and 500 ft. From AC 90-66C: no turn to crosswind until 'within 300 feet below traffic pattern altitude' (11.7), the pattern 'usually ... 1,000 feet above the elevation of the airport surface' (Appendix A), and the departure leg 'at least 1/2 mile beyond the departure end of the runway'; the figures are this check's judgment, not a rule.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TrackLeftFromInput",
+          "type": "object",
+          "properties": {
+            "distance_nm": {
+              "type": "number",
+              "description": "The first point's distance from the nearest field, nm."
+            },
+            "above_ft": {
+              "type": "number",
+              "description": "Its altitude over the field's elevation, ft."
+            }
+          },
+          "required": [
+            "distance_nm",
+            "above_ft"
+          ]
+        },
+        "answer": {
+          "title": "TrackLeftFromAnswer",
+          "type": "object",
+          "properties": {
+            "left": {
+              "type": "boolean",
+              "description": "The track starts at its takeoff from the field."
+            }
+          },
+          "required": [
+            "left"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "traffic_fresh": {
       "description": "Whether each airplane heard is drawn: its position, seen_s old when the answer was made and the answer age_s old now, within 30 s (wingtip.traffic's STALE_S); older, it is somewhere else by now.",
       "type": "object",
@@ -29651,6 +30169,29 @@
         },
         "answer": {
           "title": "VfrAltitudesAnswer",
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "vfr_at_hours": {
+      "description": "The hours ahead a search's \"VFR at\u2026\" menu offers, in order: each within the 24 hours a TAF covers (FAA-H-8083-28B 27.4.1), the steps the app's choice.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "VfrAtHoursInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "VfrAtHoursAnswer",
           "type": "array",
           "items": {
             "type": "number"
@@ -31135,10 +31676,12 @@
     "compass_point",
     "compass_word",
     "congested_points",
+    "congested_reach",
     "copilot_watch",
     "csv_rows",
     "ctaf_of",
     "data_cycle",
+    "datis_ends",
     "datis_remarks",
     "debrief",
     "debrief_airborne",
@@ -31248,6 +31791,7 @@
     "gonogo_verdict_line",
     "gonogo_with_alternate",
     "great_circles",
+    "ground_figures",
     "groundspeed_kt",
     "handbook_figures",
     "handbook_read_check",
@@ -31273,6 +31817,7 @@
     "in_emergency",
     "in_flight",
     "inspections_due",
+    "instructor_records_since",
     "is_eastbound",
     "isa_temp_c",
     "kept_age",
@@ -31280,6 +31825,7 @@
     "least_crosswind",
     "legal_cruising_altitudes",
     "lighting_read",
+    "live_feed_refresh",
     "logbook_csv_read",
     "logbook_csv_write",
     "logbook_from_track",
@@ -31348,6 +31894,8 @@
     "procedure_climb_nm",
     "procedure_hold",
     "procedure_hold_leg_nm",
+    "procedure_leg_nm",
+    "procedure_reversal",
     "procedure_turn",
     "procedures_read",
     "procedures_write",
@@ -31374,10 +31922,12 @@
     "registered_profile",
     "remarks_read",
     "replay_track",
+    "report_near",
     "reserve_min",
     "route_options",
     "route_options_frame",
     "route_position",
+    "route_read",
     "route_way_warning",
     "runway_calm",
     "runway_crosswind",
@@ -31389,6 +31939,7 @@
     "runway_with_winds",
     "runways_read",
     "rvr_check",
+    "rvr_readings",
     "same_field",
     "select_cruise_altitude",
     "service_ceiling_on_the_day",
@@ -31417,6 +31968,7 @@
     "thin_track",
     "title_case",
     "tokens",
+    "track_left_from",
     "traffic_fresh",
     "traffic_kind",
     "traffic_marks",
@@ -31429,6 +31981,7 @@
     "velocity_track",
     "vertical_speed",
     "vfr_altitudes",
+    "vfr_at_hours",
     "vfr_basic_minimums",
     "vfr_floors",
     "vfr_minimums",

@@ -1,5 +1,5 @@
 //! A field's way in, as the 3D map stands it up over the ground (the web's
-//! features/plan/map/terrain/ApproachGl): each runway's extended
+//! features/plan-map/terrain/ApproachGl): each runway's extended
 //! centreline on the ground, the glidepath to its threshold in the air,
 //! the picked approach's path at its altitudes, and a ring at the
 //! traffic pattern's altitude. A picture to fly by, drawn from the FAA's

@@ -59,12 +59,13 @@ test("a tap beside the course opens its Route Leg sheet, its figures the nav log
     await expect(page.getByTestId("route-leg-card")).toBeVisible({ timeout: 2_000 });
   }).toPass({ timeout: slow(20_000) });
   const card = page.getByTestId("route-leg-card");
-  await expect(card.getByTestId("route-leg-ends")).toContainText("KDLH");
+  // Its ends the head's line under its name (the one drawer contract).
+  await expect(card.getByTestId("card-sub")).toContainText("KDLH");
   // The end is the destination: Direct to it, nothing to remove.
   await expect(card.getByTestId("route-leg-direct")).toContainText("Direct KDLH");
   await expect(card.getByTestId("route-leg-remove")).toHaveCount(0);
   // Not flying: no leg is the active one.
-  await expect(card.getByTestId("route-leg-active")).toHaveCount(0);
+  await expect(card.getByTestId("card-sub")).not.toContainText("Active");
   await expect(card.getByTestId("route-leg-distance")).toContainText(/\d+\.\d nm/, { timeout: slow(30_000) });
   await expect(card.getByTestId("route-leg-course")).toContainText(/\d{3}°M/);
   // The green casing shows along the selected leg only (the owner,

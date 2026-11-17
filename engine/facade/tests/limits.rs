@@ -139,6 +139,18 @@ fn the_filing_forms_items() {
     for c in f["rnav"].as_array().unwrap() {
         assert_eq!(ask("filed_rnav", json!({ "airways": c["airways"] })), c["rnav"], "{c}");
     }
+    // A route typed as item 15's words, read back (route_read).
+    for c in f["routeRead"].as_array().unwrap() {
+        let got = ask("route_read", json!({ "text": c["text"] }));
+        assert_eq!(got["points"], c["points"], "{c}");
+        for key in ["cruise_ft", "tas_kt"] {
+            assert_eq!(got[key].as_f64(), c[key].as_f64(), "{c} {key}");
+        }
+        assert_eq!(got["changes"].as_array().unwrap().len(), c["changes"].as_array().unwrap().len(), "{c}");
+        for (g, w) in got["changes"].as_array().unwrap().iter().zip(c["changes"].as_array().unwrap()) {
+            assert_eq!((&g["at"], g["ft"].as_f64()), (&w["at"], w["ft"].as_f64()), "{c}");
+        }
+    }
     assert_eq!(ask("filed_wake", json!({ "max_takeoff_lb": 2550 })), json!("L"));
     assert_eq!(ask("filed_zzzz", json!({ "ident": "C81" })), json!(true));
 }

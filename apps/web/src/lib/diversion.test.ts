@@ -1,7 +1,11 @@
 import { describe, expect, test } from "vitest";
 import type { EmergencyFields, Leg } from "./api/types";
 import { callEngine } from "./engine/engine";
-import { ALLOWANCES, divert, diversionFields, reasonable, windTriangle } from "./diversion";
+import { ALLOWANCES, divert, diversionFields, reasonable } from "./diversion";
+
+/** The engine's wind triangle, as the nav log and the diversion ask it. */
+const windTriangle = (tc: number, tas: number, windFromDeg: number, windKt: number) =>
+  callEngine("wind_triangle", { tc, tas, wind_from_deg: windFromDeg, wind_kt: windKt });
 import { stopwatch } from "./format";
 
 const leg = { tas_kt: 110, fuel_burn_gph: 8.5, magnetic_variation_deg: -3, wind: { wind_dir_true_deg: 270, wind_speed_kt: 20 } } as Leg;

@@ -11,7 +11,7 @@ import type { Briefing, Course, Leg } from "../../lib/api/types";
 import { capitalised, pirepConditions } from "../../lib/advisories";
 import { ceilingAndVisibility, clockTime, windLine } from "../plan";
 import CategoryBadge from "./CategoryBadge";
-import Observed from "../../components/Observed";
+import LiveAge from "../../components/LiveAge";
 import { categoryAt, nearestStation, ownStation, placesOf, tafReachNm, type Station } from "../../lib/fieldWeather";
 import { FINDING_TONE } from "../../lib/findings";
 import OnRouteRow from "./OnRouteRow";
@@ -183,16 +183,23 @@ export default function WeatherAlongRoute({
                     // (below).
                     <ListRow
                       title={metar?.raw ? `Now · wind ${windLine(metar).replace(/^(Calm|Variable|Not)/, (w) => w.toLowerCase())}` : "Now"}
-                      // When it was observed under the figures, amber past 90
-                      // minutes, as the map's card says it: the planner holds
-                      // a report up to 3 hours when aviationweather.gov does
-                      // not answer, and the go/no-go is made here.
+                      // Its age at the figures' end in a few characters,
+                      // greyed once the engine's weather_in_force says the
+                      // report no longer counts (LiveAge; the FPL redesign,
+                      // 2026-11-17): the planner holds a report up to 3 hours
+                      // when aviationweather.gov does not answer, and the
+                      // go/no-go is made here.
                       description={
                         metar?.raw ? (
-                          <>
-                            <span className="block">{metarFigures(metar)}</span>
-                            {metar.observed_at && <Observed at={metar.observed_at} className="block" />}
-                          </>
+                          <span className="block">
+                            {metarFigures(metar)}
+                            {metar.observed_at && (
+                              <>
+                                {" · "}
+                                <LiveAge at={metar.observed_at} what={{ product: "metar" }} testId="observed" />
+                              </>
+                            )}
+                          </span>
                         ) : (
                           "No current report"
                         )
