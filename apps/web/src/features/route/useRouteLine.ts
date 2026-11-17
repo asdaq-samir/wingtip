@@ -11,8 +11,10 @@ const NO_WAYS: RouteWay[] = [];
 const NO_CHIPS: RouteChip[] = [];
 
 /** Where along each way its chip sits, a share of its length, by the
- *  way's place among all those offered. */
-const WAY_CHIP_SHARES = [0.2, 0.4, 0.6, 0.8];
+ *  way's place among all those offered: kept off the line's ends, where
+ *  at a whole route's zoom a chip at a fifth covered the departure's mark
+ *  (the chips win their place over the names since the UI audit's B6). */
+const WAY_CHIP_SHARES = [0.3, 0.45, 0.6, 0.75];
 
 /** A card of FPL's route line: a way, its time, miles and fuel, and what
  *  it meets. */
