@@ -117,23 +117,19 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   ).toBe(1);
   expect(await page.locator("header").getByTestId("account-button").count()).toBe(0);
 
-  // The route's ••• at the end of the airplane's and the altitude's line;
-  // the Brief, the Nav Log, the Profile and Share one floating bar at the
-  // sheet's foot (FplTabBar; the owner, 2026-11-16) -- printing in the
-  // Brief's and the nav log's own (below).
-  const [briefBox, moreBox] = await Promise.all(
-    ["route-brief", "share-route"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
-  );
-  expect(briefBox.y).toBeGreaterThan(moreBox.y + moreBox.height);
+  // The Brief, the Nav Log, the Profile and the route's ••• one floating
+  // bar at the sheet's foot (FplTabBar; the owner, 2026-11-17: "move
+  // everything to the tab bar with a ... instead of share"), none of them
+  // in the airplane's and the altitude's line over the route.
   const tiles = await Promise.all(
-    ["route-brief", "route-navlog", "route-profile"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
+    ["route-brief", "route-navlog", "route-profile", "share-route"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
   );
-  for (const tile of tiles) expect(Math.abs(tile.y - briefBox.y)).toBeLessThan(2);
+  for (const tile of tiles) expect(Math.abs(tile.y - tiles[0]!.y)).toBeLessThan(2);
+  await expect(drawer.getByTestId("route-strip").getByTestId("share-route")).toHaveCount(0);
+  const airplane = (await drawer.getByTestId("aircraft-select").boundingBox())!;
+  expect(tiles[0]!.y).toBeGreaterThan(airplane.y + airplane.height);
   // The departure's time on its step in the route's list, not in this
   // line, at the owner's ask: the airplane's chip leads the line instead.
-  const airplane = (await drawer.getByTestId("aircraft-select").boundingBox())!;
-  expect(approachesBox.x).toBeGreaterThan(airplane.x);
-  expect(Math.abs(shareBox.y + shareBox.height / 2 - (airplane.y + airplane.height / 2))).toBeLessThan(12);
   await expect(drawer.getByTestId("procedures").getByTestId("depart-date")).toBeVisible();
   await drawer.getByTestId("share-route").click();
   // And, signed in, Save this flight among them.

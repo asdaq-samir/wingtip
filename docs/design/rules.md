@@ -453,9 +453,9 @@ off by default (the owner, 2026-11-13).
    strip with buttons in the same size as search bar"): the airplane's
    strip -- its N-number, the altitude, VFR/IFR beside it (a compact
    segmented control, the fields' 28 points tall; moved from the Profile
-   card by the owner, 2026-11-17) and the route's •••, a plain glyph in
-   the tint as the search bar's microphone is (one look for a button in
-   the row) -- in a bar exactly the search field's size, the page toggle at its end, so a turn
+   card by the owner, 2026-11-17), and before there is a route its •••
+   for Show Route As, a plain glyph in the tint as the search bar's
+   microphone is -- in a bar exactly the search field's size, the page toggle at its end, so a turn
    of the page changes only what is in the bar; under it the route as one
    row, in whichever of the three ways Show Route As picks (the box of
    pills, the line, or the cards' ends and the Routes' chips), never in the
@@ -464,12 +464,14 @@ off by default (the owner, 2026-11-13).
    miles, "1,334 nm", the owner's list, 2026-11-17) at their own size, and at the sheet's foot from
    half up a floating glass bar, the airport card's tab bar's capsule,
    of four buttons: Brief, Nav Log and Profile, each opening its card
-   over FPL, and Share, one menu for every way the plan leaves the app
-   (its link, Open in ForeFlight, the checkpoints for ForeFlight, Print
-   the nav log), the ••• keeping the plan's own (Save, File, Refresh,
-   Show Route As, Clear) (the owner, 2026-11-16, "make those action
-   buttons as tab bar again and move the calculations strip to where the
-   action buttons are now", buttons not tabs at the owner's pick). At the
+   over FPL, and the route's •••, "More", its one menu -- undo and redo,
+   its link, Open in ForeFlight, the checkpoints, the kneeboard, Save,
+   File, Plan again, Show Fuel Stops, Show Route As and Clear (the owner,
+   2026-11-16, "make those action buttons as tab bar again and move the
+   calculations strip to where the action buttons are now", buttons not
+   tabs at the owner's pick; 2026-11-17, "move everything to the tab bar
+   with a ... instead of share"); in flight the drawer's tiles are the
+   same four. At the
    pill the figures alone, large: swiped down, they grow. Taken up from
    the pill, FPL rises as the airport card does, one shared way for every
    sheet (the owner, 2026-11-16: "can we make it a shared code for all

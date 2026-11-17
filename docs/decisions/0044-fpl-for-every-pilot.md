@@ -58,9 +58,14 @@ a reload lost it.
 Panels and controls stay where they are but one. Four moves were offered
 and the owner set three aside (2026-11-17, "don't worry about the 4
 decisions"): one Flight card for Brief, Nav Log and Profile; the Go / No-Go
-verdict on the strip; "To" off the strip on the ground. The fourth he took:
-Share left the floating bar (and the in-flight tiles) for the route's •••
-("Yes to changing share to ... button").
+verdict on the strip; "To" off the strip on the ground. The fourth he took,
+and then said what he meant ("No I meant move everything to the tab bar
+with a ... instead of share"): Share left the floating bar and the
+in-flight tiles, and the route's •••, "More", took its place there -- the
+one menu of the route, its undo and redo, its link, Open in ForeFlight,
+the checkpoints, the kneeboard, Save, File, Plan again, Show Fuel Stops,
+Show Route As and Clear. The first row keeps a ••• only before there is
+a route, for Show Route As.
 
 ## Consequences
 

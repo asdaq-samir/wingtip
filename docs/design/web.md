@@ -722,15 +722,16 @@ after the bar. The bar before it is one size on both pages
 (`panelField`'s `SHEET_BAR`, 46 tall, round-ended, the row's room less
 the toggle): on Search the one search's field (`OneSearchField`), on FPL
 the airplane's strip (`features/fpl/workspace/FplBar`, its
-`RouteControls`: the N-number, the altitude and the route's •••, on one
-line, the airplane and the altitude giving way first, the route's •••
-holding Share too (its link, Open in ForeFlight, the checkpoints, the
-kneeboard; the owner, 2026-11-17); the Brief, the Nav Log and the Profile
-are the floating glass bar at the sheet's foot
+`RouteControls`: the N-number, the altitude, VFR/IFR and, before there
+is a route, the route's •••, on one line, the N-number giving way first;
+the Brief, the Nav Log, the Profile and the route's ••• ("More", the
+route's one menu with its sharing; the owner, 2026-11-17: "move
+everything to the tab bar with a ... instead of share") are the floating
+glass bar at the sheet's foot
 from half up, `FplTabBar` in `FlightFoot`, `CardAction`s in its `bar` look
 in the cards' tabs' capsule (`CardTabBar`'s `GlassBar`, held at the
-foot as they are by sheet/insets' `HOLD_AT_EDGE`), each opening its card, Share the route's
-`ShareMenu` as `"send"`, out of sight at the pill under the figures
+foot as they are by sheet/insets' `HOLD_AT_EDGE`), each opening its card, the ••• the route's
+`ShareMenu` in its `look="bar"` (`"tile"` in flight's `FplActions`), out of sight at the pill under the figures
 (sheet/insets' `RISEN_OVER`, in sight only while a finger has the
 sheet). The figures under the route are FPL's pill too, one copy at
 every size: components/sheet/pinAtFoot's `usePinAtFoot` holds them on

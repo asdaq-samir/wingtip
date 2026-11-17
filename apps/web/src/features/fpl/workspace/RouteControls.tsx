@@ -13,7 +13,7 @@ const FLIGHT_RULES = [
 
 /** The route's chips: the airplane, the altitude and the time
  *  (`flightInputs`), the flight rules beside the altitude, a local
- *  flight's time aloft, and the route's ••• (`share`). */
+ *  flight's time aloft, and before there is a route its ••• (`share`). */
 export default function RouteControls({
   vm,
   flightInputs,
@@ -53,19 +53,18 @@ export default function RouteControls({
           <LocalDuration minutes={localMin} options={LOCAL_MINUTES} onChange={changeLocalMin} />
         </Suspense>
       )}
-      {/* At the row's end the route's ••• alone: the Brief, the Nav Log,
-          the Profile and Share are the floating bar at the sheet's foot
-          (FplTabBar; the owner, 2026-11-16). A round button at a fixed 32 in
+      {/* The route's ••• at the row's end only before there is a route,
+          for its Show Route As (the owner, 2026-11-13: the layout reachable
+          before there is a route); once there is one it ends FPL's floating
+          bar (FplTabBar; the owner, 2026-11-17: "move everything to the tab
+          bar with a ... instead of share"). A round button at a fixed 32 in
           points, as iOS's bar buttons keep their size at any text size
           (the FPL audit's A3). */}
-      <div className="ml-auto flex shrink-0 items-center pl-2" data-testid="route-actions">
-        {/* The route's menu, with a route or without: before one, only its
-            Show Route As (the owner, 2026-11-13: the layout reachable
-            before there is a route), where it was once kept back until a
-            route was entered ("the share button should not appear before
-            a route is entered"). */}
-        {share}
-      </div>
+      {share && (
+        <div className="ml-auto flex shrink-0 items-center pl-2" data-testid="route-actions">
+          {share}
+        </div>
+      )}
     </div>
   );
 }
