@@ -15,12 +15,14 @@ import app.wingtipmaps.gateway.planner.model.PlannerPilotNotes;
 import app.wingtipmaps.gateway.planner.model.PlannerPilotNotesForgotten;
 import app.wingtipmaps.gateway.planner.model.PlannerStudioDraft;
 import app.wingtipmaps.gateway.planner.model.PlannerWordsSources;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.service.annotation.DeleteExchange;
 import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.annotation.HttpExchange;
@@ -53,6 +55,11 @@ public interface PlannerApi {
 
     @GetExchange("/api/pilot/endorsement-kinds")
     List<PlannerEndorsementKind> endorsementKinds();
+
+    /** The first day an instructor's page lists (the engine's
+     *  instructor_records_since, 14 CFR 61.189(c)); `today` YYYY-MM-DD. */
+    @GetExchange("/api/pilot/instructor-records-since")
+    LocalDate instructorRecordsSince(@RequestParam String today);
 
     @PostExchange("/api/pilot/endorsement-fill")
     PlannerEndorsementFilled fill(@RequestBody PlannerEndorsementFillAsk ask);

@@ -42,6 +42,8 @@
 //!   class and its GFA cloud text;
 //! - freezing: freezing rain and drizzle (FZRA, FZDZ) in a field's METAR
 //!   or TAF, which ices an airplane out of cloud (AIM 7-1-20);
+//! - live_feeds: how often the apps ask again for the SWIM feeds' live
+//!   reports (RVR's minute, AIM 7-1-13);
 //! - worse: what counts as a route's weather getting worse between two
 //!   readings of its briefing (AIM 7-1-6, 7-1-7).
 
@@ -55,6 +57,7 @@ pub mod forecast;
 pub mod freezing;
 pub mod gairmet_window;
 pub mod lighting_read;
+pub mod live_feeds;
 pub mod metar;
 pub mod model_levels;
 pub mod model_weather;

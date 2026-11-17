@@ -55,7 +55,7 @@ scripts/build/design_tokens.py 551
 scripts/build/engine-contract-apps.mjs 435
 scripts/dev/check.sh 407
 services/gateway/src/main/java/app/wingtipmaps/gateway/security/SecurityConfig.java 421
-services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 534
+services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 531
 services/gateway/src/test/java/app/wingtipmaps/gateway/controller/AircraftControllerTest.java 424
 services/gateway/src/test/java/app/wingtipmaps/gateway/controller/PlannerProxyControllerTest.java 544
 services/ingest/ingest/swim.py 411

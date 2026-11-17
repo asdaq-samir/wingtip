@@ -6786,6 +6786,11 @@ enum EngineContract {
         }
     }
 
+    struct InstructorRecordsSinceInput: Codable, Equatable, Sendable {
+        /// YYYY-MM-DD, UTC: the engine has no clock.
+        var today: String
+    }
+
     struct IsaTempCInput: Codable, Equatable, Sendable {
         var altitudeFt: Double
 
@@ -6976,6 +6981,24 @@ enum EngineContract {
         var lighting: [String]
         /// Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
         var beacon: [String]?
+    }
+
+    struct LiveFeedRefreshAnswer: Codable, Equatable, Sendable {
+        /// How long an answer is fresh, seconds.
+        var freshS: Double
+        /// How often a screen showing it asks again, seconds; null where it is not polled.
+        var pollS: Double?
+        var source: String
+
+        enum CodingKeys: String, CodingKey {
+            case freshS = "fresh_s"
+            case pollS = "poll_s"
+            case source
+        }
+    }
+
+    struct LiveFeedRefreshInput: Codable, Equatable, Sendable {
+        var feed: String
     }
 
     struct LogbookCsvReadAnswer: Codable, Equatable, Sendable {
@@ -12698,6 +12721,9 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case fromFt = "from_ft"
         }
+    }
+
+    struct VfrAtHoursInput: Codable, Equatable, Sendable {
     }
 
     struct VfrBasicMinimumsAnswer: Codable, Equatable, Sendable {

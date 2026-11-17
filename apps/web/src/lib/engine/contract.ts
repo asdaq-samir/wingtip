@@ -658,6 +658,10 @@ export type InFlightAnswer = {
     fuel_left_gal: number | null;
   } | null;
 } | null;
+/**
+ * YYYY-MM-DD.
+ */
+export type InstructorRecordsSinceAnswer = string;
 export type IsEastboundAnswer = boolean;
 export type IsaTempCAnswer = number;
 /**
@@ -1038,6 +1042,7 @@ export type VelocityTrackAnswer = {
 }[];
 export type VerticalSpeedAnswer = number | null;
 export type VfrAltitudesAnswer = number[];
+export type VfrAtHoursAnswer = number[];
 export type VfrFloorsAnswer = {
   floor_ft: number;
   lowest_ground_ft: number;
@@ -2596,6 +2601,13 @@ export interface EngineContract {
     answer: InspectionsDueAnswer;
   };
   /**
+   * The first day an instructor's page lists what they signed: the same day 3 years before today, as 14 CFR 61.189(c) has an instructor keep their records "for at least 3 years" (a 29 February the 28th in a year without one).
+   */
+  instructor_records_since: {
+    input: InstructorRecordsSinceInput;
+    answer: InstructorRecordsSinceAnswer;
+  };
+  /**
    * Whether a magnetic course is eastbound, 0 to 179 degrees (14 CFR 91.159(a)).
    */
   is_eastbound: {
@@ -2643,6 +2655,13 @@ export interface EngineContract {
   lighting_read: {
     input: LightingReadInput;
     answer: LightingReadAnswer;
+  };
+  /**
+   * How long an answer from one of the FAA's SWIM feeds (the planner's /api/live/*) is fresh and how often a screen showing it asks again: a runway's RVR each minute, as it is updated (AIM 7-1-13), the ITWS alerts and special activity airspace's SFDPS status as often (the app's choice), the Command Center's programs every five minutes, and the D-ATIS and a flight's tower departures fresh for five minutes and not polled (the app's choice).
+   */
+  live_feed_refresh: {
+    input: LiveFeedRefreshInput;
+    answer: LiveFeedRefreshAnswer;
   };
   /**
    * A logbook CSV (ForeFlight's export or this logbook's own) read into the gateway's LogbookEntryRequest entries, camelCase, and the lines skipped with why; landings as 14 CFR 61.57(a) and (b) count them. Air time (not a 61.51(b) column) is this logbook's AirTime, else ForeFlight's TimeOff to TimeOn, else 0 (not known); an entry read from a file is never from a track.
@@ -3686,6 +3705,13 @@ export interface EngineContract {
   vfr_altitudes: {
     input: VfrAltitudesInput;
     answer: VfrAltitudesAnswer;
+  };
+  /**
+   * The hours ahead a search's "VFR at…" menu offers, in order: each within the 24 hours a TAF covers (FAA-H-8083-28B 27.4.1), the steps the app's choice.
+   */
+  vfr_at_hours: {
+    input: VfrAtHoursInput;
+    answer: VfrAtHoursAnswer;
   };
   /**
    * The surface-area minimums (14 CFR 91.155(c), (d)), which the planner holds every route to: no VFR under a 1,000 ft ceiling or in under 3 statute miles within a surface area of controlled airspace. Not the least VFR ever asks (Class G at or below 1,200 ft above the surface by day: 1 sm and clear of clouds, 91.155(a)).
@@ -8851,6 +8877,12 @@ export interface InspectionsDueAnswer {
     until: string;
   } | null;
 }
+export interface InstructorRecordsSinceInput {
+  /**
+   * YYYY-MM-DD, UTC: the engine has no clock.
+   */
+  today: string;
+}
 export interface IsEastboundInput {
   magnetic_course_deg: number;
 }
@@ -8993,6 +9025,20 @@ export interface LightingNote {
    */
   words: string;
   as_written: string;
+}
+export interface LiveFeedRefreshInput {
+  feed: "rvr" | "itws" | "saa" | "flow" | "atis" | "departures";
+}
+export interface LiveFeedRefreshAnswer {
+  /**
+   * How long an answer is fresh, seconds.
+   */
+  fresh_s: number;
+  /**
+   * How often a screen showing it asks again, seconds; null where it is not polled.
+   */
+  poll_s: number | null;
+  source: string;
 }
 export interface LogbookCsvReadInput {
   text: string;
@@ -12970,6 +13016,7 @@ export interface VerticalSpeedInput {
 export interface VfrAltitudesInput {
   from_ft?: number | null;
 }
+export interface VfrAtHoursInput {}
 export interface VfrBasicMinimumsInput {}
 export interface VfrBasicMinimumsAnswer {
   ceiling_ft: number;

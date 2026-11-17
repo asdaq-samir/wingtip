@@ -9,8 +9,8 @@ import {
   RUNWAY_STEPS,
   SURFACES,
   SURFACE_WORDS,
-  VFR_AT_STEPS,
   WITHIN_STEPS,
+  vfrAtSteps,
   runwayWords,
   vfrAtClock,
   vfrAtMenuWords,
@@ -88,7 +88,7 @@ export default function FiltersPage() {
         <ListRow title="VFR at">
           <StepMenu
             value={draft.vfrInHours}
-            steps={VFR_AT_STEPS}
+            steps={vfrAtSteps}
             words={vfrAtMenuWords}
             onPick={(vfrInHours) => setDraft({ vfrInHours })}
             trigger={menuButton(vfrAtClock(draft.vfrInHours) ?? "Any Time")}

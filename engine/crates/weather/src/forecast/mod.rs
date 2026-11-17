@@ -7,8 +7,9 @@
 //! what they say along a route (route) -- a TAF over a window of time, the
 //! worst forecast near the route, the SIGMETs, PIREPs and G-AIRMETs it
 //! meets -- and the dry run played against the forecast for the hours it
-//! flies (run). The hosts fetch; what the products mean is decided here, once.
+//! flies (run), and the hours ahead a search's "VFR at…" offers (ahead). The hosts fetch; what the products mean is decided here, once.
 
+pub mod ahead;
 pub mod awc;
 pub mod calls;
 pub mod covers;

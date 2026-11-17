@@ -55,7 +55,6 @@ compass_point
 compass_word
 copilot_watch
 csv_rows
-ctaf_of
 data_cycle
 datis_remarks
 debrief
@@ -111,7 +110,6 @@ glide_ring
 gonogo_balance
 gonogo_brief
 gonogo_default_load
-gonogo_density_altitude
 gonogo_end_distance
 gonogo_glance_lines
 gonogo_icing
@@ -145,6 +143,7 @@ in_flight
 kept_age
 kneeboard_radio
 least_crosswind
+live_feed_refresh
 logbook_csv_read
 logbook_csv_write
 logbook_from_track
@@ -218,6 +217,7 @@ traffic_marks
 traffic_pattern
 turbulence_category
 underway
+vfr_at_hours
 vfr_basic_minimums
 vor_check_limit_deg
 weather_in_force
@@ -229,4 +229,5 @@ wind_components
 wind_pick
 wind_steady_or_gust
 wind_triangle
+words_flight_level
 workings_right

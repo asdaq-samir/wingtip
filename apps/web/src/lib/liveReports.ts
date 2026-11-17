@@ -8,13 +8,27 @@
  * rvr_check, read_datis).
  */
 import { api } from "./api/client";
+import { callEngine, engineLoaded, type EngineInput } from "./engine/engine";
 import { zuluTime } from "./format";
 import type { FlowProgram, ItwsProduct, SaaStatus } from "./api/types";
 import type { VerdictInput } from "./verdict";
 
-/** How long an answer is fresh, ms: ITWS's products expire in three
- *  minutes, RVR is made each minute (AIM 7-1-13). */
-const LIVE_MS = 60_000;
+type Feed = EngineInput<"live_feed_refresh">["feed"];
+
+/** How long a feed's answer is fresh and how often a screen showing it
+ *  asks again, as react-query takes them: the engine's (live_feed_refresh,
+ *  RVR's minute, AIM 7-1-13). Read as the query asks, so a card drawn
+ *  before the engine is there asks at once and polls from its next answer. */
+function cadence(feed: Feed) {
+  const asked = () => (engineLoaded() ? callEngine("live_feed_refresh", { feed }) : null);
+  return {
+    staleTime: () => (asked()?.fresh_s ?? 0) * 1000,
+    refetchInterval: () => {
+      const poll = asked()?.poll_s;
+      return poll == null ? false : poll * 1000;
+    },
+  };
+}
 
 /** Idents as the planner's lists take them, upper case and once each. */
 function idents(list: (string | null | undefined)[]): string[] {
@@ -29,8 +43,7 @@ export const itwsQuery = (airports: (string | null | undefined)[]) => {
     queryKey: ["live", "itws", asked],
     queryFn: () => api.liveItws(asked),
     enabled: asked.length > 0,
-    staleTime: LIVE_MS,
-    refetchInterval: LIVE_MS,
+    ...cadence("itws"),
     meta: { silent: true },
   };
 };
@@ -41,8 +54,7 @@ export const flowQuery = (airports: (string | null | undefined)[]) => {
     queryKey: ["live", "flow", asked],
     queryFn: () => api.liveFlow(asked),
     enabled: asked.length > 0,
-    staleTime: 5 * LIVE_MS,
-    refetchInterval: 5 * LIVE_MS,
+    ...cadence("flow"),
     meta: { silent: true },
   };
 };
@@ -53,8 +65,7 @@ export const saaQuery = (designators: string[]) => {
     queryKey: ["live", "saa", asked],
     queryFn: () => api.liveSaa(asked),
     enabled: asked.length > 0,
-    staleTime: LIVE_MS,
-    refetchInterval: LIVE_MS,
+    ...cadence("saa"),
     meta: { silent: true },
   };
 };
@@ -63,8 +74,7 @@ export const rvrQuery = (airport: string | null | undefined) => ({
   queryKey: ["live", "rvr", airport?.toUpperCase() ?? ""],
   queryFn: () => api.liveRvr(airport!),
   enabled: !!airport,
-  staleTime: LIVE_MS,
-  refetchInterval: LIVE_MS,
+  ...cadence("rvr"),
   meta: { silent: true },
 });
 
@@ -72,7 +82,7 @@ export const datisQuery = (airport: string | null | undefined) => ({
   queryKey: ["live", "atis", airport?.toUpperCase() ?? ""],
   queryFn: () => api.liveAtis(airport!),
   enabled: !!airport,
-  staleTime: 5 * LIVE_MS,
+  ...cadence("atis"),
   meta: { silent: true },
 });
 
@@ -80,7 +90,7 @@ export const departuresQuery = (ident: string | null | undefined) => ({
   queryKey: ["live", "departures", ident?.toUpperCase() ?? ""],
   queryFn: () => api.liveDepartures(ident!),
   enabled: !!ident && ident.length >= 2,
-  staleTime: 5 * LIVE_MS,
+  ...cadence("departures"),
   meta: { silent: true },
 });
 

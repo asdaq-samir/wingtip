@@ -9,8 +9,8 @@ import {
   RUNWAY_STEPS,
   SURFACES,
   SURFACE_WORDS,
-  VFR_AT_STEPS,
   WITHIN_STEPS,
+  vfrAtSteps,
   filtersOn,
   listWords,
   runwayWords,
@@ -73,7 +73,7 @@ export default function FilterChips() {
       {toggle("vfrNow", "VFR Now")}
       <StepMenu
         value={filters.vfrInHours}
-        steps={VFR_AT_STEPS}
+        steps={vfrAtSteps}
         words={vfrAtMenuWords}
         onPick={(vfrInHours) => set({ vfrInHours })}
         testId="chip-vfr-at"

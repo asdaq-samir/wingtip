@@ -1291,6 +1291,12 @@ fun Engine.inspectionsDue(annualOn: String? = null, eltOn: String? = null, stati
     rule("inspections_due", EngineContract.InspectionsDueInput(annualOn = annualOn, eltOn = eltOn, staticCheckOn = staticCheckOn, transponderCheckOn = transponderCheckOn, hundredHourAtHours = hundredHourAtHours, vorCheck = vorCheck))
 
 /**
+ * The first day an instructor's page lists what they signed: the same day 3 years before today, as 14 CFR 61.189(c) has an instructor keep their records "for at least 3 years" (a 29 February the 28th in a year without one).
+ */
+fun Engine.instructorRecordsSince(today: String): Result<String> =
+    rule("instructor_records_since", EngineContract.InstructorRecordsSinceInput(today = today))
+
+/**
  * Whether a magnetic course is eastbound, 0 to 179 degrees (14 CFR 91.159(a)).
  */
 fun Engine.isEastbound(magneticCourseDeg: Double): Result<Boolean> =
@@ -1331,6 +1337,12 @@ fun Engine.legalCruisingAltitudes(floorFt: Double, ceilingFt: Double? = null, ma
  */
 fun Engine.lightingRead(lighting: List<String>, beacon: List<String>? = null): Result<EngineContract.LightingReadAnswer> =
     rule("lighting_read", EngineContract.LightingReadInput(lighting = lighting, beacon = beacon))
+
+/**
+ * How long an answer from one of the FAA's SWIM feeds (the planner's /api/live/&#42;) is fresh and how often a screen showing it asks again: a runway's RVR each minute, as it is updated (AIM 7-1-13), the ITWS alerts and special activity airspace's SFDPS status as often (the app's choice), the Command Center's programs every five minutes, and the D-ATIS and a flight's tower departures fresh for five minutes and not polled (the app's choice).
+ */
+fun Engine.liveFeedRefresh(feed: String): Result<EngineContract.LiveFeedRefreshAnswer> =
+    rule("live_feed_refresh", EngineContract.LiveFeedRefreshInput(feed = feed))
 
 /**
  * A logbook CSV (ForeFlight's export or this logbook's own) read into the gateway's LogbookEntryRequest entries, camelCase, and the lines skipped with why; landings as 14 CFR 61.57(a) and (b) count them. Air time (not a 61.51(b) column) is this logbook's AirTime, else ForeFlight's TimeOff to TimeOn, else 0 (not known); an entry read from a file is never from a track.
@@ -2225,6 +2237,12 @@ fun Engine.verticalSpeed(samples: List<EngineContract.VerticalSpeedInputSamplesI
  */
 fun Engine.vfrAltitudes(fromFt: Double? = null): Result<List<Double>> =
     rule("vfr_altitudes", EngineContract.VfrAltitudesInput(fromFt = fromFt))
+
+/**
+ * The hours ahead a search's "VFR at…" menu offers, in order: each within the 24 hours a TAF covers (FAA-H-8083-28B 27.4.1), the steps the app's choice.
+ */
+fun Engine.vfrAtHours(): Result<List<Double>> =
+    rule("vfr_at_hours", EngineContract.VfrAtHoursInput())
 
 /**
  * The surface-area minimums (14 CFR 91.155(c), (d)), which the planner holds every route to: no VFR under a 1,000 ft ceiling or in under 3 statute miles within a surface area of controlled airspace. Not the least VFR ever asks (Class G at or below 1,200 ft above the surface by day: 1 sm and clear of clouds, 91.155(a)).
