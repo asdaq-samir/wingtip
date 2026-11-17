@@ -11,7 +11,7 @@ import { useProceduresRoute } from "./useProceduresRoute";
 import type { ProceduresRouteProps } from "./routeProps";
 import { RouteLine } from "./RouteLine";
 import { FieldStep } from "./FieldStep";
-import { pointEnd } from "./pointEnd";
+import { pointEnd, stopRemoval } from "./pointEnd";
 import { nthTyped } from "./visits";
 import { AddStopRow, HoldRow, NewStopCard, Step } from "./RouteRows";
 import { RouteGrid, type RouteItem } from "./RouteGrid";
@@ -144,6 +144,7 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
     id: `${a.role}:${a.ident}`,
     label: `${a.role} ${pointName(a.ident)}`,
     point: edit ? pointIndex(a.ident, a.role) : undefined,
+    remove: stopRemoval(vm, a.ident, a.role === "Stop"),
     node: <FieldStep vm={vm} a={a} row={row} last={last} leads={leads} />,
   });
   // A fix flown twice (out and back over VPBNG) is two rows and two typed
@@ -219,6 +220,7 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
       id: row.key,
       label: rowPoint(row).name,
       point: edit && typedAt >= 0 ? typedAt : undefined,
+      remove: end?.remove,
       node: (
         <Step
           first={steps.length === 0}

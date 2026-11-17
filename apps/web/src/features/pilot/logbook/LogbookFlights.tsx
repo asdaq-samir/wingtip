@@ -41,7 +41,7 @@ function EntryRow({ e, vm }: { e: LogbookEntry; vm: LogbookFlightsModel }) {
   // Taken off as every kept list's rows are -- its ••• or a long press, or
   // Edit's minus -- at once, with a toast's Undo.
   return (
-    <RemovableRow name={`the flight of ${day}`} label={`Delete the flight of ${day}`} onDelete={() => vm.remove(e)}>
+    <RemovableRow name={`the flight of ${day}`} label={`Delete the flight of ${day}`} onDelete={() => vm.remove(e)} editing={vm.editing}>
       <ListRow
         media={vm.editing ? <RemoveMinus label={`Delete the flight of ${day}…`} /> : undefined}
         title={`${day}${e.route ? ` · ${e.route}` : ""}`}

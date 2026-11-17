@@ -142,6 +142,7 @@ function RecentRouteRows({
             key={key}
             label={`More for ${name}`}
             testId="route-recent-more"
+            swipe
             actions={[
               { label: "Share", icon: <Share />, onSelect: share, testId: "route-recent-share" },
               { label: "Remove", icon: <Trash2 />, destructive: true, onSelect: () => remove(key), testId: "route-recent-remove" },

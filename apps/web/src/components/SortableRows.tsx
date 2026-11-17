@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { GripVertical } from "lucide-react";
 import { Button, GridList, GridListItem, useDragAndDrop } from "react-aria-components";
+import { feel } from "../lib/haptics";
 
 // Apart from Favorites' strips and tiles, which the first load draws: the
 // lists in full that a pilot edits are loaded when one is opened
@@ -31,6 +32,8 @@ export function SortableRows({
 }) {
   const { dragAndDropHooks } = useDragAndDrop({
     getItems: (keys) => [...keys].map((key) => ({ "text/plain": String(key) })),
+    // Felt as it lifts where the browser can (Chrome on Android).
+    onDragStart: () => feel("detent"),
     onReorder: ({ keys, target }) => {
       const from = ids.indexOf(String([...keys][0]));
       const at = ids.indexOf(String(target.key));

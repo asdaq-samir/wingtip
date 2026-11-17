@@ -989,6 +989,38 @@ less cluttered". Decision [0044](../decisions/0044-fpl-for-every-pilot.md).
 7. **One surface.** No box in a box, fewer borders and pills; spacing
    groups, colour only for meaning.
 
+## 12. A list's rows: swipe to remove, hold to move (the owner, 2026-11-17)
+
+The owner: "Can we add swipe gesture to remove and hold/drag to move etc
+like iPhone?" Decision [0045](../decisions/0045-row-gestures.md).
+
+1. **A swipe to the left removes.** On every row whose menu has Remove
+   (the Recents and Favorites, airports' and airplanes', Home, your
+   Airplane, the routes' Recents, saved Flights, the logbook's flights)
+   and on a stop the pilot typed in FPL's route list (not the departure
+   or the destination, whose menus have no Remove): a short swipe
+   uncovers the red button with the menu's word, a full swipe (past 60%
+   of the row) removes it when let go, felt as it crosses the line where
+   the device can. Both call the menu's own Remove, so its Undo (the
+   toast's, the route's •••) is the same. A tap anywhere closes an open
+   row. Off in a list's Edit, where the minus removes.
+2. **A touch and hold moves.** A movable row of FPL's route list (a
+   typed point, where the list edits the route) is lifted by a hold
+   anywhere on it and put down where the drop line shows; its words are
+   not selected by the hold. The grip stays for a mouse, a keyboard and
+   VoiceOver, shown only where the list can be reordered.
+3. **The menu stays.** A swipe and a hold are additions: the row's •••
+   and its long press (where the row does not move) keep every action
+   for a mouse, a keyboard and VoiceOver (WCAG 2.5.7, a single pointer).
+4. **Sideways is the row's.** A sideways drag on a swipeable row never
+   moves the sheet; an upright one is the sheet's or the list's scroll.
+
+| | Web | iPhone | Android |
+|---|---|---|---|
+| Swipe | React Aria's iOS List View recipe on Motion (`components/SwipeRow`, `components/swipe`), on RowMenu's `swipe` and RouteGrid's `remove`; `data-base-ui-swipe-ignore="x"`; a finger or a pen only; its chunk lazy, asked for on a touch screen | Not yet: SwiftUI's `swipeActions`, on the owner's word (decision 0038) | Not yet: Material 3's `SwipeToDismissBox`, on the owner's word |
+| Hold to move | React Aria's `useDragAndDrop` (`RouteGrid`): the row is the browser's own `draggable`, Safari and Chrome lifting it on a long press; the grip is React Aria's drag button | Not yet: `onMove` / `draggable` on the owner's word | Not yet |
+| Tests | `e2e/swipe-rows.spec.ts` (a Recents row, a stop and its Undo, the sheet still); `components/SwipeRow.test.tsx`, `components/swipe/swipeEnd.test.ts`; the hold's drop by `stops-reorder.spec.ts` | -- | -- |
+
 ## Changing a rule
 
 A rule here changes only when the owner says so (the `owner` label). Then

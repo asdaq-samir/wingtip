@@ -199,7 +199,7 @@ list is where it was.
 | Search results (Airports, Waypoints and Navaids, Airplanes, Do, Ask) | the search field, typed | **new: 1** | -- |
 | Saved flights | search → Saved; account → Flights | 2 | Name and notes edited in the row; delete with a confirm |
 | Airport card | Tap a field; a search result; a route row's More Info; a nav log field | 1 (2 from the search) | **Fly Here, Depart From, Add as Stop at its top (new)**, favorite; frequencies copy |
-| Favorites, Recents (airports' and airplanes') | search → Favorites / Recents | 2 | Drag to reorder, swipe to delete, Undo row; the airplanes after the airports in each, and in the search page's rows |
+| Favorites, Recents (airports' and airplanes') | search → Favorites / Recents | 2 | Drag to reorder (Edit's grip), swipe left to remove (a full swipe removes), Undo in the toast; the airplanes after the airports in each, and in the search page's rows |
 | Nearest | search → Nearest; search → Do → Nearest | 2 | Change the place it is from in the one search's field, scoped to it (no second field) |
 | Airplane profile | an N-number tapped; a search result (yours, the FAA registry's) | 1, 2 | **Fly This Airplane (new)**; every figure edited in place; a card in the sheet over the search with ✕ (one card rule, 2026-11-10; was a dimmed sheet on a phone) |
 | Airplane card, past flight | Tap traffic; the airplane found in the one search (heard on the map by callsign or address, kept, or the FAA registry's in the air); a Favorite's or Recent's tile; its past row | 1, 2 | Replay; search → Do → Show Traffic turns the traffic on the map. The traffic's own page, with a second search field, went for the one search (the owner, 2026-11-14), and an old `?aircraft=1` link lands on the search |
@@ -317,6 +317,19 @@ or overflow).
 | An approach | Brief, Dry Run, Load into Route, Plate | procedures sheet | -- (ProceduresRow picks the procedure only; gap) | -- (no approach list on Android; gap) |
 | An alert | what it is and its fix | AlertsBanner opens it | **the airspace card; copilot: Direct To, More Info (new)** | **the Ahead sheet; copilot: Fly to, More Info (new)** |
 | A Go / No-Go item, a Brief line | its fix | opens its page | targets only | **not tappable (gap)** |
+
+### Gestures on a list's row
+
+A swipe and a hold are additions to the row's menu, never the only way
+(rules.md section 12, decision 0045). Web first; the phones on the
+owner's word.
+
+| Gesture | Does | Web | iOS | Android |
+|---|---|---|---|---|
+| Swipe left | Uncovers Remove; a full swipe removes, with the menu's Undo | Recents and Favorites (airports', airplanes', routes'), Home, your Airplane, saved Flights, logbook flights, a typed stop in FPL's list (`SwipeRow`) | -- | -- |
+| Touch and hold, then drag | Lifts a row to move it, the drop line showing where | FPL's typed points where the list edits the route (React Aria's drag, the browser's own lift); Favorites in Edit by the grip | -- | -- |
+| Touch and hold, still | The row's menu (where the row does not move) | every kept list's row (Base UI's ContextMenu), a route pill | context menus | long press |
+| Pinch, double tap | Zoom | the map, a plate, the airport diagram (MapLibre) | the same | the same |
 
 ## Gaps left, for the owner
 
