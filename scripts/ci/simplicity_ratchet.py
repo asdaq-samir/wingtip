@@ -105,7 +105,7 @@ METRICS = {
         "MapPane holds more state: move it into a ViewModel",
     ),
     "web_plan_workspace_lines": (
-        lambda: lines("apps/web/src/features/plan/hooks/usePlanWorkspace.ts"),
+        lambda: lines("apps/web/src/features/fpl/vm/usePlanWorkspace.ts"),
         "usePlanWorkspace grew: give the new state its own hook",
     ),
     # Views that ask the engine themselves, rather than through their model (MVVM).

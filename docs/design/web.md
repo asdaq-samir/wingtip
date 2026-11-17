@@ -696,7 +696,7 @@ the tint's glyph, its 44-point area its `::after`, never grown, eight
 after the bar. The bar before it is one size on both pages
 (`panelField`'s `SHEET_BAR`, 46 tall, round-ended, the row's room less
 the toggle): on Search the one search's field (`OneSearchField`), on FPL
-the airplane's strip (`features/plan/components/workspace/FplBar`, its
+the airplane's strip (`features/fpl/workspace/FplBar`, its
 `RouteControls`: the N-number, the altitude and the route's •••, on one
 line, the airplane and the altitude giving way first; the Brief, the Nav
 Log, the Profile and Share are the floating glass bar at the sheet's foot

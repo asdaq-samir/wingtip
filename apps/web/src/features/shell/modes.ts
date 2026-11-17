@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { PlanWorkspace } from "../plan";
+import { PlanWorkspace } from "../fpl";
 import { loadTrainWorkspace } from "../chart-labels";
 import { loadStudioWorkspace } from "../studio";
 

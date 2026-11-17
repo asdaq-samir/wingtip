@@ -35,7 +35,7 @@ apps/web/src/features/chart-labels/hooks/useTraining.ts 422
 apps/web/src/features/pilot/AccountPanels.tsx 708
 apps/web/src/features/pilot/FlightPage.tsx 447
 apps/web/src/features/pilot/InstructorPage.tsx 541
-apps/web/src/features/plan/PlanWorkspace.tsx 464
+apps/web/src/features/fpl/PlanWorkspace.tsx 464
 apps/web/src/features/plan/components/AltitudeReasoning.tsx 577
 apps/web/src/features/plan/components/ApproachLesson.tsx 467
 apps/web/src/features/plan/components/PlaceCard.tsx 440
