@@ -5,6 +5,7 @@ import type { Leg, NavLogAltitude } from "../../lib/api/types";
 import { magneticVariation, windCorrection } from "../../lib/format";
 import { PointMark } from "./PointMark";
 import { Heading } from "./ColumnHeading";
+import FigureWait from "../../components/FigureWait";
 
 // TanStack Table's own extension point for arbitrary per-column data --
 // used below to carry each numeric column's shared className (bordered,
@@ -136,13 +137,13 @@ export function navLogColumns({
       id: "dist",
       header: () => <Heading name="Dist" unit="nm" spoken="Distance, nautical miles" />,
       // With a procedure's miles where the leg ends (rows' procedureOf).
-      cell: ({ row }) => (legOf(row.original) ? one(flownNmOf(row.original)!) : "—"),
+      cell: ({ row }) => (legOf(row.original) ? one(flownNmOf(row.original)!) : <FigureWait />),
     },
     {
       id: "tc",
       header: () => <Heading name="TC" unit="true" spoken="True course" />,
       meta: PAPER,
-      cell: ({ row }) => (legOf(row.original) ? bearing(legOf(row.original)!.true_course_deg) : "—"),
+      cell: ({ row }) => (legOf(row.original) ? bearing(legOf(row.original)!.true_course_deg) : <FigureWait />),
     },
     {
       id: "wind",
@@ -150,7 +151,7 @@ export function navLogColumns({
       meta: PAPER,
       cell: ({ row }) => {
         const leg = legOf(row.original);
-        return leg ? (leg.wind ? windAloft(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt) : "no data") : "—";
+        return leg ? (leg.wind ? windAloft(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt) : "no data") : <FigureWait />;
       },
     },
     {
@@ -169,7 +170,7 @@ export function navLogColumns({
       id: "var",
       header: () => <Heading name="Var" unit="°" spoken="Magnetic variation" />,
       meta: PAPER,
-      cell: ({ row }) => (legOf(row.original) ? magneticVariation(legOf(row.original)!.magnetic_variation_deg) : "—"),
+      cell: ({ row }) => (legOf(row.original) ? magneticVariation(legOf(row.original)!.magnetic_variation_deg) : <FigureWait />),
     },
     {
       id: "mh",
@@ -185,7 +186,7 @@ export function navLogColumns({
       meta: PAPER,
       cell: ({ row }) => {
         const leg = legOf(row.original);
-        return leg ? tas(leg) : "—";
+        return leg ? tas(leg) : <FigureWait />;
       },
     },
     {
@@ -194,7 +195,7 @@ export function navLogColumns({
       meta: PAPER,
       cell: ({ row }) => {
         const leg = legOf(row.original);
-        return leg ? (leg.groundspeed_kt === null ? "—" : Math.round(leg.groundspeed_kt)) : "—";
+        return leg ? (leg.groundspeed_kt === null ? "—" : Math.round(leg.groundspeed_kt)) : <FigureWait />;
       },
     },
     {
@@ -202,14 +203,14 @@ export function navLogColumns({
       header: () => <Heading name="ETE" unit="min" spoken="Time en route, minutes" />,
       cell: ({ row }) => {
         const leg = legOf(row.original);
-        return leg ? (leg.ete_min === null ? "unflyable" : one(leg.ete_min)) : "—";
+        return leg ? (leg.ete_min === null ? "unflyable" : one(leg.ete_min)) : <FigureWait />;
       },
     },
     {
       id: "fuel",
       header: () => <Heading name="Fuel" unit="gal" spoken="Fuel, gallons" />,
       meta: PAPER,
-      cell: ({ row }) => (legOf(row.original) ? one(legOf(row.original)!.fuel_gal) : "—"),
+      cell: ({ row }) => (legOf(row.original) ? one(legOf(row.original)!.fuel_gal) : <FigureWait />),
     },
   ];
   // With a departure time, every row gets its ETA: the departure's own

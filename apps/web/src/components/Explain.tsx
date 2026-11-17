@@ -12,7 +12,19 @@ import { TEXT } from "../lib/text";
  * (lib/explain). No label is added beside it, so the screen reads as it
  * did. A tap on it is its own, never the row's under it.
  */
-export default function Explain({ term, children, className }: { term: ExplainedTerm; children?: ReactNode; className?: string }) {
+export default function Explain({
+  term,
+  children,
+  spoken,
+  className,
+}: {
+  term: ExplainedTerm;
+  children?: ReactNode;
+  /** Its whole name for a screen reader where the word stands alone (a
+   *  column's heading, "Magnetic heading"). */
+  spoken?: string;
+  className?: string;
+}) {
   const what = EXPLAINED[term];
   return (
     <Popover>
@@ -23,7 +35,7 @@ export default function Explain({ term, children, className }: { term: Explained
           "relative inline cursor-help rounded-sm text-tint outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
           className,
         )}
-        aria-label={`${children ?? term}: what it means`}
+        aria-label={`${spoken ?? children ?? term}: what it means`}
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => event.stopPropagation()}
         data-testid={`explain-${term.replace(/\s+/g, "-").toLowerCase()}`}

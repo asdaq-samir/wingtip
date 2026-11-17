@@ -3,6 +3,8 @@ import { windAloft, bearing } from "../plan";
 import type { Leg } from "../../lib/api/types";
 import { gal, magneticVariation, windCorrection } from "../../lib/format";
 import { TEXT } from "../../lib/text";
+import Explain from "../../components/Explain";
+import { EXPLAINED, type ExplainedTerm } from "../../lib/explain";
 import LegWorkings from "./LegWorkings";
 import type { Phase } from "./workings";
 import DiversionDrill from "./DiversionDrill";
@@ -37,7 +39,8 @@ export function LegLine({ leg, at, phase }: { leg: Leg; at: { name: string; lat:
       <dl className="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] gap-x-2 gap-y-1">
         {figures.map(([name, value]) => (
           <div key={name}>
-            <dt className={TEXT.note}>{name}</dt>
+            {/* The shorthand a tap for its meaning where it has one (Explain). */}
+            <dt className={TEXT.note}>{name in EXPLAINED ? <Explain term={name as ExplainedTerm} /> : name}</dt>
             <dd className={cn("text-foreground tabular-nums", TEXT.detail)}>{value}</dd>
           </div>
         ))}
