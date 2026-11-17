@@ -38,13 +38,6 @@ def alt_ft(ft: float | None) -> str:
     return ask("words_alt_ft", ft=ft)
 
 
-def flight_level(ft: float | None) -> str:
-    """A cruising altitude as the owner asked it written, hundreds of feet
-    in three figures: "FL-045" for 4,500 ft, "FL-___" with none yet
-    (lib/format flightLevel)."""
-    return ask("words_flight_level", ft=ft)
-
-
 def ceiling_and_visibility(ceiling_ft: float | None, visibility_sm: float | None) -> str:
     """Ceiling and visibility the way a briefer says them
     (features/plan/format ceilingAndVisibility)."""

@@ -8,10 +8,14 @@
 //! - occurrence: whether an accident or incident report, the FAA's
 //!   registry and an ADS-B track are one airplane at one time and place
 //!   (the Studio's crash drafts, docs/STUDIO-PIPELINE.md).
+//! - track_start: whether a recorded ADS-B track starts at its takeoff
+//!   from the nearest field (AC 90-66C's departure, the traffic card's
+//!   "left from").
 
 pub mod figures;
 pub mod occurrence;
 pub mod paths;
+pub mod track_start;
 
 // The modules below this crate by the names they had when the engine was
 // one crate, so the code reads them as crate::json and so on.

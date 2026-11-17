@@ -463,6 +463,12 @@ fun Engine.congestedPoints(areas: List<List<List<List<List<Double>>>>>, points: 
     rule("congested_points", EngineContract.CongestedPointsInput(areas = areas, points = points, candidates = candidates))
 
 /**
+ * How far round a point the host looks for towns before congested_points measures it against them: 2,500 ft, a quarter past 14 CFR 91.119(b)'s 'horizontal radius of 2,000 feet', so a town at the radius's edge is always a candidate; in degrees of latitude (sixty nautical miles each), divided by the cosine of the farthest latitude asked (held to 0.2 and over, the latitude to 89 degrees) so it is short in no direction.
+ */
+fun Engine.congestedReach(lat: Double): Result<EngineContract.CongestedReachAnswer> =
+    rule("congested_reach", EngineContract.CongestedReachInput(lat = lat))
+
+/**
  * The in-flight copilot: from own ship and the live data, the messages that change what the pilot should do, most pressing first (warning, caution, advisory; then the kinds' order), each with the words to show and speak and its sources. Warns, never limits.
  */
 fun Engine.copilotWatch(nowS: Double, own: EngineContract.CopilotWatchInputOwn, fields: List<EngineContract.CopilotField>, rules: String? = null, minimums: EngineContract.CopilotWatchInputMinimums? = null, fuelGal: Double? = null, burnGph: Double? = null, tasKt: Double? = null, dest: String, alternate: String? = null, remainingNm: Double? = null, plannedGsKt: Double? = null, passengers: Boolean? = null, nightCurrent: Boolean? = null, areas: List<EngineContract.CopilotWatchInputAreasItem>? = null, itws: List<EngineContract.CopilotWatchInputItwsItem>? = null, ahead: List<EngineContract.CopilotWatchInputAheadItem>? = null): Result<EngineContract.CopilotWatchAnswer> =
@@ -485,6 +491,12 @@ fun Engine.ctafOf(frequencies: List<EngineContract.FieldFrequency>): Result<Json
  */
 fun Engine.dataCycle(kind: String, effective: String? = null, on: String): Result<EngineContract.DataCycleAnswer> =
     rule("data_cycle", EngineContract.DataCycleInput(kind = kind, effective = effective, on = on))
+
+/**
+ * When a digital ATIS broadcast heard at a time stops being the airport's: two hours after it was heard, two of the updates AIM 4-1-13 asks ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.
+ */
+fun Engine.datisEnds(heard: Double): Result<EngineContract.DatisEndsAnswer> =
+    rule("datis_ends", EngineContract.DatisEndsInput(heard = heard))
 
 /**
  * A digital ATIS's remarks as the airport card shows them (STDDS TDES DATISData): the sentences after its weather (AIM 4-1-13), an item each, in the FAA's words in sentence case with RWY, TWY and the codes kept, the contractions of FAA Order JO 7340.2 written out, a figure said for the voice ('9 THSD 7 HND 25 FT') written as one (9,725 ft), and the sentences that say the same of several runways folded into one item listing them all. The heading, the closing 'ADVS YOU HAVE INFO' and a sentence whose approach or runways read_datis already shows are left out.
@@ -1897,6 +1909,12 @@ fun Engine.replayTrack(points: List<EngineContract.ReplayTrackInputPointsItem>, 
     rule("replay_track", EngineContract.ReplayTrackInput(points = points, gapS = gapS))
 
 /**
+ * Whether a station's report is near enough to a field with none of its own to say the field's weather by it, approximately: within 10 statute miles, the top of a METAR's vicinity (FAA-H-8083-28B 24.4.3.8.2, 'between 5–10 SM ... coded as in the vicinity (VC)'). A design choice: no FAA source says a station's flight category holds at another field.
+ */
+fun Engine.reportNear(distanceNm: Double): Result<EngineContract.ReportNearAnswer> =
+    rule("report_near", EngineContract.ReportNearInput(distanceNm = distanceNm))
+
+/**
  * The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).
  */
 fun Engine.reserveMin(ifr: Boolean? = null, night: Boolean? = null): Result<Double> =
@@ -1985,6 +2003,12 @@ fun Engine.runwaysRead(text: String): Result<List<EngineContract.RunwaysReadAnsw
  */
 fun Engine.rvrCheck(runways: List<EngineContract.RvrCheckInputRunwaysItem>, minimumRvrFt: Double? = null, minimumSm: Double? = null): Result<EngineContract.RvrCheckAnswer> =
     rule("rvr_check", EngineContract.RvrCheckInput(runways = runways, minimumRvrFt = minimumRvrFt, minimumSm = minimumSm))
+
+/**
+ * An RVR system's readings as STDDS's APDS feed sends them, two figures in hundreds of feet ("35" is 3,500 ft; "00", "FF" or blank none), each with whether it is the system's most: AIM 7-1-13's readouts run 'to a maximum value of 6,000 feet', so a reading of 6,000 is '6,000 or more'.
+ */
+fun Engine.rvrReadings(readings: List<String?>): Result<EngineContract.RvrReadingsAnswer> =
+    rule("rvr_readings", EngineContract.RvrReadingsInput(readings = readings))
 
 /**
  * Whether a and b name one field (KSTL and STL).
@@ -2153,6 +2177,12 @@ fun Engine.titleCase(text: String? = null, texts: List<String?>? = null): Result
  */
 fun Engine.tokens(text: String): Result<List<EngineContract.HeardToken>> =
     rule("tokens", EngineContract.TokensInput(text = text))
+
+/**
+ * Whether a recorded ADS-B track whose first point is distance_nm from the nearest field and above_ft over its elevation starts at its takeoff from that field: within 2 nm and 500 ft. From AC 90-66C: no turn to crosswind until 'within 300 feet below traffic pattern altitude' (11.7), the pattern 'usually ... 1,000 feet above the elevation of the airport surface' (Appendix A), and the departure leg 'at least 1/2 mile beyond the departure end of the runway'; the figures are this check's judgment, not a rule.
+ */
+fun Engine.trackLeftFrom(distanceNm: Double, aboveFt: Double): Result<EngineContract.TrackLeftFromAnswer> =
+    rule("track_left_from", EngineContract.TrackLeftFromInput(distanceNm = distanceNm, aboveFt = aboveFt))
 
 /**
  * Whether each airplane heard is drawn: its position, seen_s old when the answer was made and the answer age_s old now, within 30 s (wingtip.traffic's STALE_S); older, it is somewhere else by now.

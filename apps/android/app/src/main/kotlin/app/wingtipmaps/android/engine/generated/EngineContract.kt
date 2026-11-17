@@ -2562,6 +2562,28 @@ object EngineContract {
         val candidates: List<List<Int>>? = null,
     )
 
+    @Serializable
+    data class CongestedReachAnswer(
+        /**
+         * The search's reach, ft.
+         */
+        @SerialName("search_ft")
+        val searchFt: Double,
+        /**
+         * The reach in degrees, never short of search_ft in any direction.
+         */
+        @SerialName("reach_deg")
+        val reachDeg: Double,
+    )
+
+    @Serializable
+    data class CongestedReachInput(
+        /**
+         * The farthest latitude of the points asked, degrees (either sign).
+         */
+        val lat: Double,
+    )
+
     /**
      * The best alternative: best_fields' first diversion pick that the copilot's weather and fuel checks find good.
      */
@@ -2838,6 +2860,22 @@ object EngineContract {
          * YYYY-MM-DD: the UTC day it is used on.
          */
         val on: String,
+    )
+
+    @Serializable
+    data class DatisEndsAnswer(
+        /**
+         * When it is no longer the airport's, Unix seconds.
+         */
+        val ends: Double,
+    )
+
+    @Serializable
+    data class DatisEndsInput(
+        /**
+         * When it was heard, Unix seconds.
+         */
+        val heard: Double,
     )
 
     @Serializable
@@ -10805,6 +10843,25 @@ object EngineContract {
     )
 
     @Serializable
+    data class ReportNearAnswer(
+        val near: Boolean,
+        /**
+         * How near is near, statute miles.
+         */
+        @SerialName("within_sm")
+        val withinSm: Double,
+    )
+
+    @Serializable
+    data class ReportNearInput(
+        /**
+         * The station's distance from the field, nm.
+         */
+        @SerialName("distance_nm")
+        val distanceNm: Double,
+    )
+
+    @Serializable
     data class ReserveMinInput(
         val ifr: Boolean? = null,
         val night: Boolean? = null,
@@ -11516,6 +11573,34 @@ object EngineContract {
         val midpointFt: Double? = null,
         @SerialName("rollout_ft")
         val rolloutFt: Double? = null,
+    )
+
+    @Serializable
+    data class RvrReadingsAnswer(
+        /**
+         * Each reading, in the order given.
+         */
+        val readings: List<EngineContract.RvrReadingsAnswerReadingsItem>,
+    )
+
+    @Serializable
+    data class RvrReadingsAnswerReadingsItem(
+        /**
+         * The reading, ft; null where the part reports none.
+         */
+        val ft: Int? = null,
+        /**
+         * The system's most, 6,000 ft or more (AIM 7-1-13).
+         */
+        val more: Boolean,
+    )
+
+    @Serializable
+    data class RvrReadingsInput(
+        /**
+         * Each part's reading as sent (touchdown, midpoint, rollout ...), in any order.
+         */
+        val readings: List<String?>,
     )
 
     @Serializable
@@ -12418,6 +12503,28 @@ object EngineContract {
     @Serializable
     data class TokensInput(
         val text: String,
+    )
+
+    @Serializable
+    data class TrackLeftFromAnswer(
+        /**
+         * The track starts at its takeoff from the field.
+         */
+        val left: Boolean,
+    )
+
+    @Serializable
+    data class TrackLeftFromInput(
+        /**
+         * The first point's distance from the nearest field, nm.
+         */
+        @SerialName("distance_nm")
+        val distanceNm: Double,
+        /**
+         * Its altitude over the field's elevation, ft.
+         */
+        @SerialName("above_ft")
+        val aboveFt: Double,
     )
 
     /**

@@ -148,9 +148,9 @@ def test_each_runway_ends_rvr_is_kept_in_feet_and_six_thousand_is_the_most():
 
 def test_a_reading_of_00_or_ff_is_no_reading_never_zero():
     # Readings in hundreds of feet.
-    assert [rvr.reading_ft(t) for t in ("60", "35", "05", "10")] == [6000, 3500, 500, 1000]
+    assert [r["ft"] for r in rvr.readings(["60", "35", "05", "10"])] == [6000, 3500, 500, 1000]
     # KDFW 17R's "00" on every reading, KOMA's "FF", a blank: not reported.
-    assert [rvr.reading_ft(t) for t in ("00", "FF", "  ", "", "6")] == [None, None, None, None, None]
+    assert [r["ft"] for r in rvr.readings(["00", "FF", "  ", "", "6"])] == [None, None, None, None, None]
 
 
 def test_a_d_atis_is_kept_by_its_airport_and_broadcast_and_read_by_the_engine():
@@ -163,7 +163,8 @@ def test_a_d_atis_is_kept_by_its_airport_and_broadcast_and_read_by_the_engine():
     assert (reading["information"], reading["time_z"], reading["altimeter_inhg"]) == ("I", "0353Z", 30.06)
     assert reading["wind"] == {"from_deg": None, "kt": 3, "gust_kt": None, "variable": True}
     assert (reading["visibility_sm"], reading["temp_c"], reading["dewpoint_c"]) == (10, 7, 3)
-    assert datis.at_airport("KMSP", now=NOW + datis.KEEP_S + 1) == []
+    # Two hours on (two of AIM 4-1-13's hourly updates, the engine's datis_ends) it is no longer the airport's.
+    assert datis.at_airport("KMSP", now=NOW + 2 * 3600 + 1) == []
 
 
 def test_a_departure_event_is_kept_under_its_ident_with_the_times_it_gives():

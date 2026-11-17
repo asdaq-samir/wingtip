@@ -5836,6 +5836,48 @@
       ],
       "additionalProperties": false
     },
+    "congested_reach": {
+      "description": "How far round a point the host looks for towns before congested_points measures it against them: 2,500 ft, a quarter past 14 CFR 91.119(b)'s 'horizontal radius of 2,000 feet', so a town at the radius's edge is always a candidate; in degrees of latitude (sixty nautical miles each), divided by the cosine of the farthest latitude asked (held to 0.2 and over, the latitude to 89 degrees) so it is short in no direction.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CongestedReachInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number",
+              "description": "The farthest latitude of the points asked, degrees (either sign)."
+            }
+          },
+          "required": [
+            "lat"
+          ]
+        },
+        "answer": {
+          "title": "CongestedReachAnswer",
+          "type": "object",
+          "properties": {
+            "search_ft": {
+              "type": "number",
+              "description": "The search's reach, ft."
+            },
+            "reach_deg": {
+              "type": "number",
+              "description": "The reach in degrees, never short of search_ft in any direction."
+            }
+          },
+          "required": [
+            "search_ft",
+            "reach_deg"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "copilot_watch": {
       "description": "The in-flight copilot: from own ship and the live data, the messages that change what the pilot should do, most pressing first (warning, caution, advisory; then the kinds' order), each with the words to show and speak and its sources. Warns, never limits.",
       "type": "object",
@@ -6339,6 +6381,43 @@
             "behind"
           ],
           "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "datis_ends": {
+      "description": "When a digital ATIS broadcast heard at a time stops being the airport's: two hours after it was heard, two of the updates AIM 4-1-13 asks ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DatisEndsInput",
+          "type": "object",
+          "properties": {
+            "heard": {
+              "type": "number",
+              "description": "When it was heard, Unix seconds."
+            }
+          },
+          "required": [
+            "heard"
+          ]
+        },
+        "answer": {
+          "title": "DatisEndsAnswer",
+          "type": "object",
+          "properties": {
+            "ends": {
+              "type": "number",
+              "description": "When it is no longer the airport's, Unix seconds."
+            }
+          },
+          "required": [
+            "ends"
+          ]
         }
       },
       "required": [
@@ -25389,6 +25468,47 @@
       ],
       "additionalProperties": false
     },
+    "report_near": {
+      "description": "Whether a station's report is near enough to a field with none of its own to say the field's weather by it, approximately: within 10 statute miles, the top of a METAR's vicinity (FAA-H-8083-28B 24.4.3.8.2, 'between 5\u201310 SM ... coded as in the vicinity (VC)'). A design choice: no FAA source says a station's flight category holds at another field.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ReportNearInput",
+          "type": "object",
+          "properties": {
+            "distance_nm": {
+              "type": "number",
+              "description": "The station's distance from the field, nm."
+            }
+          },
+          "required": [
+            "distance_nm"
+          ]
+        },
+        "answer": {
+          "title": "ReportNearAnswer",
+          "type": "object",
+          "properties": {
+            "near": {
+              "type": "boolean"
+            },
+            "within_sm": {
+              "type": "number",
+              "description": "How near is near, statute miles."
+            }
+          },
+          "required": [
+            "near",
+            "within_sm"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "reserve_min": {
       "description": "The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).",
       "type": "object",
@@ -26542,6 +26662,69 @@
             "minimum_ft",
             "judged",
             "runways"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "rvr_readings": {
+      "description": "An RVR system's readings as STDDS's APDS feed sends them, two figures in hundreds of feet (\"35\" is 3,500 ft; \"00\", \"FF\" or blank none), each with whether it is the system's most: AIM 7-1-13's readouts run 'to a maximum value of 6,000 feet', so a reading of 6,000 is '6,000 or more'.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RvrReadingsInput",
+          "type": "object",
+          "properties": {
+            "readings": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "description": "Each part's reading as sent (touchdown, midpoint, rollout ...), in any order."
+            }
+          },
+          "required": [
+            "readings"
+          ]
+        },
+        "answer": {
+          "title": "RvrReadingsAnswer",
+          "type": "object",
+          "properties": {
+            "readings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ft": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "The reading, ft; null where the part reports none."
+                  },
+                  "more": {
+                    "type": "boolean",
+                    "description": "The system's most, 6,000 ft or more (AIM 7-1-13)."
+                  }
+                },
+                "required": [
+                  "ft",
+                  "more"
+                ]
+              },
+              "description": "Each reading, in the order given."
+            }
+          },
+          "required": [
+            "readings"
           ]
         }
       },
@@ -28992,6 +29175,48 @@
       ],
       "additionalProperties": false
     },
+    "track_left_from": {
+      "description": "Whether a recorded ADS-B track whose first point is distance_nm from the nearest field and above_ft over its elevation starts at its takeoff from that field: within 2 nm and 500 ft. From AC 90-66C: no turn to crosswind until 'within 300 feet below traffic pattern altitude' (11.7), the pattern 'usually ... 1,000 feet above the elevation of the airport surface' (Appendix A), and the departure leg 'at least 1/2 mile beyond the departure end of the runway'; the figures are this check's judgment, not a rule.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TrackLeftFromInput",
+          "type": "object",
+          "properties": {
+            "distance_nm": {
+              "type": "number",
+              "description": "The first point's distance from the nearest field, nm."
+            },
+            "above_ft": {
+              "type": "number",
+              "description": "Its altitude over the field's elevation, ft."
+            }
+          },
+          "required": [
+            "distance_nm",
+            "above_ft"
+          ]
+        },
+        "answer": {
+          "title": "TrackLeftFromAnswer",
+          "type": "object",
+          "properties": {
+            "left": {
+              "type": "boolean",
+              "description": "The track starts at its takeoff from the field."
+            }
+          },
+          "required": [
+            "left"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "traffic_fresh": {
       "description": "Whether each airplane heard is drawn: its position, seen_s old when the answer was made and the answer age_s old now, within 30 s (wingtip.traffic's STALE_S); older, it is somewhere else by now.",
       "type": "object",
@@ -31135,10 +31360,12 @@
     "compass_point",
     "compass_word",
     "congested_points",
+    "congested_reach",
     "copilot_watch",
     "csv_rows",
     "ctaf_of",
     "data_cycle",
+    "datis_ends",
     "datis_remarks",
     "debrief",
     "debrief_airborne",
@@ -31374,6 +31601,7 @@
     "registered_profile",
     "remarks_read",
     "replay_track",
+    "report_near",
     "reserve_min",
     "route_options",
     "route_options_frame",
@@ -31389,6 +31617,7 @@
     "runway_with_winds",
     "runways_read",
     "rvr_check",
+    "rvr_readings",
     "same_field",
     "select_cruise_altitude",
     "service_ceiling_on_the_day",
@@ -31417,6 +31646,7 @@
     "thin_track",
     "title_case",
     "tokens",
+    "track_left_from",
     "traffic_fresh",
     "traffic_kind",
     "traffic_marks",
