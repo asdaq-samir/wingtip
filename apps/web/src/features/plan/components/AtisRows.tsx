@@ -128,31 +128,42 @@ export function AtisRows() {
             value={reading?.information ? <span className="text-foreground">Information {reading.information}</span> : undefined}
           />
         )}
-        {reading &&
-          heardAny(reading) &&
-          atisRows(reading).map((row, k) => (
-            <ListRow
-              key={`${row.label}-${k}`}
-              title={row.label}
-              value={<span className="text-foreground">{row.value}</span>}
-              data-testid="place-atis-row"
-            />
-          ))}
-        {reading && (
-          <Collapsible>
-            <CollapsibleTrigger render={<ListRow title="Transcript" chevron data-testid="place-atis-transcript" />} />
-            <CollapsibleContent>
-              <ListRow
-                title={
-                  <span className={cn("font-mono break-words text-muted-foreground", TEXT.detail)} data-testid="place-atis-raw">
-                    {reading.raw}
-                  </span>
-                }
-              />
-            </CollapsibleContent>
-          </Collapsible>
-        )}
+        {reading && <AtisReadingRows reading={reading} rowTestId="place-atis-row" />}
+        {reading && <AtisRawFold title="Transcript" text={reading.raw} testId="place-atis-transcript" rawTestId="place-atis-raw" />}
       </ListGroup>
     </div>
+  );
+}
+
+/** The figures a read ATIS gives, a row each (the heard one's and the
+ *  tower's D-ATIS, LiveAirportRows, alike): nothing where nothing was
+ *  heard. `remarks: false` leaves the remarks to a list of their own. */
+export function AtisReadingRows({ reading, rowTestId, remarks }: { reading: AtisReading; rowTestId: string; remarks?: boolean }) {
+  if (!heardAny(reading)) return null;
+  return atisRows(reading, { remarks }).map((row, k) => (
+    <ListRow
+      key={`${row.label}-${k}`}
+      title={row.label}
+      value={<span className="text-foreground">{row.value}</span>}
+      data-testid={rowTestId}
+    />
+  ));
+}
+
+/** The words as sent, folded under a row (the transcript, the D-ATIS text). */
+export function AtisRawFold({ title, text, testId, rawTestId }: { title: string; text: string; testId: string; rawTestId: string }) {
+  return (
+    <Collapsible>
+      <CollapsibleTrigger render={<ListRow title={title} chevron data-testid={testId} />} />
+      <CollapsibleContent>
+        <ListRow
+          title={
+            <span className={cn("font-mono break-words text-muted-foreground", TEXT.detail)} data-testid={rawTestId}>
+              {text}
+            </span>
+          }
+        />
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
