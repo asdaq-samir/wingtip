@@ -1,8 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { done } from "../../lib/doneNote";
-import { Ellipsis, FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Share, Trash2 } from "lucide-react";
-import RoundButton from "../../components/RoundButton";
-import { CardAction } from "../../components/CardAction";
+import { FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Trash2 } from "lucide-react";
+import { TriggerButton, TriggerFace } from "./ShareTrigger";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../components/ResponsivePopover";
 import {
   DropdownMenu,
@@ -21,16 +20,6 @@ import { refreshLive } from "../../lib/liveRefresh";
 import type { RouteEdit } from "../../lib/preferences";
 import PlanUndoItems from "./PlanUndoItems";
 import ShowRouteAs, { RouteMapChoices } from "./ShowRouteAs";
-
-const SHARE_LABEL: Record<"route" | RouteCard, string> = {
-  // The route box's is More, a "…", at the owner's ask ("Don't call it
-  // share, call it more with the … as the text"): it holds the route's
-  // other actions (save, file, plan again, clear), not sharing alone.
-  route: "More",
-  brief: "Share the briefing",
-  navlog: "Share the nav log",
-  profile: "Share the profile",
-};
 
 /** The route as typed: its departure, stops and destination. */
 interface Planned {
@@ -208,54 +197,8 @@ export default function ShareMenu({
         }}
       >
         <ResponsivePopoverAnchor asChild>
-          <DropdownMenuTrigger
-            render={
-              look ? (
-                <CardAction
-                  icon={
-                    <span className="relative flex">
-                      <Ellipsis />
-                      {!!planAgain?.stale.length && (
-                        <span
-                          aria-hidden="true"
-                          data-testid="plan-again-mark"
-                          className="absolute -top-0.5 -right-1 size-2 rounded-full bg-caution"
-                        />
-                      )}
-                    </span>
-                  }
-                  label={SHARE_LABEL.route}
-                  spoken={planAgain?.stale.length ? `More: ${planAgain.stale.join(", ")}` : undefined}
-                  testId={testId}
-                  bar={look === "bar"}
-                />
-              ) : (
-                // FPL's ••• a plain glyph in the tint, as the search bar's
-                // microphone is in its twin of a bar: one look for a button
-                // in the first row (the owner's list, 2026-11-17), where it
-                // was a grey disc with a black glyph beside the tinted toggle.
-                <RoundButton
-                  label={planAgain?.stale.length ? `${SHARE_LABEL[card]}: ${planAgain.stale.join(", ")}` : SHARE_LABEL[card]}
-                  {...(card === "route" ? { variant: "ghost" as const, className: "size-[32px]" } : {})}
-                  data-testid={testId}
-                />
-              )
-            }
-          >
-            {/* The route box's a size down, as the box's other buttons are;
-                the bar's its own glyph and word. */}
-            {!look && (
-              <span className="relative">
-                {card === "route" ? <Ellipsis className="size-[18px]" strokeWidth={2.4} /> : <Share className="size-5" strokeWidth={2} />}
-                {!!planAgain?.stale.length && (
-                  <span
-                    aria-hidden="true"
-                    data-testid="plan-again-mark"
-                    className="absolute -top-0.5 -right-1 size-2 rounded-full bg-caution"
-                  />
-                )}
-              </span>
-            )}
+          <DropdownMenuTrigger render={<TriggerButton look={look} card={card} stale={planAgain?.stale ?? []} testId={testId} />}>
+            {!look && <TriggerFace card={card} stale={planAgain?.stale ?? []} />}
           </DropdownMenuTrigger>
         </ResponsivePopoverAnchor>
         <DropdownMenuContent align={align} className="min-w-56 print:hidden">
