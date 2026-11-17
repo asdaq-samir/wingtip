@@ -52,6 +52,11 @@ export const FT_PER_SM = 5280;
  *  (1,609.344, NIST SP 811 B.9). */
 export const M_PER_SM = FT_PER_SM * M_PER_FT;
 
+/** Statute miles in a nautical mile (1,852 / 1,609.344, about 1.1508),
+ *  from the two exact definitions above: the strip's distance in statute
+ *  miles at the pilot's tap. */
+export const SM_PER_NM = M_PER_NM / M_PER_SM;
+
 /** Nautical miles in a degree of latitude, as the nautical mile was first
  *  defined (a minute of arc, 60 to the degree; today's 1,852 m is within
  *  a percent of it everywhere): the scale of the flat sums below. */

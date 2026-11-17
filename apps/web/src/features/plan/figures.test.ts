@@ -23,6 +23,13 @@ describe("fitFigures", () => {
     expect(shown[1]!.value).toBe("324");
   });
 
+  it("writes the distance in statute miles at the pilot's tap", () => {
+    // 1,334.1 nm at 1,852 / 1,609.344 statute miles each is 1,535.3 sm.
+    const sm = tripFigures({ ...input, totals: { ...totals, distance_nm: 1334.1 } as unknown as Totals, statute: true }, false);
+    expect([sm[1]!.value, sm[1]!.unit]).toEqual(["1,535", "sm"]);
+    expect(sm[1]!.said).toMatch(/statute miles$/);
+  });
+
   it("changes nothing when everything fits", () => {
     const exact = tripFigures(input, false);
     expect(fitFigures(exact, tripFigures(input, true), () => true)).toEqual(exact);

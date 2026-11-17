@@ -1,7 +1,8 @@
 import type { Totals } from "../../lib/api/types";
 import type { Flown } from "./dryRun";
 import { decimalHours, etaAt, one } from "./format";
-import { duration, grouped, NOT_KNOWN, spokenDistance, spokenDuration, spokenFuel } from "../../lib/format";
+import { duration, grouped, NOT_KNOWN, spokenDistance, spokenDuration, spokenFuel, spokenStatute } from "../../lib/format";
+import { SM_PER_NM } from "../../lib/geo";
 import { callEngine } from "../../lib/engine/engine";
 import { pointName } from "../../lib/identSchema";
 
@@ -33,6 +34,8 @@ interface TripInput {
   /** The arrival's clock time in the time en route's place, the pilot's
    *  tap on it (TripFigures). */
   arrival?: boolean;
+  /** The distance in statute miles, the pilot's tap on it (TripFigures). */
+  statute?: boolean;
   /** With stops, the destination in the next stop's place, the pilot's
    *  tap on To (TripFigures): the distance and time the whole route's. */
   toDestination?: boolean;
@@ -71,6 +74,14 @@ function stripFuel(totals: Totals | null, hop = 0, burntGal: number | null = nul
   });
 }
 
+/** The strip's distance in nautical miles, or statute miles at the
+ *  pilot's tap (the owner, 2026-11-17: "Distance can switch to sm"). */
+function distanceFigure(nm: number, statute: boolean): Figure {
+  if (!statute) return { name: "Dist", value: grouped(nm), unit: "nm", said: `Distance, ${spokenDistance(nm)}` };
+  const sm = nm * SM_PER_NM;
+  return { name: "Dist", value: grouped(sm), unit: "sm", said: `Distance, ${spokenStatute(sm)}` };
+}
+
 /** The strip's figures, at the owner's ask ("To, Dist, ETE, Fuel. To is
  *  the next stop, fuel is the fuel required"): the next landing, and the
  *  distance, time and fuel required to it -- exact or (`whole`) each
@@ -81,7 +92,7 @@ function stripFuel(totals: Totals | null, hop = 0, burntGal: number | null = nul
  *  summary's (the owner's list, 2026-11-17: "one distance format
  *  everywhere"); its tenths are the nav log's legs'. */
 export function tripFigures(
-  { totals, estimate, local, destination, depart = "", arrival = false, toDestination = false, flown = null }: TripInput,
+  { totals, estimate, local, destination, depart = "", arrival = false, toDestination = false, flown = null, statute = false }: TripInput,
   whole: boolean,
 ): Figure[] {
   const guessed = !totals && !local && estimate ? guess(estimate) : null;
@@ -90,7 +101,7 @@ export function tripFigures(
     const { distanceNm, minutes, required } = guessed;
     return [
       { name: "To", value: destination || "—", testId: "navlog-to", said: `To ${destination || NOT_KNOWN}` },
-      { name: "Dist", value: grouped(distanceNm), unit: "nm", said: `Distance, ${spokenDistance(distanceNm)}` },
+      distanceFigure(distanceNm, statute),
       arrival
         ? { name: "ETA", value: etaAt(from, minutes), testId: "navlog-eta", said: `Arrival, ${etaAt(from, minutes)}` }
         : {
@@ -145,9 +156,7 @@ export function tripFigures(
   const eta = leg ? etaAt(start, minutes === null ? null : minutes + (toDestination && !flown ? (leg.ground_min ?? 0) : 0)) : "—";
   return [
     to,
-    distance !== null
-      ? { name: "Dist", value: grouped(distance), unit: "nm", said: `Distance, ${spokenDistance(distance)}` }
-      : { name: "Dist", value: "—", said: `Distance, ${NOT_KNOWN}` },
+    distance !== null ? distanceFigure(distance, statute) : { name: "Dist", value: "—", said: `Distance, ${NOT_KNOWN}` },
     arrival
       ? { name: "ETA", value: eta, testId: "navlog-eta", said: `Arrival, ${eta === "—" ? NOT_KNOWN : eta}` }
       : { name: "ETE", value: time, testId: "navlog-ete", said: `Time en route, ${timeSaid}` },

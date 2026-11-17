@@ -8,7 +8,6 @@ import FigureStrip, { type StripFigure } from "../../components/FigureStrip";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../components/ResponsivePopover";
 import { Button } from "../../components/ui/button";
 import { nextLanding, shortFlights, tripFigures, type Flown } from "../plan";
-import { wantScreen } from "../../lib/navigation/wanted";
 import { requestAirplanePick } from "../../lib/pickAirplane";
 
 /** What the fuel is made of, from the figure's first tap: its own chunk,
@@ -114,9 +113,11 @@ export default function TripFigures({
   // place, and back, at the owner's ask ("To should change to next stop
   // or destination").
   const [toDestination, setToDestination] = useState(false);
+  // Nautical or statute miles, switched by a tap on the distance.
+  const [statute, setStatute] = useState(false);
   const [breakdownOpen, setBreakdownOpen] = useState(false);
   const stops = (totals?.hops.length ?? 0) > 0;
-  const input = { totals, estimate, local, destination, depart, arrival, toDestination: stops && toDestination, flown };
+  const input = { totals, estimate, local, destination, depart, arrival, toDestination: stops && toDestination, flown, statute };
   // A dry run's figures keep the strip's own format, set smaller to fit
   // rather than rounded ("1.2h", "102 nm" in the run against "1h 14m",
   // "105.1 nm" in the plan, the FPL audit's A20; the owner's one strip).
@@ -216,16 +217,17 @@ export default function TripFigures({
           {face}
         </Button>
       );
-    // The distance opens the nav log it is the sum of, leg by leg (tap
-    // what you see, docs/navigation.md).
+    // The distance switches between nautical and statute miles, as Time
+    // switches to the arrival (the owner, 2026-11-17: "Distance can switch
+    // to sm"); the nav log is the floating bar's.
     if (f.name === "Dist" && !local && !flown)
       return (
         <Button
           variant="link"
           size="inline"
-          onClick={() => wantScreen("navlog")}
-          data-testid="dist-navlog"
-          aria-label={`${seen(f)}, ${said}: open the nav log`}
+          onClick={() => setStatute(!statute)}
+          data-testid="dist-unit"
+          aria-label={`${seen(f)}, ${said}: show in ${statute ? "nautical" : "statute"} miles`}
           className={cn(AREA, "items-baseline")}
         >
           {face}
