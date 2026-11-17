@@ -4,4 +4,4 @@
  * (aircraftTilesChunk): the airplanes' shapes (components/PlaneMarks) are
  * no part of the first screen.
  */
-export { AircraftFavoriteStrip, AircraftRecentRows, AircraftRecentTiles } from "./components/AircraftTiles";
+export { AircraftFavoriteStrip, AircraftRecentRows, AircraftRecentTiles } from "./AircraftTiles";

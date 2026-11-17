@@ -1,13 +1,13 @@
 import { Plus } from "lucide-react";
-import { Mark, RemoveMinus } from "../../../components/Favorites";
-import { HomePlane, PLANE_ROW, PlaneMark } from "../../../components/PlaneMarks";
-import { MoveHandle, SortableRow, SortableRows } from "../../../components/SortableRows";
-import { keptKind } from "../../../lib/aircraftKind";
-import { planeLink } from "../../../lib/flightLink";
-import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { RemovableRow } from "../../../components/RemovableRow";
-import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
-import { toast } from "../../../lib/toast";
+import { Mark, RemoveMinus } from "../../components/Favorites";
+import { HomePlane, PLANE_ROW, PlaneMark } from "../../components/PlaneMarks";
+import { MoveHandle, SortableRow, SortableRows } from "../../components/SortableRows";
+import { keptKind } from "../../lib/aircraftKind";
+import { planeLink } from "../../lib/flightLink";
+import { ListGroup, ListRow } from "../../components/GroupedList";
+import { RemovableRow } from "../../components/RemovableRow";
+import { usePreferences, type KeptAircraft } from "../../lib/preferences";
+import { toast } from "../../lib/toast";
 
 /**
  * The airplanes in the Favorites in full (FavoritesList's `airplanes`), after

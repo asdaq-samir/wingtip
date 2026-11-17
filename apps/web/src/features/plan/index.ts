@@ -10,7 +10,6 @@
  */
 
 export { ShareMenu } from "./ShareMenuLazy";
-export { AircraftFavoriteStrip, AircraftRecentRows, AircraftRecentTiles, usePrefetchAircraftTiles } from "./aircraftTilesChunk";
 export { default as DirectStrip } from "./components/DirectStrip";
 export { default as FirstFlight } from "./components/FirstFlight";
 export { default as FplStrip } from "./components/FplStrip";
@@ -26,9 +25,17 @@ export { dryRunFlown } from "./components/navlog/dryRun";
 export { figuresLine, nextLanding } from "./figures";
 export { legsWithoutWind, windsOutOfDate } from "./format";
 export { panelNow, riseToSee } from "./hooks/panelNow";
-export { type PlannedRoute, approximateOf, departureRunways, directKeys, landingRunways, namesRoute, procsWithoutDirect, suggestedStopAt } from "./hooks/planAddress";
+export {
+  type PlannedRoute,
+  approximateOf,
+  departureRunways,
+  directKeys,
+  landingRunways,
+  namesRoute,
+  procsWithoutDirect,
+  suggestedStopAt,
+} from "./hooks/planAddress";
 export type { PlanAnswer, PlanCourse } from "./hooks/planTypes";
-export { useAircraftPick } from "./hooks/useAircraftPick";
 export { type AirplaneRow, useAirplaneHits } from "./hooks/useAirplaneHits";
 export { useCopilotPublish } from "./hooks/useCopilotPublish";
 export { useDryRun } from "./hooks/useDryRun";
@@ -62,9 +69,6 @@ export { useTrueHeightView } from "./map/terrain/heightStretch";
 export { useTerrainView } from "./map/terrain/useTerrainView";
 export { RouteBox } from "./routeBoxChunk";
 export { BootMap, RouteMap } from "./routeMapChunk";
-
-/** AircraftFavoriteGroups, on a chunk of its own, as its importer loads it. */
-export const loadAircraftFavoriteGroups = () => import("./components/AircraftFavoriteGroups");
 
 /** AssignedLesson, on a chunk of its own, as its importer loads it. */
 export const loadAssignedLesson = () => import("./components/AssignedLesson");

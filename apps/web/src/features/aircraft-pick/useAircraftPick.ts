@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { AircraftChoice } from "../../../lib/api/types";
-import { aircraftKey, choiceOf, tailChoice } from "../../../lib/aircraftChoice";
-import { usePreferences } from "../../../lib/preferences";
-import { aircraftListQuery, aircraftProfilesQuery, pilotQuery } from "../../../lib/queryClient";
+import type { AircraftChoice } from "../../lib/api/types";
+import { aircraftKey, choiceOf, tailChoice } from "../../lib/aircraftChoice";
+import { usePreferences } from "../../lib/preferences";
+import { aircraftListQuery, aircraftProfilesQuery, pilotQuery } from "../../lib/queryClient";
 
 /**
  * The airplane the nav log is computed for (usePlanWorkspace): remembered

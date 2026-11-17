@@ -1,11 +1,11 @@
 import { Plus } from "lucide-react";
-import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { PillStrip, SmallMark, SmallTile } from "../../../components/Favorites";
-import { HomePlane, PLANE_TILE, PlaneMark } from "../../../components/PlaneMarks";
-import { RemovableRow } from "../../../components/RemovableRow";
-import { keptKind } from "../../../lib/aircraftKind";
-import { planeLink } from "../../../lib/flightLink";
-import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
+import { ListGroup, ListRow } from "../../components/GroupedList";
+import { PillStrip, SmallMark, SmallTile } from "../../components/Favorites";
+import { HomePlane, PLANE_TILE, PlaneMark } from "../../components/PlaneMarks";
+import { RemovableRow } from "../../components/RemovableRow";
+import { keptKind } from "../../lib/aircraftKind";
+import { planeLink } from "../../lib/flightLink";
+import { usePreferences, type KeptAircraft } from "../../lib/preferences";
 
 /**
  * The airplanes kept, on the one search's page and in its lists in full:

@@ -5,17 +5,11 @@ import type { LatLon } from "../../../lib/geo";
 import { MAX_STOPS } from "../../../lib/identSchema";
 import { RecentsPage } from "../../../components/PanelCapsule";
 import { sameField } from "../../../lib/procedures";
-import {
-  AircraftRecentRows,
-  usePrefetchAircraftTiles,
-  RecentRoutesPage,
-  loadSearchResultsPage,
-  loadAircraftFavoriteGroups,
-  loadNearestCard,
-} from "../../plan";
+import { AircraftRecentRows, usePrefetchAircraftTiles, loadAircraftFavoriteGroups } from "../../aircraft-pick";
 import type { OneSearchModel } from "../search/useOneSearch";
 import TabKept from "../../../components/TabKept";
 import TabPage from "../../../components/TabPage";
+import { RecentRoutesPage, loadSearchResultsPage, loadNearestCard } from "../../plan";
 import { AirspaceCard, FlightCard, PastFlightCard, PlaceCard } from "../routePanelParts";
 import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
 import type { KeptAircraft } from "../../../lib/preferences";

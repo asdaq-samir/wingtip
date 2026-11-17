@@ -3,7 +3,7 @@ import { FavoriteStrip, PillSection, PillStrip } from "../../../components/Favor
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
 import AddFavoriteTile from "../../../components/AddFavoriteTile";
 import TabPage from "../../../components/TabPage";
-import { AircraftFavoriteStrip, AircraftRecentTiles } from "../../plan";
+import { AircraftFavoriteStrip, AircraftRecentTiles } from "../../aircraft-pick";
 import FindNearby from "./FindNearby";
 import { NearestStrip } from "./NearestStrip";
 import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";

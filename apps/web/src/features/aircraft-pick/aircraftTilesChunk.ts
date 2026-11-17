@@ -7,7 +7,7 @@ import { fromChunk } from "../../lib/fromChunk";
 // budget (scripts/first-load.mjs, 2026-11-09). Asked for a moment after the
 // page has drawn (usePrefetchAircraftTiles, in PlanSidebar), so each part is
 // drawn straight from the chunk (fromChunk), waiting only until then.
-const load = () => import("./aircraftTiles");
+const load = () => import("./aircraftTileParts");
 const favorites = fromChunk(load, (m) => m.AircraftFavoriteStrip);
 const recentTiles = fromChunk(load, (m) => m.AircraftRecentTiles);
 const recentRows = fromChunk(load, (m) => m.AircraftRecentRows);
