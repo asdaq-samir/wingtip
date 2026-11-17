@@ -14,7 +14,9 @@ import { TEXT } from "../../../lib/text";
  *  simple app with search like Apple/Google and a plan page like an EFB
  *  that can be easily accessed"). */
 const ROWS = [
-  { icon: Search, title: "Search, like Maps", line: "Find any airport, town or fix the way you would in Apple or Google Maps." },
+  // In the search field's own words (searchPlaceholder, the owner's "Search airports and airplanes"),
+  // so the welcome promises what the field says it does (UI audit C17, 2026-11-17).
+  { icon: Search, title: "Search, like Maps", line: "Search airports and airplanes the way you would in Apple or Google Maps." },
   // FPL's own glyph on the page toggle (PageToggle), a round route glyph
   // at the search's end with no "FPL" word on it (the web audit's WEB-42).
   {
