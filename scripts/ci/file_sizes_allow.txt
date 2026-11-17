@@ -39,7 +39,7 @@ apps/web/src/features/plan/PlanWorkspace.tsx 467
 apps/web/src/features/plan/components/AltitudeReasoning.tsx 577
 apps/web/src/features/plan/components/ApproachLesson.tsx 476
 apps/web/src/features/plan/components/PlaceCard.tsx 441
-apps/web/src/features/plan/components/RouteMap.tsx 439
+apps/web/src/features/plan/components/RouteMap.tsx 437
 apps/web/src/features/plan/components/navlog/NavLogView.tsx 868
 apps/web/src/features/plan/components/procedures/FieldStep.tsx 547
 apps/web/src/features/plan/components/procedures/PatternChips.tsx 425
