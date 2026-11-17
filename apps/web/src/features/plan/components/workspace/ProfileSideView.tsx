@@ -47,9 +47,9 @@ export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
         legs={s.legs}
         winds={s.totals?.winds}
         ends={course}
-        chart={(preview) => (
+        chart={(view) => (
           <Suspense fallback={null}>
-            <MiniProfile ends={course} selected={selected} legs={s.legs} preview={preview} ruler />
+            <MiniProfile ends={course} selected={selected} legs={s.legs} {...view} ruler />
           </Suspense>
         )}
         corner={

@@ -22,6 +22,20 @@ export function ceilings(airspace: { class: string; ceiling_ft?: number | null }
   return airspace.filter((a) => ["B", "C", "D"].includes(a.class) && a.ceiling_ft != null).map((a) => a.ceiling_ft!);
 }
 
+/** The side view's height, ft: over the highest ground and airspace
+ *  ceiling by 300 ft, and over each altitude it shows (`feet`: the cruise,
+ *  a preview) by 1,000, so the line and its tag sit inside the chart and
+ *  never past its top, to the next 500 -- the owner's "y axis has extra
+ *  white space" kept for the ground. The Profile card's slider is laid on
+ *  the same scale (AltitudeProfile), so its knob sits at the feet it says. */
+export function sideViewTop(
+  profile: { terrain: { ground_ft: number }[]; airspace: { class: string; ceiling_ft?: number | null }[] },
+  feet: number[],
+) {
+  const ground = Math.max(0, ...profile.terrain.map((t) => t.ground_ft), ...ceilings(profile.airspace));
+  return Math.ceil(Math.max(ground + 300, ...feet.map((ft) => ft + 1000)) / 500) * 500;
+}
+
 /** The sectional's airspace colours: Class B solid blue, C magenta, D
  *  blue dashed (FAA Aeronautical Chart User's Guide, Airspace); each name
  *  in its colour as text, lightened on a dark card (index.css). */
