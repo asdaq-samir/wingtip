@@ -15,4 +15,3 @@ export const FIELD_CLEAR =
 export function FieldClearGlyph() {
   return <X className="size-3" strokeWidth={3} aria-hidden="true" />;
 }
-

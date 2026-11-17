@@ -98,7 +98,9 @@ export default function AirportSearch({
             onKeyDown={(e) => {
               // What was typed goes through when the rows are not the
               // answer to it yet, and when the lookup has nothing for it
-              // (a private strip, say).
+              // (a private strip, say). Base UI's Enter would take the lit
+              // row of an older answer and has no prop for rows that are not
+              // the answer yet, so its handler is kept from running.
               if (e.key === "Enter" && typed && !(answered && rows.length > 0)) {
                 e.preventDefault();
                 e.preventBaseUIHandler();

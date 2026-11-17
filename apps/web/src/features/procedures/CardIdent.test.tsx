@@ -47,6 +47,28 @@ describe("CardIdent", () => {
     expect(onCommit).toHaveBeenCalledWith("KOSH");
   });
 
+  test("Return takes the first suggestion that answers after the typing (Base UI's own, since 1.9)", () => {
+    search.mockReturnValue({ typed: "KOS", rows: [], answered: false });
+    const onCommit = vi.fn();
+    const { rerender } = render(<CardIdent value="KUGN" label="Ident" testId="ident" onCommit={onCommit} />);
+    const field = screen.getByTestId("ident");
+    field.focus();
+    fireEvent.change(field, { target: { value: "kos" } });
+    // The lookup answers a moment later, none lit by hand.
+    search.mockReturnValue({ typed: "KOS", rows, answered: true });
+    rerender(<CardIdent value="KUGN" label="Ident" testId="ident" onCommit={onCommit} />);
+    fireEvent.keyDown(field, { key: "Enter" });
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith("KOSH");
+  });
+
+  test("Escape puts the ident back", () => {
+    const { field, onCommit } = setup();
+    fireEvent.keyDown(field, { key: "Escape" });
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(field).toHaveProperty("value", "KUGN");
+  });
+
   test("Return takes what was typed where it is a suggestion's own ident", () => {
     const { field, onCommit } = setup({}, "kosu");
     fireEvent.keyDown(field, { key: "Enter" });

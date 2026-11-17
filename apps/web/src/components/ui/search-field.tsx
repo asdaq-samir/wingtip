@@ -29,10 +29,7 @@ function SearchField({ className, ...props }: Omit<SearchFieldProps, "className"
 }
 
 /** The field's input; the browser's own clear put away for the field's. */
-function SearchFieldInput({
-  className,
-  ...props
-}: Omit<InputProps, "className"> & { className?: string; ref?: Ref<HTMLInputElement> }) {
+function SearchFieldInput({ className, ...props }: Omit<InputProps, "className"> & { className?: string; ref?: Ref<HTMLInputElement> }) {
   return (
     <AriaInput
       data-slot="input-group-control"

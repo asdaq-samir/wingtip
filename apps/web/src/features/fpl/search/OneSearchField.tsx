@@ -109,23 +109,18 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
             // A picker's Enter before the rows answer what is typed: what
             // is typed, not the first row of an older answer -- an ident the
             // lookup does not know (a private strip) still goes through, as
-            // each picker's own field did (airport-search.spec).
+            // each picker's own field did (airport-search.spec). Base UI's
+            // Enter would take the lit row of the older answer, and it has
+            // no prop for rows that are not the answer yet, so its handler
+            // is kept from running (its documented way, preventBaseUIHandler).
+            // Rows that answer after the typing are lit by Base UI itself
+            // since 1.9 (autoHighlight for asynchronous results, #5818),
+            // where this took the first by hand.
             const rows = model.airports.length + model.waypoints.length;
             if (e.key === "Enter" && model.pick && model.typed && (!model.answered || rows === 0)) {
               e.preventDefault();
-              (e as { preventBaseUIHandler?: () => void }).preventBaseUIHandler?.();
+              e.preventBaseUIHandler();
               model.pickIdent(model.typed);
-            } else if (e.key === "Enter" && model.pick && model.typed && !e.currentTarget.getAttribute("aria-activedescendant")) {
-              // Rows that answered after the typing (the planner's lookup on
-              // a slow link) come in with none highlighted: the root's
-              // autoHighlight acts on a change of what is typed, not of the
-              // rows. Enter takes the first, as it would have been.
-              const first = model.airports[0]?.ident ?? model.waypoints[0]?.ident;
-              if (first) {
-                e.preventDefault();
-                (e as { preventBaseUIHandler?: () => void }).preventBaseUIHandler?.();
-                model.pickIdent(first);
-              }
             }
           }}
           // The browser's own clear put away for the field's (CommandClear),
