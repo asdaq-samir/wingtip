@@ -100,7 +100,7 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
       {/* The next checkpoint over the map in flight (FlyingHead). */}
       {flying && (
         <Suspense fallback={null}>
-          <FlyingHead run={dryRunning} rows={routeRows} />
+          <FlyingHead run={dryRunning} rows={routeRows} line={course?.course_line} />
         </Suspense>
       )}
       {/* Kept from its first open on, so it eases out as it closes. */}

@@ -17,14 +17,14 @@ import { runwayNumber } from "../lib/pattern";
 import { useRunwayPicks } from "../lib/useRunwayPicks";
 import { runwayChecks } from "../lib/runwayCheck";
 import { worstOf } from "../../../lib/findings";
-import { useVerdict, verdictItems, type VerdictItem } from "../../../lib/verdict";
+import { alternateFinding, useVerdict, verdictItems, withAlternate, type VerdictItem } from "../../../lib/verdict";
 import { callSign, fieldPhases } from "../lib/radio";
 import { useGlance, type BriefGlance, type FieldGlance } from "../lib/glance";
 import { shortName } from "../../../lib/aircraftChoice";
 import { usePrinting } from "../lib/usePrinting";
 import { fieldCategory } from "../components/briefing/fieldWeather";
 import { flightPlanForms, type FiledProcedure } from "../lib/flightPlanForm";
-import { alternateFinding, useAlternate } from "./useAlternate";
+import { useAlternate } from "./useAlternate";
 import { useRouteFields } from "./useRouteFields";
 import { flowQuery, itwsLines, itwsQuery, liveWhen, programLines, saaQuery } from "../../../lib/liveReports";
 import { icingFindings } from "../lib/icing";
@@ -333,17 +333,13 @@ export function useFlightBriefing({
   });
   // Published once, for the tabs' marks (PlanWorkspace), as the risk is.
   const setItems = useVerdict((v) => v.setItems);
-  // The alternate is the weather's to say, where the weather says nothing
-  // worse: a caution or a stop of its own, opening its section.
   // No airplane picked: the fuel, the runways' distances and crosswind
   // limits and the weight and balance are an airplane's, and are not
   // judged on one assumed (the owner, 2026-11-08: "don't assume").
   const airplane = useAirplaneChosen();
-  const found: VerdictItem[] = verdictFound.map((i) =>
-    alternateFound && i.key === "weather" && (i.finding === "ok" || (alternateFound.finding === "stop" && i.finding !== "stop"))
-      ? { ...i, ...alternateFound, tab: "arrive", section: "Alternate" }
-      : i,
-  );
+  // The alternate is the weather's to say, where the weather says nothing
+  // worse: a caution or a stop of its own, opening its section.
+  const found = withAlternate(verdictFound, alternateFound);
   // Then the fields row, after the tabs' findings (gonogo_field_permission).
   const fields = useRouteFields(dep, stops, dest, totals?.alternate?.ident ?? null);
   const items = [...found, ...(fields.permission ? [fields.permission] : [])].filter((i) => airplane || !AIRPLANE_ITEMS.includes(i.key));

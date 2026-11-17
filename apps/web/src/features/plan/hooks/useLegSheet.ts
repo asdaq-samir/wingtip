@@ -63,7 +63,7 @@ export function useLegSheet({
   // way to make a leg the active one but flying it.
   const mapLegs = useMemo(() => routeLegs(routeRows), [routeRows]);
   const [legAt, setLegAt] = useState<string | null>(null);
-  const flyingTo = useFlyingTo(dryRunning, routeRows);
+  const flyingTo = useFlyingTo(dryRunning, routeRows, course?.course_line);
   const openLeg = useMemo<RouteLegView | null>(() => {
     const at = mapLegs.find((l) => l.key === legAt);
     if (!at) return null;
