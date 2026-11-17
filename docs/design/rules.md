@@ -654,10 +654,11 @@ gone on every platform.
    beside the slider's track. It starts at the cruise flown, and with no
    airplane, where no climb is worked out, the cruise is drawn level and
    dashed (the UI audit's A1, 2026-11-17). As it moves, the ground and the DOF's obstacles
-   within a mile of the line turn red within 100 ft of the altitude or
-   above it and yellow within 1,000 ft (`profile_clearance`; ForeFlight's
-   display defaults, not a rule: the legal margins are 14 CFR 91.119 and
-   91.177, which the legal altitudes keep). Nothing is planned until
+   within a mile of the line turn red within 500 ft of the altitude or
+   above it (14 CFR 91.119(c)) and yellow within 1,000 ft (91.119(b)'s
+   height over a congested area), as the engine's `profile_clearance`
+   says; the legal floors are 91.119 (VFR) and 91.177 (IFR), which the
+   legal altitudes keep. Nothing is planned until
    **Set**. In flight, **Auto** holds the preview at the GPS altitude.
 2. **A waypoint's altitude, Start At or Cross At.** A tap on a waypoint
    sets its altitude: Cross At (done by the waypoint, the planner's
