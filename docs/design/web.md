@@ -740,7 +740,7 @@ while the route slides on under them, the other way waiting there until
 their place comes up to them, by their transform alone, a frame at a
 time while a finger has the sheet or it settles (FplRoute's `PINNED`:
 in sight at the pill, the foot's sides, the sheet's solid colour under
-them); nothing is handed over at the pill, where two copies flickered.
+them); nothing is handed over at the pill, where two copies flickered. It measures the foot's edge only while the foot is in sight: with a card up the foot is put away, and a measure then held the figures as the pill once the card closed (the owner, 2026-11-17: "When I tap the fuel and close it, the strip becomes bigger hiding the departure"); it measures again as the foot comes back.
 FPL's bar and route are laid out at the pill with `RISEN_FACE`
 (SheetParts' `rises`), in sight from the finger's first move by
 visibility alone, as the cards' bodies come into sight (`PILL_BODY`,

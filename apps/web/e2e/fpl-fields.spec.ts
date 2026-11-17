@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, grabberTo, settle, sideDrawer } from "./helpers";
+import { controlsInSight, grabberTo, settle, sideDrawer, slow } from "./helpers";
+import { pickAirplane } from "./startState";
 
 /**
  * FPL's own fields as the UI audit of 2026-11-17 found them: the airplane's
@@ -57,4 +58,31 @@ test("FPL's actions float over a fade to the sheet's colour, taking taps on the 
   await expect(bar).toHaveCSS("background-image", /linear-gradient/);
   await expect(bar).toHaveCSS("pointer-events", "none");
   await expect(bar.getByTestId("route-navlog")).toBeEnabled();
+});
+
+test("the fuel's breakdown opened and closed leaves FPL as it was: the strip its size, the departure in sight", async ({ page }) => {
+  // The owner, 2026-11-17: "When I tap the fuel and close it, the strip
+  // becomes bigger hiding the departure." The card over the sheet puts
+  // its foot away; the strip's hold at the foot (usePinAtFoot) measured
+  // against the foot gone and was held as the pill once the card closed.
+  await pickAirplane(page);
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await grabberTo(page, "half");
+  const strip = sideDrawer(page).locator("[data-pin-foot]");
+  const departure = sideDrawer(page).locator('[data-testid="route-field"]').first();
+  const fuel = page.getByTestId("fuel-breakdown-open");
+  await expect(fuel).toBeVisible({ timeout: slow(60_000) });
+  const before = (await strip.boundingBox())!;
+  await fuel.click();
+  await expect(page.getByTestId("fuel-breakdown")).toBeVisible();
+  // While it is up, the hold's room stays the one measured with the foot.
+  expect(parseFloat(await strip.evaluate((el) => el.style.getPropertyValue("--pin-room")))).toBeGreaterThan(0);
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("fuel-breakdown")).toHaveCount(0);
+  await expect(strip).not.toHaveAttribute("data-pinned");
+  const after = (await strip.boundingBox())!;
+  expect(Math.abs(after.height - before.height)).toBeLessThan(2);
+  expect(Math.abs(after.y - before.y)).toBeLessThan(2);
+  await expect(departure).toBeInViewport();
 });
