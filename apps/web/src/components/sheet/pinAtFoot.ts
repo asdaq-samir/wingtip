@@ -97,7 +97,10 @@ const SHEET = ".group\\/sheet";
 
 /** How far `el` is moved down by its own transform now. */
 function moved(el: Element | null) {
-  return el ? new DOMMatrixReadOnly(getComputedStyle(el).transform).m42 : 0;
+  // Nothing moved where the page has no layout to read (jsdom, the unit
+  // tests' page, has no DOMMatrixReadOnly: the planner's first draw threw).
+  if (!el || typeof DOMMatrixReadOnly === "undefined") return 0;
+  return new DOMMatrixReadOnly(getComputedStyle(el).transform).m42;
 }
 
 /** Where the foot's edge is once the sheet is at rest: its place now with
