@@ -12,6 +12,7 @@ import { holdForListening } from "../../../lib/audioInput";
 import { callEngine, type EngineAnswer } from "../../../lib/engine/engine";
 import { listen, saidSoFar } from "../../../lib/listen";
 import { altFt, reportedDirection } from "../../../lib/format";
+import { windText } from "../format";
 
 /** A broadcast's figures as the engine reads them (read_atis): a figure
  *  not heard is null. The shapes are the engine's contract's. */
@@ -47,15 +48,20 @@ export function heardAny(r: AtisReading): boolean {
   );
 }
 
-/** The wind as a pilot says it back: "210° at 12 kt, gusts 18". */
+/** The wind a broadcast gives, as the app writes a wind (windText):
+ *  magnetic and marked so, "210°M 12G18 kt" -- "Wind direction is
+ *  reported relative to magnetic north in ATIS as well as ASOS and AWOS
+ *  radio (voice) broadcasts" (AIM 7-1-10), where a METAR's is true -- and
+ *  a variable one in words, "180°M variable at 15 kt, gusts 25". */
 export function windWords(w: AtisWind): string {
   // Calm is a speed of 0 (AIM 7-1-28), the engine's wind_calm.
   if (callEngine("wind_calm", { speed_kt: w.kt })) return "Calm";
+  if (w.from_deg != null && w.kt != null && !w.variable) return windText(w.from_deg, w.kt, w.gust_kt, "M");
   const speed = w.kt != null ? `${w.kt} kt` : null;
   const gusts = w.gust_kt != null ? `gusts ${w.gust_kt}` : null;
   const head =
     w.from_deg != null
-      ? `${reportedDirection(w.from_deg)}°${w.variable ? " variable" : ""}`
+      ? `${reportedDirection(w.from_deg)}°M${w.variable ? " variable" : ""}`
       : w.variable
         ? speed
           ? "Variable"

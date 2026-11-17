@@ -26,7 +26,7 @@ export interface Where {
 }
 
 export interface VerdictItem extends Where {
-  key: "weather" | "airspace" | "altitude" | "fuel" | "runways" | "balance" | "risk" | "fields";
+  key: "weather" | "airspace" | "altitude" | "oxygen" | "fuel" | "runways" | "balance" | "risk" | "fields";
   label: string;
   finding: Finding;
   /** What was found, in a line. */
@@ -80,6 +80,11 @@ export interface VerdictInput {
     cautions: string[];
     /** The altitude flown, as the FL chip says it. */
     flown: string | null;
+    /** The highest the nav log flies, feet MSL, for the engine's oxygen
+     *  finding (14 CFR 91.211(a)); null before it. */
+    highestFt?: number | null;
+    /** The airplane carries oxygen or a pressurised cabin. */
+    oxygen?: boolean;
   };
   fuel: {
     pending: boolean;
@@ -131,7 +136,14 @@ function engineInput({ weather, airspace, altitude, fuel, runways, balance, risk
       near: airspace.near,
       special_use: airspace.specialUse,
     },
-    altitude,
+    altitude: {
+      pending: altitude.pending,
+      problem: altitude.problem,
+      cautions: altitude.cautions,
+      flown: altitude.flown,
+      highest_ft: altitude.highestFt ?? null,
+      oxygen: altitude.oxygen ?? false,
+    },
     fuel: {
       pending: fuel.pending,
       margin_gal: fuel.marginGal,

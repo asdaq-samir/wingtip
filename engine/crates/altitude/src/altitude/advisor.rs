@@ -25,12 +25,31 @@ pub struct Row {
     pub flown: bool,
     pub fastest: bool,
     pub economical: bool,
-    /// Why the row is warned of; None for a legal one flown everywhere.
+    /// Why the row is warned of, short; None for a legal one flown everywhere.
     pub warning: Option<String>,
+    /// What a row outside the legal altitudes means, said once over the
+    /// rows (NOTE); None on a legal one.
+    pub note: Option<&'static str>,
 }
 
-/// The words on a row outside the legal altitudes.
-pub const OUTSIDE: &str = "Outside this route's legal altitudes (14 CFR 91.119, 91.159 or 91.179, airspace, clouds or the airplane's ceiling): flown as your own, with its cautions";
+/// What a row outside the legal altitudes means, once over the rows: the
+/// rules that made the legal ones, and that it is flown anyway. On each
+/// row it was cut to "...flown as..." and said a dozen times over (the UI
+/// audit's C1); each row now says where it is (outside).
+pub const NOTE: &str = "Altitudes outside this route's legal ones (14 CFR 91.119, 91.159 or 91.179, airspace, clouds or the airplane's ceiling) are flown as your own, with their cautions.";
+
+/// The short words on a row outside the legal altitudes: under the lowest
+/// legal one, over the highest, or between two -- where it sits, which is
+/// all the advisor knows of why (the figures are the legal altitudes').
+pub fn outside(ft: f64, legal: &[f64]) -> &'static str {
+    if legal.iter().all(|l| ft < *l) {
+        "Under the legal altitudes"
+    } else if legal.iter().all(|l| ft > *l) {
+        "Over the legal altitudes"
+    } else {
+        "Between the legal altitudes"
+    }
+}
 /// And on one some legs of which fly their nearest legal altitude.
 pub const SOME_LEGS: &str = "Some legs at their nearest legal altitude";
 
@@ -55,7 +74,7 @@ pub fn rows(figures: &[Figure], flown_ft: Option<f64>, plans: &[(String, f64)]) 
             let figure = figures.iter().find(|f| f.altitude_ft == ft).cloned();
             let is_legal = figure.is_some();
             let warning = match &figure {
-                None => Some(OUTSIDE.to_owned()),
+                None => Some(outside(ft, &legal).to_owned()),
                 Some(f) if !f.everywhere => Some(SOME_LEGS.to_owned()),
                 _ => None,
             };
@@ -66,6 +85,7 @@ pub fn rows(figures: &[Figure], flown_ft: Option<f64>, plans: &[(String, f64)]) 
                 fastest: fastest == Some(ft),
                 economical: economical == Some(ft),
                 warning,
+                note: (!is_legal).then_some(NOTE),
             }
         })
         .collect()
@@ -86,7 +106,10 @@ mod tests {
         let at = |ft: f64| rows.iter().find(|r| r.figure.altitude_ft == ft).unwrap();
         assert!(at(6500.0).fastest && !at(6500.0).economical);
         assert!(at(4500.0).economical && at(4500.0).flown && at(4500.0).legal);
-        assert!(!at(5000.0).legal && at(5000.0).warning.as_deref() == Some(OUTSIDE));
+        assert!(!at(5000.0).legal && at(5000.0).warning.as_deref() == Some("Between the legal altitudes"));
+        assert_eq!((at(5000.0).note, at(4500.0).note), (Some(NOTE), None));
+        assert_eq!(at(1000.0).warning.as_deref(), Some("Under the legal altitudes"));
+        assert_eq!(at(17500.0).warning.as_deref(), Some("Over the legal altitudes"));
         assert_eq!(rows[0].figure.altitude_ft, 17500.0);
         let planned = super::rows(&figures, None, &[("fastest".to_owned(), 4500.0)]);
         assert!(planned.iter().find(|r| r.figure.altitude_ft == 4500.0).unwrap().fastest);

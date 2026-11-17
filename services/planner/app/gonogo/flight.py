@@ -356,6 +356,9 @@ def findings_for(
             "problem": planned.problem,
             "cautions": [reason for c in (nav or {}).get("cautions") or [] for reason in c["reasons"]],
             "flown": _flown_words(nav) if nav else None,
+            # The engine's oxygen finding (14 CFR 91.211(a)): the highest leg, and the airplane's oxygen.
+            "highest_ft": max((leg["altitude_ft"] for leg in legs), default=None),
+            "oxygen": bool(profile.get("supplemental_oxygen") or profile.get("pressurized")),
         },
         "fuel": {
             "pending": not totals,

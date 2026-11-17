@@ -55,6 +55,10 @@ export type AltitudeAdvisorAnswer = {
   flown: boolean;
   fastest: boolean;
   economical: boolean;
+  /**
+   * On a row outside the legal altitudes, what such a row means, the same on each: said once over the rows. Null on a legal one.
+   */
+  note?: string | null;
   warning: string | null;
 }[];
 export type AltitudeAllowedAnswer = boolean;
@@ -1227,7 +1231,7 @@ export interface EngineContract {
     answer: AlertsAheadAnswer;
   };
   /**
-   * The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a warning (the owner's warn, never limit).
+   * The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a short warning of where it sits, under, over or between them, and the note that says what that means, once over the rows (the owner's warn, never limit).
    */
   altitude_advisor: {
     input: AltitudeAdvisorInput;
@@ -1969,7 +1973,7 @@ export interface EngineContract {
     answer: FiledRnavAnswer;
   };
   /**
-   * Item 15's route between the departure and the destination (AIM Appendix 4: "DALL3 EIC V18 MEI LGC4", "FLACK DCT IRW"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct. `airways` names which of the stops are airways.
+   * Item 15's route between the departure and the destination (AIM Appendix 4: "DALL3 EIC V18 MEI LGC4", "FLACK DCT IRW"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct; a pilot's own point off a fix ("VPBNG/095/14.2") as a fix, radial and distance, "VPBNG095014" (AIM Appendix 4's "IRW12503"), never with the strokes item 15 reads as a speed and altitude. `airways` names which of the stops are airways.
    */
   filed_route: {
     input: FiledRouteInput;
@@ -2109,7 +2113,7 @@ export interface EngineContract {
     answer: FrequenciesInOrderAnswer;
   };
   /**
-   * A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name.
+   * A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name; a CTAF that is the field's tower frequency "Tower / CTAF" (AIM 4-1-9).
    */
   frequency_line: {
     input: FrequencyLineInput;
@@ -2221,7 +2225,7 @@ export interface EngineContract {
     answer: GonogoBalanceAnswer;
   };
   /**
-   * The Brief's Go / No-Go put together, one call for every host that shows it: gonogo_verdict_items' seven findings, the IFR alternate's finding in the weather's where the weather says nothing worse (gonogo_alternate_finding, 14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (gonogo_field_permission: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left (gonogo_verdict_line). The decision stays the pilot in command's (14 CFR 91.3).
+   * The Brief's Go / No-Go put together, one call for every host that shows it: gonogo_verdict_items' seven findings, an oxygen finding after the altitude's where the nav log flies over 12,500 ft MSL in an airplane not known to carry oxygen or a pressurised cabin (14 CFR 91.211(a); a caution, its words then left out of the altitude's), the IFR alternate's finding in the weather's where the weather says nothing worse (gonogo_alternate_finding, 14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (gonogo_field_permission: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left (gonogo_verdict_line). The decision stays the pilot in command's (14 CFR 91.3).
    */
   gonogo_brief: {
     input: GonogoBriefInput;
@@ -2949,7 +2953,7 @@ export interface EngineContract {
     answer: PassengerNightOnTheWayAnswer;
   };
   /**
-   * A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C).
+   * A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C) to the nearest hundred feet.
    */
   pattern_altitude: {
     input: PatternAltitudeInput;
@@ -6336,6 +6340,14 @@ export interface VerdictInput {
      * The altitude flown as the FL chip says it.
      */
     flown?: string | null;
+    /**
+     * The highest altitude the nav log flies, feet MSL, for 14 CFR 91.211(a)'s oxygen (gonogo_brief's oxygen finding); null before the nav log.
+     */
+    highest_ft?: number | null;
+    /**
+     * Whether the airplane picked carries supplemental oxygen or a pressurised cabin (its profile's supplemental_oxygen or pressurized). Read as JavaScript reads it; false, the safer side, with no airplane picked.
+     */
+    oxygen?: boolean | null;
   };
   fuel: {
     /**
@@ -7434,6 +7446,14 @@ export interface FrequenciesInOrderInput {
 export interface FrequencyLineInput {
   type?: string | null;
   description?: string | null;
+  /**
+   * This frequency's figure, MHz.
+   */
+  frequency_mhz?: number | null;
+  /**
+   * The field's frequencies: a CTAF that is its tower's is named Tower / CTAF (AIM 4-1-9).
+   */
+  frequencies?: FieldFrequency[] | null;
 }
 export interface FrequencyLineAnswer {
   name: string;
@@ -10360,7 +10380,7 @@ export interface PatternAltitudeInput {
 export interface PatternAltitudeAnswer {
   agl_ft: number;
   /**
-   * Feet MSL, whole; null with no elevation.
+   * Feet MSL: the published height over the field's elevation, whole, halves up; with none published, to the nearest hundred (as flown_ft); null with no elevation.
    */
   altitude_ft: number | null;
   /**

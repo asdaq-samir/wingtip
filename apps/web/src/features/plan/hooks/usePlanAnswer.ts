@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useAirplaneChosen } from "../../../lib/preferences";
 import { useKeepOffline } from "../map/keepStatus";
 import { useAircraftPick } from "./useAircraftPick";
 import { useRouteWays } from "./useRouteWays";
@@ -23,7 +24,13 @@ export function usePlanAnswer({ planned, depart, local, flightRules, ground, pla
   const s = usePlan(planParams);
   // The route's own time and miles: its nav log's once it is planned,
   // the grid's and the course's before (its weather strip's minutes).
-  const gridOwnMin = (ways.routeWays?.current_along?.bands ?? []).reduce((sum, b) => sum + b.min, 0);
+  // The grid's minutes are its weather timing's, at a speed the planner
+  // takes for the weather alone: a time on the route only with an airplane
+  // picked, as the FPL figures and the nav log say none without one (the
+  // owner, 2026-11-08: "don't assume"; the UI audit's A3, "13h 38m" on the
+  // chart beside ETE "—").
+  const airplane = useAirplaneChosen();
+  const gridOwnMin = airplane ? (ways.routeWays?.current_along?.bands ?? []).reduce((sum, b) => sum + b.min, 0) : 0;
   // And its minutes on the ground at the fields it lands at (`ground`,
   // else the owner's 30), as the ways count theirs: the nav log's totals
   // are air time alone, and Your Route read shorter than a way through

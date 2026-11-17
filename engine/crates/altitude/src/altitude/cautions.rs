@@ -7,7 +7,7 @@
 
 use crate::figures::words::grouped;
 use crate::json::Value;
-use wingtip_flight::limits::{CLASS_A_FLOOR_FT, OXYGEN_CREW_FT, OXYGEN_CREW_PAST_30_MIN_FT, OXYGEN_EVERYONE_FT};
+use wingtip_flight::limits::{oxygen_words, CLASS_A_FLOOR_FT};
 
 fn as_bool(v: &Value) -> Option<bool> {
     match v {
@@ -93,26 +93,13 @@ pub fn floor(segment: &Value, altitude: f64) -> Option<String> {
     Some(format!("{short} ft under the {} ft 14 CFR 91.119(c) asks: {} ft over {what}", grouped(need), grouped(clearance)))
 }
 
-/// What 14 CFR 91.211(a) asks of a flight up to `highest_ft` in an
-/// airplane with no pressurised cabin, its cabin at the altitude flown:
-/// over 12,500 ft MSL the crew's oxygen for any of it past 30 minutes
-/// ((a)(1)), over 14,000 ft for all of it ((a)(2)), over 15,000 ft every
-/// occupant's ((a)(3)). None where the profile carries oxygen or a
-/// pressurised cabin, as the nav log's plans hold (navlog::plans::
-/// OXYGEN_CAP_FT, the same 12,500 ft).
+/// What 14 CFR 91.211(a) asks of a flight up to `highest_ft`
+/// (wingtip_flight::limits::oxygen_words). None where the profile carries
+/// oxygen or a pressurised cabin, as the nav log's plans hold
+/// (navlog::plans::OXYGEN_CAP_FT, the same 12,500 ft).
 pub fn oxygen(highest_ft: Option<f64>, profile: Option<&Value>) -> Vec<String> {
     let carried = profile.is_some_and(|p| truthy(p, "supplemental_oxygen") || truthy(p, "pressurized"));
-    let Some(highest) = highest_ft.filter(|h| *h > OXYGEN_CREW_PAST_30_MIN_FT && !carried) else {
-        return Vec::new();
-    };
-    vec![if highest > OXYGEN_EVERYONE_FT {
-        "Over 15,000 ft MSL: oxygen for the crew the whole time there and for every occupant (14 CFR 91.211(a)(2), (3))"
-    } else if highest > OXYGEN_CREW_FT {
-        "Over 14,000 ft MSL: oxygen for the crew the whole time there (14 CFR 91.211(a)(2))"
-    } else {
-        "Over 12,500 ft MSL: oxygen for the crew for any of it past 30 minutes (14 CFR 91.211(a)(1))"
-    }
-    .to_owned()]
+    highest_ft.filter(|_| !carried).and_then(oxygen_words).map(str::to_owned).into_iter().collect()
 }
 
 /// Prohibited airspace on the way, as a warning: nobody flies in it

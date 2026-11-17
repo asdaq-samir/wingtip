@@ -24,7 +24,7 @@ pub const LINES_MAX: usize = 3;
 /// Why each finding matters, in plain words, and the rule it rests on:
 /// (key, why, cite). Explanations of the Go / No-Go's findings, not rules
 /// of their own.
-const WHY: [(&str, &str, &str); 8] = [
+const WHY: [(&str, &str, &str); 9] = [
     (
         "weather",
         "VFR needs 14 CFR 91.155's visibility and distance from clouds all the way; a briefer's \"VFR not recommended\" (AIM 7-1-5) means the forecast is under them somewhere on the route, and your own minimums are stricter still.",
@@ -39,6 +39,12 @@ const WHY: [(&str, &str, &str); 8] = [
         "altitude",
         "Above 3,000 ft AGL a VFR cruise follows the hemispheric rule (14 CFR 91.159), 91.119 sets the least height over terrain and people, and the altitude must keep 91.155's distance from the clouds.",
         "14 CFR 91.119, 91.155, 91.159",
+    ),
+    (
+        // 91.211(a)(1)-(3), the three heights brief.rs's oxygen_item reads.
+        "oxygen",
+        "In an airplane without a pressurised cabin, 14 CFR 91.211(a) asks for oxygen for the crew for any time past 30 minutes over 12,500 ft MSL, all the time over 14,000 ft, and for every occupant over 15,000 ft.",
+        "14 CFR 91.211(a)",
     ),
     (
         // 91.151(a) is a rule about beginning the flight: "No person may
@@ -85,10 +91,11 @@ const WHY: [(&str, &str, &str); 8] = [
 /// What to do about a finding: (key, if it stops the flight, if it wants
 /// a look). Flight Service's number with non-breaking hyphens (U+2011):
 /// it broke after "(1-" on a phone (the web audit's WEB-43).
-const ACTION: [(&str, &str, &str); 8] = [
+const ACTION: [(&str, &str, &str); 9] = [
     ("weather", "wait for it to lift, or plan another day", "read it on En route and plan around it"),
     ("airspace", "route around it, or go later", "ask Flight Service (1\u{2011}800\u{2011}WX\u{2011}BRIEF) before you go"),
     ("altitude", "pick another altitude or route", "pick an altitude the profile offers"),
+    ("oxygen", "carry oxygen, or plan lower", "carry oxygen, or plan lower"),
     ("fuel", "add fuel, or plan a stop", "add fuel, or plan a stop"),
     ("runways", "pick a longer runway, or a lighter load", "ask for another runway, or wait for the wind"),
     ("balance", "move or leave some weight", "move or leave some weight"),

@@ -83,10 +83,18 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   // is on its own (the owner, 2026-11-05: "The red dot can be on profile
   // (like brief) instead of the altitude"); not for a route with no legal
   // altitude, which the altitude's field says in red itself.
-  const altitudeMark = !profileReady || s.unflyable || !s.nav ? null : s.nav.cautions?.length ? "caution" : tightLeg ? "tight" : null;
+  // The Brief's oxygen finding (the engine's gonogo_brief, 14 CFR
+  // 91.211(a)) is one too: the altitude the plan picked asks for it
+  // whether or not the pilot set it.
+  const oxygen = verdict.find((i) => i.key === "oxygen")?.detail;
+  const altitudeMark =
+    !profileReady || s.unflyable || !s.nav ? null : s.nav.cautions?.length || oxygen ? "caution" : tightLeg ? "tight" : null;
   // The cautions' reasons, each once, for the Profile card's head, where
-  // the mark above points (ProfileCard).
-  const profileCautions = useMemo(() => [...new Set((s.nav?.cautions ?? []).flatMap((c) => c.reasons))], [s.nav]);
+  // the mark above points (ProfileCard), the oxygen finding's with them.
+  const profileCautions = useMemo(
+    () => [...new Set([...(s.nav?.cautions ?? []).flatMap((c) => c.reasons), ...(oxygen ? [oxygen] : [])])],
+    [s.nav, oxygen],
+  );
   // The route's airports' airspace classes, as the course came with them:
   // the pills coloured the moment it is in. Each made again only when what
   // it reads changes, as the box is drawn again only then (fromRoutePanel's memo).

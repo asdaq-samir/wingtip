@@ -358,11 +358,11 @@ fn the_pattern_altitude_is_the_faas_where_published_and_1000_ft_above_the_field_
     );
     assert_eq!(
         ask("pattern_altitude", json!({"elevation_ft": 727.0})),
-        json!({"agl_ft": 1000.0, "altitude_ft": 1727, "flown_ft": 1700, "published": false})
+        json!({"agl_ft": 1000.0, "altitude_ft": 1700, "flown_ft": 1700, "published": false})
     );
-    assert_eq!(ask("pattern_altitude", json!({}))["altitude_ft"], Value::Null);
-    // Halves to even, as the planner's round.
-    assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 812.5}))["altitude_ft"], json!(1812));
+    // The FAA's to the foot, halves up as the elevation is written (808.5 is 809); none, to the hundred.
+    let at = |e: Value, a: Option<f64>| ask("pattern_altitude", json!({"elevation_ft": e, "published_agl_ft": a}))["altitude_ft"].take();
+    assert_eq!((at(json!(808.5), Some(800.0)), at(json!(808.5), None), at(Value::Null, None)), (json!(1609), json!(1800), Value::Null));
 }
 
 #[test]

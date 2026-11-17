@@ -100,6 +100,7 @@ export function PlaceInfoTab({
                       description={f.description}
                       mhz={f.frequency_mhz}
                       testId="place-frequency"
+                      field={place.frequencies}
                       notam={mark && <NotamBadge mark={mark} kind="frequency" onOpen={() => sheet.show(mark)} />}
                     />
                   );

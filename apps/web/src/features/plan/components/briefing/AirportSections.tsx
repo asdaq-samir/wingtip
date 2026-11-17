@@ -83,7 +83,14 @@ export default function AirportSections({
               <ListGroup title={phases.length ? "Other frequencies" : "Radio"}>
                 {otherFrequencies.length ? (
                   otherFrequencies.map((f, k) => (
-                    <FrequencyRow key={k} type={f.type} description={f.description} mhz={f.frequency_mhz} testId="airport-frequency" />
+                    <FrequencyRow
+                      key={k}
+                      type={f.type}
+                      description={f.description}
+                      mhz={f.frequency_mhz}
+                      field={info?.frequencies}
+                      testId="airport-frequency"
+                    />
                   ))
                 ) : (
                   <ListRow muted title={<>{info?.frequencies.length ? "None but those on the calls" : NO_FREQUENCIES}</>} />

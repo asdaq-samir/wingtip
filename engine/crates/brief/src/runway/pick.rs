@@ -254,12 +254,21 @@ pub const PATTERN_AGL_FT: f64 = 1000.0;
 
 /// How high the pattern is flown (wingtip.pattern pattern_at): above the
 /// field, the FAA's own where it publishes one (APT_BASE's TPA, which the
-/// host reads), else PATTERN_AGL_FT; above sea level, to the foot, where
-/// the field's elevation is known; and whether it is the FAA's.
+/// host reads), else PATTERN_AGL_FT; above sea level where the field's
+/// elevation is known; and whether it is the FAA's. The FAA's to the foot,
+/// halves up as the field's elevation is written beside it (the card's
+/// 809 ft field beside a 1,608 ft pattern read a foot short, halves to
+/// even). Where none is published, to the nearest hundred feet
+/// (pattern_altitude_flown): AC 90-66C's 1,000 ft is a height to fly, not
+/// a surveyed one, and 1,808 ft beside an 809 ft field said a precision
+/// no rule gives (the UI audit's A6).
 pub fn pattern_altitude(elevation_ft: Option<f64>, published_agl_ft: Option<f64>) -> (f64, Option<f64>, bool) {
     let agl = published_agl_ft.unwrap_or(PATTERN_AGL_FT);
-    // Python's round, halves to even, as the planner has always given it.
-    (agl, elevation_ft.map(|e| (e + agl).round_ties_even()), published_agl_ft.is_some())
+    let altitude = match published_agl_ft {
+        Some(_) => elevation_ft.map(|e| (e + agl).round()),
+        None => pattern_altitude_flown(elevation_ft, None),
+    };
+    (agl, altitude, published_agl_ft.is_some())
 }
 
 /// The pattern altitude as a pilot sets it on the altimeter and the

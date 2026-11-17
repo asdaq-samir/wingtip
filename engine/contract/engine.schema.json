@@ -1753,7 +1753,7 @@
       "additionalProperties": false
     },
     "altitude_advisor": {
-      "description": "The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a warning (the owner's warn, never limit).",
+      "description": "The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a short warning of where it sits, under, over or between them, and the note that says what that means, once over the rows (the owner's warn, never limit).",
       "type": "object",
       "properties": {
         "input": {
@@ -1865,6 +1865,13 @@
               },
               "economical": {
                 "type": "boolean"
+              },
+              "note": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "On a row outside the legal altitudes, what such a row means, the same on each: said once over the rows. Null on a legal one."
               },
               "warning": {
                 "type": [
@@ -9680,7 +9687,7 @@
       "additionalProperties": false
     },
     "filed_route": {
-      "description": "Item 15's route between the departure and the destination (AIM Appendix 4: \"DALL3 EIC V18 MEI LGC4\", \"FLACK DCT IRW\"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct. `airways` names which of the stops are airways.",
+      "description": "Item 15's route between the departure and the destination (AIM Appendix 4: \"DALL3 EIC V18 MEI LGC4\", \"FLACK DCT IRW\"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct; a pilot's own point off a fix (\"VPBNG/095/14.2\") as a fix, radial and distance, \"VPBNG095014\" (AIM Appendix 4's \"IRW12503\"), never with the strokes item 15 reads as a speed and altitude. `airways` names which of the stops are airways.",
       "type": "object",
       "properties": {
         "input": {
@@ -11247,7 +11254,7 @@
       "additionalProperties": false
     },
     "frequency_line": {
-      "description": "A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name.",
+      "description": "A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name; a CTAF that is the field's tower frequency \"Tower / CTAF\" (AIM 4-1-9).",
       "type": "object",
       "properties": {
         "input": {
@@ -11265,6 +11272,23 @@
                 "string",
                 "null"
               ]
+            },
+            "frequency_mhz": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "This frequency's figure, MHz."
+            },
+            "frequencies": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "$ref": "#/definitions/FieldFrequency"
+              },
+              "description": "The field's frequencies: a CTAF that is its tower's is named Tower / CTAF (AIM 4-1-9)."
             }
           }
         },
@@ -12209,7 +12233,7 @@
       "additionalProperties": false
     },
     "gonogo_brief": {
-      "description": "The Brief's Go / No-Go put together, one call for every host that shows it: gonogo_verdict_items' seven findings, the IFR alternate's finding in the weather's where the weather says nothing worse (gonogo_alternate_finding, 14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (gonogo_field_permission: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left (gonogo_verdict_line). The decision stays the pilot in command's (14 CFR 91.3).",
+      "description": "The Brief's Go / No-Go put together, one call for every host that shows it: gonogo_verdict_items' seven findings, an oxygen finding after the altitude's where the nav log flies over 12,500 ft MSL in an airplane not known to carry oxygen or a pressurised cabin (14 CFR 91.211(a); a caution, its words then left out of the altitude's), the IFR alternate's finding in the weather's where the weather says nothing worse (gonogo_alternate_finding, 14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (gonogo_field_permission: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left (gonogo_verdict_line). The decision stays the pilot in command's (14 CFR 91.3).",
       "type": "object",
       "properties": {
         "input": {
@@ -21558,7 +21582,7 @@
       "additionalProperties": false
     },
     "pattern_altitude": {
-      "description": "A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C).",
+      "description": "A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C) to the nearest hundred feet.",
       "type": "object",
       "properties": {
         "input": {
@@ -21591,7 +21615,7 @@
                 "integer",
                 "null"
               ],
-              "description": "Feet MSL, whole; null with no elevation."
+              "description": "Feet MSL: the published height over the field's elevation, whole, halves up; with none published, to the nearest hundred (as flown_ft); null with no elevation."
             },
             "flown_ft": {
               "type": [
@@ -39281,6 +39305,20 @@
                 "null"
               ],
               "description": "The altitude flown as the FL chip says it."
+            },
+            "highest_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The highest altitude the nav log flies, feet MSL, for 14 CFR 91.211(a)'s oxygen (gonogo_brief's oxygen finding); null before the nav log."
+            },
+            "oxygen": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Whether the airplane picked carries supplemental oxygen or a pressurised cabin (its profile's supplemental_oxygen or pressurized). Read as JavaScript reads it; false, the safer side, with no airplane picked."
             }
           }
         },

@@ -685,6 +685,10 @@ object EngineContract {
         val flown: Boolean,
         val fastest: Boolean,
         val economical: Boolean,
+        /**
+         * On a row outside the legal altitudes, what such a row means, the same on each: said once over the rows. Null on a legal one.
+         */
+        val note: String? = null,
         val warning: String? = null,
     )
 
@@ -4517,6 +4521,15 @@ object EngineContract {
     data class FrequencyLineInput(
         val type: String? = null,
         val description: String? = null,
+        /**
+         * This frequency's figure, MHz.
+         */
+        @SerialName("frequency_mhz")
+        val frequencyMhz: Double? = null,
+        /**
+         * The field's frequencies: a CTAF that is its tower's is named Tower / CTAF (AIM 4-1-9).
+         */
+        val frequencies: List<EngineContract.FieldFrequency>? = null,
     )
 
     @Serializable
@@ -9023,7 +9036,7 @@ object EngineContract {
         @SerialName("agl_ft")
         val aglFt: Double,
         /**
-         * Feet MSL, whole; null with no elevation.
+         * Feet MSL: the published height over the field's elevation, whole, halves up; with none published, to the nearest hundred (as flown_ft); null with no elevation.
          */
         @SerialName("altitude_ft")
         val altitudeFt: Int? = null,
@@ -12735,6 +12748,15 @@ object EngineContract {
          * The altitude flown as the FL chip says it.
          */
         val flown: String? = null,
+        /**
+         * The highest altitude the nav log flies, feet MSL, for 14 CFR 91.211(a)'s oxygen (gonogo_brief's oxygen finding); null before the nav log.
+         */
+        @SerialName("highest_ft")
+        val highestFt: Double? = null,
+        /**
+         * Whether the airplane picked carries supplemental oxygen or a pressurised cabin (its profile's supplemental_oxygen or pressurized). Read as JavaScript reads it; false, the safer side, with no airplane picked.
+         */
+        val oxygen: Boolean? = null,
     )
 
     @Serializable

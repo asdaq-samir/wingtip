@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { aircraftListQuery, currencyQuery, pilotQuery } from "../../../lib/queryClient";
 import type { Briefing, Course, Leg, NavLogAltitude, Totals } from "../../../lib/api/types";
 import type { BriefingState } from "./usePlan";
-import { ceilingAndVisibility, PLAN_NAME, reportedWind } from "../format";
-import { feetRange, flightLevel, grouped, localDay, reportedDirection } from "../../../lib/format";
+import { ceilingAndVisibility, PLAN_NAME, windLine, windText } from "../format";
+import { feetRange, flightLevel, grouped, localDay } from "../../../lib/format";
 import { isAirwayToken } from "../../../lib/identSchema";
 import { useLoad } from "./useLoad";
 import { armText } from "../../../lib/weightBalance";
@@ -315,6 +315,9 @@ export function useFlightBriefing({
           : nav.flown === "custom"
             ? `${flightLevel(nav.altitude_ft)}, your own`
             : `${altitudeRange(nav)}${chosen ? ` · ${PLAN_NAME[chosen.kind]} plan` : ""}`,
+        // The engine's oxygen finding (14 CFR 91.211(a)): the highest leg, and the airplane's oxygen.
+        highestFt: legs.length ? Math.max(...legs.map((leg) => leg.altitude_ft)) : null,
+        oxygen: !!(nav?.aircraft?.supplemental_oxygen || nav?.aircraft?.pressurized),
       },
       fuel: {
         pending: !totals,
@@ -369,9 +372,6 @@ export function useFlightBriefing({
           );
           const distance = check?.distances.find((d) => d.kind === (kind === "departure" ? "takeoff" : "landing"));
           const metar = briefing?.metars[ident];
-          const said = metar
-            ? reportedWind(metar.wind_dir_true_deg ?? null, metar.wind_speed_kt ?? null, metar.wind_gust_kt ?? null)
-            : null;
           const phase = briefing
             ? fieldPhases(briefing, landings, legs, ownCallSign, ident, picks).find((p) => p.kind === kind)
             : undefined;
@@ -383,7 +383,7 @@ export function useFlightBriefing({
             runway: check?.end ? runwayNumber(check.end) : null,
             runwayFt: check?.runway?.length_ft ?? null,
             overFiftyFt: distance ? Math.round(distance.totalFt) : null,
-            wind: said === "calm" ? "Calm" : said ? `${said.dir.replace(/T$/, "")}/${said.speed}` : null,
+            wind: metar && metar.wind_speed_kt != null ? windLine(metar) : null,
             crosswindKt: check ? Math.round(check.crosswindKt) : null,
             crosswindOver: !!check?.crosswindOver,
             radio: call ? { to: call.to, mhz: call.mhz! } : null,
@@ -412,7 +412,7 @@ export function useFlightBriefing({
           enroute: {
             ceilingFt: briefing?.forecast.min_ceiling_ft ?? null,
             visibilitySm: briefing?.forecast.min_visibility_sm ?? null,
-            wind: wind ? `${reportedDirection(wind.dir)}°/${wind.speed}` : null,
+            wind: wind ? windText(wind.dir, wind.speed, null, "T") : null,
             eteMin: totals?.ete_min ?? null,
             line: items.find((i) => i.key === "weather")?.detail ?? null,
             finding: byKey(["weather", "altitude"]),
