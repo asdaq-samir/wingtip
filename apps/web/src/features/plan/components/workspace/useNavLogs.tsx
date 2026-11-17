@@ -22,7 +22,7 @@ export function useNavLogs(
   const { briefShown, closeNavLogCard, navLogShown } = vm.fpl;
   const { dryRunning } = vm.flight;
   const { deselectPoint, selectPointAt, selectedPoint } = vm.leg;
-  const { briefLine, estimate, landedStops, marks, metarColour, unflyableBrief } = vm.brief;
+  const { estimate, landedStops, marks, metarColour, unflyableBrief } = vm.brief;
 
   // What the Nav Log under the route and the Nav Log card both show.
   const shared = useMemo(
@@ -145,10 +145,12 @@ export function useNavLogs(
               name="Nav Log"
               sub={
                 <EngineGate>
-                  <FiguresLine input={{ totals: s.totals, estimate, local: s.local, destination: `${planned.dest}`, depart }} />
+                  <FiguresLine
+                    input={{ totals: s.totals, estimate, local: s.local, destination: `${planned.dest}`, depart }}
+                    noAirplane={!!aircraft.none}
+                  />
                 </EngineGate>
               }
-              line={briefLine}
               nameTestId="navlog-name"
               onClose={closeNavLogCard}
               onShare="navlog"
@@ -158,7 +160,7 @@ export function useNavLogs(
         />
       </Suspense>
     ),
-    [shared, estimate, s.totals, s.local, planned.dest, depart, navLogShown, briefLine, closeNavLogCard],
+    [shared, estimate, s.totals, s.local, planned.dest, depart, navLogShown, closeNavLogCard, aircraft.none],
   );
   return { navLog, navLogCard };
 }

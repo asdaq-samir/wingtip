@@ -30,7 +30,9 @@ export default function BriefCard({
   route,
 }: {
   name: ReactNode;
-  /** Under the name: where from and to, the airplane, the altitude, when. */
+  /** Under the name in its pinned head, at every size: the altitude, when,
+   *  the airplane, where from and to. It was a line under the head the
+   *  Brief scrolled over (the UI audit's B2, 2026-11-17). */
   line: ReactNode;
   contents: Record<PanelTab, ReactNode>;
   /** The briefing's warnings, over every page. */
@@ -61,15 +63,7 @@ export default function BriefCard({
           before={
             // Its room over the name the grabber's, which the pinned head's frost reaches up over (PinnedHead).
             <div className="px-4 pt-(--pinned-room) [--pinned-room:var(--corner-inset,0.75rem)]">
-              <CardHead
-                name={name}
-                line={line}
-                nameTestId="brief-name"
-                lineTestId="brief-line"
-                onClose={onClose}
-                onShare="brief"
-                closeTestId="brief-close"
-              />
+              <CardHead name={name} sub={line} nameTestId="brief-name" onClose={onClose} onShare="brief" closeTestId="brief-close" />
             </div>
           }
         />

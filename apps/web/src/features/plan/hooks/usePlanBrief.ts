@@ -117,12 +117,14 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
     if (!course) return null;
     const cruiseFt = s.legs.length ? Math.max(...s.legs.map((leg) => leg.altitude_ft)) : null;
     const from = placeName(course.departure.name, course.departure.ident);
+    // The Brief's head's one line, cut short at its end on a phone: the
+    // altitude and when first, the names (the head's idents) last.
     return [
-      s.local ? from : `${from} to ${placeName(course.destination.name, course.destination.ident)}`,
-      shortName(aircraftLabel),
       // Written as the route box writes it (FL-090), the owner's format.
       cruiseFt ? flightLevel(cruiseFt) : null,
       depart ? `leaving ${clockTime(new Date(depart))}` : "leaving now",
+      shortName(aircraftLabel),
+      s.local ? from : `${from} to ${placeName(course.destination.name, course.destination.ident)}`,
     ]
       .filter(Boolean)
       .join(" · ");
