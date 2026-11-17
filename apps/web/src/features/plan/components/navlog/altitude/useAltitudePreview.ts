@@ -1,6 +1,6 @@
 import { useState, type RefObject } from "react";
 import type { AltitudeChoice, Leg, NavLogAltitude, RouteProfile } from "../../../../../lib/api/types";
-import { altFt, flightLevel } from "../../../../../lib/format";
+import { altFt, feet, flightLevel } from "../../../../../lib/format";
 import { useFlying } from "../../../../../lib/mapChrome";
 import { useOwnFix } from "../../../../../lib/map/position/ownShip";
 import { clearanceAt, clearanceWords, strikeWords, type AlongPoint } from "./clearance";
@@ -126,7 +126,7 @@ export function useAltitudePreview({
     /** The slider's spoken value: the altitude, what it clears, its plan. */
     spoken: (altitude: number) => {
       const row = rows.find((r) => r.altitude_ft === altitude);
-      const words = clearanceAt(profile, altitude, points)?.words ?? `${altFt(altitude)} ft`;
+      const words = clearanceAt(profile, altitude, points)?.words ?? feet(altitude);
       const marks = [
         row?.fastest && "Fastest",
         row?.economical && "Most economical",

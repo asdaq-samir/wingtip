@@ -16,7 +16,7 @@ export type FrequencyKind = EngineAnswer<"frequency_line">["kind"];
  */
 
 /** The fields the engine reads of a frequency. */
-const sent = (frequencies: readonly Frequency[]) =>
+export const sentFrequencies = (frequencies: readonly Frequency[]) =>
   frequencies.map((f) => ({ type: f.type ?? null, description: f.description ?? null, frequency_mhz: f.frequency_mhz ?? null }));
 
 /** The CTAF: the one so called, else a UNICOM that is also the CTAF,
@@ -25,7 +25,7 @@ const sent = (frequencies: readonly Frequency[]) =>
  *  kneeboard both name it from here: with no frequency listed, the one
  *  said to use 122.9 and the other "No published radio". */
 export function ctafOf(frequencies: Frequency[]): Frequency {
-  const ctaf = callEngine("ctaf_of", { frequencies: sent(frequencies) });
+  const ctaf = callEngine("ctaf_of", { frequencies: sentFrequencies(frequencies) });
   return typeof ctaf === "number" ? frequencies[ctaf]! : ctaf;
 }
 
@@ -35,13 +35,13 @@ export function ctafOf(frequencies: Frequency[]): Frequency {
  *  KDLH's UNICOM first and its ATIS out of sight (the web audit's WEB-10).
  *  Indices into `frequencies`, so a NOTAM's mark by index still finds its row. */
 export function inUseOrder(frequencies: readonly Frequency[]): number[] {
-  return callEngine("frequencies_in_order", { frequencies: sent(frequencies) });
+  return callEngine("frequencies_in_order", { frequencies: sentFrequencies(frequencies) });
 }
 
 /** A field's radio as the kneeboard lists it (Kneeboard): each by its
  *  short name, with its frequency, the tower's before the CTAF's. */
 export function kneeboardRadio(frequencies: Frequency[]): [string, number][] {
-  return callEngine("kneeboard_radio", { frequencies: sent(frequencies) });
+  return callEngine("kneeboard_radio", { frequencies: sentFrequencies(frequencies) });
 }
 
 /**

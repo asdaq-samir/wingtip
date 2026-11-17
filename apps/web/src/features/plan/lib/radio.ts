@@ -11,9 +11,10 @@
  * kneeboard -- a controller may ask for something else, and the pilot
  * says what they ask.
  */
-import type { Briefing, Frequency, Leg } from "../../../lib/api/types";
+import type { Briefing, Leg } from "../../../lib/api/types";
 import { pickedEnd, runwayFlown, type InUse, type RunwayEnd, type RunwayPicks } from "./pattern";
 import { callEngine } from "../../../lib/engine/engine";
+import { sentFrequencies } from "../../../lib/frequencies";
 
 type Facilities = Briefing["airports"][string];
 
@@ -64,8 +65,6 @@ interface RadioInput {
 }
 
 const sentEnd = (inUse: InUse | null) => (inUse ? { ident: inUse.end.ident, traffic: inUse.end.traffic ?? null } : null);
-const sentFrequencies = (frequencies: Frequency[]) =>
-  frequencies.map((f) => ({ type: f.type ?? null, description: f.description ?? null, frequency_mhz: f.frequency_mhz ?? null }));
 
 /** The route's calls, airport by airport: leaving the departure, into
  *  and out of each stop, and into the destination. */

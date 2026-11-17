@@ -13,7 +13,7 @@ import { useOwnFix } from "../../../../lib/map/position/ownShip";
 import { SIMULATED_FIX_MS, endSimulation, simulateFix } from "../../../../lib/map/position/dryRun";
 import { useOwnTrail } from "../../../../lib/map/position/ownTrail";
 import { positionAt, stepPastFlight, usePastFlight, type ReplayPoint } from "../pastFlight";
-import { colourRuns } from "../traffic";
+import { colourLines } from "../traffic";
 import { useTracking } from "../../../../lib/map/position/tracking";
 import { useGlMap } from "../../../../lib/map/gl/glLayer";
 import { iconMarker, setMarkerIcon } from "../../../../lib/map/gl/htmlMarker";
@@ -253,15 +253,7 @@ export function PastFlightGl({ hex, id }: { hex: string; id: number }) {
     if (data) usePastFlight.setState({ points: data.points });
   }, [data]);
   const points = useMemo(() => data?.points ?? [], [data]);
-  const runs = useMemo<GlRun[]>(
-    () =>
-      colourRuns(points.map((p) => ({ lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? null }))).map((r) => ({
-        points: r.points,
-        colour: r.colour,
-        width: 3,
-      })),
-    [points],
-  );
+  const runs = useMemo<GlRun[]>(() => colourLines(points.map((p) => ({ lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? null }))), [points]);
   useGlLines("past-flight", "route", runs, CASING);
   useGlFit(points, points.length > 1 ? `${hex}-${id}` : null, 13);
   return <ReplayGl />;
@@ -275,7 +267,7 @@ export function TrackedPathGl({ hex }: { hex: string }) {
   const runs = useMemo<GlRun[]>(() => {
     const trail = (data?.trail ?? []).map((p) => ({ t: p.t * 1000, lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? null }));
     const last = trail.at(-1)?.t ?? 0;
-    return colourRuns([...trail, ...since.filter((p) => p.t > last)]).map((r) => ({ points: r.points, colour: r.colour, width: 3 }));
+    return colourLines([...trail, ...since.filter((p) => p.t > last)]);
   }, [data, since]);
   useGlLines("tracked-path", "route", runs, CASING);
   return null;

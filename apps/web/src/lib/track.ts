@@ -33,6 +33,9 @@ export function readTrack(text: string): TrackPoint[] {
   return read.points.map((p) => ({ t: p.t, lat: p.lat, lon: p.lon, altFt: p.alt_ft }));
 }
 
+/** A track as the engine reads its points: altitude as alt_ft. */
+export const enginePoints = (points: TrackPoint[]) => points.map((p) => ({ t: p.t, lat: p.lat, lon: p.lon, alt_ft: p.altFt }));
+
 /** A track thinned to at most `most` points, the first and the last
  *  kept: for keeping it, where a second-by-second log of two hours is
  *  seven thousand. Even steps through it, which keep its shape at a

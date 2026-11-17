@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { ReplayPoint } from "../../../../lib/replay/clock";
 import { useGlLines, type GlRun } from "../../../../lib/map/gl/useGlLines";
 import { CHART } from "../../../../lib/tokens";
-import { colourRuns } from "../traffic";
+import { colourLines } from "../traffic";
 import { useGlFit } from "../useGlFit";
 import { ReplayGl } from "./TracksGl";
 
@@ -23,13 +23,7 @@ export default function ReplayTrackGl({ id, points }: { id: string; points: Repl
       if (p.gap) pieces.push([]);
       pieces.at(-1)!.push(p);
     }
-    return pieces.flatMap((piece) =>
-      colourRuns(piece.map((p) => ({ lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? null }))).map((r) => ({
-        points: r.points,
-        colour: r.colour,
-        width: 3,
-      })),
-    );
+    return pieces.flatMap((piece) => colourLines(piece.map((p) => ({ lat: p.lat, lon: p.lon, altFt: p.alt_ft ?? null }))));
   }, [points]);
   useGlLines("replay-track", "route", runs, CASING);
   useGlFit(points, id, 12);

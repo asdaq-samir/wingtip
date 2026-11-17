@@ -12,6 +12,7 @@ import { useRouteLine } from "./useRouteLine";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanViewModel } from "./usePlanView";
+import { coursePoints } from "../../../lib/course";
 
 /**
  * FPL's route as a list and a line (usePlanWorkspace): its points edited
@@ -51,7 +52,7 @@ export function usePlanRouteList(
   const dropIntoRoute = useCallback(
     (ident: string, at: LatLon, then: "add" | "direct" | "hold") => {
       if (!geo || !course) return;
-      const points = [course.departure, ...(course.stops ?? []), course.destination];
+      const points = coursePoints(course);
       const index = geo.bestStopIndex(points, at);
       const ship = useOwnShip.getState();
       const fix = ship.enabled ? ship.fix : null;

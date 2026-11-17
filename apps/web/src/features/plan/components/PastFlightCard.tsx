@@ -8,7 +8,7 @@ import { CardHead } from "../../../components/CardHead";
 import { SheetCard } from "../../../components/SheetCard";
 import { RowBadge } from "../../../components/RowBadge";
 import type { PastFlightPoint, PastFlights, PastFlightSummary } from "../../../lib/api/types";
-import { clockTime, wholeNm } from "../../../lib/format";
+import { clockTime, feet, knots, wholeNm } from "../../../lib/format";
 import { compassPoint } from "../../../lib/compass";
 import { useGeo } from "../../../lib/geo";
 import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight } from "../map/pastFlight";
@@ -117,7 +117,7 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
           </RowBadge>
         }
         title="Highest"
-        value={value(`${altFt(flight.max_alt_ft)} ft`)}
+        value={value(feet(flight.max_alt_ft))}
       />
       {points.length > 1 && flown !== null && (
         <>
@@ -138,7 +138,7 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
               </RowBadge>
             }
             title="Average ground speed"
-            value={value(hours > 0 ? `${Math.round(flown / hours)} kt` : "—")}
+            value={value(hours > 0 ? knots(flown / hours) : "—")}
           />
         </>
       )}
@@ -183,7 +183,7 @@ function ReplayChart({ points }: { points: PastFlightPoint[] }) {
         <span className="text-muted-foreground">{here ? clockTime(when(here.t)) : "Altitude, ft · ground speed, kt"}</span>
         {here && (
           <span className="font-semibold text-foreground" data-testid="replay-now">
-            {altFt(here.alt_ft)} ft · {here.gs_kt != null ? `${Math.round(here.gs_kt)} kt` : "—"}
+            {altFt(here.alt_ft)} ft · {here.gs_kt != null ? knots(here.gs_kt) : "—"}
             {here.track_deg != null ? ` · ${compassPoint(here.track_deg)}` : ""}
           </span>
         )}

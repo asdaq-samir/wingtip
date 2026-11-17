@@ -19,6 +19,12 @@ export function clockTime(at: Date): string {
   return `${twoFigures(at.getHours())}:${twoFigures(at.getMinutes())}`;
 }
 
+/** A clock to the second, "14:32:05": UTC's with `utc`, else this device's. */
+export function clockSeconds(at: Date, utc = false): string {
+  const [h, m, sec] = utc ? [at.getUTCHours(), at.getUTCMinutes(), at.getUTCSeconds()] : [at.getHours(), at.getMinutes(), at.getSeconds()];
+  return `${twoFigures(h)}:${twoFigures(m)}:${twoFigures(sec)}`;
+}
+
 let zoneFormat: Intl.DateTimeFormat | null = null;
 const zones = new Map<number, string>();
 /** This device's time zone as a clock time is read in it, "CST" (or

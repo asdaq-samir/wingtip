@@ -1,11 +1,11 @@
 import type { AltitudeOption, Leg, Runway, Totals } from "../../lib/api/types";
-import { altFt, bearing, flightLevel, gal, miles, one } from "../../lib/format";
+import { altFt, bearing, feet, flightLevel, gal, miles, one } from "../../lib/format";
 import { clockTime, duration, zuluTime } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 import { calmOnRunway, isCalm } from "./lib/wind";
 import { modelledWinds, windsSource } from "../../lib/windsAloft";
 
-export { altFt, bearing, one };
+export { altFt, bearing, feet, one };
 
 /** How far below the clouds VFR keeps at a ceiling, feet: 14 CFR 91.155(a),
  *  500 ft, 1,000 ft at or above 10,000 ft MSL -- the engine's
@@ -301,5 +301,5 @@ export function ceilingAndVisibility(
   visibilitySm: number | null | undefined,
   visibilityPlus = false,
 ): string {
-  return `${ceilingFt == null ? "no ceiling" : `${altFt(ceilingFt)} ft`} · ${miles(visibilitySm, visibilityPlus)}`;
+  return `${ceilingFt == null ? "no ceiling" : feet(ceilingFt)} · ${miles(visibilitySm, visibilityPlus)}`;
 }

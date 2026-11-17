@@ -10,7 +10,7 @@ import { useGeo } from "../../../../lib/geo";
 import { runwayNumber, type WindPick } from "../../lib/pattern";
 import { transitionWords, type PickedProcedure } from "../../../../lib/procedures";
 import { TEXT } from "../../../../lib/text";
-import { altFt, nm } from "../../../../lib/format";
+import { altFt, feet, nm } from "../../../../lib/format";
 import { faaWords } from "../../../../lib/advisories";
 import type { ProcedureKind } from "../../hooks/useProceduresRoute";
 import { procedureQuery } from "../../../../lib/queryClient";
@@ -234,7 +234,7 @@ function FixLadder({ drawing }: { drawing: ProcedureDrawing }) {
 /** "3,200 ft or above", "2,700 ft", "4,000–6,000 ft": the altitude a fix
  *  is crossed at, from its coded limits; nothing where it has none. */
 function crossing(min: number | null | undefined, max: number | null | undefined): string {
-  if (min != null && max != null) return min === max ? `${altFt(min)} ft` : `${altFt(min)}–${altFt(max)} ft`;
+  if (min != null && max != null) return min === max ? feet(min) : `${altFt(min)}–${altFt(max)} ft`;
   if (min != null) return `${altFt(min)} ft or above`;
   if (max != null) return `${altFt(max)} ft or below`;
   return "";

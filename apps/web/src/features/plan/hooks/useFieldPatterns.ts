@@ -7,6 +7,7 @@ import { runwayNumber } from "../lib/pattern";
 import type { PlannedRoute } from "./planAddress";
 import type { PlanAnswer, PlanCourse } from "./planTypes";
 import { useLoad } from "./useLoad";
+import { coursePoints } from "../../../lib/course";
 
 /**
  * The route's fields as its Procedures list them (usePlanWorkspace): each
@@ -64,7 +65,7 @@ export function useFieldPatterns({
     const once = fields.filter(
       (f, i) => fields.findIndex((g) => g.ident === f.ident && (g.role === f.role || g.role === "Stop" || f.role === "Stop")) === i,
     );
-    const fieldsOfCourse = course ? [course.departure, ...(course.stops ?? []), course.destination] : [];
+    const fieldsOfCourse = course ? coursePoints(course) : [];
     return once.map(({ ident, role }) => ({
       ident,
       role,

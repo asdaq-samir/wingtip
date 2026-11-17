@@ -13,7 +13,7 @@ import { callEngine } from "../../../../lib/engine/engine";
 import { ALLOWANCES, divert, diversionFields, reasonable, type Diversion, type EstimateKey } from "../../../../lib/diversion";
 import { TEXT } from "../../../../lib/text";
 import { altFt } from "../../format";
-import { bearing, gal, grouped, nm, stopwatch, windCorrection } from "../../../../lib/format";
+import { bearing, gal, grouped, knots, nm, stopwatch, windCorrection } from "../../../../lib/format";
 import { FINDING_TONE } from "../../../../lib/findings";
 import { written } from "./workings";
 import { api } from "../../../../lib/api/client";
@@ -31,7 +31,7 @@ function Answer({ ident, d }: { ident: string; d: Diversion }) {
     ["Wind correction", windCorrection(d.wca)],
     ["True heading", bearing(d.th)],
     ["Magnetic heading", bearing(d.mh)],
-    ["Ground speed", `${Math.round(d.gs)} kt`],
+    ["Ground speed", knots(d.gs)],
     ["Time", `${Math.round(d.ete)} min`],
     ["Fuel", gal(d.fuel)],
   ];

@@ -9,6 +9,7 @@ import type { Briefing, Course } from "../../../../lib/api/types";
 import type { Geo } from "../../../../lib/geo";
 import { categoryOf } from "../../../../lib/map/marks/flightCategory";
 import { callEngine } from "../../../../lib/engine/engine";
+import { coursePoints, courseFields } from "../../../../lib/course";
 
 export type Station = Briefing["forecast"]["stations"][number];
 
@@ -21,7 +22,7 @@ interface Place {
 }
 
 export function placesOf(geo: Geo, course: Course): Place[] {
-  const points = [course.departure, ...(course.stops ?? []), course.destination];
+  const points = coursePoints(course);
   // A local flight, one field to itself, is one place.
   if (points.length === 2 && points[0]!.ident === points[1]!.ident) {
     const p = points[0]!;
@@ -70,7 +71,7 @@ export function nearestStation(stations: Station[], place: Pick<Place, "ident" |
  *  METAR's; null where none says. The Brief's glance (features/plan/lib/glance). */
 export function fieldCategory(briefing: Briefing, course: Course, ident: string): string | null {
   const stations = briefing.forecast.stations;
-  const place = [course.departure, ...(course.stops ?? []), course.destination].find((p) => p.kind !== "fix" && p.ident === ident);
+  const place = courseFields(course).find((p) => p.ident === ident);
   const station = ownStation(stations, ident) ?? (place ? nearestStation(stations, place)?.s : undefined);
   return (station ? categoryAt(station) : null) ?? briefing.metars[ident]?.flight_category ?? null;
 }

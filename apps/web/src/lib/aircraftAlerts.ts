@@ -1,9 +1,8 @@
 import { create } from "zustand";
 import type { FlightStatus } from "./api/types";
-import { clockTime } from "./format";
+import { clockTime, feet } from "./format";
 import { compassPoint, saidPoint } from "./compass";
 import { callEngine } from "./engine/engine";
-import { altFt } from "./format";
 import { orList } from "./listWords";
 
 /**
@@ -129,7 +128,7 @@ export function fired(
   if (!go.fires || !plane || go.nm === null || go.bearing_deg === null) return { alert: null, inside: go.inside };
   const miles = Math.max(1, Math.round(go.nm));
   const way = compassPoint(go.bearing_deg);
-  const height = plane.altitude_ft == null ? null : `${altFt(Math.round(plane.altitude_ft / 100) * 100)} ft`;
+  const height = plane.altitude_ft == null ? null : feet(Math.round(plane.altitude_ft / 100) * 100);
   const where = nearMe ? "you" : alert.airport!.ident;
   return {
     inside: true,

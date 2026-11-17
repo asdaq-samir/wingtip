@@ -18,7 +18,7 @@ import { alertsLine } from "../../../lib/aircraftAlerts";
 import { planePhotoQuery } from "../lib/planePhoto";
 import { airportQuery, flightQuery, routeQuery } from "../../../lib/queryClient";
 import { TEXT } from "../../../lib/text";
-import { reportedAltitude } from "../../../lib/format";
+import { knots, reportedAltitude } from "../../../lib/format";
 import AircraftAlertMenu from "../../../components/airplane/AircraftAlertMenu";
 import { squawkMeaning } from "../lib/squawks";
 import PastFlights from "../../../components/airplane/PastFlights";
@@ -276,7 +276,7 @@ export default function FlightCard({
   // behind it the photo, or the tint the head draws where there is none.
   const pillLine = [
     plane?.altitude_ft != null && reportedAltitude(plane.altitude_ft),
-    plane?.speed_kt != null && `${Math.round(plane.speed_kt)} kt`,
+    plane?.speed_kt != null && knots(plane.speed_kt),
     !plane && chip,
     fromIdent && toIdent && fromIdent !== toIdent
       ? `${fromIdent} → ${toIdent}`

@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { wholeNm } from "../../../../lib/format";
+import { feet, wholeNm } from "../../../../lib/format";
 import { ChevronRight } from "lucide-react";
 import { cn } from "cn";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
@@ -10,7 +10,7 @@ import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import type { Briefing, Course, Leg } from "../../../../lib/api/types";
 import { capitalised, pirepConditions } from "../../../../lib/advisories";
 import { passTime } from "../../lib/passTimes";
-import { altFt, ceilingAndVisibility, clockTime, windLine } from "../../format";
+import { ceilingAndVisibility, clockTime, windLine } from "../../format";
 import CategoryBadge from "./CategoryBadge";
 import Observed from "../../../../components/Observed";
 import { phasesOf, type Phase } from "./sections";
@@ -62,9 +62,7 @@ function PirepRow({ p }: { p: Pirep }) {
     <ListRow
       title={
         <span className={cn(p.urgent && cn("font-semibold", FINDING_TONE.stop))}>
-          {[p.urgent ? "Urgent PIREP" : "PIREP", p.altitude_ft != null && `${altFt(p.altitude_ft)} ft`, p.aircraft]
-            .filter(Boolean)
-            .join(" · ")}
+          {[p.urgent ? "Urgent PIREP" : "PIREP", p.altitude_ft != null && feet(p.altitude_ft), p.aircraft].filter(Boolean).join(" · ")}
         </span>
       }
       description={

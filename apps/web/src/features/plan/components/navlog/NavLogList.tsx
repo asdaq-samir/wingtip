@@ -4,7 +4,7 @@ import { Fragment, type CSSProperties, type KeyboardEvent, type ReactNode } from
 import { cn } from "cn";
 import { Button } from "../../../../components/ui/button";
 import { Badge } from "../../../../components/ui/badge";
-import { nm, zoneName } from "../../../../lib/format";
+import { feet, nm, zoneName } from "../../../../lib/format";
 import { placeName } from "../../lib/radio";
 import { wantPlace } from "../../../../lib/navigation/wanted";
 import { TEXT } from "../../../../lib/text";
@@ -62,7 +62,7 @@ function railOf(rows: NavLogRow[]): { wind: string | null; airway: string | null
     const altitude = field
       ? `field ${altFt("airport" in row ? row.airport.elevation_ft : null)} ft`
       : legAltitude !== null && (isLegPoint(row) || legAltitude !== altitudeBefore)
-        ? `${altFt(legAltitude)} ft`
+        ? feet(legAltitude)
         : "";
     if (legAltitude !== null) altitudeBefore = legAltitude;
     return { wind: changed, airway: joined, altitude };

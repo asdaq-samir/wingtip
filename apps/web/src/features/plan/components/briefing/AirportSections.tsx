@@ -2,7 +2,7 @@ import AccordionSection from "../../../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import type { Briefing, Leg } from "../../../../lib/api/types";
 import { isPosition } from "../../../../lib/identSchema";
-import { altFt } from "../../format";
+import { feet } from "../../format";
 import { phasesOf, type Phase } from "./sections";
 import { FrequencyRow } from "../FrequencyRow";
 import { PublicationRows } from "../PublicationRows";
@@ -53,7 +53,7 @@ export default function AirportSections({
         const about = [
           info?.name && info.name !== ident ? info.name : null,
           info?.airspace_class && `Class ${info.airspace_class}`,
-          info?.elevation_ft != null && `${altFt(info.elevation_ft)} ft`,
+          info?.elevation_ft != null && feet(info.elevation_ft),
         ]
           .filter(Boolean)
           .join(" · ");

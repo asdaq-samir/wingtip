@@ -7,7 +7,7 @@ import { TEXT } from "../../../../lib/text";
 import { WINDS_MODELLED_LABEL, windsSource } from "../../../../lib/windsAloft";
 import type { Course, Leg, Totals } from "../../../../lib/api/types";
 import type { FlightBriefing } from "../../hooks/useFlightBriefing";
-import { altFt, ceilingAndVisibility, clockTime, windAloft } from "../../format";
+import { altFt, ceilingAndVisibility, feet, clockTime, windAloft } from "../../format";
 import OnRouteRow from "./OnRouteRow";
 import { faaWords, gairmetAltitudes, gairmetTitle, sigmetHazard } from "../../../../lib/advisories";
 import WeatherAlongRoute from "./WeatherAlongRoute";
@@ -219,7 +219,7 @@ function WindsAloft({ vm, legs, winds }: { vm: FlightBriefing; legs: Leg[]; wind
                   {st.from} → {st.to}
                 </span>
               }
-              description={`${altFt(st.altitudeFt)} ft`}
+              description={feet(st.altitudeFt)}
               value={`${st.wind ? `${windAloft(st.wind.dir, st.wind.speed)} kt` : "no wind data"}${st.oatC === null ? "" : ` · ${st.oatC} °C`}`}
             />
           ))}

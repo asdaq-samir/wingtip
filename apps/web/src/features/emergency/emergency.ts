@@ -18,6 +18,7 @@
  * sent into what the engine reads.
  */
 import type { EmergencyFields } from "../../lib/api/types";
+import { engineFields } from "../../lib/engineFields";
 import type { DeviceField } from "../../lib/fieldsOnDevice";
 import { compassPoint } from "../../lib/compass";
 import { miles } from "../../lib/format";
@@ -40,20 +41,7 @@ export function bestFields(
   fix: Pick<Fix, "lat" | "lon" | "altitudeFt" | "speedKt">,
   variationDeg: number | null,
 ): BestFields {
-  const fields = data.fields.map((f) => ({
-    ident: f.ident,
-    name: f.name,
-    lat: f.lat,
-    lon: f.lon,
-    elevation_ft: f.elevation_ft ?? null,
-    runways: f.runways,
-    metar: f.metar ?? null,
-    towered: f.towered,
-    private: f.private,
-    military: f.military,
-    // NASR's status: the engine never ranks a closed field (decision 0043).
-    status: f.status ?? null,
-  }));
+  const fields = engineFields(data);
   return ranked(fields, data.airplane ?? null, data.wind ?? null, fix, variationDeg);
 }
 

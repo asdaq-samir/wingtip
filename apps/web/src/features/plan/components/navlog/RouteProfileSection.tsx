@@ -5,7 +5,7 @@ import AfterPaint from "../../../../components/AfterPaint";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { titleCase } from "../../../../lib/advisories";
 import { routeProfileQuery } from "../../../../lib/queryClient";
-import { altFt } from "../../../../lib/format";
+import { altFt, feet } from "../../../../lib/format";
 import { planProfile } from "./profile";
 import type { NavLogRow, RouteEnds } from "./rows";
 
@@ -58,7 +58,7 @@ export default function RouteProfileSection({ ends, rows }: { ends: RouteEnds; r
                   <ListRow
                     key={`${a.name}-${a.floor_ft}-${a.from_nm}`}
                     title={titleCase(a.name)}
-                    description={`${a.floor_ft === 0 ? "Surface" : `${altFt(a.floor_ft)} ft`} to ${a.ceiling_ft != null ? `${altFt(a.ceiling_ft)} ft` : "—"}`}
+                    description={`${a.floor_ft === 0 ? "Surface" : feet(a.floor_ft)} to ${a.ceiling_ft != null ? feet(a.ceiling_ft) : "—"}`}
                     value={`${Math.round(a.from_nm)}–${Math.round(a.to_nm)} nm`}
                   />
                 ))}

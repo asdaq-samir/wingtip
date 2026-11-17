@@ -8,7 +8,7 @@
  */
 import type { Leg } from "../../../../lib/api/types";
 import { callEngine } from "../../../../lib/engine/engine";
-import { bearing, gal, grouped, magneticVariation, windCorrection } from "../../../../lib/format";
+import { bearing, gal, grouped, knots, magneticVariation, windCorrection } from "../../../../lib/format";
 
 /** What the student works out; how far off an E6B allows is the
  *  engine's (`workings_right`). */
@@ -122,7 +122,7 @@ export function workingsOf(leg: Leg, phase: Phase = "cruise"): Workings | null {
                 // at every altitude, no power model (the engine's, AV-8).
                 "the airplane's cruise speed as given, at every altitude"
               : `${Math.round(leg.power_pct)}% power at a density altitude of ${grouped(leg.density_altitude_ft)} ft`,
-      result: `${Math.round(tas)} kt`,
+      result: knots(tas),
     },
     {
       name: "Wind correction",
@@ -139,7 +139,7 @@ export function workingsOf(leg: Leg, phase: Phase = "cruise"): Workings | null {
     {
       name: "Ground speed",
       sum: `${Math.round(tas)} × cos ${Math.abs(wca).toFixed(0)}° − ${Math.round(windKt)} × cos(${bearing(windDir)} − ${bearing(tc)})`,
-      result: `${Math.round(gs)} kt`,
+      result: knots(gs),
     },
     { name: "Time", sum: `${r1(leg.distance_nm)} nm ÷ ${Math.round(gs)} kt × 60`, result: `${Math.round(ete)} min` },
     {

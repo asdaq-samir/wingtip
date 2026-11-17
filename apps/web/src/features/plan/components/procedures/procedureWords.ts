@@ -1,5 +1,5 @@
 import { runwayNumber } from "../../lib/pattern";
-import { altFt, dayMonthYear } from "../../../../lib/format";
+import { dayMonthYear, feet } from "../../../../lib/format";
 import type { ProcedureAirport, ProcedureKind } from "../../hooks/useProceduresRoute";
 import type { Landing } from "./PatternChips";
 
@@ -26,7 +26,7 @@ export function patternNote(a: ProcedureAirport, chosen: string | null, landing:
   const end = (a.runways ?? []).flatMap((r) => r.runway_ends ?? []).find((e) => runwayNumber(e.ident) === chosen);
   // Left unless the FAA flags it right (14 CFR 91.126(b)(1)).
   const side = end ? `Runway ${chosen}, ${end.traffic === "right" ? "right" : "left"} traffic` : `Runway ${chosen}`;
-  return [side, a.patternAltitudeFt != null ? `${altFt(a.patternAltitudeFt)} ft` : null].filter(Boolean).join(" · ");
+  return [side, a.patternAltitudeFt != null ? feet(a.patternAltitudeFt) : null].filter(Boolean).join(" · ");
 }
 
 /** A CIFP cycle's first day, "261001" as "1 Oct 2026" (lib/format's

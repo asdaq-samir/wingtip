@@ -3,6 +3,7 @@ import type { Minimums } from "../../../lib/minimums";
 import type { FlightRules } from "../../../lib/preferences";
 import { dryRunRow, type DryRun } from "../components/navlog/dryRun";
 import type { RouteEnds } from "../components/navlog/rows";
+import { coursePoints } from "../../../lib/course";
 
 /** The most points of a run sent: the planner takes up to 600, and every
  *  third of the run's two-mile points is a sample each six miles. */
@@ -20,7 +21,7 @@ export function forecastAsk(run: DryRun, ends: RouteEnds, rules: FlightRules, mi
   const every = Math.max(1, Math.ceil(run.points.length / MOST_POINTS));
   const kept = run.points.filter((_, i) => i % every === 0 || i === run.points.length - 1);
   const track = kept.map((p) => ({ t: p.t, lat: p.lat, lon: p.lon, alt_ft: p.alt_ft ?? null, row: dryRunRow(run, p.t) }));
-  const at = new Map([ends.departure, ...(ends.stops ?? []), ends.destination].map((f) => [f.ident, f]));
+  const at = new Map(coursePoints(ends).map((f) => [f.ident, f]));
   const landings = run.landings.flatMap((l, i) => {
     const f = at.get(l.ident);
     const role = i === run.landings.length - 1 ? ("destination" as const) : ("stop" as const);

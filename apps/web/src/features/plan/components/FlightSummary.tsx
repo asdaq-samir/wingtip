@@ -7,7 +7,7 @@ import { type Fix } from "../../../lib/map/position/ownShip";
 import { carriedOn, closestApproach, nearInHeight } from "../map/traffic";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { TEXT } from "../../../lib/text";
-import { altFt, bearing, clockTime, reportedAltitude } from "../../../lib/format";
+import { altFt, bearing, clockTime, knots, reportedAltitude } from "../../../lib/format";
 import { awayFrom, nmAway } from "../../../lib/useAway";
 import AirplaneSketch from "./AirplaneSketch";
 import { squawkMeaning } from "../lib/squawks";
@@ -205,7 +205,7 @@ function FlightSummary({
         <span className={cn("font-semibold text-foreground tabular-nums", TEXT.detail)} data-testid="flight-altitude">
           {reportedAltitude(plane.altitude_ft)} {climb}
           {" · "}
-          {plane.speed_kt == null ? "—" : `${Math.round(plane.speed_kt)} kt`}
+          {plane.speed_kt == null ? "—" : knots(plane.speed_kt)}
           {/* ADS-B's track is over the ground and true, not magnetic. */}
           {plane.track_deg != null && ` · ${bearing(plane.track_deg)} true`}
         </span>

@@ -1,7 +1,7 @@
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type { TrafficAircraft, TrafficFound } from "../api/types";
-import { reportedAltitude } from "../format/figures";
+import { knots, reportedAltitude } from "../format/figures";
 import { NO_CONNECTION, noConnection } from "../problems";
 import { useDebounced } from "../useDebounced";
 
@@ -89,7 +89,7 @@ export function inAirWords(inAir: InAir): StatusWords {
       return { text: "Checking whether it's in the air…", problem: false };
     case "flying": {
       const { altitude_ft: ft, speed_kt: kt } = inAir.plane;
-      const how = [ft == null ? null : reportedAltitude(ft), kt == null ? null : `${Math.round(kt)} kt`].filter(Boolean);
+      const how = [ft == null ? null : reportedAltitude(ft), kt == null ? null : knots(kt)].filter(Boolean);
       return { text: ["In the air", ...how].join(" · "), problem: false, badge: "inAir", rest: how.join(" · ") };
     }
     case "ground":
