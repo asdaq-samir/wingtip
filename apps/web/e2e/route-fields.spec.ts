@@ -86,8 +86,18 @@ test("an airport's ident opens its card as the nav log's names do, the rest of i
   await expect(toggle).toHaveAttribute("aria-expanded", "false", { timeout: slow(30_000) });
   // No chevron of its own: the row's lines are the disclosure, the symbol the menu (C14).
   await expect(toggle.locator("svg")).toHaveCount(0);
+  // Always a card, the Nav Log's picked row's fill, no border; opened, it
+  // grows with its runways and procedures inside it (the owner, 2026-11-17).
+  const block = sideDrawer(page).locator('[data-testid="route-field"][data-ident="KDLH"]');
+  const fill = await block.evaluate((el) => getComputedStyle(el).backgroundColor);
+  expect(fill).not.toBe("rgba(0, 0, 0, 0)");
+  await expect(block).toHaveCSS("border-top-width", "0px");
+  const shut = (await block.boundingBox())!.height;
   await field.getByTestId("field-wind").click();
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(field.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(30_000) });
+  expect((await block.boundingBox())!.height).toBeGreaterThan(shut);
+  await expect(block.getByTestId("procedure-pattern").first()).toBeVisible();
   const ident = field.getByTestId("field-open");
   await expect(ident).toHaveAccessibleName("KDLH: open the airport");
   await ident.click();

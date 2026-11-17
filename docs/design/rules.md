@@ -502,11 +502,21 @@ off by default (the owner, 2026-11-13).
    airports/stops tappable as the navlog does?"), the rest of its lines
    folding its runways and procedures open, one disclosure with no
    chevron beside the symbol (the UI audit's C14), the symbol its menu;
-   a waypoint's or a fix's stays plain. In the Plan's cards the ident is
+   a waypoint's or a fix's stays plain. Every airport of the route is
+   always a card, in every layout -- the Nav Log's picked row's fill and
+   corner, no border or shadow -- and a tap on its lines makes it bigger,
+   its runways and procedures opening inside it, as the Nav Log's note
+   opens inside its row (the owner, 2026-11-17: "show it all the time,
+   tapping just makes it bigger"); the waypoints between stay plain rows
+   in the box's and the line's lists. One card look for the list
+   (`routeListStyle`'s POINT_CARD and FIELD_CARD, one fill). In the Plan's cards the ident is
    the same link, and Change in the menu asks the one search for the
    airport to put in its place. On the
    map the way flown is solid magenta and the others thin dotted lines
-   in the chart's ink, each chip named, the others' chips left out where
+   in the chart's ink, each chip named -- every chip white and small,
+   12 points, quieter than the line: the way flown's words in the map's
+   tint, the others' in the chart's ink (the owner's list, 2026-11-17) --
+   the others' chips left out where
    they would overlap (the owner's pick of the routes canvas, board 5,
    2026-11-16); then the route in order, and
    the actions' bar pinned at the foot, the figures at the pill, both
