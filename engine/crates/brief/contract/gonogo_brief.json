@@ -1,0 +1,70 @@
+{
+  "x-call": "wingtip_brief::gonogo::brief::call",
+  "description": "The Brief's Go / No-Go put together, one call for every host that shows it: gonogo_verdict_items' seven findings, the IFR alternate's finding in the weather's where the weather says nothing worse (gonogo_alternate_finding, 14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (gonogo_field_permission: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left (gonogo_verdict_line). The decision stays the pilot in command's (14 CFR 91.3).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoBriefInput",
+      "type": "object",
+      "properties": {
+        "verdict": {
+          "$ref": "#/definitions/VerdictInput"
+        },
+        "alternate": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GonogoAlternateData"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "/api/alternate's answer; null while it is awaited or where none was asked."
+        },
+        "fields": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/GonogoFieldUse"
+          },
+          "description": "The departure, the stops and the destination; null or empty where the route has no two ends yet."
+        },
+        "airplane": {
+          "type": "boolean",
+          "description": "An airplane is picked."
+        }
+      },
+      "required": [
+        "verdict",
+        "airplane"
+      ]
+    },
+    "answer": {
+      "title": "GonogoBriefAnswer",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GonogoItem"
+          },
+          "description": "The findings in the order the Brief shows them."
+        },
+        "line": {
+          "$ref": "#/definitions/GonogoLine"
+        }
+      },
+      "required": [
+        "items",
+        "line"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

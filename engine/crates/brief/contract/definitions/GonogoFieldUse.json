@@ -1,0 +1,59 @@
+{
+  "title": "GonogoFieldUse",
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "role": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "departure",
+        "destination",
+        "stop",
+        null
+      ],
+      "description": "Null is taken as destination."
+    },
+    "private": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "NASR FACILITY_USE_CODE PR, not owned by the armed services."
+    },
+    "military": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "military",
+        "joint",
+        null
+      ],
+      "description": "\"military\" or \"joint\" for a field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG)."
+    },
+    "phone": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "NASR APT_CON's phone, the manager's or else the owner's."
+    },
+    "status": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where the host has no NASR record."
+    }
+  },
+  "required": [
+    "ident"
+  ],
+  "description": "A field the route uses, as the host has it from NASR APT_BASE and APT_CON."
+}

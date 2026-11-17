@@ -12208,6 +12208,75 @@
       ],
       "additionalProperties": false
     },
+    "gonogo_brief": {
+      "description": "The Brief's Go / No-Go put together, one call for every host that shows it: gonogo_verdict_items' seven findings, the IFR alternate's finding in the weather's where the weather says nothing worse (gonogo_alternate_finding, 14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (gonogo_field_permission: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left (gonogo_verdict_line). The decision stays the pilot in command's (14 CFR 91.3).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GonogoBriefInput",
+          "type": "object",
+          "properties": {
+            "verdict": {
+              "$ref": "#/definitions/VerdictInput"
+            },
+            "alternate": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/GonogoAlternateData"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "/api/alternate's answer; null while it is awaited or where none was asked."
+            },
+            "fields": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "$ref": "#/definitions/GonogoFieldUse"
+              },
+              "description": "The departure, the stops and the destination; null or empty where the route has no two ends yet."
+            },
+            "airplane": {
+              "type": "boolean",
+              "description": "An airplane is picked."
+            }
+          },
+          "required": [
+            "verdict",
+            "airplane"
+          ]
+        },
+        "answer": {
+          "title": "GonogoBriefAnswer",
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/GonogoItem"
+              },
+              "description": "The findings in the order the Brief shows them."
+            },
+            "line": {
+              "$ref": "#/definitions/GonogoLine"
+            }
+          },
+          "required": [
+            "items",
+            "line"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "gonogo_default_load": {
       "description": "The load a profile starts with: its sample empty weight and arm, stations empty, the fuel given.",
       "type": "object",
@@ -12385,61 +12454,7 @@
             "fields": {
               "type": "array",
               "items": {
-                "type": "object",
-                "properties": {
-                  "ident": {
-                    "type": "string"
-                  },
-                  "role": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "enum": [
-                      "departure",
-                      "destination",
-                      "stop",
-                      null
-                    ],
-                    "description": "Null is taken as destination."
-                  },
-                  "private": {
-                    "type": [
-                      "boolean",
-                      "null"
-                    ],
-                    "description": "NASR FACILITY_USE_CODE PR, not owned by the armed services."
-                  },
-                  "military": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "enum": [
-                      "military",
-                      "joint",
-                      null
-                    ],
-                    "description": "\"military\" or \"joint\" for a field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG)."
-                  },
-                  "phone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "NASR APT_CON's phone, the manager's or else the owner's."
-                  },
-                  "status": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where the host has no NASR record."
-                  }
-                },
-                "required": [
-                  "ident"
-                ]
+                "$ref": "#/definitions/GonogoFieldUse"
               }
             }
           },
@@ -12456,6 +12471,203 @@
             {
               "type": "null"
             }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "gonogo_glance_lines": {
+      "description": "The Brief as it opens (the owner, 2026-11-03: look and go): the findings that stop the flight, then those that want a look, at most three, each one sentence of at most 140 characters with what to do about it, why it matters and the rule it rests on (14 CFR 91.155 and AIM 7-1-5 for the weather; 91.133, 91.137, 91.141 the airspace; 91.119, 91.155, 91.159 the altitude; 91.151, 91.167 the fuel; 91.103(b) and the POH the runways; 91.9, 91.103 the loading; FAA-H-8083-2 and 91.3 the risk; 91.103 and NASR APT_BASE the fields), and the reports it was read from as sent; then every other finding folded into one row.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GonogoGlanceLinesInput",
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/GonogoItem"
+              },
+              "description": "gonogo_brief's items."
+            },
+            "fields": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "runway": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The runway flown there, \"24\"."
+                  },
+                  "crosswind_kt": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "The crosswind on it, whole knots."
+                  },
+                  "crosswind_over": {
+                    "type": "boolean",
+                    "description": "Past the airplane's demonstrated crosswind."
+                  },
+                  "finding": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "ident",
+                  "finding"
+                ]
+              },
+              "description": "The departure's and the destination's figures, for the crosswind's line."
+            },
+            "raw": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "metars": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "tafs": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "tfrs": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "metars",
+                    "tafs",
+                    "tfrs"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The reports the briefing holds as sent: the fields' METARs and TAFs, and the TFRs by their NOTAM."
+            }
+          },
+          "required": [
+            "items"
+          ]
+        },
+        "answer": {
+          "title": "GonogoGlanceLinesAnswer",
+          "type": "object",
+          "properties": {
+            "act": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "finding": {
+                    "type": "string"
+                  },
+                  "tab": {
+                    "type": "string"
+                  },
+                  "section": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "line": {
+                    "type": "string",
+                    "description": "The finding and its action, one sentence."
+                  },
+                  "lead": {
+                    "type": "string",
+                    "description": "The finding alone."
+                  },
+                  "action": {
+                    "type": "string",
+                    "description": "What to do about it."
+                  },
+                  "why": {
+                    "type": "string",
+                    "description": "Why it matters, in plain words."
+                  },
+                  "cite": {
+                    "type": "string",
+                    "description": "The rule it rests on."
+                  },
+                  "raw": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "The reports it was read from, as sent."
+                  }
+                },
+                "required": [
+                  "key",
+                  "finding",
+                  "tab",
+                  "section",
+                  "line",
+                  "lead",
+                  "action",
+                  "why",
+                  "cite",
+                  "raw"
+                ]
+              }
+            },
+            "rest": {
+              "type": "object",
+              "properties": {
+                "line": {
+                  "type": "string"
+                },
+                "finding": {
+                  "type": "string"
+                },
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/GonogoItem"
+                  }
+                }
+              },
+              "required": [
+                "line",
+                "finding",
+                "items"
+              ]
+            }
+          },
+          "required": [
+            "act",
+            "rest"
           ]
         }
       },
@@ -30984,10 +31196,12 @@
     "glide_ring",
     "gonogo_alternate_finding",
     "gonogo_balance",
+    "gonogo_brief",
     "gonogo_default_load",
     "gonogo_density_altitude",
     "gonogo_end_distance",
     "gonogo_field_permission",
+    "gonogo_glance_lines",
     "gonogo_hazard_window",
     "gonogo_icing",
     "gonogo_icing_line",
@@ -34231,6 +34445,65 @@
         "finding"
       ],
       "description": "One risk factor."
+    },
+    "GonogoFieldUse": {
+      "title": "GonogoFieldUse",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "role": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "departure",
+            "destination",
+            "stop",
+            null
+          ],
+          "description": "Null is taken as destination."
+        },
+        "private": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "NASR FACILITY_USE_CODE PR, not owned by the armed services."
+        },
+        "military": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "military",
+            "joint",
+            null
+          ],
+          "description": "\"military\" or \"joint\" for a field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG)."
+        },
+        "phone": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NASR APT_CON's phone, the manager's or else the owner's."
+        },
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where the host has no NASR record."
+        }
+      },
+      "required": [
+        "ident"
+      ],
+      "description": "A field the route uses, as the host has it from NASR APT_BASE and APT_CON."
     },
     "GonogoFlown": {
       "title": "GonogoFlown",

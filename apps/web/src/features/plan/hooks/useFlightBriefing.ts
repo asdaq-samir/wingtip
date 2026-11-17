@@ -17,7 +17,7 @@ import { runwayNumber } from "../lib/pattern";
 import { useRunwayPicks } from "../lib/useRunwayPicks";
 import { runwayChecks } from "../lib/runwayCheck";
 import { worstOf } from "../../../lib/findings";
-import { alternateFinding, useVerdict, verdictItems, withAlternate, type VerdictItem } from "../../../lib/verdict";
+import { briefVerdict, useVerdict, type VerdictItem } from "../../../lib/verdict";
 import { callSign, fieldPhases } from "../lib/radio";
 import { useGlance, type BriefGlance, type FieldGlance } from "../lib/glance";
 import { shortName } from "../../../lib/aircraftChoice";
@@ -270,90 +270,90 @@ export function useFlightBriefing({
   const etaIso = totals?.ete_min != null ? new Date(new Date(depart || opened).getTime() + totals.ete_min * 60_000).toISOString() : null;
   const alternateWhere = { dest, eta: ifr ? etaIso : null, tasKt: nav?.aircraft?.cruise_tas_kt ?? null };
   const alternateCheck = useAlternate(alternateWhere);
-  const alternateFound = ifr ? alternateFinding(alternateCheck.data) : null;
-  const verdictFound: VerdictItem[] = verdictItems({
-    weather: {
-      pending: !briefing && !failed,
-      failed,
-      vfrNotRecommended: vnrReasons,
-      underMinimums: underMine,
-      icing: icingLines.length ? icingLines.join("; ") : null,
-      hazards: hazardNames,
-      unchecked: [
-        ...(briefing?.weather_unavailable ?? []).filter((w) => w !== "tfrs").map((w) => WEATHER_SOURCE_LABEL[w]),
-        ...(ifr && icingForecast.isError ? ["the forecast icing"] : []),
-      ],
-      worst:
-        briefing && (briefing.forecast.min_ceiling_ft != null || briefing.forecast.min_visibility_sm != null)
-          ? ceilingAndVisibility(briefing.forecast.min_ceiling_ft, briefing.forecast.min_visibility_sm)
-          : null,
-      terminalAlerts: itwsLines(itwsNow?.alerts ?? []),
-      flowPrograms: programLines(flowNow?.programs ?? []),
-      ifr,
-    },
-    airspace: {
-      pending: !briefing && !failed,
-      unchecked: !!failed || unchecked("tfrs"),
-      inForce: routeFigures.tfrs_in_force,
-      near: routeFigures.tfrs_near,
-      specialUse: specialUse.map(({ area, when }) => ({ name: area.name, when })),
-    },
-    altitude: {
-      pending: !nav,
-      problem,
-      cautions: nav?.cautions.flatMap((c) => c.reasons) ?? [],
-      flown: !nav
-        ? null
-        : nav.flown === "custom"
-          ? `${flightLevel(nav.altitude_ft)}, your own`
-          : `${altitudeRange(nav)}${chosen ? ` · ${PLAN_NAME[chosen.kind]} plan` : ""}`,
-    },
-    fuel: {
-      pending: !totals,
-      marginGal: leastMarginGal,
-      requiredGal: routeFigures.required_gal,
-      reserveMin: routeFigures.reserve_min,
-      ifr,
-    },
-    runways: {
-      pending: !nav || !briefing,
-      worked: !nav || (!!nav.aircraft?.takeoff && !!nav.aircraft?.landing),
-      short: [...new Set(checks.filter((c) => c.distances.some((d) => d.over)).map((c) => c.field.ident))],
-      crosswind: [...new Set(checks.filter((c) => c.crosswindOver).map((c) => c.field.ident))],
-      beyond: [...new Set(checks.filter((c) => c.distances.some((d) => d.beyond)).map((c) => c.field.ident))],
-      unchecked: [...new Set(checks.filter((c) => c.unchecked || c.distances.some((d) => d.unknown)).map((c) => c.field.ident))],
-    },
-    balance: {
-      pending: !nav,
-      worked: !!loading && !!loaded,
-      problems: loaded?.problems ?? [],
-      takeoff: loaded ? `${grouped(loaded.takeoff.weightLb)} lb at ${armText(loaded.takeoff)}` : null,
-    },
-    risk: assessment ? { level: assessment.level, line: riskLine(assessment) } : null,
-  });
-  // Published once, for the tabs' marks (PlanWorkspace), as the risk is.
-  const setItems = useVerdict((v) => v.setItems);
-  // No airplane picked: the fuel, the runways' distances and crosswind
-  // limits and the weight and balance are an airplane's, and are not
-  // judged on one assumed (the owner, 2026-11-08: "don't assume").
-  const airplane = useAirplaneChosen();
-  // The alternate is the weather's to say, where the weather says nothing
-  // worse: a caution or a stop of its own, opening its section.
-  const found = withAlternate(verdictFound, alternateFound);
-  // Then the fields row, after the tabs' findings (gonogo_field_permission).
+  // The fields the route lands at, for the Go / No-Go's fields row and the flight plan's ZZZZ.
   const fields = useRouteFields(dep, stops, dest, totals?.alternate?.ident ?? null);
-  const items = [...found, ...(fields.permission ? [fields.permission] : [])].filter((i) => airplane || !AIRPLANE_ITEMS.includes(i.key));
-  const itemsKey = `${airplane}|` + items.map((i) => `${i.key}:${i.finding}:${i.detail}`).join("|");
-  const publishItems = useEffectEvent(() => {
-    if (publish) setItems(items);
+  // No airplane picked: the engine judges none of an airplane's findings on one assumed (the owner, 2026-11-08).
+  const airplane = useAirplaneChosen();
+  // The Go / No-Go put together by the engine (gonogo_brief): the tabs' findings, the alternate's, the fields row.
+  const verdict = briefVerdict({
+    alternate: alternateCheck.data,
+    fields: fields.uses,
+    airplane,
+    input: {
+      weather: {
+        pending: !briefing && !failed,
+        failed,
+        vfrNotRecommended: vnrReasons,
+        underMinimums: underMine,
+        icing: icingLines.length ? icingLines.join("; ") : null,
+        hazards: hazardNames,
+        unchecked: [
+          ...(briefing?.weather_unavailable ?? []).filter((w) => w !== "tfrs").map((w) => WEATHER_SOURCE_LABEL[w]),
+          ...(ifr && icingForecast.isError ? ["the forecast icing"] : []),
+        ],
+        worst:
+          briefing && (briefing.forecast.min_ceiling_ft != null || briefing.forecast.min_visibility_sm != null)
+            ? ceilingAndVisibility(briefing.forecast.min_ceiling_ft, briefing.forecast.min_visibility_sm)
+            : null,
+        terminalAlerts: itwsLines(itwsNow?.alerts ?? []),
+        flowPrograms: programLines(flowNow?.programs ?? []),
+        ifr,
+      },
+      airspace: {
+        pending: !briefing && !failed,
+        unchecked: !!failed || unchecked("tfrs"),
+        inForce: routeFigures.tfrs_in_force,
+        near: routeFigures.tfrs_near,
+        specialUse: specialUse.map(({ area, when }) => ({ name: area.name, when })),
+      },
+      altitude: {
+        pending: !nav,
+        problem,
+        cautions: nav?.cautions.flatMap((c) => c.reasons) ?? [],
+        flown: !nav
+          ? null
+          : nav.flown === "custom"
+            ? `${flightLevel(nav.altitude_ft)}, your own`
+            : `${altitudeRange(nav)}${chosen ? ` · ${PLAN_NAME[chosen.kind]} plan` : ""}`,
+      },
+      fuel: {
+        pending: !totals,
+        marginGal: leastMarginGal,
+        requiredGal: routeFigures.required_gal,
+        reserveMin: routeFigures.reserve_min,
+        ifr,
+      },
+      runways: {
+        pending: !nav || !briefing,
+        worked: !nav || (!!nav.aircraft?.takeoff && !!nav.aircraft?.landing),
+        short: [...new Set(checks.filter((c) => c.distances.some((d) => d.over)).map((c) => c.field.ident))],
+        crosswind: [...new Set(checks.filter((c) => c.crosswindOver).map((c) => c.field.ident))],
+        beyond: [...new Set(checks.filter((c) => c.distances.some((d) => d.beyond)).map((c) => c.field.ident))],
+        unchecked: [...new Set(checks.filter((c) => c.unchecked || c.distances.some((d) => d.unknown)).map((c) => c.field.ident))],
+      },
+      balance: {
+        pending: !nav,
+        worked: !!loading && !!loaded,
+        problems: loaded?.problems ?? [],
+        takeoff: loaded ? `${grouped(loaded.takeoff.weightLb)} lb at ${armText(loaded.takeoff)}` : null,
+      },
+      risk: assessment ? { level: assessment.level, line: riskLine(assessment) } : null,
+    },
+  });
+  const { items } = verdict;
+  // Published once, for the tabs' marks (PlanWorkspace) and the Brief, as the risk is.
+  const setVerdict = useVerdict((v) => v.set);
+  const itemsKey = items.map((i) => `${i.key}:${i.finding}:${i.detail}`).join("|");
+  const publishVerdict = useEffectEvent(() => {
+    if (publish) setVerdict(verdict);
   });
   // Keyed on what they say, not the array made each render.
-  useEffect(() => publishItems(), [itemsKey, publish]);
+  useEffect(() => publishVerdict(), [itemsKey, publish]);
   useEffect(
     () => () => {
-      if (publish) setItems([]);
+      if (publish) setVerdict(null);
     },
-    [setItems, publish],
+    [setVerdict, publish],
   );
 
   // The Brief's glance (features/plan/lib/glance): each part of the flight in a few
@@ -512,6 +512,7 @@ export function useFlightBriefing({
     hazardNames,
     loaded,
     items,
+    line: verdict.line,
     alternateWhere,
     printing,
     folds,
@@ -522,6 +523,3 @@ export function useFlightBriefing({
 
 /** The briefing's view model, as its parts read it. */
 export type FlightBriefing = ReturnType<typeof useFlightBriefing>;
-
-/** The verdict's items that need an airplane's figures. */
-const AIRPLANE_ITEMS: VerdictItem["key"][] = ["fuel", "runways", "balance"];

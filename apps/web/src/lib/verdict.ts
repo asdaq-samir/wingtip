@@ -9,7 +9,7 @@
  * The findings are the planner's; the decision is the pilot in command's
  * (14 CFR 91.3), and the line says so.
  *
- * Worked out by the shared engine (engine/crates/brief/src/gonogo/verdict.rs,
+ * Worked out and put together by the shared engine (gonogo_brief, engine/crates/brief/src/gonogo/brief.rs,
  * through lib/engine), the very code behind the planner's POST
  * /api/go-no-go and the phones' `call`: the rules, their words and
  * their sources live there. Only the shapes are made here.
@@ -145,48 +145,45 @@ function engineInput({ weather, airspace, altitude, fuel, runways, balance, risk
   };
 }
 
-/** Each tab's finding, in the order a pilot goes through them. */
-export function verdictItems(input: VerdictInput): VerdictItem[] {
+/** What the Go / No-Go comes to: the findings and the line over them. */
+export interface Verdict {
+  items: VerdictItem[];
+  line: { finding: Finding; words: string };
+}
+
+/**
+ * The Brief's Go / No-Go put together by the engine (gonogo_brief): each
+ * tab's finding in the order a pilot goes through them, the IFR
+ * alternate's in the weather's (`alternate`, /api/alternate's answer,
+ * undefined while it is awaited), the fields row for a closed, private or
+ * military-only field (`fields`, useRouteFields), the airplane's findings
+ * left out where none is picked, and the line over them.
+ */
+export function briefVerdict({
+  input,
+  alternate,
+  fields,
+  airplane,
+}: {
+  input: VerdictInput;
+  alternate?: EngineInput<"gonogo_brief">["alternate"];
+  fields?: EngineInput<"gonogo_brief">["fields"];
+  airplane: boolean;
+}): Verdict {
   // The engine's items are plain strings; its keys, tabs and findings are
   // the ones VerdictItem names (gonogo/verdict.rs verdict_items).
-  return callEngine("gonogo_verdict_items", engineInput(input)) as VerdictItem[];
-}
-
-/** The row for a departure, destination or stop that NASR lists as
- *  closed, or that is private or the armed services' own (the engine's
- *  gonogo_field_permission: decision 0043; the owner's permission or the
- *  service's PPR, with NASR APT_CON's phone; 14 CFR 91.103), to go after
- *  the tabs' findings and before the line; null where every field is open
- *  and public or joint use. */
-export function fieldPermission(fields: EngineInput<"gonogo_field_permission">["fields"]): VerdictItem | null {
-  return callEngine("gonogo_field_permission", { fields }) as VerdictItem | null;
-}
-
-/** What the IFR alternate comes to for the Go / No-Go (the engine's
- *  gonogo_alternate_finding, 14 CFR 91.169(a)(2), (b)): a stop where the
- *  one filed will not do, a caution where one is needed and none is filed
- *  or the one filed is the pilot's to check; null where none is needed.
- *  `data` is /api/alternate's answer, undefined while it is awaited. */
-export function alternateFinding(data: EngineInput<"gonogo_alternate_finding">["data"] | undefined) {
-  return callEngine("gonogo_alternate_finding", { data: data ?? null });
-}
-
-/** The tabs' findings with the alternate's put in the weather's, where the
- *  weather says nothing worse: a caution or a stop of its own, opening its
- *  section (the engine's gonogo_with_alternate). */
-export function withAlternate(items: VerdictItem[], found: ReturnType<typeof alternateFinding>): VerdictItem[] {
-  if (!found) return items;
-  return callEngine("gonogo_with_alternate", { items: items.map((i) => ({ ...i, section: i.section ?? null })), found }) as VerdictItem[];
-}
-
-/** What the findings come to, in a line over them. */
-export function verdictLine(items: VerdictItem[]): { finding: Finding; words: string } {
-  return callEngine("gonogo_verdict_line", { items: items.map((i) => ({ ...i, section: i.section ?? null })) });
+  return callEngine("gonogo_brief", {
+    verdict: engineInput(input),
+    alternate: alternate ?? null,
+    fields: fields ?? null,
+    airplane,
+  }) as Verdict;
 }
 
 /** The findings for the flight on screen, published once (as the risk
  *  is, lib/frat) for the tabs' marks. */
-export const useVerdict = create<{ items: VerdictItem[]; setItems: (items: VerdictItem[]) => void }>((set) => ({
+export const useVerdict = create<{ items: VerdictItem[]; line: Verdict["line"] | null; set: (verdict: Verdict | null) => void }>((set) => ({
   items: [],
-  setItems: (items) => set({ items }),
+  line: null,
+  set: (verdict) => set({ items: verdict?.items ?? [], line: verdict?.line ?? null }),
 }));

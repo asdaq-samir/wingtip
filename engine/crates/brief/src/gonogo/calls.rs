@@ -298,7 +298,7 @@ pub(crate) fn verdict_input(i: In, v: &Value) -> R<verdict::Input> {
     })
 }
 
-fn items(i: In, v: &Value, key: &str) -> R<Vec<Item>> {
+pub(crate) fn items(i: In, v: &Value, key: &str) -> R<Vec<Item>> {
     i.list(v, key)?
         .iter()
         .map(|x| {

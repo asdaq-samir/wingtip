@@ -810,6 +810,11 @@ extension Engine {
         try Self.rule("gonogo_balance", EngineContract.GonogoBalanceInput(loading: loading, load: load, tripFuelGal: tripFuelGal))
     }
 
+    /// The Brief's Go / No-Go put together, one call for every host that shows it: gonogo_verdict_items' seven findings, the IFR alternate's finding in the weather's where the weather says nothing worse (gonogo_alternate_finding, 14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (gonogo_field_permission: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left (gonogo_verdict_line). The decision stays the pilot in command's (14 CFR 91.3).
+    static func gonogoBrief(verdict: EngineContract.VerdictInput, alternate: EngineContract.GonogoAlternateData? = nil, fields: [EngineContract.GonogoFieldUse]? = nil, airplane: Bool) throws -> EngineContract.GonogoBriefAnswer {
+        try Self.rule("gonogo_brief", EngineContract.GonogoBriefInput(verdict: verdict, alternate: alternate, fields: fields, airplane: airplane))
+    }
+
     /// The load a profile starts with: its sample empty weight and arm, stations empty, the fuel given.
     static func gonogoDefaultLoad(loading: EngineContract.GonogoLoading, fuelGal: Double) throws -> EngineContract.GonogoDefaultLoadAnswer {
         try Self.rule("gonogo_default_load", EngineContract.GonogoDefaultLoadInput(loading: loading, fuelGal: fuelGal))
@@ -826,8 +831,13 @@ extension Engine {
     }
 
     /// The Go / No-Go's "fields" row for a departure, destination or stop that NASR lists as closed (APT_BASE ARPT_STATUS not O: "00MO is closed indefinitely (NASR): it cannot be planned as a landing field", decision 0043), private (FACILITY_USE_CODE PR: "IL11 is private: land only with the owner's permission (call 847-323-8911)") or military-only ("prior permission required (PPR)"), the phone NASR APT_CON's; 14 CFR 91.103 (all available information). A caution, opening the Depart tab for the departure and Arrive otherwise; null where every field is open and public or joint use. The hosts add it to gonogo_verdict_items' list before gonogo_verdict_line.
-    static func gonogoFieldPermission(fields: [EngineContract.GonogoFieldPermissionInputFieldsItem]) throws -> EngineContract.GonogoItem? {
+    static func gonogoFieldPermission(fields: [EngineContract.GonogoFieldUse]) throws -> EngineContract.GonogoItem? {
         try Self.rule("gonogo_field_permission", EngineContract.GonogoFieldPermissionInput(fields: fields))
+    }
+
+    /// The Brief as it opens (the owner, 2026-11-03: look and go): the findings that stop the flight, then those that want a look, at most three, each one sentence of at most 140 characters with what to do about it, why it matters and the rule it rests on (14 CFR 91.155 and AIM 7-1-5 for the weather; 91.133, 91.137, 91.141 the airspace; 91.119, 91.155, 91.159 the altitude; 91.151, 91.167 the fuel; 91.103(b) and the POH the runways; 91.9, 91.103 the loading; FAA-H-8083-2 and 91.3 the risk; 91.103 and NASR APT_BASE the fields), and the reports it was read from as sent; then every other finding folded into one row.
+    static func gonogoGlanceLines(items: [EngineContract.GonogoItem], fields: [EngineContract.GonogoGlanceLinesInputFieldsItem]? = nil, raw: EngineContract.GonogoGlanceLinesInputRaw? = nil) throws -> EngineContract.GonogoGlanceLinesAnswer {
+        try Self.rule("gonogo_glance_lines", EngineContract.GonogoGlanceLinesInput(items: items, fields: fields, raw: raw))
     }
 
     /// Whether a flight in a hazard from `enter` to `leave` is there while it is valid: "before" it starts, "after" it ends, else "during", its window widened by `margin_min` either way (30, PASS_MARGIN_MIN, where missing: an ETA is an estimate); null where it gives no window.

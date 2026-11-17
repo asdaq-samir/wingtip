@@ -18,7 +18,7 @@ import { grouped } from "../../../../lib/format";
 import { mhzText } from "../../../../lib/frequencies";
 import { isPosition } from "../../../../lib/identSchema";
 import { useAirplaneChosen } from "../../../../lib/preferences";
-import { useVerdict, verdictLine } from "../../../../lib/verdict";
+import { useVerdict } from "../../../../lib/verdict";
 import { useAnnounce } from "../../../../lib/announce";
 import type { PanelTab } from "../navlog/panelTab";
 import CategoryBadge from "./CategoryBadge";
@@ -265,7 +265,9 @@ export default function BriefGlance({
 }) {
   const glance = useGlance((g) => g.glance);
   const items = useVerdict((v) => v.items);
-  const verdict = items.length ? verdictLine(items) : null;
+  // The line over the findings, put together with them by the engine (gonogo_brief).
+  const line = useVerdict((v) => v.line);
+  const verdict = items.length ? line : null;
   const lines = items.length ? glanceLines(items, glance) : null;
   const checking = verdict?.finding === "pending";
   const before = glance?.before;

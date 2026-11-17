@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { FlowProgram, ItwsProduct, SaaStatus } from "./api/types";
 import { itwsLines, liveWhen, programLine, saaWords, zulu } from "./liveReports";
-import { verdictItems, type VerdictInput } from "./verdict";
+import { briefVerdict, type VerdictInput } from "./verdict";
 
 const quiet: VerdictInput = {
   weather: { pending: false, failed: null, vfrNotRecommended: [], underMinimums: [], hazards: [], unchecked: [], worst: "3,500 ft · 6 sm" },
@@ -12,7 +12,7 @@ const quiet: VerdictInput = {
   balance: { pending: false, worked: true, problems: [], takeoff: "2,407 lb at 41.2 in" },
   risk: { level: "low", line: "Low · 2 points" },
 };
-const finding = (input: VerdictInput, key: string) => verdictItems(input).find((i) => i.key === key)!;
+const finding = (input: VerdictInput, key: string) => briefVerdict({ input, airplane: true }).items.find((i) => i.key === key)!;
 
 // 2026-11-09 21:30Z.
 const AT_2130 = Date.UTC(2026, 10, 9, 21, 30) / 1000;

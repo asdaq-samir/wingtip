@@ -2221,6 +2221,13 @@ export interface EngineContract {
     answer: GonogoBalanceAnswer;
   };
   /**
+   * The Brief's Go / No-Go put together, one call for every host that shows it: gonogo_verdict_items' seven findings, the IFR alternate's finding in the weather's where the weather says nothing worse (gonogo_alternate_finding, 14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (gonogo_field_permission: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left (gonogo_verdict_line). The decision stays the pilot in command's (14 CFR 91.3).
+   */
+  gonogo_brief: {
+    input: GonogoBriefInput;
+    answer: GonogoBriefAnswer;
+  };
+  /**
    * The load a profile starts with: its sample empty weight and arm, stations empty, the fuel given.
    */
   gonogo_default_load: {
@@ -2247,6 +2254,13 @@ export interface EngineContract {
   gonogo_field_permission: {
     input: GonogoFieldPermissionInput;
     answer: GonogoFieldPermissionAnswer;
+  };
+  /**
+   * The Brief as it opens (the owner, 2026-11-03: look and go): the findings that stop the flight, then those that want a look, at most three, each one sentence of at most 140 characters with what to do about it, why it matters and the rule it rests on (14 CFR 91.155 and AIM 7-1-5 for the weather; 91.133, 91.137, 91.141 the airspace; 91.119, 91.155, 91.159 the altitude; 91.151, 91.167 the fuel; 91.103(b) and the POH the runways; 91.9, 91.103 the loading; FAA-H-8083-2 and 91.3 the risk; 91.103 and NASR APT_BASE the fields), and the reports it was read from as sent; then every other finding folded into one row.
+   */
+  gonogo_glance_lines: {
+    input: GonogoGlanceLinesInput;
+    answer: GonogoGlanceLinesAnswer;
   };
   /**
    * Whether a flight in a hazard from `enter` to `leave` is there while it is valid: "before" it starts, "after" it ends, else "during", its window widened by `margin_min` either way (30, PASS_MARGIN_MIN, where missing: an ETA is an estimate); null where it gives no window.
@@ -7658,6 +7672,67 @@ export interface GonogoBalanceAnswer {
    */
   takeoff_words: string;
 }
+export interface GonogoBriefInput {
+  verdict: VerdictInput;
+  /**
+   * /api/alternate's answer; null while it is awaited or where none was asked.
+   */
+  alternate?: GonogoAlternateData | null;
+  /**
+   * The departure, the stops and the destination; null or empty where the route has no two ends yet.
+   */
+  fields?: GonogoFieldUse[] | null;
+  /**
+   * An airplane is picked.
+   */
+  airplane: boolean;
+}
+/**
+ * A field the route uses, as the host has it from NASR APT_BASE and APT_CON.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "GonogoFieldUse".
+ */
+export interface GonogoFieldUse {
+  ident: string;
+  /**
+   * Null is taken as destination.
+   */
+  role?: "departure" | "destination" | "stop" | null;
+  /**
+   * NASR FACILITY_USE_CODE PR, not owned by the armed services.
+   */
+  private?: boolean | null;
+  /**
+   * "military" or "joint" for a field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG).
+   */
+  military?: "military" | "joint" | null;
+  /**
+   * NASR APT_CON's phone, the manager's or else the owner's.
+   */
+  phone?: string | null;
+  /**
+   * NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where the host has no NASR record.
+   */
+  status?: string | null;
+}
+export interface GonogoBriefAnswer {
+  /**
+   * The findings in the order the Brief shows them.
+   */
+  items: GonogoItem[];
+  line: GonogoLine;
+}
+/**
+ * What the findings come to, in a line over them.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "GonogoLine".
+ */
+export interface GonogoLine {
+  finding: "ok" | "caution" | "stop" | "unknown" | "pending";
+  words: string;
+}
 export interface GonogoDefaultLoadInput {
   loading: GonogoLoading;
   fuel_gal: number;
@@ -7696,29 +7771,79 @@ export interface GonogoEndDistanceAnswer {
   over: boolean;
 }
 export interface GonogoFieldPermissionInput {
-  fields: {
-    ident: string;
+  fields: GonogoFieldUse[];
+}
+export interface GonogoGlanceLinesInput {
+  /**
+   * gonogo_brief's items.
+   */
+  items: GonogoItem[];
+  /**
+   * The departure's and the destination's figures, for the crosswind's line.
+   */
+  fields?:
+    | {
+        ident: string;
+        /**
+         * The runway flown there, "24".
+         */
+        runway?: string | null;
+        /**
+         * The crosswind on it, whole knots.
+         */
+        crosswind_kt?: number | null;
+        /**
+         * Past the airplane's demonstrated crosswind.
+         */
+        crosswind_over?: boolean;
+        finding: string;
+      }[]
+    | null;
+  /**
+   * The reports the briefing holds as sent: the fields' METARs and TAFs, and the TFRs by their NOTAM.
+   */
+  raw?: {
+    metars: string[];
+    tafs: string[];
+    tfrs: string[];
+  } | null;
+}
+export interface GonogoGlanceLinesAnswer {
+  act: {
+    key: string;
+    finding: string;
+    tab: string;
+    section: string | null;
     /**
-     * Null is taken as destination.
+     * The finding and its action, one sentence.
      */
-    role?: "departure" | "destination" | "stop" | null;
+    line: string;
     /**
-     * NASR FACILITY_USE_CODE PR, not owned by the armed services.
+     * The finding alone.
      */
-    private?: boolean | null;
+    lead: string;
     /**
-     * "military" or "joint" for a field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG).
+     * What to do about it.
      */
-    military?: "military" | "joint" | null;
+    action: string;
     /**
-     * NASR APT_CON's phone, the manager's or else the owner's.
+     * Why it matters, in plain words.
      */
-    phone?: string | null;
+    why: string;
     /**
-     * NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where the host has no NASR record.
+     * The rule it rests on.
      */
-    status?: string | null;
+    cite: string;
+    /**
+     * The reports it was read from, as sent.
+     */
+    raw: string[];
   }[];
+  rest: {
+    line: string;
+    finding: string;
+    items: GonogoItem[];
+  };
 }
 export interface GonogoHazardWindowInput {
   enter: number;
@@ -8014,16 +8139,6 @@ export interface GonogoVerdictLineInput {
         detail: string;
       }[]
     | null;
-}
-/**
- * What the findings come to, in a line over them.
- *
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "GonogoLine".
- */
-export interface GonogoLine {
-  finding: "ok" | "caution" | "stop" | "unknown" | "pending";
-  words: string;
 }
 export interface GonogoWithAlternateInput {
   items?:

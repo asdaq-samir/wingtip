@@ -4848,6 +4848,22 @@ enum EngineContract {
         }
     }
 
+    struct GonogoBriefAnswer: Codable, Equatable, Sendable {
+        /// The findings in the order the Brief shows them.
+        var items: [EngineContract.GonogoItem]
+        var line: EngineContract.GonogoLine
+    }
+
+    struct GonogoBriefInput: Codable, Equatable, Sendable {
+        var verdict: EngineContract.VerdictInput
+        /// /api/alternate's answer; null while it is awaited or where none was asked.
+        var alternate: EngineContract.GonogoAlternateData?
+        /// The departure, the stops and the destination; null or empty where the route has no two ends yet.
+        var fields: [EngineContract.GonogoFieldUse]?
+        /// An airplane is picked.
+        var airplane: Bool
+    }
+
     struct GonogoDefaultLoadAnswer: Codable, Equatable, Sendable {
         var emptyWeightLb: Double
         var emptyArmIn: Double
@@ -4933,10 +4949,11 @@ enum EngineContract {
     }
 
     struct GonogoFieldPermissionInput: Codable, Equatable, Sendable {
-        var fields: [EngineContract.GonogoFieldPermissionInputFieldsItem]
+        var fields: [EngineContract.GonogoFieldUse]
     }
 
-    struct GonogoFieldPermissionInputFieldsItem: Codable, Equatable, Sendable {
+    /// A field the route uses, as the host has it from NASR APT_BASE and APT_CON.
+    struct GonogoFieldUse: Codable, Equatable, Sendable {
         var ident: String
         /// Null is taken as destination.
         var role: String?
@@ -4962,6 +4979,70 @@ enum EngineContract {
             case end
             case byWind = "by_wind"
         }
+    }
+
+    struct GonogoGlanceLinesAnswer: Codable, Equatable, Sendable {
+        var act: [EngineContract.GonogoGlanceLinesAnswerActItem]
+        var rest: EngineContract.GonogoGlanceLinesAnswerRest
+    }
+
+    struct GonogoGlanceLinesAnswerActItem: Codable, Equatable, Sendable {
+        var key: String
+        var finding: String
+        var tab: String
+        var section: String?
+        /// The finding and its action, one sentence.
+        var line: String
+        /// The finding alone.
+        var lead: String
+        /// What to do about it.
+        var action: String
+        /// Why it matters, in plain words.
+        var why: String
+        /// The rule it rests on.
+        var cite: String
+        /// The reports it was read from, as sent.
+        var raw: [String]
+    }
+
+    struct GonogoGlanceLinesAnswerRest: Codable, Equatable, Sendable {
+        var line: String
+        var finding: String
+        var items: [EngineContract.GonogoItem]
+    }
+
+    struct GonogoGlanceLinesInput: Codable, Equatable, Sendable {
+        /// gonogo_brief's items.
+        var items: [EngineContract.GonogoItem]
+        /// The departure's and the destination's figures, for the crosswind's line.
+        var fields: [EngineContract.GonogoGlanceLinesInputFieldsItem]?
+        /// The reports the briefing holds as sent: the fields' METARs and TAFs, and the TFRs by their NOTAM.
+        var raw: EngineContract.GonogoGlanceLinesInputRaw?
+    }
+
+    struct GonogoGlanceLinesInputFieldsItem: Codable, Equatable, Sendable {
+        var ident: String
+        /// The runway flown there, "24".
+        var runway: String?
+        /// The crosswind on it, whole knots.
+        var crosswindKt: Double?
+        /// Past the airplane's demonstrated crosswind.
+        var crosswindOver: Bool?
+        var finding: String
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case runway
+            case crosswindKt = "crosswind_kt"
+            case crosswindOver = "crosswind_over"
+            case finding
+        }
+    }
+
+    struct GonogoGlanceLinesInputRaw: Codable, Equatable, Sendable {
+        var metars: [String]
+        var tafs: [String]
+        var tfrs: [String]
     }
 
     struct GonogoHazardWindowInput: Codable, Equatable, Sendable {

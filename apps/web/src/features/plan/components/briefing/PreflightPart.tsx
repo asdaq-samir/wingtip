@@ -43,11 +43,12 @@ interface Props {
 /** Preflight: the go / no-go first, then what is done before leaving --
  *  the airspace, the risk, the paperwork, the loading. */
 export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Props) {
-  const { items, landings, setFolds, printing, folds, assessment, briefingPendingMessage, ifr, planForms, briefing } = vm;
+  const { items, line, landings, setFolds, printing, folds, assessment, briefingPendingMessage, ifr, planForms, briefing } = vm;
   return (
     <>
       <BriefChecks
         items={items}
+        line={line}
         flight={`${landings.join("-")}|${depart}`}
         here={TILE_SECTIONS}
         onOpen={(section) => setFolds((open) => (open.includes(section) ? open : [...open, section]))}

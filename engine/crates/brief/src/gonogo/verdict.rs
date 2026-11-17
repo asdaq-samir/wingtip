@@ -1,5 +1,5 @@
-//! The Brief's Go / No-Go (apps/web/src/lib/verdict.ts, which holds the same
-//! rules for the web app: the two change together): every tab's own
+//! The Brief's Go / No-Go (every app asks it, put together by brief.rs's
+//! `gonogo_brief`; apps/web/src/lib/verdict.ts asks it by name): each tab's own
 //! finding about the flight in one list, each a row that opens where it
 //! was found -- the weather, the airspace on the route, the altitude, the
 //! fuel, the runways, the loading and the risk -- and one line over them

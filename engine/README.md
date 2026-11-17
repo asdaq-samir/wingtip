@@ -248,7 +248,12 @@ Then the callers switch to the name and the old copy is deleted.
   the modules it is fed from), and the route's fuel and TFR figures the
   findings are put together from (`gonogo_route_figures`: the least fuel
   margin, the fuel required, the reserve, the TFRs in force and near), so
-  neither shell works them out. Each is a name in `call.rs`
+  neither shell works them out. They are put together as the Brief shows
+  them -- the alternate's in the weather's, the fields row, no airplane's
+  findings where none is picked, the line over them -- by `gonogo_brief`,
+  and worded for the Brief as it opens (at most three lines a pilot acts
+  on, each with what to do, why and its rule, the rest in one row) by
+  `gonogo_glance_lines`. Each is a name in `call.rs`
   (`gonogo_verdict_items`, `gonogo_risk`, `gonogo_runway_checks` ...), asked by
   the web app (callEngine), the planner's app.gonogo (wingtip_native.call)
   and the phones (the generated `call`). Which Class B band of a route's

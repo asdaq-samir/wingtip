@@ -914,7 +914,7 @@ are designed ([Vercel guidelines][vercel-guidelines]).
 cluttered at the owner's word, 2026-11-16, "How do we make brief less
 cluttered?" then "Do it").
 1. The verdict, as the engine words it, and at most three findings, each
-   two rows at most, the finding alone (`glanceLines`' `lead`, the risk
+   two rows at most, the finding alone (the engine's `gonogo_glance_lines`' `lead`, the risk
    named, "Risk: High · 16 points"); under its tap
    what to do first (`action`), then why it matters with its rule, the
    reports as sent and the way to its page. No "nothing to fix" row: the

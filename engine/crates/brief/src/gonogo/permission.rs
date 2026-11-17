@@ -12,7 +12,8 @@
 //! planner gives it.
 //!
 //! A row of its own after the seven (`gonogo_field_permission`), which
-//! the hosts add to `gonogo_verdict_items`' list before its line; none
+//! the hosts add to `gonogo_verdict_items`' list before its line
+//! (`gonogo_brief` puts the two together for them); none
 //! where every field is public use. A caution, never a stop: the pilot
 //! may well have the permission already (the owner's "warn, never
 //! limit").
@@ -65,22 +66,25 @@ pub fn permission_item(fields: &[Used]) -> Option<Item> {
     })
 }
 
-/// `gonogo_field_permission` by name.
-pub fn call(name: &str, v: &Value) -> R<String> {
-    let i = In { name };
-    let fields = i
-        .list(v, "fields")?
+/// The fields as the hosts send them (GonogoFieldUse), under `key`.
+pub(crate) fn read_fields(i: In, v: &Value, key: &str) -> R<Vec<Used>> {
+    i.list(v, key)?
         .iter()
         .map(|f| {
             Ok(Used {
                 ident: i.str(f, "ident")?,
                 role: i.opt_str(f, "role")?.unwrap_or_else(|| "destination".into()),
-                usage: airport_use::read(name, f)?,
+                usage: airport_use::read(i.name, f)?,
                 phone: i.opt_str(f, "phone")?,
                 status: i.opt_str(f, "status")?,
             })
         })
-        .collect::<R<Vec<_>>>()?;
+        .collect()
+}
+
+/// `gonogo_field_permission` by name.
+pub fn call(name: &str, v: &Value) -> R<String> {
+    let fields = read_fields(In { name }, v, "fields")?;
     Ok(match permission_item(&fields) {
         Some(item) => {
             let mut out = String::new();

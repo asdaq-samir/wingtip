@@ -43,7 +43,7 @@ apps/web/src/features/plan/components/RouteMap.tsx 437
 apps/web/src/features/plan/components/navlog/NavLogView.tsx 868
 apps/web/src/features/plan/components/procedures/FieldStep.tsx 547
 apps/web/src/features/plan/components/procedures/PatternChips.tsx 423
-apps/web/src/features/plan/hooks/useFlightBriefing.ts 527
+apps/web/src/features/plan/hooks/useFlightBriefing.ts 525
 apps/web/src/features/plan/hooks/usePlan.ts 581
 apps/web/src/features/plan/hooks/useProceduresRoute.ts 460
 apps/web/src/lib/audioInput.test.ts 632

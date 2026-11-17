@@ -6,7 +6,7 @@ import FindingIcon from "../../../../components/FindingIcon";
 import { useTicked, usePreflight } from "./preflight";
 import { FINDING_TONE, type Finding } from "../../../../lib/findings";
 import { TEXT } from "../../../../lib/text";
-import { verdictLine, type VerdictItem, type Where } from "../../../../lib/verdict";
+import type { Verdict, VerdictItem, Where } from "../../../../lib/verdict";
 import { GoToTab, LEGS } from "../navlog/panelTab";
 
 /** A check the planner does not make, and where the pilot makes it: the
@@ -45,11 +45,14 @@ const ELSEWHERE: Elsewhere[] = [
  */
 export default function BriefChecks({
   items,
+  line,
   flight,
   here,
   onOpen,
 }: {
   items: VerdictItem[];
+  /** What they come to, the engine's line over them (gonogo_brief). */
+  line: Verdict["line"];
   /** The flight the looks are for: its route and time. */
   flight: string;
   /** The sections of this page a tile opens, by their titles. */
@@ -60,7 +63,6 @@ export default function BriefChecks({
   const go = useContext(GoToTab);
   const looked = useTicked(flight);
   const tick = usePreflight((s) => s.tick);
-  const line = verdictLine(items);
   const keys = [...items.map((i) => i.key), ...ELSEWHERE.map((e) => e.key)];
   const seen = keys.filter((key) => looked[key]).length;
   const open = (key: string, at: Where | undefined) => {

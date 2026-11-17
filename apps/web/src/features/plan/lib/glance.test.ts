@@ -1,24 +1,28 @@
-import { describe, expect, it } from "vitest";
-import { LINE_MAX, LINES_MAX, glanceLines, type BriefGlance } from "./glance";
+import { describe, expect, it, test } from "vitest";
+import { callEngine, type EngineInput } from "../../../lib/engine/engine";
+import fixture from "../../../lib/fixtures/goNoGoBrief.json";
 import type { VerdictItem } from "../../../lib/verdict";
+import { glanceLines, type BriefGlance } from "./glance";
 
-const item = (key: VerdictItem["key"], finding: VerdictItem["finding"], detail: string, label: string = key): VerdictItem => ({
+// The engine's rules as the web's build of it answers the shared cases
+// (engine/facade/tests/gonogo_brief.rs reads the same file).
+describe("the engine's gonogo_brief and gonogo_glance_lines", () => {
+  test.each(fixture.brief)("$name", ({ input, answer }) => {
+    expect(callEngine("gonogo_brief", input as unknown as EngineInput<"gonogo_brief">)).toEqual(answer);
+  });
+  test.each(fixture.glance)("$name", ({ input, answer }) => {
+    expect(callEngine("gonogo_glance_lines", input as unknown as EngineInput<"gonogo_glance_lines">)).toEqual(answer);
+  });
+});
+
+const item = (key: VerdictItem["key"], finding: VerdictItem["finding"], detail: string, label: string): VerdictItem => ({
   key,
   label,
   finding,
   detail,
-  tab: "preflight",
-  section: "x",
+  tab: "depart",
+  section: "Takeoff",
 });
-const quiet: VerdictItem[] = [
-  item("weather", "ok", "No hazards along the route", "Weather"),
-  item("airspace", "ok", "None on the route", "TFRs & special use"),
-  item("altitude", "ok", "FL055 · Lowest", "Altitude"),
-  item("fuel", "ok", "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare", "Fuel"),
-  item("runways", "ok", "Takeoff and landing within each runway", "Runways"),
-  item("balance", "ok", "2,407 lb at 41.2 in, within limits", "Weight & balance"),
-  item("risk", "ok", "Low · 2 points", "Risk"),
-];
 const field = (ident: string, runway: string, crosswindKt: number) => ({
   ident,
   category: "VFR",
@@ -36,96 +40,26 @@ const glance: BriefGlance = {
   before: { risk: null, spareGal: 12.4, balance: null, finding: "ok" },
   depart: field("C81", "27", 18),
   enroute: { ceilingFt: null, visibilitySm: null, wind: null, eteMin: null, line: null, finding: "ok" },
-  arrive: { ...field("KDLH", "9", 4), finding: "ok" },
-  raw: {
-    metars: [{ ident: "C81", raw: "METAR C81 ..." }],
-    tafs: [{ ident: "KDLH", raw: "TAF KDLH ..." }],
-    tfrs: ["6/1111 · Sporting event"],
-  },
+  arrive: null,
+  raw: { metars: [{ ident: "C81", raw: "METAR C81 ..." }], tafs: [], tfrs: [] },
 };
-const with_ = (changes: Partial<Record<VerdictItem["key"], [VerdictItem["finding"], string]>>) =>
-  quiet.map((i) => (changes[i.key] ? { ...i, finding: changes[i.key]![0], detail: changes[i.key]![1] } : i));
 
-describe("the Brief's lines at a glance", () => {
-  it("folds a quiet day into one row saying everything is fine", () => {
-    const { act, rest } = glanceLines(quiet, glance);
-    expect(act).toEqual([]);
-    expect(rest.finding).toBe("ok");
-    expect(rest.line).toBe("Weather, TFRs & special use, altitude, fuel, runways, weight & balance, risk: nothing to fix");
-    expect(rest.items).toHaveLength(7);
-  });
-
-  it("says the crosswind in the glance's own figures, with what to do, and why with its rule and the METAR", () => {
-    const { act, rest } = glanceLines(with_({ runways: ["caution", "Crosswind past the POH's demonstrated at C81"] }), glance);
-    expect(act).toHaveLength(1);
-    expect(act[0]!.line).toBe(
-      "Runway 27 at C81 has 18 kt across, past the POH's demonstrated: ask for another runway, or wait for the wind",
-    );
-    expect(act[0]!.cite).toBe("14 CFR 91.103(b); the POH");
-    expect(act[0]!.raw).toEqual(["METAR C81 ..."]);
-    expect(rest.line).toBe("Weather, TFRs & special use, altitude, fuel, weight & balance, risk: nothing to fix");
-  });
-
-  it("names only the fields whose crosswind is past the demonstrated, not one cautioned for its runway's length", () => {
-    // KDLH a caution with 0 kt across: past the POH's distance tables, not its crosswind.
-    const short = { ...glance, arrive: { ...field("KDLH", "3", 0), finding: "caution" as const } };
-    const { act } = glanceLines(with_({ runways: ["caution", "Crosswind past the POH's demonstrated at C81"] }), short);
-    expect(act[0]!.line).toBe(
-      "Runway 27 at C81 has 18 kt across, past the POH's demonstrated: ask for another runway, or wait for the wind",
-    );
-  });
-
-  it("puts the stops before the cautions, at most three lines, the rest counted", () => {
-    const items = with_({
-      weather: ["caution", "AIRMET Sierra along the route"],
-      airspace: ["stop", "TFR 6/1111 in force when you get there"],
-      fuel: ["stop", "2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)"],
-      runways: ["caution", "Crosswind past the POH's demonstrated at C81"],
-      risk: ["caution", "Caution · 14 points"],
+describe("the Brief's lines at a glance, from the glance's figures", () => {
+  it("hands the engine the fields' crosswinds and the reports as sent", () => {
+    const { act, rest } = glanceLines([item("runways", "caution", "Crosswind past the POH's demonstrated at C81", "Runways")], glance);
+    expect(act[0]).toMatchObject({
+      key: "runways",
+      tab: "depart",
+      section: "Takeoff",
+      line: "Runway 27 at C81 has 18 kt across, past the POH's demonstrated: ask for another runway, or wait for the wind",
+      raw: ["METAR C81 ..."],
     });
-    const { act, rest } = glanceLines(items, glance);
-    expect(act.map((l) => l.key)).toEqual(["airspace", "fuel", "weather"]);
-    expect(act[0]!.line).toBe("TFR 6/1111 in force when you get there: route around it, or go later");
-    expect(act[0]!.raw).toEqual(["6/1111 · Sporting event"]);
-    expect(act[1]!.line).toBe("2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151): add fuel, or plan a stop");
-    expect(rest.line).toBe("2 more to look at");
-    expect(rest.finding).toBe("caution");
-    expect(rest.items.map((i) => i.key)).toEqual(["altitude", "runways", "balance", "risk"]);
+    expect(rest.items).toEqual([]);
   });
 
-  it("keeps every line to one sentence of at most 140 characters, however long the engine's detail", () => {
-    const long =
-      "VFR not recommended: " + "KDLH currently reporting IFR with ceilings of 400 ft and visibility of a half mile in fog, ".repeat(3);
-    const items = with_({
-      weather: ["stop", long],
-      altitude: ["stop", "Ceiling 11,700 ft: terrain 40 nm past KDLH needs 12,500"],
-      balance: ["stop", "120 lb over the maximum takeoff weight"],
-    });
-    const { act } = glanceLines(items, glance);
-    expect(act.length).toBeLessThanOrEqual(LINES_MAX);
-    for (const l of act) {
-      expect(l.line.length).toBeLessThanOrEqual(LINE_MAX);
-      expect(l.line).not.toMatch(/\. [A-Z]/);
-      expect(l.line.endsWith(":")).toBe(false);
-    }
-    expect(act[0]!.line).toMatch(/…: wait for it to lift, or plan another day$/);
-  });
-
-  it("says what is still being checked, and what was not worked out", () => {
-    expect(glanceLines(with_({ fuel: ["pending", "Working out the fuel…"] }), null).rest.line).toBe("Still checking fuel");
-    const rest = glanceLines(with_({ balance: ["unknown", "Not worked out for this airplane"] }), null).rest;
-    expect(rest.line).toBe("1 more to look at");
-    expect(rest.finding).toBe("unknown");
-  });
-
-  it("gives each line its finding alone and its action apart, for the one-row lines", () => {
-    const { act } = glanceLines(with_({ fuel: ["stop", "2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)."] }), null);
-    expect(act[0]!.lead).toBe("2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)");
-    expect(act[0]!.action).toBe("Add fuel, or plan a stop");
-  });
-
-  it("names the risk on its row, whose detail is its level alone", () => {
-    const { act } = glanceLines(with_({ risk: ["stop", "High · 16 points"] }), null);
-    expect(act[0]!.lead).toBe("Risk: High · 16 points");
+  it("with no glance yet, words the engine's detail alone", () => {
+    const { act } = glanceLines([item("runways", "caution", "Crosswind past the POH's demonstrated at C81", "Runways")], null);
+    expect(act[0]!.lead).toBe("Crosswind past the POH's demonstrated at C81");
+    expect(act[0]!.raw).toEqual([]);
   });
 });

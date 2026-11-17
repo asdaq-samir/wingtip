@@ -4860,6 +4860,32 @@ object EngineContract {
     )
 
     @Serializable
+    data class GonogoBriefAnswer(
+        /**
+         * The findings in the order the Brief shows them.
+         */
+        val items: List<EngineContract.GonogoItem>,
+        val line: EngineContract.GonogoLine,
+    )
+
+    @Serializable
+    data class GonogoBriefInput(
+        val verdict: EngineContract.VerdictInput,
+        /**
+         * /api/alternate's answer; null while it is awaited or where none was asked.
+         */
+        val alternate: EngineContract.GonogoAlternateData? = null,
+        /**
+         * The departure, the stops and the destination; null or empty where the route has no two ends yet.
+         */
+        val fields: List<EngineContract.GonogoFieldUse>? = null,
+        /**
+         * An airplane is picked.
+         */
+        val airplane: Boolean,
+    )
+
+    @Serializable
     data class GonogoDefaultLoadAnswer(
         @SerialName("empty_weight_lb")
         val emptyWeightLb: Double,
@@ -4947,11 +4973,14 @@ object EngineContract {
 
     @Serializable
     data class GonogoFieldPermissionInput(
-        val fields: List<EngineContract.GonogoFieldPermissionInputFieldsItem>,
+        val fields: List<EngineContract.GonogoFieldUse>,
     )
 
+    /**
+     * A field the route uses, as the host has it from NASR APT_BASE and APT_CON.
+     */
     @Serializable
-    data class GonogoFieldPermissionInputFieldsItem(
+    data class GonogoFieldUse(
         val ident: String,
         /**
          * Null is taken as destination.
@@ -4987,6 +5016,94 @@ object EngineContract {
         val end: Int,
         @SerialName("by_wind")
         val byWind: Boolean,
+    )
+
+    @Serializable
+    data class GonogoGlanceLinesAnswer(
+        val act: List<EngineContract.GonogoGlanceLinesAnswerActItem>,
+        val rest: EngineContract.GonogoGlanceLinesAnswerRest,
+    )
+
+    @Serializable
+    data class GonogoGlanceLinesAnswerActItem(
+        val key: String,
+        val finding: String,
+        val tab: String,
+        val section: String? = null,
+        /**
+         * The finding and its action, one sentence.
+         */
+        val line: String,
+        /**
+         * The finding alone.
+         */
+        val lead: String,
+        /**
+         * What to do about it.
+         */
+        val action: String,
+        /**
+         * Why it matters, in plain words.
+         */
+        val why: String,
+        /**
+         * The rule it rests on.
+         */
+        val cite: String,
+        /**
+         * The reports it was read from, as sent.
+         */
+        val raw: List<String>,
+    )
+
+    @Serializable
+    data class GonogoGlanceLinesAnswerRest(
+        val line: String,
+        val finding: String,
+        val items: List<EngineContract.GonogoItem>,
+    )
+
+    @Serializable
+    data class GonogoGlanceLinesInput(
+        /**
+         * gonogo_brief's items.
+         */
+        val items: List<EngineContract.GonogoItem>,
+        /**
+         * The departure's and the destination's figures, for the crosswind's line.
+         */
+        val fields: List<EngineContract.GonogoGlanceLinesInputFieldsItem>? = null,
+        /**
+         * The reports the briefing holds as sent: the fields' METARs and TAFs, and the TFRs by their NOTAM.
+         */
+        val raw: EngineContract.GonogoGlanceLinesInputRaw? = null,
+    )
+
+    @Serializable
+    data class GonogoGlanceLinesInputFieldsItem(
+        val ident: String,
+        /**
+         * The runway flown there, "24".
+         */
+        val runway: String? = null,
+        /**
+         * The crosswind on it, whole knots.
+         */
+        @SerialName("crosswind_kt")
+        val crosswindKt: Double? = null,
+        /**
+         * Past the airplane's demonstrated crosswind.
+         */
+        @SerialName("crosswind_over")
+        val crosswindOver: Boolean? = null,
+        val finding: String,
+    )
+
+    @Serializable
+    data class GonogoGlanceLinesInputRaw(
+        val metars: List<String>,
+        val tafs: List<String>,
+        val tfrs: List<String>,
     )
 
     @Serializable
