@@ -120,7 +120,7 @@ export function SwipeRowImpl({ word, label, onRemove, children }: SwipeRowProps)
           aria-label={label}
           data-testid="swipe-remove"
           className={cn(
-            "h-full w-full rounded-none bg-destructive px-0 text-white hover:bg-destructive",
+            "h-full w-full rounded-none bg-destructive px-0 text-white hover:bg-destructive dark:text-background",
             full ? "justify-start" : "justify-end",
             TEXT.row,
           )}
