@@ -36,9 +36,13 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
     // effect): at half the route's rows ran on under the glass and showed
     // through it, half read ("Pick an airplane" under Share; the UI
     // audit's B1, 2026-11-17). The fade's room taken back from above, so
-    // the bar stays where it was; only the capsule takes taps.
+    // the bar stays where it was; only the capsule takes taps. Across the
+    // sheet's whole width, out over the foot's 16-point sides (SheetParts'
+    // px-4): narrower, the airport cards' fill (drawn out past the column,
+    // FIELD_CARD) showed its edges either side of a lighter box round the
+    // bar, a box in a box.
     <div
-      className="pointer-events-none -mt-6 flex justify-center bg-linear-to-b from-transparent to-(--sheet) to-50% pt-8"
+      className="pointer-events-none -mx-4 -mt-6 flex justify-center bg-linear-to-b from-transparent to-(--sheet) to-50% px-4 pt-8"
       data-testid="fpl-actions"
     >
       {/* The glass capsule, the airport card's bar's (CardTabBar): glass
