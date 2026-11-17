@@ -1,24 +1,24 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { done } from "../../../lib/doneNote";
+import { done } from "../../lib/doneNote";
 import { Ellipsis, FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Share, Trash2 } from "lucide-react";
-import RoundButton from "../../../components/RoundButton";
-import { CardAction } from "../../../components/CardAction";
-import { ResponsivePopover, ResponsivePopoverAnchor } from "../../../components/ResponsivePopover";
+import RoundButton from "../../components/RoundButton";
+import { CardAction } from "../../components/CardAction";
+import { ResponsivePopover, ResponsivePopoverAnchor } from "../../components/ResponsivePopover";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../../../components/ui/dropdown-menu";
-import type { Candidate, Course } from "../../../lib/api/types";
-import type { RouteCard } from "../../../lib/openCards";
-import { foreflightRoute, type PlanPoint } from "../../../lib/flightPlanFiles";
-import { markPackSent, openInForeFlight, packOrigin, packPath, packSent } from "../lib/foreflightPack";
-import { navLogRows } from "./navlog/rows";
-import { useShareLink } from "../hooks/useShareLink";
-import { refreshLive } from "../../../lib/liveRefresh";
-import type { RouteEdit } from "../../../lib/preferences";
+} from "../../components/ui/dropdown-menu";
+import type { Candidate, Course } from "../../lib/api/types";
+import type { RouteCard } from "../../lib/openCards";
+import { foreflightRoute, type PlanPoint } from "../../lib/flightPlanFiles";
+import { markPackSent, openInForeFlight, packOrigin, packPath, packSent } from "./foreflightPack";
+import { navLogRows } from "../plan";
+import { useShareLink } from "./useShareLink";
+import { refreshLive } from "../../lib/liveRefresh";
+import type { RouteEdit } from "../../lib/preferences";
 import ShowRouteAs, { RouteMapChoices } from "./ShowRouteAs";
 
 const SHARE_LABEL: Record<"route" | "send" | RouteCard, string> = {
@@ -163,7 +163,7 @@ export default function ShareMenu({
   );
 
   // The checkpoints as a ForeFlight content pack, built by the planner
-  // (features/plan/lib/foreflightPack): each a waypoint with its own page, and the course
+  // (features/share/foreflightPack): each a waypoint with its own page, and the course
   // drawn on its map, for ForeFlight's own link or to download.
   const packHref = selected.length ? packPath(planned.dep, planned.dest, planned.stops) : null;
   // Open in ForeFlight is one button for the two hand-offs ForeFlight
@@ -350,7 +350,7 @@ export default function ShareMenu({
             <DropdownMenuItem
               disabled={!routed}
               data-testid="print-kneeboard"
-              onClick={afterMenu(() => void import("../lib/printKneeboard").then((m) => m.printKneeboard()))}
+              onClick={afterMenu(() => void import("./printKneeboard").then((m) => m.printKneeboard()))}
             >
               <Printer />
               Print the nav log

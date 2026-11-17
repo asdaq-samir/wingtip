@@ -5,8 +5,8 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
-} from "../../../components/ui/dropdown-menu";
-import { usePreferences, type RouteEdit } from "../../../lib/preferences";
+} from "../../components/ui/dropdown-menu";
+import { usePreferences, type RouteEdit } from "../../lib/preferences";
 
 const CHOICES: { value: RouteEdit; label: string }[] = [
   { value: "box", label: "Route Box" },

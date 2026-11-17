@@ -25,7 +25,7 @@ import { startLoadLog } from "./lib/loadLog";
 import MapPage from "./features/shell/MapPage";
 import { prefetchRouteMap } from "./features/plan/routeMapChunk";
 import { prefetchRouteBox } from "./features/plan/routeBoxChunk";
-import { prefetchShareMenu } from "./features/plan/shareMenuChunk";
+import { prefetchShareMenu } from "./features/share/shareMenuChunk";
 import { loadPopups } from "./components/popupsChunk";
 import "./index.css";
 // Barlow, the face of both looks (lib/brand), in the first stylesheet

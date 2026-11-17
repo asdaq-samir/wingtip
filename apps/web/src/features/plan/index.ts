@@ -9,7 +9,6 @@
  * through this file only; it reaches none of them.
  */
 
-export { ShareMenu } from "./ShareMenuLazy";
 export { default as DirectStrip } from "./components/DirectStrip";
 export { default as FplStrip } from "./components/FplStrip";
 export type { EditedPoint, PointAltitude } from "./components/PointAltitudeDialog";

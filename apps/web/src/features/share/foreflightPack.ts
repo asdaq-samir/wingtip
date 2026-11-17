@@ -9,7 +9,7 @@
  * share sheet, which does not offer ForeFlight for a ZIP. The route itself
  * goes by ForeFlight's maps link (lib/flightPlanFiles foreflightRoute).
  */
-import { keptStore } from "../../../lib/storage";
+import { keptStore } from "../../lib/storage";
 
 /** The pack's address on this server: the route, its idents dash-joined,
  *  then the pack's name -- KORD-KDLH/KORD-KDLH-checkpoints.zip -- the

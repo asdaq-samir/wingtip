@@ -3,9 +3,10 @@ import { TEXT } from "../../lib/text";
 import { CommandRoot } from "../../components/ui/command";
 import { MAX_STOPS } from "../../lib/identSchema";
 import type { WorkspaceProps } from "../../lib/workspace";
-import { ShareMenu, type BriefingPart } from "../plan";
+import { ShareMenu } from "../share";
 import { RouteShareMenu, type RouteCard } from "../../lib/openCards";
 import { useNavLogs } from "./workspace/useNavLogs";
+import type { BriefingPart } from "../plan";
 import {
   PilotPanel,
   ProceduresRoute,

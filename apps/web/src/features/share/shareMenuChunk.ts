@@ -7,6 +7,6 @@ import { fromChunk } from "../../lib/fromChunk";
  * by ShareMenuLazy, its room kept until it is in.
  */
 export const { Part: ShareMenuPart, prefetch: prefetchShareMenu } = fromChunk(
-  () => import("./components/ShareMenu"),
+  () => import("./ShareMenu"),
   (m) => m.default,
 );

@@ -1,11 +1,11 @@
 import { useCallback } from "react";
-import { done } from "../../../lib/doneNote";
-import { usePreferences } from "../../../lib/preferences";
-import { showError } from "../../../lib/problems";
-import { cancelled, shareOrCopy } from "../../../lib/share";
-import { airplaneOfChoice, sharedPlanLink } from "../../../lib/sharedFlight";
-import { routeName } from "../../../lib/identSchema";
-import { useAddressKey } from "../../../lib/address";
+import { done } from "../../lib/doneNote";
+import { usePreferences } from "../../lib/preferences";
+import { showError } from "../../lib/problems";
+import { cancelled, shareOrCopy } from "../../lib/share";
+import { airplaneOfChoice, sharedPlanLink } from "../../lib/sharedFlight";
+import { routeName } from "../../lib/identSchema";
+import { useAddressKey } from "../../lib/address";
 
 /**
  * The route's Share link (ShareMenu): the plan sent in the link itself --
