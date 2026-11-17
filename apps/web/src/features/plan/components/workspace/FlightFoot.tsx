@@ -44,7 +44,7 @@ export function FlightFigures({ vm, grow, foot = false }: { vm: PlanWorkspaceMod
         </div>
       )}
       <div data-testid="flight-line">
-        <TripFigures {...line} grow={grow} fuelStop={firstFuelStop} />
+        <TripFigures {...line} grow={grow} fuelStop={firstFuelStop} unknown={s.unknownPlace?.ident ?? null} />
       </div>
     </EngineGate>
   );

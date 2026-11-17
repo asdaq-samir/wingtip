@@ -28,11 +28,20 @@ export function FplTabBar({ vm, share }: { vm: PlanWorkspaceModel; share: ReactN
   const { altitudeMark, briefMark } = vm.brief;
   const found = findingRows(useVerdict((v) => v.items)).length;
   return (
-    <div className="flex justify-center pt-2" data-testid="fpl-actions">
+    // Over a fade to the sheet's own colour from a little above it, as
+    // iOS 26 fades what scrolls under a floating bar (its scroll edge
+    // effect): at half the route's rows ran on under the glass and showed
+    // through it, half read ("Pick an airplane" under Share; the UI
+    // audit's B1, 2026-11-17). The fade's room taken back from above, so
+    // the bar stays where it was; only the capsule takes taps.
+    <div
+      className="pointer-events-none -mt-6 flex justify-center bg-linear-to-b from-transparent to-(--sheet) to-50% pt-8"
+      data-testid="fpl-actions"
+    >
       {/* The glass capsule, the airport card's bar's (CardTabBar): glass
           only on what floats (rules.md). Each button 56 tall in its
           columns, side by side, so their areas are over 44 points. */}
-      <GlassBar className="grid h-16 max-w-full auto-cols-fr grid-flow-col">
+      <GlassBar className="pointer-events-auto grid h-16 max-w-full auto-cols-fr grid-flow-col">
         <Action
           bar
           icon={
@@ -44,6 +53,9 @@ export function FplTabBar({ vm, share }: { vm: PlanWorkspaceModel; share: ReactN
           label="Brief"
           spoken={briefMark && found > 0 ? `Brief, ${found} ${found === 1 ? "finding" : "findings"} to look at` : undefined}
           onClick={openBrief}
+          // Nothing to brief while a point of the route is not known, as
+          // the Nav Log and the Profile have nothing (the UI audit's B8).
+          disabled={!!vm.plan.s.unknownPlace}
           testId="route-brief"
           data-finding={briefMark ?? undefined}
         />

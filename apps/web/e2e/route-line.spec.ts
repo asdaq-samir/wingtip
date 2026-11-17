@@ -215,3 +215,18 @@ test("another airplane picked keeps the Routes row in its place, dimmed, till it
   );
   expect(await page.evaluate(() => (window as unknown as { routeLineGone: number }).routeLineGone)).toBe(0);
 });
+
+test("a way that is the best of several kinds is named short on its chip, in full in its name", async ({ page }) => {
+  // "Avoid Weather & Fastest & Over Land" ran off the row (the UI audit's C7, 2026-11-17).
+  const chips = WAYS.chips.map((c) => (c.key === "weather" ? { ...c, label: "Avoid Weather & Fastest & Over Land" } : c));
+  await page.route(
+    (url) => url.pathname.endsWith("/route-options"),
+    (route) => route.fulfill({ json: { ...WAYS, chips } }),
+  );
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  const chip = sideDrawer(page).getByTestId("route-line").getByTestId("route-line-chip").nth(1);
+  await expect(chip).toHaveText(/^Avoid Weather \+2/, { timeout: slow(30_000) });
+  await expect(chip).toHaveAccessibleName(/^Avoid Weather & Fastest & Over Land, /);
+});

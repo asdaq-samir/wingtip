@@ -151,3 +151,26 @@ test(
     await expect(field).toHaveValue("");
   },
 );
+
+test.describe("with no position", () => {
+  test.use({ permissions: [] });
+
+  test("the search's Nearest lists the fields nearest the map's middle, says so, and still offers the position", async ({ page }) => {
+    // It showed only "Show my position" (the UI audit's C9, 2026-11-17).
+    await page.route(
+      (url) => url.pathname.endsWith("/api/planner/airports/nearest"),
+      (route) =>
+        route.fulfill({
+          json: { airports: [{ ...FIELD, ident: "C81", name: "Campbell", lat: 42.3246, lon: -88.0741, distance_nm: 12, bearing_deg: 40 }] },
+        }),
+    );
+    await page.goto("/app/plan?dep=C81&dest=KDLH");
+    await settle(page);
+    await grabberTo(page, "half");
+    await showSearch(page);
+    const drawer = sideDrawer(page);
+    await expect(drawer.getByTestId("nearest-strip-field").first()).toBeVisible({ timeout: slow(15000) });
+    await expect(drawer.getByTestId("nearest-strip-near-map")).toHaveText("Near the middle of the map.");
+    await expect(drawer.getByTestId("nearest-strip-position")).toBeVisible();
+  });
+});

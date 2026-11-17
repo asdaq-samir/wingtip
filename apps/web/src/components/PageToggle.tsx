@@ -3,6 +3,7 @@ import { Toggle } from "./ui/toggle";
 import { PANEL_FIELD_FILL } from "./panelField";
 import { useConsoleOpen } from "../lib/mapChrome";
 import { closeEveryCard } from "../lib/openCards";
+import { FPL_TIP, useTips } from "../lib/firstRunTips";
 import { keepPlanButton, usePageToggle } from "./sheet/pageToggle";
 
 /**
@@ -42,6 +43,10 @@ export default function PageToggle({ page }: { page: 0 | 1 }) {
         closeEveryCard();
         useConsoleOpen.getState().setOpen(false);
         pages.go(onSearch ? 1 : 0);
+        // The first flight's tip points at FPL's glyph (FplTip): once it has
+        // been tapped to FPL, the tip has done its work and is not shown
+        // again (the UI audit's B5).
+        if (onSearch) useTips.getState().see(FPL_TIP);
       }}
       aria-label={onSearch ? "Show flight plan" : "Show search"}
       data-testid="sheet-page-toggle"

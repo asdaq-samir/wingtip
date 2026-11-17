@@ -9,6 +9,7 @@ import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger }
 import { Button } from "../../../components/ui/button";
 import { nextLanding, shortFlights, tripFigures } from "../figures";
 import { wantScreen } from "../../../lib/navigation/wanted";
+import { requestAirplanePick } from "../../../lib/pickAirplane";
 import type { Flown } from "./navlog/dryRun";
 
 /** What the fuel is made of, from the figure's first tap: its own chunk,
@@ -55,6 +56,13 @@ const seen = (f: { value: string; unit?: string }) => (f.unit ? `${f.value} ${f.
  *  its 44-point area round it (the after), the figure not grown to make it. */
 const AREA = "relative max-w-full after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']";
 
+/** A figure an airplane makes (the time, the fuel), with none picked: a
+ *  dash, said as what it waits for. */
+function wantsAirplane(f: StripFigure): StripFigure {
+  const name = f.name === "Fuel" ? "Fuel required" : f.name === "ETA" ? "Arrival" : f.name === "Aloft" ? "Time aloft" : "Time en route";
+  return { name: f.name, value: "—", said: `${name}: pick an airplane for it` };
+}
+
 export default function TripFigures({
   totals,
   estimate,
@@ -65,7 +73,11 @@ export default function TripFigures({
   flown = null,
   flying = false,
   fuelStop = null,
+  unknown = null,
 }: {
+  /** A point of the route the planner does not know (usePlan's
+   *  `unknownPlace`): where it is the To, said so on it. */
+  unknown?: string | null;
   totals: Totals | null;
   /** Before the nav log's totals, at the pilot's ask for the figures as
    *  soon as can be: the course's distance at once, and the time and fuel
@@ -110,10 +122,22 @@ export default function TripFigures({
   // the time and the fuel are an airplane's, and none is assumed (the
   // owner, 2026-11-08: "only show the distance and the things you can
   // without airplane profile, don't assume").
+  // The four columns kept all the same, the time and the fuel a dash in
+  // the tint that asks for an airplane (lib/pickAirplane), where the two
+  // went and the strip said nothing of why (the UI audit's C2,
+  // 2026-11-17): what the airplane would make of the route, none assumed.
   const airplane = useAirplaneChosen();
   const ours = (whole: boolean): StripFigure[] =>
     tripFigures(input, whole)
-      .filter((f) => airplane || f.name === "To" || f.name === "Dist")
+      .map((f) => (airplane || f.name === "To" || f.name === "Dist" ? f : wantsAirplane(f)))
+      // The destination the planner does not know, said on the figure in
+      // red with its mark, the pill too, where the pill read "ZZZZ" over
+      // a dash as if nothing were wrong (the UI audit's B8).
+      .map((f) =>
+        f.name === "To" && unknown && f.value.toUpperCase() === unknown.toUpperCase()
+          ? { ...f, alert: true, said: `${f.said ?? f.value}, not a place we know` }
+          : f,
+      )
       // The fuel named as what it is, the fuel required (the legs, the
       // start and taxi, the reserve): beside the route's rows' fuel in the
       // tanks, "Fuel" read as the fuel burnt, 16.6 against the 13 gone
@@ -126,6 +150,19 @@ export default function TripFigures({
   const breakdown = next.totals?.fuel_required_gal != null ? next : null;
   const tap = (f: StripFigure, face: ReactNode): ReactNode => {
     const said = f.said ?? f.name;
+    if (!airplane && f.name !== "To" && f.name !== "Dist")
+      return (
+        <Button
+          variant="link"
+          size="inline"
+          onClick={requestAirplanePick}
+          data-testid="strip-pick-airplane"
+          aria-label={said}
+          className={AREA}
+        >
+          {face}
+        </Button>
+      );
     if (f.name === "Fuel" && breakdown)
       return (
         <ResponsivePopover open={breakdownOpen} onOpenChange={setBreakdownOpen}>

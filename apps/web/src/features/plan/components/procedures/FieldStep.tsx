@@ -274,13 +274,10 @@ export function FieldStep({
           <span aria-hidden="true" className="absolute top-3 bottom-0 left-[calc(0.875rem-1px)] w-0.5" style={ROUTE_LINE} />
         )}
         <section aria-label={`${a.ident} · ${first.role}`} className={cn(!(opened && parts[1]) && !asCards && "pb-5")}>
-          {/* The airport's lines: a tap anywhere on them -- its symbol, its
-                        ident, its fuel, its wind, its time -- opens it, at the
-                        owner's ask ("it should expand when tapped anywhere on the
-                        airport information next to the symbol or the symbol
-                        itself"): the arrow by the symbol is the button, its area
-                        stretched over the lines (before:inset-0); the menu and a
-                        time to pick lie over it, their own. */}
+          {/* The airport's lines: a tap anywhere on them -- its symbol, its ident, its fuel, its wind, its time -- opens it,
+              at the owner's ask ("it should expand when tapped anywhere on the airport information next to the symbol or
+              the symbol itself"): the arrow by the symbol is the button, its area stretched over the lines (before:inset-0);
+              the menu and a time to pick lie over it, their own. */}
           <div className="relative flex gap-2.5">
             {/* A fuel stop's pump on top of its symbol, at the owner's ask
                           ("instead of fuel symbol next to airport id, can we put it
@@ -304,10 +301,8 @@ export function FieldStep({
                 ),
               )}
             </div>
-            {/* Two lines, as a waypoint's row and the list before had them,
-                          at the owner's ask ("line up the time with airport id and
-                          elevation with wind like before"): the ident and the time,
-                          then the wind and the elevation. */}
+            {/* Two lines, as a waypoint's row and the list before had them, at the owner's ask ("line up the time with
+                airport id and elevation with wind like before"): the ident and the time, then the wind and the elevation. */}
             <div
               className={cn(
                 "grid min-w-0 flex-1 items-center gap-x-2",
@@ -369,8 +364,13 @@ export function FieldStep({
                 )}
               </div>
               <div className="relative z-10 col-start-2 row-start-1 justify-self-end">{end.time}</div>
+              {/* The wind grey as the elevation, a figure, not a link (the UI audit's C14); Direct to in the tint. */}
               <p
-                className={cn("col-start-1 row-start-2 flex min-w-0 items-center gap-1 font-semibold text-tint tabular-nums", TEXT.note)}
+                className={cn(
+                  "col-start-1 row-start-2 flex min-w-0 items-center gap-1 tabular-nums",
+                  end.direct ? "font-semibold text-tint" : "text-muted-foreground",
+                  TEXT.note,
+                )}
                 data-testid="field-wind"
               >
                 {end.direct

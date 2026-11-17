@@ -11,8 +11,9 @@ export interface StripFigure {
   value: string;
   unit?: string;
   testId?: string;
-  /** Short of what it must be (the fuel past the tanks): a warning mark
-   *  before it, which useFigureFit leaves room for. */
+  /** Short of what it must be (the fuel past the tanks), or wrong (a
+   *  destination not known): a warning mark before it, which useFigureFit
+   *  leaves room for, and red where it is not a button. */
   alert?: boolean;
   /** The figure as a screen reader says it, name and all ("Distance, one
    *  hundred two point four nautical miles"), the shorthand hidden from
@@ -113,11 +114,22 @@ export default function FigureStrip({
               </dt>
               <dd
                 ref={i === 0 ? room : undefined}
-                className={cn(type.value, "truncate font-semibold tabular-nums", button && "overflow-visible")}
+                className={cn(
+                  type.value,
+                  "truncate font-semibold tabular-nums",
+                  button && "overflow-visible",
+                  // A figure that is not a button said wrong in red, its
+                  // mark before it (a destination not known, TripFigures).
+                  !button && f.alert && "inline-flex w-full items-baseline justify-center text-destructive",
+                )}
                 data-testid={f.testId}
+                data-alert={(!button && f.alert) || undefined}
               >
                 {button ?? (
                   <>
+                    {f.alert && (
+                      <TriangleAlert className="mr-0.5 size-[0.8em] shrink-0 self-center" aria-hidden data-testid="figure-alert-mark" />
+                    )}
                     <span
                       key={f.value}
                       aria-hidden={f.said ? true : undefined}

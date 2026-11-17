@@ -18,41 +18,44 @@ const STRIP_FIELDS = 8;
  * nearby airports as small icons"): the nearest fields as small tiles,
  * each its chart mark -- its airspace's colour, its weather's dot -- its
  * ident and how far, nearest first; a tap opens the field's card, as a row
- * of the list does. With no position yet, the way to show it. The list in
- * full is the tab's, half way up.
+ * of the list does. With no position yet, the fields nearest the map's
+ * middle, and the way to show it. The list in full is the tab's, half way up.
  */
 export function NearestStrip({
   fields,
   located,
+  nearMap = false,
   onOpen,
 }: {
   fields: NearestAirport[] | undefined;
   /** Whether there is a position (or a place typed) to be near. */
   located: boolean;
+  /** No position: the fields are the nearest the map's middle
+   *  (usePlanSearch), said so, with the way to show the position under them. */
+  nearMap?: boolean;
   onOpen: (ident: string) => void;
 }) {
   const setEnabled = useOwnShip((s) => s.setEnabled);
-  if (!located) {
-    return (
-      <Button
-        variant="link"
-        size="inline"
-        onClick={() => setEnabled(true)}
-        data-testid="nearest-strip-position"
-        // At the left where the tiles start, as every strip's words are (F-L2).
-        className={cn("relative self-start py-1 text-left after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
-      >
-        Show my position
-      </Button>
-    );
-  }
+  const showPosition = (
+    <Button
+      variant="link"
+      size="inline"
+      onClick={() => setEnabled(true)}
+      data-testid="nearest-strip-position"
+      // At the left where the tiles start, as every strip's words are (F-L2).
+      className={cn("relative self-start py-1 text-left after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
+    >
+      Show my position
+    </Button>
+  );
+  if (!located && !nearMap) return showPosition;
   if (!fields)
     return (
       <p className={cn("py-1 text-center text-foreground/65", TEXT.note)} role="status">
         Fetching the nearest fields…
       </p>
     );
-  return (
+  const strip = (
     <PillStrip testId="nearest-strip">
       {fields.slice(0, STRIP_FIELDS).map((field) => {
         const use = field.military === "military" ? "military" : field.private ? "private" : null;
@@ -73,5 +76,17 @@ export function NearestStrip({
         );
       })}
     </PillStrip>
+  );
+  if (!nearMap) return strip;
+  // Near the map's middle, not the pilot (the UI audit's C9): said, and the
+  // way to the pilot's own nearest under it.
+  return (
+    <div className="flex flex-col gap-2" data-near="map">
+      {strip}
+      <p className={cn("flex flex-wrap items-baseline gap-x-2 text-foreground/65", TEXT.note)}>
+        <span data-testid="nearest-strip-near-map">Near the middle of the map.</span>
+        {showPosition}
+      </p>
+    </div>
   );
 }
