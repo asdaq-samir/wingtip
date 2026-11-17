@@ -1,9 +1,9 @@
 import { Coffee, Fuel, PlaneLanding, PlaneTakeoff, Plus, Route, Trash2 } from "lucide-react";
 import { cn } from "cn";
-import { Button } from "../../../../components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../../../components/ui/dropdown-menu";
-import type { BranchFix } from "../../../../lib/procedures";
-import { TEXT } from "../../../../lib/text";
+import { Button } from "../../components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
+import type { BranchFix } from "../../lib/procedures";
+import { TEXT } from "../../lib/text";
 
 /** An instrument procedure picked at a point of the route (the route's
  *  Procedures), said in the box after the point's pill: its field, its

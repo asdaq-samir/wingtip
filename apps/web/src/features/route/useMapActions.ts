@@ -1,19 +1,18 @@
 import { useCallback, useEffect } from "react";
-import { api } from "../../../lib/api/client";
-import type { AircraftChoice } from "../../../lib/api/types";
-import { N_NUMBER, shortName } from "../../../lib/aircraftChoice";
-import { useAtcRadio, useRadioActions } from "../../../lib/atcRadio";
-import { useGeo } from "../../../lib/geo";
-import { MAX_STOPS } from "../../../lib/identSchema";
-import { usePointActions } from "../../../lib/map/cards/pointActions";
-import { useOwnShip } from "../../../lib/map/position/ownShip";
-import { useEngineReady } from "../../../lib/engine/useEngineReady";
-import type { TypedProcedure } from "../../../lib/procedures";
-import type { RouteParts } from "../components/RouteBox";
-import type { PlannedRoute } from "./planAddress";
-import type { PlanCourse } from "./planTypes";
+import { api } from "../../lib/api/client";
+import type { AircraftChoice } from "../../lib/api/types";
+import { N_NUMBER, shortName } from "../../lib/aircraftChoice";
+import { useAtcRadio, useRadioActions } from "../../lib/atcRadio";
+import { useGeo } from "../../lib/geo";
+import { MAX_STOPS } from "../../lib/identSchema";
+import { usePointActions } from "../../lib/map/cards/pointActions";
+import { useOwnShip } from "../../lib/map/position/ownShip";
+import { useEngineReady } from "../../lib/engine/useEngineReady";
+import type { TypedProcedure } from "../../lib/procedures";
+import type { RouteParts } from "./RouteBox";
+import type { PlannedRoute, PlanCourse } from "../plan";
 import type { useRouteEdits } from "./useRouteEdits";
-import { coursePoints } from "../../../lib/course";
+import { coursePoints } from "../../lib/course";
 
 type RouteEdits = ReturnType<typeof useRouteEdits>;
 

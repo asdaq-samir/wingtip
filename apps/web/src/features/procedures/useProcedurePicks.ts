@@ -19,7 +19,8 @@ import { procedureQuery, proceduresQuery, queryClient } from "../../lib/queryCli
 import type { TrafficPattern } from "../../lib/trafficPattern";
 import type { OpenFix } from "./FixCard";
 import type { ProcedureAirport, ProceduresAt } from "./ProceduresRoute";
-import { type RouteProcedure, routeBeforeDirect, type PlannedRoute } from "../plan";
+import type { RouteProcedure } from "../route";
+import { routeBeforeDirect, type PlannedRoute } from "../plan";
 
 /** The procedures drawn, the queries that have answered. */
 export const drawnOnly = (results: { data?: ProcedureDrawing }[]) => results.flatMap((r) => (r.data ? [r.data] : []));

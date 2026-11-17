@@ -3,7 +3,7 @@ import { normalizeDeg } from "../../lib/geo";
 import { sameField } from "../../lib/procedures";
 import { altFt } from "../../lib/format";
 import { isFixIdent, visitKey } from "../../lib/identSchema";
-import { PointFigures, PointMenu } from "../plan/lazy";
+import { PointFigures, PointMenu } from "../route/lazy";
 import { legOf, type NavLogRow } from "../plan";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 import { PointGrip } from "./RouteGrid";

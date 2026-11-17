@@ -24,7 +24,7 @@ import { startLongTaskReports } from "./lib/longTasks";
 import { startLoadLog } from "./lib/loadLog";
 import MapPage from "./features/shell/MapPage";
 import { prefetchRouteMap } from "./features/plan-map/routeMapChunk";
-import { prefetchRouteBox } from "./features/plan/routeBoxChunk";
+import { prefetchRouteBox } from "./features/route/routeBoxChunk";
 import { prefetchShareMenu } from "./features/share/shareMenuChunk";
 import { loadPopups } from "./components/popupsChunk";
 import "./index.css";

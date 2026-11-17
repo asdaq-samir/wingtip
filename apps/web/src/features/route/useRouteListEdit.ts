@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
-import type { Detour } from "../../../lib/api/types";
-import { identOf, isAirwayToken, isPosition } from "../../../lib/identSchema";
-import type { RouteParts } from "../components/RouteBox";
-import type { PlanCourse } from "./planTypes";
+import type { Detour } from "../../lib/api/types";
+import { identOf, isAirwayToken, isPosition } from "../../lib/identSchema";
+import type { RouteParts } from "./RouteBox";
+import type { PlanCourse } from "../plan";
 
 /** The route's points with one moved from `from` to `to`, as FPL's list
  *  drags them: the ends kept airports or a position (`isEnd`), as the box

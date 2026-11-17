@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { RouteChip, RouteOptions } from "../../../lib/api/types";
+import type { RouteChip, RouteOptions } from "../../lib/api/types";
 import { wayCards } from "./useRouteLine";
 
 const chip = (key: string, stops: string[], crosses: number[] = []) =>

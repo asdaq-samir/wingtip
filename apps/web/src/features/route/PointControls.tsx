@@ -14,11 +14,11 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "cn";
-import { Button } from "../../../components/ui/button";
-import RoundButton from "../../../components/RoundButton";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "../../../components/ui/dropdown-menu";
+import { Button } from "../../components/ui/button";
+import RoundButton from "../../components/RoundButton";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 import { DROPDOWN, useAfterMenu, type MenuKit } from "./pointMenu";
-import { TEXT } from "../../../lib/text";
+import { TEXT } from "../../lib/text";
 
 /** What a point's altitude is: a field's elevation, the plan's cruise to
  *  it, the chart's crossing at a procedure's fix, or the pilot's own. */

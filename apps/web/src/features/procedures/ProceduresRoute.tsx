@@ -3,9 +3,9 @@ import CloseButton from "../../components/CloseButton";
 import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } from "../../components/ResponsivePopover";
 import { sameField } from "../../lib/procedures";
 import { frdOf, isPosition, placeOfPoint, pointName } from "../../lib/identSchema";
-import { etaAt, legOf, rowPoint, type NavLogRow, type ProcedureAirport, loadPointAltitudeDialog } from "../plan";
+import { etaAt, legOf, rowPoint, type NavLogRow, type ProcedureAirport } from "../plan";
 import { PointMark } from "../navlog/lazy";
-import { PointFigures } from "../plan/lazy";
+import { PointFigures } from "../route/lazy";
 import { FuelGauge } from "./FuelGauge";
 import { useProceduresRoute, type ProceduresRouteProps } from "./useProceduresRoute";
 import { RouteLine } from "./RouteLine";
@@ -23,6 +23,7 @@ import { plateTitle } from "../plates";
 export type { ProcedureAirport } from "../plan";
 export type { FitInputs, ProceduresAt } from "./useProceduresRoute";
 export { RouteLine } from "./RouteLine";
+import { loadPointAltitudeDialog } from "../route";
 
 // Opened only from a point's menu, so fetched as one first is: in the
 // first load they took it over its 1.10 MB budget (CI, 2026-10-20).

@@ -3,32 +3,32 @@ import { Autocomplete, Token, TokenField, TokenInput } from "react-aria-componen
 import { TriangleAlert } from "lucide-react";
 import { ScrollArea } from "@base-ui/react/scroll-area";
 import { cn } from "cn";
-import ClearButton from "../../../components/ClearButton";
-import { PANEL_FIELD } from "../../../components/panelField";
-import { Button } from "../../../components/ui/button";
-import { Alert, AlertAction, AlertDescription } from "../../../components/ui/alert";
-import { InputGroup } from "../../../components/ui/input-group";
-import { Popover, PopoverContent } from "../../../components/ui/popover";
-import type { FuelStopSuggestion } from "../../../lib/api/types";
-import { useKeyboardInset } from "../../../hooks/use-viewport";
-import { fromChunk } from "../../../lib/fromChunk";
-import { TEXT } from "../../../lib/text";
+import ClearButton from "../../components/ClearButton";
+import { PANEL_FIELD } from "../../components/panelField";
+import { Button } from "../../components/ui/button";
+import { Alert, AlertAction, AlertDescription } from "../../components/ui/alert";
+import { InputGroup } from "../../components/ui/input-group";
+import { Popover, PopoverContent } from "../../components/ui/popover";
+import type { FuelStopSuggestion } from "../../lib/api/types";
+import { useKeyboardInset } from "../../hooks/use-viewport";
+import { fromChunk } from "../../lib/fromChunk";
+import { TEXT } from "../../lib/text";
 import PointAltitudeDialog, { type EditedPoint } from "./PointAltitudeDialog";
-import type { RouteProcedure } from "./routeBox/RouteChips";
-import type { RouteBoxProps } from "./routeBox/routeBoxProps";
-import RouteToken from "./routeBox/RouteToken";
-import type { RouteValue } from "./routeBox/routeTokens";
-import { useRouteBox } from "../hooks/useRouteBox";
+import type { RouteProcedure } from "./RouteChips";
+import type { RouteBoxProps } from "./routeBoxProps";
+import RouteToken from "./RouteToken";
+import type { RouteValue } from "./routeTokens";
+import { useRouteBox } from "./useRouteBox";
 
-export type { RouteParts } from "./routeBox/routeEdit";
-export type { RouteProcedure } from "./routeBox/RouteChips";
+export type { RouteParts } from "./routeEdit";
+export type { RouteProcedure } from "./RouteChips";
 
 // The suggestions' list on a chunk of its own: React Aria's ListBox, which
 // the route panel's chunk brings once the page has painted, kept out of
 // the box's, which comes beside the first script (routeBoxChunk). Asked
 // for as the box is first taken, before anything is typed.
 const { Part: RouteSuggestions, prefetch: prefetchSuggestions } = fromChunk(
-  () => import("./routeBox/RouteSuggestions"),
+  () => import("./RouteSuggestions"),
   (m) => m.default,
 );
 

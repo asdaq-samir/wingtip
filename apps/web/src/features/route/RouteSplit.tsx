@@ -2,10 +2,10 @@ import { Button as BaseButton } from "@base-ui/react/button";
 import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { cn } from "cn";
-import AirportPicker from "../../../components/AirportPicker";
-import { PANEL_FIELD_FILL } from "../../../components/panelField";
-import { pointName } from "../../../lib/identSchema";
-import { TEXT } from "../../../lib/text";
+import AirportPicker from "../../components/AirportPicker";
+import { PANEL_FIELD_FILL } from "../../components/panelField";
+import { pointName } from "../../lib/identSchema";
+import { TEXT } from "../../lib/text";
 
 /** The course's magenta, as the plan's line and its marks. */
 const COURSE = { borderColor: "var(--course)" } as const;

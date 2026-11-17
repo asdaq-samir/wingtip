@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 // points on a touch screen; a raw text-sm or text-xs stayed 14 and 12
 // on the phone (the design audit, 2026-10-08).
 const FILES = [
-  "features/plan/components/PointAltitudeDialog.tsx",
+  "features/route/PointAltitudeDialog.tsx",
   "components/SignInModal.tsx",
   "features/pilot/LinkSignIn.tsx",
   "features/place/PlaceCard.tsx",

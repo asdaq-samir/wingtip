@@ -1,19 +1,19 @@
 import { useState } from "react";
 import { TriangleAlert } from "lucide-react";
 import { cn } from "cn";
-import AirportPicker from "../../../../components/AirportPicker";
-import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "../../../../components/ui/context-menu";
-import { isPosition, pointName } from "../../../../lib/identSchema";
-import type { AirspaceClass } from "../../../../lib/preferences";
-import { useAirspace } from "../../../../lib/useAirspace";
-import { airportMarkSvg } from "../../../../lib/map/marks/airportMark";
-import { colourOf } from "../../../../lib/map/marks/flightCategory";
-import { WAYPOINT_MAGENTA } from "../../../../lib/map/marks/chartColors";
-import { feet, flightLevel } from "../../../../lib/format";
-import { TEXT } from "../../../../lib/text";
-import { PointMenuItems } from "../PointControls";
-import { CONTEXT_MENU, useAfterMenu } from "../pointMenu";
-import type { PointAltitude } from "../PointAltitudeDialog";
+import AirportPicker from "../../components/AirportPicker";
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "../../components/ui/context-menu";
+import { isPosition, pointName } from "../../lib/identSchema";
+import type { AirspaceClass } from "../../lib/preferences";
+import { useAirspace } from "../../lib/useAirspace";
+import { airportMarkSvg } from "../../lib/map/marks/airportMark";
+import { colourOf } from "../../lib/map/marks/flightCategory";
+import { WAYPOINT_MAGENTA } from "../../lib/map/marks/chartColors";
+import { feet, flightLevel } from "../../lib/format";
+import { TEXT } from "../../lib/text";
+import { PointMenuItems } from "./PointControls";
+import { CONTEXT_MENU, useAfterMenu } from "./pointMenu";
+import type { PointAltitude } from "./PointAltitudeDialog";
 import { holdGuard } from "./holdGuard";
 
 /** One point of the route: its ident in its airspace's look, a tap to

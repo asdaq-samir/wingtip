@@ -9,11 +9,8 @@
  * through this file only; it reaches none of them.
  */
 
-export { default as DirectStrip } from "./components/DirectStrip";
 export { default as FplStrip } from "./components/FplStrip";
-export type { EditedPoint, PointAltitude } from "./components/PointAltitudeDialog";
 export { RecentRoutesPage } from "./components/RecentRoutes";
-export type { RouteParts, RouteProcedure } from "./components/RouteBox";
 export type { BriefingPart } from "./components/briefing/sections";
 export { type DryRun, type Flown, dryRunAt, dryRunFlown, dryRunOf, dryRunRow, runNmAt } from "./components/navlog/dryRun";
 export { type CourseLine, dryRunNext, gpsAhead, useFlyingTo } from "./components/navlog/flyingTo";
@@ -66,6 +63,7 @@ export { briefingLegs } from "./hooks/briefingLegs";
 export { panelNow, riseToSee } from "./hooks/panelNow";
 export {
   NO_AUTO,
+  NO_DIRECT,
   type PlannedRoute,
   type SuggestedStop,
   approximateOf,
@@ -75,6 +73,7 @@ export {
   landingRunways,
   namesRoute,
   procsWithoutDirect,
+  renamed,
   routeBeforeDirect,
   suggestedStopAt,
 } from "./hooks/planAddress";
@@ -83,16 +82,12 @@ export type { Landing, ProcedureAirport, ProcedureKind } from "./hooks/procedure
 export { type AirplaneRow, useAirplaneHits } from "./hooks/useAirplaneHits";
 export { type Description, descriptionKey } from "./hooks/useCheckpointNotes";
 export { useLoad } from "./hooks/useLoad";
-export { useMapActions } from "./hooks/useMapActions";
 export { type PanelList, type PanelView, useAddressCards, usePanelView } from "./hooks/usePanelView";
-export { type BriefingState, type PlanParams, navlogQuery, usePlan } from "./hooks/usePlan";
+export { type BriefingState, type PlanParams, type Unflyable, navlogQuery, usePlan } from "./hooks/usePlan";
 export { usePlanSetters } from "./hooks/usePlanSetters";
-export { useRouteEdits } from "./hooks/useRouteEdits";
-export { useRouteLine } from "./hooks/useRouteLine";
-export { useRouteListEdit } from "./hooks/useRouteListEdit";
-export { useRouteTidy } from "./hooks/useRouteTidy";
-export { useRouteWays } from "./hooks/useRouteWays";
+export { type Browsing, type FuelCard, useRouteWays } from "./hooks/useRouteWays";
 export { nearOf, useSearchResultRows, useSearchResults } from "./hooks/useSearchResults";
+export { FIELD_LIST_KEYS, fieldListParams, fieldListsOf, prunedFieldLists } from "./lib/fieldLists";
 export type { SuaWhen, TfrWhen } from "./lib/passTimes";
 export {
   type RunwayEnd,
@@ -110,7 +105,7 @@ export {
 } from "./lib/pattern";
 export { type RadioCall, type RadioPhase, callSign, fieldPhases, placeName } from "./lib/radio";
 export { type Hold, holdWords, holdsOf, holdsParam, lengthCode, lengthOfCode, lengthWords } from "./lib/routeHolds";
-export { sameStops } from "./lib/routeWays";
+export { gridScale, sameStops, wayTime } from "./lib/routeWays";
 export { readQuery } from "./lib/searchFilters";
 export { useTabSearch } from "./lib/tabSearch";
 export { runwayCrosswindKt } from "./lib/wind";
@@ -127,13 +122,9 @@ export {
   stopPastFlight,
   usePastFlight,
 } from "./map/pastFlight";
-export { RouteBox } from "./routeBoxChunk";
 
 /** NearestCard, on a chunk of its own, as its importer loads it. */
 export const loadNearestCard = () => import("./components/NearestCard");
-
-/** PointAltitudeDialog, on a chunk of its own, as its importer loads it. */
-export const loadPointAltitudeDialog = () => import("./components/PointAltitudeDialog");
 
 /** SearchResultsPage, on a chunk of its own, as its importer loads it. */
 export const loadSearchResultsPage = () => import("./components/search/SearchResultsPage");

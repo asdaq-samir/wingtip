@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, type Dispatch, type SetStateAction } from "react";
-import type { RouteChip, RouteOptions } from "../../../lib/api/types";
-import { duration } from "../../../lib/format";
-import { callEngine } from "../../../lib/engine/engine";
-import type { RouteWay } from "../../../lib/map/route/routeWays";
-import { gridScale, sameStops, wayTime } from "../lib/routeWays";
+import type { RouteChip, RouteOptions } from "../../lib/api/types";
+import { duration } from "../../lib/format";
+import { callEngine } from "../../lib/engine/engine";
+import type { RouteWay } from "../../lib/map/route/routeWays";
+import { gridScale, sameStops, wayTime, type Browsing, type FuelCard } from "../plan";
 import type { useRouteEdits } from "./useRouteEdits";
-import type { Browsing, FuelCard } from "./useRouteWays";
 
 /** No ways on the chart: one array for good, so the map's memo holds. */
 const NO_WAYS: RouteWay[] = [];

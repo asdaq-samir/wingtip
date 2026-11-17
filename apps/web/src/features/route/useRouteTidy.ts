@@ -1,11 +1,10 @@
 import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { Address, AddressChange, SetAddress } from "../../../lib/address";
-import { FIELD_LIST_KEYS, fieldListParams, fieldListsOf, prunedFieldLists } from "../lib/fieldLists";
-import { identOf } from "../../../lib/identSchema";
-import { sameField } from "../../../lib/procedures";
-import { airportQuery } from "../../../lib/queryClient";
-import { renamed, type PlannedRoute } from "./planAddress";
+import type { Address, AddressChange, SetAddress } from "../../lib/address";
+import { FIELD_LIST_KEYS, fieldListParams, fieldListsOf, prunedFieldLists, renamed, type PlannedRoute } from "../plan";
+import { identOf } from "../../lib/identSchema";
+import { sameField } from "../../lib/procedures";
+import { airportQuery } from "../../lib/queryClient";
 import { procedureKind } from "./useRouteEdits";
 
 /**

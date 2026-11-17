@@ -3,7 +3,8 @@ import { useFailedAction } from "../../lib/problems";
 import { holdAskOnOpen } from "../../lib/map/position/ownShip";
 import { useFirstFlight } from "./useFirstFlight";
 import type { PanelState } from "../../lib/mapChrome";
-import type { PanelView, RouteParts } from "../plan";
+import type { PanelView } from "../plan";
+import type { RouteParts } from "../route";
 
 /** Each its own chunk, off the first load every pilot waits for
  *  (scripts/first-load.mjs): drawn once on a device, if ever. */

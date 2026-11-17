@@ -9,7 +9,6 @@ import {
   landingRunways,
   namesRoute,
   type PlannedRoute,
-  useRouteEdits,
   type PlanCourse,
 } from "../../plan";
 import { altitudesOf, altitudesParam, departureOf, groundOf, identOf, nameOwnPoints, routeOf, stopsOf } from "../../../lib/identSchema";
@@ -21,6 +20,7 @@ import { picksOf } from "../../../lib/flightLink";
 import { proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
 import { airportQuery, procedureQuery } from "../../../lib/queryClient";
 import { drawnOnly } from "../../procedures";
+import { useRouteEdits } from "../../route";
 
 /**
  * The route as the address has it (usePlanWorkspace): its points, the

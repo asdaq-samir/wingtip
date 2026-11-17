@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import type { Detour } from "../../../lib/api/types";
-import { frdOf, identOf, isPosition, MAX_STOPS, stopOf } from "../../../lib/identSchema";
-import { usePreferences, type RecentAirport } from "../../../lib/preferences";
-import type { TypedProcedure } from "../../../lib/procedures";
-import { useAirportSearch } from "../../../lib/useAirportSearch";
-import { pointsOf, readTyped, roleAt, routeOf, withoutPoint, withTyped, type RouteParts } from "../components/routeBox/routeEdit";
-import { releaseTyped } from "../components/routeBox/routeEdit";
-import { endedWords, removedPoint, routeValue, samePoints, takeTyped, tokensOf, typedOf } from "../components/routeBox/routeTokens";
-import type { RouteValue } from "../components/routeBox/routeTokens";
+import type { Detour } from "../../lib/api/types";
+import { frdOf, identOf, isPosition, MAX_STOPS, stopOf } from "../../lib/identSchema";
+import { usePreferences, type RecentAirport } from "../../lib/preferences";
+import type { TypedProcedure } from "../../lib/procedures";
+import { useAirportSearch } from "../../lib/useAirportSearch";
+import { pointsOf, readTyped, roleAt, routeOf, withoutPoint, withTyped, type RouteParts } from "./routeEdit";
+import { releaseTyped } from "./routeEdit";
+import { endedWords, removedPoint, routeValue, samePoints, takeTyped, tokensOf, typedOf } from "./routeTokens";
+import type { RouteValue } from "./routeTokens";
 import { useRouteCaret } from "./useRouteCaret";
 import { useStopAsked } from "./useStopAsked";
 

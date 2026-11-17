@@ -6,7 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../compo
 import { altitudeLines, decorationOf, fixRoles, type BranchFix } from "../../lib/procedures";
 import { altFt } from "../../lib/format";
 import { TEXT } from "../../lib/text";
-import { PointFigures, PointMenu } from "../plan/lazy";
+import { PointFigures, PointMenu } from "../route/lazy";
 
 /**
  * A procedure picked at a field, its fixes a branch off the route's line in

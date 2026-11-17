@@ -1,12 +1,12 @@
 import { useId, useState } from "react";
-import SheetDialog from "../../../components/SheetDialog";
-import { useDiscardGuard } from "../../../components/discardGuard";
-import { Button } from "../../../components/ui/button";
-import { NumberField } from "../../../components/ui/number-field";
-import { THREE_FIGURES, WHOLE } from "../../../components/ui/numberFormats";
-import { callEngine } from "../../../lib/engine/engine";
-import { TEXT } from "../../../lib/text";
-import { altFt, flightLevel } from "../../../lib/format";
+import SheetDialog from "../../components/SheetDialog";
+import { useDiscardGuard } from "../../components/discardGuard";
+import { Button } from "../../components/ui/button";
+import { NumberField } from "../../components/ui/number-field";
+import { THREE_FIGURES, WHOLE } from "../../components/ui/numberFormats";
+import { callEngine } from "../../lib/engine/engine";
+import { TEXT } from "../../lib/text";
+import { altFt, flightLevel } from "../../lib/format";
 
 /** The altitude at a point of the route: the pilot's own (`own`), else
  *  the plan's -- a waypoint's cruise there, an airport's pattern -- in

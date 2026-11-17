@@ -1,9 +1,9 @@
 import { ChevronsUpDown } from "lucide-react";
 import { cn } from "cn";
-import { CHIP_TEXT } from "../../../lib/mapChrome";
-import { Button } from "../../../components/ui/button";
-import PullDown from "../../../components/PullDown";
-import { duration } from "../../../lib/format";
+import { CHIP_TEXT } from "../../lib/mapChrome";
+import { Button } from "../../components/ui/button";
+import PullDown from "../../components/PullDown";
+import { duration } from "../../lib/format";
 
 /** How long a local flight stays aloft, from the times PlanWorkspace allows:
  *  the app's pull-down (PullDown) behind a chip beside the pill's other

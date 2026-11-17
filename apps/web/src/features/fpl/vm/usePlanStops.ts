@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useEffectEvent } from "react";
 import { checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
-import { navlogQuery, suggestedStopAt, useMapActions } from "../../plan";
+import { navlogQuery, suggestedStopAt } from "../../plan";
 import { useSuggestedStops, withStopsAfter } from "../../stops";
+import { useMapActions } from "../../route";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanCards } from "./usePlanCards";

@@ -1,5 +1,5 @@
-import { departureOf, stopOf } from "../../../lib/identSchema";
-import { askSearchPick, useSearchPick } from "../../../lib/oneSearch";
+import { departureOf, stopOf } from "../../lib/identSchema";
+import { askSearchPick, useSearchPick } from "../../lib/oneSearch";
 
 /**
  * The route box's arrow between two points asking the one search for the

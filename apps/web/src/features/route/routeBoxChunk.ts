@@ -10,7 +10,7 @@ import { fromChunk } from "../../lib/fromChunk";
 // painted (routePanelParts).
 // Drawn again only when its props change (memo), as the panel's parts are.
 const { Part, prefetch } = fromChunk(
-  () => import("./components/RouteBox"),
+  () => import("./RouteBox"),
   (m) => m.default,
 );
 export const RouteBox = memo(Part);

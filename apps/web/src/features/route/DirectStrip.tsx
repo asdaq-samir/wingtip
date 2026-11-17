@@ -1,7 +1,7 @@
 import { MoveUpRight } from "lucide-react";
 import { cn } from "cn";
-import { Button } from "../../../components/ui/button";
-import { TEXT } from "../../../lib/text";
+import { Button } from "../../components/ui/button";
+import { TEXT } from "../../lib/text";
 
 /** The route flown direct to a point (PlanWorkspace's directToPoint), said
  *  over the route's figures, as mock 5 of the owner's canvas has it, and

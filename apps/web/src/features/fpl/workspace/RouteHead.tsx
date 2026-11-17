@@ -1,9 +1,10 @@
 import { Suspense } from "react";
-import { placeName, RouteBox } from "../../plan";
+import { placeName } from "../../plan";
 import { SearchNear } from "../../../lib/useAirportSearch";
 import { coverCard, useSheetCards } from "../../../lib/sheetCards";
 import { RouteLine, RouteEnds, RouteSplit } from "../routePanelParts";
 // The search, on a chunk of its own: the first screen draws it.
+import { RouteBox } from "../../route";
 import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
 
 /**

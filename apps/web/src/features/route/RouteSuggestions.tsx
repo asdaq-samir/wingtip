@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import { Header, ListBox, ListBoxItem, ListBoxSection } from "react-aria-components";
 import { cn } from "cn";
-import { AirportRowFace, type ShownAirport } from "../../../../components/AirportResults";
-import type { Detour } from "../../../../lib/api/types";
-import { bearing } from "../../../../lib/format";
-import { frdOf } from "../../../../lib/identSchema";
-import type { RecentAirport } from "../../../../lib/preferences";
-import type { AirportSearchRow } from "../../../../lib/airportIndex";
-import { TEXT } from "../../../../lib/text";
+import { AirportRowFace, type ShownAirport } from "../../components/AirportResults";
+import type { Detour } from "../../lib/api/types";
+import { bearing } from "../../lib/format";
+import { frdOf } from "../../lib/identSchema";
+import type { RecentAirport } from "../../lib/preferences";
+import type { AirportSearchRow } from "../../lib/airportIndex";
+import { TEXT } from "../../lib/text";
 
 /**
  * What answers what is typed in the route's box, under it: Fly via's ways

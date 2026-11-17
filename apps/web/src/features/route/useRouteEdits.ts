@@ -1,14 +1,13 @@
 import { useCallback } from "react";
-import { ADDRESS_CLEARED, type SetAddress } from "../../../lib/address";
-import type { Detour, ProcedureDrawing } from "../../../lib/api/types";
-import { fieldListParams, fieldListsOf, prunedFieldLists } from "../lib/fieldLists";
-import { MAX_STOPS, altitudesOf, altitudesParam, departureOf, identOf, routeOf, stopsOf } from "../../../lib/identSchema";
-import { sameField, type PickedProcedure } from "../../../lib/procedures";
-import { courseQuery, queryClient } from "../../../lib/queryClient";
-import { feel } from "../../../lib/haptics";
-import { rebasedRoute } from "../lib/routeRebase";
-import type { RouteParts } from "../components/RouteBox";
-import { NO_DIRECT } from "./planAddress";
+import { ADDRESS_CLEARED, type SetAddress } from "../../lib/address";
+import type { Detour, ProcedureDrawing } from "../../lib/api/types";
+import { fieldListParams, fieldListsOf, prunedFieldLists, NO_DIRECT } from "../plan";
+import { MAX_STOPS, altitudesOf, altitudesParam, departureOf, identOf, routeOf, stopsOf } from "../../lib/identSchema";
+import { sameField, type PickedProcedure } from "../../lib/procedures";
+import { courseQuery, queryClient } from "../../lib/queryClient";
+import { feel } from "../../lib/haptics";
+import { rebasedRoute } from "./routeRebase";
+import type { RouteParts } from "./RouteBox";
 
 /** A picked procedure's kind, from its drawing where it has been asked for:
  *  what prunedFieldLists needs to keep an approach only where the route
@@ -44,7 +43,7 @@ export function useRouteEdits({
   // as the route's close leaves it (clearRoute).
   // An edit is worked out from the route this render drew; made while the
   // address is a change ahead of it, it is carried onto the address's
-  // route (features/plan/lib/routeRebase), never written over it.
+  // route (features/route/routeRebase), never written over it.
   const drawnDep = planned.dep,
     drawnDest = planned.dest,
     stops = planned.stops;

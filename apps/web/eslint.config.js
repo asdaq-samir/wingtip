@@ -52,7 +52,7 @@ const GEO_BANS = [
 // into live words, the owner's pick of 2026-11-09) and the scale bar
 // (ZoomBanner.tsx, drawn to the map's zoom).
 const HAND_BUILT_KEPT = [
-  "src/features/plan/components/RouteBox.tsx",
+  "src/features/route/RouteBox.tsx",
   "src/components/MapControls.tsx",
   "src/components/RadioLayer.tsx",
   "src/components/ZoomBanner.tsx",

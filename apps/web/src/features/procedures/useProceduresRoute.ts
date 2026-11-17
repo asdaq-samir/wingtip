@@ -1,20 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 import { useQueries } from "@tanstack/react-query";
-import {
-  useWindPicks,
-  type PointAltitude,
-  type Hold,
-  legOf,
-  type NavLogRow,
-  type Landing,
-  type ProcedureAirport,
-  type ProcedureKind,
-} from "../plan";
+import { useWindPicks, type Hold, legOf, type NavLogRow, type Landing, type ProcedureAirport, type ProcedureKind } from "../plan";
 import type { AircraftProfile, Detour, ProcedureList, ProcedureSummary } from "../../lib/api/types";
 import { plateQuery, proceduresQuery } from "../../lib/queryClient";
 import { approachRunway, sameField, type BranchFix, type PickedProcedure } from "../../lib/procedures";
 import { useOwnShip } from "../../lib/map/position/ownShip";
+import type { PointAltitude } from "../route";
 import { useFuelStops } from "./useFuelStops";
 import { cycleDate } from "./procedureWords";
 import { useRouteSheets } from "./useRouteSheets";

@@ -1,13 +1,13 @@
 import { Fragment } from "react";
 import { ArrowRight } from "lucide-react";
 import { cn } from "cn";
-import { TEXT } from "../../../../lib/text";
-import type { FuelStopSuggestion } from "../../../../lib/api/types";
-import { Button } from "../../../../components/ui/button";
-import { identOf } from "../../../../lib/identSchema";
-import type { AirspaceClass } from "../../../../lib/preferences";
-import { sameField } from "../../../../lib/procedures";
-import type { PointAltitude } from "../PointAltitudeDialog";
+import { TEXT } from "../../lib/text";
+import type { FuelStopSuggestion } from "../../lib/api/types";
+import { Button } from "../../components/ui/button";
+import { identOf } from "../../lib/identSchema";
+import type { AirspaceClass } from "../../lib/preferences";
+import { sameField } from "../../lib/procedures";
+import type { PointAltitude } from "./PointAltitudeDialog";
 import { FuelStopChip, ProcedureChip, type RouteProcedure } from "./RouteChips";
 import RoutePill from "./RoutePill";
 

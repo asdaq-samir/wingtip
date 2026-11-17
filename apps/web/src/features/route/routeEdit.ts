@@ -1,5 +1,5 @@
-import { MAX_STOPS, stopOf } from "../../../../lib/identSchema";
-import { TYPED_PROCEDURE, type TypedProcedure } from "../../../../lib/procedures";
+import { MAX_STOPS, stopOf } from "../../lib/identSchema";
+import { TYPED_PROCEDURE, type TypedProcedure } from "../../lib/procedures";
 
 /** The route as the box changes it: either end may be missing (half a
  *  route, the other end still to be typed), and neither means none. */

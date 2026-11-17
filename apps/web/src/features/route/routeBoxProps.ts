@@ -1,7 +1,7 @@
-import type { Detour, FuelStopSuggestion } from "../../../../lib/api/types";
-import type { AirspaceClass } from "../../../../lib/preferences";
-import type { TypedProcedure } from "../../../../lib/procedures";
-import type { PointAltitude } from "../PointAltitudeDialog";
+import type { Detour, FuelStopSuggestion } from "../../lib/api/types";
+import type { AirspaceClass } from "../../lib/preferences";
+import type { TypedProcedure } from "../../lib/procedures";
+import type { PointAltitude } from "./PointAltitudeDialog";
 import type { RouteProcedure } from "./RouteChips";
 import type { RouteParts } from "./routeEdit";
 

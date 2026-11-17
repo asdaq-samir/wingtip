@@ -1,9 +1,9 @@
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, type MouseEvent, type RefObject } from "react";
 import { TokenFieldValue } from "react-aria-components";
 import { setTokenFieldSelection } from "react-aria-components/TokenField";
-import type { Detour } from "../../../lib/api/types";
-import { prefersReducedMotion } from "../../../lib/motion";
-import { caretBefore, type RouteValue } from "../components/routeBox/routeTokens";
+import type { Detour } from "../../lib/api/types";
+import { prefersReducedMotion } from "../../lib/motion";
+import { caretBefore, type RouteValue } from "./routeTokens";
 
 /**
  * Where the route box's caret goes (useRouteBox): on a tap in the box's

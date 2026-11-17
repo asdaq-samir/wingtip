@@ -5,7 +5,7 @@ import { Button } from "../../../components/ui/button";
 import { EngineGate } from "../../../lib/engine/engineGate";
 import { TEXT } from "../../../lib/text";
 import { TripFigures } from "../../navlog";
-import { DirectStrip } from "../../plan";
+import { DirectStrip } from "../../route";
 import { DryRunFigures } from "../routePanelParts";
 import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
 import { FplTabBar } from "./FplTabBar";

@@ -1,5 +1,5 @@
 import { useRunwayPicks, useFieldPatterns, useProcedurePicks } from "../../procedures";
-import { useRouteTidy } from "../../plan";
+import { useRouteTidy } from "../../route";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 

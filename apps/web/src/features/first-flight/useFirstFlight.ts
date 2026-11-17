@@ -4,8 +4,9 @@ import { positionNow } from "../../lib/map/position/ownShip";
 import { askSearchPick, useSearchPick, type SearchPick } from "../../lib/oneSearch";
 import { usePreferences } from "../../lib/preferences";
 import { FIRST_FLIGHT, FPL_TIP, unseen, useTips } from "../../lib/firstRunTips";
-import { type RouteParts, type PanelView, riseToSee } from "../plan";
+import type { RouteParts } from "../route";
 import type { PanelState } from "../../lib/mapChrome";
+import { type PanelView, riseToSee } from "../plan";
 
 /**
  * The first flight (FirstFlight), the owner's option A (2026-11-13): a

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { normalizeDeg } from "../../lib/geo";
 import { sameField, type PickedProcedure } from "../../lib/procedures";
-import { type EditedPoint, type Hold, legOf, type NavLogRow } from "../plan";
+import type { EditedPoint } from "../route";
 import type { HoldAt } from "./HoldSheet";
+import { type Hold, legOf, type NavLogRow } from "../plan";
 
 /** The one sheet FPL's route list has open over it (ProceduresRoute): a
  *  point's altitude (PointAltitudeDialog), a fix made off a point

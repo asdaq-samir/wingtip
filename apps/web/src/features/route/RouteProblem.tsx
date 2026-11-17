@@ -1,9 +1,9 @@
-import { Button } from "../../../components/ui/button";
-import { wholeNm } from "../../../lib/format";
+import { Button } from "../../components/ui/button";
+import { wholeNm } from "../../lib/format";
 import { cn } from "cn";
-import { TEXT } from "../../../lib/text";
-import type { Unflyable } from "../hooks/usePlan";
-import { FINDING_TONE } from "../../../lib/findings";
+import { TEXT } from "../../lib/text";
+import type { Unflyable } from "../plan";
+import { FINDING_TONE } from "../../lib/findings";
 
 /**
  * No legal altitude for the route: where along it, why as a list, and the

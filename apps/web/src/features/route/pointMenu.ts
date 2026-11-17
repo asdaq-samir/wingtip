@@ -5,14 +5,14 @@ import {
   ContextMenuLabel,
   ContextMenuSeparator,
   ContextMenuShortcut,
-} from "../../../components/ui/context-menu";
+} from "../../components/ui/context-menu";
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
-} from "../../../components/ui/dropdown-menu";
+} from "../../components/ui/dropdown-menu";
 
 /** The menu's own parts, a DropdownMenu's or a ContextMenu's (shadcn's,
  *  the same shape). */
