@@ -55,8 +55,7 @@ test("plan page: every popup the map opens dismisses the same way", async ({ pag
   // dismissed one and left the other sitting there, over the markers
   // underneath it, swallowing their clicks. The map's openCard gives all
   // of them one dismissal, and this is the test that says so.
-  // Class B on from the start, from the route's ••• menu.
-  await routeMenuSwitch(page, "class-b-toggle", true);
+  // The Class B fields always drawn (the owner, 2026-11-17).
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await expect(page.locator("[data-chart-zoom]")).toBeAttached();

@@ -7,9 +7,9 @@ import { fromRest } from "./startState";
  * to its line to read, the figures and the Routes' chips under it; a tap on
  * the line opens it to edit, its airport cards with their roles, the
  * route's field and the figures under them; Done folds it, the sheet back
- * where it was. Labels C: "Airplane" and "Cruise" over the first row's
- * fields, each card's role over its ident, "Suggested routes" over the
- * chips. Show Route As and its three layouts are gone.
+ * where it was. Labels C: each card's role over its ident, "Suggested
+ * routes" over the chips; the first row's fields bare. Show Route As and
+ * its three layouts are gone.
  */
 test.describe("/app/plan", () => {
   test("the route folds to its line, opens to its cards at a tap, and folds again at Done", async ({ page }) => {
@@ -19,19 +19,26 @@ test.describe("/app/plan", () => {
     await openPanel(page);
     const drawer = sideDrawer(page);
 
-    // The first row's labels, inside its fields.
-    await expect(drawer.getByTestId("aircraft-select-caption")).toHaveText("Airplane");
-    await expect(drawer.getByTestId("altitude-group-caption")).toHaveText("Cruise");
+    // The first row's fields bare, no captions (the owner, 2026-11-17: "No
+    // need for airplane and cruise labels"), their names VoiceOver's.
+    await expect(drawer.getByTestId("aircraft-select-caption")).toHaveCount(0);
+    await expect(drawer.getByTestId("altitude-group-caption")).toHaveCount(0);
+    await expect(drawer.getByTestId("aircraft-input")).toHaveAccessibleName(/^Airplane, N-number/);
 
-    // Folded: the line with both ends, the figures, the Routes under their
-    // heading, and nothing else -- no cards, no field.
-    const line = drawer.getByTestId("route-summary");
-    await expect(line).toBeVisible({ timeout: slow(30_000) });
+    // Folded: the timeline, one line an airport -- its ident a link, its
+    // city, its time -- the figures, the Routes under their heading, and
+    // nothing else: no cards, no field. The timeline one disclosure.
+    const timeline = drawer.getByTestId("route-summary");
+    const line = drawer.getByTestId("route-summary-open");
+    await expect(timeline).toBeVisible({ timeout: slow(30_000) });
     await expect(line).toHaveAttribute("aria-expanded", "false");
-    await expect(line).toContainText("KORD");
-    await expect(line).toContainText("KDEN");
-    await expect(line).toContainText("1 stop");
-    await expect(line).toHaveAccessibleName(/^Route, KORD .* to KDEN .*1 stop: KOMA\. Edit$/);
+    await expect(line).toHaveAccessibleName("Route KORD to KDEN via KOMA, open");
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KOMA", "KDEN"]);
+    await expect(timeline.getByTestId("timeline-name")).toContainText(["Chicago", "Omaha", "Denver"], { timeout: slow(30_000) });
+    await expect(timeline.getByTestId("timeline-time").first()).toHaveText("Now");
+    // No words but the line's own: none ends in "…" at this size.
+    for (const name of await timeline.getByTestId("timeline-name").all())
+      expect(await name.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
     await expect(drawer.getByTestId("flight-line")).toBeVisible();
     await expect(drawer.getByTestId("route-group")).toContainText("Suggested routes", { timeout: slow(30_000) });
     await expect(drawer.getByTestId("route-field")).toHaveCount(0);
@@ -58,7 +65,7 @@ test.describe("/app/plan", () => {
     await expect(drawer.getByTestId("route-group")).toHaveCount(0);
     await expect(drawer.getByTestId("flight-line")).toHaveCount(1);
 
-    // Done: folded, the focus back on the line, the sheet back at half.
+    // Done: folded, the focus back on the timeline, the sheet back at half.
     await foldRoute(page);
     await expect(line).toBeFocused();
     await expect(drawer).toHaveAttribute("data-panel", "half");
@@ -81,25 +88,41 @@ test.describe("/app/plan", () => {
       await expect(line).toBeVisible();
       await expect(drawer.getByTestId("route-field")).toHaveCount(0);
     }
+
+    // An ident is its airport's card, not the route opened.
+    await timeline.getByTestId("timeline-ident").nth(1).click();
+    await expect(page.getByTestId("place-card")).toBeVisible();
+    await expect(drawer.getByTestId("route-done")).toHaveCount(0);
   });
 
-  test('a Direct To from where the airplane is reads "Present position", its Direct to line and Cancel folded and open', async ({
-    page,
-  }) => {
+  test("past four points the middle stops fold into one line, the next stop always shown", async ({ page }) => {
+    await page.goto("/app/plan?dep=KORD&stops=KDSM,KOMA,KLNK,KGRI&dest=KDEN");
+    await settle(page);
+    await openPanel(page);
+    const timeline = sideDrawer(page).getByTestId("route-summary");
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDSM", "KDEN"], { timeout: slow(30_000) });
+    await expect(timeline.getByTestId("timeline-more")).toHaveText("3 more stops");
+    await expect(sideDrawer(page).getByTestId("route-summary-open")).toHaveAccessibleName(
+      "Route KORD to KDEN via KDSM, KOMA, KLNK, KGRI, open",
+    );
+  });
+
+  test('a Direct To from where the airplane is reads "My Location", its Direct to line and Cancel folded and open', async ({ page }) => {
     // The owner's iPhone, 2026-11-17: the folded line read "POS0" over
-    // "Present position". One name, the pilot's words, everywhere.
+    // "Present position". One name, Apple Maps' "My Location", everywhere.
     await page.goto("/app/plan?dep=@42.2333,-87.9883&dest=KUGN&direct=KUGN&was=C81%7C%7CKUGN");
     await settle(page);
     await fromRest(page);
     await openPanel(page);
     const drawer = sideDrawer(page);
-    const line = drawer.getByTestId("route-summary");
-    await expect(line.getByTestId("route-summary-end").first()).toHaveText("Present position", { timeout: slow(30_000) });
-    await expect(line).not.toContainText("POS0");
+    const timeline = drawer.getByTestId("route-summary");
+    await expect(timeline.getByTestId("timeline-line").first()).toContainText("My Location", { timeout: slow(30_000) });
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KUGN"]);
+    await expect(timeline).not.toContainText("POS0");
     // The Direct to line over the figures, folded and open.
     const direct = drawer.getByTestId("direct-strip");
     await expect(direct).toBeVisible();
-    await line.click();
+    await drawer.getByTestId("route-summary-open").click();
     await expect(direct).toBeVisible();
     await expect(drawer).not.toContainText("POS0");
     // Cancel gives the route back as it was.

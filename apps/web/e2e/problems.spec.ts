@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { clearTheRoute, settled as settledLocator, grabberTo } from "./helpers";
+import { clearTheRoute, settled as settledLocator, grabberTo, openPanel, openRoute } from "./helpers";
 
 /**
  * What a pilot meets when things go wrong, and the toasts that are left.
@@ -145,7 +145,14 @@ test("an ident the planner does not know is said on its pill, not the map's line
   // only word was the map's line, cut off, naming the data set. The pilot
   // typed it; it is said where they typed it, with Remove.
   await page.goto("/app/plan?dep=KUGN&dest=KZZZ");
-  // Open by itself to edit, where the point is said (the one layout).
+  // Folded, its timeline's line in red with why (the one layout); opened,
+  // its field says it with Remove.
+  await openPanel(page);
+  const line = page.getByTestId("route-summary").getByTestId("timeline-line").last();
+  await expect(line).toContainText("KZZZ", { timeout: 20000 });
+  await expect(line.getByTestId("timeline-name")).toHaveText("isn't an airport or waypoint we know");
+  await expect(line.getByTestId("timeline-name")).toHaveClass(/text-destructive/);
+  await openRoute(page);
   const said = page.getByTestId("route-unknown");
   await expect(said).toContainText("KZZZ isn't an airport or waypoint we know", { timeout: 20000 });
   await expect(page.getByTestId("route-dest").locator("[aria-invalid=true]")).toHaveCount(1);
@@ -167,6 +174,11 @@ test("an ident only a field abroad goes by is no destination: no distance, no wa
   // abroad, the strip gave its distance and the Routes row its ways
   // (2026-11-17). KIGN is no US field's: the unknown place, as KZZZ is.
   await page.goto("/app/plan?dep=KUGN&dest=KIGN");
+  await openPanel(page);
+  await expect(page.getByTestId("route-summary").getByTestId("timeline-name").last()).toHaveText("isn't an airport or waypoint we know", {
+    timeout: 20000,
+  });
+  await openRoute(page);
   const said = page.getByTestId("route-unknown");
   await expect(said).toContainText("KIGN isn't an airport or waypoint we know", { timeout: 20000 });
   await expect(page.getByTestId("flight-line").getByTestId("navlog-to")).toHaveAttribute("data-alert", "true");
@@ -189,6 +201,11 @@ test("a real field abroad is said to be outside the US charts, not planned", asy
       }),
   );
   await page.goto("/app/plan?dep=KUGN&dest=AYID");
+  await openPanel(page);
+  await expect(page.getByTestId("route-summary").getByTestId("timeline-name").last()).toHaveText("is outside the US charts", {
+    timeout: 20000,
+  });
+  await openRoute(page);
   await expect(page.getByTestId("route-unknown")).toContainText("AYID is outside the US charts", { timeout: 20000 });
   await expect(page.getByTestId("flight-line").getByTestId("navlog-to")).toHaveAttribute("data-alert", "true");
   await expect(banner(page)).toHaveCount(0);

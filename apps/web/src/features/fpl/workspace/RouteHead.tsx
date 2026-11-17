@@ -2,23 +2,21 @@ import { Suspense, useEffect, useRef } from "react";
 import { cn } from "cn";
 import { Button } from "../../../components/ui/button";
 import { TEXT } from "../../../lib/text";
-import { placeName } from "../../plan";
-import { RouteSummary } from "../routePanelParts";
+import { RouteTimeline } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import { routeEditing } from "./routeEditing";
 
 /**
  * The route under FPL's first row (PlanWorkspace's `route`), in its one
  * layout (the owner, 2026-11-17, decision 0046): folded, its one line to
- * read (RouteSummary), a tap opening it; open, the head over its airport
+ * read, its timeline (RouteTimeline), a tap opening it; open, the head over its airport
  * cards (RouteEditor, in the page under it): "Route" and Done, as an iOS
  * list's Edit and Done, Done or a tap on "Route" folding it again. Before
  * the route is whole it is open, "Route" alone. The airplane's strip is
  * not here but the first row's bar over it (FplBar).
  */
-export default function RouteHead({ vm }: { vm: PlanSlices<"flight" | "plan" | "route" | "routeList"> }) {
-  const { planned, wholeRoute } = vm.route;
-  const { course, s } = vm.plan;
+export default function RouteHead({ vm }: { vm: PlanSlices<"brief" | "cards" | "flight" | "leg" | "plan" | "route" | "routeList"> }) {
+  const { wholeRoute } = vm.route;
   const { foldRoute, openRoute } = vm.routeList;
   const editing = routeEditing(vm);
   // A tap that opens or folds it keeps the focus on the toggle that is
@@ -40,8 +38,8 @@ export default function RouteHead({ vm }: { vm: PlanSlices<"flight" | "plan" | "
     if (open) openRoute();
     else foldRoute();
   };
-  // Done only where it can fold: a route whole and known.
-  const canFold = wholeRoute && !s.unknownPlace;
+  // Done only where it can fold: a whole route.
+  const canFold = wholeRoute;
   return (
     <div ref={head} className="flex min-w-0 flex-1 flex-col" data-testid={editing ? "route-editing" : "route-folded"}>
       {editing ? (
@@ -76,16 +74,9 @@ export default function RouteHead({ vm }: { vm: PlanSlices<"flight" | "plan" | "
           )}
         </div>
       ) : (
-        // Its room while its code comes: the line's own height.
-        <Suspense fallback={<div className="h-[3.25rem] rounded-full bg-card" />}>
-          <RouteSummary
-            dep={planned.dep}
-            dest={planned.dest}
-            stops={planned.stops}
-            depName={course ? placeName(course.departure.name, course.departure.ident) : null}
-            destName={course ? placeName(course.destination.name, course.destination.ident) : null}
-            onOpen={toggle(true)}
-          />
+        // Its room while its code comes: two lines' height.
+        <Suspense fallback={<div className="h-24 rounded-(--radius-banner) bg-card" />}>
+          <RouteTimeline vm={vm} onOpen={toggle(true)} />
         </Suspense>
       )}
     </div>

@@ -109,8 +109,10 @@ Compose. Nothing here is built by hand where a stock part does it.
    else acts on a card in its ••• menu or its content: the Brief's Refresh
    in its menu as the route's is, the Stops' distance a filter at its
    list's top (`CardHead` takes nothing more; cards.spec checks every
-   card); VFR/IFR is FPL's first row's, a compact segmented control
-   beside the altitude it sets the rules for (the owner, 2026-11-17) -- as Apple
+   card); VFR/IFR is the Profile card's, a segmented control at the top
+   of its content (back from FPL's first row, the owner, 2026-11-17: "No
+   need for vfr/ifr, that can stay somewhere else, maybe in the
+   profile?") -- as Apple
    Maps' place card at its smallest size (the owner, 2026-11-11: "let's move the title in the
    middle"; `HeadGrid`, the inset each side the wider side's),
    `CardHeadRow` (`CardHead`, `CardTitle`, `SheetCard`,
@@ -464,27 +466,37 @@ off by default (the owner, 2026-11-13).
 2. **FPL** (the second page): its first row the search's row's twin
    (the owner, 2026-11-14: "for all three fpl layouts, keep the n-number
    strip with buttons in the same size as search bar"): the airplane's
-   strip -- its N-number, the altitude, VFR/IFR beside it (a compact
-   segmented control, the fields' 28 points tall; moved from the Profile
-   card by the owner, 2026-11-17), the N-number and the altitude each
-   with its small caption inside its field, "Airplane" and "Cruise"
-   (labels C, the owner, 2026-11-17), and before there is a route its •••
+   strip -- its N-number and the altitude, no captions (the owner,
+   2026-11-17: "No need for airplane and cruise labels"; VFR/IFR the
+   Profile card's, the same day), and before there is a route its •••
    (Undo, the map's choices, a half route's Clear), a plain glyph in the
    tint as the search bar's microphone is -- in a bar exactly the search
    field's size, the page toggle at its end, so a turn of the page changes
    only what is in the bar; under it the route in its one layout (the
    owner, 2026-11-17, "Ok let's try it"; decision
    [0046](../decisions/0046-one-fpl-layout.md)), never in the bar: once
-   whole, folded to read -- one line, both ends' idents with their names
-   under them, the stops counted between, a chevron in the tint -- and a
-   tap on it opens it to edit: a head, "Route" and Done (iOS's Edit and
+   whole, folded to read -- a timeline on the cards' own magenta rail, one
+   line an airport (the owner's "Go", 2026-11-17, the canvas's "Timeline,
+   one line each"): its dot, its ident a link to its card, its flight
+   category from its latest METAR (none with no report), its city
+   (NASR's, the name where it has none; the name itself stays the card's
+   and VoiceOver's), a fuel stop's pump in the tint, and its time -- the
+   departure's leave time as its picker says it, the others' arrival from
+   the nav log, a dash with no airplane -- and a chevron on the first;
+   no other words on a line, nothing cut at the normal text size and the
+   city the first to give way at a larger one; past four points the middle
+   ones one line, "3 more stops", the next stop always shown; a Direct
+   To's first line My Location; a point the planner does not know its line
+   in red with why. The timeline is one disclosure ("Route KORD to KDEN via
+   KOMA, open"), each ident its own link -- and a tap anywhere else on it
+   opens it to edit: a head, "Route" and Done (iOS's Edit and
    Done), over the airport cards, Add a Stop, the route's field to type or
    paste a whole route, and the figures under all of them, the Routes'
    chips put away; on a phone the sheet's height drives it, as Apple Maps
    shows more as its sheet rises: folded at half and the pill, open all
    the way up, so a full sheet is never blank; the tap raises the sheet to
    full and Done (or a tap on "Route") folds it back to half, never while
-   its field has the focus; a present position is "Present position"
+   its field has the focus; a present position is "My Location" (Apple Maps' words)
    wherever the route shows it, never an ident (decision 0046); under the
    folded route the route's figures (To,
    Distance, Time, Fuel: short words in sentence case, the distance whole
@@ -910,11 +922,13 @@ way: three homes, and every control in one of them.
    under a faint grid); Strength and Heights rows of an inset grouped
    list at the tiles' edges, in the list's row type; one section gap
    (space.xl) between the parts. The public
-   fields, the route and the plan's points, own ship and the TFRs have no
-   switch: always drawn. The route's VFR checkpoints and the Class B
-   fields' weather chips are switches of the route's ••• menu, On the Map
-   (Checkpoints, Class B Weather), each off by default (the owner's "Let's
-   not enable waypoints for a pilot").
+   fields, the route and the plan's points, own ship, the TFRs and the
+   Class B fields' weather marks have no switch: always drawn, the Class B
+   ones at every zoom (the owner, 2026-11-17: "Just keep it by default in
+   the app so all the class B airports show even when zoomed out"). The
+   route's VFR checkpoints are a switch of the route's ••• menu, On the Map
+   (Checkpoints), off by default (the owner's "Let's not enable waypoints
+   for a pilot").
 
 Taken out the same day, with no home: the sheet's Position (a phone's
 sheet is always at the bottom), Terrain's Flat (the 2D chart is always

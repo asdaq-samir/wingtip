@@ -22,11 +22,26 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
 ## Decision
 
 1. **Folded, to read**, the default once the route is whole: the first
-   row (the airplane, the altitude, VFR/IFR); the route as one line, both
-   ends' idents with their names under them and the stops counted
-   between, a chevron in the tint (`RouteSummary`); the figures right
-   under it; "Suggested routes" over the Routes' chips; nothing else.
-   A tap on the line opens it.
+   row (the airplane and the altitude; VFR/IFR is the Profile card's, the
+   owner's "maybe in the profile?" of the same day); the route as a timeline on
+   the cards' own magenta rail (the owner's "Go", 2026-11-17, to the
+   canvas's board "Timeline, one line each"; it replaced one line of both
+   ends' idents and names): one 44-point line an airport -- its ident a
+   link to its card, its flight category from its latest METAR (none with
+   no report), its city (the owner, the same day: the city, not the name,
+   which stays on the card and in what VoiceOver hears; the name where a
+   field has no city), a fuel stop's pump in the tint (no words: the
+   owner's "no extra words on a timeline line"), and its time (the
+   departure's leave time, the others' arrival, a dash with no airplane),
+   a chevron on the first; past four points the middle ones fold into
+   "N more stops", the next stop always shown; a Direct To's My Location
+   first; an unknown point's line in red with why (`RouteTimeline`).
+   Then the figures; "Suggested routes" over the Routes' chips; nothing
+   else. The timeline is one disclosure (`aria-expanded`, "Route KORD to
+   KDEN via KOMA, open"), each ident a link of its own over it; a tap
+   anywhere else opens the route, the lines giving way to the cards on the
+   same rail with no motion of their own. The lines are 44 points, not
+   the canvas's 30, so each ident's tap is a finger's (the hit area rule).
 2. **Open, to edit**: a head, "Route" and Done; the airport cards
    (always filled, their role over the ident: Departure, Stop,
    Destination), the waypoints as plain rows between, Add a Stop at the
@@ -50,19 +65,20 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    made whole a point at a time, or typed or pasted into the field, stays
    open till Done; one that arrives whole from elsewhere (Fly Here, a
    link, a Saved flight) arrives folded, or open where the sheet is all
-   the way up.
-5. **One name for a present position**: "Present position", in the
-   pilot's words, wherever the route shows it -- the folded line (on two
+   the way up. An unknown point no longer opens it by itself: its line on
+   the timeline says it in red, and the field's Remove is a tap away.
+5. **One name for a present position**: "My Location", Apple Maps'
+   words (the owner, 2026-11-17), wherever the route shows it -- the folded line (on two
    lines where one has no room, nothing under it), the cards, the pills,
    the strip, the Nav Log, the Brief, the map (identSchema's
    `POSITION_NAME`, through `pointName`); it was "POS0" at the owner's earlier ask ("Let's call current position as POS0"),
    which the screenshot showed over "Present position".
    Told after the flight (a saved flight, a shared briefing), a present
-   position stays its coordinates (`placeOfPoint`), as "Present position"
+   position stays its coordinates (`placeOfPoint`), as "My Location"
    says nowhere to someone else. The pilot's own points stay POS1 on.
-6. **Labels C**: "Airplane" over the N-number and "Cruise" over the
-   altitude, inside their fields (`InlineField`'s `caption`, its words
-   the start of the field's name for VoiceOver); each card's role over its
+6. **Labels C**, but the first row's: the "Airplane" and "Cruise"
+   captions came out the same day (the owner: "No need for airplane and
+   cruise labels"), the fields' names VoiceOver's as before; each card's role over its
    ident; "Suggested routes" over the chips. The figures keep their own
    short names and explain on tap.
 7. **Gone**: Show Route As and the `routeEdit` preference (persisted
@@ -71,7 +87,7 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    (`NewStopCard`), the cards' ident text boxes and their second card look
    (`POINT_CARD`, `CARD_BODY`), and the route box's own Done. The first
    row's ••• before there is a route stays: it holds Undo (a cleared route
-   put back), the map's choices (Checkpoints, Class B Weather) and Clear
+   put back), the map's choice (Checkpoints) and Clear
    for half a route.
 
 ## Consequences

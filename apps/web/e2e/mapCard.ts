@@ -41,12 +41,11 @@ export async function setMap3d(page: Page, on: boolean) {
   await expect(button).toHaveText(on ? "2D" : "3D");
 }
 
-/** One of the route's ••• menu's map switches -- Checkpoints
- *  (`waypoints-toggle`) or Class B Weather (`class-b-toggle`), since the
- *  Map card's layers became four (the owner, 2026-11-14) -- turned over on
+/** The route's ••• menu's map switch -- Checkpoints (`waypoints-toggle`),
+ *  since the Map card's layers became four (the owner, 2026-11-14) -- turned over on
  *  the planner before a route is loaded, remembered per browser, so the
  *  route loaded after shows it. */
-export async function routeMenuSwitch(page: Page, testId: "waypoints-toggle" | "class-b-toggle", on: boolean) {
+export async function routeMenuSwitch(page: Page, testId: "waypoints-toggle", on: boolean) {
   await page.goto("/app/plan");
   await settle(page);
   await openPanel(page);

@@ -769,8 +769,9 @@ after the bar. The bar before it is one size on both pages
 (`panelField`'s `SHEET_BAR`, 46 tall, round-ended, the row's room less
 the toggle): on Search the one search's field (`OneSearchField`), on FPL
 the airplane's strip (`features/fpl/workspace/FplBar`, its
-`RouteControls`: the N-number, the altitude, VFR/IFR and, before there
-is a route, the route's •••, on one line, the N-number giving way first;
+`RouteControls`: the N-number, the altitude and, before there is a
+route, the route's •••, on one line (VFR/IFR the Profile card's top,
+`PlanCards`' `rules`, since 2026-11-17), the N-number giving way first;
 the Brief, the Nav Log, the Profile and the route's ••• ("More", the
 route's one menu with its sharing; the owner, 2026-11-17: "move
 everything to the tab bar with a ... instead of share") are the floating

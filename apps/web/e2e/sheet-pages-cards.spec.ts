@@ -81,7 +81,7 @@ test("the last waypoint taken out all the way up leaves the sheet all the way up
   // From the address the route is folded to its line; a tap on it opens the
   // box to edit.
   const line = page.getByTestId("route-summary");
-  if (await line.isVisible()) await line.click();
+  if (await line.isVisible()) await page.getByTestId("route-summary-open").click();
   // Focused, its caret at the end: the route box holds its pills inside
   // the field, so a click in its middle can land on a pill.
   await page.getByTestId("route-type").focus();

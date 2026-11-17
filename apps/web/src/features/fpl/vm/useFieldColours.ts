@@ -48,5 +48,9 @@ export function useFieldColours({
     },
     [metars, approximateKey],
   );
-  return { metarColour };
+  // The field's flight category from its latest METAR alone, as the planner
+  // reads it (wingtip's flight_category, AIM 7-1-7): the folded route's
+  // timeline's badge, none where the field has no report of its own.
+  const metarCategory = useCallback((ident: string) => metars?.[ident]?.flight_category ?? null, [metars]);
+  return { metarColour, metarCategory };
 }

@@ -17,8 +17,8 @@ const CLASS_B = "class-b-fields";
 const CLASS_B_LAYERS = [labelledLayer(CLASS_B, CLASS_B)];
 
 /**
- * The Class B fields' weather, as marks over the chart, at the route's
- * ••• menu's Class B Weather, on the planner's map and the training map alike: a
+ * The Class B fields' weather, as marks over the chart, always and at
+ * every zoom, on the planner's map and the training map alike: a
  * tap the field's card where the map has one (`onSelectPlace`), and on
  * the training map, which has none, the map goes to the field at the zoom
  * its terminal chart starts at. The terminal sheet is always drawn over
@@ -35,14 +35,16 @@ export function ClassBGl({
   onSelectPlace?: (ident: string) => void;
 }) {
   const { map } = useGlMap();
-  const show = usePreferences((s) => s.classB);
   const base = usePreferences((s) => s.base);
   const { overlay } = chartPair(chart.chart_layers, base);
   const overlayFromZoom = overlay?.min_zoom ?? 10;
-  const { data } = useQuery({ ...classBQuery, enabled: show });
+  // Always drawn, at every zoom (the owner, 2026-11-17: "Just keep it by
+  // default in the app so all the class B airports show even when zoomed
+  // out"), where it was the route's ••• menu's Class B Weather, off.
+  const { data } = useQuery(classBQuery);
   const marks = useMemo<GlSymbol[]>(
     () =>
-      show && data
+      data
         ? data
             .filter((a) => !route.includes(a.ident))
             .map((a) => {
@@ -60,7 +62,7 @@ export function ClassBGl({
               };
             })
         : [],
-    [show, data, route, overlayFromZoom, onSelectPlace, map],
+    [data, route, overlayFromZoom, onSelectPlace, map],
   );
   useGlSymbols(CLASS_B, CLASS_B_LAYERS, marks);
   // Every field given, in sight or not, for the browser tests (the probe

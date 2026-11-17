@@ -16,6 +16,7 @@ import { TEXT } from "../../lib/text";
 export default function ProfileCard({
   name,
   sub,
+  rules,
   cautions = [],
   onClose,
   children,
@@ -27,6 +28,12 @@ export default function ProfileCard({
    *  again under it: it said the cruise twice and the card scrolled over
    *  it under the pinned head (the UI audit's B2, 2026-11-17). */
   sub?: ReactNode;
+  /** The flight rules, VFR or IFR, a segmented control at the top of the
+   *  card's content, with no label of its own (the owner's "don't need the
+   *  label flight rules"): back here from FPL's first row at the owner's
+   *  word (2026-11-17: "No need for vfr/ifr, that can stay somewhere else,
+   *  maybe in the profile?"); the head keeps its two buttons. */
+  rules?: ReactNode;
   /** What the pilot's own altitude breaks, the engine's words with their
    *  rules (own_altitude_caution: over the airplane's service ceiling, the
    *  oxygen 14 CFR 91.211(a) asks: (a)(1) the crew past 30 minutes over
@@ -51,6 +58,7 @@ export default function ProfileCard({
       data-testid="profile-card"
     >
       <CardHead name={name} sub={sub} nameTestId="profile-name" onClose={onClose} onShare="profile" closeTestId="profile-close" />
+      {rules && <div className="mt-2 flex shrink-0 justify-center">{rules}</div>}
       {cautions.length > 0 && (
         <ul className={cn("mt-2 shrink-0 space-y-1 rounded-lg bg-caution-wash px-2.5 py-2 text-caution-ink", TEXT.detail)}>
           {cautions.map((reason) => (

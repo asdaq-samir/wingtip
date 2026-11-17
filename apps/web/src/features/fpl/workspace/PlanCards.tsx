@@ -1,7 +1,9 @@
 import type { ComponentProps, ReactNode } from "react";
 import FlightFoot from "./FlightFoot";
 import { routeName } from "../../../lib/identSchema";
+import type { FlightRules } from "../../../lib/preferences";
 import { Shown, useShown } from "../../../lib/shown";
+import Segmented from "../../../components/Segmented";
 import { ProfileCard } from "../../navlog";
 import { BriefCard, StopsCard, DryRunControls } from "../routePanelParts";
 import { CardLayer } from "../../../components/sheet/CardLayer";
@@ -11,6 +13,13 @@ import type { PlanSlices } from "../vm/planSlices";
 import ProfileSideView from "./ProfileSideView";
 import Waits from "./Waits";
 import { STOPS_CARD } from "../vm/useFplCards";
+
+/** The flight rules a route is planned under, as the Profile card's switch
+ *  offers them. */
+const FLIGHT_RULES = [
+  { value: "vfr", label: "VFR" },
+  { value: "ifr", label: "IFR" },
+];
 
 /**
  * FPL's cards over the sheet, each its own nested drawer (CardLayer; the
@@ -38,8 +47,8 @@ export default function PlanCards({
   briefContents: ComponentProps<typeof BriefCard>["contents"];
   briefNotice: ReactNode;
 }) {
-  const { planned, routeKey, routed } = vm.route;
-  const { course } = vm.plan;
+  const { flightRules, planned, routeKey, routed, setFlightRules } = vm.route;
+  const { course, s } = vm.plan;
   const { cardUp, selectPlace } = vm.cards;
   const { addStopField } = vm.stops;
   const {
@@ -96,7 +105,26 @@ export default function PlanCards({
       )}
       {profileDrawn && routed && (
         <CardLayer open={profileShown}>
-          <ProfileCard name="Profile" sub={<ProfileLine vm={vm} />} onClose={closeProfileCard} cautions={profileCautions}>
+          <ProfileCard
+            name="Profile"
+            sub={<ProfileLine vm={vm} />}
+            onClose={closeProfileCard}
+            cautions={profileCautions}
+            // VFR or IFR at the card's top, none for a local flight (the
+            // owner, 2026-11-17: "No need for vfr/ifr [in the first row] ...
+            // maybe in the profile?").
+            rules={
+              !s.local && (
+                <Segmented
+                  label="Flight rules"
+                  value={flightRules}
+                  onChange={(v) => setFlightRules(v as FlightRules)}
+                  testId="flight-rules"
+                  options={FLIGHT_RULES}
+                />
+              )
+            }
+          >
             {/* The dry run in the side view's place while it plays, the card's
                   height. */}
             {dryRunning ? (

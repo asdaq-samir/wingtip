@@ -75,7 +75,7 @@ export function FplActions({ vm, more }: { vm: PlanSlices<"brief" | "flight" | "
 export function FplRoute({
   vm,
 }: {
-  vm: PlanSlices<"brief" | "cards" | "flight" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
+  vm: PlanSlices<"brief" | "cards" | "flight" | "leg" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
 }) {
   const { panelOpen } = vm.view;
   const { dryRunning, flying } = vm.flight;

@@ -13,7 +13,7 @@ export { ProceduresRoute } from "../procedures/lazy";
 export { RouteLine } from "../procedures/lazy";
 export { FlightBriefingView, BriefingNotices, ReviewAskItem, ReviewAskSheet, SaveFlightButton } from "../brief/lazy";
 export { RouteEnds } from "../procedures/lazy";
-export { RouteSummary } from "../route/lazy";
+export { default as RouteTimeline } from "./workspace/RouteTimeline";
 export { default as RouteEditor } from "./workspace/RouteEditor";
 export { Kneeboard } from "../navlog/lazy";
 export { FlightInputs } from "../navlog/lazy";

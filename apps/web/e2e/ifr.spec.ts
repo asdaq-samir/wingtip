@@ -35,16 +35,19 @@ test("under IFR the altitude is chosen from the minimum IFR altitude by directio
   await openProfile(page);
   const popover = page.getByTestId("profile-card");
   await expect(popover).toContainText("14 CFR 91.159");
-  // The rules are FPL's first row's, beside the altitude (2026-11-17).
-  await expect(popover.getByTestId("flight-rules")).toHaveCount(0);
-  await closeCard(page, "profile-close");
-  await expect(popover).toBeHidden();
-  const rules = page.getByTestId("route-strip").getByTestId("flight-rules");
+  // The rules are the Profile card's again, at its top (the owner,
+  // 2026-11-17: "No need for vfr/ifr [in the first row] ... maybe in the
+  // profile?"), and FPL's first row has none.
+  await expect(page.getByTestId("route-strip").getByTestId("flight-rules")).toHaveCount(0);
+  const rules = popover.getByTestId("flight-rules");
   await expect(rules.getByRole("button", { name: "VFR" })).toHaveAttribute("aria-pressed", "true");
   await rules.getByRole("button", { name: "IFR" }).click();
   await expect.poll(() => asked.at(-1)).toBe("ifr");
+  // Put away to read the altitude, which the card covers.
+  await closeCard(page, "profile-close");
+  await expect(popover).toBeHidden();
   // No IFR word beside the altitude, at the owner's ask: the rules are the
-  // switch beside it, and the altitude's name says them.
+  // Profile card's switch, and the altitude's name says them.
   await expect(page.getByTestId("ifr-flag")).toHaveCount(0);
   // The re-plan's altitude: whole thousands, west of north out of C81
   // (even thousands, 91.179(b)(1)(ii)).

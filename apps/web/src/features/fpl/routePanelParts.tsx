@@ -77,7 +77,8 @@ export const SaveFlightButton = fromRoutePanel("SaveFlightButton");
 export const ReviewAskItem = fromRoutePanel("ReviewAskItem");
 export const ReviewAskSheet = fromRoutePanel("ReviewAskSheet");
 export const RouteEnds = fromRoutePanel("RouteEnds");
-export const RouteSummary = fromRoutePanel("RouteSummary");
+// The folded route, its timeline (RouteHead).
+export const RouteTimeline = fromRoutePanel("RouteTimeline");
 // The route open to edit, its field and figures under its cards (PlanPage).
 export const RouteEditor = fromRoutePanel("RouteEditor");
 export const Kneeboard = fromRoutePanel("Kneeboard");

@@ -2,18 +2,11 @@ import { Suspense, type ReactNode } from "react";
 import { LocalDuration } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import { LOCAL_MINUTES } from "../../../lib/address";
-import Segmented from "../../../components/Segmented";
-import type { FlightRules } from "../../../lib/preferences";
-
-/** The flight rules a route is planned under. */
-const FLIGHT_RULES = [
-  { value: "vfr", label: "VFR" },
-  { value: "ifr", label: "IFR" },
-];
 
 /** The route's chips: the airplane, the altitude and the time
- *  (`flightInputs`), the flight rules beside the altitude, a local
- *  flight's time aloft, and before there is a route its ••• (`share`). */
+ *  (`flightInputs`), a local flight's time aloft, and before there is a
+ *  route its ••• (`share`). The flight rules are the Profile card's
+ *  (PlanCards; the owner, 2026-11-17). */
 export default function RouteControls({
   vm,
   flightInputs,
@@ -23,7 +16,7 @@ export default function RouteControls({
   flightInputs: ReactNode;
   share: ReactNode;
 }) {
-  const { flightRules, localMin, setFlightRules } = vm.route;
+  const { localMin } = vm.route;
   const { changeLocalMin, s } = vm.plan;
   return (
     // One line, never wrapped: it is FPL's bar (FplBar), the one search's
@@ -32,22 +25,6 @@ export default function RouteControls({
     <div className="flex w-full min-w-0 flex-nowrap items-center gap-x-1">
       {/* The chips' room while their code comes (routePanel). */}
       <Suspense fallback={<span className="h-9 w-48" aria-hidden="true" />}>{flightInputs}</Suspense>
-      {/* VFR or IFR beside the altitude it sets the rules for, a segmented
-          control the fields' 28 tall (the owner, 2026-11-17, moved from
-          the Profile card's top): the rules change the altitudes legal, the
-          reserve and the Brief, so they sit with the altitude, not in one
-          of its cards. None for a local flight, which has no altitude. */}
-      {!s.local && (
-        <Segmented
-          compact
-          label="Flight rules"
-          value={flightRules}
-          onChange={(v) => setFlightRules(v as FlightRules)}
-          testId="flight-rules"
-          options={FLIGHT_RULES}
-          className="ml-1 shrink-0"
-        />
-      )}
       {s.local && (
         <Suspense fallback={<span className="h-8 w-20 shrink-0" aria-hidden="true" />}>
           <LocalDuration minutes={localMin} options={LOCAL_MINUTES} onChange={changeLocalMin} />

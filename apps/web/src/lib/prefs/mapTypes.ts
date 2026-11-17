@@ -57,11 +57,6 @@ export interface MapSlice {
    *  the owner's ask ("Let's not enable waypoints for a pilot"); the
    *  route's ••• menu's Checkpoints (RouteMapChoices). */
   waypoints: boolean;
-  /** Whether the Class B airports are drawn, with their current flight
-   *  category and a terminal chart on hover. Off by default: useful on
-   *  a route that passes near one, clutter on a route that does not; the
-   *  route's ••• menu's Class B Weather (RouteMapChoices). */
-  classB: boolean;
   /** Whether the airplanes ADS-B receivers hear about the map are drawn
    *  (TrafficGl). Off by default: it asks a third party every five seconds. */
   traffic: boolean;
@@ -101,7 +96,6 @@ export interface MapSlice {
   setAeronautical: (aeronautical: boolean) => void;
   setWeather: (weather: boolean) => void;
   setWaypoints: (waypoints: boolean) => void;
-  setClassB: (classB: boolean) => void;
   setTraffic: (traffic: boolean) => void;
   setPlates: (plates: boolean) => void;
   setPrivateMilitary: (privateMilitary: boolean) => void;

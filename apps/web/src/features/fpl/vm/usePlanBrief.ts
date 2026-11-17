@@ -76,7 +76,7 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   const marks = useMemo(() => marksOf(verdict), [verdict]);
   const landings = useMemo(() => [...new Set([planned.dep, ...landedStops, planned.dest])], [planned.dep, landedStops, planned.dest]);
   // The route's fields' chips' colours (useFieldColours).
-  const { metarColour } = useFieldColours({ briefing: s.briefing, planned, waypointStops });
+  const { metarColour, metarCategory } = useFieldColours({ briefing: s.briefing, planned, waypointStops });
   // A caution on the pilot's own altitude, or one tight in its band, marked
   // on the Profile button where the caution is said, as the AI brief's mark
   // is on its own (the owner, 2026-11-05: "The red dot can be on profile
@@ -173,6 +173,7 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
     // The Brief's own, on its button: the worst of its pages'.
     briefMark: briefMarkOf(marks),
     metarColour,
+    metarCategory,
     altitudeMark,
     profileCautions,
     airspaceOf,

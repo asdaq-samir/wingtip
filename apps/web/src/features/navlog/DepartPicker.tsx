@@ -1,5 +1,6 @@
 import { Suspense, lazy, useState } from "react";
-import { clockTime, localDay, monthSlashDay, twoFigures, weekdayShort } from "../../lib/format";
+import { clockTime, localDay, twoFigures } from "../../lib/format";
+import { leaveWhen } from "../../lib/format/leaveWhen";
 import { CalendarIcon } from "lucide-react";
 import { Button } from "../../components/ui/button";
 
@@ -46,21 +47,6 @@ function nextHour(): string {
   return `${twoFigures((new Date().getHours() + 1) % 24)}:00`;
 }
 
-/** The departure in a few characters, as iOS's compact picker reads:
- *  "18:00" today, "Sat 18:00" within the week, "11/17 18:00" further
- *  out -- short enough that the airplane, the time and Save, Brief and
- *  Print share one line on a phone, where the day, a time box and a
- *  cross took a line of their own, and "17 Nov 18:00" still pushed the
- *  buttons to the next. */
-function shortWhen(date: Date): string {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const days = Math.round((new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() - today.getTime()) / 86_400_000);
-  const time = clockTime(date);
-  if (days === 0) return time;
-  return `${days > 0 && days < 7 ? weekdayShort(date) : monthSlashDay(date)} ${time}`;
-}
-
 /**
  * When the flight leaves: one compact field, "Now" or "Sat 18:00", that
  * opens shadcn's own date picker -- the calendar in a popover, a sheet on
@@ -100,7 +86,7 @@ export default function DepartPicker({
           <Button
             variant="link"
             size="inline"
-            aria-label={`${label}, ${date ? shortWhen(date) : "now"}: change`}
+            aria-label={`${label}, ${date ? leaveWhen(date) : "now"}: change`}
             data-testid={testId}
             className={cn(
               // 44 tall round its 20 (12 over and under), so a tap just
@@ -113,7 +99,7 @@ export default function DepartPicker({
             {/* The tint alone says it opens, as every other tappable
                 figure's does: no chevron after it (the owner's list,
                 2026-11-17, "Now ⌄"). */}
-            {date ? shortWhen(date) : "Now"}
+            {date ? leaveWhen(date) : "Now"}
           </Button>
         ) : (
           <Button
@@ -127,7 +113,7 @@ export default function DepartPicker({
             data-testid={testId}
           >
             {!date && <CalendarIcon className="text-muted-foreground" />}
-            {date ? shortWhen(date) : "Now"}
+            {date ? leaveWhen(date) : "Now"}
           </Button>
         )}
       </ResponsivePopoverTrigger>
@@ -138,7 +124,7 @@ export default function DepartPicker({
           under the fold (the UI audit's B7, the owner's word 2026-11-17). */}
       <ResponsivePopoverContent
         title={label}
-        description={date ? `Leaving ${shortWhen(date)}` : "Leaving now"}
+        description={date ? `Leaving ${leaveWhen(date)}` : "Leaving now"}
         className="w-auto p-0"
         align="start"
         closeButton={false}

@@ -161,12 +161,11 @@ export default memo(function RouteMap({
   // The route's airports, one array while the course is the same answer.
   const airports = useMemo(() => (course ? routeAirports(course) : []), [course]);
   // The fields that wear a chip of their own already: the route's own,
-  // and the Class B ones while they are on (ClassBGl).
-  const showClassB = usePreferences((s) => s.classB);
+  // and the Class B ones, always drawn (ClassBGl).
   const { data: classBAirports } = useQuery({ ...classBQuery, enabled: false });
   const chippedFields = useMemo(
-    () => [...airports.filter((a) => a.kind === "airport"), ...(showClassB ? (classBAirports ?? []) : [])],
-    [airports, showClassB, classBAirports],
+    () => [...airports.filter((a) => a.kind === "airport"), ...(classBAirports ?? [])],
+    [airports, classBAirports],
   );
   // And the route's waypoints, which the VFR waypoints' layer leaves to it.
   const chipped = useMemo(() => new Set([...airports, ...chippedFields].map((a) => a.ident)), [airports, chippedFields]);
@@ -247,11 +246,11 @@ export default memo(function RouteMap({
             lat: a.lat,
             lon: a.lon,
             fix: a.kind === "fix",
-            space: a.airspace_class ?? (showClassB && classBAirports?.some((b) => b.ident === a.ident) ? "B" : null),
+            space: a.airspace_class ?? (classBAirports?.some((b) => b.ident === a.ident) ? "B" : null),
             colour: chipColourOf(weatherOf(a.ident, airportWeather)),
             select: () => (a.kind === "fix" ? onSelectPoint(a.lat, a.lon) : onSelectPlace(a.ident)),
           })),
-    [course, airportWeather, onSelectPoint, onSelectPlace, showClassB, classBAirports],
+    [course, airportWeather, onSelectPoint, onSelectPlace, classBAirports],
   );
   // The legs' ends, for the tap on the course to find the nearest leg.
   const glLegs = useMemo<GlLeg[]>(() => routeLegs.map((l) => ({ key: l.key, from: l.from, to: l.to })), [routeLegs]);

@@ -82,12 +82,12 @@ export function departureOf(value: string | null | undefined): string {
 
 /** A present position's one name wherever the route shows it -- its line,
  *  its cards, its pills, the strip, the Nav Log, the Brief, the map -- in
- *  the pilot's words: "Present position" (the coordinator's fix of the
- *  owner's iPhone screenshot, 2026-11-17, where the folded line read
- *  "POS0" over "Present position"; it was "POS0" at the owner's ask
+ *  Apple Maps' words, "My Location" (the owner, 2026-11-17, after the
+ *  folded line read "POS0" over "Present position"; it was "POS0" at the
+ *  owner's ask
  *  "Let's call current position as POS0", where its coordinates filled the
  *  route's box). The pilot's own points stay POS1 on. */
-export const POSITION_NAME = "Present position";
+export const POSITION_NAME = "My Location";
 
 /** The pilot's own points in the route now -- one off a fix (frdOf), made
  *  by a long press on the map or Create a fix -- by the name each goes by,
@@ -105,8 +105,8 @@ export function nameOwnPoints(stops: readonly string[]) {
   ownPointNames = new Map(own.map((stop, i) => [stop, `POS${i + 1}`]));
 }
 
-/** A point's name as the route shows it: a present position as "Present
- *  position" (POSITION_NAME), the
+/** A point's name as the route shows it: a present position as "My
+ *  Location" (POSITION_NAME), the
  *  pilot's own points POS1 on (nameOwnPoints), the rest by their idents. */
 export function pointName(ident: string): string {
   return isPosition(ident) ? POSITION_NAME : (ownPointNames.get(ident) ?? ident);

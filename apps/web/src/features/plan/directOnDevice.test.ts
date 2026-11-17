@@ -47,7 +47,7 @@ describe("a Direct To worked out on the device", () => {
     expect(done.totals.distance_nm).toBeCloseTo(flown[0]!.distance_nm, 0);
     // The hops the page reads the next landing from (nextLanding), there.
     expect(done.totals.hops).toEqual([]);
-    expect(made.course.departure).toMatchObject({ name: "Present position", lat: 43.5, lon: -89.0 });
+    expect(made.course.departure).toMatchObject({ name: "My Location", lat: 43.5, lon: -89.0 });
     expect(made.course.course_line[0]).toEqual([43.5, -89.0]);
     expect(made.course.course_line.at(-1)).toEqual([43.98, -88.56]);
   });

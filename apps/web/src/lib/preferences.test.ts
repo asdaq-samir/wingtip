@@ -51,7 +51,6 @@ describe("a new pilot's preferences", () => {
       traffic: false,
       privateMilitary: false,
       waypoints: false,
-      classB: false,
     });
     expect(keptPreferences({ ...usePreferences.getInitialState(), ownShipLook: "jet" })).toMatchObject({ ownShipLook: "jet" });
   });
