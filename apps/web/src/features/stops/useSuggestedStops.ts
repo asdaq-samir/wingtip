@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
-import type { FuelStopSuggestion, Totals } from "../../../lib/api/types";
-import { MAX_STOPS } from "../../../lib/identSchema";
-import { sameField } from "../../../lib/procedures";
+import type { FuelStopSuggestion, Totals } from "../../lib/api/types";
+import { MAX_STOPS } from "../../lib/identSchema";
+import { sameField } from "../../lib/procedures";
 
 const NO_FUEL_STOPS: FuelStopSuggestion[] = [];
 const NO_IDENTS: string[] = [];

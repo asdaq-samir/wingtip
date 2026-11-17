@@ -25,6 +25,6 @@ export { AirspaceCard } from "../plan/lazy";
 export { FlightCard } from "../plan/lazy";
 export { PastFlightCard } from "../flying/lazy";
 export { PlaceCard } from "../plan/lazy";
-export { StopsCard } from "../plan/lazy";
+export { StopsCard } from "../stops/lazy";
 export { DryRunControls, DryRunFigures } from "../flying/lazy";
 export { FlyingHead } from "../flying/lazy";

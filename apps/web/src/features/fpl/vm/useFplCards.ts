@@ -8,9 +8,10 @@ import { usePreferences } from "../../../lib/preferences";
 import { sameField } from "../../../lib/procedures";
 import { stopsAlongQuery, stopsNearQuery } from "../../../lib/queryClient";
 import { kindsOf, type StopKind } from "../../../lib/stopKinds";
-import { useStopsAlong, riseToSee, type PlannedRoute, type PanelView } from "../../plan";
+import { useStopsAlong } from "../../stops";
 import { setCard, useSheetCards } from "../../../lib/sheetCards";
 import type { ProceduresAt } from "../../procedures";
+import { riseToSee, type PlannedRoute, type PanelView } from "../../plan";
 import { useOpenScreen } from "./useOpenScreen";
 
 /** The Stops card's id among the cards (CardLayer), for its pins' taps. */

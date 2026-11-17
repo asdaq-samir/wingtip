@@ -79,7 +79,6 @@ export { useRouteListEdit } from "./hooks/useRouteListEdit";
 export { useRouteTidy } from "./hooks/useRouteTidy";
 export { useRouteWays } from "./hooks/useRouteWays";
 export { nearOf, useSearchResults } from "./hooks/useSearchResults";
-export { useSuggestedStops, withStopsAfter } from "./hooks/useSuggestedStops";
 export type { SuaWhen, TfrWhen } from "./lib/passTimes";
 export {
   type RunwayEnd,
@@ -96,7 +95,6 @@ export { type RadioCall, type RadioPhase, callSign, fieldPhases, placeName } fro
 export { type Hold, holdWords, holdsOf, holdsParam, lengthCode, lengthOfCode, lengthWords } from "./lib/routeHolds";
 export { sameStops } from "./lib/routeWays";
 export { readQuery } from "./lib/searchFilters";
-export { useStopsAlong } from "./lib/stopsAlong";
 export { useTabSearch } from "./lib/tabSearch";
 export { useWindPicks } from "./lib/windPicks";
 export { useKeepOffline } from "./map/keepStatus";

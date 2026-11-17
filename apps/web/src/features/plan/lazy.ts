@@ -18,7 +18,6 @@ export { PublicationRows } from "./components/PublicationRows";
 export { default as RouteProblem } from "./components/RouteProblem";
 export { default as RouteSplit } from "./components/RouteSplit";
 export { RunwayRow } from "./components/RunwayRow";
-export { default as StopsCard } from "./components/StopsCard";
 export { type Phase, phasesOf } from "./components/briefing/sections";
 export { default as AltitudeGroup } from "./components/navlog/AltitudeGroup";
 export { default as DepartPicker } from "./components/navlog/DepartPicker";
