@@ -40,7 +40,7 @@ export function useRouteTidy({ planned, address, setAddress }: { planned: Planne
   }, [depNamed, destNamed, typedDep, typedDest, setAddress]);
   // Whatever changed the route -- a stop added from a card, the Class B
   // detour taken out, a link opened with picks for fields it no longer
-  // has -- the picks at fields it no longer has go (features/plan/lib/fieldLists), as
+  // has -- the picks at fields it no longer has go (features/plan/fieldLists), as
   // setRoute takes them in the same change. Not while a Direct to holds the
   // route (`was`): Cancel brings the route back, with its picks.
   const stops = planned.stops;

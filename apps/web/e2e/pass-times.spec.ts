@@ -5,7 +5,7 @@ test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setu
 
 /**
  * When the flight gets to each TFR and special-use area on the route,
- * against the times it is in force (features/plan/lib/passTimes): the briefing's and
+ * against the times it is in force (features/plan/passTimes): the briefing's and
  * the nav log's own answers, with a TFR and an area put in them.
  */
 test("a TFR in force when the flight gets there is flagged, one that starts later is not, and each area says when it is passed", async ({

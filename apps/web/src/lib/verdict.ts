@@ -68,7 +68,7 @@ export interface VerdictInput {
     /** TFRs near the route that are not. */
     near: number;
     /** Special-use areas the legs cross, as their times of use read for
-     *  the pass (features/plan/lib/passTimes), or as SFDPS says they are now
+     *  the pass (features/plan/passTimes), or as SFDPS says they are now
      *  (active-now, cold-now: lib/liveReports). */
     specialUse: { name: string; when: "active" | "not-scheduled" | "by-notam" | "unknown" | "active-now" | "cold-now" }[];
   };

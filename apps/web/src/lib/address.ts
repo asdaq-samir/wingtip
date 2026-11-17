@@ -108,7 +108,7 @@ export const addressParsers = {
   class_b: createParser({ parse: (v) => v !== "0", serialize: (through: boolean) => (through ? "1" : "0") }).withDefault(true),
   class_b_via: parseAsString,
   // The picks at the route's fields, each in the text its reader parses
-  // (features/plan/lib/fieldLists): runways landed on and left from, the
+  // (features/plan/fieldLists): runways landed on and left from, the
   // runways picked into the wind, procedures, points' altitudes, crossing
   // altitudes, times on the ground and holds.
   pattern: parseAsString,

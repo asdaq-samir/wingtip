@@ -150,7 +150,7 @@ export function usePlanRoute() {
   // stop's Depart step (ProceduresRoute); one not named, 30.
   const groundParamText = address.ground;
   const ground = useMemo(() => groundOf(groundParamText), [groundParamText]);
-  // The pilot's holds (`holds`, features/plan/lib/routeHolds), each flown on the leg leaving
+  // The pilot's holds (`holds`, features/plan/routeHolds), each flown on the leg leaving
   // its point (plan.with_holds), set from a point's menu in FPL's list.
   const holdsParamText = address.holds;
   const holds = useMemo(() => holdsOf(holdsParamText), [holdsParamText]);

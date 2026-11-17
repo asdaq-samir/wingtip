@@ -30,7 +30,7 @@ const LOG_ROWS = 60;
  * (`?past=`), at the pilot's ask: "when a flight is selected it should
  * open another card with replay options and data". Its replay -- the
  * airplane flown along its path again on the map at 10, 50 or 200 times
- * (features/plan/map/pastFlight) -- then its figures (off, on, how long, how high,
+ * (features/plan/pastFlight) -- then its figures (off, on, how long, how high,
  * how far and how fast), then its track log, as FlightAware's: its height
  * and speed over the flight and each report. Its close goes back to the
  * airplane's card, on its Activity.

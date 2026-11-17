@@ -4,7 +4,7 @@ import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
- * The briefing's Pattern & Radio (PatternRadio, features/plan/lib/pattern, features/plan/lib/radio):
+ * The briefing's Pattern & Radio (PatternRadio, features/plan/pattern, features/plan/radio):
  * each field's pattern drawn for the runway the wind favours, and the
  * calls in the order they are made. The destination's runways are put
  * in the briefing's answer, a right-traffic 27 into the wind, so the

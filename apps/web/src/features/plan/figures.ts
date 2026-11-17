@@ -1,5 +1,5 @@
 import type { Totals } from "../../lib/api/types";
-import type { Flown } from "./components/navlog/dryRun";
+import type { Flown } from "./dryRun";
 import { decimalHours, etaAt, one } from "./format";
 import { duration, NOT_KNOWN, spokenDistance, spokenDuration, spokenFuel } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";

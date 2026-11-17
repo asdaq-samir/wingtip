@@ -247,7 +247,7 @@ close does.
   typing sizes either. The page sizes the main sheet only by Apple Maps'
   one rule (the owner, 2026-11-11: "I like the stock behavior"):
   something new opened at the pill rises it to half (`riseToSee` in
-  `features/plan/hooks/panelNow`); otherwise it keeps the size the pilot
+  `features/plan/panelNow`); otherwise it keeps the size the pilot
   left it at, never lowered and never taken all the way up, a page put
   away leaving it where it is (`e2e/sheet-size.spec.ts`). They are put inside the sheet's popup
   (`Drawer.Portal`'s `container`), outside its corners' clip, placed from
@@ -1416,7 +1416,7 @@ WebAssembly and what Keep for the Air fetched; the page asks it first.
   browser keeps, the engine's `best_fields` (`lib/fieldsOnDevice`), said
   "From this device, without weather".
 - Direct To works its leg out on the device (the engine's `navlog_leg`
-  and `navlog_totals`, `features/plan/hooks/directOnDevice`), "Worked out
+  and `navlog_totals`, `features/plan/directOnDevice`), "Worked out
   on this device" under the Direct strip, and its fuel check as the
   planner makes it (`navlog_fuel_plan`, night from `night_at_either_end`),
   so the strip's Fuel req has its figure offline too; where it cannot, the

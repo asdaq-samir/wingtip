@@ -2,7 +2,7 @@ import type { AltitudeOption, Leg, Runway, Totals } from "../../lib/api/types";
 import { altFt, bearing, feet, flightLevel, gal, miles, one } from "../../lib/format";
 import { clockTime, duration, zuluTime } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
-import { calmOnRunway, isCalm } from "./lib/wind";
+import { calmOnRunway, isCalm } from "./wind";
 import { modelledWinds, windsSource } from "../../lib/windsAloft";
 
 export { altFt, bearing, feet, one };
@@ -199,7 +199,7 @@ export function surfaceName(surface: string | null | undefined): string | null {
 
 /** A runway's wind in its parts, signed as wingtip.runway_wind's are (a
  *  tailwind negative, a crosswind from the right positive): the planner's
- *  Runway["wind"] and features/plan/lib/pattern's WindPick alike. */
+ *  Runway["wind"] and features/plan/pattern's WindPick alike. */
 interface WindParts {
   headwindKt: number;
   crosswindKt: number;

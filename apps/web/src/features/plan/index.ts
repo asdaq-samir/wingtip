@@ -9,27 +9,12 @@
  * through this file only; it reaches none of them.
  */
 
-export type { BriefingPart } from "./components/briefing/sections";
-export { type DryRun, type Flown, dryRunAt, dryRunFlown, dryRunOf, dryRunRow, runNmAt } from "./components/navlog/dryRun";
-export { type CourseLine, dryRunNext, gpsAhead, useFlyingTo } from "./components/navlog/flyingTo";
-export { GoToTab, LEGS, type PanelTab, useTabAsk } from "./components/navlog/panelTab";
-export {
-  type NavLogRow,
-  type RouteEnds,
-  type RouteLeg,
-  firstFlown,
-  flownNmOf,
-  groundMinAt,
-  isLegPoint,
-  legOf,
-  navLogRows,
-  phaseOf,
-  procedureOf,
-  routeLegs,
-  rowPoint,
-  savedCheckpoints,
-} from "./components/navlog/rows";
+export type { BriefingPart } from "./briefSections";
+export { briefingLegs } from "./briefingLegs";
+export { type DryRun, type Flown, dryRunAt, dryRunFlown, dryRunOf, dryRunRow, runNmAt } from "./dryRun";
+export { FIELD_LIST_KEYS, fieldListParams, fieldListsOf, prunedFieldLists } from "./fieldLists";
 export { figuresLine, nextLanding, shortFlights, tripFigures } from "./figures";
+export { type CourseLine, dryRunNext, gpsAhead, useFlyingTo } from "./flyingTo";
 export {
   PLAN_NAME,
   type ReportedWind,
@@ -57,8 +42,51 @@ export {
   windText,
   windsOutOfDate,
 } from "./format";
-export { briefingLegs } from "./hooks/briefingLegs";
-export { panelNow, riseToSee } from "./hooks/panelNow";
+export {
+  type NavLogRow,
+  type RouteEnds,
+  type RouteLeg,
+  firstFlown,
+  flownNmOf,
+  groundMinAt,
+  isLegPoint,
+  legOf,
+  navLogRows,
+  phaseOf,
+  procedureOf,
+  routeLegs,
+  rowPoint,
+  savedCheckpoints,
+} from "./navLogRows";
+export { panelNow, riseToSee } from "./panelNow";
+export { GoToTab, LEGS, type PanelTab, useTabAsk } from "./panelTab";
+export type { SuaWhen, TfrWhen } from "./passTimes";
+export {
+  DRY_RUN,
+  REPLAY_SPEEDS,
+  type ReplayPoint,
+  clearPastFlight,
+  pausePastFlight,
+  playPastFlight,
+  positionAt,
+  stepPastFlight,
+  stopPastFlight,
+  usePastFlight,
+} from "./pastFlight";
+export {
+  type RunwayEnd,
+  type RunwayPicks,
+  type WindPick,
+  compassWord,
+  entryFor,
+  exitFor,
+  patternSideDeg,
+  pickedEnd,
+  runwayFlown,
+  runwayInUse,
+  runwayNumber,
+  windPick,
+} from "./pattern";
 export {
   NO_AUTO,
   NO_DIRECT,
@@ -74,46 +102,18 @@ export {
   renamed,
   routeBeforeDirect,
   suggestedStopAt,
-} from "./hooks/planAddress";
-export type { PlanAnswer, PlanCourse } from "./hooks/planTypes";
-export type { Landing, ProcedureAirport, ProcedureKind } from "./hooks/procedureTypes";
-export { type AirplaneRow, useAirplaneHits } from "./hooks/useAirplaneHits";
-export { type Description, descriptionKey } from "./hooks/useCheckpointNotes";
-export { useLoad } from "./hooks/useLoad";
-export { type PanelList, type PanelView, useAddressCards, usePanelView } from "./hooks/usePanelView";
-export { type BriefingState, type PlanParams, type Unflyable, navlogQuery, usePlan } from "./hooks/usePlan";
-export { usePlanSetters } from "./hooks/usePlanSetters";
-export { type Browsing, type FuelCard, useRouteWays } from "./hooks/useRouteWays";
-export { FIELD_LIST_KEYS, fieldListParams, fieldListsOf, prunedFieldLists } from "./lib/fieldLists";
-export type { SuaWhen, TfrWhen } from "./lib/passTimes";
-export {
-  type RunwayEnd,
-  type RunwayPicks,
-  type WindPick,
-  compassWord,
-  entryFor,
-  exitFor,
-  patternSideDeg,
-  pickedEnd,
-  runwayFlown,
-  runwayInUse,
-  runwayNumber,
-  windPick,
-} from "./lib/pattern";
-export { type RadioCall, type RadioPhase, callSign, fieldPhases, placeName } from "./lib/radio";
-export { type Hold, holdWords, holdsOf, holdsParam, lengthCode, lengthOfCode, lengthWords } from "./lib/routeHolds";
-export { gridScale, sameStops, wayTime } from "./lib/routeWays";
-export { runwayCrosswindKt } from "./lib/wind";
-export { useWindPicks } from "./lib/windPicks";
-export {
-  DRY_RUN,
-  REPLAY_SPEEDS,
-  type ReplayPoint,
-  clearPastFlight,
-  pausePastFlight,
-  playPastFlight,
-  positionAt,
-  stepPastFlight,
-  stopPastFlight,
-  usePastFlight,
-} from "./map/pastFlight";
+} from "./planAddress";
+export type { PlanAnswer, PlanCourse } from "./planTypes";
+export type { Landing, ProcedureAirport, ProcedureKind } from "./procedureTypes";
+export { type RadioCall, type RadioPhase, callSign, fieldPhases, placeName } from "./radio";
+export { type Hold, holdWords, holdsOf, holdsParam, lengthCode, lengthOfCode, lengthWords } from "./routeHolds";
+export { gridScale, sameStops, wayTime } from "./routeWays";
+export { type AirplaneRow, useAirplaneHits } from "./useAirplaneHits";
+export { type Description, descriptionKey } from "./useCheckpointNotes";
+export { useLoad } from "./useLoad";
+export { type PanelList, type PanelView, useAddressCards, usePanelView } from "./usePanelView";
+export { type BriefingState, type PlanParams, type Unflyable, navlogQuery, usePlan } from "./usePlan";
+export { usePlanSetters } from "./usePlanSetters";
+export { type Browsing, type FuelCard, useRouteWays } from "./useRouteWays";
+export { runwayCrosswindKt } from "./wind";
+export { useWindPicks } from "./windPicks";

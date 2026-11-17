@@ -167,7 +167,7 @@ export interface ProceduresRouteProps {
   /** The pilot's own point off one of the route's, flown over after it
    *  (FixFromDialog): "VPBNG/090/30". */
   onCreateFix: (after: string, ident: string) => void;
-  /** The pilot's holds (features/plan/lib/routeHolds), each its own row after its point, and
+  /** The pilot's holds (features/plan/routeHolds), each its own row after its point, and
    *  one set, changed or (null) taken off (HoldSheet). */
   holds: Hold[];
   onHoldSet: (fix: string, hold: Hold | null) => void;
@@ -341,7 +341,7 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
       ];
     })
     .join(",");
-  // Save waits while a field's wind is still coming (features/plan/lib/windPicks): its
+  // Save waits while a field's wind is still coming (features/plan/windPicks): its
   // runway is picked into it as it comes, and the route planned again.
   const windComing = airports.some((_, i) => (forecastFor[i] != null ? forecasts[i]?.isPending : cards[i]?.isPending) ?? false);
   useEffect(() => () => useWindPicks.setState({ pending: false }), []);

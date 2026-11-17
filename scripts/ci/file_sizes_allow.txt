@@ -44,7 +44,7 @@ apps/web/src/features/navlog/NavLogView.tsx 868
 apps/web/src/features/procedures/FieldStep.tsx 546
 apps/web/src/features/procedures/PatternChips.tsx 423
 apps/web/src/features/brief/useFlightBriefing.ts 525
-apps/web/src/features/plan/hooks/usePlan.ts 581
+apps/web/src/features/plan/usePlan.ts 581
 apps/web/src/features/procedures/useProceduresRoute.ts 460
 apps/web/src/lib/audioInput.test.ts 632
 apps/web/src/lib/audioInput.ts 592

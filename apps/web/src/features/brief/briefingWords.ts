@@ -15,7 +15,7 @@ export function hazardAltitudeRange(lowFt: number | null, highFt: number | null)
 }
 
 /** A special-use area's word for the pass: its times of use's
- *  (features/plan/lib/passTimes), or SFDPS's status now where it holds then
+ *  (features/plan/passTimes), or SFDPS's status now where it holds then
  *  (lib/liveReports liveWhen). */
 type AreaWhen = SuaWhen | "active-now" | "cold-now";
 

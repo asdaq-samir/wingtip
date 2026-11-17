@@ -220,7 +220,7 @@ function PatternRows({ phase, facilities, courseDeg }: { phase: RadioPhase; faci
  * card and radio scripts, ACS PA.III.A and B), in the Brief's section
  * for it: leaving it or arriving -- both at a stop -- its pattern
  * drawn for the runway the wind favours, then the calls in the order they
- * are made (features/plan/lib/radio), worked out over the whole route so each field's
+ * are made (features/plan/radio), worked out over the whole route so each field's
  * calls know the next. Nothing for a local flight: there is no route to
  * call along.
  */

@@ -34,7 +34,7 @@ export interface FieldGlance {
   /** Whether that crosswind is past the airplane's demonstrated one: a
    *  caution can be the runway's length past the POH's tables alone. */
   crosswindOver: boolean;
-  /** The first station called or listened to there (features/plan/lib/radio). */
+  /** The first station called or listened to there (features/plan/radio). */
   radio: { to: string; mhz: number } | null;
   finding: Finding;
 }
