@@ -8,6 +8,7 @@ export const CHART = {
   routeEdge: "#0b0f0a",
   waypoint: "#c0309f",
   mapBlue: "#007aff",
+  mapBlueInk: "#0066d6",
   towered: "#2465b8",
   untowered: "#c0309f",
   fieldUnknown: "#6b7280",

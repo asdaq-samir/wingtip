@@ -186,7 +186,7 @@ test("each row's miles over its groundspeed come to its minutes, a pattern's mil
   await closeNavLog(page);
 });
 
-test("the route's Profile, AI brief and ••• stay on the airplane and altitude's line at the owner's 19.65 px text", async ({ page }) => {
+test("VFR/IFR stays on the airplane and altitude's line at the owner's 19.65 px text", async ({ page }) => {
   // The FPL audit's A3 (2026-11-08): at 19.65 px the three round buttons
   // wrapped onto a line of their own under N-_____ and FL-0xx.
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
@@ -201,7 +201,9 @@ test("the route's Profile, AI brief and ••• stay on the airplane and altit
       document.documentElement.style.fontSize = size;
     }, root);
     const chip = sideDrawer(page).getByTestId("aircraft-select");
-    const actions = sideDrawer(page).getByTestId("route-actions");
+    // The route's ••• is the floating bar's once there is a route
+    // (FplTabBar); the line ends with the flight rules.
+    const actions = sideDrawer(page).getByTestId("route-strip").getByTestId("flight-rules");
     await expect(actions).toBeVisible({ timeout: slow(30000) });
     await expect
       .poll(

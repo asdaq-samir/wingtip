@@ -722,15 +722,16 @@ after the bar. The bar before it is one size on both pages
 (`panelField`'s `SHEET_BAR`, 46 tall, round-ended, the row's room less
 the toggle): on Search the one search's field (`OneSearchField`), on FPL
 the airplane's strip (`features/fpl/workspace/FplBar`, its
-`RouteControls`: the N-number, the altitude and the route's •••, on one
-line, the airplane and the altitude giving way first, the route's •••
-holding Share too (its link, Open in ForeFlight, the checkpoints, the
-kneeboard; the owner, 2026-11-17); the Brief, the Nav Log and the Profile
-are the floating glass bar at the sheet's foot
+`RouteControls`: the N-number, the altitude, VFR/IFR and, before there
+is a route, the route's •••, on one line, the N-number giving way first;
+the Brief, the Nav Log, the Profile and the route's ••• ("More", the
+route's one menu with its sharing; the owner, 2026-11-17: "move
+everything to the tab bar with a ... instead of share") are the floating
+glass bar at the sheet's foot
 from half up, `FplTabBar` in `FlightFoot`, `CardAction`s in its `bar` look
 in the cards' tabs' capsule (`CardTabBar`'s `GlassBar`, held at the
-foot as they are by sheet/insets' `HOLD_AT_EDGE`), each opening its card, Share the route's
-`ShareMenu` as `"send"`, out of sight at the pill under the figures
+foot as they are by sheet/insets' `HOLD_AT_EDGE`), each opening its card, the ••• the route's
+`ShareMenu` in its `look="bar"` (`"tile"` in flight's `FplActions`), out of sight at the pill under the figures
 (sheet/insets' `RISEN_OVER`, in sight only while a finger has the
 sheet). The figures under the route are FPL's pill too, one copy at
 every size: components/sheet/pinAtFoot's `usePinAtFoot` holds them on
@@ -739,7 +740,7 @@ while the route slides on under them, the other way waiting there until
 their place comes up to them, by their transform alone, a frame at a
 time while a finger has the sheet or it settles (FplRoute's `PINNED`:
 in sight at the pill, the foot's sides, the sheet's solid colour under
-them); nothing is handed over at the pill, where two copies flickered.
+them); nothing is handed over at the pill, where two copies flickered. It measures the foot's edge only while the foot is in sight: with a card up the foot is put away, and a measure then held the figures as the pill once the card closed (the owner, 2026-11-17: "When I tap the fuel and close it, the strip becomes bigger hiding the departure"); it measures again as the foot comes back.
 FPL's bar and route are laid out at the pill with `RISEN_FACE`
 (SheetParts' `rises`), in sight from the finger's first move by
 visibility alone, as the cards' bodies come into sight (`PILL_BODY`,
@@ -760,8 +761,8 @@ pills on one line, no footer; Route Line, the line split in three
 whole, then the Routes' chips (`route-group`, `RouteLine`: one row of
 the search's pill, each way's name and time, the one flown filled; on the
 map `WaysGl` draws it solid magenta and the others dotted, their chips
-white at 12 points, the flown way's words in the map's blue
-(`routeWays`' `wayInk`), named and kept apart by MapLibre's collision), the cards
+white at 12 points, the flown way's words in the map's blue a step
+deeper for words, `map-blue-ink` (5.4:1 on the white chip; `routeWays`' `wayInk`), named and kept apart by MapLibre's collision), the cards
 in the plan under it. The toggle is drawn only on the page that is up,
 so there is one in the page. The account button took the toggle's
 place over the map: a glass circle the size of the 3D's in the left-hand

@@ -3,7 +3,7 @@ import { altitudesOf, visitKey } from "../../../lib/identSchema";
 import { cruiseTasOf, shortName, taxiFuelOf } from "../../../lib/aircraftChoice";
 import { clockTime, flightLevel } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
-import { legsWithoutWind, windsOutOfDate, placeName } from "../../plan";
+import { legsWithoutWind, windsOutOfDate } from "../../plan";
 import { useGeo } from "../../../lib/geo";
 import { placeOf, useAirportIndex } from "../../../lib/airportIndex";
 import { useProgressToast } from "../../../lib/useProgressToast";
@@ -123,19 +123,19 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   const briefLine = useMemo(() => {
     if (!course) return null;
     const cruiseFt = s.legs.length ? Math.max(...s.legs.map((leg) => leg.altitude_ft)) : null;
-    const from = placeName(course.departure.name, course.departure.ident);
-    // The Brief's head's one line, cut short at its end on a phone: the
-    // altitude and when first, the names (the head's idents) last.
+    // The Brief's head's one line: the altitude, when and the airplane. No
+    // airport names: the title has the idents, and the names ran the line
+    // off a phone's width ("FL-145 · leaving now · Chicago Exec to Harry
+    // R…"; the owner, 2026-11-17: "Yes to all recs").
     return [
       // Written as the route box writes it (FL-090), the owner's format.
       cruiseFt ? flightLevel(cruiseFt) : null,
       depart ? `leaving ${clockTime(new Date(depart))}` : "leaving now",
       shortName(aircraftLabel),
-      s.local ? from : `${from} to ${placeName(course.destination.name, course.destination.ident)}`,
     ]
       .filter(Boolean)
       .join(" · ");
-  }, [course, s.legs, s.local, aircraftLabel, depart]);
+  }, [course, s.legs, aircraftLabel, depart]);
   // The flight to save and file, and what the Brief reads of it
   // (useFlightToSave).
   const saving = useFlightToSave({

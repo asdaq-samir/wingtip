@@ -207,8 +207,9 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     ],
   );
 
-  const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard) => (
+  const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard, look?: "bar" | "tile") => (
     <ShareMenu
+      look={look}
       align={align}
       testId={testId}
       card={card}
@@ -259,8 +260,12 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           at: view === "plan" ? 1 : 0,
           go: pickPage,
           floats: !flying && !vm.flight.dryRunning,
-          bar: <FplBar strip={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />} />,
-          second: <PlanPage vm={vm} navLog={navLog} />,
+          // The route's ••• in the first row only before there is a route:
+          // once there is, it ends the floating bar (FlightFoot; the owner,
+          // 2026-11-17: "move everything to the tab bar with a ... instead
+          // of share"), and with none its Show Route As stays at hand.
+          bar: <FplBar strip={<RouteControls vm={vm} flightInputs={flightInputs} share={routed ? null : shareMenu("end")} />} />,
+          second: <PlanPage vm={vm} navLog={navLog} more={shareMenu("end", undefined, undefined, "tile")} />,
         },
         // The one search's Autocomplete round the whole panel: its field (the first row) and its list (the body) one combobox.
         around: (panel) => (
@@ -276,7 +281,10 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         bar: <OneSearchField model={search} inputRef={vm.search.searchInput} />,
         // FPL's foot (FlightFoot): from half up its actions' floating bar, at the pill its figures alone, large,
         // under the route from half up (the owner, 2026-11-16); in flight the figures; under the Profile, its card's (PlanCards).
-        foot: !place && !heldPoint && !flight && !briefShown && !profileShown ? routed && <FlightFoot vm={vm} tabs /> : undefined,
+        foot:
+          !place && !heldPoint && !flight && !briefShown && !profileShown
+            ? routed && <FlightFoot vm={vm} more={shareMenu("end", undefined, undefined, "bar")} />
+            : undefined,
         // The route as one row under FPL's bar (MapPanel keeps it under the
         // others' heads). How it shows once whole is the pilot's pick from its
         // ••• menu's Show Route As (lib/preferences RouteEdit: the box, one
