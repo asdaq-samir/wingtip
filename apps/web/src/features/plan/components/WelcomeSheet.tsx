@@ -33,8 +33,8 @@ const ROWS = [
  * The first flight's welcome (FirstFlight, useFirstFlight; the owner's
  * option A, 2026-11-13), laid out as an Apple app's own welcome sheet: the
  * app's name large and centred, three rows each a tinted icon, a bold
- * title and a line; the look picked on Setup's own two tiles, Theme and
- * Appearance side by side as its Layout has them (lookPicks), changing the
+ * title and a line; the look picked on the Map card's own two tiles, Theme
+ * and Appearance side by side as its Look has them (lookPicks), changing the
  * sheet and the map behind it as it is picked (the owner, 2026-11-13:
  * "give theme and appearance selection on the welcome screen"); and one
  * way on at its foot, Let's Go Flying (the owner, 2026-11-13: one button,
@@ -218,11 +218,12 @@ function Foot({ onGo }: { onGo: () => void }) {
   );
 }
 
-/** Theme and Appearance as two tiles side by side (lookPicks' tiles; the
- *  Map card's Look draws the same picks as rows). */
+/** Theme and Appearance as two tiles side by side, the Map card's Look's
+ *  own (lookPicks, LayerMenuTile), in its grid, so the look is picked on
+ *  the same tiles in both places. */
 function LookRows() {
   return (
-    <div className="mx-auto mt-4 grid w-full max-w-sm grid-cols-2 gap-2">
+    <div className="mx-auto mt-4 grid w-full max-w-sm auto-rows-fr grid-cols-2 gap-2">
       <ThemeTile />
       <AppearanceTile />
     </div>

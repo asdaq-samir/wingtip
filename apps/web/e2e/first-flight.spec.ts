@@ -64,6 +64,16 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   await expect(welcome.getByRole("heading", { name: "Welcome to Wingtip Maps" })).toBeVisible();
   for (const row of ["Search, like Maps", "FPL, like your EFB", "FAA charts that move like Maps"])
     await expect(welcome.getByText(row)).toBeVisible();
+  // Theme and Appearance on the Map card's own look tiles (lookPicks'
+  // LayerMenuTile), two side by side and one size, each its value under
+  // its name and a tap its menu.
+  const [theme, appearance] = [welcome.getByTestId("brand-select"), welcome.getByTestId("theme-select")];
+  await expect(theme).toHaveAccessibleName(/^Theme: /);
+  await expect(appearance).toHaveAccessibleName(/^Appearance: /);
+  const [themeBox, appearanceBox] = [await theme.boundingBox(), await appearance.boundingBox()];
+  expect(Math.abs(themeBox!.y - appearanceBox!.y)).toBeLessThan(1);
+  expect(Math.abs(themeBox!.height - appearanceBox!.height)).toBeLessThan(1);
+  expect(themeBox!.height).toBeGreaterThanOrEqual(80);
   // The position not yet allowed: Turn On Location and Later at its foot
   // (Apple's permission priming, the owner, 2026-11-13), Later going on
   // without asking.

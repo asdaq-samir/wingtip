@@ -1316,7 +1316,7 @@ The first time the planner opens with no route on a device
 (`WelcomeSheet`: the stock Drawer on a phone, the stock Dialog from `md`
 up, solid): "Welcome to Wingtip Maps", three rows (Search, like Maps; FPL,
 like your EFB; FAA charts that move like Maps), Theme and Appearance as
-two tiles (`components/lookPicks`' `ThemeTile` and `AppearanceTile`, `MenuTile`; the Map card's Look draws the same picks as the layers' tiles, `ThemeLayerTile` and `AppearanceLayerTile`), applied
+two tiles, the Map card's Look's own (`components/lookPicks`' `ThemeTile` and `AppearanceTile`, the layers' `LayerMenuTile`; 2026-11-17, where the welcome had tiles of its own), applied
 as they are picked, the sheet and the map changing behind it; the owner,
 2026-11-13), and at its foot Apple's permission priming (the owner,
 2026-11-13): with the browser's question still to come, Turn On Location

@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { AppearanceLayerTile, OwnShipLayerTile, SunlightLayerTile, ThemeLayerTile } from "../../components/lookPicks";
+import { AppearanceTile, OwnShipTile, SunlightTile, ThemeTile } from "../../components/lookPicks";
 import SectionTitle from "../../components/SectionTitle";
 
 /**
@@ -24,10 +24,10 @@ export default function LookChoice() {
       </div>
       {/* The layers' grid (MapLayers), so every section's tiles line up. */}
       <div className="grid auto-rows-fr grid-cols-2 gap-2">
-        <ThemeLayerTile />
-        <AppearanceLayerTile />
-        <SunlightLayerTile />
-        <OwnShipLayerTile />
+        <ThemeTile />
+        <AppearanceTile />
+        <SunlightTile />
+        <OwnShipTile />
       </div>
     </section>
   );
