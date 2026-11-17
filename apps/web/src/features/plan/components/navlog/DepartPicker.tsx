@@ -129,9 +129,18 @@ export default function DepartPicker({
           </Button>
         )}
       </ResponsivePopoverTrigger>
-      {/* A sheet from the bottom on a phone, the calendar centred in it. */}
-      {/* Its Done at the foot its way out (no close). */}
-      <ResponsivePopoverContent title={label} className="w-auto p-0" align="start" closeButton={false}>
+      {/* A sheet from the bottom on a phone, the calendar centred in it.
+          Its ✕ in its head as every card's (rules.md §1), Done at the
+          foot as well: at half the foot is under the calendar, out of
+          sight, and the card had no way out in view; the time picked said
+          under the name, so the choice is in view at half too (the UI
+          audit's B7, 2026-11-17). */}
+      <ResponsivePopoverContent
+        title={label}
+        description={date ? `Leaving ${shortWhen(date)}` : "Leaving now"}
+        className="w-auto p-0"
+        align="start"
+      >
         <div className="flex flex-col items-center gap-3 pb-3" data-testid="depart-picker">
           {/* Sized like the grid it stands in for, so the popover does
               not jump once it arrives. */}
