@@ -1,10 +1,10 @@
 import { BadgeCheck, Fan, IdCard, Plane, UserRound } from "lucide-react";
 import { cn } from "cn";
-import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { RowBadge } from "../../../components/RowBadge";
-import type { AircraftRegistration } from "../../../lib/api/types";
-import { BADGE } from "../../../lib/rowBadges";
-import { dayMonthYear, grouped } from "../../../lib/format";
+import { ListGroup, ListRow } from "../../components/GroupedList";
+import { RowBadge } from "../../components/RowBadge";
+import type { AircraftRegistration } from "../../lib/api/types";
+import { BADGE } from "../../lib/rowBadges";
+import { dayMonthYear, grouped } from "../../lib/format";
 
 /** An ISO date as a day, as the app writes every one: "31 Jan 2033"
  *  (lib/format days; it was the phone's own form, CODE-33). */

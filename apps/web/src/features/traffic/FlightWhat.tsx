@@ -1,4 +1,4 @@
-import FitLine from "../../../components/FitLine";
+import FitLine from "../../components/FitLine";
 
 /**
  * An airplane card's head's second line: what it is and who flies it,

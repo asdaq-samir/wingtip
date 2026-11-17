@@ -1,19 +1,19 @@
 import { cn } from "cn";
-import StatusBadge from "../../../components/StatusBadge";
-import { Progress } from "../../../components/ui/progress";
-import { useGeo, type LatLon } from "../../../lib/geo";
-import { useClock } from "../../../lib/useMinuteClock";
-import { type Fix } from "../../../lib/map/position/ownShip";
-import { carriedOn, closestApproach, nearInHeight } from "../../../lib/traffic";
-import type { TrafficAircraft } from "../../../lib/api/types";
-import { TEXT } from "../../../lib/text";
-import { altFt, bearing, clockTime, knots, reportedAltitude } from "../../../lib/format";
-import { awayFrom, nmAway } from "../../../lib/useAway";
+import StatusBadge from "../../components/StatusBadge";
+import { Progress } from "../../components/ui/progress";
+import { useGeo, type LatLon } from "../../lib/geo";
+import { useClock } from "../../lib/useMinuteClock";
+import { type Fix } from "../../lib/map/position/ownShip";
+import { carriedOn, closestApproach, nearInHeight } from "../../lib/traffic";
+import type { TrafficAircraft } from "../../lib/api/types";
+import { TEXT } from "../../lib/text";
+import { altFt, bearing, clockTime, knots, reportedAltitude } from "../../lib/format";
+import { awayFrom, nmAway } from "../../lib/useAway";
 import AirplaneSketch from "./AirplaneSketch";
-import { squawkMeaning } from "../lib/squawks";
-import { lasted } from "../../../components/airplane/pastFlightFormat";
+import { squawkMeaning } from "./squawks";
+import { lasted } from "../../components/airplane/pastFlightFormat";
 import { End, EndPending } from "./FlightEnds";
-import { SkeletonLine } from "../../../components/QueryState";
+import { SkeletonLine } from "../../components/QueryState";
 
 /** The summary's corner: climbing, level or descending in the air; on the
  *  ground; or an emergency's code (AIM 6-2-2, 6-3-4, 6-4-2). */

@@ -1,6 +1,6 @@
 import { memo } from "react";
-import type { SketchField } from "../../../lib/airplane/sketchField";
-import { colourRuns } from "../../../lib/traffic";
+import type { SketchField } from "../../lib/airplane/sketchField";
+import { colourRuns } from "../../lib/traffic";
 
 /**
  * Where an airplane has flown, drawn small in the airport card's diagram's

@@ -1,4 +1,4 @@
-import { callEngine } from "../../../lib/engine/engine";
+import { callEngine } from "../../lib/engine/engine";
 
 /** What a squawk says, where it says more than a code: the three a pilot
  *  sets in trouble -- 7700 an emergency (AIM 6-2-2), 7500 unlawful

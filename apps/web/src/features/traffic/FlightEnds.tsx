@@ -1,7 +1,7 @@
 import { cn } from "cn";
-import { Button } from "../../../components/ui/button";
-import { SkeletonLine } from "../../../components/QueryState";
-import { TEXT } from "../../../lib/text";
+import { Button } from "../../components/ui/button";
+import { SkeletonLine } from "../../components/QueryState";
+import { TEXT } from "../../lib/text";
 
 /** One end of the flight in its summary: the field's ident, a tap that
  *  opens its card where there is one to open, and its town under it. */

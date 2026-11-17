@@ -1,18 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { Route } from "lucide-react";
 import { cn } from "cn";
-import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { PillSection } from "../../../components/Favorites";
-import { RowBadge } from "../../../components/RowBadge";
-import { SkeletonLine } from "../../../components/QueryState";
-import type { FlightDetail, FlightRoute, TrafficAircraft } from "../../../lib/api/types";
-import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
-import { departuresQuery } from "../../../lib/liveReports";
-import { BADGE } from "../../../lib/rowBadges";
-import { TEXT } from "../../../lib/text";
-import { departureLine } from "../lib/departureWords";
-import { nameCase } from "../lib/nameCase";
-import { squawkMeaning } from "../lib/squawks";
+import { ListGroup, ListRow } from "../../components/GroupedList";
+import { PillSection } from "../../components/Favorites";
+import { RowBadge } from "../../components/RowBadge";
+import { SkeletonLine } from "../../components/QueryState";
+import type { FlightDetail, FlightRoute, TrafficAircraft } from "../../lib/api/types";
+import { openAirplaneProfile } from "../../lib/airplane/profileStore";
+import { departuresQuery } from "../../lib/liveReports";
+import { BADGE } from "../../lib/rowBadges";
+import { TEXT } from "../../lib/text";
+import { departureLine } from "./departureWords";
+import { nameCase } from "./nameCase";
+import { squawkMeaning } from "./squawks";
 import FaaRegistration from "./FaaRegistration";
 
 /** A row's value from the airplane's record: its words as a name is
@@ -97,7 +97,7 @@ export default function FlightInfoTab({
             value={<span className={cn("font-semibold text-foreground uppercase tabular-nums", TEXT.row)}>{hex}</span>}
           />
           <ListRow title="Callsign" value={<span className="font-semibold text-foreground">{plane?.callsign ?? "—"}</span>} />
-          {/* The tower's departure event, where TDES sent one (features/plan/lib/departureWords). */}
+          {/* The tower's departure event, where TDES sent one (features/traffic/departureWords). */}
           {towerLine && <ListRow title="Tower" description={towerLine} />}
         </ListGroup>
       </PillSection>

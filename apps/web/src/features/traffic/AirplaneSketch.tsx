@@ -1,6 +1,6 @@
 import { cn } from "cn";
-import { TEXT } from "../../../lib/text";
-import type { SketchField } from "../../../lib/airplane/sketchField";
+import { TEXT } from "../../lib/text";
+import type { SketchField } from "../../lib/airplane/sketchField";
 import TrailSketch from "./TrailSketch";
 
 /**

@@ -5,8 +5,8 @@
  * sends the departure clearance's delivery (times.clearance_delivery),
  * which is not a takeoff, and is never called one.
  */
-import type { DepartureEvent } from "../../../lib/api/types";
-import { zulu } from "../../../lib/liveReports";
+import type { DepartureEvent } from "../../lib/api/types";
+import { zulu } from "../../lib/liveReports";
 
 export function departureLine(e: DepartureEvent | undefined): string | null {
   if (!e) return null;

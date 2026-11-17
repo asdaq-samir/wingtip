@@ -22,7 +22,7 @@ export { RouteProblem } from "../plan/lazy";
 export { LocalDuration } from "../plan/lazy";
 export { BriefCard } from "../brief/lazy";
 export { AirspaceCard } from "../plan/lazy";
-export { FlightCard } from "../plan/lazy";
+export { FlightCard } from "../traffic/lazy";
 export { PastFlightCard } from "../flying/lazy";
 export { PlaceCard } from "../plan/lazy";
 export { StopsCard } from "../stops/lazy";

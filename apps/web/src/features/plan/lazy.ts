@@ -8,7 +8,6 @@
 
 export { default as AirspaceCard } from "./components/AirspaceCard";
 export { default as AltitudeReasoning } from "./components/AltitudeReasoning";
-export { default as FlightCard } from "./components/FlightCard";
 export { FrequencyRow, Mhz } from "./components/FrequencyRow";
 export { default as Kneeboard } from "./components/Kneeboard";
 export { default as LocalDuration } from "./components/LocalDuration";
