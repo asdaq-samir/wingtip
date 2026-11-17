@@ -1,7 +1,7 @@
 //! How high a map stands an airspace volume in 3D: its floor and top in
 //! feet MSL, from the limits as the FAA's data gives them, over the ground
 //! under it where a limit is above the ground. The one copy of it: the
-//! web's 3D view (features/plan/map/terrain/airspaceVolumes) asks it by
+//! web's 3D view (features/plan-map/terrain/airspaceVolumes) asks it by
 //! name (`airspace_volume_span`), and the phones' 3D views are to.
 //!
 //! The limits are read as the special-use tab reads them (sua_limit

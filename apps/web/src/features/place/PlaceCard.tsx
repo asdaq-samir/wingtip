@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState, useEffectEvent } from "react";
-import { usePrefetchQuery, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { usePrefetchQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "cn";
 import { useKeptAirport } from "../../lib/preferences";
 import { useOwnShip } from "../../lib/map/position/ownShip";
@@ -13,19 +13,16 @@ import { useCardTab } from "../../lib/cardTab";
 import { useTabScroll } from "../../lib/tabScroll";
 import PlaceActions from "./PlaceActions";
 import { ApiError } from "../../lib/api/client";
-import type { AirportPin, AirportPlace, ClassBAirport } from "../../lib/api/types";
-import { compassPoint } from "../../lib/compass";
-import { useGeo, type Geo, type LatLon } from "../../lib/geo";
-import { awayFrom } from "../../lib/useAway";
-import { clockTime, feet, miles, nm, zoneName } from "../../lib/format";
+import type { AirportPlace } from "../../lib/api/types";
+import { useGeo, type LatLon } from "../../lib/geo";
 import { reportedWind } from "../plan";
-import { placeWind } from "./placeWind";
+import { placeWeather } from "./placeWeather";
+import { awayOf, distanceOf, kindOf, knownOf, zonedClock } from "./placeCardWords";
 import { runwaysLeftOut, stripsOf } from "./runwayDrawing";
 import { TEXT } from "../../lib/text";
 import { useMinuteClock } from "../../lib/useMinuteClock";
 import { prefersReducedMotion } from "../../lib/motion";
 import { arrivalHour, hoursOf, sentenceOf } from "./hourly";
-import { sameField } from "../../lib/procedures";
 import { airportQuery, photosQuery, servicesQuery } from "../../lib/queryClient";
 import { StopStrip, type SuggestedStop } from "./StopServices";
 import { PlaceChartsTab } from "./PlaceChartsTab";
@@ -38,57 +35,6 @@ import { runwaysPictureOf } from "./runwayPicks";
 import { useFlyHereMinutes } from "./flyHereTime";
 import { useShown } from "../../lib/shown";
 import StatusBadge from "../../components/StatusBadge";
-import { callEngine } from "../../lib/engine/engine";
-
-/** "18 nm NE", from wherever the card is measured from. */
-function away(geo: Geo, from: LatLon, to: LatLon): string {
-  return geo.distanceNm(from, to) < 0.5 ? "here" : awayFrom(geo, from, to);
-}
-
-/** How far the field is, for the facts' Distance (2026-11-14), "18 nm NE" from C81. Nothing
- *  where there is nothing to measure from, nor where the start is the
- *  field itself: the departure's own card, with no fix, said "here of
- *  KMSN", as the phones said "From KMSN 0 nm". */
-function distanceOf(geo: Geo | null, place: AirportPlace, from: { point: LatLon; name: string | null } | null): string | null {
-  const itself = !!from?.name && (sameField(from.name, place.ident) || (geo?.distanceNm(from.point, place) ?? Infinity) < 0.5);
-  if (!geo || !from || itself) return null;
-  // "18 nm NE|C81", one string so the card redraws only when it changes; parted again by awayOf.
-  return `${away(geo, from.point, place)}|${from.name ?? ""}`;
-}
-
-/** The distance's two parts for the fact strip: "18 nm NE", and "C81" or none for own ship. */
-function awayOf(distance: string | null) {
-  if (!distance) return null;
-  const [words = "", from = ""] = distance.split("|");
-  return { words, from: from || null };
-}
-
-/** Who may land there, the card's one use line on every app (the owner,
- *  2026-11-13), under its name (PlaceSubtitle): the engine's airport_use_words,
- *  "Private: permission required", "Military: prior permission required",
- *  none for a public or joint-use field; first, one NASR lists as closed,
- *  its label (decision 0043). */
-function kindOf(place: AirportPlace | undefined): string | null {
-  if (!place || place.closed) return place?.closed ?? null;
-  return callEngine("airport_use_words", { private: place.private, military: place.military ?? null }).words;
-}
-
-/** A forecast's hour in the sentence over the hours, this device's clock
- *  with its zone, "15:00 CST": the card says "Observed 0355Z" beside it,
- *  and a bare "15:00" read as either (the web audit's WEB-9). */
-const zonedClock = (ms: number) => `${clockTime(new Date(ms))} ${zoneName(new Date(ms))}`;
-
-/** An airport's name and weather from whatever the map has already
- *  asked for it in: the fields in view, the route's, the Class B ones. */
-function knownOf(queryClient: QueryClient, ident: string): { name: string; category: string | null } | null {
-  for (const key of ["airportsInView", "airportsReporting", "classB"]) {
-    for (const [, pins] of queryClient.getQueriesData<(AirportPin | ClassBAirport)[]>({ queryKey: [key] })) {
-      const hit = pins?.find((p) => p.ident === ident);
-      if (hit) return { name: hit.name, category: hit.flight_category ?? null };
-    }
-  }
-  return null;
-}
 
 /**
  * An airport's card in the panel, as a place's is in Maps, laid out at
@@ -222,30 +168,7 @@ export default function PlaceCard({
   const name = place?.name ?? known?.name ?? kept?.name ?? null;
   const kind = kindOf(place);
   const line = place ? null : error ? (error instanceof ApiError && error.status === 404 ? "Not found" : "Could not be looked up") : "…";
-  const metar = place?.metar ?? null;
-  const weather = place
-    ? { status: place.weather_unavailable ? "unavailable" : metar ? "reported" : "no-report", category: metar?.flight_category ?? null }
-    : known && { status: known.category ? "reported" : "no-report", category: known.category };
-  // A field with no report of its own: the nearest station's within 30
-  // nm (wingtip.weather.nearest_report), at the pilot's ask -- its category
-  // the card's badge, "≈", only within the ten statute miles a report is
-  // said of (`near`).
-  const nearby = place && !metar ? (place.nearby_metar ?? null) : null;
-  const nearbyCategory = nearby?.metar.flight_category ?? null;
-  const nearCategory = nearby?.near ? nearbyCategory : null;
-  // And the weather the National Weather Service's Gridded LAMP models at
-  // the field itself for the hour (wingtip.glmp), at the pilot's ask: the
-  // badge's before a near station's, the model being of this field.
-  const modelled = place && !metar ? (place.modelled_weather ?? null) : null;
-  // A flight category only: its own, or with none the modelled one or the
-  // nearest station's, marked "≈" -- and none at all where neither is
-  // had, the weather's line saying why.
-  const approximate = modelled
-    ? { category: modelled.flight_category, said: "modelled for this field by the National Weather Service, not a report" }
-    : nearCategory
-      ? { category: nearCategory, said: `from the report of ${nearby?.ident}, another station, not this field's own` }
-      : null;
-  const category = weather?.category ?? approximate?.category ?? null;
+  const { metar, weather, approximate, category, weatherLine, observedAt } = placeWeather(place, known);
   // The shared StatusBadge in the category's chip colour (AIM 7-1-7's categories, the FAA's colours).
   const chip = category && (
     <StatusBadge category={category} className="h-[1.625rem] px-2.5" data-testid="place-category">
@@ -261,27 +184,6 @@ export default function PlaceCard({
       )}
     </StatusBadge>
   );
-  // The weather in a line at the top of its tab where there is no
-  // forecast to say, as a pilot reads a report first: the wind, the
-  // visibility and the ceiling (the lowest broken or overcast layer, 14
-  // CFR 1.1), and how old it is; with none of its own, the model's or the
-  // nearest station's, said as such.
-  const weatherLine = metar
-    ? [
-        placeWind(metar),
-        metar.visibility_sm != null ? miles(metar.visibility_sm, metar.visibility_plus) : null,
-        metar.ceiling_ft == null ? "No ceiling" : `Ceiling ${feet(metar.ceiling_ft)}`,
-      ]
-        .filter(Boolean)
-        .join(" · ")
-    : modelled
-      ? `Modelled: ${modelled.visibility_sm >= 10 ? "10+ sm" : miles(modelled.visibility_sm)} · ${modelled.ceiling_ft == null ? "no ceiling" : `ceiling ${feet(modelled.ceiling_ft)}`}`
-      : nearby
-        ? `Nearest report ${nearby.ident}, ${nm(nearby.distance_nm)} ${compassPoint(nearby.bearing_deg)}`
-        : place?.weather_unavailable
-          ? "The weather service could not be reached"
-          : "No weather station reports from this field";
-  const observedAt = (metar ? metar.observed_at : nearby?.metar.observed_at) ?? null;
   // And hour by hour, as Apple's Weather has it (the owner's pick, G1):
   // Now from the report, each hour after it from the field's own TAF,
   // and a sentence of what they say, written from them (features/place/hourly). Read

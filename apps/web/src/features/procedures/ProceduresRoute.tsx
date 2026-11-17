@@ -7,7 +7,8 @@ import { etaAt, legOf, rowPoint, type NavLogRow, type ProcedureAirport } from ".
 import { PointMark } from "../navlog/lazy";
 import { PointFigures } from "../route/lazy";
 import { FuelGauge } from "./FuelGauge";
-import { useProceduresRoute, type ProceduresRouteProps } from "./useProceduresRoute";
+import { useProceduresRoute } from "./useProceduresRoute";
+import type { ProceduresRouteProps } from "./routeProps";
 import { RouteLine } from "./RouteLine";
 import { FieldStep } from "./FieldStep";
 import { pointEnd } from "./pointEnd";
@@ -21,7 +22,7 @@ import { plateTitle } from "../plates";
 // The list's types and its Routes row, where PlanWorkspace and the
 // routePanel chunk import them from.
 export type { ProcedureAirport } from "../plan";
-export type { FitInputs, ProceduresAt } from "./useProceduresRoute";
+export type { FitInputs, ProceduresAt } from "./routeProps";
 export { RouteLine } from "./RouteLine";
 import { loadPointAltitudeDialog } from "../route";
 

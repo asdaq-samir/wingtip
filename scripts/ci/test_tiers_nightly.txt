@@ -28,6 +28,7 @@ direct-to.spec.ts
 diversion.spec.ts
 dry-run-bar.spec.ts
 dry-run-follow.spec.ts
+dry-run-profile.spec.ts
 export.spec.ts
 favorites-add.spec.ts
 field-lights.spec.ts
@@ -41,6 +42,7 @@ fpl-route-as.spec.ts
 frequency-copy.spec.ts
 fuel-stops.spec.ts
 hazard-legs.spec.ts
+ifr-icing.spec.ts
 inspections.spec.ts
 instructor-lesson.spec.ts
 instructor.spec.ts
@@ -68,11 +70,17 @@ passengers.spec.ts
 pattern-radio.spec.ts
 place-add-stop.spec.ts
 place-tabs.spec.ts
+places-chart.spec.ts
+places-search.spec.ts
+places.spec.ts
 plan-cards-heads.spec.ts
 plane-card.spec.ts
+plans-altitude.spec.ts
 plates-map.spec.ts
 practice.spec.ts
 problems.spec.ts
+procedures-approach.spec.ts
+procedures-route.spec.ts
 profile.spec.ts
 pull-down.spec.ts
 radio-input.spec.ts
@@ -98,6 +106,8 @@ sheet-turn.spec.ts
 speed-lab.spec.ts
 speed.spec.ts
 status-feeds.spec.ts
+stops-box.spec.ts
+stops-points.spec.ts
 stops-reorder.spec.ts
 stops-sheet.spec.ts
 stops-waypoints.spec.ts
@@ -110,6 +120,8 @@ tap-in-sight.spec.ts
 terrain.spec.ts
 tfr-card.spec.ts
 tiles.spec.ts
+tracking-card.spec.ts
+tracking-flights.spec.ts
 tracking.spec.ts
 undo.spec.ts
 weather-flow.spec.ts

@@ -12,9 +12,8 @@ import {
   setAirportWeather,
   setOverlayExclusion,
   setSelectedAirport,
-  volumeOfTile,
-  vorOfTile,
 } from "./glOverlays";
+import { volumeOfTile, vorOfTile } from "./glTileFeatures";
 import { airspaceText, glZoom } from "./glStyle";
 
 const TILES: OverlayTiles = {

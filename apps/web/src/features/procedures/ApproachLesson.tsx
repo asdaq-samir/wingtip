@@ -2,35 +2,24 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
-import { ListChoices, ListGroup, ListRow } from "../../components/GroupedList";
+import { ListGroup, ListRow } from "../../components/GroupedList";
 import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } from "../../components/ResponsivePopover";
 import Segmented from "../../components/Segmented";
-import StatusBadge from "../../components/StatusBadge";
 import { Button } from "../../components/ui/button";
 import { Skeleton } from "../../components/ui/skeleton";
 import { useIsMobile } from "../../hooks/use-mobile";
-import {
-  approachBrief,
-  approachQuiz,
-  coachingSteps,
-  lessonPath,
-  lessonProfile,
-  pathBetween,
-  type CoachStep,
-  type LessonInput,
-} from "../../lib/approachLesson";
-import type { AircraftProfile, ProcedureDrawing, QuizAnswer } from "../../lib/api/types";
-import { noteAt } from "../../lib/assignedLessons";
+import { approachBrief, coachingSteps, lessonPath, pathBetween, type LessonInput } from "../../lib/approachLesson";
+import type { AircraftProfile } from "../../lib/api/types";
 import { useGeo } from "../../lib/geo";
-import { NO_FOCUS, endLessonMap, useLessonMap } from "../../lib/map/route/lessonMap";
+import { endLessonMap, useLessonMap } from "../../lib/map/route/lessonMap";
 import type { PickedProcedure } from "../../lib/procedures";
 import { airportQuery, procedureQuery } from "../../lib/queryClient";
 import { FINDING_TONE } from "../../lib/findings";
-import { TEXT, TEXT_POINTS } from "../../lib/text";
-import SectionTitle from "../../components/SectionTitle";
-import { altFt } from "../../lib/format";
-import { CHART } from "../../lib/tokens";
+import { TEXT } from "../../lib/text";
 import { FieldError } from "../../components/ui/field";
+import { InstructorNote, Progress, type FromInstructor } from "./LessonParts";
+import { LessonProfile } from "./LessonProfile";
+import { QuizPage } from "./LessonQuiz";
 
 /** The lesson's one safety line, its subtitle: the plate, not this, is
  *  what is flown (CLAUDE.md's safety principle, kept off the pilot's
@@ -48,33 +37,6 @@ const PAGES = [
  *  the one picked. 90 to start, a light airplane's approach speed or near
  *  it in still air -- the pilot's to change, said on the control. */
 const SPEEDS = [70, 90, 120] as const;
-
-/** An approach an instructor set as a lesson (AssignedLesson): their name
- *  and their notes at its fixes, shown on the brief's and the flying's
- *  cards, and where the lesson reports how far the student has come -- the
- *  brief finished, flown to its end, each quiz answer (the answers so far,
- *  of how many) -- with what went wrong sending it, said on the card. */
-export interface FromInstructor {
-  instructorName: string;
-  notes: Record<string, string>;
-  onBriefed: () => void;
-  onFlown: () => void;
-  onQuiz: (answers: QuizAnswer[], of: number) => void;
-  problem: string | null;
-}
-
-/** "Your instructor: …" under a step whose fix they left a note at. */
-function InstructorNote({ from, fix }: { from: FromInstructor | undefined; fix: string | null }) {
-  const note = noteAt(from?.notes, fix);
-  if (!from || !note) return null;
-  return (
-    <ListRow
-      title={<span className={TEXT.prose}>Your instructor: “{note}”</span>}
-      description={from.instructorName}
-      data-testid="approach-instructor-note"
-    />
-  );
-}
 
 /** A speed of the airplane's own figures, where its profile carries one
  *  (its POH's VREF, or its VSO): none of the app's profiles do yet, and
@@ -190,11 +152,6 @@ function Lesson({ input, from }: { input: LessonInput; from?: FromInstructor }) 
   );
 }
 
-/** "3 of 10" over a step, a section's title (SectionTitle), said as it changes. */
-const Progress = ({ at, of }: { at: number; of: number }) => (
-  <SectionTitle aria-live="polite" data-testid="approach-lesson-progress">{`${at + 1} of ${of}`}</SectionTitle>
-);
-
 function BriefPage({ input, from, onDone }: { input: LessonInput; from?: FromInstructor; onDone: () => void }) {
   const items = useMemo(() => approachBrief(input), [input]);
   const [at, setAt] = useState(0);
@@ -305,163 +262,6 @@ function FlyPage({
           </Button>
         )}
       </div>
-    </div>
-  );
-}
-
-/**
- * The approach from the side, as the plate's profile view draws it, a
- * sketch from the coded data: each fix's crossing altitude, the path down
- * from the FAF at its coded angle dashed in the tint, and the airplane at
- * the step's fix. No minimums: they are the plate's.
- */
-function LessonProfile({ drawing, steps, at }: { drawing: ProcedureDrawing; steps: CoachStep[]; at: number }) {
-  const { marks, path } = useMemo(() => lessonProfile(drawing), [drawing]);
-  const known = marks.filter((m) => m.ft != null);
-  if (known.length < 1 || marks.length < 2) return null;
-  const W = 288,
-    H = 96,
-    PAD = 14;
-  const nms = marks.map((m) => m.alongNm);
-  const lo = Math.min(...nms),
-    hi = Math.max(...nms);
-  const fts = [...known.map((m) => m.ft!), ...(path ? [path.to.ft] : [])];
-  const top = Math.max(...fts),
-    bottom = Math.min(...fts, top - 1000);
-  const x = (nm: number) => PAD + ((nm - lo) / Math.max(1e-6, hi - lo)) * (W - 2 * PAD);
-  const y = (ft: number) => PAD + ((top - ft) / Math.max(1, top - bottom)) * (H - 2 * PAD - TEXT_POINTS.caption);
-  // The fix the step is at, and the altitude it is crossed at; past the
-  // last fix (the decision, the missed approach), at the end of the path.
-  const step = steps[at];
-  const here =
-    marks.find((m) => m.ident === step?.focus.fix && m.ft != null) ??
-    (step?.key === "decision" && path ? { alongNm: path.to.nm, ft: path.to.ft } : null);
-  const line = known.map((m) => `${x(m.alongNm)},${y(m.ft!)}`).join(" ");
-  return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className="h-24 w-full rounded-xl bg-muted/60"
-      role="img"
-      data-testid="approach-profile"
-      aria-label={`The approach from the side: ${known.map((m) => `${m.ident} ${altFt(m.ft)} ft`).join(", ")}${path ? `, then down at ${drawing.glidepath_deg?.toFixed(2)}°` : ""}`}
-    >
-      <polyline points={line} fill="none" stroke="currentColor" strokeWidth={1.5} className="text-procedure" />
-      {path && (
-        <line
-          x1={x(path.from.nm)}
-          y1={y(path.from.ft)}
-          x2={x(path.to.nm)}
-          y2={y(path.to.ft)}
-          stroke="var(--tint)"
-          strokeWidth={2}
-          strokeDasharray="5 4"
-        />
-      )}
-      {marks.map((m) => (
-        <g key={m.ident}>
-          {m.ft != null && <circle cx={x(m.alongNm)} cy={y(m.ft)} r={2.5} className="fill-procedure" />}
-          <text x={x(m.alongNm)} y={H - 4} textAnchor="middle" fontSize={TEXT_POINTS.caption} className="fill-muted-foreground">
-            {/^RW\d/.test(m.ident) ? "RWY" : m.ident}
-          </text>
-        </g>
-      ))}
-      {here && (
-        <circle
-          cx={x(here.alongNm)}
-          cy={y(here.ft!)}
-          r={5}
-          fill="var(--tint)"
-          stroke={CHART.casing}
-          strokeWidth={2}
-          data-testid="approach-profile-airplane"
-        />
-      )}
-    </svg>
-  );
-}
-
-function QuizPage({ input, from, gs }: { input: LessonInput; from?: FromInstructor; gs: number }) {
-  const questions = useMemo(() => approachQuiz(input, gs), [input, gs]);
-  const [at, setAt] = useState(0);
-  const [picked, setPicked] = useState<number | null>(null);
-  const [right, setRight] = useState(0);
-  // This attempt's answers, for the instructor's score: Ask Again starts anew.
-  const [answers, setAnswers] = useState<QuizAnswer[]>([]);
-  const done = at >= questions.length;
-  const q = done ? null : questions[at]!;
-  // A wrong answer shows where the right one is; until then, nothing.
-  useEffect(() => {
-    useLessonMap.setState({ focus: q && picked !== null && picked !== q.answer ? q.focus : NO_FOCUS, flight: null });
-  }, [q, picked]);
-  if (questions.length === 0) return <p className={cn("text-muted-foreground", TEXT.prose)}>See the plate</p>;
-  if (!q) {
-    return (
-      <div className="space-y-3">
-        <p className={cn("font-semibold", TEXT.row)} role="status">
-          {right} of {questions.length} right
-        </p>
-        <Button
-          className="w-full"
-          onClick={() => {
-            setAt(0);
-            setPicked(null);
-            setRight(0);
-            setAnswers([]);
-          }}
-        >
-          Ask Again
-        </Button>
-      </div>
-    );
-  }
-  const answered = picked !== null;
-  const pick = (choice: number) => {
-    if (answered) return;
-    setPicked(choice);
-    if (choice === q.answer) setRight(right + 1);
-    const next = [...answers, { question: q.prompt, chosen: q.choices[choice]!, right: choice === q.answer }];
-    setAnswers(next);
-    from?.onQuiz(next, questions.length);
-  };
-  return (
-    <div className="space-y-3" data-testid="approach-quiz">
-      <Progress at={at} of={questions.length} />
-      <p className={cn("font-medium", TEXT.prose)} data-testid="approach-quiz-question">
-        {q.prompt}
-      </p>
-      {/* A tap or Space answers, as the procedures' menus pick (ProcedureMenu):
-          the arrow keys move between the choices without answering. */}
-      <ListChoices value={picked === null ? "" : String(picked)} onChange={() => undefined} label={q.prompt}>
-        <ListGroup>
-          {q.choices.map((choice, i) => (
-            <ListRow
-              key={choice}
-              radio={String(i)}
-              title={choice}
-              disabled={answered && i !== picked}
-              onClick={() => pick(i)}
-              data-testid="approach-quiz-choice"
-            />
-          ))}
-        </ListGroup>
-      </ListChoices>
-      {answered && (
-        <div className="space-y-2" data-testid="approach-quiz-result">
-          <StatusBadge tone={picked === q.answer ? "up" : "down"}>{picked === q.answer ? "Right" : "Not quite"}</StatusBadge>
-          {picked !== q.answer && <p className={cn("font-medium", TEXT.prose)}>The answer: {q.choices[q.answer]}</p>}
-          <p className={cn("text-muted-foreground", TEXT.prose)}>{q.explain}</p>
-          <Button
-            className="w-full"
-            onClick={() => {
-              setAt(at + 1);
-              setPicked(null);
-            }}
-            data-testid="approach-quiz-next"
-          >
-            {at === questions.length - 1 ? "See My Score" : "Next Question"}
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
