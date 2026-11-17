@@ -4,11 +4,12 @@ import { Fragment, type CSSProperties, type KeyboardEvent, type ReactNode } from
 import { cn } from "cn";
 import { Button } from "../../../../components/ui/button";
 import { Badge } from "../../../../components/ui/badge";
+import type { Leg } from "../../../../lib/api/types";
 import { feet, nm, zoneName } from "../../../../lib/format";
 import { placeName } from "../../lib/radio";
 import { wantPlace } from "../../../../lib/navigation/wanted";
 import { TEXT } from "../../../../lib/text";
-import { altFt, bearing, etaAt, one, windAloft } from "../../format";
+import { altFt, bearing, etaAt, one, windText } from "../../format";
 import { PointMark } from "./PointMark";
 import { flownNmOf, isLegPoint, legOf, procedureOf, rowPoint, type NavLogRow } from "./rows";
 
@@ -18,12 +19,23 @@ const RAIL = "left-[calc(0.375rem+1.0625rem)]";
 /** A mark's middle, down the row: the row's 8 and half a mark's 24. */
 const MARK_MIDDLE = "1.25rem";
 
+/** The way a leg is flown, magnetic and named so, as a paper nav log's
+ *  MC and MH columns are: its heading with an airplane picked ("MH 252°"),
+ *  else its course ("MC 258°"), which no airplane changes. The course is
+ *  the great circle's at the leg's start less the leg's variation (the
+ *  engine's navlog legs), as a pilot sets out on it; a bare
+ *  "258°" read as either, and as true (the UI audit's A4). */
+function courseWords(leg: Leg, airplane: boolean): string {
+  const heading = airplane ? leg.magnetic_heading_deg : null;
+  return heading != null ? `MH ${bearing(heading)}` : `MC ${bearing(leg.magnetic_course_deg)}`;
+}
+
 /** The wind a leg was worked out in, as the nav log says it (true, as the
  *  forecast's winds aloft are). */
 function windOf(row: NavLogRow): string | null {
   const leg = legOf(row);
   if (!leg) return null;
-  return leg.wind ? `${windAloft(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt)} kt` : "no data";
+  return leg.wind ? windText(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt, null, "T") : "no data";
 }
 
 /** The airway a leg flies and its published altitudes, as a paper IFR
@@ -139,7 +151,15 @@ export function NavLogList({
           said by its place and its unit. */}
         <div role="rowgroup" className="sr-only">
           <div role="row">
-            {["Waypoint", "Arrival time", "Magnetic heading", "Distance", "Time en route", "Altitude", "Groundspeed"].map((name) => (
+            {[
+              "Waypoint",
+              "Arrival time",
+              airplane ? "Magnetic heading" : "Magnetic course",
+              "Distance",
+              "Time en route",
+              "Altitude",
+              "Groundspeed",
+            ].map((name) => (
               <span key={name} role="columnheader">
                 {name}
               </span>
@@ -305,9 +325,7 @@ export function NavLogList({
                                 <path d="M8 1.5 12.5 13 8 10.5 3.5 13z" fill="currentColor" />
                               </svg>
                             )}
-                            {leg
-                              ? bearing(airplane ? (leg.magnetic_heading_deg ?? leg.magnetic_course_deg) : leg.magnetic_course_deg)
-                              : "—"}
+                            {leg ? courseWords(leg, airplane) : "—"}
                           </span>
                           <span aria-hidden="true"> · </span>
                           {/* With a procedure's miles where the leg ends (procedureOf),

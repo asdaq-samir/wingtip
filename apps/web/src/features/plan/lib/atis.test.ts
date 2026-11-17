@@ -18,7 +18,7 @@ describe("an ATIS heard", () => {
     expect(glanceWords(r)).toBe("Runway 19R · 29.92 inHg");
     expect(atisRows(r)).toEqual([
       { label: "Information", value: "C · 1852Z" },
-      { label: "Wind", value: "210° at 12 kt, gusts 18" },
+      { label: "Wind", value: "210°M 12G18 kt" },
       { label: "Visibility", value: "10 sm" },
       { label: "Sky", value: "Few 4,500 ft" },
       { label: "Temperature", value: "18 °C, dew point 12 °C" },
@@ -38,7 +38,8 @@ describe("an ATIS heard", () => {
     expect(windWords({ from_deg: null, kt: 0, gust_kt: null, variable: false })).toBe("Calm");
     expect(windWords({ from_deg: null, kt: 4, gust_kt: null, variable: true })).toBe("Variable at 4 kt");
     expect(windWords({ from_deg: null, kt: null, gust_kt: null, variable: true })).toBe("Light and variable");
-    expect(windWords({ from_deg: 180, kt: 15, gust_kt: 25, variable: true })).toBe("180° variable at 15 kt, gusts 25");
+    expect(windWords({ from_deg: 180, kt: 15, gust_kt: 25, variable: true })).toBe("180°M variable at 15 kt, gusts 25");
+    expect(windWords({ from_deg: 210, kt: 12, gust_kt: 18, variable: false })).toBe("210°M 12G18 kt");
     expect(visibilityWords(2.5)).toBe("2½ sm");
     expect(visibilityWords(0.75)).toBe("¾ sm");
     expect(visibilityWords(10)).toBe("10 sm");

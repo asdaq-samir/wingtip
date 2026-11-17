@@ -26,9 +26,9 @@
 use crate::clearance::{letter, tokens, Token};
 use crate::json;
 
-/// The wind as said: from where (true, as a broadcast's is: AIM 7-1-11
-/// gives the voice wind in degrees true, the tower's in magnetic -- shown
-/// as said either way), how fast, its gusts, and whether it is variable.
+/// The wind as said: from where (magnetic, AIM 7-1-10: "reported relative to magnetic north
+/// in ATIS as well as ASOS and AWOS radio (voice) broadcasts"), how fast, its gusts, and
+/// whether it is variable.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Wind {
     pub from_deg: Option<i64>,

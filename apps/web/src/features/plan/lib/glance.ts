@@ -27,7 +27,7 @@ export interface FieldGlance {
   runway: string | null;
   runwayFt: number | null;
   overFiftyFt: number | null;
-  /** The wind reported there, in words ("090° 6 kt", "Calm"). */
+  /** The wind reported there, in words ("090°T 6 kt", "Calm"; features/plan/format's windText). */
   wind: string | null;
   /** The crosswind on that runway, the gusts' where more (features/plan/lib/runwayCheck). */
   crosswindKt: number | null;
@@ -53,7 +53,7 @@ export interface BriefGlance {
     /** The lowest ceiling and visibility forecast along the route. */
     ceilingFt: number | null;
     visibilitySm: number | null;
-    /** The first stretch's wind aloft, in words ("350°/8"). */
+    /** The first stretch's wind aloft, in words ("350°T 8 kt"). */
     wind: string | null;
     eteMin: number | null;
     /** Its finding, in a line (the weather's on the Go / No-Go). */
