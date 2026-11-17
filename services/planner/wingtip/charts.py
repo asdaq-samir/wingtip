@@ -1967,21 +1967,15 @@ def _archive_metadata(kind: ChartKind, cycle: str, scale: int) -> dict:
 
 
 def pack_pyramid(kind: ChartKind, cycle: str, scale: int = 1) -> int:
-    """A kind's loose tiles of one density, the pass's and any drawn on
-    request, packed into its archive with every tile of the archive before
-    it that they do not replace, nor a `.none` marker strike off, within
-    the kind's zooms; the loose files, their `.none` markers and any
-    `.partial` go. Returns how many tiles the archive holds; with no loose
-    tiles, nothing is written and the archive there is kept. Kept, not
-    replaced: a pass over some zooms alone (pyramid --zooms) packed into
-    an archive of only those, and the TAC's zooms 10 to 13 were gone from
-    the map when its zooms 3 to 9 were drawn (2026-11-16)."""
+    """A kind's loose tiles of one density packed into its archive with
+    the old archive's tiles the pass left alone (tile_archive.kept); the
+    loose files, their `.none` markers and any `.partial` go. Returns how
+    many tiles the archive holds; with no loose tiles, nothing is written
+    and the archive there is kept."""
     suffix = "" if scale == 1 else f"@{scale}x"
     name = re.compile(rf"(\d+){re.escape(suffix)}\.png")
-    # This density's markers: a `.none` says no tile is there, which the
-    # archive says as well by not holding one, and a `.partial` is a tile
-    # drawn again in the archive. Both go with the loose tiles, wherever
-    # they are, not only beside a tile packed.
+    # This density's markers, a `.none` (no tile there) and a `.partial`
+    # (a tile drawn again), go with the loose tiles wherever they are.
     marker = re.compile(rf"\d+{re.escape(suffix)}\.(none|partial)")
     tiles, markers, base = [], [], CHART_TILE_CACHE_DIR / cycle / kind.key
     for z_dir in os.scandir(base) if base.is_dir() else ():
@@ -1995,13 +1989,9 @@ def pack_pyramid(kind: ChartKind, cycle: str, scale: int = 1) -> int:
                     tiles.append((int(z_dir.name), int(x_dir.name), int(match[1]), f.stat().st_size, lambda p=f.path: Path(p).read_bytes()))
                 elif marker.fullmatch(f.name):
                     markers.append(Path(f.path))
-    archive_path = _archive_path(kind.key, cycle, scale)
-    before = tile_archive.on_disk(archive_path) if tiles else None
-    # What this pass said of a tile -- drawn, or that none is there.
-    drawn = {(z, x, y) for z, x, y, _, _ in tiles}
-    drawn |= {(int(m.parent.parent.name), int(m.parent.name), int(m.name.split(".")[0].split("@")[0])) for m in markers}
-    kept = [t for t in before.tiles() if (t[0], t[1], t[2]) not in drawn and kind.min_zoom <= t[0] <= kind.max_zoom] if before else []
-    count = tile_archive.write(archive_path, [*tiles, *kept], _archive_metadata(kind, cycle, scale))
+    struck = [(int(m.parent.parent.name), int(m.parent.name), int(m.name.split(".")[0].split("@")[0])) for m in markers]
+    kept = tile_archive.kept(_archive_path(kind.key, cycle, scale), tiles, struck, range(kind.min_zoom, kind.max_zoom + 1))
+    count = tile_archive.write(_archive_path(kind.key, cycle, scale), [*tiles, *kept], _archive_metadata(kind, cycle, scale))
     if not count:
         return 0
     for z, x, y, _, _ in tiles:
@@ -2011,7 +2001,7 @@ def pack_pyramid(kind: ChartKind, cycle: str, scale: int = 1) -> int:
     for folder in [*sorted(base.rglob("*"), key=lambda p: len(p.parts), reverse=True), base]:
         if folder.is_dir() and not any(folder.iterdir()):
             folder.rmdir()
-    log.info("%s %s%s: %d tiles packed into %s (%d kept from before)", cycle, kind.key, suffix, count, archive_path.name, len(kept))
+    log.info("%s %s%s: %d tiles packed into %s", cycle, kind.key, suffix, count, _archive_path(kind.key, cycle, scale).name)
     return count
 
 

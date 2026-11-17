@@ -173,6 +173,20 @@ class Archive:
         yield from walk(self.header["root_offset"], self.header["root_length"])
 
 
+def kept(path: Path, tiles: list, struck: list, zooms: range) -> list:
+    """The tiles of the archive at path, within `zooms`, that a new pass
+    left alone -- neither drew (`tiles`) nor marked as none (`struck`),
+    each starting (z, x, y) -- to be written again beside its own; none
+    where the pass drew nothing. Packed after a pass over the TAC's zooms
+    3 to 9 alone, the archive held only those and its zooms 10 to 13 were
+    gone from the map (2026-11-16)."""
+    archive = on_disk(path) if tiles else None
+    if archive is None:
+        return []
+    said = {tuple(t[:3]) for t in [*tiles, *struck]}
+    return [t for t in archive.tiles() if (t[0], t[1], t[2]) not in said and t[0] in zooms]
+
+
 class _File:
     """An archive on disk, mapped, and mapped again when a rewrite has
     renamed a new one over it (its inode changes)."""
