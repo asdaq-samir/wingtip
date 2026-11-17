@@ -493,7 +493,16 @@ off by default (the owner, 2026-11-13).
    drawn, red a stop and amber a caution, its figure in the ground's
    colour so it reads in either theme; a plain count (an airport's
    charts, an airplane's flights) is said in its tab's name, not drawn
-   as a badge (the owner's list, 2026-11-17). The Routes are one row of chips, each a way's name and time, the
+   as a badge (the owner's list, 2026-11-17). A fuel stop is no
+   caution: its pump on the field's symbol is in the tint and its tanks'
+   gauge in the text's colour, never the amber (the owner, 2026-11-17:
+   "Yes to all recs"). Winds stay as they are, by the owner's choice the
+   same day: no "T" after the direction in FPL's rows (his "No need to put
+   T next to wind"), "°T" in the Brief and the Nav Log, where a true wind
+   unmarked reads as the magnetic one a tower gives (the UI audit's A7).
+   The Brief's line under its name has no airport names: its title has
+   the idents, and the names ran it off the line ("FL-145 · leaving now ·
+   Chicago Exec to Harry R…"). The Routes are one row of chips, each a way's name and time, the
    one flown filled, a swipe for more, every unpicked one the same
    neutral look: a way that meets something says so by its amber
    warning mark alone, its name in the text's colour (the owner's list,

@@ -761,8 +761,8 @@ pills on one line, no footer; Route Line, the line split in three
 whole, then the Routes' chips (`route-group`, `RouteLine`: one row of
 the search's pill, each way's name and time, the one flown filled; on the
 map `WaysGl` draws it solid magenta and the others dotted, their chips
-white at 12 points, the flown way's words in the map's blue
-(`routeWays`' `wayInk`), named and kept apart by MapLibre's collision), the cards
+white at 12 points, the flown way's words in the map's blue a step
+deeper for words, `map-blue-ink` (5.4:1 on the white chip; `routeWays`' `wayInk`), named and kept apart by MapLibre's collision), the cards
 in the plan under it. The toggle is drawn only on the page that is up,
 so there is one in the page. The account button took the toggle's
 place over the map: a glass circle the size of the 3D's in the left-hand

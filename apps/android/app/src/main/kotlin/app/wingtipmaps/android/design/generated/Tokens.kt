@@ -38,6 +38,9 @@ object WingtipColors {
         /** iOS's systemBlue, the blue Maps draws its own marks in: the position dot, a point held on the chart, a procedure's Direct to. Not the tint, which is a step deeper for words on white. */
         val MapBlue = Color(0xFF007AFF)
         const val MAP_BLUE_HEX = "#007aff"
+        /** Map blue a step deeper, for words on the chart's white chips (the route's way label): 5.4:1 on white, where map blue's #007aff is 4.0:1, under WCAG 1.4.3's 4.5 for 12-point text. The chips stay white in the dark, as the chart does, so one value (the owner, 2026-11-17: "Yes to all recs"). */
+        val MapBlueInk = Color(0xFF0066D6)
+        const val MAP_BLUE_INK_HEX = "#0066d6"
         /** The sectional's blue: "Airports having control towers are shown in blue, all others in magenta" (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports). Also VORs. */
         val Towered = Color(0xFF2465B8)
         const val TOWERED_HEX = "#2465b8"

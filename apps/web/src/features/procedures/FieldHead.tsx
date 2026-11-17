@@ -39,7 +39,9 @@ export function FieldHead({
       <div className="relative flex gap-2.5">
         {/* A fuel stop's pump on top of its symbol, at the owner's ask
                   ("instead of fuel symbol next to airport id, can we put it
-                  on top of the airport symbol?"). */}
+                  on top of the airport symbol?"), in the tint: amber means a
+                  caution wherever it is drawn (the owner, 2026-11-17: "Yes to
+                  all recs"). */}
         {/* The symbol is the field's menu, over the lines' tap that
                   opens them (z-10), at the owner's ask ("Use the airport
                   icon as the more button"). */}
@@ -51,7 +53,7 @@ export function FieldHead({
               <span className="relative">
                 {mark}
                 {a.role === "Stop" && isFuelStop(a.ident) && (
-                  <span className="absolute -top-1.5 -right-1.5 grid size-4 place-items-center rounded-full bg-caution text-background ring-2 ring-background">
+                  <span className="absolute -top-1.5 -right-1.5 grid size-4 place-items-center rounded-full bg-tint text-primary-foreground ring-2 ring-background">
                     <Fuel className="size-2.5" strokeWidth={2.6} aria-label="fuel stop" role="img" />
                   </span>
                 )}
