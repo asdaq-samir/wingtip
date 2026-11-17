@@ -30,6 +30,10 @@ describe("withNotamClosures", () => {
       [0, mark("unusable")],
       [1, mark("caution")],
     ]);
-    expect(withNotamClosures(runways, { runway }).map((r) => r.closed)).toEqual([true, false, true]);
+    const got = withNotamClosures(runways, { runway });
+    expect(got.map((r) => r.closed)).toEqual([true, false, true]);
+    // Closed for good only where the FAA's data has it so (AC 150/5340-1M
+    // 5.6's Xs every 1,000 ft); a NOTAM's closure is not.
+    expect(got.map((r) => r.closedForGood)).toEqual([false, false, true]);
   });
 });

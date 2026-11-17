@@ -11001,6 +11001,54 @@ enum EngineContract {
         }
     }
 
+    struct RunwayClosureMarksAnswer: Codable, Equatable, Sendable {
+        /// One for each runway asked, in its order.
+        var runways: [EngineContract.RunwayClosureMarksAnswerRunwaysItem]
+    }
+
+    struct RunwayClosureMarksAnswerRunwaysItem: Codable, Equatable, Sendable {
+        /// The parts closed, each from and to as fractions of the way from its first end; [[0, 1]] closed end to end; none open.
+        var closed: [[Double]]
+        /// Each X's centre on the centre line, as a fraction of the way from its first end.
+        var marks: [Double]
+    }
+
+    struct RunwayClosureMarksInput: Codable, Equatable, Sendable {
+        /// Every runway drawn, in the sketch's order.
+        var runways: [EngineContract.RunwayClosureMarksInputRunwaysItem]
+        /// An X's half size as drawn, in the runways' feet.
+        var markFt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case runways
+            case markFt = "mark_ft"
+        }
+    }
+
+    struct RunwayClosureMarksInputRunwaysItem: Codable, Equatable, Sendable {
+        /// Its ends' designations as the card writes them, the first end first ("02", "20").
+        var ends: [String]
+        /// Its first end, feet east and north of a point of the field.
+        var a: [Double]
+        /// Its second end, the same.
+        var b: [Double]
+        /// Its width as drawn, in the same feet: the room an X keeps off it.
+        var widthFt: Double?
+        /// Closed for good: NASR's runway remark.
+        var permanent: Bool?
+        /// The NOTAMs in force that close it or a part of it, as sent.
+        var notams: [String]?
+
+        enum CodingKeys: String, CodingKey {
+            case ends
+            case a
+            case b
+            case widthFt = "width_ft"
+            case permanent
+            case notams
+        }
+    }
+
     struct RunwayCrosswindInput: Codable, Equatable, Sendable {
         var wind: EngineContract.RunwayCrosswindInputWind
     }

@@ -7,7 +7,7 @@ import { TEXT } from "../../lib/text";
 import { FaaChart } from "../../components/AirportDiagram";
 import { RunwaySketch } from "./RunwaySketch";
 import { useNotamMarks } from "./notamBadges";
-import { runwaysPictureOf, withNotamClosures } from "./runwayPicks";
+import { closedByNotam, runwaysPictureOf, withNotamClosures } from "./runwayPicks";
 
 const SketchViewer = lazy(() => import("./SketchViewer"));
 const PictureViewer = lazy(() => import("../../components/AirportDiagramViewer")); // the pictures behind the diagram, full screen to pinch in on
@@ -47,11 +47,11 @@ export function PlacePictures({
   // Its runways closed where the Runways tab says Closed, NOTAMs in force
   // as well as the FAA's data (withNotamClosures). The FAA's diagram is
   // drawn for the cycle and knows nothing of a NOTAM's closure, so while one
-  // is in force the sketch is shown, which crosses the runway out.
+  // is in force the sketch is shown, which crosses the runway, or the part
+  // of it closed, out.
   const marks = useNotamMarks(ident, place);
   const runways = withNotamClosures(place.runways, marks);
-  const closedByNotam = runways.some((r, i) => r.closed && !place.runways[i]?.closed);
-  const runwaysPicture = closedByNotam ? null : runwaysPictureOf(place, noRunwaysPicture);
+  const runwaysPicture = closedByNotam(marks) ? null : runwaysPictureOf(place, noRunwaysPicture);
   const closedWords = runways.filter((r) => r.closed && r.ends).map((r) => r.ends);
   // The picture open full screen, made once for it: a new list at each draw
   // of the card (its minute clock, a report asked again, own ship's fix) made

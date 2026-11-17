@@ -188,6 +188,12 @@ pub fn compass(word: &str) -> Option<&'static str> {
     lookup(POINTS, word)
 }
 
+/// A compass point's bearing (3-3-9's abbreviation), degrees: the middle
+/// of its 22.5-degree sector, N 0 and E 90. None where `word` is no point.
+pub fn point_bearing(word: &str) -> Option<f64> {
+    POINTS.lines().position(|line| line.split_once(':').is_some_and(|(code, _)| code == word)).map(|at| at as f64 * 22.5)
+}
+
 /// A bearing (degrees true, any turn) as the nearest of the 16 points,
 /// 3-3-9's abbreviation: each point the middle of its 22.5-degree sector,
 /// so north runs from 348.75 up to 11.25, a bearing on a sector's edge
@@ -211,6 +217,10 @@ mod tests {
         assert_eq!(written("ILS"), None);
         assert!(is_code("PAPI") && !is_code("CRANE"));
         assert_eq!(compass("SSW"), Some("south-southwest"));
+        assert_eq!(
+            (point_bearing("N"), point_bearing("E"), point_bearing("SSW"), point_bearing("X")),
+            (Some(0.0), Some(90.0), Some(202.5), None)
+        );
     }
 
     #[test]

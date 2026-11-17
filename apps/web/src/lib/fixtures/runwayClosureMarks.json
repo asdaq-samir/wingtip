@@ -1,0 +1,392 @@
+{
+  "_note": "Where a closed runway's crosses go on the airport card's runway sketch, the engine's runway_closure_marks (engine/crates/weather/src/runway_closure): AC 150/5340-1M (Change 1, 12/23/2020) 5.6 and 5.7 and AIM 2-3-6, worked by hand. Runways in feet east and north of a point; each answer a fraction of the way from the runway's first end, to four places. engine/facade/tests/runway_closure.rs asks the engine each case; the web's runwayClosure.test.ts reads the same.",
+  "cases": [
+    {
+      "about": "KEFT, 2026-11-17: 02/20 closed by NOTAM, 12/30 open across it 2,340 ft from the 02 end. An X at each end only (AIM 2-3-6e), 50 ft in from each threshold (AC 150/5340-1M 5.7.1.2, over the designation marking; Figure A-3), none on 12/30.",
+      "input": {
+        "mark_ft": 40,
+        "runways": [
+          {
+            "ends": [
+              "02",
+              "20"
+            ],
+            "a": [
+              -1094.3,
+              -1624.4
+            ],
+            "b": [
+              -253.2,
+              1254.2
+            ],
+            "width_ft": 75,
+            "notams": [
+              "!EFT 11/003 EFT RWY 02/20 CLSD 2611111352-2611192359"
+            ]
+          },
+          {
+            "ends": [
+              "12",
+              "30"
+            ],
+            "a": [
+              -1723.1,
+              1417.6
+            ],
+            "b": [
+              2518.0,
+              -1208.8
+            ],
+            "width_ft": 75
+          }
+        ]
+      },
+      "answer": {
+        "runways": [
+          {
+            "closed": [
+              [
+                0,
+                1
+              ]
+            ],
+            "marks": [
+              0.0167,
+              0.9833
+            ]
+          },
+          {
+            "closed": [],
+            "marks": []
+          }
+        ]
+      }
+    },
+    {
+      "about": "A runway 4,000 ft long closed for good (NASR, CLSD INDEFLY): an X at each end and every 1,000 ft from the first (AC 5.6, AIM 2-3-6d).",
+      "input": {
+        "mark_ft": 30,
+        "runways": [
+          {
+            "ends": [
+              "09",
+              "27"
+            ],
+            "a": [
+              0,
+              0
+            ],
+            "b": [
+              4000,
+              0
+            ],
+            "width_ft": 100,
+            "permanent": true
+          }
+        ]
+      },
+      "answer": {
+        "runways": [
+          {
+            "closed": [
+              [
+                0,
+                1
+              ]
+            ],
+            "marks": [
+              0.0125,
+              0.2625,
+              0.5125,
+              0.7625,
+              0.9875
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "about": "The same with an open runway 100 ft wide across it 1,000 ft from its first end: an X each side of it (AC 5.6, 'near the sides of the open intersecting runway'), 80 ft from its centre line (its half width and the X's 30 ft), and the 1,050-ft one, which would lie on it, left out.",
+      "input": {
+        "mark_ft": 30,
+        "runways": [
+          {
+            "ends": [
+              "09",
+              "27"
+            ],
+            "a": [
+              0,
+              0
+            ],
+            "b": [
+              4000,
+              0
+            ],
+            "width_ft": 100,
+            "permanent": true
+          },
+          {
+            "ends": [
+              "18",
+              "36"
+            ],
+            "a": [
+              1000,
+              1000
+            ],
+            "b": [
+              1000,
+              -1000
+            ],
+            "width_ft": 100
+          }
+        ]
+      },
+      "answer": {
+        "runways": [
+          {
+            "closed": [
+              [
+                0,
+                1
+              ]
+            ],
+            "marks": [
+              0.0125,
+              0.23,
+              0.27,
+              0.5125,
+              0.7625,
+              0.9875
+            ]
+          },
+          {
+            "closed": [],
+            "marks": []
+          }
+        ]
+      }
+    },
+    {
+      "about": "Closed for good and crossed by two open runways, at 1,000 and 3,000 ft: an X each side of each (AC 5.6), and the 1,000-ft intervals that would lie on them (1,050 and 3,050 ft) left out.",
+      "input": {
+        "mark_ft": 30,
+        "runways": [
+          {
+            "ends": [
+              "09",
+              "27"
+            ],
+            "a": [
+              0,
+              0
+            ],
+            "b": [
+              4000,
+              0
+            ],
+            "width_ft": 100,
+            "permanent": true
+          },
+          {
+            "ends": [
+              "18",
+              "36"
+            ],
+            "a": [
+              1000,
+              1000
+            ],
+            "b": [
+              1000,
+              -1000
+            ],
+            "width_ft": 100
+          },
+          {
+            "ends": [
+              "18",
+              "36"
+            ],
+            "a": [
+              3000,
+              1000
+            ],
+            "b": [
+              3000,
+              -1000
+            ],
+            "width_ft": 100
+          }
+        ]
+      },
+      "answer": {
+        "runways": [
+          {
+            "closed": [
+              [
+                0,
+                1
+              ]
+            ],
+            "marks": [
+              0.0125,
+              0.23,
+              0.27,
+              0.5125,
+              0.73,
+              0.77,
+              0.9875
+            ]
+          },
+          {
+            "closed": [],
+            "marks": []
+          },
+          {
+            "closed": [],
+            "marks": []
+          }
+        ]
+      }
+    },
+    {
+      "about": "Closed by NOTAM with an open runway across it 60 ft from its first end: that end's X, 50 ft in, would lie on it, so it moves along the centre line clear of it, to 140 ft.",
+      "input": {
+        "mark_ft": 30,
+        "runways": [
+          {
+            "ends": [
+              "09",
+              "27"
+            ],
+            "a": [
+              0,
+              0
+            ],
+            "b": [
+              4000,
+              0
+            ],
+            "width_ft": 100,
+            "notams": [
+              "!ABC 11/001 ABC RWY 09/27 CLSD 2611101200-2611121432"
+            ]
+          },
+          {
+            "ends": [
+              "18",
+              "36"
+            ],
+            "a": [
+              60,
+              1000
+            ],
+            "b": [
+              60,
+              -1000
+            ],
+            "width_ft": 100
+          }
+        ]
+      },
+      "answer": {
+        "runways": [
+          {
+            "closed": [
+              [
+                0,
+                1
+              ]
+            ],
+            "marks": [
+              0.035,
+              0.9875
+            ]
+          },
+          {
+            "closed": [],
+            "marks": []
+          }
+        ]
+      }
+    },
+    {
+      "about": "A part closed, 'RWY 09/27 E 500FT CLSD' (JO 7930.2): the east 500 ft, the 27 end's, marked at its own ends, its inner edge's X its own size in.",
+      "input": {
+        "mark_ft": 30,
+        "runways": [
+          {
+            "ends": [
+              "09",
+              "27"
+            ],
+            "a": [
+              0,
+              0
+            ],
+            "b": [
+              4000,
+              0
+            ],
+            "width_ft": 100,
+            "notams": [
+              "!ABC 11/002 ABC RWY 09/27 E 500FT CLSD 2611101200-2611121432"
+            ]
+          }
+        ]
+      },
+      "answer": {
+        "runways": [
+          {
+            "closed": [
+              [
+                0.875,
+                1
+              ]
+            ],
+            "marks": [
+              0.8825,
+              0.9875
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "about": "Closed at times (CLSD DLY) is not closed: no X, as the card's badge says Closed at times.",
+      "input": {
+        "mark_ft": 30,
+        "runways": [
+          {
+            "ends": [
+              "09",
+              "27"
+            ],
+            "a": [
+              0,
+              0
+            ],
+            "b": [
+              4000,
+              0
+            ],
+            "width_ft": 100,
+            "notams": [
+              "!ABC 11/006 ABC RWY 09/27 CLSD DLY 0400-1100 2611101200-2611121432"
+            ]
+          }
+        ]
+      },
+      "answer": {
+        "runways": [
+          {
+            "closed": [],
+            "marks": []
+          }
+        ]
+      }
+    }
+  ]
+}

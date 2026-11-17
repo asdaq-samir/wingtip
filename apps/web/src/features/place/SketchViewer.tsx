@@ -1,4 +1,4 @@
-import type { Runway } from "../../lib/api/types";
+import type { SketchRunway } from "./runwayDrawing";
 import { TEXT, TEXT_POINTS } from "../../lib/text";
 import { cn } from "cn";
 import FullScreenViewer from "../../components/FullScreenViewer";
@@ -20,7 +20,7 @@ export default function SketchViewer({
   onClose,
 }: {
   ident: string;
-  runways: Runway[];
+  runways: SketchRunway[];
   lat: number;
   lon: number;
   onClose: () => void;

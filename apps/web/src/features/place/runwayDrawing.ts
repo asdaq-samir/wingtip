@@ -8,9 +8,17 @@ interface Strip {
   width_ft: number;
   ends: [string, string];
   closed: boolean;
+  /** Closed for good (NASR's remark), and the NOTAMs in force on it: what
+   *  the engine places its Xs by (runwayClosures). */
+  permanent: boolean;
+  notams: string[];
   /** Its turf, as fractions of the way from `a` to `b`. */
   turf: [number, number][];
 }
+
+/** A runway as the sketch takes it: the place's, or the card's with its
+ *  NOTAMs (runwayPicks' withNotamClosures). */
+export type SketchRunway = Runway & { closedForGood?: boolean; notams?: string[] };
 
 /** A runway of turf or grass alone, as OurAirports writes its surface
  *  ("TURF", "TURF-G", "GRS", "GRASS / SOD"); one of two surfaces
@@ -43,7 +51,7 @@ function turfOf(r: Runway, ends: [string, string]): [number, number][] {
  *  field's point would cross the others where it may not, and not for a
  *  runway parallel to one already guessed, which would lie on top of it.
  *  None for a helipad. */
-export function stripsOf(runways: Runway[], lat: number, lon: number): Strip[] {
+export function stripsOf(runways: SketchRunway[], lat: number, lon: number): Strip[] {
   const east = (lonDeg: number) => (lonDeg - lon) * NM_PER_DEG * lonScale(lat);
   const north = (latDeg: number) => (latDeg - lat) * NM_PER_DEG;
   const strips: Strip[] = [];
@@ -54,13 +62,14 @@ export function stripsOf(runways: Runway[], lat: number, lon: number): Strip[] {
     if (!first || !second) continue;
     const ends: [string, string] = [first.ident, second.ident];
     const width_ft = r.width_ft ?? 75;
+    const closure = { closed: r.closed, permanent: r.closedForGood ?? r.closed, notams: r.notams ?? [] };
     if (first.lat != null && first.lon != null && second.lat != null && second.lon != null) {
       strips.push({
         a: [east(first.lon), north(first.lat)],
         b: [east(second.lon), north(second.lat)],
         width_ft,
         ends,
-        closed: r.closed,
+        ...closure,
         turf: turfOf(r, ends),
       });
     } else if (first.heading_true_deg != null && r.length_ft) {
@@ -73,7 +82,7 @@ export function stripsOf(runways: Runway[], lat: number, lon: number): Strip[] {
       const line = ((first.heading_true_deg % 180) + 180) % 180;
       if (guessed.some((h) => Math.min(Math.abs(h - line), 180 - Math.abs(h - line)) < 1)) continue;
       guessed.push(line);
-      guesses.push({ a: [-dx, -dy], b: [dx, dy], width_ft, ends, closed: r.closed, turf: turfOf(r, ends) });
+      guesses.push({ a: [-dx, -dy], b: [dx, dy], width_ft, ends, ...closure, turf: turfOf(r, ends) });
     }
   }
   return strips.length ? strips : guesses;

@@ -72,7 +72,7 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
 
   await card(page).getByRole("tab", { name: "Info" }).click();
   // The runway the Runways tab says is Closed is crossed out on the
-  // pictures' sketch, an X a quarter in from each end, and only it: the
+  // pictures' sketch, an X at each end (AIM 2-3-6e), and only it: the
   // FAA's diagram knows nothing of the NOTAM, so the sketch stands in for
   // it while the closure is in force (UI audit A5).
   const sketch = card(page).getByTestId("runway-sketch");

@@ -193,6 +193,7 @@ export const WEB_RULES = [
   "route_read",
   "route_way_warning",
   "runway_calm",
+  "runway_closure_marks",
   "runway_crosswind",
   "runway_end_fit",
   "rvr_check",

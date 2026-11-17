@@ -260,6 +260,19 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    ("Weather, VFR"), the dot and count over the icon's corner. The bar is glass because it floats over the
    card (the owner's decision of 2026-11-10 keeps glass for what floats).
    This replaces T4's tabs under the actions and its one-line report.
+   A closed runway is crossed out on the pictures' runway sketch where
+   the airport marks it on the ground, the engine's
+   `runway_closure_marks` (2026-11-17; AC 150/5340-1M 5.6 and 5.7, AIM
+   2-3-6): an X at each end of one a NOTAM closes, 50 ft in over its
+   designation; for one closed for good (NASR's CLSD INDEFLY or PERMLY)
+   every 1,000 ft too and one each side of an open runway it crosses;
+   never on an open runway, an X that would be moved along the centre
+   line clear of it; each X square to its runway and just wider than its
+   strip. A part a NOTAM closes ("RWY 09/27 E 500FT CLSD", "RWY 27 FIRST
+   1000FT CLSD") is faded and crossed at its own ends; a closure between a
+   taxiway and an end is the whole runway's, as the Runways tab's badge
+   says. The Xs are the Closed badge's red where the FAA paints them
+   yellow (Figure A-27): the owner's to change.
    The airplane cards are laid out the same way, with the same parts (the
    owner, 2026-11-14: "make sure the airplane card looks similar to
    airport card"): an N-number's card and a tracked flight's have their

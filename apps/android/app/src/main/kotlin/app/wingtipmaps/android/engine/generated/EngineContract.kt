@@ -11218,6 +11218,68 @@ object EngineContract {
     )
 
     @Serializable
+    data class RunwayClosureMarksAnswer(
+        /**
+         * One for each runway asked, in its order.
+         */
+        val runways: List<EngineContract.RunwayClosureMarksAnswerRunwaysItem>,
+    )
+
+    @Serializable
+    data class RunwayClosureMarksAnswerRunwaysItem(
+        /**
+         * The parts closed, each from and to as fractions of the way from its first end; [[0, 1]] closed end to end; none open.
+         */
+        val closed: List<List<Double>>,
+        /**
+         * Each X's centre on the centre line, as a fraction of the way from its first end.
+         */
+        val marks: List<Double>,
+    )
+
+    @Serializable
+    data class RunwayClosureMarksInput(
+        /**
+         * Every runway drawn, in the sketch's order.
+         */
+        val runways: List<EngineContract.RunwayClosureMarksInputRunwaysItem>,
+        /**
+         * An X's half size as drawn, in the runways' feet.
+         */
+        @SerialName("mark_ft")
+        val markFt: Double,
+    )
+
+    @Serializable
+    data class RunwayClosureMarksInputRunwaysItem(
+        /**
+         * Its ends' designations as the card writes them, the first end first ("02", "20").
+         */
+        val ends: List<String>,
+        /**
+         * Its first end, feet east and north of a point of the field.
+         */
+        val a: List<Double>,
+        /**
+         * Its second end, the same.
+         */
+        val b: List<Double>,
+        /**
+         * Its width as drawn, in the same feet: the room an X keeps off it.
+         */
+        @SerialName("width_ft")
+        val widthFt: Double? = null,
+        /**
+         * Closed for good: NASR's runway remark.
+         */
+        val permanent: Boolean? = null,
+        /**
+         * The NOTAMs in force that close it or a part of it, as sent.
+         */
+        val notams: List<String>? = null,
+    )
+
+    @Serializable
     data class RunwayCrosswindInput(
         val wind: EngineContract.RunwayCrosswindInputWind,
     )

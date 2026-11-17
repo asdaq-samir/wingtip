@@ -1909,6 +1909,12 @@ fun Engine.runwayCalm(wind: EngineContract.RunwayCalmInputWind): Result<Boolean>
     rule("runway_calm", EngineContract.RunwayCalmInput(wind = wind))
 
 /**
+ * Where a closed runway's crosses go on a sketch of the field, as the airport marks it on the ground (AC 150/5340-1M, Standards for Airport Markings, Change 1, 12/23/2020; AIM 2-3-6). Permanently closed (NASR's runway remark, CLSD INDEFLY or PERMLY): an X at each end and at 1,000-ft intervals, and one each side of an open runway it crosses (AC 5.6; AIM 2-3-6d). Closed by NOTAM: an X only at each end (AC 5.7.1; AIM 2-3-6e), over the designation marking, 50 ft in (Figure A-3's 60-ft numerals 20 ft from the threshold), at least the X's own size in. A part closed by NOTAM, read from JO 7930.2's forms (RWY 09/27 E 500FT CLSD, RWY 27 FIRST 1000FT CLSD), is marked at the part's own ends; a part it cannot place is not drawn, and a closure between a taxiway and an end (CLSD BTN TWY A AND RWY END 20) closes the whole runway, as notam_subject's badge says. An X never lies on an open runway: one that would moves along the centre line clear of it. The FAA's Xs are yellow (Figure A-27); the colour is the app's.
+ */
+fun Engine.runwayClosureMarks(runways: List<EngineContract.RunwayClosureMarksInputRunwaysItem>, markFt: Double): Result<EngineContract.RunwayClosureMarksAnswer> =
+    rule("runway_closure_marks", EngineContract.RunwayClosureMarksInput(runways = runways, markFt = markFt))
+
+/**
  * A runway's wind's crosswind, steady or gust, whichever is more.
  */
 fun Engine.runwayCrosswind(wind: EngineContract.RunwayCrosswindInputWind): Result<Double> =

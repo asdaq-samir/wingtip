@@ -24,6 +24,9 @@
 //! - rvr: runway visual range against a visibility minimum (91.175(h));
 //!   rvr_read: an RVR system's readings as its feed sends them, 6,000 ft
 //!   its most (AIM 7-1-13);
+//! - runway_closure: where a closed runway's crosses go on a sketch of
+//!   the field (AC 150/5340-1M 5.6 and 5.7, AIM 2-3-6), and the part of a
+//!   runway a NOTAM closes where its words say which;
 //! - datis_kept: how long a digital ATIS is still the airport's, two of
 //!   its hourly updates (AIM 4-1-13);
 //! - near_report: whether a station's report is near enough to say a
@@ -75,6 +78,7 @@ pub mod notam_read;
 pub mod notam_subject;
 pub mod ready;
 pub mod remarks_read;
+pub mod runway_closure;
 pub mod rvr;
 pub mod rvr_read;
 pub mod sky;

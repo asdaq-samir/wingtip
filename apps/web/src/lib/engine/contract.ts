@@ -3309,6 +3309,13 @@ export interface EngineContract {
     answer: RunwayCalmAnswer;
   };
   /**
+   * Where a closed runway's crosses go on a sketch of the field, as the airport marks it on the ground (AC 150/5340-1M, Standards for Airport Markings, Change 1, 12/23/2020; AIM 2-3-6). Permanently closed (NASR's runway remark, CLSD INDEFLY or PERMLY): an X at each end and at 1,000-ft intervals, and one each side of an open runway it crosses (AC 5.6; AIM 2-3-6d). Closed by NOTAM: an X only at each end (AC 5.7.1; AIM 2-3-6e), over the designation marking, 50 ft in (Figure A-3's 60-ft numerals 20 ft from the threshold), at least the X's own size in. A part closed by NOTAM, read from JO 7930.2's forms (RWY 09/27 E 500FT CLSD, RWY 27 FIRST 1000FT CLSD), is marked at the part's own ends; a part it cannot place is not drawn, and a closure between a taxiway and an end (CLSD BTN TWY A AND RWY END 20) closes the whole runway, as notam_subject's badge says. An X never lies on an open runway: one that would moves along the centre line clear of it. The FAA's Xs are yellow (Figure A-27); the colour is the app's.
+   */
+  runway_closure_marks: {
+    input: RunwayClosureMarksInput;
+    answer: RunwayClosureMarksAnswer;
+  };
+  /**
    * A runway's wind's crosswind, steady or gust, whichever is more.
    */
   runway_crosswind: {
@@ -12019,6 +12026,67 @@ export interface RunwayCalmInput {
     gust_crosswind_kt?: number | null;
     in_use?: unknown;
   };
+}
+export interface RunwayClosureMarksInput {
+  /**
+   * Every runway drawn, in the sketch's order.
+   */
+  runways: RunwayClosureStrip[];
+  /**
+   * An X's half size as drawn, in the runways' feet.
+   */
+  mark_ft: number;
+}
+export interface RunwayClosureStrip {
+  /**
+   * Its ends' designations as the card writes them, the first end first ("02", "20").
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  ends: [string, string];
+  /**
+   * Its first end, feet east and north of a point of the field.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  a: [number, number];
+  /**
+   * Its second end, the same.
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  b: [number, number];
+  /**
+   * Its width as drawn, in the same feet: the room an X keeps off it.
+   */
+  width_ft?: number;
+  /**
+   * Closed for good: NASR's runway remark.
+   */
+  permanent?: boolean;
+  /**
+   * The NOTAMs in force that close it or a part of it, as sent.
+   */
+  notams?: string[];
+}
+export interface RunwayClosureMarksAnswer {
+  /**
+   * One for each runway asked, in its order.
+   */
+  runways: RunwayClosureMarked[];
+}
+export interface RunwayClosureMarked {
+  /**
+   * The parts closed, each from and to as fractions of the way from its first end; [[0, 1]] closed end to end; none open.
+   */
+  closed: [number, number][];
+  /**
+   * Each X's centre on the centre line, as a fraction of the way from its first end.
+   */
+  marks: number[];
 }
 export interface RunwayCrosswindInput {
   wind: {

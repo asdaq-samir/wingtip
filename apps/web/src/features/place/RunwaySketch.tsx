@@ -1,8 +1,8 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { Runway } from "../../lib/api/types";
 import { TEXT_POINTS } from "../../lib/text";
 import { FT_PER_NM } from "../../lib/geo";
-import { numberHalfWidth, numbersOf, stripsOf } from "./runwayDrawing";
+import { numberHalfWidth, numbersOf, stripsOf, type SketchRunway } from "./runwayDrawing";
+import { closureMarksOf, MARK_STROKE, markHalf } from "./runwayClosures";
 import { CHART } from "../../lib/tokens";
 
 /** Round the runways, in the box's own points: the strips' half width and
@@ -41,7 +41,7 @@ export function RunwaySketch({
   lon,
   numberSize = TEXT_POINTS.caption,
 }: {
-  runways: Runway[];
+  runways: SketchRunway[];
   lat: number;
   lon: number;
   /** The ends' numbers' size, points: TEXT_POINTS.caption (iOS's Caption 2)
@@ -99,7 +99,10 @@ export function RunwaySketch({
       const width = Math.max(4, Math.min(10, (s.width_ft / FT_PER_NM) * scale * 3));
       return { ...s, ...p, width };
     });
-    return { w, h, strips: placed, numbers: numbersOf(placed, numberSize, gap, w, h) };
+    // Each runway's closed parts and crosses, the engine's (runwayClosures).
+    const closures = closureMarksOf(placed, scale);
+    const marked = placed.map((p, i) => ({ ...p, closed: p.closed || closures[i]!.whole, closure: closures[i]! }));
+    return { w, h, strips: marked, numbers: numbersOf(marked, numberSize, gap, w, h) };
   }, [runways, lat, lon, size, numberSize]);
   return (
     <svg
@@ -157,31 +160,49 @@ export function RunwaySketch({
               strokeDasharray="3.5 3"
             />
           ))}
+          {/* A part a NOTAM closes, faded as a closed runway is. */}
+          {!s.closed &&
+            s.closure.parts.map(([from, to]) => (
+              <line
+                key={`closed-${from}-${to}`}
+                data-closed-part={s.ends.join("/")}
+                x1={s.ax + (s.bx - s.ax) * from}
+                y1={s.ay + (s.by - s.ay) * from}
+                x2={s.ax + (s.bx - s.ax) * to}
+                y2={s.ay + (s.by - s.ay) * to}
+                className="stroke-background"
+                strokeOpacity={0.65}
+                strokeWidth={s.width + 1}
+              />
+            ))}
         </g>
       ))}
-      {/* A closed runway crossed out, as the FAA's airport diagrams mark
-          one (Chart Supplement legend, "Closed runway"), in the red of the
-          Runways tab's Closed badge: faded alone it read as open
-          (UI audit A5, 2026-11-17). An X a quarter in from each end,
-          clear of the crossings that are most often at a field's middle. */}
-      {drawn?.strips
-        .filter((s) => s.closed)
-        .flatMap((s) =>
-          [0.25, 0.75].map((f) => {
-            const [x, y] = [s.ax + (s.bx - s.ax) * f, s.ay + (s.by - s.ay) * f];
-            const arm = Math.max(6, s.width);
-            return (
-              <path
-                key={`${s.ends.join("/")}-x-${f}`}
-                data-closed-runway={s.ends.join("/")}
-                d={`M${x - arm} ${y - arm}L${x + arm} ${y + arm}M${x - arm} ${y + arm}L${x + arm} ${y - arm}`}
-                className="stroke-destructive"
-                strokeWidth={2.5}
-                strokeLinecap="round"
-              />
-            );
-          }),
-        )}
+      {/* A closed runway crossed out where the airport marks it on the
+          ground (AC 150/5340-1M 5.6 and 5.7, AIM 2-3-6; the engine's
+          runway_closure_marks): an X at each end, and for one closed for
+          good every 1,000 ft and each side of an open runway it crosses,
+          never on an open one. Each X square to its runway and just wider
+          than it, in the red of the Runways tab's Closed badge (the FAA
+          paints them yellow, Figure A-27; faded alone a closed runway
+          read as open, UI audit A5, 2026-11-17). */}
+      {drawn?.strips.flatMap((s) =>
+        s.closure.marks.map(([x, y], k) => {
+          const m = markHalf(s.width);
+          // Along the runway and across it, an arm each way between them.
+          const [ax, ay] = [s.ux * m, s.uy * m],
+            [cx, cy] = [-s.uy * m, s.ux * m];
+          return (
+            <path
+              key={`${s.ends.join("/")}-x-${k}`}
+              data-closed-runway={s.ends.join("/")}
+              d={`M${x - ax - cx} ${y - ay - cy}L${x + ax + cx} ${y + ay + cy}M${x - ax + cx} ${y - ay + cy}L${x + ax - cx} ${y + ay - cy}`}
+              className="stroke-destructive"
+              strokeWidth={MARK_STROKE}
+              strokeLinecap="round"
+            />
+          );
+        }),
+      )}
       {/* Each end's number past it, upright, over every strip, in the
           strips' ink with a casing of the box's ground so a crossing
           runway does not cut through it. */}
