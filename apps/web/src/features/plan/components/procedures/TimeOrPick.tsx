@@ -16,7 +16,7 @@ export function TimeOrPick({ time }: { time: ReactNode }) {
       size="inline"
       onClick={requestAirplanePick}
       data-testid="point-pick-airplane"
-      className="relative font-semibold after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-['']"
+      className="relative font-semibold after:absolute after:-inset-y-3 after:inset-x-0 after:content-['']"
     >
       Pick an airplane
     </Button>
