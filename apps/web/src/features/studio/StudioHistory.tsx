@@ -19,7 +19,7 @@ export function WeatherThen({ history }: { history: StudioHistory }) {
   if (weatherProblem) return <p className={cn("text-destructive", TEXT.note)}>{weatherProblem}</p>;
   if (!weather) return <p className={cn("text-muted-foreground", TEXT.note)}>Fetching the weather as it was…</p>;
   return (
-    <div className="flex flex-col gap-2" data-testid="studio-weather">
+    <div className="flex flex-col gap-2">
       {metars.length === 0 && <p className={cn("text-muted-foreground", TEXT.note)}>No METARs near the track at this moment.</p>}
       {metars.map((m) => (
         <Raw key={m.station}>{m.raw}</Raw>
@@ -54,7 +54,7 @@ export function NtsbEvents({ history }: { history: StudioHistory }) {
   if (!history.ntsb.length)
     return <p className={cn("text-muted-foreground", TEXT.note)}>No NTSB event for this airplane within a day of this date.</p>;
   return (
-    <div className="flex flex-col gap-4" data-testid="studio-ntsb">
+    <div className="flex flex-col gap-4">
       {history.ntsb.map((e) => (
         <article key={e.ev_id} className="flex flex-col gap-1.5">
           <span className={cn("font-semibold", TEXT.row)}>
@@ -108,7 +108,7 @@ export function NotamsThen({ history }: { history: StudioHistory }) {
   if (!n.tfrs.length && !n.notams.length)
     return <p className={cn("text-muted-foreground", TEXT.note)}>None in force near the track at this hour.</p>;
   return (
-    <div className="flex flex-col gap-3" data-testid="studio-notams">
+    <div className="flex flex-col gap-3">
       {n.tfrs.length > 0 && (
         <ListGroup title="TFRs">
           {n.tfrs.map((t) => (

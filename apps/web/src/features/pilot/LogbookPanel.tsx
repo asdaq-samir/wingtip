@@ -52,7 +52,7 @@ function DateField({
   value: string | null | undefined;
   label: string;
   onChange: (v: string | null) => void;
-  testId: string;
+  testId?: string;
 }) {
   return (
     <StockDateField
@@ -187,20 +187,10 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
               currency?.flightReviewUntil ? <Until date={currency.flightReviewUntil} what="review" /> : "Within 24 calendar months"
             }
           >
-            <DateField
-              value={reviewOn}
-              label="Flight review date"
-              testId="flight-review-date"
-              onChange={(v) => setDates({ flightReviewOn: v })}
-            />
+            <DateField value={reviewOn} label="Flight review date" onChange={(v) => setDates({ flightReviewOn: v })} />
           </ListRow>
           <ListRow title="Medical" description={medicalOn ? <Until date={medicalOn} what="medical" /> : "The day it expires"}>
-            <DateField
-              value={medicalOn}
-              label="Medical expires"
-              testId="medical-date"
-              onChange={(v) => setDates({ medicalExpiresOn: v })}
-            />
+            <DateField value={medicalOn} label="Medical expires" onChange={(v) => setDates({ medicalExpiresOn: v })} />
           </ListRow>
           <ListRow title="Reminders" description="An email 30 and 7 days before each runs out, your airplanes' too">
             <TogglePill

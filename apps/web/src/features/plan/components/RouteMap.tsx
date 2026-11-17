@@ -175,7 +175,7 @@ function CheckpointCard({ candidate, number, leg }: { candidate: Candidate; numb
       {/* Its leg of the nav log, at the owner's ask for cards that say
           what a pilot does there (2026-10-30): the heading and altitude
           on from it, the leg to it, and when it comes. */}
-      {leg && <TermTable testId="checkpoint-leg" rows={legFactRows(leg)} className="tabular-nums" />}
+      {leg && <TermTable rows={legFactRows(leg)} className="tabular-nums" />}
     </MapCard>
   );
 }

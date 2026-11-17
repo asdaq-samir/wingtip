@@ -292,14 +292,7 @@ export default function ProcedureMenu({
                 {others.length > 0 && (
                   <ListGroup title="Other runways">
                     {others.map((r) => (
-                      <ListRow
-                        key={r}
-                        title={runwayName(r)}
-                        chevron
-                        value={pickedOn(r)}
-                        onClick={() => push({ runway: r })}
-                        data-testid="procedure-menu-runway"
-                      />
+                      <ListRow key={r} title={runwayName(r)} chevron value={pickedOn(r)} onClick={() => push({ runway: r })} />
                     ))}
                   </ListGroup>
                 )}
@@ -345,7 +338,7 @@ export default function ProcedureMenu({
                   data-testid="procedure-menu-learn"
                 />
               )}
-              {picked && <ListRow title={NONE[kind]} onClick={() => pick(null)} data-testid="procedure-menu-none" />}
+              {picked && <ListRow title={NONE[kind]} onClick={() => pick(null)} />}
               <ListRow
                 title={ALL[kind]}
                 chevron

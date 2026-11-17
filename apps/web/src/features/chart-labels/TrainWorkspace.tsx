@@ -157,7 +157,7 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
           },
         ]
       : [
-          { name: "Rated", value: String(picks.length), testId: "rated-count" },
+          { name: "Rated", value: String(picks.length) },
           { name: "Left", value: String(Math.max(0, total - picks.length)) },
           { name: "Model", value: score == null ? "—" : score.toFixed(1) },
           { name: "MAE", value: error },

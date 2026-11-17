@@ -11,7 +11,7 @@ import RouteForm from "../../components/RouteForm";
 import { EngineGate } from "../../lib/engine/engineGate";
 import { useWarmAirportIndex } from "../../lib/airportIndex";
 import { useHomeAirportSync } from "../../lib/homeAirport";
-import { LinkSignIn, TvLinkHost } from "../pilot";
+import { LinkSignIn } from "../pilot";
 import { EmergencyHost } from "../emergency";
 import { AirplaneProfileHost } from "../airplane";
 import { AutoLogbookHost } from "../logbook-auto";
@@ -226,7 +226,6 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 <title>{title}</title>
                 {/* An emailed sign-in link lands here (#signin=…), finished in the app's own dialog. */}
                 <LinkSignIn />
-                <TvLinkHost />
                 {/* The emergency assistant (features/emergency); an airplane's profile, from any N-number (features/airplane). */}
                 <EmergencyHost />
                 <AirplaneProfileHost />

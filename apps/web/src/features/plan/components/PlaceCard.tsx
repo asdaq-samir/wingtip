@@ -327,7 +327,6 @@ export default function PlaceCard({
             title={ident4}
             testId="place-head"
             titleTestId="place-name"
-            subtitleTestId="place-where"
             // Its full name the head row's second line, centred under the
             // ident and fitted to it, in sight at the card's smallest size
             // too (the owner, 2026-11-11, after Apple Maps' "Buttermilk Cafe /

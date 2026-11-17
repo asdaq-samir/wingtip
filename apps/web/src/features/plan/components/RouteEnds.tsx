@@ -29,9 +29,9 @@ export default function RouteEnds({
   // mark's grey disc, its ident's box the ident's width, and the course's
   // line outside the cards' left edge into each mark.
   return (
-    <ol className="flex min-w-0 flex-1 flex-col pt-1 pb-2 pl-0" aria-label="The route" data-testid="route-ends">
-      <EndCard value={dep} onChange={onDep} label="Departure" testId="route-end-departure" first />
-      <EndCard value={dest} onChange={onDest} label="Destination" testId="route-end-destination" />
+    <ol className="flex min-w-0 flex-1 flex-col pt-1 pb-2 pl-0" aria-label="The route">
+      <EndCard value={dep} onChange={onDep} label="Departure" first />
+      <EndCard value={dest} onChange={onDest} label="Destination" />
     </ol>
   );
 }
@@ -46,7 +46,7 @@ function EndCard({
   value: string;
   onChange: (ident: string) => void;
   label: string;
-  testId: string;
+  testId?: string;
   first?: boolean;
 }) {
   return (

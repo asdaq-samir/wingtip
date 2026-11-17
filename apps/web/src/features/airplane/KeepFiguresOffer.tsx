@@ -17,8 +17,7 @@ export default function KeepFiguresOffer() {
       }}
       title={`Save ${vm.tail}'s figures to your account?`}
       description={vm.problem ?? `The figures you set for ${vm.tail} on this device, kept with your airplanes.`}
-      action={{ label: vm.saving ? "Saving…" : "Save", onClick: () => void vm.keep(), disabled: vm.saving, testId: "keep-figures-save" }}
-      testId="keep-figures-offer"
+      action={{ label: vm.saving ? "Saving…" : "Save", onClick: () => void vm.keep(), disabled: vm.saving }}
     />
   );
 }

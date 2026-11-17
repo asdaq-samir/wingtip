@@ -419,19 +419,6 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
   }
 }
 
-/* On a TV (lib/tv), where the remote is: a ring in the tint round
-   whatever has the focus, thick enough to be seen across a room, the map
-   ringed inside its edge -- on any focus, not only a keyboard's, as the
-   app puts the remote on its first control itself. A remote has nothing
-   else to show it by. */
-html[data-tv] :focus {
-  outline: 4px solid var(--tint) !important;
-  outline-offset: 3px;
-}
-html[data-tv] .maplibregl-canvas:focus {
-  outline-offset: -6px;
-}
-
 /* A panel tab not up (PanelTabs: its Base UI Tabs.Panel's data-hidden;
    TabKept: tab-away): skipped, its layout and its charts'
    sizes kept for its return, where display: none threw them away -- a

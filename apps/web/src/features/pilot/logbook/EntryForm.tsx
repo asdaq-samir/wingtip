@@ -190,11 +190,7 @@ export default function EntryForm({
         </span>
       </div>
       {field("remarks", "Remarks")}
-      {problem && (
-        <FieldError className={cn("text-destructive", TEXT.note)} data-testid="logbook-problem">
-          {problem}
-        </FieldError>
-      )}
+      {problem && <FieldError className={cn("text-destructive", TEXT.note)}>{problem}</FieldError>}
       <div className="flex justify-end gap-2 pt-1">
         {onCancel && (
           <Button type="button" size="sm" variant="ghost" onClick={cancel} data-testid="logbook-cancel">

@@ -75,7 +75,6 @@ export function ReviewAskForm({
           min={localDay()}
           className="h-8 w-40"
           onChange={(day) => setFlightOn(day || localDay())}
-          data-testid="review-day"
         />
       </ListRow>
       <div className="p-2">

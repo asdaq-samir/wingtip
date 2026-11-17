@@ -148,7 +148,6 @@ export function ExportPanel({
           onValueChange={(v) => Array.isArray(v) && v.length === 2 && setRange([v[0]!, v[1]!])}
           thumb={{ className: THUMB_HIT }}
           aria-label="Range to export"
-          data-testid="studio-export-range"
         />
         <div className="flex gap-2">
           <Button
@@ -156,7 +155,6 @@ export function ExportPanel({
             className="flex-1"
             disabled={at === null}
             onClick={() => at !== null && setRange([at, Math.max(at, to)])}
-            data-testid="studio-export-from"
           >
             From here
           </Button>
@@ -165,7 +163,6 @@ export function ExportPanel({
             className="flex-1"
             disabled={at === null}
             onClick={() => at !== null && setRange([Math.min(from, at), at])}
-            data-testid="studio-export-to"
           >
             To here
           </Button>
@@ -203,23 +200,19 @@ export function ExportPanel({
         <div className="flex flex-col gap-2">
           <Progress value={done * 100} aria-label="Rendering the video" />
           <span className={cn("tabular-nums", TEXT.note)}>Rendering {Math.round(done * 100)}%</span>
-          <Button variant="outline" onClick={video.cancel} data-testid="studio-export-cancel">
+          <Button variant="outline" onClick={video.cancel}>
             Cancel
           </Button>
         </div>
       ) : (
-        <Button
-          disabled={to <= from}
-          onClick={() => void video.start({ track, choice, range: { start: from, end: to }, scene, credits })}
-          data-testid="studio-export-start"
-        >
+        <Button disabled={to <= from} onClick={() => void video.start({ track, choice, range: { start: from, end: to }, scene, credits })}>
           <Film aria-hidden />
           Make the video
         </Button>
       )}
-      {problem && <FieldError data-testid="studio-export-problem">{problem}</FieldError>}
+      {problem && <FieldError>{problem}</FieldError>}
       {made && !running && (
-        <a className={buttonVariants({ variant: "outline" })} href={made.url} download={made.name} data-testid="studio-export-save">
+        <a className={buttonVariants({ variant: "outline" })} href={made.url} download={made.name}>
           <Download aria-hidden />
           Save {made.name} ({(made.bytes / 1e6).toFixed(1)} MB)
         </a>

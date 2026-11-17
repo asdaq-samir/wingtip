@@ -39,7 +39,7 @@ export default function DepartureWindowStrip() {
     <PillSection title={title} testId="departure-window">
       {m.error ? (
         // Where it happened, not a toast (lib/problems).
-        <FieldError className={cn(TEXT.detail, "text-muted-foreground")} data-testid="departure-window-error">
+        <FieldError className={cn(TEXT.detail, "text-muted-foreground")}>
           Hours unavailable: {describeError(m.error, "the planner did not answer")}
         </FieldError>
       ) : m.pending ? (
@@ -57,13 +57,11 @@ export default function DepartureWindowStrip() {
           ))}
         </div>
       ) : m.hours.length === 0 ? (
-        <p className={cn(TEXT.detail, "text-muted-foreground")} data-testid="departure-window-none">
-          No TAF along the route reaches past the next hour.
-        </p>
+        <p className={cn(TEXT.detail, "text-muted-foreground")}>No TAF along the route reaches past the next hour.</p>
       ) : (
         <>
           {!m.best && (
-            <p className={cn(TEXT.detail, "text-muted-foreground")} data-testid="departure-window-no-go">
+            <p className={cn(TEXT.detail, "text-muted-foreground")}>
               No hour with nothing against it before {clock(m.hours.at(-1)!.depart)}.
             </p>
           )}
@@ -80,7 +78,6 @@ export default function DepartureWindowStrip() {
             // The last ask's hours, dimmed, while this one's come.
             aria-busy={m.stale || undefined}
             className={cn("-mx-4 w-auto snap-x overflow-x-auto overscroll-x-contain px-4 pb-1", m.stale && "opacity-50")}
-            data-testid="departure-window-hours"
           >
             {m.hours.map((h) => {
               const finding = HOUR_FINDING[h.verdict];

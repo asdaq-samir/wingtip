@@ -64,7 +64,5 @@ export function useGoogleAttribution(session: string | null, key: string | null)
       map.off("moveend", ask);
     };
   }, [map, session, key]);
-  useGoogleCredit(
-    session ? `<span aria-label="Google Maps" data-testid="google-credit">Google Maps</span>${copyright ? ` · ${copyright}` : ""}` : null,
-  );
+  useGoogleCredit(session ? `<span aria-label="Google Maps">Google Maps</span>${copyright ? ` · ${copyright}` : ""}` : null);
 }

@@ -44,19 +44,10 @@ export function AirspaceHours({
             title={<span className={cn(now === surface.class && "text-tint")}>{now ? `Class ${now}` : "Part-time"}</span>}
             description={today ? undefined : faaWords(line) || "Hours not published"}
             value={today ?? undefined}
-            data-testid="place-airspace-now"
           />
           {hours?.known && (
             <Collapsible open={open} onOpenChange={onOpenChange}>
-              <CollapsibleTrigger
-                render={
-                  <ListRow
-                    title={<span className="text-muted-foreground">Normal hours</span>}
-                    chevron
-                    data-testid="place-airspace-week-open"
-                  />
-                }
-              />
+              <CollapsibleTrigger render={<ListRow title={<span className="text-muted-foreground">Normal hours</span>} chevron />} />
               <CollapsibleContent data-testid="place-airspace-week">
                 {normalHours(hours).map((row) => (
                   <ListRow

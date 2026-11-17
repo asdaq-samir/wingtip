@@ -19,7 +19,7 @@ export default function SwitchRow({
   description?: ReactNode;
   on: boolean;
   onChange: (on: boolean) => void;
-  testId: string;
+  testId?: string;
   disabled?: boolean;
 }) {
   const id = useId();

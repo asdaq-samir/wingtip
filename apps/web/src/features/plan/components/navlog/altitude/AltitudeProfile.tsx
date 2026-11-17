@@ -123,7 +123,7 @@ export function AltitudeProfile({
   // by it (Cross At): the planner's `altitudes` and `altitude_starts`.
   const setLeg = (point: ProfilePoint, feet: number, mode: ChangeMode) => onLegAltitude?.(point.ident, feet, mode === "start_at");
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-3" data-testid="altitude-profile">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-3">
       <div ref={graph} className="relative h-56 max-h-full min-h-16 shrink-0">
         {chart(shownAt !== null && shownAt !== flown ? shownAt : null)}
         {/* The stock Slider, upright down the graph's left, a step each of
@@ -160,9 +160,7 @@ export function AltitudeProfile({
       {shownAt !== null && (
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <span className={cn("font-bold tabular-nums", TEXT.heading)} data-testid="altitude-picked">
-              {flightLevel(shownAt)}
-            </span>
+            <span className={cn("font-bold tabular-nums", TEXT.heading)}>{flightLevel(shownAt)}</span>
             {shownAt !== flown && (
               <span className={cn("ml-2 text-muted-foreground", TEXT.detail)}>
                 Preview{flown !== null ? `, flying ${flightLevel(flown)}` : ""}
@@ -176,7 +174,7 @@ export function AltitudeProfile({
               <Toggle
                 pressed={vm.auto}
                 onPressedChange={vm.setAuto}
-                render={<Button type="button" size="sm" variant={vm.auto ? "default" : "secondary"} data-testid="altitude-auto" />}
+                render={<Button type="button" size="sm" variant={vm.auto ? "default" : "secondary"} />}
               >
                 Auto
               </Toggle>

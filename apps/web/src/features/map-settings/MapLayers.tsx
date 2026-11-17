@@ -59,7 +59,6 @@ export default function MapLayers() {
           glyph={CloudSun}
           on={prefs.weather}
           onChange={prefs.setWeather}
-          testId="weather-toggle"
           menuLabel="Weather to show"
           menuTestId="weather-more"
         >
@@ -68,7 +67,7 @@ export default function MapLayers() {
         {/* The airplanes ADS-B receivers hear about the map (TrafficGl),
             from adsb.lol: off unless turned on, as it asks a third party
             every five seconds. */}
-        <LayerToggle name="Traffic" glyph={Plane} on={prefs.traffic} onChange={prefs.setTraffic} testId="traffic-toggle" />
+        <LayerToggle name="Traffic" glyph={Plane} on={prefs.traffic} onChange={prefs.setTraffic} />
         {/* The privately owned fields and the armed services' own: off by
             default, as each is landed at only by leave; drawn whatever
             this says while the emergency assistant is open. */}

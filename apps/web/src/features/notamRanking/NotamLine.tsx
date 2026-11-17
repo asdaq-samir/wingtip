@@ -40,12 +40,8 @@ export default function NotamLine({ notam, testId }: { notam: RankedNotam; testI
           <Ellipsis className="size-5" aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={() => togglePin(notam.id)} data-testid="notam-pin">
-            {pinned ? "Unpin" : "Pin to Top"}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => toggleRead(notam.id)} data-testid="notam-read">
-            {read ? "Mark as Unread" : "Mark as Read"}
-          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => togglePin(notam.id)}>{pinned ? "Unpin" : "Pin to Top"}</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => toggleRead(notam.id)}>{read ? "Mark as Unread" : "Mark as Read"}</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </li>

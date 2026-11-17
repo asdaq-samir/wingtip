@@ -50,7 +50,7 @@ export function RemovableRow({
         label={`More for ${name}`}
         testId="row-more"
         actions={[
-          ...(share ? [{ label: "Share", icon: <Share />, onSelect: shareIt, testId: "row-share" }] : []),
+          ...(share ? [{ label: "Share", icon: <Share />, onSelect: shareIt }] : []),
           { label: "Remove", icon: <Trash2 />, destructive: true, spoken: label, onSelect: onDelete, testId: "row-remove" },
         ]}
       >

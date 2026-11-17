@@ -37,7 +37,7 @@ export function KeyframesPanel() {
   const { keys, keyed, kind } = useReplayCamera();
   const at = usePastFlight((s) => s.at);
   return (
-    <div className="flex flex-col gap-3" data-testid="studio-keyframes">
+    <div className="flex flex-col gap-3">
       <Button
         variant="outline"
         disabled={at === null}
@@ -45,7 +45,6 @@ export function KeyframesPanel() {
           const map = useExporting.getState().map;
           if (at !== null) addKeyframe(at, kind ? null : map && viewNow(map));
         }}
-        data-testid="studio-keyframe-add"
       >
         <KeyRound aria-hidden />
         Add a keyframe here
@@ -76,7 +75,7 @@ export function KeyframesPanel() {
                     <span className={TEXT.note}>Held view</span>
                   ) : (
                     <DropdownMenu>
-                      <DropdownMenuTrigger render={<Button variant="ghost" data-testid={`studio-keyframe-kind-${k.id}`} />}>
+                      <DropdownMenuTrigger render={<Button variant="ghost" />}>
                         {CAMERAS.find((c) => c.value === k.kind)?.label}
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

@@ -54,14 +54,12 @@ export default function NotamRankingSection() {
       </CollapsibleTrigger>
       <CollapsibleContent className="flex flex-col gap-2 px-3.5 pb-1">
         {pending ? (
-          <div className="flex flex-col gap-2 py-0.5" aria-busy="true" data-testid="brief-notams-pending">
+          <div className="flex flex-col gap-2 py-0.5" aria-busy="true">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-2/3" />
           </div>
         ) : error && !answer ? (
-          <p className={cn("text-muted-foreground", TEXT.note)} data-testid="brief-notams-unavailable">
-            {describeError(error, "The NOTAMs could not be ranked")}
-          </p>
+          <p className={cn("text-muted-foreground", TEXT.note)}>{describeError(error, "The NOTAMs could not be ranked")}</p>
         ) : (
           <>
             {/* The ranking kept on this device, with its age, where it could
@@ -88,7 +86,7 @@ export default function NotamRankingSection() {
               </p>
             )}
             {top.length > 0 && (
-              <ol className="flex flex-col gap-3" data-testid="brief-notams-top">
+              <ol className="flex flex-col gap-3">
                 {top.map((n) => (
                   <NotamLine key={n.id} notam={n} testId="brief-notam" />
                 ))}
@@ -119,9 +117,7 @@ export default function NotamRankingSection() {
               </Collapsible>
             )}
             {answer?.unchecked.includes("tfrs") && (
-              <p className={cn("text-muted-foreground", TEXT.note)} data-testid="brief-notams-unchecked">
-                TFRs could not be checked just now.
-              </p>
+              <p className={cn("text-muted-foreground", TEXT.note)}>TFRs could not be checked just now.</p>
             )}
             <p className={cn("pb-2 text-muted-foreground", TEXT.note)} data-testid="brief-notams-credit">
               {notamCredit(since)}

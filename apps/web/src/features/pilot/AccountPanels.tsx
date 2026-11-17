@@ -234,7 +234,6 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
           id={`${id}-battery`}
           aria-label="ELT battery replace by"
           className="h-8 w-40"
-          data-testid="inspection-elt-battery-date"
         />
       </ListRow>
       {/* Whether the 100-hour is owed at all: carrying anyone for hire, or
@@ -284,7 +283,6 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
               className="h-8 w-28"
               inputClassName="text-right"
               {...ariaInvalid(`${id}-at`, errors.hundredHourAtHours?.message)}
-              data-testid="inspection-hundred-hour-at"
             />
           </FieldHit>
         </RowField>
@@ -538,9 +536,7 @@ export function AircraftPanel() {
               <form id={formElementId} className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
                 {/* What the gateway refused of the last save, over the fields typed as they were. */}
                 {errors.root?.server && (
-                  <FieldError className={cn("px-1 text-destructive", TEXT.note)} data-testid="aircraft-problem">
-                    {errors.root.server.message}
-                  </FieldError>
+                  <FieldError className={cn("px-1 text-destructive", TEXT.note)}>{errors.root.server.message}</FieldError>
                 )}
                 {/* What the airplane is, then its speeds and fuel burns --
                   climb and cruise, a row each under the group's heading

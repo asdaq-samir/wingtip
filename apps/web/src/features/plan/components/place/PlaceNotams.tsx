@@ -80,7 +80,7 @@ export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
   return (
     <div className="flex flex-col gap-1 pb-6" data-testid="place-notam-full">
       <NotamState n={n} />
-      <p className={cn("font-medium", TEXT.prose, n.in_force === false && "text-muted-foreground")} data-testid="place-notam-what">
+      <p className={cn("font-medium", TEXT.prose, n.in_force === false && "text-muted-foreground")}>
         <NotamWhat what={whatOf(n, ident)} />
       </p>
       <p className={TEXT.prose}>
@@ -194,9 +194,7 @@ function NotamState({ n }: { n: FieldNotam }) {
  *  the list. */
 function Unchecked({ data }: { data: FieldNotams | undefined }) {
   return data && data.unchecked.length > 0 ? (
-    <p className={cn("pt-2 text-caution-ink", TEXT.note)} data-testid="place-notams-unchecked">
-      The TFR list could not be read: check the FAA's TFRs before flying.
-    </p>
+    <p className={cn("pt-2 text-caution-ink", TEXT.note)}>The TFR list could not be read: check the FAA's TFRs before flying.</p>
   ) : null;
 }
 
@@ -247,7 +245,7 @@ export function PlaceNotamsSection({ ident, none = null }: { ident: string; none
           <CollapsibleContent className="flex flex-col gap-2">
             {!shown.length && <NotamRows notams={[]} ident={ident} state={state} />}
             {kindsOf(shown, ident).map(([kind, group]) => (
-              <div key={kind} className="flex flex-col gap-1" data-testid="place-notams-kind">
+              <div key={kind} className="flex flex-col gap-1">
                 <span className={cn("px-1 text-muted-foreground", TEXT.note)}>{kind}</span>
                 <NotamRows notams={group} ident={ident} state={null} />
               </div>

@@ -148,7 +148,7 @@ export default function AircraftAlertMenu({
             >
               <DropdownMenuRadioItem value="off">Off</DropdownMenuRadioItem>
               {NEAR_ME_NM.map((nm) => (
-                <DropdownMenuRadioItem key={nm} value={String(nm)} data-testid={`flight-alert-near-me-${nm}`}>
+                <DropdownMenuRadioItem key={nm} value={String(nm)}>
                   {nm} nm
                 </DropdownMenuRadioItem>
               ))}
@@ -156,7 +156,7 @@ export default function AircraftAlertMenu({
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <DropdownMenuSub>
-          <DropdownMenuSubTrigger disabled={!fields.length && !nearField} className={UNAVAILABLE} data-testid="flight-alert-near-airport">
+          <DropdownMenuSubTrigger disabled={!fields.length && !nearField} className={UNAVAILABLE}>
             <span className="flex min-w-0 flex-1 flex-col">
               Comes near an airport
               {!fields.length && !nearField && (
@@ -179,7 +179,7 @@ export default function AircraftAlertMenu({
               </DropdownMenuLabel>
               <DropdownMenuRadioItem value="off">Off</DropdownMenuRadioItem>
               {fields.map((field) => (
-                <DropdownMenuRadioItem key={field.ident} value={field.ident} data-testid={`flight-alert-airport-${field.ident}`}>
+                <DropdownMenuRadioItem key={field.ident} value={field.ident}>
                   {field.label}
                 </DropdownMenuRadioItem>
               ))}

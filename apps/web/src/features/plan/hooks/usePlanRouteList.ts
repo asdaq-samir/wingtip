@@ -3,10 +3,9 @@ import { positionIdent, stopsOf } from "../../../lib/identSchema";
 import { useGeo, type LatLon } from "../../../lib/geo";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { ADDRESS_CLEARED } from "../../../lib/address";
-import { proceduresOf, proceduresParam } from "../../../lib/procedures";
 import type { PanelState } from "../../../lib/mapChrome";
 import { riseToSee } from "./panelNow";
-import { routeWas } from "./planAddress";
+import { directKeys, procsWithoutDirect } from "./planAddress";
 import { useRouteListEdit } from "./useRouteListEdit";
 import { useRouteLine } from "./useRouteLine";
 import type { PlanRoute } from "./usePlanRoute";
@@ -61,15 +60,13 @@ export function usePlanRouteList(
         const withIt = [...stops.slice(0, index), ident, ...stops.slice(index)];
         const away = { place: null, at: null };
         if (then !== "direct") return { ...away, stops: withIt.join(",") };
-        const procs = proceduresOf(prev.procs);
         return {
           ...away,
           dep: fix ? positionIdent(fix) : undefined,
           stops: [ident, ...stops.slice(index)].join(","),
-          direct: ident,
-          was: prev.was ?? routeWas(prev),
+          ...directKeys(prev, ident),
           // One direct at a time, as directToPoint's.
-          procs: procs.some((p) => p.direct) ? proceduresParam(procs.map((p) => ({ ...p, direct: null }))) || null : undefined,
+          procs: procsWithoutDirect(prev.procs),
         };
       });
       // FPL's list in sight, its new row and the hold's sheet with it: up

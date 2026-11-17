@@ -101,7 +101,6 @@ function Plan({ plan }: { plan: ProficiencyPlan }) {
             key={d.key}
             title={d.label}
             description={`${d.rule} · ${d.detail}`}
-            data-testid="coach-due"
             value={<span className={cn("tabular-nums", FINDING_TONE[STATUS[d.status].tone])}>{STATUS[d.status].words(d)}</span>}
           />
         ))}
@@ -111,7 +110,7 @@ function Plan({ plan }: { plan: ProficiencyPlan }) {
           {plan.weak_areas.map((w) => (
             // Base UI's Collapsible, its trigger the list's own row with its
             // chevron, as the stop's services fold theirs (StopServices).
-            <Collapsible key={w.key} data-testid="coach-weak">
+            <Collapsible key={w.key}>
               <CollapsibleTrigger render={<ListRow title={`${w.label} · ${w.evidence.length} · ACS ${w.acs.join(", ")}`} chevron />} />
               <CollapsibleContent render={<ul className={cn("space-y-1 px-4 pb-2 text-muted-foreground", TEXT.detail)} />}>
                 {plan.evidence

@@ -44,14 +44,10 @@ export default function AircraftFavoriteGroups({
     const at = favorites.findIndex((f) => f.hex === a.hex);
     const end = favorites.length - 1;
     toggle(a);
-    toast.undo(
-      `Removed ${a.name}`,
-      () => {
-        toggle(a);
-        move(end, at);
-      },
-      { testId: "aircraft-favorites-undo" },
-    );
+    toast.undo(`Removed ${a.name}`, () => {
+      toggle(a);
+      move(end, at);
+    });
   };
   const name = (a: KeptAircraft) => <span className="font-semibold">{a.name}</span>;
   return (
@@ -74,7 +70,7 @@ export default function AircraftFavoriteGroups({
           >
             {editing ? (
               <ListRow
-                media={<RemoveMinus label={`Remove ${mine.name} as your Airplane…`} testId="aircraft-favorites-mine-remove" />}
+                media={<RemoveMinus label={`Remove ${mine.name} as your Airplane…`} />}
                 title={name(mine)}
                 description={mine.type ?? undefined}
               />
@@ -104,7 +100,6 @@ export default function AircraftFavoriteGroups({
                     media={<RemoveMinus label={`Remove ${a.name} from Favorites…`} />}
                     title={name(a)}
                     description={a.type ?? undefined}
-                    data-testid="aircraft-favorites-row"
                   >
                     <MoveHandle label={`Move ${a.name}`} />
                   </ListRow>
@@ -127,12 +122,11 @@ export default function AircraftFavoriteGroups({
                 title={name(a)}
                 description={a.type ?? undefined}
                 onClick={() => onOpen(a)}
-                data-testid="aircraft-favorites-row"
               />
             </RemovableRow>
           ))
         )}
-        <ListRow media={<Plus className="size-5" />} title="Add an Airplane" onClick={onAdd} data-testid="aircraft-favorites-add" />
+        <ListRow media={<Plus className="size-5" />} title="Add an Airplane" onClick={onAdd} />
       </ListGroup>
     </>
   );

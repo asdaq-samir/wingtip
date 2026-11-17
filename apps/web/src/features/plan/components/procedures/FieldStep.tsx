@@ -351,7 +351,6 @@ export function FieldStep({
                     <CardIdent
                       value={a.ident}
                       label={`${a.ident}, change`}
-                      testId="field-ident"
                       onCommit={(v) => {
                         const at = pointIndex(a.ident, a.role);
                         if (at !== undefined && !sameField(v, a.ident)) edit.onReplace!(at, v);

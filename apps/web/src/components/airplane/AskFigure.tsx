@@ -40,14 +40,14 @@ export function AskFigure({
     return (
       <div className={cn("flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground", TEXT.prose)} data-testid={testId}>
         <span>{what} needs an airplane.</span>
-        <Button variant="link" size="sm" className={LINK} onClick={requestAirplanePick} data-testid="pick-airplane">
+        <Button variant="link" size="sm" className={LINK} onClick={requestAirplanePick}>
           Pick an airplane
         </Button>
       </div>
     );
   }
   const edit = vm.tail && (
-    <Button variant="link" size="sm" className={LINK} onClick={() => vm.edit()} data-testid="ask-edit">
+    <Button variant="link" size="sm" className={LINK} onClick={() => vm.edit()}>
       Edit {vm.tail}
     </Button>
   );
@@ -76,16 +76,15 @@ export function AskFigure({
             className="h-8 w-24"
             inputClassName={cn("text-right", TEXT.row)}
             isInvalid={!!vm.problem}
-            data-testid="ask-input"
           />
           <span className="text-muted-foreground">{words.unit}</span>
         </span>
         {vm.problem && <FieldError className={cn("text-destructive-ink", TEXT.detail)}>{vm.problem}</FieldError>}
         <span className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <Button type="submit" size="sm" disabled={vm.saving || vm.typed == null} data-testid="ask-save">
+          <Button type="submit" size="sm" disabled={vm.saving || vm.typed == null}>
             {vm.saving ? "Saving…" : "Save"}
           </Button>
-          <Button type="button" variant="link" size="sm" className={LINK} onClick={vm.notNow} data-testid="ask-not-now">
+          <Button type="button" variant="link" size="sm" className={LINK} onClick={vm.notNow}>
             Not now
           </Button>
           {edit}

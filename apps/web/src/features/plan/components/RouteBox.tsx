@@ -277,7 +277,6 @@ export default function RouteBox({
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={done}
-                data-testid="route-box-done"
                 className={cn(
                   "relative mt-1 ml-1 h-7 shrink-0 rounded-full px-1.5 font-semibold text-tint outline-none after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
                   TEXT.row,

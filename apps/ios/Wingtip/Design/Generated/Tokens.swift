@@ -20,7 +20,7 @@ enum WingtipColor {
         static let routeGreenNight = rgb(0x3F9A1C)
         /// The thin edge round the course's magenta by day (white at 35% over the dimmed chart).
         static let routeEdge = rgb(0x0B0F0A)
-        /// A VFR waypoint's magenta, the sectional's.
+        /// A VFR waypoint's magenta, the sectional's: the one it draws a field with no tower in.
         static let waypoint = rgb(0xC0309F)
         /// iOS's systemBlue, the blue Maps draws its own marks in: the position dot, a point held on the chart, a procedure's Direct to. Not the tint, which is a step deeper for words on white.
         static let mapBlue = rgb(0x007AFF)
@@ -944,14 +944,10 @@ enum WingtipRadius {
 /// Motion: durations in seconds, curves as cubic-bezier points.
 enum WingtipMotion {
     static let sheet: TimeInterval = 0.3
-    static let sheetLeast: TimeInterval = 0.22
-    static let sheetMost: TimeInterval = 0.35
     static let sheetEase = Animation.timingCurve(0, 0, 0.58, 1, duration: 0.3)
-    static let sheetBackEase = Animation.timingCurve(0.2, 0.9, 0.3, 1, duration: 0.3)
     static let drawer: TimeInterval = 0.45
     static let drawerEase = Animation.timingCurve(0.32, 0.72, 0, 1, duration: 0.3)
     static let fade: TimeInterval = 0.2
-    static let quick: TimeInterval = 0.15
     static let page: TimeInterval = 0.25
     static let skeletonPulse: TimeInterval = 1.5
 }
@@ -1020,6 +1016,5 @@ enum WingtipSize {
     static let panel: CGFloat = 384
     static let panelWide: CGFloat = 448
     static let desktop: CGFloat = 1024
-    static let refreshPull: CGFloat = 64
     static let glassBlur: CGFloat = 15
 }

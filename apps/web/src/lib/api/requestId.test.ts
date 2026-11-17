@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { REQUEST_ID_HEADER, newRequestId, requestIdHeaders } from "./requestId";
+import { newRequestId } from "./requestId";
 
 /** The gateway takes an id of up to 64 letters, digits, dots, dashes and
  *  underscores (RequestIdFilter), and makes its own of anything else. */
@@ -19,9 +19,5 @@ describe("request id", () => {
   it("is still a token outside a secure context, where crypto.randomUUID is missing", () => {
     vi.stubGlobal("crypto", {});
     expect(newRequestId()).toMatch(TOKEN);
-  });
-
-  it("goes in a plain fetch's headers as X-Request-Id", () => {
-    expect(Object.keys(requestIdHeaders())).toEqual([REQUEST_ID_HEADER]);
   });
 });

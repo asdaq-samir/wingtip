@@ -1,19 +1,6 @@
 import { describe, expect, it } from "vitest";
 import geodesic from "./fixtures/geodesic.json";
-import {
-  angleBetween,
-  deg,
-  flatBearingDeg,
-  flatDeg,
-  flatDeg2,
-  flatNm,
-  lonScale,
-  M_PER_DEG,
-  normalizeDeg,
-  rad,
-  signedTurn,
-  geoLoaded,
-} from "./geo";
+import { deg, flatBearingDeg, flatDeg, flatDeg2, flatNm, lonScale, M_PER_DEG, normalizeDeg, rad, geoLoaded } from "./geo";
 
 // The engine's geodesic rules, loaded by the setup file (vitestSetup).
 const { bearingDeg, bestStopIndex, destination, distanceNm, legsNm } = await geoLoaded;
@@ -74,22 +61,6 @@ describe("geo", () => {
     expect(bestStopIndex([campbell, minneapolis, duluth], madison)).toBe(0);
     // And a stop near Duluth goes after it.
     expect(bestStopIndex([campbell, minneapolis, duluth], { lat: 46.5, lon: -92.5 })).toBe(1);
-  });
-});
-
-describe("two directions apart, and the turn between them", () => {
-  it("measures the angle round the compass the short way, 0 to 180", () => {
-    expect(angleBetween(358, 2)).toBe(4);
-    expect(angleBetween(2, 358)).toBe(4);
-    expect(angleBetween(90, 270)).toBe(180);
-    expect(angleBetween(10, 10)).toBe(0);
-    expect(angleBetween(-600, 120)).toBe(0);
-  });
-
-  it("turns right positive, left negative", () => {
-    expect(signedTurn(90, 120)).toBe(30);
-    expect(signedTurn(350, 10)).toBe(20);
-    expect(signedTurn(10, 350)).toBe(-20);
   });
 });
 

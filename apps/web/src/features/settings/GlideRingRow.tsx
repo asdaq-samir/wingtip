@@ -13,13 +13,6 @@ export default function GlideRingRow() {
   const ratio = useGlideRatio();
   const blocked = glideRingBlocked(!aircraft.none, tailOf(aircraft), ratio);
   return (
-    <SwitchRow
-      title="Glide Ring"
-      description={blocked ?? undefined}
-      on={on && !blocked}
-      onChange={setGlideRing}
-      disabled={!!blocked}
-      testId="glide-ring-toggle"
-    />
+    <SwitchRow title="Glide Ring" description={blocked ?? undefined} on={on && !blocked} onChange={setGlideRing} disabled={!!blocked} />
   );
 }

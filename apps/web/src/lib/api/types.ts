@@ -287,10 +287,6 @@ export type SignInCapabilities = Gateway["Capabilities"];
  *  COMPED, until when, and whether the free month is still theirs to start.
  *  For showing: the server checks it again on every paid call. */
 export type Subscription = Gateway["SubscriptionDto"];
-/** The iOS app's Apple sign-in, done: where to go next. */
-export type AppleSignedIn = Gateway["SignedIn"];
-/** A TV's code to be signed in with from a phone (DeviceSignInController). */
-export type DeviceCode = Gateway["DeviceCode"];
 
 /** A pilot's own airplane, from `/api/aircraft`. `usableFuelGal` is
  *  null when the owner has not said, and then the nav log makes no

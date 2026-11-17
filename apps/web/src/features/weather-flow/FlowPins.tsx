@@ -47,5 +47,5 @@ function Pin({ at, value }: { at: [number, number]; value: number | null }) {
       marker.remove();
     };
   }, [map, marker, lon, lat]);
-  return createPortal(<FlowPill value={value} testId="weather-flow-pin" />, el);
+  return createPortal(<FlowPill value={value} />, el);
 }

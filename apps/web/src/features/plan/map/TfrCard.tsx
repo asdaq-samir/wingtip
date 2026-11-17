@@ -62,11 +62,9 @@ export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
             say what a pilot does there (2026-10-30): whether the route
             goes through it, and how far it is. */}
         {rings.length > 0 && line && (
-          <p className={cn(enters && "font-semibold text-caution-ink")} data-testid="tfr-route">
-            {enters ? "Your route goes through it" : "Clear of your route"}
-          </p>
+          <p className={cn(enters && "font-semibold text-caution-ink")}>{enters ? "Your route goes through it" : "Clear of your route"}</p>
         )}
-        {from && <p data-testid="tfr-from">{from}</p>}
+        {from && <p>{from}</p>}
         {/* Its 44-point area from the link's own line, nothing grown. */}
         <a
           className="relative block w-fit text-tint after:absolute after:-inset-y-3 after:inset-x-0 after:content-['']"
@@ -87,7 +85,7 @@ export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
 export function TfrGone({ notamId, failed }: { notamId: string; failed: boolean }) {
   return (
     <MapCard title={`TFR ${notamId}`}>
-      <div className="space-y-1 text-left" data-testid="tfr-gone">
+      <div className="space-y-1 text-left">
         <p>{failed ? "The TFRs didn't load. Check tfr.faa.gov before flight." : "Not on tfr.faa.gov's list now: ended or cancelled."}</p>
         <a
           className="relative block w-fit text-tint after:absolute after:-inset-y-3 after:inset-x-0 after:content-['']"

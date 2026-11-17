@@ -17,7 +17,7 @@ function PickItems<T extends string | number>({
   value: T;
   choices: { value: T; label: string }[];
   onPick: (value: T) => void;
-  testId: string;
+  testId?: string;
 }) {
   return (
     <DropdownMenuContent align="end">
@@ -29,7 +29,7 @@ function PickItems<T extends string | number>({
         }}
       >
         {choices.map((c) => (
-          <DropdownMenuRadioItem key={c.value} value={String(c.value)} data-testid={`${testId}-${c.value}`}>
+          <DropdownMenuRadioItem key={c.value} value={String(c.value)} data-testid={testId && `${testId}-${c.value}`}>
             {c.label}
           </DropdownMenuRadioItem>
         ))}
@@ -59,8 +59,8 @@ export default function MenuPick<T extends string | number>({
   value: T;
   choices: { value: T; label: string }[];
   onPick: (value: T) => void;
-  testId: string;
-  trigger?: (props: { "aria-label": string; "data-testid": string }) => ReactElement;
+  testId?: string;
+  trigger?: (props: { "aria-label": string; "data-testid"?: string }) => ReactElement;
 }) {
   const label = choices.find((c) => c.value === value)?.label ?? choices[0]?.label ?? String(value);
   const own = { "aria-label": `${name}: ${label}`, "data-testid": testId };

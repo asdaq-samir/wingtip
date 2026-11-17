@@ -245,7 +245,7 @@ function PreviewRows({
         data-testid="logbook-preview-import"
       />
       {onColumns && <ListRow title={<span className="text-tint">Change columns</span>} onClick={onColumns} />}
-      <ListRow title={<span className="text-tint">Cancel</span>} onClick={onCancel} data-testid="logbook-preview-cancel" />
+      <ListRow title={<span className="text-tint">Cancel</span>} onClick={onCancel} />
     </>
   );
 }

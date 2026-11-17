@@ -124,12 +124,7 @@ export function DryRunControls({
           loop's too): a toolbar, one tab stop, the arrows between its
           buttons; Play a stock toggle; the speed a menu (decision 0017),
           its one small button where the speeds went round a tap each. */}
-      <PlaybackToolbar
-        label="Dry run"
-        onToggle={toggle}
-        className="absolute top-1.5 right-1.5 z-10 flex items-center gap-2"
-        data-testid="dry-run-bar"
-      >
+      <PlaybackToolbar label="Dry run" onToggle={toggle} className="absolute top-1.5 right-1.5 z-10 flex items-center gap-2">
         {/* No from the start, at the owner's ask ("I don't think we need the
             replay button"): the chart's drag takes the run back. Go missed
             on the approach's final only (above). */}

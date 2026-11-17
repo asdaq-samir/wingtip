@@ -138,7 +138,7 @@ export function AtisRows() {
 /** The figures a read ATIS gives, a row each (the heard one's and the
  *  tower's D-ATIS, LiveAirportRows, alike): nothing where nothing was
  *  heard. `remarks: false` leaves the remarks to a list of their own. */
-export function AtisReadingRows({ reading, rowTestId, remarks }: { reading: AtisReading; rowTestId: string; remarks?: boolean }) {
+export function AtisReadingRows({ reading, rowTestId, remarks }: { reading: AtisReading; rowTestId?: string; remarks?: boolean }) {
   if (!heardAny(reading)) return null;
   return atisRows(reading, { remarks }).map((row, k) => (
     <ListRow
@@ -151,7 +151,7 @@ export function AtisReadingRows({ reading, rowTestId, remarks }: { reading: Atis
 }
 
 /** The words as sent, folded under a row (the transcript, the D-ATIS text). */
-export function AtisRawFold({ title, text, testId, rawTestId }: { title: string; text: string; testId: string; rawTestId: string }) {
+export function AtisRawFold({ title, text, testId, rawTestId }: { title: string; text: string; testId?: string; rawTestId?: string }) {
   return (
     <Collapsible>
       <CollapsibleTrigger render={<ListRow title={title} chevron data-testid={testId} />} />

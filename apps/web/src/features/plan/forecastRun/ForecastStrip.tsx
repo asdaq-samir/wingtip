@@ -38,17 +38,11 @@ export function ForecastStrip({ run, ends }: { run: DryRun; ends: RouteEnds | nu
   if (!vm.on) return null;
   if (vm.error) {
     return (
-      <p className={cn("px-2 pt-1 text-destructive", TEXT.note)} data-testid="forecast-run-error">
-        The forecast for the run couldn't be had: {describeError(vm.error)}
-      </p>
+      <p className={cn("px-2 pt-1 text-destructive", TEXT.note)}>The forecast for the run couldn't be had: {describeError(vm.error)}</p>
     );
   }
   if (!vm.answer) {
-    return (
-      <p className={cn("px-2 pt-1 text-muted-foreground", TEXT.note)} data-testid="forecast-run-loading">
-        Fetching the forecast for the run…
-      </p>
-    );
+    return <p className={cn("px-2 pt-1 text-muted-foreground", TEXT.note)}>Fetching the forecast for the run…</p>;
   }
   const alert = vm.alerts[0];
   const missing = unavailableWords(vm.answer.unavailable);
@@ -112,7 +106,7 @@ function Here({ here }: { here: ForecastRun["samples"][number] }) {
       ? `wind ${threeFigures(here.wind_dir_true_deg)}° ${Math.round(here.wind_speed_kt)} kt`
       : "wind aloft not known";
   return (
-    <p className={cn("text-foreground", TEXT.caption)} data-testid="forecast-run-here">
+    <p className={cn("text-foreground", TEXT.caption)}>
       <span className="font-semibold">
         {zulu(here.t)} {here.category ?? "Category not known"}
       </span>

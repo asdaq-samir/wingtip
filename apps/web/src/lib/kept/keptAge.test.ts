@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 import fixture from "../fixtures/keptAge.json";
-import { KEPT_KINDS, keptAge, type KeptKind } from "./keptAge";
+import { keptAge, type KeptKind } from "./keptAge";
+
+/** Every kind the engine ages. */
+const KEPT_KINDS: readonly KeptKind[] = ["briefing", "weather", "notams", "airports", "plates", "plan", "go_no_go", "weather_loop"];
 
 describe("a kept answer's age, the engine's (keptAge.json, as both phones read it)", () => {
   test.each(fixture.cases)("$why", (c) => {

@@ -59,10 +59,30 @@ export function suggestedStopAt(ident: string | null, suggestions: FuelStopSugge
 
 /** The route as the address has it, "dep|stops|dest", kept as a Direct to
  *  goes in (directToPoint) for its Cancel. */
-export const routeWas = (address: Pick<Address, "dep" | "stops" | "dest">) =>
-  `${address.dep ?? ""}|${address.stops ?? ""}|${address.dest ?? ""}`;
+const routeWas = (address: Pick<Address, "dep" | "stops" | "dest">) => `${address.dep ?? ""}|${address.stops ?? ""}|${address.dest ?? ""}`;
+
+/** A route changed by hand is the route: a Direct to's point let go, and
+ *  Cancel with nothing to go back to. */
+export const NO_DIRECT = { direct: null, was: null } as const;
 
 type DirectAddress = Pick<Address, "dep" | "stops" | "dest" | "direct" | "was" | "procs">;
+
+/** The keys every Direct to writes for the point it flies to, wherever
+ *  it is asked (a point of the route, one dropped on the line, a VOR off
+ *  the chart): the point, for its strip and pressed button, and the route
+ *  as it was before the first Direct to (`was`), kept for Cancel. */
+export const directKeys = (prev: Pick<Address, "dep" | "stops" | "dest" | "was">, ident: string) => ({
+  direct: ident,
+  was: prev.was || routeWas(prev),
+});
+
+/** The procedures with their own direct given back, as a Direct to along
+ *  the route goes in: one direct at a time. Undefined, the key left as it
+ *  is, where none has one. */
+export function procsWithoutDirect(procs: Address["procs"]): string | null | undefined {
+  const picked = proceduresOf(procs);
+  return picked.some((p) => p.direct) ? proceduresParam(picked.map((p) => ({ ...p, direct: null }))) || null : undefined;
+}
 
 /** The address's changes that give a Direct to back: the route as it was
  *  before it; none with no Direct to. */
@@ -70,7 +90,7 @@ export function routeBeforeDirect(address: DirectAddress): AddressChange {
   const was = address.was;
   if (address.direct === null && !was) return {};
   const [dep = "", stops = "", dest = ""] = (was || routeWas(address)).split("|");
-  return { dep: dep || null, stops: stops || null, dest: dest || null, direct: null, was: null };
+  return { dep: dep || null, stops: stops || null, dest: dest || null, ...NO_DIRECT };
 }
 
 /** The address's changes for a Direct to a point of the route (`ident`),
@@ -81,19 +101,17 @@ export function routeBeforeDirect(address: DirectAddress): AddressChange {
  *  changes nothing. */
 export function directToPatch(prev: DirectAddress, ident: string | null, fix: Parameters<typeof positionIdent>[0] | null): AddressChange {
   if (ident === null) return routeBeforeDirect(prev);
-  const was = prev.was || routeWas(prev);
-  const [dep = "", stopsWere = "", dest = ""] = was.split("|");
+  const keys = directKeys(prev, ident);
+  const [dep = "", stopsWere = "", dest = ""] = keys.was.split("|");
   const stopsThen = stopsOf(stopsWere);
   const at = stopsThen.findIndex((stop) => sameField(stop, ident));
   if (at < 0 && !sameField(dest, ident)) return {};
-  const procs = proceduresOf(prev.procs);
   return {
     dep: (fix ? positionIdent(fix) : dep) || null,
     stops: at < 0 ? null : stopsThen.slice(at).join(",") || null,
     dest: dest || null,
-    direct: ident || null,
-    was,
-    procs: procs.some((p) => p.direct) ? proceduresParam(procs.map((p) => ({ ...p, direct: null }))) || null : undefined,
+    ...keys,
+    procs: procsWithoutDirect(prev.procs),
   };
 }
 

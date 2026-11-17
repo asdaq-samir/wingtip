@@ -50,7 +50,7 @@ export default function SpeedPage() {
           <Segmented label="Device" value={device} onChange={setDevice} options={DEVICES} testId="speed-device" />
         </ListRow>
         <ListRow title="Over">
-          <Segmented label="Over" value={span} onChange={setSpan} options={SPANS} testId="speed-span" />
+          <Segmented label="Over" value={span} onChange={setSpan} options={SPANS} />
         </ListRow>
       </ListGroup>
       {error && (

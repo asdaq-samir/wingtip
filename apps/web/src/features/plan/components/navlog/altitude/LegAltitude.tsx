@@ -170,7 +170,6 @@ export default function LegAltitude({
       size="inline"
       type="button"
       aria-label={`${point.ident}: set the altitude at it`}
-      data-testid="profile-waypoint"
       className={cn(
         "justify-start text-inherit",
         "absolute bottom-6 size-3 -translate-x-1/2 rotate-45 rounded-[2px] border-2 border-background bg-tint shadow-(--depth-mark) outline-none",

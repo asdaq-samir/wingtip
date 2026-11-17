@@ -96,7 +96,7 @@ function KnowledgeTest({ codes, onSave, saving }: { codes: string[]; onSave: (co
           </span>
           <span className="flex gap-2">
             {codes.length > 0 && (
-              <Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => onSave([])} data-testid="acs-codes-clear">
+              <Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => onSave([])}>
                 Clear
               </Button>
             )}
@@ -196,7 +196,6 @@ function Instructors({ training }: { training: Training }) {
               className="text-destructive"
               disabled={drop.isPending}
               onClick={() => drop.mutate(l.id)}
-              data-testid="instructor-remove"
             >
               Remove
             </Button>
@@ -231,7 +230,6 @@ function Instructors({ training }: { training: Training }) {
               key={r.id}
               title={<span className="font-mono">{reviewRoute(r)}</span>}
               description={`${said(r.flightOn)} · ${r.makeModel} · ${reviewState(r)}`}
-              data-testid="review-row"
             >
               {!r.answeredAt && (
                 <Button type="button" variant="ghost" size="sm" disabled={withdraw.isPending} onClick={() => withdraw.mutate(r.id)}>
@@ -242,11 +240,7 @@ function Instructors({ training }: { training: Training }) {
           ))}
         </ListGroup>
       )}
-      {problem && (
-        <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="instructor-problem">
-          {problem}
-        </FieldError>
-      )}
+      {problem && <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{problem}</FieldError>}
     </>
   );
 }

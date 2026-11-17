@@ -209,7 +209,7 @@ export default function AirspaceCard({
           stays as it was (the owner's ask). */}
       {(data || isLoading) && (
         <div className="pt-3">
-          <PillSection title="Airspace here" onMore={summary ? () => card?.setSize("full") : undefined} testId="airspace-summary">
+          <PillSection title="Airspace here" onMore={summary ? () => card?.setSize("full") : undefined}>
             {/* Feet MSL (each range says so), from the FAA's airspace file
                 and the ground's height there: the chart is the authority. */}
             <ListGroup>
@@ -279,7 +279,6 @@ export default function AirspaceCard({
                             <span
                               // The badge at the row's end says the status; these words say until when and whose.
                               className="block"
-                              data-testid="airspace-sua-status"
                             >
                               {saaWords(saa?.areas[area.name])}
                             </span>
@@ -319,7 +318,7 @@ export default function AirspaceCard({
                       href={tfrPage(t.notam_id)}
                       data-testid="airspace-tfr"
                     >
-                      <StatusBadge variant={t.active_now ? "active" : "later"} data-testid="airspace-tfr-state" />
+                      <StatusBadge variant={t.active_now ? "active" : "later"} />
                     </ListRow>
                   ))
                 )}
@@ -349,14 +348,9 @@ function SuaState({
   timeZone?: string | null;
 }) {
   const now = useClock(60_000);
-  if (status && status.active != null) return <StatusBadge variant={status.active ? "active" : "cold"} data-testid="airspace-sua-state" />;
+  if (status && status.active != null) return <StatusBadge variant={status.active ? "active" : "cold"} />;
   const when = suaWhen(timesOfUse, new Date(now), timeZone);
-  if (when === "active") return <StatusBadge variant="active" data-testid="airspace-sua-state" />;
-  if (when === "not-scheduled")
-    return (
-      <StatusBadge variant="cold" data-testid="airspace-sua-state">
-        Not scheduled
-      </StatusBadge>
-    );
+  if (when === "active") return <StatusBadge variant="active" />;
+  if (when === "not-scheduled") return <StatusBadge variant="cold">Not scheduled</StatusBadge>;
   return null;
 }

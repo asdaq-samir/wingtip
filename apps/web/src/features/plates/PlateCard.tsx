@@ -40,7 +40,7 @@ export function PlateCard({ airport, id, viewer: Viewer }: { airport: string; id
         </div>
         <ListGroup>
           <SwitchRow title="Show Annotations" on={vm.annotations} onChange={vm.setAnnotations} testId="plate-annotations" />
-          <SwitchRow title="Invert Plate Colors" on={vm.inverted} onChange={vm.setInverted} testId="plate-invert" />
+          <SwitchRow title="Invert Plate Colors" on={vm.inverted} onChange={vm.setInverted} />
         </ListGroup>
         {/* Continuous, so a slider (the owner circled ForeFlight's): its
             ends a clear page and a solid one. */}
@@ -56,7 +56,6 @@ export function PlateCard({ airport, id, viewer: Viewer }: { airport: string; id
               // Base UI's own value text from its format: "65%".
               format={{ style: "percent" }}
               thumb={{ "aria-label": "Plate transparency" }}
-              data-testid="plate-opacity"
             />
             <Square className="size-5 shrink-0 fill-current text-muted-foreground" aria-label="Solid" />
           </div>

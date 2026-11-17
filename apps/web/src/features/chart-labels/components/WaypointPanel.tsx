@@ -98,7 +98,6 @@ export default function WaypointPanel({ entries, selected, onFocus, departureIde
       <div
         className="min-h-0 flex-1 overflow-auto pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[env(safe-area-inset-left)]"
         data-waypoint-list
-        data-testid="waypoint-scroller"
       >
         <ul aria-label={`Waypoints from ${departureIdent} to ${destinationIdent}`} className="divide-y divide-border">
           {entries.length === 0 && (
@@ -268,7 +267,7 @@ export function WaypointActions({ rated, filters, counts, onFilterChange, canUnd
           <FilterBar filters={filters} onChange={onFilterChange} counts={counts} />
         </ResponsivePopoverContent>
       </ResponsivePopover>
-      <ToolbarButton text="Undo" icon={<Undo2 />} onClick={onUndo} disabled={!canUndo} data-testid="undo-button" />
+      <ToolbarButton text="Undo" icon={<Undo2 />} onClick={onUndo} disabled={!canUndo} />
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
@@ -294,7 +293,7 @@ export function WaypointActions({ rated, filters, counts, onFilterChange, canUnd
                   : "Retrain the model"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onClick={askReset} disabled={rated === 0} data-testid="reset-ratings-button">
+          <DropdownMenuItem variant="destructive" onClick={askReset} disabled={rated === 0}>
             <Eraser />
             Reset all ratings
           </DropdownMenuItem>

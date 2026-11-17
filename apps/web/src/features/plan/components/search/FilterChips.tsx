@@ -58,7 +58,7 @@ export default function FilterChips() {
     </Toggle>
   );
   return (
-    <div className="-mx-4 flex gap-2 overflow-x-auto overscroll-x-contain px-4 pb-1 [scrollbar-width:none]" data-testid="search-chips">
+    <div className="-mx-4 flex gap-2 overflow-x-auto overscroll-x-contain px-4 pb-1 [scrollbar-width:none]">
       <Button
         variant="outline"
         size="sm"
@@ -121,7 +121,6 @@ export default function FilterChips() {
         steps={RUNWAY_STEPS}
         words={runwayWords}
         onPick={(minRunwayFt) => set({ minRunwayFt })}
-        testId="chip-runway"
         trigger={
           <Button variant="outline" size="sm" className={CHIP} data-on={filters.minRunwayFt != null || undefined}>
             {runwayWords(filters.minRunwayFt)}
@@ -134,7 +133,6 @@ export default function FilterChips() {
         steps={WITHIN_STEPS}
         words={withinWords}
         onPick={(withinNm) => set({ withinNm })}
-        testId="chip-within"
         trigger={
           <Button variant="outline" size="sm" className={CHIP} data-on={filters.withinNm != null || undefined}>
             {withinWords(filters.withinNm)}

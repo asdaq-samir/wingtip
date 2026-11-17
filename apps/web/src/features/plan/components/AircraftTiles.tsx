@@ -36,7 +36,7 @@ export function AircraftFavoriteStrip({
   const favorites = usePreferences((s) => s.favoriteAircraft);
   const mine = usePreferences((s) => s.myAircraft);
   return (
-    <PillStrip testId="pill-aircraft-favorites">
+    <PillStrip>
       {/* My Airplane first, with Add until one is kept, as Home is. */}
       <SmallTile
         mark={<SmallMark icon={<HomePlane kind={mine ? keptKind(mine) : "high"} />} className={PLANE_TILE} />}
@@ -44,7 +44,6 @@ export function AircraftFavoriteStrip({
         detail={mine?.name ?? "Add"}
         label={mine ? `Airplane, ${mine.name}` : "Add your Airplane"}
         onClick={mine ? () => onOpen(mine) : onAddMine}
-        testId="pill-aircraft-mine"
       />
       {favorites.map((a) => (
         <KeptAircraftTile key={a.hex} aircraft={a} onClick={() => onOpen(a)} testId="pill-aircraft-favorite" />
@@ -58,7 +57,6 @@ export function AircraftFavoriteStrip({
           title="Add"
           label="Add a Favorite"
           onClick={onAddFavorite}
-          testId="pill-aircraft-favorite-add"
         />
       )}
     </PillStrip>

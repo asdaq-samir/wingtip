@@ -98,7 +98,7 @@ export default function FlightInfoTab({
           />
           <ListRow title="Callsign" value={<span className="font-semibold text-foreground">{plane?.callsign ?? "—"}</span>} />
           {/* The tower's departure event, where TDES sent one (features/plan/lib/departureWords). */}
-          {towerLine && <ListRow title="Tower" description={towerLine} data-testid="flight-tower" />}
+          {towerLine && <ListRow title="Tower" description={towerLine} />}
         </ListGroup>
       </PillSection>
       {route && (

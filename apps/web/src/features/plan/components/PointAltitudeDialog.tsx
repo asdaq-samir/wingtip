@@ -115,10 +115,7 @@ export default function PointAltitudeDialog({
           className="contents"
         >
           {altitude.caution && altitude.caution.length > 0 && (
-            <ul
-              className={`list-disc space-y-0.5 rounded-lg bg-caution-wash py-2 pr-2.5 pl-6 text-caution-ink ${TEXT.prose}`}
-              data-testid="point-altitude-caution"
-            >
+            <ul className={`list-disc space-y-0.5 rounded-lg bg-caution-wash py-2 pr-2.5 pl-6 text-caution-ink ${TEXT.prose}`}>
               {altitude.caution.map((reason) => (
                 <li key={reason}>{reason}</li>
               ))}

@@ -16,7 +16,7 @@ import { SHEET_BAR } from "../../../../components/panelField";
  */
 export default function FplBar({ strip }: { strip: ReactNode }) {
   return (
-    <div className="flex w-full items-center gap-2" data-testid="fpl-bar">
+    <div className="flex w-full items-center gap-2">
       <div className={cn("flex items-center pr-1 pl-1.5", SHEET_BAR)} data-testid="route-strip">
         {strip}
       </div>

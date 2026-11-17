@@ -39,7 +39,7 @@ export default function CardIdent({
   value: string;
   label: string;
   onCommit: (ident: string) => void;
-  testId: string;
+  testId?: string;
   bold?: boolean;
   /** Its words while empty, in their own case. */
   placeholder?: string;
@@ -223,7 +223,7 @@ export default function CardIdent({
           initialFocus={false}
           onPointerDown={(e) => e.preventDefault()}
           onMouseDown={(e) => e.preventDefault()}
-          data-testid={`${testId}-suggestions`}
+          data-testid={testId && `${testId}-suggestions`}
         >
           <AirportResults
             rows={open ? rows : NO_ROWS}

@@ -42,7 +42,7 @@ export function SortableRows({
     },
   });
   return (
-    <GridList aria-label={label} dragAndDropHooks={dragAndDropHooks} className="outline-none" data-testid="sortable-rows">
+    <GridList aria-label={label} dragAndDropHooks={dragAndDropHooks} className="outline-none">
       {children}
     </GridList>
   );

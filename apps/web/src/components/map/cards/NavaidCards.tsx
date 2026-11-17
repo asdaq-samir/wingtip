@@ -77,7 +77,7 @@ export function VorCard({ vor }: { vor: VorPin }) {
           airplanes only (lib/preferences). */}
       <PointActions point={vor} copy={freq ? { label: freq, text: freq } : null} />
       {on && (
-        <p className={cn("tabular-nums", TEXT.row)} data-testid="vor-radial">
+        <p className={cn("tabular-nums", TEXT.row)}>
           <span className="font-semibold">On the {threeFigures(on.radial)} radial</span> · {nmAway(on.nm)}
           <span className={cn("block text-muted-foreground", TEXT.detail)}>{threeFigures(on.toCourse)}° to fly to it</span>
         </p>
@@ -92,7 +92,6 @@ export function VorCard({ vor }: { vor: VorPin }) {
               {morseOf(vor.ident)}
             </span>
           }
-          data-testid="vor-morse"
         />
         {vor.channel && <ListRow title="DME channel" value={<span className="text-foreground">{vor.channel}</span>} />}
         {volume && <ListRow title="Service volume" description={volume} data-testid="vor-service-volume" />}
@@ -117,17 +116,12 @@ export function VorCard({ vor }: { vor: VorPin }) {
                 <ListRow
                   title={<span className={cn(vor.restricted && "text-caution")}>{vor.restricted ? "Restrictions" : "Remarks"}</span>}
                   chevron
-                  data-testid="vor-remarks"
                 />
               }
             />
             <CollapsibleContent>
               {(vor.remarks ?? []).map((remark) => (
-                <ListRow
-                  key={remark}
-                  title={<span className={cn("text-muted-foreground", TEXT.detail)}>{remark}</span>}
-                  data-testid="vor-remark"
-                />
+                <ListRow key={remark} title={<span className={cn("text-muted-foreground", TEXT.detail)}>{remark}</span>} />
               ))}
             </CollapsibleContent>
           </Collapsible>

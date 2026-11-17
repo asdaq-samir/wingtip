@@ -56,7 +56,7 @@ export function PirepCard({ pirep }: { pirep: MapPirep }) {
       title={pirep.urgent ? "Urgent PIREP" : "PIREP"}
       subtitle={[pirep.observed_at && zuluTime(new Date(pirep.observed_at)), pirep.aircraft].filter(Boolean).join(" · ")}
     >
-      <div className="space-y-1 text-left" data-testid="pirep-card">
+      <div className="space-y-1 text-left">
         {pirep.altitude_ft != null && <p>At {mapLevel(pirep.altitude_ft)}</p>}
         {pirep.turbulence && <p>Turbulence: {faaWords(pirep.turbulence)}</p>}
         {pirep.icing && <p>Icing: {faaWords(pirep.icing)}</p>}
@@ -76,7 +76,7 @@ export function WindCard({ wind, altitudeFt }: { wind: StationWind; altitudeFt: 
       subtitle={`${wind.ident} · at ${mapLevel(altitudeFt)} · ${WINDS_MODELLED}`}
     >
       {wind.temp_c != null && (
-        <p className="text-left" data-testid="wind-card">
+        <p className="text-left">
           {wind.temp_c > 0 ? "+" : ""}
           {wind.temp_c} °C
         </p>

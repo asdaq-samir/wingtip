@@ -109,8 +109,6 @@ terrain.spec.ts
 tfr-card.spec.ts
 tiles.spec.ts
 tracking.spec.ts
-tv-signin.spec.ts
-tv.spec.ts
 undo.spec.ts
 weather-flow.spec.ts
 workings.spec.ts

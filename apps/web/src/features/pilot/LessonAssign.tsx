@@ -130,7 +130,7 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
           </FieldHit>
         </ListRow>
         <ListRow id={ids.due} title="Due" description="Optional">
-          <DateField id={ids.due} aria-label="Due" value={due} onChange={setDue} className="h-8 w-40" data-testid="lesson-due" />
+          <DateField id={ids.due} aria-label="Due" value={due} onChange={setDue} className="h-8 w-40" />
         </ListRow>
       </ListGroup>
       {typed &&
@@ -229,9 +229,9 @@ function LessonDetail({ lesson, studentId, onDone }: { lesson: ApproachLesson; s
   const remove = useMutation({ mutationFn: () => api.instructor.removeLesson(studentId, lesson.id), onSuccess: (next) => onDone(next) });
   const notes = Object.entries(lesson.fixNotes);
   return (
-    <div className="space-y-4" data-testid="lesson-detail">
+    <div className="space-y-4">
       <ListGroup title={`${lesson.procedureName} · ${lesson.airportIdent}`}>
-        <ListRow title="Progress" value={lessonStatus(lesson)} data-testid="lesson-status" />
+        <ListRow title="Progress" value={lessonStatus(lesson)} />
         {lesson.briefedAt && <ListRow title="Briefed" value={said(lesson.briefedAt.slice(0, 10))} />}
         {lesson.flownAt && <ListRow title="Flown in the lesson" value={said(lesson.flownAt.slice(0, 10))} />}
         {lesson.dueOn && <ListRow title="Due" value={said(lesson.dueOn)} />}
@@ -264,9 +264,8 @@ function LessonDetail({ lesson, studentId, onDone }: { lesson: ApproachLesson; s
           title={<span className="text-destructive">Take Back This Lesson</span>}
           disabled={remove.isPending}
           onClick={() => remove.mutate()}
-          data-testid="lesson-remove"
         />
-        <ListRow title="Done" onClick={() => onDone()} data-testid="lesson-done" />
+        <ListRow title="Done" onClick={() => onDone()} />
       </ListGroup>
       {remove.error && <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{remove.error.message}</FieldError>}
     </div>
@@ -286,7 +285,7 @@ function LessonDebrief({ lesson, studentId }: { lesson: ApproachLesson; studentI
   });
   if (!flight) return null;
   return (
-    <div className="space-y-3" data-testid="lesson-debrief">
+    <div className="space-y-3">
       <ListChoices value={String(flight.id)} onChange={(id) => setPicked(Number(id))} label="Flight to debrief">
         <ListGroup title="Flown, put to you">
           {lesson.flights.map((f) => (
@@ -296,7 +295,6 @@ function LessonDebrief({ lesson, studentId }: { lesson: ApproachLesson; studentI
               title={<span className="font-mono">{route(f)}</span>}
               description={said((f.plannedFor ?? f.createdAt).slice(0, 10))}
               onClick={() => setPicked(f.id)}
-              data-testid="lesson-flight"
             />
           ))}
         </ListGroup>

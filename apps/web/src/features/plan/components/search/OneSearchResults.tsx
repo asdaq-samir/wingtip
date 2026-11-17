@@ -142,7 +142,7 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
       testId="search-airplane"
       actions={
         top && a.fly ? (
-          <QuickAction label="Fly This Airplane" onClick={() => model.flyAirplane(a)} testId="search-top-fly-airplane" />
+          <QuickAction label="Fly This Airplane" onClick={() => model.flyAirplane(a)} />
         ) : a.track ? (
           <QuickAction label="Track" onClick={a.track} testId="search-airplane-track" wide />
         ) : undefined
@@ -224,16 +224,8 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
     // Its sides the page's own sixteen (TabPage), where its own sixteen
     // more put the list 32 in (the sheet audit's F-P1).
     <div className="flex flex-col gap-2 pt-2 pb-4" data-testid="one-search-results">
-      {problem && (
-        <FieldError className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-problem">
-          {problem}
-        </FieldError>
-      )}
-      {unheard && (
-        <FieldError className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-voice-problem">
-          {unheard}
-        </FieldError>
-      )}
+      {problem && <FieldError className={cn("appear text-destructive-ink", TEXT.note)}>{problem}</FieldError>}
+      {unheard && <FieldError className={cn("appear text-destructive-ink", TEXT.note)}>{unheard}</FieldError>}
       <CommandList
         className={cn("max-h-none overflow-hidden rounded-2xl bg-card p-0", none && "bg-transparent", !answered && "opacity-60")}
         aria-busy={!answered}

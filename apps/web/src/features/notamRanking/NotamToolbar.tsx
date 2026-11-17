@@ -61,7 +61,7 @@ export default function NotamToolbar() {
     </DropdownMenuCheckboxItem>
   );
   return (
-    <Toolbar.Root aria-label="NOTAM filters" className={cn("-ml-3 flex items-center gap-1", TEXT.detail)} data-testid="notam-toolbar">
+    <Toolbar.Root aria-label="NOTAM filters" className={cn("-ml-3 flex items-center gap-1", TEXT.detail)}>
       <DropdownMenu>
         <DropdownMenuTrigger render={<Toolbar.Button className={TOOL} data-testid="notam-filter" />}>
           <ListFilter className="size-4" aria-hidden="true" />
@@ -80,12 +80,7 @@ export default function NotamToolbar() {
             {when("later", "Later")}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuCheckboxItem
-            checked={filter.read}
-            onCheckedChange={(read) => set({ read })}
-            closeOnClick={false}
-            data-testid="notam-filter-read"
-          >
+          <DropdownMenuCheckboxItem checked={filter.read} onCheckedChange={(read) => set({ read })} closeOnClick={false}>
             Show Read
           </DropdownMenuCheckboxItem>
         </DropdownMenuContent>
@@ -100,7 +95,7 @@ export default function NotamToolbar() {
             <DropdownMenuLabel className={cn("font-normal text-muted-foreground", TEXT.note)}>Sort By</DropdownMenuLabel>
             <DropdownMenuRadioGroup value={sort} onValueChange={(v) => setSort(v as NotamSort)}>
               {SORTS.map((s) => (
-                <DropdownMenuRadioItem key={s.value} value={s.value} data-testid={`notam-sort-${s.value}`}>
+                <DropdownMenuRadioItem key={s.value} value={s.value}>
                   {s.label}
                 </DropdownMenuRadioItem>
               ))}

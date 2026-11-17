@@ -46,7 +46,7 @@ export function PlaceSubtitle({
     </span>
   );
   const towerWords = tower && (
-    <span className="shrink-0 whitespace-nowrap" data-testid="place-tower">
+    <span className="shrink-0 whitespace-nowrap">
       {name ? (
         <span aria-hidden className="whitespace-pre">
           {" "}

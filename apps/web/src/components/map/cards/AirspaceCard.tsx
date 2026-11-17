@@ -66,7 +66,7 @@ export function AirspaceCardBody({ volume, close }: { volume: AirspaceVolume; cl
       {/* What it takes to go in, each rule with its section (lib/airspaceRules),
           at the owner's ask for cards that say what a pilot does there
           (2026-10-30). */}
-      <div data-testid="airspace-rules">
+      <div>
         <ListGroup title="To enter">
           {entryRules(volume.airspace_class).map((r) => (
             <ListRow key={r.rule} title={<span className={TEXT.detail}>{r.rule}</span>} description={r.cite} />
@@ -82,7 +82,6 @@ export function AirspaceCardBody({ volume, close }: { volume: AirspaceVolume; cl
             close();
             avoid();
           }}
-          data-testid="airspace-avoid"
         >
           Route Around Class B
         </Button>
@@ -103,7 +102,7 @@ function AirspaceCall({ volume }: { volume: AirspaceVolume }) {
   const shown = calls.filter((f) => f.type?.toUpperCase() === first).slice(0, 3);
   if (!shown.length) return null;
   return (
-    <div data-testid="airspace-call">
+    <div>
       <ListGroup title={first === "APP" ? "Call approach" : "Call the tower"}>
         {shown.map((f, i) => (
           <ListRow

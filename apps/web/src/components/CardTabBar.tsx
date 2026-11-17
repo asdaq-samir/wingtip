@@ -88,9 +88,9 @@ export function CardTabBar<T extends string>({
   onPick: (tab: T) => void;
   /** Greyed until the card's answer comes. */
   disabled?: boolean;
-  testId: string;
+  testId?: string;
   /** Each trigger's test id, from its value: "place-tab-" gives "place-tab-radio". */
-  tabTestId: string;
+  tabTestId?: string;
 }) {
   return (
     // Sticky at the foot of the card's scroller, the page scrolling under it;
@@ -118,7 +118,7 @@ export function CardTabBar<T extends string>({
               )}
               disabled={disabled}
               aria-label={t.hint ? `${t.label}, ${t.hint}` : t.label}
-              data-testid={`${tabTestId}${t.value}`}
+              data-testid={tabTestId && `${tabTestId}${t.value}`}
               // A tap picks the tab and nothing else: the sheet keeps the size
               // it was dragged to (the owner, 2026-11-11).
               onClick={() => onPick(t.value)}

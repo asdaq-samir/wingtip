@@ -30,7 +30,7 @@ export function SuaVolumeCard({ area, colour }: { area: SuaArea; colour: string 
       subtitle={kind}
       pill={{ name, line: kind, colour }}
     >
-      <TermTable rows={rows} testId="sua-card" className={TEXT.row} />
+      <TermTable rows={rows} className={TEXT.row} />
     </MapCard>
   );
 }

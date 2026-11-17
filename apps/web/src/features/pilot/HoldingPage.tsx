@@ -138,7 +138,7 @@ function NumberRow({
   value: string;
   onChange: (v: string) => void;
   unit: string;
-  testId: string;
+  testId?: string;
 }) {
   return (
     <ListRow id={id} title={title}>
@@ -190,7 +190,7 @@ export default function HoldingPage() {
   return (
     <div className="space-y-4">
       <ListGroup title="The hold">
-        <NumberRow id={`${id}-in`} title="Inbound course" value={inbound} onChange={setInbound} unit="°" testId="hold-inbound" />
+        <NumberRow id={`${id}-in`} title="Inbound course" value={inbound} onChange={setInbound} unit="°" />
         <ListRow title="Turns">
           <Segmented
             label="Turns"
@@ -226,11 +226,7 @@ export default function HoldingPage() {
               data-testid="hold-entry"
             />
             {found.either && (
-              <ListRow
-                title={`Or ${ENTRY_NAME[found.either].toLowerCase()}`}
-                description="Within 5° of the line between the two"
-                data-testid="hold-entry-either"
-              />
+              <ListRow title={`Or ${ENTRY_NAME[found.either].toLowerCase()}`} description="Within 5° of the line between the two" />
             )}
           </ListGroup>
         </>
@@ -240,28 +236,18 @@ export default function HoldingPage() {
           clearance gives the course (winds aloft are true, so the row says
           which). Turns at standard rate. */}
       <ListGroup title="In the wind">
-        <NumberRow id={`${id}-tas`} title="True airspeed" value={tas} onChange={setTas} unit="kt" testId="hold-tas" />
+        <NumberRow id={`${id}-tas`} title="True airspeed" value={tas} onChange={setTas} unit="kt" />
         <NumberRow id={`${id}-wd`} title="Wind from, magnetic" value={windFrom} onChange={setWindFrom} unit="°" testId="hold-wind-from" />
         <NumberRow id={`${id}-ws`} title="Wind speed" value={windKt} onChange={setWindKt} unit="kt" testId="hold-wind-kt" />
-        <NumberRow id={`${id}-alt`} title="Altitude" value={altitude} onChange={setAltitude} unit="ft" testId="hold-altitude" />
+        <NumberRow id={`${id}-alt`} title="Altitude" value={altitude} onChange={setAltitude} unit="ft" />
       </ListGroup>
       {wind ? (
         // An inbound leg of a minute at or below 14,000 ft MSL, a minute and
         // a half above (AIM 5-3-8); outbound timing from over or abeam the
         // fix, whichever is later.
         <ListGroup>
-          <ListRow
-            title="Inbound heading"
-            description={wind.words.inbound}
-            value={bearing(wind.inbound.heading)}
-            data-testid="hold-in-heading"
-          />
-          <ListRow
-            title="Outbound heading"
-            description={wind.words.outbound}
-            value={bearing(wind.outbound.heading)}
-            data-testid="hold-out-heading"
-          />
+          <ListRow title="Inbound heading" description={wind.words.inbound} value={bearing(wind.inbound.heading)} />
+          <ListRow title="Outbound heading" description={wind.words.outbound} value={bearing(wind.outbound.heading)} />
           <ListRow
             title="Outbound time"
             description={wind.words.time}

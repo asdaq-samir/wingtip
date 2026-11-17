@@ -127,7 +127,6 @@ function CallActions({
             variant="secondary"
             className={CHIP}
             disabled={!!busy}
-            data-testid="radio-direct"
             onClick={() => void run("direct", () => directTo(heard.direct!))}
           >
             Direct To {named(heard.direct)}
@@ -138,7 +137,6 @@ function CallActions({
             size="sm"
             variant="secondary"
             className={cn(CHIP, "text-destructive")}
-            data-testid="radio-emergency"
             onClick={() => {
               openEmergency("voice");
               done();
@@ -171,7 +169,6 @@ function CallActions({
             variant="secondary"
             className={CHIP}
             disabled={!!busy}
-            data-testid="radio-plan"
             onClick={() => void run("plan", () => planTo(destination.place))}
           >
             {route.dest ? "Replace the route: plan to " : "Plan to "}
@@ -199,7 +196,6 @@ function CallActions({
             variant="secondary"
             className={CHIP}
             disabled={!!busy}
-            data-testid="radio-procedure"
             onClick={() =>
               void run("procedure", async () => {
                 const at = await fieldOf(procedure.field);
@@ -213,14 +209,7 @@ function CallActions({
           </Button>
         )}
         {weather && (
-          <Button
-            size="sm"
-            variant="secondary"
-            className={CHIP}
-            disabled={!!busy}
-            data-testid="radio-weather"
-            onClick={() => void tellWeather(weather.field)}
-          >
+          <Button size="sm" variant="secondary" className={CHIP} disabled={!!busy} onClick={() => void tellWeather(weather.field)}>
             Weather{weather.field ? ` at ${named(weather.field)}` : ""}
           </Button>
         )}
@@ -253,7 +242,6 @@ function CallActions({
             variant="secondary"
             className={CHIP}
             disabled={!!busy}
-            data-testid="radio-route"
             onClick={() =>
               void run("route", async () => {
                 const asked = placesAsked(clearance);
@@ -296,7 +284,6 @@ function CallActions({
             size="sm"
             variant="secondary"
             className={CHIP}
-            data-testid="radio-frequency"
             onClick={() => void navigator.clipboard?.writeText(clearance.frequency!).catch(() => {})}
           >
             Copy {clearance.frequency}
@@ -304,11 +291,7 @@ function CallActions({
         )}
         {clearance.squawk && <span className={cn("font-semibold", TEXT.detail)}>Squawk {clearance.squawk}</span>}
       </div>
-      {note && (
-        <p className={cn("pt-1 pr-2 font-mono", TEXT.note)} data-testid="radio-note">
-          {note}
-        </p>
-      )}
+      {note && <p className={cn("pt-1 pr-2 font-mono", TEXT.note)}>{note}</p>}
       {problem && (
         <p className={cn("pt-1 pr-2 text-destructive-ink", TEXT.note)} role="status">
           {problem}
@@ -323,11 +306,7 @@ function CallActions({
 function ReadbackLine({ cleared, said }: { cleared: string; said: string }) {
   const { items, words } = useMemo(() => readbackCheck(cleared, said), [cleared, said]);
   return (
-    <p
-      className={cn("pt-1 pr-2", items.length ? "text-caution-ink" : "text-muted-foreground", TEXT.note)}
-      role="status"
-      data-testid="radio-readback-check"
-    >
+    <p className={cn("pt-1 pr-2", items.length ? "text-caution-ink" : "text-muted-foreground", TEXT.note)} role="status">
       {words}
     </p>
   );
@@ -417,10 +396,8 @@ function RadioCall({ call }: { call: Transmission }) {
     <div className={cn(bannerGlass(true), "py-2 pr-1 pl-3")} role="region" aria-label="Call from ATC" data-testid="radio-call">
       <div className="flex items-start gap-2">
         <Radio className="mt-1 size-5 shrink-0 text-tint" aria-hidden="true" />
-        <p className={cn("min-w-0 flex-1 font-semibold", TEXT.detail)} data-testid="radio-call-text">
-          {call.text}
-        </p>
-        <CloseButton label="Put away" onClick={done} data-testid="radio-call-close" />
+        <p className={cn("min-w-0 flex-1 font-semibold", TEXT.detail)}>{call.text}</p>
+        <CloseButton label="Put away" onClick={done} />
       </div>
       <CallActions text={call.text} done={done} />
       {readback && <ReadbackLine cleared={call.text} said={readback.text} />}
@@ -465,11 +442,7 @@ function RadioCaptions() {
       )}
       <span className={cn("flex min-w-0 flex-1 flex-col", TEXT.detail)} aria-live="polite">
         {error && <span className="text-caution-ink">{error}</span>}
-        {!error && lost && (
-          <span className="text-caution-ink" data-testid="radio-captions-lost">
-            {lost}
-          </span>
-        )}
+        {!error && lost && <span className="text-caution-ink">{lost}</span>}
         {!error && !lost && !lines.length && (
           <span className="text-muted-foreground">
             {name

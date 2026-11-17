@@ -212,12 +212,7 @@ function ReviewSection({
           />
         )}
         <ConsoleClose>
-          <ListRow
-            title="Open on the map"
-            description="Its nav log, and today's weather and NOTAMs along it"
-            to={planHrefOf(f)}
-            data-testid="review-open"
-          />
+          <ListRow title="Open on the map" description="Its nav log, and today's weather and NOTAMs along it" to={planHrefOf(f)} />
         </ConsoleClose>
       </ListGroup>
       {/* 14 CFR 61.93(d)(4) and (5), as their record has them. */}
@@ -267,14 +262,12 @@ function ReviewSection({
               maxLength={500}
               placeholder="Why, and what to change"
               aria-label="Why not"
-              data-testid="review-decline-note"
             />
           </div>
           <ListRow
             title={<span className="font-medium text-tint">Send</span>}
             disabled={!note.trim() || decline.isPending}
             onClick={() => decline.mutate()}
-            data-testid="review-decline-send"
           />
           <ListRow title="Cancel" onClick={() => setAnswering(null)} />
         </ListGroup>
@@ -436,7 +429,7 @@ export default function InstructorPage() {
   const kindOf = (code: string) => instructor.kinds.find((k) => k.code === code);
   return (
     <ConsolePages back="Instructing" pages={pages}>
-      <div className="space-y-5" data-testid="instructor-page">
+      <div className="space-y-5">
         {!instructor.certificate || editing ? (
           <CertificateForm instructor={instructor} onDone={instructor.certificate ? () => setEditing(false) : undefined} />
         ) : (

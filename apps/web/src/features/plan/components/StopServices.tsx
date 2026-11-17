@@ -22,7 +22,7 @@ const GLANCE_ICONS: Record<GlanceItem["key"], ReactNode> = { fuel: <Fuel />, foo
  *  look under a field and a suggested stop's row
  *  (StopGlance), where the two had their own sizes and colours: a note's
  *  size, in the muted grey, as the line under a row is. */
-function Glance({ of, className, testId }: { of: Glanceable; className?: string; testId: string }) {
+function Glance({ of, className, testId }: { of: Glanceable; className?: string; testId?: string }) {
   const items = glanceOf(of);
   if (!items.length) return null;
   return (
@@ -44,7 +44,7 @@ function Glance({ of, className, testId }: { of: Glanceable; className?: string;
  *  nothing until then, or where none is near. */
 function StopGlance({ ident, className }: { ident: string; className?: string }) {
   const { data } = useQuery(servicesQuery(ident));
-  return data ? <Glance of={data} className={className} testId="stop-glance" /> : null;
+  return data ? <Glance of={data} className={className} /> : null;
 }
 
 /** A section of the airport card's, titled as its frequencies and lights
@@ -153,7 +153,6 @@ export function StopServices({
             {note}
           </span>
         ))}
-        data-testid="services-fuel-remarks"
       />
     ),
     s.fuel_remarks.length > 0 && (

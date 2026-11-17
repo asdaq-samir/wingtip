@@ -81,11 +81,7 @@ export function RunwayRow({
       title={
         <span className="flex items-center gap-2">
           {`Runway ${runway.ends ?? "—"}`}
-          {bestWind && (
-            <Badge variant="secondary" data-testid="runway-best-wind">
-              Best Wind
-            </Badge>
-          )}
+          {bestWind && <Badge variant="secondary">Best Wind</Badge>}
           {longest && (
             <Badge variant="secondary" data-testid="runway-longest">
               Longest

@@ -304,7 +304,7 @@ export default function FlightCard({
         shareTestId="flight-share"
         pill={{ line: pillLine || undefined, picture: photo?.src, tint: !photo }}
       />
-      <div className="grid grid-cols-4 gap-2 pt-3" data-testid="flight-actions">
+      <div className="grid grid-cols-4 gap-2 pt-3">
         {/* Follow filled, the card's first thing to do; nothing to follow
             where it is not heard now: greyed, not pressed. */}
         <TogglePrimitive
@@ -362,15 +362,10 @@ export default function FlightCard({
       {/* Its pages under the glass bar at the card's foot, Info's starting with its facts in a strip and its
           pictures, as the airport card has them (C1; the owner, 2026-11-14: "make sure the airplane card
           looks similar to airport card"; "Switching tabs should not show those"). */}
-      <CardTabPages
-        tab={tab}
-        onPick={setTab}
-        top={setTop}
-        bar={<CardTabBar testId="flight-tab-bar" tabTestId="flight-tab-" onPick={setTab} tabs={TABS} />}
-      >
+      <CardTabPages tab={tab} onPick={setTab} top={setTop} bar={<CardTabBar onPick={setTab} tabs={TABS} />}>
         <CardTabPanel value="info" className="pt-0">
           <AirplaneFacts record={detail?.faa} type={detail?.type ?? plane?.type ?? null} year={detail?.year} testId="flight-facts" />
-          <CardPictures slides={slides} label={`${name}: ${photo ? "its photo, and " : ""}where it has flown`} testId="flight-pictures" />
+          <CardPictures slides={slides} label={`${name}: ${photo ? "its photo, and " : ""}where it has flown`} />
           <FlightInfoTab hex={hex} plane={plane} detail={detail} detailLoading={detailLoading} registered={registered} route={route} />
         </CardTabPanel>
         {/* The ones before the flight it is on, each replayed (PastFlights), and a day to look back from. */}

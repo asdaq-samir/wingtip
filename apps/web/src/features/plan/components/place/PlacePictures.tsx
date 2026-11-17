@@ -112,14 +112,12 @@ export function PlacePictures({
       key: "photo",
       open: () => setPicture("photo"),
       label: `${ident} from the ground, full screen`,
-      testId: "place-photo-open",
       picture: (
         <PhotoSlide
           src={photos.photo.url}
           alt=""
           label={`${ident} from the ground`}
           testId="place-photo"
-          creditTestId="place-photo-credit"
           // Its photographer and licence, as Commons' licences ask.
           credit={`${photos.photo.credit}${photos.photo.license ? ` · ${photos.photo.license}` : ""}`}
         />

@@ -32,7 +32,7 @@ object WingtipColors {
         /** The thin edge round the course's magenta by day (white at 35% over the dimmed chart). */
         val RouteEdge = Color(0xFF0B0F0A)
         const val ROUTE_EDGE_HEX = "#0b0f0a"
-        /** A VFR waypoint's magenta, the sectional's. */
+        /** A VFR waypoint's magenta, the sectional's: the one it draws a field with no tower in. */
         val Waypoint = Color(0xFFC0309F)
         const val WAYPOINT_HEX = "#c0309f"
         /** iOS's systemBlue, the blue Maps draws its own marks in: the position dot, a point held on the chart, a procedure's Direct to. Not the tint, which is a step deeper for words on white. */
@@ -1166,14 +1166,10 @@ object WingtipRadius {
 /** Motion: durations in milliseconds, curves as easings. */
 object WingtipMotion {
     const val SHEET_MS = 300
-    const val SHEET_LEAST_MS = 220
-    const val SHEET_MOST_MS = 350
     val SheetEase = CubicBezierEasing(0f, 0f, 0.58f, 1f)
-    val SheetBackEase = CubicBezierEasing(0.2f, 0.9f, 0.3f, 1f)
     const val DRAWER_MS = 450
     val DrawerEase = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
     const val FADE_MS = 200
-    const val QUICK_MS = 150
     const val PAGE_MS = 250
     const val SKELETON_PULSE_MS = 1500
 }
@@ -1241,5 +1237,4 @@ object WingtipSize {
     val Panel = 384.dp
     val PanelWide = 448.dp
     val Desktop = 1024.dp
-    val RefreshPull = 64.dp
 }

@@ -46,7 +46,6 @@ export default function RouteSuggestions({
       aria-label="Airports and waypoints"
       aria-busy={!answered}
       className={cn("outline-none", !answered && "opacity-60")}
-      data-testid="route-suggestion-list"
     >
       {via.length > 0 && (
         <Group heading="Suggested">
@@ -55,7 +54,6 @@ export default function RouteSuggestions({
               key={`via-${d.ident}`}
               id={`via-${d.ident}`}
               waypoint
-              testId="picker-suggestion"
               airport={{
                 ident: d.ident,
                 name: d.kind,

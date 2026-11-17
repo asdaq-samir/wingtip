@@ -117,14 +117,7 @@ function NearAnswers({ from, onFrom }: { from: NearFrom | null; onFrom: (from: N
         {!found && !(current && isError) && (
           <ListRow title={<span className={cn("text-muted-foreground", TEXT.detail)}>Fetching {typed.trim()}…</span>} />
         )}
-        {from && (
-          <ListRow
-            media={<LocateFixed className="size-5 text-tint" />}
-            title="Current position"
-            onClick={() => pick(null)}
-            data-testid="nearest-from-position"
-          />
-        )}
+        {from && <ListRow media={<LocateFixed className="size-5 text-tint" />} title="Current position" onClick={() => pick(null)} />}
       </ListGroup>
     </div>
   );
@@ -313,7 +306,7 @@ export default function NearestCard({
             {enabled ? (
               <ListRow muted title="Finding your position…" />
             ) : (
-              <ListRow title="Show my position" onClick={() => setEnabled(true)} data-testid="nearest-show-position" />
+              <ListRow title="Show my position" onClick={() => setEnabled(true)} />
             )}
           </ListGroup>
         ) : (
@@ -351,7 +344,7 @@ export default function NearestCard({
         )}
         {/* In the air with an airplane of no glide ratio: asked for in
             place, the fields listed nearest first meanwhile (AskFigure). */}
-        {!from && ratio == null && underway(fix) && <AskFigure figure="glide" what="The glide" testId="nearest-glide-ask" />}
+        {!from && ratio == null && underway(fix) && <AskFigure figure="glide" what="The glide" />}
       </div>
     </SheetCard>
   );

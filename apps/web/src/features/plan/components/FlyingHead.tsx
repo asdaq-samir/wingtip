@@ -111,9 +111,7 @@ export default function FlyingHead({ run, rows, line }: { run: DryRun | null; ro
       {next.at !== null && (
         <div className="text-right">
           <div className={GROUP_HEADING}>ETA</div>
-          <div className={cn(TEXT.card, "font-semibold tabular-nums")} data-testid="flying-next-eta">
-            {clockTime(new Date(next.at * 1000))}
-          </div>
+          <div className={cn(TEXT.card, "font-semibold tabular-nums")}>{clockTime(new Date(next.at * 1000))}</div>
         </div>
       )}
       {/* The emergency assistant's way in from flying mode, inside its own

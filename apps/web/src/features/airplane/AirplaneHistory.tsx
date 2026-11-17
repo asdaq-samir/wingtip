@@ -7,7 +7,7 @@ const joined = (...parts: (string | number | null | undefined)[]) =>
 const town = (city?: string | null, state?: string | null) => [city, state].filter(Boolean).join(", ") || null;
 
 /** A group's own line where it has nothing, in place. */
-const None = ({ text, testId }: { text: string; testId: string }) => <ListRow muted title={text} data-testid={testId} />;
+const None = ({ text, testId }: { text: string; testId?: string }) => <ListRow muted title={text} data-testid={testId} />;
 
 /**
  * The airplane card's Info past its record (the owner's P1, 2026-11-14), in
@@ -24,10 +24,7 @@ export default function AirplaneHistory({ details, failed }: { details: Airplane
   if (!details)
     return (
       <ListGroup title="History">
-        <None
-          text={failed ? "Its history couldn't be fetched. Try again in a moment." : "Fetching its history…"}
-          testId="airplane-history-waiting"
-        />
+        <None text={failed ? "Its history couldn't be fetched. Try again in a moment." : "Fetching its history…"} />
       </ListGroup>
     );
   const { based, ntsb, documents, reservation } = details;
@@ -44,14 +41,14 @@ export default function AirplaneHistory({ details, failed }: { details: Airplane
                 data-testid="airplane-based-field"
               />
             ) : (
-              <None text="Looking…" testId="airplane-based-pending" />
+              <None text="Looking…" />
             )}
           </ListGroup>
         </div>
       )}
-      <div data-testid="airplane-safety">
+      <div>
         <ListGroup title="Safety history">
-          {ntsb.length === 0 && <None text="No NTSB accident or incident on record since 2008." testId="airplane-ntsb-none" />}
+          {ntsb.length === 0 && <None text="No NTSB accident or incident on record since 2008." />}
           {ntsb.map((c) => (
             <ListRow
               key={c.ev_id}
@@ -64,18 +61,13 @@ export default function AirplaneHistory({ details, failed }: { details: Airplane
           {ntsb
             .filter((c) => c.docket_url)
             .map((c) => (
-              <ListRow
-                key={`docket-${c.ev_id}`}
-                title={`Docket ${c.ntsb_no ?? ""}`.trim()}
-                href={c.docket_url!}
-                data-testid="airplane-ntsb-docket"
-              />
+              <ListRow key={`docket-${c.ev_id}`} title={`Docket ${c.ntsb_no ?? ""}`.trim()} href={c.docket_url!} />
             ))}
         </ListGroup>
       </div>
       <div data-testid="airplane-ownership">
         <ListGroup title="Ownership history">
-          {past.length === 0 && <None text="No past registrations." testId="airplane-ownership-none" />}
+          {past.length === 0 && <None text="No past registrations." />}
           {past.map((p, i) => (
             <ListRow
               key={`reg-${i}`}
@@ -95,7 +87,7 @@ export default function AirplaneHistory({ details, failed }: { details: Airplane
       </div>
       <div data-testid="airplane-documents">
         <ListGroup title="Documents filed">
-          {documents.length === 0 && !reservation && <None text="None filed in the last month." testId="airplane-documents-none" />}
+          {documents.length === 0 && !reservation && <None text="None filed in the last month." />}
           {documents.map((d, i) => (
             <ListRow
               key={d.document_id ?? `doc-${i}`}
@@ -113,7 +105,6 @@ export default function AirplaneHistory({ details, failed }: { details: Airplane
                 reservation.kind,
                 reservation.change_to && `changing to ${reservation.change_to}`,
               )}
-              data-testid="airplane-reservation"
             />
           )}
         </ListGroup>

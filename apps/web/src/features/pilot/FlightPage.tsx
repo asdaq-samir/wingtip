@@ -107,7 +107,7 @@ function Findings({ d }: { d: Debrief }) {
   return (
     <div className="space-y-4">
       {d.notes.length > 0 && (
-        <ul className={cn("list-disc space-y-0.5 pl-5 text-caution-ink", TEXT.prose)} data-testid="debrief-notes">
+        <ul className={cn("list-disc space-y-0.5 pl-5 text-caution-ink", TEXT.prose)}>
           {d.notes.map((note) => (
             <li key={note}>{note}</li>
           ))}
@@ -115,12 +115,7 @@ function Findings({ d }: { d: Debrief }) {
       )}
       <ListGroup title="The flight">
         <ListRow title="Took off" value={dayMonthTime(new Date(d.takeoff))} />
-        <ListRow
-          title="In the air"
-          description={d.plannedMin != null ? `${hm(d.plannedMin)} planned` : undefined}
-          value={hm(d.flownMin)}
-          data-testid="debrief-time"
-        />
+        <ListRow title="In the air" description={d.plannedMin != null ? `${hm(d.plannedMin)} planned` : undefined} value={hm(d.flownMin)} />
         {d.hasAltitude && <Profile d={d} />}
       </ListGroup>
 
@@ -298,11 +293,7 @@ function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string
           }}
         >
           <Pressable>
-            <ListRow
-              title={track ? "Import another track" : "Import a track"}
-              media={<Upload className="size-5" aria-hidden />}
-              data-testid="debrief-import"
-            />
+            <ListRow title={track ? "Import another track" : "Import a track"} media={<Upload className="size-5" aria-hidden />} />
           </Pressable>
         </FileTrigger>
         {track && !onAccount && (
@@ -401,11 +392,7 @@ function InstructorReview({ summary }: { summary: FlightSummary }) {
           initialDay={localDay(summary.plannedFor ? new Date(summary.plannedFor) : new Date())}
         />
       )}
-      {ask.error && (
-        <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="review-problem">
-          {ask.error.message}
-        </FieldError>
-      )}
+      {ask.error && <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{ask.error.message}</FieldError>}
     </>
   );
 }

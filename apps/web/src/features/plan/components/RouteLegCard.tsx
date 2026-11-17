@@ -74,7 +74,7 @@ function RouteLegBody({ leg }: { leg: RouteLegView }) {
         )}
       </div>
       {actions > 0 && (
-        <div className={cn("grid gap-2", actions === 2 ? "grid-cols-2" : "grid-cols-1")} data-testid="route-leg-actions">
+        <div className={cn("grid gap-2", actions === 2 ? "grid-cols-2" : "grid-cols-1")}>
           {leg.direct && (
             <CardAction
               icon={<DirectToIcon />}

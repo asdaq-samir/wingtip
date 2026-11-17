@@ -30,7 +30,7 @@ export function PlaceDetails({ place, where, data }: { place: AirportPlace; wher
       {phones.map((p) => (
         <ListRow key={`${p.who}-${p.number}`} muted title={p.who} value={value(p.number)} href={dial(p.number)} data-testid="place-phone" />
       ))}
-      {site && <ListRow muted title="Website" value={value(hostOf(site))} href={site} data-testid="place-website" />}
+      {site && <ListRow muted title="Website" value={value(hostOf(site))} href={site} />}
       {address && <ListRow muted title="Address" value={value(address)} href={mapsLink(place)} data-testid="place-address" />}
       {data && <ListRow muted title={data} data-testid="place-data-source" />}
     </ListGroup>

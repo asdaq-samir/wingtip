@@ -49,7 +49,7 @@ export default function PlanPage({ vm, navLog, share }: { vm: PlanWorkspaceModel
           planned last, to pick from, where the sheet stood empty under
           the one field (the owner's screenshot, 2026-10-23). */}
       {depAlone && hasPoints && (
-        <div className="px-4 pt-2" data-testid="fpl-departure-strip">
+        <div className="px-4 pt-2">
           <FplStrip onAllSaved={openSaved} onAllRecents={() => openList("routes")} />
         </div>
       )}

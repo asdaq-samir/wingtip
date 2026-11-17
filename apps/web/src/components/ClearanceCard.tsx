@@ -349,7 +349,6 @@ export default function ClearanceCard({
                 <li key={t.id}>
                   <BaseButton
                     onClick={() => pick(t.text)}
-                    data-testid="radio-log-row"
                     className={cn(
                       "relative w-full py-1 text-left text-tint outline-none after:absolute after:inset-x-0 after:-inset-y-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
                       t.forUs && "font-semibold",

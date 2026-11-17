@@ -49,6 +49,15 @@ export const browserStorage: StateStorage = {
   },
 };
 
+/** persist's migrate for a store kept under an older version: what was
+ *  kept is read as it is. Nothing is launched yet, so no step brings an
+ *  old shape forward (the owner: break freely until launch, no shims); a
+ *  value missing starts at its default, and one no longer kept goes at
+ *  the store's next write. */
+export function keptAsIs<T>(kept: unknown): T {
+  return kept as T;
+}
+
 /** persist's storage for a store of one `value`, kept as that value's JSON
  *  alone, not in persist's { state, version } wrapper: what the keepers
  *  wrote under these keys before they were stores, so nothing a pilot kept

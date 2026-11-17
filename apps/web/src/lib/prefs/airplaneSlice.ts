@@ -19,18 +19,6 @@ export const NO_AIRPLANE: AircraftChoice = { profile: "", label: "", none: true 
 /** Whether an airplane has been picked: its figures can be shown. */
 export const airplaneChosen = (aircraft: AircraftChoice): boolean => !aircraft.none;
 
-/** The stock C172 as the default kept it, not one a pilot picked. */
-export function isStockDefault(a: AircraftChoice | undefined): boolean {
-  return (
-    !a ||
-    (a.profile === STOCK_C172.profile &&
-      a.label === STOCK_C172.label &&
-      !a.tail &&
-      a.aircraftId === undefined &&
-      a.cruiseTasKt === undefined)
-  );
-}
-
 export const AIRPLANE_KEPT = ["aircraft", "tailFigures", "loads", "minimums", "routeWeather"] as const;
 
 export const airplaneSlice: Slice<AirplaneSlice> = (set) => ({

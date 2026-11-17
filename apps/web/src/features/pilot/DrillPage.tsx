@@ -69,7 +69,7 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
   if (!card) {
     const next = nextDue(deck, progress, now);
     return (
-      <div className="space-y-4" data-testid="drill-done">
+      <div className="space-y-4">
         {/* Each card known comes back later: a day, three, a week, a fortnight. */}
         <ListGroup>
           <ListRow
@@ -83,7 +83,6 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
               setQueue(deck.cards.map((c) => c.id));
               setDone(0);
             }}
-            data-testid="drill-practice"
           />
         </ListGroup>
       </div>
@@ -114,7 +113,7 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
       </div>
       {revealed && (
         <div className="grid grid-cols-2 gap-2">
-          <Button type="button" variant="outline" onClick={() => answer(false)} data-testid="drill-missed">
+          <Button type="button" variant="outline" onClick={() => answer(false)}>
             Missed it
           </Button>
           <Button type="button" onClick={() => answer(true)} data-testid="drill-knew">

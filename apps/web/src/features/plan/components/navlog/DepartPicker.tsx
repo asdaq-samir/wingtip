@@ -132,7 +132,7 @@ export default function DepartPicker({
       {/* A sheet from the bottom on a phone, the calendar centred in it. */}
       {/* Its Done at the foot its way out (no close). */}
       <ResponsivePopoverContent title={label} className="w-auto p-0" align="start" closeButton={false}>
-        <div className="flex flex-col items-center gap-3 pb-3" data-testid="depart-picker">
+        <div className="flex flex-col items-center gap-3 pb-3">
           {/* Sized like the grid it stands in for, so the popover does
               not jump once it arrives. */}
           <Suspense fallback={<div className="h-[21rem] w-[17rem]" />}>

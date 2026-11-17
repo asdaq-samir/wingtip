@@ -99,7 +99,7 @@ export function PlaceWeatherTab({
                 {/* When it was observed, first: a report's age is what a
                     pilot weighs it by (and where it came from, where it is
                     own ship's receiver). Its wind is true, as reported. */}
-                {metar.observed_at && <ListRow title={<Observed at={metar.observed_at} />} data-testid="place-observed" />}
+                {metar.observed_at && <ListRow title={<Observed at={metar.observed_at} />} />}
                 {/* Each figure with its glyph, its value at the right in
                     the text's own colour; the report as it was sent
                     under them. */}
@@ -112,7 +112,6 @@ export function PlaceWeatherTab({
                     }
                     title="Wind"
                     value={<span className="font-semibold text-foreground">{placeWind(metar)}</span>}
-                    data-testid="place-wind"
                   />
                 )}
                 <ListRow

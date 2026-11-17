@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import c172Json from "../../../../../../data/aircraft/c172.json?raw";
 import type { AircraftProfile, Airport, Briefing, Course } from "../../../lib/api/types";
 import { callEngine } from "../../../lib/engine/engine";
-import { densityAltitudeFt, runwayChecks } from "./runwayCheck";
+import { runwayChecks } from "./runwayCheck";
 
 // One of the engine's names its runway check asks inside the engine,
 // asked by name through the .wasm.
@@ -10,18 +10,6 @@ const softSurface = (runway: { surface?: string | null } | undefined) =>
   callEngine("gonogo_soft_surface", { surface: runway?.surface ?? null });
 
 const c172 = { name: "c172", ...JSON.parse(c172Json) } as AircraftProfile;
-
-describe("density altitude", () => {
-  it("is the pressure altitude on a standard day, and higher the hotter it is", () => {
-    expect(densityAltitudeFt(0, 15)).toBeCloseTo(0, 6);
-    // ISA at 5,000 ft is 5.1 °C: at 25 °C the rule of thumb's 120 ft a
-    // degree gives 7,390 ft; the atmosphere itself, 7,260.
-    expect(densityAltitudeFt(5000, 5.094)).toBeCloseTo(5000, -1);
-    expect(densityAltitudeFt(5000, 25)).toBeGreaterThan(7200);
-    expect(densityAltitudeFt(5000, 25)).toBeLessThan(7400);
-    expect(densityAltitudeFt(2000, -10)).toBeLessThan(2000);
-  });
-});
 
 const field = (ident: string, elevation: number): Airport => ({
   ident,

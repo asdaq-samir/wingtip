@@ -26,7 +26,6 @@ export function EnduranceSection({ tail, usableGal, burnGph }: { tail: string; u
       <ListGroup title="Endurance">
         <ListRow
           title={ask}
-          data-testid="endurance-ask"
           description={
             <Button
               type="button"

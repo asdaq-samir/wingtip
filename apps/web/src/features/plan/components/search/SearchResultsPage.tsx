@@ -138,7 +138,7 @@ export default function SearchResultsPage() {
       <FilterChips />
       <p className={cn("text-muted-foreground", TEXT.note)}>
         Near {sent.near.label}
-        {onDevice && <span data-testid="search-on-device"> · From this device, without weather</span>}
+        {onDevice && <span> · From this device, without weather</span>}
       </p>
       {note ? (
         <p role="status" className={cn("py-6 text-center text-muted-foreground", TEXT.prose)}>
