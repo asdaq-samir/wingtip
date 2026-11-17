@@ -51,6 +51,9 @@ export default function FlightInputs({
   const tailNow = engineReady && N_NUMBER.test(current) ? current : "";
   const [typed, setTyped] = useState<string | null>(null);
   const shown = typed ?? tailNow;
+  // Typed so far and no registration: every start of a good one is one
+  // itself ("N1", "N1A"), so this is never a number half typed.
+  const wrong = engineReady && !!typed && !N_NUMBER.test(typed);
   const queryClient = useQueryClient();
   const registered = (tail: string) => queryClient.fetchQuery(registeredQuery(tail));
   // An N-number typed: one of the pilot's own picked, any other added at
@@ -132,10 +135,15 @@ export default function FlightInputs({
         value={`N-${shown.replace(/^N-?/, "")}`}
         onValueChange={(next) => {
           picked.current = false;
+          // The field's N is fixed before what is typed, so an N typed
+          // first ("N12", as a pilot writes it) is that N, not a second
+          // one: it read "N-N12", which no list matched (the UI audit's
+          // B4, 2026-11-17).
           const rest = next
             .toUpperCase()
             .replace(/^N-?/, "")
             .replace(/[^A-Z0-9]/g, "")
+            .replace(/^N+/, "")
             .slice(0, 5);
           setTyped(rest ? `N${rest}` : "");
         }}
@@ -166,6 +174,10 @@ export default function FlightInputs({
               spellCheck: false,
               value: `N-${shown.replace(/^N-?/, "")}`,
               "aria-label": shown ? "Airplane, N-number" : "Airplane, N-number: none picked; pick one for times and fuel",
+              // What is typed that no registration can be ("KOSH") said in
+              // red as it is typed, by the engine's own test (N_NUMBER),
+              // where it was taken in silence and nothing came of it.
+              "aria-invalid": wrong || undefined,
               onKeyDown: (e) => {
                 const base = e as typeof e & { preventBaseUIHandler?: () => void };
                 // Enter on a suggestion lit by the arrows is the list's (it picks it); else
@@ -187,7 +199,7 @@ export default function FlightInputs({
               ref: setField,
               "data-testid": "aircraft-input",
             }}
-            inputClassName="text-foreground"
+            inputClassName={wrong ? "text-destructive" : "text-foreground"}
           />
           <PopoverContent
             anchor={anchor}
