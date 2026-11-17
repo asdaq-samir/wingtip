@@ -88,7 +88,7 @@ const WHY: [(&str, &str, &str); 8] = [
 const ACTION: [(&str, &str, &str); 8] = [
     ("weather", "wait for it to lift, or plan another day", "read it on En route and plan around it"),
     ("airspace", "route around it, or go later", "ask Flight Service (1\u{2011}800\u{2011}WX\u{2011}BRIEF) before you go"),
-    ("altitude", "pick another altitude or route", "pick an altitude the wheel offers"),
+    ("altitude", "pick another altitude or route", "pick an altitude the profile offers"),
     ("fuel", "add fuel, or plan a stop", "add fuel, or plan a stop"),
     ("runways", "pick a longer runway, or a lighter load", "ask for another runway, or wait for the wind"),
     ("balance", "move or leave some weight", "move or leave some weight"),
