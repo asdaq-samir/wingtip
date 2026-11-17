@@ -28,6 +28,7 @@ from shapely.geometry import LineString, Point, shape
 
 from . import outside
 from .atomic import atomic_path
+from .engine import ask as engine
 from .geo import along_track_distance_nm, corridor_bbox
 
 FEATURE_SERVICE = "https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services/Special_Use_Airspace/FeatureServer/0/query"
@@ -77,11 +78,13 @@ TIME_ZONES = {
 # threads, hence the lock.
 HOLD_S = 24 * 3600
 #: How old a set may be and still be served when the service does not
-#: answer: the areas change only on the 28-day AIRAC dates the FAA's NASR
+#: answer: the areas change only on the AIRAC dates the FAA's NASR
 #: subscription is published on (14 CFR part 73's areas are amended
 #: effective those dates), so the set read within the last cycle still
 #: shows every area, its limits and its times of use, its age in the log.
-SERVE_HELD_S = 28 * 24 * 3600
+#: The cycle's length is the engine's (data_cycle's cycle_days, the same
+#: on any day asked).
+SERVE_HELD_S = engine("data_cycle", kind="airac", on="2026-01-01")["cycle_days"] * 24 * 3600
 #: After the service fails to answer, how long before it is asked again:
 #: a download takes up to half a minute and every route would wait on it.
 RETRY_AFTER_S = 600

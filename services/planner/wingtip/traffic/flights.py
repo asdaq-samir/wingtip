@@ -10,7 +10,8 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 from cachetools import TTLCache
 
-from .. import airports, geo, registry
+from .. import airports, registry
+from .legs import LEG_GAP_S as LEG_GAP_S, _field_at as _field_at, _left_from as _left_from, _legs
 from .common import _LOCK, _clock, _number
 from .adsb_lol import GLOBE, UNREAD, _GlobeRefused, _Unread, _globe_get, _trace
 from .recorded import _recorded, follow
@@ -123,28 +124,6 @@ HISTORY_BATCH = 7
 HISTORY_DAYS_PER_ASK = 14
 #: A past day's trace is kept this long, s: it no longer changes.
 HISTORY_TTL_S = 12 * 3600
-#: No report for this long, s, ends a flight: the airplane landed out of
-#: the receivers' hearing (a small airplane low over a field often is)
-#: and went again later.
-LEG_GAP_S = 10 * 60
-#: A flight's first or last report this near a landing field, nm, and
-#: this little above its elevation, ft, is a takeoff from it or a landing
-#: at it: low near a field where the receivers stopped or started hearing it.
-FIELD_NEAR_NM = 5.0
-FIELD_ABOVE_FT = 2000.0
-#: Further out and higher, a report still is, where the airplane was
-#: coming down to it (its last) or going up from it (its first): receivers
-#: lose a small airplane well before it lands. N654FL's LWM to LCI on
-#: 2026-10-11 was last heard 3,000 ft over Laconia, coming down.
-FIELD_APPROACH_NM = 10.0
-FIELD_APPROACH_FT = 3500.0
-#: Coming down or going up: this fast, ft/min, or headed this near
-#: straight at it or away from it, degrees (a light airplane levels off
-#: for its pattern).
-FIELD_APPROACH_FPM = 200.0
-FIELD_APPROACH_DEG = 30.0
-#: A flight shorter than this, s, is a blip, not a flight.
-LEG_MIN_S = 120
 #: At most this many points of a past flight are sent: a track log and a
 #: replay's worth, a fraction of a long flight's seconds.
 PAST_POINTS = 1500
@@ -213,59 +192,6 @@ def _points(trace: dict | None) -> list[dict]:
             }
         )
     return out
-
-
-def _field_at(point: dict, landing: bool) -> dict | None:
-    """The landing field a flight's first or last (`landing`) report is at:
-    one within FIELD_NEAR_NM, the report on the ground or within
-    FIELD_ABOVE_FT of its elevation; or within FIELD_APPROACH_NM and
-    FIELD_APPROACH_FT, coming down to it or going up from it. None where it
-    was heard first or last on its way somewhere."""
-    rate = point.get("vrate_fpm") or 0.0
-    sloping = rate <= -FIELD_APPROACH_FPM if landing else rate >= FIELD_APPROACH_FPM
-    track = point.get("track_deg")
-    # The US's fields, then -- none of them near -- the rest of the
-    # world's, so a flight abroad is named by its own airports (the owner
-    # saw "— → —" for a Vueling A320 on 2026-10-12).
-    near = airports.nearest(point["lat"], point["lon"], limit=3)
-    if not near or near[0]["distance_nm"] > FIELD_APPROACH_NM:
-        near = airports.nearest_abroad(point["lat"], point["lon"], limit=3)
-    for field in near:
-        if field["distance_nm"] > FIELD_APPROACH_NM:
-            break
-        above = None if point["alt_ft"] is None else point["alt_ft"] - (field.get("elevation_ft") or 0.0)
-        close = field["distance_nm"] <= FIELD_NEAR_NM and (above is None or above <= FIELD_ABOVE_FT)
-        # `bearing_deg` is from the report to the field: a landing heads along it, a takeoff away.
-        toward = (field["bearing_deg"] if landing else field["bearing_deg"] + 180) % 360
-        headed = track is not None and geo.angle_between(track, toward) <= FIELD_APPROACH_DEG
-        if close or ((sloping or headed) and above is not None and above <= FIELD_APPROACH_FT):
-            return {"ident": field["ident"], "name": field.get("name"), "city": field.get("municipality"), "region": field.get("region")}
-    return None
-
-
-def _legs(points: list[dict]) -> list[list[dict]]:
-    """A run of points cut into flights: at readsb's own new leg, at a
-    stretch on the ground, and at a silence of LEG_GAP_S; the points on the
-    ground at either end kept, as the takeoff's and the landing's place."""
-    legs, leg = [], []
-    for point in points:
-        gap = leg and point["t"] - leg[-1]["t"] > LEG_GAP_S
-        landed = leg and point["alt_ft"] is None and any(p["alt_ft"] is not None for p in leg)
-        if leg and (point["new_leg"] or gap):
-            legs.append(leg)
-            leg = []
-        leg.append(point)
-        if landed:
-            legs.append(leg)
-            leg = [point]
-    if leg:
-        legs.append(leg)
-    flown = []
-    for leg in legs:
-        air = [p for p in leg if p["alt_ft"] is not None]
-        if len(air) >= 2 and air[-1]["t"] - air[0]["t"] >= LEG_MIN_S:
-            flown.append(leg)
-    return flown
 
 
 def _summaries(points: list[dict]) -> list[dict]:
@@ -418,27 +344,4 @@ def past_flight(hex_id: str, flight_id: int, today=None) -> dict | None:
                 "id": flight_id,
                 "points": [{k: p.get(k) for k in ("t", "lat", "lon", "alt_ft", "gs_kt", "track_deg", "vrate_fpm")} for p in kept],
             }
-    return None
-
-
-#: A recorded track that starts within this of a field, nm, and this far
-#: over it, ft, starts at its takeoff from it: about the pattern's crosswind
-#: turn, 500 ft up (AC 90-66C's departure leg).
-LEFT_NEAR_NM = 2.0
-LEFT_ABOVE_FT = 500.0
-
-
-def _left_from(first: dict) -> dict | None:
-    """The field a recorded track starts at, where it starts there: within
-    LEFT_NEAR_NM of it and LEFT_ABOVE_FT over it, just off the ground. A
-    track recorded from when a card was opened mostly starts in the air
-    on the way somewhere -- N3429J's, opened over Burlington at 2,000 ft,
-    was said to have left KBUU where it had left C81 -- and its departure
-    is then not known."""
-    if first.get("alt_ft") is None:
-        return None
-    for field in airports.nearest(first["lat"], first["lon"], limit=1):
-        above = first["alt_ft"] - (field.get("elevation_ft") or 0.0)
-        if field["distance_nm"] <= LEFT_NEAR_NM and above <= LEFT_ABOVE_FT:
-            return {"ident": field["ident"], "name": field.get("name"), "at": round(first["t"])}
     return None

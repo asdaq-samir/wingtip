@@ -22,17 +22,7 @@ from .pass_times import pass_time, sua_when, tfr_when
 from .runways import runway_checks
 from .schemas import GoNoGoAsk
 from .weight_balance import balance, default_load
-from .words import (
-    PLAN_NAME,
-    WEATHER_SOURCE_LABEL,
-    alt_ft,
-    ceiling_and_visibility,
-    flight_level,
-    gairmet_title,
-    grouped,
-    sigmet_hazard,
-    to_fixed,
-)
+from .words import PLAN_NAME, WEATHER_SOURCE_LABEL, alt_ft, ceiling_and_visibility, gairmet_title, grouped, sigmet_hazard, to_fixed
 from .. import route_briefing
 from ..plan_query import PlanQuery, named_checkpoints
 
@@ -159,7 +149,9 @@ def _altitude_range(nav: dict) -> str:
 
 def _flown_words(nav: dict) -> str:
     if nav["flown"] == "custom":
-        return f"{flight_level(nav['altitude_ft'])}, your own"
+        # A cruising altitude as the owner asked it written, "FL-045"
+        # (the engine's words_flight_level, lib/format flightLevel).
+        return f"{engine_ask('words_flight_level', ft=nav['altitude_ft'])}, your own"
     chosen = next((o for o in nav["options"] if o["kind"] == nav["flown"]), None)
     plan = f" · {PLAN_NAME[chosen['kind']]} plan" if chosen else ""
     return f"{_altitude_range(nav)}{plan}"

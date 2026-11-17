@@ -1,0 +1,43 @@
+{
+  "x-call": "wingtip_altitude::altitude::congested_reach::call",
+  "description": "How far round a point the host looks for towns before congested_points measures it against them: 2,500 ft, a quarter past 14 CFR 91.119(b)'s 'horizontal radius of 2,000 feet', so a town at the radius's edge is always a candidate; in degrees of latitude (sixty nautical miles each), divided by the cosine of the farthest latitude asked (held to 0.2 and over, the latitude to 89 degrees) so it is short in no direction.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CongestedReachInput",
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "number",
+          "description": "The farthest latitude of the points asked, degrees (either sign)."
+        }
+      },
+      "required": [
+        "lat"
+      ]
+    },
+    "answer": {
+      "title": "CongestedReachAnswer",
+      "type": "object",
+      "properties": {
+        "search_ft": {
+          "type": "number",
+          "description": "The search's reach, ft."
+        },
+        "reach_deg": {
+          "type": "number",
+          "description": "The reach in degrees, never short of search_ft in any direction."
+        }
+      },
+      "required": [
+        "search_ft",
+        "reach_deg"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

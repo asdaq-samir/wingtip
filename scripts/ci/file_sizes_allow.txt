@@ -61,9 +61,6 @@ services/gateway/src/test/java/app/wingtipmaps/gateway/controller/PlannerProxyCo
 services/ingest/ingest/swim.py 411
 services/jobs/charts/overlays.py 653
 services/jobs/charts/tests/test_overlays.py 791
-services/planner/wingtip/airspace.py 611
 services/planner/wingtip/charts.py 2336
-services/planner/wingtip/traffic/flights.py 444
-services/planner/wingtip/weather.py 516
 services/weather/app/gfs.py 402
 services/weather/tests/test_aviationweather.py 557

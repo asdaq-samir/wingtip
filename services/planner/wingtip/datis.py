@@ -8,8 +8,9 @@ the airport has two (ARR INFO, DEP INFO; AIM 4-1-13 orders what an ATIS
 says).
 
 Kept in wingtip.live_reports (kind "datis"), one report an airport and
-broadcast (arrival, departure or both), until KEEP_S after it was heard:
-a new letter writes over the last. The words are read into figures by
+broadcast (arrival, departure or both), until the engine's datis_ends
+after it was heard (two of AIM 4-1-13's hourly updates): a new letter
+writes over the last. The words are read into figures by
 the engine (read_datis, into the figures read_atis gives the app's
 microphone ATIS), when a pilot asks, so the reading is always the
 engine's of now.
@@ -17,20 +18,14 @@ engine's of now.
 
 from __future__ import annotations
 
-import json
 import re
 import time
 import xml.etree.ElementTree as ET
 
-import wingtip_native
-
 from . import live_reports
+from .engine import ask as engine
 
 KIND = "datis"
-#: How long a broadcast is given after it was heard, s: an ATIS is made
-#: again at least each hour with the weather (AIM 4-1-13), so one two
-#: hours old is no longer the airport's.
-KEEP_S = 2 * 3600
 #: Which broadcast it is, from its first words ("MSP ARR INFO I").
 _WHICH = re.compile(r"\b(ARR|DEP)\s+INFO\b")
 
@@ -74,7 +69,7 @@ def heard(xml: str | bytes, now: float | None = None) -> int:
         f"{live_reports.ident(found['airport'])}:{found['which'] or 'both'}",
         found,
         place=found["airport"],
-        ends=now + KEEP_S,
+        ends=engine("datis_ends", heard=now)["ends"],
         now=now,
     )
     return 1
@@ -83,10 +78,10 @@ def heard(xml: str | bytes, now: float | None = None) -> int:
 def read(text: str) -> dict:
     """A broadcast's words read into figures by the engine (read_datis:
     its METAR groups as a METAR, the rest as a spoken ATIS is read)."""
-    return json.loads(wingtip_native.call("read_datis", json.dumps({"text": text})))
+    return engine("read_datis", text=text)
 
 
 def at_airport(airport: str, now: float | None = None) -> list[dict]:
-    """An airport's D-ATIS broadcasts heard in the last KEEP_S, each with
+    """An airport's D-ATIS broadcasts still the airport's, each with
     the engine's reading of it ("reading") and when it was heard."""
     return [{**b, "reading": read(b["text"])} for b in live_reports.at(KIND, [airport], now=now)]

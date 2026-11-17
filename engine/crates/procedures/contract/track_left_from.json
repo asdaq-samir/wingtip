@@ -1,0 +1,43 @@
+{
+  "x-call": "wingtip_procedures::track_start::call",
+  "description": "Whether a recorded ADS-B track whose first point is distance_nm from the nearest field and above_ft over its elevation starts at its takeoff from that field: within 2 nm and 500 ft. From AC 90-66C: no turn to crosswind until 'within 300 feet below traffic pattern altitude' (11.7), the pattern 'usually ... 1,000 feet above the elevation of the airport surface' (Appendix A), and the departure leg 'at least 1/2 mile beyond the departure end of the runway'; the figures are this check's judgment, not a rule.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TrackLeftFromInput",
+      "type": "object",
+      "properties": {
+        "distance_nm": {
+          "type": "number",
+          "description": "The first point's distance from the nearest field, nm."
+        },
+        "above_ft": {
+          "type": "number",
+          "description": "Its altitude over the field's elevation, ft."
+        }
+      },
+      "required": [
+        "distance_nm",
+        "above_ft"
+      ]
+    },
+    "answer": {
+      "title": "TrackLeftFromAnswer",
+      "type": "object",
+      "properties": {
+        "left": {
+          "type": "boolean",
+          "description": "The track starts at its takeoff from the field."
+        }
+      },
+      "required": [
+        "left"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -3,11 +3,6 @@
 # into the engine (engine/README.md) and its line taken out; issue #482
 # lists what is still to move.
 
-# The owner's FL-045 way of writing a cruise altitude (2026-11-04): the
-# planner's Go / No-Go words write the altitude it is given and decide
-# nothing (the engine's words_flight_level writes it the same way for the
-# web, the phones and the planner).
-services/planner/app/gonogo/words.py 1
 
 # The sphere's figures where they are deliberately the host's own: the
 # planner's wingtip.geo (pyproj, which the engine's core::geo is held to)
@@ -16,25 +11,6 @@ services/planner/app/gonogo/words.py 1
 services/planner/wingtip/geo.py 1
 apps/web/src/lib/geo.ts 1
 
-# The planner's wingtip/, scanned since 2026-11-10. Readers' and caches'
-# own bounds, not a figure a flight is planned by: the towns looked for
-# round a point (wider than the engine's 91.119(b) radius, so none at its
-# edge is missed); the most an RVR system reports, as its feed is read;
-# how long the special use airspace set is served while the service is
-# down (a NASR cycle); where a recorded track is taken to start at a
-# field; how far a station's report is said of a field (a design choice,
-# its comment says so). The sea floor in the terrain tiles, the obstacles
-# the map stands up, the side view's obstacle width and the finer
-# terrain's reach are the engine's ground_figures since 2026-11-17, and a
-# procedure's open legs and course reversals its procedure_leg_nm and
-# procedure_reversal.
-services/planner/wingtip/congested.py 1
-services/planner/wingtip/rvr.py 1
-services/planner/wingtip/sua.py 1
-services/planner/wingtip/traffic/flights.py 1
-services/planner/wingtip/weather.py 1
-# Still to move into the engine (#482): how long a D-ATIS is the airport's.
-services/planner/wingtip/datis.py 1
 # The statute mile's length in metres (1,609.344, NIST Handbook 44,
 # Appendix C) among wingtip.units' conversions: a unit's definition, which
 # glmp and the weather service's grids read a visibility in metres with.

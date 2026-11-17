@@ -170,7 +170,8 @@ def test_a_tfr_crossed_while_in_force_and_one_passed_before_it_starts(stubbed):
 
 def test_a_route_with_no_legal_altitude_is_no_go_and_the_rest_waits_as_on_the_web(stubbed):
     stubbed["planned"] = flight.Planned(nav=None, legs=[], totals=None, problem="No legal altitude past KDLH")
-    body = client.post("/api/go-no-go", json=ask()).json()
+    # An airplane picked: with none, its findings are left out (gonogo_brief).
+    body = client.post("/api/go-no-go", json=ask(aircraft="c172")).json()
     items = by_key(body)
     assert (items["altitude"]["finding"], items["altitude"]["detail"]) == ("stop", "No legal altitude past KDLH")
     assert items["fuel"]["finding"] == "pending"

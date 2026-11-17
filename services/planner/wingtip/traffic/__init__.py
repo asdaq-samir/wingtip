@@ -77,25 +77,25 @@ from .watched import FOLLOW_EVERY_S, WATCH_FOR_S, WATCH_GAP_S, follow_job, follo
 from .view import ALTIMETER_NM, near, on_altimeter
 from .lookup import ADSBX_BY, FOUND_TTL_S, find, find_credited, registered
 from .routes import OFF_ROUTE_NM, ROUTE_TTL_S, ROUTE_URL, route
-from .flights import (
-    ARCHIVE_DAYS,
-    DEPARTED_WITHIN_NM,
+from .legs import (
     FIELD_ABOVE_FT,
     FIELD_APPROACH_DEG,
     FIELD_APPROACH_FPM,
     FIELD_APPROACH_FT,
     FIELD_APPROACH_NM,
     FIELD_NEAR_NM,
+    LEG_GAP_S,
+    LEG_MIN_S,
+)
+from .flights import (
+    ARCHIVE_DAYS,
+    DEPARTED_WITHIN_NM,
     HISTORY_BATCH,
     HISTORY_DAYS_PER_ASK,
     HISTORY_FLIGHTS,
     HISTORY_TIMEOUT_S,
     HISTORY_TTL_S,
     HISTORY_URL,
-    LEFT_ABOVE_FT,
-    LEFT_NEAR_NM,
-    LEG_GAP_S,
-    LEG_MIN_S,
     PAST_POINTS,
     TRAIL_POINTS,
     flight,
@@ -146,8 +146,6 @@ __all__ = [
     "HISTORY_URL",
     "KEEP_S",
     "LANDED_UNHEARD_S",
-    "LEFT_ABOVE_FT",
-    "LEFT_NEAR_NM",
     "LEG_GAP_S",
     "LEG_MIN_S",
     "LOOKED_S",
