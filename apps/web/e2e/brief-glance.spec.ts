@@ -89,7 +89,7 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   const runways = glance.getByTestId("brief-line-runways");
   await expect(runways).toHaveAttribute("data-finding", "caution");
   // The gusts' crosswind, the figure held against the demonstrated
-  // (features/plan/lib/runwayCheck), on one row; what to do under its tap
+  // (features/brief/runwayCheck), on one row; what to do under its tap
   // (the owner, 2026-11-16: the Brief less cluttered).
   await expect(runways.getByTestId("brief-line-words")).toContainText(/C81 has 22 kt across, past the POH's demonstrated$/);
   // The rest folded into one row, and none where everything else is fine.

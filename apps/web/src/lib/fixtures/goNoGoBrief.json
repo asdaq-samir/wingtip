@@ -1,5 +1,5 @@
 {
-  "_note": "gonogo_brief and gonogo_glance_lines (engine/crates/brief/src/gonogo/brief.rs, glance.rs): each case's input and its answer. The answers were the web's own code's (lib/verdict's assembly in useFlightBriefing, features/plan/lib/glance) when the rules moved into the engine on 2026-11-17, but for the fuel's and the weight and balance's why, corrected to 14 CFR 91.151(a)'s and 91.103's words; engine/facade/tests/gonogo_brief.rs and the web's glance.test.ts read them.",
+  "_note": "gonogo_brief and gonogo_glance_lines (engine/crates/brief/src/gonogo/brief.rs, glance.rs): each case's input and its answer. The answers were the web's own code's (lib/verdict's assembly in useFlightBriefing, features/brief/glance) when the rules moved into the engine on 2026-11-17, but for the fuel's and the weight and balance's why, corrected to 14 CFR 91.151(a)'s and 91.103's words; engine/facade/tests/gonogo_brief.rs and the web's glance.test.ts read them.",
   "brief": [
     {
       "name": "A quiet VFR day with an airplane: seven rows, nothing found",

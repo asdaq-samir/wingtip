@@ -42,7 +42,7 @@ export interface VerdictInput {
     vfrNotRecommended: string[];
     /** Under the pilot's own minimums (lib/minimums). */
     underMinimums: string[];
-    /** Under IFR, icing possible at an altitude flown (features/plan/lib/icing), in a
+    /** Under IFR, icing possible at an altitude flown (features/brief/icing), in a
      *  line. */
     icing?: string | null;
     /** The SIGMETs and G-AIRMETs along the route, by name. */

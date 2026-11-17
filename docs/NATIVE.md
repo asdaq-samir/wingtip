@@ -93,7 +93,7 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
 | The airplane's checklist written as text | `lib/checklist.ts` | the engine: `checklist_read`, `checklist_write` (`ChecklistText`) | `checklist.json` |
 | Flash-card drills: light gun signals (14 CFR 91.125), VFR weather minimums (91.155), Leitner's boxes | `features/pilot/drills.ts` | Swift: `Drills` in `PilotLogic.swift` | `drills.json` |
 | Two-way radio failure, the route and when to leave the clearance limit (14 CFR 91.185(c)(1), (c)(3)) | `features/pilot/lostComms.ts` | Swift: `LostComms` in `PilotLogic.swift` | `lostComms.json` |
-| Flight plan items 15 and 16 (AIM Appendix 4; 14 CFR 91.121(a)(2)) | `features/plan/lib/flightPlanForm.ts` | Swift: `FilingForm` in `Views/InFlightViews.swift` | `filingForm.json` |
+| Flight plan items 15 and 16 (AIM Appendix 4; 14 CFR 91.121(a)(2)) | `features/brief/flightPlanForm.ts` | Swift: `FilingForm` in `Views/InFlightViews.swift` | `filingForm.json` |
 | Traffic's label and the 1,000 ft "near" (14 CFR 91.159's spacing) | `lib/traffic.ts` | the engine: `traffic_marks` (`Traffic.marks`) | `traffic.json` |
 | A watched airplane in the air, a takeoff or landing watch going off | `lib/aircraftAlerts.ts` | the engine: `airborne_now`, `alert_fires` (`Tracking`) | the engine's own tests |
 | In flight: where the airplane is on its route, the next waypoint and the destination, the desired track, the fuel left; the vertical speed; the glide ring; own ship on an airport diagram (#218) | `navlog/dryRun.ts`, `lib/map/position/glide.ts` | the engine: `in_flight`, `vertical_speed`, `glide_ring`, `diagram_labels`, `diagram_graticule`, `diagram_point` (`InFlight`, `InstrumentsBar`, `DiagramPage`) | the engine's own tests, `InFlightTests` |

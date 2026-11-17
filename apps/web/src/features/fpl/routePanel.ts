@@ -11,7 +11,7 @@
 export { NavLogView } from "../plan/lazy";
 export { ProceduresRoute } from "../plan/lazy";
 export { RouteLine } from "../plan/lazy";
-export { FlightBriefingView, BriefingNotices, ReviewAskItem, ReviewAskSheet, SaveFlightButton } from "../plan/lazy";
+export { FlightBriefingView, BriefingNotices, ReviewAskItem, ReviewAskSheet, SaveFlightButton } from "../brief/lazy";
 export { RouteEnds } from "../plan/lazy";
 export { RouteSplit } from "../plan/lazy";
 export { Kneeboard } from "../plan/lazy";
@@ -20,7 +20,7 @@ export { AltitudeGroup } from "../plan/lazy";
 export { AltitudeProfile } from "../plan/lazy";
 export { RouteProblem } from "../plan/lazy";
 export { LocalDuration } from "../plan/lazy";
-export { BriefCard } from "../plan/lazy";
+export { BriefCard } from "../brief/lazy";
 export { AirspaceCard } from "../plan/lazy";
 export { FlightCard } from "../plan/lazy";
 export { PastFlightCard } from "../plan/lazy";

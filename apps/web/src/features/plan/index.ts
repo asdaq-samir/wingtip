@@ -22,8 +22,23 @@ export type { BriefingPart } from "./components/briefing/sections";
 export { loadFlightChart } from "./components/loadFlightChart";
 export { clearanceAt } from "./components/navlog/altitude/clearance";
 export { dryRunFlown } from "./components/navlog/dryRun";
+export { GoToTab, LEGS, type PanelTab, useTabAsk } from "./components/navlog/panelTab";
+export { navLogRows, savedCheckpoints } from "./components/navlog/rows";
 export { figuresLine, nextLanding } from "./figures";
-export { legsWithoutWind, windsOutOfDate } from "./format";
+export {
+  PLAN_NAME,
+  altFt,
+  ceilingAndVisibility,
+  clockTime,
+  feet,
+  legsWithoutWind,
+  one,
+  windLine,
+  windOnRunway,
+  windText,
+  windsOutOfDate,
+} from "./format";
+export { briefingLegs } from "./hooks/briefingLegs";
 export { panelNow, riseToSee } from "./hooks/panelNow";
 export {
   type PlannedRoute,
@@ -40,12 +55,12 @@ export { type AirplaneRow, useAirplaneHits } from "./hooks/useAirplaneHits";
 export { useCopilotPublish } from "./hooks/useCopilotPublish";
 export { useDryRun } from "./hooks/useDryRun";
 export { useFieldPatterns } from "./hooks/useFieldPatterns";
-export { useFlightToSave } from "./hooks/useFlightToSave";
 export { useFlyingMode } from "./hooks/useFlyingMode";
 export { useLegSheet } from "./hooks/useLegSheet";
+export { useLoad } from "./hooks/useLoad";
 export { useMapActions } from "./hooks/useMapActions";
 export { type PanelList, type PanelView, useAddressCards, usePanelView } from "./hooks/usePanelView";
-export { type PlanParams, navlogQuery, usePlan } from "./hooks/usePlan";
+export { type BriefingState, type PlanParams, navlogQuery, usePlan } from "./hooks/usePlan";
 export { usePlanSetters } from "./hooks/usePlanSetters";
 export { drawnOnly, useProcedurePicks } from "./hooks/useProcedurePicks";
 export { useRouteEdits } from "./hooks/useRouteEdits";
@@ -56,7 +71,9 @@ export { useRouteWays } from "./hooks/useRouteWays";
 export { useRunwayPicks } from "./hooks/useRunwayPicks";
 export { nearOf, useSearchResults } from "./hooks/useSearchResults";
 export { useSuggestedStops, withStopsAfter } from "./hooks/useSuggestedStops";
-export { placeName } from "./lib/radio";
+export type { SuaWhen, TfrWhen } from "./lib/passTimes";
+export { type RunwayEnd, type RunwayPicks, compassWord, entryFor, exitFor, patternSideDeg, runwayNumber } from "./lib/pattern";
+export { type RadioCall, type RadioPhase, callSign, fieldPhases, placeName } from "./lib/radio";
 export { holdsOf, holdsParam } from "./lib/routeHolds";
 export { sameStops } from "./lib/routeWays";
 export { readQuery } from "./lib/searchFilters";
@@ -81,6 +98,9 @@ export const loadNearestCard = () => import("./components/NearestCard");
 
 /** RouteLegCard, on a chunk of its own, as its importer loads it. */
 export const loadRouteLegCard = () => import("./components/RouteLegCard");
+
+/** EnvelopeChart, on a chunk of its own, as its importer loads it. */
+export const loadEnvelopeChart = () => import("./components/briefing/EnvelopeChart");
 
 /** MiniProfile, on a chunk of its own, as its importer loads it. */
 export const loadMiniProfile = () => import("./components/navlog/MiniProfile");
