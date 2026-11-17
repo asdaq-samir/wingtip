@@ -333,7 +333,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
         </SheetCard>
       )}
       {!bare && <MapBanners map={map} />}
-      {!bare && <MapControls />}
+      {!bare && <MapControls map={map} />}
     </div>
   );
 }

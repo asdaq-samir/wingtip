@@ -69,16 +69,16 @@ export default function TerrainGl({
       setReady(false);
     };
   }, [map]);
-  // In 3D: the ground stood up, the map free to tilt and turn; flat and
-  // north up again after.
+  // In 3D: the ground stood up, the map free to tilt as well as turn;
+  // flat again after, at the bearing the pilot turned it to (the flat
+  // chart turns too since 2026-11-17, makeMap; the compass sets it north
+  // up).
   const raised = ready && mode === "3d"; // mounted in 3D only (GlRouteMap); the dry run's pilot view is 3D
   useEffect(() => {
     if (!raised) return;
     const el = map.getContainer();
     map.setMaxPitch(MAP.pitchMax);
-    map.dragRotate.enable();
     map.touchPitch.enable();
-    map.touchZoomRotate.enableRotation();
     el.dataset.terrain = "3d";
     if (map.getPitch() < 1) map.easeTo({ pitch: MAP.pitchOpen, duration: TILT_MS });
     return () => {
@@ -86,10 +86,8 @@ export default function TerrainGl({
       delete el.dataset.heightStretch;
       if (!map.style) return;
       if (map.getTerrain()) map.setTerrain(null);
-      map.dragRotate.disable();
       map.touchPitch.disable();
-      map.touchZoomRotate.disableRotation();
-      map.easeTo({ pitch: 0, bearing: 0, duration: TILT_MS });
+      map.easeTo({ pitch: 0, duration: TILT_MS });
       map.setMaxPitch(MAP.pitchFlatMax);
     };
   }, [map, raised]);

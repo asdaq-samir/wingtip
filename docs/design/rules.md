@@ -762,13 +762,35 @@ Class B has no setting (the owner, 2026-11-17: "We don't need the Class B whethe
 3. **Google's credit alone stays on the map**, while its tiles are drawn,
    as MapLibre's stock compact attribution (the (i)), because Google's
    Map Tiles API policies ask for its attribution on the map itself.
+4. **The map turns, and the compass turns it back** (the owner,
+   2026-11-17, "Yes to all recs"; it was read north up only): two fingers
+   twisted, a right drag (or Ctrl and a drag) with a mouse, Shift and the
+   left or right arrow from the keyboard, MapLibre's own gestures and
+   keys (`components/map/makeMap`). Tilting stays the 3D button's: no
+   two-finger tilt on the flat chart, and a right drag turns without
+   tilting; MapLibre's keyboard ties tilt to turn, so Shift and up or down
+   tilt it a little, which the compass also undoes on the flat chart.
+   The compass is among the map's buttons, after My Position, shown only
+   while the map is not north up, its red needle pointing to north on the
+   screen, and a tap eases it north up again as Apple Maps' does
+   (`components/CompassButton`, the camera's `northUp`; it ends no
+   follow). What is drawn keeps its sense as the map turns: the chart and
+   everything fixed to it (airspace tabs and their rings' labels, runway
+   numbers, wind barbs, the pattern's arrows, traffic and own ship on
+   their tracks) turn with it, as on a turned paper chart; names and the
+   weather's marks stay upright to the screen; a route point's name stays
+   outside the turn (`routeTurns`' `turnSide`, again at each turn); a fit
+   to the route keeps the bearing the pilot set; leaving 3D lays the map
+   flat at its bearing; and a two-finger hold that turns the map is a
+   turn, not the ruler.
 
 | | Web | iOS |
 |---|---|---|
 | Riding the sheet | `components/sheet/sheetTop` (`OnSheetTop`): a slot in the Drawer's popup just over its top edge (`bottom: 100%`), the popup's corners clipped on an inner box | `MapButtonsDock`: the system sheet's own height, the plan's and a card's over it (`onGeometryChange`, `SheetEdge`), sets the glass group (Map, My Position, Ask) 24 over the higher top at the right, fading out past 60% of the screen; at the top right beside the iPad's sidebar. SwiftUI has no stock placement that follows a sheet over a UIKit map |
 | Settings' foot | `features/pilot/PilotPanel`'s "More" row, `settings-foot`; 44-point hit areas that meet (`PAGE_LINK`), a second line at a large text size | |
 | Status | `components/StatusPanel`: FAA Data, On the Map (`lib/map/gl/creditStore`) | |
-| Tests | `e2e/sheet-webkit.spec.ts` (WebKit at an iPhone's size: heads pinned, nothing over or through them, the page toggle and the map's buttons 24 over the sheet and clear of each other, the radio's among the map's, Settings at the pill, its seven links, no credits row, Status's cycles), `e2e/legal.spec.ts` | `WingtipUITests/MapButtonsTests` (over the search at half and the pill, at the right edge, 44 points, out of reach at full) |
+| Turning and the compass | `components/map/makeMap` (MapLibre's own rotation), `components/CompassButton` in `MapControls`, `lib/map/gl/camera`'s `northUp` | |
+| Tests | `e2e/map-rotation.spec.ts` (the keyboard's turn, the compass shown and its tap), `lib/map/gl/camera.test.ts` (a fit keeps the bearing; north up holds the camera); `e2e/sheet-webkit.spec.ts` (WebKit at an iPhone's size: heads pinned, nothing over or through them, the page toggle and the map's buttons 24 over the sheet and clear of each other, the radio's among the map's, Settings at the pill, its seven links, no credits row, Status's cycles), `e2e/legal.spec.ts` | `WingtipUITests/MapButtonsTests` (over the search at half and the pill, at the right edge, 44 points, out of reach at full) |
 
 On Android the map's buttons (My Position, with Ask over it) ride the
 `BottomSheetScaffold`'s top at the right the same way, placed from the

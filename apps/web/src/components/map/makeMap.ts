@@ -92,11 +92,18 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     zoom: glZoom(last ? OPEN_ZOOM : COUNTRY_ZOOM),
     minZoom: glZoom(3),
     attributionControl: false,
-    // A chart is read north up: no turn, no tilt.
-    dragRotate: false,
+    // Turned as Apple Maps' map turns (the owner's "Yes to all recs",
+    // 2026-11-17): two fingers twisted, a right drag or Ctrl and a drag
+    // with a mouse, Shift and the arrows from the keyboard (MapLibre's own
+    // keys: arrows pan, + and - zoom, Shift and left or right turn, Shift
+    // and up or down tilt, its keyboard tying the two), the compass among
+    // the map's buttons turning it north up again (CompassButton). A chart
+    // was read north up before. No tilt by hand on the flat chart: the 3D
+    // button stands the map up (TerrainGl), and a two-finger drag up or
+    // down tilting a flat chart with no ground under it would be in the
+    // way of the pinch and the twist; a right drag turns and does not tilt.
     pitchWithRotate: false,
     touchPitch: false,
-    // MapLibre's own keys (its default: arrows pan, + and - zoom).
     // Symbols placed at once, not faded in over 0.3 s.
     fadeDuration: 0,
     // And its world copies (its default): the Western Aleutian sectional runs across 180°.
@@ -108,8 +115,6 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     const got = pictures?.get(id);
     if (got && !m.hasImage(id)) m.addImage(id, got.image, got.options);
   });
-  m.touchZoomRotate.disableRotation();
-  m.keyboard.disableRotation();
   m.setPadding(padOf(insets));
   // A tile 404 left blank; any other failure said and reported (mapErrors).
   watchMapErrors(m);
