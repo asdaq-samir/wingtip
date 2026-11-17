@@ -134,8 +134,8 @@ test("the pictures open on the runways, and the Weather tab opens on the forecas
   expect(await hours.count()).toBeGreaterThan(12);
   await expect(hours.nth(1)).toContainText(/\d\d:00/);
   await expect(hours.filter({ hasText: "2,500" }).first()).toContainText("15G22");
-  // Only the row scrolls sideways, not the card.
-  const row = card(page).getByTestId("place-hours");
+  // Only the row slides sideways (the stock Carousel), not the card.
+  const row = card(page).getByTestId("place-hours").locator("[data-slot=carousel-content]");
   expect(await row.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
   expect(await card(page).evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
   // The route's destination: the hour the flight lands in outlined, once

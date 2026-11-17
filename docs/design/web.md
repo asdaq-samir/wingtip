@@ -1581,7 +1581,10 @@ sheet scrolls one way on a phone:
   size the pilot left it. Nothing sits below the screen to be scrolled to
   at half.
 - Sideways rows scroll sideways only: the Embla carousels (`CardPictures`,
-  `RecentCards`) and the route's pills carry `data-base-ui-swipe-ignore="x"`
+  `RecentCards`, the weather's hours `HourlyForecast` and the Brief's
+  departure hours `DepartureWindowStrip`, shadcn's Carousel since
+  2026-11-17, where the two were rows of our own with scroll snapping)
+  and the route's pills carry `data-base-ui-swipe-ignore="x"`
   (an up or down drag the sheet's), and every native sideways row
   `overscroll-x-contain`. The upright altitude Slider and the sortable
   rows' grips keep `""`: their own drag is up and down.
