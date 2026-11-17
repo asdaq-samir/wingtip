@@ -7,16 +7,17 @@ import { ListGroup, ListRow } from "./GroupedList";
 import { ClearList, RemovableRow } from "./RemovableRow";
 import { KeptMark, ListPageHead } from "./Favorites";
 import { placeLink } from "../lib/flightLink";
-import ClearButton from "./ClearButton";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";
+import { InputGroup, InputGroupAddon } from "./ui/input-group";
+import { SearchField as AriaSearchField, SearchFieldClear, SearchFieldInput } from "./ui/search-field";
 import { PANEL_FIELD } from "./panelField";
 
 /**
  * The search bar, as Maps' is, at the top of a tab's sheet the whole
  * width (Settings a tab of the bar, not a button beside it). Focused, the
- * sheet comes all the way up (`onFocus`); what is typed cleared inside it
- * (ClearButton); Escape puts the search away. Enter picks the first
- * airport that answers, or the ident typed.
+ * sheet comes all the way up (`onFocus`); what is typed cleared inside it.
+ * React Aria's SearchField (ui/search-field): its clear, and its Escape,
+ * which clears what is typed and, once it is empty, puts the search away.
+ * Enter picks the first airport that answers, or the ident typed.
  */
 export function SearchField({
   value,
@@ -69,57 +70,52 @@ export function SearchField({
           on the sheet the grey of iOS's search field, on the glass capsule
           a lighter pane of the glass, no line round it, its 44-point hit
           area its own. The magnifier drawn fine and grey, as SF Symbols'. */}
-      <InputGroup
-        className={cn(
-          "h-[2.875rem] min-w-0 flex-1 gap-2 rounded-full border-0 px-3.5 text-muted-foreground shadow-none has-[[data-slot=input-group-control]:focus-visible]:ring-0",
-          PANEL_FIELD,
-          TEXT.row,
-        )}
+      <AriaSearchField
+        value={value}
+        onChange={onChange}
+        onClear={() => {
+          if (onClear) onClear();
+          else onChange("");
+        }}
+        // Escape with something typed is the field's own clear; with the
+        // field empty it puts the search away, as the close beside it did.
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && !value) {
+            input.current?.blur();
+            onCancel();
+          }
+        }}
+        onFocus={onFocus}
+        aria-label={label ?? placeholder}
+        className="min-w-0 flex-1"
       >
-        <InputGroupAddon className="p-0">
-          <Icon className="size-5 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
-        </InputGroupAddon>
-        <InputGroupInput
-          ref={input}
-          type="search"
-          enterKeyHint="search"
-          autoCorrect="off"
-          spellCheck={false}
-          autoCapitalize={capitals ? "characters" : undefined}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={onFocus}
-          // Escape puts the search away, as the close beside it did.
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              input.current?.blur();
-              onCancel();
-            }
-          }}
-          placeholder={placeholder}
-          aria-label={label ?? placeholder}
-          data-testid={testId}
+        <InputGroup
           className={cn(
-            "h-full min-w-0 px-0 py-0 text-foreground placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden",
+            "h-[2.875rem] min-w-0 gap-2 rounded-full border-0 px-3.5 text-muted-foreground shadow-none has-[[data-slot=input-group-control]:focus-visible]:ring-0",
+            PANEL_FIELD,
             TEXT.row,
           )}
-        />
-        {/* What is typed cleared inside the field, as iOS's search field
-            clears it. */}
-        {value && (
-          <InputGroupAddon align="inline-end" className="p-0">
-            <ClearButton
-              label="Clear the search"
-              testId="search-clear"
-              onClear={() => {
-                if (onClear) onClear();
-                else onChange("");
-                input.current?.focus();
-              }}
-            />
+        >
+          <InputGroupAddon className="p-0">
+            <Icon className="size-5 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
           </InputGroupAddon>
-        )}
-      </InputGroup>
+          <SearchFieldInput
+            ref={input}
+            enterKeyHint="search"
+            autoCorrect="off"
+            spellCheck={false}
+            autoCapitalize={capitals ? "characters" : undefined}
+            placeholder={placeholder}
+            data-testid={testId}
+            className={cn("h-full px-0 py-0 text-foreground placeholder:text-muted-foreground", TEXT.row)}
+          />
+          {/* What is typed cleared inside the field, as iOS's search field
+              clears it: the field's own, shown while something is typed. */}
+          <InputGroupAddon align="inline-end" className="p-0 group-data-empty/search-field:hidden">
+            <SearchFieldClear aria-label="Clear the search" data-testid="search-clear" />
+          </InputGroupAddon>
+        </InputGroup>
+      </AriaSearchField>
     </form>
   );
 }

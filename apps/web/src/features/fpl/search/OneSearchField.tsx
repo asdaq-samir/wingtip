@@ -2,7 +2,6 @@ import { useEffect, useEffectEvent } from "react";
 import { Search } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { cn } from "cn";
-import ClearButton from "../../../components/ClearButton";
 import { SHEET_BAR } from "../../../components/panelField";
 import PageToggle from "../../../components/PageToggle";
 import { CommandClear, CommandField } from "../../../components/ui/command";
@@ -129,13 +128,13 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
               }
             }
           }}
-          // The browser's own clear put away for the app's (ClearButton),
+          // The browser's own clear put away for the field's (CommandClear),
           // the one every field has.
           className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
         />
         {/* Base UI's own clear: shown while something is typed, the
             words cleared through the root's onValueChange, the focus kept. */}
-        <CommandClear render={<ClearButton label="Clear the search" testId="search-clear" />} />
+        <CommandClear aria-label="Clear the search" data-testid="search-clear" />
         {!model.typed && desktop && !using && <Kbd aria-hidden="true">{searchKeys()}</Kbd>}
         {/* The microphone, the field's trailing button: on-device speech
             only (lib/speechLocal), so none where the browser has no

@@ -92,7 +92,7 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
       const svg = button.querySelector("svg");
       // The airport card's runway sketch is a picture as wide as two tiles,
       // not an icon button: its svg is the drawing, not a glyph. Nor is a
-      // text field's clear (ClearButton), iOS's own 20-point circled cross
+      // text field's clear (ui/field-clear's FIELD_CLEAR), iOS's own 20-point circled cross
       // inside the field, which every field with words in it now wears.
       // Nor a list's disclosure (FPL's airport opened by the arrow by its
       // fuel), iOS's small chevron, at the owner's ask. Nor a card head's

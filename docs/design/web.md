@@ -1711,7 +1711,14 @@ Enter, the search's hidden native clear, its first-row and ⌘Enter
 fallbacks (`autoHighlight="always"`), its numbered map marks and Alt+Down
 override, the toasts' sonner-shaped calls (Base UI's `add` and `close`
 directly) and their switched-off swipe, `joinProps` (Base UI's
-`mergeProps`), and the route rows' drag image. What is left, each with
+`mergeProps`), and the route rows' drag image. The fields' clear went
+the same way (the owner, 2026-11-17): React Aria's SearchField and its
+clear Button on Nearest's field (`components/ui/search-field`, its
+Escape clearing what is typed before it puts the field away), that clear
+alone on the route box (React Aria's TokenField has no clear of its own),
+and Base UI's `Autocomplete.Clear` on the one search (ui/command's
+`CommandClear`), all three iOS's grey disc (`ui/field-clear`); the
+hand-styled `ClearButton` is gone. What is left, each with
 its reason:
 
 - **`PhoneSheet` (components/PhoneSheet.tsx):** a phone's sheet for the
