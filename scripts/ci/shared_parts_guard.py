@@ -45,7 +45,7 @@ SHARED = {"apps/web/src/components/CardHead.tsx", "apps/web/src/components/Secti
 HEADING = re.compile(r"<h[1-6]\b")
 ROLE = re.compile(r"TEXT\.(?:hero|card|title|heading)\b|\bSECTION_TITLE\b|--type-(?:hero|card|title|heading)\b")
 CROSS = re.compile(r"<(?:X|ICON\.close)\b")
-BUTTON = re.compile(r"<(button|Button|IconButton|RoundButton|ToolbarButton)\b")
+BUTTON = re.compile(r"<(button|Button|IconButton|ToolbarButton)\b")
 # How far back a cross's button may open.
 REACH = 800
 

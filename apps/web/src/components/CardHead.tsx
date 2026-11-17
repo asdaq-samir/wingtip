@@ -4,7 +4,7 @@ import { cn } from "cn";
 import CloseButton from "./CloseButton";
 import { HeadGrid } from "./HeadGrid";
 import { PinnedHead } from "./PinnedHead";
-import RoundButton from "./RoundButton";
+import IconButton from "./IconButton";
 import { closeTopCard, useHeldCard, RouteShareMenu, type CardShare } from "../lib/openCards";
 import { TEXT } from "../lib/text";
 
@@ -203,8 +203,8 @@ export function CardShareButton({ onShare }: { onShare?: CardShare }) {
   if (typeof onShare === "string") return routeShare?.(onShare) ?? null;
   if (!onShare) return null;
   return (
-    <RoundButton label="Share" onClick={onShare} data-testid="card-share">
+    <IconButton round label="Share" onClick={onShare} data-testid="card-share">
       <Share className="size-5" strokeWidth={2} />
-    </RoundButton>
+    </IconButton>
   );
 }

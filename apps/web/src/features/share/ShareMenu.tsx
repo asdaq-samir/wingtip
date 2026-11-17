@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { done } from "../../lib/doneNote";
 import { Ellipsis, FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Share, Trash2 } from "lucide-react";
-import RoundButton from "../../components/RoundButton";
+import IconButton from "../../components/IconButton";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../components/ResponsivePopover";
 import {
   DropdownMenu,
@@ -207,7 +207,7 @@ export default function ShareMenu({
               // microphone is in its twin of a bar: one look for a button
               // in the first row (the owner's list, 2026-11-17), where it
               // was a grey disc with a black glyph beside the tinted toggle.
-              <RoundButton
+              <IconButton round
                 label={planAgain?.stale.length ? `${SHARE_LABEL[card]}: ${planAgain.stale.join(", ")}` : SHARE_LABEL[card]}
                 {...(card === "route" ? { variant: "ghost" as const, className: "size-[32px]" } : {})}
                 data-testid={testId}

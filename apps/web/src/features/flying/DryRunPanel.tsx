@@ -5,7 +5,7 @@ import { callEngine } from "../../lib/engine/engine";
 import { setPilotView, usePilotView } from "../plan-map";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
-import RoundButton from "../../components/RoundButton";
+import IconButton from "../../components/IconButton";
 import { Slider } from "../../components/ui/slider";
 import { PlaybackButton, PlaybackToggle, PlaybackToolbar, PlayToggle, SpeedMenu } from "../../components/PlaybackBar";
 import { playbackKey } from "../../components/playbackKeys";
@@ -129,7 +129,7 @@ export function DryRunControls({
         {onFinal && (
           <PlaybackButton
             render={
-              <RoundButton
+              <IconButton round
                 label="Go missed"
                 onClick={onMissed}
                 className={cn("w-auto px-2.5 font-semibold", TEXT.note)}

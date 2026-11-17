@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Ellipsis } from "lucide-react";
-import RoundButton from "./RoundButton";
+import IconButton from "./IconButton";
 import { loadPopups, usePopups } from "./popupsChunk";
 
 /** One of a row's actions: Share, Clear, Delete… */
@@ -54,7 +54,7 @@ export default function RowMenu(props: RowMenuProps) {
   return (
     <div className={ROW_LIFT}>
       <div className="min-w-0 flex-1">{props.children}</div>
-      <RoundButton
+      <IconButton round
         label={props.label}
         className={ROW_MORE}
         data-testid={props.testId}
@@ -64,7 +64,7 @@ export default function RowMenu(props: RowMenuProps) {
         }}
       >
         <Ellipsis className="size-5" aria-hidden="true" />
-      </RoundButton>
+      </IconButton>
     </div>
   );
 }
