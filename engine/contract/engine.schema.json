@@ -14275,6 +14275,48 @@
       ],
       "additionalProperties": false
     },
+    "ground_figures": {
+      "description": "The figures the planner's readers of the ground and its obstacles take: the lowest ground in North America, Badwater Basin's 282 ft below sea level (USGS; NPS), below which a terrain tile's height is the sea floor and the surface 14 CFR 91.159 and 91.119 measure from is the sea's, 0 ft; the obstacles the map stands up, 14 CFR 77.9(a)'s more than 200 ft AGL; how far either side of each hop the side view draws obstacles, 1 nm, a display width (the legal margins are 91.119(b)'s and 91.177(a)(2)'s, which the floors keep); and how far round a public-use airport the finer terrain is kept, 5 nm, where a 3\u00b0 path (AIM 1-1-9) is 1,500 ft up.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GroundFiguresInput",
+          "type": "object",
+          "properties": {},
+          "required": []
+        },
+        "answer": {
+          "title": "GroundFiguresAnswer",
+          "type": "object",
+          "properties": {
+            "lowest_ground_ft": {
+              "type": "number"
+            },
+            "obstacle_shown_agl_ft": {
+              "type": "number"
+            },
+            "profile_obstacle_nm": {
+              "type": "number"
+            },
+            "fine_terrain_radius_nm": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lowest_ground_ft",
+            "obstacle_shown_agl_ft",
+            "profile_obstacle_nm",
+            "fine_terrain_radius_nm"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "groundspeed_kt": {
       "description": "The nav log's ground speed once the heading holds the course: the airspeed's share along it less the wind's.",
       "type": "object",
@@ -22966,6 +23008,98 @@
       ],
       "additionalProperties": false
     },
+    "procedure_leg_nm": {
+      "description": "How far a procedure's leg with no fix of its own to end at is drawn, nm (ARINC 424-18 5.21): an FC leg its coded distance from its fix; a leg flown to an altitude (FA, CA, VA) from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; any other (to a DME distance, a radial, an intercept, a manual termination) 2 nm.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureLegNmInput",
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "distance_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "known_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "path"
+          ]
+        },
+        "answer": {
+          "title": "ProcedureLegNmAnswer",
+          "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "procedure_reversal": {
+      "description": "The course reversal flown where a procedure's path turns `turn_deg` at a fix (AIM 5-4-9): \"coded\" -- the chart's hold in lieu of a procedure turn or its procedure turn there, entered -- where one is coded at the fix and the path turns more than 90\u00b0 there, come to from its far side (from the near side a pilot is lined up already and makes none, as on a NoPT route, 14 CFR 91.175(j)); else \"teardrop\" where the path doubles back more than 120\u00b0 at a fix past the procedure's first; else null.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureReversalInput",
+          "type": "object",
+          "properties": {
+            "turn_deg": {
+              "type": "number"
+            },
+            "coded": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "first_fix": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "turn_deg"
+          ]
+        },
+        "answer": {
+          "title": "ProcedureReversalAnswer",
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "coded",
+            "teardrop",
+            null
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "procedure_turn": {
       "description": "A 45\u00b0/180\u00b0 procedure turn at its fix (AIM 5-4-9): 4 nm out on the final's reciprocal, 2 nm on the barb's true course, a standard-rate 180\u00b0 turn at 120 kt toward the final's side, back to meet the final within 10 nm, and in to the fix.",
       "type": "object",
@@ -31248,6 +31382,7 @@
     "gonogo_verdict_line",
     "gonogo_with_alternate",
     "great_circles",
+    "ground_figures",
     "groundspeed_kt",
     "handbook_figures",
     "handbook_read_check",
@@ -31348,6 +31483,8 @@
     "procedure_climb_nm",
     "procedure_hold",
     "procedure_hold_leg_nm",
+    "procedure_leg_nm",
+    "procedure_reversal",
     "procedure_turn",
     "procedures_read",
     "procedures_write",

@@ -5901,6 +5901,24 @@ object EngineContract {
     )
 
     @Serializable
+    data class GroundFiguresAnswer(
+        @SerialName("lowest_ground_ft")
+        val lowestGroundFt: Double,
+        @SerialName("obstacle_shown_agl_ft")
+        val obstacleShownAglFt: Double,
+        @SerialName("profile_obstacle_nm")
+        val profileObstacleNm: Double,
+        @SerialName("fine_terrain_radius_nm")
+        val fineTerrainRadiusNm: Double,
+    )
+
+    @Serializable
+    class GroundFiguresInput {
+        override fun equals(other: Any?): Boolean = other is GroundFiguresInput
+        override fun hashCode(): Int = 0
+    }
+
+    @Serializable
     data class GroundspeedKtInput(
         @SerialName("true_course_deg")
         val trueCourseDeg: Double,
@@ -9580,6 +9598,26 @@ object EngineContract {
         val minutes: Double? = null,
         @SerialName("distance_nm")
         val distanceNm: Double? = null,
+    )
+
+    @Serializable
+    data class ProcedureLegNmInput(
+        val path: String,
+        @SerialName("distance_nm")
+        val distanceNm: Double? = null,
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
+        @SerialName("known_ft")
+        val knownFt: Double? = null,
+    )
+
+    @Serializable
+    data class ProcedureReversalInput(
+        @SerialName("turn_deg")
+        val turnDeg: Double,
+        val coded: Boolean? = null,
+        @SerialName("first_fix")
+        val firstFix: Boolean? = null,
     )
 
     @Serializable

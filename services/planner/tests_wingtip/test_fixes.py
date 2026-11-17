@@ -4,7 +4,7 @@ pilot has on a chart, and what the rest are."""
 import os
 
 import pytest
-from wingtip import fixes, geo, magnetic
+from wingtip import fix_rows, fixes, geo, magnetic
 
 HEADER = '"FIX_ID","STATE_CODE","LAT_DECIMAL","LONG_DECIMAL","FIX_USE_CODE","CHARTS"\n'
 
@@ -12,7 +12,7 @@ HEADER = '"FIX_ID","STATE_CODE","LAT_DECIMAL","LONG_DECIMAL","FIX_USE_CODE","CHA
 def _table(tmp_path, *rows):
     path = tmp_path / "FIX_BASE.csv"
     path.write_text(HEADER + "".join(f'"{i}","IL",{lat},{lon},"{use}","{charts}"\n' for i, lat, lon, use, charts in rows))
-    return fixes._read(path)
+    return fix_rows._read(path)
 
 
 def test_a_vfr_waypoint_is_one_on_the_sectional_or_the_terminal_area_chart(tmp_path):
@@ -42,7 +42,7 @@ def _navaids(tmp_path, *rows):
         NAV_HEADER
         + "".join(f'"{i}","{kind}","{name}","IL","{status}",{lat},{lon},"{freq}"\n' for i, kind, name, status, lat, lon, freq in rows)
     )
-    return fixes._read_navaids(path)
+    return fix_rows._read_navaids(path)
 
 
 def test_the_navaids_in_service_are_fixes_a_route_flies_over(tmp_path):
@@ -155,9 +155,9 @@ def test_a_vors_radial_is_turned_to_true_by_its_own_variation_and_a_waypoints_co
 
 
 def test_a_navaids_own_variation_is_read_east_positive(tmp_path):
-    assert fixes._station_variation({"MAG_VARN": "5", "MAG_VARN_HEMIS": "E"}) == 5
-    assert fixes._station_variation({"MAG_VARN": "3", "MAG_VARN_HEMIS": "W"}) == -3
-    assert fixes._station_variation({"MAG_VARN": "", "MAG_VARN_HEMIS": ""}) is None
+    assert fix_rows._station_variation({"MAG_VARN": "5", "MAG_VARN_HEMIS": "E"}) == 5
+    assert fix_rows._station_variation({"MAG_VARN": "3", "MAG_VARN_HEMIS": "W"}) == -3
+    assert fix_rows._station_variation({"MAG_VARN": "", "MAG_VARN_HEMIS": ""}) is None
 
 
 def test_a_point_off_an_airport_is_found_by_what_locates_the_airport(monkeypatch):
@@ -189,7 +189,7 @@ def test_a_vors_card_has_its_channel_service_volume_and_unusable_sectors(monkeyp
         '"MAG_VARN_HEMIS","CHAN","ALT_CODE","OPER_HOURS"\n'
         '"JOT","VOR/DME","JOLIET","IL","OPERATIONAL RESTRICTED",41.54641852,-88.31841055,"112.3","590.9","2","E","70X","VH","24"\n'
     )
-    jot = fixes._read_navaids(tmp_path / "NAV_BASE.csv")["JOT"][0]
+    jot = fix_rows._read_navaids(tmp_path / "NAV_BASE.csv")["JOT"][0]
     assert {k: jot[k] for k in ("mag_var", "elevation_ft", "channel", "service_volume", "hours", "restricted")} == {
         "mag_var": 2.0,
         "elevation_ft": 590.9,

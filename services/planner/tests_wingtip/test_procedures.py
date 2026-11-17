@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from wingtip import geo, procedures
+from wingtip import cifp_index, cifp_records, geo, procedure_parts, procedures
 
 CIFP = Path(__file__).parent / "cifp" / "FAACIFP18"
 
@@ -73,7 +73,7 @@ def test_a_terminal_ndb_kept_apart_from_its_airports_run_takes_in_no_other_field
     assert procedures.procedures_at("KBUR")["procedures"] == alone
     assert all(p["id"].startswith("Z") for p in procedures.procedures_at("KZZZ")["procedures"])
     # The NDB is the field's own all the same, for a leg that names it.
-    assert near(procedures._airport("KBUR", file).waypoints["DL"], (46.84572, -92.35494))
+    assert near(cifp_index._airport("KBUR", file).waypoints["DL"], (46.84572, -92.35494))
 
 
 @pytest.mark.parametrize(
@@ -165,9 +165,9 @@ def test_an_unknown_procedure_is_none():
     ],
 )
 def test_altitude_descriptions_are_read_as_arinc_424_codes_them(code, first, second, limits):
-    leg = next(iter(procedures._airport("KBUR", CIFP).legs.values()))[0]
+    leg = next(iter(cifp_index._airport("KBUR", CIFP).legs.values()))[0]
     leg = dataclasses.replace(leg, altitude_code=code, altitude1=first, altitude2=second)
-    assert procedures.altitude_limits(leg) == limits
+    assert cifp_records.altitude_limits(leg) == limits
 
 
 def test_a_fallback_file_is_reported_as_the_cycle_it_is_of(monkeypatch, tmp_path):
@@ -185,7 +185,7 @@ def test_a_speed_says_whether_it_is_at_a_minimum_or_a_maximum():
     assert all(f["speed_limit"] is None for f in drawing["fixes"] if not f["speed_kt"])
 
 
-def _leg(**given) -> procedures.Leg:
+def _leg(**given) -> cifp_records.Leg:
     fields = dict(
         route="I08-Y",
         transition="",
@@ -213,7 +213,7 @@ def _leg(**given) -> procedures.Leg:
         center_icao="",
         center_section="",
     )
-    return procedures.Leg(**{**fields, **given})
+    return cifp_records.Leg(**{**fields, **given})
 
 
 @pytest.mark.parametrize(
@@ -223,12 +223,12 @@ def _leg(**given) -> procedures.Leg:
 def test_a_fix_is_named_for_its_waypoint_description(code, roles):
     """ARINC 424-18 5.17: I is the final approach course fix, B the intermediate fix."""
     leg = _leg(description=f"   {code}")
-    assert procedures._fix_roles(leg) == roles
+    assert procedure_parts._fix_roles(leg) == roles
 
 
 def test_a_leg_with_no_altitude_code_has_no_limit_read_into_it():
     leg = _leg(altitude_code="", altitude1=3000)
-    assert procedures.altitude_limits(leg) == (3000, 3000)
+    assert cifp_records.altitude_limits(leg) == (3000, 3000)
 
 
 def test_a_procedure_turn_goes_out_on_the_finals_reciprocal_turns_on_the_barb_and_comes_back_to_the_fix():
@@ -238,7 +238,7 @@ def test_a_procedure_turn_goes_out_on_the_finals_reciprocal_turns_on_the_barb_an
     (AIM 5-4-9)."""
     lados = (33.286861, -92.729061)
     inbound = 223.0
-    pts = procedures._procedure_turn(lados, inbound, 0.0)
+    pts = procedure_parts._procedure_turn(lados, inbound, 0.0)
     assert pts[0] == lados and pts[-1] == lados
     assert geo.bearing_deg(*lados, *pts[1]) == pytest.approx((inbound + 180) % 360, abs=1)
     assert max(geo.distance_nm(*lados, *p) for p in pts) < 10
@@ -262,7 +262,7 @@ def test_a_leg_flown_to_an_altitude_goes_as_far_as_the_standard_climb_takes_the_
 
 def test_an_airports_elevation_is_its_airport_records():
     # KBUR's airport record, columns 57 to 61: 00778.
-    assert procedures._airport("KBUR", CIFP).elevation_ft == 778
+    assert cifp_index._airport("KBUR", CIFP).elevation_ft == 778
 
 
 def test_an_approachs_runway_path_is_its_finals_vertical_angle_to_its_runways_crossing_altitude():
@@ -307,6 +307,6 @@ def test_an_approach_says_its_glidepath_its_final_course_and_its_missed_approach
 
 
 def test_a_vertical_angle_is_read_in_hundredths_of_a_degree():
-    assert procedures._vertical_angle("-300") == -3.0
-    assert procedures._vertical_angle("-350") == -3.5
-    assert procedures._vertical_angle("    ") is None
+    assert cifp_records._vertical_angle("-300") == -3.0
+    assert cifp_records._vertical_angle("-350") == -3.5
+    assert cifp_records._vertical_angle("    ") is None

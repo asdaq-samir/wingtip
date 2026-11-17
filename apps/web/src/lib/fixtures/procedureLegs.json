@@ -1,0 +1,26 @@
+{
+  "_comment": "How a procedure's open legs are drawn and where a course reversal is flown (engine procedure_leg_nm, procedure_reversal; ARINC 424-18 5.21, FAA Order 8260.3's 200 ft a nm, AIM 5-4-9, 14 CFR 91.175(j)), and the ground figures (ground_figures: Badwater Basin, 14 CFR 77.9(a), AIM 1-1-9). The planner's wingtip.procedures and wingtip.procedure_paths gave these before the move.",
+  "legNm": [
+    { "input": { "path": "FC", "distance_nm": 4.0 }, "answer": 4.0 },
+    { "input": { "path": "FC", "distance_nm": null }, "answer": 2.0 },
+    { "input": { "path": "FA", "altitude_ft": 3000, "known_ft": 2600 }, "answer": 2.0 },
+    { "input": { "path": "CA", "altitude_ft": 9000, "known_ft": 0 }, "answer": 15.0 },
+    { "input": { "path": "VA", "altitude_ft": 3000, "known_ft": 2950 }, "answer": 1.0 },
+    { "input": { "path": "CA", "altitude_ft": 3000, "known_ft": null }, "answer": 2.0 },
+    { "input": { "path": "VM", "distance_nm": 6.0 }, "answer": 2.0 },
+    { "input": { "path": "FD", "distance_nm": 6.0 }, "answer": 2.0 }
+  ],
+  "reversal": [
+    { "input": { "turn_deg": 150, "coded": true, "first_fix": true }, "answer": "coded" },
+    { "input": { "turn_deg": 90, "coded": true, "first_fix": false }, "answer": null },
+    { "input": { "turn_deg": 121, "coded": false, "first_fix": false }, "answer": "teardrop" },
+    { "input": { "turn_deg": 120, "coded": false, "first_fix": false }, "answer": null },
+    { "input": { "turn_deg": 175, "coded": false, "first_fix": true }, "answer": null }
+  ],
+  "groundFigures": {
+    "lowest_ground_ft": -282,
+    "obstacle_shown_agl_ft": 200,
+    "profile_obstacle_nm": 1,
+    "fine_terrain_radius_nm": 5
+  }
+}
