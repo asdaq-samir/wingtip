@@ -404,7 +404,7 @@ pub struct FiledAlternate {
 }
 
 /// What the IFR alternate comes to for the Go / No-Go
-/// (features/plan/hooks/useAlternate alternateFinding): a stop where the
+/// (asked by the web's lib/verdict and the phones): a stop where the
 /// one filed will not do, a caution where one is needed (14 CFR
 /// 91.169(a)(2), (b)) and none is filed or the one filed is the pilot's
 /// to check; nothing where none is needed. (finding, detail).
