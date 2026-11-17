@@ -126,7 +126,7 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   );
   expect(briefBox.y).toBeGreaterThan(moreBox.y + moreBox.height);
   const tiles = await Promise.all(
-    ["route-brief", "route-navlog", "route-profile", "share-plan"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
+    ["route-brief", "route-navlog", "route-profile"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
   );
   for (const tile of tiles) expect(Math.abs(tile.y - briefBox.y)).toBeLessThan(2);
   // The departure's time on its step in the route's list, not in this

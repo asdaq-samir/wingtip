@@ -25,11 +25,9 @@ const FplStrip = fromChunk(loadFplStrip, (m) => m.default).Part;
 export default function PlanPage({
   vm,
   navLog,
-  share,
 }: {
   vm: PlanSlices<"brief" | "cards" | "flight" | "fpl" | "map" | "plan" | "route" | "view">;
   navLog: ReactNode;
-  share: ReactNode;
 }) {
   const { stripsDrawn } = vm.view;
   const { hasPoints } = vm.route;
@@ -56,7 +54,7 @@ export default function PlanPage({
           owner, 2026-11-15: "What about the fpl drawer when pulling it up?"). */}
       <div className={cn("flex min-h-0 flex-col print:flex", depAlone ? "flex-none" : "flex-1", !hasPoints && "hidden")}>
         <div className="px-4 empty:hidden print:hidden">
-          <FplActions vm={vm} share={share} />
+          <FplActions vm={vm} />
         </div>
         {navLog}
       </div>

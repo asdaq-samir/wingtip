@@ -207,9 +207,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     ],
   );
 
-  const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard | "send", bar?: boolean) => (
+  const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard) => (
     <ShareMenu
-      bar={bar}
       align={align}
       testId={testId}
       card={card}
@@ -261,7 +260,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           go: pickPage,
           floats: !flying && !vm.flight.dryRunning,
           bar: <FplBar strip={<RouteControls vm={vm} flightInputs={flightInputs} share={shareMenu("end")} />} />,
-          second: <PlanPage vm={vm} navLog={navLog} share={shareMenu("end", "share-plan", "send")} />,
+          second: <PlanPage vm={vm} navLog={navLog} />,
         },
         // The one search's Autocomplete round the whole panel: its field (the first row) and its list (the body) one combobox.
         around: (panel) => (
@@ -277,10 +276,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         bar: <OneSearchField model={search} inputRef={vm.search.searchInput} />,
         // FPL's foot (FlightFoot): from half up its actions' floating bar, at the pill its figures alone, large,
         // under the route from half up (the owner, 2026-11-16); in flight the figures; under the Profile, its card's (PlanCards).
-        foot:
-          !place && !heldPoint && !flight && !briefShown && !profileShown
-            ? routed && <FlightFoot vm={vm} share={shareMenu("end", "share-plan", "send", true)} />
-            : undefined,
+        foot: !place && !heldPoint && !flight && !briefShown && !profileShown ? routed && <FlightFoot vm={vm} tabs /> : undefined,
         // The route as one row under FPL's bar (MapPanel keeps it under the
         // others' heads). How it shows once whole is the pilot's pick from its
         // ••• menu's Show Route As (lib/preferences RouteEdit: the box, one

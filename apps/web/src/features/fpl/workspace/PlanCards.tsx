@@ -96,12 +96,7 @@ export default function PlanCards({
       )}
       {profileDrawn && routed && (
         <CardLayer open={profileShown}>
-          <ProfileCard
-            name="Profile"
-            sub={<ProfileLine vm={vm} />}
-            onClose={closeProfileCard}
-            cautions={profileCautions}
-          >
+          <ProfileCard name="Profile" sub={<ProfileLine vm={vm} />} onClose={closeProfileCard} cautions={profileCautions}>
             {/* The dry run in the side view's place while it plays, the card's
                   height. */}
             {dryRunning ? (

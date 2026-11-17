@@ -723,8 +723,10 @@ after the bar. The bar before it is one size on both pages
 the toggle): on Search the one search's field (`OneSearchField`), on FPL
 the airplane's strip (`features/fpl/workspace/FplBar`, its
 `RouteControls`: the N-number, the altitude and the route's •••, on one
-line, the airplane and the altitude giving way first; the Brief, the Nav
-Log, the Profile and Share are the floating glass bar at the sheet's foot
+line, the airplane and the altitude giving way first, the route's •••
+holding Share too (its link, Open in ForeFlight, the checkpoints, the
+kneeboard; the owner, 2026-11-17); the Brief, the Nav Log and the Profile
+are the floating glass bar at the sheet's foot
 from half up, `FplTabBar` in `FlightFoot`, `CardAction`s in its `bar` look
 in the cards' tabs' capsule (`CardTabBar`'s `GlassBar`, held at the
 foot as they are by sheet/insets' `HOLD_AT_EDGE`), each opening its card, Share the route's

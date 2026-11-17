@@ -55,10 +55,12 @@ a reload lost it.
 7. **One surface.** No box in a box, fewer borders and pills: spacing
    groups, colour only for meaning.
 
-Panels and controls stay where they are. Four moves were offered and the
-owner set them aside (2026-11-17, "don't worry about the 4 decisions"): one Flight card for Brief, Nav Log and Profile; Share into
-•••; the Go / No-Go verdict on the strip; "To" off the strip on the
-ground). They are not part of this.
+Panels and controls stay where they are but one. Four moves were offered
+and the owner set three aside (2026-11-17, "don't worry about the 4
+decisions"): one Flight card for Brief, Nav Log and Profile; the Go / No-Go
+verdict on the strip; "To" off the strip on the ground. The fourth he took:
+Share left the floating bar (and the in-flight tiles) for the route's •••
+("Yes to changing share to ... button").
 
 ## Consequences
 

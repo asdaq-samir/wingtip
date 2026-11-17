@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { useVerdict } from "../../../lib/verdict";
 import { findingRows } from "../vm/planWords";
 import { CardAction as Action } from "../../../components/CardAction";
@@ -10,11 +9,11 @@ import type { PlanSlices } from "../vm/planSlices";
  * FPL's actions as a floating glass bar at the sheet's foot (the owner,
  * 2026-11-16: "make those action buttons as tab bar again and move the
  * calculations strip to where the action buttons are now"): Brief, Nav Log,
- * Profile and Share, each its 24-point glyph over its word in one capsule,
+ * Profile, each its 24-point glyph over its word in one capsule,
  * as the airport card's tabs are drawn (CardTabBar), but buttons, not tabs:
  * each opens its card over FPL as the tiles did (the owner's pick, "Bar
- * look, open cards"). Share is the plan's one Share menu (ShareMenu's
- * "send"). From half up; at the pill the figures alone, large (FlightFoot).
+ * look, open cards"). Share is the route's ••• (the owner, 2026-11-17).
+ * From half up; at the pill the figures alone, large (FlightFoot).
  * What the Brief found to act on is counted on its glyph's corner, red
  * where one is a stop, amber where all are cautions (CardTabBar's
  * TabCount, the one badge, each colour one meaning): the findings themselves
@@ -22,7 +21,7 @@ import type { PlanSlices } from "../vm/planSlices";
  * there a better place for them? Like brief"), not a list on FPL. The
  * Profile's own altitude caution the same, a 1. Both said in their names.
  */
-export function FplTabBar({ vm, share }: { vm: PlanSlices<"brief" | "fpl" | "plan">; share: ReactNode }) {
+export function FplTabBar({ vm }: { vm: PlanSlices<"brief" | "fpl" | "plan"> }) {
   const { course } = vm.plan;
   const { openBrief, openNavLogCard, openProfile, profileReady } = vm.fpl;
   const { altitudeMark, briefMark } = vm.brief;
@@ -80,7 +79,6 @@ export function FplTabBar({ vm, share }: { vm: PlanSlices<"brief" | "fpl" | "pla
           disabled={!profileReady}
           testId="route-profile"
         />
-        {share}
       </GlassBar>
     </div>
   );

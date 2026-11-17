@@ -16,16 +16,7 @@ const MiniProfile = lazy(() => loadMiniProfile());
  *  altitude's wheel in its corner, its dry run at its top right, and under
  *  it the altitude's figures, Class B and why. */
 export default function ProfileSideView({ vm }: { vm: PlanSlices<"brief" | "flight" | "fpl" | "plan" | "route" | "routeList"> }) {
-  const {
-    flyAltitude,
-    local,
-    planned,
-    routeEdit,
-    routePoints,
-    routed,
-    setPointAltitude,
-    setStops,
-  } = vm.route;
+  const { flyAltitude, local, planned, routeEdit, routePoints, routed, setPointAltitude, setStops } = vm.route;
   const { aircraft, changeAltitudeChoice, course, s, selected } = vm.plan;
   const { setAddingStop, typeStopAt, waypointStops } = vm.routeList;
   const { closeProfileCard } = vm.fpl;

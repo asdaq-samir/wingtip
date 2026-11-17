@@ -12,7 +12,7 @@ async function routeWithCheckpoints(page: Page) {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await expect.poll(markWith(page, "route-marks", "1"), { timeout: slow(30000) }).not.toBeNull();
-  // Share is a round button in the chips' row, all the way up.
+  // Share is in the route's ••• at the chips' row's end (the owner, 2026-11-17).
   await controlsInSight(page);
 }
 
@@ -20,7 +20,7 @@ test("the route goes to the panel through ForeFlight, with no Garmin Pilot item 
   page,
 }) => {
   await routeWithCheckpoints(page);
-  await page.getByTestId("share-plan").click();
+  await page.getByTestId("share-route").click();
   await expect(page.getByTestId("open-foreflight")).toBeVisible();
   // The owner's calls (2026-11-02): wireless through ForeFlight, which
   // most pilots have; no Garmin Pilot, no SD card or USB stick.
@@ -32,7 +32,7 @@ test("the route goes to ForeFlight in one button: its checkpoints' pack the firs
   page,
 }) => {
   await routeWithCheckpoints(page);
-  await page.getByTestId("share-plan").click();
+  await page.getByTestId("share-route").click();
   // The first time, ForeFlight's content-pack link, to the pack on this server.
   const open = page.getByTestId("open-foreflight");
   const packLink = new URL((await open.getAttribute("href"))!);
@@ -48,7 +48,7 @@ test("the route goes to ForeFlight in one button: its checkpoints' pack the firs
   // Back, and the same button opens the route, each checkpoint by its
   // name in the pack.
   await routeWithCheckpoints(page);
-  await page.getByTestId("share-plan").click();
+  await page.getByTestId("share-route").click();
   const routeLink = (await page.getByTestId("open-foreflight").getAttribute("href"))!;
   expect(routeLink).toMatch(/^foreflightmobile:\/\/maps\/search\?q=C81\+(CONTPACK@[A-Z0-9_]{3,}\+)+KDLH(\+\d+ft)?$/);
   await expect(page.getByTestId("foreflight-pack")).toHaveText("Send the checkpoints again");

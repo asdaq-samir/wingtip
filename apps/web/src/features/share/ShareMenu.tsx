@@ -2,7 +2,6 @@ import { useMemo, useState, type ReactNode } from "react";
 import { done } from "../../lib/doneNote";
 import { Ellipsis, FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Share, Trash2 } from "lucide-react";
 import RoundButton from "../../components/RoundButton";
-import { CardAction } from "../../components/CardAction";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../components/ResponsivePopover";
 import {
   DropdownMenu,
@@ -22,13 +21,11 @@ import type { RouteEdit } from "../../lib/preferences";
 import PlanUndoItems from "./PlanUndoItems";
 import ShowRouteAs, { RouteMapChoices } from "./ShowRouteAs";
 
-const SHARE_LABEL: Record<"route" | "send" | RouteCard, string> = {
+const SHARE_LABEL: Record<"route" | RouteCard, string> = {
   // The route box's is More, a "…", at the owner's ask ("Don't call it
   // share, call it more with the … as the text"): it holds the route's
   // other actions (save, file, plan again, clear), not sharing alone.
   route: "More",
-  // FPL's Share (FplTabBar, FplActions in flight): every way the plan leaves the app.
-  send: "Share",
   brief: "Share the briefing",
   navlog: "Share the nav log",
   profile: "Share the profile",
@@ -80,10 +77,7 @@ export default function ShareMenu({
   onShowFuel,
   onClear,
   showRouteAs,
-  bar,
 }: {
-  /** Share as a button of FPL's floating bar (FplTabBar), not a tile. */
-  bar?: boolean;
   /** How FPL shows its route, the route box's menu's view options (the
    *  owner, 2026-11-13: "I want to move fpl layout to the fpl page"). */
   showRouteAs?: { value: RouteEdit; onChange: (value: RouteEdit) => void };
@@ -96,9 +90,9 @@ export default function ShareMenu({
   /** Its button's: the route box's, or the tab bar's over the Brief and
    *  the nav log (TabBar's `routeShare`). */
   testId?: string;
-  /** Whose Share it is: the route box's •••, FPL's Share tile ("send"),
-   *  or one of the route's cards'. */
-  card?: "route" | "send" | RouteCard;
+  /** Whose menu it is: the route's ••• (its sharing too, since Share left
+   *  the floating bar, the owner 2026-11-17), or one of the route's cards'. */
+  card?: "route" | RouteCard;
   planned: Planned;
   course: Course | null;
   selected: Candidate[];
@@ -209,26 +203,19 @@ export default function ShareMenu({
         <ResponsivePopoverAnchor asChild>
           <DropdownMenuTrigger
             render={
-              // FPL's Share a tile of its row, as the airplane card's Alert
-              // is a tile that opens its menu (AircraftAlertMenu).
-              card === "send" ? (
-                <CardAction icon={<Share />} label={SHARE_LABEL.send} testId={testId} bar={bar} />
-              ) : (
-                // FPL's ••• a plain glyph in the tint, as the search bar's
-                // microphone is in its twin of a bar: one look for a button
-                // in the first row (the owner's list, 2026-11-17), where it
-                // was a grey disc with a black glyph beside the tinted toggle.
-                <RoundButton
-                  label={planAgain?.stale.length ? `${SHARE_LABEL[card]}: ${planAgain.stale.join(", ")}` : SHARE_LABEL[card]}
-                  {...(card === "route" ? { variant: "ghost" as const, className: "size-[32px]" } : {})}
-                  data-testid={testId}
-                />
-              )
+              // FPL's ••• a plain glyph in the tint, as the search bar's
+              // microphone is in its twin of a bar: one look for a button
+              // in the first row (the owner's list, 2026-11-17), where it
+              // was a grey disc with a black glyph beside the tinted toggle.
+              <RoundButton
+                label={planAgain?.stale.length ? `${SHARE_LABEL[card]}: ${planAgain.stale.join(", ")}` : SHARE_LABEL[card]}
+                {...(card === "route" ? { variant: "ghost" as const, className: "size-[32px]" } : {})}
+                data-testid={testId}
+              />
             }
           >
-            {/* The route box's a size down, as the box's other buttons are;
-                the tile its own glyph and word. */}
-            {card !== "send" && (
+            {/* The route box's a size down, as the box's other buttons are. */}
+            {
               <span className="relative">
                 {card === "route" ? <Ellipsis className="size-[18px]" strokeWidth={2.4} /> : <Share className="size-5" strokeWidth={2} />}
                 {!!planAgain?.stale.length && (
@@ -239,7 +226,7 @@ export default function ShareMenu({
                   />
                 )}
               </span>
-            )}
+            }
           </DropdownMenuTrigger>
         </ResponsivePopoverAnchor>
         <DropdownMenuContent align={align} className="min-w-56 print:hidden">
@@ -250,14 +237,16 @@ export default function ShareMenu({
               Show Fuel Stops
             </DropdownMenuItem>
           )}
-          {/* The route's own link in FPL's Share; each card's, its link. */}
-          {routed && card !== "route" && (
+          {/* The route's link and its sending, in the route's ••• since
+              Share left the floating bar (the owner, 2026-11-17: "Yes to
+              changing share to ... button"); each card's, its link. */}
+          {routed && (
             <DropdownMenuItem onClick={() => void share()} data-testid="share-link">
               <Link2 />
               Share link
             </DropdownMenuItem>
           )}
-          {card === "send" && routed && (
+          {card === "route" && routed && (
             <>
               {/* ForeFlight sends the route on to the panel wirelessly
                       (Garmin's Connext, Avidyne, Dynon): the owner's pick
@@ -352,7 +341,7 @@ export default function ShareMenu({
               Refresh
             </DropdownMenuItem>
           )}
-          {(card === "navlog" || card === "send") && !local && (
+          {(card === "navlog" || card === "route") && !local && (
             <DropdownMenuItem
               disabled={!routed}
               data-testid="print-kneeboard"
