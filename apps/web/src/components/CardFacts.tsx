@@ -61,7 +61,8 @@ export function CardFact({
  * card"). Each fact a CardFact, only where the card's data has it. With
  * `fit`, the airport card's five, spread across the card's width with no
  * sideways scroll (the owner, 2026-11-14: "keep the info strip compact
- * enough so pilot doesn't have to scroll").
+ * enough so pilot doesn't have to scroll"), the last of them wrapping to a
+ * second row where larger text leaves no room (UI audit B9, 2026-11-17).
  */
 export function CardFacts({ testId, fit, children }: { testId: string; fit?: boolean; children: ReactNode }) {
   return (
@@ -71,7 +72,7 @@ export function CardFacts({ testId, fit, children }: { testId: string; fit?: boo
       className={cn(
         "flex pt-4",
         fit
-          ? "justify-between gap-2"
+          ? "flex-wrap justify-between gap-x-2 gap-y-3"
           : "-mx-4 gap-6 overflow-x-auto overscroll-x-contain px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
       )}
       data-testid={testId}
