@@ -60,9 +60,12 @@ const SIZES: PanelState[] = ["peek", "half", "full"];
  * the settle it stayed in sight for its transition's time, FPL's ••• over
  * the pill's figures (the owner's screen recording, 2026-11-16: "Better
  * but just a bit left at the end"). Up from the pill the class is gone and
- * its controls ease as they do.
+ * its controls ease as they do. Not a row parked at the foot (data-pin-foot,
+ * sheet/pinAtFoot's PIN_AT_FOOT): its ease is what holds it still as the
+ * sheet slides, and stopped at the pill it rode the sheet's last stretch
+ * down and came back up (the owner's screen recording, 2026-11-16).
  */
-export const PILL_BODY = "invisible group-data-swiping/sheet:visible [&_*]:transition-none";
+export const PILL_BODY = "invisible group-data-swiping/sheet:visible [&_*:not([data-pin-foot])]:transition-none";
 /** And a body that is the pill's one surface: its title row kept in sight. */
 export const AT_PILL = `${PILL_BODY} [&_[data-sheet-head]]:visible`;
 
