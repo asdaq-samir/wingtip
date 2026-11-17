@@ -132,10 +132,7 @@ pub fn pounds(lb: f64) -> String {
 pub fn flight_level(ft: Option<f64>) -> String {
     match ft {
         None => "FL-___".to_owned(),
-        Some(ft) => {
-            let hundreds = js_num(js_round_f(ft / 100.0));
-            format!("FL-{}{hundreds}", "0".repeat(3usize.saturating_sub(hundreds.chars().count())))
-        }
+        Some(ft) => crate::text::flight_level(&js_num(js_round_f(ft / 100.0))),
     }
 }
 

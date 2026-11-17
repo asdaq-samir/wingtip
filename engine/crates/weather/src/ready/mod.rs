@@ -35,7 +35,7 @@
 
 use crate::cycles::{self, Kind, State};
 use crate::json::{self, Value};
-use crate::text::grouped_int;
+use crate::text::flight_level;
 use crate::validity::ROUTINE_INTERVAL_S;
 
 mod checks;
@@ -137,7 +137,9 @@ fn plan_items(plan: Option<&Value>, out: &mut Vec<Item>) -> bool {
         "altitude",
         altitude.is_some(),
         match altitude {
-            Some(ft) => format!("Cruise at {} ft", grouped_int(ft.round() as i64)),
+            // FL-145, as FPL's altitude field writes it (the owner's FL
+            // everywhere), not "14,500 ft" beside it (the UI audit's C6).
+            Some(ft) => format!("Cruise at {}", flight_level(&((ft / 100.0).round() as i64).to_string())),
             None => "Set the cruise altitude".into(),
         },
         "The winds, fuel and terrain clearance are worked at it".into(),
@@ -236,8 +238,10 @@ pub fn call(_name: &str, v: &Value) -> R<String> {
     let todo: Vec<&Item> = items.iter().filter(|i| !i.ok).collect();
     let line = match todo.len() {
         0 => "Ready to fly: all on this device".to_owned(),
-        1 => "1 thing to fix while you have a signal".to_owned(),
-        n => format!("{n} things to fix while you have a signal"),
+        // What is left, plainly: "while you have a signal" said neither what
+        // nor when (the UI audit's C6, 2026-11-17).
+        1 => "1 thing left to do before you go".to_owned(),
+        n => format!("{n} things left to do before you go"),
     };
     let next = cycles::start_on(Kind::Airac, today) + Kind::Airac.days();
     let mut out = format!("{{\"ready\":{},\"finding\":", todo.is_empty());

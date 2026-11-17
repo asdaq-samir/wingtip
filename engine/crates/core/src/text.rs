@@ -29,6 +29,16 @@ pub fn grouped_int(n: i64) -> String {
     grouped(&n.to_string())
 }
 
+/// A cruising altitude as the owner asked it written, its hundreds of
+/// feet in three figures: "FL-045" for 4,500 ft (the web's lib/format
+/// flightLevel; the owner, 2026-10-27: "make it in the format FL-***").
+/// `hundreds` is the rounded figure's digits, padded as JavaScript's
+/// String(n).padStart(3, "0") pads them, a minus sign and all. One copy for
+/// every crate that writes one (the procedures' words, the Ready to Fly).
+pub fn flight_level(hundreds: &str) -> String {
+    format!("FL-{}{hundreds}", "0".repeat(3usize.saturating_sub(hundreds.chars().count())))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -44,5 +54,12 @@ mod tests {
         assert_eq!(grouped("-500"), "-500");
         assert_eq!(grouped_int(i64::MIN), "-9,223,372,036,854,775,808");
         assert_eq!(grouped("12.5"), "12.5");
+    }
+
+    #[test]
+    fn a_flight_level_is_three_figures_of_hundreds() {
+        assert_eq!(flight_level("45"), "FL-045");
+        assert_eq!(flight_level("145"), "FL-145");
+        assert_eq!(flight_level("5"), "FL-005");
     }
 }

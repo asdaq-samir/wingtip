@@ -25,7 +25,7 @@ test("the Brief ends on Ready to fly, its actions fixing in place", async ({ pag
   await expect(glance.locator("> *").first()).not.toHaveAttribute("data-testid", "ready-to-fly");
   const top = async (id: string) => (await glance.getByTestId(id).first().boundingBox())!.y;
   expect(await top("brief-glance-preflight")).toBeLessThan(await top("ready-to-fly"));
-  await expect(ready.getByTestId("ready-line")).toHaveText(/things? to fix while you have a signal|Ready to fly/);
+  await expect(ready.getByTestId("ready-line")).toHaveText(/things? left to do before you go|Ready to fly/);
   // One row, folded: its actions and every check under its tap (the owner, 2026-11-16).
   await expect(ready.locator("[data-testid^='ready-action-']")).toHaveCount(0);
   await ready.getByTestId("ready-all").click();

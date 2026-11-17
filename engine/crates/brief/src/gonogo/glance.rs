@@ -169,6 +169,9 @@ fn sentence(lead: &str, action: &str) -> String {
 /// whose crosswind is past the demonstrated: a caution for its runway's
 /// length alone read "has 0 kt across" (brief-glance.spec, 2026-11-13).
 fn lead(item: &Item, fields: &[Field]) -> String {
+    if item.key == "risk" {
+        return risk_lead(&item.detail);
+    }
     if item.key != "runways" || item.finding != "caution" {
         return item.detail.clone();
     }
@@ -185,6 +188,21 @@ fn lead(item: &Item, fields: &[Field]) -> String {
         item.detail.clone()
     } else {
         format!("{}, past the POH's demonstrated", each.join(", "))
+    }
+}
+
+/// The risk's finding in plain words. Its detail is the assessment's
+/// level and score alone (frat::risk_line, "High · 21 points"), which read
+/// "Risk: High · 21 points" with nothing to say what the points were (the
+/// UI audit's C6, 2026-11-17): the level as a risk, and the points as the
+/// PAVE and IMSAFE checklist's (FAA-H-8083-2, the assessment's source).
+/// Any other detail (one still waiting) is named as the risk's.
+fn risk_lead(detail: &str) -> String {
+    match detail.split_once(" · ") {
+        Some((level, points)) if points.ends_with("points") || points.ends_with("point") => {
+            format!("{level} risk, {points} on the PAVE and IMSAFE checklist")
+        }
+        _ => format!("Risk: {detail}"),
     }
 }
 
@@ -209,12 +227,10 @@ pub fn glance_lines(items: &[Item], fields: &[Field], raw: Option<&Raw>) -> (Vec
             let action = if i.finding == "stop" { stop } else { caution };
             let (_, why, cite) = WHY.iter().find(|w| w.0 == i.key).copied().unwrap_or(("", "", ""));
             let said = lead(i, fields);
-            // The risk's detail is its level alone ("High · 16 points"): named.
-            let named = if i.key == "risk" { "Risk: " } else { "" };
             Line {
                 item: (*i).clone(),
                 line: sentence(&said, action),
-                lead: format!("{named}{}", trim_end(&said)),
+                lead: trim_end(&said).to_owned(),
                 action: capital(action),
                 why,
                 cite,
@@ -244,4 +260,31 @@ pub fn glance_lines(items: &[Item], fields: &[Field], raw: Option<&Raw>) -> (Vec
         "ok"
     };
     (act, Rest { line, finding, items: rest })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn risk(finding: &str, detail: &str) -> Item {
+        Item {
+            key: "risk".into(),
+            label: "Risk".into(),
+            tab: "preflight".into(),
+            section: None,
+            finding: finding.into(),
+            detail: detail.into(),
+        }
+    }
+
+    #[test]
+    fn the_risk_says_what_its_points_are() {
+        let (act, _) = glance_lines(&[risk("stop", "High · 21 points")], &[], None);
+        assert_eq!(act[0].lead, "High risk, 21 points on the PAVE and IMSAFE checklist");
+        assert_eq!(act[0].line, "High risk, 21 points on the PAVE and IMSAFE checklist: talk it over with your instructor before you go");
+        let (act, _) = glance_lines(&[risk("caution", "Raised · 1 point")], &[], None);
+        assert_eq!(act[0].lead, "Raised risk, 1 point on the PAVE and IMSAFE checklist");
+        let (act, _) = glance_lines(&[risk("caution", "Waiting on the briefing…")], &[], None);
+        assert_eq!(act[0].lead, "Risk: Waiting on the briefing…");
+    }
 }
