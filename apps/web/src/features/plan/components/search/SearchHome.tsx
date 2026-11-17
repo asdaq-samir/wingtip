@@ -31,13 +31,13 @@ export default function SearchHome({ vm }: { vm: PlanWorkspaceModel }) {
   const { selectPlace, openList, selectFlight } = vm.cards;
   const { nearOrigin } = vm.map;
   const { openNearest, findNearby } = vm.fpl;
-  const { home, favorites, askFor, pickAirplane, pickPlace, nearStrip } = vm.search;
+  const { home, favorites, askFor, pickAirplane, pickPlace, nearStrip, nearMap } = vm.search;
   const openAirplane = (kept: KeptAircraft) => pickAirplane(kept, (hex) => selectFlight(hex));
   const hasAirplane = usePreferences((s) => !!s.myAircraft || s.favoriteAircraft.length > 0);
   return (
     <TabPage testId="search-home">
       <PillSection title="Nearest" onMore={openNearest} testId="pill-section-nearest">
-        <NearestStrip fields={nearStrip} located={!!nearOrigin} onOpen={selectPlace} />
+        <NearestStrip fields={nearStrip} located={!!nearOrigin} nearMap={nearMap} onOpen={selectPlace} />
       </PillSection>
       <FindNearby onFind={findNearby} />
       <PillSection title="Favorites" onMore={() => openList("favorites")} testId="pill-section-favorites">

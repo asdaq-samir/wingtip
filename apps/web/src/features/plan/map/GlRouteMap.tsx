@@ -21,6 +21,7 @@ import { NavaidsGl, WaypointsGl } from "../../../components/map/layers/NavaidsGl
 import { OwnShipGl } from "../../../lib/map/gl/layers/OwnShipGl";
 import { HoldTracksGl, LegPointsGl, PatternsGl, PickedGl, ProceduresGl } from "../../../lib/map/gl/layers/RouteExtrasGl";
 import { WaysGl } from "../../../lib/map/gl/layers/WaysGl";
+import { MapCentreGl } from "../../../lib/map/mapCentre";
 import { LessonGl } from "../../../lib/map/gl/layers/LessonGl";
 import { FuelStopsGl, StopFieldsGl } from "../../../lib/map/gl/layers/StopMarksGl";
 import { RouteGl, type GlCandidate, type GlCheckpoint, type GlEndpoint } from "../../../lib/map/gl/layers/RouteGl";
@@ -208,6 +209,7 @@ function EngineLayers(p: GlRouteMapProps) {
       )}
       {weather && <WeatherGl line={p.courseLine} altitudeFt={p.cruiseFt} />}
       <TfrGl />
+      <MapCentreGl />
       {/* A search sent, its fields marked (the one search's results). */}
       <SearchResultsGl />
       <AirspaceGl />
