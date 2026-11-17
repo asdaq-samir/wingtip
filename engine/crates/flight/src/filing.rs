@@ -50,12 +50,34 @@ pub struct Procedure<'a> {
     pub transition: Option<&'a str>,
 }
 
+/// A pilot's own point off a fix, as the route writes it ("VPBNG/095/14.2",
+/// the route crate's frd_ident), in the form item 15 takes a fix, radial
+/// and distance: the fix, three figures of course and three of whole
+/// miles, "VPBNG095014" -- AIM Appendix 4's "IRW12503" among a route's
+/// "fixes in the following formats", and the packed form the planner reads
+/// back (route::points). Filed with its strokes, the point read as
+/// something else: in item 15 an oblique stroke brings in "the next speed
+/// and altitude" or a delay ("/DHH+MM"). The point the weather-avoiding
+/// ways turn at is one (the UI audit's A8). Anything else is as it was.
+fn filed_point(point: &str) -> String {
+    let parts: Vec<&str> = point.split('/').collect();
+    let [base, course, nm] = parts[..] else { return point.to_owned() };
+    let fix = (2..=5).contains(&base.len()) && base.bytes().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit());
+    match (fix, course.parse::<i64>(), nm.parse::<f64>()) {
+        (true, Ok(c), Ok(d)) if course.len() == 3 && (0..=360).contains(&c) && d > 0.0 && d <= 999.0 => {
+            format!("{base}{:03}{:03}", c % 360, js_round(d))
+        }
+        _ => point.to_owned(),
+    }
+}
+
 /// Item 15's route between the departure and the destination: airways
 /// between the fixes they are joined and left at, and DCT between two
 /// fixes flown direct; a departure procedure first, with the fix its
 /// transition leaves it at, and an arrival last, after the fix its
 /// transition joins it at (AIM Appendix 4: "DALL3 EIC V18 MEI LGC4",
 /// "FLACK DCT IRW"); DCT alone for a flight direct from one to the other.
+/// A pilot's own point is filed as a fix, radial and distance (filed_point).
 pub fn route(stops: &[&str], is_airway: impl Fn(&str) -> bool, departure: Option<&Procedure>, arrival: Option<&Procedure>) -> String {
     let mut points: Vec<&str> = Vec::new();
     if let Some(d) = departure {
@@ -73,12 +95,12 @@ pub fn route(stops: &[&str], is_airway: impl Fn(&str) -> bool, departure: Option
     }
     // A procedure, as an airway, is joined and left at its fixes.
     let joined = |w: &str| is_airway(w) || departure.is_some_and(|d| d.id == w) || arrival.is_some_and(|a| a.id == w);
-    let mut words: Vec<&str> = Vec::new();
+    let mut words: Vec<String> = Vec::new();
     for (i, point) in points.iter().enumerate() {
         if i > 0 && !joined(point) && !joined(points[i - 1]) {
-            words.push("DCT");
+            words.push("DCT".to_owned());
         }
-        words.push(point);
+        words.push(filed_point(point));
     }
     if words.is_empty() {
         "DCT".to_owned()
@@ -147,6 +169,13 @@ mod tests {
         assert_eq!(route(&["EIC", "V18", "MEI"], |w| w == "V18", Some(&dall3), Some(&lgc4)), "DALL3 EIC V18 MEI LGC4");
         // ... and flown direct from MEI to LGC first, as FLACK DCT IRW is.
         assert_eq!(route(&["EIC", "V18", "MEI", "LGC"], |w| w == "V18", Some(&dall3), Some(&lgc4)), "DALL3 EIC V18 MEI DCT LGC LGC4");
+        // A pilot's own point as a fix, radial and distance, as AIM
+        // Appendix 4's IRW12503, never with the strokes item 15 reads as a
+        // speed and altitude: three figures of whole miles.
+        assert_eq!(route(&["FLACK", "VPBNG/095/14.2", "IRW"], |_| false, None, None), "FLACK DCT VPBNG095014 DCT IRW");
+        assert_eq!(route(&["DLH/000/30"], |_| false, None, None), "DLH000030");
+        assert_eq!(route(&["DLH/360/2.5"], |_| false, None, None), "DLH000003");
+        assert_eq!(route(&["LEXOR/N0467F380"], |_| false, None, None), "LEXOR/N0467F380");
         assert_eq!(wake(Some(15_500.0)), Some("L"));
         assert_eq!(wake(Some(15_501.0)), None);
     }

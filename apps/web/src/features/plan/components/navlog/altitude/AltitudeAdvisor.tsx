@@ -15,9 +15,12 @@ const windWords = (kt: number) => `${kt >= 0 ? "+" : "−"}${Math.abs(Math.round
  * how the cruise is chosen in the plan, one row per altitude with its
  * time, fuel and head or tail wind, Fastest and Most economical marked; a
  * tap flies it. A row outside the legal altitudes is there too, with its
- * warning (warn, never limit). With no airplane picked, no time or fuel,
- * only the wind (the owner, 2026-11-09: nothing assumed). It replaces the
- * plan's menu.
+ * warning (warn, never limit): where it sits on the row, what that means
+ * once over them (the engine's `note`), and the altitude flown first, where
+ * it was scrolled out of sight under a dozen rows each repeating the same
+ * cut-off warning (the UI audit's C1). With no airplane picked, no time or
+ * fuel, only the wind (the owner, 2026-11-09: nothing assumed). It
+ * replaces the plan's menu.
  */
 export default function AltitudeAdvisor({
   rows,
@@ -32,14 +35,21 @@ export default function AltitudeAdvisor({
   onPick: (altitude: number, legal: boolean) => void;
 }) {
   if (!rows.length) return null;
+  const note = rows.find((r) => r.note)?.note;
+  const shown = [...rows.filter((r) => r.flown), ...rows.filter((r) => !r.flown)];
   return (
     <section aria-labelledby="altitude-advisor-title" data-testid="altitude-advisor">
       {/* A section's title as every other is (SectionTitle, 20 points). */}
       <SectionTitle id="altitude-advisor-title" className="mb-1">
         Altitude Advisor
       </SectionTitle>
+      {note && (
+        <p className={cn("mb-1 text-muted-foreground", TEXT.note)} data-testid="altitude-advisor-note">
+          {note}
+        </p>
+      )}
       <ItemGroup className="max-h-72 gap-0 overflow-y-auto rounded-xl bg-card">
-        {rows.map((r) => {
+        {shown.map((r) => {
           const figures = [
             airplane && r.ete_min != null ? duration(r.ete_min) : null,
             airplane && r.fuel_gal != null ? gal(r.fuel_gal) : null,

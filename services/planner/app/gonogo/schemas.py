@@ -13,8 +13,9 @@ from ..schemas.common import AltitudeChoice, FlightRules, Loading
 
 Finding = Literal["ok", "caution", "stop", "unknown", "pending"]
 #: "fields": a closed, private or military-only field on the route, a row
-#: after the seven only where there is one (gonogo_field_permission).
-VerdictKey = Literal["weather", "airspace", "altitude", "fuel", "runways", "balance", "risk", "fields"]
+#: after the seven only where there is one (gonogo_field_permission);
+#: "oxygen", after the altitude's where it flies over 12,500 ft (14 CFR 91.211(a)).
+VerdictKey = Literal["weather", "airspace", "altitude", "oxygen", "fuel", "runways", "balance", "risk", "fields"]
 VerdictTab = Literal["preflight", "depart", "enroute", "arrive"]
 RiskLevel = Literal["low", "caution", "high"]
 

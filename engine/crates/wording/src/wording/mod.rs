@@ -168,7 +168,13 @@ pub fn answer(name: &str, v: &Value) -> Result<String, String> {
             Ok(out)
         }
         "frequency_line" => {
-            let (named, kind, detail) = radio::frequency_line(opt_text(name, v, "type")?, opt_text(name, v, "description")?);
+            let field = if v.get("frequencies").is_some_and(|f| !matches!(f, Value::Null)) { frequencies(name, v)? } else { Vec::new() };
+            let (named, kind, detail) = radio::frequency_line_at(
+                opt_text(name, v, "type")?,
+                opt_text(name, v, "description")?,
+                opt_num(name, v, "frequency_mhz")?,
+                &field,
+            );
             Ok(format!("{{\"name\":{},\"kind\":{},\"detail\":{}}}", quoted(&named), quoted(kind), opt_quoted(detail.as_deref())))
         }
         "frequency_of" => Ok(index(radio::frequency_of(&frequencies(name, v)?, &strings(name, v, "types")?))),

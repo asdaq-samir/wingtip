@@ -192,6 +192,20 @@
             "null"
           ],
           "description": "The altitude flown as the FL chip says it."
+        },
+        "highest_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The highest altitude the nav log flies, feet MSL, for 14 CFR 91.211(a)'s oxygen (gonogo_brief's oxygen finding); null before the nav log."
+        },
+        "oxygen": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether the airplane picked carries supplemental oxygen or a pressurised cabin (its profile's supplemental_oxygen or pressurized). Read as JavaScript reads it; false, the safer side, with no airplane picked."
         }
       }
     },

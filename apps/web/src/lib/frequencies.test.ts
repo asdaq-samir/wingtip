@@ -25,6 +25,13 @@ describe("a field's frequencies as its card lists them", () => {
     expect(frequencyLine("POST", "ANG COMD POST")).toMatchObject({ kind: "other", detail: null });
     expect(frequencyLine("POST", "ANG COMD POST").name).toBe("ANG comd post");
     expect(frequencyLine(null, null)).toEqual({ name: "Frequency", kind: "other", detail: null });
+    // AIM 4-1-9: a towered field's CTAF is its tower's frequency (KOSH's 118.5).
+    const kosh = [
+      { type: "TWR", description: "TWR", frequency_mhz: 118.5 },
+      { type: "CTAF", description: "CTAF", frequency_mhz: 118.5 },
+    ];
+    expect(frequencyLine("CTAF", "CTAF", 118.5, kosh)).toEqual({ name: "Tower / CTAF", kind: "tower", detail: null });
+    expect(frequencyLine("CTAF", "CTAF", 122.8, kosh)).toMatchObject({ name: "CTAF", kind: "traffic" });
   });
 });
 

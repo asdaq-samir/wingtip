@@ -136,6 +136,22 @@ fn a_fields_fuel_and_radio() {
     assert_eq!(line(r#"" twr ""#, r#""""#), r#"{"name":"Tower","kind":"tower","detail":null}"#);
 }
 
+#[test]
+fn a_ctaf_that_is_the_tower_frequency_is_named_so() {
+    // AIM 4-1-9: "The CTAF may be a UNICOM, MULTICOM, FSS, or tower
+    // frequency". KOSH lists 118.5 as its tower's and its CTAF.
+    let field = r#"[{"type": "TWR", "description": "TWR", "frequency_mhz": 118.5}, {"type": "CTAF", "description": "CTAF", "frequency_mhz": 118.5}]"#;
+    let at = |mhz: f64| {
+        call("frequency_line", &format!(r#"{{"type": "CTAF", "description": "CTAF", "frequency_mhz": {mhz}, "frequencies": {field}}}"#))
+            .unwrap()
+    };
+    assert_eq!(at(118.5), r#"{"name":"Tower / CTAF","kind":"tower","detail":null}"#);
+    // A CTAF of its own, or none of the field's sent: the CTAF.
+    assert_eq!(at(122.8), r#"{"name":"CTAF","kind":"traffic","detail":null}"#);
+    let alone = call("frequency_line", r#"{"type": "CTAF", "description": "CTAF", "frequency_mhz": 118.5}"#).unwrap();
+    assert_eq!(alone, r#"{"name":"CTAF","kind":"traffic","detail":null}"#);
+}
+
 fn freqs(list: &[(&str, f64, &str)]) -> String {
     let items: Vec<String> =
         list.iter().map(|(t, mhz, d)| format!("{{\"type\": {t:?}, \"description\": {d:?}, \"frequency_mhz\": {mhz}}}")).collect();

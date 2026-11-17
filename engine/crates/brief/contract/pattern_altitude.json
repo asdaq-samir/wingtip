@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_brief::runway::calls::call",
-  "description": "A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C).",
+  "description": "A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C) to the nearest hundred feet.",
   "type": "object",
   "properties": {
     "input": {
@@ -33,7 +33,7 @@
             "integer",
             "null"
           ],
-          "description": "Feet MSL, whole; null with no elevation."
+          "description": "Feet MSL: the published height over the field's elevation, whole, halves up; with none published, to the nearest hundred (as flown_ft); null with no elevation."
         },
         "flown_ft": {
           "type": [

@@ -60,6 +60,28 @@ pub const OXYGEN_CREW_PAST_30_MIN_FT: f64 = 12_500.0;
 pub const OXYGEN_CREW_FT: f64 = 14_000.0;
 pub const OXYGEN_EVERYONE_FT: f64 = 15_000.0;
 
+/// What 14 CFR 91.211(a) asks of a flight up to `highest_ft` MSL in an
+/// airplane with no pressurised cabin, its cabin at the altitude flown,
+/// in a pilot's words: over 12,500 ft the crew's oxygen for any of it past
+/// 30 minutes ((a)(1)), over 14,000 ft for all of it ((a)(2)), over 15,000
+/// ft every occupant's ((a)(3)). Each height is the rule's "above", so
+/// 12,500, 14,000 and 15,000 themselves ask no more than the band under.
+/// The 30 minutes are not counted: said as the rule says them, the safer
+/// side where the time up there is not known. None at or under 12,500 ft.
+/// One copy for the pilot's own altitude's caution and the Brief's
+/// oxygen finding.
+pub fn oxygen_words(highest_ft: f64) -> Option<&'static str> {
+    if highest_ft > OXYGEN_EVERYONE_FT {
+        Some("Over 15,000 ft MSL: oxygen for the crew the whole time there and for every occupant (14 CFR 91.211(a)(2), (3))")
+    } else if highest_ft > OXYGEN_CREW_FT {
+        Some("Over 14,000 ft MSL: oxygen for the crew the whole time there (14 CFR 91.211(a)(2))")
+    } else if highest_ft > OXYGEN_CREW_PAST_30_MIN_FT {
+        Some("Over 12,500 ft MSL: oxygen for the crew for any of it past 30 minutes (14 CFR 91.211(a)(1))")
+    } else {
+        None
+    }
+}
+
 /// The highest altitude for the flight rules flown.
 pub fn highest_ft(ifr: bool) -> f64 {
     if ifr {

@@ -666,6 +666,8 @@ enum EngineContract {
         var flown: Bool
         var fastest: Bool
         var economical: Bool
+        /// On a row outside the legal altitudes, what such a row means, the same on each: said once over the rows. Null on a legal one.
+        var note: String?
         var warning: String?
 
         enum CodingKeys: String, CodingKey {
@@ -677,6 +679,7 @@ enum EngineContract {
             case flown
             case fastest
             case economical
+            case note
             case warning
         }
     }
@@ -4490,6 +4493,17 @@ enum EngineContract {
     struct FrequencyLineInput: Codable, Equatable, Sendable {
         var type: String?
         var description: String?
+        /// This frequency's figure, MHz.
+        var frequencyMhz: Double?
+        /// The field's frequencies: a CTAF that is its tower's is named Tower / CTAF (AIM 4-1-9).
+        var frequencies: [EngineContract.FieldFrequency]?
+
+        enum CodingKeys: String, CodingKey {
+            case type
+            case description
+            case frequencyMhz = "frequency_mhz"
+            case frequencies
+        }
     }
 
     struct FrequencyOfInput: Codable, Equatable, Sendable {
@@ -8890,7 +8904,7 @@ enum EngineContract {
 
     struct PatternAltitudeAnswer: Codable, Equatable, Sendable {
         var aglFt: Double
-        /// Feet MSL, whole; null with no elevation.
+        /// Feet MSL: the published height over the field's elevation, whole, halves up; with none published, to the nearest hundred (as flown_ft); null with no elevation.
         var altitudeFt: Int?
         /// Feet MSL to the nearest hundred (halves to even), as the planner flies down to it; null with no elevation.
         var flownFt: Int?
@@ -12563,6 +12577,19 @@ enum EngineContract {
         var cautions: [String]?
         /// The altitude flown as the FL chip says it.
         var flown: String?
+        /// The highest altitude the nav log flies, feet MSL, for 14 CFR 91.211(a)'s oxygen (gonogo_brief's oxygen finding); null before the nav log.
+        var highestFt: Double?
+        /// Whether the airplane picked carries supplemental oxygen or a pressurised cabin (its profile's supplemental_oxygen or pressurized). Read as JavaScript reads it; false, the safer side, with no airplane picked.
+        var oxygen: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case pending
+            case problem
+            case cautions
+            case flown
+            case highestFt = "highest_ft"
+            case oxygen
+        }
     }
 
     struct VerdictInputBalance: Codable, Equatable, Sendable {

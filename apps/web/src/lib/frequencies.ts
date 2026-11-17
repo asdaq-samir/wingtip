@@ -49,8 +49,20 @@ export function kneeboardRadio(frequencies: Frequency[]): [string, number][] {
  * "Tower"), its kind for the row's glyph, and what OurAirports says of it
  * in sentence case (lib/advisories faaWords) where that adds to the name
  * -- "Minneapolis APP/DEP", not a second "TWR" under "Tower". A type with
- * no name of its own is named by its description.
+ * no name of its own is named by its description. With its figure and
+ * the field's frequencies (`field`), a CTAF that is the tower's is "Tower
+ * / CTAF" (AIM 4-1-9).
  */
-export function frequencyLine(type: string | null | undefined, description: string | null | undefined): EngineAnswer<"frequency_line"> {
-  return callEngine("frequency_line", { type: type ?? null, description: description ?? null });
+export function frequencyLine(
+  type: string | null | undefined,
+  description: string | null | undefined,
+  mhz: number | null | undefined = null,
+  field: readonly Frequency[] = [],
+): EngineAnswer<"frequency_line"> {
+  return callEngine("frequency_line", {
+    type: type ?? null,
+    description: description ?? null,
+    frequency_mhz: mhz ?? null,
+    frequencies: sentFrequencies(field),
+  });
 }

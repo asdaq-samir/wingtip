@@ -3,6 +3,7 @@ import { CloudSun, Headset, Radar, Radio, RadioTower, TowerControl } from "lucid
 import { ListRow } from "../../../components/GroupedList";
 import { RowBadge } from "../../../components/RowBadge";
 import FrequencyButton from "../../../components/FrequencyButton";
+import type { Frequency } from "../../../lib/api/types";
 import { frequencyLine, type FrequencyKind } from "../../../lib/frequencies";
 import { BADGE } from "../../../lib/rowBadges";
 
@@ -31,6 +32,7 @@ export function FrequencyRow({
   mhz,
   testId,
   notam,
+  field = [],
 }: {
   type: string | null | undefined;
   description: string | null | undefined;
@@ -39,8 +41,11 @@ export function FrequencyRow({
   /** A NOTAM's badge by its name (the airport card's NotamBadge), a
    *  button of its own: the row's own tap is the frequency's copy. */
   notam?: ReactNode;
+  /** The field's frequencies, for its CTAF where that is the tower's
+   *  ("Tower / CTAF", the engine's frequency_line). */
+  field?: readonly Frequency[];
 }) {
-  const line = frequencyLine(type, description);
+  const line = frequencyLine(type, description, mhz, field);
   return (
     <ListRow
       media={<RowBadge colour={BADGE[line.kind]}>{GLYPH[line.kind]}</RowBadge>}

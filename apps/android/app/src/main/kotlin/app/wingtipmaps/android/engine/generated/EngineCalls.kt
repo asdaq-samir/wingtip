@@ -121,7 +121,7 @@ fun Engine.alertsAhead(lat: Double, lon: Double, trackDeg: Double, gsKt: Double,
     rule("alerts_ahead", EngineContract.AlertsAheadInput(lat = lat, lon = lon, trackDeg = trackDeg, gsKt = gsKt, altFt = altFt, vsFpm = vsFpm, now = now, groundFt = groundFt, airspace = airspace, specialUse = specialUse, tfrs = tfrs, nearField = nearField, swathGroundFt = swathGroundFt, obstacles = obstacles))
 
 /**
- * The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a warning (the owner's warn, never limit).
+ * The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a short warning of where it sits, under, over or between them, and the note that says what that means, once over the rows (the owner's warn, never limit).
  */
 fun Engine.altitudeAdvisor(figures: List<EngineContract.AltitudeAdvisorInputFiguresItem>, flownFt: Double? = null, plans: List<EngineContract.AltitudeAdvisorInputPlansItem>? = null): Result<List<EngineContract.AltitudeAdvisorAnswerItem>> =
     rule("altitude_advisor", EngineContract.AltitudeAdvisorInput(figures = figures, flownFt = flownFt, plans = plans))
@@ -757,7 +757,7 @@ fun Engine.filedRnav(airways: List<String>): Result<Boolean> =
     rule("filed_rnav", EngineContract.FiledRnavInput(airways = airways))
 
 /**
- * Item 15's route between the departure and the destination (AIM Appendix 4: "DALL3 EIC V18 MEI LGC4", "FLACK DCT IRW"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct. `airways` names which of the stops are airways.
+ * Item 15's route between the departure and the destination (AIM Appendix 4: "DALL3 EIC V18 MEI LGC4", "FLACK DCT IRW"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct; a pilot's own point off a fix ("VPBNG/095/14.2") as a fix, radial and distance, "VPBNG095014" (AIM Appendix 4's "IRW12503"), never with the strokes item 15 reads as a speed and altitude. `airways` names which of the stops are airways.
  */
 fun Engine.filedRoute(stops: List<String>, airways: List<String>? = null, departure: EngineContract.FiledRouteInputDeparture? = null, arrival: EngineContract.FiledRouteInputArrival? = null): Result<String> =
     rule("filed_route", EngineContract.FiledRouteInput(stops = stops, airways = airways, departure = departure, arrival = arrival))
@@ -877,10 +877,10 @@ fun Engine.frequenciesInOrder(frequencies: List<EngineContract.FieldFrequency>):
     rule("frequencies_in_order", EngineContract.FrequenciesInOrderInput(frequencies = frequencies))
 
 /**
- * A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name.
+ * A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name; a CTAF that is the field's tower frequency "Tower / CTAF" (AIM 4-1-9).
  */
-fun Engine.frequencyLine(type: String? = null, description: String? = null): Result<EngineContract.FrequencyLineAnswer> =
-    rule("frequency_line", EngineContract.FrequencyLineInput(type = type, description = description))
+fun Engine.frequencyLine(type: String? = null, description: String? = null, frequencyMhz: Double? = null, frequencies: List<EngineContract.FieldFrequency>? = null): Result<EngineContract.FrequencyLineAnswer> =
+    rule("frequency_line", EngineContract.FrequencyLineInput(type = type, description = description, frequencyMhz = frequencyMhz, frequencies = frequencies))
 
 /**
  * The index of the first frequency (with a MHz) of the first of types the field lists, or null.
@@ -973,7 +973,7 @@ fun Engine.gonogoBalance(loading: EngineContract.GonogoLoading, load: EngineCont
     rule("gonogo_balance", EngineContract.GonogoBalanceInput(loading = loading, load = load, tripFuelGal = tripFuelGal))
 
 /**
- * The Brief's Go / No-Go put together, one call for every host that shows it: gonogo_verdict_items' seven findings, the IFR alternate's finding in the weather's where the weather says nothing worse (gonogo_alternate_finding, 14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (gonogo_field_permission: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left (gonogo_verdict_line). The decision stays the pilot in command's (14 CFR 91.3).
+ * The Brief's Go / No-Go put together, one call for every host that shows it: gonogo_verdict_items' seven findings, an oxygen finding after the altitude's where the nav log flies over 12,500 ft MSL in an airplane not known to carry oxygen or a pressurised cabin (14 CFR 91.211(a); a caution, its words then left out of the altitude's), the IFR alternate's finding in the weather's where the weather says nothing worse (gonogo_alternate_finding, 14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (gonogo_field_permission: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left (gonogo_verdict_line). The decision stays the pilot in command's (14 CFR 91.3).
  */
 fun Engine.gonogoBrief(verdict: EngineContract.VerdictInput, alternate: EngineContract.GonogoAlternateData? = null, fields: List<EngineContract.GonogoFieldUse>? = null, airplane: Boolean): Result<EngineContract.GonogoBriefAnswer> =
     rule("gonogo_brief", EngineContract.GonogoBriefInput(verdict = verdict, alternate = alternate, fields = fields, airplane = airplane))
@@ -1597,7 +1597,7 @@ fun Engine.passengerNightOnTheWay(start: List<Double>, end: List<Double>, depart
     rule("passenger_night_on_the_way", EngineContract.PassengerNightOnTheWayInput(start = start, end = end, departS = departS, minutes = minutes))
 
 /**
- * A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C).
+ * A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C) to the nearest hundred feet.
  */
 fun Engine.patternAltitude(elevationFt: Double? = null, publishedAglFt: Double? = null): Result<EngineContract.PatternAltitudeAnswer> =
     rule("pattern_altitude", EngineContract.PatternAltitudeInput(elevationFt = elevationFt, publishedAglFt = publishedAglFt))

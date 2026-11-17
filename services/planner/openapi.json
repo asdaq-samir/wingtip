@@ -24854,6 +24854,7 @@
               "weather",
               "airspace",
               "altitude",
+              "oxygen",
               "fuel",
               "runways",
               "balance",
