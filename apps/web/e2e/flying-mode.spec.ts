@@ -86,3 +86,64 @@ test("Done flying leaves flying mode with one tap while the airplane flies on", 
   await expect(page.getByTestId("flying-nearest")).toHaveCount(0);
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
 });
+
+/** A GPS in the air at Campbell Airport (C81), going 120 kt on 090: every
+ *  second the same fix, answered later as a real GPS answers. */
+async function gpsFlying(page: Page) {
+  await page.context().grantPermissions(["geolocation"]);
+  await page.addInitScript(() => {
+    const position = () =>
+      ({
+        coords: {
+          latitude: 42.3246,
+          longitude: -88.0741,
+          accuracy: 10,
+          heading: 90,
+          speed: 120 / 1.943844, // 120 kt in m/s
+          altitude: 914,
+          altitudeAccuracy: 10,
+          toJSON() {
+            return this;
+          },
+        },
+        timestamp: Date.now(),
+        toJSON() {
+          return this;
+        },
+      }) as unknown as GeolocationPosition;
+    Geolocation.prototype.watchPosition = function (success: PositionCallback) {
+      window.setTimeout(() => success(position()), 0);
+      return window.setInterval(() => success(position()), 1000);
+    };
+    Geolocation.prototype.clearWatch = function (id: number) {
+      window.clearInterval(id);
+    };
+    Geolocation.prototype.getCurrentPosition = function (success: PositionCallback) {
+      window.setTimeout(() => success(position()), 0);
+    };
+    localStorage.setItem(
+      "wingtip.ownship",
+      JSON.stringify({ state: { enabled: true, follow: false, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 }),
+    );
+  });
+}
+
+test("from the GPS, the head gives the next checkpoint on the route and only Emergency off it", async ({ page }) => {
+  // On the route: C81 is the departure, the airplane on its line.
+  await gpsFlying(page);
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  const head = page.getByTestId("flying-head");
+  await expect(head.getByTestId("flying-next-name")).not.toBeEmpty({ timeout: slow(60_000) });
+  await expect(head).not.toHaveAttribute("data-off-route");
+
+  // Off it: Rockford to Madison passes some 40 nm west of Campbell, past
+  // the engine's on_route (in_flight), as the phones' instruments drop
+  // their Next row. The way to Emergency stays.
+  await page.goto("/app/plan?dep=KRFD&dest=KMSN");
+  await settle(page);
+  await expect(head).toHaveAttribute("data-off-route", "true", { timeout: slow(60_000) });
+  await expect(head.getByTestId("flying-next-name")).toHaveCount(0);
+  await expect(head.getByTestId("flying-next-figures")).toHaveCount(0);
+  await expect(head.getByTestId("flying-emergency")).toBeVisible();
+});

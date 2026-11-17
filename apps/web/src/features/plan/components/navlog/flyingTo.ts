@@ -35,14 +35,17 @@ export function dryRunNext(run: DryRun, rows: NavLogRow[], t: number): number | 
 
 /** Own ship's next checkpoint from the GPS fix: its row, the miles to it
  *  direct, the minutes at the fix's ground speed and the arrival in Unix
- *  seconds (null below flying speed, the engine's `underway`). The tops of
- *  climb and descent are not asked about, so the engine's next is a
- *  checkpoint. Null with no line, or no checkpoint past the departure. */
+ *  seconds (null below flying speed, the engine's `underway`), and whether
+ *  the airplane is flying the route (the engine's `on_route`: at flying
+ *  speed and within its 3 nm of the line, the debrief's tolerance, ACS
+ *  PA.VI.A.S5), as the phones' InFlight asks it. The tops of climb and
+ *  descent are not asked about, so the engine's next is a checkpoint. Null
+ *  with no line, or no checkpoint past the departure. */
 export function gpsAhead(
   rows: NavLogRow[],
   line: CourseLine,
   fix: Pick<Fix, "lat" | "lon" | "headingDeg" | "speedKt" | "at">,
-): { index: number; nm: number; min: number | null; at: number | null } | null {
+): { index: number; nm: number; min: number | null; at: number | null; onRoute: boolean } | null {
   if (!line || line.length < 2) return null;
   const checkpoints = rows.flatMap((row, i) => (isLegPoint(row) ? [] : [i]));
   const answer = callEngine("in_flight", {
@@ -53,7 +56,7 @@ export function gpsAhead(
   });
   const next = answer?.next;
   if (!next) return null;
-  return { index: checkpoints[next.index]!, nm: next.distance_nm, min: next.ete_min, at: next.eta_s };
+  return { index: checkpoints[next.index]!, nm: next.distance_nm, min: next.ete_min, at: next.eta_s, onRoute: answer.on_route };
 }
 
 /** The key of the row being flown to while flying mode is on (the dry

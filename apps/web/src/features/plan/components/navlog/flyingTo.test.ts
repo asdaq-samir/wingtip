@@ -37,4 +37,13 @@ describe("own ship's next checkpoint from the GPS (the engine's in_flight)", () 
     expect(slow.at).toBeNull();
     expect(gpsAhead(rows, null, { lat: 0, lon: 0.5, headingDeg: 90, speedKt: 120, at: 0 })).toBeNull();
   });
+
+  it("says whether the airplane is on the route as the engine does, so the head drops its next checkpoint off it", () => {
+    // On the line at flying speed; a tenth of a degree north of it (6 nm);
+    // on the line but below flying speed: the engine's on_route, not a
+    // distance of the web's own.
+    expect(gpsAhead(rows, line, { lat: 0, lon: 0.5, headingDeg: 90, speedKt: 120, at: 0 })!.onRoute).toBe(true);
+    expect(gpsAhead(rows, line, { lat: 0.1, lon: 0.5, headingDeg: 90, speedKt: 120, at: 0 })!.onRoute).toBe(false);
+    expect(gpsAhead(rows, line, { lat: 0, lon: 0.5, headingDeg: null, speedKt: 10, at: 0 })!.onRoute).toBe(false);
+  });
 });

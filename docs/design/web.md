@@ -803,7 +803,10 @@ by clicking the map, typing an address or a name, up to 9 stops in all
    One strip in every state, FPL's route row on the ground, a dry run and
    in flight, and the training page's too: `components/FigureStrip`, the
    plan's figures and their taps given it by `features/plan`'s
-   `TripFigures` (`FlightLine` until 2026-11-17).
+   `TripFigures` (`FlightLine` until 2026-11-17). In flight the head over
+   the map gives the next checkpoint only while the engine's `in_flight`
+   says the airplane is on the route (`on_route`), as the iPhone's
+   instruments do; off it, the head is Emergency alone (`FlyingHead`).
    The Profile card sets the altitude on the side view
    ([rules.md](rules.md) section 6): the upright Slider previews the
    clearance (red within 100 ft, yellow within 1,000 ft, the engine's

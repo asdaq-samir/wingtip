@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { cn } from "cn";
 import { GLASS } from "../../../lib/mapChrome";
 import { Button } from "../../../components/ui/button";
@@ -26,11 +27,16 @@ import { isLegPoint, rowPoint, type NavLogRow } from "./navlog/rows";
  * asks it: the next checkpoint along the course line (`line`), its
  * distance direct from the fix, the time at the fix's ground speed and
  * the arrival, with no figure of its own: the strip's figures
- * (FlightLine) stay the plan's.
+ * (TripFigures) stay the plan's. Off the route -- the engine's `on_route`
+ * false -- there is no next checkpoint to give, and the head is Emergency
+ * alone, as the iPhone's instruments drop their Next row (InstrumentsBar).
  *
  * Drawn again as a figure changes -- a tenth of a mile, a minute -- not
  * at each of a run's frames, as the dry run's figures are (DryRunFigures).
  */
+
+/** FlyingHead's word for off the route, in place of the next's figures. */
+const OFF_ROUTE = "off";
 
 interface Next {
   index: number;
@@ -62,11 +68,21 @@ export default function FlyingHead({ run, rows, line }: { run: DryRun | null; ro
     if (run || !engine || !s.enabled || !s.fix) return "";
     const next = gpsAhead(rows, line, s.fix);
     if (next === null) return "";
+    // Off the route (the engine's on_route false: more than its 3 nm from
+    // the line, or below flying speed), no next checkpoint, as the phones'
+    // instruments leave theirs out: the head keeps only Emergency.
+    if (!next.onRoute) return OFF_ROUTE;
     const at = next.at === null ? null : Math.floor(next.at / 60) * 60;
     return [next.index, next.nm.toFixed(1), next.min === null ? "" : Math.round(next.min), at ?? ""].join(" ");
   });
   const words = key || gpsKey;
   if (!words) return null;
+  if (words === OFF_ROUTE)
+    return (
+      <Head off>
+        <EmergencyEntry />
+      </Head>
+    );
   const [i, nm, min, at] = words.split(" ");
   const index = Number(i);
   const next: Next = {
@@ -78,19 +94,7 @@ export default function FlyingHead({ run, rows, line }: { run: DryRun | null; ro
     at: at === "" ? null : Number(at),
   };
   return (
-    <div
-      data-testid="flying-head"
-      className={cn(
-        GLASS,
-        // Clear of the panel where it covers the map's side or top (the
-        // map's insets, MapPage): over a wide screen it ran on under the
-        // panel, its next point hidden there (the owner's screenshot,
-        // 2026-11-06); on a phone's bottom sheet both are 0.
-        "pointer-events-none absolute right-3 left-[calc(0.75rem+var(--map-inset-left,0px))] top-[calc(max(0.75rem,env(safe-area-inset-top))+var(--map-inset-top,0px))] z-[1000] flex items-center gap-3.5 rounded-(--radius-card) px-4 py-3",
-        // In as the flight starts; not where the pilot asks for less motion.
-        "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-4 motion-safe:duration-300",
-      )}
-    >
+    <Head>
       <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-caution font-bold text-white" aria-hidden="true">
         <span className={TEXT.card}>{next.number}</span>
       </div>
@@ -115,6 +119,30 @@ export default function FlyingHead({ run, rows, line }: { run: DryRun | null; ro
       {/* The emergency assistant's way in from flying mode, inside its own
           head rather than a map button (the owner removed EMER, 2026-11-08). */}
       <EmergencyEntry />
+    </Head>
+  );
+}
+
+/** The head's glass at the map's top. Off the route (`off`) it is
+ *  Emergency alone, at the right, as wide as it. */
+function Head({ off = false, children }: { off?: boolean; children: ReactNode }) {
+  return (
+    <div
+      data-testid="flying-head"
+      data-off-route={off || undefined}
+      className={cn(
+        GLASS,
+        // Clear of the panel where it covers the map's side or top (the
+        // map's insets, MapPage): over a wide screen it ran on under the
+        // panel, its next point hidden there (the owner's screenshot,
+        // 2026-11-06); on a phone's bottom sheet both are 0.
+        "pointer-events-none absolute right-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+var(--map-inset-top,0px))] z-[1000] flex items-center gap-3.5 rounded-(--radius-card) px-4 py-3",
+        off ? "w-fit" : "left-[calc(0.75rem+var(--map-inset-left,0px))]",
+        // In as the flight starts; not where the pilot asks for less motion.
+        "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-4 motion-safe:duration-300",
+      )}
+    >
+      {children}
     </div>
   );
 }
