@@ -7,6 +7,7 @@ import type { FlightRules } from "../../lib/preferences";
 import { TEXT } from "../../lib/text";
 import { flightLevel } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
+import { useEngineReady } from "../../lib/engine/useEngineReady";
 import { cruiseOf } from "./altitude/plans";
 
 /** What the empty field says: an example of what it takes, at the owner's
@@ -15,8 +16,10 @@ import { cruiseOf } from "./altitude/plans";
 // altitude planned (the owner's screenshot, 2026-10-27, while the
 // altitudes were still being planned).
 /** With no altitude, "FL-" kept in the field as the airplane's "N-" is,
- *  and its three blanks after it in grey (flightLevel(null), "FL-___"). */
-const hint = () => ({ start: "FL-", words: flightLevel(null).slice(3) });
+ *  and its three blanks after it in grey (flightLevel(null), "FL-___"):
+ *  the engine's words, so none until its .wasm is in (the row is drawn at
+ *  once, the engine or not; firstDraw.test). */
+const hint = (engineReady: boolean) => ({ start: "FL-", words: engineReady ? flightLevel(null).slice(3) : "" });
 /** An altitude as said: feet under 18,000 ft, a flight level from there
  *  up, where altimeters are set to 29.92 (the engine's `altitude_said`;
  *  14 CFR 91.121(a)(2), AIM 4-2-9), its "ft" said in full as "feet", as
@@ -62,6 +65,7 @@ export default function AltitudeGroup({
   /** The flight rules it is planned under: IFR's flag on the group. */
   rules?: FlightRules;
 }) {
+  const engineReady = useEngineReady();
   const cruise = cruiseOf(nav, legs);
   const cautions = nav?.cautions ?? [];
   // What is typed, while it is: the figure flown otherwise.
@@ -129,7 +133,7 @@ export default function AltitudeGroup({
       tabular
       shrink
       placeholder=""
-      hint={hint()}
+      hint={hint(engineReady)}
       input={{
         // "FL-" in the field's own text, not a label beside it: iOS keeps
         // a few points inside an input's edge, which set the figures apart

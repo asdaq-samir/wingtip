@@ -646,7 +646,13 @@ whether it is in the air under it, so the card opens on answers already
 in hand. The FPL's airplane field suggests from the same rows as it is typed
 (`navlog/useAirplaneSuggestions` over `features/plan/useAirplaneHits`, Base UI's
 Autocomplete through `CommandRoot` and `CommandField` in `InlineField`,
-the list in a Popover under the field), the record alone, no live find. No airplane picked shows "No airplane
+the list in a Popover under the field). `InlineField`, the N-number's and
+the cruise altitude's pill, is shadcn's `InputGroup` round its
+`InputGroupInput` since 2026-11-17 (Base UI's Autocomplete input drawn as
+the stock input by its `render`), the stock group's focus ring round the
+pill while it has the keyboard's focus, the owner's rules for it kept
+(28 tall, one width, the fixed "N-" and "FL-" in the text with their
+grey blanks, the airplane giving way first, never under 16 px), the record alone, no live find. No airplane picked shows "No airplane
 picked" and Pick Airplane, never a default type (decision 0011).
 
 **Structure, a tracked flight's card** (`FlightCard`), the same way (C1,

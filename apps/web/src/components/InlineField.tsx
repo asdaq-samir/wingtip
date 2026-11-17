@@ -1,13 +1,19 @@
 import type { ComponentPropsWithRef, ElementType, ReactNode } from "react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
+import { InputGroup, InputGroupInput } from "./ui/input-group";
 
 /**
  * A short field in the route box's row with a glass button at its end --
  * the airplane's N-number (FlightInputs) and the cruise altitude
  * (AltitudeGroup) -- one component where the two were near-copies (the 23
- * Oct audit), keeping what the owner asked of them:
- * - 28 tall, the route box's fill and type;
+ * Oct audit). shadcn's InputGroup round shadcn's InputGroupInput (the
+ * owner, 2026-11-17: stock over our own), the group drawing the stock
+ * focus ring round the pill while its field has the keyboard's focus,
+ * keeping what the owner asked of them:
+ * - 28 tall, the route box's fill and type, at least 16 px (the stock
+ *   input's text-base; under 16 iOS zooms the page in on a field), the
+ *   row's 17 to a finger;
  * - one width whatever is in it ("Keep these inputs fixed size"): the
  *   widest value and the button, and the example, measured unseen in the
  *   one cell, emptied it keeps it and shows its example;
@@ -29,10 +35,12 @@ export function InlineField({
   inputClassName,
   button,
   endRoom = "w-[1.5625rem]",
-  field: Field = "input",
+  field: Field,
 }: {
-  /** The input's element: a list's own field where it suggests as it is typed (the airplane's,
-   *  Base UI's Autocomplete.Input through CommandField), else a plain input. */
+  /** The input's element where it is more than the stock input: a list's
+   *  own field where it suggests as it is typed (the airplane's, Base UI's
+   *  Autocomplete.Input through CommandField), drawn as the InputGroupInput
+   *  (its `render`). */
   field?: ElementType;
   /** Grey words after a fixed start the field keeps in its text (the
    *  airplane's "N-"), in the example's style, while nothing is typed
@@ -60,18 +68,27 @@ export function InlineField({
   /** At its end, shown when it has something to open. */
   button?: ReactNode;
 }) {
+  // The stock InputGroupInput, its own size and padding set to the pill's:
+  // the words the group's size (inherit), never under the stock input's 16.
+  const look = cn(
+    "relative z-10 h-full w-0 min-w-0 flex-1 py-0 pr-0.5 pl-2.5 font-semibold placeholder:font-normal",
+    "text-[length:inherit] md:text-[length:inherit] pointer-coarse:text-[length:inherit]",
+    tabular && "tabular-nums",
+    inputClassName,
+  );
+  const shared = { type: "text", autoComplete: "off", enterKeyHint: "done" as const, size: 1, placeholder, ...input };
   return (
     // A row's size to a finger, but no larger than it is at the owner's
     // 17.88 px text (19 px): at 19.65 the two chips and the route's three
     // round buttons came to 10-15 points more than a 390-point phone's
     // line, and the buttons wrapped onto a line of their own (the FPL
     // audit's A3; the owner's route-box-buttons rule, 2026-10-24: one line
-    // at their text sizes). The field is 28 tall whatever its text.
-    <div
-      role="group"
+    // at their text sizes). The field is 28 tall whatever its text. The
+    // stock group's line, shade and full width put away for the pill.
+    <InputGroup
       aria-label={label}
       className={cn(
-        "grid h-7 items-center rounded-full bg-foreground/8",
+        "grid h-7 w-auto items-center rounded-full border-0 bg-foreground/8 shadow-none dark:bg-foreground/8",
         shrink && "shrink-0",
         TEXT.row,
         "pointer-coarse:text-[length:min(1.0625rem,19px)]",
@@ -100,20 +117,7 @@ export function InlineField({
       )}
       <div className="col-start-1 row-start-1 flex h-full min-w-0 items-center">
         <label className="relative flex h-full min-w-0 flex-1 items-center pr-1 after:absolute after:-inset-y-2 after:-left-0.5 after:right-0 after:content-['']">
-          <Field
-            type="text"
-            autoComplete="off"
-            enterKeyHint="done"
-            size={1}
-            placeholder={placeholder}
-            {...input}
-            className={cn(
-              "relative z-10 h-full w-0 min-w-0 flex-1 bg-transparent pr-0.5 font-semibold outline-none placeholder:font-normal",
-              "pl-2.5",
-              tabular && "tabular-nums",
-              inputClassName,
-            )}
-          />
+          {Field ? <Field {...shared} render={<InputGroupInput className={look} />} /> : <InputGroupInput {...shared} className={look} />}
           {hint && input.value === hint.start && (
             // Over the input, after its text (laid out unseen beside it),
             // never in a tap's way, cut at the field's end where the field
@@ -133,6 +137,6 @@ export function InlineField({
         </label>
         {button}
       </div>
-    </div>
+    </InputGroup>
   );
 }
