@@ -19,6 +19,7 @@ import { navLogRows } from "../plan";
 import { useShareLink } from "./useShareLink";
 import { refreshLive } from "../../lib/liveRefresh";
 import type { RouteEdit } from "../../lib/preferences";
+import PlanUndoItems from "./PlanUndoItems";
 import ShowRouteAs, { RouteMapChoices } from "./ShowRouteAs";
 
 const SHARE_LABEL: Record<"route" | "send" | RouteCard, string> = {
@@ -238,6 +239,7 @@ export default function ShareMenu({
           </DropdownMenuTrigger>
         </ResponsivePopoverAnchor>
         <DropdownMenuContent align={align} className="min-w-56 print:hidden">
+          {card === "route" && <PlanUndoItems />}
           {routed && onShowFuel && (
             <DropdownMenuItem onClick={onShowFuel} data-testid="route-show-fuel">
               <Fuel />
