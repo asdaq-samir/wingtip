@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from "react";
-import { GripVertical } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button, DropIndicator, GridList, GridListItem, useDragAndDrop, type Key } from "react-aria-components";
 import { cn } from "cn";
 import { pointName } from "../../lib/identSchema";
@@ -124,7 +124,7 @@ export function RouteGrid({ items, onMove }: { items: RouteItem[]; onMove?: (fro
   );
 }
 
-/** A typed point's grip, at its row's end, as iOS's reorder control is:
+/** A typed point's grip, at its row's end, as iOS's reorder control is (its three lines, the owner 2026-11-17):
  *  React Aria's drag button, dragged by a mouse or a finger, or Enter for
  *  the keyboard's and VoiceOver's drag. A 32-point glyph with its 44-point
  *  area. */
@@ -139,7 +139,7 @@ export function PointGrip({ ident }: { ident: string }) {
       data-base-ui-swipe-ignore=""
       className="relative grid size-8 shrink-0 cursor-grab touch-none place-items-center rounded-full text-muted-foreground outline-none select-none after:absolute after:-inset-1.5 after:content-[''] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring"
     >
-      <GripVertical className="size-5" aria-hidden />
+      <Menu className="size-6" strokeWidth={1.5} aria-hidden />
     </Button>
   );
 }
