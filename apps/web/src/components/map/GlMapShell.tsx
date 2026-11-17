@@ -45,7 +45,6 @@ import { probeLayers } from "../../lib/map/gl/useGlProbe";
 import { RulerGl } from "../../lib/map/gl/layers/RulerGl";
 import { cameraOf } from "../../lib/map/gl/camera";
 import { inRoom } from "../../lib/map/gl/cameraParts";
-import { tvPlatform, zoomInKey, zoomOutKey } from "../../lib/tv";
 
 const COUNTRY: [number, number] = [39.5, -98.35];
 /** RouteMap's: how close in an airport's card brings the map. */
@@ -96,7 +95,7 @@ const loaded = new WeakSet<maplibregl.Map>();
  * them, so the airspace, the airports and the navaids load per tile with
  * the chart rather than each asking the planner for the view.
  */
-function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): maplibregl.Map {
+function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.Map {
   const last = useOwnShip.getState().lastFix;
   const [lat, lon] = last ? [last.lat, last.lon] : COUNTRY;
   const tiles = queryClient.getQueryData(overlayTilesQuery.queryKey) ?? null;
@@ -127,7 +126,7 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
     dragRotate: false,
     pitchWithRotate: false,
     touchPitch: false,
-    // MapLibre's own keys everywhere (its default: arrows pan, + and - zoom), not only a TV's.
+    // MapLibre's own keys (its default: arrows pan, + and - zoom).
     // Symbols placed at once, not faded in over 0.3 s.
     fadeDuration: 0,
     // And its world copies (its default): the Western Aleutian sectional runs across 180°.
@@ -139,8 +138,6 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
     const got = pictures?.get(id);
     if (got && !m.hasImage(id)) m.addImage(id, got.image, got.options);
   });
-  // A remote has no pinch: the map's own + and - to reach with its arrows.
-  if (onTv) m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
   m.touchZoomRotate.disableRotation();
   m.keyboard.disableRotation();
   m.setPadding(padOf(insets));
@@ -246,8 +243,6 @@ interface Props {
  * overlays kept, rather than a second map drawn from nothing.
  */
 export default function GlMapShell({ course, focus, focusZoom, place, children, bare = false }: Props) {
-  // Once: a page is on a TV or not for its whole visit.
-  const [onTv] = useState(() => tvPlatform() !== null);
   const box = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<maplibregl.Map | null>(null);
   const [overlays, setOverlays] = useState(false);
@@ -297,7 +292,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       holder.className = "h-full w-full bg-(--chart-map-ground) dark:bg-(--chart-map-ground-night)";
       holder.dataset.testid = "gl-map";
       host.appendChild(holder);
-      m = makeMap(holder, onTv, insetsRef.current);
+      m = makeMap(holder, insetsRef.current);
     }
     // Whether its first style has the overlay tiles: a map made without
     // them (no archive yet, or its name too slow to come) has them added
@@ -336,7 +331,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
         }, PARK_MS),
       };
     };
-  }, [ready, onTv]);
+  }, [ready]);
 
   // The overlay tiles added to a map made without them, once their name
   // comes: the airspace, airports and navaids are the tiles' alone.
@@ -357,19 +352,6 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   // emergency's (watchOverlayFilters).
   useEffect(() => (map && overlays ? watchOverlayFilters(map) : undefined), [map, overlays]);
 
-  // A remote has no pinch: its zoom keys zoom the map while it is focused.
-  useEffect(() => {
-    if (!map || !onTv) return;
-    const container = map.getCanvasContainer();
-    const onKey = (event: KeyboardEvent) => {
-      if (zoomInKey(event)) map.zoomIn();
-      else if (zoomOutKey(event)) map.zoomOut();
-      else return;
-      event.preventDefault();
-    };
-    container.addEventListener("keydown", onKey);
-    return () => container.removeEventListener("keydown", onKey);
-  }, [map, onTv]);
   // The one tap: the nearest thing's, in the taps' rank order.
   // Held in state, not refs: made once, read in the map's own handler.
   const [registry] = useState(() => ({ taps: new Set<GlTap>(), misses: new Set<(event: MapMouseEvent) => void>() }));

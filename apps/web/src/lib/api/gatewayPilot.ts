@@ -1,8 +1,6 @@
 import { gateway, data, csrfHeaders } from "./http";
 import { ApiError, failIfNotOk } from "./errors";
 import type {
-  AppleSignedIn,
-  DeviceCode,
   FlightPlanFiled,
   FlightPlanFilingRequest,
   FlightServiceStatus,
@@ -29,29 +27,6 @@ export const gatewayPilot = {
       if (err instanceof ApiError && err.status === 401) return null;
       throw err;
     }
-  },
-
-  /** A code for this TV to be signed in with from a phone
-   *  (DeviceSignInController): shown, with the address to type it at. */
-  deviceCode: () => gateway.POST("/api/auth/device").then(data<DeviceCode>),
-
-  /** Whether this TV's code has been typed in on a phone: not yet
-   *  ("waiting"), signed in now with where to go, or run out ("gone"),
-   *  for which the TV asks for a new one. */
-  deviceToken: async (deviceCode: string): Promise<AppleSignedIn | "waiting" | "gone"> => {
-    try {
-      const { data: answer, response } = await gateway.POST("/api/auth/device/token", { body: { deviceCode } });
-      return response.status === 202 ? "waiting" : (answer as AppleSignedIn);
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 410) return "gone";
-      throw err;
-    }
-  },
-
-  /** The code a TV shows, typed in by the pilot signed in here: the TV
-   *  is signed in as them at its next ask. */
-  approveDevice: async (userCode: string): Promise<void> => {
-    await gateway.POST("/api/auth/device/approve", { body: { userCode } });
   },
 
   /** The signed-in pilot's telephone number and home base, both at once,

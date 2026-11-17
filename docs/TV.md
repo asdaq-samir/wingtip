@@ -3,7 +3,17 @@
 Parked: the TV shells (`tv/`: the page, `package.sh`, the Tizen and webOS
 files) were deleted on 2026-11-07, as nothing built them. Git keeps them:
 `git checkout a8015833 -- tv` brings them back, and the paths below are
-theirs. The site's own TV mode (`apps/web/src/lib/tv.ts`) is still here.
+theirs. The site's own TV mode and the TV's sign-in by code went on
+2026-11-17 (the web audit's cleanup), as nothing opens the site as a TV
+any more: `git checkout 42ec8d610 -- apps/web/src/lib/tv.ts
+apps/web/src/lib/tvStart.ts apps/web/src/components/TvCode.tsx
+apps/web/src/features/pilot/TvLink.tsx apps/web/src/features/pilot/TvLinkHost.tsx
+apps/web/src/features/pilot/TvCodeField.tsx apps/web/src/features/pilot/tvCode.ts
+apps/web/e2e/tv.spec.ts apps/web/e2e/tv-signin.spec.ts` brings them back,
+with the spatial navigation polyfill, the `html[data-tv]` focus ring in
+index.css and their hooks in main.tsx, GlMapShell, SignInModal and
+MapPage. The gateway's half of the sign-in (`DeviceSignInController`,
+the `/tv` redirect) is still there.
 
 Wingtip Maps on Samsung's TVs (Tizen) and LG's (webOS) is the site in the
 TV's own web engine. It is for planning on the big screen: the chart, the

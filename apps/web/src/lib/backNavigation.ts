@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { closeTopCard, useOpenCards } from "./openCards";
 
 /**
- * A device's own Back -- Android's gesture or button, a TV remote's --
+ * A device's own Back -- Android's gesture or button --
  * on the site: what Escape does, the topmost thing closed, a menu, a
  * dialog, the layers (each takes the key and says so, preventDefault), else the
  * top card closed (an airport's, Nearest's: lib/openCards), else the
@@ -37,7 +37,7 @@ type CloseWatchers = { CloseWatcher?: new () => CloseWatcher };
 
 /**
  * Android's Back (and the browser's own close requests) on the web:
- * the top thing closed, as on a TV (closeTopmost), through the
+ * the top thing closed (closeTopmost), through the
  * platform's stock CloseWatcher -- no history entries, the address still
  * replaced at each change. A watcher is held only while something is
  * open (a card, a list, the sheet above its pill: `raised`), so with

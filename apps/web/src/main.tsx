@@ -38,7 +38,6 @@ import "@fontsource/barlow/latin-400.css";
 import "@fontsource/barlow/latin-500.css";
 import "@fontsource/barlow/latin-600.css";
 import "@fontsource/barlow/latin-700.css";
-import { tvPlatform } from "./lib/tv";
 import { loadEngine } from "./lib/engine/engine";
 import { preconnectTiles, preloadFirstLoad } from "./lib/preloads";
 import { usePreferences } from "./lib/preferences";
@@ -56,13 +55,6 @@ const engineLoaded = loadEngine();
 // The reader's text size from the iPhone's Settings, before the first
 // render, so the page is never drawn at the wrong size first.
 followDynamicType();
-
-// On a Samsung or LG TV (the TV shells, in git history; lib/tv), the page made for its remote and
-// its distance, before the first render.
-// Its code on a chunk of its own (lib/tvStart), which the first render
-// waits for on a TV alone.
-const tv = tvPlatform();
-const tvStarted = tv ? import("./lib/tvStart").then((m) => m.startTv(tv)) : null;
 
 // The map's chunk (routeMapChunk) and the search's (routeBoxChunk),
 // fetched while the page draws.
@@ -309,7 +301,7 @@ void engineLoaded.catch((error) => {
   sendReport(reportOf("error", error));
   console.error(error);
 });
-void Promise.all([faceLoaded, tvStarted]).then(render, render);
+void faceLoaded.then(render, render);
 
 // The deletes whose Undo was still up when the tab was last closed, sent
 // now (lib/pendingDeletes); the lists fetched again once any is.
