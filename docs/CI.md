@@ -481,7 +481,8 @@ architecture"), each layer by a check that fails the run:
   `scripts/ci/file_sizes_new_allow.txt` (the wave's new files of 301-400
   lines on 2026-11-12). A listed file may not grow, and neither list may
   gain or raise an entry against the base branch's; a split lowers its
-  count (`--write`).
+  count (`--write`). A file moved since the base (git's rename detection)
+  is the file it was: held to 400, its entry carried to its new path.
 
 ## Simplicity rules
 
@@ -489,7 +490,8 @@ The simplicity audits' findings, held as checks so they cannot come back
 (the owner, 2026-11-12: "make simplicity rules as hard rules"; CLAUDE.md,
 "Simplicity rules"). Each looks only at the files a change touches, each
 holds today's exceptions in a baseline that only shrinks (`--write` lowers
-it, never raises it; a baseline raised against the base branch fails), and
+it, never raises it; a baseline raised against the base branch fails, an
+entry for a moved file compared under its old path: `changed.raised`), and
 each runs in `guards`, the pre-push hook and, for one file at a time, the
 agents' edit-time hook (`scripts/dev/simplicity_hook.py`, a Claude Code
 `PostToolUse` hook in `.claude/settings.json`):
