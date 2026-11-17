@@ -8,12 +8,13 @@ import { DRY_RUN, usePastFlight } from "../../plan";
 
 /** An approach the pilot's instructor set them, opened from their
  *  Checkride page (`?lesson=12`): its own chunk, as the lesson's is. */
-import { ReadyToFlyPrompt } from "../../readyToFly";
+import { loadReadyToFlyPrompt } from "../../readyToFly";
 import { EngineGate } from "../../../lib/engine/engineGate";
 import { loadAssignedLesson, loadFixCard } from "../../procedures";
 import { loadRouteLegCard } from "../../navlog";
 
 const AssignedLesson = lazy(() => loadAssignedLesson());
+const ReadyToFlyPrompt = lazy(() => loadReadyToFlyPrompt().then((m) => ({ default: m.ReadyToFlyPrompt })));
 /** What the first screen does not draw, each its own chunk off the first
  *  load (scripts/first-load.mjs's budget): a fix's card and a leg's, from
  *  their first tap on. */
@@ -65,9 +66,11 @@ export default function PlanMap({
       {/* Ready to fly, once, as a dry run or own ship starts with something
           to fix (features/readyToFly): a dialog over the map, nothing moved.
           Its findings are the engine's, so once that is there. */}
-      <EngineGate>
-        <ReadyToFlyPrompt dryPlaying={dryPlaying} />
-      </EngineGate>
+      <Suspense fallback={null}>
+        <EngineGate>
+          <ReadyToFlyPrompt dryPlaying={dryPlaying} />
+        </EngineGate>
+      </Suspense>
       <Suspense fallback={null}>
         <RouteMap
           course={course}

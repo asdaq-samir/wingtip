@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { showError } from "../../lib/problems";
 import { TEXT } from "../../lib/text";
@@ -7,7 +7,6 @@ import { Shown } from "../../lib/shown";
 import DevGuard from "../../components/DevGuard";
 import MapPanel from "../../components/MapPanel";
 import { ConsoleInPanelContext, useConsoleOpen, insetVars, setMapInsets, type PanelState } from "../../lib/mapChrome";
-import RouteForm from "../../components/RouteForm";
 import { EngineGate } from "../../lib/engine/engineGate";
 import { useWarmAirportIndex } from "../../lib/airportIndex";
 import { useHomeAirportSync } from "../../lib/homeAirport";
@@ -22,6 +21,11 @@ import { isDesktopNow, useIsDesktop } from "../../hooks/use-desktop";
 import { useShortcuts } from "../../hooks/use-shortcuts";
 import ConsoleLayer from "./ConsoleLayer";
 import type { WorkspacePieces } from "../../lib/workspace";
+
+/** The plain route form, for a workspace with no route box of its own (the
+ *  developer's and the Studio's; the planner's is its own, FplRoute): on a
+ *  chunk of its own, with its airport pickers, off the pilot's first load. */
+const RouteForm = lazy(() => import("../../components/RouteForm"));
 
 /**
  * The one page, in three modes: the pilot's planner, the developer's
@@ -177,14 +181,16 @@ export default function MapPage({ mode }: { mode: Mode }) {
     <>
       <div className="min-w-0 flex-1">
         {pieces.route ?? (
-          <RouteForm
-            dep={dep}
-            dest={dest}
-            onDepChange={setDep}
-            onDestChange={setDest}
-            onSubmit={() => pieces.submit?.()}
-            disabled={pieces.loading}
-          />
+          <Suspense fallback={null}>
+            <RouteForm
+              dep={dep}
+              dest={dest}
+              onDepChange={setDep}
+              onDestChange={setDest}
+              onSubmit={() => pieces.submit?.()}
+              disabled={pieces.loading}
+            />
+          </Suspense>
         )}
       </div>
       {pieces.actions && <div className="flex shrink-0 items-center">{pieces.actions}</div>}

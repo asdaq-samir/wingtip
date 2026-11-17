@@ -6,7 +6,7 @@ import { useIsDesktop } from "../hooks/use-desktop";
 import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useSafeArea } from "../hooks/use-viewport";
-import { GLASS_SHEET, PILL_RADIUS, type MapInsets, type PanelState } from "../lib/mapChrome";
+import { GLASS_SHEET, PILL_RADIUS, useSlidingSheet, type MapInsets, type PanelState } from "../lib/mapChrome";
 import { feel } from "../lib/haptics";
 import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
@@ -147,7 +147,14 @@ export default function MapPanel(props: Props) {
   // The room the sheet in sight (the top card, else the sheet) leaves the
   // map, from the size it is set to: the map eases with the sheet
   // (GlMapShell, in the Drawer's time).
-  const cover = useSheetCover(sheetNode, front, onPhone, fromBottom);
+  const { cover, least, most } = useSheetCover(sheetNode, front, onPhone, fromBottom);
+  // The sheet the map slides with, frame by frame (useSlidingSheet): a
+  // phone's bottom sheet with no card over it.
+  const slides = bottomSheet && !cardsUp && !!sheetNode && most > 0;
+  useEffect(() => {
+    useSlidingSheet.setState({ sheet: slides && sheetNode ? { node: sheetNode, least, most } : null });
+  }, [slides, sheetNode, least, most]);
+  useEffect(() => () => useSlidingSheet.setState({ sheet: null }), []);
   // The pages, drawn whenever the workspace has them and is not flying: a
   // card alone over them (`layer` "card") is drawn from inside one, the
   // Brief from FPL's (PlanPage), so put away with them it never opened.
