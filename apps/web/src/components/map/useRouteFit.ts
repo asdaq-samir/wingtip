@@ -5,6 +5,7 @@ import type { MapInsets } from "../../lib/mapChrome";
 import { FIT_MARGIN } from "../../lib/map/clear";
 import { useOwnShip } from "../../lib/map/position/ownShip";
 import { cameraOf } from "../../lib/map/gl/camera";
+import { coursePoints } from "../../lib/course";
 
 /** The least the map is fitted to round a route, ~10 nm. */
 const MIN_FIT_DEG = 0.08;
@@ -12,7 +13,10 @@ const MIN_FIT_DEG = 0.08;
 /** The route's points, in order: what a change of fits the map again. A
  *  stop put in, taken out or moved is a new route as much as a new end
  *  is; its altitudes, procedures or a detour round the line are not. */
-const routePointsKey = (course: Course) => [course.departure, ...(course.stops ?? []), course.destination].map((p) => p.ident).join(">");
+const routePointsKey = (course: Course) =>
+  coursePoints(course)
+    .map((p) => p.ident)
+    .join(">");
 
 /**
  * The map fitted to the route (GlMapShell's): once for each set of the

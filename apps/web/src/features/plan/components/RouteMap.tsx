@@ -22,6 +22,7 @@ import { inkOn, scoreColor } from "../../../lib/scoreScale";
 import { firstFlown, type NavLogRow, type RouteLeg } from "./navlog/rows";
 import { useTerrainView } from "../map/terrain/useTerrainView";
 import { useRouteAloft } from "../hooks/useRouteAloft";
+import { coursePoints } from "../../../lib/course";
 
 const NO_PATTERNS: TrafficPattern[] = [];
 const NO_POINTS: { lat: number; lon: number }[] = [];
@@ -212,11 +213,10 @@ function weatherOf(ident: string, briefing: BriefingState): { status: string; ca
   return { status, category: metar?.flight_category ?? null };
 }
 
-/** The route's airports in the order they are flown -- the departure,
- *  each stop, the destination -- or, `each` false, each once: a round
+/** The route's points in flown order, or, `each` false, each once: a round
  *  trip's departure is its destination, one chip on the map. */
 function routeAirports(course: Course, each = false) {
-  const all = [course.departure, ...(course.stops ?? []), course.destination];
+  const all = coursePoints(course);
   return each ? all : all.filter((a, i) => all.findIndex((b) => b.ident === a.ident) === i);
 }
 

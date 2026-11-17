@@ -13,6 +13,7 @@ import type { RouteParts } from "../components/RouteBox";
 import type { PlannedRoute } from "./planAddress";
 import type { PlanCourse } from "./planTypes";
 import type { useRouteEdits } from "./useRouteEdits";
+import { coursePoints } from "../../../lib/course";
 
 type RouteEdits = ReturnType<typeof useRouteEdits>;
 
@@ -54,7 +55,7 @@ export function useMapActions({
     (at: { ident: string; lat: number; lon: number }) => {
       // The planner's limit, as the airport card's Add Stop keeps it.
       if (!geo || !course || planned.stops.length >= MAX_STOPS) return;
-      const points = [course.departure, ...(course.stops ?? []), course.destination];
+      const points = coursePoints(course);
       if (points.some((p) => p.ident === at.ident)) return;
       const stops = [...planned.stops];
       stops.splice(geo.bestStopIndex(points, at), 0, at.ident);

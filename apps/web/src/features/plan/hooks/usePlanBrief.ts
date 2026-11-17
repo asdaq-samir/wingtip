@@ -16,6 +16,7 @@ import { useFlightToSave } from "./useFlightToSave";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanFpl } from "./usePlanFpl";
+import { coursePoints } from "../../../lib/course";
 
 /**
  * What the screen says of the plan (usePlanWorkspace): its progress, its
@@ -89,10 +90,7 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   // The route's airports' airspace classes, as the course came with them:
   // the pills coloured the moment it is in. Each made again only when what
   // it reads changes, as the box is drawn again only then (fromRoutePanel's memo).
-  const routeAirport = useCallback(
-    (ident: string) => [course?.departure, ...(course?.stops ?? []), course?.destination].find((a) => a?.ident === ident),
-    [course],
-  );
+  const routeAirport = useCallback((ident: string) => (course ? coursePoints(course).find((a) => a.ident === ident) : undefined), [course]);
   const airspaceOf = useCallback((ident: string) => routeAirport(ident)?.airspace_class ?? undefined, [routeAirport]);
   // The altitude at a point, as its menu offers it: the pilot's own, else
   // a waypoint's cruise -- the leg flown to it -- or an airport's pattern.

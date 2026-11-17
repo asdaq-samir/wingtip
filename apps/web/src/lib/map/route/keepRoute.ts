@@ -7,6 +7,7 @@ import { M_PER_NM, rad } from "../../geo";
 import { kindCycle, tileUrl } from "../sources/tiles";
 import { tileOf, WORLD_WIDTH_M } from "../tileMath";
 import { routeAnswersAsked } from "./routeAnswers";
+import { coursePoints, courseFields } from "../../course";
 
 /**
  * The tiles a route needs in the air, fetched now so the service
@@ -114,9 +115,7 @@ async function workerReady(): Promise<boolean> {
  *  (cached by the worker too): none for a waypoint, a field with none, or
  *  a card that could not be had. A field may have a diagram and no crop. */
 async function routeDiagrams(course: Course): Promise<string[]> {
-  const idents = [
-    ...new Set([course.departure, ...(course.stops ?? []), course.destination].filter((a) => a.kind !== "fix").map((a) => a.ident)),
-  ];
+  const idents = [...new Set(courseFields(course).map((a) => a.ident))];
   const cards = await Promise.allSettled(idents.map((ident) => api.airport(ident)));
   return cards.flatMap((card) =>
     card.status === "fulfilled" && card.value.airport_diagram_cycle
@@ -140,7 +139,7 @@ async function routeDiagrams(course: Course): Promise<string[]> {
  *  airport-pictures). Its own fetches, the lists'; the rest as URLs to
  *  fetch with the tiles. None where the planner cannot be asked. */
 export async function routeStopsKept(course: Course): Promise<string[]> {
-  const own = [course.departure, ...(course.stops ?? []), course.destination].filter((a) => a.kind !== "fix").map((a) => a.ident);
+  const own = courseFields(course).map((a) => a.ident);
   const stops = await api
     .stopsAlong(course.departure.ident, course.destination.ident, (course.stops ?? []).map((s) => s.ident).join(","))
     .catch(() => null);
@@ -238,7 +237,9 @@ function remember(key: string, now = Date.now()) {
 }
 
 export function keepKey(course: Course, kind: string): string {
-  const route = [course.departure, ...(course.stops ?? []), course.destination].map((a) => a.ident).join("->");
+  const route = coursePoints(course)
+    .map((a) => a.ident)
+    .join("->");
   const { cycle, revision } = kindCycle(course, kind);
   return `${route}/${kind}/${cycle}/${revision}`;
 }

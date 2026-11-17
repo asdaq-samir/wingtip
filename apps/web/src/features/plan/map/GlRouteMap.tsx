@@ -41,6 +41,7 @@ import { useGlFit } from "./useGlFit";
 import type { AloftPoint } from "./terrain/geometry";
 import { useTerrainView } from "./terrain/useTerrainView";
 import ReliefGl from "./terrain/ReliefGl";
+import { coursePoints } from "../../../lib/course";
 
 /** The 3D ground and the pilot's-eye view (features/plan/map/terrain): a
  *  chunk of its own, deck.gl with it, loaded only once 3D is on; the
@@ -176,7 +177,7 @@ function EngineLayers(p: GlRouteMapProps) {
   // Drawer's own cover, useSheetCover) are its padding already.
   useGlFit(p.focusedProcedure, p.focusedProcedure.length ? p.procedureFocus : null, 12);
   useGlFit(p.focusedPattern, p.focusedPattern.length ? p.patternFocus : null, 13);
-  const route = course ? [course.departure.ident, ...(course.stops ?? []).map((s) => s.ident), course.destination.ident] : [];
+  const route = course ? coursePoints(course).map((p) => p.ident) : [];
   const worse = useWorseByArrival(p.briefing, course);
   const terrain = useTerrainView();
   // The weather picked, only while the Map card's Weather is on (the

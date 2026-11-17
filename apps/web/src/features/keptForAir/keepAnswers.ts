@@ -10,6 +10,7 @@ import { airportQuery } from "../../lib/queryClient";
 import { notamRankingQuery } from "../notamRanking";
 import { keptRecordStore, keptRoute, type KeptRecord } from "./keptRecord";
 import { keepProfile, keepRadar } from "./keepFlightPath";
+import { courseFields } from "../../lib/course";
 
 /**
  * The route's answers kept for the air, in one go with its charts (Keep for
@@ -65,7 +66,7 @@ export async function keepRouteAnswers(
   alternate: string | null,
   signal?: AbortSignal,
 ): Promise<KeptRecord> {
-  const fields = [course.departure, ...(course.stops ?? []), course.destination].filter((a) => a.kind !== "fix").map((a) => a.ident);
+  const fields = courseFields(course).map((a) => a.ident);
   const dep = course.departure.ident;
   const dest = course.destination.ident;
   const onBoard = new Set<KeptKind>();

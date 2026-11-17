@@ -17,6 +17,7 @@ import LegAltitude, { type ChangeMode, type ProfilePoint } from "./LegAltitude";
 import ProfileNotes from "./ProfileNotes";
 import { pointsAlong, waypointsAlong } from "./points";
 import { useAltitudePreview } from "./useAltitudePreview";
+import { coursePoints } from "../../../../../lib/course";
 
 const RULES = [
   { value: "vfr", label: "VFR" },
@@ -89,7 +90,11 @@ export function AltitudeProfile({
   winds?: Totals["winds"];
 }) {
   const airplane = useAirplaneChosen();
-  const route = ends ? [ends.departure.ident, ...(ends.stops ?? []).map((s) => s.ident), ends.destination.ident].join(" ") : "";
+  const route = ends
+    ? coursePoints(ends)
+        .map((p) => p.ident)
+        .join(" ")
+    : "";
   const { data: profile } = useQuery({
     ...routeProfileQuery(
       ends?.departure.ident ?? "",
