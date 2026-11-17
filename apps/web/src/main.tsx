@@ -1,6 +1,3 @@
-// First: the browser's kept "vfr." keys renamed "wingtip." before any
-// store below reads its own (features/shell/storageRename).
-import "./features/shell/storageRename";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";

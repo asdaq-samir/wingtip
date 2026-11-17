@@ -5,14 +5,14 @@ import { showError } from "../../lib/problems";
 
 /** What this device keeps for a pilot -- their preferences, the tracks
  *  they flew (lib/track), their drills (features/pilot/drills), the charts kept for
- *  a route -- all under the app's two prefixes in localStorage. */
-const ON_THIS_DEVICE = ["vfr.", "wingtip."];
+ *  a route -- all under the app's prefix in localStorage. */
+const ON_THIS_DEVICE = "wingtip.";
 
 /** This device's copies taken out, as the account they were kept for
  *  goes: the server deletes its own, but cannot reach these. */
 export function forgetThisDevice(storage: Storage = window.localStorage) {
   const keys = Array.from({ length: storage.length }, (_, i) => storage.key(i)).filter(
-    (key): key is string => key !== null && ON_THIS_DEVICE.some((prefix) => key.startsWith(prefix)),
+    (key): key is string => key !== null && key.startsWith(ON_THIS_DEVICE),
   );
   for (const key of keys) storage.removeItem(key);
 }

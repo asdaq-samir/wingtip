@@ -218,7 +218,7 @@ src/
   features/                One folder per feature; a file used by one feature lives in it, not in lib/;
                            another feature or a shared component reaches it only through its index.ts
     shell/MapPage.tsx  The shell both pages mount into (the contract a workspace hands it is lib/workspace.ts);
-                                      the page's start (dynamicType, freshLoad, storageRename) that main.tsx runs
+                                      the page's start (dynamicType, freshLoad) that main.tsx runs
     plan/PlanWorkspace.tsx           The pilot's workspace: hooks/usePlan.ts (state), components/: RouteMap,
                                       BuildNotice, AltitudeReasoning, navlog/, briefing/, procedures/
     plan/lib/                        The plan's own rules and readings: pattern, wind, radio, routeHolds,

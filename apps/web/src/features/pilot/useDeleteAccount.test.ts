@@ -17,8 +17,8 @@ function fakeStorage(entries: Record<string, string>): Storage {
 }
 
 describe("forgetThisDevice", () => {
-  it("removes what the app keeps under its two prefixes and nothing else", () => {
-    const storage = fakeStorage({ "vfr.prefs": "1", "vfr.track.7": "[]", "wingtip.drills": "2", "other.key": "3" });
+  it("removes what the app keeps under its prefix and nothing else", () => {
+    const storage = fakeStorage({ "wingtip.preferences": "1", "wingtip.track.7": "[]", "wingtip.drills": "2", "other.key": "3" });
     forgetThisDevice(storage);
     expect(Array.from({ length: storage.length }, (_, i) => storage.key(i))).toEqual(["other.key"]);
   });

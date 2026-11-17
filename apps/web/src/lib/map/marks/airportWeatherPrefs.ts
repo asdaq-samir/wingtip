@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { keptAsIs } from "../../storage";
 
 /** How a field's weather looks on the chart (glOverlays' airport weather
  *  state): none at all, a ring in its flight category's colour round the
@@ -32,29 +33,14 @@ export function airportWeatherDrawn(show: AirportWeather): { look: AirportWeathe
   return { look: "halo", stationClose: show === "wind", windArrows: show === "wind" };
 }
 
-/** What a device kept before the menu, brought to one of its choices:
- *  Off kept, the station model kept, the ring with its barbs With Wind,
- *  the rest -- the ring alone, the dot -- the flight category. */
-export function migrateAirportWeather(kept: unknown, from: number): { show: AirportWeather } {
-  const old = (kept ?? {}) as { look?: string; windArrows?: boolean; show?: AirportWeather };
-  if (from >= 1 && old.show) return { show: old.show };
-  // Nothing kept is the old store's default, the ring with every switch
-  // on, so it comes to the new default, With Wind.
-  const look = old.look ?? "halo";
-  if (look === "off") return { show: "off" };
-  if (look === "station") return { show: "station" };
-  return { show: look === "halo" && old.windArrows !== false ? "wind" : "category" };
-}
-
 /** Kept on this device, as the map's other weather settings are
  *  (lib/map/sources/weatherLayers). With Wind, the look most pilots had:
  *  the ring with its barbs and the station model close in. */
 export const useAirportWeatherPrefs = create<{ show: AirportWeather; set: (show: AirportWeather) => void }>()(
   persist((set) => ({ show: "wind", set: (show) => set({ show }) }), {
     name: "wingtip.airportWeather",
-    // 1: the menu of three (2026-11-13), from the look and its switches.
     version: 1,
-    migrate: migrateAirportWeather,
+    migrate: keptAsIs<{ show: AirportWeather }>,
     partialize: ({ show }) => ({ show }),
   }),
 );
