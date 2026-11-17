@@ -64,6 +64,8 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   await expect(welcome.getByRole("heading", { name: "Welcome to Wingtip Maps" })).toBeVisible();
   for (const row of ["Search, like Maps", "FPL, like your EFB", "FAA charts that move like Maps"])
     await expect(welcome.getByText(row)).toBeVisible();
+  // Its search row in the search field's own words (UI audit C17).
+  await expect(welcome).toContainText("Search airports and airplanes the way you would in Apple or Google Maps.");
   // Theme and Appearance on the Map card's own look tiles (lookPicks'
   // LayerMenuTile), two side by side and one size, each its value under
   // its name and a tap its menu.

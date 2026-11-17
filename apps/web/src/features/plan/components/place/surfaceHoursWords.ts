@@ -5,7 +5,7 @@ import { twoFigures } from "../../../../lib/format";
 
 /**
  * A part-time surface area's hours, as the airport card says them: the
- * Airspace fact's one short note ("G after 22:00", "D from 06:00") and the
+ * Airspace fact's one short note ("G after 22:00 local", "D from 06:00 local") and the
  * Info tab's Airspace hours, today's and the week's, as Apple Maps writes
  * a place's opening hours (the owner, 2026-11-14). The hours are the
  * engine's (surface_hours: NASR's CLS_ARSP AIRSPACE_HRS, AIM 3-2-5a1), read
@@ -47,15 +47,17 @@ export function classNow(surface: AirportPlace["surface_airspace"], hours: Surfa
   return hours.in_force ? surface.class : (hours.other ?? null);
 }
 
-/** The Airspace fact's note: the day's next change, "G after 22:00" or
- *  "D from 06:00"; "Part-time" where it is not known today; none for a
+/** The Airspace fact's note: the day's next change at the field's own
+ *  clock, said so as the NOTAMs' times are, "G after 22:00 local" or "D
+ *  from 06:00 local" (UI audit C12, 2026-11-17: a bare time read as the
+ *  device's or UTC); "Part-time" where it is not known today; none for a
  *  full-time class or a part-time one in effect all day. */
 export function changeNote(surface: AirportPlace["surface_airspace"], hours: SurfaceHours | null): string | null {
   if (!surface?.part_time) return null;
   if (!hours?.known || hours.in_force == null) return "Part-time";
   if (!hours.change) return hours.in_force ? null : "Part-time";
-  if (hours.in_force) return hours.other ? `${hours.other} after ${clock(hours.change.at)}` : "Part-time";
-  return `${surface.class} from ${clock(hours.change.at)}`;
+  if (hours.in_force) return hours.other ? `${hours.other} after ${clock(hours.change.at)} local` : "Part-time";
+  return `${surface.class} from ${clock(hours.change.at)} local`;
 }
 
 /** Today's times beside the class in force, "06:00–22:00, then E"; "E all

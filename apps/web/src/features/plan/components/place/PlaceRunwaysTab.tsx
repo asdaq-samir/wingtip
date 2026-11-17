@@ -10,7 +10,7 @@ import { runwayInUse } from "../../lib/pattern";
 import { NotamBadge, NotamSheet } from "./NotamBadge";
 import { useNotamMarks, useNotamSheet } from "./notamBadges";
 import { NO_RUNWAYS } from "../../../../lib/emptyWords";
-import { longestOpen } from "./runwayPicks";
+import { longestOpen, withNotamClosures } from "./runwayPicks";
 
 /** An airport's card's Runways tab (PlaceCard): its pattern altitude, each
  *  runway, a NOTAM's badge by its name ("Closed") and a tap on it opening
@@ -20,7 +20,7 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
   // Closed by a NOTAM in force as by the FAA's data: no runway shut to
   // landing and takeoff is the longest or the best (KORD's 04L/22R, "CLSD
   // EXC TAX", was badged Best Wind, 2026-11-11).
-  const runways = place.runways.map((r, i) => (marks.runway.get(i)?.severity === "unusable" ? { ...r, closed: true } : r));
+  const runways = withNotamClosures(place.runways, marks);
   // The longest runway open, what a pilot sizes a field by: a badge on its
   // row (it was a row of the Info tab's Details). None where the field has one.
   const open = runways.filter((r) => !r.closed && r.length_ft != null);

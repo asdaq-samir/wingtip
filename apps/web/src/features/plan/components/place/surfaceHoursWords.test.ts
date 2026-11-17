@@ -11,9 +11,9 @@ const g = { ...d, otherwise: "G" as const, otherwise_part_time: false };
 describe("the Airspace fact's note", () => {
   it("says the day's next change at the field's own clock", () => {
     // KPWK on a Saturday: D at noon, E after 22:00; E at 23:00, D from 07:00.
-    expect(airspaceWords(d, answer("KPWK on a Saturday at noon"))).toEqual({ value: "Class D", note: "E after 22:00" });
-    expect(airspaceWords(d, answer("KPWK on a Saturday at 23:00"))).toEqual({ value: "Class E", note: "D from 07:00" });
-    expect(changeNote(g, answer("KOSH's seasons"))).toBe("G after 22:00");
+    expect(airspaceWords(d, answer("KPWK on a Saturday at noon"))).toEqual({ value: "Class D", note: "E after 22:00 local" });
+    expect(airspaceWords(d, answer("KPWK on a Saturday at 23:00"))).toEqual({ value: "Class E", note: "D from 07:00 local" });
+    expect(changeNote(g, answer("KOSH's seasons"))).toBe("G after 22:00 local");
   });
   it("is part-time alone where the hours cannot be known", () => {
     expect(airspaceWords(g, answer("Closed on holidays"))).toEqual({ value: "Class D", note: "Part-time" });

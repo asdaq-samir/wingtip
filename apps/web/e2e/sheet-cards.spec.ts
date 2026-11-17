@@ -124,6 +124,9 @@ test("the Map card's gear opens Settings over it at Map, and Settings' close goe
   await expect(settings.getByRole("heading", { name: "Settings", level: 3 })).toBeVisible();
   // Raised all the way, its Map group in sight.
   await expect(settings.getByTestId("airport-weather-look")).toBeInViewport();
+  // Clear Your Path greyed with why while nothing has been flown (UI audit C16).
+  await expect(settings.getByTestId("own-trail-clear")).toBeDisabled();
+  await expect(settings.getByTestId("own-trail-clear")).toContainText("None yet: it is drawn as you fly");
   // Settings' close: it closes where it is, the Map card under it the same drawer.
   await expectDrawnOnce(
     page,

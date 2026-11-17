@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useGlLayer, useGlMap, useGlPaint } from "../glLayer";
 import { imageryFade, imageryFrom } from "../closeZoom";
+import { NIGHT_BRIGHTNESS } from "../useDarkTheme";
 import type { CloseTiles } from "../useCloseImagery";
 
 /** The imagery's layer (useCloseImagery's tiles), under the chart
@@ -35,7 +36,7 @@ export function CloseImageryGl({
     ],
     under,
   );
-  useGlPaint(["close-imagery"], { "raster-brightness-max": night ? 0.5 : 1 });
+  useGlPaint(["close-imagery"], { "raster-brightness-max": night ? NIGHT_BRIGHTNESS : 1 });
   // For the browser tests: the imagery is there to fade into.
   useEffect(() => {
     const el = map.getContainer();

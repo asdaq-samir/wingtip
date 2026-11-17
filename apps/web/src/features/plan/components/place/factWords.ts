@@ -15,7 +15,7 @@ export interface FactWords {
  * the engine's (surface_airspace: 14 CFR 71; a shelf over the field is not
  * its class), "Class D" (the owner, 2026-11-14: the word before the
  * letter); where it is part-time, the note its next change today
- * from the engine's surface_hours, "G after 22:00" or "D from 06:00", or
+ * from the engine's surface_hours, "G after 22:00 local" or "D from 06:00 local", or
  * "Part-time" where the hours are not known (surfaceHoursWords). A dash where
  * the planner could not read the airspace.
  */

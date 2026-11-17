@@ -84,7 +84,10 @@ export function PlaceWeatherTab({
                 "refresh can go in the weather tab itself"). */}
             {place && <RefreshNow card="airport" label={`Refresh ${place.ident}`} className="size-8" />}
           </ListRow>
-          {place && hourly.hours.length > 0 && (
+          {/* The hours only where there is a forecast to show (a TAF): Now
+              alone was a column of the summary's own figures in a mostly
+              empty strip (UI audit C10, 2026-11-17). */}
+          {place && hourly.hours.length > 1 && (
             <div className="min-w-0">
               <HourlyForecast hours={hourly.hours} arrival={arrival} />
             </div>
@@ -98,8 +101,12 @@ export function PlaceWeatherTab({
               <>
                 {/* When it was observed, first: a report's age is what a
                     pilot weighs it by (and where it came from, where it is
-                    own ship's receiver). Its wind is true, as reported. */}
-                {metar.observed_at && <ListRow title={<Observed at={metar.observed_at} />} />}
+                    own ship's receiver); said once, in the summary over
+                    it, where that is this report's (UI audit C10). Its
+                    wind is true, as reported. */}
+                {metar.observed_at && metar.observed_at !== observedAt && (
+                  <ListRow title={<Observed at={metar.observed_at} />} data-testid="place-observed" />
+                )}
                 {/* Each figure with its glyph, its value at the right in
                     the text's own colour; the report as it was sent
                     under them. */}
@@ -112,6 +119,7 @@ export function PlaceWeatherTab({
                     }
                     title="Wind"
                     value={<span className="font-semibold text-foreground">{placeWind(metar)}</span>}
+                    data-testid="place-wind"
                   />
                 )}
                 <ListRow

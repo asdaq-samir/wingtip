@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { longestOpen } from "./runwayPicks";
+import { longestOpen, withNotamClosures } from "./runwayPicks";
+import type { NotamMark } from "./notamBadges";
 
 describe("longestOpen", () => {
   it("is the longest runway open, closed ones and unsurveyed ones left out", () => {
@@ -14,5 +15,21 @@ describe("longestOpen", () => {
 
   it("is none where every runway is closed", () => {
     expect(longestOpen([{ length_ft: 5000, closed: true }])).toBeNull();
+  });
+});
+
+describe("withNotamClosures", () => {
+  it("closes a runway a NOTAM shuts and leaves one under a caution open", () => {
+    const runways = [
+      { ends: "05/23", closed: false },
+      { ends: "09/27", closed: false },
+      { ends: "18/36", closed: true },
+    ];
+    const mark = (severity: NotamMark["severity"]) => ({ word: "", severity, label: "", notams: [] }) as unknown as NotamMark;
+    const runway = new Map([
+      [0, mark("unusable")],
+      [1, mark("caution")],
+    ]);
+    expect(withNotamClosures(runways, { runway }).map((r) => r.closed)).toEqual([true, false, true]);
   });
 });

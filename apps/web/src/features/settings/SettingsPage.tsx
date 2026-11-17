@@ -95,13 +95,21 @@ function MapGroup() {
     };
   }, [wanted, card]);
   return (
-    <div ref={at} className="scroll-mt-16">
+    <div ref={at} className="scroll-mt-16" data-testid="settings-map">
       <ListGroup title="Map">
         <AirportWeatherRow />
         {/* The glide ring about own ship, off unless turned on (GlideRingGl; the owner, 2026-11-09). */}
         <GlideRingRow />
-        {/* Own ship's path flown (OwnTrailGl), put away here: it starts again with the next flight. */}
-        <ListRow title="Clear Your Path" disabled={!trailed} onClick={clearOwnTrail} />
+        {/* Own ship's path flown (OwnTrailGl), put away here: it starts again with the next flight.
+            Greyed with why while there is none, as Glide Ring says what it waits for: alone it read
+            as a link that did not work (UI audit C16, 2026-11-17). */}
+        <ListRow
+          title="Clear Your Path"
+          description={trailed ? undefined : "None yet: it is drawn as you fly"}
+          disabled={!trailed}
+          onClick={clearOwnTrail}
+          data-testid="own-trail-clear"
+        />
       </ListGroup>
     </div>
   );
@@ -135,8 +143,8 @@ function InFlightGroup() {
   const [alertMode] = useAlertMode();
   return (
     <ListGroup title="In Flight">
-      <PageRow page="alerts" title="Alerts" value={ALERT_MODES.find((m) => m.value === alertMode)?.label} />
-      <PageRow page="atc" title="ATC" />
+      <PageRow page="alerts" title="Alerts" value={ALERT_MODES.find((m) => m.value === alertMode)?.label} testId="alerts-row" />
+      <PageRow page="atc" title="ATC" testId="atc-row" />
     </ListGroup>
   );
 }

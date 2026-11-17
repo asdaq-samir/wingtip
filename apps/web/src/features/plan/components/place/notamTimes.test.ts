@@ -18,7 +18,7 @@ describe("a NOTAM's times, as ForeFlight's list gives them", () => {
     // Oshkosh in November keeps Central Standard Time, UTC-6.
     const lines = timeLines(n, read, "America/Chicago", NOW);
     expect(lines.map((l) => l.label)).toEqual(["Since", "Ends"]);
-    expect(lines[0]!.value).toBe("11/10 06:00 (1200Z)");
+    expect(lines[0]!.value).toBe("11/10 06:00 local (1200Z)");
     expect(lines[1]!.value).toBe("11/12 08:32 local (1432Z) (in 1d2h)");
   });
 

@@ -63,3 +63,29 @@ test("in the dark theme the page is the night's navy and only the chart's tiles 
   await expect(html).not.toHaveClass(/dark/);
   await expect.poll(() => lookOf(page)).toBe("normal");
 });
+
+/** Each chart layer's brightness as the map draws it (ChartGl's
+ *  data-chart-brightness, read from the map at rest): "chart 0.5,...". */
+const brightnessOf = (page: Page) => page.getByTestId("gl-map").getAttribute("data-chart-brightness");
+
+test("at night the chart is dimmed at every zoom, the whole country and close in at a field alike", async ({ page }) => {
+  test.setTimeout(slow(60000));
+  // The whole country, then close in at Oshkosh, where the sectional's own
+  // tiles were drawn undimmed under the dimmed region's level (UI audit B10).
+  for (const url of ["/app/plan?dep=KPWK&dest=KLAS", "/app/plan?place=KOSH"]) {
+    await page.goto(url);
+    await settle(page);
+    await expect.poll(() => lookOf(page), { timeout: slow(15000) }).toBe("dimmed");
+    await expect
+      .poll(
+        async () => {
+          const drawn = (await brightnessOf(page)) ?? "";
+          const each = drawn.split(",").filter(Boolean);
+          return each.length > 0 && each.every((d) => d.endsWith(" 0.5"));
+        },
+        { timeout: slow(15000) },
+      )
+      .toBe(true);
+    expect(await brightnessOf(page)).toContain("chart 0.5");
+  }
+});
