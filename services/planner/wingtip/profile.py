@@ -23,16 +23,16 @@ from functools import lru_cache
 from . import airports as airports_module
 from . import elevation, faa_data, geo
 from .airspace import load_controlled_airspace
+from .engine import ask as engine
 from .terrain import SAMPLE_INTERVAL_NM, _route_sample_points
 from .units import M_TO_FT
 
 
-#: How far off each hop's line an obstacle is drawn on the side view: a
-#: display choice, a nautical mile either side, not a rule -- the legal
-#: margins over obstacles are 14 CFR 91.119's (a 2,000 ft radius over a
-#: congested area) and 91.177's 4 nm under IFR, which the planner's floors
-#: keep with their own wider read (wingtip.terrain's OBSTACLE_READ_NM).
-PROFILE_OBSTACLE_NM = 1.0
+#: How far off each hop's line an obstacle is drawn on the side view, nm
+#: either side: a display width, not a margin (the engine's ground_figures,
+#: profile_obstacle_nm); the floors keep the legal margins with their own
+#: wider read.
+PROFILE_OBSTACLE_NM = engine("ground_figures")["profile_obstacle_nm"]
 
 
 def _obstacles_along(start: tuple, end: tuple, length: float, offset: float, dof_path) -> list[dict]:

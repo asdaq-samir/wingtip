@@ -82,15 +82,11 @@ services/planner/wingtip/chart_faces.py 937
 services/planner/wingtip/charts.py 2336
 services/planner/wingtip/chartvision.py 1070
 services/planner/wingtip/cycle_pack.py 893
-services/planner/wingtip/elevation.py 460
 services/planner/wingtip/faa_data.py 815
-services/planner/wingtip/fixes.py 434
 services/planner/wingtip/flight_plan.py 1049
 services/planner/wingtip/osm.py 522
 services/planner/wingtip/pipeline.py 837
 services/planner/wingtip/planning.py 688
-services/planner/wingtip/procedure_paths.py 401
-services/planner/wingtip/procedures.py 867
 services/planner/wingtip/publications.py 553
 services/planner/wingtip/traffic/flights.py 444
 services/planner/wingtip/weather.py 516

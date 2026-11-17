@@ -950,6 +950,11 @@ extension Engine {
         try Self.rule("great_circles", EngineContract.GreatCirclesInput(lat1: lat1, lon1: lon1, lat2: lat2, lon2: lon2))
     }
 
+    /// The figures the planner's readers of the ground and its obstacles take: the lowest ground in North America, Badwater Basin's 282 ft below sea level (USGS; NPS), below which a terrain tile's height is the sea floor and the surface 14 CFR 91.159 and 91.119 measure from is the sea's, 0 ft; the obstacles the map stands up, 14 CFR 77.9(a)'s more than 200 ft AGL; how far either side of each hop the side view draws obstacles, 1 nm, a display width (the legal margins are 91.119(b)'s and 91.177(a)(2)'s, which the floors keep); and how far round a public-use airport the finer terrain is kept, 5 nm, where a 3° path (AIM 1-1-9) is 1,500 ft up.
+    static func groundFigures() throws -> EngineContract.GroundFiguresAnswer {
+        try Self.rule("ground_figures", EngineContract.GroundFiguresInput())
+    }
+
     /// The nav log's ground speed once the heading holds the course: the airspeed's share along it less the wind's.
     static func groundspeedKt(trueCourseDeg: Double, windFromDeg: Double, windKt: Double, tasKt: Double, wcaDeg: Double) throws -> Double {
         try Self.rule("groundspeed_kt", EngineContract.GroundspeedKtInput(trueCourseDeg: trueCourseDeg, windFromDeg: windFromDeg, windKt: windKt, tasKt: tasKt, wcaDeg: wcaDeg))
@@ -1458,6 +1463,16 @@ extension Engine {
     /// A hold's leg, nm: a timed leg flown at 120 kt (AIM 5-3-8 j.4), else the distance the CIFP codes; null with neither.
     static func procedureHoldLegNm(minutes: Double? = nil, distanceNm: Double? = nil) throws -> Double? {
         try Self.rule("procedure_hold_leg_nm", EngineContract.ProcedureHoldLegNmInput(minutes: minutes, distanceNm: distanceNm))
+    }
+
+    /// How far a procedure's leg with no fix of its own to end at is drawn, nm (ARINC 424-18 5.21): an FC leg its coded distance from its fix; a leg flown to an altitude (FA, CA, VA) from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; any other (to a DME distance, a radial, an intercept, a manual termination) 2 nm.
+    static func procedureLegNm(path: String, distanceNm: Double? = nil, altitudeFt: Double? = nil, knownFt: Double? = nil) throws -> Double {
+        try Self.rule("procedure_leg_nm", EngineContract.ProcedureLegNmInput(path: path, distanceNm: distanceNm, altitudeFt: altitudeFt, knownFt: knownFt))
+    }
+
+    /// The course reversal flown where a procedure's path turns `turn_deg` at a fix (AIM 5-4-9): "coded" -- the chart's hold in lieu of a procedure turn or its procedure turn there, entered -- where one is coded at the fix and the path turns more than 90° there, come to from its far side (from the near side a pilot is lined up already and makes none, as on a NoPT route, 14 CFR 91.175(j)); else "teardrop" where the path doubles back more than 120° at a fix past the procedure's first; else null.
+    static func procedureReversal(turnDeg: Double, coded: Bool? = nil, firstFix: Bool? = nil) throws -> String? {
+        try Self.rule("procedure_reversal", EngineContract.ProcedureReversalInput(turnDeg: turnDeg, coded: coded, firstFix: firstFix))
     }
 
     /// A 45°/180° procedure turn at its fix (AIM 5-4-9): 4 nm out on the final's reciprocal, 2 nm on the barb's true course, a standard-rate 180° turn at 120 kt toward the final's side, back to meet the final within 10 nm, and in to the fix.

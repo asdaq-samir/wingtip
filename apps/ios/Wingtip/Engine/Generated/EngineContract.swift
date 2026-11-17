@@ -5793,6 +5793,23 @@ enum EngineContract {
         var lon2: [Double]
     }
 
+    struct GroundFiguresAnswer: Codable, Equatable, Sendable {
+        var lowestGroundFt: Double
+        var obstacleShownAglFt: Double
+        var profileObstacleNm: Double
+        var fineTerrainRadiusNm: Double
+
+        enum CodingKeys: String, CodingKey {
+            case lowestGroundFt = "lowest_ground_ft"
+            case obstacleShownAglFt = "obstacle_shown_agl_ft"
+            case profileObstacleNm = "profile_obstacle_nm"
+            case fineTerrainRadiusNm = "fine_terrain_radius_nm"
+        }
+    }
+
+    struct GroundFiguresInput: Codable, Equatable, Sendable {
+    }
+
     struct GroundspeedKtInput: Codable, Equatable, Sendable {
         var trueCourseDeg: Double
         var windFromDeg: Double
@@ -9460,6 +9477,32 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case minutes
             case distanceNm = "distance_nm"
+        }
+    }
+
+    struct ProcedureLegNmInput: Codable, Equatable, Sendable {
+        var path: String
+        var distanceNm: Double?
+        var altitudeFt: Double?
+        var knownFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case path
+            case distanceNm = "distance_nm"
+            case altitudeFt = "altitude_ft"
+            case knownFt = "known_ft"
+        }
+    }
+
+    struct ProcedureReversalInput: Codable, Equatable, Sendable {
+        var turnDeg: Double
+        var coded: Bool?
+        var firstFix: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case turnDeg = "turn_deg"
+            case coded
+            case firstFix = "first_fix"
         }
     }
 

@@ -5,11 +5,14 @@
 //! - figures: the debrief of a flown track (ACS PA.VI.A), the diversion
 //!   drill (PA.VI.C), a hold's entry and wind (AIM 5-3-8) and lost
 //!   communications' altitudes (14 CFR 91.185), with their words.
+//! - legs: how far a coded leg with no end of its own is drawn, and the
+//!   course reversal flown where a procedure's path turns back (AIM 5-4-9).
 //! - occurrence: whether an accident or incident report, the FAA's
 //!   registry and an ADS-B track are one airplane at one time and place
 //!   (the Studio's crash drafts, docs/STUDIO-PIPELINE.md).
 
 pub mod figures;
+pub mod legs;
 pub mod occurrence;
 pub mod paths;
 

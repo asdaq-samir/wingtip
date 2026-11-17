@@ -800,6 +800,8 @@ export type ProcedureArcAnswer = [number, number][];
 export type ProcedureClimbNmAnswer = number;
 export type ProcedureHoldAnswer = [number, number][];
 export type ProcedureHoldLegNmAnswer = number | null;
+export type ProcedureLegNmAnswer = number;
+export type ProcedureReversalAnswer = "coded" | "teardrop" | null;
 export type ProcedureTurnAnswer = [number, number][];
 export type ProceduresReadAnswer = {
   part: string;
@@ -2426,6 +2428,13 @@ export interface EngineContract {
     answer: GreatCirclesAnswer;
   };
   /**
+   * The figures the planner's readers of the ground and its obstacles take: the lowest ground in North America, Badwater Basin's 282 ft below sea level (USGS; NPS), below which a terrain tile's height is the sea floor and the surface 14 CFR 91.159 and 91.119 measure from is the sea's, 0 ft; the obstacles the map stands up, 14 CFR 77.9(a)'s more than 200 ft AGL; how far either side of each hop the side view draws obstacles, 1 nm, a display width (the legal margins are 91.119(b)'s and 91.177(a)(2)'s, which the floors keep); and how far round a public-use airport the finer terrain is kept, 5 nm, where a 3° path (AIM 1-1-9) is 1,500 ft up.
+   */
+  ground_figures: {
+    input: GroundFiguresInput;
+    answer: GroundFiguresAnswer;
+  };
+  /**
    * The nav log's ground speed once the heading holds the course: the airspeed's share along it less the wind's.
    */
   groundspeed_kt: {
@@ -3138,6 +3147,20 @@ export interface EngineContract {
   procedure_hold_leg_nm: {
     input: ProcedureHoldLegNmInput;
     answer: ProcedureHoldLegNmAnswer;
+  };
+  /**
+   * How far a procedure's leg with no fix of its own to end at is drawn, nm (ARINC 424-18 5.21): an FC leg its coded distance from its fix; a leg flown to an altitude (FA, CA, VA) from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; any other (to a DME distance, a radial, an intercept, a manual termination) 2 nm.
+   */
+  procedure_leg_nm: {
+    input: ProcedureLegNmInput;
+    answer: ProcedureLegNmAnswer;
+  };
+  /**
+   * The course reversal flown where a procedure's path turns `turn_deg` at a fix (AIM 5-4-9): "coded" -- the chart's hold in lieu of a procedure turn or its procedure turn there, entered -- where one is coded at the fix and the path turns more than 90° there, come to from its far side (from the near side a pilot is lined up already and makes none, as on a NoPT route, 14 CFR 91.175(j)); else "teardrop" where the path doubles back more than 120° at a fix past the procedure's first; else null.
+   */
+  procedure_reversal: {
+    input: ProcedureReversalInput;
+    answer: ProcedureReversalAnswer;
   };
   /**
    * A 45°/180° procedure turn at its fix (AIM 5-4-9): 4 nm out on the final's reciprocal, 2 nm on the barb's true course, a standard-rate 180° turn at 120 kt toward the final's side, back to meet the final within 10 nm, and in to the fix.
@@ -8215,6 +8238,13 @@ export interface GreatCirclesAnswer {
   distance_nm: number[];
   bearing_deg: number[];
 }
+export interface GroundFiguresInput {}
+export interface GroundFiguresAnswer {
+  lowest_ground_ft: number;
+  obstacle_shown_agl_ft: number;
+  profile_obstacle_nm: number;
+  fine_terrain_radius_nm: number;
+}
 export interface GroundspeedKtInput {
   true_course_deg: number;
   wind_from_deg: number;
@@ -10786,6 +10816,17 @@ export interface ProcedureHoldInput {
 export interface ProcedureHoldLegNmInput {
   minutes?: number | null;
   distance_nm?: number | null;
+}
+export interface ProcedureLegNmInput {
+  path: string;
+  distance_nm?: number | null;
+  altitude_ft?: number | null;
+  known_ft?: number | null;
+}
+export interface ProcedureReversalInput {
+  turn_deg: number;
+  coded?: boolean | null;
+  first_fix?: boolean | null;
 }
 export interface ProcedureTurnInput {
   /**
