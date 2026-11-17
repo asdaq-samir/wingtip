@@ -490,9 +490,22 @@ off by default (the owner, 2026-11-13).
    in red with why. The timeline is one disclosure ("Route KORD to KDEN via
    KOMA, open"), each ident its own link -- and a tap anywhere else on it
    opens it to edit: a head, "Route" and Done (iOS's Edit and
-   Done), over the airport cards, Add a Stop, the route's field to type or
-   paste a whole route, and the figures under all of them, the Routes'
-   chips put away; on a phone the sheet's height drives it, as Apple Maps
+   Done), over one grouped list as Apple Maps' Directions (the owner's
+   model, 2026-11-17: "Changeable by tapping and then the map shows only
+   the route points which can be tapped to show their info") -- a row a
+   point, hairlines between in one rounded group, the rail between the
+   marks: its mark (its menu), its ident over its city (My Location for
+   where the airplane is), its time, its grip; a tap on a row changes the
+   point by the one search, My Location offered first where it is not it
+   ("should be able to change any of the stops including my location"),
+   a Direct To's start changed a route from there, the plan's Undo taking
+   any change back; a hold or a drag moves it, a swipe to the left takes
+   a stop out; an airport's runways and procedures, with its wind, under
+   its row from its menu's Runways & Procedures; Add a Stop the group's
+   last row -- then the route's field to type or paste a whole route, and
+   the figures under all of them, the Routes' chips put away; while it is
+   open the map shows the route's points alone (the chart under them, the
+   TFRs kept; lib/map/routeOnly), each a tap to its card; on a phone the sheet's height drives it, as Apple Maps
    shows more as its sheet rises: folded at half and the pill, open all
    the way up, so a full sheet is never blank; the tap raises the sheet to
    full and Done (or a tap on "Route") folds it back to half, never while

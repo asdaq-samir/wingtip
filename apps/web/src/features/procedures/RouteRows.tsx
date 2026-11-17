@@ -68,8 +68,11 @@ export function Step({
   field = false,
   testId,
   icon,
+  change,
   children,
 }: {
+  /** Open to edit: a tap on the row changes the point (askChange). */
+  change?: () => void;
   /** Its menu, behind its mark (PointMenu's `face`). */
   mark: ReactNode;
   /** After its name: the fuel in the tanks there (FuelGauge). */
@@ -94,8 +97,19 @@ export function Step({
       {!last && <span aria-hidden="true" className="absolute top-3 bottom-0 left-[calc(0.875rem-1px)] w-0.5" style={ROUTE_LINE} />}
       <div className="relative flex w-7 shrink-0 justify-center pt-0.5">{menu ? menu(mark) : mark}</div>
       <section aria-label={title} className={cn("min-w-0 flex-1 space-y-3", field ? "pb-5" : "pb-4")}>
-        <div className="flex items-center gap-2">
-          <div className="flex min-w-0 flex-1 flex-col">
+        <div className="relative flex items-center gap-2">
+          {change && (
+            <Button
+              variant="ghost"
+              size="inline"
+              type="button"
+              onClick={change}
+              data-testid="step-change"
+              aria-label={`${title}: change`}
+              className="absolute inset-0 rounded-lg outline-none hover:bg-transparent dark:hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          )}
+          <div className="pointer-events-none flex min-w-0 flex-1 flex-col">
             <span className="flex min-w-0 items-center gap-1">
               <Name className={cn("truncate", field ? "font-semibold" : "font-normal", TEXT.row)}>{title}</Name>
               {icon}

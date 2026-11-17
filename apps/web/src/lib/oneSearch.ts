@@ -30,6 +30,9 @@ export interface SearchPick {
   fixes: boolean;
   onPick: (ident: string) => void;
   problem?: string;
+  /** Where the airplane is offered first (My Location), as Maps' From
+   *  offers it: a point of the route changed, that is not it already. */
+  position?: boolean;
 }
 export const useSearchPick = create<{ pick: SearchPick | null; fields: number }>(() => ({ pick: null, fields: 0 }));
 

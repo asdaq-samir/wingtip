@@ -42,6 +42,10 @@ import type { AloftPoint } from "./terrain/geometry";
 import { useTerrainView } from "./terrain/useTerrainView";
 import ReliefGl from "./terrain/ReliefGl";
 import { coursePoints } from "../../lib/course";
+import { useRouteOnly } from "../../lib/map/routeOnly";
+
+/** No checkpoints, while the map shows the route's points alone. */
+const NO_CHECKPOINTS: GlCheckpoint[] = [];
 
 /** The 3D ground and the pilot's-eye view (features/plan-map/terrain): a
  *  chunk of its own, deck.gl with it, loaded only once 3D is on; the
@@ -183,7 +187,9 @@ function EngineLayers(p: GlRouteMapProps) {
   // The weather picked, only while the Map card's Weather is on (the
   // owner, 2026-11-14): the radar and satellite loop under the advisories,
   // and the model weather's flow layer, its own chunk.
-  const weather = usePreferences((s) => s.weather);
+  // The route's points alone while the route is open to edit (routeOnly).
+  const routeOnly = useRouteOnly((s) => s.on);
+  const weather = usePreferences((s) => s.weather) && !routeOnly;
   const loop = useWeatherLayers((s) => s.loop !== "off") && weather;
   const flow = useWeatherLayers((s) => s.flow !== "off") && weather;
   return (
@@ -210,29 +216,33 @@ function EngineLayers(p: GlRouteMapProps) {
       <TfrGl />
       <MapCentreGl />
       {/* A search sent, its fields marked (the one search's results). */}
-      <SearchResultsGl />
-      <AirspaceGl />
-      <NavaidsGl />
-      <WaypointsGl exclude={p.chippedIdents} />
+      {!routeOnly && (
+        <>
+          <SearchResultsGl />
+          <AirspaceGl />
+          <NavaidsGl />
+          <WaypointsGl exclude={p.chippedIdents} />
+        </>
+      )}
       <AirportsGl selected={p.place} onSelect={p.onSelectPlace} others={p.chipped} route={p.routeBox} worse={worse} />
-      {p.chart && <ClassBGl chart={p.chart} route={route} onSelectPlace={p.onSelectPlace} />}
-      <StopFieldsGl fields={p.stopFields} onSelect={p.onPickStopField ?? p.onSelectPlace} />
+      {p.chart && !routeOnly && <ClassBGl chart={p.chart} route={route} onSelectPlace={p.onSelectPlace} />}
+      {!routeOnly && <StopFieldsGl fields={p.stopFields} onSelect={p.onPickStopField ?? p.onSelectPlace} />}
       {course && (
         <>
-          {p.onPickWay && p.ways && <WaysGl ways={p.ways} shown={p.wayShown} onPick={p.onPickWay} />}
+          {p.onPickWay && p.ways && !routeOnly && <WaysGl ways={p.ways} shown={p.wayShown} onPick={p.onPickWay} />}
           <LegHighlightGl course={course} />
           <LegHoverGl />
           <PlatesGl drawings={p.procedures} viewer={FaaChart} />
           <RouteGl
             course={course}
-            checkpoints={p.checkpoints}
+            checkpoints={routeOnly ? NO_CHECKPOINTS : p.checkpoints}
             candidates={p.candidates}
             endpoints={p.endpoints}
             legs={p.routeLegs}
             onSelectLeg={p.onSelectLeg}
             selectedLeg={p.selectedLeg}
           />
-          <FuelStopsGl stops={p.fuelStops} onSelect={p.onSelectPlace} />
+          {!routeOnly && <FuelStopsGl stops={p.fuelStops} onSelect={p.onSelectPlace} />}
           <FlownTrackGl course={course} />
           {dryRunning && <ReplayGl asOwnShip />}
           {dryRunning && <ForecastRunGl />}
@@ -251,7 +261,7 @@ function EngineLayers(p: GlRouteMapProps) {
       <GlideRingGl />
       <OwnShipGl />
       <AheadGl />
-      <TrafficGl />
+      {!routeOnly && <TrafficGl />}
     </>
   );
 }

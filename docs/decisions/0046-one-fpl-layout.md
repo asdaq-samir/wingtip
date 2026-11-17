@@ -42,10 +42,26 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    anywhere else opens the route, the lines giving way to the cards on the
    same rail with no motion of their own. The lines are 44 points, not
    the canvas's 30, so each ident's tap is a finger's (the hit area rule).
-2. **Open, to edit**: a head, "Route" and Done; the airport cards
-   (always filled, their role over the ident: Departure, Stop,
-   Destination), the waypoints as plain rows between, Add a Stop at the
-   end; the route's field to type or paste a whole route (RouteBox, read
+2. **Open, to edit**: a head, "Route" and Done; one grouped list as
+   Apple Maps' Directions (the owner's model of 2026-11-17: "Changeable by
+   tapping and then the map shows only the route points which can be
+   tapped to show their info"): a row a point, hairlines between in one
+   rounded group, the rail between the marks, each its mark (its menu),
+   its ident over its city (My Location for the airplane's own position),
+   its time and its grip; a tap on a row changes the point by the one
+   search (`askChange`), My Location offered first where the row is not
+   it, any point the departure, a stop, the destination or a Direct To's
+   start (which becomes a route from there), the plan's Undo taking it
+   back ("should be able to change any of the stops including my
+   location"); a hold or the grip moves it, a swipe to the left takes a
+   stop out (the ends keep their places, the route staying whole); an
+   airport's runways and procedures, with its wind, open under its row
+   from its menu's Runways & Procedures (the airport card has no
+   procedure picking, so the row keeps it); Add a Stop the group's last
+   row (no microphone of its own: the field under it and the one search
+   take speech); while open the map shows the route's points alone, the
+   chart under them and the TFRs kept, each a tap to its card
+   (`lib/map/routeOnly`), everything again folded; the route's field to type or paste a whole route (RouteBox, read
    by the engine's `route_read` as before); and the figures under all of
    it, changing as it is edited. The Routes' chips are put away while it
    is open: they change the route rather than edit it.

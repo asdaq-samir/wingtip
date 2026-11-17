@@ -11,7 +11,7 @@ import { useProceduresRoute } from "./useProceduresRoute";
 import type { ProceduresRouteProps } from "./routeProps";
 import { RouteLine } from "./RouteLine";
 import { FieldStep } from "./FieldStep";
-import { pointEnd, stopRemoval } from "./pointEnd";
+import { askChange, pointEnd, stopRemoval } from "./pointEnd";
 import { nthTyped } from "./visits";
 import { AddStopRow, HoldRow, Step } from "./RouteRows";
 import { RouteGrid, type RouteItem } from "./RouteGrid";
@@ -228,6 +228,19 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
           figures={end?.figures ?? <PointFigures time={time} altitude={null} kind="cruise" />}
           menu={end?.menu}
           grip={end?.grip}
+          // Open to edit, a tap on the row changes it: a typed point, or
+          // where the route starts (My Location).
+          change={
+            edit && (typedAt >= 0 || row.kind === "departure")
+              ? () =>
+                  askChange(
+                    vm,
+                    row.kind === "departure" ? routePoints[0]! : row.airport.ident,
+                    row.kind === "departure" ? 0 : typedAt,
+                    row.kind !== "departure",
+                  )
+              : undefined
+          }
         />
       ),
     });
@@ -267,14 +280,20 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
       >
         <ResponsivePopoverAnchor asChild>
           {/* Its points moved by their grips, where the list changes the route (RouteGrid). */}
-          <div className="pt-2 pb-1">
-            <RouteGrid items={fieldsAlone ?? steps} onMove={edit?.onMove} />
+          {/* Open to edit, one grouped list as Apple Maps' Directions, its
+              rows apart by hairlines, Add a Stop its last row. */}
+          <div className={edit ? "mt-2 mb-1 rounded-(--radius-banner) bg-card px-3 py-1" : "pt-2 pb-1"}>
+            <RouteGrid items={fieldsAlone ?? steps} onMove={edit?.onMove} grouped={!!edit} />
+            {edit && routePoints.length > 1 && (
+              <div className="border-t border-border">
+                <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} />
+              </div>
+            )}
           </div>
         </ResponsivePopoverAnchor>
         {/* A stop before the destination, as Maps' Add Stop is, at the
           list's end where the list changes the route (the FPL canvas's A
           and B, 2026-11-05). */}
-        {edit && routePoints.length > 1 && <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} />}
         {editingUsed && (
           <Suspense fallback={null}>
             <PointAltitudeDialog

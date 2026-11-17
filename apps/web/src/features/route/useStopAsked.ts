@@ -31,7 +31,7 @@ export function useStopAsked({
       label: departure ? "Departure" : "Stop",
       fixes: !departure,
       onPick: (ident) => {
-        // The departure may be where the airplane is (the search's My Position).
+        // The departure may be where the airplane is (the search's My Location).
         const fresh = (departure && departureOf(ident)) || stopOf(ident);
         if (fresh) change([...points.slice(0, before), fresh, ...points.slice(before)], hasDep || (departure && isEnd(fresh)), hasDest);
       },

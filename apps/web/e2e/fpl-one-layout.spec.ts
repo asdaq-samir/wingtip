@@ -55,8 +55,12 @@ test.describe("/app/plan", () => {
     await expect(head).toBeFocused();
     await expect(drawer.getByTestId("route-done")).toBeVisible();
     await expect(drawer).toHaveAttribute("data-panel", "full");
-    const roles = drawer.getByTestId("route-field").getByTestId("field-role");
-    await expect(roles).toHaveText(["Departure", "Stop", "Destination"], { timeout: slow(30_000) });
+    // One grouped list, Apple Maps' Directions': each row its ident over
+    // its city, a tap on it a change (its name says so), Add a Stop last.
+    const idents = drawer.getByTestId("route-field").getByTestId("field-ident");
+    await expect(idents).toHaveText(["KORD", "KOMA", "KDEN"], { timeout: slow(30_000) });
+    await expect(drawer.getByTestId("route-field").getByTestId("field-city")).toContainText(["Chicago", "Omaha", "Denver"]);
+    await expect(drawer.getByRole("button", { name: /^Stop KOMA.*: change$/ })).toBeVisible();
     await expect(drawer.getByTestId("route-box")).toBeVisible();
     const figures = drawer.getByTestId("route-editor-figures");
     await expect(figures.getByTestId("flight-line")).toBeVisible();
@@ -149,7 +153,7 @@ test.describe("/app/plan", () => {
     await page.keyboard.insertText("KORD KOMA KDEN");
     await page.keyboard.press("Enter");
     await expect(drawer.getByTestId("route-done")).toBeVisible({ timeout: slow(30_000) });
-    await expect(drawer.getByTestId("route-field").getByTestId("field-role")).toHaveText(["Departure", "Stop", "Destination"], {
+    await expect(drawer.getByTestId("route-field").getByTestId("field-ident")).toHaveText(["KORD", "KOMA", "KDEN"], {
       timeout: slow(30_000),
     });
     await foldRoute(page);

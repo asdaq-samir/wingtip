@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { normalizeDeg } from "../../lib/geo";
 import { sameField } from "../../lib/procedures";
 import { altFt } from "../../lib/format";
-import { isFixIdent, pointName, visitKey } from "../../lib/identSchema";
+import { isFixIdent, isPosition, pointName, visitKey } from "../../lib/identSchema";
 import { PointFigures, PointMenu } from "../route/lazy";
 import { askSearchPick } from "../../lib/oneSearch";
 import { legOf, type NavLogRow } from "../plan";
@@ -15,6 +15,27 @@ import { PointGrip, type RouteItem } from "./RouteGrid";
 export function stopRemoval(vm: ProceduresRouteModel, ident: string, stop: boolean): RouteItem["remove"] {
   if (!stop || !vm.routePoints.some((p) => sameField(p, ident))) return undefined;
   return { label: `Remove ${pointName(ident)} from the route`, onRemove: () => vm.onRemove(ident) };
+}
+
+/**
+ * A point of the route changed, the owner's "Changeable by tapping"
+ * (2026-11-17, Apple Maps' Directions as the model): the one search asked
+ * for the point to put in its place, My Location first where the point is
+ * not it already, and the pick put there (a Direct To's start changed is a
+ * route from there; the plan's Undo takes it back). A stop may be a fix;
+ * an end is an airport or My Location.
+ */
+export function askChange(vm: ProceduresRouteModel, ident: string, index: number, fixes: boolean) {
+  const edit = vm.edit;
+  if (!edit) return;
+  askSearchPick({
+    label: `In place of ${pointName(ident)}`,
+    fixes,
+    position: !isPosition(ident),
+    onPick: (picked) => {
+      if (!sameField(picked, ident)) edit.onReplace(index, isPosition(picked) ? picked : picked.toUpperCase());
+    },
+  });
 }
 
 // The end of a point's row, at the owner's picks ("keep the format of
@@ -40,6 +61,9 @@ export function pointEnd(
     /** At a point the route is at more than once, which visit this is,
      *  from 1: its own altitude is that visit's (visitKey; WEB-2). */
     visit?: number;
+    /** An airport's runways and procedures opened under its row, from its
+     *  menu, where a tap on the row changes the point (the open route). */
+    details?: () => void;
   },
 ) {
   const {
@@ -119,18 +143,8 @@ export function pointEnd(
         // An airport changed here, by the one search asked for an airport,
         // its ident a link to its card (FieldHead; the owner, 2026-11-17:
         // "Can we make the airports/stops tappable as the navlog does?").
-        onChange={
-          edit && !at.waypoint && at.index !== undefined
-            ? () =>
-                askSearchPick({
-                  label: `In place of ${ident}`,
-                  fixes: false,
-                  onPick: (picked) => {
-                    if (!sameField(picked, ident)) edit.onReplace(at.index!, picked.toUpperCase());
-                  },
-                })
-            : undefined
-        }
+        onChange={edit && at.index !== undefined ? () => askChange(vm, ident, at.index!, at.stop || at.waypoint) : undefined}
+        onDetails={at.details}
         onAddAfter={
           edit && at.index !== undefined && at.index < routePoints.length - 1 && !stopsFull ? () => edit.onAddAt(at.index! + 1) : undefined
         }

@@ -236,7 +236,7 @@ export default function PlanSidebar({
           </TabPage>
         ) : model.typed || model.direct || (model.pick && model.does.length > 0) ? (
           // A search sent, its results, else the suggestions: each its own scroll box (one scrolling rule);
-          // a picker's ask with a row before anything is typed too (the departure's My Position).
+          // a picker's ask with a row before anything is typed too (the departure's My Location).
           <TabPage key={model.sent ? "results" : "suggestions"}>
             <Waits>{model.sent ? <SearchResultsPage /> : <OneSearchResults model={model} />}</Waits>
           </TabPage>

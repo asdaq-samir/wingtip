@@ -14,7 +14,7 @@ import { SCREENS, type ScreenId } from "../../../lib/navigation/generated/screen
 import { wantScreen } from "../../../lib/navigation/wanted";
 import { takeSearchAsk, useSearchAsk, useSearchPick } from "../../../lib/oneSearch";
 import { usePickScope } from "./usePickScope";
-import { positionIdent } from "../../../lib/identSchema";
+import { POSITION_NAME, positionIdent } from "../../../lib/identSchema";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { searchWords } from "./searchPlaceholder";
 import type { AirportSearchRow } from "../../../lib/airportIndex";
@@ -177,8 +177,8 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   // The departure asked for: where the airplane is, first, as Maps' From
   // offers My Location -- a route may start at a present position, as Fly
   // Here's does (the owner's "Departure → HSKEL → KJAX", 2026-11-13).
-  if (pick?.label === "Departure" && positioned && (!typed || finds(typed, "My Position")))
-    does.push({ key: "my-position", label: "My Position", kind: "action", run: () => pickIdent(positionNow() ?? "") });
+  if ((pick?.label === "Departure" || pick?.position) && positioned && (!typed || finds(typed, POSITION_NAME)))
+    does.push({ key: "my-position", label: POSITION_NAME, kind: "action", run: () => pickIdent(positionNow() ?? "") });
   const trafficOn = usePreferences((p) => p.traffic);
   if (!direct && !pick && !airplaneAsk) {
     const out = does;
@@ -226,7 +226,7 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   };
 
   const pickIdent = (ident: string) => {
-    if (!ident) return; // My Position with the fix gone since
+    if (!ident) return; // My Location with the fix gone since
     const to = pick;
     done();
     to?.onPick(ident.toUpperCase());

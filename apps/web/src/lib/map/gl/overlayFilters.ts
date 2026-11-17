@@ -2,6 +2,7 @@ import type { Map as MlMap } from "maplibre-gl";
 import { useEmergencyOpen } from "../../emergencyStore";
 import { usePreferences } from "../../preferences";
 import { applyOverlayFilters } from "./glOverlays";
+import { useRouteOnly } from "../routeOnly";
 
 /**
  * The settings' filters on the overlay tiles (applyOverlayFilters), applied
@@ -10,11 +11,12 @@ import { applyOverlayFilters } from "./glOverlays";
  * and military fields are drawn whatever the switches say, as it may rank
  * one first (14 CFR 91.3(b): in an emergency the pilot in command lands
  * where it needs), the switches left untouched and theirs again once it
- * closes (the owner, 2026-11-13).
+ * closes (the owner, 2026-11-13). While FPL's route is open to edit the
+ * map shows the route's points alone (lib/map/routeOnly).
  */
 export function watchOverlayFilters(map: MlMap): () => void {
-  const apply = () => applyOverlayFilters(map, useEmergencyOpen.getState().open != null);
+  const apply = () => applyOverlayFilters(map, useEmergencyOpen.getState().open != null, useRouteOnly.getState().on);
   apply();
-  const stops = [usePreferences.subscribe(apply), useEmergencyOpen.subscribe(apply)];
+  const stops = [usePreferences.subscribe(apply), useEmergencyOpen.subscribe(apply), useRouteOnly.subscribe(apply)];
   return () => stops.forEach((stop) => stop());
 }

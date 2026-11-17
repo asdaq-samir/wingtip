@@ -1,4 +1,5 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
+import { useRouteOnly } from "../../../lib/map/routeOnly";
 import { SearchNear } from "../../../lib/useAirportSearch";
 import { coverCard, useSheetCards } from "../../../lib/sheetCards";
 import { RouteEnds } from "../routePanelParts";
@@ -21,7 +22,7 @@ import { FlightFigures } from "./FlightFoot";
 export default function RouteEditor({
   vm,
 }: {
-  vm: PlanSlices<"brief" | "cards" | "flight" | "picks" | "plan" | "route" | "routeList" | "stops">;
+  vm: PlanSlices<"brief" | "cards" | "flight" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
 }) {
   const { directParam, hasPoints, planned, setPointAltitude, setRoute, wholeRoute } = vm.route;
   const { directToPoint, s } = vm.plan;
@@ -35,6 +36,13 @@ export default function RouteEditor({
   // sheet is inert (SheetParts, while a card is up), and the field's focus
   // as it was asked went nowhere (plans.spec, "no legal altitude").
   const covered = useSheetCards((c) => !!coverCard(c.stack));
+  // While a whole route is open on FPL, the map shows its points alone
+  // (lib/map/routeOnly); folded (this gone), or Search up, everything again.
+  const routeOnly = wholeRoute && vm.view.view === "plan";
+  useEffect(() => {
+    useRouteOnly.setState({ on: routeOnly });
+    return () => useRouteOnly.setState({ on: false });
+  }, [routeOnly]);
   return (
     <div
       className="flex flex-col px-4 pb-2"

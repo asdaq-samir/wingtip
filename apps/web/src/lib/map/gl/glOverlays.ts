@@ -215,6 +215,9 @@ export const AIRSPACE_TILE_LAYERS = [
   ...SUA_LAYERS,
 ];
 const NAVAID_TILE_LAYERS = ["navaids", "navaids-idents", "fixes", "fixes-idents"];
+/** What the route's points alone leave out besides (lib/map/routeOnly):
+ *  every airport and VFR waypoint of the tiles. */
+const ROUTE_ONLY_HIDDEN = ["airports", "vfr-waypoints", "vfr-waypoints-idents"];
 
 /** The overlay tiles' source and layers, by the slot each is drawn under
  *  (glLayer's SLOTS), for the map's first style; the layers of a layer the
@@ -298,14 +301,15 @@ function setState(map: MlMap, key: string, value: unknown) {
 /** The Map card's layers on the tile layers: Aeronautical's airspace,
  *  VORs and fixes on or off, and Private/Military's fields shown or not, or
  *  shown whatever the switches say in an emergency (overlayFilters). */
-export function applyOverlayFilters(map: MlMap, emergency = false) {
+export function applyOverlayFilters(map: MlMap, emergency = false, routeOnly = false) {
   if (!map.style) return;
   const prefs = usePreferences.getState();
   const visible = (ids: string[], on: boolean) => {
     for (const id of ids) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
   };
-  visible(AIRSPACE_TILE_LAYERS, prefs.aeronautical);
-  visible(NAVAID_TILE_LAYERS, prefs.aeronautical);
+  visible(AIRSPACE_TILE_LAYERS, prefs.aeronautical && !routeOnly);
+  visible(NAVAID_TILE_LAYERS, prefs.aeronautical && !routeOnly);
+  visible(ROUTE_ONLY_HIDDEN, !routeOnly);
   setState(map, SHOW_MILITARY, prefs.privateMilitary || emergency);
   setState(map, SHOW_PRIVATE, prefs.privateMilitary || emergency);
 }

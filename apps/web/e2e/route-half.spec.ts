@@ -57,8 +57,13 @@ test("a field of half a route offers its procedures whole, with no runways' outl
   await settle(page);
   await openPanel(page);
   const field = sideDrawer(page).getByTestId("procedures").getByRole("region", { name: "KJAX · Arrive" });
-  const toggle = field.getByTestId("field-toggle");
-  if ((await toggle.getAttribute("aria-expanded")) === "false") await toggle.click();
+  // Its runways and procedures from its menu, the row a tap to change it
+  // (the open route, 2026-11-17), where they are not open already.
+  await expect(field).toBeVisible({ timeout: slow(30_000) });
+  if ((await field.getByTestId("procedure-kind").count()) === 0) {
+    await field.getByTestId("point-menu").click();
+    await page.getByTestId("point-menu-details").click();
+  }
   const adds = field.getByTestId("procedure-kind");
   await expect(adds.first()).toBeVisible({ timeout: slow(30_000) });
   await expect(field.locator('[data-slot="skeleton"]')).toHaveCount(0);

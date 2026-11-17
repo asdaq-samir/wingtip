@@ -15,9 +15,9 @@ import ProcedureMenu from "./ProcedureMenu";
 import { DAY_MIN, toggleField, type ProceduresRouteModel } from "./useProceduresRoute";
 import { PatternChips } from "./PatternChips";
 import { RunwayTray } from "./RunwayTray";
-import { FieldHead } from "./FieldHead";
+import { FieldHead, WindLine } from "./FieldHead";
 import { KIND_WORD, patternNote } from "./procedureWords";
-import { pointEnd } from "./pointEnd";
+import { askChange, pointEnd } from "./pointEnd";
 
 type Kind = ProcedureKind;
 
@@ -36,6 +36,7 @@ export function FieldStep({
   leads: boolean;
 }) {
   const {
+    edit,
     airports,
     lists,
     cards,
@@ -202,8 +203,13 @@ export function FieldStep({
       holdable: a.role === "Destination",
       row,
       index: pointIndex(a.ident, a.role),
+      // Open to edit, a tap on the row changes the point; its runways and
+      // procedures from its menu (the owner, 2026-11-17).
+      details: edit ? () => toggleField(key, a.ident, !opened) : undefined,
     });
     const reported = reportedOf(a.ident);
+    const index = pointIndex(a.ident, a.role);
+    const change = edit && index !== undefined ? () => askChange(vm, a.ident, index, a.role === "Stop") : undefined;
     // Without the "T" after its direction, at the owner's ask ("No need
     // to put T next to wind"): a METAR's and a TAF's winds are true (FAA
     // Order JO 7900.5), as VoiceOver still says them (`spoken`).
@@ -223,7 +229,8 @@ export function FieldStep({
         onOpenChange={(next) => toggleField(key, a.ident, next)}
         render={
           <div
-            className={cn("relative isolate", FIELD_CARD, !last && FIELD_GAP)}
+            // Open to edit a row of one grouped list, read a card.
+            className={cn("relative isolate", edit ? "-mx-1.5 px-1.5 py-1" : cn(FIELD_CARD, !last && FIELD_GAP))}
             data-testid="route-field"
             data-ident={a.ident}
             data-open={opened || undefined}
@@ -232,9 +239,13 @@ export function FieldStep({
       >
         <CardThread first={leads} last={last} />
         <section aria-label={`${a.ident} · ${first.role}`}>
-          <FieldHead vm={vm} a={a} mark={mark} end={end} tank={tank} wind={wind} reported={reported} />
-          {/* Its runways and procedures under the ident, inside the card. */}
-          <CollapsibleContent className="pl-9.5">{partBody(first)}</CollapsibleContent>
+          <FieldHead {...{ vm, a, mark, end, tank, wind, reported, change }} city={card?.municipality ?? null} />
+          {/* Its runways and procedures under the ident, inside the card; open
+              to edit, its wind over them, the row's second line its city. */}
+          <CollapsibleContent className="pl-9.5">
+            {edit && <WindLine direct={false} wind={wind} reported={reported} className="pt-2" />}
+            {partBody(first)}
+          </CollapsibleContent>
         </section>
         {opened && parts[1] && (
           <section aria-label={`${a.ident} · ${parts[1].role}`} className="pl-9.5">

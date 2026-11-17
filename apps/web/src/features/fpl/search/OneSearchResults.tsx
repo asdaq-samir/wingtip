@@ -15,7 +15,7 @@ import { useVoiceInput } from "../../voice";
 import { AirportIcon, Matched, QuickAction, ResultGroup, ResultRow, RoundIcon, RowLine } from "./ResultRows";
 import { FieldError } from "../../../components/ui/field";
 
-/** A Do row's glyph: the arrow for Direct To, My Position's filled one,
+/** A Do row's glyph: the arrow for Direct To, My Location's filled one,
  *  the Brief's, Nearest's, the emergency's in red, the traffic's, a screen's. */
 function doGlyph(hit: DoHit) {
   if (hit.key.startsWith("direct")) return <MoveUpRight />;
