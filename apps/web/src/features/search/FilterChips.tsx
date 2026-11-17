@@ -1,9 +1,9 @@
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import { cn } from "cn";
-import { Badge } from "../../../../components/ui/badge";
-import { Button } from "../../../../components/ui/button";
-import { Toggle } from "../../../../components/ui/toggle";
-import { TEXT } from "../../../../lib/text";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
+import { Toggle } from "../../components/ui/toggle";
+import { TEXT } from "../../lib/text";
 import {
   FUELS,
   RUNWAY_STEPS,
@@ -18,8 +18,8 @@ import {
   vfrAtWords,
   withinWords,
   type SearchFilters,
-} from "../../lib/searchFilters";
-import { useSearchResults } from "../../hooks/useSearchResults";
+} from "./searchFilters";
+import { useSearchResults } from "./useSearchResults";
 import CheckMenu from "./CheckMenu";
 import StepMenu from "./StepMenu";
 

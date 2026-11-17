@@ -9,7 +9,7 @@ import { AircraftRecentRows, usePrefetchAircraftTiles, loadAircraftFavoriteGroup
 import type { OneSearchModel } from "../search/useOneSearch";
 import TabKept from "../../../components/TabKept";
 import TabPage from "../../../components/TabPage";
-import { RecentRoutesPage, loadSearchResultsPage, loadNearestCard } from "../../plan";
+import { RecentRoutesPage, loadSearchResultsPage, loadNearestCard } from "../../search";
 import { AirspaceCard, FlightCard, PastFlightCard, PlaceCard } from "../routePanelParts";
 import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
 import type { KeptAircraft } from "../../../lib/preferences";

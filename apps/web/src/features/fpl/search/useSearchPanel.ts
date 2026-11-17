@@ -3,14 +3,15 @@ import type { Address, SetAddress } from "../../../lib/address";
 import { identOf } from "../../../lib/identSchema";
 import { usePreferences, type KeptAircraft, type RecentAirport } from "../../../lib/preferences";
 import { airportQuery, queryClient } from "../../../lib/queryClient";
-import { useTabSearch, type PanelView } from "../../plan";
+import { useTabSearch } from "../../search";
 import { useAirportSearch } from "../../../lib/useAirportSearch";
+import type { PanelView } from "../../plan";
 
 /**
  * The planner's search fields (usePlanWorkspace): the one search, whose
  * airport opens its card or is made Home or a Favorite, and whose airplane
  * opens its card or is made the pilot's Airplane or a Favorite; Nearest's,
- * whose text lives in features/plan/lib/tabSearch; the Adds that focus
+ * whose text lives in features/search/tabSearch; the Adds that focus
  * them; and Favorites brought in by a link. No field's focus
  * or typing moves the sheet (the owner, 2026-11-11: "Whenever I try to
  * type on search bar it takes the card to full screen"): it stays where

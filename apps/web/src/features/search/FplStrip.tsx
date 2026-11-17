@@ -2,17 +2,17 @@ import { lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Route } from "lucide-react";
 import { useNavigate } from "react-router";
-import { PillStrip, SmallMark, SmallTile, StripNote, StripSection } from "../../../components/Favorites";
-import { planHrefOf } from "../../../lib/flightLink";
-import { placeOfPoint } from "../../../lib/identSchema";
-import { dayMonth } from "../../../lib/format";
-import { flightsQuery, pilotQuery } from "../../../lib/queryClient";
-import QueryState from "../../../components/QueryState";
-import { useStripShows } from "../hooks/useStripShows";
+import { PillStrip, SmallMark, SmallTile, StripNote, StripSection } from "../../components/Favorites";
+import { planHrefOf } from "../../lib/flightLink";
+import { placeOfPoint } from "../../lib/identSchema";
+import { dayMonth } from "../../lib/format";
+import { flightsQuery, pilotQuery } from "../../lib/queryClient";
+import QueryState from "../../components/QueryState";
+import { useStripShows } from "./useStripShows";
 import { RecentRouteTiles } from "./RecentRoutes";
 
 // The sign-in sheet's code with its first tap, not FPL's first load.
-const SignInModal = lazy(() => import("../../../components/SignInModal"));
+const SignInModal = lazy(() => import("../../components/SignInModal"));
 
 /** The most the strip shows, newest first; Saved's title opens them all. */
 const STRIP_MOST = 10;

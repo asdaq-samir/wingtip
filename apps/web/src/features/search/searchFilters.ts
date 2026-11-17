@@ -1,6 +1,6 @@
-import type { NearestAirport } from "../../../lib/api/types";
-import { clockTime } from "../../../lib/format";
-import { callEngine } from "../../../lib/engine/engine";
+import type { NearestAirport } from "../../lib/api/types";
+import { clockTime } from "../../lib/format";
+import { callEngine } from "../../lib/engine/engine";
 
 /** A fuel a search filters by (the planner's, from NASR's fuel codes). */
 export type Fuel = NonNullable<NearestAirport["fuel"]>[number];

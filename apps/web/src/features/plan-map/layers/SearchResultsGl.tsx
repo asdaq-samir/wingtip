@@ -5,7 +5,7 @@ import { useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/g
 import { cameraOf } from "../../../lib/map/gl/camera";
 import { GL_FONT_BOLD, TAP } from "../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
-import { useSearchResultRows, useSearchResults } from "../../plan";
+import { useSearchResultRows, useSearchResults } from "../../search";
 import { useGlFit } from "../useGlFit";
 
 const SOURCE = "search-results";

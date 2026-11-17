@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { NearestAirport } from "../../../lib/api/types";
+import type { NearestAirport } from "../../lib/api/types";
 import { NO_FILTERS, filterFields, filtersOn, listWords, readQuery, vfrAtTime } from "./searchFilters";
 
 const field = (over: Partial<NearestAirport>): NearestAirport =>

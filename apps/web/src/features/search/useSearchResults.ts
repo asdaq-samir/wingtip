@@ -1,12 +1,12 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { create } from "zustand";
-import { api } from "../../../lib/api/client";
-import type { NearestAirport } from "../../../lib/api/types";
-import { placeOf, useAirportIndex } from "../../../lib/airportIndex";
-import { nearestOnDevice } from "../../../lib/fieldsOnDevice";
-import { noConnection } from "../../../lib/problems";
-import { NO_FILTERS, filterFields, readQuery, vfrAtTime, type SearchFilters } from "../lib/searchFilters";
+import { api } from "../../lib/api/client";
+import type { NearestAirport } from "../../lib/api/types";
+import { placeOf, useAirportIndex } from "../../lib/airportIndex";
+import { nearestOnDevice } from "../../lib/fieldsOnDevice";
+import { noConnection } from "../../lib/problems";
+import { NO_FILTERS, filterFields, readQuery, vfrAtTime, type SearchFilters } from "./searchFilters";
 
 /** Where a search sent looks round: a field named, own ship, or the
  *  place the pilot's Nearest is from. */

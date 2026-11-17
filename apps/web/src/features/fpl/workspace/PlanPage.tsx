@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "cn";
 import TabKept from "../../../components/TabKept";
 import TabPage from "../../../components/TabPage";
-import { FplStrip } from "../../plan";
+import { FplStrip } from "../../search";
 import { FplActions } from "./FplActions";
 import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
 

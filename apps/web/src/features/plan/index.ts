@@ -9,8 +9,6 @@
  * through this file only; it reaches none of them.
  */
 
-export { default as FplStrip } from "./components/FplStrip";
-export { RecentRoutesPage } from "./components/RecentRoutes";
 export type { BriefingPart } from "./components/briefing/sections";
 export { type DryRun, type Flown, dryRunAt, dryRunFlown, dryRunOf, dryRunRow, runNmAt } from "./components/navlog/dryRun";
 export { type CourseLine, dryRunNext, gpsAhead, useFlyingTo } from "./components/navlog/flyingTo";
@@ -86,7 +84,6 @@ export { type PanelList, type PanelView, useAddressCards, usePanelView } from ".
 export { type BriefingState, type PlanParams, type Unflyable, navlogQuery, usePlan } from "./hooks/usePlan";
 export { usePlanSetters } from "./hooks/usePlanSetters";
 export { type Browsing, type FuelCard, useRouteWays } from "./hooks/useRouteWays";
-export { nearOf, useSearchResultRows, useSearchResults } from "./hooks/useSearchResults";
 export { FIELD_LIST_KEYS, fieldListParams, fieldListsOf, prunedFieldLists } from "./lib/fieldLists";
 export type { SuaWhen, TfrWhen } from "./lib/passTimes";
 export {
@@ -106,8 +103,6 @@ export {
 export { type RadioCall, type RadioPhase, callSign, fieldPhases, placeName } from "./lib/radio";
 export { type Hold, holdWords, holdsOf, holdsParam, lengthCode, lengthOfCode, lengthWords } from "./lib/routeHolds";
 export { gridScale, sameStops, wayTime } from "./lib/routeWays";
-export { readQuery } from "./lib/searchFilters";
-export { useTabSearch } from "./lib/tabSearch";
 export { runwayCrosswindKt } from "./lib/wind";
 export { useWindPicks } from "./lib/windPicks";
 export {
@@ -122,9 +117,3 @@ export {
   stopPastFlight,
   usePastFlight,
 } from "./map/pastFlight";
-
-/** NearestCard, on a chunk of its own, as its importer loads it. */
-export const loadNearestCard = () => import("./components/NearestCard");
-
-/** SearchResultsPage, on a chunk of its own, as its importer loads it. */
-export const loadSearchResultsPage = () => import("./components/search/SearchResultsPage");

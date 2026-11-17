@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { aircraftKey, choiceOf, tailTyped } from "../../../lib/aircraftChoice";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
-import { useAirplaneHits, readQuery, nearOf, useSearchResults, riseToSee } from "../../plan";
+import { useAirplaneHits, riseToSee } from "../../plan";
 import { useHeardHits } from "./useHeardHits";
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { registeredQuery } from "../../../lib/airplane/lookup";
@@ -20,6 +20,7 @@ import { searchWords } from "./searchPlaceholder";
 import type { AirportSearchRow } from "../../../lib/airportIndex";
 import { SCREEN_KEYS, DIRECT_KEY } from "../../../hooks/use-shortcuts";
 import { useAirportIndex } from "../../../lib/airportIndex";
+import { readQuery, nearOf, useSearchResults } from "../../search";
 import { useEngineReady } from "../../../lib/engine/useEngineReady";
 import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
 

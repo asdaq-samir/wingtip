@@ -5,7 +5,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from "../../../../components/ui/dropdown-menu";
+} from "../../components/ui/dropdown-menu";
 
 /** A menu of steps, any first, as a stock Menu whose trigger is `trigger`. */
 export default function StepMenu({

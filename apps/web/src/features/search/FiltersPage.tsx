@@ -1,9 +1,9 @@
 import { ChevronsUpDown } from "lucide-react";
 import { cn } from "cn";
-import { Button } from "../../../../components/ui/button";
-import { Switch } from "../../../../components/ui/switch";
-import { ToggleGroup, ToggleGroupItem } from "../../../../components/ui/toggle-group";
-import { TEXT } from "../../../../lib/text";
+import { Button } from "../../components/ui/button";
+import { Switch } from "../../components/ui/switch";
+import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
+import { TEXT } from "../../lib/text";
 import {
   FUELS,
   RUNWAY_STEPS,
@@ -18,10 +18,10 @@ import {
   type Fuel,
   type SearchFilters,
   type Surface,
-} from "../../lib/searchFilters";
-import { useSearchResults } from "../../hooks/useSearchResults";
+} from "./searchFilters";
+import { useSearchResults } from "./useSearchResults";
 import StepMenu from "./StepMenu";
-import { ListGroup, ListRow } from "../../../../components/GroupedList";
+import { ListGroup, ListRow } from "../../components/GroupedList";
 
 /**
  * A search's Filters, in the sheet in place of its results, as Apple Maps

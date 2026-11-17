@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "../../../../components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 
 /** A menu of things any number of which may be ticked (a chip's fuels or
  *  surfaces), as a stock Menu's checkbox items whose trigger is `trigger`:

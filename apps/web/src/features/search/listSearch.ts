@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 import { MapPin } from "lucide-react";
-import { useTabSearch } from "../../lib/tabSearch";
-import type { SearchField } from "../../../../components/PanelCapsule";
+import { useTabSearch } from "./tabSearch";
+import type { SearchField } from "../../components/PanelCapsule";
 
 type ListSearch = ComponentProps<typeof SearchField>;
 
@@ -13,7 +13,7 @@ type ListSearch = ComponentProps<typeof SearchField>;
  * is under it while it is open and the place could not be typed there
  * (nearest.spec's smoke test, 2026-11-12). The traffic's scoped field went
  * for the one search, which finds airplanes too (the owner, 2026-11-14).
- * `nearTyped` is what is typed in it (features/plan/lib/tabSearch's `near`).
+ * `nearTyped` is what is typed in it (features/search/tabSearch's `near`).
  */
 export function nearSearch(nearTyped: string): ListSearch {
   return {

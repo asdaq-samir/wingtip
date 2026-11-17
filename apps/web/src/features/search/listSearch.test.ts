@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { useTabSearch } from "../../lib/tabSearch";
+import { useTabSearch } from "./tabSearch";
 import { nearSearch } from "./listSearch";
 
 describe("Nearest's field", () => {
