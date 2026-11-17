@@ -134,7 +134,7 @@ export default function RouteBox({
   // does, and a reader is told so (its label).
   const placeholder = !points.length ? "Route" : at === null ? (hasDest ? "" : "Destination") : at === 0 && !hasDep ? "Departure" : "";
   const label = !points.length
-    ? "The route, from its departure"
+    ? "The route: its departure and destination, or a whole route typed, as KPWK V100 KLAS"
     : at === null
       ? hasDest
         ? "Add stop, the new destination"
@@ -257,7 +257,10 @@ export default function RouteBox({
                         aria-hidden="true"
                         className={cn("pointer-events-none absolute inset-y-0 left-1 flex items-center text-muted-foreground", TEXT.row)}
                       >
-                        Route
+                        {/* What the empty box takes, in a few words, for a
+                            pilot going step by step and one typing a filed
+                            route alike (the FPL redesign, 2026-11-17). */}
+                        From, to, or a whole route
                       </span>
                     )}
                   </TokenField>

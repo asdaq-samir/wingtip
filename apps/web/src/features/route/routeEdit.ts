@@ -92,6 +92,10 @@ export function withTyped(shape: RouteShape, fresh: string[], at: number | null)
  * to be picked once the route is in. Procedures are read only where the
  * box has somewhere to send them.
  */
+// TODO(claude/web-audit): read the words through the engine's `route_read`
+// once the web's .wasm is built with it (lib/engine is that branch's), so a
+// pasted filed route's DCT is dropped and its "N0110A065" sets the cruise
+// (engine/crates/flight/src/route_read.rs, the FPL redesign 2026-11-17).
 export function readTyped(typed: string[], withProcedures: boolean): { fresh: string[]; procedures: TypedProcedure[] } {
   const words = typed.map((t) => t.trim().toUpperCase()).filter(Boolean);
   const isProcedure = (word: string) => withProcedures && TYPED_PROCEDURE.test(word);

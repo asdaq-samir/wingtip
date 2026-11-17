@@ -1,0 +1,75 @@
+{
+  "x-call": "wingtip_flight::calls::filed",
+  "description": "A route typed as a pilot writes one, read back as item 15 of FAA Form 7233-4 has it (AIM Appendix 4), for the route's one field: split on spaces and commas, DCT (direct) taken out; a cruising speed and level group or a level alone before the first point the cruise's (\"N0110A065\": 110 kt true, 6,500 ft; \"A\" and hundreds of feet in three figures, \"F\" a flight level, 14 CFR 1.1 and 91.121(a)(2); \"VFR\" a VFR level, no figure; metric speeds and levels give no figure); a point with a group after its stroke (\"LEXOR/N0467F380\") the point, its level a change from there. The rest are the route's points, airways and procedures in order, upper case, as typed: which is which is the caller's.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RouteReadInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The route as typed or pasted: \"KPWK DCT OBK V100 KLAS\"."
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "RouteReadAnswer",
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cruise_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The cruise's altitude, feet MSL; null where none was given or it is VFR's."
+        },
+        "tas_kt": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The cruise's true airspeed, knots, where given in knots."
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "at": {
+                "type": "string"
+              },
+              "ft": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "at",
+              "ft"
+            ]
+          }
+        }
+      },
+      "required": [
+        "points",
+        "cruise_ft",
+        "tas_kt",
+        "changes"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

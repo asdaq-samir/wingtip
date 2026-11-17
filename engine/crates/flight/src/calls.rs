@@ -5,7 +5,7 @@
 //! planned at (limits.rs) and FAA Form 7233-4's items (filing.rs), as the
 //! planner's wingtip_native functions of the same names work them out.
 
-use crate::{based, field, filing, flight, limits, sun};
+use crate::{based, field, filing, flight, limits, route_read, sun};
 use wingtip_core::ask::Ask;
 use wingtip_core::json::{self, Value};
 
@@ -139,6 +139,8 @@ pub fn filed(name: &str, v: &Value) -> Result<String, String> {
             };
             out.push_str(&filing::rnav_route(&airways).to_string());
         }
+        // A route typed as item 15's words, read back (route_read.rs).
+        "route_read" => route_read::write(&route_read::read(ask.str("text")?), &mut out),
         _ => json::string(&mut out, &filed_route(&ask)?),
     }
     Ok(out)
