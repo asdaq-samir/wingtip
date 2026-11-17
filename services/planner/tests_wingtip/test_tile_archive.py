@@ -81,6 +81,19 @@ def test_a_finished_kind_is_packed_and_served_from_its_archives(cache, monkeypat
     assert charts.tile_png(65, 94, 8, "sec") == b"plain"
 
 
+def test_a_pass_over_some_zooms_keeps_the_rest_of_the_archive(cache):
+    """Packed after a pass over zoom 8 alone, the archive keeps its other
+    zooms' tiles, takes the new ones over the old, and drops one a
+    `.none` marker now says is not there (2026-11-16: the TAC's close
+    zooms were lost when its far ones were drawn)."""
+    old = [(z, x, y, 3, lambda: b"old") for z, x, y in ((9, 130, 189), (8, 65, 94), (8, 65, 95))]
+    tile_archive.write(cache / CYCLE / "sec.pmtiles", old, {})
+    assert charts.pack_complete(CYCLE) == {"sec": 3}
+    assert charts.tile_png(130, 189, 9, "sec") == b"old"  # another zoom: kept
+    assert charts.tile_png(65, 94, 8, "sec") == b"plain"  # drawn again: the new one
+    assert charts.tile_png(65, 95, 8, "sec") is None  # marked as none: dropped
+
+
 def test_a_kind_mid_pass_is_not_packed(cache):
     """A pass under way keeps the last finished pass's record, complete,
     beside half a pyramid of loose tiles."""
