@@ -88,7 +88,6 @@ export default function StatusPanel() {
                 title={c.name}
                 value={dayWords(c.edition)}
                 data-testid="status-data-cycle"
-                data-cycle={c.state}
                 description={warning ? <span className={cn("text-destructive-ink", TEXT.detail)}>{warning}</span> : undefined}
               />
             );

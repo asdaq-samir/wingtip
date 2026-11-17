@@ -100,5 +100,5 @@ export function useAirplaneHits({ typed, tail, live, enabled }: { typed: string;
           }))
       : [];
 
-  return { own, kept, registry, types, ownTail, mineHex: mine?.hex ?? null, profiles };
+  return { own, kept, registry, types, profiles };
 }

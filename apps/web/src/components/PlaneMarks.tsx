@@ -1,4 +1,3 @@
-import { Plane } from "lucide-react";
 import { useId } from "react";
 import { cn } from "cn";
 import type { AircraftKind } from "../lib/aircraftKind";
@@ -9,40 +8,21 @@ import { Mark, SmallMark } from "./Favorites";
 // wait a moment after the page draws, so their shapes are not in the first load (scripts/first-load.mjs).
 
 /** An airplane's mark, in a row (`small`, the Mark's 32) or a strip's tile
- *  (SmallMark's 56): the Favorites' sky disc with a white airplane, turned
- *  to its track where it is heard, red in an emergency -- one mark for
- *  every list of airplanes, where the heard ones were a grey disc with a
- *  sky airplane and Recents and the found ones a bare grey airplane (the
- *  owner, 2026-10-28: "How come nearest airports and aircraft icons look
+ *  (SmallMark's 56): the Favorites' sky disc with a white airplane -- one
+ *  mark for every list of airplanes, where the heard ones were a
+ *  grey disc with a sky airplane and Recents and the found ones a bare
+ *  grey airplane (the owner, 2026-10-28: "How come nearest airports and aircraft icons look
  *  different than favorites"). */
-export function PlaneMark({
-  trackDeg,
-  emergency = false,
-  small = false,
-  kind,
-}: {
-  trackDeg?: number | null;
-  emergency?: boolean;
-  small?: boolean;
-  /** A kept airplane's shape (lib/aircraftKind), nose up; the ones heard,
-   *  turned to their track, keep lucide's airplane as the map's traffic
-   *  does (the owner: "Keep traffic as is", 2026-11-04). */
-  kind?: AircraftKind;
-}) {
-  const fill = emergency ? "bg-destructive text-white" : "bg-(--badge-airplane) text-white";
-  if (kind) {
-    // The shapes fill their square, so drawn larger than a glyph: 34 in
-    // the tile's 56, 22 in the row's 32.
-    const icon = <KindGlyph kind={kind} />;
-    return small ? (
-      <Mark icon={icon} className={cn(fill, "[&_svg]:size-[22px]")} />
-    ) : (
-      <SmallMark icon={icon} className={cn(fill, "[&_svg]:size-[34px]")} />
-    );
-  }
-  // lucide's airplane points north-east: turned to its track.
-  const icon = <Plane fill="currentColor" style={trackDeg != null ? { transform: `rotate(${trackDeg - 45}deg)` } : undefined} />;
-  return small ? <Mark icon={icon} className={fill} /> : <SmallMark icon={icon} className={fill} />;
+export function PlaneMark({ small = false, kind }: { small?: boolean; kind: AircraftKind }) {
+  const fill = "bg-(--badge-airplane) text-white";
+  // The shapes fill their square, so drawn larger than a glyph: 34 in
+  // the tile's 56, 22 in the row's 32.
+  const icon = <KindGlyph kind={kind} />;
+  return small ? (
+    <Mark icon={icon} className={cn(fill, "[&_svg]:size-[22px]")} />
+  ) : (
+    <SmallMark icon={icon} className={cn(fill, "[&_svg]:size-[34px]")} />
+  );
 }
 
 /** An airplane's shape alone, sized by its container's svg rule. */

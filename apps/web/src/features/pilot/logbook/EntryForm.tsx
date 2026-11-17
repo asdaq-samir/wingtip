@@ -134,7 +134,7 @@ export default function EntryForm({
         <Input className="h-8" data-testid={`logbook-${key}`} {...register(key)} onKeyDown={escape} />
       );
     return (
-      <div data-field={key}>
+      <div>
         <label className={cn("grid grid-cols-[8rem_1fr] items-center gap-2", TEXT.detail)}>
           <span>{label}</span>
           {box}

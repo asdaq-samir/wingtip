@@ -32,7 +32,6 @@ interface Tolerances {
   courseDeg: number;
   offRouteNm: number;
   etaMin: number;
-  patternNm: number;
   patternFt: number;
 }
 
@@ -144,7 +143,6 @@ export function debrief(flight: Flight, points: TrackPoint[], patterns: Record<s
       courseDeg: t.course_deg,
       offRouteNm: t.off_route_nm,
       etaMin: t.eta_min,
-      patternNm: t.pattern_nm,
       patternFt: t.pattern_ft,
     },
     takeoff: d.takeoff,

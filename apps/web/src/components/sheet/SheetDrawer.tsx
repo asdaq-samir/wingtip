@@ -115,7 +115,6 @@ export function SheetDrawer({
             <Drawer.Popup
               {...popup}
               ref={popupRef}
-              data-sheet=""
               // The Drawer's own word on a finger's drag, its or a card's on it.
               render={(own, state) => <Told swiping={state.swiping || state.nestedDrawerSwiping} {...own} />}
               initialFocus={false}

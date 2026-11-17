@@ -79,7 +79,7 @@ export default function AlertsBanner() {
           </CollapsibleTrigger>
           <CollapsibleContent className="flex flex-col gap-1.5 pb-1 text-foreground">
             {alerts.map((a) => (
-              <div key={a.id} data-alert-item={a.kind}>
+              <div key={a.id}>
                 {a !== first && (
                   <p className={cn("font-semibold", INK[a.level])}>
                     {alertTitle(a)}: {alertWhen(a)} · {alertWhere(a)}

@@ -13,13 +13,12 @@ const MiniProfile = lazy(() => import("../navlog/MiniProfile"));
 
 /** The Profile card's body (AltitudeProfile): the side view with the
  *  altitude's wheel in its corner, its dry run at its top right, and under
- *  it the altitude's figures, Class B, the rules and why. */
+ *  it the altitude's figures, Class B and why. */
 export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
   const {
     acceptClassB,
     avoidClassB,
     classBClearance,
-    flightRules,
     flyAltitude,
     local,
     planned,
@@ -105,8 +104,6 @@ export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
         waypoints={waypointStops}
         airplaneProfile={airplaneProfile}
         onLegAltitude={setPointAltitude}
-        // The rules' switch at the card's top right (ProfileCard's corner).
-        rules={flightRules}
       />
     </Suspense>
   );

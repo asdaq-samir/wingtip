@@ -134,7 +134,6 @@ export function useStudio() {
     /** The airplane's N-number and UTC day, where the track is a day's
      *  from the store (for the NTSB's events); null for a file's. */
     registration,
-    utcDay,
     /** The altitude strip's ground and flown line, null with no track. */
     profile,
     /** What else was so at the replay's moment (useStudioHistory). */

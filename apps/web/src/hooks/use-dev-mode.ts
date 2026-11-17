@@ -19,7 +19,7 @@ export function routeSearch(search: string): string {
 /**
  * Dev mode, off or on: the same page with the developer's drawers in
  * place of the pilot's. One control, Pilot and Developer in the
- * console's title (ConsoleHeader), instead of a Dev link on one page
+ * account menu (AccountMenu), instead of a Dev link on one page
  * and a Plan link on the other, and then a switch in the settings.
  * Flipping it navigates; the console stays out across it (useConsoleOpen). The route on screen comes along both ways,
  * and where Plan was (the open briefing, say) is remembered on the way
@@ -83,10 +83,9 @@ export function useDevMode() {
     const from = mode === "pilot" ? pathname + search : ((state as { from?: string } | null)?.from ?? undefined);
     void navigate(`/${next === "developer" ? "dev" : "studio"}${routeSearch(search)}`, { state: { from } });
   };
-  const flip = () => go(on ? "pilot" : "developer");
   // Undefined while either query is in flight: the switch appears when
   // the answer does, rather than flashing in and out.
   const allowed = pilot?.developer === true || capabilities?.access === "OPEN";
   const refused = mode !== "pilot" && pilotKnown && capabilities !== undefined && !allowed;
-  return { on, mode, go, flip, allowed, refused, navigate };
+  return { on, mode, go, allowed, refused, navigate };
 }

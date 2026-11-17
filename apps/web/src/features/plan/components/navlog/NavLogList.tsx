@@ -233,7 +233,6 @@ export function NavLogList({
                     onKeyDown={keys}
                     data-kind={row.kind}
                     data-selected={selected || undefined}
-                    data-flying={isFlying || undefined}
                     data-expanded={selected}
                     aria-current={selected || undefined}
                     className={cn(

@@ -75,6 +75,4 @@ export function usePlanHistory(address: Address, setAddress: SetAddress) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [undo, redo]);
-
-  return { undo, redo };
 }

@@ -272,7 +272,6 @@ export default function MapPage({ mode }: { mode: Mode }) {
                     pages={pieces.pages}
                     layer={pieces.alone ? "card" : "tab"}
                     foot={pieces.foot}
-                    cardOver={!!pieces.cardOver}
                     flying={!!pieces.flying}
                     // Kept too where the row holds the workspace's actions: one can own a card in the
                     // panel (Train's Filter, a ResponsivePopover), and the card's own coming up hides the

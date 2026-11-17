@@ -4,9 +4,8 @@ import { cn } from "cn";
 import { Button } from "../../../../../components/ui/button";
 import { Toggle } from "@base-ui/react/toggle";
 import { Slider } from "../../../../../components/ui/slider";
-import Segmented from "../../../../../components/Segmented";
 import type { AltitudeChoice, Detour, Leg, NavLogAltitude, Totals } from "../../../../../lib/api/types";
-import { useAirplaneChosen, type FlightRules } from "../../../../../lib/preferences";
+import { useAirplaneChosen } from "../../../../../lib/preferences";
 import { routeProfileQuery } from "../../../../../lib/queryClient";
 import { TEXT } from "../../../../../lib/text";
 import { altFt, flightLevel } from "../../../../../lib/format";
@@ -18,10 +17,6 @@ import ProfileNotes from "./ProfileNotes";
 import { pointsAlong, waypointsAlong } from "./points";
 import { useAltitudePreview } from "./useAltitudePreview";
 
-const RULES = [
-  { value: "vfr", label: "VFR" },
-  { value: "ifr", label: "IFR" },
-];
 const LEVEL_INK: Record<string, string> = { red: "text-destructive-ink", yellow: "text-caution-ink" };
 
 /**
@@ -51,8 +46,6 @@ export function AltitudeProfile({
   onGoRound,
   onAltitudeChoiceChange,
   onFlyAltitude,
-  rules = "vfr",
-  onRulesChange,
   routePoints = [],
   waypoints,
   airplaneProfile = null,
@@ -74,8 +67,6 @@ export function AltitudeProfile({
   onGoRound?: (via: string[], stopIndex: number) => void;
   onAltitudeChoiceChange: (choice: AltitudeChoice) => void;
   onFlyAltitude: (feet: number, legal: boolean) => void;
-  rules?: FlightRules;
-  onRulesChange?: (rules: FlightRules) => void;
   /** The route's points in order, and which are waypoints flown through:
    *  their marks on the profile, each a per-leg altitude. */
   routePoints?: string[];
@@ -221,18 +212,6 @@ export function AltitudeProfile({
       )}
       {problem}
       <AltitudeAdvisor rows={rows} airplane={airplane} previewed={shownAt} onPick={(ft) => vm.fly(ft)} />
-      {onRulesChange && (
-        <div className="flex items-center justify-between gap-3">
-          <span className={cn("font-semibold", TEXT.row)}>Flight rules</span>
-          <Segmented
-            label="Flight rules"
-            value={rules}
-            onChange={(v) => onRulesChange(v as FlightRules)}
-            options={RULES}
-            testId="flight-rules"
-          />
-        </div>
-      )}
       <ProfileNotes
         nav={nav}
         legs={legs}

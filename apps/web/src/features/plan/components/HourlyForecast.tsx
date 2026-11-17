@@ -85,7 +85,6 @@ export function HourlyForecast({
             key={hour.now ? "now" : hour.at}
             role="listitem"
             data-testid="place-hour"
-            data-now={hour.now || undefined}
             data-arrival={landing ? "" : undefined}
             // About 52 points a column, in rem so it grows with the text;
             // relative, so its sr-only words (absolute) are placed in it and

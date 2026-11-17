@@ -100,7 +100,6 @@ export default function FixBranch({
                 key={`${fix.ident}-${i}`}
                 className={cn("relative flex min-h-12 items-center gap-2 pl-7", isDirect && "rounded-xl bg-tint/8")}
                 data-testid="fix-branch-row"
-                data-fix={fix.ident}
               >
                 {/* The branch's line and the fix's mark: dashed and hollow where
                     skipped, a filled tint dot where the airplane is sent. */}

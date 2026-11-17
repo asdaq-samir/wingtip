@@ -32,7 +32,6 @@ export function CardTitle({
   subtitleTestId,
   closeTestId,
   shareTestId,
-  twoLines = false,
 }: {
   title: string;
   /** The line under the name inside the pinned head row, centred with it
@@ -49,9 +48,6 @@ export function CardTitle({
   subtitleTestId?: string;
   closeTestId: string;
   shareTestId?: string;
-  /** The subtitle two lines tall whatever it holds, so the card keeps one
-   *  layout for a short name and a long one (places.spec). */
-  twoLines?: boolean;
 }) {
   useHeldCard(onClose, onShare, true, pill);
   const close = () => {
@@ -77,7 +73,7 @@ export function CardTitle({
       {(subtitle != null || line != null) && (
         <div className="min-w-0 pt-1">
           {subtitle != null && (
-            <p className={cn("line-clamp-2 text-foreground/80", twoLines && "min-h-[2lh]", TEXT.prose)} data-testid={subtitleTestId}>
+            <p className={cn("line-clamp-2 text-foreground/80", TEXT.prose)} data-testid={subtitleTestId}>
               {subtitle}
             </p>
           )}

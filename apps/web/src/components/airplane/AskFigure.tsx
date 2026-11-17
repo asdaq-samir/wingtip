@@ -57,7 +57,6 @@ export function AskFigure({
       <form
         className={cn("flex flex-col gap-2", TEXT.prose)}
         data-testid={testId}
-        data-ask={vm.asked}
         onSubmit={(e) => {
           e.preventDefault();
           void vm.submit();

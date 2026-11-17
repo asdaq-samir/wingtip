@@ -14,16 +14,8 @@
 export default function SafariEdges() {
   return (
     <>
-      <div
-        aria-hidden="true"
-        data-safari-edge="top"
-        className="pointer-events-none fixed inset-x-0 top-0 z-50 h-1 bg-background print:hidden"
-      />
-      <div
-        aria-hidden="true"
-        data-safari-edge="bottom"
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-50 h-1 bg-(--sheet) md:hidden print:hidden"
-      />
+      <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 z-50 h-1 bg-background print:hidden" />
+      <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 bottom-0 z-50 h-1 bg-(--sheet) md:hidden print:hidden" />
     </>
   );
 }
