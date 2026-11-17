@@ -239,14 +239,10 @@ export const TYPE_POINTS = {
 /** Motion: durations in seconds, curves as cubic-bezier points. */
 export const MOTION = {
   sheet: 0.3,
-  sheetLeast: 0.22,
-  sheetMost: 0.35,
   sheetEase: [0, 0, 0.58, 1],
-  sheetBackEase: [0.2, 0.9, 0.3, 1],
   drawer: 0.45,
   drawerEase: [0.32, 0.72, 0, 1],
   fade: 0.2,
-  quick: 0.15,
   page: 0.25,
   skeletonPulse: 1.5,
 } as const;
@@ -353,5 +349,4 @@ export const SIZE = {
   panel: 384,
   panelWide: 448,
   desktop: 1024,
-  refreshPull: 64,
 } as const;
