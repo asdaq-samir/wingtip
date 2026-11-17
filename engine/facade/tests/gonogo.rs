@@ -69,5 +69,7 @@ mod minimums_cases;
 mod pass_times_cases;
 #[path = "gonogo/runways_cases.rs"]
 mod runways_cases;
+#[path = "gonogo/runways_more_cases.rs"]
+mod runways_more_cases;
 #[path = "gonogo/verdict_cases.rs"]
 mod verdict_cases;

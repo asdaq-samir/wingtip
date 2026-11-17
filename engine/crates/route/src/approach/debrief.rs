@@ -322,3 +322,5 @@ mod run;
 pub use run::*;
 mod tail;
 pub use tail::*;
+mod write;
+pub use write::*;

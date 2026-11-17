@@ -192,3 +192,5 @@ fn ils_landing() -> Vec<Value> {
 mod debrief_cases;
 #[path = "approach/lesson_cases.rs"]
 mod lesson_cases;
+#[path = "approach/lesson_more_cases.rs"]
+mod lesson_more_cases;
