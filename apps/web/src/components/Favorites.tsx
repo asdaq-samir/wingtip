@@ -82,6 +82,7 @@ export function SmallTile({
   onClick,
   testId,
   wide = false,
+  tone = "strip",
   ...rest
 }: Omit<ComponentProps<"button">, "title" | "children" | "className" | "type"> & {
   mark: ReactNode;
@@ -92,6 +93,10 @@ export function SmallTile({
   testId?: string;
   /** Room for a route's two idents (SavedStrip), not one's. */
   wide?: boolean;
+  /** "strip": a pill's tile (hover fill, line at 4.5:1 on its glass). "muted" and
+   *  "tint": the search's round tiles (FavoriteTiles) on the sheet, no hover fill, the
+   *  line grey, or the tint for an action ("Add"). */
+  tone?: "strip" | "muted" | "tint";
 }) {
   return (
     <BaseButton
@@ -100,13 +105,24 @@ export function SmallTile({
       data-testid={testId}
       className={cn(
         wide ? "w-24" : "w-[4.5rem]",
-        "flex shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ring",
+        "flex shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        tone === "strip" && "hover:bg-foreground/5",
       )}
     >
       {mark}
       <span className={cn("w-full truncate text-center font-medium text-foreground", TEXT.detail)}>{title}</span>
       {/* 4.5:1 on the pill's glass, as the tab bar's words are. */}
-      {detail && <span className={cn("-mt-1.5 w-full truncate text-center text-foreground/65 tabular-nums", TEXT.note)}>{detail}</span>}
+      {detail && (
+        <span
+          className={cn(
+            "-mt-1.5 w-full truncate text-center",
+            TEXT.note,
+            tone === "strip" ? "text-foreground/65 tabular-nums" : tone === "tint" ? "text-tint" : "text-muted-foreground",
+          )}
+        >
+          {detail}
+        </span>
+      )}
       {label && <span className="sr-only">, {label}</span>}
     </BaseButton>
   );
