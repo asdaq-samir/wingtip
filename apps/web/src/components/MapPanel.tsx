@@ -152,9 +152,9 @@ export default function MapPanel(props: Props) {
   // phone's bottom sheet with no card over it.
   const slides = bottomSheet && !cardsUp && !!sheetNode && most > 0;
   useEffect(() => {
-    useSlidingSheet.setState({ sheet: slides && sheetNode ? { node: sheetNode, least, most } : null });
-  }, [slides, sheetNode, least, most]);
-  useEffect(() => () => useSlidingSheet.setState({ sheet: null }), []);
+    useSlidingSheet.setState({ sheet: slides && sheetNode ? { node: sheetNode, least, most } : null, half: bottomSheet ? most : 0 });
+  }, [slides, sheetNode, least, most, bottomSheet]);
+  useEffect(() => () => useSlidingSheet.setState({ sheet: null, half: 0 }), []);
   // The pages, drawn whenever the workspace has them and is not flying: a
   // card alone over them (`layer` "card") is drawn from inside one, the
   // Brief from FPL's (PlanPage), so put away with them it never opened.
@@ -172,7 +172,9 @@ export default function MapPanel(props: Props) {
     () => ({ ...insetsOf(front, cover, onPhone, fromBottom, safe.top, desktop), card: cardsUp }),
     [front, cover, onPhone, fromBottom, safe.top, desktop, cardsUp],
   );
-  useEffect(() => tellInsets(insetsNow), [insetsNow, tellInsets]);
+  // Told in the commit that changes them, before any effect after paint: a
+  // place picked with a card centres itself in the card's room (GlMapShell).
+  useLayoutEffect(() => tellInsets(insetsNow), [insetsNow, tellInsets]);
 
   // Escape with no card over it (a card's own drawer takes it) lowers the
   // sheet to the pill; whether it took the key.

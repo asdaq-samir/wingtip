@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import MapControls from "../MapControls";
 import MapBanners from "../MapBanners";
 import MapLoading from "../MapLoading";
-import { SHEET_SECONDS, useMapInsets, type MapInsets } from "../../lib/mapChrome";
+import { SHEET_SECONDS, useMapInsets, useSlidingSheet, type MapInsets } from "../../lib/mapChrome";
 import { SheetCard } from "../SheetCard";
 import { DRAWER_MS } from "../sheet/insets";
 import { drawerEasing } from "./drawerEasing";
@@ -23,7 +23,6 @@ import { watchOverlayFilters } from "../../lib/map/gl/overlayFilters";
 import { glZoom } from "../../lib/map/gl/glStyle";
 import { RulerGl } from "../../lib/map/gl/layers/RulerGl";
 import { cameraOf } from "../../lib/map/gl/camera";
-import { inRoom } from "../../lib/map/gl/cameraParts";
 
 /** RouteMap's: how close in an airport's card brings the map. */
 const PLACE_ZOOM = 9;
@@ -80,7 +79,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   const insets = useMapInsets();
   const insetsRef = useRef(insets);
   // What a tap opened a card for, brought into sight once the card is up if it hides it.
-  const { note: noteTap, fresh: tapFresh } = useTappedInSight(map, insetsRef, padOf);
+  const { note: noteTap, take: takeTap } = useTappedInSight(map, insetsRef, padOf);
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
   const known = !!(course ?? chartOnly);
   // The overlay tiles' name and the overlays' pictures, for the map's
@@ -288,22 +287,32 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   useEffect(() => {
     flyTo(focus, focusZoom);
   }, [flyTo, focus, focusZoom]);
-  // A field tapped on the chart is in sight already: never flown to, at
-  // any zoom, only brought into the card's room once its card is up, if
-  // the card hides it (useTappedInSight). Flown to below zoom 9, the
-  // flight was aimed again as the card's room came, two moves for one tap
-  // (the flicker audit's FL-8, 2026-11-14). One picked elsewhere -- the
-  // search, a list, a link -- is flown to, unless it is close in and in
-  // the room already.
+  // An airport's card opened -- tapped on the chart, picked in a list, a
+  // route's row or the search -- centres its field in the room above the
+  // card's detent as the card starts up, in the commit that opens it: one
+  // move, centre and padding together, on the sheet's curve and time (the
+  // owner, 2026-11-17: "It should be instant"). The room is the detent the
+  // card opens at (half, cardOpening; useSlidingSheet's `half`), known as
+  // it opens, not measured once it is up, as it was: the map waited for the
+  // card to settle and moved after it, 820 ms after the tap on a phone's
+  // CPU. A field tapped keeps the pilot's zoom; one picked elsewhere is
+  // brought in to PLACE_ZOOM, and flown to if it is off the screen.
   useEffect(() => {
     if (!map || !place) return;
     const at: [number, number] = [place.lon, place.lat];
-    if (tapFresh() || (map.getZoom() >= glZoom(PLACE_ZOOM) && inRoom(map, at, padOf(insetsRef.current)))) {
-      noteTap(at);
-      return;
-    }
-    flyTo(place, PLACE_ZOOM);
-  }, [map, flyTo, place, noteTap, tapFresh]);
+    const tapped = takeTap();
+    const half = useSlidingSheet.getState().half;
+    const pad = { ...padOf(insetsRef.current), ...(half ? { bottom: half } : {}) };
+    const p = map.project(at),
+      box = map.getContainer();
+    const near = !!tapped || (p.x >= 0 && p.y >= 0 && p.x <= box.clientWidth && p.y <= box.clientHeight);
+    cameraOf(map).pick(at, {
+      zoom: tapped ? map.getZoom() : Math.max(map.getZoom(), glZoom(PLACE_ZOOM)),
+      pad,
+      duration: near ? DRAWER_MS : flight(),
+      easing: drawerEasing,
+    });
+  }, [map, place, takeTap]);
 
   return (
     <div className="relative h-full w-full">

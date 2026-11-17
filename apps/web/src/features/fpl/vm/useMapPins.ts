@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { locateOnOpen, useOwnShipNear } from "../../../lib/map/position/ownShip";
 import { useKeptAirport } from "../../../lib/preferences";
+import { placeOf, useAirportIndex } from "../../../lib/airportIndex";
 import { airportQuery, nearestQuery } from "../../../lib/queryClient";
 import type { PlannedRoute, PlanCourse, useAddressCards } from "../../plan";
 
@@ -49,9 +50,15 @@ export function useMapPins({
   // while it is the same place, as the map brings itself to it each time
   // it changes.
   const keptPlace = useKeptAirport(place);
+  // Else from the airport index this browser keeps (lib/airportIndex), read
+  // once a place is opened: any field it lists is placed in the commit that
+  // opens its card, so the map centres it as the card starts up rather than
+  // a round trip later (the owner, 2026-11-17: "It should be instant").
+  const index = useAirportIndex(true, !!place);
+  const indexed = place && index ? placeOf(index, place) : null;
   const pinIdent = placeData?.ident ?? place;
-  const pinLat = placeData?.lat ?? keptPlace?.lat;
-  const pinLon = placeData?.lon ?? keptPlace?.lon;
+  const pinLat = placeData?.lat ?? keptPlace?.lat ?? indexed?.lat;
+  const pinLon = placeData?.lon ?? keptPlace?.lon ?? indexed?.lon;
   const placePin = useMemo(
     () => (pinIdent && pinLat != null && pinLon != null ? { ident: pinIdent, lat: pinLat, lon: pinLon } : null),
     [pinIdent, pinLat, pinLon],
