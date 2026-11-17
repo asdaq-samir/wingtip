@@ -62,6 +62,21 @@ export function setMapInsets(next: MapInsets) {
   if (!same) useMapInsets.setState(next, true);
 }
 
+/** A phone's bottom sheet, which the map slides with frame by frame as it
+ *  moves (GlMapShell's useSheetSlide): its popup, and the least and the most
+ *  of the map it covers, the pill's and half's (all the way up, the map is
+ *  fitted to what half leaves). Null for a side panel, a top sheet, or with
+ *  a card up, whose room the map takes as it settles. And `half`, what a
+ *  phone's bottom sheet or a card covers at half, the detent a card opens
+ *  at (cardOpening), for a place picked to be centred above its card as it
+ *  opens (GlMapShell); 0 where there is none. */
+export interface SlidingSheet {
+  node: HTMLElement;
+  least: number;
+  most: number;
+}
+export const useSlidingSheet = create<{ sheet: SlidingSheet | null; half: number }>(() => ({ sheet: null, half: 0 }));
+
 /** The insets as the map's element's CSS variables, for the chart credit
  *  (index.css): a ref, written now and at each change, never by a render. */
 export function insetVars(el: HTMLElement | null) {

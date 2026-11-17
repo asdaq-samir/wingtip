@@ -14,9 +14,6 @@ apps/ios/Wingtip/Views/ChartOverlays.swift 749
 apps/ios/Wingtip/Views/InFlightViews.swift 418
 apps/ios/Wingtip/Views/InstructorView.swift 407
 apps/ios/Wingtip/Views/PlannerFiguresViews.swift 464
-apps/web/src/components/map/GlMapShell.tsx 499
-apps/web/src/features/plan-map/RouteMap.tsx 436
-apps/web/src/lib/queryClient.ts 442
 scripts/build/design_tokens.py 551
 scripts/build/engine-contract-apps.mjs 435
 scripts/dev/check.sh 407

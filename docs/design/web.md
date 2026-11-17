@@ -56,7 +56,32 @@ These hold on every screen below and win over any reference app.
   1100000`). Every screen below except the map, its sheet and the search
   field loads on its own chunk when first opened. A new library for a
   screen is weighed against that budget before it is added
-  (`docs` memory: web bundle budget; the measure-speed skill).
+  (`docs` memory: web bundle budget; the measure-speed skill). It was
+  0.97 MB on 2026-11-17: what the first screen does not draw (Recents in
+  full, FPL's strip under an empty route, Ready to Fly's prompt, the
+  figures offer, the developer's route form) is on chunks asked for
+  after it (`lib/fromChunk`).
+- **A return visit fetches nothing but the worker's own check.** The
+  service worker precaches the app shell, every first-load chunk and the
+  engine's `.wasm` (`globPatterns`), so a second load is served from it
+  (measured 2026-11-17: 185 responses from the worker, none from the
+  network, 46 KB for `sw.js` and its Workbox runtime).
+- **The map slides with the sheet frame by frame** on a phone
+  (`components/map/useSheetSlide`): its padding is what the sheet covers
+  where it is drawn that frame, read off the popup's rect, between the
+  pill's and half's, from Base UI's `data-swiping` and the popup's
+  transform transition, so the two land on the same frame. A pick or a
+  fit under way is aimed again at the room once the sheet settles; a
+  card's room is taken as it opens.
+- **An airport's card centres its field as it opens** (the owner,
+  2026-11-17: "It should be instant"): tapped on the chart, picked in a
+  list, a route's row or the search, the map makes one move, centre and
+  padding together, to the middle of the room above half (the detent a
+  card opens at), in the commit that opens the card, on the sheet's curve
+  and time (GlMapShell's place). The field is placed from the airport
+  index the browser keeps where its card's answer is not in yet
+  (`useMapPins`), and the sheet's insets are told in a layout effect so
+  the room is known first.
 - **A drag up below full moves the sheet**, wherever it starts: on a
   button, a chip or a sideways row as on the body; a tap stays a tap. It
   is Base UI's Drawer's own arbitration; in the sheet a sideways row

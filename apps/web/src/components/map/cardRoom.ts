@@ -21,8 +21,8 @@ const TAP_WAITS_MS = 3000;
  * (lib/map/gl/camera). Not where the pilot has moved the map since
  * (pilotCamera), nor while the map flies to a place picked elsewhere.
  * Returns the tap's note, for what the map's own tap hears (a feature
- * drawn on the canvas), and whether a tap is waiting on its card
- * (`fresh`): an airport tapped on the chart is never flown to (FL-8).
+ * drawn on the canvas), and `take`, the tap waiting on its card, for an
+ * airport's card, which centres it as the card opens instead (GlMapShell).
  */
 export function useTappedInSight(
   map: maplibregl.Map | null,
@@ -42,9 +42,12 @@ export function useTappedInSight(
     },
     [map],
   );
-  const fresh = useCallback(() => {
+  // A tap waiting on its card, taken by the place it opened (GlMapShell),
+  // which centres it as the card opens: none left for the card's settle.
+  const take = useCallback((): [number, number] | null => {
     const tap = tapped.current;
-    return !!tap && performance.now() - tap.when <= TAP_WAITS_MS;
+    tapped.current = null;
+    return tap && performance.now() - tap.when <= TAP_WAITS_MS ? tap.at : null;
   }, []);
   // A mark drawn as an element over the chart (a checkpoint's numbered
   // dot), tapped: its own click, which the map's tap (GlMapShell) does not
@@ -74,5 +77,5 @@ export function useTappedInSight(
       camera.pick(tap.at, { onlyIfHidden: true, pad: padOf(insets.current), duration: DRAWER_MS, easing: drawerEasing });
     });
   }, [map, insets, padOf]);
-  return { note, fresh };
+  return { note, take };
 }
