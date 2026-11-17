@@ -157,9 +157,8 @@ export default memo(function MiniProfile({
       <span
         className={cn("relative block min-h-0", ruler && "overflow-hidden")}
         data-plot=""
-        // The drag's zoom: the chart drawn at `top`, scaled about its foot
-        // to the drag's --scale-top as it goes, smoothly, nothing drawn
-        // again till the finger lifts (AltitudeProfile).
+        // The chart's top, read by the rolling tick and the ruler's marks
+        // below and by the altitude preview (useAltitudePreview).
         style={{ "--base-top": top } as CSSProperties}
       >
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block h-full w-full" aria-hidden="true">
@@ -175,14 +174,7 @@ export default memo(function MiniProfile({
               <stop offset={tintOffset(tint?.yellow_from_ft)} stopColor={CHART.terrain} data-tint="amber-end" />
             </linearGradient>
           </defs>
-          <g
-            style={{
-              transformBox: "view-box",
-              transformOrigin: "0 100%",
-              transform: "scaleY(calc(var(--base-top) / var(--scale-top, var(--base-top))))",
-              transition: "transform 0.18s ease-out",
-            }}
-          >
+          <g>
             {profile.airspace.map((a, i) => {
               const look = AIRSPACE[a.class];
               if (!look) return null;
@@ -237,7 +229,7 @@ export default memo(function MiniProfile({
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 border-t-2 border-dashed border-primary opacity-[var(--roll-on,0)]"
           style={{
-            top: "calc((1 - min(var(--roll-ft, 0), var(--scale-top, var(--base-top))) / var(--scale-top, var(--base-top))) * 100%)",
+            top: "calc((1 - min(var(--roll-ft, 0), var(--base-top)) / var(--base-top)) * 100%)",
           }}
         >
           <span
@@ -248,16 +240,16 @@ export default memo(function MiniProfile({
             )}
           />
         </span>
-        {/* The ruler: its heights where the chart's scale puts them, moved with
-          the drag's zoom as the line is (--scale-top), those over the top cut
-          off by the plot; a step to keep them four or more apart. */}
+        {/* The ruler: its heights where the chart's scale puts them, those
+          over the top cut off by the plot; a step to keep them four or more
+          apart. */}
         {ruler &&
           rulerMarks(top).map((ft) => (
             <span
               key={ft}
               aria-hidden="true"
               className="pointer-events-none absolute left-11 -translate-y-1/2 pl-0.5 text-muted-foreground opacity-[calc(1-var(--roll-on,0)*0.4)]"
-              style={{ top: `calc((1 - ${ft} / var(--scale-top, var(--base-top))) * 100%)` }}
+              style={{ top: `calc((1 - ${ft} / var(--base-top)) * 100%)` }}
             >
               {altFt(ft)}
             </span>

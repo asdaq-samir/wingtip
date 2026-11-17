@@ -66,7 +66,7 @@ SKIP = re.compile(
 # Ramps that are data, not the app's look: the radar's reflectivity scale
 # (NWS's dBZ colours) and the FAA chart's own symbology drawn as the chart
 # draws it.
-DATA = re.compile(r"(apps/web/src/lib/map/gl/radar[^/]*\.ts$|apps/web/src/features/plan/map/radar[^/]*\.ts$)")
+DATA = re.compile(r"(apps/web/src/lib/map/gl/radar[^/]*\.ts$)")
 
 # A corner under the least radius token's half (4 points) is a small
 # glyph's geometry -- a diamond's tip, a gauge's cell -- not a look.

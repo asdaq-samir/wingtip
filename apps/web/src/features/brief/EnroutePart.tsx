@@ -86,28 +86,8 @@ function AdverseConditions({ vm, legs }: { vm: FlightBriefing; legs: Leg[] }) {
       {/* Its own standard element (AIM 7-1-5(b)), stated first, the
           way a live briefer states it before the detail that
           justifies it. Red on pale red at 7:1, in both themes. */}
-      {vnrReasons.length > 0 && (
-        <Alert className={cn("mb-2 border-destructive/30 bg-destructive/10 text-destructive-ink", TEXT.prose)}>
-          <OctagonAlert />
-          <AlertTitle>VFR flight not recommended</AlertTitle>
-          <ul className="col-start-2 list-disc space-y-0.5 pl-4 [&>li]:first-letter:uppercase">
-            {vnrReasons.map((reason) => (
-              <li key={reason}>{reason}</li>
-            ))}
-          </ul>
-        </Alert>
-      )}
-      {underMine.length > 0 && (
-        <Alert className={cn("mb-2 border-destructive/30 bg-destructive/10 text-destructive-ink", TEXT.prose)} data-testid="minimums-alert">
-          <OctagonAlert />
-          <AlertTitle>Under your personal minimums</AlertTitle>
-          <ul className="col-start-2 list-disc space-y-0.5 pl-4 [&>li]:first-letter:uppercase">
-            {underMine.map((reason) => (
-              <li key={reason}>{reason}</li>
-            ))}
-          </ul>
-        </Alert>
-      )}
+      {vnrReasons.length > 0 && <StopAlert title="VFR flight not recommended" reasons={vnrReasons} />}
+      {underMine.length > 0 && <StopAlert title="Under your personal minimums" reasons={underMine} testId="minimums-alert" />}
       {icing && (
         // Under IFR, in cloud at or above the freezing level.
         <Alert className={cn("mb-2 border-caution/30 bg-caution-wash text-caution-ink", TEXT.prose)} data-testid="icing-alert">
@@ -226,5 +206,21 @@ function WindsAloft({ vm, legs, winds }: { vm: FlightBriefing; legs: Leg[]; wind
         </ListGroup>
       )}
     </AccordionSection>
+  );
+}
+
+// A red finding with its reasons, red on pale red at 7:1 in both themes:
+// VFR not recommended, or under the pilot's own minimums.
+function StopAlert({ title, reasons, testId }: { title: string; reasons: readonly string[]; testId?: string }) {
+  return (
+    <Alert className={cn("mb-2 border-destructive/30 bg-destructive/10 text-destructive-ink", TEXT.prose)} data-testid={testId}>
+      <OctagonAlert />
+      <AlertTitle>{title}</AlertTitle>
+      <ul className="col-start-2 list-disc space-y-0.5 pl-4 [&>li]:first-letter:uppercase">
+        {reasons.map((reason) => (
+          <li key={reason}>{reason}</li>
+        ))}
+      </ul>
+    </Alert>
   );
 }

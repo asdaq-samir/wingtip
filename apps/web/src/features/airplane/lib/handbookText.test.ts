@@ -6,7 +6,7 @@ const values = (text: string) => Object.fromEntries(Object.entries(figuresOfPage
 describe("a handbook's specifications page read", () => {
   it("gives a Piper's figures, in knots where it prints mph", () => {
     // The Cherokee 140 "D" handbook's page 1, the owner's photo of it as
-    // Tesseract read it (features/plan/lib/readPage): its misreads ("sca", "{flaps",
+    // Tesseract read it (features/airplane/lib/readPage): its misreads ("sca", "{flaps",
     // "(142%)") kept.
     const page = `CHEROKEE 140 “D" SECTION |
 SECTION |

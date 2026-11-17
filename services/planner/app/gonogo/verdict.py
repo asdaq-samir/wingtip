@@ -36,7 +36,7 @@ def verdict_line(items: list[dict]) -> dict:
 
 def alternate_finding(data: dict | None) -> dict | None:
     """What the IFR alternate comes to for the Go / No-Go
-    (features/plan/hooks/useAlternate alternateFinding): a stop where the
+    (features/brief/useAlternate alternateFinding): a stop where the
     one filed will not do, a caution where one is needed (14 CFR
     91.169(a)(2), (b)) and none is filed or the one filed is the pilot's
     to check; nothing where none is needed."""

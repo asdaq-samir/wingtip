@@ -1,5 +1,5 @@
 """The airspace's volumes in a box, each whole, for the map's 3D view
-(apps/web features/plan/map/terrain/AirspaceVolumesGl, which stands them
+(apps/web features/plan-map/terrain/AirspaceVolumesGl, which stands them
 up with deck.gl between their floors and ceilings).
 
 The 2D chart draws its airspace from the cycle's vector tiles, and a tile
