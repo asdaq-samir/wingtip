@@ -41,7 +41,6 @@ class Asked:
     altitude_ft: float | None = None
     altitude_nearest: bool = False
     altitude_choice: str = "fastest"
-    class_b_clearance: bool = False
     rules: str = "vfr"
     depart: datetime | None = None
     own_altitudes: dict = field(default_factory=dict)

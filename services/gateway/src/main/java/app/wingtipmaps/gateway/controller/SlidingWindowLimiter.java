@@ -10,9 +10,6 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.util.matcher.InetAddressMatcher;
 import org.springframework.security.util.matcher.InetAddressMatchers;
 
@@ -92,18 +89,6 @@ public final class SlidingWindowLimiter {
             // A name that is no address is no proxy.
             return false;
         }
-    }
-
-    /** The key a request is counted under: whoever is signed in, or the
-     *  address it came from where nobody is. */
-    static String callerOf(HttpServletRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null
-                && authentication.isAuthenticated()
-                && !(authentication instanceof AnonymousAuthenticationToken)) {
-            return "user:" + authentication.getName();
-        }
-        return "client:" + clientOf(request);
     }
 
     /**

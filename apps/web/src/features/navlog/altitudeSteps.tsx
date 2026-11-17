@@ -74,7 +74,7 @@ export function ifrSteps(nav: NavLogAltitude): Step[] {
     .flatMap((seg) => (seg.airway ? [seg.airway] : []))
     .filter((a, i, all) => all.findIndex((b) => b.id === a.id && b.mea_ft === a.mea_ft && b.maa_ft === a.maa_ft) === i);
   // Under IFR the ceiling is the airplane's service ceiling, or an
-  // airway's MAA under it (wingtip.altitude's band): no shelf or cloud.
+  // airway's MAA under it (wingtip.altitude's band): no cloud.
   const ifrCeilingReason =
     s.band_ceiling_ft == null
       ? null
@@ -122,7 +122,7 @@ export function ifrSteps(nav: NavLogAltitude): Step[] {
       body: (
         <>
           {ceilingWords(nav, "The") ? `${ceilingWords(nav, "The")}. ` : ""}
-          Under IFR no Class B shelf, cloud or Class A caps it: the clearance takes the flight into each.
+          Under IFR no cloud or Class A caps it: the clearance takes the flight into each.
         </>
       ),
     },

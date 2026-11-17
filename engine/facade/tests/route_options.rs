@@ -84,6 +84,20 @@ fn a_clear_day_is_the_straight_line_for_every_kind() {
 }
 
 #[test]
+fn avoid_class_b_is_the_route_through_the_fixes_round_it_and_none_unasked() {
+    let (answer, expect) = options("classB");
+    let way = &answer["class_b"];
+    assert_eq!(way["kind"], expect["kind"]);
+    assert_eq!(way["title"], expect["title"]);
+    assert_eq!(way["stops"], expect["stops"]);
+    assert_eq!(way["landings"], expect["landings"]);
+    assert!((way["distance_nm"].as_f64().unwrap() - expect["distance_nm"].as_f64().unwrap()).abs() <= 2.0);
+    // A route entering no Class B is asked with none, and none is offered.
+    let (clear, _) = options("clearDay");
+    assert_eq!(clear["class_b"], Value::Null);
+}
+
+#[test]
 fn a_thunderstorm_on_the_line_is_gone_round_by_twenty_miles() {
     let (answer, expect) = options("storm");
     assert_eq!(names(&answer, "direct"), strings(&expect["direct"]));

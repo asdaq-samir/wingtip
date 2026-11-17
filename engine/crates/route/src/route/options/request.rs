@@ -156,6 +156,7 @@ pub(super) fn options(a: &Ask) -> Result<String, String> {
         path.push(end);
         own(&mut grid, &gs, a, &fuel, &path, idents, &vec![false; idents.len()], "filed", "Most Filed")
     });
+    let class_b = super::class_b_way::class_b_way(&mut grid, &gs, a, &fuel);
 
     let mut out = String::from("{\"options\":[");
     for (i, w) in found.iter().enumerate() {
@@ -166,10 +167,12 @@ pub(super) fn options(a: &Ask) -> Result<String, String> {
     }
     out.push_str("],\"own\":");
     way_json(&mut out, &mine, a.profile.airplane, &grid.hazards);
-    out.push_str(",\"filed\":");
-    match &filed {
-        Some(w) => way_json(&mut out, w, a.profile.airplane, &grid.hazards),
-        None => out.push_str("null"),
+    for (key, way) in [("filed", &filed), ("class_b", &class_b)] {
+        out.push_str(&format!(",\"{key}\":"));
+        match way {
+            Some(w) => way_json(&mut out, w, a.profile.airplane, &grid.hazards),
+            None => out.push_str("null"),
+        }
     }
     // The pilot's own route as it is flown, end to end, for the map to
     // draw beside the ways (the owner's "all routes drawn including mine",

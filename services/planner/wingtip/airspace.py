@@ -12,13 +12,15 @@ altitude at all. They are reported instead as airspace to establish
 contact with, which is nav-log information a pilot wants.
 
 Class B is different: it takes an explicit clearance ("cleared into the
-Bravo"), which may not be granted, and a light aircraft is usually better
-off staying beneath the shelf and out of the way of airliners. So Class B
-alone imposes a ceiling.
+Bravo", 14 CFR 91.131(a)(1)). Since 2026-11-17 it imposes no ceiling
+either (the owner: "keep it true by default in the app"): a route is
+planned through it with the clearance it takes, its transits say so, and
+the Routes offer the way round it (class_b_entered, detour_waypoints,
+wingtip.class_b_route).
 
-Before this, all of B/C/D imposed one, which forced routes beneath
-shelves a pilot would simply have talked their way through -- and for a
-Class-C-to-Class-C route left no legal altitude at all.
+Before 2026-09-10, all of B/C/D imposed a ceiling, which forced routes
+beneath shelves a pilot would simply have talked their way through -- and
+for a Class-C-to-Class-C route left no legal altitude at all.
 
 Class E is excluded entirely: VFR overflight needs neither clearance nor
 a radio call, just cloud clearance and visibility minimums.
@@ -43,9 +45,8 @@ from .engine import ask as engine
 # needs them, as nothing about E asks a VFR pilot for a clearance.
 SURFACE_E_TYPES = ("CLASS_E2", "CLASS_E3", "CLASS_E4")
 
-# Class B takes an explicit clearance, which can be refused and which a
-# light aircraft is usually better off not asking for. This is the only
-# class that pushes a route beneath a shelf.
+# Class B takes an explicit clearance, which can be refused: the only class
+# the Routes offer a way round (detour_waypoints).
 CLEARANCE_CLASSES = ("B",)
 
 
@@ -137,13 +138,12 @@ def surface_classes(points: list[tuple[float, float]], shp_path) -> list[str]:
 
 def is_own_surface_area(polygon: dict, start_point, end_point) -> bool:
     """Whether this airspace polygon is the departure or destination
-    airport's own surface area, rather than something the route has to
-    route around.
+    airport's own surface area, rather than something the route could go
+    round.
 
     Two conditions, and the floor is the load-bearing one: the airspace
     must reach the surface, and must enclose one end of the route. An
-    overlying shelf fails the first test however low it sits, which is
-    what keeps it a real constraint.
+    overlying shelf fails the first test however low it sits.
     """
     if polygon["floor_ft_msl"] > 0:
         return False
@@ -153,82 +153,10 @@ def is_own_surface_area(polygon: dict, start_point, end_point) -> bool:
 def own_class_b(polygons: list, start_point, end_point) -> set[str]:
     """The Class B a route takes off from or lands in, by name: those whose
     surface area holds one of its ends. Landing at O'Hare takes a Class B
-    clearance anyway, so none of Chicago's shelves is a ceiling on the way
-    in -- Midway to O'Hare had no legal altitude under the 1,900 ft shelf
-    between them, only the surface area round O'Hare itself being left
-    out. A field under a shelf, not in a surface area (Midway under
-    Chicago's 3,000), is flown out of under it as before."""
+    clearance anyway, so no way round Chicago's shelves is offered on the
+    way in. A field under a shelf, not in a surface area (Midway under
+    Chicago's 3,000), is not in its own Class B."""
     return {p["name"] for p in polygons if p["class"] in CLEARANCE_CLASSES and is_own_surface_area(p, start_point, end_point)}
-
-
-def airspace_ceiling_profile(route_start: tuple, route_end: tuple, fixes: list, shp_path) -> list:
-    """The airspace ceiling of each leg of the nav log -- the lowest
-    Class B shelf floor the leg between consecutive `fixes` ((lat, lon)
-    pairs, the route's ends included) passes laterally under, or None
-    where it passes under none. Where the whole route's ceiling is the
-    lowest shelf anywhere along it, this is the shelf over each leg, so
-    a route can cruise low under the Bravo by the departure and climb
-    once past it. The route's own surface areas are excluded on the
-    whole route's ends: a leg that
-    starts at the departure begins inside that airport's airspace just
-    as the route does -- and with them the whole Class B they are part
-    of (own_class_b): a route into or out of it is cleared through it.
-
-    A leg's ceiling is the highest it can cruise staying beneath every
-    Class B shelf it laterally passes through -- transiting *under* the
-    Bravo rather than asking for a clearance through it, the usual choice
-    for a light aircraft.
-
-    Class C and D impose nothing here. Entering either needs only two-way
-    radio communication established, which is routine, so they are
-    reported by airspace_transits() rather than treated as a lid. See the
-    module docstring for what this used to do and why it was wrong.
-
-    A *surface area* containing the departure or destination point is
-    deliberately excluded: landing at or departing from your own airport
-    inherently means transiting its local airspace to reach the runway
-    (with whatever clearance or coordination that requires), which isn't
-    a *routing* conflict the way an unrelated shelf along the way would
-    be. Without the exclusion, a route ending at any towered airport
-    trivially produces a ~0 ft "ceiling" from that airport's own
-    airspace, and no legal cruising altitude at all.
-
-    What identifies "its own airspace" is the floor being at the surface,
-    not the airspace class. This was Class-D-only until 2026-09-10, on
-    the reasoning that a compact D ring reliably means "that airport's
-    shelf" while B and C are larger and often sit over an unrelated
-    field. The second half of that is true but the rule drawn from it was
-    wrong: KDSM->KOMA is Class C at both ends, so the route began and
-    ended inside surface areas with SFC floors and select_cruise_altitude
-    returned None for an ordinary 100 nm cross-country.
-
-    Testing the floor instead keeps every case the class test got right.
-    An overlying shelf is still a hard constraint, because its floor is
-    not the surface -- C81/Grayslake sits laterally under Chicago's Class
-    B, whose floor there is a few thousand feet, so it still imposes a
-    ceiling exactly as before.
-    """
-    from .geo import corridor_bbox
-
-    bbox = corridor_bbox(route_start, route_end, buffer_nm=2.0)
-    start_point = Point(route_start[1], route_start[0])
-    end_point = Point(route_end[1], route_end[0])
-    polygons = load_controlled_airspace(shp_path, bbox)
-    own = own_class_b(polygons, start_point, end_point)
-    shelves = [p for p in polygons if p["class"] in CLEARANCE_CLASSES and p["name"] not in own]
-
-    # Every leg against the shelves at once, through their index (STRtree):
-    # each leg tried against each shelf by hand was 12.5 s of a cold Seattle
-    # to Miami plan, the corridor's box holding a country's worth of them.
-    ceilings: list = [None] * max(0, len(fixes) - 1)
-    if not shelves or not ceilings:
-        return ceilings
-    legs = [LineString([(lon1, lat1), (lon2, lat2)]) for (lat1, lon1), (lat2, lon2) in zip(fixes, fixes[1:])]
-    leg_at, shelf_at = STRtree([p["geometry"] for p in shelves]).query(legs, predicate="intersects")
-    for i, j in zip(leg_at.tolist(), shelf_at.tolist()):
-        floor = shelves[j]["floor_ft_msl"]
-        ceilings[i] = floor if ceilings[i] is None else min(ceilings[i], floor)
-    return ceilings
 
 
 #: detour_waypoints by leg, altitude and the Class B in its way, bounded.
@@ -262,7 +190,7 @@ def detour_waypoints(route_start: tuple, route_end: tuple, shp_path, below_ft: f
     adding the least distance first, a VFR waypoint (VPBNG, on the
     sectional) before a GPS fix (wingtip.fixes): the engine's choice
     (class_b_detours, #482 phase 5), the fixes round the Class B read
-    here. The route's own surface areas aside, as for the ceiling. Each as
+    here. The route's own surface areas aside (own_class_b). Each as
     {"ident", "kind", "added_nm"}."""
     from . import fixes
     from .geo import corridor_bbox

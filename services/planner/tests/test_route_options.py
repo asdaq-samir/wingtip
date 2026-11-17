@@ -29,6 +29,7 @@ ANSWER = {
         }
     ],
     "own": None,
+    "class_b": None,
     "current_path": [],
     "direct": [0],
     "ends": [],
@@ -130,13 +131,17 @@ def test_the_route_lines_chips_one_a_set_of_stops_in_the_owners_order():
     chips = route_options._chips(found, ["COU", "@42.1,-88.2"])
     assert [(c["key"], c["label"]) for c in chips] == [
         ("none", "As typed"),
-        ("fuel", "Your Route"),
+        ("fuel", "With Fuel Stops"),
         ("weather", "Avoid Weather"),
         ("fastest", "Fastest"),
     ]
     assert chips[0]["crosses"] == [2] and chips[2]["crosses"] == [1]
     # Nothing but the route itself: no line.
     assert route_options._chips({**ANSWER, "options": []}, []) == []
+    # A route that lands where it needs to already, no fuel stop put in:
+    # no "With Fuel Stops" (the owner, 2026-11-17).
+    landed = {**found, "own": {**way("own", ["own"], ["KCOU", "KMVN"]), "landings": 1}}
+    assert "fuel" not in [c["key"] for c in route_options._chips(landed, ["COU", "@42.1,-88.2"])]
 
 
 def test_the_most_filed_route_is_the_last_chip_its_airway_named(monkeypatch):
@@ -184,3 +189,56 @@ def test_the_most_filed_route_is_the_last_chip_its_airway_named(monkeypatch):
     assert asked[0]["filed"] == ([(2.0, 2.0), (3.0, 2.0), (4.0, 2.0), (5.0, 2.0)], ["BAE", "P1", "P2", "OBH"])
     assert answer["chips"][-1] == {"key": "filed", "label": "Most Filed", "stops": ["BAE", "V100", "OBH"], "fuel": [], "crosses": []}
     assert "filed" not in answer
+
+
+def test_avoid_class_b_is_asked_at_the_routes_altitude_and_its_chip_comes_before_most_filed(monkeypatch):
+    # The owner, 2026-11-17: "You can still avoid class B in the suggested
+    # routes". The plan flies through it with its clearance (14 CFR
+    # 91.131(a)(1)); the way round is a chip of its own.
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    asked, built = [], []
+    round_b = {"points": [[1.5, 2.0]], "idents": ["VPNEAR"], "landed": [False]}
+    class_b_way = {
+        **ANSWER["options"][0],
+        "kind": "class_b",
+        "kinds": ["class_b"],
+        "title": "Avoid Class B",
+        "stops": ["VPNEAR"],
+        "fuel": [],
+    }
+
+    def options(dep, dest, profile, **given):
+        asked.append(given)
+        return {**ANSWER, "class_b": class_b_way if given["class_b"] else None}
+
+    def route_round(points, idents, landed, cruise_ft):
+        built.append((points, cruise_ft))
+        return round_b
+
+    monkeypatch.setattr(route_options, "resolve", lambda *idents: tuple({"lat": 1.0 + i, "lon": 2.0} for i, _ in enumerate(idents)))
+    monkeypatch.setattr(route_options.wingtip_route_options, "options", options)
+    monkeypatch.setattr(route_options.prefetch, "route", lambda dep, dest, stops="": None)
+    monkeypatch.setattr(route_options.filed_routes, "most_filed", lambda dep, dest: [])
+    monkeypatch.setattr(route_options, "class_b_route", route_round)
+
+    def no_route(dep, dest, stops=""):
+        from fastapi import HTTPException
+
+        raise HTTPException(404, "not read here")
+
+    # The straight line, as for a route the plan refuses.
+    monkeypatch.setattr(route_options, "load_route", no_route)
+    client = TestClient(app)
+
+    answer = client.get("/api/route-options?dep=kmdw&dest=kdlh&altitude_ft=4500").json()
+    assert built == [([(1.0, 2.0), (2.0, 2.0)], 4500.0)]
+    assert asked[-1]["class_b"] == round_b
+    assert answer["chips"][-1]["key"] == "class_b" and answer["chips"][-1]["label"] == "Avoid Class B"
+    assert answer["class_b"]["stops"] == ["VPNEAR"]
+    # Before the plan, with no altitude, none is asked or offered.
+    answer = client.get("/api/route-options?dep=kmdw&dest=kdlh").json()
+    assert asked[-1]["class_b"] is None and answer["class_b"] is None
+    assert all(c["key"] != "class_b" for c in answer["chips"])

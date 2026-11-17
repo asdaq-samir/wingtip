@@ -115,13 +115,7 @@ def navlog_stream(q: Annotated[PlanQuery, Depends()]) -> StreamingResponse:
             why, detours = fp.unflyable_parts(outcome, runs)
             yield line(
                 NavLogError(
-                    detail=why["title"],
-                    brief=why["brief"],
-                    reasons=why["reasons"],
-                    advice=why["advice"],
-                    retry=False,
-                    class_b=why["class_b"],
-                    detours=detours,
+                    detail=why["title"], brief=why["brief"], reasons=why["reasons"], advice=why["advice"], retry=False, detours=detours
                 )
             )
             return
@@ -153,7 +147,7 @@ def navlog_stream(q: Annotated[PlanQuery, Depends()]) -> StreamingResponse:
                 options=outcome.options,
                 aircraft=aircraft_line,
                 cautions=list(outcome.cautions),
-                class_b_detours=fp.class_b_detours_of(runs, outcome, asked),
+                detours=fp.detours_of(runs, outcome, asked),
                 altitude_figures=list(outcome.figures),
             )
         )

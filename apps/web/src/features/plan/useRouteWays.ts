@@ -20,7 +20,7 @@ export interface FuelCard {
 }
 
 /** The route as it was before the first Routes card was swiped into FPL,
- *  with its figures, kept for Your Route to put it back (useRouteWays). */
+ *  with its figures, kept for As typed to put it back (useRouteWays). */
 export interface Browsing {
   /** The route's ends it was kept under (chosenKey). */
   key: string;
@@ -32,6 +32,9 @@ export interface Browsing {
   ownNm: number | null;
   /** The typed route's fuel burnt, its nav log's (Totals.fuel_gal). */
   ownGal: number | null;
+  /** The typed route's highest cruise altitude, its nav log's, the ways
+   *  were asked at (Avoid Class B's). */
+  ownAltitudeFt: number | null;
   /** The ways' stops, as they have been offered from it. */
   ways: string[][];
 }
@@ -50,6 +53,7 @@ export function useRouteWays({
   depart,
   local,
   flightRules,
+  altitudeFt,
 }: {
   planned: PlannedRoute;
   aircraft: AircraftChoice;
@@ -57,6 +61,10 @@ export function useRouteWays({
   /** A local flight, an airport to itself with no stop. */
   local: boolean;
   flightRules: string;
+  /** The route as planned's highest cruise altitude, its nav log's; null
+   *  before the plan. Where the route enters Class B there, the ways
+   *  offer Avoid Class B (the owner, 2026-11-17). */
+  altitudeFt: number | null;
 }) {
   const minimums = usePreferences((p) => p.minimums);
   const routeWeather = usePreferences((p) => p.routeWeather);
@@ -67,7 +75,7 @@ export function useRouteWays({
   // owner's "Can fpl also reflect the change of the card?", as Maps'
   // directions follow the route picked; the route as it was before the
   // first card is kept here (with its figures and its fuel stops' card),
-  // the cards asked for and drawn from it, and Your Route puts it back.
+  // the cards asked for and drawn from it, and As typed puts it back.
   // Use keeps the one in sight; a change of the route by hand ends it.
   const [browsingKept, setBrowsing] = useState<Browsing | null>(null);
   const chosenKey = `${planned.dep}|${planned.dest ?? ""}`;
@@ -81,10 +89,15 @@ export function useRouteWays({
   const keptWays = browsingKept
     ? (queryClient
         .getQueryData<RouteOptions>(
-          routeOptionsQuery(planned.dep, `${planned.dest ?? ""}`, browsingKept.stops.join(","), { ...aircraft }, depart || undefined, {
-            ceilingFt,
-            visibilitySm,
-          }).queryKey,
+          routeOptionsQuery(
+            planned.dep,
+            `${planned.dest ?? ""}`,
+            browsingKept.stops.join(","),
+            { ...aircraft },
+            depart || undefined,
+            { ceilingFt, visibilitySm },
+            browsingKept.ownAltitudeFt,
+          ).queryKey,
         )
         ?.options.map((o) => o.stops) ?? [])
     : [];
@@ -104,10 +117,17 @@ export function useRouteWays({
   // the compiler takes it as changed there and skips every later memo
   // that reads it (lib/queryClient's queries are pure).
   const routeWaysQuery = useQuery({
-    ...routeOptionsQuery(planned.dep, `${planned.dest ?? ""}`, baseStops.join(","), { ...aircraft }, depart || undefined, {
-      ceilingFt,
-      visibilitySm,
-    }),
+    // At the typed route's altitude while a way is tried, as the ways
+    // were asked from it.
+    ...routeOptionsQuery(
+      planned.dep,
+      `${planned.dest ?? ""}`,
+      baseStops.join(","),
+      { ...aircraft },
+      depart || undefined,
+      { ceilingFt, visibilitySm },
+      browsing ? browsing.ownAltitudeFt : altitudeFt,
+    ),
     enabled: vfrRoute,
     // The ways before kept on the row while the same route is asked for
     // again -- another airplane, departure time or minimums -- so FPL's

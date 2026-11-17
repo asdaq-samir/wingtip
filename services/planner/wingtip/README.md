@@ -168,9 +168,10 @@ engine (#482).
 
 | Module | What it decides |
 |---|---|
-| `altitude.py` | The VFR cruising altitude to file, and the reasoning behind it -- terrain floor, airspace ceiling, the hemispheric rule leg by leg, the freezing level as an icing warning, the forecast ceiling/visibility over the flight, hazards, timed per stage (see services/planner/README.md). |
+| `altitude.py` | The VFR cruising altitude to file, and the reasoning behind it -- terrain floor, the clouds and the service ceiling (Class B none: the route is planned through it with its clearance), the hemispheric rule leg by leg, the freezing level as an icing warning, the forecast ceiling/visibility over the flight, hazards, timed per stage (see services/planner/README.md). |
 | `checkpoint_notes.py`, `routecsv.py` | A pilot's own "how to spot it" note per checkpoint, and the shared "one judgment at one place on one route" CSV mechanics (read-and-coerce, rewrite-whole-file, "same place" by proximity) it and `chartlabels.py` both need -- one module, so the two files' own same-distance threshold is one constant instead of two copies that could drift apart. |
 | `remarks.py` | An airport's Chart Supplement remarks in plain English: lights turned on from the cockpit, weather read out on mic clicks. |
+| `class_b_route.py` | Avoid Class B for the Routes: the route as planned with the best fix round each leg that enters Class B at its altitude (the engine's `class_b_entered` and `class_b_detours`, 14 CFR 91.131(a)(1)), none where no leg does or one has no way round. |
 | `classb.py` | Every Class B airport, matched from the FAA Class Airspace shapefile's ~370 polygons down to the ~30 airports they actually belong to -- envelope containment plus ident-prefix matching, not a bare ident lookup (a bare "HNL" once matched a Mexican airspace record). |
 
 **The ML pipeline**

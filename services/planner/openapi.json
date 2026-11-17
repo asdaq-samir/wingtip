@@ -2938,6 +2938,7 @@
                 "type": "null"
               }
             ],
+            "default": null,
             "title": "Airspace Ceiling Ft"
           },
           "airspace_transits": {
@@ -2965,11 +2966,6 @@
             },
             "title": "Candidates Ft",
             "type": "array"
-          },
-          "class_b_cleared": {
-            "default": false,
-            "title": "Class B Cleared",
-            "type": "boolean"
           },
           "cloud_base_ft": {
             "anyOf": [
@@ -3177,7 +3173,6 @@
           "course_magnetic_deg",
           "eastbound",
           "floor_ft",
-          "airspace_ceiling_ft",
           "airspace_transits",
           "freezing_level_ft",
           "band_ceiling_ft",
@@ -3368,19 +3363,8 @@
         "type": "object"
       },
       "AltitudeSegment": {
-        "description": "One leg's own band: its floor, the shelf and the clouds over it\nalone, and the legal cruising altitudes between -- what lets a plan\nstep down under a Class B shelf and climb again past it.",
+        "description": "One leg's own band: its floor, the clouds and the service ceiling\nover it alone, and the legal cruising altitudes between -- what lets a\nplan step over high ground or under low cloud leg by leg.",
         "properties": {
-          "airspace_ceiling_ft": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Airspace Ceiling Ft"
-          },
           "airway": {
             "anyOf": [
               {
@@ -3593,7 +3577,6 @@
           "from_nm",
           "to_nm",
           "floor_ft",
-          "airspace_ceiling_ft",
           "band_ceiling_ft",
           "candidates_ft"
         ],
@@ -7106,11 +7089,6 @@
             "title": "Checkpoints",
             "type": "boolean"
           },
-          "class_b_clearance": {
-            "default": false,
-            "title": "Class B Clearance",
-            "type": "boolean"
-          },
           "climb_fuel_burn_gph": {
             "anyOf": [
               {
@@ -7712,7 +7690,7 @@
         "type": "object"
       },
       "Detour": {
-        "description": "A named fix that keeps a route out of the Class B airspace it is\nstopped by (wingtip.airspace.detour_waypoint), and where it goes in the\nstops: before the stop at `stop_index`, so on the hop it is for.",
+        "description": "A way round the high ground that leaves a route no altitude\n(wingtip.terrain_detour), and where it goes in the stops: before the\nstop at `stop_index`, so on the hop it is for.",
         "properties": {
           "added_nm": {
             "title": "Added Nm",
@@ -11142,11 +11120,6 @@
             "title": "Checkpoints",
             "type": "boolean"
           },
-          "class_b_clearance": {
-            "default": false,
-            "title": "Class B Clearance",
-            "type": "boolean"
-          },
           "climb_fuel_burn_gph": {
             "anyOf": [
               {
@@ -14361,12 +14334,12 @@
             "title": "Cautions",
             "type": "array"
           },
-          "class_b_detours": {
+          "detours": {
             "default": [],
             "items": {
               "$ref": "#/components/schemas/Detour"
             },
-            "title": "Class B Detours",
+            "title": "Detours",
             "type": "array"
           },
           "flown": {
@@ -17829,14 +17802,6 @@
             ],
             "title": "Chart Tiles Base"
           },
-          "class_b_detours": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/Detour"
-            },
-            "title": "Class B Detours",
-            "type": "array"
-          },
           "course_line": {
             "items": {
               "maxItems": 2,
@@ -17859,6 +17824,14 @@
           },
           "destination": {
             "$ref": "#/components/schemas/AirportEnd"
+          },
+          "detours": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Detour"
+            },
+            "title": "Detours",
+            "type": "array"
           },
           "distance_nm": {
             "title": "Distance Nm",
@@ -20080,7 +20053,8 @@
               "weather",
               "stops",
               "land",
-              "own"
+              "own",
+              "class_b"
             ],
             "title": "Kind",
             "type": "string"
@@ -20092,7 +20066,8 @@
                 "weather",
                 "stops",
                 "land",
-                "own"
+                "own",
+                "class_b"
               ],
               "type": "string"
             },
@@ -20181,6 +20156,16 @@
             },
             "title": "Chips",
             "type": "array"
+          },
+          "class_b": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RouteOption"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "current": {
             "default": [],
@@ -30188,16 +30173,6 @@
           },
           {
             "in": "query",
-            "name": "class_b_clearance",
-            "required": false,
-            "schema": {
-              "default": false,
-              "title": "Class B Clearance",
-              "type": "boolean"
-            }
-          },
-          {
-            "in": "query",
             "name": "rules",
             "required": false,
             "schema": {
@@ -30828,16 +30803,6 @@
                 }
               ],
               "title": "Depart"
-            }
-          },
-          {
-            "in": "query",
-            "name": "class_b_clearance",
-            "required": false,
-            "schema": {
-              "default": false,
-              "title": "Class B Clearance",
-              "type": "boolean"
             }
           },
           {
@@ -32083,16 +32048,6 @@
           },
           {
             "in": "query",
-            "name": "class_b_clearance",
-            "required": false,
-            "schema": {
-              "default": false,
-              "title": "Class B Clearance",
-              "type": "boolean"
-            }
-          },
-          {
-            "in": "query",
             "name": "rules",
             "required": false,
             "schema": {
@@ -32532,6 +32487,24 @@
                 }
               ],
               "title": "Min Visibility Sm"
+            }
+          },
+          {
+            "in": "query",
+            "name": "altitude_ft",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 60000,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Altitude Ft"
             }
           }
         ],

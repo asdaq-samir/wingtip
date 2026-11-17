@@ -99,6 +99,7 @@ export function usePlanRouteList(
     ownGround: own.ground,
     ownNm: own.nm,
     ownGal: own.gal,
+    ownAltitudeFt: own.altitudeFt,
     setStops,
     flightRules,
   });

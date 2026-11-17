@@ -20478,7 +20478,7 @@
       "additionalProperties": false
     },
     "no_altitude": {
-      "description": "Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, whether Class B is what stops it, and all of it as one message.",
+      "description": "Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, and all of it as one message.",
       "type": "object",
       "properties": {
         "input": {
@@ -20495,20 +20495,6 @@
               ],
               "items": {
                 "type": "string"
-              }
-            },
-            "via": {
-              "type": [
-                "object",
-                "null"
-              ],
-              "properties": {
-                "ident": {
-                  "type": "string"
-                },
-                "added_nm": {
-                  "type": "number"
-                }
               }
             },
             "where": {
@@ -20541,9 +20527,6 @@
             "advice": {
               "type": "string"
             },
-            "class_b": {
-              "type": "boolean"
-            },
             "detail": {
               "type": "string"
             }
@@ -20553,7 +20536,6 @@
             "brief",
             "reasons",
             "advice",
-            "class_b",
             "detail"
           ]
         }
@@ -21530,7 +21512,7 @@
       "additionalProperties": false
     },
     "own_altitude_caution": {
-      "description": "What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, into Class B (91.131), over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.",
+      "description": "What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.",
       "type": "object",
       "properties": {
         "input": {
@@ -25762,7 +25744,7 @@
       "additionalProperties": false
     },
     "route_options": {
-      "description": "The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route and the most filed one with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.",
+      "description": "The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.",
       "type": "object",
       "properties": {
         "input": {
@@ -25782,6 +25764,17 @@
               "$ref": "#/definitions/RouteOption"
             },
             "filed": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/RouteOption"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "class_b": {
+              "description": "Avoid Class B: the route as planned round the Class B it enters, with its fuel stops (route/options/class_b_way.rs); null where none was asked.",
               "anyOf": [
                 {
                   "$ref": "#/definitions/RouteOption"
@@ -25869,6 +25862,7 @@
             "options",
             "own",
             "filed",
+            "class_b",
             "current_path",
             "direct",
             "ends",
@@ -27059,7 +27053,7 @@
       "additionalProperties": false
     },
     "select_cruise_altitude": {
-      "description": "The planner's altitude selection from the data it read: each leg's band (the floor up to the lowest of the Class B shelf, 91.155's distance under the forecast clouds and the service ceiling, none in prohibited airspace; under IFR the service ceiling and an airway's MAA alone), its legal altitudes by its own magnetic course, the route's, the lowest recommended, and icing where a legal altitude reaches the freezing level with moisture.",
+      "description": "The planner's altitude selection from the data it read: each leg's band (the floor up to the lower of 91.155's distance under the forecast clouds and the service ceiling, none in prohibited airspace, Class B no ceiling as the route is planned through it with its clearance (14 CFR 91.131(a)(1)); under IFR the service ceiling and an airway's MAA alone), its legal altitudes by its own magnetic course, the route's, the lowest recommended, and icing where a legal altitude reaches the freezing level with moisture.",
       "type": "object",
       "properties": {
         "input": {
@@ -27112,12 +27106,6 @@
                 null
               ]
             },
-            "class_b_cleared": {
-              "type": [
-                "boolean",
-                "null"
-              ]
-            },
             "floors": {
               "type": "array",
               "items": {
@@ -27149,15 +27137,6 @@
                     "null"
                   ]
                 }
-              }
-            },
-            "airspace_ceilings_ft": {
-              "type": "array",
-              "items": {
-                "type": [
-                  "number",
-                  "null"
-                ]
               }
             },
             "service_ceilings_ft": {
@@ -27298,15 +27277,6 @@
             },
             "floor_ft": {
               "type": "number"
-            },
-            "airspace_ceiling_ft": {
-              "type": [
-                "number",
-                "null"
-              ]
-            },
-            "class_b_cleared": {
-              "type": "boolean"
             },
             "service_ceiling_ft": {
               "type": [
@@ -32208,12 +32178,6 @@
         },
         "floor_ft": {
           "type": "number"
-        },
-        "airspace_ceiling_ft": {
-          "type": [
-            "number",
-            "null"
-          ]
         },
         "service_ceiling_ft": {
           "type": [
@@ -38895,6 +38859,42 @@
               "type": "array",
               "items": {
                 "type": "string"
+              }
+            }
+          },
+          "required": [
+            "points",
+            "idents"
+          ]
+        },
+        "class_b": {
+          "description": "The route as planned with the fixes that keep it out of the Class B it enters at its altitude (class_b_entered, class_b_detours; 14 CFR 91.131(a)(1)), its points between the ends, their idents and which are fields landed at: built as Avoid Class B. Null where it enters none or a leg that does has no way round.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
+            "idents": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "landed": {
+              "type": "array",
+              "items": {
+                "type": "boolean"
               }
             }
           },

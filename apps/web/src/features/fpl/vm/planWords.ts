@@ -34,12 +34,7 @@ export function tightLegWords(segments: AltitudeSegment[] | null | undefined): s
   const tight = segments?.find((seg) => seg.tight);
   if (!tight || tight.candidates_ft[0] === undefined || tight.band_ceiling_ft == null) return null;
   const altitude = tight.candidates_ft[0];
-  const under =
-    tight.band_ceiling_ft === tight.airspace_ceiling_ft
-      ? "the Class B"
-      : tight.band_ceiling_ft === tight.cloud_ceiling_ft
-        ? "the cloud clearance"
-        : "the service ceiling";
+  const under = tight.band_ceiling_ft === tight.cloud_ceiling_ft ? "the cloud clearance" : "the service ceiling";
   const over = Math.round(altitude - tight.floor_ft);
   return (
     `Tight ${Math.round(tight.from_nm)}–${Math.round(tight.to_nm)} nm along: ${grouped(altitude)} ft, ` +

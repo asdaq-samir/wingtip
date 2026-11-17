@@ -26,7 +26,7 @@ from concurrent.futures import TimeoutError as FuturesTimeoutError
 
 # The parts of a flight each have a module of their own; this one runs them
 # under the time limit, and the planner's callers ask for all of them here.
-from .flight_detours import class_b_detours_of, terrain_way, unflyable_parts  # noqa: F401
+from .flight_detours import detours_of, terrain_way, unflyable_parts  # noqa: F401
 from .flight_hops import _fixes, hop_runs, join_figures, join_outcomes, resolve_altitude, resolve_run  # noqa: F401
 from .flight_legs import flown_legs, fuel_stops_of, on_airway, totals_of, with_holds  # noqa: F401
 from .flight_outcomes import Asked, Flown, HopRun, NoWinds, Unflyable
@@ -76,7 +76,6 @@ def waiting_on(run: HopRun, asked: Asked) -> str:
         _fixes(run.fixes),
         run.fcst_hr,
         run.window,
-        asked.class_b_clearance,
         asked.rules,
         run.hop.dest_airport.get("airway"),
         run.paths,

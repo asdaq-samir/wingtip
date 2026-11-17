@@ -197,8 +197,7 @@ def plan(q: Annotated[PlanQuery, Depends()]) -> Plan:
     if isinstance(outcome, fp.NoWinds):
         raise outcome.error
     if isinstance(outcome, fp.Unflyable):
-        _, ways = fp.unflyable_parts(outcome, runs)
-        raise HTTPException(422, planning.no_altitude(outcome.selection, outcome.between, ways[0] if ways else None)["detail"])
+        raise HTTPException(422, planning.no_altitude(outcome.selection, outcome.between)["detail"])
     outcome, leg_list = fp.flown_as_picked(r, runs, outcome, asked)
 
     return Plan(
@@ -216,7 +215,7 @@ def plan(q: Annotated[PlanQuery, Depends()]) -> Plan:
         altitude_options=outcome.options,
         altitude_choice=outcome.choice,
         altitude_cautions=list(outcome.cautions),
-        class_b_detours=fp.class_b_detours_of(runs, outcome, asked),
+        detours=fp.detours_of(runs, outcome, asked),
         altitude_figures=list(outcome.figures),
         aircraft=None if asked.profile is None else {"name": q.aircraft, **asked.profile},
         **chart_summary(),

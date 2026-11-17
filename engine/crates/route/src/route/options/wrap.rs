@@ -54,7 +54,8 @@ pub fn unwrapped(mut a: Ask) -> Ask {
 pub fn unwrap(a: &mut Ask) {
     let reference = a.dep.at.1;
     point(&mut a.dest.at, reference);
-    for p in a.current.iter_mut().flatten().chain(a.filed.iter_mut().flat_map(|f| f.0.iter_mut())) {
+    let class_b = a.class_b.iter_mut().flat_map(|c| c.points.iter_mut());
+    for p in a.current.iter_mut().flatten().chain(a.filed.iter_mut().flat_map(|f| f.0.iter_mut())).chain(class_b) {
         point(p, reference);
     }
     for r in a.tafs.iter_mut().flatten().chain(a.metars.iter_mut().flatten()) {

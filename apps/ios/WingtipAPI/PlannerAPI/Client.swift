@@ -6828,13 +6828,6 @@ public struct Client: APIProtocol {
                     in: &request,
                     style: .form,
                     explode: true,
-                    name: "class_b_clearance",
-                    value: input.query.classBClearance
-                )
-                try converter.setQueryItemAsURI(
-                    in: &request,
-                    style: .form,
-                    explode: true,
                     name: "rules",
                     value: input.query.rules
                 )
@@ -7540,13 +7533,6 @@ public struct Client: APIProtocol {
                     explode: true,
                     name: "depart",
                     value: input.query.depart
-                )
-                try converter.setQueryItemAsURI(
-                    in: &request,
-                    style: .form,
-                    explode: true,
-                    name: "class_b_clearance",
-                    value: input.query.classBClearance
                 )
                 try converter.setQueryItemAsURI(
                     in: &request,
@@ -9449,13 +9435,6 @@ public struct Client: APIProtocol {
                     in: &request,
                     style: .form,
                     explode: true,
-                    name: "class_b_clearance",
-                    value: input.query.classBClearance
-                )
-                try converter.setQueryItemAsURI(
-                    in: &request,
-                    style: .form,
-                    explode: true,
                     name: "rules",
                     value: input.query.rules
                 )
@@ -9900,6 +9879,13 @@ public struct Client: APIProtocol {
                     explode: true,
                     name: "min_visibility_sm",
                     value: input.query.minVisibilitySm
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "altitude_ft",
+                    value: input.query.altitudeFt
                 )
                 converter.setAcceptHeader(
                     in: &request.headerFields,

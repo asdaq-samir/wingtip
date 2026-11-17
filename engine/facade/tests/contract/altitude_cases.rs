@@ -31,7 +31,7 @@ pub(super) fn cases(c: &mut Checker) {
     );
     c.ask("select_cruise_altitude", json!({
         "start": dep, "end": dest, "fixes": [dep, mid, dest], "breaks_nm": [0.0, 30.0, 60.0],
-        "floors": floors, "airspace_ceilings_ft": [null, 3000], "service_ceilings_ft": [14000, 14000],
+        "floors": floors, "service_ceilings_ft": [14000, 14000],
         "variation_deg": 0, "leg_variations_deg": [0, 0],
         "stations": [{ "icaoId": "KXYZ", "lat": 45.5, "lon": -90.0, "ceiling_ft": 2200, "elevation_ft": 900 }],
         "min_ceiling_ft": 2200, "special_use": [], "freezing": { "ft": 4000, "at_or_below": false }, "hazards": [], "weather_unavailable": [],

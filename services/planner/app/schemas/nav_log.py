@@ -31,11 +31,12 @@ class NavLogError(BaseModel):
     brief: str | None = None
     reasons: list[str] = []
     advice: str | None = None
-    #: Class B airspace is what leaves no altitude: the page offers to
-    #: plan it with a clearance (`class_b_clearance`), or to fly via a
-    #: waypoint, `detours` the ones that keep the route out of it, best
-    #: first.
+    #: Always False: Class B no longer leaves a route no altitude, as it
+    #: is planned through with its clearance (14 CFR 91.131(a)(1)). Kept
+    #: only while the iPhone's NavLogError(detail:...) still names it
+    #: (apps/ios/Wingtip/API/NavLog.swift); goes with the phones' turn.
     class_b: bool = False
+    #: The way round the high ground that leaves no altitude (Detour).
     detours: list[Detour] = []
 
 
@@ -62,9 +63,10 @@ class NavLogAltitude(BaseModel):
     #: The altitudes the pilot set that the planner would not have flown,
     #: and why (AltitudeCaution); none for the planner's own plans.
     cautions: list[AltitudeCaution] = []
-    #: With the Class B clearance, the waypoints that keep the route out
-    #: of the Class B it enters (Detour, best first): "Avoid Class B".
-    class_b_detours: list["Detour"] = []
+    #: Flown at no legal altitude (altitude_anyway), the way round the
+    #: high ground that stops each hop, for the pilot to take or not
+    #: (Detour); none for a pilot's own altitude.
+    detours: list["Detour"] = []
     #: The route flown at each altitude any leg may fly (AltitudeFigure),
     #: lowest first: the altitude wheel's figures.
     altitude_figures: list[AltitudeFigure] = []

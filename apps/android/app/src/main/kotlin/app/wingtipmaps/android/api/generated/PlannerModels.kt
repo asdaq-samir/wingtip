@@ -2933,9 +2933,6 @@ data class DepartureWindowAsk (
     val altitudes: String? = null,
     val checkpoints: Boolean? = null,
 
-    @SerialName("class_b_clearance")
-    val classBClearance: Boolean? = null,
-
     @SerialName("climb_fuel_burn_gph")
     val climbFuelBurnGph: Double? = null,
 
@@ -4311,9 +4308,6 @@ data class GoNoGoAsk (
     val altitudes: String? = null,
     val checkpoints: Boolean? = null,
 
-    @SerialName("class_b_clearance")
-    val classBClearance: Boolean? = null,
-
     @SerialName("climb_fuel_burn_gph")
     val climbFuelBurnGph: Double? = null,
 
@@ -5073,10 +5067,7 @@ data class NavLogAltitude (
     val altitudeSelection: AltitudeBreakdown,
 
     val cautions: List<AltitudeCaution>? = null,
-
-    @SerialName("class_b_detours")
-    val classBDetours: List<Detour>? = null,
-
+    val detours: List<Detour>? = null,
     val flown: String? = null,
     val options: List<AltitudeOption>? = null,
     val type: String? = null
@@ -5190,9 +5181,6 @@ data class AltitudeBreakdown (
     @SerialName("candidates_ft")
     val candidatesFt: List<Double>? = null,
 
-    @SerialName("class_b_cleared")
-    val classBCleared: Boolean? = null,
-
     @SerialName("cloud_base_ft")
     val cloudBaseFt: Double? = null,
 
@@ -5274,15 +5262,12 @@ data class AirspaceTransit (
 )
 
 /**
- * One leg's own band: its floor, the shelf and the clouds over it
- * alone, and the legal cruising altitudes between -- what lets a plan
- * step down under a Class B shelf and climb again past it.
+ * One leg's own band: its floor, the clouds and the service ceiling
+ * over it alone, and the legal cruising altitudes between -- what lets a
+ * plan step over high ground or under low cloud leg by leg.
  */
 @Serializable
 data class AltitudeSegment (
-    @SerialName("airspace_ceiling_ft")
-    val airspaceCeilingFt: Double? = null,
-
     val airway: AirwayAltitudes? = null,
 
     @SerialName("band_ceiling_ft")
@@ -5422,9 +5407,9 @@ data class AltitudeCaution (
 )
 
 /**
- * A named fix that keeps a route out of the Class B airspace it is
- * stopped by (wingtip.airspace.detour_waypoint), and where it goes in the
- * stops: before the stop at `stop_index`, so on the hop it is for.
+ * A way round the high ground that leaves a route no altitude
+ * (wingtip.terrain_detour), and where it goes in the stops: before the
+ * stop at `stop_index`, so on the hop it is for.
  */
 @Serializable
 data class Detour (
@@ -6024,10 +6009,6 @@ data class NavLogMessage (
     val altitudeSelection: AltitudeBreakdown? = null,
 
     val cautions: List<AltitudeCaution>? = null,
-
-    @SerialName("class_b_detours")
-    val classBDetours: List<Detour>? = null,
-
     val flown: String? = null,
     val options: List<AltitudeOption>? = null,
     val airway: AirwayAltitudes? = null,
@@ -6751,14 +6732,12 @@ data class Plan (
     @SerialName("chart_tiles_base")
     val chartTilesBase: String? = null,
 
-    @SerialName("class_b_detours")
-    val classBDetours: List<Detour>? = null,
-
     @SerialName("course_line")
     val courseLine: List<List<Double>>,
 
     val departure: AirportEnd,
     val destination: AirportEnd,
+    val detours: List<Detour>? = null,
 
     @SerialName("distance_nm")
     val distanceNm: Double,
@@ -7439,6 +7418,10 @@ data class RouteNotesRequest (
 @Serializable
 data class RouteOptions (
     val chips: List<RouteChip>? = null,
+
+    @SerialName("class_b")
+    val classB: RouteOption? = null,
+
     val current: List<Int>? = null,
 
     @SerialName("current_along")
@@ -7473,49 +7456,6 @@ data class RouteChip (
     val key: String,
     val label: String,
     val stops: List<String>
-)
-
-/**
- * What a way meets along it: its weather strip, its mean wind (kt,
- * a tailwind positive) and its floor (ft, the highest ground with
- * 14 CFR 91.119's 1,000 ft).
- */
-@Serializable
-data class RouteAlong (
-    val bands: List<RouteBand>,
-
-    @SerialName("floor_ft")
-    val floorFt: Int,
-
-    @SerialName("tail_kt")
-    val tailKt: Double,
-
-    @SerialName("water_nm")
-    val waterNm: Int? = null
-)
-
-/**
- * A run of the weather a way meets (the engine's route_options): VFR,
- * marginal (MVFR), IFR or a thunderstorm, and how many minutes of the
- * flight it lasts, in the order flown.
- */
-@Serializable
-data class RouteBand (
-    val kind: String,
-    val min: Double
-)
-
-/**
- * What a way keeps clear of or is told of (wingtip.route_options): its
- * kind -- storm, weather, marginal, sigmet, tfr, prohibited, terrain,
- * fuel, or a special-use area a way is flown through and stays open
- * across (restricted, moa, warning, alert; AIM 3-4-3 to 3-4-6) -- and its
- * words ("Restricted area R-2508").
- */
-@Serializable
-data class RouteHazard (
-    val kind: String,
-    val name: String
 )
 
 /**
@@ -7564,6 +7504,49 @@ data class RouteOption (
 
     @SerialName("water_nm")
     val waterNm: Int? = null
+)
+
+/**
+ * A run of the weather a way meets (the engine's route_options): VFR,
+ * marginal (MVFR), IFR or a thunderstorm, and how many minutes of the
+ * flight it lasts, in the order flown.
+ */
+@Serializable
+data class RouteBand (
+    val kind: String,
+    val min: Double
+)
+
+/**
+ * What a way meets along it: its weather strip, its mean wind (kt,
+ * a tailwind positive) and its floor (ft, the highest ground with
+ * 14 CFR 91.119's 1,000 ft).
+ */
+@Serializable
+data class RouteAlong (
+    val bands: List<RouteBand>,
+
+    @SerialName("floor_ft")
+    val floorFt: Int,
+
+    @SerialName("tail_kt")
+    val tailKt: Double,
+
+    @SerialName("water_nm")
+    val waterNm: Int? = null
+)
+
+/**
+ * What a way keeps clear of or is told of (wingtip.route_options): its
+ * kind -- storm, weather, marginal, sigmet, tfr, prohibited, terrain,
+ * fuel, or a special-use area a way is flown through and stays open
+ * across (restricted, moa, warning, alert; AIM 3-4-3 to 3-4-6) -- and its
+ * words ("Restricted area R-2508").
+ */
+@Serializable
+data class RouteHazard (
+    val kind: String,
+    val name: String
 )
 
 /**

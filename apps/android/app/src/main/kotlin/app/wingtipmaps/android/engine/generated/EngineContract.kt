@@ -862,8 +862,6 @@ object EngineContract {
         val toNm: Double,
         @SerialName("floor_ft")
         val floorFt: Double,
-        @SerialName("airspace_ceiling_ft")
-        val airspaceCeilingFt: Double? = null,
         @SerialName("service_ceiling_ft")
         val serviceCeilingFt: Double? = null,
         @SerialName("cloud_base_ft")
@@ -8610,8 +8608,6 @@ object EngineContract {
         val brief: String,
         val reasons: List<String>,
         val advice: String,
-        @SerialName("class_b")
-        val classB: Boolean,
         val detail: String,
     )
 
@@ -8619,15 +8615,7 @@ object EngineContract {
     data class NoAltitudeInput(
         val selection: Map<String, JsonElement>,
         val between: List<String>? = null,
-        val via: EngineContract.NoAltitudeInputVia? = null,
         val where: String? = null,
-    )
-
-    @Serializable
-    data class NoAltitudeInputVia(
-        val ident: String? = null,
-        @SerialName("added_nm")
-        val addedNm: Double? = null,
     )
 
     @Serializable
@@ -11064,6 +11052,11 @@ object EngineContract {
         val options: List<EngineContract.RouteOption>,
         val own: EngineContract.RouteOption,
         val filed: EngineContract.RouteOption? = null,
+        /**
+         * Avoid Class B: the route as planned round the Class B it enters, with its fuel stops (route/options/class_b_way.rs); null where none was asked.
+         */
+        @SerialName("class_b")
+        val classB: EngineContract.RouteOption? = null,
         @SerialName("current_path")
         val currentPath: List<List<Double>>,
         val direct: List<Int>,
@@ -11207,6 +11200,11 @@ object EngineContract {
         val currentLanded: List<Boolean>? = null,
         val filed: EngineContract.RouteOptionsInputFiled? = null,
         /**
+         * The route as planned with the fixes that keep it out of the Class B it enters at its altitude (class_b_entered, class_b_detours; 14 CFR 91.131(a)(1)), its points between the ends, their idents and which are fields landed at: built as Avoid Class B. Null where it enters none or a leg that does has no way round.
+         */
+        @SerialName("class_b")
+        val classB: EngineContract.RouteOptionsInputClassB? = null,
+        /**
          * Night at either end (14 CFR 91.151's 45 minutes) as the host judged it; missing or null, the engine judges it over the flight's window (sun.rs).
          */
         val night: Boolean? = null,
@@ -11224,6 +11222,16 @@ object EngineContract {
         val fields: List<EngineContract.RouteOptionsField>? = null,
         val food: Boolean? = null,
         val fixes: List<EngineContract.RouteOptionsFix>? = null,
+    )
+
+    /**
+     * The route as planned with the fixes that keep it out of the Class B it enters at its altitude (class_b_entered, class_b_detours; 14 CFR 91.131(a)(1)), its points between the ends, their idents and which are fields landed at: built as Avoid Class B. Null where it enters none or a leg that does has no way round.
+     */
+    @Serializable
+    data class RouteOptionsInputClassB(
+        val points: List<List<Double>>,
+        val idents: List<String>,
+        val landed: List<Boolean>? = null,
     )
 
     @Serializable
@@ -11719,10 +11727,6 @@ object EngineContract {
         val hemisphericRuleFromFt: Double,
         @SerialName("floor_ft")
         val floorFt: Double,
-        @SerialName("airspace_ceiling_ft")
-        val airspaceCeilingFt: Double? = null,
-        @SerialName("class_b_cleared")
-        val classBCleared: Boolean? = null,
         @SerialName("service_ceiling_ft")
         val serviceCeilingFt: Double? = null,
         @SerialName("cloud_base_ft")
@@ -11759,15 +11763,11 @@ object EngineContract {
         @SerialName("breaks_nm")
         val breaksNm: List<Double>? = null,
         val rules: String? = null,
-        @SerialName("class_b_cleared")
-        val classBCleared: Boolean? = null,
         /**
          * vfr_floors' or ifr_floors' answer, a floor a leg.
          */
         val floors: List<Map<String, JsonElement>>? = null,
         val airway: EngineContract.SelectCruiseAltitudeInputAirway? = null,
-        @SerialName("airspace_ceilings_ft")
-        val airspaceCeilingsFt: List<Double?>? = null,
         /**
          * Null on a leg: no airplane, no ceiling of its own.
          */

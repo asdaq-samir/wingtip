@@ -841,7 +841,6 @@ enum EngineContract {
         var fromNm: Double
         var toNm: Double
         var floorFt: Double
-        var airspaceCeilingFt: Double?
         var serviceCeilingFt: Double?
         var cloudBaseFt: Double?
         var cloudStation: String?
@@ -865,7 +864,6 @@ enum EngineContract {
             case fromNm = "from_nm"
             case toNm = "to_nm"
             case floorFt = "floor_ft"
-            case airspaceCeilingFt = "airspace_ceiling_ft"
             case serviceCeilingFt = "service_ceiling_ft"
             case cloudBaseFt = "cloud_base_ft"
             case cloudStation = "cloud_station"
@@ -8515,34 +8513,13 @@ enum EngineContract {
         var brief: String
         var reasons: [String]
         var advice: String
-        var classB: Bool
         var detail: String
-
-        enum CodingKeys: String, CodingKey {
-            case title
-            case brief
-            case reasons
-            case advice
-            case classB = "class_b"
-            case detail
-        }
     }
 
     struct NoAltitudeInput: Codable, Equatable, Sendable {
         var selection: [String: OpenAPIValueContainer]
         var between: [String]?
-        var via: EngineContract.NoAltitudeInputVia?
         var `where`: String?
-    }
-
-    struct NoAltitudeInputVia: Codable, Equatable, Sendable {
-        var ident: String?
-        var addedNm: Double?
-
-        enum CodingKeys: String, CodingKey {
-            case ident
-            case addedNm = "added_nm"
-        }
     }
 
     struct NotamReadAnswer: Codable, Equatable, Sendable {
@@ -10827,6 +10804,8 @@ enum EngineContract {
         var options: [EngineContract.RouteOption]
         var own: EngineContract.RouteOption
         var filed: EngineContract.RouteOption?
+        /// Avoid Class B: the route as planned round the Class B it enters, with its fuel stops (route/options/class_b_way.rs); null where none was asked.
+        var classB: EngineContract.RouteOption?
         var currentPath: [[Double]]
         var direct: [Int]
         var ends: [Int]
@@ -10841,6 +10820,7 @@ enum EngineContract {
             case options
             case own
             case filed
+            case classB = "class_b"
             case currentPath = "current_path"
             case direct
             case ends
@@ -10983,6 +10963,8 @@ enum EngineContract {
         var currentIdents: [String]?
         var currentLanded: [Bool]?
         var filed: EngineContract.RouteOptionsInputFiled?
+        /// The route as planned with the fixes that keep it out of the Class B it enters at its altitude (class_b_entered, class_b_detours; 14 CFR 91.131(a)(1)), its points between the ends, their idents and which are fields landed at: built as Avoid Class B. Null where it enters none or a leg that does has no way round.
+        var classB: EngineContract.RouteOptionsInputClassB?
         /// Night at either end (14 CFR 91.151's 45 minutes) as the host judged it; missing or null, the engine judges it over the flight's window (sun.rs).
         var night: Bool?
         var terrainFt: [Double]?
@@ -11010,6 +10992,7 @@ enum EngineContract {
             case currentIdents = "current_idents"
             case currentLanded = "current_landed"
             case filed
+            case classB = "class_b"
             case night
             case terrainFt = "terrain_ft"
             case waterFar = "water_far"
@@ -11024,6 +11007,13 @@ enum EngineContract {
             case food
             case fixes
         }
+    }
+
+    /// The route as planned with the fixes that keep it out of the Class B it enters at its altitude (class_b_entered, class_b_detours; 14 CFR 91.131(a)(1)), its points between the ends, their idents and which are fields landed at: built as Avoid Class B. Null where it enters none or a leg that does has no way round.
+    struct RouteOptionsInputClassB: Codable, Equatable, Sendable {
+        var points: [[Double]]
+        var idents: [String]
+        var landed: [Bool]?
     }
 
     struct RouteOptionsInputFiled: Codable, Equatable, Sendable {
@@ -11514,8 +11504,6 @@ enum EngineContract {
         var eastbound: Bool
         var hemisphericRuleFromFt: Double
         var floorFt: Double
-        var airspaceCeilingFt: Double?
-        var classBCleared: Bool?
         var serviceCeilingFt: Double?
         var cloudBaseFt: Double?
         var cloudStation: String?
@@ -11536,8 +11524,6 @@ enum EngineContract {
             case eastbound
             case hemisphericRuleFromFt = "hemispheric_rule_from_ft"
             case floorFt = "floor_ft"
-            case airspaceCeilingFt = "airspace_ceiling_ft"
-            case classBCleared = "class_b_cleared"
             case serviceCeilingFt = "service_ceiling_ft"
             case cloudBaseFt = "cloud_base_ft"
             case cloudStation = "cloud_station"
@@ -11560,11 +11546,9 @@ enum EngineContract {
         var fixes: [[Double]]?
         var breaksNm: [Double]?
         var rules: String?
-        var classBCleared: Bool?
         /// vfr_floors' or ifr_floors' answer, a floor a leg.
         var floors: [[String: OpenAPIValueContainer]]?
         var airway: EngineContract.SelectCruiseAltitudeInputAirway?
-        var airspaceCeilingsFt: [Double?]?
         /// Null on a leg: no airplane, no ceiling of its own.
         var serviceCeilingsFt: [Double?]
         var variationDeg: Double?
@@ -11582,10 +11566,8 @@ enum EngineContract {
             case fixes
             case breaksNm = "breaks_nm"
             case rules
-            case classBCleared = "class_b_cleared"
             case floors
             case airway
-            case airspaceCeilingsFt = "airspace_ceilings_ft"
             case serviceCeilingsFt = "service_ceilings_ft"
             case variationDeg = "variation_deg"
             case legVariationsDeg = "leg_variations_deg"

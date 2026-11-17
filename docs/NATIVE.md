@@ -57,7 +57,7 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
   never a crash; `engine/facade/src/call.rs` lists every name, and
   `engine/contract/engine.schema.json` types each input and answer). An
   answer the app decodes can use a type generated from that contract,
-  `apps/ios/Wingtip/Engine/EngineContract.swift` (`scripts/build/engine-contract-apps.sh`,
+  `apps/ios/Wingtip/Engine/Generated/EngineContract.swift` (`scripts/build/engine-contract-apps.sh`,
   committed), rather than a Decodable written by hand; callers move over
   one name at a time. The Swift keeps the words and the formatting, not
   the rule, and each screen's state is one observable model the view

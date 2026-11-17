@@ -230,3 +230,77 @@ test("a way that is the best of several kinds is named short on its chip, in ful
   await expect(chip).toHaveText(/^Avoid Weather \+2/, { timeout: slow(30_000) });
   await expect(chip).toHaveAccessibleName(/^Avoid Weather & Fastest & Over Land, /);
 });
+
+test("Avoid Class B is asked at the planned altitude, shown as a chip like the others, and tapped is the route round it", async ({
+  page,
+}) => {
+  // The owner, 2026-11-17: "You can still avoid class B in the suggested
+  // routes". The plan flies through Class B with its clearance (14 CFR
+  // 91.131(a)(1)); the way round it is the planner's (wingtip.class_b_route).
+  const round = {
+    ...WAYS.options[0],
+    kind: "class_b",
+    kinds: ["class_b"],
+    title: "Avoid Class B",
+    stops: ["VPNEAR"],
+    distance_nm: 360.1,
+    fuel_gal: 26.2,
+  };
+  const asked: (string | null)[] = [];
+  await page.route(
+    (url) => url.pathname.endsWith("/route-options"),
+    (route) => {
+      asked.push(new URL(route.request().url()).searchParams.get("altitude_ft"));
+      return route.fulfill({
+        json: {
+          ...WAYS,
+          class_b: round,
+          chips: [...WAYS.chips, { key: "class_b", label: "Avoid Class B", stops: ["VPNEAR"], fuel: [], crosses: [] }],
+        },
+      });
+    },
+  );
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  const chips = sideDrawer(page).getByTestId("route-line").getByTestId("route-line-chip");
+  await expect(chips).toHaveText([/^As typed/, /^Avoid Weather/, /^Fastest/, /^Avoid Class B/], { timeout: slow(30_000) });
+  // Its own miles and fuel, as every way's.
+  await expect(chips.last()).toHaveAccessibleName(/^Avoid Class B, .*360 nm, 26\.2 gal/);
+  // Asked again at the plan's altitude once it is planned.
+  await expect.poll(() => asked.some((ft) => ft !== null && Number(ft) > 0), { timeout: slow(30_000) }).toBe(true);
+  await chips.filter({ hasText: "Avoid Class B" }).click();
+  await expect(page).toHaveURL(stopsAre("VPNEAR"));
+  await expect(chips.filter({ hasText: "Avoid Class B" })).toHaveAttribute("data-pressed", "");
+});
+
+test("a route short of fuel is offered With Fuel Stops, tapped the route with them put in", async ({ page }) => {
+  // The owner, 2026-11-17: "Suggested routes should also have 'add fuel
+  // stops'": the route as typed with the fuel stops it needs, each landing
+  // with 14 CFR 91.151's reserve (the engine's route_options `own`).
+  const own = { ...WAYS.options[1], kind: "own", kinds: ["own"], title: "Your Route", stops: ["KEAU"], fuel: ["KEAU"] };
+  await page.route(
+    (url) => url.pathname.endsWith("/route-options"),
+    (route) =>
+      route.fulfill({
+        json: {
+          ...WAYS,
+          own,
+          chips: [
+            WAYS.chips[0],
+            { key: "fuel", label: "With Fuel Stops", stops: ["KEAU"], fuel: ["KEAU"], crosses: [] },
+            ...WAYS.chips.slice(2),
+          ],
+        },
+      }),
+  );
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  const chips = sideDrawer(page).getByTestId("route-line").getByTestId("route-line-chip");
+  await expect(chips).toHaveText([/^As typed/, /^With Fuel Stops/, /^Fastest/], { timeout: slow(30_000) });
+  await expect(chips.nth(1)).toHaveAccessibleName(/^With Fuel Stops, .*\d+ nm, \d+\.\d gal/);
+  await chips.filter({ hasText: "With Fuel Stops" }).click();
+  await expect(page).toHaveURL(stopsAre("KEAU"));
+  await expect(page).toHaveURL(/[?&]fuel=KEAU(&|$)/);
+});

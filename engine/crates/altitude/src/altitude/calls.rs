@@ -5,7 +5,7 @@
 
 use super::floor::{self, Ground, Obstacle, CORRIDOR_HALF_WIDTH_NM, IFR_OBSTACLE_RADIUS_NM};
 use super::select;
-use super::words::{self, Via};
+use super::words;
 use super::{cautions, clouds, congested, cruising, profile_calls};
 use crate::json::{self, Value};
 
@@ -196,22 +196,14 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                 Some([a, b]) => Some((a.as_str().unwrap_or(""), b.as_str().unwrap_or(""))),
                 _ => None,
             };
-            let via = match v.get("via") {
-                Some(w @ Value::Object(_)) => Some(Via {
-                    ident: w.get("ident").and_then(Value::as_str).unwrap_or("").to_owned(),
-                    added_nm: opt_num(name, w, "added_nm")?.unwrap_or(0.0),
-                }),
-                _ => None,
-            };
             let place = v.get("where").and_then(Value::as_str);
-            let why = words::no_altitude(selection, between, via.as_ref(), place);
+            let why = words::no_altitude(selection, between, place);
             let detail = why.detail();
             Ok(written(&obj(vec![
                 ("title", Value::String(why.title)),
                 ("brief", Value::String(why.brief)),
                 ("reasons", Value::Array(why.reasons.into_iter().map(Value::String).collect())),
                 ("advice", Value::String(why.advice)),
-                ("class_b", Value::Bool(why.class_b)),
                 ("detail", Value::String(detail)),
             ])))
         }

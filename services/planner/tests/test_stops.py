@@ -173,7 +173,6 @@ def test_the_joined_breakdown_is_the_most_limiting_of_the_hops():
     a = {
         "floor_ft": 2000.0,
         "band_ceiling_ft": 9000.0,
-        "airspace_ceiling_ft": None,
         "candidates_ft": [4500.0, 6500.0],
         "segments": [{"from_nm": 0.0, "to_nm": 40.0}],
         "special_use": [],
@@ -187,7 +186,6 @@ def test_the_joined_breakdown_is_the_most_limiting_of_the_hops():
         **a,
         "floor_ft": 5000.0,
         "band_ceiling_ft": 7000.0,
-        "airspace_ceiling_ft": 8000.0,
         "candidates_ft": [6500.0],
         "segments": [{"from_nm": 0.0, "to_nm": 60.0}],
         "icing_possible": None,
@@ -196,7 +194,6 @@ def test_the_joined_breakdown_is_the_most_limiting_of_the_hops():
     joined = planning.join_selections([a, b], [0.0, 40.0])
 
     assert joined["floor_ft"] == 5000.0 and joined["band_ceiling_ft"] == 7000.0
-    assert joined["airspace_ceiling_ft"] == 8000.0
     assert joined["candidates_ft"] == [6500.0] and joined["recommended_ft"] == 6500.0
     assert [(s["from_nm"], s["to_nm"]) for s in joined["segments"]] == [(0.0, 40.0), (40.0, 100.0)]
     # A hop that could not be checked: unknown, not "no icing".

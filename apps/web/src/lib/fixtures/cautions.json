@@ -8,7 +8,6 @@
             "floor_ft": 3200,
             "hemispheric_rule_from_ft": 3800,
             "eastbound": false,
-            "airspace_ceiling_ft": 8000,
             "service_ceiling_ft": 13000,
             "cloud_ceiling_ft": 7000
           },
@@ -16,7 +15,6 @@
             "floor_ft": 3200,
             "hemispheric_rule_from_ft": 3800,
             "eastbound": false,
-            "airspace_ceiling_ft": 8000,
             "service_ceiling_ft": 13000,
             "cloud_ceiling_ft": 7000
           }
@@ -43,7 +41,6 @@
             "floor_ft": 3200,
             "hemispheric_rule_from_ft": 3800,
             "eastbound": false,
-            "airspace_ceiling_ft": 8000,
             "service_ceiling_ft": 13000,
             "cloud_ceiling_ft": 7000
           },
@@ -51,7 +48,6 @@
             "floor_ft": 3200,
             "hemispheric_rule_from_ft": 3800,
             "eastbound": false,
-            "airspace_ceiling_ft": 8000,
             "service_ceiling_ft": 13000,
             "cloud_ceiling_ft": 7000
           }
@@ -85,7 +81,6 @@
             "floor_ft": 3200,
             "hemispheric_rule_from_ft": 3800,
             "eastbound": false,
-            "airspace_ceiling_ft": 8000,
             "service_ceiling_ft": 13000,
             "cloud_ceiling_ft": 7000
           },
@@ -93,7 +88,6 @@
             "floor_ft": 3200,
             "hemispheric_rule_from_ft": 3800,
             "eastbound": false,
-            "airspace_ceiling_ft": 8000,
             "service_ceiling_ft": 13000,
             "cloud_ceiling_ft": 7000
           }
@@ -127,7 +121,6 @@
             "floor_ft": 3200,
             "hemispheric_rule_from_ft": 3800,
             "eastbound": false,
-            "airspace_ceiling_ft": 8000,
             "service_ceiling_ft": 13000,
             "cloud_ceiling_ft": 7000
           },
@@ -135,7 +128,6 @@
             "floor_ft": 3200,
             "hemispheric_rule_from_ft": 3800,
             "eastbound": false,
-            "airspace_ceiling_ft": 8000,
             "service_ceiling_ft": 13000,
             "cloud_ceiling_ft": 7000
           }
@@ -158,7 +150,6 @@
         "to_ident": "VPBNG",
         "altitude_ft": 8500,
         "reasons": [
-          "Into Class B from 8,000 ft: it needs a clearance (14 CFR 91.131)",
           "Inside the cloud clearance under 7,000 ft (14 CFR 91.155)"
         ]
       }
@@ -405,7 +396,6 @@
             "course_magnetic_deg": 80,
             "eastbound": true,
             "hemispheric_rule_from_ft": 9000,
-            "airspace_ceiling_ft": null,
             "cloud_ceiling_ft": null,
             "candidates_ft": []
           }
@@ -440,7 +430,6 @@
             "course_magnetic_deg": 80,
             "eastbound": true,
             "hemispheric_rule_from_ft": 9000,
-            "airspace_ceiling_ft": null,
             "cloud_ceiling_ft": null,
             "candidates_ft": []
           }
@@ -477,7 +466,6 @@
             "course_magnetic_deg": 80,
             "eastbound": true,
             "hemispheric_rule_from_ft": 9000,
-            "airspace_ceiling_ft": null,
             "cloud_ceiling_ft": null,
             "candidates_ft": []
           }
@@ -507,7 +495,6 @@
             "course_magnetic_deg": 80,
             "eastbound": true,
             "hemispheric_rule_from_ft": 9000,
-            "airspace_ceiling_ft": null,
             "cloud_ceiling_ft": null,
             "candidates_ft": []
           }

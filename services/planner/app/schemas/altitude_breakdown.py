@@ -30,14 +30,13 @@ class SpecialUseArea(SpecialUse):
 
 
 class AltitudeSegment(BaseModel):
-    """One leg's own band: its floor, the shelf and the clouds over it
-    alone, and the legal cruising altitudes between -- what lets a plan
-    step down under a Class B shelf and climb again past it."""
+    """One leg's own band: its floor, the clouds and the service ceiling
+    over it alone, and the legal cruising altitudes between -- what lets a
+    plan step over high ground or under low cloud leg by leg."""
 
     from_nm: float
     to_nm: float
     floor_ft: float
-    airspace_ceiling_ft: float | None
     #: The aeroplane's service ceiling over this leg in the forecast air
     #: (see AltitudeBreakdown's).
     service_ceiling_ft: float | None = None
@@ -62,7 +61,7 @@ class AltitudeSegment(BaseModel):
     candidates_ft: list[float]
     #: No 500 ft step fits under this leg's ceiling, and its one altitude
     #: is the highest whole hundred under it that clears the floor (1,800
-    #: ft under a 1,900 ft shelf): legal, but tight (wingtip.altitude).
+    #: ft under a 1,900 ft ceiling): legal, but tight (wingtip.altitude).
     tight: bool = False
     #: What the floor is from: the ground or the DOF obstacle it rests on
     #: and its height MSL, and the clearance over it. Under IFR (wingtip.ifr,
@@ -112,7 +111,7 @@ class AltitudeBreakdown(BaseModel):
 
     #: The rules it was chosen under: "vfr", or "ifr" -- 14 CFR 91.177's
     #: minimum IFR altitudes for its floors, 91.179(b)'s thousands by
-    #: direction of flight, no Class B, cloud or Class A ceiling (wingtip.ifr).
+    #: direction of flight, no cloud or Class A ceiling (wingtip.ifr).
     rules: FlightRules = "vfr"
     recommended_ft: float | None
     candidates_ft: list[float] = []
@@ -126,10 +125,12 @@ class AltitudeBreakdown(BaseModel):
     #: every 500 ft is legal as well as the rule's altitudes.
     hemispheric_rule_from_ft: float | None = None
     floor_ft: float
-    airspace_ceiling_ft: float | None
-    #: Planned with a Class B clearance: its shelves are no ceiling, and
-    #: its transits still say it takes one.
-    class_b_cleared: bool = False
+    #: Always None: Class B is no ceiling, the route planned through it
+    #: with its clearance (14 CFR 91.131(a)(1)). Kept only while the
+    #: iPhone's altitude reasons still read it (apps/ios/Wingtip/Words/
+    #: AltitudeWhy.swift, Profile/ProfileReasons.swift); goes with the
+    #: phones' turn.
+    airspace_ceiling_ft: float | None = None
     #: The aeroplane's service ceiling where it is in the forecast air,
     #: the lowest over any leg: a service ceiling is a density altitude
     #: (the profile's `service_ceiling_ft`, the book figure), so a warm

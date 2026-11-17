@@ -61,7 +61,7 @@ public record SaveFlightRequest(
         String altitudes,
         /* The planner's address's other picks for the flight, as it writes
          *  them -- runways, procedures, crossings, times on the ground,
-         *  holds, the Class B avoided, the plan or altitude flown -- so it
+         *  holds, the plan or altitude flown -- so it
          *  opens again as it was planned. Only those keys, URL-encoded.
          *  Null or blank for none. */
         @Nullable
@@ -74,7 +74,7 @@ public record SaveFlightRequest(
     /** One pick: a key the planner's address has for a flight (web
      *  lib/flightLink PICK_KEYS), and its value URL-encoded. */
     static final String PICK =
-            "(?:altitude_ft|altitude_nearest|altitude_choice|pattern|takeoff|auto|procs|cross|ground|holds|class_b|class_b_via"
+            "(?:altitude_ft|altitude_nearest|altitude_choice|pattern|takeoff|auto|procs|cross|ground|holds"
                     + "|alternate|local_min)=[A-Za-z0-9%._~+-]{0,400}";
 
     /** A point of the route: an airport's or a waypoint's ident, or the

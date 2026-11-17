@@ -49,7 +49,8 @@
 //! high ground for a plan with no legal altitude is `terrain`'s; the fuel
 //! stops a planned flight too long for its tanks needs, and the fields
 //! along a route for the map's Stops, `fuel`'s; whether a leg enters
-//! Class B and the fixes that take it round, `classb`'s.
+//! Class B and the fixes that take it round, `classb`'s; the route round
+//! the Class B it enters, Avoid Class B, `class_b_way`'s.
 
 mod answer;
 pub mod ask;
@@ -115,6 +116,7 @@ pub const WATER_COST: f64 = 10.0;
 
 mod build;
 use build::*;
+mod class_b_way;
 mod request;
 use request::*;
 mod entry;

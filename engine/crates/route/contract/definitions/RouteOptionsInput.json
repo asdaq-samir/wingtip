@@ -101,6 +101,42 @@
         "idents"
       ]
     },
+    "class_b": {
+      "description": "The route as planned with the fixes that keep it out of the Class B it enters at its altitude (class_b_entered, class_b_detours; 14 CFR 91.131(a)(1)), its points between the ends, their idents and which are fields landed at: built as Avoid Class B. Null where it enters none or a leg that does has no way round.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "idents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "landed": {
+          "type": "array",
+          "items": {
+            "type": "boolean"
+          }
+        }
+      },
+      "required": [
+        "points",
+        "idents"
+      ]
+    },
     "night": {
       "type": [
         "boolean",

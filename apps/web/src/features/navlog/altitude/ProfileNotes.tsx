@@ -49,7 +49,7 @@ export default function ProfileNotes({
         })
       : null;
   const bravo = profile && bravoAt != null ? (profile.airspace[bravoAt] ?? null) : null;
-  const detours = nav?.class_b_detours ?? [];
+  const detours = nav?.detours ?? [];
   const cautions = nav?.cautions ?? [];
   return (
     <>

@@ -53,7 +53,6 @@ ROUTE_FIELDS = (
     "taxi_fuel_gal",
     "glide_ratio",
     "depart",
-    "class_b_clearance",
     "rules",
     "alternate",
     "altitudes",

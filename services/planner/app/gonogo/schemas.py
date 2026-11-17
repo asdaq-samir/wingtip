@@ -135,7 +135,6 @@ class GoNoGoAsk(BaseModel):
     glide_ratio: float | None = Field(default=None, gt=1, le=80)
     #: When the flight leaves (UTC when naive); now when not given.
     depart: datetime | None = None
-    class_b_clearance: bool = False
     rules: FlightRules = "vfr"
     alternate: str = ""
     altitudes: str = ""

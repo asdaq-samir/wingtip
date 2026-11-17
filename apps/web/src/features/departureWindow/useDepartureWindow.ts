@@ -55,8 +55,6 @@ export function useDepartureWindow() {
     altitudes: "",
     altitude_starts: "",
     checkpoints: true,
-    // Through Class B with its clearance, as the page plans it (14 CFR 91.131).
-    class_b_clearance: true,
     crossings: "",
     ground: "",
     holds: "",

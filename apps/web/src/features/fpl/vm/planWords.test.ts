@@ -23,7 +23,6 @@ describe("a tight leg", () => {
       tight: true,
       candidates_ft: [4400],
       band_ceiling_ft: 4500,
-      airspace_ceiling_ft: 4500,
       cloud_ceiling_ft: null,
       floor_ft: 4100,
       from_nm: 12.4,
@@ -33,9 +32,9 @@ describe("a tight leg", () => {
 
   it("says where, at what, and the room either side", () => {
     expect(tightLegWords([segment({})])).toBe(
-      "Tight 12–31 nm along: 4,400 ft, 100 ft under the Class B and 300 ft over the obstacle minimum.",
+      "Tight 12–31 nm along: 4,400 ft, 100 ft under the service ceiling and 300 ft over the obstacle minimum.",
     );
-    expect(tightLegWords([segment({ airspace_ceiling_ft: null, cloud_ceiling_ft: 4500, floor_ft: 4400 })])).toBe(
+    expect(tightLegWords([segment({ cloud_ceiling_ft: 4500, floor_ft: 4400 })])).toBe(
       "Tight 12–31 nm along: 4,400 ft, 100 ft under the cloud clearance and right at the obstacle minimum.",
     );
   });

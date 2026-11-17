@@ -88,9 +88,6 @@ export const plannerRoute = {
           altitude_choice: altitudeChoice && altitudeChoice !== "fastest" ? altitudeChoice : undefined,
           ...airplaneQuery(aircraft),
           depart: depart || undefined,
-          // Always through Class B with the clearance (14 CFR 91.131; the
-          // owner, 2026-11-17): the planner's own default is without.
-          class_b_clearance: true,
           altitudes: altitudes || undefined,
           altitude_starts: altitudeStarts || undefined, // begun there: Start At
           checkpoints: checkpoints ? undefined : false,
@@ -233,6 +230,9 @@ export const plannerRoute = {
     aircraft: AircraftChoice | undefined,
     depart: string | undefined,
     minimums: { ceilingFt: number | null; visibilitySm: number | null },
+    /** The route as planned's highest cruise altitude: where it enters
+     *  Class B there, Avoid Class B is offered (14 CFR 91.131(a)(1)). */
+    altitudeFt: number | null = null,
   ) =>
     planner
       .GET("/api/route-options", {
@@ -245,6 +245,7 @@ export const plannerRoute = {
             depart: depart || undefined,
             min_ceiling_ft: minimums.ceilingFt ?? undefined,
             min_visibility_sm: minimums.visibilitySm ?? undefined,
+            altitude_ft: altitudeFt ?? undefined,
           },
         },
       })

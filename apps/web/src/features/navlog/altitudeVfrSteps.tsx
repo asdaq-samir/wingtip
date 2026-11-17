@@ -4,19 +4,18 @@ import { altFt, feetBelowClouds } from "../plan";
 import { andList } from "../../lib/listWords";
 import { ceilingValue, ceilingWords, EASTBOUND, otherHalfOf, ruleCourse, WESTBOUND, type Step } from "./altitudeSteps";
 
-/** What sets the whole route's VFR ceiling, the lowest of three
+/** What sets the whole route's VFR ceiling, the lower of two
  *  (wingtip.altitude's band_ceiling): the clouds (14 CFR 91.155's distance
- *  under the lowest forecast near a leg), a Class B shelf, or the
- *  airplane. */
+ *  under the lowest forecast near a leg) or the airplane. Class B is none:
+ *  the route is planned through it with its clearance (91.131(a)(1)). */
 function ceilingReason(s: NavLogAltitude["altitude_selection"]): string | null {
   if (s.band_ceiling_ft == null) return null;
   if (s.cloud_ceiling_ft != null && s.cloud_ceiling_ft === s.band_ceiling_ft) return `Under the clouds near ${s.cloud_station}`;
-  if (s.airspace_ceiling_ft != null && s.airspace_ceiling_ft === s.band_ceiling_ft) return "The Class B shelf";
   return "The airplane's service ceiling";
 }
 
-/** Consecutive segments under the same shelf, for "the ceiling leg by
- *  leg": [{from_nm, to_nm, airspace_ceiling_ft, band_ceiling_ft}]. */
+/** Consecutive segments under the same ceiling, for "the ceiling leg by
+ *  leg": [{from_nm, to_nm, band_ceiling_ft}]. */
 function ceilingRuns(segments: AltitudeSegment[]): AltitudeSegment[] {
   const runs: AltitudeSegment[] = [];
   for (const s of segments) {
@@ -27,13 +26,11 @@ function ceilingRuns(segments: AltitudeSegment[]): AltitudeSegment[] {
   return runs;
 }
 
-/** The steps of a VFR choice: the floor, the ceiling (the lowest of the
- *  clouds, a Class B shelf and the airplane) and the rule. */
+/** The steps of a VFR choice: the floor, the ceiling (the lower of the
+ *  clouds and the airplane) and the rule. */
 export function vfrSteps(nav: NavLogAltitude): Step[] {
   const s = nav.altitude_selection;
-  const ceilingParts: string[] = [
-    s.airspace_ceiling_ft !== null ? `the Class B shelf at ${altFt(s.airspace_ceiling_ft)} ft` : "no Class B shelf across the route",
-  ];
+  const ceilingParts: string[] = [];
   // The clouds, 14 CFR 91.155's distance below the lowest ceiling the
   // TAFs near the legs forecast for the flight, the engine's: 500 ft, or
   // 1,000 ft where that is at 10,000 ft or above.
@@ -58,9 +55,7 @@ export function vfrSteps(nav: NavLogAltitude): Step[] {
             const why =
               r.cloud_ceiling_ft != null && r.cloud_ceiling_ft === r.band_ceiling_ft
                 ? `the clouds near ${r.cloud_station}`
-                : r.airspace_ceiling_ft !== null && r.airspace_ceiling_ft === r.band_ceiling_ft
-                  ? "the Class B shelf"
-                  : "the service ceiling";
+                : "the service ceiling";
             const where =
               i === 0
                 ? `for the first ${r.to_nm} nm`

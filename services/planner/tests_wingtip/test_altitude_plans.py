@@ -83,14 +83,7 @@ FIXES = [
 
 def _segments(candidates_per_leg):
     return [
-        {
-            "from_nm": 0.0,
-            "to_nm": 60.0,
-            "floor_ft": 2000.0,
-            "airspace_ceiling_ft": None,
-            "band_ceiling_ft": max(c) if c else None,
-            "candidates_ft": list(c),
-        }
+        {"from_nm": 0.0, "to_nm": 60.0, "floor_ft": 2000.0, "band_ceiling_ft": max(c) if c else None, "candidates_ft": list(c)}
         for c in candidates_per_leg
     ]
 

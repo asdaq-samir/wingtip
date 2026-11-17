@@ -1,13 +1,15 @@
-"""Where a flight cannot fly its altitude, the ways round it: the terrain
-that stops it and the Class B it can go round, as stops the pilot may
-add (the passes by ident, never a route the planner flies unasked)."""
+"""Where a flight cannot fly its altitude, the way round the terrain that
+stops it, as stops the pilot may add (the passes by ident, never a route
+the planner flies unasked). Class B never stops it: the route is planned
+through it with its clearance, and the Routes offer the way round it
+(wingtip.class_b_route)."""
 
 from __future__ import annotations
 
 import logging
 
-from . import fixes, geo, places, terrain_detour
-from .planning import class_b_detours, class_b_ways, no_altitude
+from . import geo, terrain_detour
+from .planning import no_altitude
 
 from .flight_outcomes import Asked, Flown, HopRun, Unflyable
 
@@ -15,31 +17,24 @@ log = logging.getLogger(__name__)
 
 
 def unflyable_parts(outcome: Unflyable, runs: list[HopRun]) -> tuple[dict, list[dict]]:
-    """no_altitude's words for a route with no legal altitude, and the
-    waypoints round the Class B airspace that stops it, best first
-    (class_b_detours), each with its place in the stops: on the hop it
-    fails on."""
+    """no_altitude's words for a route with no legal altitude, and the way
+    round the high ground that stops it (terrain_way), with its place in
+    the stops: on the hop it fails on."""
     at = next((i for i, run in enumerate(runs) if (run.hop.dep_ident, run.hop.dest_ident) == outcome.between), 0)
     hop = runs[at].hop
-    ways = class_b_detours(outcome.selection, hop.start, hop.end)
-    why = no_altitude(outcome.selection, outcome.between, ways[0] if ways else None, _stuck_where(outcome.selection, hop))
-    out = [{**way, "stop_index": at, "description": _where(way["ident"])} for way in ways]
-    if not ways:
-        round_way = terrain_way(outcome.selection, hop)
-        if round_way:
-            out.append({**round_way, "stop_index": at})
-            why = {
-                **why,
-                "advice": "Go round the high ground by the way suggested, or set a cruise altitude of your own to plan it anyway.",
-            }
-    return why, out
+    why = no_altitude(outcome.selection, outcome.between, _stuck_where(outcome.selection, hop))
+    round_way = terrain_way(outcome.selection, hop)
+    if not round_way:
+        return why, []
+    why = {**why, "advice": "Go round the high ground by the way suggested, or set a cruise altitude of your own to plan it anyway."}
+    return why, [{**round_way, "stop_index": at}]
 
 
 def terrain_way(selection: dict, hop) -> dict | None:
     """Where the airplane's service ceiling is what stops the route over
     high ground, the way round it (wingtip.terrain_detour): the points to fly
     by, as a detour of its own, with how much longer it makes the hop.
-    None where something else stops it (clouds, Class B) or there is no
+    None where something else stops it (the clouds) or there is no
     way round in reach. At the owner's ask ("Suggest a way around the
     terrain ... Yes build it", 2026-10-23)."""
     stuck = next((s for s in selection.get("segments", []) if not s.get("candidates_ft")), None)
@@ -64,10 +59,9 @@ def terrain_way(selection: dict, hop) -> dict | None:
 
 
 def ways_round_of(runs: list[HopRun], outcome: Flown) -> list[dict]:
-    """For each hop flown at no legal altitude (altitude_anyway), the ways
-    round what stops it that the problem offered when it refused (the
-    Class B's waypoints, the way round the high ground), for the pilot to
-    take or not."""
+    """For each hop flown at no legal altitude (altitude_anyway), the way
+    round the high ground that stops it the problem offered when it
+    refused, for the pilot to take or not."""
     if not any("candidates_ft" in seg and not seg["candidates_ft"] for seg in outcome.selection.get("segments", [])):
         return []
     out, start = [], 0.0
@@ -82,24 +76,11 @@ def ways_round_of(runs: list[HopRun], outcome: Flown) -> list[dict]:
     return out
 
 
-def class_b_detours_of(runs: list[HopRun], outcome: Flown, asked: Asked) -> list[dict]:
-    """With the Class B clearance, the waypoints that keep each hop out of
-    the Class B it enters at its highest cruise altitude (class_b_ways),
-    each with its place in the stops as unflyable_parts gives them: what
-    "Avoid Class B" adds. None without the clearance -- the route is then
-    planned under or round it already -- or with no Class B on the way.
-    Without a pilot's own altitude, the ways round a hop flown at no legal
-    altitude first (ways_round_of)."""
-    out = [] if asked.altitude_ft is not None else ways_round_of(runs, outcome)
-    if not asked.class_b_clearance or not any(t.get("class") == "B" for t in outcome.selection.get("airspace_transits", [])):
-        return out
-    for at, (run, legs) in enumerate(zip(runs, outcome.hop_legs)):
-        heights = [leg["altitude_ft"] for leg in legs if leg.get("altitude_ft") is not None]
-        if not heights:
-            continue
-        ways = class_b_ways(run.hop.start, run.hop.end, max(heights))
-        out.extend({**way, "stop_index": at, "description": _where(way["ident"])} for way in ways)
-    return out
+def detours_of(runs: list[HopRun], outcome: Flown, asked: Asked) -> list[dict]:
+    """The ways round the high ground of a route flown at no legal
+    altitude (ways_round_of); none for a pilot's own altitude, flown as
+    set with its cautions."""
+    return [] if asked.altitude_ft is not None else ways_round_of(runs, outcome)
 
 
 def _stuck_where(selection: dict, hop) -> str | None:
@@ -114,8 +95,3 @@ def _stuck_where(selection: dict, hop) -> str | None:
     middle = (stuck["from_nm"] + stuck["to_nm"]) / 2
     left = max(0.0, hop.length_nm - middle)
     return f"{middle:,.0f} nm past {hop.dep_ident}" if middle <= left else f"{left:,.0f} nm before {hop.dest_ident}"
-
-
-def _where(ident: str) -> str | None:
-    fix = fixes.find_fix(ident)
-    return places.describe(fix["lat"], fix["lon"]) if fix else None
