@@ -69,10 +69,10 @@ interface Props {
    *  chart (AirportsGl) -- or, with null, to put it away. */
   place: { ident: string; lat: number; lon: number } | null;
   /** The route's departure while it is all there is (no destination yet):
-   *  the map brought to it (FitTo), at the owner's screenshot. */
+   *  the map brought to it (GlRouteMap's useGlFit), at the owner's screenshot. */
   start?: { ident: string; lat: number; lon: number } | null;
   /** The fields Nearest lists and own ship, with its card up: the map
-   *  fitted to them over the half panel (FitTo). */
+   *  fitted to them over the half panel (GlRouteMap's useGlFit). */
   nearest?: { ident: string; lat: number; lon: number }[] | null;
   onSelectPlace: (ident: string | null) => void;
   /** The nav log's legs so far, for their tops of climb and descent. */

@@ -25,7 +25,7 @@ import { fromRest } from "./startState";
  *  - a corner-pinned button not actually flush against the edge it's
  *    meant to sit on, because a wider sibling was silently deciding
  *    the shared container's own shrink-to-fit width
- *  - the sidebar (a `MapDrawer` over the map area) not actually
+ *  - the sidebar (the map panel's `SheetDrawer` over the map area) not actually
  *    starting closed, not opening from its trigger, or covering the
  *    header it is meant to sit under
  *  - wide content (the nav log table) pushing the whole page into

@@ -204,7 +204,7 @@ type TypeFinding = { size: number; leading: number | null; want: number | null; 
 /** P2 and P3: visible text off iOS's scale, and text at an iOS size off
  *  that size's leading by more than a pixel -- each kind grouped by size
  *  (and leading) and by where it is (the nearest test id, shadcn slot or
- *  Leaflet part), with an example and how many pieces of text. Not seen:
+ *  MapLibre part), with an example and how many pieces of text. Not seen:
  *  text clipped to a pixel (a screen reader's alone), and text above or
  *  left of the page, where no scroll reaches, and text kept for a screen
  *  reader (sr-only, whose padding can leave it a box of its own). */
@@ -218,7 +218,7 @@ export function typeFindings(
         offLeading = new Map<string, TypeFinding>(),
         offFace = new Map<string, TypeFinding>();
       // P16: the app's own face -- the body's -- or its monospace where a
-      // font-mono class asks for one. The map's words were Leaflet's
+      // font-mono class asks for one. The map's words were the old map's
       // Helvetica Neue, and every size check passed them.
       const first = (family: string) => family.split(",")[0].replace(/["']/g, "").trim();
       const appFace = first(getComputedStyle(document.body).fontFamily);
@@ -241,8 +241,8 @@ export function typeFindings(
           const want = Math.abs(size - Math.round(size)) <= 0.25 ? (type[Math.round(size)] ?? null) : null;
           let where = el.tagName.toLowerCase();
           for (let a: HTMLElement | null = el; a; a = a.parentElement) {
-            const leaflet = [...a.classList].find((c) => c.startsWith("maplibregl-") && c !== "maplibregl-map");
-            const id = a.dataset.testid ? `#${a.dataset.testid}` : (a.dataset.slot ?? leaflet);
+            const mapClass = [...a.classList].find((c) => c.startsWith("maplibregl-") && c !== "maplibregl-map");
+            const id = a.dataset.testid ? `#${a.dataset.testid}` : (a.dataset.slot ?? mapClass);
             if (id) {
               where = id;
               break;
@@ -417,7 +417,7 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
       // inside the field, which every field with words in it now wears.
       // Nor a list's disclosure (FPL's airport opened by the arrow by its
       // fuel), iOS's small chevron, at the owner's ask. Nor a card head's
-      // picture (PhotoHead), tapped to show it alone: its svg, where there
+      // picture (CardPictures), tapped to show it alone: its svg, where there
       // is no photo, is the picture. Nor the Ask row's round 48-point
       // microphone, Stop and Send beside its 48-point field (data-composer),
       // drawn as the canvas's Ask screen at the owner's ask (46502903).
@@ -627,7 +627,7 @@ export function contrastFindings(page: Page, scope = "body"): Promise<ContrastFi
         if (bg[3] > 0) layers.push(bg);
       }
       // A toast fading in or out is between two states, neither of them its
-      // own; at rest it is measured. So is a map's tooltip or card: Leaflet
+      // own; at rest it is measured. So is a map's tooltip or card: MapLibre
       // fades one out over 0.2 s before it takes it away, and the course
       // line's, at no opacity under a pointer the map had moved from, read
       // 1:1 on CI's phones.

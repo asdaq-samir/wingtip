@@ -19,7 +19,7 @@ import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
 /**
  * On a phone, what a control opens (ResponsivePopover) and what a tap on
- * the chart opens (MapPopup) is a card in the map's one sheet, as Maps
+ * the chart opens (openCard) is a card in the map's one sheet, as Maps
  * opens everything in its sheet, at the owner's ask ("Yes to all, let's
  * have consistency and common code", 2026-10-27): not a sheet floating
  * over it, nor a popup over the chart (SheetCard). The card is its own
@@ -191,7 +191,7 @@ test("a checkpoint tapped on the chart opens its card in the sheet; one opened o
   // Not a popup over the chart.
   await expect(page.locator(".maplibregl-popup:visible")).toHaveCount(0);
   // Its ring on the map is drawn by MapLibre now (PickedGl's picked-ring
-  // layers), not an SVG path a locator can count as Leaflet's was, so it
+  // layers), not an SVG path a locator can count, so it
   // is left to the map's own tests.
 
   // The Map settings over it: its card on top, the checkpoint's kept

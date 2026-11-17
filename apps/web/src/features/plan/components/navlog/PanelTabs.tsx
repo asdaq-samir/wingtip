@@ -196,7 +196,7 @@ export default function PanelTabs({
     <Tabs value={tab ?? ""} onValueChange={choose} className="flex shrink-0 flex-col gap-0 print:h-auto">
       <div ref={localHead} className="frost-head sticky top-(--sheet-head,0px) z-20 flex shrink-0 flex-col print:static">
         {before}
-        {/* The stock line tabs, as the consoles' (ConsoleTabs), over the
+        {/* The stock line tabs, as every tab row's (components/ui/tabs), over the
           scroller so they stay as it scrolls: an icon over its word, at a
           fixed size (it does not grow with the text, as iOS's tab bar's
           does not), so the five share the line evenly -- a 24-point glyph

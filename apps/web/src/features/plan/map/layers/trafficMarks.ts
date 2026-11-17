@@ -29,7 +29,6 @@ export interface TrafficMarkProps {
   /** Its track, degrees true; 0 for a dot. */
   track: number;
   tracked: boolean;
-  /** Dimmed: a list's own picks shown, this one not among them. */
   /** Its height against own ship's (trafficLabel), "" where not shown. */
   label: string;
   /** Its call sign, "" where not shown. */

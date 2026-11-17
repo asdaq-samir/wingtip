@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 
 /** The course line's core, on screen: the box round every piece of it
- *  the map drew (RouteGl's route-line probe), in the page's points. A canvas has no path to measure, as Leaflet's SVG had. */
+ *  the map drew (RouteGl's route-line probe), in the page's points. A canvas has no path to measure. */
 export const courseBox = (page: Page) =>
   page.evaluate(() => {
     const map = document.querySelector(".maplibregl-map")!.getBoundingClientRect();

@@ -53,13 +53,13 @@ export async function withPrivateFields(page: Page) {
 }
 
 /** Closer in over the departure, where the chart's airports are drawn big
- *  enough to tap -- the wheel over its marker, a level at a time (Leaflet
+ *  enough to tap -- the wheel over its marker, a level at a time (MapLibre
  *  zooms about the cursor, so C81 stays under it) -- and where one is
  *  whose middle nothing else covers: not the route's own marker, not the
  *  panel. */
 export async function airportToTap(page: Page) {
   // Once the map has stopped: the panel coming back to rest fits the route
-  // again (MapShell), and a wheel turned while it flies is lost to it.
+  // again (GlMapShell), and a wheel turned while it flies is lost to it.
   await mapStill(page);
   const departure = markWith(page, "route-marks", "C81");
   await expect.poll(departure, { timeout: slow(30000) }).not.toBeNull();
@@ -83,7 +83,7 @@ export async function airportToTap(page: Page) {
   }
   // Its chip, or this close in, its grey one for no report; further out
   // the field's place on the chart, which a tap opens all the same (the
-  // canvas's marks, AirportCanvas).
+  // canvas's marks, AirportsGl).
   await expect.poll(async () => (await airportMarks(page)).length, { timeout: slow(20000) }).toBeGreaterThan(1);
   // And until they have all come: the view's own answer redraws them, and
   // a tap as it does lands on the chart.

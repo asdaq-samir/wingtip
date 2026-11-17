@@ -239,7 +239,7 @@ function NearestRow({
 
 /**
  * Nearest, as an EFB's, a card in the panel at the pilot's ask -- half
- * way up with the map fitted to the fields above it (RouteMap's FitTo),
+ * way up with the map fitted to the fields above it (GlRouteMap's useGlFit),
  * where it was a sheet of its own over the panel: the ten fields nearest
  * own ship, how far and which way, the longest runway, and -- in the
  * air, with the GPS's altitude -- which are within a still-air glide

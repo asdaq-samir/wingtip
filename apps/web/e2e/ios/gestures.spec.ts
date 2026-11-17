@@ -6,9 +6,9 @@ import { airportMarks, drawn, mapStill, openMapSettings, settle, slow } from "..
  * keeps up while the finger is still down, a pan's and a pinch's, where it
  * waited for the fingers to lift (the owner, 2026-10-16: "Why doesn't the
  * map update while zooming in/out or even panning? Only updates when the
- * finger is off the screen"). Safari's user agent, from which Leaflet takes
- * a phone's ways -- on one it asks for a layer's tiles once a pan has ended
- * -- and the fingers Chromium's own touches (CDP), which WebKit here has
+ * finger is off the screen"). Safari's user agent, from which the map takes
+ * a phone's ways -- once, on one, it asked for a layer's tiles only once a pan
+ * had ended -- and the fingers Chromium's own touches (CDP), which WebKit here has
  * none of.
  */
 test.use({ userAgent: devices["iPhone 15 Pro"].userAgent });
@@ -73,7 +73,7 @@ test("the imagery over the chart comes in under a finger's pan, before it lifts"
     await page.waitForTimeout(30);
   }
   // Still held: the imagery asked for where the chart has come into sight.
-  // On a phone Leaflet asked for it only once the pan had ended.
+  // On a phone the map once asked for it only after the pan had ended.
   await expect.poll(() => asked, { timeout: slow(5_000) }).toBeGreaterThan(before);
   await touch("touchEnd", []);
 });
@@ -182,7 +182,7 @@ test("a pinch is left where the fingers leave it, as ForeFlight's is, between th
 
 test("a pinch draws the course line again at its own width as it zooms, not scaled up and settling back", async ({ page }) => {
   // The owner's notice (2026-10-16): "The course line seems to get thicker
-  // with the zoom and then settles back". Leaflet's SVG renderer scaled
+  // with the zoom and then settles back". The old SVG renderer scaled
   // what it had drawn, strokes and all, until the fingers lifted.
   await openOnC81(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");

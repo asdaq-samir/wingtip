@@ -6,7 +6,7 @@ import { markWith } from "./marks";
  * The chart layers the map asks for: the terminal area chart over the
  * sectional always, at its own levels, and the IFR low enroute chart as the
  * base. Switched with a route on screen, on the training page: the
- * planner's map is the same (MapShell), and its settings are on the
+ * planner's map is the same (GlMapShell), and its settings are on the
  * search bar, which a route takes the place of (classb.spec.ts sets
  * them there before one is loaded).
  *

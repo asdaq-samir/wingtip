@@ -37,7 +37,7 @@ export function RowMenuImpl({
   };
   // A press in a menu is the menu's own: portalled out of the sheet in the
   // page but inside it in React's tree, it went on up to the map sheet's
-  // head, whose drag (useDetentDrag) took the finger, and a tap on Delete
+  // head, whose drag (the Drawer's swipe) took the finger, and a tap on Delete
   // on a phone left the menu open with Delete only focused (flights.spec,
   // half the runs on the phone project). As PhoneSheetContent stops its own.
   const ownPress = (event: { stopPropagation: () => void }) => event.stopPropagation();

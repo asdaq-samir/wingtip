@@ -4,7 +4,7 @@ import { closeMapSettings, openSettingsPage } from "./mapCard";
 
 /**
  * What is ahead of own ship in the air (lib/map/position/ahead), said over the map
- * beside its buttons (AlertsBanner) and drawn where it is (AheadLayer).
+ * beside its buttons (AlertsBanner) and drawn where it is (MarksGl).
  * The GPS is a fake one in flight -- east at 120 kt, 3,000 ft, near
  * Campbell Airport (C81) -- and the planner's answer is stubbed: what it
  * finds ahead is wingtip.alerts' to test (services/planner/tests_wingtip/test_alerts.py).
