@@ -1,4 +1,3 @@
-import { Button as BaseButton } from "@base-ui/react/button";
 import { useEffect, useMemo, useState } from "react";
 import { Radio } from "lucide-react";
 import { cn } from "cn";
@@ -447,7 +446,7 @@ function RadioCaptions() {
   const chosen = chosenOutside(input);
   const lost = input?.lost ? lostWords(input) : null;
   return (
-    <BaseButton
+    <button
       type="button"
       data-testid="radio-captions"
       aria-label={listening ? "What the radio is saying: open the log" : "Radio: open the log"}
@@ -494,7 +493,7 @@ function RadioCaptions() {
           </span>
         ))}
       </span>
-    </BaseButton>
+    </button>
   );
 }
 

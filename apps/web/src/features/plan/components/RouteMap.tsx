@@ -1,8 +1,9 @@
 import { memo, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { feet, hm, nm, threeFigures } from "../../../lib/format";
+import { nm } from "../../../lib/format";
 import { Badge } from "../../../components/ui/badge";
 import { TermTable } from "../../../components/CardFacts";
+import { legFactRows } from "./legFactRows";
 import { chartQuery, classBQuery } from "../../../lib/queryClient";
 import { pointName } from "../../../lib/identSchema";
 import { placeWords } from "../../../lib/advisories";
@@ -173,31 +174,7 @@ function CheckpointCard({ candidate, number, leg }: { candidate: Candidate; numb
       {/* Its leg of the nav log, at the owner's ask for cards that say
           what a pilot does there (2026-10-30): the heading and altitude
           on from it, the leg to it, and when it comes. */}
-      {leg && (
-        <TermTable
-          testId="checkpoint-leg"
-          className="tabular-nums"
-          rows={[
-            ...(leg.out
-              ? [
-                  [
-                    "On from it",
-                    `${leg.out.magnetic_heading_deg != null ? `${threeFigures(leg.out.magnetic_heading_deg)}° · ` : ""}${feet(leg.out.altitude_ft)}${leg.out.groundspeed_kt != null ? ` · ${Math.round(leg.out.groundspeed_kt)} kt` : ""}`,
-                  ] as const,
-                ]
-              : []),
-            ...(leg.into
-              ? [
-                  [
-                    "Leg to it",
-                    [nm(leg.into.distance_nm), leg.into.ete_min != null && hm(leg.into.ete_min)].filter(Boolean).join(" · "),
-                  ] as const,
-                ]
-              : []),
-            ["Reached", `${hm(leg.afterMin)} after takeoff`] as const,
-          ]}
-        />
-      )}
+      {leg && <TermTable testId="checkpoint-leg" rows={legFactRows(leg)} className="tabular-nums" />}
     </MapCard>
   );
 }

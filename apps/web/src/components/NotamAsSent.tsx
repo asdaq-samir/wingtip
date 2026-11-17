@@ -19,7 +19,7 @@ export function NotamAsSent({
   raw: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  /** The trigger's test id; the text's is `${testId}-raw`. */
+  /** The line's test id: the trigger is `${testId}-source`, the text `${testId}-raw`. */
   testId?: string;
 }) {
   return (
@@ -29,7 +29,7 @@ export function NotamAsSent({
           "group relative inline-flex items-center gap-1 self-start font-medium text-tint outline-none after:absolute after:-inset-y-3 after:inset-x-0 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
           TEXT.note,
         )}
-        data-testid={testId}
+        data-testid={testId ? `${testId}-source` : undefined}
       >
         {label}
         <ChevronDown className="size-4 transition-transform group-data-panel-open:rotate-180" aria-hidden="true" />

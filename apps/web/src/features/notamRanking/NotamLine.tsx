@@ -38,7 +38,7 @@ export default function NotamLine({ notam, testId }: { notam: RankedNotam; testI
         >
           {notam.why}
         </p>
-        <NotamAsSent label={notam.label} raw={notam.raw} open={open} onOpenChange={setOpen} testId={`${testId}-source`} />
+        <NotamAsSent label={notam.label} raw={notam.raw} open={open} onOpenChange={setOpen} testId={testId} />
       </div>
       {pinned && <Pin className="mt-1 size-4 shrink-0 text-tint" aria-label="Pinned" />}
       <DropdownMenu>
