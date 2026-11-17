@@ -67,7 +67,6 @@ export default function FavoritesList({
         title="Favorites"
         backLabel="Back to the search"
         onBack={onBack}
-        testId="favorites-page"
         action={<EditToggle editing={editing} onToggle={() => setEditing((e) => !e)} testId="favorites-edit" />}
       />
       <ListGroup title="Home">
@@ -79,7 +78,7 @@ export default function FavoritesList({
           <RemovableRow name={home.ident} label={`Remove ${home.ident} as Home`} onDelete={onRemoveHome} share={placeLink(home)}>
             {editing ? (
               <ListRow
-                media={<RemoveMinus label={`Remove ${home.ident} as Home…`} testId="favorites-home-remove" />}
+                media={<RemoveMinus label={`Remove ${home.ident} as Home…`} />}
                 title={
                   <>
                     <span className="font-mono font-semibold">{home.ident}</span> · {home.name}
@@ -156,7 +155,7 @@ export default function FavoritesList({
             </RemovableRow>
           ))
         )}
-        <ListRow media={<Plus className="size-5" />} title="Add a Favorite" onClick={onAdd} data-testid="favorites-add" />
+        <ListRow media={<Plus className="size-5" />} title="Add a Favorite" onClick={onAdd} />
       </ListGroup>
       {airplanes(editing)}
     </div>

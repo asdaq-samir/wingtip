@@ -16,7 +16,7 @@ export function LegPointNote({ point, descent }: { point: TopOfClimb | TopOfDesc
   return (
     <span className="flex flex-col gap-2">
       <span>{`${words} Flown at the cruise's speed and fuel flow, for want of the airplane's descent figures.`}</span>
-      <AskFigure figure="descent" what="The descent" testId="descent-ask" />
+      <AskFigure figure="descent" what="The descent" />
     </span>
   );
 }

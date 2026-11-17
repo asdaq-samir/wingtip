@@ -87,16 +87,14 @@ export default function TvLink() {
             />
           </Suspense>
           {short && (
-            <FieldError className={`text-destructive-ink ${TEXT.prose}`} data-testid="tv-link-short">
-              Enter all {TV_CODE_LENGTH} characters the TV shows.
-            </FieldError>
+            <FieldError className={`text-destructive-ink ${TEXT.prose}`}>Enter all {TV_CODE_LENGTH} characters the TV shows.</FieldError>
           )}
           {approve.isError && (
             <FieldError className={`text-destructive ${TEXT.prose}`} data-testid="tv-link-error">
               {approve.error instanceof ApiError ? approve.error.message : "Couldn't reach the server. Try again."}
             </FieldError>
           )}
-          <Button type="submit" disabled={approve.isPending} aria-busy={approve.isPending} data-testid="tv-link-approve">
+          <Button type="submit" disabled={approve.isPending} aria-busy={approve.isPending}>
             Sign in the TV
           </Button>
         </form>

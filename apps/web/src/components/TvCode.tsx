@@ -45,7 +45,7 @@ export default function TvCode() {
     else if (answer && answer !== "waiting") window.location.assign(answer.next);
   }, [answer, client]);
   return (
-    <div className="flex flex-col items-center gap-2 py-2 text-center" data-testid="tv-sign-in">
+    <div className="flex flex-col items-center gap-2 py-2 text-center">
       <p className={TEXT.prose}>On your phone, signed in to Wingtip Maps, open</p>
       <p className={`font-semibold text-tint ${TEXT.row}`} data-testid="tv-address">
         {window.location.host}

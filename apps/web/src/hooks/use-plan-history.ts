@@ -60,7 +60,7 @@ export function usePlanHistory(address: Address, setAddress: SetAddress) {
     history.current = next;
     if (!note) return;
     dismissRouteUndo();
-    routeUndo = toast.undo(note, undo, { testId: "route-undo", onClose: () => (routeUndo = null) });
+    routeUndo = toast.undo(note, undo, { onClose: () => (routeUndo = null) });
   }, [state, undo]);
   // The page gone, its Undo with it.
   useEffect(() => dismissRouteUndo, []);

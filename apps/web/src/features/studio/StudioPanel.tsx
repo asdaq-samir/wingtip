@@ -27,7 +27,7 @@ export function StudioPanel({ studio, tools }: { studio: Studio; tools?: ReactNo
   const [day, setDay] = useState(studio.day || utcToday());
   const track = studio.track;
   return (
-    <div className="flex flex-col gap-5 px-4 pb-6" data-testid="studio-panel">
+    <div className="flex flex-col gap-5 px-4 pb-6">
       <StudioDrafts drafts={studio.drafts} />
       <form
         className="flex flex-col gap-3"
@@ -51,10 +51,10 @@ export function StudioPanel({ studio, tools }: { studio: Studio; tools?: ReactNo
         </Field>
         <Field>
           <FieldLabel>Day (UTC)</FieldLabel>
-          <DateField aria-label="Day, UTC" value={day} max={utcToday()} onChange={setDay} data-testid="studio-day" />
+          <DateField aria-label="Day, UTC" value={day} max={utcToday()} onChange={setDay} />
           <FieldDescription>adsb.lol keeps about six weeks of days.</FieldDescription>
         </Field>
-        <Button type="submit" disabled={studio.loading || tail.trim().length < 2 || !day} data-testid="studio-load">
+        <Button type="submit" disabled={studio.loading || tail.trim().length < 2 || !day}>
           {studio.loading ? "Fetching…" : "Load track"}
         </Button>
         {studio.problem && <FieldError data-testid="studio-problem">{studio.problem}</FieldError>}
@@ -64,7 +64,7 @@ export function StudioPanel({ studio, tools }: { studio: Studio; tools?: ReactNo
         <p className={cn("text-muted-foreground", TEXT.note)} data-testid="studio-track">
           <span className="font-semibold text-foreground">{track.label}</span> · {wholeNm(track.lengthNm)} ·{" "}
           {track.gaps.length === 0 ? "no gaps" : track.gaps.length === 1 ? "1 gap" : `${track.gaps.length} gaps`}
-          {track.credit && <span data-testid="studio-credit"> · {track.credit}</span>}
+          {track.credit && <span> · {track.credit}</span>}
         </p>
       )}
       {track && <SimExportMenu track={track} ground={studio.ground} />}
@@ -83,7 +83,6 @@ export function StudioPanel({ studio, tools }: { studio: Studio; tools?: ReactNo
                 setDay(w.days[0]!);
                 studio.load(w.registration ?? w.hex, w.days[0]!);
               }}
-              data-testid={`studio-watched-${w.hex}`}
             />
           ))}
         </ListGroup>
@@ -100,7 +99,7 @@ export function StudioPanel({ studio, tools }: { studio: Studio; tools?: ReactNo
           }}
         >
           <Pressable>
-            <Button variant="outline" data-testid="studio-import">
+            <Button variant="outline">
               <FileUp aria-hidden />
               Import a track file
             </Button>

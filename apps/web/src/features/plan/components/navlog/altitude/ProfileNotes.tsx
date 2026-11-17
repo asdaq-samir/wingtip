@@ -116,7 +116,6 @@ export default function ProfileNotes({
                     variant="secondary"
                     className="shrink-0 text-tint"
                     onClick={() => onGoRound(d.via!, d.stop_index)}
-                    data-testid="caution-go-round"
                   >
                     Go Round
                   </Button>
@@ -125,7 +124,7 @@ export default function ProfileNotes({
         </div>
       )}
       {tight && (
-        <p className={cn("rounded-lg bg-caution-wash p-2.5 text-caution-ink", TEXT.detail)} data-testid="tight-altitude">
+        <p className={cn("rounded-lg bg-caution-wash p-2.5 text-caution-ink", TEXT.detail)}>
           <span className="font-semibold">Tight altitude. </span>
           {tight}
         </p>

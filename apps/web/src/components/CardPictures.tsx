@@ -46,7 +46,7 @@ export function CardPictures({
 }: {
   slides: (CardSlide | null | false | undefined)[];
   label: string;
-  testId: string;
+  testId?: string;
 }) {
   const present = slides.filter((s): s is CardSlide => !!s);
   // A picture that arrives later goes after those already in the row, never

@@ -56,11 +56,11 @@ export default function RouteProblem({
         </div>
       ) : round && onGoRound ? (
         <div className="space-y-2">
-          <p className={cn("text-muted-foreground", TEXT.detail)} data-testid="unflyable-way-round">
+          <p className={cn("text-muted-foreground", TEXT.detail)}>
             By {round.via!.join(", ")} · +{wholeNm(round.added_nm)}
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" size="sm" onClick={() => onGoRound(round.via!, round.stop_index)} data-testid="unflyable-go-round">
+            <Button type="button" size="sm" onClick={() => onGoRound(round.via!, round.stop_index)}>
               Go round the high ground
             </Button>
             <Button type="button" size="sm" variant="outline" onClick={onAddStop} data-testid="unflyable-add-stop">

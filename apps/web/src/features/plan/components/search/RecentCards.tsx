@@ -31,7 +31,7 @@ export default function RecentCards({ onPick }: { onPick: (airport: RecentAirpor
   if (recents.length === 0) return planes ? null : <StripNote>None yet: the airports and airplanes opened are kept here.</StripNote>;
   return (
     // A sideways drag the row's, an up or down one the sheet's (the one scrolling rule).
-    <Carousel opts={{ align: "start", dragFree: true }} data-base-ui-swipe-ignore="x" data-testid="pill-airport-recents">
+    <Carousel opts={{ align: "start", dragFree: true }} data-base-ui-swipe-ignore="x">
       <CarouselContent className="-ml-3">
         {recents.map((a) => (
           <CarouselItem key={a.ident} className="basis-auto pl-3">

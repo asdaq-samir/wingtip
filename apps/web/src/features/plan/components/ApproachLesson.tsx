@@ -139,11 +139,7 @@ export default function ApproachLesson({
         action={<CloseButton onClick={onClose} data-testid="approach-lesson-close" />}
       >
         {/* The popover shows no subtitle: the line at its top there. */}
-        {!isMobile && (
-          <p className={cn("text-muted-foreground", TEXT.note)} data-testid="approach-lesson-aid">
-            {AID}
-          </p>
-        )}
+        {!isMobile && <p className={cn("text-muted-foreground", TEXT.note)}>{AID}</p>}
         {error ? (
           <FieldError className={cn(FINDING_TONE.stop, TEXT.prose)}>The approach could not be had: {error.message}</FieldError>
         ) : isPending || !input ? (
@@ -177,11 +173,7 @@ function Lesson({ input, from }: { input: LessonInput; from?: FromInstructor }) 
         className="w-full [&>*]:flex-1"
         testId="approach-lesson-steps"
       />
-      {from?.problem && (
-        <FieldError className={cn(FINDING_TONE.stop, TEXT.note)} data-testid="approach-lesson-problem">
-          {from.problem}
-        </FieldError>
-      )}
+      {from?.problem && <FieldError className={cn(FINDING_TONE.stop, TEXT.note)}>{from.problem}</FieldError>}
       {page === "brief" && (
         <BriefPage
           input={input}
@@ -300,10 +292,10 @@ function FlyPage({
       <div className="flex gap-2">
         {last ? (
           <>
-            <Button variant="secondary" className="flex-1" onClick={() => setAt(0)} data-testid="approach-fly-again">
+            <Button variant="secondary" className="flex-1" onClick={() => setAt(0)}>
               Fly It Again
             </Button>
-            <Button className="flex-1" onClick={onDone} data-testid="approach-fly-quiz">
+            <Button className="flex-1" onClick={onDone}>
               Quiz Me
             </Button>
           </>
@@ -404,7 +396,7 @@ function QuizPage({ input, from, gs }: { input: LessonInput; from?: FromInstruct
   if (questions.length === 0) return <p className={cn("text-muted-foreground", TEXT.prose)}>See the plate</p>;
   if (!q) {
     return (
-      <div className="space-y-3" data-testid="approach-quiz-done">
+      <div className="space-y-3">
         <p className={cn("font-semibold", TEXT.row)} role="status">
           {right} of {questions.length} right
         </p>
@@ -416,7 +408,6 @@ function QuizPage({ input, from, gs }: { input: LessonInput; from?: FromInstruct
             setRight(0);
             setAnswers([]);
           }}
-          data-testid="approach-quiz-again"
         >
           Ask Again
         </Button>

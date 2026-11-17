@@ -113,7 +113,7 @@ function AccountMenu() {
               <DropdownMenuSeparator />
               {/* A copy of everything the account keeps, as one file: the
                 right to take one's data away, beside deleting it. */}
-              <DropdownMenuItem onClick={() => exportAccount.mutate()} disabled={exportAccount.isPending} data-testid="export-account">
+              <DropdownMenuItem onClick={() => exportAccount.mutate()} disabled={exportAccount.isPending}>
                 Export my data
               </DropdownMenuItem>
               <DropdownMenuItem variant="destructive" onClick={() => logout.mutate()} disabled={logout.isPending}>

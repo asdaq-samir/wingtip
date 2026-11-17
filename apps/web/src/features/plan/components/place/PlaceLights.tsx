@@ -83,7 +83,7 @@ export function PlaceLights({
         />
       );
     }),
-    ...place.light_notes.map((note) => <ListRow key={note.as_written} media={badge} title={note.words} data-testid="place-light-note" />),
+    ...place.light_notes.map((note) => <ListRow key={note.as_written} media={badge} title={note.words} />),
   ];
   return (
     <div className="pt-5">

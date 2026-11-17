@@ -41,7 +41,6 @@ export function FavoriteTiles({
           detail={home ? away(home) : "Add"}
           tone={home ? "muted" : "tint"}
           onClick={home ? () => onOpen(home) : onAddHome!}
-          testId="favorite-home"
         />
       )}
       {favorites.map((a) => (

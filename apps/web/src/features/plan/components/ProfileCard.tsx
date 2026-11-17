@@ -69,10 +69,7 @@ export default function ProfileCard({
       />
       {rules && <div className="mt-2 flex shrink-0 justify-center">{rules}</div>}
       {cautions.length > 0 && (
-        <ul
-          className={cn("mt-2 shrink-0 space-y-1 rounded-lg bg-caution-wash px-2.5 py-2 text-caution-ink", TEXT.detail)}
-          data-testid="profile-cautions"
-        >
+        <ul className={cn("mt-2 shrink-0 space-y-1 rounded-lg bg-caution-wash px-2.5 py-2 text-caution-ink", TEXT.detail)}>
           {cautions.map((reason) => (
             <li key={reason} className="flex gap-1.5">
               <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />

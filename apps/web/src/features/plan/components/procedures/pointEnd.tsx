@@ -74,7 +74,7 @@ export function pointEnd(
     // The two apart, for an airport's block: the time on its ident's
     // line, the elevation on its wind's.
     time: <PointFigures time={arrival ? <TimeOrPick time={at.time} /> : at.time} altitude={null} kind={kind} />,
-    elevation: <PointFigures time={null} altitude={shown === null ? null : altFt(shown)} kind={kind} testId="point-elevation" />,
+    elevation: <PointFigures time={null} altitude={shown === null ? null : altFt(shown)} kind={kind} />,
     // Behind the point's mark (`face`), at the owner's ask ("Use the
     // airport icon as the more button instead of having one to the right").
     menu: (face: ReactNode) => (

@@ -110,13 +110,7 @@ export function HourlyForecast({
                 every column, so the figures under them line up. */}
             <span aria-hidden className="flex h-3 w-8 flex-col gap-0.5">
               <span className="h-1.5 rounded-full" style={{ backgroundColor: colourOf(hour.category) }} />
-              {hour.atTimes && (
-                <span
-                  className="h-1 rounded-full opacity-50"
-                  style={{ backgroundColor: colourOf(hour.atTimes) }}
-                  data-testid="place-hour-at-times"
-                />
-              )}
+              {hour.atTimes && <span className="h-1 rounded-full opacity-50" style={{ backgroundColor: colourOf(hour.atTimes) }} />}
             </span>
             <span aria-hidden className={cn("font-semibold text-foreground", TEXT.note)}>
               {hour.ceilingFt == null ? "—" : altFt(hour.ceilingFt)}

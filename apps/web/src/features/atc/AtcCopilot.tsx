@@ -33,7 +33,6 @@ export default function AtcCopilot() {
       <p
         className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-(--radius-banner) px-3 py-2 text-muted-foreground", TEXT.detail)}
         role="status"
-        data-testid="atc-no-tail"
       >
         ATC: pick your airplane to listen for its call sign
       </p>
@@ -49,13 +48,7 @@ export default function AtcCopilot() {
         <span className={cn("min-w-0", atc.error ? "text-caution-ink" : "text-muted-foreground", TEXT.detail)} role="status">
           {atc.error ?? "ATC: not listening yet"}
         </span>
-        <Button
-          size="sm"
-          variant="secondary"
-          className={`${CAPSULE_HIT} shrink-0 text-tint`}
-          onClick={atc.listen}
-          data-testid="atc-listen-start"
-        >
+        <Button size="sm" variant="secondary" className={`${CAPSULE_HIT} shrink-0 text-tint`} onClick={atc.listen}>
           Listen
         </Button>
       </div>

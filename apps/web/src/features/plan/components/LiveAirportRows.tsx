@@ -37,7 +37,7 @@ export function DigitalAtisRows({ ident }: { ident: string }) {
         // remarks where it has any.
         const foot = (
           <>
-            <AtisRawFold title="As sent" text={b.text} testId="place-datis-sent" rawTestId="place-datis-raw" />
+            <AtisRawFold title="As sent" text={b.text} />
             <ListRow muted title={<span className={TEXT.note}>FAA D-ATIS</span>} />
           </>
         );
@@ -52,10 +52,9 @@ export function DigitalAtisRows({ ident }: { ident: string }) {
                     </RowBadge>
                   }
                   title={<span className="font-semibold text-foreground">{glanceWords(reading)}</span>}
-                  data-testid="place-datis-glance"
                 />
               )}
-              <AtisReadingRows reading={reading} rowTestId="place-datis-row" remarks={false} />
+              <AtisReadingRows reading={reading} remarks={false} />
               {!remarks.length && foot}
             </ListGroup>
             {remarks.length > 0 && (
@@ -63,11 +62,7 @@ export function DigitalAtisRows({ ident }: { ident: string }) {
                 {/* An item a line, left-aligned and wrapping, in the
                     broadcast's order: a list to read, not a figure. */}
                 {remarks.map((remark, k) => (
-                  <ListRow
-                    key={`${k}-${remark}`}
-                    title={<span className="text-foreground">{remark}</span>}
-                    data-testid="place-datis-remark"
-                  />
+                  <ListRow key={`${k}-${remark}`} title={<span className="text-foreground">{remark}</span>} />
                 ))}
                 {foot}
               </ListGroup>
@@ -103,17 +98,8 @@ export function RvrRows({ ident }: { ident: string }) {
               </RowBadge>
             }
             title={`RVR ${r.runway}`}
-            description={
-              r.under ? (
-                <span className="text-destructive" data-testid="place-rvr-under">
-                  {r.under}
-                </span>
-              ) : (
-                "Touchdown · midpoint · rollout"
-              )
-            }
+            description={r.under ? <span className="text-destructive">{r.under}</span> : "Touchdown · midpoint · rollout"}
             value={<span className="font-semibold text-foreground tabular-nums">{r.readings}</span>}
-            data-testid="place-rvr-row"
           />
         ))}
         <ListRow muted title={<span className={TEXT.note}>FAA RVR, through SWIM</span>} />

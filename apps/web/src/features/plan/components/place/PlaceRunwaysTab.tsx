@@ -49,7 +49,6 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
               ...(place.pattern.remarks ?? []),
             ].join(" ")}
             value={<span className="font-semibold text-foreground">{feet(place.pattern.altitude_ft)}</span>}
-            data-testid="place-pattern"
           />
         )}
         {place.runways.length ? (

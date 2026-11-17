@@ -127,7 +127,7 @@ export default function PlanCards({
                   height. */}
             {dryRunning ? (
               <Waits>
-                <div className="flex min-h-0 flex-1 flex-col" data-testid="profile-dry-run">
+                <div className="flex min-h-0 flex-1 flex-col">
                   <DryRunControls run={dryRunning} ends={course} onClose={stopDryRun} missed={goMissed} onMissed={goMissedNow} />
                 </div>
               </Waits>

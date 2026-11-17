@@ -91,7 +91,6 @@ export default function FiltersPage() {
             steps={VFR_AT_STEPS}
             words={vfrAtMenuWords}
             onPick={(vfrInHours) => setDraft({ vfrInHours })}
-            testId="filter-vfr-at"
             trigger={menuButton(vfrAtClock(draft.vfrInHours) ?? "Any Time")}
           />
         </ListRow>
@@ -105,7 +104,6 @@ export default function FiltersPage() {
             aria-label="Fuel sold"
             variant="outline"
             size="sm"
-            data-testid="filter-fuel"
           >
             {FUELS.map((k) => (
               <ToggleGroupItem key={k} value={k} className={TEXT.detail}>
@@ -139,7 +137,6 @@ export default function FiltersPage() {
             steps={RUNWAY_STEPS}
             words={runwayWords}
             onPick={(minRunwayFt) => setDraft({ minRunwayFt })}
-            testId="filter-runway"
             trigger={menuButton(draft.minRunwayFt == null ? "Any" : `${draft.minRunwayFt.toLocaleString("en-US")} ft`)}
           />
         </ListRow>
@@ -151,7 +148,6 @@ export default function FiltersPage() {
             steps={WITHIN_STEPS}
             words={withinWords}
             onPick={(withinNm) => setDraft({ withinNm })}
-            testId="filter-within"
             trigger={menuButton(draft.withinNm == null ? "Any" : `${draft.withinNm} nm`)}
           />
         </ListRow>

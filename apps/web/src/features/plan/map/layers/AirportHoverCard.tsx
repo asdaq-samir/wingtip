@@ -9,7 +9,7 @@ export default function AirportHoverCard({ ident, x, y }: { ident: string; x: nu
   const anchor = useMemo(() => ({ getBoundingClientRect: () => DOMRect.fromRect({ x, y, width: 0, height: 0 }) }), [x, y]);
   return (
     <PreviewCard open>
-      <PreviewCardContent anchor={anchor} side="top" align="center" sideOffset={16} data-testid="airport-hover-card">
+      <PreviewCardContent anchor={anchor} side="top" align="center" sideOffset={16}>
         <AirportPreview ident={ident} />
       </PreviewCardContent>
     </PreviewCard>

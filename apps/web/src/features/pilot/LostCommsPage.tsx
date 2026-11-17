@@ -65,7 +65,7 @@ export default function LostCommsPage() {
           />
         </ListRow>
         {/* The rule for the route picked, a row of its own: it was a footnote. */}
-        <ListRow title={<span className={TEXT.detail}>{routes.find((r) => r.key === route)!.rule}</span>} data-testid="lost-route-rule" />
+        <ListRow title={<span className={TEXT.detail}>{routes.find((r) => r.key === route)!.rule}</span>} />
       </ListGroup>
 
       <ListGroup title="The clearance">
@@ -79,7 +79,6 @@ export default function LostCommsPage() {
               onTyped={(v) => setAssigned(v == null ? "" : String(v))}
               formatOptions={WHOLE}
               minValue={0}
-              data-testid="lost-assigned"
             />
           </FieldHit>
         </ListRow>
@@ -93,7 +92,6 @@ export default function LostCommsPage() {
               onTyped={(v) => setExpected(v == null ? "" : String(v))}
               formatOptions={WHOLE}
               minValue={0}
-              data-testid="lost-expected"
             />
           </FieldHit>
         </ListRow>
@@ -163,7 +161,6 @@ export default function LostCommsPage() {
           title="Add a segment"
           media={<Plus className="size-5" aria-hidden />}
           onClick={() => setSegments((list) => [...list, { n: Math.max(-1, ...list.map((s) => s.n)) + 1, name: "", minimum: "" }])}
-          data-testid="lost-add"
         />
       </ListGroup>
 

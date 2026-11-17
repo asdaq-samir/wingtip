@@ -156,7 +156,7 @@ function FlightSummary({
         )}
         {plane ? (
           <>
-            <StatusBadge variant="inAir" data-testid="flight-air" />
+            <StatusBadge variant="inAir" />
             <span className="text-foreground">
               {badge?.tone === "air" && <span data-testid="flight-state">{badge.word}</span>}
               {badge?.tone === "air" && flown && " · "}
@@ -222,19 +222,16 @@ function FlightSummary({
       )}
       {squawk && meaning && (
         // An emergency's code where it is seen first (AIM 6-2-2, 6-3-4, 6-4-2).
-        <span className={cn("font-semibold text-destructive-ink tabular-nums", TEXT.detail)} data-testid="flight-squawk-alarm">
+        <span className={cn("font-semibold text-destructive-ink tabular-nums", TEXT.detail)}>
           Squawk {squawk} · {meaning}
         </span>
       )}
       {plane && fix && fromYou && (
-        <span className={cn("text-muted-foreground", TEXT.detail)} data-testid="flight-from-you">
+        <span className={cn("text-muted-foreground", TEXT.detail)}>
           {`${fromYou} of you`}
           {fix.altitudeFt != null && plane.altitude_ft != null ? `, ${against(plane.altitude_ft - fix.altitudeFt)}` : ""}
           {cpa && (
-            <span
-              data-testid="flight-closest"
-              className={cn(cpa.nm < 1 && (cpa.aboveFt == null || nearInHeight(cpa.aboveFt)) && "font-semibold text-destructive-ink")}
-            >
+            <span className={cn(cpa.nm < 1 && (cpa.aboveFt == null || nearInHeight(cpa.aboveFt)) && "font-semibold text-destructive-ink")}>
               {" · closest "}
               {cpa.inMin < 0.5 ? "now, drawing apart" : `in ${Math.round(cpa.inMin)} min`}
               {`: ${nmAway(cpa.nm)}${cpa.aboveFt != null ? `, ${against(cpa.aboveFt)}` : ""}`}

@@ -62,7 +62,7 @@ export default function FlightFoot({ vm, share }: { vm: PlanWorkspaceModel; shar
   // Done flying at the figures' foot, as the canvas has the line there;
   // the tabs come back on the ground by themselves.
   const doneFlyingRow = flying && (
-    <div className={cn("flex items-center justify-between pt-1 text-foreground/65", TEXT.note)} data-testid="flying-foot">
+    <div className={cn("flex items-center justify-between pt-1 text-foreground/65", TEXT.note)}>
       <span>Flying</span>
       <Button
         variant="link"

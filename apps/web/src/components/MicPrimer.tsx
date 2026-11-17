@@ -32,13 +32,12 @@ export function useMicPrimer(): [ReactNode, (then: () => void) => void] {
       }}
       title="The Microphone"
       description="Wingtip listens to the radio to write down your clearance. Wingtip records no audio, and keeps speech on this device wherever your browser can."
-      testId="mic-primer"
     >
       <div className="grid gap-2">
-        <Button type="button" size="lg" className="h-12 rounded-(--radius-control) font-semibold" onClick={allow} data-testid="mic-allow">
+        <Button type="button" size="lg" className="h-12 rounded-(--radius-control) font-semibold" onClick={allow}>
           Allow
         </Button>
-        <Button type="button" variant="ghost" onClick={() => setWaiting(null)} data-testid="mic-not-now">
+        <Button type="button" variant="ghost" onClick={() => setWaiting(null)}>
           Not Now
         </Button>
       </div>

@@ -92,7 +92,7 @@ export function TermTable({
   ddClassName,
 }: {
   rows: readonly (readonly [string, ReactNode])[];
-  testId: string;
+  testId?: string;
   className?: string;
   ddClassName?: string;
 }) {

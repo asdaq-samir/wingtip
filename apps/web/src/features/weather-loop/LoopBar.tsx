@@ -96,7 +96,6 @@ export function LoopBar() {
                   "aria-valuetext": time ? `${time.zulu}, ${time.age}` : undefined,
                   className: THUMB_HIT,
                 }}
-                data-testid="weather-loop-scrubber"
               />
             </div>
             {shownTime && (

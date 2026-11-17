@@ -9,7 +9,7 @@ type Contact = NonNullable<NonNullable<FieldNotam["tfr"]>["facility"]>;
 /** One whom-to-call line: its name as the engine writes it ("Fort Worth
  *  ARTCC", tfr_detail_read), its telephone a link the phone dials, its
  *  frequency. */
-function ContactLine({ label, c, testId }: { label: string; c: Contact; testId: string }) {
+function ContactLine({ label, c, testId }: { label: string; c: Contact; testId?: string }) {
   return (
     <div className="flex flex-col" data-testid={testId}>
       <span className={cn("text-muted-foreground", TEXT.note)}>{label}</span>
@@ -21,7 +21,7 @@ function ContactLine({ label, c, testId }: { label: string; c: Contact; testId: 
             <a
               href={dial(c.phone)}
               className="relative font-medium text-tint tabular-nums after:absolute after:-inset-y-3 after:inset-x-0 after:content-['']"
-              data-testid={`${testId}-phone`}
+              data-testid={testId && `${testId}-phone`}
             >
               {c.phone}
             </a>
@@ -63,7 +63,7 @@ export function TfrDetails({ n }: { n: FieldNotam }) {
         </div>
       )}
       {t?.facility && <ContactLine label="Coordination facility" c={t.facility} testId="place-tfr-facility" />}
-      {t?.contact && <ContactLine label="Point of contact" c={t.contact} testId="place-tfr-contact" />}
+      {t?.contact && <ContactLine label="Point of contact" c={t.contact} />}
     </>
   );
 }

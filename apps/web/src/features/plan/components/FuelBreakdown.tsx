@@ -44,9 +44,7 @@ export default function FuelBreakdown({
   return (
     <div className="flex flex-col gap-3" data-testid="fuel-breakdown">
       {shortOnes.some((f) => f.name) && (
-        <p className="font-semibold text-destructive-ink" data-testid="fuel-short-flights">
-          Short: {shortOnes.map((f) => `${f.name}, ${gal(f.shortGal)}`).join("; ")}
-        </p>
+        <p className="font-semibold text-destructive-ink">Short: {shortOnes.map((f) => `${f.name}, ${gal(f.shortGal)}`).join("; ")}</p>
       )}
       <ListGroup>
         <ListRow
@@ -64,7 +62,7 @@ export default function FuelBreakdown({
           // The airplane's own allowance only, never another's (the owner,
           // 2026-11-09): it has none, so the fuel required leaves it out, and
           // it is asked for under the list (AskFigure).
-          <ListRow title="Start, taxi and takeoff" description="Not counted" value="—" data-testid="fuel-taxi-missing" />
+          <ListRow title="Start, taxi and takeoff" description="Not counted" value="—" />
         ) : (
           <ListRow
             title="Start, taxi and takeoff"
@@ -85,9 +83,7 @@ export default function FuelBreakdown({
           value={<span className="font-semibold text-foreground">{gal(totals.fuel_required_gal)}</span>}
         />
       </ListGroup>
-      {totals.taxi_gal == null && totals.fuel_required_gal != null && (
-        <AskFigure figure="fuel_totals" what="The fuel required" testId="fuel-taxi-ask" />
-      )}
+      {totals.taxi_gal == null && totals.fuel_required_gal != null && <AskFigure figure="fuel_totals" what="The fuel required" />}
       {burnt != null && totals.fuel_required_gal != null && (
         <ListGroup>
           <ListRow title="Burnt so far" value={gal(burnt)} />

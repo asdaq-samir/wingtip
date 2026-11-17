@@ -75,7 +75,6 @@ export function AtcPage() {
               label="ATC alerts"
               value={atcListen}
               onChange={(v) => (v === "flying" ? primeMic(() => setAtcListen("flying")) : setAtcListen(v as AtcListen))}
-              testId="atc-listen-mode"
               options={ATC_LISTEN_MODES}
             />
           </ListRow>
@@ -111,9 +110,9 @@ export function HelpPage({ pages }: { pages: HelpPages }) {
           <PageRow page="guide" title="Guide" testId="guide-link" />
           {/* How old the plan's data is, and what is kept through a dropped
               connection, for every pilot (the owner, 2026-11-04). */}
-          <PageRow page="status" title="Status" testId="status-link" />
+          <PageRow page="status" title="Status" />
           {/* When the map's layers showed at this device's loads (lib/loadLog). */}
-          <PageRow page="log" title="Log" testId="log-link" />
+          <PageRow page="log" title="Log" />
           <PageRow page="about" title="About" testId="about-link" />
           {/* Where the map's data comes from and how old it is. */}
           <PageRow page="sources" title="Sources" testId="sources-row" />
@@ -185,7 +184,6 @@ function SourcesPage() {
       <ListRow
         title="Traffic"
         value={<span className="text-foreground">{traffic && ages.traffic ? `${trafficSource} · ${ages.traffic}` : trafficSource}</span>}
-        data-testid="traffic-age"
       />
     </ListGroup>
   );

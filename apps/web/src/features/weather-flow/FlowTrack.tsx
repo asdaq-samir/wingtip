@@ -68,7 +68,6 @@ export function FlowTrack({
             "aria-valuetext": shown >= 0 ? `${zulu(shown)}, ${hourName(frames, shown)}` : undefined,
             className: THUMB_HIT,
           }}
-          data-testid="weather-flow-scrubber"
         />
         {/* A tick for each hour, over the track and under the thumb. */}
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">

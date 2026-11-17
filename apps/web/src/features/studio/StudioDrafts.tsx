@@ -41,14 +41,8 @@ export function StudioDrafts({ drafts }: { drafts: Drafts }) {
             {d.n_number ? ` · ${d.n_number}` : ""} · Preliminary
           </p>
           <div className="flex flex-wrap gap-2">
-            <Badge variant={status.variant} data-testid="studio-draft-status">
-              {status.label}
-            </Badge>
-            {d.track === "none" && (
-              <Badge variant="outline" data-testid="studio-draft-no-track">
-                No ADS-B track
-              </Badge>
-            )}
+            <Badge variant={status.variant}>{status.label}</Badge>
+            {d.track === "none" && <Badge variant="outline">No ADS-B track</Badge>}
           </div>
         </div>
         {d.identity && (
@@ -70,21 +64,21 @@ export function StudioDrafts({ drafts }: { drafts: Drafts }) {
         </ListGroup>
         <div className="flex flex-col gap-2">
           {d.status === "needs_identity" && (
-            <Button onClick={drafts.confirm} disabled={drafts.busy} data-testid="studio-draft-confirm">
+            <Button onClick={drafts.confirm} disabled={drafts.busy}>
               Identity is right
             </Button>
           )}
           {(d.status === "needs_identity" || d.status === "ready") && (
-            <Button variant="outline" onClick={drafts.reject} disabled={drafts.busy} data-testid="studio-draft-reject">
+            <Button variant="outline" onClick={drafts.reject} disabled={drafts.busy}>
               Not this airplane
             </Button>
           )}
           {d.status !== "dismissed" && (
-            <Button variant="outline" onClick={drafts.dismiss} disabled={drafts.busy} data-testid="studio-draft-dismiss">
+            <Button variant="outline" onClick={drafts.dismiss} disabled={drafts.busy}>
               Dismiss
             </Button>
           )}
-          <Button variant="ghost" onClick={() => drafts.select(null)} data-testid="studio-draft-close">
+          <Button variant="ghost" onClick={() => drafts.select(null)}>
             All drafts
           </Button>
           {drafts.problem && <FieldError>{drafts.problem}</FieldError>}

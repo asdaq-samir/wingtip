@@ -65,7 +65,7 @@ export function ProcedurePicker({
   // warning in its place.
   return (
     <ListGroup>
-      {stale && <ListRow title={<span className="text-destructive-ink">{stale}</span>} data-testid="procedures-stale" />}
+      {stale && <ListRow title={<span className="text-destructive-ink">{stale}</span>} />}
       {of.map((p) => {
         const mine = chosen?.id === p.id ? chosen : null;
         const windward = kind === "approach" && !!p.runway && !!wind && !wind.calm && runwayNumber(p.runway) === wind.ident;

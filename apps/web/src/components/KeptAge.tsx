@@ -31,7 +31,6 @@ export default function KeptAge({
   return (
     <p
       className={cn(TEXT.detail, age.finding === "caution" ? FINDING_TONE.caution : "text-muted-foreground", className)}
-      data-testid={`kept-age-${kind}`}
       data-finding={age.finding}
       title={`${age.detail} (${age.source})`}
     >

@@ -50,12 +50,7 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
   if (!fix) {
     return (
       <ListGroup title="Best fields">
-        <ListRow
-          title="Show my position"
-          description="The fields within a glide are worked out from it"
-          onClick={showPosition}
-          data-testid="emergency-show-position"
-        />
+        <ListRow title="Show my position" description="The fields within a glide are worked out from it" onClick={showPosition} />
       </ListGroup>
     );
   }
@@ -68,7 +63,6 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
             muted
             title="From this device, without weather"
             description="No connection: the fields from the chart data kept here, with no runways, elevations or wind aloft"
-            data-testid="emergency-on-device"
           />
         )}
         {ranked?.needs_airplane && (
@@ -76,7 +70,6 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
             muted
             title={vm.airplaneName ? `No glide ratio for ${vm.airplaneName}` : "Glide needs an airplane"}
             description="Nearest first: no glide is worked out without the airplane's own figures"
-            data-testid="emergency-needs-airplane"
           />
         )}
         {ranked && (
@@ -146,7 +139,7 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
       </ListGroup>
       {/* Its glide ratio asked for in place, the fields listed anyway
           (AskFigure; the owner, 2026-11-09). */}
-      {ranked?.needs_airplane && vm.airplaneName && <AskFigure figure="glide" what="The glide" testId="emergency-glide-ask" />}
+      {ranked?.needs_airplane && vm.airplaneName && <AskFigure figure="glide" what="The glide" />}
     </div>
   );
 }

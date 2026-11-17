@@ -355,15 +355,14 @@ function TrainingGroup() {
         ) : undefined
       }
     >
-      {!lastRun && <ListRow muted title={running ? "Starting the run…" : "No run yet"} data-testid="run-row" />}
-      {lastRun?.error && <ListRow title={<span className="text-destructive-ink">{lastRun.error}</span>} data-testid="run-error" />}
+      {!lastRun && <ListRow muted title={running ? "Starting the run…" : "No run yet"} />}
+      {lastRun?.error && <ListRow title={<span className="text-destructive-ink">{lastRun.error}</span>} />}
       {stages.map((s) => (
         <ListRow
           key={s.name}
           title={STAGE_NAMES[s.name] ?? s.name}
           description={s.detail ?? undefined}
           value={STAGE_STATES[s.state] ?? s.state}
-          data-testid={`stage-${s.name}`}
         />
       ))}
     </ListGroup>
@@ -698,7 +697,7 @@ function ChartsSection({
           : `missing ${p.missing.length} sheet${p.missing.length === 1 ? "" : "s"}: ${p.missing.slice(0, 3).join(", ")}${p.missing.length > 3 ? "…" : ""}`;
   const workers = `${charts.refresh_workers} worker${charts.refresh_workers === 1 ? "" : "s"}`;
   return (
-    <div className="space-y-6" data-testid="charts-status">
+    <div className="space-y-6">
       <ListGroup footer="The FAA charts on disk and the map tiles rendered from them.">
         <ListRow title="Serving cycle" value={charts.cycle} />
         <ListRow
@@ -723,7 +722,6 @@ function ChartsSection({
           <ListRow title={`Cycle ${charts.next.cycle}`} value={`takes effect ${charts.next.effective}`} />
           <ListRow
             title="Staging"
-            data-testid="charts-next-state"
             description={`${charts.next.detail ?? ""}${charts.next.updated_at ? ` · ${agoOrDate(charts.next.updated_at)}` : ""}`}
             value={<StatusBadge tone={NEXT_TONE[charts.next.state] ?? "checking"}>{charts.next.state.replace("_", " ")}</StatusBadge>}
           />
@@ -914,7 +912,6 @@ function SystemTab({
                     <ListRow
                       key={c.key}
                       title={c.name}
-                      data-testid="dev-data-cycle"
                       description={`${c.kind.toUpperCase()} · edition ${c.edition ?? "unknown"} · current ${c.current}`}
                       value={
                         <StatusBadge tone={c.state === "in_force" ? "up" : c.state === "expired" ? "down" : "checking"}>
@@ -962,7 +959,6 @@ function SystemTab({
                       <ListRow
                         key={f.name}
                         title={DATASET_NAMES[f.name] ?? f.name}
-                        data-testid="dev-feed"
                         description={`${f.kind === "swim" ? `${f.what} · ` : ""}${f.detail ?? ""}${
                           f.stale_since ? ` · stale since ${agoOrDate(f.stale_since)}` : ""
                         }`}
@@ -1000,7 +996,6 @@ function SystemTab({
                       {e.status} · {agoOrDate(new Date(e.at * 1000).toISOString())}
                     </span>
                   }
-                  data-testid="recent-error"
                 />
               ))}
               {(status?.recent_errors ?? []).length === 0 && (

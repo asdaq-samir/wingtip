@@ -45,7 +45,7 @@ export function CaptionsPanel({ callsign }: { callsign: string | null }) {
           </Button>
         </div>
       ) : (
-        <Button variant="outline" disabled={!buffer || !sync} onClick={() => void makeCaptions()} data-testid="studio-captions-make">
+        <Button variant="outline" disabled={!buffer || !sync} onClick={() => void makeCaptions()}>
           <Captions aria-hidden />
           Make captions from the recording
         </Button>
@@ -93,10 +93,7 @@ export function CaptionLine({ className }: { className?: string }) {
   const on = at === null ? null : captionAt(captions, at);
   if (!on) return null;
   return (
-    <p
-      className={cn(GLASS, "rounded-(--radius-card) px-3 py-1 text-center font-semibold", TEXT.row, className)}
-      data-testid="replay-caption"
-    >
+    <p className={cn(GLASS, "rounded-(--radius-card) px-3 py-1 text-center font-semibold", TEXT.row, className)}>
       {on.speaker ? `${on.speaker}: ` : ""}
       {on.text}
     </p>

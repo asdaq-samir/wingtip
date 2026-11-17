@@ -81,7 +81,7 @@ export function ReadyToFly() {
           <ReadyAction key={item.key} item={item} ready={ready} />
         ))}
         {answer.items.map((item) => (
-          <div key={item.key} className="flex items-start gap-2" data-testid={`ready-item-${item.key}`} data-finding={item.finding}>
+          <div key={item.key} className="flex items-start gap-2" data-finding={item.finding}>
             <FindingIcon finding={item.finding} className="mt-0.5 size-4" />
             <span className={cn("min-w-0 flex-1", TEXT.detail)}>
               <span className="font-medium">{item.line}</span>

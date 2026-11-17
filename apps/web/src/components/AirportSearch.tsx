@@ -107,7 +107,7 @@ export default function AirportSearch({
             }}
           />
         </div>
-        <CloseButton onClick={onClose} data-testid="picker-close" />
+        <CloseButton onClick={onClose} />
       </div>
       {/* Its own height, not shrunk: with the keyboard up the sheet is
           short, and the tiles were squeezed to a sliver of their tops. */}

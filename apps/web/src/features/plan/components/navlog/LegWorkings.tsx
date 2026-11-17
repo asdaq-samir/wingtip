@@ -31,13 +31,12 @@ function Worked({ workings }: { workings: Workings }) {
       )}
       {/* Asked for where it is needed, and kept (feedback: ask when needed):
           the climb's fuel flow, with no assumed figure in its place. */}
-      {workings.climb && workings.climb.gal === null && <AskFigure figure="climb" what="The climb's fuel" testId="working-climb-ask" />}
+      {workings.climb && workings.climb.gal === null && <AskFigure figure="climb" what="The climb's fuel" />}
       {workings.procedure && (
         <ListRow
           title={workings.procedure.landing ? "Pattern or approach, added" : "Departure, added"}
           description={`${nm(workings.procedure.nm)} more than the leg's line, at its ground speed`}
           value={`${Math.round(workings.procedure.min)} min · ${gal(workings.procedure.gal)}`}
-          data-testid="working-procedure"
         />
       )}
     </ListGroup>

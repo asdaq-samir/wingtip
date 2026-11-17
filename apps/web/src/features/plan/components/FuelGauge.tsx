@@ -16,7 +16,6 @@ export function FuelGauge({ gal, usable, tone }: { gal: number; usable: number |
         TEXT.note,
         tone === "low" ? "text-destructive-ink" : tone === "fuel" ? "text-caution-ink" : "text-muted-foreground",
       )}
-      data-testid="fuel-gauge"
     >
       {share !== null && (
         // Drawn as a gauge, its edge in the words' colour and the share

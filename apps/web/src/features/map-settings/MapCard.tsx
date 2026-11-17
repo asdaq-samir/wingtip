@@ -43,7 +43,7 @@ export default function MapCard() {
     // iOS Settings spaces its groups; every section's tiles the one 2x2
     // grid (LayerTile), so the four line up (the owner, 2026-11-14:
     // "every section should have 4 tiles like Layers one").
-    <div className="flex flex-col gap-6" data-testid="map-settings-groups">
+    <div className="flex flex-col gap-6">
       <ChartChoice />
       <OverlayChoice />
       <HeightsChoice />
@@ -166,11 +166,7 @@ function HeightsChoice() {
   return (
     <ListGroup
       footer={
-        trueView && (
-          <span data-testid="heights-true">
-            {trueView === "pilot" ? "True height in the pilot's view" : "True height while a replay camera follows"}
-          </span>
-        )
+        trueView && <span>{trueView === "pilot" ? "True height in the pilot's view" : "True height while a replay camera follows"}</span>
       }
     >
       <ListRow title="Heights">
@@ -178,7 +174,6 @@ function HeightsChoice() {
           label="Heights"
           value={String(stretch)}
           onChange={(v) => setStretch(Number(v) as HeightStretch)}
-          testId="heights-stretch"
           options={HEIGHT_STRETCHES.map((k) => ({ value: String(k), label: `×${k}` }))}
         />
       </ListRow>

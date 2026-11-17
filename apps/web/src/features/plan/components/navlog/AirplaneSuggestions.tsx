@@ -19,7 +19,7 @@ export interface SuggestionGroup {
  */
 export default function AirplaneSuggestions({ groups, onPick }: { groups: SuggestionGroup[]; onPick: (run: () => void) => void }) {
   return (
-    <CommandList className="max-h-80" data-testid="aircraft-suggestions-list">
+    <CommandList className="max-h-80">
       {groups.map((g) => (
         <CommandGroup key={g.heading} heading={g.heading} data-testid={`aircraft-suggestions-${g.heading.split(" ")[0]!.toLowerCase()}`}>
           {g.rows.map((row) => (

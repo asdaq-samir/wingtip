@@ -199,7 +199,7 @@ function Now({ points, alongNm, fromStart }: { points: PastFlightPoint[]; alongN
   if (cx === undefined || !Number.isFinite(cx)) return null;
   return (
     <>
-      <line x1={cx} x2={cx} y1={area.y} y2={area.y + area.height} stroke="var(--tint)" strokeWidth={2} data-testid="replay-mark" />
+      <line x1={cx} x2={cx} y1={area.y} y2={area.y + area.height} stroke="var(--tint)" strokeWidth={2} />
       {alongNm && atNm !== null && <NowMarks nm={atNm} alt={mix(a.alt_ft, b.alt_ft) ?? 0} kt={mix(a.gs_kt, b.gs_kt)} />}
     </>
   );
@@ -257,7 +257,7 @@ function NowMarks({ nm, alt, kt }: { nm: number; alt: number; kt: number | null 
     lower.middle = upper.middle + MARK_LINE_PX;
   }
   return (
-    <g data-testid="dry-run-now" aria-hidden>
+    <g aria-hidden>
       {placed.map((m) => (
         <g key={m.key} data-mark={m.key}>
           <circle cx={cx} cy={m.dot} r={3.5} fill={m.colour} stroke="var(--background)" strokeWidth={1.5} />

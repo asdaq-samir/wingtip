@@ -113,7 +113,7 @@ export function QuickAction({
 }: {
   label: string;
   onClick: () => void;
-  testId: string;
+  testId?: string;
   wide?: boolean;
 }) {
   const tap = (event: MouseEvent) => {

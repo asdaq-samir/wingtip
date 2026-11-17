@@ -57,11 +57,7 @@ function rowOf(f: FlightSummary) {
         {feet(f.cruiseAltitudeFt)}
         {f.totalDistanceNm != null && ` · ${nm(f.totalDistanceNm)}`} · saved {dayMonthYear(new Date(f.createdAt))}
         {/* The risk assessment it was saved with (lib/frat). */}
-        {f.risk && (
-          <span className={cn("block", LEVEL_TONE[f.risk.level as RiskLevel])} data-testid="flight-risk">
-            Risk {riskLine(f.risk).toLowerCase()}
-          </span>
-        )}
+        {f.risk && <span className={cn("block", LEVEL_TONE[f.risk.level as RiskLevel])}>Risk {riskLine(f.risk).toLowerCase()}</span>}
         {f.notes && (
           <span className="line-clamp-2 block whitespace-pre-line" data-testid="saved-flight-notes-shown">
             {f.notes}
@@ -124,9 +120,7 @@ function SavedFlightRow({ f, vm }: { f: FlightSummary; vm: SavedFlightsModel }) 
         // A link that opens it read-only, until Stop Sharing, with the
         // airplane's N-number where it has one (the owner, 2026-11-11).
         { label: "Share", icon: <Share />, testId: "saved-flight-share", onSelect: () => void vm.shareFlight(f) },
-        ...(f.share
-          ? [{ label: "Stop Sharing", icon: <Link2Off />, testId: "saved-flight-stop-sharing", onSelect: () => void vm.stopSharing(f) }]
-          : []),
+        ...(f.share ? [{ label: "Stop Sharing", icon: <Link2Off />, onSelect: () => void vm.stopSharing(f) }] : []),
         { label: "Remove", icon: <Trash2 />, destructive: true, onSelect: remove, testId: "saved-flight-delete" },
       ]}
     >

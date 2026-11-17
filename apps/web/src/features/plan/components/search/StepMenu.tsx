@@ -21,7 +21,7 @@ export default function StepMenu({
   words: (v: number | null) => string;
   onPick: (v: number | null) => void;
   trigger: ReactElement;
-  testId: string;
+  testId?: string;
 }) {
   return (
     <DropdownMenu>
@@ -30,7 +30,7 @@ export default function StepMenu({
         <DropdownMenuRadioGroup value={value == null ? "any" : String(value)} onValueChange={(v) => onPick(v === "any" ? null : Number(v))}>
           <DropdownMenuRadioItem value="any">{words(null)}</DropdownMenuRadioItem>
           {steps.map((s) => (
-            <DropdownMenuRadioItem key={s} value={String(s)} data-testid={`${testId}-${s}`}>
+            <DropdownMenuRadioItem key={s} value={String(s)} data-testid={testId && `${testId}-${s}`}>
               {words(s)}
             </DropdownMenuRadioItem>
           ))}

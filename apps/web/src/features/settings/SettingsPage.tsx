@@ -95,13 +95,13 @@ function MapGroup() {
     };
   }, [wanted, card]);
   return (
-    <div ref={at} className="scroll-mt-16" data-testid="settings-map">
+    <div ref={at} className="scroll-mt-16">
       <ListGroup title="Map">
         <AirportWeatherRow />
         {/* The glide ring about own ship, off unless turned on (GlideRingGl; the owner, 2026-11-09). */}
         <GlideRingRow />
         {/* Own ship's path flown (OwnTrailGl), put away here: it starts again with the next flight. */}
-        <ListRow title="Clear Your Path" disabled={!trailed} onClick={clearOwnTrail} data-testid="own-trail-clear" />
+        <ListRow title="Clear Your Path" disabled={!trailed} onClick={clearOwnTrail} />
       </ListGroup>
     </div>
   );
@@ -135,8 +135,8 @@ function InFlightGroup() {
   const [alertMode] = useAlertMode();
   return (
     <ListGroup title="In Flight">
-      <PageRow page="alerts" title="Alerts" value={ALERT_MODES.find((m) => m.value === alertMode)?.label} testId="alerts-row" />
-      <PageRow page="atc" title="ATC" testId="atc-row" />
+      <PageRow page="alerts" title="Alerts" value={ALERT_MODES.find((m) => m.value === alertMode)?.label} />
+      <PageRow page="atc" title="ATC" />
     </ListGroup>
   );
 }

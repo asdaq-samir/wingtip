@@ -116,7 +116,7 @@ function StopFieldCard({
         ))}
       </CardContent>
       {photos && (
-        <CardContent className="grid grid-cols-3 gap-2 px-4 pt-1" data-testid="stops-pictures">
+        <CardContent className="grid grid-cols-3 gap-2 px-4 pt-1">
           <div className="relative aspect-square">
             <PhotoSlide src={photos.aerial_url} alt="" onOpen={() => onOpenField(field.ident)} label={`${field.ident} from the air`} />
           </div>
@@ -205,7 +205,6 @@ export default function StopsCard({
           filter, at its top. */}
       <CardHeadRow
         name="Stops"
-        nameTestId="stops-name"
         sub={
           data && pending === 0
             ? fields.length === 0
@@ -310,7 +309,6 @@ export default function StopsCard({
                     Looking at {pending} more {pending === 1 ? "airport" : "airports"}…
                   </>
                 }
-                data-testid="stops-pending"
               />
             )}
           </ListGroup>

@@ -73,14 +73,7 @@ export function SignedRow({
       />
       <CollapsibleContent>
         <SignedWords text={e.text} signature={e.signature} />
-        {onVoid && !e.voided && (
-          <ListRow
-            title={<span className="text-destructive">Void it</span>}
-            disabled={voiding}
-            onClick={onVoid}
-            data-testid="signed-void"
-          />
-        )}
+        {onVoid && !e.voided && <ListRow title={<span className="text-destructive">Void it</span>} disabled={voiding} onClick={onVoid} />}
       </CollapsibleContent>
     </Collapsible>
   );
@@ -205,11 +198,7 @@ export function SignForm({
         />
         <ListRow title="Cancel" onClick={onCancel} />
       </ListGroup>
-      {sign.error && (
-        <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="sign-problem">
-          {sign.error.message}
-        </FieldError>
-      )}
+      {sign.error && <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{sign.error.message}</FieldError>}
     </div>
   );
 }

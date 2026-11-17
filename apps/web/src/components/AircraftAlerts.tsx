@@ -108,7 +108,7 @@ export default function AircraftAlerts() {
           Show
         </Button>
         {/* The app's one close (CloseButton), as every card's and sheet's. */}
-        <CloseButton label="Dismiss" className="shrink-0" onClick={() => dismiss(alert.id)} data-testid="aircraft-alert-dismiss" />
+        <CloseButton label="Dismiss" className="shrink-0" onClick={() => dismiss(alert.id)} />
       </Alert>
     </div>
   ));

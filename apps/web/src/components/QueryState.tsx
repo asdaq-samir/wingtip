@@ -115,7 +115,6 @@ export function SkeletonRows({ rows, lines = 1, fetching }: { rows: number; line
       {Array.from({ length: rows }, (_, i) => (
         <ListRow
           key={i}
-          data-testid="skeleton-row"
           title={
             <span role={i === 0 ? "status" : undefined}>
               {i === 0 && <span className="sr-only">{fetching}</span>}

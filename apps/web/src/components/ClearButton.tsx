@@ -18,7 +18,7 @@ export default function ClearButton({
   onClear,
   label = "Clear",
   className,
-  testId = "field-clear",
+  testId,
   // Base UI's own words for the button ("x"): the cross is drawn here.
   children: _children,
   ...props

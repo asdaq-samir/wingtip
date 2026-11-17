@@ -109,11 +109,7 @@ export default function ApproachDebriefs({
   }
   const shown = only ? flown.filter((d) => d.id === only) : flown;
   if (shown.length === 0) {
-    return none ? (
-      <p className={cn("px-1 text-muted-foreground", TEXT.prose)} data-testid="approach-debrief-none">
-        {none}
-      </p>
-    ) : null;
+    return none ? <p className={cn("px-1 text-muted-foreground", TEXT.prose)}>{none}</p> : null;
   }
   return (
     <div className="space-y-4" data-testid="approach-debrief">

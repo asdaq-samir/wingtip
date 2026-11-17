@@ -47,7 +47,6 @@ export function NewStopCard({
             value=""
             label="New stop"
             placeholder="Airport or waypoint"
-            testId="route-new-stop-ident"
             focused
             wide
             fixes
@@ -62,7 +61,7 @@ export function NewStopCard({
           in, as the box's Suggested were; held off the text box's blur,
           which would take the empty card away before the tap. */}
       {via && via.length > 0 && (
-        <ul className="mt-2 pl-9.5" aria-label="Suggested" data-testid="route-new-stop-via">
+        <ul className="mt-2 pl-9.5" aria-label="Suggested">
           {via.map((d) => (
             <li key={d.ident}>
               <Button
@@ -71,7 +70,6 @@ export function NewStopCard({
                 type="button"
                 onPointerDown={(e) => e.preventDefault()}
                 onClick={() => onCommit(d.ident)}
-                data-testid="picker-suggestion"
                 className={cn(
                   "flex min-h-11 w-full items-center gap-2 pr-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 )}
@@ -190,7 +188,7 @@ export function Step({
             <span className="flex min-w-0 items-center gap-1">
               {rename ? (
                 <Name className="min-w-0">
-                  <CardIdent value={title} label={`${title}, change`} testId="step-ident" suggest={false} onCommit={rename} bold={field} />
+                  <CardIdent value={title} label={`${title}, change`} suggest={false} onCommit={rename} bold={field} />
                 </Name>
               ) : (
                 <Name className={cn("truncate", field ? "font-semibold" : "font-normal", TEXT.row)}>{title}</Name>
@@ -218,7 +216,6 @@ export function AddStopRow({ disabled, onClick }: { disabled: boolean; onClick: 
       variant="ghost"
       disabled={disabled}
       onClick={onClick}
-      data-testid="route-add-stop"
       className={cn("h-11 w-full justify-start gap-2.5 px-0 hover:bg-transparent", TEXT.row)}
     >
       <span className="grid w-7 shrink-0 place-items-center">

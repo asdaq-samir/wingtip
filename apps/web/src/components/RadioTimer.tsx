@@ -14,7 +14,7 @@ export function Timer({ from, onStop }: { from: number; onStop: () => void }) {
       <span className={cn("font-semibold tabular-nums", TEXT.detail)} data-testid="radio-timer-time">
         Timer {stopwatch(Math.floor(Math.max(0, now - from) / 1000))}
       </span>
-      <Button size="sm" variant="secondary" className={CHIP} onClick={onStop} data-testid="radio-timer-stop">
+      <Button size="sm" variant="secondary" className={CHIP} onClick={onStop}>
         Stop
       </Button>
     </div>

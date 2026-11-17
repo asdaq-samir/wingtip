@@ -16,11 +16,7 @@ export default function DirectStrip({ ident, onDevice = false, onCancel }: { ide
       <span className="flex min-w-0 flex-1 flex-col">
         <span className={cn("truncate font-semibold text-foreground", TEXT.row)}>Direct to {ident}</span>
         {/* No connection: the leg there the engine's, here (directOnDevice). */}
-        {onDevice && (
-          <span className={cn("truncate text-muted-foreground", TEXT.detail)} data-testid="direct-on-device">
-            Worked out on this device
-          </span>
-        )}
+        {onDevice && <span className={cn("truncate text-muted-foreground", TEXT.detail)}>Worked out on this device</span>}
       </span>
       <Button
         variant="link"

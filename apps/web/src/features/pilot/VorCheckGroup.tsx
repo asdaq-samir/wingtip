@@ -117,7 +117,6 @@ export function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
             max={today}
             {...ariaInvalid(`${id}-on`, errors.checkedOn?.message)}
             aria-label="VOR check date"
-            data-testid="vor-check-date"
           />
         </RowField>
       </ListRow>
@@ -129,7 +128,6 @@ export function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
             <PullDown
               label="How the VOR was checked"
               value={field.value}
-              testId="vor-check-kind"
               options={VOR_CHECKS.map((k) => ({
                 value: k.value,
                 label: `${k.label} (±${callEngine("vor_check_limit_deg", { kind: k.value })}°)`,

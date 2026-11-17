@@ -171,7 +171,7 @@ export default function PlanSidebar({
           kept while FPL is up, as it was left. */}
       <TabKept away={cardUp || nearOpen}>
         {favoritesOpen ? (
-          <TabPage testId="favorites-page">
+          <TabPage>
             <Waits>
               <FavoritesList
                 home={home}
@@ -195,7 +195,7 @@ export default function PlanSidebar({
             </Waits>
           </TabPage>
         ) : airportRecentsOpen && !query ? (
-          <TabPage testId="airport-recents-list">
+          <TabPage>
             <RecentsPage
               onBack={closeList}
               onPick={(airport) => {
@@ -208,11 +208,11 @@ export default function PlanSidebar({
             />
           </TabPage>
         ) : routeRecentsOpen ? (
-          <TabPage testId="route-recents-list">
+          <TabPage>
             <RecentRoutesPage onBack={closeList} />
           </TabPage>
         ) : savedOpen ? (
-          <TabPage testId="saved-flights">
+          <TabPage>
             <Waits>
               <SavedFlights onBack={closeSaved} />
             </Waits>
@@ -220,7 +220,7 @@ export default function PlanSidebar({
         ) : model.typed || model.direct || (model.pick && model.does.length > 0) ? (
           // A search sent, its results, else the suggestions: each its own scroll box (one scrolling rule);
           // a picker's ask with a row before anything is typed too (the departure's My Position).
-          <TabPage key={model.sent ? "results" : "suggestions"} testId="search-page">
+          <TabPage key={model.sent ? "results" : "suggestions"}>
             <Waits>{model.sent ? <SearchResultsPage /> : <OneSearchResults model={model} />}</Waits>
           </TabPage>
         ) : (

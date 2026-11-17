@@ -161,7 +161,7 @@ function Replay() {
     <ListGroup>
       <div className="px-3 py-2">
         <ReplayTimeline label="Replay" speeds={REPLAY_SPEEDS} onStop={stopPastFlight} testId="replay">
-          {threeD && <CameraMenu testId="replay-camera" />}
+          {threeD && <CameraMenu />}
         </ReplayTimeline>
       </div>
       {points.length > 1 && <ReplayChart points={points} />}
@@ -178,7 +178,7 @@ function ReplayChart({ points }: { points: PastFlightPoint[] }) {
   const box = useRef<HTMLDivElement>(null);
   const height = useHalfFit(box);
   return (
-    <div className="px-1 pt-1 pb-2" data-testid="track-log-chart">
+    <div className="px-1 pt-1 pb-2">
       <p className={cn("flex justify-between px-3 pb-1 tabular-nums", TEXT.detail)}>
         <span className="text-muted-foreground">{here ? clockTime(when(here.t)) : "Altitude, ft · ground speed, kt"}</span>
         {here && (
@@ -222,11 +222,7 @@ function ApproachRow({ ident, points }: { ident: string; points: PastFlightPoint
   if (!asked) {
     return (
       <ListGroup>
-        <ListRow
-          title={<span className="text-[var(--tint)]">Debrief its approach into {ident}</span>}
-          onClick={() => setAsked(true)}
-          data-testid="past-flight-approach"
-        />
+        <ListRow title={<span className="text-[var(--tint)]">Debrief its approach into {ident}</span>} onClick={() => setAsked(true)} />
       </ListGroup>
     );
   }

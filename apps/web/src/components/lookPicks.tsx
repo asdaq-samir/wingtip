@@ -50,7 +50,7 @@ const APPEARANCES: Record<Appearance, [theme: "system" | "light" | "dark", night
 };
 
 const APPEARANCE_OPTIONS: PullDownOption<Appearance>[] = [
-  { value: "system", label: "System", testId: "theme-system" },
+  { value: "system", label: "System" },
   { value: "light", label: "Light", testId: "theme-light" },
   { value: "dark", label: "Dark", testId: "theme-dark" },
   { value: "dark-bright", label: "Dark + Bright", testId: "theme-dark-bright" },
@@ -97,8 +97,8 @@ export function AppearanceLayerTile() {
 }
 
 const SUNLIGHT_OPTIONS: PullDownOption<ChartLight>[] = [
-  { value: "auto", label: "Auto", testId: "sunlight-auto" },
-  { value: "on", label: "On", testId: "sunlight-on" },
+  { value: "auto", label: "Auto" },
+  { value: "on", label: "On" },
   { value: "off", label: "Off", testId: "sunlight-off" },
 ];
 

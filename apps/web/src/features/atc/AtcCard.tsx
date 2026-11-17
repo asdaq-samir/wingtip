@@ -18,7 +18,7 @@ const CHIP = `${CAPSULE_HIT} shrink-0 text-tint`;
 function ReadbackResult({ check }: { check: NonNullable<Card["readback"]>["check"] }) {
   if (!check.items.length) {
     return (
-      <p className={cn("flex items-center gap-1.5 text-muted-foreground", TEXT.note)} role="status" data-testid="atc-readback">
+      <p className={cn("flex items-center gap-1.5 text-muted-foreground", TEXT.note)} role="status">
         <Check className="size-4 shrink-0" aria-hidden="true" />
         Readback complete
       </p>
@@ -26,7 +26,7 @@ function ReadbackResult({ check }: { check: NonNullable<Card["readback"]>["check
   }
   const items = [...check.items].sort((a, b) => Number(b.required) - Number(a.required));
   return (
-    <ul className={cn("flex flex-col gap-0.5 text-caution-ink", TEXT.note)} role="status" data-testid="atc-readback">
+    <ul className={cn("flex flex-col gap-0.5 text-caution-ink", TEXT.note)} role="status">
       {items.map((i) => (
         <li key={i.item + i.cleared} className="flex items-start gap-1.5">
           <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
@@ -76,13 +76,11 @@ export default function AtcCard({
     >
       <div className="flex items-start gap-2">
         <Radio className="mt-1 size-5 shrink-0 text-tint" aria-hidden="true" />
-        <p className={cn("min-w-0 flex-1 text-muted-foreground line-clamp-2", TEXT.note)} data-testid="atc-card-heard">
-          {card.text}
-        </p>
-        <CloseButton label="Put away" onClick={onClose} data-testid="atc-card-close" />
+        <p className={cn("min-w-0 flex-1 text-muted-foreground line-clamp-2", TEXT.note)}>{card.text}</p>
+        <CloseButton label="Put away" onClick={onClose} />
       </div>
       {card.items.length > 0 && (
-        <ul className="flex flex-col gap-2 py-1 pr-2" data-testid="atc-items">
+        <ul className="flex flex-col gap-2 py-1 pr-2">
           {card.items.map((item, index) => {
             const action = can(item);
             const done = card.set.includes(index);
@@ -91,12 +89,12 @@ export default function AtcCard({
                 <span className={cn("min-w-0 flex-1 font-semibold tabular-nums", TEXT.detail)}>{itemWords(item)}</span>
                 {action &&
                   (done ? (
-                    <span className={cn("flex shrink-0 items-center gap-1 text-muted-foreground", TEXT.note)} data-testid="atc-item-done">
+                    <span className={cn("flex shrink-0 items-center gap-1 text-muted-foreground", TEXT.note)}>
                       <Check className="size-4" aria-hidden="true" />
                       Set
                     </span>
                   ) : (
-                    <Button size="sm" variant="secondary" className={CHIP} data-testid={`atc-set-${action}`} onClick={() => onAct(index)}>
+                    <Button size="sm" variant="secondary" className={CHIP} onClick={() => onAct(index)}>
                       {ACTION_LABEL[action]}
                     </Button>
                   ))}
@@ -120,7 +118,7 @@ export default function AtcCard({
       </div>
       {!card.awaiting && (
         <div className="flex flex-wrap gap-2 pt-1 pr-2">
-          <Button size="sm" variant="secondary" className={CHIP} data-testid="atc-read-back" onClick={onReadBack}>
+          <Button size="sm" variant="secondary" className={CHIP} onClick={onReadBack}>
             {card.readback ? "Read Back Again" : "Read Back"}
           </Button>
         </div>

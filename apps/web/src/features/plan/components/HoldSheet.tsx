@@ -64,7 +64,7 @@ export default function HoldSheet({
         align="center"
         className="flex w-80 flex-col gap-3 p-3"
         data-testid="hold-sheet"
-        action={<CloseButton onClick={onClose} data-testid="hold-close" />}
+        action={<CloseButton onClick={onClose} />}
       >
         {at && <HoldForm key={at.fix} at={at} onSet={onSet} />}
       </ResponsivePopoverContent>
@@ -115,7 +115,6 @@ function HoldForm({ at, onSet }: { at: HoldAt; onSet: (fix: string, hold: Hold |
               label="The course is"
               value={way}
               onChange={(v) => setWay(v as "in" | "out")}
-              testId="hold-way"
               options={[
                 { value: "in", label: "Inbound" },
                 { value: "out", label: "Outbound" },
@@ -154,7 +153,6 @@ function HoldForm({ at, onSet }: { at: HoldAt; onSet: (fix: string, hold: Hold |
               label="Legs by"
               value={timed ? "time" : "distance"}
               onChange={(v) => setTimed(v === "time")}
-              testId="hold-legs"
               options={[
                 { value: "time", label: "Time" },
                 { value: "distance", label: "Distance" },
@@ -164,7 +162,7 @@ function HoldForm({ at, onSet }: { at: HoldAt; onSet: (fix: string, hold: Hold |
               <PullDown
                 label="Leg time"
                 value={`${legMin}`}
-                options={LEG_MIN.map((m) => ({ value: `${m}`, label: `${m} min`, testId: `hold-leg-min-${m}` }))}
+                options={LEG_MIN.map((m) => ({ value: `${m}`, label: `${m} min` }))}
                 onChange={(v) => setLegMin(Number(v))}
                 testId="hold-leg-min"
               />
@@ -172,7 +170,7 @@ function HoldForm({ at, onSet }: { at: HoldAt; onSet: (fix: string, hold: Hold |
               <PullDown
                 label="Leg distance"
                 value={`${legNm}`}
-                options={LEG_NM.map((n) => ({ value: `${n}`, label: `${n} nm`, testId: `hold-leg-nm-${n}` }))}
+                options={LEG_NM.map((n) => ({ value: `${n}`, label: `${n} nm` }))}
                 onChange={(v) => setLegNm(Number(v))}
                 testId="hold-leg-nm"
               />

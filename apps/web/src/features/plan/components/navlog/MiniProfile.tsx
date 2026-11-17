@@ -197,7 +197,6 @@ export default memo(function MiniProfile({
                 strokeWidth={2}
                 strokeDasharray="6 4"
                 vectorEffect="non-scaling-stroke"
-                data-testid="mini-profile-preview"
               />
             )}
           </g>
@@ -233,7 +232,6 @@ export default memo(function MiniProfile({
               aria-hidden="true"
               className="pointer-events-none absolute left-0 -translate-y-1/2 pl-0.5 text-muted-foreground opacity-[calc(1-var(--roll-on,0)*0.4)]"
               style={{ top: `calc((1 - ${ft} / var(--scale-top, var(--base-top))) * 100%)` }}
-              data-testid="profile-ruler-mark"
             >
               {altFt(ft)}
             </span>
@@ -275,7 +273,6 @@ export default memo(function MiniProfile({
             )}
             style={{ top: ruler ? `${(y(preview ?? cruise) / H) * 100}%` : `calc(${(y(preview ?? cruise) / H) * 100}% + 3px)` }}
             aria-hidden="true"
-            data-testid="mini-profile-cruise"
           >
             {/* The owner's FL-055, as the altitude field and the wheel write it
               (lib/format flightLevel; the FPL audit's A7); a reader hears the
@@ -289,7 +286,7 @@ export default memo(function MiniProfile({
       <span className="flex justify-between" aria-hidden="true">
         <span>0</span>
         <span>{miles(profile.length_nm / 2)}</span>
-        <span data-testid="mini-profile-length">
+        <span>
           {miles(profile.length_nm)} nm{procedureNm >= 0.5 && ` + ${one(procedureNm)} ${procedureWord}`}
         </span>
       </span>

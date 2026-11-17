@@ -29,10 +29,7 @@ export default function SheetFooter() {
     })),
   ];
   return (
-    <footer
-      className={cn("flex flex-col items-center gap-3 px-4 pt-6 pb-4 text-center text-muted-foreground", TEXT.note)}
-      data-testid="sheet-footer"
-    >
+    <footer className={cn("flex flex-col items-center gap-3 px-4 pt-6 pb-4 text-center text-muted-foreground", TEXT.note)}>
       <nav aria-label="Legal" className="flex flex-wrap items-center justify-center gap-x-2 gap-y-6">
         {links.map((l) => (
           <Fragment key={l.key}>

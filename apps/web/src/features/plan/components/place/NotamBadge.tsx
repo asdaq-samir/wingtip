@@ -63,7 +63,7 @@ export function NotamSheet({ notams, ident, onClose }: { notams: FieldNotam[]; i
       </SheetCard>
     );
   return (
-    <SheetCard title="NOTAMs" description={ident} onClose={onClose} testId="place-notams-on">
+    <SheetCard title="NOTAMs" description={ident} onClose={onClose}>
       <div className="flex flex-col pb-6">
         <NotamRows notams={notams} ident={ident} state={null} />
       </div>

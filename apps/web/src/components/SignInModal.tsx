@@ -88,10 +88,7 @@ export default function SignInModal({
       description="Save your airplanes and filed flights to your own account."
       trigger={
         inline ? (
-          <BaseButton
-            data-testid="sign-in-inline"
-            className="relative font-semibold text-tint outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring"
-          >
+          <BaseButton className="relative font-semibold text-tint outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring">
             Sign in
           </BaseButton>
         ) : hero ? (

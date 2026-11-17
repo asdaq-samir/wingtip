@@ -46,13 +46,12 @@ export default function RouteSplit({
   const many = stops.length;
   return (
     <div className={cn("flex h-[3.25rem] min-w-0 flex-1 items-center rounded-full", PANEL_FIELD_FILL)} data-testid="route-split">
-      <End value={dep} name={depName} onChange={onDep} label="Departure" testId="route-split-departure">
+      <End value={dep} name={depName} onChange={onDep} label="Departure">
         <Mark round filled={!!dep} />
       </End>
       <BaseButton
         onClick={onStops}
         disabled={!dep || !dest}
-        data-testid="route-split-stops"
         aria-label={many ? `${many} ${many === 1 ? "stop" : "stops"}: ${stops.map(pointName).join(", ")}. Change` : "Add a stop"}
         className={cn(
           "relative flex h-7 shrink-0 items-center gap-1 rounded-full px-2 font-semibold text-tint outline-none after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring disabled:text-muted-foreground",
@@ -68,7 +67,7 @@ export default function RouteSplit({
           </>
         )}
       </BaseButton>
-      <End value={dest} name={destName} onChange={onDest} label="Destination" testId="route-split-destination" end>
+      <End value={dest} name={destName} onChange={onDest} label="Destination" end>
         <Mark filled={!!dest} />
       </End>
     </div>
@@ -88,7 +87,7 @@ function End({
   name?: string | null;
   onChange: (ident: string) => void;
   label: string;
-  testId: string;
+  testId?: string;
   /** The destination's, its words at the right, its mark after them. */
   end?: boolean;
   /** Its mark. */
