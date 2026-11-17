@@ -278,6 +278,21 @@ public class PlannerClient {
                         .toList());
     }
 
+    /**
+     * The first day an instructor's page lists what they signed (GET
+     * /api/pilot/instructor-records-since, the engine's
+     * instructor_records_since): 3 years before {@code today}, as 14 CFR
+     * 61.189(c) has them keep the records.
+     *
+     * @throws PlannerUnavailableException when the planner cannot be reached or refuses
+     */
+    public LocalDate instructorRecordsSince(LocalDate today) {
+        return rule(
+                "how far back an instructor's records go",
+                () -> planner.instructorRecordsSince(today.toString()),
+                d -> d);
+    }
+
     /** The endorsement of {@code code} in the catalogue, if there is one. */
     public Optional<EndorsementKindDto> endorsementKind(String code) {
         return endorsementKinds().stream().filter(k -> k.code().equals(code)).findFirst();

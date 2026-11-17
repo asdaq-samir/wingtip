@@ -422,6 +422,11 @@ async def experience(*, body: dict[str, Any]) -> Any:
     return await _send('POST', '/api/pilot/experience', query={}, body=body, headers={})
 
 
+async def instructor_records_since(*, today: str) -> Any:
+    """GET /api/pilot/instructor-records-since: Instructor Records Since"""
+    return await _send('GET', '/api/pilot/instructor-records-since', query={'today': today}, body=None, headers={})
+
+
 async def places_search(*, q: str | None = None) -> Any:
     """GET /api/places/search: Places Search"""
     return await _send('GET', '/api/places/search', query={'q': q}, body=None, headers={})

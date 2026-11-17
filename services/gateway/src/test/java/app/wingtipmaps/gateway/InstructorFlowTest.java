@@ -100,6 +100,10 @@ class InstructorFlowTest {
 
     @org.junit.jupiter.api.BeforeEach
     void theEnginesAnswer() {
+        // The instructor's page lists 3 years back (14 CFR 61.189(c),
+        // instructor_records_since, held in the engine to shellFigures.json).
+        org.mockito.BDDMockito.given(planner.instructorRecordsSince(any()))
+                .willAnswer(ask -> ((LocalDate) ask.getArgument(0)).minusYears(3));
         org.mockito.BDDMockito.given(planner.endorsements(any(), any())).willAnswer(ask -> {
             List<PlannerHeldEndorsement> held = ask.getArgument(0);
             LocalDate flightOn = ask.getArgument(1);

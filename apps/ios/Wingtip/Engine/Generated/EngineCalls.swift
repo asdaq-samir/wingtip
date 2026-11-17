@@ -1075,6 +1075,11 @@ extension Engine {
         try Self.rule("inspections_due", EngineContract.InspectionsDueInput(annualOn: annualOn, eltOn: eltOn, staticCheckOn: staticCheckOn, transponderCheckOn: transponderCheckOn, hundredHourAtHours: hundredHourAtHours, vorCheck: vorCheck))
     }
 
+    /// The first day an instructor's page lists what they signed: the same day 3 years before today, as 14 CFR 61.189(c) has an instructor keep their records "for at least 3 years" (a 29 February the 28th in a year without one).
+    static func instructorRecordsSince(today: String) throws -> String {
+        try Self.rule("instructor_records_since", EngineContract.InstructorRecordsSinceInput(today: today))
+    }
+
     /// Whether a magnetic course is eastbound, 0 to 179 degrees (14 CFR 91.159(a)).
     static func isEastbound(magneticCourseDeg: Double) throws -> Bool {
         try Self.rule("is_eastbound", EngineContract.IsEastboundInput(magneticCourseDeg: magneticCourseDeg))
@@ -1108,6 +1113,11 @@ extension Engine {
     /// A field's lighting remarks read for a pilot (the Chart Supplement's, NASR APT_RMK.csv LGT_SKED and BCN_LGT_SKED): each system named, by its code in the Chart Supplement legend (Airport Lighting, Visual Glideslope Indicators) and its name in AIM 2-1 (approach lights 2-1-1, visual glideslope indicators 2-1-2, REIL 2-1-3, runway edge lights by intensity 2-1-4, in-runway lighting 2-1-5, the beacon 2-1-9, taxiway lights 2-1-10), the runways it serves as written, and how it is turned on: keying the mic on the CTAF or a frequency (AIM 2-1-8, Pilot Control of Airport Lighting), when the tower is closed, at a preset intensity a pilot turns up, on a schedule (sunset to sunrise), or on all the time; the contractions written out (JO 7340.2 and the Chart Supplement's Abbreviations). A sentence not read in full is a note, its known contractions written out and every other word kept as written, never guessed. standard_keying where a light is the pilot's and the remarks give no count of clicks of their own: AIM 2-1-8's 7 (highest), 5 (medium or lower) and 3 (lowest) within 5 seconds.
     static func lightingRead(lighting: [String], beacon: [String]? = nil) throws -> EngineContract.LightingReadAnswer {
         try Self.rule("lighting_read", EngineContract.LightingReadInput(lighting: lighting, beacon: beacon))
+    }
+
+    /// How long an answer from one of the FAA's SWIM feeds (the planner's /api/live/*) is fresh and how often a screen showing it asks again: a runway's RVR each minute, as it is updated (AIM 7-1-13), the ITWS alerts and special activity airspace's SFDPS status as often (the app's choice), the Command Center's programs every five minutes, and the D-ATIS and a flight's tower departures fresh for five minutes and not polled (the app's choice).
+    static func liveFeedRefresh(feed: String) throws -> EngineContract.LiveFeedRefreshAnswer {
+        try Self.rule("live_feed_refresh", EngineContract.LiveFeedRefreshInput(feed: feed))
     }
 
     /// A logbook CSV (ForeFlight's export or this logbook's own) read into the gateway's LogbookEntryRequest entries, camelCase, and the lines skipped with why; landings as 14 CFR 61.57(a) and (b) count them. Air time (not a 61.51(b) column) is this logbook's AirTime, else ForeFlight's TimeOff to TimeOn, else 0 (not known); an entry read from a file is never from a track.
@@ -1853,6 +1863,11 @@ extension Engine {
     /// Every 500 ft from from_ft (1,000 ft where not given), rounded up to a step, to 17,500 ft, the highest VFR cruising altitude under Class A (91.159(a), 71.33(a)): the altitudes a wheel offers.
     static func vfrAltitudes(fromFt: Double? = nil) throws -> [Double] {
         try Self.rule("vfr_altitudes", EngineContract.VfrAltitudesInput(fromFt: fromFt))
+    }
+
+    /// The hours ahead a search's "VFR at…" menu offers, in order: each within the 24 hours a TAF covers (FAA-H-8083-28B 27.4.1), the steps the app's choice.
+    static func vfrAtHours() throws -> [Double] {
+        try Self.rule("vfr_at_hours", EngineContract.VfrAtHoursInput())
     }
 
     /// The surface-area minimums (14 CFR 91.155(c), (d)), which the planner holds every route to: no VFR under a 1,000 ft ceiling or in under 3 statute miles within a surface area of controlled airspace. Not the least VFR ever asks (Class G at or below 1,200 ft above the surface by day: 1 sm and clear of clouds, 91.155(a)).

@@ -70,9 +70,6 @@ public class InstructorService {
 
     private static final Logger log = LoggerFactory.getLogger(InstructorService.class);
 
-    /** How long an instructor keeps the record of what they signed:
-     *  "at least 3 years" (14 CFR 61.189(c)). */
-    static final int RECORD_YEARS = 3;
     /** Instructors a student may ask in a day: each ask is an email to an
      *  address of the student's choosing. */
     static final int ASKS_A_DAY = 5;
@@ -410,8 +407,8 @@ public class InstructorService {
                 reviews.findByInstructorIdAndAnsweredAtIsNullOrderByAskedAt(pilot.getId()).stream()
                         .map(this::reviewOf)
                         .toList();
-        Instant since = LocalDate.ofInstant(now, ZoneOffset.UTC)
-                .minusYears(RECORD_YEARS)
+        // As far back as 14 CFR 61.189(c) has them keep it: the engine's.
+        Instant since = planner.instructorRecordsSince(LocalDate.ofInstant(now, ZoneOffset.UTC))
                 .atStartOfDay(ZoneOffset.UTC)
                 .toInstant();
         return new InstructorDto(

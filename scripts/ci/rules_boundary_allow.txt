@@ -3,30 +3,11 @@
 # into the engine (engine/README.md) and its line taken out; issue #482
 # lists what is still to move.
 
-# The owner's FL-045 way of writing a cruise altitude (2026-11-04): how a
-# figure is written stays with each app (CLAUDE.md). The web's flightLevel
-# moved from lib/units.ts to lib/format/figures.ts in the lib regroup; it
-# writes the altitude it is given and decides nothing (the engine's
-# words_flight_level writes it the same way for the phones and the planner).
-apps/web/src/lib/format/figures.ts 1
+# The owner's FL-045 way of writing a cruise altitude (2026-11-04): the
+# planner's Go / No-Go words write the altitude it is given and decide
+# nothing (the engine's words_flight_level writes it the same way for the
+# web, the phones and the planner).
 services/planner/app/gonogo/words.py 1
-
-# A typed wrapper over the engine's wind_triangle, not a copy of it.
-apps/web/src/lib/diversion.ts 1
-
-# The airport card's hours: a day of hourly rows, a display span.
-apps/web/src/features/place/hourly.ts 1
-
-# How far back the instructor's page lists what they signed: 14 CFR
-# 61.189(c)'s three years of an instructor's own records, which the gateway
-# keeps (records are its job, not a figure a flight is planned by).
-services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 1
-
-# How often the web asks the planner again for the SWIM feeds' live
-# reports (react-query's staleTime and refetchInterval): a minute, as the
-# feeds are made (RVR each minute, AIM 7-1-13), a polling cadence. What a
-# report means for the flight is the engine's (rvr_check, the Go / No-Go).
-apps/web/src/lib/liveReports.ts 1
 
 # The sphere's figures where they are deliberately the host's own: the
 # planner's wingtip.geo (pyproj, which the engine's core::geo is held to)
@@ -71,9 +52,3 @@ services/planner/wingtip/terrain_fine.py 1
 # Appendix C) among wingtip.units' conversions: a unit's definition, which
 # glmp and the weather service's grids read a visibility in metres with.
 services/planner/wingtip/units.py 1
-
-# Cited lists of numbers, scanned since 2026-11-12 (the simplicity audit's
-# finding 7). The "VFR at…" menu's hours ahead: the choices a menu offers,
-# kept within a TAF's 24 hours (FAA-H-8083-28B 27.4.1); what the weather
-# then means for the flight is the engine's.
-apps/web/src/features/search/searchFilters.ts 1

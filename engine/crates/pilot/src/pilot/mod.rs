@@ -10,7 +10,8 @@
 //! CurrencyService and TrainingService), and what the records say of
 //! endorsements running out, a solo cross-country's 61.93(d) and the
 //! airplane's inspections (records, from the gateway's EndorsementRecords
-//! and CalendarMonths). The rest moved from the web
+//! and CalendarMonths), and how far back an instructor's page lists what
+//! they signed (instructor_records, 61.189(c)). The rest moved from the web
 //! app's lib/checklist, lib/logbookCsv, lib/handbookText,
 //! lib/endorsements and lib/checkride, which the iPhone app copied, so
 //! both read a pilot's text alike; `js` holds JavaScript's own reading of
@@ -23,6 +24,7 @@ pub mod currency;
 pub mod due_tone;
 pub mod endorsements;
 pub mod handbook;
+pub mod instructor_records;
 pub mod js;
 pub mod kinds;
 pub mod logbook;

@@ -6903,6 +6903,14 @@ object EngineContract {
     )
 
     @Serializable
+    data class InstructorRecordsSinceInput(
+        /**
+         * YYYY-MM-DD, UTC: the engine has no clock.
+         */
+        val today: String,
+    )
+
+    @Serializable
     data class IsaTempCInput(
         @SerialName("altitude_ft")
         val altitudeFt: Double,
@@ -7104,6 +7112,26 @@ object EngineContract {
          * Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
          */
         val beacon: List<String>? = null,
+    )
+
+    @Serializable
+    data class LiveFeedRefreshAnswer(
+        /**
+         * How long an answer is fresh, seconds.
+         */
+        @SerialName("fresh_s")
+        val freshS: Double,
+        /**
+         * How often a screen showing it asks again, seconds; null where it is not polled.
+         */
+        @SerialName("poll_s")
+        val pollS: Double? = null,
+        val source: String,
+    )
+
+    @Serializable
+    data class LiveFeedRefreshInput(
+        val feed: String,
     )
 
     @Serializable
@@ -12895,6 +12923,12 @@ object EngineContract {
         @SerialName("from_ft")
         val fromFt: Double? = null,
     )
+
+    @Serializable
+    class VfrAtHoursInput {
+        override fun equals(other: Any?): Boolean = other is VfrAtHoursInput
+        override fun hashCode(): Int = 0
+    }
 
     @Serializable
     data class VfrBasicMinimumsAnswer(

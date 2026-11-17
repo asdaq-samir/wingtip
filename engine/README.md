@@ -272,6 +272,16 @@ Then the callers switch to the name and the old copy is deleted.
   said only with at least 3 of their takeoffs and landings, 0.4 of them
   and no tie (the owner's figures), for the planner's airplane card and the
   Aircraft tab's "based at"; held to the web's fixture `usualBase.json`.
+- The few figures the shells kept for themselves are the engine's too,
+  held to the web's fixture `shellFigures.json`: how often the live SWIM
+  feeds are asked again (`live_feed_refresh`, `crates/weather`: RVR each
+  minute as it is updated, AIM 7-1-13; the rest the app's choice), the
+  hours a search's "VFR at…" offers (`vfr_at_hours`, within a TAF's 24,
+  FAA-H-8083-28B 27.4.1), and the first day an instructor's page lists
+  (`instructor_records_since`, `crates/pilot`: 3 years back, 14 CFR
+  61.189(c)), which the gateway asks through the planner (GET
+  /api/pilot/instructor-records-since). The web's cruise altitude,
+  "FL-045", is `words_flight_level`'s.
 - Runways, the wind on them and the traffic pattern are the engine's too
   (`crates/brief`): a wind along and across a runway and the end it favours,
   the runway flown (the pilot's pick, else into the wind, AC 90-66C

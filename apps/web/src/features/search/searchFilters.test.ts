@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { NearestAirport } from "../../lib/api/types";
-import { NO_FILTERS, filterFields, filtersOn, listWords, readQuery, vfrAtTime } from "./searchFilters";
+import shared from "../../lib/fixtures/shellFigures.json";
+import { NO_FILTERS, filterFields, filtersOn, listWords, readQuery, vfrAtSteps, vfrAtTime } from "./searchFilters";
 
 const field = (over: Partial<NearestAirport>): NearestAirport =>
   ({
@@ -115,5 +116,12 @@ describe("readQuery", () => {
     expect(readQuery("fuel")).toEqual({ near: null, filters: {} });
     expect(readQuery("jet fuel near KMSN with an approach")).toEqual({ near: "KMSN", filters: { fuel: ["Jet A"], approach: true } });
     expect(readQuery("grass strips")).toEqual({ near: null, filters: { surface: ["turf"] } });
+  });
+});
+
+describe("VFR at…'s hours", () => {
+  // The engine's (vfr_at_hours), each within a TAF's 24 (FAA-H-8083-28B 27.4.1).
+  it("are the shared fixture's", () => {
+    expect(vfrAtSteps()).toEqual(shared.vfr_at_hours.answer);
   });
 });
