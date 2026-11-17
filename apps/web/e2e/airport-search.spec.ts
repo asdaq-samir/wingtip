@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { openPanel, sideDrawer, slow } from "./helpers";
+import { openPanel, sideDrawer, slow, openRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 
 /**
@@ -97,6 +97,7 @@ test("a stop at the route box's arrow and the route's ends are picked in the one
   test.skip(info.project.name !== "mobile", "judged as a phone");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await openPanel(page);
+  await openRoute(page);
   await sideDrawer(page).getByRole("button", { name: "Add a stop between C81 and KDLH" }).click();
   const field = page.getByTestId("search-airports");
   await expect(field).toHaveAttribute("placeholder", "Search airports and waypoints");

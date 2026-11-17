@@ -128,6 +128,7 @@ export default function AltitudeGroup({
     // up"), or why there is none to show.
     <InlineField
       label="Cruise altitude"
+      caption="Cruise"
       testId="altitude-group"
       widest="FL-000"
       tabular

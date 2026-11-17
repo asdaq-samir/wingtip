@@ -30,7 +30,7 @@ const WINDS: { value: WindsAt; label: string }[] = [
  * settings?"), where there were eleven; two by two since 2026-11-14. The public fields, the route and
  * the plan's points, own ship and the TFRs have no switch: always drawn;
  * the route's checkpoints and the Class B chips are the route's ••• menu's
- * (ShowRouteAs). Which weather the Weather layer draws is its tile's own
+ * (RouteMapChoices). Which weather the Weather layer draws is its tile's own
  * menu, the ••• in its corner.
  */
 export default function MapLayers() {

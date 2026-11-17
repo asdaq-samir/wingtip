@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openPanel, settle, sideDrawer, slow } from "./helpers";
+import { openPanel, openRoute, settle, sideDrawer, slow } from "./helpers";
 
 /**
  * A clearance into the route, from the map's microphone: the
@@ -23,6 +23,7 @@ test("a clearance read is shown in its items and entered as the route", async ({
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   const box = sideDrawer(page).getByTestId("route-box");
   await page.getByTestId("radio-button").click();
   await expect(page.getByTestId("clearance-text")).toBeVisible();

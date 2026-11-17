@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { cardClose, grabberTo, openTab, settle, settled, sideDrawer, slow } from "./helpers";
+import { cardClose, grabberTo, openTab, settle, settled, sideDrawer, slow, openRoute } from "./helpers";
 import { tapMarkApart } from "./marks";
 import { pickAirplane } from "./startState";
 import { LIST, DRAWN } from "./procedureStubs";
@@ -15,6 +15,7 @@ test.describe("on the owner's phone's width, to a finger", () => {
     await page.goto("/app/plan?dep=C81&dest=ORD");
     await settle(page);
     await openTab(page, "Nav Log");
+    await openRoute(page);
     const trigger = page.locator("[data-testid=procedure-kind][data-kind=approach]");
     await expect(trigger).toBeVisible({ timeout: slow(20000) });
     // Once it has stopped moving: the route's rows coming in, the runway
@@ -59,6 +60,9 @@ test.describe("on the owner's phone's width, to a finger", () => {
     await page.goto("/app/plan?dep=C81&stops=KDLH&dest=KRFD&procs=KDLH:I09:DLH");
     await settle(page);
     // Half way, the sheet in from the screen's sides, its box the narrower.
+    await grabberTo(page, "half");
+    // Opened to edit, which raises the sheet for its room, and back at half.
+    await openRoute(page);
     await grabberTo(page, "half");
     const box = sideDrawer(page).getByTestId("route-box");
     await expect(box.getByTestId("route-procedure")).toBeVisible({ timeout: slow(10000) });
@@ -113,6 +117,7 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   await page.goto("/app/plan?dep=C81&dest=KDLH&procs=KDLH:I09:DLH");
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
   const approach = kdlh.locator("[data-testid=procedure-kind][data-kind=approach]");
   await expect(approach).toContainText("ILS 09 · DLH", { timeout: slow(20000) });
@@ -126,6 +131,7 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:)FAKER(&|$)/);
   await settled(sideDrawer(page));
   await openTab(page, "Nav Log");
+  await openRoute(page);
   await expect(approach).toContainText("ILS 09 · direct FAKER");
   // Back as charted.
   await approach.click();
@@ -154,6 +160,7 @@ test("a procedure's fixes branch off the route, each sent direct to or given an 
   await page.goto("/app/plan?dep=C81&dest=KDLH&procs=KDLH:I09:DLH");
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
   const toggle = kdlh.getByTestId("fix-branch-toggle");
   // The branch's head, after the runways: the approach's name with the
@@ -174,6 +181,7 @@ test("a procedure's fixes branch off the route, each sent direct to or given an 
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:)FAKER(&|$)/);
   await settled(sideDrawer(page));
   await openTab(page, "Nav Log");
+  await openRoute(page);
   // Opened again where the plan made again folded it.
   await expect(async () => {
     if (!(await rows.first().isVisible())) await toggle.click();

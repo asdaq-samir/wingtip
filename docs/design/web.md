@@ -794,23 +794,33 @@ visibility alone, as the cards' bodies come into sight (`PILL_BODY`,
 nothing in it eased at the pill); a tap on the held figures raises the
 sheet to half as a tap on the foot does; `feel("detent")`
 as the sheet settles (MapPanel); in flight the tiles are `FplActions`
-at the top of the flying drawer. Under the route, `FplRoute`: the
-figures at their own size, the Routes' chips next. The Brief's findings
+at the top of the flying drawer. Under the folded route, `FplRoute`: the
+figures at their own size, then "Suggested routes" over the Routes'
+chips; open to edit, the figures go under the cards (`RouteEditor`) and
+the chips away. The Brief's findings
 to act on are counted on its button in the bar (the cards' `TabCount` with its finding's
 `mark`,
 from `lib/verdict` through `planWords`' `findingRows`), the findings
 themselves the Brief's). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
 a turn of the page moves nothing and the head's first row, and the map's
 room, stay the same. The route is the row under FPL's bar (`RouteHead`),
-in each of the three ways Show Route As picks: Route Box, the box of
-pills on one line, no footer; Route Line, the line split in three
-(`RouteSplit`); Route Cards, its two ends' cards until the route is
-whole, then the Routes' chips (`route-group`, `RouteLine`: one row of
+in its one layout (the owner, 2026-11-17; decision 0046): folded, one
+Base UI Button (`route/RouteSummary`, `aria-expanded` false), both ends'
+idents with their names, the stops counted, a chevron in the tint; open
+(`routeEditing`), a head, "Route" (the same disclosure, `aria-expanded`
+true) and Done, the focus kept on the toggle and the change said by
+React Aria's live announcer, over the page's airport cards
+(`ProceduresRoute`, its edits `useRouteListEdit`), then `RouteEditor`:
+with no route the two ends' cards (`RouteEnds`), the route's field
+(`RouteBox`) and the figures. Opened with its end under the sheet's
+edge on a phone, the sheet goes to its full snap point (usePlanRouteList's
+`makeRoom`) and Done sets it back (`foldRoute`); at the pill it folds.
+The Routes' chips (`route-group`, `RouteLine`: one row of
 the search's pill, each way's name and time, the one flown filled; on the
 map `WaysGl` draws it solid magenta and the others dotted, their chips
 white at 12 points, the flown way's words in the map's blue a step
-deeper for words, `map-blue-ink` (5.4:1 on the white chip; `routeWays`' `wayInk`), named and kept apart by MapLibre's collision), the cards
-in the plan under it. The toggle is drawn only on the page that is up,
+deeper for words, `map-blue-ink` (5.4:1 on the white chip; `routeWays`' `wayInk`), named and kept apart by MapLibre's collision)
+under the folded route's figures. The toggle is drawn only on the page that is up,
 so there is one in the page. The account button took the toggle's
 place over the map: a glass circle the size of the 3D's in the left-hand
 column (`MapControls`' `AccountCircle`), so on a bottom sheet it rides
@@ -872,12 +882,18 @@ button lists generated, recently cleared and ATC-preferred routes
 by clicking the map, typing an address or a name, up to 9 stops in all
 ([Google Maps directions][gmaps-directions]).
 
-**Structure, top to bottom.**
-1. The route box: departure and destination, the Routes, Brief and •••
-   buttons on the pills' first line (memory: route box buttons).
-2. The route as rows: each point with its kind's mark and a drag handle;
-   between rows, the leg's figures the engine returns.
-3. The route string field (typed, Enter to compute), as SkyVector's.
+**Structure, top to bottom.** One layout (the owner, 2026-11-17;
+decision 0046), folded to read and opened to edit, as iOS's lists keep
+Edit and Done.
+1. Folded: the route's one line, both ends' idents over their names, the
+   stops counted between, a chevron; a tap opens it. Under it the figures
+   and "Suggested routes" over the Routes' chips.
+2. Open: "Route" and Done over the route as rows: each airport a card,
+   its role over its ident, each point with its kind's mark and a drag
+   handle; between rows, the leg's figures the engine returns; Add a Stop
+   at the end.
+3. The route string field (typed or pasted, Enter to compute), as
+   SkyVector's, under the rows, and the figures under it.
 4. The altitude (`FL045` style, decision 0009) and the figure strip at
    the foot: To, Distance, Time, Fuel (Time and Fuel only with an
    airplane), named in short words in sentence case. A distance in a
@@ -888,8 +904,8 @@ by clicking the map, typing an address or a name, up to 9 stops in all
    "Sat 18:00"), no chevron; its picker (`navlog/DepartPicker`) has Done
    at its top and Now at its start only once a time is picked, and the
    calendar is drawn on the sheet with no box of its own
-   (`components/ui/calendar`), as iOS's inline date picker is. FPL's route list draws each airport as a card always, in every
-   layout, the Nav Log's picked row's fill (`bg-foreground/8`, rounded,
+   (`components/ui/calendar`), as iOS's inline date picker is. FPL's route list draws each airport as a card always, its role
+   over its ident, the Nav Log's picked row's fill (`bg-foreground/8`, rounded,
    no border; `features/procedures/routeListStyle`), its runways and
    procedures opening inside it on a tap; its ident links to its card.
    One strip in every state, FPL's route row on the ground, a dry run and
@@ -942,9 +958,11 @@ Menu (Direct To, Set Altitude…, Hold Here…, Add a Stop After, Move Up,
 Move Down, Remove). The map's point menu: Base UI Context Menu on desktop
 right-click, the point card on touch. The string: shadcn Input Group.
 
-**Primary action.** Adding a point: the search field in the route box
-("Add a point"), and Fly Here / Add Stop on any card. Done editing has no
-button: every change is saved as it is made, with Undo in place.
+**Primary action.** Opening the route: a tap on its line. Adding a point:
+Add a Stop (the route's field takes it at its place), the field itself,
+and Fly Here / Add Stop on any card. Done folds the route; every change
+is saved as it is made, with Undo in place, so Done saves nothing of its
+own.
 
 **Keyboard and hover.** The rows are a grid with one tab stop; arrows
 between rows, Tab through a row's own controls (`keyboardNavigationBehavior`

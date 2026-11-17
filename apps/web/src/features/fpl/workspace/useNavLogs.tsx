@@ -17,7 +17,7 @@ export function useNavLogs(
   { tabContent, routeList, kneeboard }: { tabContent: (part: BriefingPart) => ReactNode; routeList: ReactNode; kneeboard: ReactNode },
 ) {
   const { drawerOpen } = vm.view;
-  const { depart, planned, routeEdit } = vm.route;
+  const { depart, planned } = vm.route;
   const { aircraft, course, s } = vm.plan;
   const { briefShown, closeNavLogCard, navLogShown } = vm.fpl;
   const { dryRunning } = vm.flight;
@@ -78,10 +78,9 @@ export function useNavLogs(
           // In sight all the way up, the Brief not over it: a row picked is
           // brought into sight as it comes back.
           drawerOpen={drawerOpen && !briefShown}
-          // Route Cards with one end only: its card is the end's own (RouteEnds),
-          // not again under it as the list's row (the owner's screenshot,
-          // 2026-11-05: C81 typed as the departure, there twice).
-          route={routeEdit === "plan" && !(planned.dep && planned.dest) ? undefined : routeList}
+          // The route's list as the one layout has it now (useProceduresRoute):
+          // open to edit, read in flight, or nothing while it is folded.
+          route={routeList}
           notice={<BriefingNotices briefing={s.briefing} />}
         >
           {/* Out of the tabs, drawing nothing: the risk assessment and the
@@ -124,7 +123,6 @@ export function useNavLogs(
       drawerOpen,
       briefShown,
       routeList,
-      routeEdit,
     ],
   );
   // The Nav Log, a card of its own over FPL (the owner, 2026-11-11), its

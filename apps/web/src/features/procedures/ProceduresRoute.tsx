@@ -13,7 +13,7 @@ import { RouteLine } from "./RouteLine";
 import { FieldStep } from "./FieldStep";
 import { pointEnd, stopRemoval } from "./pointEnd";
 import { nthTyped } from "./visits";
-import { AddStopRow, HoldRow, NewStopCard, Step } from "./RouteRows";
+import { AddStopRow, HoldRow, Step } from "./RouteRows";
 import { RouteGrid, type RouteItem } from "./RouteGrid";
 import { ProcedurePage, ProcedurePicker } from "./ProcedureSheet";
 import { listTitle } from "./procedureWords";
@@ -100,11 +100,9 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
     close,
     destination,
     along,
-    asCards,
     pointIndex,
     tanks,
     points,
-    newAt,
     field,
     list,
     chosen,
@@ -121,24 +119,6 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
   // first field's toggle under it, whose 44-point hit area came 3 up into
   // the Routes row's (the iOS audit's P1, CI on 4d7da5f0).
   const lineRow = routeLine ? <RouteLine line={routeLine} /> : null;
-  // The stop being added, its card before the point at its place.
-  const newCard: RouteItem | null =
-    newAt !== null
-      ? {
-          id: "new-stop",
-          label: "New stop",
-          node: (
-            <NewStopCard via={edit!.newVia ?? null} onCommit={(v) => edit!.onInsert!(newAt, v)} onCancel={() => edit!.onCancelNew?.()} />
-          ),
-        }
-      : null;
-  let newPut = false;
-  const newBefore = (index: number | undefined, into: RouteItem[]) => {
-    if (newCard && !newPut && index === newAt) {
-      into.push(newCard);
-      newPut = true;
-    }
-  };
   // Each a row of the list (RouteGrid); a typed point's by its place among them, which moves.
   const fieldStep = (a: ProcedureAirport, row: NavLogRow | undefined, last: boolean, leads: boolean): RouteItem => ({
     id: `${a.role}:${a.ident}`,
@@ -188,7 +168,6 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
     };
     if (field) {
       shown.add(field);
-      newBefore(pointIndex(field.ident, field.role), steps);
       steps.push(fieldStep(field, row, last, steps.length === 0));
       if (field.role === "Destination") holdRow(field.ident);
       return;
@@ -215,7 +194,6 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
           visit: again ? seen + 1 : undefined,
         })
       : null;
-    if (typedAt >= 0) newBefore(typedAt, steps);
     steps.push({
       id: row.key,
       label: rowPoint(row).name,
@@ -223,9 +201,7 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
       remove: end?.remove,
       node: (
         <Step
-          first={steps.length === 0}
           last={last}
-          rename={asCards && edit?.onReplace && typedAt >= 0 ? (v) => edit.onReplace!(typedAt, v) : undefined}
           mark={<PointMark row={row} number={undefined} weather={weather} />}
           title={rowPoint(row).name}
           testId={`route-${row.kind}`}
@@ -252,20 +228,12 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
           figures={end?.figures ?? <PointFigures time={time} altitude={null} kind="cruise" />}
           menu={end?.menu}
           grip={end?.grip}
-          card={asCards}
         />
       ),
     });
     if (to) holdRow(row.airport.ident);
   });
-  const fieldsAlone =
-    rows.length === 0
-      ? airports.flatMap((a, i) => {
-          const before: RouteItem[] = [];
-          newBefore(pointIndex(a.ident, a.role), before);
-          return [...before, fieldStep(a, undefined, i === airports.length - 1, i === 0)];
-        })
-      : null;
+  const fieldsAlone = rows.length === 0 ? airports.map((a, i) => fieldStep(a, undefined, i === airports.length - 1, i === 0)) : null;
 
   return (
     <>

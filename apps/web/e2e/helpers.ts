@@ -11,6 +11,8 @@ export {
   frontSheet,
   showTabs,
   openPanel,
+  openRoute,
+  foldRoute,
   clearTheRoute,
   grabberTo,
   sheetUpToType,

@@ -24,9 +24,12 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("the route box is one row under FPL's bar, the airplane's strip over it and not in it, at the owner's text size", async ({ page }) => {
-  // The owner, 2026-11-14: "The route box just become a single row under
-  // it", the N-number strip with its buttons the sheet's first row's bar.
+test("the route's field is under FPL's bar and the route's cards, the airplane's strip over it and not in it, at the owner's text size", async ({
+  page,
+}) => {
+  // The owner, 2026-11-14: the N-number strip with its buttons the sheet's
+  // first row's bar; half a route is open to edit (the one layout, decision
+  // 0046), its field under its cards.
   await page.setViewportSize({ width: 390, height: 844 });
   await ownersText(page);
   await page.goto(ROUTE);
@@ -43,8 +46,6 @@ test("the route box is one row under FPL's bar, the airplane's strip over it and
   });
   expect(m.inBox).toBe(0);
   expect(m.strip).toBeLessThanOrEqual(m.box);
-  // The bar's 46 and its row's room under it: the box close under it.
-  expect(m.box - m.strip).toBeLessThanOrEqual(16);
 });
 
 test("a field of half a route offers its procedures whole, with no runways' outlines waiting for a briefing that never comes", async ({

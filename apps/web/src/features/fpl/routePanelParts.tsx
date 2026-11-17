@@ -69,7 +69,7 @@ export const NavLogView = fromRoutePanel("NavLogView");
 // which waits on this chunk already: 61 KB off the first load, which
 // stood 10 KB under its 1.10 MB budget (the 20 Oct audit).
 export const ProceduresRoute = fromRoutePanel("ProceduresRoute");
-// The Routes row, in Route Cards' head box beside the controls.
+// The Routes row, under the folded route's figures (FplRoute).
 export const RouteLine = fromRoutePanel("RouteLine");
 export const FlightBriefingView = fromRoutePanel("FlightBriefingView");
 export const BriefingNotices = fromRoutePanel("BriefingNotices");
@@ -77,7 +77,9 @@ export const SaveFlightButton = fromRoutePanel("SaveFlightButton");
 export const ReviewAskItem = fromRoutePanel("ReviewAskItem");
 export const ReviewAskSheet = fromRoutePanel("ReviewAskSheet");
 export const RouteEnds = fromRoutePanel("RouteEnds");
-export const RouteSplit = fromRoutePanel("RouteSplit");
+export const RouteSummary = fromRoutePanel("RouteSummary");
+// The route open to edit, its field and figures under its cards (PlanPage).
+export const RouteEditor = fromRoutePanel("RouteEditor");
 export const Kneeboard = fromRoutePanel("Kneeboard");
 export const FlightInputs = fromRoutePanel("FlightInputs");
 export const AltitudeGroup = fromRoutePanel("AltitudeGroup");

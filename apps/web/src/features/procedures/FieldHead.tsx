@@ -95,7 +95,14 @@ export function FieldHead({
             (NavLogList's navlog-field-open; the owner, 2026-11-17: "Can we make the airports/stops tappable as the
             navlog does?"). Its 44 points a pseudo-element; the ident not grown. In the Plan's cards it was a text
             box: an airport is changed from its menu's Change now (pointEnd), by the one search. */}
-            <h3 className={cn("min-w-0 font-semibold", TEXT.row)}>
+            {/* Its role over the ident, a caption, so a new pilot can tell
+                which card is which end (labels C of the one layout's canvas,
+                the owner, 2026-11-17); the section's name says it to a
+                screen reader. */}
+            <h3 className={cn("flex min-w-0 flex-col font-semibold", TEXT.row)}>
+              <span aria-hidden="true" className={cn("text-muted-foreground", TEXT.caption)} data-testid="field-role">
+                {a.role}
+              </span>
               <Button
                 variant="link"
                 size="inline"
@@ -106,7 +113,7 @@ export function FieldHead({
                   event.stopPropagation();
                   onInfo(a.ident);
                 }}
-                className="relative z-10 max-w-full justify-start truncate font-semibold after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-['']"
+                className="relative z-10 max-w-full self-start justify-start truncate font-semibold after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-['']"
               >
                 {a.ident}
               </Button>

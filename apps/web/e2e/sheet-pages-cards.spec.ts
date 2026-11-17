@@ -78,7 +78,9 @@ test("the last waypoint taken out all the way up leaves the sheet all the way up
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "full");
-  const line = page.getByTestId("route-line");
+  // From the address the route is folded to its line; a tap on it opens the
+  // box to edit.
+  const line = page.getByTestId("route-summary");
   if (await line.isVisible()) await line.click();
   // Focused, its caret at the end: the route box holds its pills inside
   // the field, so a click in its middle can land on a pill.

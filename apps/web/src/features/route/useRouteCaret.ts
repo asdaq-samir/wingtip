@@ -25,7 +25,6 @@ export function useRouteCaret({
   onAddingChange,
   addAt,
   via,
-  opened,
 }: {
   field: RefObject<HTMLDivElement | null>;
   slide: RefObject<HTMLDivElement | null>;
@@ -42,8 +41,6 @@ export function useRouteCaret({
   onAddingChange: (adding: boolean) => void;
   addAt: number | null;
   via?: Detour[];
-  /** Opened from its folded line (RouteBox's onDone). */
-  opened: boolean;
 }) {
   // The caret before point `at` (null: after the last), the field taken:
   // within a tap's own handler, as iOS brings the keyboard up for no
@@ -142,12 +139,6 @@ export function useRouteCaret({
     frame = requestAnimationFrame(again);
     return () => cancelAnimationFrame(frame);
   }, [adding, field]);
-  // Opened from its folded line, the same: in the tap's own commit, so iOS
-  // brings the keyboard up (it does for no focus after the tap).
-  const openedNow = useEffectEvent(() => focusAt(startAt));
-  useLayoutEffect(() => {
-    if (opened) openedNow();
-  }, [opened]);
   // Idents, typed in capitals, not words for the keyboard to correct; its
   // Return says Done. TokenInput passes no such props, so they are the
   // element's own.

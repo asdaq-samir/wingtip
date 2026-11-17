@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from "react";
-import type { Detour } from "../../lib/api/types";
 import { identOf, isAirwayToken, isPosition } from "../../lib/identSchema";
 import type { RouteParts } from "./RouteBox";
 import type { PlanCourse } from "../plan";
@@ -18,9 +17,9 @@ export function movedRoute(points: string[], from: number, to: number, isEnd: (p
   return { dep: next[0]!, stops: next.slice(1, -1), dest: next.at(-1)! };
 }
 
-/** The route's points with the one at `at` made `ident`, as typed (its
- *  card's ident, In the Plan): null where it is empty or the same as its
- *  neighbour's, a leg of none. */
+/** The route's points with the one at `at` made `ident` (its menu's
+ *  Change, the one search's pick): null where it is empty or the same as
+ *  its neighbour's, a leg of none. */
 export function replacedRoute(points: string[], at: number, ident: string): RouteParts | null {
   if (at < 0 || at >= points.length) return null;
   const next = [...points];
@@ -29,25 +28,17 @@ export function replacedRoute(points: string[], at: number, ident: string): Rout
   return { dep: next[0]!, stops: next.slice(1, -1), dest: next.at(-1)! };
 }
 
-/** The route's points with `ident` put in at `at`: null where it is the
- *  same as its neighbour's. */
-export function insertedRoute(points: string[], at: number, ident: string): RouteParts | null {
-  const next = [...points];
-  next.splice(at, 0, ident.trim().toUpperCase());
-  if (next.some((p, i) => i > 0 && p === next[i - 1])) return null;
-  return { dep: next[0]!, stops: next.slice(1, -1), dest: next.at(-1)! };
-}
-
 /**
- * FPL's list of the route's points changed in place (usePlanWorkspace):
- * a point dragged to another's place, made another from its card, a stop
- * typed in at its place -- by an empty card In the Plan, by the route's
- * box otherwise -- and which stops are flown through rather than landed at.
+ * FPL's list of the route's points changed in place (usePlanWorkspace),
+ * while the route is open to edit (the one layout's expanded list; the
+ * owner, 2026-11-17, decision 0046): a point dragged to another's place,
+ * made another from its menu's Change, a stop typed in at its place by
+ * the route's field (RouteBox's `addAt`) -- and which stops are flown
+ * through rather than landed at.
  */
 export function useRouteListEdit({
   stops,
   course,
-  routeEdit,
   routePoints,
   setRoute,
   setAddingStop,
@@ -55,8 +46,6 @@ export function useRouteListEdit({
   /** The route's stops as typed. */
   stops: string[];
   course: PlanCourse | null;
-  /** How the route is changed (the RouteEdit setting). */
-  routeEdit: string;
   /** The route's points as typed, the departure first. */
   routePoints: string[];
   setRoute: (parts: RouteParts) => void;
@@ -78,31 +67,21 @@ export function useRouteListEdit({
       ),
     [stops, course],
   );
-  // A whole route's box opened again from its folded line (RouteEdit's
-  // "folded"), till its Done; and where a stop asked for from FPL's list
-  // is typed in (its Add a Stop, a point's Add a Stop After).
+  // The route open to edit, its airport cards under its head, till its
+  // Done; and where a stop asked for from FPL's list (its Add a Stop, a
+  // point's Add a Stop After) is typed into the route's field.
   const [routeOpen, setRouteOpen] = useState(false);
   const [addAt, setAddAt] = useState<number | null>(null);
-  // In the Plan, a stop added as an empty card at its place in the list,
-  // with no route box (the owner, 2026-11-05: "I want to completely get rid
-  // of the route box for in the plan, when adding a stop just add a stop
-  // with the editable card").
-  const [newStopAt, setNewStopAt] = useState<number | null>(null);
-  // Fly via's ways round the Class B, offered on that card.
-  const [newStopVia, setNewStopVia] = useState<Detour[] | null>(null);
   const typeStopAt = useCallback(
     (index: number) => {
-      if (routeEdit === "plan") {
-        setNewStopAt(index);
-        return;
-      }
       setAddAt(index);
       setAddingStop("stop");
     },
-    [routeEdit, setAddingStop],
+    [setAddingStop],
   );
-  // A point dragged by its grip in FPL's list onto another's place, as the
-  // box's pills are dragged (movedRoute), and the route planned again.
+  // A point dragged by its grip (or held) in FPL's list onto another's
+  // place, as the field's pills are moved (movedRoute), and the route
+  // planned again.
   const movePoint = useCallback(
     (from: number, to: number) => {
       const isEnd = (p: string) => (!!identOf(p) && !waypointStops.has(p)) || isPosition(p);
@@ -111,9 +90,8 @@ export function useRouteListEdit({
     },
     [routePoints, waypointStops, setRoute],
   );
-  // A point made another from its card's ident (In the Plan): anything
-  // typed, as the box takes it; only a point the same as its neighbour's
-  // is let go, a leg of none.
+  // An airport made another from its menu's Change, the one search's
+  // pick; only a point the same as its neighbour's is let go, a leg of none.
   const replacePoint = useCallback(
     (at: number, ident: string) => {
       const replaced = replacedRoute(routePoints, at, ident);
@@ -121,33 +99,9 @@ export function useRouteListEdit({
     },
     [routePoints, setRoute],
   );
-  const insertPoint = useCallback(
-    (at: number, ident: string) => {
-      setNewStopAt(null);
-      setNewStopVia(null);
-      const inserted = insertedRoute(routePoints, at, ident);
-      if (inserted) setRoute(inserted);
-    },
-    [routePoints, setRoute],
-  );
-  const cancelNewStop = useCallback(() => {
-    setNewStopAt(null);
-    setNewStopVia(null);
-  }, []);
   const listEdit = useMemo(
-    () => ({
-      onMove: movePoint,
-      onAddAt: typeStopAt,
-      onReplace: replacePoint,
-      newAt: newStopAt,
-      newVia: newStopVia,
-      onInsert: insertPoint,
-      onCancelNew: cancelNewStop,
-      // In the Plan, the points as cards (ProceduresRoute), each changed by
-      // its own ident's text box, no menu's Change to a box.
-      cards: routeEdit === "plan",
-    }),
-    [movePoint, typeStopAt, replacePoint, newStopAt, newStopVia, insertPoint, cancelNewStop, routeEdit],
+    () => ({ onMove: movePoint, onAddAt: typeStopAt, onReplace: replacePoint }),
+    [movePoint, typeStopAt, replacePoint],
   );
-  return { waypointStops, routeOpen, setRouteOpen, addAt, setAddAt, setNewStopVia, typeStopAt, listEdit };
+  return { waypointStops, routeOpen, setRouteOpen, addAt, setAddAt, typeStopAt, listEdit };
 }

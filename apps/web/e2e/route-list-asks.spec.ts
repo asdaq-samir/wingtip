@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openTab, settle, slow } from "./helpers";
+import { openTab, settle, slow, openRoute } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -18,6 +18,7 @@ test("a field's approaches that could not be fetched are said so in place, never
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
   // KDLH's card lists its approach plates (d-TPP), so its approach pull-down is offered.
   const approach = kdlh.locator("[data-testid=procedure-kind][data-kind=approach]");

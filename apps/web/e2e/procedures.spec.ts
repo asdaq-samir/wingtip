@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openTab, settle, slow } from "./helpers";
+import { openTab, settle, slow, openRoute } from "./helpers";
 import { pickAirplane } from "./startState";
 import { circuitsOf, openRunways } from "./procedureStubs";
 
@@ -9,6 +9,7 @@ test("a field's traffic pattern is picked by its runway, kept in the address and
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const procedures = page.getByTestId("procedures");
   // The route's fields in the order they are flown, each its runways as
   // chips under its arrival and approach.
@@ -44,6 +45,7 @@ test("a runway line opened stays open until folded, and folds with its field", a
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const procedures = page.getByTestId("procedures");
   const destination = procedures.getByRole("region", { name: "KDLH · Arrive" });
   // A runway picked first, the pilot's own, which a pick into the wind
@@ -106,6 +108,7 @@ test("the destination's runway into the wind is picked as the route comes in, an
   await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${depart}&pattern=KDLH:NONE`);
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
   await expect(kdlh.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(20000) });
   await expect(kdlh.getByRole("button", { name: /^Runway 9, into the wind/ })).toHaveAttribute("aria-pressed", "true", {
@@ -124,6 +127,7 @@ test("the destination's runway into the wind is picked as the route comes in, an
   await page.goto(page.url());
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   await expect(kdlh.locator("[data-folded]")).toHaveText(name, { timeout: slow(20000) });
 });
 
@@ -140,6 +144,7 @@ test("a field typed as ORD is KORD, its arrivals offered and its runways one lin
   await expect(page).toHaveURL(/[?&]pattern=[^&]*KORD(%3A|:)9L(%2C|,|&|$)/);
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const kord = page.getByTestId("procedures").getByRole("region", { name: "KORD · Arrive" });
   await expect(kord.locator("[data-testid=procedure-kind][data-kind=arrival]")).toBeVisible({ timeout: slow(20000) });
   const chips = kord.getByTestId("procedure-pattern");
@@ -179,6 +184,7 @@ test("a field's departure is picked after its runways, as its arrival and approa
   await page.goto("/app/plan?dep=KORD&dest=C81");
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const kord = page.getByTestId("procedures").getByRole("region", { name: "KORD · Depart" });
   const menu = kord.locator("[data-testid=procedure-kind][data-kind=departure]");
   await expect(menu).toBeVisible({ timeout: slow(20000) });
@@ -213,6 +219,7 @@ test("a route from the present position arrives at its destination", async ({ pa
   await page.goto("/app/plan?dep=@42.2333,-87.9883&dest=KSTL");
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const route = page.getByTestId("procedures");
   await expect(route.getByRole("region", { name: "KSTL · Arrive" })).toBeVisible({ timeout: slow(30000) });
   await expect(route.getByRole("region", { name: "KSTL · Depart" })).toHaveCount(0);

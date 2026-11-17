@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useEffectEvent, useRef, useState } from "react";
 import { ChevronsUpDown } from "lucide-react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
@@ -39,10 +39,6 @@ interface Props {
   onOpenChange?: (open: boolean) => void;
   /** What a tap on the button does in place of opening the search. */
   onTap?: () => void;
-  /** What the button shows in place of the ident and its chevron: FPL's
-   *  split route line, its mark and the airport's name with it
-   *  (RouteSplit). */
-  children?: ReactNode;
 }
 
 /**
@@ -72,7 +68,6 @@ export default function AirportPicker({
   open: shown,
   onOpenChange,
   onTap,
-  children,
 }: Props) {
   const [ownOpen, setOwnOpen] = useState(false);
   const open = shown ?? ownOpen;
@@ -116,7 +111,7 @@ export default function AirportPicker({
       aria-expanded={onTap ? undefined : open}
       // Its ident first, as seen, then which field (WCAG 2.5.3, Label
       // in Name): "C81, Departure"; empty, the placeholder it shows.
-      aria-label={value && !children ? `${value}, ${ariaLabel}` : ariaLabel}
+      aria-label={value ? `${value}, ${ariaLabel}` : ariaLabel}
       aria-invalid={invalid}
       data-testid={testId}
       onPointerDown={prefetchSearch}
@@ -132,12 +127,8 @@ export default function AirportPicker({
           : cn("font-mono uppercase text-foreground", TEXT.row, !value && "text-muted-foreground", className)
       }
     >
-      {children ?? (
-        <>
-          {value || placeholder}
-          {look === "field" && <ChevronsUpDown className="text-muted-foreground" />}
-        </>
-      )}
+      {value || placeholder}
+      {look === "field" && <ChevronsUpDown className="text-muted-foreground" />}
     </Button>
   );
   return (

@@ -1,17 +1,16 @@
 import { cn } from "cn";
 import CardIdent from "./CardIdent";
 import { CardMark, CardThread, EmptyMark } from "./routeCard";
-import { CARD_GAP, POINT_CARD } from "./routeListStyle";
+import { FIELD_CARD, FIELD_GAP } from "./routeListStyle";
 
 /**
- * FPL's two lines before there is a route, where the route is changed in
- * the plan (lib/preferences RouteEdit "plan"), at the owner's pick of the
- * FPL canvas (2026-11-05, option 3 as cards: "On the plan should ask for
- * depart and destination on two lines, no n number or altitude"): the
- * departure and the destination each a card, as the plan's points are
- * once there is a route, on its dashed line; each a text box, the ident
- * typed in. The airplane, the altitude and the route's buttons
- * come with the route, over its Routes.
+ * FPL's route before it is whole, open to edit (the one layout, decision
+ * 0046; the owner, 2026-11-17: "a new plan with no route opens expanded
+ * with empty Departure and Destination cards to fill"): the departure and
+ * the destination each a card, as the route's airports are once it is
+ * whole (FieldStep, the one card look), on the course's line; each a text
+ * box, the ident typed in, its role its placeholder. The route's field
+ * under them takes a whole route typed or pasted (RouteBox).
  */
 export default function RouteEnds({
   dep,
@@ -24,12 +23,8 @@ export default function RouteEnds({
   onDep: (ident: string) => void;
   onDest: (ident: string) => void;
 }) {
-  // The plan's own cards (routeCard), at the owner's ask (2026-11-05: "Make
-  // these cards look similar to the ones when populated"): its card, its
-  // mark's grey disc, its ident's box the ident's width, and the course's
-  // line outside the cards' left edge into each mark.
   return (
-    <ol className="flex min-w-0 flex-1 flex-col pt-1 pb-2 pl-0" aria-label="The route">
+    <ol className="flex min-w-0 flex-1 flex-col pt-2 pb-1 pl-0" aria-label="The route" data-testid="route-ends">
       <EndCard value={dep} onChange={onDep} label="Departure" first />
       <EndCard value={dest} onChange={onDest} label="Destination" />
     </ol>
@@ -40,17 +35,15 @@ function EndCard({
   value,
   onChange,
   label,
-  testId,
   first = false,
 }: {
   value: string;
   onChange: (ident: string) => void;
   label: string;
-  testId?: string;
   first?: boolean;
 }) {
   return (
-    <li className={cn("relative isolate flex min-h-16 items-center gap-2.5", POINT_CARD, first && CARD_GAP)}>
+    <li className={cn("relative isolate flex min-h-14 items-center gap-2.5", FIELD_CARD, first && FIELD_GAP)}>
       <CardThread first={first} last={!first} />
       {/* The airport symbol on the marks' grey, faded, at the owner's ask
           (2026-11-05: "The stop icons can be airport like when empty"). */}
@@ -59,11 +52,10 @@ function EndCard({
           <EmptyMark />
         </CardMark>
       </span>
-      {/* A text box, as every card's ident is (CardIdent), at the owner's
-          ask (2026-11-05: "Even the start can be consistent with it to
-          have editable cards"); its placeholder in the words' own case. */}
+      {/* A text box, as the route's cards' were (CardIdent); its
+          placeholder its role, in the words' own case. */}
       <div className="flex min-w-0 flex-1 pr-1.5">
-        <CardIdent value={value} onCommit={onChange} placeholder={label} label={label} testId={testId} />
+        <CardIdent value={value} onCommit={onChange} placeholder={label} label={label} />
       </div>
     </li>
   );

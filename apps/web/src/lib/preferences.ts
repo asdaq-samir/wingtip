@@ -12,7 +12,7 @@ import { keptAsIs } from "./storage";
 
 export { BASE_CHARTS, HEIGHT_STRETCHES } from "./prefs/mapSlice";
 export type { BaseChart, HeightStretch, ChartLight, ChartNight, MapOverlay, OverlayStrength } from "./prefs/mapTypes";
-export type { Brand, FlightRules, NavEdge, OwnShipLook, RouteEdit } from "./prefs/lookTypes";
+export type { Brand, FlightRules, NavEdge, OwnShipLook } from "./prefs/lookTypes";
 export { airplaneChosen, NO_AIRPLANE, STOCK_C172 } from "./prefs/airplaneSlice";
 export type { RouteWeather } from "./prefs/airplaneTypes";
 export { recentRouteKey } from "./prefs/keptSlice";

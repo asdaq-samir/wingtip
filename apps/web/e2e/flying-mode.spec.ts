@@ -39,6 +39,7 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   await expect(frontSheet(page)).not.toHaveAttribute("data-panel", "peek");
   await expect(sideDrawer(page).getByTestId("dry-run-close")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("route-box")).toBeHidden();
+  await expect(sideDrawer(page).getByTestId("route-summary")).toBeHidden();
   await expect(sideDrawer(page).getByTestId("search-airports")).toBeHidden();
   await expect(page.getByTestId("done-flying")).toBeVisible();
   // The map's buttons: NRST, D→ and the location arrow at the right, the
@@ -74,7 +75,7 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   expect(Math.round(mic.width)).toBeLessThan(FLYING_PX);
   await closeProfile(page);
   await grabberTo(page, "half");
-  await expect(sideDrawer(page).getByTestId("route-box")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeVisible();
   await expect(page.getByTestId("sheet-page-toggle")).toBeVisible();
 });
 

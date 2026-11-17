@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, searchAirports, settle, sheetUpToType, showTabs } from "./helpers";
+import { grabberTo, openRoute, searchAirports, settle, sheetUpToType, showTabs } from "./helpers";
 import { ownHomeBase } from "./oneSearch";
 
 /**
@@ -27,7 +27,9 @@ test("Fly Here goes direct from the present position, not from Home", async ({ p
   await page.getByTestId("place-card").getByTestId("fly-here").click();
   await expect(page).toHaveURL(/[?&]dest=KDLH/, { timeout: 15_000 });
   await expect(page).toHaveURL(/[?&]dep=(%40|@)42\.3246(%2C|,)-88\.0741/);
-  // Half way, where the card was, the route's box from the present
-  // position: put away, the pill is the route's figures alone.
+  // Half way, where the card was, the route folded to its line, opened to
+  // its box from the present position: put away, the pill is the route's
+  // figures alone.
+  await openRoute(page);
   await expect(page.getByTestId("route-dep")).toContainText("POS0");
 });

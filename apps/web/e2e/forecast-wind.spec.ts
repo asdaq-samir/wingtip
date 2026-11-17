@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openTab, settle, sideDrawer, slow } from "./helpers";
+import { openTab, settle, sideDrawer, slow, openRoute } from "./helpers";
 import { pickAirplane } from "./startState";
 // An airplane, so the legs have their times and a field when it is reached
 // (the setup picks none, and with none there is no time to forecast for).
@@ -32,6 +32,7 @@ test("a field reached hours from now picks its runway into the forecast wind, an
   await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${depart()}`);
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const kdlh = sideDrawer(page).getByRole("region", { name: "KDLH · Arrive" });
   // The airport's wind under its ident, the forecast's for when it lands
   // there, said so to VoiceOver.
@@ -53,6 +54,7 @@ test("a runway picked into an earlier wind follows the wind, where one the pilot
   await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${depart()}&pattern=KDLH%3A27&auto=land%3AKDLH`);
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const kdlh = sideDrawer(page).getByRole("region", { name: "KDLH · Arrive" });
   await expect(kdlh.getByRole("button", { name: /^Runway 9, into the wind/ })).toHaveAttribute("aria-pressed", "true", {
     timeout: slow(60_000),
@@ -65,6 +67,7 @@ test("a runway picked into an earlier wind follows the wind, where one the pilot
   await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${depart()}&pattern=KDLH%3A27&auto=-`);
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   await expect(kdlh.getByTestId("field-wind")).toContainText("090° 14 kt", { timeout: slow(60_000) });
   await expect(kdlh.getByRole("button", { name: /^Runway 27/ })).toHaveAttribute("aria-pressed", "true");
   await expect(page).not.toHaveURL(/land(%3A|:)KDLH/);
@@ -72,6 +75,7 @@ test("a runway picked into an earlier wind follows the wind, where one the pilot
   await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${depart()}&pattern=KDLH%3A27`);
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   await expect(kdlh.getByRole("button", { name: /^Runway 9, into the wind/ })).toHaveAttribute("aria-pressed", "true", {
     timeout: slow(60_000),
   });

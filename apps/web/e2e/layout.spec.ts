@@ -75,7 +75,7 @@ test.describe("/app/plan", () => {
     const figures = sideDrawer(page).getByTestId("flight-line");
     await expect(figures).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
     if ((page.viewportSize()?.width ?? 0) < 768) {
-      await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeHidden();
+      await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeHidden();
       // The pill no taller for them: the search's own 4.25 rem, on the
       // screen's foot (no home indicator here; the pages' toggle rides its
       // top, PageToggle, with no bar under it).
@@ -86,9 +86,9 @@ test.describe("/app/plan", () => {
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
     // The plan, the sheet's main content with a route.
-    await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeVisible();
+    await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeVisible();
     await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
-    await expect(page.getByLabel(/^(\S+, )?Departure$/)).toBeVisible();
+    await expect(sideDrawer(page).getByTestId("route-summary")).toContainText("C81");
     expect(await page.getByTestId("toolbar-trigger").count()).toBe(0);
   });
 
@@ -256,8 +256,10 @@ test.describe("/app/plan", () => {
       expect(bar.y).toBeLessThan(100);
       expect(headerBox.y).toBeLessThan(bar.y + bar.height + 8);
     }
-    const departureBox = (await header.getByLabel(/^(\S+, )?Departure$/).boundingBox())!;
-    expect(departureBox.x - headerBox.x).toBeLessThan(40);
+    // The route folded to its one line leads the panel, its departure at its
+    // left edge.
+    const summaryBox = (await sideDrawer(page).getByTestId("route-summary").boundingBox())!;
+    expect(summaryBox.x - (await sideDrawer(page).boundingBox())!.x).toBeLessThan(40);
 
     // The grabber on the panel's far edge: the top of a phone's sheet,
     // the bottom of a card at the top of the screen -- once the sheet has

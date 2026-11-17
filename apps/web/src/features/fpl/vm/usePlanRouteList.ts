@@ -1,35 +1,37 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { positionIdent, stopsOf } from "../../../lib/identSchema";
 import { useGeo, type LatLon } from "../../../lib/geo";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { ADDRESS_CLEARED } from "../../../lib/address";
 import type { PanelState } from "../../../lib/mapChrome";
-import { riseToSee, directKeys, procsWithoutDirect } from "../../plan";
+import { riseToSee, directKeys, panelNow, procsWithoutDirect } from "../../plan";
 import { useRouteListEdit, useRouteLine } from "../../route";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanViewModel } from "./usePlanView";
+import type { PlanPicks } from "./usePlanPicks";
 import { coursePoints } from "../../../lib/course";
 
 /**
- * FPL's route as a list and a line (usePlanWorkspace): its points edited
- * in place (useRouteListEdit), a stop being added, the box folded away,
- * a point dropped on the map into it, its close, and the Routes' chips
- * over it (useRouteLine).
+ * FPL's route as a list and a line (usePlanWorkspace): folded to its one
+ * line, or open to edit (the one layout, decision 0046), its points edited
+ * in place (useRouteListEdit), a stop being added, a point dropped on the
+ * map into it, its close, and the Routes' chips (useRouteLine).
  */
 export function usePlanRouteList(
   route: PlanRoute,
   { course, ways, own }: PlanAnswerModel,
-  { setViewPick }: PlanViewModel,
+  { setViewPick, panelOpen }: PlanViewModel,
+  { proceduresAt }: Pick<PlanPicks, "proceduresAt">,
   setPanel: (state: PanelState) => void,
 ) {
   "use no memo"; // As usePlanWorkspace, whose part this is: left to its own memos.
-  const { planned, routeEdit, routePoints, setRoute, setStops, setAddress, wholeRoute, fuelParam, flightRules } = route;
+  const { planned, hasPoints, routePoints, setRoute, setStops, setAddress, wholeRoute, fuelParam, flightRules } = route;
   // Add Stop open: from its own button, or from no legal altitude's --
   // "via", its Fly via round a Class B, the ways round suggested.
   const [addingStop, setAddingStop] = useState<false | "stop" | "via">(false);
   // FPL's list edited in place (useRouteListEdit).
-  const { setAddAt, ...edit } = useRouteListEdit({ stops: planned.stops, course, routeEdit, routePoints, setRoute, setAddingStop });
+  const { setAddAt, ...edit } = useRouteListEdit({ stops: planned.stops, course, routePoints, setRoute, setAddingStop });
   const addingChange = useCallback(
     (open: boolean) => {
       setAddingStop(open ? "stop" : false);
@@ -103,20 +105,74 @@ export function usePlanRouteList(
     setStops,
     flightRules,
   });
-  // The route's chips: the airplane, the altitude, the time, Saved,
-  // Approaches and Share (`controls`), and with no route the pill's too.
-  // Folded from the start, no route yet too, at the owner's ask ("They
-  // should not have route box from the start", 2026-11-05): the box only
-  // while it is opened from the head, or a stop is typed in. Opened to
-  // type a route, it folds by itself once the route is whole -- the
-  // destination in -- as the pilot has what they opened it for.
+  // Folded to its one line once whole, and open to edit (its airport
+  // cards, Add a Stop, the route's field and the figures under them) at
+  // a tap on the line, till its Done (the owner, 2026-11-17, decision
+  // 0046). Before it is whole it is always open, its two ends' cards to
+  // fill. Made whole a point at a time, or typed or pasted into its field,
+  // it stays open for the pilot to go on; arriving whole at once from
+  // elsewhere -- Fly Here, a link, a Saved flight -- it folds, to be read.
   const [wasWhole, setWasWhole] = useState(wholeRoute);
-  if (wholeRoute !== wasWhole) {
+  const [hadPoints, setHadPoints] = useState(hasPoints);
+  // Whether the focus is in the open route (RouteEditor), its field typed in.
+  const [editorFocused, setEditorFocused] = useState(false);
+  if (wholeRoute !== wasWhole || hasPoints !== hadPoints) {
     setWasWhole(wholeRoute);
-    if (wholeRoute && edit.routeOpen) edit.setRouteOpen(false);
+    setHadPoints(hasPoints);
+    if (wholeRoute && !wasWhole) edit.setRouteOpen(hadPoints || editorFocused);
+    if (!hasPoints) edit.setRouteOpen(false);
   }
-  // In the Plan never the box (the owner, 2026-11-05: "completely get rid
-  // of the route box for in the plan").
-  const routeFolded = routeEdit === "plan" || (routeEdit === "folded" && !edit.routeOpen && !addingStop);
-  return { ...edit, ...line, addingStop, setAddingStop, addingChange, holdAsk, dropIntoRoute, clearRoute, routeFolded };
+  // The sheet's size before it was raised to make room for the open
+  // route (makeRoom), to go back to at its Done.
+  const raisedFrom = useRef<PanelState | null>(null);
+  // Down at the pill, it folds: the pill's face is the folded route's
+  // figures (FplRoute), and it comes up folded, as it was left to read.
+  if (!panelOpen && wholeRoute && edit.routeOpen) edit.setRouteOpen(false);
+  // A hold or a procedure asked for from elsewhere (the map's Hold Here, a
+  // voice's "the ILS one nine right at Milwaukee") opens the route, whose
+  // list draws them: once for each ask, once the sheet is up.
+  const asked = holdAsk ?? proceduresAt;
+  const [askSeen, setAskSeen] = useState<typeof asked>(null);
+  if (asked && asked !== askSeen && panelOpen && wholeRoute) {
+    setAskSeen(asked);
+    edit.setRouteOpen(true);
+  }
+  const routeFolded = wholeRoute && !edit.routeOpen && !addingStop;
+  const { setRouteOpen } = edit;
+  const openRoute = useCallback(() => {
+    raisedFrom.current = null;
+    setRouteOpen(true);
+  }, [setRouteOpen]);
+  // Done: folded again, the sheet back to the size it was at before it
+  // was raised for the room the open route took, if it is still there.
+  const foldRoute = useCallback(() => {
+    setRouteOpen(false);
+    setAddingStop(false);
+    setAddAt(null);
+    const before = raisedFrom.current;
+    raisedFrom.current = null;
+    if (before && panelNow.current === "full") setPanel(before);
+  }, [setRouteOpen, setAddAt, setPanel]);
+  // The open route wants more room than the sheet shows: all the way up,
+  // as iOS raises a sheet for its editor, kept to go back to at Done.
+  const makeRoom = useCallback(() => {
+    if (panelNow.current === "full") return;
+    raisedFrom.current = panelNow.current;
+    setPanel("full");
+  }, [setPanel]);
+  return {
+    ...edit,
+    ...line,
+    addingStop,
+    setAddingStop,
+    addingChange,
+    holdAsk,
+    dropIntoRoute,
+    clearRoute,
+    routeFolded,
+    openRoute,
+    foldRoute,
+    makeRoom,
+    setEditorFocused,
+  };
 }

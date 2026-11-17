@@ -453,13 +453,24 @@ off by default (the owner, 2026-11-13).
    strip with buttons in the same size as search bar"): the airplane's
    strip -- its N-number, the altitude, VFR/IFR beside it (a compact
    segmented control, the fields' 28 points tall; moved from the Profile
-   card by the owner, 2026-11-17), and before there is a route its •••
-   for Show Route As, a plain glyph in the tint as the search bar's
-   microphone is -- in a bar exactly the search field's size, the page toggle at its end, so a turn
-   of the page changes only what is in the bar; under it the route as one
-   row, in whichever of the three ways Show Route As picks (the box of
-   pills, the line, or the cards' ends and the Routes' chips), never in the
-   bar; under the route, once there is one, the route's figures (To,
+   card by the owner, 2026-11-17), the N-number and the altitude each
+   with its small caption inside its field, "Airplane" and "Cruise"
+   (labels C, the owner, 2026-11-17), and before there is a route its •••
+   (Undo, the map's choices, a half route's Clear), a plain glyph in the
+   tint as the search bar's microphone is -- in a bar exactly the search
+   field's size, the page toggle at its end, so a turn of the page changes
+   only what is in the bar; under it the route in its one layout (the
+   owner, 2026-11-17, "Ok let's try it"; decision
+   [0046](../decisions/0046-one-fpl-layout.md)), never in the bar: once
+   whole, folded to read -- one line, both ends' idents with their names
+   under them, the stops counted between, a chevron in the tint -- and a
+   tap on it opens it to edit: a head, "Route" and Done (iOS's Edit and
+   Done), over the airport cards, Add a Stop, the route's field to type or
+   paste a whole route, and the figures under all of them, the Routes'
+   chips put away; Done or a tap on "Route" folds it, and so does the
+   sheet coming down to the pill; opened with more than the sheet shows,
+   the sheet goes all the way up, and Done takes it back; under the folded
+   route the route's figures (To,
    Distance, Time, Fuel: short words in sentence case, the distance whole
    miles, "1,334 nm", the owner's list, 2026-11-17) at their own size, always
    exact and one column each, never wrapped; where the widest does not fit
@@ -472,7 +483,7 @@ off by default (the owner, 2026-11-13).
    of four buttons: Brief, Nav Log and Profile, each opening its card
    over FPL, and the route's •••, "More", its one menu -- undo and redo,
    its link, Open in ForeFlight, the checkpoints, the kneeboard, Save,
-   File, Plan again, Show Fuel Stops, Show Route As and Clear (the owner,
+   File, Plan again, Show Fuel Stops, the map's choices and Clear (the owner,
    2026-11-16, "make those action buttons as tab bar again and move the
    calculations strip to where the action buttons are now", buttons not
    tabs at the owner's pick; 2026-11-17, "move everything to the tab bar
@@ -488,8 +499,9 @@ off by default (the owner, 2026-11-13).
    the risen face (the actions' bar) fades in, in the sheet's settle
    time. A light tick as it settles where the browser has one. In flight the
    four are a row of tiles at the top of the flying drawer and the foot
-   the figures, large, with Done flying. Nothing between the figures
-   and the Routes' chips (the owner, 2026-11-16). What the Brief found
+   the figures, large, with Done flying. Between the figures and the
+   Routes' chips only their heading, "Suggested routes" (labels C,
+   2026-11-17; nothing else, the owner, 2026-11-16). What the Brief found
    to act on is the Brief's, which opens with it, not a list on FPL
    (the owner, 2026-11-16: "isn't there a better place for them? Like
    brief"): the Brief's button carries their count on its glyph's
@@ -525,15 +537,15 @@ off by default (the owner, 2026-11-13).
    folding its runways and procedures open, one disclosure with no
    chevron beside the symbol (the UI audit's C14), the symbol its menu;
    a waypoint's or a fix's stays plain. Every airport of the route is
-   always a card, in every layout -- the Nav Log's picked row's fill and
+   always a card, its role over its ident (Departure, Stop, Destination;
+   labels C) -- the Nav Log's picked row's fill and
    corner, no border or shadow -- and a tap on its lines makes it bigger,
    its runways and procedures opening inside it, as the Nav Log's note
    opens inside its row (the owner, 2026-11-17: "show it all the time,
-   tapping just makes it bigger"); the waypoints between stay plain rows
-   in the box's and the line's lists. One card look for the list
-   (`routeListStyle`'s POINT_CARD and FIELD_CARD, one fill). In the Plan's cards the ident is
-   the same link, and Change in the menu asks the one search for the
-   airport to put in its place. On the
+   tapping just makes it bigger"); the waypoints between stay plain rows.
+   One card look for the list (`routeListStyle`'s FIELD_CARD). Change in
+   an airport's menu asks the one search for the airport to put in its
+   place. On the
    map the way flown is solid magenta and the others thin dotted lines
    in the chart's ink, each chip named -- every chip white and small,
    12 points, quieter than the line: the way flown's words in the map's
@@ -543,8 +555,9 @@ off by default (the owner, 2026-11-13).
    2026-11-16); then the route in order, and
    the actions' bar pinned at the foot, the figures at the pill, both
    FPL's alone; the Brief, the Nav Log, the Profile and the Stops are cards over it. With
-   no route, the route's row stands empty and the bar keeps the airplane
-   and the menu, with a Close that goes back to the card or Search it came from
+   no route, the route is open to edit, "Route" over the departure's and
+   the destination's cards to fill and the route's field, and the bar keeps
+   the airplane and the menu, with a Close that goes back to the card or Search it came from
    (the owner, 2026-11-11: "We don't need plan a flight either with two
    buttons"). The first time, a welcome sheet says what the app is
    (Search like Maps, FPL like an EFB, the FAA charts), offers Theme and
@@ -600,7 +613,7 @@ off by default (the owner, 2026-11-13).
 
 | Web | iPhone | Android |
 |---|---|---|
-| shadcn's Toggle on Base UI's (`components/PageToggle`), never pressed, at the end of each page's first row (`OneSearchField`, `features/fpl/workspace/FplBar`), drawn on the page that is up, told the pages by `MapPanel` (`sheet/pageToggle`); the bar before it one size on both (`panelField`'s `SHEET_BAR`), each page's first row laid out by the same `barRowOf` (`SheetParts`); the account button in the left-hand column under the 3D (`MapControls`' `AccountCircle`, riding the sheet's top through `OnSheetTop`), beside the side panel under the map's buttons; the two pages the sheet's scrollers (`SheetParts`, `sheet/SheetPages`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/fpl/workspace/PlanPage`, the route's row under the bar `RouteHead` | One round glass button in the map's left column under 3D (`Views/MapButtonsDock`), in sight over any card; a tap closes the cards and turns the sheet's page | One round button in the left column's floating toolbar under 3D (`SheetSideButtons`), in sight over any card; a tap closes the cards and turns the page (`SheetNav.togglePage`) |
+| shadcn's Toggle on Base UI's (`components/PageToggle`), never pressed, at the end of each page's first row (`OneSearchField`, `features/fpl/workspace/FplBar`), drawn on the page that is up, told the pages by `MapPanel` (`sheet/pageToggle`); the bar before it one size on both (`panelField`'s `SHEET_BAR`), each page's first row laid out by the same `barRowOf` (`SheetParts`); the account button in the left-hand column under the 3D (`MapControls`' `AccountCircle`, riding the sheet's top through `OnSheetTop`), beside the side panel under the map's buttons; the two pages the sheet's scrollers (`SheetParts`, `sheet/SheetPages`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/fpl/workspace/PlanPage` (the open route's field and figures `RouteEditor`), the route's row under the bar `RouteHead` (folded, `route/RouteSummary`; whether it is open, `routeEditing`) | One round glass button in the map's left column under 3D (`Views/MapButtonsDock`), in sight over any card; a tap closes the cards and turns the sheet's page | One round button in the left column's floating toolbar under 3D (`SheetSideButtons`), in sight over any card; a tap closes the cards and turns the page (`SheetNav.togglePage`) |
 
 The iPhone's and Android's columns are still the tab bar's design; the
 toggle reaches them at the owner's word (web first), and so does the
@@ -619,7 +632,10 @@ Tests: [`e2e/sheet-page-toggle.spec.ts`](../../apps/web/e2e/sheet-page-toggle.sp
 keyboard too; where it rides and the sheet on the screen's foot; a
 44-point toggle and the one grabber bar) and, for the cards
 over the pages, [`e2e/sheet-pages-cards.spec.ts`](../../apps/web/e2e/sheet-pages-cards.spec.ts)
-(`@smoke`: Fly Here from an airport's card lands on FPL, live).
+(`@smoke`: Fly Here from an airport's card lands on FPL, live); FPL's one
+layout, folded and opened, its labels and a new plan's cards, in
+[`e2e/fpl-one-layout.spec.ts`](../../apps/web/e2e/fpl-one-layout.spec.ts)
+(nightly).
 
 ## 5. Airport weather marks (the owner, 2026-11-10)
 
@@ -904,7 +920,9 @@ the web's words are Private & Military since 2026-11-14)
 as the stock toggle's button style, and Look, Theme and Appearance as
 menus (2026-11-14), with no overlay row (Google's tiles are not drawn on the iPhone, and the USGS
 imagery already comes in by itself close in). Show Route As (Route Box or
-Strip) is in the route's ••• menu, the empty route's too.
+Strip) is in the route's ••• menu, the empty route's too; the web has one
+layout since 2026-11-17 (decision 0046), the iPhone's to follow at the
+owner's word.
 
 On Android (Google Maps' way, 2026-11-13): every card, You and the Map
 card among them, rides the sheet's stack as Google Maps' place cards and
@@ -1030,7 +1048,8 @@ less cluttered". Decision [0044](../decisions/0044-fpl-for-every-pilot.md).
 8. **A point the planner will not plan to is said, not planned.** An
    ident no US field, waypoint or navaid goes by (KZZZ, KIGN) is the
    unknown place: its pill and the strip's To in red with their mark, a
-   line under the route box with Remove, no distance, no Routes, and
+   line under the route's field with Remove (the route open by itself to
+   show it), no distance, no Routes, and
    Brief, Nav Log and Profile off (the UI audit's B8). A real field
    abroad (AYID, Indagen) is the same, its line saying it "is outside the
    US charts": the planner plans on the FAA's charts, NASR and

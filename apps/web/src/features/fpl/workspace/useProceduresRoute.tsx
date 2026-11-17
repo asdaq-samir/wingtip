@@ -2,15 +2,21 @@ import { useMemo } from "react";
 import { MAX_STOPS } from "../../../lib/identSchema";
 import { ProceduresRoute } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
+import { routeEditing } from "./routeEditing";
 
 /**
  * FPL's list of the route's steps, made once for the same plan (useMemo),
  * so it is drawn again only when what it shows changes (routePanelParts'
  * memo): the departure and arrival with their runways and procedures, and
- * the stops between.
+ * the stops between. In the one layout (decision 0046) it is the route
+ * open to edit, its points moved, changed and added to; read in flight and
+ * a dry run, the Routes' chips over it in flight, where the route's row is
+ * not drawn; and folded, none: the folded route is its line alone.
  */
-export function useProceduresRoute(vm: PlanSlices<"route" | "plan" | "cards" | "picks" | "stops" | "routeList" | "leg" | "brief">) {
-  const { crossings, depart, directParam, ground, holds, insertStopAfter, planned, removeStop, routeEdit, routePoints, setPointAltitude } =
+export function useProceduresRoute(
+  vm: PlanSlices<"route" | "plan" | "cards" | "picks" | "stops" | "routeList" | "leg" | "brief" | "flight">,
+) {
+  const { crossings, depart, directParam, ground, holds, insertStopAfter, planned, removeStop, routePoints, setPointAltitude, hasPoints } =
     vm.route;
   const { changeDepart, directToPoint, setGround, setHold } = vm.plan;
   const { selectPlace, setApproachesOf } = vm.cards;
@@ -37,9 +43,14 @@ export function useProceduresRoute(vm: PlanSlices<"route" | "plan" | "cards" | "
   const { holdAsk, listEdit, routeLine } = vm.routeList;
   const { routeRows } = vm.leg;
   const { altitudeAt, metarColour } = vm.brief;
+  const { dryRunning, flying } = vm.flight;
+  const read = !!flying || !!dryRunning;
+  // Open to edit with points to list: half a route lists its fields too.
+  const editing = routeEditing(vm) && hasPoints;
+  const shown = read || editing;
   return useMemo(
-    () => (
-      <>
+    () =>
+      shown ? (
         <ProceduresRoute
           airports={procedureAirports}
           rows={routeRows}
@@ -84,16 +95,16 @@ export function useProceduresRoute(vm: PlanSlices<"route" | "plan" | "cards" | "
             }
           }}
           chartsDisabled={!planned.dest || noApproaches}
-          // In Route Cards the Routes row is in the head's box under the
-          // bar (the route slot, below), not over the list.
-          routeLine={routeEdit === "plan" ? null : routeLine}
-          // The list changes the route too where the box is folded away once
-          // the route is whole (RouteEdit, both of the owner's picks).
-          // Not with the box as it was, whose pills do it.
-          edit={routeEdit !== "box" && planned.dep && planned.dest ? listEdit : undefined}
+          // The Routes' chips over the list in flight alone: on the ground
+          // they are the folded route's (FplRoute).
+          routeLine={flying ? routeLine : null}
+          edit={editing ? listEdit : undefined}
         />
-      </>
-    ),
+      ) : (
+        // Folded: nothing under the route's line, not the nav log's own
+        // list either (NavLogView draws `route` in its place).
+        FOLDED
+      ),
     [
       routeLine,
       procedureAirports,
@@ -118,7 +129,6 @@ export function useProceduresRoute(vm: PlanSlices<"route" | "plan" | "cards" | "
       previewProcedure,
       proceduresAt,
       setProceduresShown,
-      planned.dep,
       planned.dest,
       setApproachesOf,
       selectPlace,
@@ -137,7 +147,12 @@ export function useProceduresRoute(vm: PlanSlices<"route" | "plan" | "cards" | "
       planned.stops.length,
       tankFigures,
       listEdit,
-      routeEdit,
+      shown,
+      flying,
+      editing,
     ],
   );
 }
+
+/** What FPL's list is while the route is folded: nothing. */
+const FOLDED = <></>;

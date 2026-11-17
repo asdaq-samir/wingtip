@@ -11,20 +11,16 @@ import { AirportMark } from "../navlog/lazy";
  * cards with a stub into each mark, "I don't like the connections from the
  * left, can we squeeze the capsule space and maybe slide them to the right
  * so we have non overlapping space for connections on the left of
- * runways"): down the marks' column (the card's 12 and half its 28), the
- * card's runways and procedures starting right of it (CARD_BODY), behind
- * all the card holds (the card isolated, the line under its content), and
- * across the gap to the next card. The first card's starts, and the
- * last's ends, 32 down, under its mark, on a disc of the card's fill
- * (CardMark), as the mark's grey is see-through.
+ * runways"): down the marks' column, behind all the card holds (the card
+ * isolated, the line under its content), and across the gap to the next
+ * card. The first card's starts, and the last's ends, under its mark, on
+ * a disc of the card's fill (CardMark), as the mark's grey is see-through.
  */
-export function CardThread({ first, last, row = false }: { first: boolean; last: boolean; row?: boolean }) {
+export function CardThread({ first, last }: { first: boolean; last: boolean }) {
   if (first && last) return null;
-  // `row`: an airport's card in the box's and the line's lists (FIELD_CARD),
-  // its column 6 in and its mark 8 down, the gap under it FIELD_GAP's 12.
-  const place = row
-    ? cn("left-[calc(1.25rem-1px)]", first ? "top-6" : "top-0", last ? "h-6" : "-bottom-3")
-    : cn("left-[calc(1.625rem-1px)]", first ? "top-8" : "top-0", last ? "h-8" : "-bottom-[1.375rem]");
+  // An airport's card in the route's list (FIELD_CARD): its column 6 in and
+  // its mark 8 down, the gap under it FIELD_GAP's 12.
+  const place = cn("left-[calc(1.25rem-1px)]", first ? "top-6" : "top-0", last ? "h-6" : "-bottom-3");
   return <span aria-hidden="true" style={ROUTE_LINE} className={cn("absolute -z-10 w-0.5", place)} />;
 }
 

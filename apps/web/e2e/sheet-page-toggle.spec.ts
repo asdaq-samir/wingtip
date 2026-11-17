@@ -183,11 +183,11 @@ test("a route made goes to FPL; Search puts FPL's figures away with its page", a
   await grabberTo(page, "peek");
   await expect(page.getByTestId("panel-foot")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
-  await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeHidden();
+  await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeHidden();
   // Half way up, FPL's bar is back with the route's row under it.
   await grabberTo(page, "half");
   await expect(sideDrawer(page).getByTestId("route-strip")).toBeVisible();
-  await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeVisible();
   await toggle(page).click();
   await expectPage(page, 0);
   await expect(page.getByTestId("panel-foot")).toBeHidden();

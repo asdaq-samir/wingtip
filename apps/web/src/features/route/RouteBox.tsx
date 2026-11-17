@@ -84,7 +84,6 @@ export default function RouteBox({
   onKeepFuelStops,
   onHideFuelStop,
   addAt = null,
-  onDone,
   unknownPoint = null,
 }: RouteBoxProps) {
   // Each by its own name: three of them are refs (the field, the row and
@@ -114,10 +113,9 @@ export default function RouteBox({
     toEnd,
     isRoom,
     arrowAt,
-    done,
     suggestions,
     dismiss,
-  } = useRouteBox({ dep, stops, dest, waypoints, onChange, onTypedProcedures, adding, onAddingChange, via, addAt, onDone });
+  } = useRouteBox({ dep, stops, dest, waypoints, onChange, onTypedProcedures, adding, onAddingChange, via, addAt });
   // The point whose altitude is being set, from its menu.
   const [editing, setEditing] = useState<EditedPoint | null>(null);
   // The box, which the suggestions are placed under (their popover's
@@ -277,25 +275,6 @@ export default function RouteBox({
                 React Aria's field clear (ui/search-field), its press keeping
                 the focus in the box; the TokenField has no clear slot. */}
             {typed.text && <SearchFieldClear aria-label="Clear what is typed" onPress={clearTyped} className="mt-1 mr-1" />}
-            {/* The route is cleared from its ••• menu, not a ✕ here (the
-                owner, 2026-11-11, ShareMenu's Clear route). Folded again, as
-                iOS's Done ends an edit: the box's first line at its end.
-                Pressed, the field keeps the focus till it goes. */}
-            {onDone && (
-              <Button
-                variant="plain"
-                size="inline"
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={done}
-                className={cn(
-                  "relative mt-1 ml-1 h-7 shrink-0 rounded-full px-1.5 font-semibold text-tint outline-none after:absolute after:-inset-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-                  TEXT.row,
-                )}
-              >
-                Done
-              </Button>
-            )}
           </InputGroup>
           {/* The suggestions under the box: the typing stays in the box,
             where the picker's sheet from the top would take the focus to a

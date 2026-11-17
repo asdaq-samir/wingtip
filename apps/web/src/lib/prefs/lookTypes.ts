@@ -11,31 +11,22 @@ export type Brand = "wingtip" | "cockpit" | "ink" | "native";
  *  VFR, or IFR -- its minimum altitudes, its thousands by direction of
  *  flight and its 45-minute reserve (the planner's wingtip.ifr). */
 export type FlightRules = "vfr" | "ifr";
-/** How FPL's route is changed once it has a destination, the owner's
- *  two picks of the FPL canvas (2026-11-05) and the box as it was: `box`,
- *  the route's box over the plan; `folded`, the box folded to one line, a
- *  tap opening it again (A); `plan`, no box, the plan's rows dragged and
- *  added to (B). In the route's ••• menu, Show Route As (ShowRouteAs). */
-export type RouteEdit = "box" | "folded" | "plan";
 /** How own ship is drawn on the chart (lib/map/position/ownShipLook): an
  *  airplane from above -- a single, the default, a twin or a jet -- or the
  *  arrow, a dot with no heading. The Map card's Own Ship (the owner,
  *  2026-11-14), back after You on the Map was taken out on 2026-11-13. */
 export type OwnShipLook = "arrow" | "single" | "twin" | "jet";
 
-/** The app's look and how the pilot works a route: Settings' Look. */
+/** The app's look and the flight rules: Settings' Look. */
 export interface LookSlice {
   /** The app's look: its tint, its typeface and its corners (lib/brand). */
   brand: Brand;
   /** The flight rules every route is planned under, kept: a pilot who
    *  files IFR files it flight after flight. */
   flightRules: FlightRules;
-  /** How FPL's route is changed once it has a destination (RouteEdit). */
-  routeEdit: RouteEdit;
   /** How own ship is drawn on the chart (OwnShipLook). */
   ownShipLook: OwnShipLook;
   setBrand: (brand: Brand) => void;
   setFlightRules: (flightRules: FlightRules) => void;
-  setRouteEdit: (routeEdit: RouteEdit) => void;
   setOwnShipLook: (ownShipLook: OwnShipLook) => void;
 }

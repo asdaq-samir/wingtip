@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
+  openRoute,
   closeCard,
   closeNavLog,
   controlsInSight,
@@ -140,6 +141,7 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   // after tomorrow falls there), then the time in the box beside it. No native datetime-local control.
   expect(await page.locator('input[type="datetime-local"]').count()).toBe(0);
   await controlsInSight(page);
+  await openRoute(page);
   await page.getByTestId("depart-date").click();
   const calendar = page.locator('[data-slot="calendar"]');
   await expect(calendar).toBeVisible();

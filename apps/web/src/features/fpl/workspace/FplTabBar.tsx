@@ -16,7 +16,7 @@ import type { PlanSlices } from "../vm/planSlices";
  * look, open cards"), and last the route's one menu, ••• "More" (`more`,
  * ShareMenu's bar look; the owner, 2026-11-17: "move everything to the tab
  * bar with a ... instead of share"): the undo, the sharing, Save, File,
- * Plan again, Show Route As and Clear.
+ * Plan again, the map's choices and Clear.
  * From half up; at the pill the figures alone, large (FlightFoot).
  * What the Brief found to act on is counted on its glyph's corner, red
  * where one is a stop, amber where all are cautions (CardTabBar's

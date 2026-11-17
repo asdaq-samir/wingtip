@@ -32,7 +32,6 @@ export function useRouteBox({
   onAddingChange,
   via,
   addAt,
-  onDone,
 }: RouteParts & {
   waypoints: Set<string>;
   onChange: (route: RouteParts) => void;
@@ -41,7 +40,6 @@ export function useRouteBox({
   onAddingChange: (adding: boolean) => void;
   via?: Detour[];
   addAt: number | null;
-  onDone?: () => void;
 }) {
   const [value, setValue] = useState(() => routeValue(pointsOf({ dep, stops, dest })));
   // The route the box shows: the plan's, or the one the box last sent until
@@ -252,7 +250,6 @@ export function useRouteBox({
     onAddingChange,
     addAt,
     via,
-    opened: !!onDone,
   });
 
   // An arrow between two points: the one search asked for a stop there
@@ -260,14 +257,6 @@ export function useRouteBox({
   const { oneSearch, askAt } = useStopAsked({ points, hasDep, hasDest, isEnd, change });
   const arrowAt = (before: number) => (oneSearch ? askAt(before) : focusAt(before));
 
-  // Folded again: what is typed put in first, as leaving the box does,
-  // and not again as the field's blur comes after the box has gone.
-  const done = () => {
-    commit();
-    valueNow.current = routeValue(points);
-    onAddingChange(false);
-    onDone?.();
-  };
   const clearTyped = () => setValue(routeValue(points, "", typed.at, value));
 
   return {
@@ -295,7 +284,6 @@ export function useRouteBox({
     toEnd,
     isRoom,
     arrowAt,
-    done,
     suggestions: { open, rows: text ? rows : [], answered: !text || answered, via: !text ? (via ?? []) : [], ownPoint, pick },
     dismiss: () => {
       setDismissed(text);

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { controlsInSight, openPanel, settle, sideDrawer, slow, openRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
 import { recordedStops } from "./recordedStops";
@@ -48,6 +48,7 @@ test("the route's box is round, one line tall for a short route and the panel's 
   await settle(page);
   // All the way up, the route's box over its chips.
   await controlsInSight(page);
+  await openRoute(page);
   const box = sideDrawer(page).getByTestId("route-box");
   await expect(box).toBeVisible();
   expect(await sideDrawer(page).getByTestId("add-stop").count()).toBe(0);
@@ -118,6 +119,7 @@ test("a town's name typed with the airports shown takes the first of them at Ent
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   // Typed in the box after its last point: the new destination, Duluth a
   // stop on the way.
   const field = sideDrawer(page).getByTestId("route-type");
@@ -139,6 +141,7 @@ test("a short town's name (four letters) takes the first airport shown at Enter,
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   const field = sideDrawer(page).getByTestId("route-type");
   await field.fill("reno");
   const first = page.getByTestId("route-suggestions").getByRole("option").first();
@@ -160,6 +163,7 @@ test("a long route's box is one row that slides sideways to the rest, faded wher
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN,KEAU,KOSH,KCWA,KSTE,KATW,KGRB");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   const lines = sideDrawer(page).getByTestId("route-slide");
   await expect(lines.locator("[role=group]")).toHaveCount(10);
   const box = await lines.evaluate((el) => ({
@@ -223,6 +227,7 @@ test("the route's airports are marked by their airspace's ring and their weather
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   await expect(mark()).toHaveAttribute("data-airspace", "D", { timeout: slow(15000) });
   // Its METAR's colour in the middle, or the grey of none, as the chart's
   // marks have it: no setting since the owner's split (2026-10-27).
@@ -238,6 +243,7 @@ test("a round trip's field is a Depart step and an Arrive step, each with its ru
   await page.goto("/app/plan?dep=C81&stops=KJVL&dest=C81");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   const route = sideDrawer(page).getByTestId("procedures");
   await expect(route.getByRole("region", { name: "C81 · Depart" })).toBeVisible({ timeout: slow(60000) });
   await expect(route.getByRole("region", { name: "C81 · Arrive" })).toBeVisible({ timeout: slow(60000) });

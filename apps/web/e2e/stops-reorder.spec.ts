@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { inSheet, openPanel, settle, sideDrawer } from "./helpers";
+import { inSheet, openPanel, openRoute, settle, sideDrawer } from "./helpers";
 import { stopsAre } from "./stopsParam";
 
 /**
@@ -69,18 +69,10 @@ test("a point's grip in FPL's list moves it anywhere, by a mouse or the keyboard
     (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname),
     (route) => route.abort(),
   );
-  // FPL's list changes the route in the Show Route As picks (the route's
-  // ••• menu, ShowRouteAs) that fold the box (A)
-  // or have none (B), where it is the route's editor (PlanWorkspace's
-  // `edit`); with the box out (the default) the box does, and the list
-  // has no grips. Layout B, the list alone.
-  await page.addInitScript(() => {
-    const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":7}');
-    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, routeEdit: "plan" } }));
-  });
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   const list = sideDrawer(page).getByTestId("procedures");
   const row = (ident: string) =>
     list
@@ -130,6 +122,7 @@ test.describe("on a touch screen", () => {
     await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN");
     await settle(page);
     await openPanel(page);
+    await openRoute(page);
     const lines = sideDrawer(page).getByTestId("route-slide");
     const stop = lines.getByRole("group", { name: "Stop 1 KRYV" });
     // Held past the menu's half second and let go where it was put down.
