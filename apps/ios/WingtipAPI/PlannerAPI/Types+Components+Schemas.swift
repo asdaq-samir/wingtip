@@ -6082,45 +6082,6 @@ extension Components {
                 case patternNm = "pattern_nm"
             }
         }
-        /// The debrief as POST /api/debrief answered it (the debrief and the
-        /// tolerances), or as the web app's own twin keeps it (lib/debrief: the
-        /// figures alone, their keys camel-cased, without the flown line and the
-        /// profile, thousands of points a sentence cannot use): `debrief_of`
-        /// reads either.
-        ///
-        /// - Remark: Generated from `#/components/schemas/DebriefWordsAsk`.
-        public struct DebriefWordsAsk: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/DebriefWordsAsk/debrief`.
-            public struct DebriefPayload: Codable, Hashable, Sendable {
-                /// A container of undocumented properties.
-                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
-                /// Creates a new `DebriefPayload`.
-                ///
-                /// - Parameters:
-                ///   - additionalProperties: A container of undocumented properties.
-                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
-                    self.additionalProperties = additionalProperties
-                }
-                public init(from decoder: any Swift.Decoder) throws {
-                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
-                }
-                public func encode(to encoder: any Swift.Encoder) throws {
-                    try encoder.encodeAdditionalProperties(additionalProperties)
-                }
-            }
-            /// - Remark: Generated from `#/components/schemas/DebriefWordsAsk/debrief`.
-            public var debrief: Components.Schemas.DebriefWordsAsk.DebriefPayload
-            /// Creates a new `DebriefWordsAsk`.
-            ///
-            /// - Parameters:
-            ///   - debrief:
-            public init(debrief: Components.Schemas.DebriefWordsAsk.DebriefPayload) {
-                self.debrief = debrief
-            }
-            public enum CodingKeys: String, CodingKey {
-                case debrief
-            }
-        }
         /// The strongest crosswind the POH says the aeroplane was shown to
         /// take off and land in: not a limitation, but past it the pilot is
         /// beyond what was tested.
@@ -17453,52 +17414,6 @@ extension Components {
                 case rule
             }
         }
-        /// The Go / No-Go as the client has it (RiskVerdict), and the pilot's
-        /// own record as the client keeps it -- personal minimums, currency,
-        /// recency, whatever it has, by its own keys -- given to the model as one
-        /// source the words can cite.
-        ///
-        /// - Remark: Generated from `#/components/schemas/RiskAsk`.
-        public struct RiskAsk: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/RiskAsk/pilot`.
-            public struct PilotPayload: Codable, Hashable, Sendable {
-                /// A container of undocumented properties.
-                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
-                /// Creates a new `PilotPayload`.
-                ///
-                /// - Parameters:
-                ///   - additionalProperties: A container of undocumented properties.
-                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
-                    self.additionalProperties = additionalProperties
-                }
-                public init(from decoder: any Swift.Decoder) throws {
-                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
-                }
-                public func encode(to encoder: any Swift.Encoder) throws {
-                    try encoder.encodeAdditionalProperties(additionalProperties)
-                }
-            }
-            /// - Remark: Generated from `#/components/schemas/RiskAsk/pilot`.
-            public var pilot: Components.Schemas.RiskAsk.PilotPayload?
-            /// - Remark: Generated from `#/components/schemas/RiskAsk/verdict`.
-            public var verdict: Components.Schemas.RiskVerdict
-            /// Creates a new `RiskAsk`.
-            ///
-            /// - Parameters:
-            ///   - pilot:
-            ///   - verdict:
-            public init(
-                pilot: Components.Schemas.RiskAsk.PilotPayload? = nil,
-                verdict: Components.Schemas.RiskVerdict
-            ) {
-                self.pilot = pilot
-                self.verdict = verdict
-            }
-            public enum CodingKeys: String, CodingKey {
-                case pilot
-                case verdict
-            }
-        }
         /// The risk assessment: its points, its level and its line ("Raised ·
         /// 8 points"), what to do at that level, and every factor counted.
         ///
@@ -17654,52 +17569,6 @@ extension Components {
                 case why
             }
         }
-        /// The Go / No-Go as POST /api/go-no-go answers it (its line, its
-        /// items, its risk assessment), or as the web app's own twin keeps it
-        /// (lib/verdict: the line's finding and words on the object itself, its
-        /// items, no risk assessment): either reads here, the extras dropped.
-        ///
-        /// - Remark: Generated from `#/components/schemas/RiskVerdict`.
-        public struct RiskVerdict: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/RiskVerdict/finding`.
-            public var finding: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/RiskVerdict/items`.
-            public var items: [Components.Schemas.VerdictItemLoose]?
-            /// - Remark: Generated from `#/components/schemas/RiskVerdict/line`.
-            public var line: Components.Schemas.VerdictLineLoose?
-            /// - Remark: Generated from `#/components/schemas/RiskVerdict/risk`.
-            public var risk: Components.Schemas.RiskAssessment?
-            /// - Remark: Generated from `#/components/schemas/RiskVerdict/words`.
-            public var words: Swift.String?
-            /// Creates a new `RiskVerdict`.
-            ///
-            /// - Parameters:
-            ///   - finding:
-            ///   - items:
-            ///   - line:
-            ///   - risk:
-            ///   - words:
-            public init(
-                finding: Swift.String? = nil,
-                items: [Components.Schemas.VerdictItemLoose]? = nil,
-                line: Components.Schemas.VerdictLineLoose? = nil,
-                risk: Components.Schemas.RiskAssessment? = nil,
-                words: Swift.String? = nil
-            ) {
-                self.finding = finding
-                self.items = items
-                self.line = line
-                self.risk = risk
-                self.words = words
-            }
-            public enum CodingKeys: String, CodingKey {
-                case finding
-                case items
-                case line
-                case risk
-                case words
-            }
-        }
         /// - Remark: Generated from `#/components/schemas/RouteAirport`.
         public struct RouteAirport: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/RouteAirport/ident`.
@@ -17768,45 +17637,6 @@ extension Components {
                 case waterNm = "water_nm"
             }
         }
-        /// A route as the words are asked for it: its ends, the stops landed
-        /// at between them in order (app.router_basics.load_route) and when it leaves
-        /// (UTC when naive; now when not given).
-        ///
-        /// - Remark: Generated from `#/components/schemas/RouteAsk`.
-        public struct RouteAsk: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/RouteAsk/dep`.
-            public var dep: Swift.String
-            /// - Remark: Generated from `#/components/schemas/RouteAsk/depart`.
-            public var depart: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/RouteAsk/dest`.
-            public var dest: Swift.String
-            /// - Remark: Generated from `#/components/schemas/RouteAsk/stops`.
-            public var stops: [Swift.String]?
-            /// Creates a new `RouteAsk`.
-            ///
-            /// - Parameters:
-            ///   - dep:
-            ///   - depart:
-            ///   - dest:
-            ///   - stops:
-            public init(
-                dep: Swift.String,
-                depart: Swift.String? = nil,
-                dest: Swift.String,
-                stops: [Swift.String]? = nil
-            ) {
-                self.dep = dep
-                self.depart = depart
-                self.dest = dest
-                self.stops = stops
-            }
-            public enum CodingKeys: String, CodingKey {
-                case dep
-                case depart
-                case dest
-                case stops
-            }
-        }
         /// A run of the weather a way meets (the engine's route_options): VFR,
         /// marginal (MVFR), IFR or a thunderstorm, and how many minutes of the
         /// flight it lasts, in the order flown.
@@ -17832,24 +17662,6 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case kind
                 case min
-            }
-        }
-        /// A route that would plan (GET /api/route-check): its stops as the
-        /// planner reads them.
-        ///
-        /// - Remark: Generated from `#/components/schemas/RouteChecked`.
-        public struct RouteChecked: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/RouteChecked/stops`.
-            public var stops: [Swift.String]
-            /// Creates a new `RouteChecked`.
-            ///
-            /// - Parameters:
-            ///   - stops:
-            public init(stops: [Swift.String]) {
-                self.stops = stops
-            }
-            public enum CodingKeys: String, CodingKey {
-                case stops
             }
         }
         /// One choice on FPL's route line (the owner's redesign, 2026-10-26:
@@ -22252,41 +22064,6 @@ extension Components {
                 case tab
             }
         }
-        /// - Remark: Generated from `#/components/schemas/VerdictItemLoose`.
-        public struct VerdictItemLoose: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/VerdictItemLoose/detail`.
-            public var detail: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/VerdictItemLoose/finding`.
-            public var finding: Swift.String
-            /// - Remark: Generated from `#/components/schemas/VerdictItemLoose/key`.
-            public var key: Swift.String
-            /// - Remark: Generated from `#/components/schemas/VerdictItemLoose/label`.
-            public var label: Swift.String
-            /// Creates a new `VerdictItemLoose`.
-            ///
-            /// - Parameters:
-            ///   - detail:
-            ///   - finding:
-            ///   - key:
-            ///   - label:
-            public init(
-                detail: Swift.String? = nil,
-                finding: Swift.String,
-                key: Swift.String,
-                label: Swift.String
-            ) {
-                self.detail = detail
-                self.finding = finding
-                self.key = key
-                self.label = label
-            }
-            public enum CodingKeys: String, CodingKey {
-                case detail
-                case finding
-                case key
-                case label
-            }
-        }
         /// - Remark: Generated from `#/components/schemas/VerdictLine`.
         public struct VerdictLine: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/VerdictLine/finding`.
@@ -22301,29 +22078,6 @@ extension Components {
             public init(
                 finding: Swift.String,
                 words: Swift.String
-            ) {
-                self.finding = finding
-                self.words = words
-            }
-            public enum CodingKeys: String, CodingKey {
-                case finding
-                case words
-            }
-        }
-        /// - Remark: Generated from `#/components/schemas/VerdictLineLoose`.
-        public struct VerdictLineLoose: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/VerdictLineLoose/finding`.
-            public var finding: Swift.String
-            /// - Remark: Generated from `#/components/schemas/VerdictLineLoose/words`.
-            public var words: Swift.String?
-            /// Creates a new `VerdictLineLoose`.
-            ///
-            /// - Parameters:
-            ///   - finding:
-            ///   - words:
-            public init(
-                finding: Swift.String,
-                words: Swift.String? = nil
             ) {
                 self.finding = finding
                 self.words = words
@@ -22605,64 +22359,6 @@ extension Components {
                 case severity
                 case validFrom = "valid_from"
                 case validTo = "valid_to"
-            }
-        }
-        /// The briefing's own parameters besides the route (GET /api/briefing):
-        /// the flight's minutes, and the nav log's fixes ("lat,lon;lat,lon") and
-        /// each leg's minutes where the page has them, for each hazard to be
-        /// placed where the flight meets it.
-        ///
-        /// - Remark: Generated from `#/components/schemas/WeatherAsk`.
-        public struct WeatherAsk: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/WeatherAsk/dep`.
-            public var dep: Swift.String
-            /// - Remark: Generated from `#/components/schemas/WeatherAsk/depart`.
-            public var depart: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/WeatherAsk/dest`.
-            public var dest: Swift.String
-            /// - Remark: Generated from `#/components/schemas/WeatherAsk/ete_min`.
-            public var eteMin: Swift.Double?
-            /// - Remark: Generated from `#/components/schemas/WeatherAsk/fixes`.
-            public var fixes: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/WeatherAsk/leg_min`.
-            public var legMin: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/WeatherAsk/stops`.
-            public var stops: [Swift.String]?
-            /// Creates a new `WeatherAsk`.
-            ///
-            /// - Parameters:
-            ///   - dep:
-            ///   - depart:
-            ///   - dest:
-            ///   - eteMin:
-            ///   - fixes:
-            ///   - legMin:
-            ///   - stops:
-            public init(
-                dep: Swift.String,
-                depart: Swift.String? = nil,
-                dest: Swift.String,
-                eteMin: Swift.Double? = nil,
-                fixes: Swift.String? = nil,
-                legMin: Swift.String? = nil,
-                stops: [Swift.String]? = nil
-            ) {
-                self.dep = dep
-                self.depart = depart
-                self.dest = dest
-                self.eteMin = eteMin
-                self.fixes = fixes
-                self.legMin = legMin
-                self.stops = stops
-            }
-            public enum CodingKeys: String, CodingKey {
-                case dep
-                case depart
-                case dest
-                case eteMin = "ete_min"
-                case fixes
-                case legMin = "leg_min"
-                case stops
             }
         }
         /// - Remark: Generated from `#/components/schemas/WeatherDataset`.

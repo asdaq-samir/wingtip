@@ -140,30 +140,6 @@ export function attemptsAt(d: ProcedureDrawing, points: TrackPoint[]): { faf: nu
   return callEngine("approach_attempts", { drawing: d, points: enginePoints(points) });
 }
 
-interface DebriefOptions {
-  /** The attempt to debrief (attemptsAt); the first where none is given. */
-  attempt?: { faf: number; from: number; to: number };
-  /** The pilot's DA or MDA from the plate, ft MSL: the CIFP has no
-   *  minimums, so none is assumed. */
-  minimumsFt?: number | null;
-}
-
-/**
- * One attempt at an approach debriefed; null where the track did not fly
- * it: never inbound over its final approach fix within PASS_NM, or then
- * not down its final within MATCH_NM on average, or far over the fix's
- * altitude.
- */
-export function debriefApproach(d: ProcedureDrawing, points: TrackPoint[], options: DebriefOptions = {}): ApproachDebrief | null {
-  const flown = callEngine("approach_debrief", {
-    drawing: d,
-    points: enginePoints(points),
-    attempt: options.attempt ?? null,
-    minimums_ft: options.minimumsFt ?? null,
-  });
-  return flown && shaped(flown);
-}
-
 /**
  * A debrief held to the pilot's minimums, the DA or MDA they flew to (the
  * CIFP has none): under them before a missed approach is flying below

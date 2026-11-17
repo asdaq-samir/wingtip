@@ -56,7 +56,6 @@ pub fn night(name: &str, v: &Value) -> Result<String, String> {
     };
     let night = match name {
         "night_on_the_way" => sun::night_on_the_way(pair("start")?, pair("end")?, ask.num("depart_s")?, ask.num("minutes")?),
-        "passenger_night" => sun::passenger_night(ask.num("lat")?, ask.num("lon")?, ask.num("at_s")?),
         // The sky's own day and night (sunset to sunrise), not 1.1's.
         "sun_down" => sun::sun_down(ask.num("lat")?, ask.num("lon")?, ask.num("at_s")?),
         "passenger_night_on_the_way" => {

@@ -94,13 +94,6 @@ pub fn files(name: &str, v: &Value) -> Result<String, String> {
         "logbook_csv_read" => return Ok(logbook::read_json(ask.str("text")?)),
         "logbook_csv_write" => json::string(&mut out, &logbook::write(ask.list("entries")?)),
         "handbook_figures" => return Ok(handbook::to_json(&handbook::figures_of_page(ask.str("text")?))),
-        "handbook_within" => {
-            let key = ask.str("key")?;
-            match handbook::figure_within(key, ask.num("value")?) {
-                Some(yes) => out.push_str(&yes.to_string()),
-                None => return Err(format!("{name}: no figure is called {key:?}")),
-            }
-        }
         _ => return Err(format!("the engine has no rule called {name:?}")),
     }
     Ok(out)

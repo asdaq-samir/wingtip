@@ -198,7 +198,7 @@ pub const BOUNDS: [(&str, f64, f64); 7] = [
 
 /// Whether a figure, by its name in BOUNDS, is within its bounds; a name
 /// not there has none.
-pub fn figure_within(key: &str, value: f64) -> Option<bool> {
+fn figure_within(key: &str, value: f64) -> Option<bool> {
     BOUNDS.iter().find(|(k, _, _)| *k == key).map(|(_, min, max)| within(Some(value), *min, *max))
 }
 
@@ -208,3 +208,17 @@ fn bounded(n: Option<f64>, key: &str) -> bool {
 
 mod says;
 pub use says::*;
+
+#[cfg(test)]
+mod tests {
+    use super::figure_within;
+
+    #[test]
+    fn a_figure_typed_in_is_held_to_the_bounds_the_page_is_read_by() {
+        assert_eq!(figure_within("cruiseTasKt", 30.0), Some(true));
+        assert_eq!(figure_within("cruiseTasKt", 29.9), Some(false));
+        assert_eq!(figure_within("climbFuelBurnGph", 150.0), Some(true));
+        assert_eq!(figure_within("serviceCeilingFt", 30001.0), Some(false));
+        assert_eq!(figure_within("wingspan", 3.0), None);
+    }
+}

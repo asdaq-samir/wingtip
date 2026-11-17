@@ -27,8 +27,8 @@ from wingtip.planning import route_line
 from wingtip.profile import route_profile as side_view
 
 from .. import chart_model, cycle_in_address, foreflight, prefetch
-from ..router_basics import load_route, resolve, resolve_stop, stops_of
-from ..schemas.plan import Checkpoints, Course, Plan, RouteChecked, RouteProfile, Totals
+from ..router_basics import load_route
+from ..schemas.plan import Checkpoints, Course, Plan, RouteProfile, Totals
 from ..checkpoint_scoring import route_checkpoints
 from ..plan_query import PlanQuery, named_checkpoints
 from ..gateway import PUBLIC, gateway
@@ -47,22 +47,6 @@ def route_profile(dep: str, dest: str, stops: str = "") -> RouteProfile:
     shp_path = airspace.ensure_class_airspace_shapefile(altitude.DEFAULT_FAA_CACHE_DIR)
     dof_path = faa_data.ensure_nasr_file("DOF.DAT", altitude.DEFAULT_FAA_CACHE_DIR)
     return side_view([(a["lat"], a["lon"]) for a in r.airports], shp_path, dof_path)
-
-
-@router.get("/api/route-check")
-def route_check(dep: str = "", dest: str = "", stops: str = "") -> RouteChecked:
-    """Whether a route would plan, checked as a typed one is (load_route):
-    a 404 naming an ident that is not one, a 422 for a stop at the point
-    before it or too many stops. With an end missing, each ident given is
-    checked alone. Nothing is read or planned. The gateway forwards
-    no app here."""
-    if dep and dest:
-        load_route(dep, dest, stops)
-    else:
-        resolve(*(ident for ident in (dep, dest) if ident))
-        for stop in stops_of(stops):
-            resolve_stop(stop)
-    return RouteChecked(stops=stops_of(stops))
 
 
 @router.get("/api/course", dependencies=[Depends(cycle_in_address.in_address)], openapi_extra=PUBLIC)

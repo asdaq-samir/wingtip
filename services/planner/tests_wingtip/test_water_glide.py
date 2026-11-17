@@ -10,17 +10,17 @@ from wingtip import water
 def test_out_of_glide_is_the_water_beyond_a_glide_of_land():
     # A strip of water 0.5 degrees wide (30 nm) between land: its middle,
     # 15 nm from either shore, out of a 6 nm glide from 4,000 ft; its edges
-    # in reach.
+    # in reach. Each cell's share of its samples out of glide, 0 to 1.
+    def shares(far, rows=4, cols=10):
+        per = far.shape[0] // rows
+        return far.reshape(rows, per, cols, per).mean(axis=(1, 3))
+
     flat = water.is_water
     try:
         water.is_water = lambda lats, lons: (np.asarray(lons) > 1.0) & (np.asarray(lons) < 1.5)
-        share = water.cell_shares(
-            water.out_of_glide_samples(0.0, 0.0, 4, 10, 0.25, height_ft=4000.0, speed_kt=110.0, glide_ratio=9.0), 4, 10
-        )
+        share = shares(water.out_of_glide_samples(0.0, 0.0, 4, 10, 0.25, height_ft=4000.0, speed_kt=110.0, glide_ratio=9.0))
         # Too slow to be flying (under the engine's 40 kt): no glide, all of it out of reach.
-        stopped = water.cell_shares(
-            water.out_of_glide_samples(0.0, 0.0, 4, 10, 0.25, height_ft=4000.0, speed_kt=0.0, glide_ratio=9.0), 4, 10
-        )
+        stopped = shares(water.out_of_glide_samples(0.0, 0.0, 4, 10, 0.25, height_ft=4000.0, speed_kt=0.0, glide_ratio=9.0))
     finally:
         water.is_water = flat
     assert share[:, 0].max() == 0.0  # dry land

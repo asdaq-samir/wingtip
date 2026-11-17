@@ -590,20 +590,6 @@ interface PlannerApi {
     suspend fun coachPlan(@Body appWingtipmapsAndroidApiGeneratedCoachAsk: app.wingtipmaps.android.api.generated.CoachAsk): Response<app.wingtipmaps.android.api.generated.ProficiencyPlan>
 
     /**
-     * POST words/coach/sources
-     * Coach Sources
-     * A proficiency plan&#39;s lines, each a source a sentence can cite.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedProficiencyPlan
-     * @return [app.wingtipmaps.android.api.generated.WordsSources]
-     */
-    @POST("words/coach/sources")
-    suspend fun coachSources(@Body appWingtipmapsAndroidApiGeneratedProficiencyPlan: app.wingtipmaps.android.api.generated.ProficiencyPlan): Response<app.wingtipmaps.android.api.generated.WordsSources>
-
-    /**
      * GET copilot/around
      * Copilot Around
      * The fields near the airplane and the destination with their weather, runway and fuel, the TFRs, active special-use areas and convective SIGMETs on the rest of the route, and ITWS&#39;s alerts at the destination and alternate: the inputs of the engine&#39;s copilot_watch, which the app asks with its own GPS. Nothing is judged here.
@@ -692,20 +678,6 @@ interface PlannerApi {
      */
     @POST("debrief")
     suspend fun debrief(@Body appWingtipmapsAndroidApiGeneratedDebriefAsk: app.wingtipmaps.android.api.generated.DebriefAsk): Response<app.wingtipmaps.android.api.generated.DebriefAnswer>
-
-    /**
-     * POST words/debrief/sources
-     * Debrief Sources
-     * A flown flight&#39;s debrief as sources (POST /api/debrief: the time in the air, each leg&#39;s altitude and course held, each checkpoint&#39;s time, each pattern entry, its notes, and the ACS tolerances they are marked against). A 422 where there is no debrief: the track never flew.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedDebriefWordsAsk
-     * @return [app.wingtipmaps.android.api.generated.WordsSources]
-     */
-    @POST("words/debrief/sources")
-    suspend fun debriefSources(@Body appWingtipmapsAndroidApiGeneratedDebriefWordsAsk: app.wingtipmaps.android.api.generated.DebriefWordsAsk): Response<app.wingtipmaps.android.api.generated.WordsSources>
 
     /**
      * GET live/departures
@@ -1275,20 +1247,6 @@ interface PlannerApi {
     suspend fun nearestAirports(@Query("lat") lat: kotlin.Double, @Query("lon") lon: kotlin.Double, @Query("limit") limit: kotlin.Int? = 10, @Query("at") at: kotlin.Double? = null): Response<app.wingtipmaps.android.api.generated.NearestAirports>
 
     /**
-     * POST words/notams/sources
-     * Notam Sources
-     * The NOTAMs and TFRs of a flight as sources, with the flight itself first: the NOTAMs in force or to come at every field the route lands at, as the FAA&#39;s NOTAM feed gave them (wingtip.notams, SWIM&#39;s FNS), and the TFRs near the route over the briefing&#39;s hours (wingtip.tfr.along_route, as GET /api/briefing asks them: two hours of flight and an hour past, the route&#39;s own time not being known here). None at all where there is no NOTAM and no TFR: nothing to say. &#x60;coverage_since&#x60;, the day the NOTAM feed was first heard (UTC); &#x60;unchecked&#x60;, \&quot;tfrs\&quot; where tfr.faa.gov did not answer.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedRouteAsk
-     * @return [app.wingtipmaps.android.api.generated.WordsSources]
-     */
-    @POST("words/notams/sources")
-    suspend fun notamSources(@Body appWingtipmapsAndroidApiGeneratedRouteAsk: app.wingtipmaps.android.api.generated.RouteAsk): Response<app.wingtipmaps.android.api.generated.WordsSources>
-
-    /**
      * POST notams/ranked
      * Notams Ranked
      * Every NOTAM the FAA&#39;s feed has sent for the fields the route lands at and every TFR near it, best first: in force while the flight is there, at its departure, stops or destination, on the runway in use, closing a field, its altitudes taking in the cruise altitude, on an airspace the route passes (14 CFR 91.103). &#x60;top&#x60; are said first; the rest are folded, never dropped. &#x60;coverage_since&#x60;, the day the feed was first heard (UTC).
@@ -1521,36 +1479,6 @@ interface PlannerApi {
      */
     @POST("retrain")
     suspend fun retrain(): Response<app.wingtipmaps.android.api.generated.RetrainStarted>
-
-    /**
-     * POST words/risk/sources
-     * Risk Sources
-     * The Go / No-Go as sources (POST /api/go-no-go&#39;s line, each finding&#39;s line, the risk assessment&#39;s level and every factor it counted) and the pilot&#39;s own record as the client sends it.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedRiskAsk
-     * @return [app.wingtipmaps.android.api.generated.WordsSources]
-     */
-    @POST("words/risk/sources")
-    suspend fun riskSources(@Body appWingtipmapsAndroidApiGeneratedRiskAsk: app.wingtipmaps.android.api.generated.RiskAsk): Response<app.wingtipmaps.android.api.generated.WordsSources>
-
-    /**
-     * GET route-check
-     * Route Check
-     * Whether a route would plan, checked as a typed one is (load_route): a 404 naming an ident that is not one, a 422 for a stop at the point before it or too many stops. With an end missing, each ident given is checked alone. Nothing is read or planned. The gateway forwards no app here.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param dep  (optional, default to "")
-     * @param dest  (optional, default to "")
-     * @param stops  (optional, default to "")
-     * @return [app.wingtipmaps.android.api.generated.RouteChecked]
-     */
-    @GET("route-check")
-    suspend fun routeCheck(@Query("dep") dep: kotlin.String? = "", @Query("dest") dest: kotlin.String? = "", @Query("stops") stops: kotlin.String? = ""): Response<app.wingtipmaps.android.api.generated.RouteChecked>
 
     /**
      * POST checkpoint-notes/route
@@ -2120,19 +2048,5 @@ interface PlannerApi {
      */
     @GET("weather/map")
     suspend fun weatherOnTheMap(@Query("south") south: kotlin.Double, @Query("west") west: kotlin.Double, @Query("north") north: kotlin.Double, @Query("east") east: kotlin.Double, @Query("at") at: kotlin.Double? = null, @Query("altitude_ft") altitudeFt: kotlin.Double? = null): Response<app.wingtipmaps.android.api.generated.WeatherMap>
-
-    /**
-     * POST words/weather/sources
-     * Weather Sources
-     * The briefing of a flight as sources (GET /api/briefing, asked here with the same parameters: its METARs, its TAF stations at the flight&#39;s time there, its hazards, G-AIRMETs, pilot reports and TFRs, the fields below VFR and its own \&quot;VFR flight not recommended\&quot;), the flight first. A briefing that cannot be had fails as it does there (a 502).
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedWeatherAsk
-     * @return [app.wingtipmaps.android.api.generated.WordsSources]
-     */
-    @POST("words/weather/sources")
-    suspend fun weatherSources(@Body appWingtipmapsAndroidApiGeneratedWeatherAsk: app.wingtipmaps.android.api.generated.WeatherAsk): Response<app.wingtipmaps.android.api.generated.WordsSources>
 
 }

@@ -23,7 +23,6 @@ approach_attempts
 approach_brief
 approach_category
 approach_coaching
-approach_debrief
 approach_descent_fpm
 approach_find
 approach_fix_tags
@@ -45,7 +44,6 @@ ceiling_visibility
 checklist_phases
 checklist_read
 checklist_section
-checklist_write
 class_b_at_altitude
 cleared_route
 closest_approach
@@ -133,7 +131,6 @@ great_circles
 handbook_figures
 hold_length_read
 hold_length_write
-hold_read
 hold_write
 holding
 holding_leg_minutes

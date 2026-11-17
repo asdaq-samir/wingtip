@@ -81,7 +81,6 @@ pub(super) fn cases(c: &mut Checker) {
         c.ask("words_flight_level", json!({ "ft": n }));
         c.ask("words_ceiling_and_visibility", json!({ "ceiling_ft": n, "visibility_sm": 3 }));
         if !n.is_null() {
-            c.ask("words_one", json!({ "n": n }));
             c.ask("words_to_fixed", json!({ "n": n, "digits": 2 }));
             c.ask("words_grouped", json!({ "n": n }));
         }

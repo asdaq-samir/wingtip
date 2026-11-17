@@ -117,9 +117,22 @@ fn a_climb_burns_the_airplanes_own_climb_fuel_flow() {
     let own = json!({"cruise_tas_kt": 100.0, "fuel_burn_gph": 8.0, "climb_rate_fpm_sea_level": 800.0, "climb_tas_kt": 70.0,
         "service_ceiling_ft": 14000.0, "climb_fuel_burn_gph": 14.0, "cruise_power_pct": 65.0});
     let legs = climbs(json!([cruise_leg(60.0, 3500.0)]), Some(500.0), own.clone());
-    let climb = ask("performance_climb", json!({"profile": own, "from_ft": 500.0, "to_ft": 3500.0}));
-    let cruise_min = (60.0 - 70.0 * f(&climb["minutes"]) / 60.0) / 100.0 * 60.0;
-    assert!(close(f(&legs[0]["fuel_gal"]), f(&climb["gallons"]) + cruise_min / 60.0 * 8.0, 1e-6));
+    // The same airplane's climb, from wingtip_flight's performance model.
+    let airplane = wingtip_engine::performance::Airplane {
+        cruise_tas_kt: 100.0,
+        fuel_burn_gph: 8.0,
+        cruise_power_pct: Some(65.0),
+        cruise_altitude_ft: None,
+        climb_tas_kt: Some(70.0),
+        climb_fuel_burn_gph: Some(14.0),
+        climb_rate_fpm_sea_level: Some(800.0),
+        service_ceiling_ft: 14000.0,
+        descent_ias_kt: None,
+        descent_fuel_burn_gph: None,
+    };
+    let climb = wingtip_engine::performance::Climber::new(&airplane).climb(500.0, 3500.0, 0.0);
+    let cruise_min = (60.0 - 70.0 * climb.minutes / 60.0) / 100.0 * 60.0;
+    assert!(close(f(&legs[0]["fuel_gal"]), climb.gallons + cruise_min / 60.0 * 8.0, 1e-6));
 }
 
 #[test]

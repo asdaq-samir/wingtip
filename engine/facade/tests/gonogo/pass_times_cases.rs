@@ -102,27 +102,25 @@ fn every_rule_answers_by_name_from_the_planners_and_the_webs_own_objects() {
         "runways": {"pending": false, "worked": true, "short": [], "crosswind": []},
         "balance": {"pending": false, "worked": true, "problems": [], "takeoff": "2,407 lb at 41.2 in"},
         "risk": {"level": "low", "line": "Low · 2 points"}}"#;
-    let items = call("gonogo_verdict_items", quiet);
-    assert_eq!(items[3]["detail"], "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare");
-    // The whole verdict as the planner's app.gonogo puts it together: the
-    // items, the alternate's say in the weather's, the line over them.
-    let found = call("gonogo_alternate_finding", r#"{"data": {"destination": {"required": true}, "alternate": null}}"#);
-    let with = call("gonogo_with_alternate", &format!(r#"{{"items": {items}, "found": {found}}}"#));
-    assert_eq!(with[0]["section"], "Alternate");
-    let line = call("gonogo_verdict_line", &format!(r#"{{"items": {with}}}"#));
-    assert_eq!(line["finding"], "caution");
+    let brief = |alternate: &str| call("gonogo_brief", &format!(r#"{{"verdict": {quiet}, "alternate": {alternate}, "airplane": true}}"#));
+    let fuel = |b: &Value| b["items"].as_array().unwrap().iter().find(|i| i["key"] == "fuel").unwrap()["detail"].clone();
+    assert_eq!(fuel(&brief("null")), "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare");
+    // Under IFR, the whole verdict as the planner's app.gonogo puts it
+    // together: the items, the alternate's say in the weather's, the line
+    // over them (14 CFR 91.169(a): an alternate the destination needs and
+    // none filed).
+    let ifr = quiet.replacen(r#""weather": {"pending": false,"#, r#""weather": {"pending": false, "ifr": true,"#, 1);
+    let ifr_brief = |alternate: &str| call("gonogo_brief", &format!(r#"{{"verdict": {ifr}, "alternate": {alternate}, "airplane": true}}"#));
+    let alternate_of = |b: &Value| b["items"].as_array().unwrap().iter().find(|i| i["section"] == "Alternate").cloned();
+    let none_filed = ifr_brief(r#"{"destination": {"required": true}, "alternate": null}"#);
+    assert!(alternate_of(&none_filed).is_some());
+    assert_eq!(none_filed["line"]["finding"], "caution");
     // An alternate with no `good` at all says nothing; one with good null
     // is the pilot's to check (useAlternate's `=== null`).
-    assert!(call(
-        "gonogo_alternate_finding",
-        r#"{"data": {"destination": {"required": true}, "alternate": {"ident": "KMSN", "reasons": []}}}"#
-    )
-    .is_null());
+    assert!(alternate_of(&ifr_brief(r#"{"destination": {"required": true}, "alternate": {"ident": "KMSN", "reasons": []}}"#)).is_none());
     assert_eq!(
-        call(
-            "gonogo_alternate_finding",
-            r#"{"data": {"destination": {"required": true}, "alternate": {"ident": "KMSN", "good": null, "reasons": []}}}"#
-        )["detail"],
+        alternate_of(&ifr_brief(r#"{"destination": {"required": true}, "alternate": {"ident": "KMSN", "good": null, "reasons": []}}"#))
+            .unwrap()["detail"],
         "KMSN: check it"
     );
     let under = call(
@@ -186,7 +184,7 @@ fn every_rule_answers_by_name_from_the_planners_and_the_webs_own_objects() {
 #[test]
 fn a_bad_ask_is_an_error_not_a_panic() {
     let err = |name: &str, input: &str| wingtip_engine::call::call(name, input).unwrap_err();
-    assert!(err("gonogo_verdict_items", "{}").contains("\"weather\" is missing"));
+    assert!(err("gonogo_brief", r#"{"verdict": {}}"#).contains("\"weather\" is missing"));
     assert!(err("gonogo_risk", r#"{"day": 5}"#).contains("not a string"));
     assert!(err("gonogo_sua_when", r#"{"utc": [9, 0]}"#).contains("day 0-6"));
     assert!(err("gonogo_nope", "{}").contains("no rule called"));
