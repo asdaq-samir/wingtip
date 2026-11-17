@@ -18,7 +18,7 @@ import { SheetGrabber } from "./sheet/SheetGrabber";
 import { CardStack, type StackProps } from "./sheet/CardStack";
 import { SheetDrawer } from "./sheet/SheetDrawer";
 import { useRidingCard } from "./sheet/sheetTopSlot";
-import type { SheetPages } from "./sheet/SheetPages";
+import type { SheetPages } from "../lib/sheetPages";
 import { usePageToggle } from "./sheet/pageToggle";
 
 interface Props {

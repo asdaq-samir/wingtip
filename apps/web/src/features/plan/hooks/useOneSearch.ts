@@ -17,7 +17,7 @@ import { usePickScope } from "./usePickScope";
 import { positionIdent } from "../../../lib/identSchema";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { searchWords } from "../lib/searchPlaceholder";
-import type { AirportSearchRow } from "../../../lib/useAirportSearch";
+import type { AirportSearchRow } from "../../../lib/airportIndex";
 import { SCREEN_KEYS, DIRECT_KEY } from "../../../hooks/use-shortcuts";
 import { useAirportIndex } from "../../../lib/airportIndex";
 import { readQuery } from "../lib/searchFilters";

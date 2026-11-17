@@ -14,6 +14,19 @@
 module.exports = {
   forbidden: [
     {
+      name: "no-circular",
+      severity: "error",
+      comment:
+        "No file reaches itself through its imports, type-only ones too: a cycle ties features or layers into one, so move what both need down into lib/ or components/.",
+      from: {},
+      // A lazy chunk (import()) that reaches back to what loaded it is how a
+      // chunk is split, not a tie: only static cycles count. The popups'
+      // loader (popupsChunk) names the chunk's module type with a
+      // `typeof import()`, which the tool reads as a type import, so a cycle
+      // through the loader is the same split.
+      to: { circular: true, viaOnly: { dependencyTypesNot: ["dynamic-import"], pathNot: "^src/components/popupsChunk\\.ts$" } },
+    },
+    {
       name: "lib-below-components",
       severity: "error",
       comment: "lib/ and hooks/ are below components/ and features/: move what it needs down into lib/ (apps/web/README.md).",

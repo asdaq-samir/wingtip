@@ -13,7 +13,7 @@
  */
 import type { components } from "./schema";
 import type { components as GatewayComponents } from "./gateway-schema";
-import type { OwnFigureValues } from "../airplane/figures";
+import type { OwnFigureValues } from "../airplane/figureFields";
 
 type Schemas = components["schemas"];
 type Gateway = GatewayComponents["schemas"];

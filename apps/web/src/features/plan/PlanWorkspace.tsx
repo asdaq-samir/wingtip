@@ -2,7 +2,7 @@ import { Suspense, useCallback, useDeferredValue, useMemo } from "react";
 import { TEXT } from "../../lib/text";
 import { CommandRoot } from "../../components/ui/command";
 import { MAX_STOPS } from "../../lib/identSchema";
-import type { WorkspaceProps } from "../shell";
+import type { WorkspaceProps } from "../../lib/workspace";
 import { ShareMenu } from "./ShareMenuLazy";
 import { RouteShareMenu, type RouteCard } from "../../lib/openCards";
 import { useNavLogs } from "./components/workspace/useNavLogs";

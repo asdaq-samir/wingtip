@@ -1,7 +1,6 @@
 import { runwayNumber } from "../../lib/pattern";
 import { altFt, dayMonthYear } from "../../../../lib/format";
-import type { ProcedureAirport, ProcedureKind } from "../../hooks/useProceduresRoute";
-import type { Landing } from "./PatternChips";
+import type { Landing, ProcedureAirport, ProcedureKind } from "../../hooks/procedureTypes";
 
 // The words FPL's route list (ProceduresRoute) says of a field's
 // procedures and pattern, apart from the parts that draw them.

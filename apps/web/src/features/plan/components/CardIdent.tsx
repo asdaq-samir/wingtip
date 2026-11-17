@@ -5,7 +5,8 @@ import { CommandField, CommandRoot } from "../../../components/ui/command";
 import { Popover, PopoverContent } from "../../../components/ui/popover";
 import { usePreferences, type RecentAirport } from "../../../lib/preferences";
 import { TEXT } from "../../../lib/text";
-import { useAirportSearch, type AirportSearchRow } from "../../../lib/useAirportSearch";
+import type { AirportSearchRow } from "../../../lib/airportIndex";
+import { useAirportSearch } from "../../../lib/useAirportSearch";
 
 const NO_ROWS: AirportSearchRow[] = [];
 

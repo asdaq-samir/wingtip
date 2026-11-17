@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { trafficCredit } from "./trafficCredit";
+import { trafficCredit } from "./dataSources";
 
 describe("the map's traffic credit", () => {
   it("names each source the planner says the airplanes came from", () => {

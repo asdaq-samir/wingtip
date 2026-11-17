@@ -21,7 +21,7 @@ import { MODES, type Mode } from "./modes";
 import { isDesktopNow, useIsDesktop } from "../../hooks/use-desktop";
 import { useShortcuts } from "../../hooks/use-shortcuts";
 import ConsoleLayer from "./ConsoleLayer";
-import type { WorkspacePieces } from "./workspace";
+import type { WorkspacePieces } from "../../lib/workspace";
 
 /**
  * The one page, in three modes: the pilot's planner, the developer's

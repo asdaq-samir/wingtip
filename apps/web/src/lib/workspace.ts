@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import type { PanelState } from "../../lib/mapChrome";
-import type { SheetPages } from "../../components/sheet/SheetPages";
+import type { PanelState } from "./mapChrome";
+import type { SheetPages } from "./sheetPages";
 
 /**
  * What a workspace (the pilot's planner, the developer's training)

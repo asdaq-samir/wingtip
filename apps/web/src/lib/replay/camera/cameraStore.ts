@@ -1,10 +1,7 @@
 import { create } from "zustand";
-import type { Keyframe, View } from "./keyframes";
+import type { CameraKind, Keyframe, View } from "./keyframes";
 
-/** The replay's cameras on the 3D view (ReplayCameraGl): behind the
- *  airplane, from its seat, round it, from a fixed point on the ground,
- *  and straight down. */
-export type CameraKind = "chase" | "cockpit" | "orbit" | "tower" | "top";
+export type { CameraKind };
 
 export const CAMERAS: { value: CameraKind; label: string }[] = [
   { value: "chase", label: "Chase" },

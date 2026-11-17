@@ -8,7 +8,7 @@ import { TEXT } from "../../../../lib/text";
 import { PreviewCard, PreviewCardContent, PreviewCardTrigger } from "../../../../components/ui/preview-card";
 import { usePointerHover } from "../../../../hooks/use-pointer-hover";
 import { keyHint } from "../../../../lib/shortcutKeys";
-import type { AirportSearchRow } from "../../../../lib/useAirportSearch";
+import type { AirportSearchRow } from "../../../../lib/airportIndex";
 import AirportPreview from "../preview/AirportPreview";
 import type { AirplaneHit, DoHit, OneSearchModel } from "../../hooks/useOneSearch";
 import { useVoiceInput } from "../../../voice";

@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { SECTION_TITLE, TEXT } from "../lib/text";
 import { CommandEmpty, CommandGroup, CommandItem, CommandList } from "./ui/command";
 import type { RecentAirport } from "../lib/preferences";
-import type { AirportSearchRow } from "../lib/useAirportSearch";
+import type { AirportSearchRow } from "../lib/airportIndex";
 import { USE_WORDS, type FieldUse } from "../lib/airportIndex";
 import StatusBadge from "./StatusBadge";
 

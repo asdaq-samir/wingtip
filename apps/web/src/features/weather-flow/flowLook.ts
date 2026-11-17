@@ -2,38 +2,10 @@ import type { FlowField } from "../../lib/map/sources/weatherLayers";
 import { callEngine } from "../../lib/engine/engine";
 import type { EngineAnswer } from "../../lib/engine/engine";
 import { FLOW, MAP, WEATHER } from "../../lib/tokens";
-import { aviationLooks, tone } from "./aviationLooks";
+import { aviationLooks, tone, type FieldLook, type Stop } from "./aviationLooks";
 
 /** A field that is on: the store's choices but Off. */
 export type ShownField = Exclude<FlowField, "off">;
-
-/** A ramp's stop: the value in the field's unit and its colour, a token
- *  with an opacity in 255ths, as weatherlayers-gl's palette takes it. */
-type Stop = [number, [number, number, number, number]];
-
-/** One field as the layer draws it and the legend explains it. */
-export interface FieldLook {
-  /** The Map menu's and the legend's name. */
-  name: string;
-  /** The legend's title: the name and its unit. */
-  title: string;
-  /** The field's colour ramp, low to high, as the map draws it. */
-  ramp: Stop[];
-  /** The legend's bar, where it is not the ramp itself: a banded field's
-   *  bands as equal blocks, so a narrow band (a ceiling under 500 ft) is
-   *  read as well as a wide one. Its values are then the bands' places. */
-  bar: Stop[];
-  /** The legend's marks: a value at its place on the bar, or a word. */
-  ticks: { at: number; label: string }[];
-  /** How strongly the field covers the chart, 0 to 1: the wind and its
-   *  gusts a light tint, as the chart under them still has to be read;
-   *  the temperature nearly solid, as Apple Weather's temperature map is
-   *  (the owner's screenshot, 2026-11-12), the chart showing faintly; the
-   *  precipitation as strong, but only where it falls (its ramp is clear
-   *  elsewhere). The airports, the route and the airspace stay over all
-   *  of them (FlowGl's slot). */
-  opacity: number;
-}
 
 /** The field's cover over the chart by kind (FieldLook.opacity). */
 const COVER = FLOW.cover;

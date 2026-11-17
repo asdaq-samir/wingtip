@@ -1,6 +1,21 @@
 import type { Inspections, Squawk } from "./api/types";
 import type { GonogoFactor } from "./engine/contract";
-import type { RiskFactor } from "./frat";
+
+/** A risk factor as the pages read it (the FRAT, the airworthiness checks). */
+export interface RiskFactor {
+  key: string;
+  label: string;
+  /** Why it counts: the rule or the reason. */
+  why?: string;
+  points: number;
+  /** A factor that makes the flight unlawful as planned: high, whatever
+   *  the points. */
+  stop?: boolean;
+  /** Its mark beside what the briefing raised, the engine's: a stop
+   *  where it makes the flight unlawful or is high on its own, else a
+   *  caution; none for a self check. */
+  finding?: "stop" | "caution" | null;
+}
 
 /** A factor as the engine answers it, with its mark (the contract's). */
 type EngineFactor = GonogoFactor;
