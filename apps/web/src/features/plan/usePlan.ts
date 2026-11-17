@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { ApiError, api, describeError, isUnknownPlace, unknownPlaceOf } from "../../lib/api/client";
+import { ApiError, api, describeError, isUnknownPlace, unknownPlaceIn } from "../../lib/api/client";
 import { chartQuery, checkpointsQuery, courseQuery } from "../../lib/queryClient";
 import { identOf, routeOf } from "../../lib/identSchema";
 import type { Candidate, Leg, NavLogAltitude, NavLogMessage, Totals } from "../../lib/api/types";
@@ -300,10 +300,9 @@ export function usePlan({
   // one, for its pill in the route box, and only for this route -- not a
   // query's left from one before it.
   const unknownError = course.error ?? checkpoints.error ?? navlog.error;
-  const unknownPlace = useMemo(() => {
-    if (!briefable || !isUnknownPlace(unknownError)) return null;
-    return { ident: unknownPlaceOf(unknownError) };
-  }, [briefable, unknownError]);
+  // A real field abroad (outside the US charts) is said as that, where KIGN
+  // had been planned 7,191 nm to Indagen, Papua New Guinea (2026-11-17).
+  const unknownPlace = useMemo(() => (briefable ? unknownPlaceIn(unknownError) : null), [briefable, unknownError]);
 
   // The same object while the briefing is: a new one at every render drew
   // every tab of the panel again with it.

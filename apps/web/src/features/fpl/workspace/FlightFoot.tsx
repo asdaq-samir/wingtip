@@ -52,7 +52,7 @@ export function FlightFigures({
         </div>
       )}
       <div data-testid="flight-line">
-        <TripFigures {...line} grow={grow} fuelStop={firstFuelStop} unknown={s.unknownPlace?.ident ?? null} />
+        <TripFigures {...line} grow={grow} fuelStop={firstFuelStop} unknown={s.unknownPlace} />
       </div>
     </EngineGate>
   );

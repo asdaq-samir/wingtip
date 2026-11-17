@@ -1027,6 +1027,19 @@ less cluttered". Decision [0044](../decisions/0044-fpl-for-every-pilot.md).
    every other edit is undone from ••• alone (the owner, 2026-11-17).
 7. **One surface.** No box in a box, fewer borders and pills; spacing
    groups, colour only for meaning.
+8. **A point the planner will not plan to is said, not planned.** An
+   ident no US field, waypoint or navaid goes by (KZZZ, KIGN) is the
+   unknown place: its pill and the strip's To in red with their mark, a
+   line under the route box with Remove, no distance, no Routes, and
+   Brief, Nav Log and Profile off (the UI audit's B8). A real field
+   abroad (AYID, Indagen) is the same, its line saying it "is outside the
+   US charts": the planner plans on the FAA's charts, NASR and
+   aviationweather.gov alone, and answers both with a 404 in its own
+   words before any planning (`wingtip.airport_lookup`, OutsideCharts). A
+   K before an FAA identifier reaches only a US field (FAA Order JO
+   7350.9): KIGN was planned 7,191 nm to Indagen, Papua New Guinea, whose
+   local code is IGN (2026-11-17). Web: `unknownPlaceIn`, usePlan's
+   `unknownPlace`.
 
 ## 12. A list's rows: swipe to remove, hold to move (the owner, 2026-11-17)
 

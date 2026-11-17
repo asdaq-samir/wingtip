@@ -5,6 +5,7 @@ import { grouped, zoneName } from "../../lib/format";
 import { useOwnFix } from "../../lib/map/position/ownShip";
 import { cn } from "cn";
 import type { ExplainedTerm } from "../../lib/explain";
+import { unknownWhy, type UnknownPlace } from "../../lib/api/client";
 import type { Totals } from "../../lib/api/types";
 import FigureStrip, { type StripFigure } from "../../components/FigureStrip";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../components/ResponsivePopover";
@@ -75,9 +76,9 @@ export default function TripFigures({
   fuelStop = null,
   unknown = null,
 }: {
-  /** A point of the route the planner does not know (usePlan's
-   *  `unknownPlace`): where it is the To, said so on it. */
-  unknown?: string | null;
+  /** A point of the route the planner does not know, or a field abroad
+   *  (usePlan's `unknownPlace`): where it is the To, said so on it. */
+  unknown?: UnknownPlace | null;
   totals: Totals | null;
   /** Before the nav log's totals, at the pilot's ask for the figures as
    *  soon as can be: the course's distance at once, and the time and fuel
@@ -152,8 +153,8 @@ export default function TripFigures({
       // red with its mark, the pill too, where the pill read "ZZZZ" over
       // a dash as if nothing were wrong (the UI audit's B8).
       .map((f) =>
-        f.name === "To" && unknown && f.value.toUpperCase() === unknown.toUpperCase()
-          ? { ...f, alert: true, said: `${f.said ?? f.value}, not a place we know` }
+        f.name === "To" && unknown?.ident && f.value.toUpperCase() === unknown.ident.toUpperCase()
+          ? { ...f, alert: true, said: `${f.said ?? f.value} ${unknownWhy(unknown)}` }
           : f,
       )
       // Each named in a short word in sentence case, "To", "Distance",

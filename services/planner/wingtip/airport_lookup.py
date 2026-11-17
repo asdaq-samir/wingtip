@@ -10,6 +10,20 @@ from . import field_use, nasr_fields
 from .airport_tables import DEFAULT_CACHE_PATH, OURAIRPORTS_URL, _airport_rows, _ensure_cached, _faa_key, _read_table
 
 
+class OutsideCharts(ValueError):
+    """An ident of a real field abroad: none the FAA's charts or NASR
+    cover. A ValueError, so every caller that takes an unknown ident for a
+    404 takes this one too, in its own words."""
+
+
+def _country(row) -> str:
+    """The row's country, as airport_tables.countries_of reads it."""
+    country = row.get("iso_country")
+    if isinstance(country, str) and country:
+        return country.upper()
+    return str(row.get("iso_region") or "").split("-")[0].upper()
+
+
 def _ours(ident: str, beside) -> tuple:
     """OurAirports' row for `ident` in the airports table beside `beside`
     (None where it has none, or the table is not there: never fetched from
@@ -48,17 +62,27 @@ def get_airport(ident: str, cache_path: Path = DEFAULT_CACHE_PATH) -> dict:
     # identifier is its FAA one with a K before it (FAA Order JO 7350.9,
     # Location Identifiers). The fuel stop the planner offered could not be
     # planned (the owner's video, 2026-10-26).
+    # Only a US field's: the K is the contiguous US's, so KIGN is not
+    # Indagen, Papua New Guinea, whose local code is IGN.
+    table = _read_table(str(path), mtime)
     if at is None and len(ident) == 4 and ident[0] == "K" and ident[1:].isalnum():
         at = rows.get(ident[1:])
+        at = at if at is not None and _country(table.iloc[at]) == "US" else None
     if at is None:
         # The pilot's words, which the route box shows on the ident's own
         # pill (the FPL audit's A2): what it is, not which file it is not in.
         raise ValueError(f"No airport goes by {ident!r}.")
-    row = _read_table(str(path), mtime).iloc[at]
+    row = table.iloc[at]
     # NASR's position, elevation and name for a field it lists; OurAirports'
     # elevation only for its own field (wingtip.nasr_fields).
     field = nasr_fields.of_row(row, cache_path)
     lent = nasr_fields.far(row["latitude_deg"], row["longitude_deg"], field)
+    # A field abroad is planned on no chart, weather or NASR record the
+    # planner has (FAA charts and aviationweather.gov alone, as
+    # wingtip.airport_us's search says), so it is said for what it is, not
+    # planned: a US territory's field NASR lists (TJSJ) is the FAA's.
+    if _country(row) != "US" and (field is None or lent):
+        raise OutsideCharts(f"{ident!r} is outside the US charts: {row['name']}, {_country(row)}.")
     named = field_use._records_of(*_faa_key(cache_path)).get(field["faa_id"], {}) if field else {}
     elevation = field["elevation_ft"] if field and field["elevation_ft"] is not None else None if lent else row.get("elevation_ft")
     return {

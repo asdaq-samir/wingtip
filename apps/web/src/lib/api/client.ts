@@ -5,7 +5,19 @@ import { plannerDev } from "./plannerDev";
 import { gatewayPilot } from "./gatewayPilot";
 import { gatewayRecords } from "./gatewayRecords";
 
-export { ApiError, describeError, detailOf, errorMessage, failIfNotOk, isDropped, isUnknownPlace, unknownPlaceOf } from "./errors";
+export {
+  ApiError,
+  describeError,
+  detailOf,
+  errorMessage,
+  failIfNotOk,
+  isDropped,
+  isUnknownPlace,
+  unknownPlaceIn,
+  unknownPlaceOf,
+  unknownWhy,
+  type UnknownPlace,
+} from "./errors";
 export { csrfHeaders, data, gateway, GatewayRequest, ndjson, planner, STREAM_QUIET_MS } from "./http";
 
 /**

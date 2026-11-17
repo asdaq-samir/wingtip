@@ -1,3 +1,4 @@
+import type { UnknownPlace } from "../../lib/api/client";
 import type { Detour, FuelStopSuggestion } from "../../lib/api/types";
 import type { AirspaceClass } from "../../lib/preferences";
 import type { TypedProcedure } from "../../lib/procedures";
@@ -63,6 +64,6 @@ export interface RouteBoxProps extends RouteParts {
    *  pill in red, a tap on it the search to change it, and a line under
    *  the box saying so with Remove -- where it happened, not the map's
    *  problem line (CLAUDE.md, the FPL audit's A2). Its ident null where
-   *  the planner's answer named none. */
-  unknownPoint?: { ident: string | null } | null;
+   *  the planner's answer named none; `outside` a real field abroad. */
+  unknownPoint?: UnknownPlace | null;
 }

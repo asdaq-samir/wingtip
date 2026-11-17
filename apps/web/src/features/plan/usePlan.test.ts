@@ -208,9 +208,19 @@ describe("the briefing", () => {
     vi.mocked(api.course).mockRejectedValue(new ApiError("No airport goes by 'KZZZ'.", 404));
     const { result } = renderHook(() => usePlan(params), { wrapper });
 
-    await waitFor(() => expect(result.current.unknownPlace).toEqual({ ident: "KZZZ" }));
+    await waitFor(() => expect(result.current.unknownPlace).toEqual({ ident: "KZZZ", outside: false }));
     expect(useSystemProblems.getState().problems.filter((p) => p.title.includes("KZZZ"))).toEqual([]);
     expect(result.current.briefing).toEqual({ state: "waiting" });
+  });
+
+  test("a field abroad is the route box's too, said to be outside the US charts", async () => {
+    // KORD-KIGN was planned to Indagen, Papua New Guinea (2026-11-17); a
+    // real field abroad is now the planner's 404 in its own words.
+    vi.mocked(api.course).mockRejectedValue(new ApiError("'AYID' is outside the US charts: Indagen Airport, PG.", 404));
+    const { result } = renderHook(() => usePlan(params), { wrapper });
+
+    await waitFor(() => expect(result.current.unknownPlace).toEqual({ ident: "AYID", outside: true }));
+    expect(useSystemProblems.getState().problems.filter((p) => p.title.includes("AYID"))).toEqual([]);
   });
 
   test("a refresh that fails keeps the last briefing up, and says the refresh failed", async () => {
