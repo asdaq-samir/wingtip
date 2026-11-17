@@ -2,13 +2,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { MapIcon, Route, Search } from "lucide-react";
 import { cn } from "cn";
-import { AppearanceTile, ThemeTile } from "../../../components/lookPicks";
-import { PhoneSheet, PhoneSheetBody, PhoneSheetContent } from "../../../components/PhoneSheet";
-import { Button } from "../../../components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "../../../components/ui/dialog";
-import { useIsMobile } from "../../../hooks/use-mobile";
-import { askPositionQuietly, ownShipAvailable, useOwnShip } from "../../../lib/map/position/ownShip";
-import { TEXT } from "../../../lib/text";
+import { AppearanceTile, ThemeTile } from "../../components/lookPicks";
+import { PhoneSheet, PhoneSheetBody, PhoneSheetContent } from "../../components/PhoneSheet";
+import { Button } from "../../components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "../../components/ui/dialog";
+import { useIsMobile } from "../../hooks/use-mobile";
+import { askPositionQuietly, ownShipAvailable, useOwnShip } from "../../lib/map/position/ownShip";
+import { TEXT } from "../../lib/text";
 
 /** What the app is, three rows of it (the owner's aim, 2026-11-13: "a
  *  simple app with search like Apple/Google and a plan page like an EFB

@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useRef } from "react";
-import { api } from "../../../lib/api/client";
-import { positionNow } from "../../../lib/map/position/ownShip";
-import { askSearchPick, useSearchPick, type SearchPick } from "../../../lib/oneSearch";
-import { usePreferences } from "../../../lib/preferences";
-import { FIRST_FLIGHT, FPL_TIP, unseen, useTips } from "../../../lib/firstRunTips";
-import type { RouteParts } from "../components/RouteBox";
-import type { PanelState } from "../../../lib/mapChrome";
-import type { PanelView } from "./usePanelView";
-import { riseToSee } from "./panelNow";
+import { api } from "../../lib/api/client";
+import { positionNow } from "../../lib/map/position/ownShip";
+import { askSearchPick, useSearchPick, type SearchPick } from "../../lib/oneSearch";
+import { usePreferences } from "../../lib/preferences";
+import { FIRST_FLIGHT, FPL_TIP, unseen, useTips } from "../../lib/firstRunTips";
+import { type RouteParts, type PanelView, riseToSee } from "../plan";
+import type { PanelState } from "../../lib/mapChrome";
 
 /**
  * The first flight (FirstFlight), the owner's option A (2026-11-13): a

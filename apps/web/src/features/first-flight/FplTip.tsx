@@ -1,10 +1,10 @@
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { cn } from "cn";
-import CloseButton from "../../../components/CloseButton";
-import { usePageToggle } from "../../../components/sheet/pageToggle";
-import { useMapInsets } from "../../../lib/mapChrome";
-import { Popover, PopoverContent, PopoverDescription, PopoverTitle } from "../../../components/ui/popover";
-import { TEXT } from "../../../lib/text";
+import CloseButton from "../../components/CloseButton";
+import { usePageToggle } from "../../components/sheet/pageToggle";
+import { useMapInsets } from "../../lib/mapChrome";
+import { Popover, PopoverContent, PopoverDescription, PopoverTitle } from "../../components/ui/popover";
+import { TEXT } from "../../lib/text";
 
 /**
  * The one tip after the first route (FirstFlight, useFirstFlight; the

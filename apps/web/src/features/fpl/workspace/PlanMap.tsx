@@ -1,6 +1,7 @@
 import { Suspense, lazy, useState } from "react";
 import { cn } from "cn";
-import { RouteMap, FirstFlight, DRY_RUN, usePastFlight, loadAssignedLesson, loadFixCard, loadRouteLegCard } from "../../plan";
+import { RouteMap, DRY_RUN, usePastFlight, loadAssignedLesson, loadFixCard, loadRouteLegCard } from "../../plan";
+import { FirstFlight } from "../../first-flight";
 import { FlyingHead } from "../routePanelParts";
 import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
 

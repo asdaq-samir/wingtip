@@ -1318,7 +1318,7 @@ A welcome sheet again, the owner's option A (2026-11-13: "highlight that
 it's a simple app with search like Apple/Google and a plan page like an
 EFB that can be easily accessed"), where the 2026-11-11 word had left none.
 The first time the planner opens with no route on a device
-(`features/plan/components/FirstFlight`, `useFirstFlight`, kept in
+(`features/first-flight/FirstFlight`, `useFirstFlight`, kept in
 `lib/firstRunTips`), Apple's welcome layout in the app's modal sheet
 (`WelcomeSheet`: the stock Drawer on a phone, the stock Dialog from `md`
 up, solid): "Welcome to Wingtip Maps", three rows (Search, like Maps; FPL,

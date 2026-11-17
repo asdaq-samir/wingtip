@@ -11,12 +11,12 @@
 
 export { ShareMenu } from "./ShareMenuLazy";
 export { default as DirectStrip } from "./components/DirectStrip";
-export { default as FirstFlight } from "./components/FirstFlight";
 export { default as FplStrip } from "./components/FplStrip";
 export type { PointAltitude } from "./components/PointAltitudeDialog";
 export type { ProceduresAt } from "./components/ProceduresRoute";
 export { default as ProfileCard } from "./components/ProfileCard";
 export { RecentRoutesPage } from "./components/RecentRoutes";
+export type { RouteParts } from "./components/RouteBox";
 export { default as TripFigures } from "./components/TripFigures";
 export type { BriefingPart } from "./components/briefing/sections";
 export { loadFlightChart } from "./components/loadFlightChart";

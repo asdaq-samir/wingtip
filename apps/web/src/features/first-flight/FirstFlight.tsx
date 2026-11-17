@@ -1,10 +1,9 @@
 import { Suspense, lazy, useEffect, useState } from "react";
-import { useFailedAction } from "../../../lib/problems";
-import { holdAskOnOpen } from "../../../lib/map/position/ownShip";
-import { useFirstFlight } from "../hooks/useFirstFlight";
-import type { PanelState } from "../../../lib/mapChrome";
-import type { PanelView } from "../hooks/usePanelView";
-import type { RouteParts } from "./RouteBox";
+import { useFailedAction } from "../../lib/problems";
+import { holdAskOnOpen } from "../../lib/map/position/ownShip";
+import { useFirstFlight } from "./useFirstFlight";
+import type { PanelState } from "../../lib/mapChrome";
+import type { PanelView, RouteParts } from "../plan";
 
 /** Each its own chunk, off the first load every pilot waits for
  *  (scripts/first-load.mjs): drawn once on a device, if ever. */
