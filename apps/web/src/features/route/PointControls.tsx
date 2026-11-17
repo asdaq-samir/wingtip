@@ -9,7 +9,6 @@ import {
   MoveUpRight,
   MoveVertical,
   Pencil,
-  PlaneLanding,
   Plus,
   Repeat2,
   Trash2,
@@ -90,9 +89,6 @@ interface PointActions {
   ident: string;
   /** Another point in its place (the route box's search). */
   onChange?: () => void;
-  /** An airport's runways and procedures opened under its row (the open
-   *  route, where a tap on the row changes it). */
-  onDetails?: () => void;
   /** Flown direct to now: its item flies the route as planned again. */
   direct?: boolean;
   onDirect?: () => void;
@@ -136,12 +132,6 @@ export function PointMenuItems({
         <Item onClick={later(a.onChange, true)} data-testid={`${testId}-change`}>
           <Pencil aria-hidden="true" />
           Change
-        </Item>
-      )}
-      {a.onDetails && (
-        <Item onClick={later(a.onDetails)} data-testid={`${testId}-details`}>
-          <PlaneLanding aria-hidden="true" />
-          Runways & Procedures
         </Item>
       )}
       {a.onDirect && (
@@ -217,13 +207,35 @@ export function PointMenuItems({
  * its 44 points a pseudo-element round its 28; else the "⋯" (IconButton round,
  * 36 with a 20-point glyph, as every icon button is).
  */
-export function PointMenu({ testId = "point-menu", face, ...actions }: PointActions & { testId?: string; face?: ReactNode }) {
+export function PointMenu({
+  testId = "point-menu",
+  face,
+  bare = false,
+  ...actions
+}: PointActions & {
+  testId?: string;
+  face?: ReactNode;
+  /** The face drawn as it is, a filled mark of its own (FPL's timeline,
+   *  Apple Maps' Directions' marks), not in a glass button round it. */
+  bare?: boolean;
+}) {
   const { later, finalFocus } = useAfterMenu();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          face ? (
+          face && bare ? (
+            <Button
+              variant="plain"
+              size="icon-sm"
+              aria-label={`${actions.ident}: more`}
+              data-testid={testId}
+              data-point-mark=""
+              className="relative shrink-0 rounded-full p-0 hover:bg-transparent aria-expanded:bg-transparent after:absolute after:-inset-1.5 after:content-['']"
+            >
+              {face}
+            </Button>
+          ) : face ? (
             <Button
               variant="glass"
               size="icon"

@@ -68,11 +68,8 @@ export function Step({
   field = false,
   testId,
   icon,
-  change,
   children,
 }: {
-  /** Open to edit: a tap on the row changes the point (askChange). */
-  change?: () => void;
   /** Its menu, behind its mark (PointMenu's `face`). */
   mark: ReactNode;
   /** After its name: the fuel in the tanks there (FuelGauge). */
@@ -98,18 +95,7 @@ export function Step({
       <div className="relative flex w-7 shrink-0 justify-center pt-0.5">{menu ? menu(mark) : mark}</div>
       <section aria-label={title} className={cn("min-w-0 flex-1 space-y-3", field ? "pb-5" : "pb-4")}>
         <div className="relative flex items-center gap-2">
-          {change && (
-            <Button
-              variant="ghost"
-              size="inline"
-              type="button"
-              onClick={change}
-              data-testid="step-change"
-              aria-label={`${title}: change`}
-              className="absolute inset-0 rounded-lg outline-none hover:bg-transparent dark:hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring"
-            />
-          )}
-          <div className="pointer-events-none flex min-w-0 flex-1 flex-col">
+          <div className="flex min-w-0 flex-1 flex-col">
             <span className="flex min-w-0 items-center gap-1">
               <Name className={cn("truncate", field ? "font-semibold" : "font-normal", TEXT.row)}>{title}</Name>
               {icon}
@@ -125,24 +111,24 @@ export function Step({
   );
 }
 
-/** A stop before the destination, as Maps' Add Stop is, at the list's end
- *  where the list changes the route (the FPL canvas's A and B,
- *  2026-11-05): the stock Button, a whole row's width and a 44-point row,
- *  where it was a button drawn by hand (the audit's WEB-18). */
+/** A stop before the destination, as Maps' Add Stop is, the last row of
+ *  FPL's timeline (TimelineRoute): the stock Button, a whole row's width
+ *  and a 44-point row (the audit's WEB-18), its mark Apple Maps' -- a
+ *  filled circle in the tint with a white + -- and its words in the tint,
+ *  after the timeline's inset hairline. */
 export function AddStopRow({ disabled, onClick }: { disabled: boolean; onClick: () => void }) {
   return (
     <Button
       variant="ghost"
       disabled={disabled}
       onClick={onClick}
-      className={cn("h-11 w-full justify-start gap-2.5 px-0 hover:bg-transparent", TEXT.row)}
+      data-testid="timeline-add-stop"
+      className={cn("h-11 w-full justify-start gap-3 px-0 text-tint hover:bg-transparent", TEXT.row)}
     >
-      <span className="grid w-7 shrink-0 place-items-center">
-        <span className="grid size-6 place-items-center rounded-full bg-tint text-white">
-          <Plus className="size-4" strokeWidth={2.6} aria-hidden />
-        </span>
+      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-tint text-white">
+        <Plus className="size-4" strokeWidth={2.6} aria-hidden />
       </span>
-      Add a Stop
+      <span className="flex h-full flex-1 items-center border-t border-border">Add a Stop</span>
     </Button>
   );
 }

@@ -1,15 +1,16 @@
 import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
+import { PlaneLanding, PlaneTakeoff, type LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "../../components/ui/collapsible";
 import type { ProcedureAirport } from "../plan";
 import { TRAY_HEAD } from "./RunwayChips";
-import { useOpenRunwayLines } from "./useProceduresRoute";
+import { useOpenRunwayLines, type ProceduresRouteModel } from "./useProceduresRoute";
+import type { FieldPart } from "./fieldParts";
 
 /** A landing's or a takeoff's tray in a field's step: its glyph and its
  *  runway chips (FieldStep's partBody). */
-export function RunwayTray({
+function RunwayTray({
   a,
   role,
   Glyph,
@@ -69,5 +70,39 @@ export function RunwayTray({
       )}
       <div className={cn("min-w-0 flex-1", a.runways?.length === 0 && "pl-2")}>{chips}</div>
     </Collapsible>
+  );
+}
+
+/** A part's tray: its glyph and runway chips (RunwayTray), what follows
+ *  them (`trailing`, the kinds' pull-downs) and, for a stop's takeoff,
+ *  when it leaves again. */
+export function PartTray({
+  vm,
+  a,
+  part,
+  trailing,
+}: {
+  vm: ProceduresRouteModel;
+  a: ProcedureAirport;
+  part: FieldPart;
+  trailing: ReactNode[];
+}) {
+  // The line folds to its runway once one is picked; the pull-downs beside
+  // the runway's chip while it is folded, at the owner's ask ("Can arrival
+  // and approach pills be next to the runway when runway is collapsed?").
+  const foldable = part.line.chosen !== null && a.runways !== null;
+  return (
+    <div className="flex items-center gap-2" data-testid="field-part" data-role={part.role}>
+      <RunwayTray
+        a={a}
+        role={part.role}
+        Glyph={part.role === "Arrive" ? PlaneLanding : PlaneTakeoff}
+        lineKey={part.line.key}
+        foldable={foldable}
+        lineOpen={vm.openLines.includes(part.line.key)}
+        chips={part.chips(trailing.length > 0 ? trailing : null)}
+      />
+      {part.leaves && <span className="shrink-0">{part.leaves}</span>}
+    </div>
   );
 }

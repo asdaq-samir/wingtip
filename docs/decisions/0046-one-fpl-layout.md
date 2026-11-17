@@ -21,68 +21,79 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
 
 ## Decision
 
-1. **Folded, to read**, the default once the route is whole: the first
-   row (the airplane and the altitude; VFR/IFR is the Profile card's, the
-   owner's "maybe in the profile?" of the same day); the route as a timeline on
-   the cards' own magenta rail (the owner's "Go", 2026-11-17, to the
-   canvas's board "Timeline, one line each"; it replaced one line of both
-   ends' idents and names): one 44-point line an airport -- its ident a
-   link to its card, its flight category from its latest METAR (none with
-   no report), its city (the owner, the same day: the city, not the name,
-   which stays on the card and in what VoiceOver hears; the name where a
-   field has no city), a fuel stop's pump in the tint (no words: the
-   owner's "no extra words on a timeline line"), and its time (the
-   departure's leave time, the others' arrival, a dash with no airplane),
-   a chevron on the first; past four points the middle ones fold into
-   "N more stops", the next stop always shown; a Direct To's My Location
-   first; an unknown point's line in red with why (`RouteTimeline`).
-   Then the figures; "Suggested routes" over the Routes' chips; nothing
-   else. The timeline is one disclosure (`aria-expanded`, "Route KORD to
-   KDEN via KOMA, open"), each ident a link of its own over it; a tap
-   anywhere else opens the route, the lines giving way to the cards on the
-   same rail with no motion of their own. The lines are 44 points, not
-   the canvas's 30, so each ident's tap is a finger's (the hit area rule).
-2. **Open, to edit**: a head, "Route" and Done; one grouped list as
-   Apple Maps' Directions (the owner's model of 2026-11-17: "Changeable by
-   tapping and then the map shows only the route points which can be
-   tapped to show their info"): a row a point, hairlines between in one
-   rounded group, the rail between the marks, each its mark (its menu),
-   its ident over its city (My Location for the airplane's own position),
-   its time and its grip; a tap on a row changes the point by the one
-   search (`askChange`), My Location offered first where the row is not
-   it, any point the departure, a stop, the destination or a Direct To's
-   start (which becomes a route from there), the plan's Undo taking it
-   back ("should be able to change any of the stops including my
-   location"); a hold or the grip moves it, a swipe to the left takes a
-   stop out (the ends keep their places, the route staying whole); an
-   airport's runways and procedures, with its wind, open under its row
-   from its menu's Runways & Procedures (the airport card has no
-   procedure picking, so the row keeps it); Add a Stop the group's last
-   row (no microphone of its own: the field under it and the one search
-   take speech); while open the map shows the route's points alone, the
-   chart under them and the TFRs kept, each a tap to its card
-   (`lib/map/routeOnly`), everything again folded; the route's field to type or paste a whole route (RouteBox, read
-   by the engine's `route_read` as before); and the figures under all of
-   it, changing as it is edited. The Routes' chips are put away while it
-   is open: they change the route rather than edit it.
-3. **On a phone the sheet's height drives it** (the coordinator's rule
-   after the owner's iPhone screenshot of a Direct To folded at full, the
-   sheet blank under the strip, 2026-11-17), as Apple Maps shows more as
-   its sheet rises: at half and the pill the route is folded; raised to
-   full it opens; lowered to half it folds again, so a full sheet is never
-   blank. A tap on the line opens it and raises the sheet to full; Done,
-   or a tap on "Route", folds it and lowers it to half (Base UI Drawer's
-   snap points, set by the panel's state, nothing mirrored in CSS). It
-   never folds while its field has the focus, what is typed not yet sent.
-   From md up, where the panel is beside the map, the tap and Done alone.
-4. **A new plan opens to edit**: with no route, the departure's and the
-   destination's cards to fill and the route's field. Half a route lists
-   its fields over the field, the field saying the end it lacks. A route
-   made whole a point at a time, or typed or pasted into the field, stays
-   open till Done; one that arrives whole from elsewhere (Fly Here, a
-   link, a Saved flight) arrives folded, or open where the sheet is all
-   the way up. An unknown point no longer opens it by itself: its line on
-   the timeline says it in red, and the field's Remove is a tap away.
+1. **The route is its timeline, read and edited at once** (the owner's
+   two-row timeline, 2026-11-17: "Yes let's try that"; it replaced the
+   timeline folded to read and the Directions list opened to edit, which
+   needed the sheet all the way up). Under the first row (the airplane and
+   the altitude; VFR/IFR is the Profile card's): one rounded group, the
+   sheet's solid grouped-list fill, Apple Maps' Directions' look (the
+   owner: "give it similar look to Apple Maps for single rows"). A line a
+   point, 44 points tall: its mark, a filled 32-point circle with a white
+   glyph -- My Location the tint with the location arrow, an airport its
+   flight category's colour (the map's, grey with no report) with an
+   airplane, a fuel stop the pump, a waypoint a grey triangle, a point it
+   cannot fly to the red with ✕ -- the mark being its menu; between the
+   marks the route's magenta in Apple's short rounded dashes ("make lines
+   magenta"); after a hairline inset to the text, as iOS's grouped lists
+   have it, its ident at the body size (a link to its airport's card), the
+   fuel in the tanks there (as the cards had it; none with no airplane),
+   its time in the secondary colour (the departure's leave time, a picker;
+   the others' arrival, a dash with no airplane) and its grip. No city
+   ("We don't need to say the city name"); the category is the mark's
+   colour and in what VoiceOver hears. Past four points the middle ones
+   fold into "N more stops", a tap showing them all. Add a Stop is the
+   last row, its mark the tint's + and its words in the tint, asking the
+   one search (no microphone of its own: the search's field has one).
+   Then the figures; "Suggested routes" over the Routes' chips.
+2. **A tap on a field's line opens it, and that is all** (the owner: "Each
+   timeline line is one 44pt row", "exactly three rows, always"): the line,
+   then its wind at the left (the cards' figure, the METAR now or the
+   forecast for when the airplane is there) and its elevation at the
+   right, then one row of chips, wrapping where they do not fit -- the
+   runway (its line folded to the one picked, RunwayTray) and its kinds of
+   procedure, each picked one its short name's chip ("ILS 26 ⌄",
+   ProcedureMenu's menu as it was: transition, plate, Learn This Approach,
+   another, none; taking one off gives the plan's toast Undo) and each not
+   picked "+ Approach": a departure's runway and "+ Departure", a stop's
+   landing runway, "+ Approach", its takeoff runway, "+ Departure" and when
+   it leaves again, a destination's runway, "+ Arrival" and "+ Approach", a
+   field with no CIFP procedures its runway alone, whose chip says its
+   pattern. One line open at a time; the open line tapped again folds, and
+   another moves it. While one is open the map centres its field above the
+   sheet and shows the route's points alone, the chart and the TFRs kept
+   (`lib/map/routeOnly`, plan-map's `useLineFocus`). My Location and a
+   waypoint open nothing. A field NASR lists as closed (the engine's
+   field_status, decision 0043), or a point the planner does not know,
+   says why in red under its line ("Closed permanently. Pick another
+   field."), no chips. The stock parts carry it: React Aria's GridList the
+   list, its drag and drop the hold and the grip that move a point and
+   the keyboard's moves; SwipeRow a swipe to the left that takes a stop
+   out (the plan's toast Undo); Base UI's Collapsible the line's opening;
+   Base UI's menus the mark's menu and the chips (`TimelineRoute`,
+   `TimelineLine`).
+3. **A point is changed from its mark's menu** (Change, by the one search,
+   My Location offered first where the point is not it; a Direct To's
+   start changed a route from there), as are Direct To, Set Altitude, Hold
+   Here, Create a Fix, Add a Stop After, Move Up and Down and Remove;
+   "Runways & Procedures" left the menu, the line's tap its home. The
+   route's field (RouteEditor: RouteEnds with no route, the route typed or
+   pasted whole, read by the engine's `route_read`, and the figures under
+   it) opens under the timeline with "Route" over it while the route is
+   not whole, while a point the planner does not know is in it, or from
+   the route's ••• (Type the Route), Done folding it away. The sheet's
+   height no longer opens or folds anything: the timeline is where the
+   route is edited, at half as all the way up. In flight and in a dry run
+   the route is read, the list of the cards with each procedure's branch
+   of fixes (ProceduresRoute); on the ground a procedure's fixes are
+   reached from the map.
+4. **A new plan opens its field**: with no route, the departure's and the
+   destination's cards to fill and the route's field. Half a route is its
+   timeline over the field, the field saying the end it lacks. A route
+   typed or pasted into the field keeps it open till Done; one made whole
+   by a pick of the one search, or arriving whole from elsewhere (Fly
+   Here, a link, a Saved flight), is the timeline alone. A point the
+   planner does not know keeps the field open, its Remove a tap away, its
+   line on the timeline red with why.
 5. **One name for a present position**: "My Location", Apple Maps'
    words (the owner, 2026-11-17), wherever the route shows it -- the folded line (on two
    lines where one has no room, nothing under it), the cards, the pills,
@@ -108,18 +119,22 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
 
 ## Consequences
 
-- One code path from the route head to the list: `routeEditing` says
-  whether the route is open, and the list edits whenever it is shown on
-  the ground (Change asks the one search, as Route Cards' did).
-- What works today stays: the unknown place opens the route by itself,
-  its field saying so with Remove; the fuel stops' suggestions are the
-  field's pills; Direct To, procedures and holds are the cards' menus
-  (a hold or a procedure asked for from the map or by voice opens the
-  route); the departure picker is the departure card's time; the dry run
+- One code path on the ground, the timeline (`TimelineRoute` over
+  `RouteGrid`), edited wherever it is shown; `routeEditing` says only
+  whether the route's field is open under it. The Directions list opened
+  to edit (the cards' grouped rows, the row's tap to change, the
+  sheet-height rule that opened it) is gone; the cards' list stays for
+  reading in flight and a dry run.
+- What works today stays: the unknown place opens the route's field by
+  itself, saying so with Remove; the fuel stops' suggestions are the
+  map's and the field's pills; Direct To, holds and a point's altitude
+  are the marks' menus; a hold or a procedure asked for from the map or by
+  voice opens its sheet over the timeline; the departure picker is the
+  departure line's time, a stop's leaving time its chips'; the dry run
   and flight read the list, never edit it; the pill is the figures alone;
-  deep links are unchanged; keyboard reorder is the cards' grips, and the
-  line and "Route" are one disclosure (`aria-expanded`), the change said
-  to VoiceOver.
+  deep links are unchanged; keyboard reorder is the lines' grips. A hold
+  set has no row of its own on the timeline: its point's menu says Change
+  Hold….
 - The owner's earlier "no need to use the word depart, fuel stop,
   arrive" (2026-10-21) gives way to labels C's role words on the cards.
 - The phones keep their layouts until the owner's word (decision 0038).

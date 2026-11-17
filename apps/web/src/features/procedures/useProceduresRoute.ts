@@ -291,6 +291,7 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
     chosenAt,
     takeoffAt,
     isOpen,
+    openAtFirst,
     isFuelStop,
     openLines,
     destination,

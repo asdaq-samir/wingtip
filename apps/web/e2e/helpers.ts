@@ -13,6 +13,7 @@ export {
   openPanel,
   openRoute,
   foldRoute,
+  timelineLine,
   clearTheRoute,
   grabberTo,
   sheetUpToType,

@@ -25,7 +25,7 @@ export function stopRemoval(vm: ProceduresRouteModel, ident: string, stop: boole
  * route from there; the plan's Undo takes it back). A stop may be a fix;
  * an end is an airport or My Location.
  */
-export function askChange(vm: ProceduresRouteModel, ident: string, index: number, fixes: boolean) {
+function askChange(vm: ProceduresRouteModel, ident: string, index: number, fixes: boolean) {
   const edit = vm.edit;
   if (!edit) return;
   askSearchPick({
@@ -61,9 +61,6 @@ export function pointEnd(
     /** At a point the route is at more than once, which visit this is,
      *  from 1: its own altitude is that visit's (visitKey; WEB-2). */
     visit?: number;
-    /** An airport's runways and procedures opened under its row, from its
-     *  menu, where a tap on the row changes the point (the open route). */
-    details?: () => void;
   },
 ) {
   const {
@@ -107,9 +104,10 @@ export function pointEnd(
     elevation: <PointFigures time={null} altitude={shown === null ? null : altFt(shown)} kind={kind} />,
     // Behind the point's mark (`face`), at the owner's ask ("Use the
     // airport icon as the more button instead of having one to the right").
-    menu: (face: ReactNode) => (
+    menu: (face: ReactNode, bare = false) => (
       <PointMenu
         face={face}
+        bare={bare}
         ident={ident}
         direct={direct}
         onDirect={at.to && typed && !homeward ? () => onDirectTo(direct ? null : ident) : undefined}
@@ -144,7 +142,6 @@ export function pointEnd(
         // its ident a link to its card (FieldHead; the owner, 2026-11-17:
         // "Can we make the airports/stops tappable as the navlog does?").
         onChange={edit && at.index !== undefined ? () => askChange(vm, ident, at.index!, at.stop || at.waypoint) : undefined}
-        onDetails={at.details}
         onAddAfter={
           edit && at.index !== undefined && at.index < routePoints.length - 1 && !stopsFull ? () => edit.onAddAt(at.index! + 1) : undefined
         }

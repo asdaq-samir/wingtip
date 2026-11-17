@@ -65,13 +65,14 @@ export function FplActions({ vm, more }: { vm: PlanSlices<"brief" | "flight" | "
 
 /** FPL's route row (the page's `route`, PlanWorkspace), a column the
  *  row's width, as the sheet lays the route in a row (MapPage's
- *  routeRowOf), where a grid alone had no width. Folded (the one layout,
- *  decision 0046): the route's line, the flight's figures under it, which
- *  are its pill too (the owner, 2026-11-16: the calculations strip where
- *  the action tiles were), and the Routes' chips under "Suggested routes"
- *  (labels C, the owner, 2026-11-17). Open to edit, its head alone: the
- *  figures go under the cards (RouteEditor) and the chips away, as they
- *  change the route rather than edit it. */
+ *  routeRowOf), where a grid alone had no width. The route's timeline
+ *  (the one layout, decision 0046, where it is read and edited), the
+ *  flight's figures under it, which are its pill too (the owner,
+ *  2026-11-16: the calculations strip where the action tiles were), and
+ *  the Routes' chips under "Suggested routes" (labels C, the owner,
+ *  2026-11-17). While the route's field is open (RouteEditor) the figures
+ *  go under it and the chips away, as they change the route rather than
+ *  edit it. */
 export function FplRoute({
   vm,
 }: {

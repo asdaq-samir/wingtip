@@ -8,3 +8,5 @@
 
 export { default as ProceduresRoute, RouteLine } from "./ProceduresRoute";
 export { default as RouteEnds } from "./RouteEnds";
+export { default as TimelineRoute, type TimelinePoint } from "./TimelineRoute";
+export type { ProceduresRouteProps } from "./routeProps";

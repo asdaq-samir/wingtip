@@ -18,9 +18,10 @@ const FplStrip = fromChunk(loadFplStrip, (m) => m.default).Part;
  * the route's row: the route in order (the plan's nav log view), kept
  * mounted under whatever is open over it and on paper. Its cards, the
  * Brief, the Nav Log, the Profile and the Stops, are over the sheet beside
- * it (PlanCards), kept in flight when no page is drawn. The route open to
- * edit (the one layout, decision 0046): its airport cards (the nav log's
- * route list), then its field and figures (RouteEditor). With no route,
+ * it (PlanCards), kept in flight when no page is drawn. The route is its
+ * timeline in the row over this page (RouteHead, decision 0046); its field
+ * and figures open under it here while it is not yet whole or is typed in
+ * (RouteEditor); in flight the route read (the nav log's list). With no route,
  * the two ends' cards to fill and the field, and the flights saved and the
  * routes planned last under them, nothing between (the owner, 2026-11-11:
  * "We don't need plan a flight either with two buttons"; the search is the

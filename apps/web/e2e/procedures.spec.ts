@@ -60,11 +60,10 @@ test("a runway line opened stays open until folded, and folds with its field", a
   await page.waitForTimeout(3000);
   await expect(destination.locator("[data-folded]")).toHaveCount(0);
   await expect(destination.getByRole("button", { name: /^Runway / }).nth(1)).toBeVisible();
-  // The field folded and opened again: its runways folded to the one picked.
-  // From its menu's Runways & Procedures, the row a tap to change it.
+  // The field's line folded and opened again by a tap on it: its runways
+  // folded to the one picked.
   const fold = async () => {
-    await procedures.locator('[data-testid="route-field"][data-ident="KDLH"]').getByTestId("point-menu").first().click();
-    await page.getByTestId("point-menu-details").click();
+    await procedures.locator('[data-testid="timeline-line"][data-ident="KDLH"]').getByTestId("timeline-toggle").click();
   };
   await fold();
   await fold();

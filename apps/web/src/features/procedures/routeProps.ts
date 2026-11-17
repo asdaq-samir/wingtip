@@ -6,13 +6,12 @@ import type { RouteLineChoices } from "./RouteLine";
 
 type Kind = ProcedureKind;
 
-/** The route changed in FPL's list while it is open to edit (the one
- *  layout's expanded list, decision 0046), by the points' places in
- *  `routePoints`. */
+/** The route changed on FPL's timeline (decision 0046), by the points'
+ *  places in `routePoints`. */
 interface RouteListEdit {
   /** A point dragged by its grip (or held) onto another's place. */
   onMove: (from: number, to: number) => void;
-  /** The route's field asked to type a stop in at this place. */
+  /** A stop asked of the one search, put in at this place. */
   onAddAt: (index: number) => void;
   /** The airport at this place made another, from its menu's Change. */
   onReplace: (index: number, ident: string) => void;
@@ -128,8 +127,8 @@ export interface ProceduresRouteProps {
   /** The route line under the departure (RouteLine): the planner's ways as
    *  chips, the one picked, and the way to pick one; none, no line. */
   routeLine?: RouteLineChoices | null;
-  /** The route changed in the list itself (RouteListEdit): each typed
+  /** The route changed on the timeline itself (RouteListEdit): each typed
    *  point's grip, Change and Add a Stop After in its menu, and Add a Stop
-   *  at the list's end. None, the list as it is read (in flight). */
+   *  at its end. None, the route as it is read (in flight, a dry run). */
   edit?: RouteListEdit;
 }

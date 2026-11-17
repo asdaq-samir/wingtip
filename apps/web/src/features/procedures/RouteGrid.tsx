@@ -44,16 +44,7 @@ export type RouteItem = { id: string; label: string; point?: number; remove?: { 
  * and VoiceOver's drag button. A stop's row is also taken out by a swipe
  * to the left (SwipeRow), its menu's Remove.
  */
-export function RouteGrid({
-  items,
-  onMove,
-  grouped = false,
-}: {
-  items: RouteItem[];
-  onMove?: (from: number, to: number) => void;
-  /** Rows of one grouped list, a hairline between each two. */
-  grouped?: boolean;
-}) {
+export function RouteGrid({ items, onMove }: { items: RouteItem[]; onMove?: (from: number, to: number) => void }) {
   const points = new Map(items.flatMap((item) => (item.point === undefined ? [] : [[item.id, item.point] as const])));
   // The row picked up: only a point is put down anywhere.
   const carried = useRef<Key | null>(null);
@@ -116,7 +107,6 @@ export function RouteGrid({
           id={item.id}
           textValue={item.label}
           className={cn(
-            grouped && "border-t border-border first:border-t-0",
             "relative outline-none data-[allows-dragging]:select-none data-[allows-dragging]:[-webkit-touch-callout:none] [&_input]:select-text data-[dragging]:opacity-40 data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring data-[focus-visible]:ring-inset",
           )}
           data-point={item.point}

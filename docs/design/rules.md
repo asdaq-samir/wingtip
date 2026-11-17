@@ -474,44 +474,32 @@ off by default (the owner, 2026-11-13).
    field's size, the page toggle at its end, so a turn of the page changes
    only what is in the bar; under it the route in its one layout (the
    owner, 2026-11-17, "Ok let's try it"; decision
-   [0046](../decisions/0046-one-fpl-layout.md)), never in the bar: once
-   whole, folded to read -- a timeline on the cards' own magenta rail, one
-   line an airport (the owner's "Go", 2026-11-17, the canvas's "Timeline,
-   one line each"): its dot, its ident a link to its card, its flight
-   category from its latest METAR (none with no report), its city
-   (NASR's, the name where it has none; the name itself stays the card's
-   and VoiceOver's), a fuel stop's pump in the tint, and its time -- the
-   departure's leave time as its picker says it, the others' arrival from
-   the nav log, a dash with no airplane -- and a chevron on the first;
-   no other words on a line, nothing cut at the normal text size and the
-   city the first to give way at a larger one; past four points the middle
-   ones one line, "3 more stops", the next stop always shown; a Direct
-   To's first line My Location; a point the planner does not know its line
-   in red with why. The timeline is one disclosure ("Route KORD to KDEN via
-   KOMA, open"), each ident its own link -- and a tap anywhere else on it
-   opens it to edit: a head, "Route" and Done (iOS's Edit and
-   Done), over one grouped list as Apple Maps' Directions (the owner's
-   model, 2026-11-17: "Changeable by tapping and then the map shows only
-   the route points which can be tapped to show their info") -- a row a
-   point, hairlines between in one rounded group, the rail between the
-   marks: its mark (its menu), its ident over its city (My Location for
-   where the airplane is), its time, its grip; a tap on a row changes the
-   point by the one search, My Location offered first where it is not it
-   ("should be able to change any of the stops including my location"),
-   a Direct To's start changed a route from there, the plan's Undo taking
-   any change back; a hold or a drag moves it, a swipe to the left takes
-   a stop out; an airport's runways and procedures, with its wind, under
-   its row from its menu's Runways & Procedures; Add a Stop the group's
-   last row -- then the route's field to type or paste a whole route, and
-   the figures under all of them, the Routes' chips put away; while it is
-   open the map shows the route's points alone (the chart under them, the
-   TFRs kept; lib/map/routeOnly), each a tap to its card; on a phone the sheet's height drives it, as Apple Maps
-   shows more as its sheet rises: folded at half and the pill, open all
-   the way up, so a full sheet is never blank; the tap raises the sheet to
-   full and Done (or a tap on "Route") folds it back to half, never while
-   its field has the focus; a present position is "My Location" (Apple Maps' words)
+   [0046](../decisions/0046-one-fpl-layout.md)), never in the bar: its timeline, read and edited at
+   once at any height of the sheet (the owner's two-row timeline,
+   2026-11-17) -- one rounded group in Apple Maps' Directions' look, a
+   44-point line a point: its mark a filled circle with a white glyph (My
+   Location the tint and the location arrow, an airport its flight
+   category's colour and an airplane, a fuel stop the pump, a waypoint a
+   grey triangle), the mark its menu (Change by the one search, Direct To,
+   Set Altitude, Hold, Add a Stop After, Move, Remove); the route's magenta
+   in short rounded dashes between the marks; after a hairline inset to the
+   text its ident (a link to its card), the fuel in the tanks there, its
+   time (the departure's a picker) and its grip; no city; past four points
+   "3 more stops", a tap showing them; Add a Stop the last row, by the one
+   search; a hold or the grip moves a point, a swipe to the left takes a
+   stop out, the plan's toast Undo putting either back. A tap on a field's
+   line opens it, one at a time: its wind at the left and elevation at the
+   right, then one row of runway and procedure chips (a picked one its
+   short name, "ILS 26 ⌄"), wrapping where they do not fit; the map centres
+   it above the sheet and shows the route's points alone (the chart and
+   the TFRs kept; lib/map/routeOnly). My Location and a waypoint open
+   nothing; a closed field or an unknown point says why in red under its
+   line, no chips. The route's field to type or paste a whole route opens
+   under the timeline ("Route" over it, Done after) with no route, half a
+   route, an unknown point, or from the route's ••• (Type the Route), the
+   figures under it and the Routes' chips put away; a present position is "My Location" (Apple Maps' words)
    wherever the route shows it, never an ident (decision 0046); under the
-   folded route the route's figures (To,
+   timeline the route's figures (To,
    Distance, Time, Fuel: short words in sentence case, the distance whole
    miles, "1,334 nm", the owner's list, 2026-11-17) at their own size, always
    exact and one column each, never wrapped; where the widest does not fit

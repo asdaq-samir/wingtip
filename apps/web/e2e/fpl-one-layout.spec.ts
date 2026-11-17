@@ -1,18 +1,21 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, emptyPlan, foldRoute, grabberTo, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { controlsInSight, emptyPlan, foldRoute, grabberTo, openPanel, openRoute, settle, sideDrawer, slow } from "./helpers";
 import { fromRest } from "./startState";
 
 /**
- * FPL's one layout (the owner, 2026-11-17, decision 0046): the route folded
- * to its line to read, the figures and the Routes' chips under it; a tap on
- * the line opens it to edit, its airport cards with their roles, the
- * route's field and the figures under them; Done folds it, the sheet back
- * where it was. Labels C: each card's role over its ident, "Suggested
- * routes" over the chips; the first row's fields bare. Show Route As and
- * its three layouts are gone.
+ * FPL's one layout (decision 0046, the owner's two-row timeline of
+ * 2026-11-17): the route a timeline, read and edited at once with the
+ * sheet where the pilot left it, the figures and the Routes' chips under
+ * it. A line a point, Apple Maps' Directions' look: its mark (its menu),
+ * its ident (a link to its card), its time and its grip; no city. A new
+ * plan, or a route typed in, has the route's field open under it till
+ * Done. Show Route As and its three layouts are gone, and the opened
+ * Directions list with them.
  */
 test.describe("/app/plan", () => {
-  test("the route folds to its line, opens to its cards at a tap, and folds again at Done", async ({ page }) => {
+  test("the route is its timeline at half, no list to open: ident, time and grip a line, the figures and the Routes under it", async ({
+    page,
+  }) => {
     await page.goto("/app/plan?dep=KORD&stops=KOMA&dest=KDEN");
     await settle(page);
     await fromRest(page);
@@ -25,78 +28,45 @@ test.describe("/app/plan", () => {
     await expect(drawer.getByTestId("altitude-group-caption")).toHaveCount(0);
     await expect(drawer.getByTestId("aircraft-input")).toHaveAccessibleName(/^Airplane, N-number/);
 
-    // Folded: the timeline, one line an airport -- its ident a link, its
-    // city, its time -- the figures, the Routes under their heading, and
-    // nothing else: no cards, no field. The timeline one disclosure.
     const timeline = drawer.getByTestId("route-summary");
-    const line = drawer.getByTestId("route-summary-open");
     await expect(timeline).toBeVisible({ timeout: slow(30_000) });
-    await expect(line).toHaveAttribute("aria-expanded", "false");
-    await expect(line).toHaveAccessibleName("Route KORD to KDEN via KOMA, open");
-    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KOMA", "KDEN"]);
-    await expect(timeline.getByTestId("timeline-name")).toContainText(["Chicago", "Omaha", "Denver"], { timeout: slow(30_000) });
-    await expect(timeline.getByTestId("timeline-time").first()).toHaveText("Now");
-    // No words but the line's own: none ends in "…" at this size.
-    for (const name of await timeline.getByTestId("timeline-name").all())
-      expect(await name.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KOMA", "KDEN"], { timeout: slow(30_000) });
+    // No city on a line (the owner: "We don't need to say the city name").
+    await expect(timeline).not.toContainText("Chicago");
+    await expect(timeline.getByTestId("timeline-line")).toHaveCount(3);
+    await expect(timeline.getByTestId("route-grip")).toHaveCount(3);
+    // Each line one 44-point row while folded.
+    for (const line of await timeline.getByTestId("timeline-line").all()) expect((await line.boundingBox())!.height).toBeLessThan(46);
+    await expect(timeline.getByTestId("timeline-add-stop")).toBeVisible();
     await expect(drawer.getByTestId("flight-line")).toBeVisible();
     await expect(drawer.getByTestId("route-group")).toContainText("Suggested routes", { timeout: slow(30_000) });
-    await expect(drawer.getByTestId("route-field")).toHaveCount(0);
+    await expect(drawer.getByTestId("route-box")).toHaveCount(0);
+    await expect(drawer.getByTestId("route-done")).toHaveCount(0);
+    await expect(drawer.getByTestId("route-summary-open")).toHaveCount(0);
+
+    // The route's field from its ••• to type the route in, Done folding it.
+    await openRoute(page);
+    await expect(drawer.getByTestId("route-box")).toBeVisible();
+    await expect(timeline).toBeVisible();
+    await foldRoute(page);
     await expect(drawer.getByTestId("route-box")).toHaveCount(0);
 
-    // Opened: the head, the cards with their roles, the field, the figures
-    // under the last card, and the chips put away. The focus on the head's
-    // toggle; the sheet raised all the way up.
+    // A line opened leaves the sheet where it is.
     await expect(drawer).toHaveAttribute("data-panel", "half");
-    await line.click();
-    const head = drawer.getByTestId("route-head");
-    await expect(head).toHaveText("Route");
-    await expect(head).toHaveAttribute("aria-expanded", "true");
-    await expect(head).toBeFocused();
-    await expect(drawer.getByTestId("route-done")).toBeVisible();
-    await expect(drawer).toHaveAttribute("data-panel", "full");
-    // One grouped list, Apple Maps' Directions': each row its ident over
-    // its city, a tap on it a change (its name says so), Add a Stop last.
-    const idents = drawer.getByTestId("route-field").getByTestId("field-ident");
-    await expect(idents).toHaveText(["KORD", "KOMA", "KDEN"], { timeout: slow(30_000) });
-    await expect(drawer.getByTestId("route-field").getByTestId("field-city")).toContainText(["Chicago", "Omaha", "Denver"]);
-    await expect(drawer.getByRole("button", { name: /^Stop KOMA.*: change$/ })).toBeVisible();
-    await expect(drawer.getByTestId("route-box")).toBeVisible();
-    const figures = drawer.getByTestId("route-editor-figures");
-    await expect(figures.getByTestId("flight-line")).toBeVisible();
-    const lastCard = (await drawer.getByTestId("route-field").last().boundingBox())!;
-    expect((await figures.boundingBox())!.y).toBeGreaterThan(lastCard.y + lastCard.height);
-    await expect(drawer.getByTestId("route-group")).toHaveCount(0);
-    await expect(drawer.getByTestId("flight-line")).toHaveCount(1);
-
-    // Done: folded, the focus back on the timeline, the sheet back at half.
-    await foldRoute(page);
-    await expect(line).toBeFocused();
+    await timeline.locator('[data-testid="timeline-line"][data-ident="KOMA"]').getByTestId("timeline-toggle").click();
     await expect(drawer).toHaveAttribute("data-panel", "half");
-    await expect(drawer.getByTestId("route-field")).toHaveCount(0);
 
-    // By the keyboard, and "Route" folds it as Done does.
-    await line.focus();
-    await page.keyboard.press("Enter");
-    await expect(head).toBeFocused();
-    await page.keyboard.press("Enter");
-    await expect(line).toBeFocused();
-
-    // The sheet's height drives it on a phone: all the way up it opens (a
-    // full sheet is never blank), back at half it folds.
+    // All the way up on a phone, the same timeline: no list of its own.
     if (test.info().project.name === "mobile") {
       await grabberTo(page, "full");
-      await expect(drawer.getByTestId("route-done")).toBeVisible();
-      await expect(drawer.getByTestId("route-field").first()).toBeVisible();
+      await expect(timeline).toBeVisible();
+      await expect(drawer.getByTestId("route-done")).toHaveCount(0);
       await grabberTo(page, "half");
-      await expect(line).toBeVisible();
-      await expect(drawer.getByTestId("route-field")).toHaveCount(0);
     }
 
-    // An ident is its airport's card, not the route opened.
+    // An ident is its airport's card.
     await timeline.getByTestId("timeline-ident").nth(1).click();
     await expect(page.getByTestId("place-card")).toBeVisible();
-    await expect(drawer.getByTestId("route-done")).toHaveCount(0);
   });
 
   test("past four points the middle stops fold into one line, the next stop always shown", async ({ page }) => {
@@ -106,9 +76,9 @@ test.describe("/app/plan", () => {
     const timeline = sideDrawer(page).getByTestId("route-summary");
     await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDSM", "KDEN"], { timeout: slow(30_000) });
     await expect(timeline.getByTestId("timeline-more")).toHaveText("3 more stops");
-    await expect(sideDrawer(page).getByTestId("route-summary-open")).toHaveAccessibleName(
-      "Route KORD to KDEN via KDSM, KOMA, KLNK, KGRI, open",
-    );
+    // A tap on it shows them all.
+    await timeline.getByTestId("timeline-more").click();
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDSM", "KOMA", "KLNK", "KGRI", "KDEN"]);
   });
 
   test('a Direct To from where the airplane is reads "My Location", its Direct to line and Cancel folded and open', async ({ page }) => {
@@ -120,13 +90,10 @@ test.describe("/app/plan", () => {
     await openPanel(page);
     const drawer = sideDrawer(page);
     const timeline = drawer.getByTestId("route-summary");
-    await expect(timeline.getByTestId("timeline-line").first()).toContainText("My Location", { timeout: slow(30_000) });
-    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KUGN"]);
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["My Location", "KUGN"], { timeout: slow(30_000) });
     await expect(timeline).not.toContainText("POS0");
-    // The Direct to line over the figures, folded and open.
+    // The Direct to line over the figures.
     const direct = drawer.getByTestId("direct-strip");
-    await expect(direct).toBeVisible();
-    await drawer.getByTestId("route-summary-open").click();
     await expect(direct).toBeVisible();
     await expect(drawer).not.toContainText("POS0");
     // Cancel gives the route back as it was.
@@ -135,7 +102,7 @@ test.describe("/app/plan", () => {
     await expect(page).not.toHaveURL(/[?&]direct=/);
   });
 
-  test("a new plan opens to edit, its two ends' cards to fill and the route's field, no Done", async ({ page }) => {
+  test("a new plan opens its field, its two ends' cards to fill, no Done; a route typed in keeps it till Done", async ({ page }) => {
     await page.goto("/app/plan");
     await settle(page);
     await emptyPlan(page);
@@ -153,10 +120,11 @@ test.describe("/app/plan", () => {
     await page.keyboard.insertText("KORD KOMA KDEN");
     await page.keyboard.press("Enter");
     await expect(drawer.getByTestId("route-done")).toBeVisible({ timeout: slow(30_000) });
-    await expect(drawer.getByTestId("route-field").getByTestId("field-ident")).toHaveText(["KORD", "KOMA", "KDEN"], {
+    await expect(drawer.getByTestId("route-summary").getByTestId("timeline-ident")).toHaveText(["KORD", "KOMA", "KDEN"], {
       timeout: slow(30_000),
     });
     await foldRoute(page);
+    await expect(drawer.getByTestId("route-box")).toHaveCount(0);
 
     // The route's ••• keeps Undo and the map's choices, and no Show Route As.
     await controlsInSight(page);

@@ -139,12 +139,13 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
 });
 
-test("a procedure's fixes branch off the route, each sent direct to or given an altitude to cross it at, from the list or the map", async ({
+test("a procedure picked is its short name's chip on its field's line, and its fixes are sent direct to or given an altitude from the map", async ({
   page,
 }) => {
-  // The owner's pick, option 4 of the fix canvas: "expandable list of
-  // connected points like git graph", any fix direct to or an altitude
-  // to cross it at, its card opened from the list or the map.
+  // The owner's two-row timeline (2026-11-17): a picked procedure is its
+  // short name's chip under its field's line, its menu ProcedureMenu's; its
+  // fixes (the git-graph branch of option 4) are the list's read in flight,
+  // and on the ground each fix's card from the map.
   await page.route(
     (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
     (route) => {
@@ -159,49 +160,25 @@ test("a procedure's fixes branch off the route, each sent direct to or given an 
   await page.goto("/app/plan?dep=C81&dest=KDLH&procs=KDLH:I09:DLH");
   await settle(page);
   await openTab(page, "Nav Log");
-  await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
-  const toggle = kdlh.getByTestId("fix-branch-toggle");
-  // The branch's head, after the runways: the approach's name with the
-  // fold's arrow beside it, its kind and its fixes under it, and the
-  // button to pick another at its right, at the owner's ask.
-  const branchHead = kdlh.getByTestId("fix-branch");
-  await expect(branchHead).toContainText("ILS 09 · DLH", { timeout: slow(20000) });
-  await expect(branchHead).toContainText("Approach · 3 fixes");
-  await expect(kdlh.locator("[data-testid=procedure-kind][data-look=button]")).toBeVisible();
-  await expect(toggle).toHaveAttribute("aria-expanded", "false");
-  await toggle.click();
-  await expect(toggle).toHaveAttribute("aria-expanded", "true");
-  const rows = kdlh.getByTestId("fix-branch-row");
-  await expect(rows).toHaveCount(3);
-  // Direct to FAKER from its row: kept in the address, the fixes before it skipped.
-  await rows.filter({ hasText: "FAKER" }).getByTestId("fix-branch-menu").click();
-  await page.getByTestId("fix-branch-menu-direct").click();
-  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:)FAKER(&|$)/);
-  await settled(sideDrawer(page));
-  await openTab(page, "Nav Log");
-  await openRoute(page);
-  // Opened again where the plan made again folded it.
-  await expect(async () => {
-    if (!(await rows.first().isVisible())) await toggle.click();
-    await expect(rows.filter({ hasText: "FAKER" })).toContainText("direct to", { timeout: 2000 });
-  }).toPass({ timeout: slow(15000) });
-  await expect(rows.filter({ hasText: "OFOFO" })).toContainText("skipped");
-  // OFOFO given 3,000 to cross at, from its card.
-  await rows.filter({ hasText: "OFOFO" }).getByTestId("fix-branch-menu").click();
-  await page.getByTestId("fix-branch-menu-altitude").click();
+  const chip = kdlh.locator("[data-testid=procedure-kind][data-look=chip]");
+  await expect(chip).toContainText("ILS 09", { timeout: slow(20000) });
+  // No branch of fixes on the ground: the chips are the line's all.
+  await expect(kdlh.getByTestId("fix-branch")).toHaveCount(0);
+  // FAKER's card from the map: direct to it, then as charted again.
+  await grabberTo(page, "peek");
+  await tapMarkApart(page, "procedure-fixes", "FAKER", "OFOFO");
   const card = page.getByTestId("fix-card");
   await expect(card).toBeVisible();
+  await card.getByTestId("fix-card-direct").click();
+  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:)FAKER(&|$)/);
+  await expect(card.getByTestId("fix-card-direct")).toContainText("as Charted");
+  // And 3,000 to cross it at.
   await card.getByTestId("fix-card-altitude").fill("3000");
   await card.getByTestId("fix-card-set").click();
-  await expect(page).toHaveURL(/[?&]cross=OFOFO(%3A|:)3000(&|$)/);
-  await expect(card.getByTestId("fix-card-charted")).toBeVisible();
+  await expect(page).toHaveURL(/[?&]cross=FAKER(%3A|:)3000(&|$)/);
   await card.getByTestId("fix-card-charted").click();
   await expect(page).not.toHaveURL(/[?&]cross=/);
   await cardClose(page, "fix-card-close").click();
   await expect(card).toHaveCount(0);
-  await grabberTo(page, "peek"); // the same card from the fix on the map, the sheet down
-  await tapMarkApart(page, "procedure-fixes", "FAKER", "OFOFO"); // at the route's zoom KDLH lies by them
-  await expect(page.getByTestId("fix-card")).toBeVisible();
-  await expect(page.getByTestId("fix-card-direct")).toContainText("as Charted");
 });

@@ -236,6 +236,12 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       // keep the route box's row on one line; Share marked where it is due.
       planAgain={card === undefined && routed && !s.local ? { stale, onPlan: () => setLoad((n) => n + 1) } : undefined}
       onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
+      // The route's field over its timeline, to type or paste it in whole.
+      onTypeRoute={
+        card === undefined && vm.route.wholeRoute && vm.routeList.routeFolded && !vm.flight.flying
+          ? () => vm.routeList.setRouteOpen(true)
+          : undefined
+      }
       // Nothing to clear on the empty page: its ✕ goes back (RouteControls).
       onClear={card === undefined && vm.route.hasPoints ? vm.routeList.clearRoute : undefined}
     />

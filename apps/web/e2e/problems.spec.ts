@@ -145,13 +145,13 @@ test("an ident the planner does not know is said on its pill, not the map's line
   // only word was the map's line, cut off, naming the data set. The pilot
   // typed it; it is said where they typed it, with Remove.
   await page.goto("/app/plan?dep=KUGN&dest=KZZZ");
-  // Folded, its timeline's line in red with why (the one layout); opened,
-  // its field says it with Remove.
+  // Its timeline's line in red with why under it (the one layout), and the
+  // route's field open under the timeline, saying it with Remove.
   await openPanel(page);
   const line = page.getByTestId("route-summary").getByTestId("timeline-line").last();
   await expect(line).toContainText("KZZZ", { timeout: 20000 });
-  await expect(line.getByTestId("timeline-name")).toHaveText("isn't an airport or waypoint we know");
-  await expect(line.getByTestId("timeline-name")).toHaveClass(/text-destructive/);
+  await expect(line.getByTestId("timeline-problem")).toHaveText("isn't an airport or waypoint we know");
+  await expect(line.getByTestId("timeline-problem")).toHaveClass(/text-destructive/);
   await openRoute(page);
   const said = page.getByTestId("route-unknown");
   await expect(said).toContainText("KZZZ isn't an airport or waypoint we know", { timeout: 20000 });
@@ -175,9 +175,10 @@ test("an ident only a field abroad goes by is no destination: no distance, no wa
   // (2026-11-17). KIGN is no US field's: the unknown place, as KZZZ is.
   await page.goto("/app/plan?dep=KUGN&dest=KIGN");
   await openPanel(page);
-  await expect(page.getByTestId("route-summary").getByTestId("timeline-name").last()).toHaveText("isn't an airport or waypoint we know", {
-    timeout: 20000,
-  });
+  await expect(page.getByTestId("route-summary").getByTestId("timeline-problem").last()).toHaveText(
+    "isn't an airport or waypoint we know",
+    { timeout: 20000 },
+  );
   await openRoute(page);
   const said = page.getByTestId("route-unknown");
   await expect(said).toContainText("KIGN isn't an airport or waypoint we know", { timeout: 20000 });
@@ -202,7 +203,7 @@ test("a real field abroad is said to be outside the US charts, not planned", asy
   );
   await page.goto("/app/plan?dep=KUGN&dest=AYID");
   await openPanel(page);
-  await expect(page.getByTestId("route-summary").getByTestId("timeline-name").last()).toHaveText("is outside the US charts", {
+  await expect(page.getByTestId("route-summary").getByTestId("timeline-problem").last()).toHaveText("is outside the US charts", {
     timeout: 20000,
   });
   await openRoute(page);

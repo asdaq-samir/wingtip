@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, settle, sideDrawer, frontSheet, slow } from "./helpers";
+import { clearTheRoute, grabberTo, settle, sideDrawer, frontSheet, slow } from "./helpers";
 import { expectPage, expectShown, openAirport, showPage } from "./sheetPages";
 
 /**
@@ -73,22 +73,14 @@ test.describe("cards over the pages", () => {
   });
 });
 
-test("the last waypoint taken out all the way up leaves the sheet all the way up", async ({ page }) => {
+test("the route cleared all the way up leaves the sheet all the way up", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "full");
-  // From the address the route is folded to its line; a tap on it opens the
-  // box to edit.
-  const line = page.getByTestId("route-summary");
-  if (await line.isVisible()) await page.getByTestId("route-summary-open").click();
-  // Focused, its caret at the end: the route box holds its pills inside
-  // the field, so a click in its middle can land on a pill.
-  await page.getByTestId("route-type").focus();
-  await page.keyboard.press("End");
-  await page.keyboard.press("Backspace");
+  // The route cleared from its ••• menu: nothing of it left.
+  await clearTheRoute(page);
   await expect(page).not.toHaveURL(/[?&]dest=/);
-  await page.keyboard.press("Backspace");
   await expect(page).not.toHaveURL(/[?&]dep=/);
   await expect(page).toHaveURL(/[?&]view=briefing/);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");

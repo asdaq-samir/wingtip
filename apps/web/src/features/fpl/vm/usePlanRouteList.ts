@@ -1,38 +1,34 @@
 import { useCallback, useState } from "react";
-import { useIsMobile } from "../../../hooks/use-mobile";
 import { positionIdent, stopsOf } from "../../../lib/identSchema";
 import { useGeo, type LatLon } from "../../../lib/geo";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { ADDRESS_CLEARED } from "../../../lib/address";
 import type { PanelState } from "../../../lib/mapChrome";
-import { riseToSee, directKeys, panelNow, procsWithoutDirect } from "../../plan";
+import { riseToSee, directKeys, procsWithoutDirect } from "../../plan";
 import { useRouteListEdit, useRouteLine } from "../../route";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanViewModel } from "./usePlanView";
-import type { PlanPicks } from "./usePlanPicks";
 import { coursePoints } from "../../../lib/course";
 
 /**
- * FPL's route as a list and a line (usePlanWorkspace): folded to its one
- * line, or open to edit (the one layout, decision 0046), its points edited
- * in place (useRouteListEdit), a stop being added, a point dropped on the
+ * FPL's route as a list and a line (usePlanWorkspace): its timeline, its
+ * points edited in place (useRouteListEdit), its field open while it is
+ * not yet whole or is typed in (decision 0046), a point dropped on the
  * map into it, its close, and the Routes' chips (useRouteLine).
  */
 export function usePlanRouteList(
   route: PlanRoute,
-  { course, ways, own }: PlanAnswerModel,
-  { setViewPick, panel, panelOpen }: PlanViewModel,
-  { proceduresAt }: Pick<PlanPicks, "proceduresAt">,
+  { course, ways, own, s }: PlanAnswerModel,
+  { setViewPick }: PlanViewModel,
   setPanel: (state: PanelState) => void,
 ) {
   "use no memo"; // As usePlanWorkspace, whose part this is: left to its own memos.
   const { planned, hasPoints, routePoints, setRoute, setStops, setAddress, wholeRoute, fuelParam, flightRules } = route;
-  // Add Stop open: from its own button, or from no legal altitude's --
-  // "via", its Fly via round a Class B, the ways round suggested.
-  const [addingStop, setAddingStop] = useState<false | "stop" | "via">(false);
+  // A stop being typed into the route's field (RouteBox's own Add a Stop).
+  const [addingStop, setAddingStop] = useState<false | "stop">(false);
   // FPL's list edited in place (useRouteListEdit).
-  const { setAddAt, ...edit } = useRouteListEdit({ stops: planned.stops, course, routePoints, setRoute, setAddingStop });
+  const { setAddAt, ...edit } = useRouteListEdit({ stops: planned.stops, course, routePoints, setRoute });
   const addingChange = useCallback(
     (open: boolean) => {
       setAddingStop(open ? "stop" : false);
@@ -106,62 +102,34 @@ export function usePlanRouteList(
     setStops,
     flightRules,
   });
-  // Folded to its one line once whole, and open to edit (its airport
-  // cards, Add a Stop, the route's field and the figures under them)
-  // (decision 0046). On a phone the sheet's height drives it, as Apple
-  // Maps shows more as its sheet rises (the coordinator's rule after the
-  // owner's iPhone screenshot of a blank full sheet, 2026-11-17): at half
-  // and the pill it is folded, all the way up it is open, so a full sheet
-  // is never blank. A tap on the line opens it and raises the sheet; Done
-  // folds it and lowers it to half. Before it is whole it is always open,
-  // its two ends' cards to fill. Made whole a point at a time, or typed or
-  // pasted into its field, it stays open for the pilot to go on; arriving
-  // whole at once from elsewhere -- Fly Here, a link, a Saved flight -- it
-  // folds, unless the sheet is all the way up. Never folded while its field
-  // has the focus (what is typed is not yet sent).
-  const onPhone = useIsMobile();
-  const full = onPhone && panel === "full";
+  // The route's field (RouteEditor) open over the timeline while there
+  // is no whole route -- a new plan, half a route -- and while a route is
+  // typed or pasted into it, till its Done (decision 0046, the owner's
+  // two-row timeline of 2026-11-17: the timeline is where the route is
+  // edited, at any height of the sheet). Made whole by a pick of the one
+  // search, or arriving whole from elsewhere -- Fly Here, a link, a Saved
+  // flight -- it is the timeline alone. Never folded while its field has
+  // the focus (what is typed is not yet sent).
   const [wasWhole, setWasWhole] = useState(wholeRoute);
   const [hadPoints, setHadPoints] = useState(hasPoints);
-  // Whether the focus is in the open route (RouteEditor), its field typed in.
+  // Whether the focus is in the route's field (RouteEditor).
   const [editorFocused, setEditorFocused] = useState(false);
   if (wholeRoute !== wasWhole || hasPoints !== hadPoints) {
     setWasWhole(wholeRoute);
     setHadPoints(hasPoints);
-    if (wholeRoute && !wasWhole) edit.setRouteOpen(hadPoints || editorFocused || full);
+    if (wholeRoute && !wasWhole) edit.setRouteOpen(editorFocused);
     if (!hasPoints) edit.setRouteOpen(false);
   }
-  // The sheet's height, as last seen: a move to full opens the route, a
-  // move down from it folds it (on a phone).
-  const [heightWas, setHeightWas] = useState<boolean | null>(null);
-  if (onPhone && heightWas !== full) {
-    setHeightWas(full);
-    if (full && wholeRoute) edit.setRouteOpen(true);
-    else if (!full && heightWas !== null && !editorFocused) edit.setRouteOpen(false);
-  }
-  // A hold or a procedure asked for from elsewhere (the map's Hold Here, a
-  // voice's "the ILS one nine right at Milwaukee") opens the route, whose
-  // list draws them: once for each ask, once the sheet is up.
-  const asked = holdAsk ?? proceduresAt;
-  const [askSeen, setAskSeen] = useState<typeof asked>(null);
-  if (asked && asked !== askSeen && panelOpen && wholeRoute) {
-    setAskSeen(asked);
-    edit.setRouteOpen(true);
-  }
-  const routeFolded = wholeRoute && !edit.routeOpen && !addingStop;
+  // A point the planner does not know keeps the field open, which says so
+  // with its Remove (RouteBox), its line on the timeline red with why.
+  const routeFolded = wholeRoute && !edit.routeOpen && !addingStop && !s.unknownPlace;
   const { setRouteOpen } = edit;
-  // The line tapped: open, and on a phone all the way up for its room.
-  const openRoute = useCallback(() => {
-    setRouteOpen(true);
-    if (onPhone && panelNow.current !== "full") setPanel("full");
-  }, [setRouteOpen, setPanel, onPhone]);
-  // Done: folded again, and on a phone back down to half, where it reads.
+  // Done: the field folded away, the timeline alone.
   const foldRoute = useCallback(() => {
     setRouteOpen(false);
     setAddingStop(false);
     setAddAt(null);
-    if (onPhone && panelNow.current === "full") setPanel("half");
-  }, [setRouteOpen, setAddAt, setPanel, onPhone]);
+  }, [setRouteOpen, setAddAt]);
   return {
     ...edit,
     ...line,
@@ -172,7 +140,6 @@ export function usePlanRouteList(
     dropIntoRoute,
     clearRoute,
     routeFolded,
-    openRoute,
     foldRoute,
     setEditorFocused,
   };

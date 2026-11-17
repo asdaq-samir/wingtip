@@ -1,6 +1,3 @@
-import { lazy, Suspense } from "react";
-import CloseButton from "../../components/CloseButton";
-import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } from "../../components/ResponsivePopover";
 import { sameField } from "../../lib/procedures";
 import { frdOf, isPosition, placeOfPoint, pointName } from "../../lib/identSchema";
 import { etaAt, legOf, rowPoint, type NavLogRow, type ProcedureAirport } from "../plan";
@@ -11,27 +8,17 @@ import { useProceduresRoute } from "./useProceduresRoute";
 import type { ProceduresRouteProps } from "./routeProps";
 import { RouteLine } from "./RouteLine";
 import { FieldStep } from "./FieldStep";
-import { askChange, pointEnd, stopRemoval } from "./pointEnd";
+import { pointEnd, stopRemoval } from "./pointEnd";
 import { nthTyped } from "./visits";
-import { AddStopRow, HoldRow, Step } from "./RouteRows";
+import { HoldRow, Step } from "./RouteRows";
 import { RouteGrid, type RouteItem } from "./RouteGrid";
-import { ProcedurePage, ProcedurePicker } from "./ProcedureSheet";
-import { listTitle } from "./procedureWords";
-import { plateTitle } from "../plates";
+import { RouteSheets } from "./RouteSheets";
 
 // The list's types and its Routes row, where PlanWorkspace and the
 // routePanel chunk import them from.
 export type { ProcedureAirport } from "../plan";
 export type { FitInputs, ProceduresAt } from "./routeProps";
 export { RouteLine } from "./RouteLine";
-import { loadPointAltitudeDialog } from "../route";
-
-// Opened only from a point's menu, so fetched as one first is: in the
-// first load they took it over its 1.10 MB budget (CI, 2026-10-20).
-const FixFromDialog = lazy(() => import("./FixFromDialog"));
-const PointAltitudeDialog = lazy(() => loadPointAltitudeDialog());
-const HoldSheet = lazy(() => import("./HoldSheet"));
-const ApproachLesson = lazy(() => import("./ApproachLesson"));
 
 /**
  * The route in FPL, in the order it is flown, at the owner's ask ("I
@@ -61,54 +48,7 @@ const ApproachLesson = lazy(() => import("./ApproachLesson"));
  */
 export default function ProceduresRoute(props: ProceduresRouteProps) {
   const vm = useProceduresRoute(props);
-  const {
-    airports,
-    rows,
-    depart,
-    weather,
-    onCharts,
-    chartsDisabled,
-    onPreview,
-    at,
-    onPointAltitude,
-    onCreateFix,
-    onHoldSet,
-    routePoints,
-    stopsFull,
-    routeLine,
-    edit,
-    fit,
-    on,
-    procedure,
-    setPage,
-    editing,
-    setEditing,
-    fixFrom,
-    setFixFrom,
-    holdAt,
-    setHoldAt,
-    editingUsed,
-    fixFromUsed,
-    holdUsed,
-    lesson,
-    setLesson,
-    lessonUsed,
-    holdOn,
-    heldAs,
-    lists,
-    pick,
-    close,
-    destination,
-    along,
-    pointIndex,
-    tanks,
-    points,
-    field,
-    list,
-    chosen,
-    stale,
-    windOf,
-  } = vm;
+  const { airports, rows, depart, weather, routePoints, routeLine, setHoldAt, holdOn, heldAs, along, pointIndex, tanks, points } = vm;
 
   // The route's own rows where the course is in: its fields as steps and
   // the fixes flown through between them, the checkpoints and the tops of
@@ -123,7 +63,7 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
   const fieldStep = (a: ProcedureAirport, row: NavLogRow | undefined, last: boolean, leads: boolean): RouteItem => ({
     id: `${a.role}:${a.ident}`,
     label: `${a.role} ${pointName(a.ident)}`,
-    point: edit ? pointIndex(a.ident, a.role) : undefined,
+    point: pointIndex(a.ident, a.role),
     remove: stopRemoval(vm, a.ident, a.role === "Stop"),
     node: <FieldStep vm={vm} a={a} row={row} last={last} leads={leads} />,
   });
@@ -197,7 +137,7 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
     steps.push({
       id: row.key,
       label: rowPoint(row).name,
-      point: edit && typedAt >= 0 ? typedAt : undefined,
+      point: typedAt >= 0 ? typedAt : undefined,
       remove: end?.remove,
       node: (
         <Step
@@ -228,19 +168,6 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
           figures={end?.figures ?? <PointFigures time={time} altitude={null} kind="cruise" />}
           menu={end?.menu}
           grip={end?.grip}
-          // Open to edit, a tap on the row changes it: a typed point, or
-          // where the route starts (My Location).
-          change={
-            edit && (typedAt >= 0 || row.kind === "departure")
-              ? () =>
-                  askChange(
-                    vm,
-                    row.kind === "departure" ? routePoints[0]! : row.airport.ident,
-                    row.kind === "departure" ? 0 : typedAt,
-                    row.kind !== "departure",
-                  )
-              : undefined
-          }
         />
       ),
     });
@@ -250,134 +177,12 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
 
   return (
     <>
-      {/* Its own popover beside the procedures' sheet's, not inside its root:
-        there, on a desktop, it closed as it opened. */}
-      {holdUsed && (
-        <Suspense fallback={null}>
-          <HoldSheet
-            at={holdAt}
-            onClose={() => setHoldAt(null)}
-            onSet={(fix, hold) => {
-              onHoldSet(fix, hold);
-              setHoldAt(null);
-            }}
-          />
-        </Suspense>
-      )}
-      {lessonUsed && (
-        <Suspense fallback={null}>
-          <ApproachLesson at={lesson} aircraft={fit?.aircraft ?? null} onClose={() => setLesson(null)} />
-        </Suspense>
-      )}
       {lineRow}
-      {/* On a phone its card opens at half whatever it covers, the
-            procedure on the map over it in sight. */}
-      <ResponsivePopover
-        open={!!at}
-        onOpenChange={(open) => {
-          if (!open) close();
-        }}
-      >
-        <ResponsivePopoverAnchor asChild>
-          {/* Its points moved by their grips, where the list changes the route (RouteGrid). */}
-          {/* Open to edit, one grouped list as Apple Maps' Directions, its
-              rows apart by hairlines, Add a Stop its last row. */}
-          <div className={edit ? "mt-2 mb-1 rounded-(--radius-banner) bg-card px-3 py-1" : "pt-2 pb-1"}>
-            <RouteGrid items={fieldsAlone ?? steps} onMove={edit?.onMove} grouped={!!edit} />
-            {edit && routePoints.length > 1 && (
-              <div className="border-t border-border">
-                <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} />
-              </div>
-            )}
-          </div>
-        </ResponsivePopoverAnchor>
-        {/* A stop before the destination, as Maps' Add Stop is, at the
-          list's end where the list changes the route (the FPL canvas's A
-          and B, 2026-11-05). */}
-        {editingUsed && (
-          <Suspense fallback={null}>
-            <PointAltitudeDialog
-              point={editing}
-              onClose={() => setEditing(null)}
-              onSet={(ident, feet) => {
-                onPointAltitude(editing?.key ?? ident, feet);
-                setEditing(null);
-              }}
-            />
-          </Suspense>
-        )}
-        {fixFromUsed && (
-          <Suspense fallback={null}>
-            <FixFromDialog
-              from={fixFrom}
-              onClose={() => setFixFrom(null)}
-              onCreate={(ident) => {
-                if (fixFrom) onCreateFix(fixFrom, ident);
-                setFixFrom(null);
-              }}
-            />
-          </Suspense>
-        )}
-        {/* On a phone a card in the map's panel (ResponsivePopover), half
-          way up, the map above it in sight and clear as a procedure is
-          picked, as ForeFlight's Procedure Advisor keeps it, at the
-          owner's pick. */}
-        <ResponsivePopoverContent
-          // The FAA's name as the plate's card writes it, "KDLH ILS or LOC
-          // rwy 09", one way everywhere (the audit's WEB-11).
-          title={on ? (procedure ? plateTitle(on.ident, procedure.name) : listTitle(on.ident, on.kind)) : "Procedures"}
-          className="max-h-[70vh] w-80 overflow-y-auto p-3"
-          align="start"
-          side="right"
-          // No Back: the close goes back to the list from a procedure's page,
-          // at the owner's ask ("close button should behave as the back
-          // button", 2026-10-22).
-          action={
-            <CloseButton
-              label={procedure ? "Back" : "Close"}
-              onClick={() => (procedure ? setPage(null) : close())}
-              data-testid="procedures-close"
-            />
-          }
-        >
-          {on &&
-            (procedure ? (
-              <ProcedurePage
-                key={`${on.ident}:${procedure.id}`}
-                kind={on.kind}
-                ident={on.ident}
-                procedure={procedure}
-                chosen={chosen?.id === procedure.id ? chosen : null}
-                stale={stale}
-                onAdd={(transition) => {
-                  pick(on.ident, on.kind, { id: procedure.id, transition });
-                  close();
-                }}
-                onRemove={() => pick(on.ident, on.kind, null)}
-                onPreview={onPreview}
-                onChart={
-                  field === destination && !chartsDisabled
-                    ? () => {
-                        close();
-                        onCharts();
-                      }
-                    : null
-                }
-              />
-            ) : (
-              <ProcedurePicker
-                key={`${on.ident}:${on.kind}`}
-                kind={on.kind}
-                list={list}
-                chosen={chosen}
-                stale={stale}
-                query={lists[airports.findIndex((a) => sameField(a.ident, on.ident))]}
-                wind={windOf(on.ident)}
-                onOpen={(p) => setPage({ at: on, procedure: p })}
-              />
-            ))}
-        </ResponsivePopoverContent>
-      </ResponsivePopover>
+      <RouteSheets vm={vm}>
+        <div className="pt-2 pb-1">
+          <RouteGrid items={fieldsAlone ?? steps} />
+        </div>
+      </RouteSheets>
     </>
   );
 }

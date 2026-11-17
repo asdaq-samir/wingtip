@@ -1,5 +1,4 @@
-import { Suspense, useEffect } from "react";
-import { useRouteOnly } from "../../../lib/map/routeOnly";
+import { Suspense } from "react";
 import { SearchNear } from "../../../lib/useAirportSearch";
 import { coverCard, useSheetCards } from "../../../lib/sheetCards";
 import { RouteEnds } from "../routePanelParts";
@@ -9,15 +8,12 @@ import type { PlanSlices } from "../vm/planSlices";
 import { FlightFigures } from "./FlightFoot";
 
 /**
- * FPL's route open to edit, under its airport cards (the nav log's route
- * list, ProceduresRoute, over it in the page), the one layout's expanded
- * face (the owner, 2026-11-17, decision 0046): with no route its two ends'
- * cards to fill (RouteEnds); the route's field to type or
- * paste a whole route in, read by the engine's route_read as it always was
- * (RouteBox), where a stop asked for from the list (Add a Stop) is typed
- * in; and once the route is whole its figures under all of it, changing
- * as it is edited. On a phone it is open while the sheet is all the way
- * up (usePlanRouteList).
+ * FPL's route's field, open under its timeline (RouteHead) while there is
+ * no whole route or one is typed in (routeEditing; decision 0046): with no
+ * route its two ends' cards to fill (RouteEnds); the route's field to type
+ * or paste a whole route in, read by the engine's route_read as it always
+ * was (RouteBox); and once the route is whole its figures under it,
+ * changing as it is edited, till Done.
  */
 export default function RouteEditor({
   vm,
@@ -36,13 +32,6 @@ export default function RouteEditor({
   // sheet is inert (SheetParts, while a card is up), and the field's focus
   // as it was asked went nowhere (plans.spec, "no legal altitude").
   const covered = useSheetCards((c) => !!coverCard(c.stack));
-  // While a whole route is open on FPL, the map shows its points alone
-  // (lib/map/routeOnly); folded (this gone), or Search up, everything again.
-  const routeOnly = wholeRoute && vm.view.view === "plan";
-  useEffect(() => {
-    useRouteOnly.setState({ on: routeOnly });
-    return () => useRouteOnly.setState({ on: false });
-  }, [routeOnly]);
   return (
     <div
       className="flex flex-col px-4 pb-2"
@@ -83,7 +72,6 @@ export default function RouteEditor({
               onTypedProcedures={typeProcedures}
               adding={!!addingStop && !covered}
               onAddingChange={addingChange}
-              via={addingStop === "via" ? s.unflyable?.detours : undefined}
               procedures={routeProcedures}
               onProcedures={openProcedures}
               fuelStops={fuelStops}

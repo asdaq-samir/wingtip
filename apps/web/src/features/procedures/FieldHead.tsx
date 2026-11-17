@@ -20,8 +20,6 @@ export function FieldHead({
   tank,
   wind,
   reported,
-  city = null,
-  change,
 }: {
   vm: ProceduresRouteModel;
   a: ProcedureAirport;
@@ -30,16 +28,8 @@ export function FieldHead({
   tank: ReturnType<ProceduresRouteModel["tanks"]["get"]>;
   wind: string | null;
   reported: ReturnType<ProceduresRouteModel["reportedOf"]>;
-  /** The field's city (NASR's), its row's second line while the route is
-   *  open to edit. */
-  city?: string | null;
-  /** Open to edit: a tap on the row changes the point (the owner,
-   *  2026-11-17, Apple Maps' Directions as the model), its row the ident
-   *  over its city and its time, no role, wind or elevation. */
-  change?: () => void;
 }) {
   const { isFuelStop, onInfo } = vm;
-  const editing = !!change;
   return (
     <>
       {/* The airport's lines: a tap anywhere on them -- its fuel, its wind, its time -- opens it, at the owner's ask
@@ -85,35 +75,22 @@ export function FieldHead({
             no chevron of its own beside the symbol, which is the menu. The Collapsible's trigger laid over the lines
             (its own `absolute` wins over index.css's touch positioning), and twelve over them into the room above
             the field (the iOS audit's P1); what has a tap of its own lies over it (z-10). */}
-            {change ? (
-              <Button
-                variant="ghost"
-                size="inline"
-                type="button"
-                onClick={change}
-                data-testid="field-change"
-                data-ident={a.ident}
-                aria-label={`${a.role} ${a.ident}${city ? `, ${city}` : ""}: change`}
-                className="absolute inset-x-0 -top-1 -bottom-1 rounded-lg outline-none hover:bg-transparent dark:hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring"
-              />
-            ) : (
-              <CollapsibleTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="inline"
-                    type="button"
-                    data-testid="field-toggle"
-                    data-ident={a.ident}
-                    data-disclosure=""
-                    aria-label={`${a.ident}: runways and procedures`}
-                    className={cn(
-                      "absolute inset-x-0 -top-3 bottom-0 rounded-lg outline-none hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring",
-                    )}
-                  />
-                }
-              />
-            )}
+            <CollapsibleTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="inline"
+                  type="button"
+                  data-testid="field-toggle"
+                  data-ident={a.ident}
+                  data-disclosure=""
+                  aria-label={`${a.ident}: runways and procedures`}
+                  className={cn(
+                    "absolute inset-x-0 -top-3 bottom-0 rounded-lg outline-none hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring",
+                  )}
+                />
+              }
+            />
             {/* The ident a link in the tint to the airport's card, over the row's fold, as the nav log's names are
             (NavLogList's navlog-field-open; the owner, 2026-11-17: "Can we make the airports/stops tappable as the
             navlog does?"). Its 44 points a pseudo-element; the ident not grown. In the Plan's cards it was a text
@@ -123,31 +100,23 @@ export function FieldHead({
                 the owner, 2026-11-17); the section's name says it to a
                 screen reader. */}
             <h3 className={cn("flex min-w-0 flex-col font-semibold", TEXT.row)}>
-              {!editing && (
-                <span aria-hidden="true" className={cn("text-muted-foreground", TEXT.caption)} data-testid="field-role">
-                  {a.role}
-                </span>
-              )}
-              {editing ? (
-                <span className="truncate" data-testid="field-ident">
-                  {a.ident}
-                </span>
-              ) : (
-                <Button
-                  variant="link"
-                  size="inline"
-                  data-testid="field-open"
-                  data-ident={a.ident}
-                  aria-label={`${a.ident}: open the airport`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onInfo(a.ident);
-                  }}
-                  className="relative z-10 max-w-full self-start justify-start truncate font-semibold after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-['']"
-                >
-                  {a.ident}
-                </Button>
-              )}
+              <span aria-hidden="true" className={cn("text-muted-foreground", TEXT.caption)} data-testid="field-role">
+                {a.role}
+              </span>
+              <Button
+                variant="link"
+                size="inline"
+                data-testid="field-open"
+                data-ident={a.ident}
+                aria-label={`${a.ident}: open the airport`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onInfo(a.ident);
+                }}
+                className="relative z-10 max-w-full self-start justify-start truncate font-semibold after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-['']"
+              >
+                {a.ident}
+              </Button>
             </h3>
             {tank && (
               <FuelGauge
@@ -158,16 +127,9 @@ export function FieldHead({
             )}
           </div>
           <div className="relative z-10 col-start-2 row-start-1 justify-self-end">{end.time}</div>
-          {/* The wind grey as the elevation, a figure, not a link (the UI audit's C14); Direct to in the tint. Open
-              to edit, the row's second line is its city, the wind under its runways (FieldStep). */}
-          {editing && !end.direct ? (
-            <p className={cn("col-start-1 row-start-2 min-w-0 truncate text-muted-foreground", TEXT.note)} data-testid="field-city">
-              {city}
-            </p>
-          ) : (
-            <WindLine direct={end.direct} wind={wind} reported={reported} className="col-start-1 row-start-2" />
-          )}
-          {!editing && <div className="col-start-2 row-start-2 justify-self-end">{end.elevation}</div>}
+          {/* The wind grey as the elevation, a figure, not a link (the UI audit's C14); Direct to in the tint. */}
+          <WindLine direct={end.direct} wind={wind} reported={reported} className="col-start-1 row-start-2" />
+          <div className="col-start-2 row-start-2 justify-self-end">{end.elevation}</div>
           {end.grip && <div className="relative z-10 col-start-3 row-span-2 row-start-1 self-center">{end.grip}</div>}
         </div>
       </div>

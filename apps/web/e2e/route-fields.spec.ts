@@ -1,17 +1,17 @@
-import { test, expect } from "@playwright/test";
-import { foldRoute, openPanel, openRoute, settle, sideDrawer, slow } from "./helpers";
+import { test, expect, type Page } from "@playwright/test";
+import { openPanel, settle, sideDrawer, slow, timelineLine } from "./helpers";
 import { airportMarks } from "./mapHelpers";
 
 /**
- * FPL's route open to edit, one grouped list as Apple Maps' Directions (the
- * owner, 2026-11-17): each row a point, a tap on it changed by the one
- * search, its runways and procedures from its menu. Before, as the owner picked (boards 4 and 5
- * of the canvas): the ident on top, a fuel stop's pump before it and the
- * fuel in the tanks after it, the time over the elevation, the wind under;
- * opened, a line for the landing and one for the takeoff, no words for
- * either ("no need to use the word depart, fuel stop, arrive"). The rest of
- * the suite starts with them opened (auth.setup's vfr.fieldsOpen); here
- * they start as a pilot's do.
+ * FPL's route on the ground, its timeline (the owner, 2026-11-17: "Yes
+ * let's try that"), read and edited at once with the sheet at half: a line
+ * a point, Apple Maps' Directions' look -- its mark (its menu), its ident,
+ * no city ("We don't need to say the city name"), its time and its grip.
+ * A tap on a field's line opens it under it, one at a time: its wind and
+ * elevation, then its runway and procedure chips; a point is changed from
+ * its mark's menu by the one search. The rest of the suite starts with the
+ * fields open (auth.setup's wingtip.fieldsOpen); here they start as a
+ * pilot's do.
  */
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -27,41 +27,41 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-/** A field's runways and procedures opened under its row from its menu
- *  (the open route, where a tap on the row changes the point). */
-async function details(page: import("@playwright/test").Page, field: import("@playwright/test").Locator) {
-  await field.getByTestId("point-menu").click();
-  await page.getByTestId("point-menu-details").click();
+/** A field's line opened by a tap on it, off its ident. */
+async function openLine(page: Page, ident: string) {
+  const line = timelineLine(page, ident);
+  await line.getByTestId("timeline-toggle").click();
+  await expect(line).toHaveAttribute("data-open", "");
 }
 
-test("open to edit, the route is one grouped list: each field its ident over its city and its time, its runways from its menu", async ({
+test("each line is its ident and time, no city; a tap opens its wind and elevation, then its chips, one line at a time", async ({
   page,
 }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
-  const route = sideDrawer(page).getByTestId("procedures");
-  for (const [name, ident] of [
-    ["C81 · Depart", "C81"],
-    ["KDLH · Arrive", "KDLH"],
-  ] as const) {
-    const field = route.getByRole("region", { name });
-    // Apple Maps' Directions' row: its ident, its city under it, its time;
-    // no role, wind or elevation on the row, and no fold of its own.
-    await expect(field.getByTestId("field-ident")).toHaveText(ident, { timeout: slow(30_000) });
-    await expect(field.getByTestId("field-city")).not.toBeEmpty();
-    await expect(field.getByTestId("field-role")).toHaveCount(0);
-    await expect(field.getByTestId("field-toggle")).toHaveCount(0);
-    await expect(field.getByTestId("point-figures").first()).toBeVisible();
-    // Its runways and procedures, and its wind, from its menu.
-    if ((await field.getByTestId("procedure-pattern").count()) === 0) await details(page, field);
-    await expect(field.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(30_000) });
-    await expect(field.getByTestId("field-wind")).toBeVisible();
+  for (const ident of ["C81", "KDLH"]) {
+    const line = timelineLine(page, ident);
+    await expect(line.getByTestId("timeline-ident")).toHaveText(ident, { timeout: slow(30_000) });
+    await expect(line.getByTestId("timeline-time")).toBeVisible();
+    await expect(line.getByTestId("route-grip")).toBeVisible();
+    // Folded: nothing under the line.
+    await expect(line.getByTestId("timeline-details")).toHaveCount(0);
   }
+  await openLine(page, "C81");
+  const dep = timelineLine(page, "C81");
+  await expect(dep.getByTestId("field-wind")).toBeVisible({ timeout: slow(30_000) });
+  await expect(dep.getByTestId("point-figures")).toBeVisible();
+  await expect(dep.getByTestId("timeline-chips").getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(30_000) });
+  // Another line opened folds the first.
+  await openLine(page, "KDLH");
+  await expect(dep).not.toHaveAttribute("data-open", "");
+  // The open line again folds it.
+  await timelineLine(page, "KDLH").getByTestId("timeline-toggle").click();
+  await expect(timelineLine(page, "KDLH")).not.toHaveAttribute("data-open", "");
 });
 
-test("a stop's landing and takeoff from its menu, and a fuel stop wears the pump on its mark", async ({ page }) => {
+test("a stop opens to its landing and its takeoff, and a fuel stop wears the pump as its mark", async ({ page }) => {
   // The fields alone: the plan through the stop is not what is tried.
   await page.route(
     (url) => /\/(course|checkpoints|navlog|briefing)$/.test(url.pathname) && !!url.searchParams.get("stops"),
@@ -70,52 +70,52 @@ test("a stop's landing and takeoff from its menu, and a fuel stop wears the pump
   await page.goto("/app/plan?dep=C81&stops=KMSN&dest=KDLH&fuel=KMSN");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
-  const route = sideDrawer(page).getByTestId("procedures");
-  const stop = route.getByRole("region", { name: "KMSN · Arrive" });
+  const stop = timelineLine(page, "KMSN");
   await expect(stop).toBeVisible({ timeout: slow(30_000) });
   await expect(stop.getByRole("img", { name: "fuel stop" })).toBeVisible();
-  await expect(route).not.toContainText("Fuel stop");
-  if ((await route.getByRole("region", { name: "KMSN · Depart" }).count()) === 0) await details(page, stop);
-  await expect(stop.getByRole("img", { name: "landing" })).toBeVisible();
-  await expect(route.getByRole("region", { name: "KMSN · Depart" }).getByRole("img", { name: "takeoff" })).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("route-summary")).not.toContainText("Fuel stop");
+  await openLine(page, "KMSN");
+  await expect(stop.getByRole("img", { name: "landing" })).toBeVisible({ timeout: slow(30_000) });
+  await expect(stop.getByRole("img", { name: "takeoff" })).toBeVisible();
   // A stop of the pilot's own: no pump.
   await page.goto("/app/plan?dep=C81&stops=KMSN&dest=KDLH");
   await openPanel(page);
-  await openRoute(page);
-  await expect(route.getByRole("region", { name: "KMSN · Arrive" })).toBeVisible({ timeout: slow(30_000) });
-  await expect(route.getByRole("img", { name: "fuel stop" })).toHaveCount(0);
+  await expect(timelineLine(page, "KMSN")).toBeVisible({ timeout: slow(30_000) });
+  await expect(sideDrawer(page).getByRole("img", { name: "fuel stop" })).toHaveCount(0);
 });
 
-test("a tap on a row changes its point by the one search, the departure, a stop, the destination and My Location alike", async ({
+test("a point is changed from its mark's menu by the one search, the departure, a stop, the destination and My Location alike", async ({
   page,
 }) => {
   // The owner, 2026-11-17: "should be able to change any of the stops
-  // including my location", "Changeable by tapping".
+  // including my location"; changing moved from the row to the mark's menu.
   await page.goto("/app/plan?dep=C81&stops=KMSN&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
-  const route = sideDrawer(page).getByTestId("procedures");
   const search = page.getByTestId("search-airports");
-  const change = async (name: string, to: string) => {
-    await route.getByRole("button", { name: new RegExp(`^${name}.*: change$`) }).click();
+  const change = async (ident: string, to: string) => {
+    await timelineLine(page, ident).getByTestId("point-menu").click();
+    await page.getByTestId("point-menu-change").click();
     await expect(search).toBeFocused({ timeout: slow(10_000) });
     await search.fill(to);
     await search.press("Enter");
   };
-  await change("Departure C81", "KUGN");
+  await change("C81", "KUGN");
   await expect(page).toHaveURL(/dep=KUGN/, { timeout: slow(15_000) });
-  await change("Stop KMSN", "KRST");
+  await change("KMSN", "KRST");
   await expect(page).toHaveURL(/stops=KRST/, { timeout: slow(15_000) });
-  await change("Destination KDLH", "KMSP");
+  await change("KDLH", "KMSP");
   await expect(page).toHaveURL(/dest=KMSP/, { timeout: slow(15_000) });
   // A Direct To's start, My Location, changed to a field: a route from it.
   await page.goto("/app/plan?dep=@42.2333,-87.9883&dest=KUGN&direct=KUGN&was=C81%7C%7CKUGN");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
-  await route.getByRole("button", { name: /^My Location: change$/ }).click();
+  const here = sideDrawer(page).getByTestId("timeline-line").first();
+  await expect(here.getByTestId("timeline-ident")).toHaveText("My Location", { timeout: slow(30_000) });
+  // My Location has no second row.
+  await expect(here.getByTestId("timeline-toggle")).toHaveCount(0);
+  await here.getByTestId("point-menu").click();
+  await page.getByTestId("point-menu-change").click();
   await expect(search).toBeFocused({ timeout: slow(10_000) });
   await search.fill("C81");
   await search.press("Enter");
@@ -123,15 +123,27 @@ test("a tap on a row changes its point by the one search, the departure, a stop,
   await expect(page).not.toHaveURL(/[?&]direct=/);
 });
 
-test("while the route is open the map shows its points alone; folded, everything again", async ({ page }) => {
+test("Add a Stop, the timeline's last row, asks the one search and puts the pick before the destination", async ({ page }) => {
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  await sideDrawer(page).getByTestId("timeline-add-stop").click();
+  const search = page.getByTestId("search-airports");
+  await expect(search).toBeFocused({ timeout: slow(10_000) });
+  await search.fill("KMSN");
+  await search.press("Enter");
+  await expect(page).toHaveURL(/stops=KMSN/, { timeout: slow(15_000) });
+});
+
+test("while a line is open the map shows the route's points alone; folded, everything again", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
   // The chart's other airports drawn now (AirportsGl's probe, rendered
-  // marks only): some folded, none while the route is open.
+  // marks only): some with every line folded, none while one is open.
   await expect.poll(async () => (await airportMarks(page)).length, { timeout: slow(30_000) }).toBeGreaterThan(0);
-  await openRoute(page);
+  await openLine(page, "KDLH");
   await expect.poll(async () => (await airportMarks(page)).length, { timeout: slow(10_000) }).toBe(0);
-  await foldRoute(page);
+  await timelineLine(page, "KDLH").getByTestId("timeline-toggle").click();
   await expect.poll(async () => (await airportMarks(page)).length, { timeout: slow(10_000) }).toBeGreaterThan(0);
 });

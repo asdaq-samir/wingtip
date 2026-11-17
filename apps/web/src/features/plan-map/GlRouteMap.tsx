@@ -43,6 +43,7 @@ import { useTerrainView } from "./terrain/useTerrainView";
 import ReliefGl from "./terrain/ReliefGl";
 import { coursePoints } from "../../lib/course";
 import { useRouteOnly } from "../../lib/map/routeOnly";
+import { useLineFocus } from "./useLineFocus";
 
 /** No checkpoints, while the map shows the route's points alone. */
 const NO_CHECKPOINTS: GlCheckpoint[] = [];
@@ -187,8 +188,9 @@ function EngineLayers(p: GlRouteMapProps) {
   // The weather picked, only while the Map card's Weather is on (the
   // owner, 2026-11-14): the radar and satellite loop under the advisories,
   // and the model weather's flow layer, its own chunk.
-  // The route's points alone while the route is open to edit (routeOnly).
+  // The route's points alone while a line of FPL's timeline is open (routeOnly), its point centred.
   const routeOnly = useRouteOnly((s) => s.on);
+  useLineFocus(course);
   const weather = usePreferences((s) => s.weather) && !routeOnly;
   const loop = useWeatherLayers((s) => s.loop !== "off") && weather;
   const flow = useWeatherLayers((s) => s.flow !== "off") && weather;

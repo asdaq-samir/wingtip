@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { identOf, isAirwayToken, isPosition } from "../../lib/identSchema";
 import type { RouteParts } from "./RouteBox";
 import type { PlanCourse } from "../plan";
+import { askSearchPick } from "../../lib/oneSearch";
 
 /** The route's points with one moved from `from` to `to`, as FPL's list
  *  drags them: the ends kept airports or a position (`isEnd`), as the box
@@ -28,6 +29,15 @@ export function replacedRoute(points: string[], at: number, ident: string): Rout
   return { dep: next[0]!, stops: next.slice(1, -1), dest: next.at(-1)! };
 }
 
+/** The route's points with `ident` put in at `at` (Add a Stop): null
+ *  where it would sit beside the same point, a leg of none. */
+export function addedRoute(points: string[], at: number, ident: string): RouteParts | null {
+  if (at < 1 || at >= points.length) return null;
+  const next = [...points.slice(0, at), ident.trim().toUpperCase(), ...points.slice(at)];
+  if (!next[at] || next.some((p, i) => i > 0 && p === next[i - 1])) return null;
+  return { dep: next[0]!, stops: next.slice(1, -1), dest: next.at(-1)! };
+}
+
 /**
  * FPL's list of the route's points changed in place (usePlanWorkspace),
  * while the route is open to edit (the one layout's expanded list; the
@@ -41,7 +51,6 @@ export function useRouteListEdit({
   course,
   routePoints,
   setRoute,
-  setAddingStop,
 }: {
   /** The route's stops as typed. */
   stops: string[];
@@ -49,7 +58,6 @@ export function useRouteListEdit({
   /** The route's points as typed, the departure first. */
   routePoints: string[];
   setRoute: (parts: RouteParts) => void;
-  setAddingStop: (adding: false | "stop" | "via") => void;
 }) {
   // The stops flown through rather than landed at: the course's own word
   // for each, and before it answers, any ident too long for an airport.
@@ -67,17 +75,26 @@ export function useRouteListEdit({
       ),
     [stops, course],
   );
-  // The route open to edit, its airport cards under its head, till its
-  // Done; and where a stop asked for from FPL's list (its Add a Stop, a
-  // point's Add a Stop After) is typed into the route's field.
+  // The route's field open over the timeline (RouteEditor) till its Done;
+  // and where a stop typed into it goes (RouteBox's `addAt`).
   const [routeOpen, setRouteOpen] = useState(false);
   const [addAt, setAddAt] = useState<number | null>(null);
+  // A stop asked for from FPL's timeline (its Add a Stop, a point's Add a
+  // Stop After, the profile's no-legal-altitude Add a Stop): by the one
+  // search, as a point is changed (rules.md, the one search), put in at
+  // its place.
   const typeStopAt = useCallback(
     (index: number) => {
-      setAddAt(index);
-      setAddingStop("stop");
+      askSearchPick({
+        label: "Add a Stop",
+        fixes: true,
+        onPick: (picked) => {
+          const added = addedRoute(routePoints, index, picked);
+          if (added) setRoute(added);
+        },
+      });
     },
-    [setAddingStop],
+    [routePoints, setRoute],
   );
   // A point dragged by its grip (or held) in FPL's list onto another's
   // place, as the field's pills are moved (movedRoute), and the route

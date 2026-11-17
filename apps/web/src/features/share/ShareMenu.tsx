@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { done } from "../../lib/doneNote";
-import { FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Trash2 } from "lucide-react";
+import { FileArchive, FileText, Fuel, Keyboard, Link2, MapPinned, Printer, RotateCw, Send, Trash2 } from "lucide-react";
 import { TriggerButton, TriggerFace } from "./ShareTrigger";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../components/ResponsivePopover";
 import {
@@ -64,6 +64,7 @@ export default function ShareMenu({
   reviewSheet,
   planAgain,
   onShowFuel,
+  onTypeRoute,
   onClear,
   look,
 }: {
@@ -74,6 +75,9 @@ export default function ShareMenu({
   look?: "bar" | "tile";
   /** The suggested fuel stops taken out of the route box, put back. */
   onShowFuel?: () => void;
+  /** The route's field opened over its timeline, to type or paste the
+   *  route in whole (RouteEditor; decision 0046). */
+  onTypeRoute?: () => void;
   /** The route cleared: the route box's menu's last item (the owner,
    *  2026-11-11: "Instead of clear button, move that to the …"). */
   onClear?: () => void;
@@ -202,6 +206,12 @@ export default function ShareMenu({
             <DropdownMenuItem onClick={onShowFuel} data-testid="route-show-fuel">
               <Fuel />
               Show Fuel Stops
+            </DropdownMenuItem>
+          )}
+          {onTypeRoute && (
+            <DropdownMenuItem onClick={onTypeRoute} data-testid="route-type-open">
+              <Keyboard />
+              Type the Route
             </DropdownMenuItem>
           )}
           {/* The route's link and its sending, in the route's ••• since

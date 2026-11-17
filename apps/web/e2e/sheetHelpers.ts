@@ -66,23 +66,35 @@ export async function openPanel(page: Page) {
   await grabberTo(page, "half");
 }
 
-/** FPL's route open to edit (the one layout, decision 0046): once the
- *  route is whole, a tap on its folded timeline (route-summary's
- *  disclosure, route-summary-open), and its head,
- *  "Route" and Done, over its airport cards, its field and its figures.
- *  Already open, as it is, so a spec can ask for it before each edit. */
+/** FPL's route's field open over its timeline (the one layout, decision
+ *  0046): the timeline is where the route is edited -- a tap on a field's
+ *  line opens its runways and procedures, the mark is its menu, a hold or
+ *  the grip moves it -- and the route's field, to type or paste it in,
+ *  opens from the route's ••• (Type the Route), Done folding it away. A
+ *  new plan or half a route has it open already. */
 export async function openRoute(page: Page) {
   const panel = sideDrawer(page);
-  const line = panel.getByTestId("route-summary");
-  await expect(line.or(panel.getByTestId("route-done")).first()).toBeVisible({ timeout: slow(30_000) });
-  if (await line.isVisible()) await panel.getByTestId("route-summary-open").click();
-  await expect(panel.getByTestId("route-done")).toBeVisible();
+  const timeline = panel.getByTestId("route-summary");
+  const done = panel.getByTestId("route-done");
+  await expect(timeline.or(done).first()).toBeVisible({ timeout: slow(30_000) });
+  if (await done.isVisible()) return;
+  await controlsInSight(page);
+  await panel.getByTestId("share-route").locator("visible=true").first().click();
+  await page.getByTestId("route-type-open").click();
+  await expect(done).toBeVisible();
 }
 
-/** FPL's route folded again by its Done, to its one line. */
+/** The route's field folded away by its Done, where it is open (a route
+ *  typed in), the timeline alone. */
 export async function foldRoute(page: Page) {
-  await sideDrawer(page).getByTestId("route-done").click();
+  const done = sideDrawer(page).getByTestId("route-done");
+  if (await done.isVisible()) await done.click();
   await expect(sideDrawer(page).getByTestId("route-summary")).toBeVisible();
+}
+
+/** A point's line on FPL's timeline, by its ident. */
+export function timelineLine(page: Page, ident: string): Locator {
+  return sideDrawer(page).locator(`[data-testid="timeline-line"][data-ident="${ident}"]`);
 }
 
 /** The route cleared by its ••• menu's Clear route (the owner, 2026-11-11). */

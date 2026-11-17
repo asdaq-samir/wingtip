@@ -35,7 +35,7 @@ test("every point's row ends in its time over its altitude and a menu: an airpor
   // The mountain before it for the eye (PointFigures), "ft" after.
   await expect(altitude).toHaveText(/^(\d{3}|\d,\d{3}) ft/);
   await expect(altitude.locator(".sr-only")).toHaveText(/ft, field elevation$/);
-  await expect(madison.getByTestId("point-figures")).toContainText(/^\d\d:\d\d/);
+  await expect(madison.getByTestId("timeline-time")).toContainText(/^\d\d:\d\d/);
   // No Direct to where the flight starts, nor on the stop's leaving again.
   // One menu an airport now, at its ident (boards 4 and 5): Madison's is
   // its landing's, flown to.
@@ -160,7 +160,7 @@ test("the pilot's own point off a fix is made from a point's menu or typed as a 
   await openRoute(page);
   const route = sideDrawer(page).getByTestId("procedures");
   const madison = route.getByRole("region", { name: "KMSN · Arrive" });
-  await expect(madison.getByTestId("point-figures")).toContainText(/\d\d:\d\d/, { timeout: slow(30_000) });
+  await expect(madison.getByTestId("timeline-time")).toContainText(/\d\d:\d\d/, { timeout: slow(30_000) });
   await inSheet(page, madison.getByTestId("point-menu"));
   await madison.getByTestId("point-menu").click();
   await page.getByTestId("point-menu-fix").click();
@@ -182,9 +182,7 @@ test("the pilot's own point off a fix is made from a point's menu or typed as a 
   await expect(page).toHaveURL(stopsAre("VPBNG/090/30"));
 });
 
-test("a hold is set from a point's menu, course, turns, legs and how long, and is a row of its own after the point; a tap changes or removes it", async ({
-  page,
-}) => {
+test("a hold is set from a point's menu, course, turns, legs and how long, and changed or removed from the same menu", async ({ page }) => {
   // The owner's asks (2026-10-20): "create a left/right hold", as Garmin
   // and ForeFlight do it, and "hold should get its own row". What the
   // planner makes of it (its entry, its minutes) is the planner's test's.
@@ -193,7 +191,7 @@ test("a hold is set from a point's menu, course, turns, legs and how long, and i
   await openRoute(page);
   const route = sideDrawer(page).getByTestId("procedures");
   const duluth = route.getByRole("region", { name: "KDLH · Arrive" });
-  await expect(duluth.getByTestId("point-figures")).toContainText(/\d\d:\d\d/, { timeout: slow(60_000) });
+  await expect(duluth.getByTestId("timeline-time")).toContainText(/\d\d:\d\d/, { timeout: slow(60_000) });
   await inSheet(page, duluth.getByTestId("point-menu"));
   await duluth.getByTestId("point-menu").click();
   await page.getByTestId("point-menu-hold").click();
@@ -207,16 +205,13 @@ test("a hold is set from a point's menu, course, turns, legs and how long, and i
   await page.getByTestId("hold-length-3T").click();
   await sheet.getByTestId("hold-set").click();
   await expect(page).toHaveURL(/[?&]holds=KDLH(%3A|:)270(%3A|:)L(%3A|:)1M(%3A|:)3T(&|$)/);
-  const row = route.getByTestId("route-hold");
-  await expect(row).toContainText("Left turns · 270° inbound · 1 min legs · 3 turns");
-  // Its own row, after Duluth's.
-  expect((await row.boundingBox())!.y).toBeGreaterThan((await duluth.boundingBox())!.y);
-  // Tapped: changed or taken off.
-  await row.getByRole("button").click();
+  // Changed or taken off from the same menu, now Change Hold….
+  await duluth.getByTestId("point-menu").click();
+  await expect(page.getByTestId("point-menu-hold")).toHaveText(/Change Hold/);
+  await page.getByTestId("point-menu-hold").click();
   await expect(sheet.getByTestId("hold-course")).toHaveValue("270");
   await sheet.getByTestId("hold-remove").click();
   await expect(page).not.toHaveURL(/[?&]holds=/);
-  await expect(route.getByTestId("route-hold")).toHaveCount(0);
 });
 
 test("a point's menu has its altitude before Remove: an airport's pattern in feet, a waypoint's cruise as a flight level, each the pilot's to set and give back", async ({

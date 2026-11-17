@@ -60,8 +60,8 @@ export default function ProfileSideView({ vm }: { vm: PlanSlices<"brief" | "flig
               problem={unflyable}
               onAddStop={() => {
                 closeProfileCard();
-                // The route opened, the field asked for a stop before the
-                // destination (useRouteListEdit's typeStopAt).
+                // The one search asked for a stop before the destination
+                // (useRouteListEdit's typeStopAt).
                 typeStopAt(routePoints.length - 1);
               }}
               onGoRound={(via, at) => {
