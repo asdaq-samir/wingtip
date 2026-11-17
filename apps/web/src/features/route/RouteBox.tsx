@@ -9,6 +9,7 @@ import { Button } from "../../components/ui/button";
 import { Alert, AlertAction, AlertDescription } from "../../components/ui/alert";
 import { InputGroup } from "../../components/ui/input-group";
 import { Popover, PopoverContent } from "../../components/ui/popover";
+import { unknownWhy } from "../../lib/api/client";
 import type { FuelStopSuggestion } from "../../lib/api/types";
 import { useKeyboardInset } from "../../hooks/use-viewport";
 import { fromChunk } from "../../lib/fromChunk";
@@ -321,7 +322,7 @@ export default function RouteBox({
             <TriangleAlert aria-hidden="true" />
             <AlertDescription className={cn("text-destructive", TEXT.detail)}>
               {unknownPoint.ident
-                ? `${unknownPoint.ident} isn't an airport or waypoint we know. Tap it to change it.`
+                ? `${unknownPoint.ident} ${unknownWhy(unknownPoint)}. Tap it to change it.`
                 : "A point of the route isn't an airport or waypoint we know."}
             </AlertDescription>
             {unknownPoint.ident && points.includes(unknownPoint.ident) && (

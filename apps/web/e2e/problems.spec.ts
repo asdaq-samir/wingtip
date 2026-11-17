@@ -160,6 +160,40 @@ test("an ident the planner does not know is said on its pill, not the map's line
   await expect(said).toHaveCount(0);
 });
 
+test("an ident only a field abroad goes by is no destination: no distance, no ways, nothing planned", async ({ page }) => {
+  // KORD-KIGN was planned 7,191 nm to Indagen, Papua New Guinea, whose
+  // local code is IGN: the planner's K-form fallback reached a field
+  // abroad, the strip gave its distance and the Routes row its ways
+  // (2026-11-17). KIGN is no US field's: the unknown place, as KZZZ is.
+  await page.goto("/app/plan?dep=KUGN&dest=KIGN");
+  const said = page.getByTestId("route-unknown");
+  await expect(said).toContainText("KIGN isn't an airport or waypoint we know", { timeout: 20000 });
+  await expect(page.getByTestId("flight-line").getByTestId("navlog-to")).toHaveAttribute("data-alert", "true");
+  await expect(page.getByTestId("flight-line")).not.toContainText(/\d\s*(nm|nautical)/);
+  await expect(page.getByTestId("route-line-chip")).toHaveCount(0);
+  await expect(page.getByTestId("route-brief")).toBeDisabled();
+});
+
+test("a real field abroad is said to be outside the US charts, not planned", async ({ page }) => {
+  // The planner's own words for one (wingtip.airport_lookup OutsideCharts),
+  // as it answers for Indagen by its own ident; said on the route box's
+  // line and the To, as an unknown place is.
+  await page.route(
+    (url) => url.pathname.startsWith("/api/planner/") && url.searchParams.get("dest") === "AYID",
+    (route: Route) =>
+      route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "'AYID' is outside the US charts: Indagen Airport, PG." }),
+      }),
+  );
+  await page.goto("/app/plan?dep=KUGN&dest=AYID");
+  await expect(page.getByTestId("route-unknown")).toContainText("AYID is outside the US charts", { timeout: 20000 });
+  await expect(page.getByTestId("flight-line").getByTestId("navlog-to")).toHaveAttribute("data-alert", "true");
+  await expect(banner(page)).toHaveCount(0);
+  await expect(page.getByTestId("route-brief")).toBeDisabled();
+});
+
 test("the line sits beside the map's buttons, level with them, one line tall, and the location arrow takes its tap", async ({ page }) => {
   // Problems that stayed were folded to lines over the map's buttons, and
   // the location arrow under them was out of reach for as long as they

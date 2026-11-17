@@ -96,12 +96,28 @@ def _airport_rows(path: str, _mtime: float) -> dict:
     # A missing local code is no code: as "NAN" it would answer a lookup of "NAN".
     idents = df["ident"].astype(str).fillna("").str.strip().str.upper()  # cast, then fill: pandas 4 won't put "" in a float column
     locals_ = df["local_code"].astype(str).fillna("").str.strip().str.upper()
-    for i, (ident, local) in enumerate(zip(idents, locals_)):
-        if ident:
-            rows.setdefault(ident, i)
-        if local:
-            rows.setdefault(local, i)
+    # The US rows first: a code a US field and a field abroad both go by
+    # is the US field's, the one the FAA's charts and NASR know. A local
+    # code is only its country's (OurAirports' local_code), and Papua New
+    # Guinea's IGN, Indagen, answered for KIGN (KORD-KIGN planned 7,191 nm
+    # to it, 2026-11-17).
+    home = countries_of(df).eq("US").tolist()
+    for i in [*(i for i, us in enumerate(home) if us), *(i for i, us in enumerate(home) if not us)]:
+        if idents.iat[i]:
+            rows.setdefault(idents.iat[i], i)
+        if locals_.iat[i]:
+            rows.setdefault(locals_.iat[i], i)
     return rows
+
+
+def countries_of(df: pd.DataFrame) -> pd.Series:
+    """Each row's country, ISO 3166-1 alpha-2 (OurAirports' iso_country),
+    or the region's first part where a table has no iso_country column
+    ("US-IL" is the US)."""
+    region = df["iso_region"].astype(str).str.split("-").str[0] if "iso_region" in df.columns else pd.Series("", index=df.index)
+    if "iso_country" not in df.columns:
+        return region.str.upper()
+    return df["iso_country"].where(df["iso_country"].notna(), region).astype(str).str.upper()
 
 
 def _faa_key(cache_path: Path) -> tuple[str, float]:

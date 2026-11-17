@@ -115,6 +115,22 @@ export function unknownPlaceOf(err: unknown): string | null {
   return isUnknownPlace(err) ? (/'([^']+)'/.exec((err as ApiError).message)?.[1]?.toUpperCase() ?? null) : null;
 }
 
+/** A point of the route the planner will not plan to: `ident` the one its
+ *  404 names (null where it names none), and `outside` where it is a real
+ *  field abroad, which the planner says is "outside the US charts"
+ *  (wingtip.airport_lookup OutsideCharts), not an ident nobody uses. */
+export type UnknownPlace = { ident: string | null; outside: boolean };
+
+/** The unknown place a planner's answer says, or null where it is none. */
+export function unknownPlaceIn(err: unknown): UnknownPlace | null {
+  if (!isUnknownPlace(err)) return null;
+  return { ident: unknownPlaceOf(err), outside: /outside the US charts/i.test((err as ApiError).message) };
+}
+
+/** What is wrong with it, after its ident: the route box's line and the
+ *  strip's To say the same. */
+export const unknownWhy = (place: UnknownPlace) => (place.outside ? "is outside the US charts" : "isn't an airport or waypoint we know");
+
 /** `describeError` for a query's `error` field, which is null while
  *  nothing has failed -- and so is this. */
 export const errorMessage = (err: unknown, fallback: string) => (err ? describeError(err, fallback) : null);
