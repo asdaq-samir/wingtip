@@ -20,7 +20,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import airports, faa_data, field_status
+from . import airport_tables, faa_data, field_status
 from .engine import ask as engine
 from .terrain import DEFAULT_FAA_CACHE_DIR
 from .single_flight import once
@@ -93,7 +93,7 @@ def public_fields(cache_dir=DEFAULT_FAA_CACHE_DIR) -> pd.DataFrame:
 def _paved_runways_of(path: str, _mtime: float) -> dict[str, int]:
     """Each field's longest open paved runway, feet, by ident (OurAirports'
     runways table: "ASPH", "CONC", "ASPH-G" and the like are paved)."""
-    df = airports._read_table(path, _mtime)
+    df = airport_tables._read_table(path, _mtime)
     surface = df["surface"].fillna("").str.upper()
     paved = surface.str.contains("ASP|CON|PEM|BIT", regex=True) & (df["closed"].fillna(0).astype(int) == 0)
     df = df[paved & df["length_ft"].notna()]
@@ -102,7 +102,7 @@ def _paved_runways_of(path: str, _mtime: float) -> dict[str, int]:
 
 def paved_runways() -> dict[str, int]:
     """Every field's longest open paved runway, feet, by ident."""
-    path = airports._ensure_cached(airports.RUNWAYS_URL, airports.RUNWAYS_CACHE_PATH)
+    path = airport_tables._ensure_cached(airport_tables.RUNWAYS_URL, airport_tables.RUNWAYS_CACHE_PATH)
     return _paved_runways_of(str(path), Path(path).stat().st_mtime)
 
 

@@ -1,6 +1,6 @@
 """What the map marks a field by, read for a whole list at once: who owns
 it and the class of airspace at its surface -- the fields in view's, a
-stop's and the nearest fields' (app.routers.airports)."""
+stop's and the nearest fields' (app.routers.airports, airport_stops)."""
 
 from wingtip import airspace, airspace_at, altitude, faa_data
 

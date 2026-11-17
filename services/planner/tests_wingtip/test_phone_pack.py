@@ -28,7 +28,7 @@ from shapely.geometry import Point, Polygon
 
 import wingtip_native
 from wingtip import airspace_at, geo, sua
-from wingtip import cycle_pack
+from wingtip import cycle_pack, pack_format, phone_pack, phone_pack_shapes
 from wingtip.engine import ask as engine
 
 FIXTURES = Path(__file__).parent / "fixtures" / "native"
@@ -78,7 +78,7 @@ def phone(chicago, tmp_path):
     """The planner's pack of the Chicago cut and a restricted area, and the
     phones' packs of it."""
     server = cycle_pack.write(tmp_path, "2026-10-29", shp_path=chicago, sua_held=AREA, sua_at=0.0, urban=[], urban_path=None, tables={})
-    index = cycle_pack.write_phone(cycle_pack.Pack(server), tmp_path / "phone", VEIL)
+    index = phone_pack.write_phone(cycle_pack.Pack(server), tmp_path / "phone", VEIL)
     return tmp_path / "phone" / "2026-10-29", index
 
 
@@ -120,9 +120,9 @@ def test_the_regions_are_named_alike_in_python_and_rust():
     points = [(0.0, 0.0), (-4.0, -4.0), (41.99999, -88.0), (44.0, -96.0), (-0.0001, 179.9999), (71.3, -156.8)]
     points += list(zip(rng.uniform(-89, 89, 2000), rng.uniform(-180, 180, 2000)))
     for lat, lon in points:
-        name = cycle_pack.region_of(lat, lon)
+        name = phone_pack_shapes.region_of(lat, lon)
         assert engine("region_of", lat=lat, lon=lon) == name, (lat, lon)
-        west, south, east, north = cycle_pack.region_bounds(name)
+        west, south, east, north = phone_pack_shapes.region_bounds(name)
         assert south <= lat < north and west <= lon < east, (lat, lon, name)
 
 
@@ -150,7 +150,7 @@ def test_random_points_answer_as_the_planner_but_on_a_line(chicago, phone):
     server = cycle_pack.Pack(next(folder.parent.parent.glob("wingtip-*.pack")))
     boxes = server.boxes("airspace")
     lines = shapely.MultiLineString(
-        [ring for shape in server.wkb("airspace") for rings in cycle_pack._rings(shape) for ring in rings if len(ring) >= 2]
+        [ring for shape in server.wkb("airspace") for rings in phone_pack_shapes._rings(shape) for ring in rings if len(ring) >= 2]
     )
     rng = np.random.default_rng(13)
     w, s = boxes[:, 0].min(), boxes[:, 1].min()
@@ -163,7 +163,7 @@ def test_random_points_answer_as_the_planner_but_on_a_line(chicago, phone):
                 differing += 1
                 ends = shapely.get_coordinates(shapely.shortest_line(lines, Point(lon, lat)))
                 off_nm = math.hypot((ends[1][0] - ends[0][0]) * 60 * math.cos(math.radians(lat)), (ends[1][1] - ends[0][1]) * 60)
-                assert off_nm <= cycle_pack.PHONE_WORST_NM, (lat, lon, ground, off_nm)
+                assert off_nm <= phone_pack_shapes.PHONE_WORST_NM, (lat, lon, ground, off_nm)
     assert asked == 4500 and differing <= 10
 
 
@@ -187,18 +187,18 @@ def test_a_region_with_no_pack_has_the_rules_alone():
 
 def test_the_index_and_the_packs_are_as_written(phone, monkeypatch):
     folder, index = phone
-    assert index["cycle"] == "2026-10-29" and index["tolerance_deg"] == cycle_pack.PHONE_TOLERANCE_DEG
+    assert index["cycle"] == "2026-10-29" and index["tolerance_deg"] == phone_pack_shapes.PHONE_TOLERANCE_DEG
     assert {r["name"] for r in index["regions"]} == {p.stem for p in folder.glob("*.pack")}
     for region in index["regions"]:
         pack = cycle_pack.Pack(folder / f"{region['name']}.pack")
         assert pack.verify() and pack.crc32 == region["crc32"]
         assert pack.meta["flavour"] == "phone" and pack.meta["region"] == region["name"]
     monkeypatch.setattr(cycle_pack, "PACK_DIR", folder.parent.parent)
-    assert cycle_pack.phone_index() == index
+    assert phone_pack.phone_index() == index
     name = index["regions"][0]["name"]
-    assert cycle_pack.phone_pack_path("2026-10-29", name) == folder / f"{name}.pack"
-    assert cycle_pack.phone_pack_path("2026-10-29", "../../etc") is None
-    assert cycle_pack.phone_pack_path("latest", name) is None
+    assert phone_pack.phone_pack_path("2026-10-29", name) == folder / f"{name}.pack"
+    assert phone_pack.phone_pack_path("2026-10-29", "../../etc") is None
+    assert phone_pack.phone_pack_path("latest", name) is None
 
 
 def test_the_ios_apps_fixture_packs_answer_as_the_planner(chicago):
@@ -229,7 +229,7 @@ def _ground_pack(tmp_path, monkeypatch, heights) -> bytes:
     monkeypatch.setattr(ground_grid, "EAST", -84.0)
     monkeypatch.setattr(ground_grid, "PER_DEG", 2)
     monkeypatch.setattr(ground_grid, "_grids", lambda: (grid, grid))
-    ground = cycle_pack._terrain("n40w088")
+    ground = phone_pack_shapes._terrain("n40w088")
     area = Polygon([(-87.0, 42.4), (-87.0, 42.6), (-86.6, 42.6), (-86.6, 42.4)])
     wkb = shapely.to_wkb(shapely.geometry.polygon.orient(area, sign=-1.0), byte_order=1)
     record = {
@@ -243,15 +243,15 @@ def _ground_pack(tmp_path, monkeypatch, heights) -> bytes:
     }
     path = tmp_path / "n40w088.pack"
     with open(path, "w+b") as f:
-        w = cycle_pack._Writer(
+        w = pack_format.Writer(
             f, ["meta", "sua.box", "sua.off", "sua.wkb", "sua.rec", "sua.json", "sua.names", "sua.alt", "sua.times", "terrain"]
         )
         w.put("meta", b"{}")
-        cycle_pack._layer(w, "sua", [area.bounds], [wkb], None)
+        pack_format.put_layer(w, "sua", [area.bounds], [wkb], None)
         w.put("sua.rec", struct.pack("<dIIII", float("nan"), 0, 0, 0, 6))
         w.put("sua.json", b"")
         w.put("sua.names", b"R-9999")
-        alt, times = cycle_pack._sua_alt([record])
+        alt, times = phone_pack_shapes._sua_alt([record])
         w.put("sua.alt", alt)
         w.put("sua.times", times)
         w.put("terrain", ground)
@@ -265,7 +265,7 @@ def test_the_ground_is_pooled_by_its_highest_and_a_misread_cell_is_none(tmp_path
     heights[4:6, 4:6] = 32000  # tiles misread: no ground known
     heights[6, 6] = 32000  # one misread among three read: theirs
     pack = _ground_pack(tmp_path, monkeypatch, heights)
-    raw = cycle_pack._terrain("n40w088")
+    raw = phone_pack_shapes._terrain("n40w088")
     south, west, per, rows, cols, _ = struct.unpack("<ddIIII", raw[:32])
     cells = np.frombuffer(raw[32:], dtype="<i2").reshape(rows, cols)
     assert (south, west, per, rows, cols) == (40.0, -88.0, 1, 4, 4)

@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from ..schemas.plan import DemonstratedCrosswind, ShortField
+from ..schemas.aircraft_figures import DemonstratedCrosswind, ShortField
 
 
 class EmergencyRunwayEnd(BaseModel):

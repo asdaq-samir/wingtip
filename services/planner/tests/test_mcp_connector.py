@@ -20,7 +20,7 @@ from app.mcp.auth import GatewayTokens
 from wingtip.config import get_settings
 
 from .mcp_harness import ISSUER, RESOURCE, call, connector, http, listed
-from .test_airports import stub_place
+from .airport_world import stub_place
 
 SNAPSHOT = Path(__file__).parent / "mcp_tools.snapshot.json"
 

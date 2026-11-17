@@ -11,7 +11,7 @@ from fastapi.openapi.utils import get_openapi
 from pydantic import TypeAdapter
 
 from .schemas.chart import DetectMessage
-from .schemas.plan import NavLogMessage
+from .schemas.nav_log import NavLogMessage
 
 # The unions no route returns, published into the OpenAPI components so
 # apps/web/ gets a TypeScript type for each stream.

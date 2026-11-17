@@ -62,7 +62,7 @@ import time
 from functools import lru_cache
 from pathlib import Path
 
-from wingtip import cycle_pack, geo, vector_tiles
+from wingtip import cycle_pack, geo, phone_pack_shapes, vector_tiles
 from wingtip.atomic import atomic_path
 from wingtip.units import M_PER_FT, M_PER_NM
 from wingtip.vector_tiles import INDEX, LAYERS, VERSION, archive_name
@@ -164,12 +164,12 @@ def airspace_features(pack, bbox=None):
     Class B, C, D and E volume as wingtip.cycle_pack's phone packs describe it."""
     import shapely
 
-    numbers = cycle_pack._controlled_numbers(pack)
+    numbers = phone_pack_shapes._controlled_numbers(pack)
     for record, number, geometry in zip(pack.attrs("airspace"), numbers, pack.geometries("airspace")):
         geometry = _orient(geometry)
         if geometry is None or geometry.is_empty or not _meets(geometry.bounds, bbox):
             continue
-        volume = cycle_pack._volume_drawn(record, number)
+        volume = phone_pack_shapes._volume_drawn(record, number)
         cls = volume["class"]
         minzoom = AIRSPACE_MIN_ZOOM.get(cls) or CLASS_E_MIN_ZOOM.get(volume["local_type"], CLASS_E_OTHER_MIN_ZOOM)
         yield _feature(
@@ -250,13 +250,13 @@ def airspace_label_features(pack, bbox=None):
     placement put a label every few hundred pixels and one in each tile
     the ring crossed: three "C: 49–23" round Madison (the owner,
     2026-11-08)."""
-    numbers = cycle_pack._controlled_numbers(pack)
+    numbers = phone_pack_shapes._controlled_numbers(pack)
     volumes = []
     for record, number, geometry in zip(pack.attrs("airspace"), numbers, pack.geometries("airspace")):
         geometry = _orient(geometry)
         if geometry is None or geometry.is_empty:
             continue
-        volume = cycle_pack._volume_drawn(record, number)
+        volume = phone_pack_shapes._volume_drawn(record, number)
         if volume["class"] in LABELLED_CLASSES and volume["ceiling_ft"] is not None:
             volumes.append((volume, number, geometry))
     # Each airspace's centre: the middle of its volumes' bounds, by its

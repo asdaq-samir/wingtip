@@ -12,7 +12,7 @@ from wingtip import airports, airspace, airspace_primaries, faa_data, field_mark
 
 from app.main import app
 
-from .test_airports import DULUTH
+from .airport_world import DULUTH
 
 client = TestClient(app)
 

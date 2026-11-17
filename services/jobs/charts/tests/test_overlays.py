@@ -27,7 +27,7 @@ import shapely
 from shapely.geometry import Polygon
 
 from charts import airports, overlays
-from wingtip import cycle_pack, vector_tiles
+from wingtip import cycle_pack, phone_pack_shapes, vector_tiles
 from wingtip import fixes as wingtip_fixes
 
 #: The shared fixtures, beside wingtip's own tests.
@@ -333,7 +333,7 @@ def test_each_class_b_c_and_d_shelf_has_one_label_on_its_ring(sources):
     labels = _lines(overlays.airspace_label_features(pack))
     shapes = {
         n: g
-        for a, n, g in zip(pack.attrs("airspace"), cycle_pack._controlled_numbers(pack), pack.geometries("airspace"))
+        for a, n, g in zip(pack.attrs("airspace"), phone_pack_shapes._controlled_numbers(pack), pack.geometries("airspace"))
         if a["CLASS"] in "BCD"
     }
     assert sorted(f["properties"]["number"] for f in labels) == sorted(shapes)

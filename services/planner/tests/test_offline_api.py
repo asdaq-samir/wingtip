@@ -4,7 +4,7 @@ first ask and fetched whole or in ranges."""
 
 import pytest
 from fastapi.testclient import TestClient
-from wingtip import charts, cycle_pack, offline_charts, tile_archive, vector_tiles
+from wingtip import charts, offline_charts, phone_pack, tile_archive, vector_tiles
 from wingtip.geo import tile_xy
 
 from app.main import app
@@ -20,7 +20,7 @@ def held(tmp_path, monkeypatch):
     monkeypatch.setattr(offline_charts, "warm", lambda cycle, regions: None)
     monkeypatch.setattr(vector_tiles, "tiles_index", lambda: {"name": "2026-10-29-v4-0badf00d", "bytes": 1234})
     monkeypatch.setattr(
-        cycle_pack,
+        phone_pack,
         "phone_index",
         lambda: {"cycle": "2026-10-29", "regions": [{"name": "n40w092", "west": -92, "south": 40, "east": -88, "north": 44, "bytes": 99}]},
     )

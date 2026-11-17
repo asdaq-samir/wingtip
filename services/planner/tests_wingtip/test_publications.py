@@ -10,7 +10,7 @@ import pytest
 import requests
 from PIL import Image
 
-from wingtip import diagram_crops, publications, single_flight
+from wingtip import diagram_crops, publication_drawing, publication_pages, publications, single_flight
 
 #: KDLH's charts in a kept index, by either ident.
 DLH_CHARTS = (
@@ -92,15 +92,15 @@ def test_the_diagram_is_drawn_once_a_cycle_by_either_ident_and_kept(monkeypatch,
     on = date(2026, 10, 3)
 
     assert publications.airport_diagram_cycle("KDLH", on) == "2610"
-    path = publications.airport_diagram_png("KDLH", "2610", on)
+    path = publication_drawing.airport_diagram_png("KDLH", "2610", on)
     # Read and closed at once: a file Pillow was left holding was a
     # ResourceWarning, an error under the suite's warnings filter.
     with Image.open(path) as image:
         mode, size = image.mode, image.size
     # Grey, DIAGRAM_SCALE times the PDF's points.
-    scale = publications.DIAGRAM_SCALE
+    scale = publication_drawing.DIAGRAM_SCALE
     assert (mode, size) == ("L", (396 * scale, 594 * scale))
-    assert publications.airport_diagram_png("DLH", "2610", on) == path
+    assert publication_drawing.airport_diagram_png("DLH", "2610", on) == path
     assert asked == ["https://aeronav.faa.gov/d-tpp/2610/00125AD.PDF"]
 
 
@@ -111,11 +111,11 @@ def test_no_diagram_for_another_cycle_a_field_without_one_or_while_the_faa_is_do
     monkeypatch.setattr(publications.outside, "get", lambda url, **kw: _Answer(fail=True))
     on = date(2026, 10, 3)
 
-    assert publications.airport_diagram_png("KDLH", "2609", on) is None
-    assert publications.airport_diagram_png("C81", "2610", on) is None
+    assert publication_drawing.airport_diagram_png("KDLH", "2609", on) is None
+    assert publication_drawing.airport_diagram_png("C81", "2610", on) is None
     assert publications.airport_diagram_cycle("C81", on) is None
     # Nothing kept from a failure: the next ask tries the FAA again.
-    assert publications.airport_diagram_png("KDLH", "2610", on) is None
+    assert publication_drawing.airport_diagram_png("KDLH", "2610", on) is None
     assert not (tmp_path / "diagrams").exists()
 
 
@@ -140,7 +140,7 @@ def test_pdfium_draws_one_pdf_at_a_time(monkeypatch):
                 inside -= 1
 
     monkeypatch.setattr(pypdfium2.PdfPage, "render", watched)
-    threads = [threading.Thread(target=publications._drawn, args=(_blank_pdf(100 + n, 100),)) for n in range(4)]
+    threads = [threading.Thread(target=publication_drawing._drawn, args=(_blank_pdf(100 + n, 100),)) for n in range(4)]
     for t in threads:
         t.start()
     for t in threads:
@@ -173,33 +173,33 @@ def _pdf_with(pages: list) -> bytes:
 
 
 def test_a_booklets_pages_are_the_ones_naming_the_field_and_a_charts_its_own(monkeypatch, tmp_path):
-    publications._pages_of.cache_clear()
+    publication_pages._pages_of.cache_clear()
     monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
     booklet = _pdf_with(["KENOSHA (ENW)", "MADISON DANE COUNTY RGNL/TRUAX FLD (MSN)", "MSN CONTINUED (MSN)", "MILWAUKEE (MKE)"])
     approach = _pdf_with(["ILS OR LOC RWY 18"])
     answers = {"EC3TO.PDF": booklet, "00245IL18.PDF": approach}
     monkeypatch.setattr(publications.outside, "get", lambda url, **kw: _Answer(answers[url.rsplit("/", 1)[1]]))
-    publications._page_count.cache_clear()
+    publication_pages._page_count.cache_clear()
     on = date(2026, 10, 3)
-    pages = publications.chart_pages("https://aeronav.faa.gov/d-tpp/2610/EC3TO.PDF", "KMSN", on)
+    pages = publication_pages.chart_pages("https://aeronav.faa.gov/d-tpp/2610/EC3TO.PDF", "KMSN", on)
     assert [p["page"] for p in pages] == [2, 3]
-    scale = publications.DIAGRAM_SCALE
+    scale = publication_drawing.DIAGRAM_SCALE
     assert pages[0] == {"source": "dtpp", "edition": "2610", "pdf": "EC3TO.PDF", "page": 2, "width": 387 * scale, "height": 594 * scale}
-    assert [p["page"] for p in publications.chart_pages("https://aeronav.faa.gov/d-tpp/2610/00245IL18.PDF", "KMSN", on)] == [1]
+    assert [p["page"] for p in publication_pages.chart_pages("https://aeronav.faa.gov/d-tpp/2610/00245IL18.PDF", "KMSN", on)] == [1]
     # A booklet without the field has no pages for it, not another field's.
-    assert publications.chart_pages("https://aeronav.faa.gov/d-tpp/2610/EC3TO.PDF", "KDLH", on) == []
+    assert publication_pages.chart_pages("https://aeronav.faa.gov/d-tpp/2610/EC3TO.PDF", "KDLH", on) == []
     # A chart of its own keeps every page, though only one is headed with the field.
     answers["00245IL19.PDF"] = _pdf_with(["ILS OR LOC RWY 19 (MSN)", "NOTES", "MORE NOTES"])
-    assert [p["page"] for p in publications.chart_pages("https://aeronav.faa.gov/d-tpp/2610/00245IL19.PDF", "KMSN", on)] == [1, 2, 3]
+    assert [p["page"] for p in publication_pages.chart_pages("https://aeronav.faa.gov/d-tpp/2610/00245IL19.PDF", "KMSN", on)] == [1, 2, 3]
     # Drawn, a page at a time, and kept.
-    path = publications.chart_page_png("dtpp", "2610", "EC3TO.PDF", 3, on)
+    path = publication_pages.chart_page_png("dtpp", "2610", "EC3TO.PDF", 3, on)
     with Image.open(path) as image:
         assert image.size == (387 * scale, 594 * scale)
     # A page past the last is none, said before any draw, and no lock is
     # kept for it or for the pages drawn (CODE-24).
     drawn = []
-    monkeypatch.setattr(publications, "_drawn", lambda *a: drawn.append(a))
-    assert publications.chart_page_png("dtpp", "2610", "EC3TO.PDF", 9, on) is None
+    monkeypatch.setattr(publication_pages, "_drawn", lambda *a: drawn.append(a))
+    assert publication_pages.chart_page_png("dtpp", "2610", "EC3TO.PDF", 9, on) is None
     assert drawn == [] and single_flight._WORKING == {}
 
 
@@ -213,13 +213,13 @@ def test_only_the_faas_charts_in_force_are_read(monkeypatch, tmp_path):
         "https://aeronav.faa.gov/d-tpp/2610/../secret.PDF",
         "https://aeronav.faa.gov/d-tpp/2610/X.exe",
     ):
-        assert publications.chart_pages(url, "KMSN", on) is None
-    assert publications.chart_page_png("dtpp", "2609", "X.PDF", 1, on) is None
-    assert publications.chart_page_png("elsewhere", "2610", "X.PDF", 1, on) is None
+        assert publication_pages.chart_pages(url, "KMSN", on) is None
+    assert publication_pages.chart_page_png("dtpp", "2609", "X.PDF", 1, on) is None
+    assert publication_pages.chart_page_png("elsewhere", "2610", "X.PDF", 1, on) is None
 
 
 def test_the_faa_not_answering_is_told_from_a_chart_it_does_not_have(monkeypatch, tmp_path):
-    publications._pages_of.cache_clear()
+    publication_pages._pages_of.cache_clear()
     monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
     monkeypatch.setattr(publications, "_ABSENT", set())
     on = date(2026, 10, 3)
@@ -229,17 +229,17 @@ def test_the_faa_not_answering_is_told_from_a_chart_it_does_not_have(monkeypatch
         asked.append(url)
         if url.endswith("GONE.PDF"):
             return _Answer(status=404)
-        raise publications.requests.ConnectionError("down")
+        raise requests.ConnectionError("down")
 
     monkeypatch.setattr(publications.outside, "get", get)
     with pytest.raises(publications.FaaUnreachable):
-        publications.chart_pages("https://aeronav.faa.gov/d-tpp/2610/00245IL19.PDF", "KMSN", on)
+        publication_pages.chart_pages("https://aeronav.faa.gov/d-tpp/2610/00245IL19.PDF", "KMSN", on)
     with pytest.raises(publications.FaaUnreachable):
-        publications.chart_page_png("dtpp", "2610", "00245IL19.PDF", 1, on)
+        publication_pages.chart_page_png("dtpp", "2610", "00245IL19.PDF", 1, on)
     # Not there is None, and asked of the FAA once.
     gone = "https://aeronav.faa.gov/d-tpp/2610/GONE.PDF"
-    assert publications.chart_pages(gone, "KMSN", on) is None
-    assert publications.chart_pages(gone, "KMSN", on) is None
+    assert publication_pages.chart_pages(gone, "KMSN", on) is None
+    assert publication_pages.chart_pages(gone, "KMSN", on) is None
     assert asked.count(gone) == 1
 
 
@@ -249,7 +249,7 @@ def test_a_diagram_is_cropped_to_its_runways_placed_by_its_own_labels():
     labels = [("44 52'N", 20, 450), ("44 51'N", 20, 150), ("91 30'W", 80, 40), ("91 29'W", 292.6, 40)]
     pdf = _pdf_with([labels])
     document = pypdfium2.PdfDocument(pdf)
-    a, b, c, d = publications._graticule(document[0])
+    a, b, c, d = publication_drawing._graticule(document[0])
     document.close()
     # 44 51.5'N half way down the two, 91 29.5'W half way across.
     assert abs((a * (44 + 51.5 / 60) + b) - (594 - 300 - 4)) < 6
@@ -257,9 +257,9 @@ def test_a_diagram_is_cropped_to_its_runways_placed_by_its_own_labels():
 
     # Its runways' two ends a third of a minute apart: the crop round them,
     # not the sheet.
-    png = publications._runways_drawn(pdf, [(44 + 51.6 / 60, -(91 + 29.7 / 60)), (44 + 51.3 / 60, -(91 + 29.3 / 60))])
+    png = publication_drawing._runways_drawn(pdf, [(44 + 51.6 / 60, -(91 + 29.7 / 60)), (44 + 51.3 / 60, -(91 + 29.3 / 60))])
     image = Image.open(io.BytesIO(png))
-    assert image.width < 387 * publications.DIAGRAM_SCALE * 0.6 and image.height < 594 * publications.DIAGRAM_SCALE * 0.6
+    assert image.width < 387 * publication_drawing.DIAGRAM_SCALE * 0.6 and image.height < 594 * publication_drawing.DIAGRAM_SCALE * 0.6
 
 
 def test_a_turned_or_unlabelled_sheet_is_not_placed_by_its_labels():
@@ -268,10 +268,10 @@ def test_a_turned_or_unlabelled_sheet_is_not_placed_by_its_labels():
     blank = _pdf_with([""])
     for pdf in (turned, blank):
         document = pypdfium2.PdfDocument(pdf)
-        assert publications._graticule(document[0]) is None
+        assert publication_drawing._graticule(document[0]) is None
         document.close()
     # Nothing to crop to on a blank sheet: none, for the card's sketch.
-    assert publications._runways_drawn(blank, [(44.86, -91.49)]) is None
+    assert publication_drawing._runways_drawn(blank, [(44.86, -91.49)]) is None
 
 
 def _with_runway(labels: list, bar: tuple) -> bytes:
@@ -295,14 +295,14 @@ _ENDS = [(44 + 51.6 / 60, -(91 + 29.7 / 60)), (44 + 51.3 / 60, -(91 + 29.3 / 60)
 
 
 def test_a_sheet_without_labels_is_cropped_to_its_runway_thick_strokes():
-    png = publications._runways_drawn(_with_runway([], (100, 300, 150, 12)), [])
+    png = publication_drawing._runways_drawn(_with_runway([], (100, 300, 150, 12)), [])
     image = Image.open(io.BytesIO(png))
-    assert image.width < 387 * publications.DIAGRAM_SCALE * 0.7 and image.height < 594 * publications.DIAGRAM_SCALE * 0.3
+    assert image.width < 387 * publication_drawing.DIAGRAM_SCALE * 0.7 and image.height < 594 * publication_drawing.DIAGRAM_SCALE * 0.3
 
 
 def test_labels_that_disagree_with_the_sheets_runways_give_the_sketch():
     # The runway is drawn far from where the labels put the ends.
-    assert publications._runways_drawn(_with_runway(_LABELS, (250, 540, 100, 12)), _ENDS) is None
+    assert publication_drawing._runways_drawn(_with_runway(_LABELS, (250, 540, 100, 12)), _ENDS) is None
 
 
 def test_a_miss_is_kept_and_a_crop_made_without_ends_is_not_the_one_with_them(monkeypatch, tmp_path):
@@ -312,11 +312,11 @@ def test_a_miss_is_kept_and_a_crop_made_without_ends_is_not_the_one_with_them(mo
     monkeypatch.setattr(publications, "airport_diagram_url", lambda ident, on=None: f"https://aeronav.faa.gov/d-tpp/{cycle}/00001AD.PDF")
     monkeypatch.setattr(publications, "_pdf_of", lambda *a: b"%PDF")
     drawn = []
-    monkeypatch.setattr(publications, "_runways_drawn", lambda pdf, ends: drawn.append(ends) or (b"png" if ends else None))
-    assert publications.airport_diagram_runways_png("KXXX", cycle, [], on) is None
-    assert publications.airport_diagram_runways_png("KXXX", cycle, [], on) is None
+    monkeypatch.setattr(publication_drawing, "_runways_drawn", lambda pdf, ends: drawn.append(ends) or (b"png" if ends else None))
+    assert publication_drawing.airport_diagram_runways_png("KXXX", cycle, [], on) is None
+    assert publication_drawing.airport_diagram_runways_png("KXXX", cycle, [], on) is None
     assert len(drawn) == 1
-    assert publications.airport_diagram_runways_png("KXXX", cycle, [(44.0, -91.0)], on).read_bytes() == b"png"
+    assert publication_drawing.airport_diagram_runways_png("KXXX", cycle, [(44.0, -91.0)], on).read_bytes() == b"png"
     assert len(drawn) == 2
 
 
@@ -328,9 +328,9 @@ def test_a_kept_miss_says_the_runways_picture_is_not_to_be_asked_for(monkeypatch
     cycle = publications.dtpp_cycle(on)
     monkeypatch.setattr(publications, "airport_diagram_url", lambda ident, on=None: f"https://aeronav.faa.gov/d-tpp/{cycle}/00001AD.PDF")
     monkeypatch.setattr(publications, "_pdf_of", lambda *a: b"%PDF")
-    monkeypatch.setattr(publications, "_runways_drawn", lambda pdf, ends: None)
+    monkeypatch.setattr(publication_drawing, "_runways_drawn", lambda pdf, ends: None)
     assert not diagram_crops.runways_missing("KXXX", True, on)
-    assert publications.airport_diagram_runways_png("KXXX", cycle, [(44.0, -91.0)], on) is None
+    assert publication_drawing.airport_diagram_runways_png("KXXX", cycle, [(44.0, -91.0)], on) is None
     assert diagram_crops.runways_missing("KXXX", True, on)
     # The crop without ends is its own, not yet tried.
     assert not diagram_crops.runways_missing("KXXX", False, on)

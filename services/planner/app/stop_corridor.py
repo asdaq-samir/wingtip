@@ -1,5 +1,5 @@
 """The fields along a route a stop may be, for the map's Stops
-(/api/stops/along, app.routers.airports): the route's corridor searched
+(/api/stops/along, app.routers.airport_stops): the route's corridor searched
 (wingtip.fuelstops) and each field's distance off its flight's line."""
 
 import functools

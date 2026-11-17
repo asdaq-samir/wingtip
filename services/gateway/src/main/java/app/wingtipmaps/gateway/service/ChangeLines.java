@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  * What changed in a watched flight's briefing, in the planner's own lines.
  *
  * <p>The planner finds the changes (POST /api/words/changes/sources,
- * routers/words.py briefing_changes: a field's flight category, a SIGMET
+ * app/words_changes.py briefing_changes: a field's flight category, a SIGMET
  * or AIRMET new or gone, a TFR new, a field newly below VFR, a TAF
  * crossing a category line). Each change's own heading ("KDLH METAR, VFR
  * to IFR") is the sentence, citing that change, and its raw reports go

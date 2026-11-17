@@ -1,7 +1,6 @@
 """Airports as places on the map, the way a maps app has places: the
-fields in view, for the chart's own airport symbols to be tapped, and
-one field's card -- its name, the airspace over it, its runways and
-radio, and the weather there now.
+fields in view, for the chart's own airport symbols to be tapped, the
+nearest to a position, and a place searched.
 
 Everything here is already in memory on this side: the OurAirports
 tables are read once per process (wingtip.airports), the airspace polygons
@@ -10,56 +9,34 @@ national cache wingtip.weather keeps for minutes at a time; a field with
 no report of its own has the weather modelled there for the hour, from
 the gridded LAMP wingtip.glmp holds an hour at a time. A card costs a few
 table lookups and a point-in-polygon test.
+
+This module holds the lists (in view, search, nearest, waypoints); a
+field's card is airport_card, its Stops airport_stops, its pictures and
+charts airport_charts.
 """
 
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Query, Response
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, HTTPException, Query
 from wingtip import (
-    airport_photos,
-    approach_facts,
     airports,
     airspace_primaries,
     altitude,
-    diagram_crops,
     faa_data,
     field_facts,
     field_forecast,
-    field_details,
     field_marks,
-    field_use,
     geocode,
-    glmp,
     map_weather,
-    nearby,
-    pattern,
-    procedures,
-    publications,
-    remarks,
-    runway_wind,
     vfr_waypoints,
     weather,
 )
 
-from .. import stop_corridor
-from ..router_basics import DIAGRAM_CACHE
 from ..schemas.airports_in_view import AirportsInView
-from ..schemas.airports import (
-    AirportPhotos,
-    AirportPlace,
-    AirportServices,
-    ForecastWind,
-    ChartPages,
-    PlacesFound,
-    ProcedureDrawing,
-    ProcedureList,
-    StopFields,
-    WaypointsInView,
-)
-from ..gateway import PUBLIC, SHARED
-from ..field_marks import owners_of as _owners, surface_airspace_of, surface_classes_of as _surface_classes
+from ..schemas.airports import ForecastWind, PlacesFound, WaypointsInView
+from ..gateway import PUBLIC
+from ..field_marks import owners_of as _owners, surface_classes_of as _surface_classes
 from ..schemas.nearest import NearestAirports
 
 log = logging.getLogger(__name__)
@@ -210,111 +187,6 @@ def nearest_airports(
     return {"airports": out}
 
 
-#: The most of the nearest fields looked at round the pilot: a hundred
-#: miles round Chicago hold some three hundred, each's places read once.
-STOP_FIELDS = 150
-
-
-def _places_of(field: dict) -> dict | None:
-    """A field's places to eat and flight schools at the airport, None
-    while they are still to be read (read on the pool): food inside its
-    outline (wingtip.nearby's), as Pilot Pete's is at Schaumburg (the owner's
-    "food at the airport itself", 2026-10-25), not a walk across the road;
-    a school on the field or a walk from it (WALK_M, 15 minutes), as a
-    school's office can be across the field's own road."""
-    places = nearby.kept(field["ident"])
-    if places is None:
-        nearby.read_later(field["ident"], field["lat"], field["lon"])
-        return None
-    return {
-        "food": [f for f in places.get("food") or [] if f.get("on_field")],
-        "training": [t for t in places.get("training") or [] if t.get("on_field") or t.get("walk_min") is not None],
-    }
-
-
-def _stop(field: dict, places: dict | None) -> dict | None:
-    """A field as one of the map's Stops, with what it has of the four
-    kinds -- fuel, food, repair, training -- and its phone; None where it
-    has none of them that is known yet. The fuel it sells and its airframe
-    and engine repair are its Chart Supplement entry's (NASR's APT_BASE:
-    FUEL_TYPES, AIRFRAME_REPAIR_SER_CODE and PWR_PLANT_REPAIR_SER, MAJOR or
-    MINOR), its phone the manager's, else the owner's (NASR's APT_CON:
-    PHONE_NO), each by its FAA or ICAO identifier (wingtip.faa_data)."""
-    services = faa_data.airport_services(field["ident"], altitude.DEFAULT_FAA_CACHE_DIR)
-    food = (places or {}).get("food") or []
-    training = (places or {}).get("training") or []
-    if not (services["fuel_types"] or services["airframe_repair"] or services["powerplant_repair"] or food or training):
-        return None
-    return {
-        "ident": field["ident"],
-        "name": field["name"],
-        "city": field.get("city") or None,
-        "lat": field["lat"],
-        "lon": field["lon"],
-        "phone": faa_data.airport_contact(field["ident"], altitude.DEFAULT_FAA_CACHE_DIR)["phone"],
-        "fuel_types": services["fuel_types"],
-        "airframe_repair": services["airframe_repair"],
-        "powerplant_repair": services["powerplant_repair"],
-        "food": food,
-        "training": training,
-        "places_known": places is not None,
-    }
-
-
-@router.get("/api/stops/near", response_model=StopFields, openapi_extra=PUBLIC)
-def stops_near(
-    lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180), nm: float = Query(default=25.0, ge=5, le=250)
-) -> StopFields:
-    """The public fields round a position with fuel, food, repair or a
-    flight school, nearest first, for the map's Stops (the owner's one
-    sheet for them near the pilot and along a route, 2026-10-27), within
-    `nm` (the sheet's 10, 25, 50 or 100). A field's places are Overture's
-    (wingtip.nearby), read on the planner's pool where they have not been and
-    counted in `pending`; a field selling fuel or with a repair shop is
-    listed at once, its places to come (`places_known`), and the page
-    asks again until none is pending."""
-    found = [p for p in airports.nearest(lat, lon, STOP_FIELDS) if p["distance_nm"] <= nm]
-    out, pending = [], 0
-    for p, (military, private) in zip(found, _owners(found)):
-        # Not the airline airports: O'Hare's food is a smoothie in the
-        # terminal, past security, not a fly-in lunch (its first answer),
-        # and its fuel and repair are the airlines' FBOs' at airline fees.
-        if military or private or p.get("kind") == "large":
-            continue
-        places = _places_of(p)
-        pending += places is None
-        stop = _stop({**p, "city": p.get("municipality")}, places)
-        if stop:
-            out.append({**stop, "distance_nm": p["distance_nm"], "bearing_deg": p["bearing_deg"]})
-    return StopFields(fields=out, pending=pending)
-
-
-@router.get("/api/stops/along", response_model=StopFields, openapi_extra=PUBLIC)
-def stops_along(dep: str, dest: str, stops: str = "") -> StopFields:
-    """The public fields along a route with fuel, food, repair or a flight
-    school, in route order, for the map's Stops while a course is drawn:
-    those no more than stop_corridor.STOP_OFF_COURSE_NM off each flight's line, each
-    with its miles from its flight's departure, those it adds and how far
-    off the course it is; what they have as round the pilot."""
-    out, pending = [], 0
-    for field, off in stop_corridor.corridor(dep, dest, stops, datetime.now(timezone.utc).date().isoformat()):
-        places = _places_of(field)
-        pending += places is None
-        stop = _stop(field, places)
-        if stop:
-            out.append(
-                {
-                    **stop,
-                    "distance_nm": field["from_nm"],
-                    "bearing_deg": 0,
-                    "departure": field["departure"],
-                    "added_nm": field["added_nm"],
-                    "off_nm": round(off, 1),
-                }
-            )
-    return StopFields(fields=out, pending=pending)
-
-
 @router.get("/api/waypoints/in-view", response_model=WaypointsInView, openapi_extra=PUBLIC)
 def waypoints_in_view(
     south: float = Query(ge=-90, le=90),
@@ -333,263 +205,6 @@ def waypoints_in_view(
     return {"waypoints": vfr_waypoints.in_view(south, west, north, east, limit)}
 
 
-def _notes(ident: str) -> dict:
-    """The lighting and mic-click remarks (wingtip.remarks), by the FAA's own
-    identifier: KRFD's are RFD's, as are Alaska's and Hawaii's P-idents'.
-    None where the remarks file cannot be had: a card without them."""
-    candidates = [ident[1:], ident] if len(ident) == 4 and ident[0] in "KP" else [ident]
-    try:
-        for faa_id in candidates:
-            notes = remarks.airport_notes(faa_id)
-            if notes["lighting"] or notes["radio"]:
-                break
-    except (OSError, RuntimeError):
-        return {}
-    return {
-        "lighting": notes["lighting"],
-        "lights": notes["lights"],
-        "light_notes": notes["light_notes"],
-        "radio_notes": notes["radio"],
-        "standard_keying": notes["standard_keying"],
-    }
-
-
-def _with_turf(runways: list[dict], ident: str) -> list[dict]:
-    """Each runway with the part of it that is turf where the FAA's
-    remarks say which (wingtip.remarks.runway_turf), by the FAA's own
-    identifier as `_notes` takes it, each part's end named as the runway's
-    own are: C81's 06/24 the 1,000 ft from its south-west end, 06. None
-    where the remarks file cannot be had."""
-    try:
-        turf = next((found for faa_id in pattern.faa_ids(ident) if (found := remarks.runway_turf(faa_id))), {})
-    except (OSError, RuntimeError):
-        return runways
-    # A runway is the same either way round: OurAirports may list 24/06.
-    by_ends = {frozenset(map(pattern.end_key, ends.split("/"))): parts for ends, parts in turf.items()}
-    with_turf = []
-    for runway in runways:
-        own = {pattern.end_key(end["ident"]): end["ident"] for end in runway.get("runway_ends", [])}
-        parts = by_ends.get(frozenset(map(pattern.end_key, (runway.get("ends") or "").split("/"))), [])
-        with_turf.append({**runway, "turf": [{**part, "end": own.get(pattern.end_key(part["end"]), part["end"])} for part in parts]})
-    return with_turf
-
-
-@router.get("/api/airport/{ident}", response_model=AirportPlace, openapi_extra=PUBLIC)
-def airport_place(ident: str) -> AirportPlace:
-    """One US airport's card, by any ident it goes by (C81, KC81, KDLH).
-
-    `airspace_class` is the surface's class, `surface_airspace` with its hours.
-    `towered` is whether it lists a tower frequency. No reporting station,
-    no `metar`; `weather_unavailable` only where the service was not asked."""
-    place = airports.find_place(ident)
-    if place is None:
-        raise HTTPException(404, f"No US airport goes by {ident.strip().upper()!r}.")
-    source = place["source_ident"]
-    frequencies = airports.get_frequencies(source)
-    unavailable = False
-    try:
-        metar = weather.metar_for_idents([source]).get(source)
-    except weather.WeatherServiceError:
-        metar, unavailable = None, True
-    # Its own forecast, the TAF as issued, for the card's hours: none for
-    # most fields, and none asked for where the weather service is out.
-    taf = None
-    if not unavailable:
-        try:
-            taf = (weather.taf_for_idents([source]).get(source) or {}).get("raw")
-        except weather.WeatherServiceError:
-            taf = None
-    military, private = _owners([place])[0]
-    # No report of its own: the nearest station's, close enough to say
-    # its weather approximately (wingtip.weather.nearest_report).
-    nearby = None
-    if metar is None and not unavailable:
-        try:
-            nearby = weather.nearest_report(place["lat"], place["lon"], exclude=source)
-        except weather.WeatherServiceError:
-            nearby = None
-    # And the weather modelled at the field itself for the hour (wingtip.glmp),
-    # whatever the reports' service said: its own source.
-    modelled = None
-    if metar is None:
-        try:
-            modelled = glmp.at(place["lat"], place["lon"])
-        except glmp.GlmpUnavailable as err:
-            log.warning("modelled weather at %s: %s", place["ident"], err)
-    # Calm now, the field's last wind for the runway in use.
-    runways = _with_turf(
-        pattern.with_traffic(
-            runway_wind.with_winds(
-                [r for r in airports.get_runways(source) if not r["closed"]],
-                metar,
-                place["lat"],
-                place["lon"],
-                weather.recent_wind(place["ident"]) if metar and metar.get("wind_speed_kt") == 0 else None,
-            ),
-            place["ident"],
-            place["lat"],
-            place["lon"],
-        ),
-        place["ident"],
-    )
-    return {
-        **{key: value for key, value in place.items() if key != "source_ident"},
-        **surface_airspace_of(place),  # the class at its surface, part-time or not (the engine's)
-        "military": military,
-        "private": private,
-        "towered": any(f["type"] == "TWR" for f in frequencies),
-        **_notes(place["ident"]),
-        **{k: v for k, v in (field_use.record_of(source) or {}).items() if k not in ("name", "status")},  # NASR's record (AirportRecord)
-        "pattern": pattern.pattern_at(place["ident"], place["elevation_ft"]),
-        "runways": runways,
-        "frequencies": frequencies,
-        "metar": metar,
-        "nearby_metar": nearby,
-        "modelled_weather": modelled,
-        "taf": taf,
-        "weather_unavailable": unavailable,
-        **field_details.of(place, altitude.DEFAULT_FAA_CACHE_DIR),  # its phones, address, airspace hours and zone
-        "airport_diagram_url": publications.airport_diagram_url(place["ident"]),
-        "airport_diagram_cycle": publications.airport_diagram_cycle(place["ident"]),
-        # Whether its diagram's crop to the runways is worth asking for: not
-        # where it is already known not to be found this cycle (WEB-41). The
-        # ends as airport_diagram_runways reads them.
-        "airport_diagram_runways": not diagram_crops.runways_missing(
-            place["ident"], any(e.get("lat") is not None for r in runways for e in r.get("runway_ends", []))
-        ),
-        "chart_supplement_url": publications.chart_supplement_url(place["ident"]),
-        "procedures": publications.terminal_charts(place["ident"]),
-    }
-
-
-@router.get("/api/airport/{ident}/services", response_model=AirportServices, openapi_extra=SHARED)
-def airport_services(ident: str, response: Response) -> dict:
-    """What a field offers a pilot who lands there, for a stop's card: its
-    fuel, fees, parking, repair and oxygen and its courtesy car from the
-    FAA's airport file and remarks (wingtip.faa_data.airport_services,
-    wingtip.remarks.service_notes), and the places to eat, sleep and hire a
-    car near it (wingtip.nearby). Its own request, not the card's: Overture's
-    first read of a field is a second or two, which the card's weather
-    and runways do not wait on."""
-    place = airports.find_place(ident)
-    if place is None:
-        raise HTTPException(404, f"No US airport goes by {ident.strip().upper()!r}.")
-    faa_ids = pattern.faa_ids(place["ident"])
-    try:
-        notes = next(
-            (found for faa_id in faa_ids if (found := remarks.service_notes(faa_id))["fuel"] or found["ground"]),
-            {"fuel": [], "ground": [], "courtesy_car": False},
-        )
-    except (OSError, RuntimeError):
-        notes = {"fuel": [], "ground": [], "courtesy_car": False}
-    try:
-        near = nearby.around(place["ident"], place["lat"], place["lon"])
-        unavailable = False
-    except nearby.NearbyUnavailable as err:
-        log.warning("nearby places at %s: %s", place["ident"], err)
-        near, unavailable = {}, True
-    # Kept six hours by the browser: the airport file changes by the FAA's
-    # 28-day cycle and the places near a field by the month, and the card
-    # asked for them afresh on every opening (0.3 to 0.8 s, the 23 Oct
-    # timings). Not where the places could not be had: asked again.
-    if not unavailable:
-        response.headers["Cache-Control"] = "public, max-age=21600"
-    return {
-        "ident": place["ident"],
-        **faa_data.airport_services(place["ident"], altitude.DEFAULT_FAA_CACHE_DIR),
-        "fuel_notes": notes["fuel"],
-        "fuel_remarks": notes.get("fuel_as_written", []),
-        "courtesy_car": notes["courtesy_car"],
-        "ground_notes": notes["ground"],
-        **near,
-        "nearby_unavailable": unavailable,
-    }
-
-
-def _runway_ends(source: str) -> list[tuple[float, float]]:
-    return [pos for r in airports.get_runways(source) if not r["closed"] for pos in (r.get("end_positions") or {}).values() if pos]
-
-
-@router.get("/api/airport/{ident}/photos", response_model=AirportPhotos, openapi_extra=SHARED)
-def airport_photos_of(ident: str, response: Response) -> dict:
-    """The pictures an airport's card swipes through behind its diagram, at
-    the owner's ask ("airport photos swipe behind the airport diagram
-    thumbnail", 2026-10-23): its aerial (/api/airport-aerial, every US
-    field's, from the USGS) and its Wikipedia article's photo where there
-    is a free one (wingtip.airport_photos)."""
-    place = airports.find_place(ident)
-    if place is None:
-        raise HTTPException(404, f"No US airport goes by {ident.strip().upper()!r}.")
-    try:
-        link = airports.wikipedia_link(place["source_ident"])
-    except (OSError, ValueError):
-        link = None
-    photo = airport_photos.ground_photo(place["ident"], link)
-    # A day in the browser: the article's photo changes in years.
-    response.headers["Cache-Control"] = "public, max-age=86400"
-    # Served from here, as the aerial is (/api/airport-photo): the page's
-    # image policy does not reach Wikimedia, and a route kept for the air
-    # keeps it.
-    return {
-        "aerial_url": f"/api/planner/airport-aerial/{place['ident']}.jpg",
-        "photo": photo and {**photo, "url": f"/api/planner/airport-photo/{place['ident']}.jpg"},
-    }
-
-
-@router.get(
-    "/api/airport-photo/{ident}.jpg",
-    response_class=FileResponse,
-    responses={
-        200: {"content": {"image/jpeg": {}}},
-        404: {"description": "No such field, or no free photo of it"},
-        503: {"description": "Wikimedia could not be reached"},
-    },
-    openapi_extra=SHARED,
-)
-def airport_photo(ident: str) -> FileResponse:
-    """The field's photo from the ground (`airport_photos_of`), fetched from
-    Wikimedia Commons once and kept, a week in the browser."""
-    place = airports.find_place(ident)
-    if place is None:
-        raise HTTPException(404, f"No US airport goes by {ident.strip().upper()!r}.")
-    try:
-        link = airports.wikipedia_link(place["source_ident"])
-    except (OSError, ValueError):
-        link = None
-    photo = airport_photos.ground_photo(place["ident"], link)
-    if photo is None:
-        raise HTTPException(404, f"No free photo of {place['ident']}.")
-    try:
-        path = airport_photos.ground_photo_file(place["ident"], photo["url"])
-    except airport_photos.PhotoUnavailable as err:
-        raise HTTPException(503, str(err)) from err
-    return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=604800"})
-
-
-@router.get(
-    "/api/airport-aerial/{ident}.jpg",
-    response_class=FileResponse,
-    responses={
-        200: {"content": {"image/jpeg": {}}},
-        404: {"description": "No such field"},
-        503: {"description": "The USGS imagery could not be had"},
-    },
-    openapi_extra=SHARED,
-)
-def airport_aerial(ident: str) -> FileResponse:
-    """The field's aerial photo from the USGS National Map's imagery
-    (public domain), framed on its runways (wingtip.airport_photos.aerial):
-    asked of the USGS once and kept, a week in the browser."""
-    place = airports.find_place(ident)
-    if place is None:
-        raise HTTPException(404, f"No US airport goes by {ident.strip().upper()!r}.")
-    try:
-        path = airport_photos.aerial(place["ident"], place["lat"], place["lon"], _runway_ends(place["source_ident"]))
-    except airport_photos.PhotoUnavailable as err:
-        raise HTTPException(503, str(err)) from err
-    return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=604800"})
-
-
 @router.get("/api/airport/{ident}/forecast-wind", response_model=ForecastWind | None, openapi_extra=PUBLIC)
 def airport_forecast_wind(ident: str, at: datetime = Query(..., description="When, ISO 8601; a naive time is UTC.")) -> dict | None:
     """The wind forecast at a field for a time -- a flight's arrival, for
@@ -605,134 +220,3 @@ def airport_forecast_wind(ident: str, at: datetime = Query(..., description="Whe
         return weather.forecast_wind(place["lat"], place["lon"], when, place["source_ident"])
     except weather.WeatherServiceError as err:
         raise HTTPException(503, f"The forecasts could not be had: {err}") from err
-
-
-@router.get(
-    "/api/airport/{ident}/procedures",
-    response_model=ProcedureList,
-    responses={503: {"description": "The FAA's procedure file could not be had"}},
-    openapi_extra=PUBLIC,
-)
-def airport_procedures(ident: str) -> ProcedureList:
-    """The field's instrument procedures -- its approaches, arrivals and
-    departures, with the transitions of each -- from the FAA's CIFP for
-    the AIRAC cycle in force (wingtip.procedures), for the route's Procedures
-    to offer. None for a field the CIFP has none for, as most small ones."""
-    try:
-        found = procedures.procedures_at(ident)
-    except RuntimeError as err:
-        raise HTTPException(503, f"The FAA's procedure file could not be had: {err}") from err
-    if found:
-        return found
-    path = procedures.cifp_path()
-    return {"airport": ident.strip().upper(), "cycle": procedures.cifp_cycle(path), "stale": procedures.cifp_stale(path), "procedures": []}
-
-
-@router.get(
-    "/api/airport/{ident}/procedures/{procedure}",
-    response_model=ProcedureDrawing,
-    responses={404: {"description": "No such procedure at the field"}, 503: {"description": "The FAA's procedure file could not be had"}},
-    openapi_extra=PUBLIC,
-)
-def airport_procedure(ident: str, procedure: str, transition: str | None = None) -> ProcedureDrawing:
-    """One of the field's procedures drawn for the map, with the
-    transition picked (`transition`, one of its `transitions`; none for an
-    approach from vectors): its lines, holds and fixes, each fix with the
-    altitudes and speed it is crossed at (wingtip.procedures.procedure_drawing);
-    an approach with the CIFP's own figures for its fixes' tags
-    (`approach`, wingtip.approach_facts; the engine's approach_fix_tags)."""
-    try:
-        drawn = procedures.procedure_drawing(ident, procedure, transition)
-    except RuntimeError as err:
-        raise HTTPException(503, f"The FAA's procedure file could not be had: {err}") from err
-    if drawn is None:
-        raise HTTPException(404, f"No procedure {procedure.strip().upper()!r} at {ident.strip().upper()!r}.")
-    if drawn["kind"] == "approach":
-        drawn = {**drawn, "approach": approach_facts.approach_facts(ident, procedure)}
-    return drawn
-
-
-@router.get(
-    "/api/airport-diagram/{cycle}/{ident}.png",
-    response_class=FileResponse,
-    responses={200: {"content": {"image/png": {}}}, 404: {"description": "No diagram for the field in that cycle"}},
-    openapi_extra=SHARED,
-)
-def airport_diagram(cycle: str, ident: str) -> FileResponse:
-    """The FAA's airport diagram for the field, from the d-TPP cycle in
-    force (`airport_diagram_cycle` on its card), as a picture for the card
-    to show and a finger to pinch in on: its PDF drawn once and kept for
-    the cycle (wingtip.publications). 404 for a field with none -- most small
-    ones -- for any cycle but the one in force, and while the FAA cannot
-    be reached."""
-    path = publications.airport_diagram_png(ident, cycle)
-    if path is None:
-        raise HTTPException(404, f"No airport diagram for {ident.strip().upper()!r} in d-TPP cycle {cycle}.")
-    return FileResponse(path, media_type="image/png", headers={"Cache-Control": DIAGRAM_CACHE})
-
-
-@router.get(
-    "/api/airport-diagram/{cycle}/runways/{ident}.png",
-    response_class=FileResponse,
-    responses={200: {"content": {"image/png": {}}}, 404: {"description": "No diagram, or its runways not found on it"}},
-    openapi_extra=SHARED,
-)
-def airport_diagram_runways(cycle: str, ident: str) -> FileResponse:
-    """The airport diagram cropped to its runways, for the card's
-    thumbnail: where the field's runway ends are (wingtip.pattern's, NASR's
-    surveyed thresholds) placed on the diagram by its own latitude and
-    longitude labels, else its runway-thick strokes (wingtip.publications).
-    404 where it has none, or its runways cannot be found on it -- the
-    card draws its own sketch then."""
-    place = airports.find_place(ident)
-    if place is None:
-        raise HTTPException(404, f"No US airport goes by {ident.strip().upper()!r}.")
-    runways = pattern.with_traffic(airports.get_runways(place["source_ident"]), place["ident"], place["lat"], place["lon"])
-    ends = [(e["lat"], e["lon"]) for r in runways if not r["closed"] for e in r["runway_ends"] if e.get("lat") is not None]
-    path = publications.airport_diagram_runways_png(place["ident"], cycle, ends)
-    if path is None:
-        raise HTTPException(404, f"No airport diagram's runways for {ident.strip().upper()!r} in d-TPP cycle {cycle}.")
-    return FileResponse(path, media_type="image/png", headers={"Cache-Control": DIAGRAM_CACHE})
-
-
-@router.get("/api/faa-chart", response_model=ChartPages, openapi_extra=SHARED)
-def faa_chart(url: str, response: Response, airport: str | None = None) -> ChartPages:
-    """The pages of one of the FAA's charts in force -- by its address on
-    aeronav.faa.gov, as a card lists it (`procedures`, the Chart
-    Supplement's) -- for the app to show them itself rather than leave for
-    the FAA's site: every page of an approach or a departure, of one of
-    the FAA's booklets (a region's takeoff minimums) the pages naming
-    `airport`, of a Chart Supplement entry each of its pages. 404 for any
-    other address; 502 while the FAA cannot be reached, which the edge
-    does not keep as it keeps a 404."""
-    try:
-        pages = publications.chart_pages(url, airport)
-    except publications.FaaUnreachable:
-        raise HTTPException(502, "The FAA could not be reached.") from None
-    if pages is None:
-        raise HTTPException(404, "Not one of the FAA's charts in force.")
-    # The address names the chart's edition: the same answer for the whole of it.
-    response.headers["Cache-Control"] = DIAGRAM_CACHE
-    return {"pages": pages}
-
-
-@router.get(
-    "/api/faa-chart/page/{source}/{edition}/{pdf}/{page}.png",
-    response_class=FileResponse,
-    responses={
-        200: {"content": {"image/png": {}}},
-        404: {"description": "No such page in force"},
-        502: {"description": "The FAA could not be reached"},
-    },
-    openapi_extra=SHARED,
-)
-def faa_chart_page(source: str, edition: str, pdf: str, page: int) -> FileResponse:
-    """One page of one of the FAA's charts in force as a picture, drawn
-    once and kept for its edition, as the airport diagram's is."""
-    try:
-        path = publications.chart_page_png(source, edition, pdf, page)
-    except publications.FaaUnreachable:
-        raise HTTPException(502, "The FAA could not be reached.") from None
-    if path is None:
-        raise HTTPException(404, f"No page {page} of {pdf} in {source} {edition}.")
-    return FileResponse(path, media_type="image/png", headers={"Cache-Control": DIAGRAM_CACHE})

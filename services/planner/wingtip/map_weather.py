@@ -19,7 +19,7 @@ import math
 
 import pandas as pd
 
-from . import airports
+from . import airport_tables
 from .engine import ask
 from .magnetic import magnetic_variation_deg
 from .single_flight import once
@@ -41,7 +41,7 @@ METAR_KEYS = (
 def load_runways() -> pd.DataFrame:
     """OurAirports' runways table, held in memory after the first read
     (wingtip.airports' own cache of its tables). Read-only."""
-    return airports._load_table(airports.RUNWAYS_URL, airports.RUNWAYS_CACHE_PATH)
+    return airport_tables._load_table(airport_tables.RUNWAYS_URL, airport_tables.RUNWAYS_CACHE_PATH)
 
 
 def _heading(value) -> float | None:
@@ -72,7 +72,7 @@ def _end_headings_of(_path: str, _mtime: float) -> dict[str, list[list]]:
 def end_headings(ident: str) -> list[list]:
     """A field's open runways, each its ends as [ident, true heading]."""
     load_runways()
-    path = airports.RUNWAYS_CACHE_PATH
+    path = airport_tables.RUNWAYS_CACHE_PATH
     return _end_headings_of(str(path), path.stat().st_mtime).get(ident.upper(), [])
 
 

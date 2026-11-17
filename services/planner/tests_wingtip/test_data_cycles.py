@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from wingtip import charts, cycle_pack, data_cycles, procedures, publications, terrain
+from wingtip import charts, data_cycles, phone_pack, procedures, publications, terrain
 
 FIXTURE = json.loads((Path(__file__).parents[3] / "apps/web/src/lib/fixtures/dataCycles.json").read_text())
 
@@ -62,7 +62,7 @@ def on_disk(monkeypatch, tmp_path):
     monkeypatch.setattr(procedures, "CIFP_DIR", tmp_path / "cifp")
     # The charts row reads the newest complete sectional pyramid on disk.
     monkeypatch.setattr(data_cycles, "_charts_edition", lambda _charts: "10-29-2026")
-    monkeypatch.setattr(cycle_pack, "phone_index", lambda: {"cycle": "2026-10-01"})
+    monkeypatch.setattr(phone_pack, "phone_index", lambda: {"cycle": "2026-10-01"})
     return tmp_path
 
 
