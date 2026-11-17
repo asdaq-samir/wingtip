@@ -76,6 +76,21 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
     el.dataset.chartKinds = kinds;
     el.dataset.chartLook = look;
   }, [map, kinds, look]);
+  // And the brightness each chart layer is drawn at, read from the map at
+  // rest, not from what was asked: the look said "dimmed" while the chart
+  // close in was drawn undimmed (UI audit B10).
+  useEffect(() => {
+    const write = () => {
+      map.getContainer().dataset.chartBrightness = ["chart-under", "chart", "chart-terminal", "close-imagery", "land-water"]
+        .filter((id) => map.getLayer(id))
+        .map((id) => `${id} ${map.getPaintProperty(id, "raster-brightness-max") ?? 1}`)
+        .join(",");
+    };
+    map.on("idle", write);
+    return () => {
+      map.off("idle", write);
+    };
+  }, [map]);
   return (
     <>
       {parts.map(({ part, spec }) => (

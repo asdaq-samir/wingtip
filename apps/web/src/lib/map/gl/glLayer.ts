@@ -270,17 +270,34 @@ export function useGlData(source: string, data: GeoJSON.GeoJSON | null) {
   }, [map, source, data]);
 }
 
-/** Paint properties set on layers as they change: a theme, the night. */
+/** Paint properties set on layers as they change: a theme, the night.
+ *  Set again whenever the style changes and a layer has not got them: a
+ *  layer added after the paint was set (made again from its spec, or not
+ *  there yet) came back in its spec's day paint, and in the dark theme
+ *  the chart close in was drawn undimmed while the region's level under
+ *  it was dimmed (UI audit B10, 2026-11-17). */
 export function useGlPaint(layers: string[], paint: Record<string, unknown>) {
   const { map } = useGlMap();
   const key = JSON.stringify(paint);
   const ids = layers.join();
   useEffect(() => {
-    const values = JSON.parse(key) as Record<string, unknown>;
-    for (const id of ids.split(",")) {
-      if (!map.getLayer(id)) continue;
-      for (const [k, v] of Object.entries(values)) map.setPaintProperty(id, k as Parameters<MlMap["setPaintProperty"]>[1], v as never);
-    }
+    const values = Object.entries(JSON.parse(key) as Record<string, unknown>);
+    const apply = () => {
+      for (const id of ids.split(",")) {
+        if (!map.getLayer(id)) continue;
+        for (const [k, v] of values) {
+          const name = k as Parameters<MlMap["setPaintProperty"]>[1];
+          // Only where it differs: setting it changes the style, which
+          // would ask for this again.
+          if (JSON.stringify(map.getPaintProperty(id, name)) !== JSON.stringify(v)) map.setPaintProperty(id, name, v as never);
+        }
+      }
+    };
+    apply();
+    map.on("styledata", apply);
+    return () => {
+      map.off("styledata", apply);
+    };
     // By value: the paint by its JSON, the layers by their names.
   }, [map, key, ids]);
 }

@@ -11,6 +11,7 @@ import type { AirspaceVolume } from "../sources/overlayTypes";
 import { chartPair, tileTemplate } from "../sources/tiles";
 import { COURSE_MAGENTA, ROUTE_GREEN, ROUTE_GREEN_NIGHT } from "../marks/chartColors";
 import { CHART } from "../../tokens";
+import { NIGHT_BRIGHTNESS } from "./useDarkTheme";
 
 /**
  * The map's style (the owner, 2026-11-06: "Like ForeFlight, I want
@@ -60,10 +61,9 @@ export interface ChartStyle {
 }
 
 /** The chart's ink by day, dimmed at night (half the brightness, a
- *  little more contrast) and brightened in sunlight (a fifth more
- *  contrast and colour). By day a touch more
- *  contrast and colour than the scan (0.1 each), as ForeFlight's chart
- *  reads beside ours (the owner's screenshots, 2026-11-07). */
+ *  little more contrast) and brightened in sunlight (a fifth more contrast
+ *  and colour). By day a touch more contrast and colour than the scan (0.1
+ *  each), as ForeFlight's chart reads beside ours (the owner's screenshots, 2026-11-07). */
 export function chartPaint(night: boolean, sunlight: boolean): RasterLayerSpecification["paint"] {
   return {
     // Each tile drawn in the frame it comes: a fade on every pan is
@@ -74,7 +74,7 @@ export function chartPaint(night: boolean, sunlight: boolean): RasterLayerSpecif
     // 2026-10-28), and between whole levels linear sampling keeps the
     // chart's type from shimmering as a pinch passes through them.
     "raster-resampling": "linear",
-    "raster-brightness-max": night ? 0.5 : 1,
+    "raster-brightness-max": night ? NIGHT_BRIGHTNESS : 1,
     "raster-contrast": sunlight ? 0.2 : night ? 0.13 : DAY_CONTRAST,
     "raster-saturation": sunlight ? 0.2 : night ? 0 : DAY_SATURATION,
   };
