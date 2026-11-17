@@ -4,6 +4,7 @@ import { Suspense, lazy, useState, type ReactNode } from "react";
 import { grouped, zoneName } from "../../lib/format";
 import { useOwnFix } from "../../lib/map/position/ownShip";
 import { cn } from "cn";
+import type { ExplainedTerm } from "../../lib/explain";
 import type { Totals } from "../../lib/api/types";
 import FigureStrip, { type StripFigure } from "../../components/FigureStrip";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../components/ResponsivePopover";
@@ -55,6 +56,10 @@ const seen = (f: { value: string; unit?: string }) => (f.unit ? `${f.value} ${f.
  *  its 44-point area round it (the after), the figure not grown to make it. */
 /** The strip's names as shown (FigureStrip's `label`). */
 const LABEL: Record<string, string> = { Dist: "Distance", ETE: "Time", Fuel: "Fuel" };
+
+/** The names a tap explains (components/Explain; decision 0044): the time
+ *  en route, the arrival, the fuel required. */
+const EXPLAIN: Record<string, ExplainedTerm> = { ETE: "ETE", ETA: "ETA", Fuel: "Fuel req" };
 
 const AREA = "relative max-w-full after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']";
 
@@ -166,7 +171,11 @@ export default function TripFigures({
       // ETE / FUEL REQ" were capitals and shorthand; the fuel is still the
       // fuel required, said so in its name to a screen reader and in its
       // breakdown (FuelBreakdown).
-      .map((f) => ({ ...f, label: LABEL[f.name] ?? (f.name === "ETA" ? `Arrival ${zoneName()}` : f.name) })),
+      .map((f) => ({ ...f, label: LABEL[f.name] ?? (f.name === "ETA" ? `Arrival ${zoneName()}` : f.name), explain: EXPLAIN[f.name] }))
+      // An airplane's figure before the nav log's totals and with no
+      // estimate is still coming: its shape, the dash kept for "needs an
+      // airplane" (decision 0044).
+      .map((f) => (airplane && !totals && f.value === "—" && f.name !== "To" ? { ...f, waiting: true } : f)),
     ...(gps === null ? [] : [gps]),
   ];
   // The fuel required tapped, what it is made of (FuelBreakdown), at the

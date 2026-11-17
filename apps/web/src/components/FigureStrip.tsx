@@ -3,6 +3,9 @@ import { TriangleAlert } from "lucide-react";
 import { cn } from "cn";
 import { FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE, TEXT } from "../lib/text";
 import { useFigureFit } from "./useFigureFit";
+import Explain from "./Explain";
+import FigureWait from "./FigureWait";
+import type { ExplainedTerm } from "../lib/explain";
 
 export interface StripFigure {
   name: string;
@@ -19,6 +22,11 @@ export interface StripFigure {
    *  hundred two point four nautical miles"), the shorthand hidden from
    *  it: "Dist 102.4 nm" was read as letters. */
   said?: string;
+  /** Still coming (the nav log not in yet): its shape, not a dash, which
+   *  means only "needs an airplane" (FigureWait; decision 0044). */
+  waiting?: boolean;
+  /** What a tap on its name explains (lib/explain), where it has one. */
+  explain?: ExplainedTerm;
 }
 
 /** How large the figures are: `fixed` a heading's 20 under its rows (FPL's
@@ -89,7 +97,7 @@ export default function FigureStrip({
               {/* Short said by a mark too, not the red alone (WCAG 1.4.1). */}
               {f.alert && <TriangleAlert className="mr-0.5 size-[0.8em] self-center" aria-hidden data-testid="fuel-short-mark" />}
               <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
-                {f.value}
+                {f.waiting ? <FigureWait /> : f.value}
               </span>
               {/* Its space a no-break one: a flex item drops a leading
                   plain one, and it read "16.6gal" (the owner's screenshot,
@@ -111,7 +119,13 @@ export default function FigureStrip({
                   To a screen reader the figure in full words, here or as its
                   button's name. */}
               <dt className={cn(GROUP_HEADING, type.name, "truncate tracking-normal normal-case text-foreground/65")}>
-                <span aria-hidden={f.said ? true : undefined}>{f.label ?? f.name}</span>
+                {f.explain ? (
+                  <Explain term={f.explain} spoken={f.label ?? f.name} className="text-inherit">
+                    {f.label ?? f.name}
+                  </Explain>
+                ) : (
+                  <span aria-hidden={f.said ? true : undefined}>{f.label ?? f.name}</span>
+                )}
                 {f.said && !button && <span className="sr-only">{f.said}</span>}
               </dt>
               <dd
@@ -139,7 +153,7 @@ export default function FigureStrip({
                       style={sized("value")}
                       data-fitted={fitted}
                     >
-                      {f.value}
+                      {f.waiting ? <FigureWait /> : f.value}
                     </span>
                     {f.unit && (
                       <span

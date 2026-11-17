@@ -167,6 +167,16 @@ export const useAddress = () => useQueryStates(addressParsers);
 /** One key of the address, drawn again only when it changes. */
 export const useAddressKey = <K extends keyof AddressParsers>(key: K) => useQueryState(key, addressParsers[key]);
 
+/** The cruise's keys alone, for a route typed whole whose speed and level
+ *  group sets it (features/route's useRouteBox): read and written together
+ *  without the rest of the address. */
+export const useCruiseKeys = () =>
+  useQueryStates({
+    altitude_ft: addressParsers.altitude_ft,
+    altitude_nearest: addressParsers.altitude_nearest,
+    altitude_choice: addressParsers.altitude_choice,
+  });
+
 /** The open VOR card's key (`navaid`), its parser's own type kept, which
  *  useAddressKey's string overload loses for an object. */
 export const useNavaidKey = () => useQueryState("navaid", navaidAt);

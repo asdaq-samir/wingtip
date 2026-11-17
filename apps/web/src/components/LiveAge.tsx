@@ -15,14 +15,19 @@ export default function LiveAge({
   what,
   className,
   testId = "live-age",
+  now: given,
 }: {
   /** When it was observed or fetched: an ISO time or milliseconds. */
   at: string | number | null | undefined;
   what: Freshness;
   className?: string;
   testId?: string;
+  /** The caller's clock where it ticks faster than the minute's (an
+   *  airplane heard, told in seconds). */
+  now?: number;
 }) {
-  const now = useMinuteClock();
+  const minute = useMinuteClock();
+  const now = given ?? minute;
   const online = useOnline();
   const atMs = typeof at === "string" ? Date.parse(at) : at;
   const age = liveAge(what, atMs, now);

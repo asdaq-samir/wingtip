@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import type { Detour } from "../../lib/api/types";
 import { frdOf, identOf, isPosition, MAX_STOPS, stopOf } from "../../lib/identSchema";
 import { usePreferences, type RecentAirport } from "../../lib/preferences";
+import { useCruiseKeys } from "../../lib/address";
 import type { TypedProcedure } from "../../lib/procedures";
 import { useAirportSearch } from "../../lib/useAirportSearch";
 import { pointsOf, readTyped, roleAt, routeOf, withoutPoint, withTyped, type RouteParts } from "./routeEdit";
@@ -95,9 +96,13 @@ export function useRouteBox({
   };
   // Words typed, put in before point `at` (null: after the last), `rest` the field's; their SIDs and STARs picked (releaseTyped).
   const held = useRef<TypedProcedure[]>([]);
+  const [, setCruise] = useCruiseKeys();
   const put = (words: string[], at: number | null, rest: RouteValue, done: boolean) => {
-    const { fresh, procedures } = readTyped(words, !!onTypedProcedures);
-    const ready = releaseTyped(held, words, procedures, done);
+    const { fresh, procedures, words: read, cruiseFt } = readTyped(words, !!onTypedProcedures);
+    // A filed route's speed and level group sets the cruise, as the
+    // altitude's own field does (useRouteEdits' flyAltitude).
+    if (cruiseFt !== null) void setCruise({ altitude_ft: cruiseFt, altitude_nearest: false, altitude_choice: null });
+    const ready = releaseTyped(held, read, procedures, done);
     const placed = fresh.length ? withTyped(shape, fresh, at) : null;
     const route = placed?.route ?? null;
     if (route) send(route);

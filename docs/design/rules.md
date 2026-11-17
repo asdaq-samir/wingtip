@@ -962,7 +962,8 @@ less cluttered". Decision [0044](../decisions/0044-fpl-for-every-pilot.md).
 4. **Ages where read.** A live figure (a METAR, the winds aloft, the
    NOTAMs, traffic) says its age in a few characters ("12m") where it is
    read, greyed once the engine says it is stale, "offline" in its row.
-   Web: `components/LiveAge` (`lib/kept/liveAge`).
+   Web: `components/LiveAge` (`lib/kept/liveAge`): the Brief's METAR,
+   the nav log's winds, an airplane heard (`traffic_fresh`, in seconds).
 5. **A dash only means "needs an airplane".** A figure still coming is a
    placeholder shape (`components/FigureWait`).
 6. **One Undo.** Every FPL edit is undone and redone from the first items

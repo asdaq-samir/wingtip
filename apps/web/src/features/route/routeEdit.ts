@@ -1,4 +1,5 @@
 import { MAX_STOPS, stopOf } from "../../lib/identSchema";
+import { callEngine } from "../../lib/engine/engine";
 import { TYPED_PROCEDURE, type TypedProcedure } from "../../lib/procedures";
 
 /** The route as the box changes it: either end may be missing (half a
@@ -85,19 +86,22 @@ export function withTyped(shape: RouteShape, fresh: string[], at: number | null)
 }
 
 /**
- * Words typed, read: the points among them, each as a stop's ident, and
- * the SIDs and STARs typed among them ("KMSP BAEE1 BAE ... OSH OSHH2
- * KATW", lib/procedures' TYPED_PROCEDURE), which are the route's
- * procedures, not points -- each with the points typed either side of it,
- * to be picked once the route is in. Procedures are read only where the
- * box has somewhere to send them.
+ * Words typed, read: a route typed whole as a pilot files it first read by
+ * the engine (`route_read`, AIM Appendix 4: DCT out, item 15's speed and
+ * level group the cruise, "LEXOR/N0467F380" the point; decision 0044), then
+ * the points among the words, each as a stop's ident, and the SIDs and
+ * STARs typed among them ("KMSP BAEE1 BAE ... OSH OSHH2 KATW", lib/procedures'
+ * TYPED_PROCEDURE), which are the route's procedures, not points -- each
+ * with the points typed either side of it, to be picked once the route is
+ * in. Procedures are read only where the box has somewhere to send them.
+ * `words` are the words read, for what is held to come after them
+ * (releaseTyped); `cruiseFt` the cruise a group typed asks for.
  */
-// TODO(claude/web-audit): read the words through the engine's `route_read`
-// once the web's .wasm is built with it (lib/engine is that branch's), so a
-// pasted filed route's DCT is dropped and its "N0110A065" sets the cruise
-// (engine/crates/flight/src/route_read.rs, the FPL redesign 2026-11-17).
-export function readTyped(typed: string[], withProcedures: boolean): { fresh: string[]; procedures: TypedProcedure[] } {
-  const words = typed.map((t) => t.trim().toUpperCase()).filter(Boolean);
+export function readTyped(
+  typed: string[],
+  withProcedures: boolean,
+): { fresh: string[]; procedures: TypedProcedure[]; words: string[]; cruiseFt: number | null } {
+  const { words, cruiseFt } = filedWords(typed.map((t) => t.trim().toUpperCase()).filter(Boolean));
   const isProcedure = (word: string) => withProcedures && TYPED_PROCEDURE.test(word);
   const procedures = words.flatMap((word, i) =>
     isProcedure(word)
@@ -118,7 +122,26 @@ export function readTyped(typed: string[], withProcedures: boolean): { fresh: st
     .filter((w) => !isProcedure(w))
     .map(stopOf)
     .filter(Boolean);
-  return { fresh, procedures };
+  return { fresh, procedures, words, cruiseFt };
+}
+
+/** The words a route typed whole says, by the engine's reader, word by
+ *  word as the box puts them in (a position's "@42.1,-88.2" kept whole,
+ *  where the reader splits on its comma); as typed where the engine is not
+ *  in yet. A level group typed anywhere is the cruise asked for. */
+function filedWords(typed: string[]): { words: string[]; cruiseFt: number | null } {
+  let cruiseFt: number | null = null;
+  const words = typed.flatMap((word) => {
+    if (word.includes(",")) return [word];
+    try {
+      const read = callEngine("route_read", { text: word });
+      cruiseFt = cruiseFt ?? read.cruise_ft;
+      return read.points;
+    } catch {
+      return [word];
+    }
+  });
+  return { words, cruiseFt };
 }
 
 /**

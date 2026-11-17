@@ -191,6 +191,7 @@ ready_to_fly
 registered_profile
 replay_track
 route_position
+route_read
 route_way_warning
 runway_calm
 runway_crosswind
@@ -213,6 +214,7 @@ tfr_read
 thin_track
 title_case
 tokens
+traffic_fresh
 traffic_marks
 traffic_pattern
 turbulence_category

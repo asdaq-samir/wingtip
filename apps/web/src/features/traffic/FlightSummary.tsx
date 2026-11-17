@@ -1,5 +1,6 @@
 import { cn } from "cn";
 import StatusBadge from "../../components/StatusBadge";
+import LiveAge from "../../components/LiveAge";
 import { Progress } from "../../components/ui/progress";
 import { useGeo, type LatLon } from "../../lib/geo";
 import { useClock } from "../../lib/useMinuteClock";
@@ -162,6 +163,9 @@ function FlightSummary({
               {badge?.tone === "air" && flown && " · "}
               {flown}
             </span>
+            {/* How long ago it was heard, greyed once the engine says its
+                position is old (LiveAge, traffic_fresh; decision 0044). */}
+            <LiveAge at={now - (plane.seen_s ?? 0) * 1000} what={{ traffic: true }} now={now} className="ml-auto" testId="flight-heard-age" />
           </>
         ) : (
           <span className="text-muted-foreground">Not heard now</span>

@@ -24,6 +24,9 @@ describe("a live figure's age", () => {
     expect(liveAge({ kept: "plan" }, NOW - 3 * 60 * MIN, NOW)?.stale).toBe(true);
     expect(liveAge({ product: "metar" }, NOW - 10_000, NOW)?.words).toBe("now");
     expect(liveAge({ product: "metar" }, null, NOW)).toBeNull();
+    // An airplane heard: seconds, stale past the planner's half minute (traffic_fresh).
+    expect(liveAge({ traffic: true }, NOW - 12_000, NOW)).toEqual({ words: "12s", stale: false });
+    expect(liveAge({ traffic: true }, NOW - 45_000, NOW)).toEqual({ words: "45s", stale: true });
   });
 
   it("greys when stale and says offline in its row", () => {

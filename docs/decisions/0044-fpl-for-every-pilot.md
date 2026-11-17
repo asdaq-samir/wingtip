@@ -63,7 +63,11 @@ ground). They are not part of this.
 ## Consequences
 
 - The web first (decision 0038); the phones follow on the owner's word.
-- The route field's reading through `route_read`, the nav log's column
-  heads and the strip's names explained, and the strip's waits as
-  placeholders land once the files of the branches still running are
-  free.
+- The route field reads a typed route through `route_read` word by word
+  as the box puts each in, a level group typed anywhere setting the
+  cruise as the altitude field does. The strip's Time, Arrival and Fuel
+  explain themselves on a tap, and wait as placeholders until the nav
+  log's totals come. An airplane heard says its age in seconds, stale by
+  the engine's `traffic_fresh`. FL is not explained: it is written only
+  inside the cruise field, where a tap types, and on the Altitude
+  Advisor's rows, which are buttons.

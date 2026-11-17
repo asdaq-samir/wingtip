@@ -82,7 +82,7 @@ describe("words typed, put in where they were typed", () => {
 
 describe("words typed, read", () => {
   it("takes the SIDs and STARs out as the route's procedures, with the points either side", () => {
-    expect(readTyped(["c81", "BAEE1", "BAE", "OSH", "OSHH2", "katw"], true)).toEqual({
+    expect(readTyped(["c81", "BAEE1", "BAE", "OSH", "OSHH2", "katw"], true)).toMatchObject({
       fresh: ["C81", "BAE", "OSH", "KATW"],
       procedures: [
         { name: "BAEE1", before: "C81", after: "BAE" },
@@ -97,6 +97,15 @@ describe("words typed, read", () => {
 
   it("drops what is empty", () => {
     expect(readTyped(["", " ", "kmsp"], true).fresh).toEqual(["KMSP"]);
+  });
+
+  it("reads a filed route pasted whole by the engine: DCT out, the group the cruise", () => {
+    const read = readTyped("N0110A065 KPWK DCT OBK V100 LEXOR/N0110A075 KLAS".split(" "), true);
+    expect(read.fresh).toEqual(["KPWK", "OBK", "V100", "LEXOR", "KLAS"]);
+    expect(read.cruiseFt).toBe(6_500);
+    expect(readTyped(["KPWK", "KLAS"], true).cruiseFt).toBeNull();
+    // A position keeps its comma.
+    expect(readTyped(["@42.1,-88.2", "dct", "KMSN"], true).words).toEqual(["@42.1,-88.2", "KMSN"]);
   });
 });
 
