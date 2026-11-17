@@ -1,6 +1,6 @@
 import { AirspaceCardBody } from "../cards/AirspaceCard";
 import { useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
-import { volumeOfTile } from "../../../lib/map/gl/glOverlays";
+import { volumeOfTile } from "../../../lib/map/gl/glTileFeatures";
 import { AIRSPACE_LINE_LAYERS, airspaceText } from "../../../lib/map/gl/glStyle";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { TAP } from "../../../lib/map/gl/layers/common";

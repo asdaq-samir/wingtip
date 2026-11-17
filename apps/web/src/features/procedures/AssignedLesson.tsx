@@ -4,7 +4,8 @@ import type { AircraftProfile, LessonProgressRequest, Training } from "../../lib
 import { api } from "../../lib/api/client";
 import { lessonPicked } from "../../lib/assignedLessons";
 import { trainingQuery } from "../../lib/queryClient";
-import ApproachLesson, { type FromInstructor } from "./ApproachLesson";
+import ApproachLesson from "./ApproachLesson";
+import type { FromInstructor } from "./LessonParts";
 
 /**
  * An approach an instructor set the pilot to learn, opened over the map

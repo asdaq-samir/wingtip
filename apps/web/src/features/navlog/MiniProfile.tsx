@@ -228,9 +228,7 @@ export default memo(function MiniProfile({
         <span
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 border-t-2 border-dashed border-primary opacity-[var(--roll-on,0)]"
-          style={{
-            top: "calc((1 - min(var(--roll-ft, 0), var(--base-top)) / var(--base-top)) * 100%)",
-          }}
+          style={{ top: "calc((1 - min(var(--roll-ft, 0), var(--base-top)) / var(--base-top)) * 100%)" }}
         >
           <span
             data-roll-label=""

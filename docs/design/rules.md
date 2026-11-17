@@ -685,7 +685,7 @@ gone on every platform.
 | Slider | Base UI Slider, upright (`features/navlog/altitude/AltitudeProfile`, its view model `useAltitudePreview`) | See [ios.md](ios.md) | See [android.md](android.md) |
 | Waypoint | Base UI Popover from a tablet's width up, `SheetDialog` on a phone (`altitude/LegAltitude`) | | |
 | Advisor | shadcn Item rows (`altitude/AltitudeAdvisor`) | | |
-| Tests | `altitude/altitude.test.ts`, `navlog/profile.test.ts`; `e2e/plans.spec.ts`, `e2e/plan-cards-heads.spec.ts` | | |
+| Tests | `altitude/altitude.test.ts`, `navlog/profile.test.ts`; `e2e/plans.spec.ts`, `e2e/plans-altitude.spec.ts`, `e2e/plan-cards-heads.spec.ts` | | |
 
 ## 7. What rides the sheet, and the map's small print (the owner, 2026-11-11)
 

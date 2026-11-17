@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AirspaceCardBody } from "../../../components/map/cards/AirspaceCard";
 import { deckSlot, useDeckLayers, useDeckTap } from "../../../lib/map/gl/deckLayers";
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../lib/map/gl/glLayer";
-import { volumeOfTile } from "../../../lib/map/gl/glOverlays";
+import { volumeOfTile } from "../../../lib/map/gl/glTileFeatures";
 import { SUA_INK } from "../../../lib/map/gl/glStyle";
 import { useGlView } from "../../../lib/map/gl/useGlView";
 import { suaTabLayout } from "../../../lib/map/gl/glSuaLabels";

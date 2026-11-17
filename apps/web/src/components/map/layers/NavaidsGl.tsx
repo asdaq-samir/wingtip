@@ -9,7 +9,8 @@ import { usePointActions } from "../../../lib/map/cards/pointActions";
 import { WaypointCard, type Waypoint } from "../cards/WaypointCard";
 import { useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
 import { cameraOf } from "../../../lib/map/gl/camera";
-import { OVERLAY_SOURCE, pointOf, setOverlayExclusion, vorOfTile } from "../../../lib/map/gl/glOverlays";
+import { OVERLAY_SOURCE, setOverlayExclusion } from "../../../lib/map/gl/glOverlays";
+import { pointOf, vorOfTile } from "../../../lib/map/gl/glTileFeatures";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { TAP } from "../../../lib/map/gl/layers/common";
 
