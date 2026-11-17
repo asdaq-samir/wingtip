@@ -33,7 +33,7 @@ export function ReadyAction({ item, ready, onDone }: { item: Item; ready: Ready;
     );
   return (
     <Button
-      variant="ghost"
+      variant="plain"
       size="inline"
       type="button"
       disabled={busy}
@@ -43,7 +43,6 @@ export function ReadyAction({ item, ready, onDone }: { item: Item; ready: Ready;
       }}
       data-testid={`ready-action-${item.key}`}
       className={cn(
-        "justify-start text-inherit hover:bg-transparent",
         "relative flex w-full items-center gap-2.5 text-left font-medium text-tint outline-none after:absolute after:-inset-y-2.5 after:inset-x-0 focus-visible:ring-2 focus-visible:ring-ring",
         TEXT.row,
       )}

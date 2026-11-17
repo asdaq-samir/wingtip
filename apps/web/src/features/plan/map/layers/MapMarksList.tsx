@@ -55,10 +55,10 @@ export default function MapMarksList({ fields, onSelect }: { fields: Field[]; on
         {shown.map((f) => (
           <li key={f.ident}>
             <Button
-              variant="ghost"
+              variant="plain"
               size="inline"
               type="button"
-              className={cn("justify-start text-inherit hover:bg-transparent", "text-left text-tint", TEXT.row)}
+              className={cn("text-left text-tint", TEXT.row)}
               onClick={() => onSelect(f.ident)}
             >
               {fieldWords(f)}
