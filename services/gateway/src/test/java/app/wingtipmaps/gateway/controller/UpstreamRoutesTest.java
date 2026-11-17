@@ -211,9 +211,8 @@ class UpstreamRoutesTest {
         // whole plan), the gateway's own currency figures, and the
         // planner's root and docs.
         for (String[] ask : new String[][] {
-            {"POST", "/api/words/weather/sources"},
+            {"POST", "/api/words/changes/sources"},
             {"DELETE", "/api/checkpoint-notes/mine"},
-            {"GET", "/api/route-check"},
             {"GET", "/api/plan"},
             {"POST", "/api/pilot/currency"},
             {"POST", "/api/aircraft/inspections"},

@@ -24,6 +24,8 @@ enum WingtipColor {
         static let waypoint = rgb(0xC0309F)
         /// iOS's systemBlue, the blue Maps draws its own marks in: the position dot, a point held on the chart, a procedure's Direct to. Not the tint, which is a step deeper for words on white.
         static let mapBlue = rgb(0x007AFF)
+        /// Map blue a step deeper, for words on the chart's white chips (the route's way label): 5.4:1 on white, where map blue's #007aff is 4.0:1, under WCAG 1.4.3's 4.5 for 12-point text. The chips stay white in the dark, as the chart does, so one value (the owner, 2026-11-17: "Yes to all recs").
+        static let mapBlueInk = rgb(0x0066D6)
         /// The sectional's blue: "Airports having control towers are shown in blue, all others in magenta" (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports). Also VORs.
         static let towered = rgb(0x2465B8)
         /// The sectional's magenta for a field with no tower (Chart User's Guide, Airports).

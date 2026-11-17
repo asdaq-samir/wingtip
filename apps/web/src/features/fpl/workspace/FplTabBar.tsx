@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useVerdict } from "../../../lib/verdict";
 import { findingRows } from "../vm/planWords";
 import { CardAction as Action } from "../../../components/CardAction";
@@ -12,7 +13,10 @@ import type { PlanSlices } from "../vm/planSlices";
  * Profile, each its 24-point glyph over its word in one capsule,
  * as the airport card's tabs are drawn (CardTabBar), but buttons, not tabs:
  * each opens its card over FPL as the tiles did (the owner's pick, "Bar
- * look, open cards"). Share is the route's ••• (the owner, 2026-11-17).
+ * look, open cards"), and last the route's one menu, ••• "More" (`more`,
+ * ShareMenu's bar look; the owner, 2026-11-17: "move everything to the tab
+ * bar with a ... instead of share"): the undo, the sharing, Save, File,
+ * Plan again, Show Route As and Clear.
  * From half up; at the pill the figures alone, large (FlightFoot).
  * What the Brief found to act on is counted on its glyph's corner, red
  * where one is a stop, amber where all are cautions (CardTabBar's
@@ -21,7 +25,7 @@ import type { PlanSlices } from "../vm/planSlices";
  * there a better place for them? Like brief"), not a list on FPL. The
  * Profile's own altitude caution the same, a 1. Both said in their names.
  */
-export function FplTabBar({ vm }: { vm: PlanSlices<"brief" | "fpl" | "plan"> }) {
+export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan">; more: ReactNode }) {
   const { course } = vm.plan;
   const { openBrief, openNavLogCard, openProfile, profileReady } = vm.fpl;
   const { altitudeMark, briefMark } = vm.brief;
@@ -32,9 +36,13 @@ export function FplTabBar({ vm }: { vm: PlanSlices<"brief" | "fpl" | "plan"> }) 
     // effect): at half the route's rows ran on under the glass and showed
     // through it, half read ("Pick an airplane" under Share; the UI
     // audit's B1, 2026-11-17). The fade's room taken back from above, so
-    // the bar stays where it was; only the capsule takes taps.
+    // the bar stays where it was; only the capsule takes taps. Across the
+    // sheet's whole width, out over the foot's 16-point sides (SheetParts'
+    // px-4): narrower, the airport cards' fill (drawn out past the column,
+    // FIELD_CARD) showed its edges either side of a lighter box round the
+    // bar, a box in a box.
     <div
-      className="pointer-events-none -mt-6 flex justify-center bg-linear-to-b from-transparent to-(--sheet) to-50% pt-8"
+      className="pointer-events-none -mx-4 -mt-6 flex justify-center bg-linear-to-b from-transparent to-(--sheet) to-50% px-4 pt-8"
       data-testid="fpl-actions"
     >
       {/* The glass capsule, the airport card's bar's (CardTabBar): glass
@@ -79,6 +87,7 @@ export function FplTabBar({ vm }: { vm: PlanSlices<"brief" | "fpl" | "plan"> }) 
           disabled={!profileReady}
           testId="route-profile"
         />
+        {more}
       </GlassBar>
     </div>
   );

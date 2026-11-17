@@ -198,7 +198,6 @@ fn points_json(points: &[P]) -> String {
 ///   "leg_nm"}`;
 /// - `procedure_turn`: the turn from `{"fix", "inbound_deg",
 ///   "pt_course_deg"}`;
-/// - `procedure_climb_nm`: nm, from `{"altitude_ft"?, "known_ft"?}`;
 /// - `procedure_hold_leg_nm`: nm or null, from `{"minutes"?,
 ///   "distance_nm"?}`.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
@@ -211,11 +210,6 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         }
         "procedure_turn" => {
             Ok(points_json(&procedure_turn(point(name, v, "fix")?, num(name, v, "inbound_deg")?, num(name, v, "pt_course_deg")?)))
-        }
-        "procedure_climb_nm" => {
-            let mut out = String::new();
-            json::number(&mut out, climb_nm(opt_num(name, v, "altitude_ft")?, opt_num(name, v, "known_ft")?));
-            Ok(out)
         }
         "procedure_hold_leg_nm" => {
             let mut out = String::new();

@@ -50,3 +50,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0042 | [Each change runs its own tests; the wave is validated on GitHub](0042-fast-checks.md) | 2026-11-13 | Accepted |
 | 0043 | [A closed field is never shown or offered as an open one](0043-closed-fields-never-open.md) | 2026-11-13 | Accepted |
 | 0044 | [FPL for every pilot: one head, one route field, ages, explanations and one Undo](0044-fpl-for-every-pilot.md) | 2026-11-17 | Accepted |
+| 0045 | [A row is swiped away and held to move, by React Aria's own recipe and the browser's own drag](0045-row-gestures.md) | 2026-11-17 | Accepted |

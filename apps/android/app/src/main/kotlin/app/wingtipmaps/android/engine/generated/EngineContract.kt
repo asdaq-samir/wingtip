@@ -896,14 +896,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class AltitudeWheelInput(
-        @SerialName("legal_ft")
-        val legalFt: List<Double>? = null,
-        @SerialName("flown_ft")
-        val flownFt: Double? = null,
-    )
-
-    @Serializable
     data class ApproachAlongNmInput(
         val path: List<EngineContract.ApproachAlongNmInputPathItem>? = null,
         val at: EngineContract.ApproachAlongNmInputAt,
@@ -3873,39 +3865,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class FieldRelationAnswer(
-        val around: Boolean,
-        val inbound: Boolean,
-        val departing: Boolean,
-    )
-
-    @Serializable
-    data class FieldRelationInput(
-        val plane: EngineContract.FieldRelationInputPlane,
-        val field: EngineContract.FieldRelationInputField,
-    )
-
-    @Serializable
-    data class FieldRelationInputField(
-        val lat: Double,
-        val lon: Double,
-        @SerialName("elevation_ft")
-        val elevationFt: Double,
-    )
-
-    @Serializable
-    data class FieldRelationInputPlane(
-        val lat: Double,
-        val lon: Double,
-        @SerialName("altitude_ft")
-        val altitudeFt: Double? = null,
-        @SerialName("track_deg")
-        val trackDeg: Double? = null,
-        @SerialName("vertical_fpm")
-        val verticalFpm: Double? = null,
-    )
-
-    @Serializable
     data class FieldsAlongAnswerItem(
         val ident: String,
         val name: String,
@@ -4853,20 +4812,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class GonogoAlternateFindingAnswer(
-        val finding: String,
-        val detail: String,
-    )
-
-    @Serializable
-    data class GonogoAlternateFindingInput(
-        /**
-         * /api/alternate's answer.
-         */
-        val data: EngineContract.GonogoAlternateData? = null,
-    )
-
-    @Serializable
     data class GonogoBalanceAnswer(
         val takeoff: EngineContract.GonogoBalanceAnswerTakeoff,
         val landing: EngineContract.GonogoBalanceAnswerLanding,
@@ -5018,11 +4963,6 @@ object EngineContract {
          * Its mark; null for a self check.
          */
         val finding: String? = null,
-    )
-
-    @Serializable
-    data class GonogoFieldPermissionInput(
-        val fields: List<EngineContract.GonogoFieldUse>,
     )
 
     /**
@@ -5881,46 +5821,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class GonogoVerdictLineInput(
-        val items: List<EngineContract.GonogoVerdictLineInputItemsItem>? = null,
-    )
-
-    @Serializable
-    data class GonogoVerdictLineInputItemsItem(
-        val key: String,
-        val label: String,
-        val tab: String,
-        val section: String? = null,
-        val finding: String,
-        val detail: String,
-    )
-
-    @Serializable
-    data class GonogoWithAlternateInput(
-        val items: List<EngineContract.GonogoWithAlternateInputItemsItem>? = null,
-        /**
-         * gonogo_alternate_finding's answer.
-         */
-        val found: EngineContract.GonogoWithAlternateInputFound? = null,
-    )
-
-    @Serializable
-    data class GonogoWithAlternateInputFound(
-        val finding: String,
-        val detail: String,
-    )
-
-    @Serializable
-    data class GonogoWithAlternateInputItemsItem(
-        val key: String,
-        val label: String,
-        val tab: String,
-        val section: String? = null,
-        val finding: String,
-        val detail: String,
-    )
-
-    @Serializable
     data class GreatCirclesAnswer(
         @SerialName("distance_nm")
         val distanceNm: List<Double>,
@@ -6298,12 +6198,6 @@ object EngineContract {
          * Feet forward for each foot down.
          */
         val ratio: Double? = null,
-    )
-
-    @Serializable
-    data class HandbookWithinInput(
-        val key: String,
-        val value: Double,
     )
 
     /**
@@ -6736,12 +6630,6 @@ object EngineContract {
         override fun equals(other: Any?): Boolean = other is IfrObstacleRadiusNmInput
         override fun hashCode(): Int = 0
     }
-
-    @Serializable
-    data class InEmergencyInput(
-        val squawk: String? = null,
-        val emergency: JsonElement? = null,
-    )
 
     @Serializable
     data class InFlightAnswer(
@@ -9075,20 +8963,6 @@ object EngineContract {
     }
 
     @Serializable
-    data class PassengerNightInput(
-        val lat: Double,
-        /**
-         * East positive.
-         */
-        val lon: Double,
-        /**
-         * UNIX seconds.
-         */
-        @SerialName("at_s")
-        val atS: Double,
-    )
-
-    @Serializable
     data class PassengerNightOnTheWayInput(
         /**
          * [lat, lon]
@@ -9185,50 +9059,6 @@ object EngineContract {
          * "right" for right traffic; anything else, or none, is left (14 CFR 91.126(b)(1)).
          */
         val traffic: String? = null,
-    )
-
-    @Serializable
-    data class PerformanceClimbAnswer(
-        val minutes: Double,
-        /**
-         * Null where the profile gives no climb fuel flow: not known, never a multiple of the cruise burn.
-         */
-        val gallons: Double? = null,
-    )
-
-    @Serializable
-    data class PerformanceClimbInput(
-        val profile: EngineContract.NavLogProfile,
-        @SerialName("from_ft")
-        val fromFt: Double,
-        @SerialName("to_ft")
-        val toFt: Double,
-        @SerialName("isa_dev_c")
-        val isaDevC: Double? = null,
-    )
-
-    @Serializable
-    data class PerformanceCruiseAnswer(
-        @SerialName("tas_kt")
-        val tasKt: Double,
-        @SerialName("fuel_burn_gph")
-        val fuelBurnGph: Double,
-        /**
-         * Null where the profile names no cruise power: the TAS and burn as given, no power model.
-         */
-        @SerialName("power_pct")
-        val powerPct: Double? = null,
-        @SerialName("density_altitude_ft")
-        val densityAltitudeFt: Double,
-    )
-
-    @Serializable
-    data class PerformanceCruiseInput(
-        val profile: EngineContract.NavLogProfile,
-        @SerialName("altitude_ft")
-        val altitudeFt: Double,
-        @SerialName("oat_c")
-        val oatC: Double? = null,
     )
 
     @Serializable
@@ -9561,14 +9391,6 @@ object EngineContract {
          */
         val end: List<Double>,
         val turn: String,
-    )
-
-    @Serializable
-    data class ProcedureClimbNmInput(
-        @SerialName("altitude_ft")
-        val altitudeFt: Double? = null,
-        @SerialName("known_ft")
-        val knownFt: Double? = null,
     )
 
     /**
@@ -12655,11 +12477,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class TrafficKindInput(
-        val category: String? = null,
-    )
-
-    @Serializable
     data class TrafficMarksAnswerItem(
         val label: String,
         val near: Boolean,
@@ -12699,36 +12516,6 @@ object EngineContract {
          */
         @SerialName("pressure_altitude")
         val pressureAltitude: Boolean? = null,
-    )
-
-    @Serializable
-    data class TrafficMatchesInput(
-        val plane: EngineContract.TrafficMatchesInputPlane,
-        val filter: EngineContract.TrafficMatchesInputFilter,
-    )
-
-    @Serializable
-    data class TrafficMatchesInputFilter(
-        /**
-         * "any" where none.
-         */
-        val kind: String? = null,
-        /**
-         * "any" where none.
-         */
-        val band: String? = null,
-        val operator: String? = null,
-        val emergency: Boolean? = null,
-    )
-
-    @Serializable
-    data class TrafficMatchesInputPlane(
-        val category: String? = null,
-        @SerialName("altitude_ft")
-        val altitudeFt: Double? = null,
-        val callsign: String? = null,
-        val squawk: String? = null,
-        val emergency: JsonElement? = null,
     )
 
     @Serializable
@@ -12789,20 +12576,6 @@ object EngineContract {
         @SerialName("seen_s")
         val seenS: Double? = null,
     )
-
-    @Serializable
-    data class TrafficReachAnswer(
-        @SerialName("around_nm")
-        val aroundNm: Double,
-        @SerialName("relation_nm")
-        val relationNm: Double,
-    )
-
-    @Serializable
-    class TrafficReachInput {
-        override fun equals(other: Any?): Boolean = other is TrafficReachInput
-        override fun hashCode(): Int = 0
-    }
 
     @Serializable
     data class TurbulenceCategoryInput(
@@ -13600,11 +13373,6 @@ object EngineContract {
     @Serializable
     data class WordsNumInput(
         val n: Double? = null,
-    )
-
-    @Serializable
-    data class WordsOneInput(
-        val n: Double,
     )
 
     @Serializable

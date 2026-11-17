@@ -254,7 +254,7 @@ Then the callers switch to the name and the old copy is deleted.
   and worded for the Brief as it opens (at most three lines a pilot acts
   on, each with what to do, why and its rule, the rest in one row) by
   `gonogo_glance_lines`. Each is a name in `call.rs`
-  (`gonogo_verdict_items`, `gonogo_risk`, `gonogo_runway_checks` ...), asked by
+  (`gonogo_brief`, `gonogo_risk`, `gonogo_runway_checks` ...), asked by
   the web app (callEngine), the planner's app.gonogo (wingtip_native.call;
   its POST /api/go-no-go asks `gonogo_brief` once) and the phones (the
   generated `call`). Which Class B band of a route's

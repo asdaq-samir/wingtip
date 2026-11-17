@@ -40,14 +40,6 @@ const toEngine = (h: Hold): RouteHoldIn => ({
   ...("turns" in h.length ? { turns: h.length.turns } : { minutes: h.length.minutes }),
 });
 
-/** One hold as the address writes it, or null: read by the shared engine
- *  (crate::route::holds), the one reading the planner and the phones
- *  have too. */
-export function holdOf(text: string): Hold | null {
-  const h = callEngine("hold_read", { text });
-  return h && fromEngine(h);
-}
-
 /** How long a hold is held, as the address codes it: "2T", "10M". */
 export function lengthCode(length: Hold["length"]): string {
   return callEngine("hold_length_write", length);

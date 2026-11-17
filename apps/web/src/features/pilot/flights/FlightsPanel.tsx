@@ -90,7 +90,7 @@ function SavedFlightRow({ f, vm }: { f: FlightSummary; vm: SavedFlightsModel }) 
   // Taken off as every kept list's rows are -- its menu or Edit's minus --
   // with a toast's Undo (RemovableRow, useSavedFlights).
   return vm.editing ? (
-    <RemovableRow name={title} label={`Delete ${title}`} onDelete={remove} share={shareOf(f)}>
+    <RemovableRow name={title} label={`Delete ${title}`} onDelete={remove} share={shareOf(f)} editing>
       <ListRow
         {...row}
         // In Edit, the name is what changes it, as iOS's lists rename a
@@ -113,6 +113,7 @@ function SavedFlightRow({ f, vm }: { f: FlightSummary; vm: SavedFlightsModel }) 
     <RowMenu
       label={`More for ${title}`}
       testId="saved-flight-more"
+      swipe
       actions={[
         // Its fields take the focus, as a question does: opened once
         // the menu has closed and let go of it (RowMenu's `asks`).

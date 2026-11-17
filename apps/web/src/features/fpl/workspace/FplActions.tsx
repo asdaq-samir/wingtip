@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { cn } from "cn";
 import { PIN_AT_FOOT, usePinAtFoot } from "../../../components/sheet/pinAtFoot";
 import { CardAction as Action } from "../../../components/CardAction";
@@ -8,16 +8,17 @@ import RouteHead from "./RouteHead";
 import { FlightFigures } from "./FlightFoot";
 
 /**
- * FPL's actions in flight, one row of three tiles at the top of the flying
+ * FPL's actions in flight, one row of four tiles at the top of the flying
  * drawer, as the airport card's are (CardAction; the owner's pick A of the
  * FPL buttons canvas, 2026-11-15, Hr6eKFhyFBLjAAAmEaq8HB): the Brief, the
- * Nav Log and the Profile. Share is the route's ••• (the owner, 2026-11-17:
- * "Yes to changing share to ... button"). In flight the foot is the
+ * Nav Log, the Profile and the route's ••• "More" (`more`; the owner,
+ * 2026-11-17: "move everything to the tab bar with a ... instead of
+ * share"). In flight the foot is the
  * figures, large, and Done flying; on the ground the four are the foot's
  * floating bar (FplTabBar). Only once there is a route; VoiceOver hears
  * the Brief's and the Profile's findings in their names.
  */
-export function FplActions({ vm }: { vm: PlanSlices<"brief" | "flight" | "fpl" | "plan" | "route"> }) {
+export function FplActions({ vm, more }: { vm: PlanSlices<"brief" | "flight" | "fpl" | "plan" | "route">; more: ReactNode }) {
   const { routed } = vm.route;
   const { flying } = vm.flight;
   const { course } = vm.plan;
@@ -30,7 +31,7 @@ export function FplActions({ vm }: { vm: PlanSlices<"brief" | "flight" | "fpl" |
   return (
     // 56 tall as the airport card's (PlaceActions), eight apart so their
     // 44-point areas meet.
-    <div className="grid grid-cols-3 gap-2 pt-2 pb-1 *:min-h-14" data-testid="fpl-actions">
+    <div className="grid grid-cols-4 gap-2 pt-2 pb-1 *:min-h-14" data-testid="fpl-actions">
       <Action
         icon={<ICON.brief />}
         label="Brief"
@@ -54,6 +55,7 @@ export function FplActions({ vm }: { vm: PlanSlices<"brief" | "flight" | "fpl" |
         disabled={!profileReady}
         testId="route-profile"
       />
+      {more}
     </div>
   );
 }

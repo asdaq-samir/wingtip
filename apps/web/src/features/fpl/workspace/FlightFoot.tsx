@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { RISEN_OVER } from "../../../components/sheet/insets";
 import { cn } from "cn";
 import { Button } from "../../../components/ui/button";
@@ -64,11 +64,12 @@ export function FlightFigures({
  *  the route row's and its pill (FplRoute). */
 export default function FlightFoot({
   vm,
-  tabs = false,
+  more,
 }: {
   vm: PlanSlices<"brief" | "flight" | "fpl" | "plan" | "route" | "stops" | "view">;
-  /** FPL's own foot, where the ground's floating bar sits (FplTabBar). */
-  tabs?: boolean;
+  /** FPL's own foot, where the ground's floating bar sits (FplTabBar), and
+   *  the route's ••• that ends it. */
+  more?: ReactNode;
 }) {
   const { doneFlying, dryRunning, flying } = vm.flight;
   const { panelOpen } = vm.view;
@@ -90,12 +91,12 @@ export default function FlightFoot({
     </div>
   );
   // On the ground, on FPL's page (not at the Profile card's foot, no
-  // `tabs`), the actions' bar alone: the figures are the route row's, and
+  // `more`), the actions' bar alone: the figures are the route row's, and
   // at the pill they are the pill itself (FplRoute). At the pill the bar
   // lies over the foot out of sight, coming into sight as a finger takes
   // the sheet (RISEN_OVER).
-  if (tabs && !dryRunning && !flying) {
-    const bar = <FplTabBar vm={vm} />;
+  if (more && !dryRunning && !flying) {
+    const bar = <FplTabBar vm={vm} more={more} />;
     return (
       <div className="relative w-full">{panelOpen ? bar : <div className={cn("absolute inset-x-0 bottom-0", RISEN_OVER)}>{bar}</div>}</div>
     );

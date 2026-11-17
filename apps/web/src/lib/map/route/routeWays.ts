@@ -25,8 +25,9 @@ export const WAY_SHARES = [0.35, 0.6, 0.8];
  *  down to the line from its lower left, the tail's tip on the point.
  *  Every chip white, quieter than the line it names (the owner's list,
  *  2026-11-17: the shown way's was a large magenta bubble, louder than the
- *  route): the shown one's words in the map's tint (MAP_BLUE, Maps' own
- *  blue for what it marks on the chart, as a tap picks it), the others' in
+ *  route): the shown one's words in the map's tint, map blue a step deeper
+ *  for words (CHART.mapBlueInk, 5.4:1 on the white chip, where Maps' own
+ *  #007aff was 4.0), as a tap picks it; the others' in
  *  the chart's ink, as their dotted lines are. Stretched to its words
  *  (icon-text-fit), ten points either side and four above and under;
  *  WAY_CHIP_PLACE puts the words where the tail's tip falls on the point. */
@@ -41,7 +42,7 @@ export function wayChip(): GlPicture {
   );
 }
 /** The words' ink on each chip. */
-export const wayInk = (shown: boolean) => (shown ? CHART.mapBlue : CHART.fixInk);
+export const wayInk = (shown: boolean) => (shown ? CHART.mapBlueInk : CHART.fixInk);
 /** The words' size, a note's 12: a label on the line, not a sign over it. */
 export const WAY_TEXT_SIZE = 12;
 /** The words' bottom left 4 points left of the tip and 12 above it (the

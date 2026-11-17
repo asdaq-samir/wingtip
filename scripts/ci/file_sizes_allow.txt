@@ -20,7 +20,7 @@ scripts/dev/check.sh 407
 services/gateway/src/main/java/app/wingtipmaps/gateway/security/SecurityConfig.java 421
 services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 531
 services/gateway/src/test/java/app/wingtipmaps/gateway/controller/AircraftControllerTest.java 424
-services/gateway/src/test/java/app/wingtipmaps/gateway/controller/PlannerProxyControllerTest.java 544
+services/gateway/src/test/java/app/wingtipmaps/gateway/controller/PlannerProxyControllerTest.java 543
 services/ingest/ingest/swim.py 411
 services/jobs/charts/overlays.py 653
 services/jobs/charts/tests/test_overlays.py 791

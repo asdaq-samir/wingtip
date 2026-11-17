@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
 import { MOTION } from "../../lib/tokens";
 import { usePanelDragging } from "../../lib/mapChrome";
 
@@ -47,6 +47,12 @@ export const PIN_AT_FOOT =
  */
 export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, { on, held }: { on: boolean; held: boolean }) {
   const dragging = usePanelDragging((d) => d.dragging);
+  // Whether it is held at rest, for a measure made between this hook's
+  // effects (below).
+  const heldNow = useRef(held);
+  useLayoutEffect(() => {
+    heldNow.current = held;
+  }, [held]);
   // The room, measured before the page is drawn, so the row is never seen
   // where it would be unheld.
   useLayoutEffect(() => {
@@ -57,13 +63,25 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       return;
     }
     const measure = () => {
+      const edge = document.querySelector<HTMLElement>(foot);
+      // Not while the foot is put away (a card up over the sheet, MapPanel's
+      // footShown): its edge read as the screen's top, the room went far
+      // below nothing, and the row was held as the pill -- larger, on the
+      // sheet's colour, over the departure -- until the next drag, the
+      // owner's "When I tap the fuel and close it, the strip becomes bigger
+      // hiding the departure" (2026-11-17). Measured again as it comes back.
+      if (edge && edge.getClientRects().length === 0) return;
       const natural = row.getBoundingClientRect().bottom - moved(row) - moved(row.closest(SHEET));
-      row.style.setProperty("--pin-room", `${restingEdge(document.querySelector<HTMLElement>(foot)) - natural}px`);
+      const room = restingEdge(edge) - natural;
+      row.style.setProperty("--pin-room", `${room}px`);
+      row.toggleAttribute("data-pinned", heldNow.current || moved(row.closest(SHEET)) > room);
     };
     measure();
     const resized = new ResizeObserver(measure);
     const page = row.closest("[data-sheet-scroll]");
     if (page) resized.observe(page.firstElementChild ?? page);
+    const edge = document.querySelector<HTMLElement>(foot);
+    if (edge) resized.observe(edge);
     addEventListener("resize", measure);
     return () => {
       resized.disconnect();

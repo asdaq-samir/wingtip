@@ -221,7 +221,7 @@ class AircraftProfile(BaseModel):
     #: The power `cruise_tas_kt` and `fuel_burn_gph` are at, in percent,
     #: at wingtip.performance's reference altitude on a standard day. None:
     #: no power model, its TAS and burn as given at every altitude and no
-    #: other airplane's power assumed (the engine's performance_cruise).
+    #: other airplane's power assumed (wingtip_flight::performance).
     cruise_power_pct: float | None = None
     climb_rate_fpm_sea_level: float | None = None
     climb_tas_kt: float | None = None
@@ -289,10 +289,3 @@ class Detour(BaseModel):
     description: str | None = None
     #: Every point to fly by, in order, the first of them `ident`.
     via: list[str] = []
-
-
-class RouteChecked(BaseModel):
-    """A route that would plan (GET /api/route-check): its stops as the
-    planner reads them."""
-
-    stops: list[str]

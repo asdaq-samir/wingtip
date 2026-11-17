@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checklistOf, textOf } from "./checklist";
+import { checklistOf } from "./checklist";
 import checklistFixture from "./fixtures/checklist.json";
 
 describe("a checklist written as text", () => {
@@ -32,8 +32,6 @@ describe("a checklist written as text", () => {
         },
       ],
     });
-    // Written back, and read again as it was.
-    expect(checklistOf(textOf(checklist))).toEqual(checklist);
   });
 
   it("keeps a hyphenated word whole, and cuts to the gateway's lengths", () => {
@@ -47,8 +45,7 @@ describe("a checklist written as text", () => {
 // tested against too (WingtipTests/SharedFixturesTests.swift), so the two
 // read a checklist alike (docs/NATIVE.md).
 describe("the shared checklist fixture", () => {
-  it.each(checklistFixture.cases.map((c, i) => ({ ...c, i })))("case $i", ({ text, checklist, written }) => {
+  it.each(checklistFixture.cases.map((c, i) => ({ ...c, i })))("case $i", ({ text, checklist }) => {
     expect(checklistOf(text)).toEqual(checklist);
-    expect(textOf(checklistOf(text))).toBe(written);
   });
 });

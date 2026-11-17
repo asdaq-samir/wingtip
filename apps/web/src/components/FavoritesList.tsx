@@ -75,7 +75,13 @@ export default function FavoritesList({
         ) : (
           // Taken off as every kept list's rows are: its menu, or Edit's
           // minus (RemovableRow).
-          <RemovableRow name={home.ident} label={`Remove ${home.ident} as Home`} onDelete={onRemoveHome} share={placeLink(home)}>
+          <RemovableRow
+            name={home.ident}
+            label={`Remove ${home.ident} as Home`}
+            onDelete={onRemoveHome}
+            share={placeLink(home)}
+            editing={editing}
+          >
             {editing ? (
               <ListRow
                 media={<RemoveMinus label={`Remove ${home.ident} as Home…`} />}
@@ -116,6 +122,7 @@ export default function FavoritesList({
                   label={`Remove ${a.ident} from Favorites`}
                   onDelete={() => remove(a, index)}
                   share={placeLink(a)}
+                  editing
                 >
                   <ListRow
                     media={<RemoveMinus label={`Remove ${a.ident} from Favorites…`} />}

@@ -2802,18 +2802,6 @@ data class DebriefPoint (
     val t: Double
 )
 
-/**
- * The debrief as POST /api/debrief answered it (the debrief and the
- * tolerances), or as the web app's own twin keeps it (lib/debrief: the
- * figures alone, their keys camel-cased, without the flown line and the
- * profile, thousands of points a sentence cannot use): `debrief_of`
- * reads either.
- */
-@Serializable
-data class DebriefWordsAsk (
-    val debrief: JsonObject
-)
-
 @Serializable
 data class DepartureEvents (
     val events: List<DepartureEvent>
@@ -7301,69 +7289,6 @@ data class RetrainStarted (
 )
 
 /**
- * The Go / No-Go as the client has it (RiskVerdict), and the pilot's
- * own record as the client keeps it -- personal minimums, currency,
- * recency, whatever it has, by its own keys -- given to the model as one
- * source the words can cite.
- */
-@Serializable
-data class RiskAsk (
-    val pilot: JsonObject? = null,
-    val verdict: RiskVerdict
-)
-
-/**
- * The Go / No-Go as POST /api/go-no-go answers it (its line, its
- * items, its risk assessment), or as the web app's own twin keeps it
- * (lib/verdict: the line's finding and words on the object itself, its
- * items, no risk assessment): either reads here, the extras dropped.
- */
-@Serializable
-data class RiskVerdict (
-    val finding: String? = null,
-    val items: List<VerdictItemLoose>? = null,
-    val line: VerdictLineLoose? = null,
-    val risk: RiskAssessment? = null,
-    val words: String? = null
-)
-
-@Serializable
-data class VerdictItemLoose (
-    val detail: String? = null,
-    val finding: String,
-    val key: String,
-    val label: String
-)
-
-@Serializable
-data class VerdictLineLoose (
-    val finding: String,
-    val words: String? = null
-)
-
-/**
- * A route as the words are asked for it: its ends, the stops landed
- * at between them in order (app.router_basics.load_route) and when it leaves
- * (UTC when naive; now when not given).
- */
-@Serializable
-data class RouteAsk (
-    val dep: String,
-    val depart: String? = null,
-    val dest: String,
-    val stops: List<String>? = null
-)
-
-/**
- * A route that would plan (GET /api/route-check): its stops as the
- * planner reads them.
- */
-@Serializable
-data class RouteChecked (
-    val stops: List<String>
-)
-
-/**
  * A route's checkpoints in along-track order, for their notes.
  */
 @Serializable
@@ -8475,29 +8400,6 @@ data class WaypointPin (
     val ident: String,
     val lat: Double,
     val lon: Double
-)
-
-/**
- * The briefing's own parameters besides the route (GET /api/briefing):
- * the flight's minutes, and the nav log's fixes ("lat,lon;lat,lon") and
- * each leg's minutes where the page has them, for each hazard to be
- * placed where the flight meets it.
- */
-@Serializable
-data class WeatherAsk (
-    val dep: String,
-    val depart: String? = null,
-    val dest: String,
-
-    @SerialName("ete_min")
-    val eteMin: Double? = null,
-
-    val fixes: String? = null,
-
-    @SerialName("leg_min")
-    val legMin: String? = null,
-
-    val stops: List<String>? = null
 )
 
 /**
