@@ -3,7 +3,7 @@ import { Route, TriangleAlert } from "lucide-react";
 import { cn } from "cn";
 import { ToggleGroup, ToggleGroupItem } from "../../../../components/ui/toggle-group";
 import { TEXT } from "../../../../lib/text";
-import { gal } from "../../../../lib/format";
+import { gal, wholeNm } from "../../../../lib/format";
 
 /** FPL's route line's choices (PlanWorkspace's routeLine): each chip's
  *  key and words, and what its way meets, in amber; the one picked. */
@@ -39,6 +39,22 @@ export interface RouteLineChoices {
 /** A way's miles and fuel, "105 nm, 10.3 gal", as far as they are known. */
 const figures = (c: RouteLineChoices["chips"][number]) =>
   [c.nm != null ? `${Math.round(c.nm)} nm` : null, c.gal != null ? gal(c.gal) : null].filter(Boolean).join(", ");
+
+/** A way's name on its chip: the planner's first kind, and how many more
+ *  it is the best of ("Avoid Weather +2"), where "Avoid Weather & Fastest &
+ *  Over Land" ran off the row (the UI audit's C7, 2026-11-17). Its name in
+ *  full is its chip's name to a screen reader and on its line's callout. */
+function shortLabel(label: string): string {
+  const kinds = label.split(" & ");
+  return kinds.length > 1 ? `${kinds[0]} +${kinds.length - 1}` : label;
+}
+
+/** What the chip says of its way after its name: its time where an
+ *  airplane gives one, else its miles, which need none -- each chip said
+ *  something of its way, where with no airplane it said nothing. */
+function chipFigure(c: RouteLineChoices["chips"][number]): string | null {
+  return c.time ?? (c.nm != null ? wholeNm(c.nm) : null);
+}
 
 export function RouteLine({ line: asked, grouped = false }: { line: RouteLineChoices; grouped?: boolean }) {
   // No airplane picked: each way's miles, not its time or fuel, which are
@@ -81,8 +97,8 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
             )}
           >
             <Route className="size-4 shrink-0" aria-hidden />
-            <span className={cn(c.warning && "text-caution-ink in-data-pressed:text-inherit")}>{c.label}</span>
-            {c.time && <span className="font-semibold">{c.time}</span>}
+            <span className={cn(c.warning && "text-caution-ink in-data-pressed:text-inherit")}>{shortLabel(c.label)}</span>
+            {chipFigure(c) && <span className="font-semibold tabular-nums">{chipFigure(c)}</span>}
             {c.warning && <TriangleAlert className="size-4 shrink-0 text-caution in-data-pressed:text-inherit" aria-hidden />}
           </ToggleGroupItem>
         ))}
