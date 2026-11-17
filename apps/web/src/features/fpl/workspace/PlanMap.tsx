@@ -3,7 +3,7 @@ import { cn } from "cn";
 import { RouteMap } from "../../plan-map";
 import { FirstFlight } from "../../first-flight";
 import { FlyingHead } from "../routePanelParts";
-import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import type { PlanSlices } from "../vm/planSlices";
 import { DRY_RUN, usePastFlight } from "../../plan";
 
 /** An approach the pilot's instructor set them, opened from their
@@ -23,7 +23,11 @@ const RouteLegCard = lazy(() => loadRouteLegCard());
 /** The map beside the briefing (PlanWorkspace's `map`), with what floats
  *  over it: the next checkpoint in flight, a fix's card, an assigned
  *  approach, Ready to Fly and the first flight's welcome and tip. */
-export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
+export default function PlanMap({
+  vm,
+}: {
+  vm: PlanSlices<"cards" | "flight" | "fpl" | "leg" | "map" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
+}) {
   const dryPlaying = usePastFlight((p) => p.hex === DRY_RUN && p.playing);
   const { panelOpen } = vm.view;
   const { crossings, routed, setRoute } = vm.route;

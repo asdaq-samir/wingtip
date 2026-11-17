@@ -6,7 +6,7 @@ import TabPage from "../../../components/TabPage";
 import { AircraftFavoriteStrip, AircraftRecentTiles } from "../../aircraft-pick";
 import FindNearby from "./FindNearby";
 import { NearestStrip } from "./NearestStrip";
-import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import type { PlanSlices } from "../vm/planSlices";
 import RecentCards from "./RecentCards";
 import SheetFooter from "./SheetFooter";
 
@@ -27,7 +27,7 @@ import SheetFooter from "./SheetFooter";
  * title (PillSection), the Recents as picture cards sliding sideways, and its foot the
  * legal links and the copyright (SheetFooter).
  */
-export default function SearchHome({ vm }: { vm: PlanWorkspaceModel }) {
+export default function SearchHome({ vm }: { vm: PlanSlices<"cards" | "fpl" | "map" | "search"> }) {
   const { selectPlace, openList, selectFlight } = vm.cards;
   const { nearOrigin } = vm.map;
   const { openNearest, findNearby } = vm.fpl;

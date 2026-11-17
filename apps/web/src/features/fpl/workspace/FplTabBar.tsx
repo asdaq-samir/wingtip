@@ -4,7 +4,7 @@ import { findingRows } from "../vm/planWords";
 import { CardAction as Action } from "../../../components/CardAction";
 import { GlassBar, TabCount } from "../../../components/CardTabBar";
 import { ICON } from "../../../lib/icons";
-import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import type { PlanSlices } from "../vm/planSlices";
 
 /**
  * FPL's actions as a floating glass bar at the sheet's foot (the owner,
@@ -22,7 +22,7 @@ import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
  * there a better place for them? Like brief"), not a list on FPL. The
  * Profile's own altitude caution the same, a 1. Both said in their names.
  */
-export function FplTabBar({ vm, share }: { vm: PlanWorkspaceModel; share: ReactNode }) {
+export function FplTabBar({ vm, share }: { vm: PlanSlices<"brief" | "fpl" | "plan">; share: ReactNode }) {
   const { course } = vm.plan;
   const { openBrief, openNavLogCard, openProfile, profileReady } = vm.fpl;
   const { altitudeMark, briefMark } = vm.brief;

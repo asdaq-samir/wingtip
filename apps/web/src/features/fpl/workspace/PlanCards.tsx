@@ -9,7 +9,7 @@ import { BriefCard, StopsCard, DryRunControls } from "../routePanelParts";
 import { CardLayer } from "../../../components/sheet/CardLayer";
 import { useOpenedOnce } from "../../../components/sheet/useOpenedOnce";
 import ProfileLine from "./ProfileLine";
-import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import type { PlanSlices } from "../vm/planSlices";
 import ProfileSideView from "./ProfileSideView";
 import Waits from "./Waits";
 import { STOPS_CARD } from "../vm/useFplCards";
@@ -41,7 +41,7 @@ export default function PlanCards({
   briefContents,
   briefNotice,
 }: {
-  vm: PlanWorkspaceModel;
+  vm: PlanSlices<"brief" | "cards" | "flight" | "fpl" | "plan" | "route" | "routeList" | "stops" | "view">;
   /** The Nav Log card's legs (useNavLogs). */
   navLogCard: ReactNode;
   briefContents: ComponentProps<typeof BriefCard>["contents"];

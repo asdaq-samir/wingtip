@@ -4,7 +4,7 @@ import { duration } from "../../../lib/format/time";
 import { usePastFlight, dryRunFlown } from "../../plan";
 import { routeProfileQuery } from "../../../lib/queryClient";
 import { clearanceAt } from "../../navlog";
-import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import type { PlanSlices } from "../vm/planSlices";
 
 /**
  * The Profile card's line under its name, in sight at its smallest size
@@ -15,7 +15,7 @@ import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
  * 91.119(c)), yellow within 1,000 ft (91.119(b)), else clear. The ground
  * is the side view's query, fetched once for both.
  */
-export default function ProfileLine({ vm }: { vm: PlanWorkspaceModel }) {
+export default function ProfileLine({ vm }: { vm: PlanSlices<"flight" | "plan" | "route"> }) {
   const { planned } = vm.route;
   const { s } = vm.plan;
   const { dryRunning } = vm.flight;

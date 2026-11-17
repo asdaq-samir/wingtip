@@ -3,7 +3,7 @@ import { cn } from "cn";
 import { PIN_AT_FOOT, usePinAtFoot } from "../../../components/sheet/pinAtFoot";
 import { CardAction as Action } from "../../../components/CardAction";
 import { ICON } from "../../../lib/icons";
-import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import type { PlanSlices } from "../vm/planSlices";
 import RouteHead from "./RouteHead";
 import { FlightFigures } from "./FlightFoot";
 
@@ -17,7 +17,7 @@ import { FlightFigures } from "./FlightFoot";
  * floating bar (FplTabBar). Only once there is a route; VoiceOver hears
  * the Brief's and the Profile's findings in their names.
  */
-export function FplActions({ vm, share }: { vm: PlanWorkspaceModel; share: ReactNode }) {
+export function FplActions({ vm, share }: { vm: PlanSlices<"brief" | "flight" | "fpl" | "plan" | "route">; share: ReactNode }) {
   const { routed } = vm.route;
   const { flying } = vm.flight;
   const { course } = vm.plan;
@@ -64,7 +64,11 @@ export function FplActions({ vm, share }: { vm: PlanWorkspaceModel; share: React
  *  the page's `route` (PlanWorkspace),
  *  a column the row's width, as the sheet lays the route in a row
  *  (MapPage's routeRowOf), where a grid alone had no width. */
-export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
+export function FplRoute({
+  vm,
+}: {
+  vm: PlanSlices<"brief" | "cards" | "flight" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
+}) {
   const { panelOpen } = vm.view;
   const { dryRunning, flying } = vm.flight;
   // The figures are FPL's pill too, one copy at every size: held on the

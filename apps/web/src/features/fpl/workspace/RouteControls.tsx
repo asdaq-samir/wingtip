@@ -1,12 +1,20 @@
 import { Suspense, type ReactNode } from "react";
 import { LocalDuration } from "../routePanelParts";
-import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import type { PlanSlices } from "../vm/planSlices";
 import { LOCAL_MINUTES } from "../../../lib/address";
 
 /** The route's chips: the airplane, the altitude and the time
  *  (`flightInputs`), a local flight's time aloft, and the route's •••
  *  (`share`). */
-export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWorkspaceModel; flightInputs: ReactNode; share: ReactNode }) {
+export default function RouteControls({
+  vm,
+  flightInputs,
+  share,
+}: {
+  vm: PlanSlices<"plan" | "route">;
+  flightInputs: ReactNode;
+  share: ReactNode;
+}) {
   const { localMin } = vm.route;
   const { changeLocalMin, s } = vm.plan;
   return (

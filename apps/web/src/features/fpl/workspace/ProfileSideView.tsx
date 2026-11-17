@@ -3,7 +3,7 @@ import { Play } from "lucide-react";
 import RoundButton from "../../../components/RoundButton";
 import { AltitudeProfile, RouteProblem } from "../routePanelParts";
 import { useQuery } from "@tanstack/react-query";
-import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import type { PlanSlices } from "../vm/planSlices";
 import { aircraftProfilesQuery } from "../../../lib/queryClient";
 import { bookOf, ownOf } from "../../../lib/airplane/figures";
 import { loadMiniProfile } from "../../navlog";
@@ -15,7 +15,7 @@ const MiniProfile = lazy(() => loadMiniProfile());
 /** The Profile card's body (AltitudeProfile): the side view with the
  *  altitude's wheel in its corner, its dry run at its top right, and under
  *  it the altitude's figures, Class B and why. */
-export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
+export default function ProfileSideView({ vm }: { vm: PlanSlices<"brief" | "flight" | "fpl" | "plan" | "route" | "routeList"> }) {
   const {
     acceptClassB,
     avoidClassB,

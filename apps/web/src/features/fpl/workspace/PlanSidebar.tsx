@@ -11,7 +11,7 @@ import TabKept from "../../../components/TabKept";
 import TabPage from "../../../components/TabPage";
 import { RecentRoutesPage, loadSearchResultsPage, loadNearestCard } from "../../search";
 import { AirspaceCard, FlightCard, PastFlightCard, PlaceCard } from "../routePanelParts";
-import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import type { PlanSlices } from "../vm/planSlices";
 import type { KeptAircraft } from "../../../lib/preferences";
 import Waits from "./Waits";
 
@@ -50,7 +50,7 @@ export default function PlanSidebar({
   vm,
   model,
 }: {
-  vm: PlanWorkspaceModel;
+  vm: PlanSlices<"cards" | "fpl" | "map" | "plan" | "route" | "routeList" | "search" | "stops" | "view">;
   /** The one search's view model (useOneSearch). */
   model: OneSearchModel;
 }) {

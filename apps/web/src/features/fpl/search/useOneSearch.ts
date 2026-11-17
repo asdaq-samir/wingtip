@@ -22,7 +22,7 @@ import { SCREEN_KEYS, DIRECT_KEY } from "../../../hooks/use-shortcuts";
 import { useAirportIndex } from "../../../lib/airportIndex";
 import { readQuery, nearOf, useSearchResults } from "../../search";
 import { useEngineReady } from "../../../lib/engine/useEngineReady";
-import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import type { PlanSlices } from "../vm/planSlices";
 
 /** One airplane the search found: the pilot's own (their record, or one
  *  kept on this device), one the FAA's registry has by the N-number typed,
@@ -90,7 +90,7 @@ const positionNow = () => {
  * "Ask:"). Each pick opens a card, a profile or a screen that works the
  * figures out. Direct To, and a picker (usePickScope), take the next pick.
  */
-export function useOneSearch(vm: PlanWorkspaceModel) {
+export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" | "search" | "view">) {
   const { pickView, setPanel } = vm.view;
   const { routed, departFrom } = vm.route;
   const { changeAircraft } = vm.plan;

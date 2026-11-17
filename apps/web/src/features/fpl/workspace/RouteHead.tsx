@@ -5,7 +5,7 @@ import { coverCard, useSheetCards } from "../../../lib/sheetCards";
 import { RouteLine, RouteEnds, RouteSplit } from "../routePanelParts";
 // The search, on a chunk of its own: the first screen draws it.
 import { RouteBox } from "../../route";
-import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import type { PlanSlices } from "../vm/planSlices";
 
 /**
  * The route under FPL's first row (PlanWorkspace's `route`), one row in
@@ -16,7 +16,7 @@ import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
  * become a single row under it and same with other fpl layouts, they just
  * go under the n-number strip with buttons and the toggle").
  */
-export default function RouteHead({ vm }: { vm: PlanWorkspaceModel }) {
+export default function RouteHead({ vm }: { vm: PlanSlices<"brief" | "cards" | "picks" | "plan" | "route" | "routeList" | "stops"> }) {
   const { directParam, planned, routeEdit, routePoints, setPointAltitude, setRoute, wholeRoute } = vm.route;
   const { course, directToPoint, s } = vm.plan;
   const { selectPlace } = vm.cards;

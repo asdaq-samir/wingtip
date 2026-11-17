@@ -7,7 +7,7 @@ import { TEXT } from "../../../lib/text";
 import { TripFigures } from "../../navlog";
 import { DirectStrip } from "../../route";
 import { DryRunFigures } from "../routePanelParts";
-import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import type { PlanSlices } from "../vm/planSlices";
 import { FplTabBar } from "./FplTabBar";
 
 /** The flight's figures (TripFigures, on the one FigureStrip) in every
@@ -19,7 +19,15 @@ import { FplTabBar } from "./FplTabBar";
  *  .wasm (EngineGate), the rest of the page not (the owner's iPhone,
  *  2026-11-11: "Part of the app didn't load" on "strip_fuel cannot be
  *  worked out"). */
-export function FlightFigures({ vm, grow, foot = false }: { vm: PlanWorkspaceModel; grow: boolean; foot?: boolean }) {
+export function FlightFigures({
+  vm,
+  grow,
+  foot = false,
+}: {
+  vm: PlanSlices<"brief" | "flight" | "plan" | "route" | "stops">;
+  grow: boolean;
+  foot?: boolean;
+}) {
   const { depart, directParam, planned } = vm.route;
   const { directToPoint, s } = vm.plan;
   const { firstFuelStop } = vm.stops;
@@ -54,7 +62,13 @@ export function FlightFigures({ vm, grow, foot = false }: { vm: PlanWorkspaceMod
  *  figures while it plays; in flight the flight's figures and Done flying;
  *  on the ground the actions' floating bar (FplTabBar), the figures being
  *  the route row's and its pill (FplRoute). */
-export default function FlightFoot({ vm, share }: { vm: PlanWorkspaceModel; share?: ReactNode }) {
+export default function FlightFoot({
+  vm,
+  share,
+}: {
+  vm: PlanSlices<"brief" | "flight" | "fpl" | "plan" | "route" | "stops" | "view">;
+  share?: ReactNode;
+}) {
   const { doneFlying, dryRunning, flying } = vm.flight;
   const { panelOpen } = vm.view;
   // In flight, the one way out of flying mode (useFlyingMode): a small

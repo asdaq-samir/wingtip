@@ -4,7 +4,7 @@ import TabKept from "../../../components/TabKept";
 import TabPage from "../../../components/TabPage";
 import { FplStrip } from "../../search";
 import { FplActions } from "./FplActions";
-import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import type { PlanSlices } from "../vm/planSlices";
 
 /**
  * The sheet's second page, FPL (its toggle, PageToggle; the owner, 2026-11-13), under
@@ -17,7 +17,15 @@ import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
  * either with two buttons"; the search is the other page, its tab beside
  * FPL's).
  */
-export default function PlanPage({ vm, navLog, share }: { vm: PlanWorkspaceModel; navLog: ReactNode; share: ReactNode }) {
+export default function PlanPage({
+  vm,
+  navLog,
+  share,
+}: {
+  vm: PlanSlices<"brief" | "cards" | "flight" | "fpl" | "map" | "plan" | "route" | "view">;
+  navLog: ReactNode;
+  share: ReactNode;
+}) {
   const { stripsDrawn } = vm.view;
   const { hasPoints } = vm.route;
   const { cardUp, openList } = vm.cards;

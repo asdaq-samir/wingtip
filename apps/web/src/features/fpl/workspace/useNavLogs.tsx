@@ -2,7 +2,7 @@ import { Suspense, useMemo, type ReactNode } from "react";
 import { CardHead } from "../../../components/CardHead";
 import type { BriefingPart } from "../../plan";
 import { BriefingNotices, FlightBriefingView, NavLogView } from "../routePanelParts";
-import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import type { PlanSlices } from "../vm/planSlices";
 import { EngineGate } from "../../../lib/engine/engineGate";
 import FiguresLine from "./FiguresLine";
 
@@ -13,7 +13,7 @@ import FiguresLine from "./FiguresLine";
  * (PlanPage's NavLogCard), each made once for the same plan.
  */
 export function useNavLogs(
-  vm: PlanWorkspaceModel,
+  vm: PlanSlices<"brief" | "flight" | "fpl" | "leg" | "plan" | "route" | "view">,
   { tabContent, routeList, kneeboard }: { tabContent: (part: BriefingPart) => ReactNode; routeList: ReactNode; kneeboard: ReactNode },
 ) {
   const { drawerOpen } = vm.view;
