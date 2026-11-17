@@ -24,20 +24,6 @@ export type LatLon = { lat: number; lon: number };
  *  as: -10 is 350, 370 is 10. Eleven files wrote this sum out. */
 export const normalizeDeg = (d: number) => ((d % 360) + 360) % 360;
 
-/** How far apart two directions are, 0 to 180: a track off a course, a
- *  wind off a runway, an estimate off its answer round the compass (358
- *  is 4 from 002). It was written eight times, two ways. */
-export function angleBetween(a: number, b: number): number {
-  const d = (((a - b) % 360) + 360) % 360;
-  return d > 180 ? 360 - d : d;
-}
-
-/** The turn from one direction to another, -180 to 180, right of it
- *  positive. */
-export function signedTurn(from: number, to: number): number {
-  return ((((to - from) % 360) + 540) % 360) - 180;
-}
-
 /** Metres in a nautical mile, the international one (NIST SP 811 B.9). */
 export const M_PER_NM = 1852;
 

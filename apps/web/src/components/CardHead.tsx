@@ -35,7 +35,6 @@ export function CardHeadRow({
   level = "h2",
   nameRef,
   slot,
-  flush = false,
   children,
 }: {
   name: ReactNode;
@@ -57,9 +56,8 @@ export function CardHeadRow({
   level?: "h2" | "h3";
   /** The name, for the focus as a page is pushed (ConsolePages). */
   nameRef?: Ref<HTMLHeadingElement>;
-  /** PinnedHead's: its slot, and a scroller with no sides of its own. */
+  /** PinnedHead's slot. */
   slot?: string;
-  flush?: boolean;
   children?: ReactNode;
 }) {
   const Name = level;
@@ -100,7 +98,7 @@ export function CardHeadRow({
       </div>
     );
   return (
-    <PinnedHead testId={testId} slot={slot} flush={flush} className="shrink-0">
+    <PinnedHead testId={testId} slot={slot} className="shrink-0">
       <HeadGrid start={start} middle={middle} end={end} />
     </PinnedHead>
   );

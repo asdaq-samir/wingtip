@@ -14,8 +14,3 @@ export function newRequestId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 }
-
-/** The header, for a plain fetch's headers. */
-export function requestIdHeaders(): Record<string, string> {
-  return { [REQUEST_ID_HEADER]: newRequestId() };
-}

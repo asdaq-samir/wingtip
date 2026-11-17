@@ -25,19 +25,6 @@ const distances = (d: EngineDistances): Distances & { over: boolean } => ({
   over: d.over,
 });
 
-/**
- * Density altitude: the height in the standard atmosphere whose air is
- * as thin as the field's, from its pressure altitude and temperature --
- * worked out from the atmosphere itself rather than the 120 ft a degree
- * rule of thumb, which it agrees with to a few per cent near the ground.
- * What an airplane performs as if it were at (FAA-H-8083-25C, chapter 11).
- * The engine's ICAO standard atmosphere (ICAO Doc 7488), the one the
- * planner's cruise and climb are flown in.
- */
-export function densityAltitudeFt(pressureAltFt: number, tempC: number): number {
-  return callEngine("gonogo_density_altitude", { pressure_alt_ft: pressureAltFt, temp_c: tempC });
-}
-
 export interface RunwayDistance extends Distances {
   kind: "takeoff" | "landing";
   /** The runway it is flown on, and its end: a stop's runway out may not

@@ -19,16 +19,6 @@ export type FrequencyKind = EngineAnswer<"frequency_line">["kind"];
 export const sentFrequencies = (frequencies: readonly Frequency[]) =>
   frequencies.map((f) => ({ type: f.type ?? null, description: f.description ?? null, frequency_mhz: f.frequency_mhz ?? null }));
 
-/** The CTAF: the one so called, else a UNICOM that is also the CTAF,
- *  else MULTICOM's 122.9 (AC 90-66C 9.6), as the engine answers it: an
- *  index into `frequencies`, or MULTICOM's own. The radio calls and the
- *  kneeboard both name it from here: with no frequency listed, the one
- *  said to use 122.9 and the other "No published radio". */
-export function ctafOf(frequencies: Frequency[]): Frequency {
-  const ctaf = callEngine("ctaf_of", { frequencies: sentFrequencies(frequencies) });
-  return typeof ctaf === "number" ? frequencies[ctaf]! : ctaf;
-}
-
 /** A field's frequencies in the order a pilot dials them, the engine's
  *  (frequencies_in_order): its ATIS or AWOS first, then clearance, ground,
  *  the tower or CTAF, approach, and UNICOM last. The file's own order put
