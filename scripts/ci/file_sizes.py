@@ -17,7 +17,9 @@ hook (files given) only says so. With `--base REF` (CI passes
 main's), an entry added to the list or raised against REF's list fails too:
 the list is not a way round the budget. With `--base`, a file that is new
 against REF is held to NEW_BUDGET (300 lines), the owner's target; the
-older ones keep the 400 and their allowances. Files given on the command
+older ones keep the 400 and their allowances; a file moved since REF
+(git's rename detection, as a feature split into folders moves its files) is
+the older one it was, its allowance carried to its new path. Files given on the command
 line (the edit-time hook passes one) are the only ones checked.
 
 Shell, the build's JavaScript (.mjs, .js), C#, and Gradle's Kotlin and
@@ -98,6 +100,24 @@ def write_allow(allowed: dict) -> None:
     ALLOW.write_text(HEADER + "\n" + body)
 
 
+def renamed_since(ref: str) -> dict:
+    """Each file moved since REF, by its path now: {new path: path at REF}.
+    A moved file is the same file, held to what it was held to at REF: a
+    feature split into folders (git mv) is not a new file over 300 lines,
+    and its allowance keeps its count under its new path."""
+    diff = subprocess.run(
+        ["git", "-C", str(ROOT), "diff", "--name-status", "--diff-filter=R", "--find-renames", "-l5000", ref],
+        capture_output=True,
+        text=True,
+    )
+    moved = {}
+    for row in diff.stdout.splitlines():
+        parts = row.split("\t")
+        if len(parts) == 3:
+            moved[parts[2]] = parts[1]
+    return moved
+
+
 def at(ref: str, path: str) -> "int | None":
     """The file's lines at REF, or None where it is not there (a new file)."""
     shown = subprocess.run(["git", "-C", str(ROOT), "show", f"{ref}:{path}"], capture_output=True)
@@ -160,6 +180,8 @@ def main(argv: list) -> int:
     if new_ref:
         listed = subprocess.run(["git", "-C", str(ROOT), "ls-tree", "-r", "--name-only", new_ref], capture_output=True, text=True)
         old = set(listed.stdout.splitlines()) if listed.returncode == 0 else set(sizes)
+        moved = renamed_since(new_ref) if listed.returncode == 0 else {}
+        old |= {path for path, was in moved.items() if was in old}
         for path, n in sorted(sizes.items()):
             if not (NEW_BUDGET < n <= BUDGET) or path in allowed or path in old:
                 continue
@@ -174,6 +196,8 @@ def main(argv: list) -> int:
         )
         if shown.returncode == 0:
             before = read_allow(shown.stdout)
+            # A listed file that moved is compared under the path it had at REF.
+            before.update({path: before[was] for path, was in renamed_since(ref).items() if was in before})
             for path, count in sorted(allowed.items()):
                 if path not in before and path.endswith(COUNTED_SINCE_2026_11_12) and at(ref, path) is not None:
                     continue  # a file there at REF, of a kind first counted on 2026-11-12
