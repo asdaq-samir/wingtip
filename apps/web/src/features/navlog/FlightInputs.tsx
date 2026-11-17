@@ -158,7 +158,10 @@ export default function FlightInputs({
             widest="N-888MM"
             placeholder=""
             endRoom="w-0"
-            shrink
+            // The one field to give way at a larger text size, the
+            // altitude beside it keeping its figures and VFR/IFR their
+            // segments (the owner's list, 2026-11-17): at 19.65 px the
+            // altitude went blank where this kept its width.
             hint={{ start: "N-", words: "_____" }}
             field={CommandField}
             input={{

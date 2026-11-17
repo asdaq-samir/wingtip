@@ -138,7 +138,7 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
   // Each figure's name as shown: TripFigures' dt also holds the words a
   // screen reader hears ("To KDLH"), hidden from sight (sr-only).
   const planned = await line.locator("dt > [aria-hidden]").allTextContents();
-  expect(planned).toEqual(["To", "Dist", "ETE", "Fuel req"]);
+  expect(planned).toEqual(["To", "Distance", "Time", "Fuel"]);
   // The figures once the plan has settled: the runways picked into the
   // wind as the route comes in plan it again with their patterns flown
   // (with_procedures), a few miles more.

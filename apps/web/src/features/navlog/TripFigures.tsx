@@ -53,6 +53,9 @@ const seen = (f: { value: string; unit?: string }) => (f.unit ? `${f.value} ${f.
 
 /** A figure's button, the figure itself in the tint as what is tapped is,
  *  its 44-point area round it (the after), the figure not grown to make it. */
+/** The strip's names as shown (FigureStrip's `label`). */
+const LABEL: Record<string, string> = { Dist: "Distance", ETE: "Time", Fuel: "Fuel" };
+
 const AREA = "relative max-w-full after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']";
 
 /** A figure an airplane makes (the time, the fuel), with none picked: a
@@ -137,11 +140,12 @@ export default function TripFigures({
           ? { ...f, alert: true, said: `${f.said ?? f.value}, not a place we know` }
           : f,
       )
-      // The fuel named as what it is, the fuel required (the legs, the
-      // start and taxi, the reserve): beside the route's rows' fuel in the
-      // tanks, "Fuel" read as the fuel burnt, 16.6 against the 13 gone
-      // from 40 to 27 (the owner's screenshot, 2026-11-06).
-      .map((f) => ({ ...f, label: f.name === "Fuel" ? "Fuel req" : f.name === "ETA" ? `ETA ${zoneName()}` : f.name }));
+      // Each named in a short word in sentence case, "To", "Distance",
+      // "Time", "Fuel" (the owner's list, 2026-11-17), where "TO / DIST /
+      // ETE / FUEL REQ" were capitals and shorthand; the fuel is still the
+      // fuel required, said so in its name to a screen reader and in its
+      // breakdown (FuelBreakdown).
+      .map((f) => ({ ...f, label: LABEL[f.name] ?? (f.name === "ETA" ? `Arrival ${zoneName()}` : f.name) }));
   // The fuel required tapped, what it is made of (FuelBreakdown), at the
   // owner's ask ("fuel is the fuel required which gives a breakdown when
   // tapped"): once the nav log's figures are in.

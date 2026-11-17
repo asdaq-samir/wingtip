@@ -6,7 +6,7 @@ import { useFigureFit } from "./useFigureFit";
 
 export interface StripFigure {
   name: string;
-  /** The name as shown where it is not the name itself ("Fuel req"). */
+  /** The name as shown where it is not the name itself ("Distance"). */
   label?: string;
   value: string;
   unit?: string;
@@ -105,10 +105,12 @@ export default function FigureStrip({
           return (
             <div key={f.name} className="min-w-0 text-center">
               {/* Its names and units a grey that reads on the pill's glass
-                  over any chart (WCAG's 4.5:1), where the muted one did not.
+                  over any chart (WCAG's 4.5:1), where the muted one did not;
+                  its names in sentence case, short words ("Distance"), not a
+                  section's capitals (the owner's list, 2026-11-17).
                   To a screen reader the figure in full words, here or as its
                   button's name. */}
-              <dt className={cn(GROUP_HEADING, type.name, "truncate text-foreground/65")}>
+              <dt className={cn(GROUP_HEADING, type.name, "truncate tracking-normal normal-case text-foreground/65")}>
                 <span aria-hidden={f.said ? true : undefined}>{f.label ?? f.name}</span>
                 {f.said && !button && <span className="sr-only">{f.said}</span>}
               </dt>

@@ -20,7 +20,12 @@ not timed on a device.
 
 - **Tap what you see.** Anything shown that is explained or changed
   somewhere opens that place: a field's name its card, the figures their
-  nav log, a waypoint its menu. Closing goes back to where the pilot was
+  nav log, a waypoint its menu. In FPL's route list an airport's ident
+  (the departure, a stop, the destination) is a link in the tint to its
+  card, as the nav log's names are; the rest of its row folds its runways
+  and procedures open, its one disclosure, and its symbol is its menu,
+  where Change asks the one search for another airport (in the Plan's
+  cards too, where the ident was a text box; the owner, 2026-11-17). Closing goes back to where the pilot was
   (one level: `lib/openCards` on the web, the card's
   close and the stack's Back on iOS (`Navigation/Navigator`); on Android
   the card's ← and system Back, its ✕ closing every card, since the card
@@ -190,7 +195,7 @@ list is where it was.
 | Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; Dist opens the nav log |
 | Brief | plan → Brief; search → Do → Brief | 2 | Alternate filed or taken off (iOS too: the Brief's Alternate sections, and the plan's Alternate row under IFR, 1 tap); Ask chips apply changes |
 | Nav log card | plan → Nav Log tile; Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
-| Profile | plan → Profile tile | 2 → **1** with a route | VFR/IFR, altitude in the side view, Dry run |
+| Profile | plan → Profile tile | 2 → **1** with a route | altitude in the side view, Dry run (VFR/IFR is FPL's first row's, beside the altitude, 2026-11-17) |
 | Search results (Airports, Waypoints and Navaids, Airplanes, Do, Ask) | the search field, typed | **new: 1** | -- |
 | Saved flights | search → Saved; account → Flights | 2 | Name and notes edited in the row; delete with a confirm |
 | Airport card | Tap a field; a search result; a route row's More Info; a nav log field | 1 (2 from the search) | **Fly Here, Depart From, Add as Stop at its top (new)**, favorite; frequencies copy |

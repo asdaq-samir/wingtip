@@ -110,7 +110,9 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   await expect(card(page).getByTestId("place-tab-diagrams")).toHaveAccessibleName("Charts, 3");
   await expect(card(page).getByTestId("place-tab-runways")).toHaveAccessibleName("Runways");
   await expect(card(page).getByTestId("place-tab-category")).toBeVisible();
-  await expect(card(page).getByTestId("place-tab-charts")).toHaveText("3");
+  // A plain count is said in the name, not drawn as a badge (one meaning
+  // per badge colour: findings only).
+  await expect(card(page).getByTestId("place-tab-charts")).toHaveCount(0);
   await expect(card(page).getByTestId("place-tab-radio")).toHaveText("Info");
   await expect(card(page).getByTestId("place-tab-runways")).toHaveText("Runways");
 

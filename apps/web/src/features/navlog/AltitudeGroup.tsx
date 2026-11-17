@@ -127,6 +127,7 @@ export default function AltitudeGroup({
       testId="altitude-group"
       widest="FL-000"
       tabular
+      shrink
       placeholder=""
       hint={hint()}
       input={{

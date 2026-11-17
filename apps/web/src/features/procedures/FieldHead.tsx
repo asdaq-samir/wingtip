@@ -1,12 +1,10 @@
 import type { ReactNode } from "react";
-import { ChevronRight, Fuel, Wind } from "lucide-react";
+import { Fuel, Wind } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { CollapsibleTrigger } from "../../components/ui/collapsible";
 import type { ProcedureAirport } from "../plan";
-import { sameField } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
-import CardIdent from "./CardIdent";
 import { CardMark } from "./routeCard";
 import { FuelGauge } from "./FuelGauge";
 import type { pointEnd } from "./pointEnd";
@@ -31,13 +29,13 @@ export function FieldHead({
   wind: string | null;
   reported: ReturnType<ProceduresRouteModel["reportedOf"]>;
 }) {
-  const { asCards, edit, pointIndex, isFuelStop } = vm;
+  const { asCards, isFuelStop, onInfo } = vm;
   return (
     <>
-      {/* The airport's lines: a tap anywhere on them -- its symbol, its ident, its fuel, its wind, its time -- opens it,
-      at the owner's ask ("it should expand when tapped anywhere on the airport information next to the symbol or
-      the symbol itself"): the arrow by the symbol is the button, its area stretched over the lines (before:inset-0);
-      the menu and a time to pick lie over it, their own. */}
+      {/* The airport's lines: a tap anywhere on them -- its fuel, its wind, its time -- opens it, at the owner's ask
+      ("it should expand when tapped anywhere on the airport information"): the Collapsible's trigger, its area
+      stretched over the lines (before:inset-0); the symbol (its menu), the ident (its card) and a time to pick lie
+      over it, their own. */}
       <div className="relative flex gap-2.5">
         {/* A fuel stop's pump on top of its symbol, at the owner's ask
                   ("instead of fuel symbol next to airport id, can we put it
@@ -53,7 +51,7 @@ export function FieldHead({
               <span className="relative">
                 {mark}
                 {a.role === "Stop" && isFuelStop(a.ident) && (
-                  <span className="absolute -top-1.5 -right-1.5 grid size-4 place-items-center rounded-full bg-caution text-white ring-2 ring-background">
+                  <span className="absolute -top-1.5 -right-1.5 grid size-4 place-items-center rounded-full bg-caution text-background ring-2 ring-background">
                     <Fuel className="size-2.5" strokeWidth={2.6} aria-label="fuel stop" role="img" />
                   </span>
                 )}
@@ -70,10 +68,11 @@ export function FieldHead({
           )}
         >
           <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5">
-            {/* The disclosure, iOS's small chevron by the symbol, the stock Button inline, not an icon button
-            (data-disclosure): the Collapsible's trigger, the arrow turned by its open state. A card's without its
-            arrow, at the owner's ask (2026-11-05: "Now that it's a card, we don't need the expanding arrow next to
-            airport", then "It should still become a smaller card with a tap"): its tap over the lines alone. */}
+            {/* The row's one disclosure (the UI audit's C14): a tap anywhere on its lines folds the runways and
+            procedures open, the whole line (the owner, 2026-11-05: "make the whole line tapable for unfolding"),
+            no chevron of its own beside the symbol, which is the menu. The Collapsible's trigger laid over the lines
+            (its own `absolute` wins over index.css's touch positioning), and twelve over them into the room above
+            the field (the iOS audit's P1); what has a tap of its own lies over it (z-10). */}
             <CollapsibleTrigger
               render={
                 <Button
@@ -84,37 +83,32 @@ export function FieldHead({
                   data-ident={a.ident}
                   data-disclosure=""
                   aria-label={`${a.ident}: runways and procedures`}
-                  // Its area over the lines a ::before: on a touch screen index.css gives every button's
-                  // ::after its 44 points, which overrode an ::after stretched here, and on the owner's phone
-                  // only the arrow opened the field ("make the whole line tapable for unfolding"). Static,
-                  // where index.css positions every button on a touch screen: its areas reach out to the
-                  // lines' box, not its own; and twelve over it, into the room above the field, where the
-                  // arrow's 44 points, round its line, reach (the iOS audit's P1).
                   className={cn(
-                    "group static grid shrink-0 place-items-center text-tint outline-none before:absolute before:inset-x-0 before:-top-3 before:bottom-0 before:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-                    asCards ? "-ml-1.5 size-0" : "-ml-0.5 size-4",
+                    "absolute inset-x-0 -top-3 bottom-0 rounded-lg outline-none hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring",
                   )}
                 />
               }
-            >
-              {!asCards && <ChevronRight className="size-4 transition-transform group-data-panel-open:rotate-90" aria-hidden />}
-            </CollapsibleTrigger>
-            {/* The size the list's names were ("the font size is bigger
-                      than it used to be for airport id"). */}
-            {asCards && edit?.onReplace && pointIndex(a.ident, a.role) !== undefined ? (
-              <h3 className="min-w-0">
-                <CardIdent
-                  value={a.ident}
-                  label={`${a.ident}, change`}
-                  onCommit={(v) => {
-                    const at = pointIndex(a.ident, a.role);
-                    if (at !== undefined && !sameField(v, a.ident)) edit.onReplace!(at, v);
-                  }}
-                />
-              </h3>
-            ) : (
-              <h3 className={cn("truncate font-semibold", TEXT.row)}>{a.ident}</h3>
-            )}
+            />
+            {/* The ident a link in the tint to the airport's card, over the row's fold, as the nav log's names are
+            (NavLogList's navlog-field-open; the owner, 2026-11-17: "Can we make the airports/stops tappable as the
+            navlog does?"). Its 44 points a pseudo-element; the ident not grown. In the Plan's cards it was a text
+            box: an airport is changed from its menu's Change now (pointEnd), by the one search. */}
+            <h3 className={cn("min-w-0 font-semibold", TEXT.row)}>
+              <Button
+                variant="link"
+                size="inline"
+                data-testid="field-open"
+                data-ident={a.ident}
+                aria-label={`${a.ident}: open the airport`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onInfo(a.ident);
+                }}
+                className="relative z-10 max-w-full justify-start truncate font-semibold after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-['']"
+              >
+                {a.ident}
+              </Button>
+            </h3>
             {tank && (
               <FuelGauge
                 gal={tank.gal}

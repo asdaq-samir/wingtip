@@ -1,5 +1,5 @@
 import { CloudSun, FileText, Info, PlaneLanding } from "lucide-react";
-import { CardTabBar, TabCount } from "../../components/CardTabBar";
+import { CardTabBar } from "../../components/CardTabBar";
 import { colourOf } from "../../lib/map/marks/flightCategory";
 
 export type PlaceTab = "radio" | "weather" | "runways" | "diagrams";
@@ -62,7 +62,6 @@ export function PlaceTabBar({
           label: "Charts",
           icon: FileText,
           hint: charts > 0 ? String(charts) : null,
-          badge: charts > 0 && <TabCount count={charts} testId="place-tab-charts" />,
         },
       ]}
     />

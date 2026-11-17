@@ -20,7 +20,7 @@ import AircraftAlertMenu from "../../components/airplane/AircraftAlertMenu";
 import PastFlights from "../../components/airplane/PastFlights";
 import { FavoriteTile } from "../../components/FavoriteTile";
 import { CardTabPages, CardTabPanel } from "../../components/CardTabs";
-import { CardTabBar, TabCount } from "../../components/CardTabBar";
+import { CardTabBar } from "../../components/CardTabBar";
 import { CardPictures } from "../../components/CardPictures";
 import { PhotoSlide } from "../../components/PictureSlides";
 import { AirplaneFacts } from "../../components/airplane/AirplaneFacts";
@@ -224,7 +224,6 @@ export default function AirplaneProfileSheet() {
                 label: "Flights",
                 icon: History,
                 hint: card.flightCount ? String(card.flightCount) : null,
-                badge: card.flightCount ? <TabCount count={card.flightCount} testId="airplane-tab-count" /> : null,
               },
               { value: "info", label: "Info", icon: Info },
               { value: "figures", label: "Figures", icon: Gauge },

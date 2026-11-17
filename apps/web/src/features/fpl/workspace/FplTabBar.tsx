@@ -16,8 +16,8 @@ import type { PlanSlices } from "../vm/planSlices";
  * look, open cards"). Share is the plan's one Share menu (ShareMenu's
  * "send"). From half up; at the pill the figures alone, large (FlightFoot).
  * What the Brief found to act on is counted on its glyph's corner, red
- * where one is a stop, amber where all are cautions, as the airport card's
- * tabs carry theirs (CardTabBar's TabCount, in the finding's colour): the findings themselves
+ * where one is a stop, amber where all are cautions (CardTabBar's
+ * TabCount, the one badge, each colour one meaning): the findings themselves
  * are the Brief's, which opens with them (the owner, 2026-11-16: "isn't
  * there a better place for them? Like brief"), not a list on FPL. The
  * Profile's own altitude caution the same, a 1. Both said in their names.

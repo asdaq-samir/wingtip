@@ -93,7 +93,11 @@ export default function FlyingHead({ run, rows, line }: { run: DryRun | null; ro
   };
   return (
     <Head>
-      <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-caution font-bold text-white" aria-hidden="true">
+      {/* The next checkpoint's number on the course's magenta, the route's
+          own colour, not the caution's amber, which means a caution
+          wherever it is drawn (the owner's list, 2026-11-17); white at the
+          head's bold 22 points, large text's 3:1 and more. */}
+      <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-course font-bold text-white" aria-hidden="true">
         <span className={TEXT.card}>{next.number}</span>
       </div>
       <div className="min-w-0 flex-1">

@@ -215,8 +215,8 @@ export const CARDS: CardRow[] = [
     name: "Profile",
     card: "profile-card",
     close: "profile-close",
-    // "Cruise FL-055 · clear of terrain".
-    pillLine: /^Cruise FL-\d{3}/,
+    // "Clears terrain by 2,552 ft", the cruise itself the side view's tag.
+    pillLine: /^(Clears terrain by [\d,]+ ft|[\d,]+ ft below terrain)$/,
     entries: [
       { name: "the plan", open: async (p) => (await go(p, ROUTE), void (await openProfile(p))), back: "plan" },
       { name: "link (open=profile)", open: (p) => go(p, `${ROUTE}&open=profile`), back: "plan" },

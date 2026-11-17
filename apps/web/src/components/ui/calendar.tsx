@@ -32,7 +32,10 @@ const NAV = cn(
  * was react-day-picker's. Ours: a finger's 44 a day (--cell-size), the
  * day's number at iOS's 20, the arrows an icon button's 36 with their 44
  * round them (index.css), and the month and year as the app's one
- * pull-down (PullDown), where shadcn's are its own Select.
+ * pull-down (PullDown), where shadcn's are its own Select. Drawn on what
+ * holds it, the sheet, a card or a popover, as iOS's inline date picker
+ * is, with no box of its own: on a phone's sheet shadcn's background was
+ * a white box on the sheet's grey (the owner's list, 2026-11-17).
  */
 function Calendar<T extends DateValue>({
   className,
@@ -48,7 +51,7 @@ function Calendar<T extends DateValue>({
       {...props}
       data-slot="calendar"
       className={cn(
-        "group/calendar w-fit bg-background p-3 [--cell-radius:var(--radius-md)] [--cell-size:--spacing(8)] pointer-coarse:[--cell-size:--spacing(11)] in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent",
+        "group/calendar w-fit bg-transparent p-3 [--cell-radius:var(--radius-md)] [--cell-size:--spacing(8)] pointer-coarse:[--cell-size:--spacing(11)]",
         className,
       )}
     >

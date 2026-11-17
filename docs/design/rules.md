@@ -108,9 +108,9 @@ Compose. Nothing here is built by hand where a stock part does it.
    2026-11-11: "all the cards have at most two head buttons"), and what
    else acts on a card in its ••• menu or its content: the Brief's Refresh
    in its menu as the route's is, the Stops' distance a filter at its
-   list's top, the Profile's VFR/IFR a segmented control at the top of
-   its content (`CardHead` takes nothing more; cards.spec checks every
-   card) -- as Apple
+   list's top (`CardHead` takes nothing more; cards.spec checks every
+   card); VFR/IFR is FPL's first row's, a compact segmented control
+   beside the altitude it sets the rules for (the owner, 2026-11-17) -- as Apple
    Maps' place card at its smallest size (the owner, 2026-11-11: "let's move the title in the
    middle"; `HeadGrid`, the inset each side the wider side's),
    `CardHeadRow` (`CardHead`, `CardTitle`, `SheetCard`,
@@ -145,8 +145,10 @@ Compose. Nothing here is built by hand where a stock part does it.
     2026-11-14: "Settings cards should only close from a swipe down when
     in medium detents"). A form with an edit still asks first (6). A
     card with a short line under its name keeps it there too: the Nav Log
-    its totals ("65.3 nm · 35m · 9.0 gal"), the Profile its cruise and the
-    clearance's verdict ("Cruise FL-055 · clear of terrain"), the Stops how
+    its totals ("65 nm · 35m · 9.0 gal"), the Profile by how much the
+    cruise clears the ground ("Clears terrain by 2,552 ft", the engine's
+    least room; the cruise is the side view's tag and FPL's altitude, not
+    said again: the owner's list, 2026-11-17), the Stops how
     many ("2 stops", "None on the route"). With no card open the pill is
     the page's own: the search on Search, the route's figures on FPL (with
     no route, FPL's bar); on the web the one round toggle that turns the
@@ -449,13 +451,17 @@ off by default (the owner, 2026-11-13).
 2. **FPL** (the second page): its first row the search's row's twin
    (the owner, 2026-11-14: "for all three fpl layouts, keep the n-number
    strip with buttons in the same size as search bar"): the airplane's
-   strip -- its N-number, the altitude and the route's ••• -- in a bar
-   exactly the search field's size, the page toggle at its end, so a turn
+   strip -- its N-number, the altitude, VFR/IFR beside it (a compact
+   segmented control, the fields' 28 points tall; moved from the Profile
+   card by the owner, 2026-11-17) and the route's •••, a plain glyph in
+   the tint as the search bar's microphone is (one look for a button in
+   the row) -- in a bar exactly the search field's size, the page toggle at its end, so a turn
    of the page changes only what is in the bar; under it the route as one
    row, in whichever of the three ways Show Route As picks (the box of
    pills, the line, or the cards' ends and the Routes' chips), never in the
    bar; under the route, once there is one, the route's figures (To,
-   Dist, ETE, Fuel req) at their own size, and at the sheet's foot from
+   Distance, Time, Fuel: short words in sentence case, the distance whole
+   miles, "1,334 nm", the owner's list, 2026-11-17) at their own size, and at the sheet's foot from
    half up a floating glass bar, the airport card's tab bar's capsule,
    of four buttons: Brief, Nav Log and Profile, each opening its card
    over FPL, and Share, one menu for every way the plan leaves the app
@@ -479,11 +485,26 @@ off by default (the owner, 2026-11-13).
    to act on is the Brief's, which opens with it, not a list on FPL
    (the owner, 2026-11-16: "isn't there a better place for them? Like
    brief"): the Brief's button carries their count on its glyph's
-   corner, red where one is a stop, amber where all are cautions, as
-   the airport card's tabs carry theirs, and the Profile's a 1 for the
-   altitude's own caution; no bare dots, which said nothing of how many. The Routes are one row of chips, each a way's name and time, the
-   one flown filled, a swipe for more; their miles and fuel are the
-   figures' and in each chip's spoken name. On the
+   corner, red where one is a stop, amber where all are cautions, and
+   the Profile's a 1 for the altitude's own caution; no bare dots, which
+   said nothing of how many. A badge means a finding wherever it is
+   drawn, red a stop and amber a caution, its figure in the ground's
+   colour so it reads in either theme; a plain count (an airport's
+   charts, an airplane's flights) is said in its tab's name, not drawn
+   as a badge (the owner's list, 2026-11-17). The Routes are one row of chips, each a way's name and time, the
+   one flown filled, a swipe for more, every unpicked one the same
+   neutral look: a way that meets something says so by its amber
+   warning mark alone, its name in the text's colour (the owner's list,
+   2026-11-17); their miles and fuel are the
+   figures' and in each chip's spoken name. In the route's list an
+   airport's ident is a link in the tint to its card (the nav log's
+   `navlog-field-open`, the owner, 2026-11-17: "Can we make the
+   airports/stops tappable as the navlog does?"), the rest of its lines
+   folding its runways and procedures open, one disclosure with no
+   chevron beside the symbol (the UI audit's C14), the symbol its menu;
+   a waypoint's or a fix's stays plain. In the Plan's cards the ident is
+   the same link, and Change in the menu asks the one search for the
+   airport to put in its place. On the
    map the way flown is solid magenta and the others thin dotted lines
    in the chart's ink, each chip named, the others' chips left out where
    they would overlap (the owner's pick of the routes canvas, board 5,
@@ -538,7 +559,7 @@ off by default (the owner, 2026-11-13).
   they were opened over.
 - **At the pill** the sheet shows the page's own one row, the grabber
   over it, and nothing else: on Search the search's row, on FPL the
-  route's figures -- To, Dist, ETE, Fuel -- (the owner, 2026-11-11, the
+  route's figures -- To, Distance, Time, Fuel -- (the owner, 2026-11-11, the
   canvas's b, as ForeFlight and Garmin Pilot keep them), FPL's bar and
   the route's row from half up; with no route, FPL's bar. The
   pill is one fixed height for both (the web's `"4.25rem"` snap point,

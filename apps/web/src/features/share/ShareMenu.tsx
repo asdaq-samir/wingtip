@@ -214,9 +214,13 @@ export default function ShareMenu({
               card === "send" ? (
                 <CardAction icon={<Share />} label={SHARE_LABEL.send} testId={testId} bar={bar} />
               ) : (
+                // FPL's ••• a plain glyph in the tint, as the search bar's
+                // microphone is in its twin of a bar: one look for a button
+                // in the first row (the owner's list, 2026-11-17), where it
+                // was a grey disc with a black glyph beside the tinted toggle.
                 <RoundButton
                   label={planAgain?.stale.length ? `${SHARE_LABEL[card]}: ${planAgain.stale.join(", ")}` : SHARE_LABEL[card]}
-                  className={card === "route" ? "size-[32px]" : undefined}
+                  {...(card === "route" ? { variant: "ghost" as const, className: "size-[32px]" } : {})}
                   data-testid={testId}
                 />
               )

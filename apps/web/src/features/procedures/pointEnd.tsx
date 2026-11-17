@@ -4,6 +4,7 @@ import { sameField } from "../../lib/procedures";
 import { altFt } from "../../lib/format";
 import { isFixIdent, visitKey } from "../../lib/identSchema";
 import { PointFigures, PointMenu } from "../route/lazy";
+import { askSearchPick } from "../../lib/oneSearch";
 import { legOf, type NavLogRow } from "../plan";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 import { PointGrip } from "./RouteGrid";
@@ -109,8 +110,25 @@ export function pointEnd(
             : undefined
         }
         // Not after the destination: what follows it is a new
-        // destination, the route box's own (its end).
-        onChange={edit?.onChange && typed ? edit.onChange : undefined}
+        // destination, the route box's own (its end). In the Plan's cards,
+        // an airport is changed here too, by the one search asked for an
+        // airport, its ident a link to its card (FieldHead; the owner,
+        // 2026-11-17: "Can we make the airports/stops tappable as the
+        // navlog does?"), where it was a text box in the card.
+        onChange={
+          edit?.cards && edit.onReplace && !at.waypoint && at.index !== undefined
+            ? () =>
+                askSearchPick({
+                  label: `In place of ${ident}`,
+                  fixes: false,
+                  onPick: (picked) => {
+                    if (!sameField(picked, ident)) edit.onReplace!(at.index!, picked.toUpperCase());
+                  },
+                })
+            : edit?.onChange && typed
+              ? edit.onChange
+              : undefined
+        }
         onAddAfter={
           edit && at.index !== undefined && at.index < routePoints.length - 1 && !stopsFull ? () => edit.onAddAt(at.index! + 1) : undefined
         }

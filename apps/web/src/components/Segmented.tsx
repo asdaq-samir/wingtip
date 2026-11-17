@@ -9,7 +9,7 @@ import { TEXT } from "../lib/text";
  *  Each keeps 44 across everywhere, so a short word's (Top, VFR) is its
  *  own to tap: VFR's 43 lost its area's edge to IFR's (the iOS audit's
  *  P1, 2026-11-05). */
-const SEGMENT = `h-7 min-w-11 rounded-md px-2.5 ${TEXT.note} text-foreground data-pressed:bg-background data-pressed:shadow-card dark:data-pressed:bg-foreground/20 [&_svg:not([class*='size-'])]:size-3.5`;
+const SEGMENT = `min-w-11 rounded-md px-2.5 ${TEXT.note} text-foreground data-pressed:bg-background data-pressed:shadow-card dark:data-pressed:bg-foreground/20 [&_svg:not([class*='size-'])]:size-3.5`;
 
 /** Two to three choices, one of which is picked: shadcn's ToggleGroup as
  *  a segmented control -- the choice raised out of a muted track, as iOS
@@ -24,6 +24,7 @@ export default function Segmented({
   options,
   testId,
   className,
+  compact = false,
 }: {
   label: string;
   value: string;
@@ -33,6 +34,13 @@ export default function Segmented({
   /** Its width, where it is not its words': `w-full [&>*]:flex-1` spans
    *  the column, the segments sharing it equally. */
   className?: string;
+  /** A row's own fields' height, 28 (FPL's first row, beside the altitude
+   *  it sets the rules for), the segments 24 in it; the 44-point area the
+   *  same pseudo-element round it. Its size held at any text size, as
+   *  iOS's bar controls keep theirs and the fields beside it are held
+   *  (InlineField): its words no larger than 14 px, each segment 44 px
+   *  across, where at 19.65 px it took 116 of the row's 300. */
+  compact?: boolean;
 }) {
   return (
     <ToggleGroup
@@ -50,11 +58,12 @@ export default function Segmented({
       // -- landed outside it. The track does not grow.
       className={cn(
         "relative isolate rounded-lg bg-muted p-0.5 after:absolute after:inset-x-0 after:-inset-y-1.5 after:-z-10 after:content-['']",
+        compact && "rounded-full after:-inset-y-2",
         className,
       )}
     >
       {options.map((o) => (
-        <ToggleGroupItem key={o.value} value={o.value} className={SEGMENT}>
+        <ToggleGroupItem key={o.value} value={o.value} className={cn(SEGMENT, compact ? "h-6 min-w-[44px] rounded-full px-2 text-[length:min(0.8125rem,14px)]" : "h-7")}>
           {o.icon}
           {o.label}
         </ToggleGroupItem>

@@ -1,15 +1,17 @@
 import { compassPoint } from "./compass";
+import { grouped } from "./format";
 import { useGeo, type Geo, type LatLon } from "./geo";
 import { useOwnFixShown } from "./map/position/ownShip";
 import type { RecentAirport } from "./preferences";
 
 /** How far, as a figure: to a tenth under 10 nm, where a few tenths are
  *  worth saying -- an airplane 2.3 nm off, a field 4.6 nm away -- and whole
- *  miles from there. One field read "12 nm" on Nearest's strip and "12.3
- *  nm" in its list and on its card. */
+ *  miles from there, with the thousands' comma, "1,317", as every summary's
+ *  distance (the owner's list, 2026-11-17). One field read "12 nm" on
+ *  Nearest's strip and "12.3 nm" in its list and on its card. */
 export function nmFigure(nm: number): string {
   const tenths = Math.round(nm * 10) / 10;
-  return tenths < 10 ? tenths.toFixed(1) : String(Math.round(nm));
+  return tenths < 10 ? tenths.toFixed(1) : grouped(nm);
 }
 
 /** How far, with its unit: "4.6 nm", "12 nm". */

@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState } from "react";
 import { clockTime, localDay, monthSlashDay, twoFigures, weekdayShort } from "../../lib/format";
-import { CalendarIcon, ChevronDown } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { Button } from "../../components/ui/button";
 
 /** The month grid and the time field are React Aria's, only ever seen
@@ -18,7 +18,7 @@ interface Props {
   value: string;
   onChange: (iso: string) => void;
   /** A chip of glass, or the time in the tint as the departure's step in
-   *  FPL's list says it ("09:00 ⌄"), where the owner moved it. */
+   *  FPL's list says it ("09:00"), where the owner moved it. */
   look?: "chip" | "time";
   /** What it is the time of: the flight's departure, or a stop's leaving
    *  again ("Departure from KMSN"). */
@@ -110,8 +110,10 @@ export default function DepartPicker({
               TEXT.detail,
             )}
           >
+            {/* The tint alone says it opens, as every other tappable
+                figure's does: no chevron after it (the owner's list,
+                2026-11-17, "Now ⌄"). */}
             {date ? shortWhen(date) : "Now"}
-            <ChevronDown className="size-4" aria-hidden />
           </Button>
         ) : (
           <Button
@@ -131,7 +133,7 @@ export default function DepartPicker({
       </ResponsivePopoverTrigger>
       {/* A sheet from the bottom on a phone. Done at the top, as an iOS
           sheet puts it, and Now at its start where there is a "now" to go
-          back to; the time above the calendar, so at half both the way
+          back to and the departure is not now already; the time above the calendar, so at half both the way
           out and the time picked are in view, and the calendar may run on
           under the fold (the UI audit's B7, the owner's word 2026-11-17). */}
       <ResponsivePopoverContent
@@ -141,7 +143,10 @@ export default function DepartPicker({
         align="start"
         closeButton={false}
         leading={
-          leavesNow ? (
+          // Now only once a time is picked: leaving now already, there is
+          // nothing to go back to, and a greyed Now was one more control
+          // that did nothing (the owner's list, 2026-11-17).
+          leavesNow && date ? (
             <Button
               type="button"
               variant="ghost"
@@ -151,7 +156,6 @@ export default function DepartPicker({
                 onChange("");
                 setOpen(false);
               }}
-              disabled={!date}
               data-testid="depart-clear"
             >
               Now

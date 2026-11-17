@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { openPanel, settle, sideDrawer, slow } from "./helpers";
+import { card } from "./placeCard";
 
 /**
- * FPL's airports one block each, folded until the arrow by their fuel is
- * tapped, as the pilot first sees them, at the owner's pick (boards 4 and 5
+ * FPL's airports one block each, folded until their lines are tapped, as the pilot first sees them, at the owner's pick (boards 4 and 5
  * of the canvas): the ident on top, a fuel stop's pump before it and the
  * fuel in the tanks after it, the time over the elevation, the wind under;
  * opened, a line for the landing and one for the takeoff, no words for
@@ -25,7 +25,7 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("the departure and the destination are one block each, opened and folded by the arrow by their fuel", async ({ page }) => {
+test("the departure and the destination are one block each, opened and folded by a tap on their lines", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -73,4 +73,43 @@ test("a stop is one block, its landing and its takeoff a tap away, and a fuel st
   await openPanel(page);
   await expect(route.getByRole("region", { name: "KMSN · Arrive" })).toBeVisible({ timeout: slow(30_000) });
   await expect(route.getByRole("img", { name: "fuel stop" })).toHaveCount(0);
+});
+
+test("an airport's ident opens its card as the nav log's names do, the rest of its row folding it open, with one disclosure", async ({
+  page,
+}) => {
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  const field = sideDrawer(page).getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
+  const toggle = field.getByTestId("field-toggle");
+  await expect(toggle).toHaveAttribute("aria-expanded", "false", { timeout: slow(30_000) });
+  // No chevron of its own: the row's lines are the disclosure, the symbol the menu (C14).
+  await expect(toggle.locator("svg")).toHaveCount(0);
+  await field.getByTestId("field-wind").click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  const ident = field.getByTestId("field-open");
+  await expect(ident).toHaveAccessibleName("KDLH: open the airport");
+  await ident.click();
+  await expect(card(page)).toContainText("KDLH", { timeout: slow(15_000) });
+});
+
+test("in the Plan's cards an airport is changed from its menu's Change, by the one search, its ident a link", async ({ page }) => {
+  await page.addInitScript(() => {
+    const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":7}');
+    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, routeEdit: "plan" } }));
+  });
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  const field = sideDrawer(page).getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
+  await expect(field.getByTestId("field-open")).toBeVisible({ timeout: slow(30_000) });
+  await expect(field.getByRole("combobox")).toHaveCount(0);
+  await field.getByTestId("point-menu").click();
+  await page.getByTestId("point-menu-change").click();
+  const search = page.getByTestId("search-airports");
+  await expect(search).toBeFocused({ timeout: slow(10_000) });
+  await search.fill("KMSP");
+  await search.press("Enter");
+  await expect(page).toHaveURL(/dest=KMSP/, { timeout: slow(15_000) });
 });
