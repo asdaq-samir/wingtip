@@ -1,58 +1,31 @@
-import * as maplibregl from "maplibre-gl";
-import type { LayerSpecification, MapMouseEvent, PaddingOptions, StyleSpecification } from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
-// The worker MapLibre parses its sources in (worker.ts).
-import "../../lib/map/gl/worker";
-// The app's own typeface for the map's words (MapLibre draws them from
-// the font file, no glyph server): the Latin subset the page loads.
-import interUrl from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
+import type * as maplibregl from "maplibre-gl";
+import type { MapMouseEvent } from "maplibre-gl";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import MapControls from "../MapControls";
 import MapBanners from "../MapBanners";
 import MapLoading from "../MapLoading";
-import { SHEET_SECONDS, useMapInsets, type MapInsets } from "../../lib/mapChrome";
+import { SHEET_SECONDS, useMapInsets, useSlidingSheet, type MapInsets } from "../../lib/mapChrome";
 import { SheetCard } from "../SheetCard";
 import { DRAWER_MS } from "../sheet/insets";
 import { drawerEasing } from "./drawerEasing";
-import { watchMapErrors } from "./mapErrors";
 import { useRouteFit } from "./useRouteFit";
 import { useTappedInSight } from "./cardRoom";
-import type { Course, OverlayTiles } from "../../lib/api/types";
+import { useSheetSlide } from "./useSheetSlide";
+import { REVEAL_EVENT, loaded, makeMap, overlaysOf, padOf, picturesDrawn, picturesReady } from "./makeMap";
+import type { Course } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
-import { usePreferences } from "../../lib/preferences";
-import { chartQuery, overlayTilesQuery, queryClient } from "../../lib/queryClient";
+import { chartQuery, overlayTilesQuery } from "../../lib/queryClient";
 import { CardCloseContext } from "../../lib/map/cards/cardClose";
-import { prefetchRing, registerOverlayProtocol } from "../../lib/map/sources/overlayTiles";
-import { COUNTRY_ZOOM, OPEN_ZOOM, useOwnShip } from "../../lib/map/position/ownShip";
-import {
-  GlMapContext,
-  SLOTS,
-  adoptLayers,
-  parkLayers,
-  slotId,
-  sweepLayers,
-  tapHit,
-  type DrawnImage,
-  type GlMapApi,
-  type GlTap,
-  type Slot,
-} from "../../lib/map/gl/glLayer";
-import { OVERLAY_SOURCE, addOverlays, overlayPictures, overlayStyle } from "../../lib/map/gl/glOverlays";
+import { GlMapContext, adoptLayers, parkLayers, sweepLayers, tapHit, type GlMapApi, type GlTap } from "../../lib/map/gl/glLayer";
+import { OVERLAY_SOURCE, addOverlays } from "../../lib/map/gl/glOverlays";
 import { watchOverlayFilters } from "../../lib/map/gl/overlayFilters";
 import { glZoom } from "../../lib/map/gl/glStyle";
-import { probeLayers } from "../../lib/map/gl/useGlProbe";
 import { RulerGl } from "../../lib/map/gl/layers/RulerGl";
 import { cameraOf } from "../../lib/map/gl/camera";
-import { inRoom } from "../../lib/map/gl/cameraParts";
 
-const COUNTRY: [number, number] = [39.5, -98.35];
 /** RouteMap's: how close in an airport's card brings the map. */
 const PLACE_ZOOM = 9;
-/** The map's first showing (GlMap's reveal): at the latest this long after
- *  it is made, faded in over this long. */
-const REVEAL_LATEST_MS = 2500;
-const REVEAL_FADE_MS = 150;
 /** The longest the map waits, before it is made, for the overlay tiles'
  *  name and the overlays' pictures to put in its first style: past it, it
  *  is made without them and they come in as they arrive. */
@@ -61,155 +34,10 @@ const FIRST_STYLE_WAIT_MS = 1500;
  *  up (the map drawn before the engine, handed to the planner's), before
  *  it is let go. */
 const PARK_MS = 10_000;
-/** Sent on the map's element as it is first shown (makeMap's reveal). */
-const REVEAL_EVENT = "mapreveal";
 const flight = () => SHEET_SECONDS * 1000 * 2;
-
-// The overlay tiles' protocol, once for the page (lib/map/sources/overlayTiles).
-registerOverlayProtocol(maplibregl);
-
-/** The overlays' pictures, once drawn (glOverlays' overlayPictures), for
- *  every map to take as a tile asks for one. */
-let pictures: Map<string, DrawnImage> | null = null;
-const picturesDrawn = overlayPictures().then(
-  (p) => {
-    pictures = p;
-  },
-  () => {
-    pictures = new Map();
-  },
-);
-
-/** The overlay tiles each map draws, for its prefetch round the view. */
-const overlaysOf = new WeakMap<maplibregl.Map, OverlayTiles>();
 
 /** The map handed from one tree to the next, its element with it. */
 let parked: { map: maplibregl.Map; holder: HTMLDivElement; timer: number } | null = null;
-/** The maps whose style has loaded. */
-const loaded = new WeakSet<maplibregl.Map>();
-
-/**
- * A map made in `holder`, at the pilot's last position or the country, in
- * the middle of what the panel leaves (padding), its first style the
- * slots' empty layers with the cycle's FAA overlays (glOverlays) among
- * them, so the airspace, the airports and the navaids load per tile with
- * the chart rather than each asking the planner for the view.
- */
-function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.Map {
-  const last = useOwnShip.getState().lastFix;
-  const [lat, lon] = last ? [last.lat, last.lon] : COUNTRY;
-  const tiles = queryClient.getQueryData(overlayTilesQuery.queryKey) ?? null;
-  const overlays = tiles ? overlayStyle(tiles) : null;
-  const layers: LayerSpecification[] = SLOTS.flatMap((s: Slot) => [
-    ...(overlays?.layers[s] ?? []),
-    { id: slotId(s), type: "background" as const, layout: { visibility: "none" as const } },
-  ]);
-  const style: StyleSpecification = {
-    version: 8,
-    sources: overlays ? { [OVERLAY_SOURCE]: overlays.source } : {},
-    layers,
-    // The same variable font under a second name: MapLibre draws a name
-    // with "Bold" in it at weight 700 (GL_FONT_BOLD, the chart's labels).
-    "font-faces": {
-      Inter: [{ url: interUrl, "unicode-range": ["U+0000-00FF", "U+2000-206F"] }],
-      "Inter Bold": [{ url: interUrl, "unicode-range": ["U+0000-00FF", "U+2000-206F"] }],
-    },
-  };
-  const m = new maplibregl.Map({
-    container: holder,
-    style,
-    center: [lon, lat],
-    zoom: glZoom(last ? OPEN_ZOOM : COUNTRY_ZOOM),
-    minZoom: glZoom(3),
-    attributionControl: false,
-    // A chart is read north up: no turn, no tilt.
-    dragRotate: false,
-    pitchWithRotate: false,
-    touchPitch: false,
-    // MapLibre's own keys (its default: arrows pan, + and - zoom).
-    // Symbols placed at once, not faded in over 0.3 s.
-    fadeDuration: 0,
-    // And its world copies (its default): the Western Aleutian sectional runs across 180°.
-  });
-  if (tiles) overlaysOf.set(m, tiles);
-  // A tile's picture from those drawn ahead (overlayPictures), which MapLibre waits on before it lays the tile out.
-  m.setMissingStyleImageResolver(async (id) => {
-    await picturesDrawn;
-    const got = pictures?.get(id);
-    if (got && !m.hasImage(id)) m.addImage(id, got.image, got.options);
-  });
-  m.touchZoomRotate.disableRotation();
-  m.keyboard.disableRotation();
-  m.setPadding(padOf(insets));
-  // A tile 404 left blank; any other failure said and reported (mapErrors).
-  watchMapErrors(m);
-  // Whether it is moving, on its element, for the browser tests to wait
-  // on a still map (e2e helpers' mapStill).
-  const el = holder;
-  m.on("movestart", () => {
-    el.dataset.moving = "";
-  });
-  // And where it is: its middle, and where the point it opened on is on
-  // the screen now, and the layers drawn
-  // bottom to top.
-  const anchor = m.getCenter();
-  const say = () => {
-    const c = m.getCenter(),
-      p = m.project(anchor);
-    el.dataset.center = `${c.lat.toFixed(5)},${c.lng.toFixed(5)}`;
-    el.dataset.offset = `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
-    // In the app's levels (MapLibre's zoom plus one, glStyle).
-    el.dataset.zoom = (m.getZoom() + 1).toFixed(3);
-  };
-  say();
-  m.on("moveend", () => {
-    delete el.dataset.moving;
-    say();
-  });
-  probeLayers(m, el);
-  m.once("load", () => loaded.add(m));
-  // Once at rest, the overlay tiles one ring outside the view fetched
-  // (overlayTiles' prefetchRing), so a pan's first frame has them; again
-  // at each rest after, for the tiles not fetched yet.
-  m.on("idle", () => {
-    const tiles = overlaysOf.get(m);
-    if (!tiles) return;
-    const b = m.getBounds();
-    prefetchRing(tiles, { west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() }, m.getZoom());
-  });
-  // The map shown as one thing (the owner, 2026-11-07): the canvas clear
-  // over the page's background until the map is first at rest with the
-  // chart's tiles drawn (none to wait for with the chart None) and the
-  // overlay tiles' first ones in, then faded in once; never longer than
-  // REVEAL_LATEST_MS, so a slow tile never leaves the map blank.
-  const canvas = m.getCanvas();
-  canvas.style.opacity = "0";
-  let chartIn = usePreferences.getState().base === "none";
-  let overlaysIn = !tiles;
-  const tileIn = (e: { sourceId?: string; tile?: unknown }) => {
-    if (!e.tile) return;
-    if (e.sourceId?.startsWith("chart")) chartIn = true;
-    if (e.sourceId === OVERLAY_SOURCE) overlaysIn = true;
-  };
-  const reveal = () => {
-    m.off("sourcedata", tileIn);
-    m.off("idle", rested);
-    window.clearTimeout(latest);
-    // Under Reduce Motion index.css stills it (its !important beats this).
-    canvas.style.transition = `opacity ${REVEAL_FADE_MS}ms ease-out`;
-    canvas.style.opacity = "1";
-    el.dataset.revealed = "";
-    // For the page's loading mark (MapLoading) to fade as the map comes in.
-    el.dispatchEvent(new Event(REVEAL_EVENT));
-  };
-  const rested = () => {
-    if (chartIn && overlaysIn) reveal();
-  };
-  const latest = window.setTimeout(reveal, REVEAL_LATEST_MS);
-  m.on("sourcedata", tileIn);
-  m.on("idle", rested);
-  return m;
-}
 
 interface Props {
   course: Course | null;
@@ -251,13 +79,13 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   const insets = useMapInsets();
   const insetsRef = useRef(insets);
   // What a tap opened a card for, brought into sight once the card is up if it hides it.
-  const { note: noteTap, fresh: tapFresh } = useTappedInSight(map, insetsRef, padOf);
+  const { note: noteTap, take: takeTap } = useTappedInSight(map, insetsRef, padOf);
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
   const known = !!(course ?? chartOnly);
   // The overlay tiles' name and the overlays' pictures, for the map's
   // first style, each waited for at most FIRST_STYLE_WAIT_MS.
   const { status: tilesStatus, data: tiles } = useQuery(overlayTilesQuery);
-  const [drawnPictures, setDrawnPictures] = useState(() => pictures !== null);
+  const [drawnPictures, setDrawnPictures] = useState(picturesReady);
   const [waited, setWaited] = useState(false);
   useEffect(() => {
     let live = true;
@@ -422,11 +250,15 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   // zoom alone). A route's fit or a point picked still on its way is aimed
   // again at the room now left by the camera's owner, not stopped by a
   // second move.
+  const sliding = useSheetSlide(map, insetsRef);
   const follow = useCallback(
     (to: MapInsets) => {
       const was = insetsRef.current;
       insetsRef.current = to;
       if (!map || (was.top === to.top && was.bottom === to.bottom && was.left === to.left)) return;
+      // The sheet moving slides the map with it, frame by frame, and sets
+      // this room once it has settled (useSheetSlide).
+      if (sliding() && !to.card && !was.card) return;
       // A card come or gone: its room is the map's from now on, the chart
       // kept where it is under it, what was tapped brought into sight once
       // the card is up if it hides it (useTappedInSight). Half way to all
@@ -434,11 +266,14 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       const how = to.card || was.card ? "still" : to.up !== was.up && to.out === was.out ? "set" : "ease";
       cameraOf(map).room(padOf(to), how, { duration: DRAWER_MS, easing: drawerEasing });
     },
-    [map],
+    [map, sliding],
   );
+  // Told as the room changes, in the store's own call, not a render and an
+  // effect later.
   useEffect(() => {
-    follow(insets);
-  }, [insets, follow]);
+    follow(useMapInsets.getState());
+    return useMapInsets.subscribe(follow);
+  }, [follow]);
 
   // A point picked -- a checkpoint, an airport's card -- brought into
   // sight, in close enough, as FocusOn; every follow ends (the camera's pick).
@@ -452,22 +287,32 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   useEffect(() => {
     flyTo(focus, focusZoom);
   }, [flyTo, focus, focusZoom]);
-  // A field tapped on the chart is in sight already: never flown to, at
-  // any zoom, only brought into the card's room once its card is up, if
-  // the card hides it (useTappedInSight). Flown to below zoom 9, the
-  // flight was aimed again as the card's room came, two moves for one tap
-  // (the flicker audit's FL-8, 2026-11-14). One picked elsewhere -- the
-  // search, a list, a link -- is flown to, unless it is close in and in
-  // the room already.
+  // An airport's card opened -- tapped on the chart, picked in a list, a
+  // route's row or the search -- centres its field in the room above the
+  // card's detent as the card starts up, in the commit that opens it: one
+  // move, centre and padding together, on the sheet's curve and time (the
+  // owner, 2026-11-17: "It should be instant"). The room is the detent the
+  // card opens at (half, cardOpening; useSlidingSheet's `half`), known as
+  // it opens, not measured once it is up, as it was: the map waited for the
+  // card to settle and moved after it, 820 ms after the tap on a phone's
+  // CPU. A field tapped keeps the pilot's zoom; one picked elsewhere is
+  // brought in to PLACE_ZOOM, and flown to if it is off the screen.
   useEffect(() => {
     if (!map || !place) return;
     const at: [number, number] = [place.lon, place.lat];
-    if (tapFresh() || (map.getZoom() >= glZoom(PLACE_ZOOM) && inRoom(map, at, padOf(insetsRef.current)))) {
-      noteTap(at);
-      return;
-    }
-    flyTo(place, PLACE_ZOOM);
-  }, [map, flyTo, place, noteTap, tapFresh]);
+    const tapped = takeTap();
+    const half = useSlidingSheet.getState().half;
+    const pad = { ...padOf(insetsRef.current), ...(half ? { bottom: half } : {}) };
+    const p = map.project(at),
+      box = map.getContainer();
+    const near = !!tapped || (p.x >= 0 && p.y >= 0 && p.x <= box.clientWidth && p.y <= box.clientHeight);
+    cameraOf(map).pick(at, {
+      zoom: tapped ? map.getZoom() : Math.max(map.getZoom(), glZoom(PLACE_ZOOM)),
+      pad,
+      duration: near ? DRAWER_MS : flight(),
+      easing: drawerEasing,
+    });
+  }, [map, place, takeTap]);
 
   return (
     <div className="relative h-full w-full">
@@ -491,9 +336,4 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       {!bare && <MapControls />}
     </div>
   );
-}
-
-/** What the panel covers, as MapLibre's padding: its middle is the map's. */
-function padOf({ top, bottom, left }: MapInsets): Required<PaddingOptions> {
-  return { top, bottom, left, right: 0 };
 }

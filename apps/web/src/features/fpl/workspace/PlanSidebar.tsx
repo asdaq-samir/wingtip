@@ -3,13 +3,12 @@ import { fromChunk } from "../../../lib/fromChunk";
 import { loadAccountPanels } from "../../pilot";
 import type { LatLon } from "../../../lib/geo";
 import { MAX_STOPS } from "../../../lib/identSchema";
-import { RecentsPage } from "../../../components/PanelCapsule";
 import { sameField } from "../../../lib/procedures";
 import { AircraftRecentRows, usePrefetchAircraftTiles, loadAircraftFavoriteGroups } from "../../aircraft-pick";
 import type { OneSearchModel } from "../search/useOneSearch";
 import TabKept from "../../../components/TabKept";
 import TabPage from "../../../components/TabPage";
-import { RecentRoutesPage, loadSearchResultsPage, loadNearestCard } from "../../search";
+import { loadRecentRoutesPage, loadSearchResultsPage, loadNearestCard } from "../../search";
 import { AirspaceCard, FlightCard, PastFlightCard, PlaceCard } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import type { KeptAircraft } from "../../../lib/preferences";
@@ -24,6 +23,16 @@ const searchHome = fromChunk(
   (m) => m.default,
 );
 const SearchHome = searchHome.Part;
+/** Recents in full, airports' and routes', opened from the search's page:
+ *  off the first load too, with their grouped rows and Favorites' heads
+ *  (GroupedList, Favorites), and asked for with the search's page. */
+const recentsPage = fromChunk(
+  () => import("../../../components/PanelCapsule"),
+  (m) => m.RecentsPage,
+);
+const RecentsPage = recentsPage.Part;
+const recentRoutesPage = fromChunk(loadRecentRoutesPage, (m) => m.RecentRoutesPage);
+const RecentRoutesPage = recentRoutesPage.Part;
 const OneSearchResults = lazy(() => import("../search/OneSearchResults"));
 const SearchResultsPage = lazy(() => loadSearchResultsPage());
 
@@ -85,7 +94,11 @@ export default function PlanSidebar({
   const { askFor, favorites, home, moveFavoriteAirport, pickAirplane, pickPlace, query, setHomeAirport, toggleFavoriteAirport } = vm.search;
   usePrefetchAircraftTiles();
   useEffect(() => {
-    const later = window.setTimeout(searchHome.prefetch, 1500);
+    const later = window.setTimeout(() => {
+      searchHome.prefetch();
+      recentsPage.prefetch();
+      recentRoutesPage.prefetch();
+    }, 1500);
     return () => window.clearTimeout(later);
   }, []);
   // An airplane's card, over whichever place is up, as an airport's is.
@@ -196,20 +209,24 @@ export default function PlanSidebar({
           </TabPage>
         ) : airportRecentsOpen && !query ? (
           <TabPage>
-            <RecentsPage
-              onBack={closeList}
-              onPick={(airport) => {
-                closeList();
-                void pickPlace(airport);
-              }}
-              // Kept open under an airplane's card opened from it, as the
-              // Favorites in full are: its close comes back here.
-              airplanes={<AircraftRecentRows onPick={openAirplane} />}
-            />
+            <Waits>
+              <RecentsPage
+                onBack={closeList}
+                onPick={(airport) => {
+                  closeList();
+                  void pickPlace(airport);
+                }}
+                // Kept open under an airplane's card opened from it, as the
+                // Favorites in full are: its close comes back here.
+                airplanes={<AircraftRecentRows onPick={openAirplane} />}
+              />
+            </Waits>
           </TabPage>
         ) : routeRecentsOpen ? (
           <TabPage>
-            <RecentRoutesPage onBack={closeList} />
+            <Waits>
+              <RecentRoutesPage onBack={closeList} />
+            </Waits>
           </TabPage>
         ) : savedOpen ? (
           <TabPage>

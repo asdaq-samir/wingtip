@@ -214,6 +214,16 @@ class Camera {
     this.map.easeTo(options);
   }
 
+  /** The sheet's room as the sheet moves, set at once, frame by frame
+   *  (components/map/useSheetSlide): the chart slides with it. Not while a
+   *  pick or a fit is under way, which `room` aims again once it settles;
+   *  false then. */
+  slide(pad: Pad): boolean {
+    if (this.picking()) return false;
+    this.map.setPadding(pad);
+    return true;
+  }
+
   /**
    * The room the sheet leaves changed to `pad`. A pick under way that will
    * land in sight in the new room is left to land, and the room taken

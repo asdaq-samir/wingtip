@@ -1,10 +1,15 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { cn } from "cn";
 import TabKept from "../../../components/TabKept";
 import TabPage from "../../../components/TabPage";
-import { FplStrip } from "../../search";
+import { loadFplStrip } from "../../search";
+import { fromChunk } from "../../../lib/fromChunk";
 import { FplActions } from "./FplActions";
 import type { PlanSlices } from "../vm/planSlices";
+
+/** The strip under an empty route, off the first load (scripts/first-load.mjs):
+ *  a route opened from the address never draws it. */
+const FplStrip = fromChunk(loadFplStrip, (m) => m.default).Part;
 
 /**
  * The sheet's second page, FPL (its toggle, PageToggle; the owner, 2026-11-13), under
@@ -41,7 +46,9 @@ export default function PlanPage({
         // The flights saved or the routes planned last, under the empty
         // box, picked from its filter as before.
         <TabPage>
-          <FplStrip onAllSaved={openSaved} onAllRecents={() => openList("routes")} />
+          <Suspense fallback={null}>
+            <FplStrip onAllSaved={openSaved} onAllRecents={() => openList("routes")} />
+          </Suspense>
         </TabPage>
       )}
       {/* FPL's nav log once there is a route, at the pilot's ask; while
@@ -58,7 +65,9 @@ export default function PlanPage({
           the one field (the owner's screenshot, 2026-10-23). */}
       {depAlone && hasPoints && (
         <div className="px-4 pt-2">
-          <FplStrip onAllSaved={openSaved} onAllRecents={() => openList("routes")} />
+          <Suspense fallback={null}>
+            <FplStrip onAllSaved={openSaved} onAllRecents={() => openList("routes")} />
+          </Suspense>
         </div>
       )}
     </TabKept>
