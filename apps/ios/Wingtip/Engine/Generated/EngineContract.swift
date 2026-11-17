@@ -11119,6 +11119,32 @@ enum EngineContract {
         }
     }
 
+    struct RouteReadAnswer: Codable, Equatable, Sendable {
+        var points: [String]
+        /// The cruise's altitude, feet MSL; null where none was given or it is VFR's.
+        var cruiseFt: Double?
+        /// The cruise's true airspeed, knots, where given in knots.
+        var tasKt: Double?
+        var changes: [EngineContract.RouteReadAnswerChangesItem]
+
+        enum CodingKeys: String, CodingKey {
+            case points
+            case cruiseFt = "cruise_ft"
+            case tasKt = "tas_kt"
+            case changes
+        }
+    }
+
+    struct RouteReadAnswerChangesItem: Codable, Equatable, Sendable {
+        var at: String
+        var ft: Double
+    }
+
+    struct RouteReadInput: Codable, Equatable, Sendable {
+        /// The route as typed or pasted: "KPWK DCT OBK V100 KLAS".
+        var text: String
+    }
+
     struct RouteWayWarningInput: Codable, Equatable, Sendable {
         /// The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
         var kinds: [String]

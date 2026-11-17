@@ -1969,6 +1969,12 @@ fun Engine.routePosition(at: EngineContract.RoutePositionInputAt, line: List<Lis
     rule("route_position", EngineContract.RoutePositionInput(at = at, line = line, points = points, legs = legs))
 
 /**
+ * A route typed as a pilot writes one, read back as item 15 of FAA Form 7233-4 has it (AIM Appendix 4), for the route's one field: split on spaces and commas, DCT (direct) taken out; a cruising speed and level group or a level alone before the first point the cruise's ("N0110A065": 110 kt true, 6,500 ft; "A" and hundreds of feet in three figures, "F" a flight level, 14 CFR 1.1 and 91.121(a)(2); "VFR" a VFR level, no figure; metric speeds and levels give no figure); a point with a group after its stroke ("LEXOR/N0467F380") the point, its level a change from there. The rest are the route's points, airways and procedures in order, upper case, as typed: which is which is the caller's.
+ */
+fun Engine.routeRead(text: String): Result<EngineContract.RouteReadAnswer> =
+    rule("route_read", EngineContract.RouteReadInput(text = text))
+
+/**
  * A way's one warning, the worst of the hazard kinds it crosses, in the words every app says it in (route_options' way `warning`; the route as typed, whose crossings come with its chips): a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where nothing is crossed.
  */
 fun Engine.routeWayWarning(kinds: List<String>): Result<String?> =

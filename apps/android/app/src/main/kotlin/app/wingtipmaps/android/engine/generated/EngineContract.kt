@@ -11315,6 +11315,36 @@ object EngineContract {
     )
 
     @Serializable
+    data class RouteReadAnswer(
+        val points: List<String>,
+        /**
+         * The cruise's altitude, feet MSL; null where none was given or it is VFR's.
+         */
+        @SerialName("cruise_ft")
+        val cruiseFt: Double? = null,
+        /**
+         * The cruise's true airspeed, knots, where given in knots.
+         */
+        @SerialName("tas_kt")
+        val tasKt: Double? = null,
+        val changes: List<EngineContract.RouteReadAnswerChangesItem>,
+    )
+
+    @Serializable
+    data class RouteReadAnswerChangesItem(
+        val at: String,
+        val ft: Double,
+    )
+
+    @Serializable
+    data class RouteReadInput(
+        /**
+         * The route as typed or pasted: "KPWK DCT OBK V100 KLAS".
+         */
+        val text: String,
+    )
+
+    @Serializable
     data class RouteWayWarningInput(
         /**
          * The kinds of the hazards the way crosses (RouteOptionsHazard's kind).
