@@ -1,7 +1,7 @@
 import { Button as BaseButton } from "@base-ui/react/button";
 import { useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { cn } from "cn";
-import type { PanelState } from "../../lib/mapChrome";
+import { GRABBER_BAR, type PanelState } from "../../lib/mapChrome";
 
 const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
 
@@ -76,7 +76,7 @@ export function SheetGrabber({
         at === "top" ? "after:top-auto! after:bottom-0!" : "after:top-0! after:bottom-auto!",
       )}
     >
-      <span className="h-[5px] w-9 rounded-full bg-muted-foreground/40" aria-hidden="true" />
+      <span className={GRABBER_BAR} aria-hidden="true" />
     </BaseButton>
   );
 }

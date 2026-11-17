@@ -173,13 +173,22 @@ export const GLASS_PICKED =
  *  role, its cap there. */
 export const CHIP_TEXT = TYPE_CLASS.chip;
 
+/** iOS's grabber bar, 36 by 5, on a sheet's top edge: the pill's button
+ *  (SheetGrabber) and a phone sheet's own (PhoneSheet) draw the same. */
+export const GRABBER_BAR = "h-[5px] w-9 rounded-full bg-muted-foreground/40";
+
+/** A capsule whose 44-point hit area is a pseudo-element six points out
+ *  round it (the app's rule: a control never grows to get there). The
+ *  caller adds its height (h-8 for the 32-point ones) and fill. */
+export const CAPSULE_HIT = "relative rounded-full after:absolute after:-inset-1.5 after:content-['']";
+
 /** A tinted capsule that adds a field to the route -- the Stops' Add
  *  Stop and Direct To (StopsCard) -- one height, padding and hit area (the
  *  consistency audit, 2026-10-23): 32 points with a 44-point area round
  *  it as a pseudo-element, so the capsule is not grown to make it. */
 export const ADD_CAPSULE =
-  "relative h-8 shrink-0 rounded-full bg-tint/12 px-3.5 font-semibold text-tint outline-none " +
-  `after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring ${TEXT.detail}`;
+  `${CAPSULE_HIT} h-8 shrink-0 bg-tint/12 px-3.5 font-semibold text-tint outline-none ` +
+  `focus-visible:ring-2 focus-visible:ring-ring ${TEXT.detail}`;
 
 /** A star filled in iOS's yellow, as a starred thing is everywhere on
  *  iOS: the airport card's star, a round button by its close. */

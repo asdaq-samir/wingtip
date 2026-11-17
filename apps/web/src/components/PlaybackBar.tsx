@@ -3,8 +3,7 @@ import { Pause, Play } from "lucide-react";
 import { cn } from "cn";
 import { Toolbar } from "@base-ui/react/toolbar";
 import { Toggle } from "./ui/toggle";
-import { DropdownMenu, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { PickItems } from "./MenuPick";
+import MenuPick from "./MenuPick";
 import { Button } from "./ui/button";
 import { TEXT } from "../lib/text";
 import { playbackKey } from "./playbackKeys";
@@ -112,36 +111,18 @@ export function PlayToggle({
 /** How fast it plays, a menu of the speeds (decision 0017: a menu, not a
  *  slider): the speed on the button, the stock menu's radio items under
  *  it. Each item's test id is the button's and its value. */
-export function SpeedMenu<T extends string | number>({
-  name,
-  value,
-  choices,
-  onPick,
-  testId,
-}: {
-  name: string;
-  value: T;
-  choices: { value: T; label: string }[];
-  onPick: (value: T) => void;
-  testId: string;
-}) {
-  const label = choices.find((c) => c.value === value)?.label ?? String(value);
+export function SpeedMenu<T extends string | number>(props: Omit<ComponentProps<typeof MenuPick<T>>, "trigger">) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        // The stock Button in its glass variant, in the toolbar's roving
-        // focus (Toolbar.Button's render), a capsule the bar's height.
-        render={
-          <Toolbar.Button
-            aria-label={`${name}: ${label}`}
-            data-testid={testId}
-            render={<Button variant="glass" className={cn("rounded-full px-2 font-semibold tabular-nums", TEXT.note)} />}
-          />
-        }
-      >
-        {label}
-      </DropdownMenuTrigger>
-      <PickItems value={value} choices={choices} onPick={onPick} testId={testId} />
-    </DropdownMenu>
+    <MenuPick
+      {...props}
+      // The stock Button in its glass variant, in the toolbar's roving
+      // focus (Toolbar.Button's render), a capsule the bar's height.
+      trigger={(own) => (
+        <Toolbar.Button
+          {...own}
+          render={<Button variant="glass" className={cn("rounded-full px-2 font-semibold tabular-nums", TEXT.note)} />}
+        />
+      )}
+    />
   );
 }

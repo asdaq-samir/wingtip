@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { GLASS_PICKED } from "../../../lib/mapChrome";
+import { CAPSULE_HIT, GLASS_PICKED } from "../../../lib/mapChrome";
 import { TEXT } from "../../../lib/text";
 
 // The classes and styles FPL's route list (ProceduresRoute) and its parts
@@ -29,9 +29,4 @@ export const CARD_BODY = "pl-5";
  *  in its glass variant (`variant="glass"`): a capsule 32 high, the one
  *  picked filled (GLASS_PICKED), its 44-point hit area a pseudo-element
  *  six round it. */
-export const CHIP = cn(
-  "relative h-8 min-w-11 justify-center rounded-full px-3 font-normal",
-  GLASS_PICKED,
-  "after:absolute after:-inset-1.5 after:content-['']",
-  TEXT.detail,
-);
+export const CHIP = cn(CAPSULE_HIT, "h-8 min-w-11 justify-center px-3 font-normal", GLASS_PICKED, TEXT.detail);
