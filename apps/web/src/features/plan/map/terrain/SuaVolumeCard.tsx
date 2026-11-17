@@ -10,7 +10,7 @@ import type { SuaArea } from "./airspaceVolumes";
  * The card a tap on a special use area's volume opens in 3D: its name and
  * kind, its altitudes as the engine writes them (sua_altitudes: a floor
  * above the ground said so), when it is used and who controls it -- what
- * the held point's card (features/plan/components/AirspaceCard) says of
+ * the held point's card (features/place/AirspaceCard) says of
  * the same area, in the area's own ink.
  */
 export function SuaVolumeCard({ area, colour }: { area: SuaArea; colour: string }) {

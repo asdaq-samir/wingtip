@@ -21,7 +21,7 @@
  * held for nothing. Nothing heard is sent anywhere or saved: the level is
  * a number for the bars, gone as it is drawn.
  *
- * Imported by lib/atcListening, features/plan/lib/atis and the card's ListenThrough, all chunks of their own.
+ * Imported by lib/atcListening, features/place/atis and the card's ListenThrough, all chunks of their own.
  * Every browser call is feature-tested and caught; where nothing can be
  * picked -- Chrome for Android, whose recognizer opens the microphone itself and whose
  * inputs are only "Bluetooth headset" and "Default" -- all of it does

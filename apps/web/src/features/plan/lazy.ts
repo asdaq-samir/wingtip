@@ -6,15 +6,10 @@
  * index.ts would load with the page (.dependency-cruiser.cjs, index-not-lazy).
  */
 
-export { default as AirspaceCard } from "./components/AirspaceCard";
-export { FrequencyRow, Mhz } from "./components/FrequencyRow";
 export { default as LocalDuration } from "./components/LocalDuration";
-export { default as PlaceCard } from "./components/PlaceCard";
 export { PointFigures, PointMenu } from "./components/PointControls";
-export { PublicationRows } from "./components/PublicationRows";
 export { default as RouteProblem } from "./components/RouteProblem";
 export { default as RouteSplit } from "./components/RouteSplit";
-export { RunwayRow } from "./components/RunwayRow";
 export { type Phase, phasesOf } from "./components/briefing/sections";
 export { hourZ, unavailableWords, zulu } from "./forecastRun/forecastRun";
 export { setForecastMode, useForecastMode, useForecastRun } from "./forecastRun/useForecastRun";

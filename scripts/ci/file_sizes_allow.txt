@@ -38,7 +38,7 @@ apps/web/src/features/pilot/InstructorPage.tsx 541
 apps/web/src/features/fpl/PlanWorkspace.tsx 464
 apps/web/src/features/navlog/AltitudeReasoning.tsx 577
 apps/web/src/features/procedures/ApproachLesson.tsx 467
-apps/web/src/features/plan/components/PlaceCard.tsx 440
+apps/web/src/features/place/PlaceCard.tsx 440
 apps/web/src/features/plan/components/RouteMap.tsx 437
 apps/web/src/features/navlog/NavLogView.tsx 868
 apps/web/src/features/procedures/FieldStep.tsx 546

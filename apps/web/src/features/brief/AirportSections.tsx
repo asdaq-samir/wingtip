@@ -3,7 +3,8 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import type { Briefing, Leg } from "../../lib/api/types";
 import { isPosition } from "../../lib/identSchema";
 import { feet, fieldPhases } from "../plan";
-import { phasesOf, type Phase, FrequencyRow, PublicationRows, RunwayRow, useRunwayPicks } from "../plan/lazy";
+import { phasesOf, type Phase, useRunwayPicks } from "../plan/lazy";
+import { FrequencyRow, PublicationRows, RunwayRow } from "../place/lazy";
 import PatternRadio from "./PatternRadio";
 import { NO_FREQUENCIES, NO_RUNWAYS } from "../../lib/emptyWords";
 

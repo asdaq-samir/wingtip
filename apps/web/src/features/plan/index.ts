@@ -52,6 +52,8 @@ export {
   one,
   plannedWords,
   reportedWind,
+  runwayWind,
+  surfaceName,
   windAloft,
   windLine,
   windOnRunway,
@@ -63,6 +65,7 @@ export { panelNow, riseToSee } from "./hooks/panelNow";
 export {
   NO_AUTO,
   type PlannedRoute,
+  type SuggestedStop,
   approximateOf,
   autoOf,
   departureRunways,
@@ -99,6 +102,7 @@ export {
   patternSideDeg,
   pickedEnd,
   runwayFlown,
+  runwayInUse,
   runwayNumber,
   windPick,
 } from "./lib/pattern";
@@ -107,6 +111,7 @@ export { type Hold, holdWords, holdsOf, holdsParam, lengthCode, lengthOfCode, le
 export { sameStops } from "./lib/routeWays";
 export { readQuery } from "./lib/searchFilters";
 export { useTabSearch } from "./lib/tabSearch";
+export { runwayCrosswindKt } from "./lib/wind";
 export { useWindPicks } from "./lib/windPicks";
 export { useKeepOffline } from "./map/keepStatus";
 export {

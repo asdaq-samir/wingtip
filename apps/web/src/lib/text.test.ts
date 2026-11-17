@@ -8,7 +8,7 @@ const FILES = [
   "features/plan/components/PointAltitudeDialog.tsx",
   "components/SignInModal.tsx",
   "features/pilot/LinkSignIn.tsx",
-  "features/plan/components/PlaceCard.tsx",
+  "features/place/PlaceCard.tsx",
   "components/AccordionSection.tsx",
 ];
 

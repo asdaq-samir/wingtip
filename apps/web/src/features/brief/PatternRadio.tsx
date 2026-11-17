@@ -15,7 +15,8 @@ import {
   altFt,
   feet,
 } from "../plan";
-import { useRunwayPicks, Mhz } from "../plan/lazy";
+import { useRunwayPicks } from "../plan/lazy";
+import { Mhz } from "../place/lazy";
 import { TEXT } from "../../lib/text";
 
 type Facilities = Briefing["airports"][string];

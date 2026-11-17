@@ -148,7 +148,7 @@ test("the pictures open on the runways, and the Weather tab opens on the forecas
   // the way up to read it, as a pilot would.
   await grabberTo(page, "full");
   // The sentence, written from the TAF: when it goes MVFR and what does
-  // it, until when, and the gust (features/plan/lib/hourly).
+  // it, until when, and the gust (features/place/hourly).
   await expect(card(page).getByTestId("place-forecast-sentence")).toHaveText(
     /^Ceilings lowering to 2,500 ft around \d\d:00, MVFR until \d\d:00\. Gusts up to 22 kt\.$/,
   );
@@ -1024,7 +1024,7 @@ test("an airport's card says which lights a pilot turns on with the mic, and the
 
 /**
  * Listen to ATIS on the Weather tab: one broadcast heard through the
- * microphone and read by the engine (features/plan/lib/atis, read_atis), the runway in
+ * microphone and read by the engine (features/place/atis, read_atis), the runway in
  * use and the altimeter in one line, the figures under it, the
  * transcript folded. The browser's recognizer is a stand-in saying the
  * broadcast.
