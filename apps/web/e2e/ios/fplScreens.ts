@@ -160,7 +160,7 @@ export const FPL_SCREENS: Screen[] = [
   },
   {
     // No legal altitude's mark beside the Nav Log, its sheet open: the
-    // reasons and the ways round a Class B.
+    // reasons and the ways round the high ground.
     name: "no legal altitude, opened",
     ready: async (page) => {
       await page.route("**/api/planner/navlog**", (route) =>
@@ -172,17 +172,16 @@ export const FPL_SCREENS: Screen[] = [
               type: "error",
               retry: false,
               detail: "No legal VFR cruising altitude 1-15 nm along the route",
-              reasons: ["The Chicago Class B reaches the ground there; going through it needs a clearance."],
-              advice: "Fly via BEPKE (6 nm further) to stay out of it, or plan it with a Class B clearance.",
-              class_b: true,
-              detours: [{ ident: "BEPKE", kind: "GPS waypoint", added_nm: 5.9, stop_index: 0, description: "in Downers Grove" }],
+              reasons: ["The terrain and obstacles there need 10,600 ft."],
+              advice: "Route around the high ground.",
+              detours: [{ ident: "BEPKE", kind: "GPS waypoint", added_nm: 5.9, stop_index: 0, via: ["BEPKE"] }],
             }) + "\n",
         }),
       );
       await page.goto(`/app/plan?${ROUTE}&view=briefing`);
       await controlsInSight(page);
       await openProfile(page);
-      await expect(page.getByTestId("unflyable-fly-via")).toBeVisible();
+      await expect(page.getByTestId("unflyable-add-stop")).toBeVisible();
     },
   },
   {

@@ -15,7 +15,7 @@ import type { PlanPicks } from "./usePlanPicks";
  */
 export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place }: PlanCards, { typeProcedures }: PlanPicks) {
   "use no memo"; // As usePlanWorkspace, whose part this is: left to its own memos.
-  const { planned, setStops, setRoute, acceptClassB, flyAltitude, load, showWaypoints, address } = route;
+  const { planned, setStops, setRoute, flyAltitude, load, showWaypoints } = route;
   const { s, course, aircraft, planParams, directToChartPoint } = answer;
   // The stops the planner suggests, and keeping them (useSuggestedStops).
   const suggested = useSuggestedStops({ totals: s.totals, local: s.local, planned, setStops });
@@ -59,11 +59,9 @@ export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place 
     course,
     planned,
     aircraft,
-    classBAvoided: !address.class_b,
     setStops,
     setRoute,
     directToChartPoint,
-    acceptClassB,
     flyAltitude,
     typeProcedures,
   });

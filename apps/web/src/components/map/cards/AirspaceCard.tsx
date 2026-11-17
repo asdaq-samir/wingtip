@@ -5,12 +5,10 @@ import { TermTable } from "../../CardFacts";
 import { airspaceFacts } from "../../../lib/map/marks/airspaceLabel";
 import { AIRSPACE_LINE } from "../../../lib/map/marks/airspaceMarks";
 import { MapCard } from "../../../lib/map/cards/MapCard";
-import { Button } from "../../ui/button";
 import { ListGroup, ListRow } from "../../GroupedList";
 import { callTypes, entryRules } from "../../../lib/airspaceRules";
 import FrequencyButton from "../../FrequencyButton";
 import { airportQuery } from "../../../lib/queryClient";
-import { usePointActions } from "../../../lib/map/cards/pointActions";
 
 /**
  * The card a tap on a Class B, C or D line opens (the map draws them from
@@ -41,11 +39,8 @@ function Swatch({ volume }: { volume: AirspaceVolume }) {
   );
 }
 
-/** A volume's card on whichever map opened it: `close` puts it away
- *  before the route is planned round the Class B (Leaflet's popup here,
- *  the WebGL map's sheet card in GlMap). */
-export function AirspaceCardBody({ volume, close }: { volume: AirspaceVolume; close: () => void }) {
-  const avoid = usePointActions((s) => s.avoidClassB);
+/** A volume's card on whichever map opened it. */
+export function AirspaceCardBody({ volume }: { volume: AirspaceVolume }) {
   const facts = airspaceFacts(volume);
   const rows: [string, string][] = [
     ["Floor", facts.floor],
@@ -73,19 +68,6 @@ export function AirspaceCardBody({ volume, close }: { volume: AirspaceVolume; cl
           ))}
         </ListGroup>
       </div>
-      {volume.airspace_class === "B" && avoid && (
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full text-tint"
-          onClick={() => {
-            close();
-            avoid();
-          }}
-        >
-          Route Around Class B
-        </Button>
-      )}
     </MapCard>
   );
 }

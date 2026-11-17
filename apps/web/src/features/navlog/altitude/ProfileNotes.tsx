@@ -3,7 +3,7 @@ import { cn } from "cn";
 import { Button } from "../../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../components/ui/collapsible";
 import { faaWords } from "../../../lib/advisories";
-import type { Detour, Leg, NavLogAltitude, RouteProfile, Totals } from "../../../lib/api/types";
+import type { Leg, NavLogAltitude, RouteProfile, Totals } from "../../../lib/api/types";
 import { altFt } from "../../../lib/format";
 import { callEngine } from "../../../lib/engine/engine";
 import { SECTION_TITLE, TEXT } from "../../../lib/text";
@@ -12,12 +12,12 @@ import AltitudeReasoning from "../AltitudeReasoning";
 /**
  * What the Profile card says under the Altitude Advisor, moved from the
  * card's body as it was: Class B entered at the altitude in sight with the
- * clearance it takes (14 CFR 91.131) and the way round it, or avoided; a
+ * clearance it takes (14 CFR 91.131), a route always being planned through
+ * it (the owner, 2026-11-17); a
  * pilot's own altitude's cautions with the way round high ground; a tight
  * altitude; and how the altitude was chosen, folded.
  */
-/** A note of the route's airspace with its one action at the end: Class
- *  B avoided with Allow, or flown through with Avoid. */
+/** A note of the route's airspace. */
 const NOTE_ROW = "flex items-center justify-between gap-2 rounded-xl bg-card py-1.5 pr-1.5 pl-3";
 
 export default function ProfileNotes({
@@ -26,9 +26,6 @@ export default function ProfileNotes({
   profile,
   shownAt,
   tight,
-  classBAvoided,
-  onAvoidClassB,
-  onAllowClassB,
   onGoRound,
   winds,
 }: {
@@ -37,9 +34,6 @@ export default function ProfileNotes({
   profile: RouteProfile | undefined;
   shownAt: number | null;
   tight: string | null;
-  classBAvoided: boolean;
-  onAvoidClassB?: (detour: Detour | null) => void;
-  onAllowClassB?: () => void;
   onGoRound?: (via: string[], stopIndex: number) => void;
   winds?: Totals["winds"];
 }) {
@@ -59,33 +53,10 @@ export default function ProfileNotes({
   const cautions = nav?.cautions ?? [];
   return (
     <>
-      {classBAvoided ? (
-        <div className={NOTE_ROW} data-testid="class-b-avoided">
-          <span className={TEXT.detail}>Avoiding Class B</span>
-          {onAllowClassB && (
-            <Button type="button" size="sm" variant="ghost" className="text-tint" onClick={onAllowClassB}>
-              Allow Class B
-            </Button>
-          )}
+      {bravo && (
+        <div className={NOTE_ROW} data-testid="class-b-accepted">
+          <span className={TEXT.detail}>Through {faaWords(bravo.name)}: clearance needed</span>
         </div>
-      ) : (
-        bravo && (
-          <div className={NOTE_ROW} data-testid="class-b-accepted">
-            <span className={TEXT.detail}>Through {faaWords(bravo.name)}: clearance needed</span>
-            {onAvoidClassB && (
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                className="shrink-0 text-tint"
-                onClick={() => onAvoidClassB(detours.find((d) => !d.via?.length) ?? null)}
-                data-testid="avoid-class-b"
-              >
-                Avoid Class B
-              </Button>
-            )}
-          </div>
-        )
       )}
       {cautions.length > 0 && (
         <div

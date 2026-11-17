@@ -34,7 +34,7 @@ function TileAirspace() {
   }));
   useGlTap(AIRSPACE_LINE_LAYERS, TAP.line, TAP.rank.line, (feature) => {
     const volume = volumeOfTile(feature);
-    openCard(<AirspaceCardBody key={volume.id} volume={volume} close={() => openCard(null)} />);
+    openCard(<AirspaceCardBody key={volume.id} volume={volume} />);
   });
   return null;
 }

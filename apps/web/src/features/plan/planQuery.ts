@@ -13,9 +13,7 @@ export interface Unflyable {
   brief: string;
   reasons: string[];
   advice: string | null;
-  /** Class B airspace is what stops it: a clearance, or a waypoint to
-   *  fly via -- `detours`, the ones round it, best first -- are the ways on. */
-  classB: boolean;
+  /** The ways round high ground, best first. */
   detours: Detour[];
 }
 
@@ -35,8 +33,6 @@ export interface PlanParams {
   aircraft: AircraftChoice;
   /** Load pressed again for the same route: a fresh nav log, fresh winds. */
   load: number;
-  /** The pilot will have a Class B clearance: planned through it. */
-  classBClearance?: boolean;
   /** Points' own altitudes, as the address has them ("VPBNG:4500,KMSN:1900"):
    *  a waypoint's flown to it, an airport's its pattern (RouteBox). */
   altitudes?: string;
@@ -88,7 +84,7 @@ export type BriefingState =
   | { state: "failed"; detail: string };
 
 /** Where the runways left from are in a plan's key (planKeyOf). */
-export const PLAN_KEY_RUNWAYS = 15;
+export const PLAN_KEY_RUNWAYS = 14;
 
 /** Everything the nav log is computed from. */
 export function planKeyOf({
@@ -100,7 +96,6 @@ export function planKeyOf({
   depart,
   aircraft,
   load,
-  classBClearance = false,
   altitudes = "",
   checkpoints = true,
   rules = "vfr",
@@ -122,7 +117,6 @@ export function planKeyOf({
     altitudeChoice,
     depart,
     load,
-    classBClearance,
     altitudeStarts ? `${altitudes}|${altitudeStarts}` : altitudes,
     checkpoints,
     aircraft.profile,
@@ -152,7 +146,6 @@ export function navlogQuery(plan: PlanParams, checkpointsToo: boolean, ahead = f
     altitudeChoice,
     depart,
     aircraft,
-    classBClearance = false,
     altitudes = "",
     rules = "vfr",
     alternate = "",
@@ -170,7 +163,7 @@ export function navlogQuery(plan: PlanParams, checkpointsToo: boolean, ahead = f
     // entered and a plan with Waypoints off are one answer.
     // Asked for ahead of the pilot (`ahead`), a key of its own: a pilot's
     // own ask is never the low-priority one already on its way.
-    queryKey: [ahead ? "navlog-ahead" : "navlog", ...planKey.slice(0, 9), checkpointsToo, ...planKey.slice(10)],
+    queryKey: [ahead ? "navlog-ahead" : "navlog", ...planKey.slice(0, 8), checkpointsToo, ...planKey.slice(9)],
     // In batches (inBatches): one render for the lines that come together.
     queryFn: streamedQuery({
       streamFn: ({ signal }: { signal: AbortSignal }) =>
@@ -185,7 +178,6 @@ export function navlogQuery(plan: PlanParams, checkpointsToo: boolean, ahead = f
               depart || undefined,
               signal,
               stops,
-              classBClearance,
               altitudes,
               checkpointsToo,
               rules,

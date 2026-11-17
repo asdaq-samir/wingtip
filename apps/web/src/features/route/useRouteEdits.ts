@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { ADDRESS_CLEARED, type SetAddress } from "../../lib/address";
-import type { Detour, ProcedureDrawing } from "../../lib/api/types";
+import type { ProcedureDrawing } from "../../lib/api/types";
 import { fieldListParams, fieldListsOf, prunedFieldLists, NO_DIRECT } from "../plan";
 import { MAX_STOPS, altitudesOf, altitudesParam, departureOf, identOf, routeOf, stopsOf } from "../../lib/identSchema";
 import { sameField, type PickedProcedure } from "../../lib/procedures";
@@ -184,37 +184,6 @@ export function useRouteEdits({
     },
     [setStops, planned.dep, planned.stops],
   );
-  // Allowed again: the waypoint Avoid Class B put round it (class_b_via)
-  // taken out of the stops too, where it still is -- left in, the route
-  // still bent round the Class B it was now planned through.
-  const acceptClassB = useCallback(
-    (accept: boolean) => {
-      void setAddress((prev) => {
-        const via = prev.class_b_via;
-        const stops = stopsOf(prev.stops).filter((stop) => !accept || stop !== via);
-        return { class_b: accept, class_b_via: accept ? null : via, stops: stops.length ? stops.join(",") : null };
-      });
-    },
-    [setAddress],
-  );
-  // "Avoid Class B": the planner's waypoint round it put in the stops where
-  // it says (Detour.stop_index, before that stop), and the clearance taken
-  // back, so the rest is planned under or round it; with no waypoint in
-  // reach, the clearance alone. One change of the address.
-  // The waypoint only where the route has room for another stop
-  // (MAX_STOPS): a ninth was refused by the planner (422), the clearance
-  // alone taken back then. Its ident kept (class_b_via), for Allow.
-  const avoidClassB = useCallback(
-    (detour: Detour | null) => {
-      void setAddress((prev) => {
-        const stops = stopsOf(prev.stops);
-        const added = !!detour && !stops.includes(detour.ident) && stops.length < MAX_STOPS;
-        if (added) stops.splice(Math.min(detour.stop_index, stops.length), 0, detour.ident);
-        return { class_b: false, class_b_via: added ? detour.ident : null, stops: stops.length ? stops.join(",") : null };
-      });
-    },
-    [setAddress],
-  );
   // An altitude of the pilot's own, the rest of the address as it was.
   // An altitude typed beside the airplane is flown on every leg, legal or
   // not, with its cautions; one picked on the wheel (`nearest`) on each
@@ -229,5 +198,5 @@ export function useRouteEdits({
     },
     [setAddress],
   );
-  return { setRoute, addStop, departFrom, setPointAltitude, setStops, removeStop, insertStopAfter, acceptClassB, avoidClassB, flyAltitude };
+  return { setRoute, addStop, departFrom, setPointAltitude, setStops, removeStop, insertStopAfter, flyAltitude };
 }

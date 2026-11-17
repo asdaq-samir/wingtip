@@ -14,13 +14,10 @@ export type ChartPoint = { ident: string; lat: number; lon: number };
 export const usePointActions = create<{
   addToRoute: ((point: ChartPoint) => void) | null;
   directTo: ((point: ChartPoint) => void) | null;
-  /** The route planned round the Class B (the planner's Avoid Class B),
-   *  from a Class B's card, while it goes through. */
-  avoidClassB: (() => void) | null;
   /** The route's course line, [lat, lon], for an area's card to say
    *  whether the route goes through it (a TFR's). */
   courseLine: readonly (readonly [number, number])[] | null;
   /** The VORs on the map (NavaidsGl), for a point's place off the
    *  nearest. */
   stations: readonly Station[];
-}>(() => ({ addToRoute: null, directTo: null, avoidClassB: null, courseLine: null, stations: [] }));
+}>(() => ({ addToRoute: null, directTo: null, courseLine: null, stations: [] }));

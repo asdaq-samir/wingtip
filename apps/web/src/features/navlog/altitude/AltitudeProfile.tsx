@@ -5,7 +5,7 @@ import { cn } from "cn";
 import { Button } from "../../../components/ui/button";
 import { Toggle } from "@base-ui/react/toggle";
 import { Slider } from "../../../components/ui/slider";
-import type { AltitudeChoice, Detour, Leg, NavLogAltitude, Totals } from "../../../lib/api/types";
+import type { AltitudeChoice, Leg, NavLogAltitude, Totals } from "../../../lib/api/types";
 import { useAirplaneChosen } from "../../../lib/preferences";
 import { routeProfileQuery } from "../../../lib/queryClient";
 import { TEXT } from "../../../lib/text";
@@ -48,9 +48,6 @@ export function AltitudeProfile({
   wheelHidden = false,
   problem,
   tight = null,
-  classBAvoided = false,
-  onAvoidClassB,
-  onAllowClassB,
   onGoRound,
   onAltitudeChoiceChange,
   onFlyAltitude,
@@ -69,9 +66,6 @@ export function AltitudeProfile({
   wheelHidden?: boolean;
   problem?: ReactNode;
   tight?: string | null;
-  classBAvoided?: boolean;
-  onAvoidClassB?: (detour: Detour | null) => void;
-  onAllowClassB?: () => void;
   onGoRound?: (via: string[], stopIndex: number) => void;
   onAltitudeChoiceChange: (choice: AltitudeChoice) => void;
   onFlyAltitude: (feet: number, legal: boolean) => void;
@@ -238,9 +232,6 @@ export function AltitudeProfile({
         profile={profile}
         shownAt={shownAt}
         tight={tight}
-        classBAvoided={classBAvoided}
-        onAvoidClassB={onAvoidClassB}
-        onAllowClassB={onAllowClassB}
         onGoRound={onGoRound}
       />
     </div>

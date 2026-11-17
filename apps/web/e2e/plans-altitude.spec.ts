@@ -1,32 +1,19 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, controlsInSight, openProfile, settle, slow } from "./helpers";
+import { controlsInSight, openProfile, settle, slow } from "./helpers";
 import { pickAirplane } from "./startState";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
-test("plan page: Class B is planned through by default, said with its clearance, and Avoid Class B puts the waypoint round it in the stops", async ({
-  page,
-}) => {
-  // The owner's pick (2026-10-20): Class B accepted unless avoided. The
-  // planner's own plan, with a Class B on the side view at its altitude
-  // and the waypoint round it (BEPKE, 6 nm further) put in its answer.
+test("plan page: Class B is always planned through, said with its clearance, with no way to avoid it", async ({ page }) => {
+  // The owner (2026-11-17): no Class B setting, planned through it with the
+  // clearance (14 CFR 91.131). The planner's own plan, with a Class B on
+  // the side view at its altitude.
   let asked = "";
   await page.route(
     (url) => url.pathname.endsWith("/planner/navlog"),
     async (route) => {
       asked = new URL(route.request().url()).searchParams.get("class_b_clearance") ?? "";
-      const response = await route.fetch();
-      const body = (await response.text())
-        .split("\n")
-        .map((line) => {
-          if (!line.trim()) return line;
-          const message = JSON.parse(line);
-          if (message.type === "altitude")
-            message.class_b_detours = [{ ident: "BEPKE", kind: "GPS waypoint", added_nm: 5.9, stop_index: 0 }];
-          return JSON.stringify(message);
-        })
-        .join("\n");
-      await route.fulfill({ response, body });
+      await route.continue();
     },
   );
   await page.route(
@@ -47,56 +34,10 @@ test("plan page: Class B is planned through by default, said with its clearance,
   await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/feet|FL/, { timeout: slow(60000) });
   expect(asked).toBe("true");
   await openProfile(page);
-  const accepted = page.getByTestId("class-b-accepted");
-  await expect(accepted).toContainText("Through Chicago Class B: clearance needed");
-  await page.getByTestId("avoid-class-b").click();
-  await expect(page).toHaveURL(/[?&]class_b=0/);
-  await expect(page).toHaveURL(/[?&]stops=BEPKE/);
-  // Avoided, and allowed again from the same card, which stays open.
-  await page.getByTestId("class-b-avoided").getByRole("button", { name: "Allow Class B" }).click();
-  await expect(page).not.toHaveURL(/class_b=/);
+  await expect(page.getByTestId("class-b-accepted")).toContainText("Through Chicago Class B: clearance needed");
+  await expect(page.getByTestId("avoid-class-b")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Class B/ })).toHaveCount(0);
   await page.unrouteAll({ behavior: "ignoreErrors" });
-});
-
-test("plan page: Class B avoided with no legal altitude offers the waypoint round it, or allowing the Class B", async ({ page }) => {
-  // Midway to Duluth runs over O'Hare, where the Chicago Class B reaches
-  // the ground: avoided (class_b=0), the planner names a waypoint round it.
-  await page.route("**/api/planner/navlog**", (route) => {
-    if (new URL(route.request().url()).searchParams.get("class_b_clearance") === "true") return route.fallback();
-    return route.fulfill({
-      status: 200,
-      contentType: "application/x-ndjson",
-      body:
-        JSON.stringify({
-          type: "error",
-          retry: false,
-          detail: "No legal VFR cruising altitude 1-15 nm along the route",
-          reasons: ["The Chicago Class B reaches the ground there; going through it needs a clearance."],
-          advice: "Fly via BEPKE (6 nm further) to stay out of it, or plan it with a Class B clearance.",
-          class_b: true,
-          detours: [{ ident: "BEPKE", kind: "GPS waypoint", added_nm: 5.9, stop_index: 0 }],
-        }) + "\n",
-    });
-  });
-  await page.goto("/app/plan?dep=C81&dest=KDLH&class_b=0");
-  await controlsInSight(page);
-  await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
-  const problem = page.getByTestId("route-problem");
-  await openProfile(page);
-  await expect(problem.getByRole("listitem")).toHaveText([
-    "The Chicago Class B reaches the ground there; going through it needs a clearance.",
-  ]);
-  // The two ways past it, and no altitude of the pilot's own: under a
-  // Class B to the ground there is none.
-  await expect(problem.getByTestId("unflyable-fly-via")).toBeVisible();
-  // The card put away, the field beside the airplane still takes a figure,
-  // at the owner's ask ("altitude should not be disabled").
-  await closeCard(page, "profile-close");
-  await expect(page.getByTestId("altitude-input")).toBeEnabled();
-  // Allowed: planned through it, the address back to its default.
-  await openProfile(page);
-  await problem.getByTestId("unflyable-accept-class-b").click();
-  await expect(page).not.toHaveURL(/class_b=/);
 });
 
 test("plan page: no legal altitude's own altitude field takes a tap", async ({ page }) => {

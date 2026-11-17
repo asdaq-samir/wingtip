@@ -54,7 +54,6 @@ export function usePlan({
   depart,
   aircraft,
   load,
-  classBClearance = false,
   altitudes = "",
   checkpoints: withCheckpoints = true,
   localMin = 60,
@@ -104,7 +103,6 @@ export function usePlan({
     depart,
     aircraft,
     load,
-    classBClearance,
     altitudes,
     checkpoints: withCheckpoints,
     rules,
@@ -189,7 +187,6 @@ export function usePlan({
           brief: error.brief ?? "No legal altitude",
           reasons: error.reasons,
           advice: error.advice,
-          classB: error.classB,
           detours: error.detours,
         }
       : null;

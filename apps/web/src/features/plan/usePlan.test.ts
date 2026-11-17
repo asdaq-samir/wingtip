@@ -247,7 +247,7 @@ describe("the route as entered", () => {
   async function* waiting(): AsyncGenerator<never> {
     yield* await new Promise<never[]>(() => {});
   }
-  const asEntered = () => vi.mocked(api.navlog).mock.calls.filter((call) => call[10] === false);
+  const asEntered = () => vi.mocked(api.navlog).mock.calls.filter((call) => call[9] === false);
 
   test("is asked for at once where the course says the chart is still to be read", async () => {
     vi.mocked(api.navlog).mockImplementation(waiting);
@@ -262,7 +262,7 @@ describe("the route as entered", () => {
       yield { type: "leg", to: "KDLH" } as NavLogMessage;
       yield* await new Promise<never[]>(() => {});
     }
-    vi.mocked(api.navlog).mockImplementation((...args: Parameters<typeof api.navlog>) => (args[10] === false ? oneLeg() : waiting()));
+    vi.mocked(api.navlog).mockImplementation((...args: Parameters<typeof api.navlog>) => (args[9] === false ? oneLeg() : waiting()));
     const { result } = renderHook(() => usePlan(params), { wrapper });
     await waitFor(() => expect(result.current.pointToPoint).toBe(true));
     expect(result.current.legs).toHaveLength(1);
@@ -313,14 +313,14 @@ describe("an altitude asked for", () => {
   });
 
   test("as a runway is picked into the wind, keeps the log before it too, said to be planned again", async () => {
-    // The departure's runway (runways, arg 18) and the destination's
-    // pattern (patterns, arg 19) as ProceduresRoute writes them.
+    // The departure's runway (runways, arg 17) and the destination's
+    // pattern (patterns, arg 18) as ProceduresRoute writes them.
     vi.mocked(api.course).mockResolvedValue({ ...courseFixture(), checkpoints_ready: true });
-    vi.mocked(api.navlog).mockImplementation((...args: Parameters<typeof api.navlog>) => (args[18] || args[19] ? waiting() : whole(4500)));
+    vi.mocked(api.navlog).mockImplementation((...args: Parameters<typeof api.navlog>) => (args[17] || args[18] ? waiting() : whole(4500)));
     const { result, rerender } = renderHook((plan: PlanParams) => usePlan(plan), { wrapper, initialProps: params });
     await waitFor(() => expect(result.current.totals).not.toBeNull());
     rerender({ ...params, runways: "C81:9", patterns: "KDLH:27" });
-    await waitFor(() => expect(vi.mocked(api.navlog).mock.calls.some((call) => call[18] === "C81:9")).toBe(true));
+    await waitFor(() => expect(vi.mocked(api.navlog).mock.calls.some((call) => call[17] === "C81:9")).toBe(true));
     expect(result.current.totals).not.toBeNull();
     expect(result.current.legs).toHaveLength(1);
     expect(result.current.replanning).toBe(true);

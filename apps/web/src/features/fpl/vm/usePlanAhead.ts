@@ -85,7 +85,6 @@ export function usePlanAhead({
           depart: q.depart ?? "",
           aircraft,
           load,
-          classBClearance: q.class_b,
           altitudes: altitudesParam(altitudesOf(q.altitudes)),
           checkpoints: showWaypoints,
           rules: flightRules,
