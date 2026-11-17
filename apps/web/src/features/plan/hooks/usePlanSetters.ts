@@ -7,7 +7,7 @@ import { feel } from "../../../lib/haptics";
 import { sameField } from "../../../lib/procedures";
 import { holdsOf, holdsParam, type Hold } from "../lib/routeHolds";
 import { turnaroundMin } from "../components/navlog/rows";
-import { directToPatch, routeWas } from "./planAddress";
+import { directKeys, directToPatch } from "./planAddress";
 import { useDirectReady, type PlanNow } from "./directOnDevice";
 
 const NO_PLAN: PlanNow = { course: null, legs: [], nav: null, totals: null };
@@ -87,9 +87,8 @@ export function usePlanSetters(
       if (!fix || !readyDirect(to.ident, fix)) return;
       feel("directTo");
       void setAddress((prev) => {
-        const was = prev.was ?? routeWas(prev);
         const stops = stopsOf(prev.stops).filter((stop) => !sameField(stop, to.ident));
-        return { dep: positionIdent(fix), stops: [to.ident, ...stops].join(","), direct: to.ident, was, place: null };
+        return { dep: positionIdent(fix), stops: [to.ident, ...stops].join(","), ...directKeys(prev, to.ident), place: null };
       });
     },
     [setAddress, readyDirect],

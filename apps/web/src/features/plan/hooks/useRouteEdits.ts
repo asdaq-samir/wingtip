@@ -8,6 +8,7 @@ import { courseQuery, queryClient } from "../../../lib/queryClient";
 import { feel } from "../../../lib/haptics";
 import { rebasedRoute } from "../lib/routeRebase";
 import type { RouteParts } from "../components/RouteBox";
+import { NO_DIRECT } from "./planAddress";
 
 /** A picked procedure's kind, from its drawing where it has been asked for:
  *  what prunedFieldLists needs to keep an approach only where the route
@@ -91,8 +92,7 @@ export function useRouteEdits({
           dest: dest || null,
           stops: stops.join(",") || null,
           ...fieldListParams(kept),
-          direct: null,
-          was: null,
+          ...NO_DIRECT,
           fuel: fuel.length ? fuel.join(",") : null,
         };
       });
@@ -119,8 +119,7 @@ export function useRouteEdits({
         stops: points.length > 2 ? points.slice(1, -1).join(",") : null,
         dest: points.length > 1 ? points.at(-1) || null : null,
         place: null,
-        direct: null,
-        was: null,
+        ...NO_DIRECT,
       });
     },
     [routePoints, planned.dep, planned.dest, setAddress],
@@ -139,8 +138,7 @@ export function useRouteEdits({
           stops: kept.length ? kept.join(",") : null,
           dest: dest && !sameField(dest, from.ident) ? dest : null,
           place: null,
-          direct: null,
-          was: null,
+          ...NO_DIRECT,
         };
       });
     },
