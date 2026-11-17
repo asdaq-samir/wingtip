@@ -162,6 +162,23 @@ export function fieldPermission(fields: EngineInput<"gonogo_field_permission">["
   return callEngine("gonogo_field_permission", { fields }) as VerdictItem | null;
 }
 
+/** What the IFR alternate comes to for the Go / No-Go (the engine's
+ *  gonogo_alternate_finding, 14 CFR 91.169(a)(2), (b)): a stop where the
+ *  one filed will not do, a caution where one is needed and none is filed
+ *  or the one filed is the pilot's to check; null where none is needed.
+ *  `data` is /api/alternate's answer, undefined while it is awaited. */
+export function alternateFinding(data: EngineInput<"gonogo_alternate_finding">["data"] | undefined) {
+  return callEngine("gonogo_alternate_finding", { data: data ?? null });
+}
+
+/** The tabs' findings with the alternate's put in the weather's, where the
+ *  weather says nothing worse: a caution or a stop of its own, opening its
+ *  section (the engine's gonogo_with_alternate). */
+export function withAlternate(items: VerdictItem[], found: ReturnType<typeof alternateFinding>): VerdictItem[] {
+  if (!found) return items;
+  return callEngine("gonogo_with_alternate", { items: items.map((i) => ({ ...i, section: i.section ?? null })), found }) as VerdictItem[];
+}
+
 /** What the findings come to, in a line over them. */
 export function verdictLine(items: VerdictItem[]): { finding: Finding; words: string } {
   return callEngine("gonogo_verdict_line", { items: items.map((i) => ({ ...i, section: i.section ?? null })) });

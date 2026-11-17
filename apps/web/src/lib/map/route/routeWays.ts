@@ -2,6 +2,7 @@ import type { Layout } from "../gl/markLayers";
 import type { GlPicture } from "../gl/useGlSymbols";
 import { framed } from "../marks/markPictures";
 import { CHART } from "../../tokens";
+import { flatDeg } from "../../geo";
 
 /** A way FPL's route line offers beside the route (its chips), as the map
  *  draws it: its line and the words on its chip. */
@@ -50,7 +51,7 @@ export const WAY_CHIP_PLACE: Layout = { "text-anchor": "bottom-left", "text-offs
 export function wayAt(path: [number, number][], share: number): [number, number] {
   const legs = path.slice(1).map((b, i) => {
     const a = path[i]!;
-    return Math.hypot(b[0] - a[0], (b[1] - a[1]) * Math.cos((a[0] * Math.PI) / 180));
+    return flatDeg(b[0] - a[0], b[1] - a[1], a[0]);
   });
   let left = legs.reduce((sum, d) => sum + d, 0) * share;
   for (let i = 0; i < legs.length; i++) {

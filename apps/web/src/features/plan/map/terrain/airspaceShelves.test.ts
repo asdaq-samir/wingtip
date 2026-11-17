@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import fixture from "../../../../lib/fixtures/airspaceShelfLabel.json";
+import { flatDeg, KM_PER_DEG } from "../../../../lib/geo";
 import { CHART } from "../../../../lib/tokens";
 import { piecesOf } from "./airspaceVolumes";
 import { planAltitudes, shadeOf, shelfLabelsOf, shelfText } from "./airspaceShelves";
@@ -84,11 +85,8 @@ describe("shelfLabelsOf", () => {
     // Spread round it, none on another: at least 8 km apart.
     const at = labels.features.map((l) => (l.geometry as GeoJSON.Point).coordinates);
     for (let i = 0; i < at.length; i++)
-      for (let j = i + 1; j < at.length; j++) {
-        const dx = (at[i]![0]! - at[j]![0]!) * Math.cos((42 * Math.PI) / 180) * 111.32;
-        const dy = (at[i]![1]! - at[j]![1]!) * 111.32;
-        expect(Math.hypot(dx, dy)).toBeGreaterThan(8);
-      }
+      for (let j = i + 1; j < at.length; j++)
+        expect(flatDeg(at[i]![1]! - at[j]![1]!, at[i]![0]! - at[j]![0]!, 42) * KM_PER_DEG).toBeGreaterThan(8);
   });
 
   it("gives a small shelf fewer places, so its label never crowds itself", () => {

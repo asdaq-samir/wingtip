@@ -3,6 +3,7 @@ import { cn } from "cn";
 import { Button } from "../../../../components/ui/button";
 import type { AirportsInView } from "../../../../lib/api/types";
 import { TEXT } from "../../../../lib/text";
+import { flatDeg2 } from "../../../../lib/geo";
 import { useGlView } from "../../../../lib/map/gl/useGlView";
 import { spokenWeather } from "../../../../lib/map/marks/airportWeather";
 
@@ -16,7 +17,7 @@ const MOST = 25;
 function inSight(fields: Field[], bounds: { south: number; west: number; north: number; east: number }) {
   const lat = (bounds.south + bounds.north) / 2,
     lon = (bounds.west + bounds.east) / 2;
-  const away = (f: Field) => (f.lat - lat) ** 2 + ((f.lon - lon) * Math.cos((lat * Math.PI) / 180)) ** 2;
+  const away = (f: Field) => flatDeg2(f.lat - lat, f.lon - lon, lat);
   return fields
     .filter((f) => f.lat >= bounds.south && f.lat <= bounds.north && f.lon >= bounds.west && f.lon <= bounds.east)
     .sort((a, b) => away(a) - away(b))

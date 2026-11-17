@@ -1,6 +1,7 @@
-import { useGeo, type Geo } from "../../../../lib/geo";
+import { callEngine } from "../../../../lib/engine/engine";
+import { useEngineReady } from "../../../../lib/engine/useEngineReady";
 import { DRY_RUN, usePastFlight } from "../../map/pastFlight";
-import { useOwnShip } from "../../../../lib/map/position/ownShip";
+import { useOwnShip, type Fix } from "../../../../lib/map/position/ownShip";
 import { useFlying } from "../../../../lib/mapChrome";
 import { dryRunRow, type DryRun } from "./dryRun";
 import { isLegPoint, rowPoint, type NavLogRow } from "./rows";
@@ -11,15 +12,14 @@ import { isLegPoint, rowPoint, type NavLogRow } from "./rows";
  * "Active Leg" (RouteLegCard), from the one place.
  *
  * In a dry run it is the run's own (the shared engine's dry_run, through
- * dryRunRow). From the GPS, the first row not yet passed -- passed once own
- * ship has come within PASSED_NM of it, kept here.
+ * dryRunRow). From the GPS it is the engine's in_flight, as the phones'
+ * InFlight asks it: the first checkpoint whose place along the course
+ * line is ahead of the airplane's, with its distance direct from the fix,
+ * the time at the fix's ground speed and the arrival.
  */
 
-/** Within this of a checkpoint, own ship has passed it. */
-const PASSED_NM = 1;
-/** The rows own ship has passed, by key, from the GPS: kept across fixes
- *  and the rows' changes as legs come in, and let go with the position. */
-const passed = new Set<string>();
+/** The course line's points, [lat, lon], as the planner sends it. */
+export type CourseLine = [number, number][] | null | undefined;
 
 /** The next checkpoint's row from `from`, skipping the tops of climb and
  *  descent; null past the last. */
@@ -33,37 +33,45 @@ export function dryRunNext(run: DryRun, rows: NavLogRow[], t: number): number | 
   return checkpointFrom(rows, dryRunRow(run, t));
 }
 
-/** Own ship's next row from the GPS fix, marking those it has passed. */
-export function gpsNext(geo: Geo, rows: NavLogRow[], fix: { lat: number; lon: number }): number | null {
-  let index = checkpointFrom(rows, 1);
-  while (index !== null && (passed.has(rows[index]!.key) || geo.distanceNm(fix, rowPoint(rows[index]!)) < PASSED_NM)) {
-    passed.add(rows[index]!.key);
-    index = checkpointFrom(rows, index + 1);
-  }
-  return index;
-}
-
-/** The position let go: the rows passed are forgotten with it. */
-export function forgetPassed(): void {
-  passed.clear();
+/** Own ship's next checkpoint from the GPS fix: its row, the miles to it
+ *  direct, the minutes at the fix's ground speed and the arrival in Unix
+ *  seconds (null below flying speed, the engine's `underway`). The tops of
+ *  climb and descent are not asked about, so the engine's next is a
+ *  checkpoint. Null with no line, or no checkpoint past the departure. */
+export function gpsAhead(
+  rows: NavLogRow[],
+  line: CourseLine,
+  fix: Pick<Fix, "lat" | "lon" | "headingDeg" | "speedKt" | "at">,
+): { index: number; nm: number; min: number | null; at: number | null } | null {
+  if (!line || line.length < 2) return null;
+  const checkpoints = rows.flatMap((row, i) => (isLegPoint(row) ? [] : [i]));
+  const answer = callEngine("in_flight", {
+    fix: { lat: fix.lat, lon: fix.lon, track_deg: fix.headingDeg, speed_kt: fix.speedKt },
+    line,
+    points: checkpoints.map((i) => rowPoint(rows[i]!)),
+    now_s: fix.at / 1000,
+  });
+  const next = answer?.next;
+  if (!next) return null;
+  return { index: checkpoints[next.index]!, nm: next.distance_nm, min: next.ete_min, at: next.eta_s };
 }
 
 /** The key of the row being flown to while flying mode is on (the dry
  *  run's, else own ship's), or null on the ground. */
-export function useFlyingTo(run: DryRun | null, rows: NavLogRow[]): string | null {
+export function useFlyingTo(run: DryRun | null, rows: NavLogRow[], line: CourseLine): string | null {
   const flying = useFlying((s) => s.flying);
   const dry = usePastFlight((s) => {
     if (!flying || !run || s.hex !== DRY_RUN || s.at === null) return null;
     const index = dryRunNext(run, rows, s.at);
     return index === null ? null : rows[index]!.key;
   });
-  // How far the fix is from each row is the engine's (lib/geo): none
-  // until its .wasm is there, as useAway waits.
-  const geo = useGeo();
+  // The next checkpoint from the fix is the engine's (in_flight): none
+  // until its .wasm is there.
+  const engine = useEngineReady();
   const gps = useOwnShip((s) => {
-    if (!flying || run || !geo || !s.enabled || !s.fix) return null;
-    const index = gpsNext(geo, rows, s.fix);
-    return index === null ? null : rows[index]!.key;
+    if (!flying || run || !engine || !s.enabled || !s.fix) return null;
+    const next = gpsAhead(rows, line, s.fix);
+    return next === null ? null : rows[next.index]!.key;
   });
   return dry ?? gps;
 }

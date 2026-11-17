@@ -1,4 +1,4 @@
-import { M_PER_FT, M_PER_NM, rad } from "../../../../lib/geo";
+import { lonScale, M_PER_FT, M_PER_NM, NM_PER_DEG } from "../../../../lib/geo";
 
 /**
  * The shapes the 3D map stands up over its ground (TerrainGl): the route
@@ -66,8 +66,8 @@ export function obstacleFeatures(
   return {
     type: "FeatureCollection",
     features: obstacles.map((o) => {
-      const dLat = half / (60 * M_PER_NM),
-        dLon = half / (60 * M_PER_NM * Math.cos(rad(o.lat)));
+      const dLat = half / (NM_PER_DEG * M_PER_NM),
+        dLon = half / (NM_PER_DEG * M_PER_NM * lonScale(o.lat));
       return {
         type: "Feature",
         geometry: {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Alternates } from "../../../lib/api/types";
-import { alternateFinding } from "./useAlternate";
+import { alternateFinding, withAlternate, type VerdictItem } from "../../../lib/verdict";
 
 const check = (good: boolean | null) => ({
   ident: "KMSN",
@@ -39,5 +39,23 @@ describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
       finding: "caution",
       detail: "KMSN: KMSN publishes its own alternate minimums.",
     });
+  });
+
+  it("puts its finding in the weather's where the weather says nothing worse", () => {
+    const weather = (finding: VerdictItem["finding"]): VerdictItem => ({
+      key: "weather",
+      label: "Weather",
+      tab: "preflight",
+      finding,
+      detail: "As forecast",
+    });
+    const stop = alternateFinding(answer(true, check(false)));
+    expect(withAlternate([weather("ok")], stop)).toEqual([
+      { ...weather("ok"), finding: "stop", detail: stop!.detail, tab: "arrive", section: "Alternate" },
+    ]);
+    expect(withAlternate([weather("caution")], stop)[0]!.finding).toBe("stop");
+    expect(withAlternate([weather("caution")], alternateFinding(answer(true, null)))[0]!.detail).toBe("As forecast");
+    expect(withAlternate([weather("stop")], stop)[0]!.detail).toBe("As forecast");
+    expect(withAlternate([weather("ok")], null)).toEqual([weather("ok")]);
   });
 });

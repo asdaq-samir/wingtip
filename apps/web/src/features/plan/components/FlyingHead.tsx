@@ -3,12 +3,12 @@ import { GLASS } from "../../../lib/mapChrome";
 import { Button } from "../../../components/ui/button";
 import { openEmergency } from "../../../lib/emergencyStore";
 import { clockTime, duration } from "../../../lib/format";
-import { useGeo } from "../../../lib/geo";
+import { useEngineReady } from "../../../lib/engine/useEngineReady";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { DRY_RUN, usePastFlight } from "../map/pastFlight";
 import { GROUP_HEADING, TEXT } from "../../../lib/text";
 import { dryRunAt, type DryRun } from "./navlog/dryRun";
-import { dryRunNext, forgetPassed, gpsNext } from "./navlog/flyingTo";
+import { dryRunNext, gpsAhead, type CourseLine } from "./navlog/flyingTo";
 import { isLegPoint, rowPoint, type NavLogRow } from "./navlog/rows";
 
 /**
@@ -21,11 +21,12 @@ import { isLegPoint, rowPoint, type NavLogRow } from "./navlog/rows";
  * In a dry run every figure is the run's own (the shared engine's
  * dry_run, through navlog/dryRun): the row it is flying to (dryRunRow),
  * the distance flown to it (`bends`) less what is flown (dryRunAt), and
- * the moment it is reached (`rowT`). From the GPS, the first row not yet
- * passed -- passed once own ship has come within PASSED_NM of it, kept
- * here -- its distance from the fix along the great circle (lib/geo) and
- * the time at the fix's ground speed, with no figure of its own: the
- * strip's figures (FlightLine) stay the plan's.
+ * the moment it is reached (`rowT`). From the GPS every figure is the
+ * engine's in_flight (navlog/flyingTo's gpsAhead), as the phones' InFlight
+ * asks it: the next checkpoint along the course line (`line`), its
+ * distance direct from the fix, the time at the fix's ground speed and
+ * the arrival, with no figure of its own: the strip's figures
+ * (FlightLine) stay the plan's.
  *
  * Drawn again as a figure changes -- a tenth of a mile, a minute -- not
  * at each of a run's frames, as the dry run's figures are (DryRunFigures).
@@ -43,7 +44,7 @@ interface Next {
 /** Its number as the log counts the checkpoints: the departure 0. */
 const numberOf = (rows: NavLogRow[], index: number) => rows.slice(1, index + 1).filter((r) => !isLegPoint(r)).length;
 
-export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: NavLogRow[] }) {
+export default function FlyingHead({ run, rows, line }: { run: DryRun | null; rows: NavLogRow[]; line: CourseLine }) {
   const key = usePastFlight((s) => {
     if (!run || s.hex !== DRY_RUN || s.at === null) return "";
     const index = dryRunNext(run, rows, s.at);
@@ -54,21 +55,15 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
     const min = Math.max(0, (run.rowT[index]! - s.at) / 60);
     return [index, nm.toFixed(1), Math.round(min), Math.floor(run.rowT[index]! / 60) * 60].join(" ");
   });
-  // The distance to the next row is the engine's (lib/geo): no line from
-  // the GPS until its .wasm is there, the rows passed kept meanwhile.
-  const geo = useGeo();
+  // The next checkpoint from the GPS is the engine's (in_flight): no line
+  // until its .wasm is there.
+  const engine = useEngineReady();
   const gpsKey = useOwnShip((s) => {
-    if (run || !s.enabled || !s.fix) {
-      forgetPassed();
-      return "";
-    }
-    if (!geo) return "";
-    const index = gpsNext(geo, rows, s.fix);
-    if (index === null) return "";
-    const nm = geo.distanceNm(s.fix, rowPoint(rows[index]!));
-    const min = s.fix.speedKt ? (nm / s.fix.speedKt) * 60 : null;
-    const at = min === null ? null : Math.floor((s.fix.at / 1000 + min * 60) / 60) * 60;
-    return [index, nm.toFixed(1), min === null ? "" : Math.round(min), at ?? ""].join(" ");
+    if (run || !engine || !s.enabled || !s.fix) return "";
+    const next = gpsAhead(rows, line, s.fix);
+    if (next === null) return "";
+    const at = next.at === null ? null : Math.floor(next.at / 60) * 60;
+    return [next.index, next.nm.toFixed(1), next.min === null ? "" : Math.round(next.min), at ?? ""].join(" ");
   });
   const words = key || gpsKey;
   if (!words) return null;

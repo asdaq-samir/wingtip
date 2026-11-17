@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { lonScale, M_PER_DEG } from "../../../lib/geo";
 import { MAP } from "../../../lib/tokens";
 import { lookAt, offset, poseOf } from "./cameraPose";
 
@@ -9,7 +10,7 @@ describe("the replay's cameras", () => {
   it("puts a point metres away on a bearing, near enough for a camera", () => {
     const east = offset(45, -93, 90, 1000);
     expect(east.lat).toBeCloseTo(45, 6);
-    expect((east.lon + 93) * 111_320 * Math.cos((45 * Math.PI) / 180)).toBeCloseTo(1000, 0);
+    expect((east.lon + 93) * M_PER_DEG * lonScale(45)).toBeCloseTo(1000, 0);
   });
 
   it("looks down at something below it, and no flatter than the map tilts", () => {

@@ -1,8 +1,5 @@
 import type { Runway } from "../../../lib/api/types";
-import { FT_PER_NM, rad } from "../../../lib/geo";
-
-/** Nautical miles in a degree of latitude. */
-const NM_PER_DEG = 60;
+import { FT_PER_NM, lonScale, NM_PER_DEG, rad } from "../../../lib/geo";
 
 interface Strip {
   /** Its two ends, in nautical miles east and north of the field. */
@@ -47,7 +44,7 @@ function turfOf(r: Runway, ends: [string, string]): [number, number][] {
  *  runway parallel to one already guessed, which would lie on top of it.
  *  None for a helipad. */
 export function stripsOf(runways: Runway[], lat: number, lon: number): Strip[] {
-  const east = (lonDeg: number) => (lonDeg - lon) * NM_PER_DEG * Math.cos(rad(lat));
+  const east = (lonDeg: number) => (lonDeg - lon) * NM_PER_DEG * lonScale(lat);
   const north = (latDeg: number) => (latDeg - lat) * NM_PER_DEG;
   const strips: Strip[] = [];
   const guesses: Strip[] = [];

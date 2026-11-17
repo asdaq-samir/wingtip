@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./api/client";
+import { flatDeg2 } from "./geo";
 import type { AirportSearchRow } from "./useAirportSearch";
 
 /** One airport of the planner's index (wingtip.airports.search_index): the
@@ -68,7 +69,7 @@ function nearness(index: AirportIndex, row: number, near: readonly { lat: number
   if (!near.length || Number.isNaN(lat)) return 0;
   let least = Infinity;
   for (const p of near) {
-    const d = (lat - p.lat) ** 2 + ((lon - p.lon) * Math.cos((p.lat * Math.PI) / 180)) ** 2;
+    const d = flatDeg2(lat - p.lat, lon - p.lon, p.lat);
     if (d < least) least = d;
   }
   return least;

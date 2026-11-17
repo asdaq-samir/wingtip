@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { create } from "zustand";
 import type { Course, Leg, NavLogAltitude, NavLogMessage, Totals } from "../../../lib/api/types";
 import { callEngine, type EngineInput } from "../../../lib/engine/engine";
+import { flatDeg2 } from "../../../lib/geo";
 import { positionIdent } from "../../../lib/identSchema";
 import { sameField } from "../../../lib/procedures";
 import { clearProblem, noConnection, raiseProblem } from "../../../lib/problems";
@@ -49,7 +50,7 @@ const useDeviceDirect = create<{ made: DeviceRoute | null }>(() => ({ made: null
 /** Flat squared degrees, the longitude shrunk by the latitude's cosine:
  *  which point of the line is the target's, an index, never a figure. */
 function apart(a: readonly [number, number], b: { lat: number; lon: number }): number {
-  return (a[0] - b.lat) ** 2 + ((a[1] - b.lon) * Math.cos((b.lat * Math.PI) / 180)) ** 2;
+  return flatDeg2(a[0] - b.lat, a[1] - b.lon, b.lat);
 }
 
 /** The engine's leg from `start` to `end` in a planned leg's air. */
