@@ -7,7 +7,7 @@ import numpy as np
 
 import pytest
 
-from wingtip import elevation
+from wingtip import elevation, elevation_sources
 
 
 REAL_FROM_TERRAIN_TILES = elevation._from_terrain_tiles
@@ -17,7 +17,7 @@ REAL_FROM_TERRAIN_TILES = elevation._from_terrain_tiles
 def no_elevation_tiles(monkeypatch):
     """EPQS alone, unless a test gives the tiles' heights itself: a real
     tile is read from the network."""
-    monkeypatch.setattr(elevation, "_dem_heights", lambda name, points: {})
+    monkeypatch.setattr(elevation_sources, "dem_heights", lambda name, points: {})
     monkeypatch.setattr(elevation, "_from_terrain_tiles", lambda keys: {})
 
 
@@ -28,7 +28,7 @@ def test_water_the_usgs_tiles_leave_out_is_read_from_the_terrain_tiles_at_sea_le
     cache = tmp_path / "elevation_cache.csv"
     monkeypatch.setattr(elevation, "_from_terrain_tiles", REAL_FROM_TERRAIN_TILES)
     monkeypatch.setattr(elevation, "ground_m", lambda lat, lon: -40.0 if lat < 29 else 12.0)
-    monkeypatch.setattr(elevation, "_fetch_elevation_m", lambda lat, lon: (_ for _ in ()).throw(AssertionError("EPQS asked")))
+    monkeypatch.setattr(elevation_sources, "fetch_elevation_m", lambda lat, lon: (_ for _ in ()).throw(AssertionError("EPQS asked")))
     assert elevation.get_elevations_m([(28.2, -83.1), (30.0, -84.0)], cache_path=cache) == {(28.2, -83.1): 0.0, (30.0, -84.0): 12.0}
 
 
@@ -36,7 +36,7 @@ def test_lookups_at_once_keep_every_point_they_fetched(tmp_path, monkeypatch):
     """Each used to write back the copy it read before its lookups, so
     the later write dropped the other's points."""
     cache = tmp_path / "elevation_cache.csv"
-    monkeypatch.setattr(elevation, "_fetch_elevation_m", lambda lat, lon: lat * 10)
+    monkeypatch.setattr(elevation_sources, "fetch_elevation_m", lambda lat, lon: lat * 10)
     barrier = threading.Barrier(12)
 
     def lookup(i: int):
@@ -54,10 +54,10 @@ def test_lookups_at_once_keep_every_point_they_fetched(tmp_path, monkeypatch):
 
 def test_a_cached_point_is_not_fetched_again(tmp_path, monkeypatch):
     cache = tmp_path / "elevation_cache.csv"
-    monkeypatch.setattr(elevation, "_fetch_elevation_m", lambda lat, lon: 250.0)
+    monkeypatch.setattr(elevation_sources, "fetch_elevation_m", lambda lat, lon: 250.0)
     elevation.get_elevations_m([(45.0, -90.0)], cache_path=cache)
 
-    monkeypatch.setattr(elevation, "_fetch_elevation_m", lambda lat, lon: (_ for _ in ()).throw(AssertionError("fetched")))
+    monkeypatch.setattr(elevation_sources, "fetch_elevation_m", lambda lat, lon: (_ for _ in ()).throw(AssertionError("fetched")))
     assert elevation.get_elevations_m([(45.0, -90.0)], cache_path=cache) == {(45.0, -90.0): 250.0}
 
 
@@ -85,7 +85,7 @@ def test_the_ground_at_a_point_is_read_from_its_terrain_tile(tmp_path, monkeypat
     def no_network(*args, **kwargs):
         raise AssertionError("a tile on disk is not fetched again")
 
-    monkeypatch.setattr(elevation.requests, "get", no_network)
+    monkeypatch.setattr(elevation._TERRAIN_SESSION, "get", no_network)
     assert elevation.ground_m(lat, lon) == 238.5
 
 
@@ -99,9 +99,9 @@ def test_the_tiles_answer_what_they_can_and_epqs_the_rest(tmp_path, monkeypatch)
         tiles.append((name, sorted(points)))
         return {p: 238.577 for p in points if p != (42.5, -88.5)}
 
-    monkeypatch.setattr(elevation, "_dem_heights", dem_heights)
+    monkeypatch.setattr(elevation_sources, "dem_heights", dem_heights)
     asked = []
-    monkeypatch.setattr(elevation, "_fetch_elevation_m", lambda lat, lon: asked.append((lat, lon)) or 300.0)
+    monkeypatch.setattr(elevation_sources, "fetch_elevation_m", lambda lat, lon: asked.append((lat, lon)) or 300.0)
     heights = elevation.get_elevations_m([(42.3172, -88.0905), (42.5, -88.5), (43.5, -88.5)], cache_path=cache)
     assert heights == {(42.3172, -88.0905): 238.577, (42.5, -88.5): 300.0, (43.5, -88.5): 238.577}
     assert sorted(tiles) == [("n43w089", [(42.3172, -88.0905), (42.5, -88.5)]), ("n44w089", [(43.5, -88.5)])]
@@ -112,15 +112,15 @@ def test_a_tile_that_cannot_be_read_leaves_its_points_to_epqs(tmp_path, monkeypa
     def unreadable(name, points):
         raise OSError("no such tile")
 
-    monkeypatch.setattr(elevation, "_dem_heights", unreadable)
-    monkeypatch.setattr(elevation, "_fetch_elevation_m", lambda lat, lon: 250.0)
+    monkeypatch.setattr(elevation_sources, "dem_heights", unreadable)
+    monkeypatch.setattr(elevation_sources, "fetch_elevation_m", lambda lat, lon: 250.0)
     assert elevation.get_elevations_m([(45.0, -90.0)], cache_path=tmp_path / "c.csv") == {(45.0, -90.0): 250.0}
 
 
 def test_a_tile_is_named_by_its_north_west_corner():
-    assert elevation._dem_name(42.3172, -88.0905) == "n43w089"
-    assert elevation._dem_name(46.8421, -92.1936) == "n47w093"
-    assert elevation._dem_name(-33.9, 151.2) is None
+    assert elevation_sources.dem_name(42.3172, -88.0905) == "n43w089"
+    assert elevation_sources.dem_name(46.8421, -92.1936) == "n47w093"
+    assert elevation_sources.dem_name(-33.9, 151.2) is None
 
 
 def test_a_void_in_a_tile_reads_as_the_ground_beside_it(tmp_path, monkeypatch):
@@ -163,3 +163,17 @@ def test_a_terrain_tile_png_is_the_cleaned_tile(monkeypatch):
     rgb = np.asarray(Image.open(io.BytesIO(elevation.terrain_tile_png(11, 509, 758))).convert("RGB")).astype(np.float64)
     assert rgb.shape == (256, 256, 3)
     assert np.allclose(elevation.terrarium_m(rgb), 212.5)
+
+
+def test_below_badwater_basin_a_pixel_is_the_sea_at_its_surface():
+    """The lowest ground in North America is Badwater Basin, 282 ft (86 m)
+    below the sea (USGS; the engine's ground_figures): a pixel lower is
+    the sea floor, read as the sea's surface; one above it is ground."""
+    assert elevation.LOWEST_GROUND_M == pytest.approx(-85.9536)
+
+    def pixel(m: float) -> np.ndarray:
+        code = m + 32768
+        return np.array([[[int(code // 256), int(code % 256), round((code % 1) * 256)]]], dtype=np.float64)
+
+    assert float(elevation.terrarium_m(pixel(-90.0))[0, 0]) == 0.0
+    assert float(elevation.terrarium_m(pixel(-80.0))[0, 0]) == -80.0

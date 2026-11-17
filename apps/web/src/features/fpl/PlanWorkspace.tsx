@@ -1,15 +1,14 @@
 import { Suspense, useCallback, useDeferredValue, useMemo } from "react";
 import { TEXT } from "../../lib/text";
 import { CommandRoot } from "../../components/ui/command";
-import { MAX_STOPS } from "../../lib/identSchema";
 import type { WorkspaceProps } from "../../lib/workspace";
 import { ShareMenu } from "../share";
 import { RouteShareMenu, type RouteCard } from "../../lib/openCards";
 import { useNavLogs } from "./workspace/useNavLogs";
+import { useProceduresRoute } from "./workspace/useProceduresRoute";
 import type { BriefingPart } from "../plan";
 import {
   PilotPanel,
-  ProceduresRoute,
   FlightBriefingView,
   BriefingNotices,
   SaveFlightButton,
@@ -56,79 +55,14 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   // 2026-11-09): its field the sheet's first row, its results the body's.
   const search = useOneSearch(vm);
   const { view, pickPage } = vm.view;
-  const {
-    altitudeFt,
-    altitudeNearest,
-    crossings,
-    depart,
-    directParam,
-    flightRules,
-    flyAltitude,
-    ground,
-    holds,
-    insertStopAfter,
-    planned,
-    removeStop,
-    routeEdit,
-    routePoints,
-    routed,
-    setLoad,
-    setRouteEdit,
-    setPointAltitude,
-  } = vm.route;
-  const {
-    aircraft,
-    aircraftChoices,
-    aircraftValue,
-    changeAircraft,
-    changeDepart,
-    course,
-    directToPoint,
-    pickTail,
-    s,
-    selected,
-    setGround,
-    setHold,
-  } = vm.plan;
-  const { cardOpen, flight, heldPoint, place, selectPlace, setApproachesOf } = vm.cards;
-  const {
-    autoPicked,
-    filedProcedures,
-    noApproaches,
-    pickPattern,
-    pickProcedures,
-    pickedPatterns,
-    pickedProcedures,
-    pickedTakeoffs,
-    preselectPattern,
-    preselectTakeoff,
-    previewProcedure,
-    procedureAirports,
-    proceduresAt,
-    routeProcedures,
-    runwayFitInputs,
-    setProceduresShown,
-    setTakeoff,
-    showFix,
-  } = vm.picks;
-  const { fuelHidden, showFuelStops, tankFigures } = vm.stops;
-  const { holdAsk, listEdit, routeLine } = vm.routeList;
+  const { altitudeFt, altitudeNearest, depart, flightRules, flyAltitude, planned, routeEdit, routed, setLoad, setRouteEdit } = vm.route;
+  const { aircraft, aircraftChoices, aircraftValue, changeAircraft, changeDepart, course, pickTail, s, selected } = vm.plan;
+  const { cardOpen, flight, heldPoint, place } = vm.cards;
+  const { filedProcedures } = vm.picks;
+  const { fuelHidden, showFuelStops } = vm.stops;
   const { briefShown, profileShown } = vm.fpl;
   const { flying } = vm.flight;
-  const { routeRows } = vm.leg;
-  const {
-    altitudeAt,
-    fileFlightPlan,
-    fileable,
-    flightToSave,
-    landedStops,
-    landings,
-    metarColour,
-    stale,
-    tightLeg,
-    unflyable,
-    unflyableBrief,
-  } = vm.brief;
+  const { fileFlightPlan, fileable, flightToSave, landedStops, landings, stale, tightLeg, unflyable, unflyableBrief } = vm.brief;
   // Each tab's part of the briefing. Made once for the same plan
   // (useCallback), and each
   // part drawn again only when its plan changes (FlightBriefingView's
@@ -193,109 +127,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   );
   const kneeboardLater = useDeferredValue(kneeboard, null);
 
-  const routeList = useMemo(
-    () => (
-      <>
-        <ProceduresRoute
-          airports={procedureAirports}
-          rows={routeRows}
-          depart={depart}
-          weather={metarColour}
-          picked={pickedPatterns}
-          onPick={pickPattern}
-          onPreselect={preselectPattern}
-          takeoffs={pickedTakeoffs}
-          onTakeoff={setTakeoff}
-          onPreselectTakeoff={preselectTakeoff}
-          autoPicked={autoPicked}
-          fit={runwayFitInputs}
-          procedures={pickedProcedures}
-          inRoute={routeProcedures}
-          onProcedures={pickProcedures}
-          onPreview={previewProcedure}
-          at={proceduresAt}
-          onAt={setProceduresShown}
-          crossings={crossings}
-          onFix={showFix}
-          onDepart={changeDepart}
-          ground={ground}
-          onGround={setGround}
-          pointAltitude={altitudeAt}
-          onPointAltitude={setPointAltitude}
-          directTo={directParam}
-          onDirectTo={directToPoint}
-          onInfo={selectPlace}
-          onRemove={removeStop}
-          onCreateFix={insertStopAfter}
-          holds={holds}
-          onHoldSet={setHold}
-          askHold={holdAsk}
-          routePoints={routePoints}
-          stopsFull={planned.stops.length >= MAX_STOPS}
-          fuel={tankFigures}
-          onCharts={() => {
-            if (planned.dest) {
-              setApproachesOf(planned.dest);
-              selectPlace(planned.dest);
-            }
-          }}
-          chartsDisabled={!planned.dest || noApproaches}
-          // In Route Cards the Routes row is in the head's box under the
-          // bar (the route slot, below), not over the list.
-          routeLine={routeEdit === "plan" ? null : routeLine}
-          // The list changes the route too where the box is folded away once
-          // the route is whole (RouteEdit, both of the owner's picks).
-          // Not with the box as it was, whose pills do it.
-          edit={routeEdit !== "box" && planned.dep && planned.dest ? listEdit : undefined}
-        />
-      </>
-    ),
-    [
-      routeLine,
-      procedureAirports,
-      routeRows,
-      depart,
-      metarColour,
-      pickedPatterns,
-      pickPattern,
-      preselectPattern,
-      pickedTakeoffs,
-      setTakeoff,
-      preselectTakeoff,
-      autoPicked,
-      runwayFitInputs,
-      pickedProcedures,
-      routeProcedures,
-      pickProcedures,
-      crossings,
-      showFix,
-      ground,
-      setGround,
-      previewProcedure,
-      proceduresAt,
-      setProceduresShown,
-      planned.dep,
-      planned.dest,
-      setApproachesOf,
-      selectPlace,
-      noApproaches,
-      changeDepart,
-      altitudeAt,
-      setPointAltitude,
-      directParam,
-      directToPoint,
-      removeStop,
-      insertStopAfter,
-      holds,
-      setHold,
-      holdAsk,
-      routePoints,
-      planned.stops.length,
-      tankFigures,
-      listEdit,
-      routeEdit,
-    ],
-  );
+  const routeList = useProceduresRoute(vm);
 
   const { navLog, navLogCard } = useNavLogs(vm, { tabContent, routeList, kneeboard: kneeboardLater });
 

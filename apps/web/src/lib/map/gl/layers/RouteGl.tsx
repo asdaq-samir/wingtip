@@ -9,10 +9,10 @@ import { usePreferences } from "../../../preferences";
 import { useSunlight } from "../../../sunlight";
 import { useGlData, useGlLayer, useGlMap, useGlPaint, useGlTap } from "../glLayer";
 import { useDarkTheme } from "../useDarkTheme";
+import { glZoom } from "../glStyle";
 import {
   CHECKPOINT_SOURCE,
   ROUTE_SOURCE,
-  glZoom,
   pointFeatures,
   routeCasingPaint,
   routeEdgePaint,
@@ -20,7 +20,7 @@ import {
   routeLayers,
   routeOuterPaint,
   selectedLegFilter,
-} from "../glStyle";
+} from "../glRoute";
 import { useGlProbe } from "../useGlProbe";
 import { GL_FONT, TAP } from "./common";
 import { useGlSymbols } from "../useGlSymbols";

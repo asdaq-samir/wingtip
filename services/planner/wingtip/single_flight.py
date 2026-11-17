@@ -23,7 +23,7 @@ that asked for the key it was itself building would wait on itself for
 ever, where the old re-entrant lock let it in. None of the 36 functions
 built with `once` does (checked 2026-11-12): nine of them read
 faa_data._read_apt_base_cached and cycle_pack._newest reads _open,
-procedures._airport reads _index, each another function's cache, and
+cifp_index._airport reads _index, each another function's cache, and
 none of those reads back -- and a same-key call would have recursed
 without end under lru_cache anyway, which never stored a key until its
 build had returned.

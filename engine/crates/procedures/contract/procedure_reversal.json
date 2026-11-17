@@ -1,0 +1,48 @@
+{
+  "x-call": "wingtip_procedures::legs::call",
+  "description": "The course reversal flown where a procedure's path turns `turn_deg` at a fix (AIM 5-4-9): \"coded\" -- the chart's hold in lieu of a procedure turn or its procedure turn there, entered -- where one is coded at the fix and the path turns more than 90° there, come to from its far side (from the near side a pilot is lined up already and makes none, as on a NoPT route, 14 CFR 91.175(j)); else \"teardrop\" where the path doubles back more than 120° at a fix past the procedure's first; else null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProcedureReversalInput",
+      "type": "object",
+      "properties": {
+        "turn_deg": {
+          "type": "number"
+        },
+        "coded": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "first_fix": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "turn_deg"
+      ]
+    },
+    "answer": {
+      "title": "ProcedureReversalAnswer",
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "coded",
+        "teardrop",
+        null
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

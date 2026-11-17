@@ -1,4 +1,4 @@
-"""The readings in words' sources (routers/words.py): each of the
+"""The readings in words' sources (app.words_sources): each of the
 planner's figures as a line a sentence can cite and a pilot can read raw.
 A briefing's changes are found here, and there are none to send where nothing changed."""
 
@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app import route_briefing
-from app.routers import words as words_router
+from app import words_changes
 from app.schemas.common import Briefing
 
 client = TestClient(app)
@@ -49,11 +49,11 @@ def test_briefing_changes_finds_a_category_change_and_none_when_identical():
     then = Briefing.model_validate(briefing())
     now = Briefing.model_validate(briefing(metars={"C81": {"raw": METAR_KDLH, "flight_category": "IFR"}, "KDLH": None}))
 
-    changes = words_router.briefing_changes(then, now)
+    changes = words_changes.briefing_changes(then, now)
 
     assert [c.id for c in changes] == ["metar:C81"]
     assert changes[0].text == f"Was: {METAR_C81}\nNow: {METAR_KDLH}"
-    assert words_router.briefing_changes(then, then) == []
+    assert words_changes.briefing_changes(then, then) == []
 
 
 def test_briefing_changes_sees_a_new_hazard_a_new_tfr_a_field_newly_below_vfr_and_a_forecast_across_a_line():
@@ -90,11 +90,11 @@ def test_briefing_changes_sees_a_new_hazard_a_new_tfr_a_field_newly_below_vfr_an
         )
     )
 
-    ids = [c.id for c in words_router.briefing_changes(then, now)]
+    ids = [c.id for c in words_changes.briefing_changes(then, now)]
 
     assert ids == ["hazard:0", "tfr:6/1234", "below-vfr:KDLH", "taf:KDLH"]
     # And gone the other way, the hazard is said to be gone.
-    assert "hazard-gone:0" in [c.id for c in words_router.briefing_changes(now, then)]
+    assert "hazard-gone:0" in [c.id for c in words_changes.briefing_changes(now, then)]
 
 
 def test_the_changes_sources_are_none_when_nothing_changed_and_the_flight_first_when_something_did():

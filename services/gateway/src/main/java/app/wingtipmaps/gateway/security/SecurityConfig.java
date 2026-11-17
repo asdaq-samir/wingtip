@@ -318,7 +318,7 @@ public class SecurityConfig {
                                 + "style-src 'self' 'unsafe-inline'; "
                                 // 'wasm-unsafe-eval': WebAssembly compiled from
                                 // this origin's own files, the page reader's
-                                // engine (web features/plan/lib/readPage); no script eval.
+                                // engine (web features/airplane/lib/readPage); no script eval.
                                 + "script-src 'self' 'wasm-unsafe-eval'; "
                                 + "connect-src 'self' " + OVERLAY_TILES + " " + PHOTO_CONNECT + " "
                                 + ModelHosts.CONNECT

@@ -243,6 +243,7 @@ src/
     emergency/                       The emergency assistant, emergency.ts its reading of the engine's answers
     chart-labels/dev/DevPanel.tsx    The dev console (its own chunk — see Architecture), drawn in the pilot console's
                                       PilotPanel, which the training workspace loads beside it (pilot's loadPilotPanel)
+                                      its parts beside it: SystemTab and SystemPages (Status), PerformancePanel (Perf)
 ```
 
 A file goes in `lib/` only when two or more features use it; one feature's

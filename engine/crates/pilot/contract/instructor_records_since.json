@@ -1,0 +1,30 @@
+{
+  "x-call": "wingtip_pilot::pilot::instructor_records::call",
+  "description": "The first day an instructor's page lists what they signed: the same day 3 years before today, as 14 CFR 61.189(c) has an instructor keep their records \"for at least 3 years\" (a 29 February the 28th in a year without one).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "InstructorRecordsSinceInput",
+      "type": "object",
+      "properties": {
+        "today": {
+          "type": "string",
+          "description": "YYYY-MM-DD, UTC: the engine has no clock."
+        }
+      },
+      "required": [
+        "today"
+      ]
+    },
+    "answer": {
+      "title": "InstructorRecordsSinceAnswer",
+      "type": "string",
+      "description": "YYYY-MM-DD."
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

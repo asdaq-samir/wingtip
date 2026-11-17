@@ -24,8 +24,6 @@ import { altFt } from "../../lib/format";
  */
 
 const HOUR_MS = 3_600_000;
-/** How many hours after Now: a TAF covers 24 or 30 (FAA-H-8083-28B 27.4.1). */
-const HOURS = 24;
 /** How far ahead the sentence looks: a flight's day, not the TAF's end. */
 const SENTENCE_HOURS = 12;
 
@@ -68,19 +66,10 @@ const rank = (category: string | null) => (category ? (RANK[category] ?? -1) : -
 
 /** Now and the hours after it, the engine's (`field_hours`): Now the
  *  METAR's, or with none the TAF's for this moment; then each whole hour
- *  the TAF (as sent) covers, up to `count`. */
-export function hoursOf({
-  metar,
-  taf,
-  now,
-  count = HOURS,
-}: {
-  metar: Metar | null;
-  taf: string | null;
-  now: number;
-  count?: number;
-}): Hour[] {
-  return callEngine("field_hours", { metar: metar ?? null, taf: taf || null, now, count }).map((h) => ({
+ *  the TAF (as sent) covers, up to `count` -- with none, the engine's
+ *  own (a TAF's 24 hours, field_hours). */
+export function hoursOf({ metar, taf, now, count }: { metar: Metar | null; taf: string | null; now: number; count?: number }): Hour[] {
+  return callEngine("field_hours", { metar: metar ?? null, taf: taf || null, now, count: count ?? null }).map((h) => ({
     at: h.at,
     now: h.now,
     category: h.category,

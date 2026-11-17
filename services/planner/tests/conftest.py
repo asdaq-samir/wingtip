@@ -6,7 +6,7 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 from wingtip import airports, airspace, airspace_at, diagram_crops, faa_data, field_marks, fixes, pattern, planning, publications, remarks
-from wingtip import field_details, tfr, weather
+from wingtip import altitude_cautions, field_details, tfr, weather
 from wingtip.config import get_settings
 
 from app import chart_model, chart_scorer, detection, prefetch, checkpoint_scoring
@@ -52,7 +52,7 @@ def _fresh_caches():
     for cache in (
         planning._ALTITUDE_CACHE,
         planning._PLANS_CACHE,
-        planning._CLASS_B_WAYS,
+        altitude_cautions._CLASS_B_WAYS,
         checkpoint_scoring._SCORE_CACHE,
         detection._DETECT_JOBS,
     ):

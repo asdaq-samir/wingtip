@@ -31670,6 +31670,49 @@
         "summary": "Experience"
       }
     },
+    "/api/pilot/instructor-records-since": {
+      "get": {
+        "description": "The first day an instructor's page lists what they signed: 3 years\nbefore `today`, as 14 CFR 61.189(c) has them keep the records (the\nengine's instructor_records_since).",
+        "operationId": "instructor_records_since_api_pilot_instructor_records_since_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "today",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Today",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "format": "date",
+                  "title": "Response Instructor Records Since Api Pilot Instructor Records Since Get",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Instructor Records Since"
+      }
+    },
     "/api/places/search": {
       "get": {
         "description": "Where a place typed is, for Nearest to find the fields near it\nrather than near own ship: the airports whose ident or name starts\nwith it, the towns that do (the Census gazetteer), and a street\naddress where it starts with a house number (the Census geocoder) --\neach with where it is (wingtip.geocode).",

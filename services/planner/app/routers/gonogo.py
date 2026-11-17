@@ -12,7 +12,7 @@ from fastapi import APIRouter
 from ..router_basics import load_route
 from ..gonogo.frat import assessment as risk_assessment, self_checks
 from ..gonogo.schemas import GoNoGo, GoNoGoAsk
-from ..gonogo.verdict import alternate_finding, field_permission, verdict_items, verdict_line, with_alternate
+from ..gonogo.verdict import brief
 from ..plan_query import PlanQuery
 from ..gonogo import flight
 from ..gateway import PUBLIC_READ_BY_POST
@@ -38,21 +38,24 @@ def go_no_go(ask: GoNoGoAsk) -> GoNoGo:
     depart = flight.departure_of(q)
     found = flight.findings_for(ask, q, r, planned, briefing, failed, depart)
     assessment = risk_assessment(found.risk_in) if found.risk_in else None
-    items = verdict_items({**found.verdict, "risk": {"level": assessment["level"], "line": assessment["line"]} if assessment else None})
+    verdict = {**found.verdict, "risk": {"level": assessment["level"], "line": assessment["line"]} if assessment else None}
     # Under IFR, the alternate (14 CFR 91.169), its ETA the nav log's.
     # The way on is flown at the airplane's own cruise; with none (no
     # airplane, so no ETA either) there is no alternate to time.
     tas = ((nav or {}).get("aircraft") or {}).get("cruise_tas_kt")
+    alternate = None
     if q.rules == "ifr" and totals and totals.get("ete_min") is not None and tas:
         eta = depart + timedelta(minutes=totals["ete_min"])
-        items = with_alternate(items, alternate_finding(flight.alternate_for(r.idents[-1], eta, tas, q.alternate)))
-    # A closed, private or military-only field on the route, a row of its own.
-    if permission := field_permission(r.idents):
-        items = [*items, permission]
+        alternate = flight.alternate_for(r.idents[-1], eta, tas, q.alternate)
+    # The engine puts the findings together: the alternate's in the
+    # weather's, a closed, private or military-only field a row of its
+    # own, and the airplane's left out where none is picked.
+    airplane = q.aircraft is not None or bool((nav or {}).get("aircraft"))
+    said = brief(verdict, alternate, r.idents, airplane)
 
     return GoNoGo(
-        line=verdict_line(items),
-        items=items,
+        line=said["line"],
+        items=said["items"],
         risk=assessment,
         self_checks=self_checks(),
         loading=found.loading,

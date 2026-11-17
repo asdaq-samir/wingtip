@@ -1,0 +1,105 @@
+{
+ "about": "Figures the apps once kept for themselves and now ask the engine (#482): how often the live SWIM feeds are asked again (live_feed_refresh: RVR updated about once a minute, AIM 7-1-13; the rest the app's choice), the hours a search's \"VFR at…\" offers (vfr_at_hours, within a TAF's 24, FAA-H-8083-28B 27.4.1), and the first day an instructor's page lists, 3 years back (instructor_records_since, 14 CFR 61.189(c)). Held by the engine (engine/facade/tests/shell_figures.rs) and the web (lib/liveReports.test.ts, features/search/searchFilters.test.ts).",
+ "live_feed_refresh": [
+  {
+   "about": "RVR, updated about once a minute (AIM 7-1-13)",
+   "input": {
+    "feed": "rvr"
+   },
+   "answer": {
+    "fresh_s": 60,
+    "poll_s": 60,
+    "source": "AIM 7-1-13: RVR updated about once a minute"
+   }
+  },
+  {
+   "about": "The ITWS alerts, as often",
+   "input": {
+    "feed": "itws"
+   },
+   "answer": {
+    "fresh_s": 60,
+    "poll_s": 60,
+    "source": "The app's choice, at RVR's minute (AIM 7-1-13)"
+   }
+  },
+  {
+   "about": "Special activity airspace's SFDPS status, as often",
+   "input": {
+    "feed": "saa"
+   },
+   "answer": {
+    "fresh_s": 60,
+    "poll_s": 60,
+    "source": "The app's choice, at RVR's minute (AIM 7-1-13)"
+   }
+  },
+  {
+   "about": "The Command Center's programs, every five minutes",
+   "input": {
+    "feed": "flow"
+   },
+   "answer": {
+    "fresh_s": 300,
+    "poll_s": 300,
+    "source": "The app's choice"
+   }
+  },
+  {
+   "about": "The D-ATIS, fresh five minutes and not polled",
+   "input": {
+    "feed": "atis"
+   },
+   "answer": {
+    "fresh_s": 300,
+    "poll_s": null,
+    "source": "The app's choice"
+   }
+  },
+  {
+   "about": "A flight's tower departures, fresh five minutes and not polled",
+   "input": {
+    "feed": "departures"
+   },
+   "answer": {
+    "fresh_s": 300,
+    "poll_s": null,
+    "source": "The app's choice"
+   }
+  }
+ ],
+ "vfr_at_hours": {
+  "about": "1, 2, 3, 6 and 12 hours ahead, each within a TAF's 24",
+  "input": {},
+  "answer": [
+   1,
+   2,
+   3,
+   6,
+   12
+  ]
+ },
+ "instructor_records_since": [
+  {
+   "about": "Three years back to the day (61.189(c))",
+   "input": {
+    "today": "2026-11-17"
+   },
+   "answer": "2023-11-17"
+  },
+  {
+   "about": "A leap day goes back to the 28th: a day more listed, never less",
+   "input": {
+    "today": "2028-02-29"
+   },
+   "answer": "2025-02-28"
+  },
+  {
+   "about": "New Year's Day",
+   "input": {
+    "today": "2027-01-01"
+   },
+   "answer": "2024-01-01"
+  }
+ ]
+}

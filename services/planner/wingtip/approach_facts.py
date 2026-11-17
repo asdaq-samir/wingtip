@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from . import pattern, procedures
+from . import cifp_index, cifp_records, pattern, procedure_parts, procedures
 
 #: The altitude descriptions whose record carries a second altitude that
 #: is the glide slope's or the vertical path's (ARINC 424-18 5.29).
@@ -44,7 +44,7 @@ def _levels(records: list, procedure: str) -> list:
     name, after the record's application type "W" in column 40."""
     found: list = []
     for rec in records:
-        col = lambda first, last: procedures._col(rec, first, last)  # noqa: E731
+        col = lambda first, last: cifp_records._col(rec, first, last)  # noqa: E731
         if col(13, 13) != "F" or col(14, 19).strip() != procedure or col(39, 39) in "01" or col(40, 40) != "W":
             continue
         body = col(41, 123)
@@ -59,12 +59,12 @@ def _runway(records: list, ident: str, runway: str) -> dict | None:
     """The runway record's threshold, elevation and TCH, with NASR's
     touchdown zone elevation; None where the CIFP has no such runway."""
     for rec in records:
-        if procedures._col(rec, 13, 13) != "G" or procedures._col(rec, 14, 18).strip() != runway:
+        if cifp_records._col(rec, 13, 13) != "G" or cifp_records._col(rec, 14, 18).strip() != runway:
             continue
-        if not procedures._continuation(rec, 22):
+        if not cifp_records._continuation(rec, 22):
             continue
-        place = procedures._position(rec)
-        elevation, tch = procedures._col(rec, 67, 71).strip(), procedures._col(rec, 76, 77).strip()
+        place = cifp_records._position(rec)
+        elevation, tch = cifp_records._col(rec, 67, 71).strip(), cifp_records._col(rec, 76, 77).strip()
         if place is None or not elevation.lstrip("-").isdigit() or not tch.isdigit():
             return None
         return {
@@ -82,8 +82,8 @@ def approach_facts(ident: str, procedure: str, on: date | None = None) -> dict |
     """{"runway", "coded", "levels"} for an approach at a field; None where
     the CIFP has no such approach."""
     path = procedures.cifp_path(on)
-    airport = procedures._airport(ident, path)
-    found = procedures._records(ident, path)
+    airport = cifp_index._airport(ident, path)
+    found = cifp_index._records(ident, path)
     procedure = procedure.strip().upper()
     legs = airport.legs.get(("F", procedure)) if airport else None
     if not legs or found is None:
@@ -94,5 +94,5 @@ def approach_facts(ident: str, procedure: str, on: date | None = None) -> dict |
         for leg in sorted(legs, key=lambda leg: leg.seq)
         if not leg.transition and leg.altitude_code and leg.altitude_code in CODED and leg.altitude2 is not None and leg.fix
     ]
-    runway = procedures._runway_of("approach", procedure)
+    runway = procedure_parts._runway_of("approach", procedure)
     return {"runway": _runway(records, ident, f"RW{runway}") if runway else None, "coded": coded, "levels": _levels(records, procedure)}

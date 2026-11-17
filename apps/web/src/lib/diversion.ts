@@ -19,7 +19,7 @@
  */
 import type { EmergencyFields, Leg } from "./api/types";
 import { engineFields } from "./engineFields";
-import { callEngine, type EngineAnswer } from "./engine/engine";
+import { callEngine } from "./engine/engine";
 
 /** The figures a student estimates, and how far off is still reasonable. */
 export const ALLOWANCES = [
@@ -41,14 +41,6 @@ export interface Diversion {
   gs: number;
   ete: number;
   fuel: number;
-}
-
-/** The wind triangle for a true course: the correction (+ right), the
- *  true heading and the ground speed; null where the crosswind is more
- *  than the airplane's speed and no heading holds the course. The nav
- *  log's own correction and ground speed, in the engine. */
-export function windTriangle(tc: number, tas: number, windFromDeg: number, windKt: number): EngineAnswer<"wind_triangle"> {
-  return callEngine("wind_triangle", { tc, tas, wind_from_deg: windFromDeg, wind_kt: windKt });
 }
 
 /** The diversion from a point on `leg` to a field `distanceNm` away on a

@@ -55,14 +55,14 @@ import requests
 from . import elevation, faa_data, geo, ground_grid, outside
 from .atomic import atomic_path
 from .config import REQUEST_HEADERS
+from .engine import ask as engine
 
 #: The finest zoom built and served (terrain_view.MAX_ZOOM).
 FINE_ZOOM = elevation.TERRAIN_TILE_ZOOM + 1
 #: How far round a public-use airport the finer tiles are built, nm: the
 #: pattern, the climb out and the descent in, where 3D is looked at close
-#: -- a 3 degree path (an ILS glide slope's usual angle, AIM 1-1-9) falls
-#: 318 ft a nm, so it is 1,500 ft above the field some 4.7 nm out.
-AIRPORT_RADIUS_NM = 5.0
+#: (the engine's ground_figures, fine_terrain_radius_nm).
+AIRPORT_RADIUS_NM = engine("ground_figures")["fine_terrain_radius_nm"]
 #: The ground's rise within a tile, ft, from which the tile is built: hills
 #: a phone's 3D view shows blurred at zoom 12 (a zoom-13 tile is some 3.7 km
 #: across at 40 N). A choice of how much to store, no aviation figure.

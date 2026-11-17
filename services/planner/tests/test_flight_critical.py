@@ -16,7 +16,7 @@ import math
 import pandas as pd
 import pytest
 from wingtip import altitude as altitude_module
-from wingtip import airports, emergency, navlog
+from wingtip import airport_places, emergency, navlog
 
 from app import checkpoint_scoring
 from app.main import app
@@ -32,7 +32,7 @@ EARTH_NM = 3440.065
 
 #: Fields round Oshkosh (OurAirports' airports.csv, its columns as
 #: wingtip.airports reads them), and a heliport, which is no field for a
-#: forced landing (airports._FIELD_KINDS).
+#: forced landing (airport_places._FIELD_KINDS).
 FIELDS = [
     ("KOSH", "Wittman Regional", 43.9844, -88.5570, 808, "medium_airport"),
     ("KATW", "Appleton International", 44.2581, -88.5191, 918, "medium_airport"),
@@ -133,7 +133,7 @@ def round_oshkosh(monkeypatch):
             for ident, name, lat, lon, elevation, kind in FIELDS
         ]
     )
-    monkeypatch.setattr(airports, "_us_airports", lambda cache_path=None: table)
+    monkeypatch.setattr(airport_places, "_us_airports", lambda cache_path=None: table)
     monkeypatch.setattr(emergency.airports, "get_runways", lambda source: [])
     monkeypatch.setattr(emergency.airports, "get_frequencies_for", lambda idents: {})
     monkeypatch.setattr(emergency.weather, "metar_for_idents", lambda idents: {})

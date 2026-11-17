@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app import stop_corridor
-from app.routers import airports as router
+from app.routers import airport_stops as router
 
 
 @pytest.fixture(autouse=True)

@@ -9071,6 +9071,99 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Instructor Records Since
+    ///
+    /// The first day an instructor's page lists what they signed: 3 years
+    /// before `today`, as 14 CFR 61.189(c) has them keep the records (the
+    /// engine's instructor_records_since).
+    ///
+    /// - Remark: HTTP `GET /api/pilot/instructor-records-since`.
+    /// - Remark: Generated from `#/paths//api/pilot/instructor-records-since/get(instructor_records_since)`.
+    public func instructorRecordsSince(_ input: Operations.InstructorRecordsSince.Input) async throws -> Operations.InstructorRecordsSince.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.InstructorRecordsSince.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/pilot/instructor-records-since",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "today",
+                    value: input.query.today
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.InstructorRecordsSince.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Swift.String.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.InstructorRecordsSince.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// Places Search
     ///
     /// Where a place typed is, for Nearest to find the fields near it

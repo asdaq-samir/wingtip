@@ -1,5 +1,5 @@
 """The airspace's volumes in a box, each whole, for the map's 3D view
-(apps/web features/plan/map/terrain/AirspaceVolumesGl, which stands them
+(apps/web features/plan-map/terrain/AirspaceVolumesGl, which stands them
 up with deck.gl between their floors and ceilings).
 
 The 2D chart draws its airspace from the cycle's vector tiles, and a tile
@@ -38,7 +38,7 @@ import numpy as np
 import shapely
 from shapely.geometry.polygon import orient
 
-from . import airspace, cycle_pack, sua
+from . import airspace, cycle_pack, phone_pack_shapes, sua
 
 #: The classes drawn as volumes, by the shapefile's CLASS.
 CLASSES = ("B", "C", "D", "E")
@@ -67,7 +67,7 @@ def _attrs(pack: cycle_pack.Pack, layer: str) -> list:
 
 @lru_cache(maxsize=2)
 def _numbers(pack: cycle_pack.Pack) -> list:
-    return cycle_pack._controlled_numbers(pack)
+    return phone_pack_shapes._controlled_numbers(pack)
 
 
 def _drawn_class(volume: dict, classes: tuple[str, ...]) -> bool:
@@ -125,7 +125,7 @@ def volumes_in(box: tuple[float, float, float, float], classes: tuple[str, ...] 
     features = []
     records, numbers = _attrs(pack, "airspace"), _numbers(pack)
     for k in _in_box(pack, "airspace", box):
-        volume = cycle_pack._volume_drawn(records[k], numbers[k])
+        volume = phone_pack_shapes._volume_drawn(records[k], numbers[k])
         if not _drawn_class(volume, classes):
             continue
         geometry = _shape(pack, "airspace", int(k))

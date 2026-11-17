@@ -13,7 +13,8 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Course, NavLogMessage } from "../../lib/api/types";
 import { useSystemProblems } from "../../lib/problems";
 import { queryClient } from "../../lib/queryClient";
-import { usePlan, type PlanParams } from "./usePlan";
+import type { PlanParams } from "./planQuery";
+import { usePlan } from "./usePlan";
 
 vi.mock("../../lib/api/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../lib/api/client")>()),

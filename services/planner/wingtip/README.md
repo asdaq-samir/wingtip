@@ -150,6 +150,9 @@ Grouped by what they are for, not alphabetically.
 | `chartvision.py` | FAA VFR sectional raster tiles, read by colour. The largest module here. |
 | `charts.py` | The same FAA GeoTIFFs rendered as an XYZ tile pyramid -- sectionals, TACs, IFR enroute and IFR area charts -- clipped to each sheet's face (found by `chart_faces.py`) so adjacent sheets butt together and no street map shows through the gaps, one drawing order for the pyramid and for tiles rendered on demand (they used to disagree inside sheet overlaps), and the sectional's masked lines -- the paper band round each TAC and inset -- taken back out when a sheet is prepared. `planner`'s `/api/chart-tile/*` and the batch `prepare`/`pyramid`/`refresh`/`unmask` commands (see that service's own README) are this module's CLI. |
 | `chart_faces.py` | Finding a chart's face on its raster -- the neatline, or where the chart runs out -- and cleaning the raster: the lines the FAA's own masking left, found and given their tint back. Split out of `charts.py` because it changes on its own. |
+| `chart_raster.py` | A chart raster's palette and RGB read, and the paper rim of a scan; shared by the face finding and the masked-line cleaning. |
+| `chart_bands.py` | Searching a sectional's raster for the masked-line bands (paper strips along another chart's boundary), measured before anything is touched. |
+| `chart_masked_lines.py` | Carrying a found band on, giving it the tint of the chart around it, and writing the sheet back (`remove_masked_lines`); reached through `chart_faces`. |
 | `osm.py` | Overpass API, for candidate landmarks. |
 | `faa_data.py` | NASR airports/navaids and the Digital Obstacle File. |
 | `weather.py` | Winds aloft (one small request), and METARs/TAFs/SIGMETs from aviationweather.gov's cache files -- the whole national dataset every five minutes, not a query per route. |

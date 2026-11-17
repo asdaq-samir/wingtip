@@ -1,0 +1,38 @@
+{
+  "x-call": "wingtip_weather::datis_kept::call",
+  "description": "When a digital ATIS broadcast heard at a time stops being the airport's: two hours after it was heard, two of the updates AIM 4-1-13 asks ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DatisEndsInput",
+      "type": "object",
+      "properties": {
+        "heard": {
+          "type": "number",
+          "description": "When it was heard, Unix seconds."
+        }
+      },
+      "required": [
+        "heard"
+      ]
+    },
+    "answer": {
+      "title": "DatisEndsAnswer",
+      "type": "object",
+      "properties": {
+        "ends": {
+          "type": "number",
+          "description": "When it is no longer the airport's, Unix seconds."
+        }
+      },
+      "required": [
+        "ends"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -111,7 +111,7 @@ services:
       CHARTS_CYCLE_AUTO: "0"
       # But the NASR files (airports, frequencies, navaids, Class B/C/D)
       # and the obstacle file are fetched again as each new edition comes
-      # out (app.main check_faa_editions): their own switch, on.
+      # out (app.warm_up check_faa_editions): their own switch, on.
       FAA_DATA_AUTO_REFRESH: "1"
       CHART_TILES_URL: https://${PUBLIC_HOST}/tiles
       TZ: America/Chicago

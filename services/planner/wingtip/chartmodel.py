@@ -136,7 +136,8 @@ def retrain(table_path: Path = TRAINING_TABLE_PATH, out_dir: Path = CHART_CANDID
     import joblib
     from sklearn.metrics import mean_absolute_error
 
-    from .pipeline import InsufficientLabelsError, _ensure_local_dir, _publish, held_out_scores, metrics_record, select_model
+    from .pipeline_retrain import select_model
+    from .pipeline_shared import InsufficientLabelsError, _ensure_local_dir, _publish, held_out_scores, metrics_record
 
     rows = pd.read_parquet(table_path) if Path(table_path).exists() else pd.DataFrame()
     if len(rows) < min_rated:

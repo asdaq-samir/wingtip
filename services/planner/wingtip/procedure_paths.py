@@ -19,6 +19,7 @@ import math
 
 from . import geo
 from . import holds as vfr_holds
+from .engine import ask as engine
 
 #: How near two points of a drawing are to be one place, nm: a fix where
 #: a transition ends and the same fix on the final, both rounded to six
@@ -31,15 +32,6 @@ INTERCEPT_NM, INTERCEPT_DEG = 1.0 + 2.0, 30.0
 #: The least offset of a downwind to the final, nm: the join's own, 3 x sin 30 = 1.5. No FAA text sets a radar downwind's
 #: (FAA-H-8083-3C ch. 8's 1/2 to 1 mile is a visual pattern's); AV-17 found a bare 4.0 here.
 DOWNWIND_NM = INTERCEPT_NM * math.sin(math.radians(INTERCEPT_DEG))
-#: How far a path turns at a point to be a course reversal there, degrees.
-REVERSAL_DEG = 120.0
-#: How far a path turns at a fix the chart puts a course reversal at -- a
-#: hold in lieu of a procedure turn, or a procedure turn -- for it to be
-#: flown, degrees: come to from the far side, more than 90° off the course
-#: it leaves the fix on. From the near side a pilot is lined up already, as
-#: a TAA's straight-in area and a feeder marked NoPT are, and makes none
-#: (AIM 5-4-5, 5-4-9; 14 CFR 91.175(j)).
-CODED_REVERSAL_DEG = 90.0
 #: A standard-rate turn's radius in a hold's entry, nm: at the 120 knots
 #: the chart's holds are drawn at (the engine's paths.rs, hold_turn_nm).
 ENTRY_TURN_NM = 120 * (120 / 3600) / (2 * math.pi)
@@ -284,10 +276,13 @@ def with_reversals(path: list, ft: list, holds: list) -> tuple[list, list]:
         # audit of 2026-10-21: Rockford's ILS 01 via KENNY, and nine in ten
         # of the RNAV approaches checked); else, past its first fix, a
         # teardrop where the path doubles back.
+        # How far the path must turn for either is the engine's
+        # (procedure_reversal: AIM 5-4-9, 14 CFR 91.175(j)).
         hold = next((h for h in holds if len(h["points"]) > 2 and geo.distance_nm(*h["points"][0], *fix) < SAME_PLACE_NM), None)
-        if hold and turn > CODED_REVERSAL_DEG:
+        way = engine("procedure_reversal", turn_deg=float(turn), coded=hold is not None, first_fix=i == 1)
+        if way == "coded":
             round_ = _entered(hold, fix, cin)
-        elif not hold and i > 1 and turn > REVERSAL_DEG:
+        elif way == "teardrop":
             round_ = _teardrop(fix, cin, cout)
         else:
             continue

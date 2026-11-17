@@ -5,7 +5,8 @@ for what they mean (CLAUDE.md: Spring Boot holds no aviation logic). The
 rules are the shared engine's (pilot_currency, pilot_experience:
 engine/crates/pilot/src/pilot/currency.rs; endorsement_records,
 inspections_due: records.rs; AC 61-65K's endorsements and their words,
-endorsement_kinds and endorsement_fill: kinds.rs), asked by name through wingtip_native.call;
+endorsement_kinds and endorsement_fill: kinds.rs; how far back an
+instructor's page lists, instructor_records_since: instructor_records.rs), asked by name through wingtip_native.call;
 this only carries the records across.
 
 The entries are the gateway's LogbookEntry, camelCase, as the engine
@@ -220,6 +221,14 @@ def endorsement_kinds() -> list[EndorsementKind]:
     """AC 61-65K's endorsements a student meets on the way to a private
     pilot certificate, in the order they meet them, word for word."""
     return [EndorsementKind(**k) for k in _ask("endorsement_kinds")]
+
+
+@router.get("/api/pilot/instructor-records-since")
+def instructor_records_since(today: date) -> date:
+    """The first day an instructor's page lists what they signed: 3 years
+    before `today`, as 14 CFR 61.189(c) has them keep the records (the
+    engine's instructor_records_since)."""
+    return date.fromisoformat(_ask("instructor_records_since", today=today.isoformat()))
 
 
 class EndorsementFillAsk(BaseModel):

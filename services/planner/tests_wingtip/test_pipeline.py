@@ -12,7 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from wingtip.pipeline import _ensure_local_dir, _ensure_local_output_dir, _publish, _reject_remote_uri
+from wingtip.model_registry import _reject_remote_uri
+from wingtip.pipeline_shared import _ensure_local_dir, _ensure_local_output_dir, _publish
 
 
 def test_reject_remote_uri_rejects_uri_style_paths():
@@ -136,7 +137,7 @@ def test_chart_picks_are_training_labels_and_win_over_older_ratings(tmp_path):
     within SAME_PLACE_NM; before this, training never read chart_picks."""
     import pandas as pd
 
-    from wingtip import pipeline
+    from wingtip import pipeline, pipeline_labels
 
     features = tmp_path / "features_c81_kdlh.parquet"
     pd.DataFrame(
@@ -158,7 +159,7 @@ def test_chart_picks_are_training_labels_and_win_over_older_ratings(tmp_path):
         "KDSM->KOMA,added,dr,town,45.5,-90.5,1,0,5,,,2026-09-20T00:00:00+00:00\n"  # another route
     )
 
-    labeled, _ = pipeline._load_labeled(features, labels, picks_path=picks)
+    labeled, _ = pipeline_labels._load_labeled(features, labels, picks_path=picks)
 
     assert dict(zip(labeled["osm_id"], labeled["rating"])) == {"1": 5, "2": 3, "3": 4}
 
@@ -283,10 +284,10 @@ def test_a_stage_with_nothing_to_do_skips_the_rest_of_its_branch_only(tmp_path):
     # A candidate that did not beat the promoted model (or too few
     # ratings): its branch stops there, promote never runs, and the run
     # is still a success that went on to the chart model.
-    from wingtip import pipeline
+    from wingtip import pipeline, pipeline_run
 
     def evaluate():
-        raise pipeline._Skip("the promoted model stays")
+        raise pipeline_run._Skip("the promoted model stays")
 
     ran = []
     branches = [[_stage(ran, "retrain"), ("evaluate", evaluate), _stage(ran, "promote")], [_stage(ran, "chart_retrain")]]
@@ -313,9 +314,9 @@ def test_a_failed_stage_fails_the_run_but_not_the_other_branch(tmp_path):
 
 def test_the_runs_stages_are_the_dags():
     # The same stages, in the same order, as the Airflow DAG it replaced.
-    from wingtip import pipeline
+    from wingtip import pipeline_run
 
-    assert [name for name, _ in pipeline._landmark_branch()] == [
+    assert [name for name, _ in pipeline_run._landmark_branch()] == [
         "landmarks_ready",
         "collect",
         "feature_engineer",
@@ -323,4 +324,4 @@ def test_the_runs_stages_are_the_dags():
         "evaluate",
         "promote",
     ]
-    assert [name for name, _ in pipeline._chart_branch()] == ["chart_retrain", "chart_evaluate", "chart_promote"]
+    assert [name for name, _ in pipeline_run._chart_branch()] == ["chart_retrain", "chart_evaluate", "chart_promote"]

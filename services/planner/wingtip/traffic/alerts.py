@@ -7,7 +7,8 @@ from .common import STALE_S, TrafficUnavailable, _number, _wall
 from .adsb_lol import UNREAD, _last_heard, _recent_trace, _trace
 from .recorded import _recorded
 from .watched import _watch
-from .flights import DEPARTED_WITHIN_NM, LEG_GAP_S, _field_at, _left_from, _points
+from .flights import DEPARTED_WITHIN_NM, _points
+from .legs import LEG_GAP_S, _field_at, _left_from
 
 #: An airplane last heard in the air, low near a field or coming down to
 #: it, is taken to have landed there once it has gone unheard this long,

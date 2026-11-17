@@ -2562,6 +2562,28 @@ object EngineContract {
         val candidates: List<List<Int>>? = null,
     )
 
+    @Serializable
+    data class CongestedReachAnswer(
+        /**
+         * The search's reach, ft.
+         */
+        @SerialName("search_ft")
+        val searchFt: Double,
+        /**
+         * The reach in degrees, never short of search_ft in any direction.
+         */
+        @SerialName("reach_deg")
+        val reachDeg: Double,
+    )
+
+    @Serializable
+    data class CongestedReachInput(
+        /**
+         * The farthest latitude of the points asked, degrees (either sign).
+         */
+        val lat: Double,
+    )
+
     /**
      * The best alternative: best_fields' first diversion pick that the copilot's weather and fuel checks find good.
      */
@@ -2838,6 +2860,22 @@ object EngineContract {
          * YYYY-MM-DD: the UTC day it is used on.
          */
         val on: String,
+    )
+
+    @Serializable
+    data class DatisEndsAnswer(
+        /**
+         * When it is no longer the airport's, Unix seconds.
+         */
+        val ends: Double,
+    )
+
+    @Serializable
+    data class DatisEndsInput(
+        /**
+         * When it was heard, Unix seconds.
+         */
+        val heard: Double,
     )
 
     @Serializable
@@ -5901,6 +5939,24 @@ object EngineContract {
     )
 
     @Serializable
+    data class GroundFiguresAnswer(
+        @SerialName("lowest_ground_ft")
+        val lowestGroundFt: Double,
+        @SerialName("obstacle_shown_agl_ft")
+        val obstacleShownAglFt: Double,
+        @SerialName("profile_obstacle_nm")
+        val profileObstacleNm: Double,
+        @SerialName("fine_terrain_radius_nm")
+        val fineTerrainRadiusNm: Double,
+    )
+
+    @Serializable
+    class GroundFiguresInput {
+        override fun equals(other: Any?): Boolean = other is GroundFiguresInput
+        override fun hashCode(): Int = 0
+    }
+
+    @Serializable
     data class GroundspeedKtInput(
         @SerialName("true_course_deg")
         val trueCourseDeg: Double,
@@ -6903,6 +6959,14 @@ object EngineContract {
     )
 
     @Serializable
+    data class InstructorRecordsSinceInput(
+        /**
+         * YYYY-MM-DD, UTC: the engine has no clock.
+         */
+        val today: String,
+    )
+
+    @Serializable
     data class IsaTempCInput(
         @SerialName("altitude_ft")
         val altitudeFt: Double,
@@ -7104,6 +7168,26 @@ object EngineContract {
          * Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
          */
         val beacon: List<String>? = null,
+    )
+
+    @Serializable
+    data class LiveFeedRefreshAnswer(
+        /**
+         * How long an answer is fresh, seconds.
+         */
+        @SerialName("fresh_s")
+        val freshS: Double,
+        /**
+         * How often a screen showing it asks again, seconds; null where it is not polled.
+         */
+        @SerialName("poll_s")
+        val pollS: Double? = null,
+        val source: String,
+    )
+
+    @Serializable
+    data class LiveFeedRefreshInput(
+        val feed: String,
     )
 
     @Serializable
@@ -9583,6 +9667,26 @@ object EngineContract {
     )
 
     @Serializable
+    data class ProcedureLegNmInput(
+        val path: String,
+        @SerialName("distance_nm")
+        val distanceNm: Double? = null,
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
+        @SerialName("known_ft")
+        val knownFt: Double? = null,
+    )
+
+    @Serializable
+    data class ProcedureReversalInput(
+        @SerialName("turn_deg")
+        val turnDeg: Double,
+        val coded: Boolean? = null,
+        @SerialName("first_fix")
+        val firstFix: Boolean? = null,
+    )
+
+    @Serializable
     data class ProceduresReadAnswerItem(
         val part: String,
         val pick: EngineContract.ProceduresReadAnswerItemPick? = null,
@@ -10805,6 +10909,25 @@ object EngineContract {
     )
 
     @Serializable
+    data class ReportNearAnswer(
+        val near: Boolean,
+        /**
+         * How near is near, statute miles.
+         */
+        @SerialName("within_sm")
+        val withinSm: Double,
+    )
+
+    @Serializable
+    data class ReportNearInput(
+        /**
+         * The station's distance from the field, nm.
+         */
+        @SerialName("distance_nm")
+        val distanceNm: Double,
+    )
+
+    @Serializable
     data class ReserveMinInput(
         val ifr: Boolean? = null,
         val night: Boolean? = null,
@@ -11516,6 +11639,34 @@ object EngineContract {
         val midpointFt: Double? = null,
         @SerialName("rollout_ft")
         val rolloutFt: Double? = null,
+    )
+
+    @Serializable
+    data class RvrReadingsAnswer(
+        /**
+         * Each reading, in the order given.
+         */
+        val readings: List<EngineContract.RvrReadingsAnswerReadingsItem>,
+    )
+
+    @Serializable
+    data class RvrReadingsAnswerReadingsItem(
+        /**
+         * The reading, ft; null where the part reports none.
+         */
+        val ft: Int? = null,
+        /**
+         * The system's most, 6,000 ft or more (AIM 7-1-13).
+         */
+        val more: Boolean,
+    )
+
+    @Serializable
+    data class RvrReadingsInput(
+        /**
+         * Each part's reading as sent (touchdown, midpoint, rollout ...), in any order.
+         */
+        val readings: List<String?>,
     )
 
     @Serializable
@@ -12420,6 +12571,28 @@ object EngineContract {
         val text: String,
     )
 
+    @Serializable
+    data class TrackLeftFromAnswer(
+        /**
+         * The track starts at its takeoff from the field.
+         */
+        val left: Boolean,
+    )
+
+    @Serializable
+    data class TrackLeftFromInput(
+        /**
+         * The first point's distance from the nearest field, nm.
+         */
+        @SerialName("distance_nm")
+        val distanceNm: Double,
+        /**
+         * Its altitude over the field's elevation, ft.
+         */
+        @SerialName("above_ft")
+        val aboveFt: Double,
+    )
+
     /**
      * A flown track's point.
      */
@@ -12895,6 +13068,12 @@ object EngineContract {
         @SerialName("from_ft")
         val fromFt: Double? = null,
     )
+
+    @Serializable
+    class VfrAtHoursInput {
+        override fun equals(other: Any?): Boolean = other is VfrAtHoursInput
+        override fun hashCode(): Int = 0
+    }
 
     @Serializable
     data class VfrBasicMinimumsAnswer(

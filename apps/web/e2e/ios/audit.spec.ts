@@ -1,20 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "@playwright/test";
 import { SCREENS } from "./screens";
-import {
-  componentFindings,
-  keyboardFindings,
-  contrastFindings,
-  emulateSafeArea,
-  hitAreaMisses,
-  horizontalOverflow,
-  outsideSafeArea,
-  quiet,
-  roleFindings,
-  still,
-  typeFindings,
-  type Insets,
-} from "./metrics";
+import { hitAreaMisses, quiet, roleFindings, still, typeFindings } from "./metrics";
+import { componentFindings } from "./metricsComponents";
+import { contrastFindings } from "./metricsContrast";
+import { emulateSafeArea, horizontalOverflow, keyboardFindings, outsideSafeArea, type Insets } from "./metricsInsets";
 import {} from "../helpers";
 import { pickAirplane } from "../startState";
 

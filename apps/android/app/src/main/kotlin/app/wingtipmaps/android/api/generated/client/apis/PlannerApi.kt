@@ -1100,6 +1100,20 @@ interface PlannerApi {
     suspend fun inspections(@Body appWingtipmapsAndroidApiGeneratedInspectionsAsk: app.wingtipmaps.android.api.generated.InspectionsAsk): Response<app.wingtipmaps.android.api.generated.Inspections>
 
     /**
+     * GET pilot/instructor-records-since
+     * Instructor Records Since
+     * The first day an instructor&#39;s page lists what they signed: 3 years before &#x60;today&#x60;, as 14 CFR 61.189(c) has them keep the records (the engine&#39;s instructor_records_since).
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param today
+     * @return [Unit]
+     */
+    @GET("pilot/instructor-records-since")
+    suspend fun instructorRecordsSince(@Query("today") today: kotlin.String): Response<Unit>
+
+    /**
      * GET live/itws
      * Itws Alerts
      * The ITWS alerts in force at these airports (a route&#39;s departure, destination and alternates): microbursts, wind shear, gust fronts, tornadoes and storm cells near the field, as the tower&#39;s ITWS gives them its controllers (AIM 4-3-7).
