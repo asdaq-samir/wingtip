@@ -663,12 +663,13 @@ html:not([data-brand="native"])::view-transition-new(.page-back) {
 /* Every card's head in the sheet, one row pinned at its top from the
    start, the content scrolling on under it blurred through its frost (the
    owner, 2026-11-10: "just keep the title on top and content moves under
-   with a frosty style"; PinnedHead): the sheet's own ground at the glass's
-   fill over the sheet's blur (design/tokens.json glass-fill, sheet-blur),
+   with a frosty style"; PinnedHead): the sheet's own ground at the head's
+   dense fill over the sheet's blur (design/tokens.json head-fill,
+   sheet-blur; the glass's 0.8 let words under the name ghost through it),
    solid where the browser frosts nothing and under Reduce Transparency
    or Increase Contrast (the solid variant), as iOS's materials go. */
 @utility frost-head {
-  background-color: color-mix(in oklab, var(--sheet, var(--background)) var(--glass-fill-light), transparent);
+  background-color: color-mix(in oklab, var(--sheet, var(--background)) var(--head-fill), transparent);
   -webkit-backdrop-filter: blur(var(--sheet-blur));
   backdrop-filter: blur(var(--sheet-blur));
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
