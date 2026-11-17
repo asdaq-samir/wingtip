@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from wingtip import airports, pattern
+from wingtip import airport_us, airports, pattern
 
 OURS = {"iso_country": "US", "icao_code": None, "gps_code": None, "wikipedia_link": None}
 #: OurAirports' rows: its 32TX is Hinson Airport at Kenney, TX, some 300 nm
@@ -243,7 +243,7 @@ RAW = Path(__file__).resolve().parents[3] / "data/raw"
     reason="needs OurAirports' and NASR's tables on disk",
 )
 def test_no_real_open_field_has_an_elevation_other_than_nasrs():
-    us = airports._us_airports(airports.DEFAULT_CACHE_PATH)
+    us = airport_us._us_airports(airports.DEFAULT_CACHE_PATH)
     open_ = us[us["_closed"].isna()]
     base = pd.read_csv(RAW / "faa_nasr/APT_BASE.csv", dtype=str, usecols=["ARPT_ID", "ICAO_ID", "ELEV"])
     icao = base.dropna(subset=["ICAO_ID"])

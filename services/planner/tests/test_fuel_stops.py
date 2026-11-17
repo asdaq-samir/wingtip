@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 from app.router_basics import Route
 from wingtip import flight_plan as plan
+from wingtip import fuelstops, geo
 from wingtip.fuelstops import FuelStop
 
 ROUTE = Route(("C81", "KJAX"), ({"lat": 42.3, "lon": -88.1}, {"lat": 30.5, "lon": -81.7}))
@@ -42,7 +43,7 @@ def test_a_flight_the_tanks_do_not_hold_gets_its_stops(monkeypatch):
         asked.update(figures, start=start, end=end)
         return [STOP], []
 
-    monkeypatch.setattr(plan.fuelstops, "suggest", suggest)
+    monkeypatch.setattr(fuelstops, "suggest", suggest)
     out = plan.fuel_stops_of(ROUTE, [SHORT], FLOWN)
     assert out == [
         {"departure": "C81", "destination": "KJAX", "usable_gal": 48.0, "reason": "fuel", "stops": [STOP.as_dict()], "choices": []}
@@ -50,7 +51,7 @@ def test_a_flight_the_tanks_do_not_hold_gets_its_stops(monkeypatch):
     # The flight's own burn and minutes a mile, on the miles it flies for
     # each straight one, its day reserve, and none of the route's own
     # fields offered.
-    straight = float(plan.geo.distance_nm(42.3, -88.1, 30.5, -81.7))
+    straight = float(geo.distance_nm(42.3, -88.1, 30.5, -81.7))
     detour = max(1.0, SHORT["distance_nm"] / straight)
     assert abs(asked["fuel_per_nm"] - SHORT["fuel_gal"] / SHORT["distance_nm"] * detour) < 1e-9
     assert abs(asked["min_per_nm"] - SHORT["ete_min"] / SHORT["distance_nm"] * detour) < 1e-9
@@ -58,7 +59,7 @@ def test_a_flight_the_tanks_do_not_hold_gets_its_stops(monkeypatch):
 
 
 def test_none_where_the_fuel_check_passes_or_cannot_be_made(monkeypatch):
-    monkeypatch.setattr(plan.fuelstops, "suggest", lambda *a, **k: (_ for _ in ()).throw(AssertionError("asked")))
+    monkeypatch.setattr(fuelstops, "suggest", lambda *a, **k: (_ for _ in ()).throw(AssertionError("asked")))
     assert plan.fuel_stops_of(ROUTE, [{**SHORT, "fuel_margin_gal": 2.0}], FLOWN) == []
     assert plan.fuel_stops_of(ROUTE, [{**SHORT, "usable_fuel_gal": None}], FLOWN) == []
     assert plan.fuel_stops_of(ROUTE, [{**SHORT, "fuel_gal": None}], FLOWN) == []

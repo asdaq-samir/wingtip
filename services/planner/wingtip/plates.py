@@ -36,7 +36,7 @@ import pypdfium2.raw as pdfium_c
 import pyproj
 from PIL import Image
 
-from . import plate_page, procedures, publications
+from . import plate_page, procedures, publication_drawing, publications
 from .atomic import atomic_path
 
 log = logging.getLogger(__name__)
@@ -250,7 +250,7 @@ def _plan_view(pdf: bytes, fixes: dict, airport: tuple) -> tuple | None:
     # Every plan view draws its own airport (the d-TPP legend's plan
     # view), so the box round the airport is the plan view's.
     x, y = geo.page_of(*airport)
-    with publications._PDFIUM:
+    with publication_drawing._PDFIUM:
         document = pypdfium2.PdfDocument(pdf)
         try:
             page = document[0]
@@ -301,7 +301,7 @@ def circling_of(pdf: bytes) -> bool:
     field's plates have none (most of KORD's). A note's "Circling NA for
     Cat E southeast of Rwy 3-27", in sentence case, only narrows it, and
     stays the pilot's to read on the plate."""
-    with publications._PDFIUM:
+    with publication_drawing._PDFIUM:
         document = pypdfium2.PdfDocument(pdf)
         try:
             return "CIRCLING" in document[0].get_textpage().get_text_range()

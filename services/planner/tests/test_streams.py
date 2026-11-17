@@ -91,7 +91,7 @@ def test_a_stuck_altitude_selection_ends_the_navlog_stream_saying_what_it_waits_
     ends at the limit with an error line saying so."""
     from wingtip import flight_plan
 
-    from app.routers import plan as plan_router
+    from app.routers import navlog as navlog_router
 
     monkeypatch.setattr(checkpoint_scoring, "score", lambda dep, dest: [])
     release = threading.Event()
@@ -102,7 +102,7 @@ def test_a_stuck_altitude_selection_ends_the_navlog_stream_saying_what_it_waits_
         return altitude
 
     monkeypatch.setattr(altitude_module, "select_cruise_altitude", stuck)
-    monkeypatch.setattr(plan_router, "HEARTBEAT_S", 0.05)
+    monkeypatch.setattr(navlog_router, "HEARTBEAT_S", 0.05)
     monkeypatch.setattr(flight_plan, "COMPUTE_LIMIT_S", 0.4)
     try:
         resp = client.get("/api/navlog", params={"dep": "C81", "dest": "KDLH"})

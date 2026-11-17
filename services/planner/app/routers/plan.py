@@ -10,97 +10,32 @@ between two landings -- a hop -- is planned as a route of its own, with
 its own chart read, altitude plan, climb from the field and fuel check,
 the hops planned at once, and the nav log runs on through each stop.
 
-The flight is put together by wingtip.flight_plan, its figures the
+The nav log's stream is app.routers.navlog; the flight is put together by wingtip.flight_plan, its figures the
 engine's: this module reads the request (app.plan_query's PlanQuery,
-refusing what is not one), asks it and answers -- one line at a time for the nav log's stream."""
+refusing what is not one), asks it and answers; the nav log's stream, one
+line at a time, is app.routers.navlog."""
 
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import Response, StreamingResponse
-from wingtip import airspace, altitude, chartlabels, charts, faa_data, geo, planning
+from fastapi.responses import Response
+from wingtip import airspace, altitude, chartlabels, faa_data, geo, planning
 from wingtip import flight_plan as fp
-from wingtip.config import VFR_SECTIONAL_MAX_ZOOM, VFR_SECTIONAL_MIN_ZOOM
 from wingtip.engine import ask as engine
 from wingtip.planning import route_line
 from wingtip.profile import route_profile as side_view
 
 from .. import chart_model, cycle_in_address, foreflight, prefetch
-from ..router_basics import CHART_CACHE, line, load_route, ndjson, resolve, resolve_stop, stops_of
-from ..schemas.plan import (
-    ChartLayer,
-    ChartSheet,
-    Checkpoints,
-    ChartInfo,
-    Course,
-    RouteChecked,
-    NavLogAltitude,
-    NavLogDone,
-    NavLogError,
-    NavLogLeg,
-    NavLogStage,
-    Plan,
-    RouteProfile,
-    Totals,
-)
+from ..router_basics import load_route, resolve, resolve_stop, stops_of
+from ..schemas.plan import Checkpoints, Course, Plan, RouteChecked, RouteProfile, Totals
 from ..checkpoint_scoring import route_checkpoints
 from ..plan_query import PlanQuery, named_checkpoints
-from ..gateway import PUBLIC, SHARED, gateway
+from ..gateway import PUBLIC, gateway
+from ..chart_summary import chart_summary
+from ..plan_dependencies import read_ahead
 
 router = APIRouter()
-
-# How often the nav log stream says it is still working while the
-# altitude plans are being made.
-HEARTBEAT_S = 8
-
-
-def chart_layers() -> list[ChartLayer]:
-    """Every chart kind the map may draw, with its zoom range -- and,
-    for an overlay, its sheets and where they are, which is how the
-    map knows to offer the Chicago TAC over Chicago."""
-    return [
-        ChartLayer(
-            kind=k.key,
-            label=k.label,
-            min_zoom=k.min_zoom,
-            max_zoom=k.max_zoom,
-            base=k.base,
-            over=list(k.over),
-            cycle=(cycle := charts.serving_cycle_of(k.key)),
-            revision=charts.tiles_revision(cycle),
-            scales=charts.tile_scales(k.key),
-            sheets=[]
-            if k.base
-            else [
-                ChartSheet(name=name, label=charts.sheet_label(k, name), west=w, south=s, east=e, north=n)
-                for name, (w, s, e, n) in charts.sheets(k)
-            ],
-        )
-        for k in charts.KINDS.values()
-    ]
-
-
-def _chart_info() -> dict:
-    cycle = charts.serving_cycle()
-    return {
-        "max_zoom": VFR_SECTIONAL_MAX_ZOOM,
-        "min_zoom": VFR_SECTIONAL_MIN_ZOOM,
-        "chart_cycle": cycle,
-        "chart_revision": charts.tiles_revision(cycle),
-        "chart_layers": chart_layers(),
-    }
-
-
-@router.get("/api/chart", openapi_extra=SHARED)
-def chart_info(response: Response) -> ChartInfo:
-    """The chart the map draws, for a map with no route on it yet: the
-    planner's page opens on a search bar over the chart, as Maps does.
-    The map asks for no tile before this answers, so it may be kept
-    (CHART_CACHE) and served from the CDN's edge."""
-    response.headers["Cache-Control"] = CHART_CACHE
-    return ChartInfo(**_chart_info())
 
 
 @router.get("/api/route-profile", openapi_extra=PUBLIC)
@@ -168,26 +103,11 @@ def course(dep: str, dest: str, stops: str = "") -> Course:
         bearing_deg=round(geo.bearing_deg(*first.start, *first.end)),
         course_line=route_line(r),
         checkpoints_ready=ready,
-        **_chart_info(),
+        **chart_summary(),
     )
 
 
-async def _read_ahead(
-    ahead: Annotated[
-        bool,
-        Query(
-            description="Asked ahead of the pilot -- a Recent or Saved route planned while "
-            "the page is idle: its chart reads wait behind the route on screen's"
-        ),
-    ] = False,
-) -> None:
-    """The request's chart reads as reads ahead (chart_model.READ_AHEAD).
-    Async, so it is set in the request's own context, which the endpoint's
-    thread and a streamed body's are copied from."""
-    chart_model.READ_AHEAD.set(ahead)
-
-
-@router.get("/api/checkpoints", dependencies=[Depends(_read_ahead), Depends(cycle_in_address.in_address)], openapi_extra=PUBLIC)
+@router.get("/api/checkpoints", dependencies=[Depends(read_ahead), Depends(cycle_in_address.in_address)], openapi_extra=PUBLIC)
 def checkpoints(dep: str, dest: str, stops: str = "") -> Checkpoints:
     """Scored candidates and the subset worth flying, hop by hop along
     the whole route: fast once each hop's chart has been read, a few
@@ -299,7 +219,7 @@ def plan(q: Annotated[PlanQuery, Depends()]) -> Plan:
         class_b_detours=fp.class_b_detours_of(runs, outcome, asked),
         altitude_figures=list(outcome.figures),
         aircraft=None if asked.profile is None else {"name": q.aircraft, **asked.profile},
-        **_chart_info(),
+        **chart_summary(),
     )
 
 
@@ -339,144 +259,3 @@ def local_flight(q: Annotated[PlanQuery, Depends()], duration_min: LocalMinutes 
         legs_without_wind=0,
         **engine("navlog_fuel_plan", total_fuel_gal=fuel, profile=profile, night=bool(night), rules=q.rules),
     )
-
-
-@router.get("/api/navlog", dependencies=[Depends(_read_ahead)], openapi_extra=PUBLIC)
-def navlog_stream(q: Annotated[PlanQuery, Depends()]) -> StreamingResponse:
-    """Altitude and the dead-reckoning legs, as newline-delimited JSON --
-    the slow half, because it reads terrain, the obstacle file, the
-    airspace shapefile and live winds; asked for separately so none of
-    that delays the chart. Each line is one app.schemas.NavLogMessage.
-
-    Streamed rather than a single blocking response so a pilot sees the
-    table fill in as it goes rather than a blank screen: a "stage" line
-    before each real piece of work (scoring, the altitude plans), an
-    "altitude" line the moment those are decided -- the four plans and
-    the one chosen (altitude_choice, see /api/plan) with it -- one "leg"
-    line per leg, then one "done" line with the totals, which need
-    every leg in before they mean anything. Its own implementation, not
-    a wrapper over /api/plan: that one commits to a single synchronous
-    JSON response, and mixing a streaming and a non-streaming contract
-    into one function would compromise both. The overlap is the same
-    handful of calls into wingtip.flight_plan either way.
-
-    An unflyable route (some leg with no legal cruising altitude at all)
-    is reported as an "error" line, not an HTTP error status -- by the
-    time that's known, a 200 and a stream of NDJSON have already gone
-    out, and an HTTP status can't change after that.
-    """
-    r = load_route(q.dep, q.dest, q.stops)
-    # Refused as a 422 here, before the stream starts: once its 200 has gone
-    # out, a bad procedure or altitude could only be an error line (the
-    # one planning sequence, 823822e7, had left them to it).
-    asked = q.asked()
-
-    def lines():
-        if q.checkpoints:
-            yield line(NavLogStage(detail="Choosing checkpoints…"))
-            _, _, by_hop = route_checkpoints(r)
-        else:
-            by_hop = [[] for _ in r.hops]
-
-        runs = fp.hop_runs(r, by_hop, asked.depart, asked.profile, asked.ground, asked.holds, asked.drawn, asked.leave_runways)
-
-        # Each stage's words short enough for the one line the panel gives
-        # them, at the pilot's ask: what is being worked on first.
-        yield line(NavLogStage(detail="Planning altitudes…"))
-        # On side threads with a heartbeat, not inline: an uncached
-        # selection on a bad aviationweather.gov day was observed
-        # taking over two minutes, all of it silent -- and the gateway
-        # proxy cuts a stream that has been silent that long, so the
-        # browser saw the nav log simply end with no legs and no error.
-        # A stage line every few seconds keeps the connection visibly
-        # alive (and tells the pilot what it's still waiting on) for
-        # however long the fetch takes. The legs are worked out there
-        # too, a pilot's own altitude's included, so none of the waiting
-        # on winds happens after the heartbeat has stopped.
-        # The heartbeat names what the selection is actually waiting on --
-        # it used to say "aviationweather.gov" whatever the cause -- and
-        # the wait ends at COMPUTE_LIMIT_S with an error line saying so,
-        # rather than a stream that never ends. Not a `with` block: that
-        # would wait on a stuck thread on the way out. Every hop of a
-        # route with stops at once, each waited on in turn.
-        altitude_pool = ThreadPoolExecutor(max_workers=len(runs))
-        outcomes = []
-        try:
-            futures = [altitude_pool.submit(fp.resolve_run, run, asked) for run in runs]
-            for run, future in zip(runs, futures):
-                where = f" {run.hop.dep_ident} → {run.hop.dest_ident}" if len(runs) > 1 else ""
-                waiting = fp.waited(future, HEARTBEAT_S, lambda run=run: fp.running_stages(run, asked))
-                while True:
-                    try:
-                        elapsed = next(waiting)
-                    except StopIteration as done:
-                        outcomes.append(done.value)
-                        break
-                    named = fp.waiting_on(run, asked)
-                    yield line(
-                        NavLogStage(
-                            detail=(
-                                f"Altitudes{where}, {elapsed:.0f} s, waiting on {named}…"
-                                if named
-                                else f"Altitudes{where}, {elapsed:.0f} s, winds for each plan…"
-                            )
-                        )
-                    )
-        finally:
-            altitude_pool.shutdown(wait=False)
-        outcome = fp.join_outcomes(runs, outcomes)
-
-        aircraft_line = None if asked.profile is None else {"name": q.aircraft, **asked.profile}
-        if isinstance(outcome, fp.Unflyable):
-            why, detours = fp.unflyable_parts(outcome, runs)
-            yield line(
-                NavLogError(
-                    detail=why["title"],
-                    brief=why["brief"],
-                    reasons=why["reasons"],
-                    advice=why["advice"],
-                    retry=False,
-                    class_b=why["class_b"],
-                    detours=detours,
-                )
-            )
-            return
-        if isinstance(outcome, fp.NoWinds):
-            # The selection stands -- terrain, airspace, the legal
-            # altitudes -- even though the winds did not come: say what
-            # was decided, then what failed.
-            yield line(
-                NavLogAltitude(
-                    flown=None,
-                    altitude_ft=None,
-                    altitude_selection=outcome.selection,
-                    options=outcome.options,
-                    aircraft=aircraft_line,
-                    altitude_figures=list(outcome.figures),
-                )
-            )
-            yield line(NavLogError(detail=str(outcome.error)))
-            return
-
-        # Before any leg -- the checkpoints already on screen from
-        # /api/checkpoints can show their own cruise altitude
-        # immediately rather than waiting on the first leg to carry it.
-        yield line(
-            NavLogAltitude(
-                flown=outcome.choice or "custom",
-                altitude_ft=outcome.altitude_ft,
-                altitude_selection=outcome.selection,
-                options=outcome.options,
-                aircraft=aircraft_line,
-                cautions=list(outcome.cautions),
-                class_b_detours=fp.class_b_detours_of(runs, outcome, asked),
-                altitude_figures=list(outcome.figures),
-            )
-        )
-        outcome, legs = fp.flown_as_picked(r, runs, outcome, asked)
-        for leg in legs:
-            yield line(NavLogLeg.model_validate(leg))
-
-        yield line(NavLogDone(totals=fp.totals_of(r, runs, outcome, asked)))
-
-    return ndjson(lines(), NavLogError)

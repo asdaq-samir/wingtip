@@ -8,7 +8,8 @@ from unittest.mock import patch
 import pytest
 from wingtip import registry, traffic
 
-from .test_traffic import CESSNA, _answer, _routed, _status, adsbx, clock  # noqa: F401 (the fixtures, by name)
+from .traffic_world import CESSNA, _answer, _routed, _status
+from .traffic_world import adsbx_fixture, clock_fixture  # noqa: F401 (the fixtures, by the names the runner gives them)
 
 # The clock stood in for and ADS-B Exchange keyed, as test_traffic's own.
 pytestmark = pytest.mark.usefixtures("adsbx")
