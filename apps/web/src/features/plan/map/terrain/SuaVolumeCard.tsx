@@ -1,5 +1,5 @@
 import { ShieldAlert } from "lucide-react";
-import { cn } from "cn";
+import { TermTable } from "../../../../components/CardFacts";
 import { RowBadge } from "../../../../components/RowBadge";
 import { faaWords, suaAltitudes } from "../../../../lib/advisories";
 import { MapCard } from "../../../../lib/map/cards/MapCard";
@@ -30,14 +30,7 @@ export function SuaVolumeCard({ area, colour }: { area: SuaArea; colour: string 
       subtitle={kind}
       pill={{ name, line: kind, colour }}
     >
-      <dl className={cn("grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-left", TEXT.row)} data-testid="sua-card">
-        {rows.map(([term, value]) => (
-          <div key={term} className="contents">
-            <dt className="text-muted-foreground">{term}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
+      <TermTable rows={rows} testId="sua-card" className={TEXT.row} />
     </MapCard>
   );
 }

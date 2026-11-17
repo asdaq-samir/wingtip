@@ -80,3 +80,30 @@ export function CardFacts({ testId, fit, children }: { testId: string; fit?: boo
     </dl>
   );
 }
+
+/** A card's terms and their values in two columns, the term small and
+ *  grey at the left (the airspace card, a special-use area's, a
+ *  checkpoint's leg). `className` sets the table's text, `ddClassName`
+ *  the values'. */
+export function TermTable({
+  rows,
+  testId,
+  className,
+  ddClassName,
+}: {
+  rows: readonly (readonly [string, ReactNode])[];
+  testId: string;
+  className?: string;
+  ddClassName?: string;
+}) {
+  return (
+    <dl className={cn("grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-left", className)} data-testid={testId}>
+      {rows.map(([term, value]) => (
+        <div key={term} className="contents">
+          <dt className="text-muted-foreground">{term}</dt>
+          <dd className={ddClassName}>{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}

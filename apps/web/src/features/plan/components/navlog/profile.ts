@@ -59,3 +59,31 @@ export function ceilingOverFloor(a: { floor_ft?: number | null; ceiling_ft?: num
   const floor = !a.floor_ft ? "SFC" : String(Math.round(a.floor_ft / 100));
   return `${Math.round(a.ceiling_ft / 100)}/${floor}`;
 }
+
+/** What a side view's ReferenceArea needs to draw an airspace piece, as
+ *  the sectional draws it: its outline and a faint fill in its class's
+ *  colour, dashed for D, clipped to the chart, and (`name` given) its name
+ *  in that colour over its ceiling over its floor. The profile and the
+ *  past flight's chart share it. */
+export function airspaceArea(
+  a: { floor_ft?: number | null; ceiling_ft?: number | null },
+  look: { stroke: string; text: string; dashed?: boolean },
+  where: { x1: number; x2: number; y2: number | undefined },
+  name?: { text: string; position: "insideTop" | "insideTopLeft" | "insideTopRight" },
+) {
+  return {
+    x1: where.x1,
+    x2: where.x2,
+    y1: a.floor_ft ?? undefined,
+    y2: where.y2,
+    stroke: look.stroke,
+    strokeDasharray: look.dashed ? "5 4" : undefined,
+    strokeOpacity: 0.8,
+    fill: look.stroke,
+    fillOpacity: 0.08,
+    ifOverflow: "hidden" as const,
+    label: name
+      ? { value: `${name.text} ${ceilingOverFloor(a)}`.trim(), position: name.position, fontSize: 11, fontWeight: 600, fill: look.text }
+      : undefined,
+  };
+}

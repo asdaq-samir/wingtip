@@ -4,7 +4,7 @@ import { cn } from "cn";
 import RoundButton from "../../components/RoundButton";
 import { PlaybackButton, PlaybackToolbar, PlayToggle, SpeedMenu } from "../../components/PlaybackBar";
 import { keepSliderKeys } from "../../components/playbackKeys";
-import { Slider } from "../../components/ui/slider";
+import { Slider, THUMB_HIT } from "../../components/ui/slider";
 import { TEXT } from "../../lib/text";
 import { replayTimes } from "./replayTime";
 import { speedName, useReplay } from "./useReplay";
@@ -93,7 +93,7 @@ export function ReplayTimeline({
           thumb={{
             "aria-label": `Where the ${label.toLowerCase()} is`,
             "aria-valuetext": times ? `${times.zulu}, ${times.local}` : undefined,
-            className: "relative after:absolute after:-inset-3.5 after:content-['']",
+            className: THUMB_HIT,
           }}
           data-testid={`${testId}-scrub`}
         />

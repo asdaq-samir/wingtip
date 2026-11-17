@@ -5,7 +5,7 @@ import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { Button, buttonVariants } from "../../../components/ui/button";
 import { FieldError } from "../../../components/ui/field";
 import { Progress } from "../../../components/ui/progress";
-import { Slider } from "../../../components/ui/slider";
+import { Slider, THUMB_HIT } from "../../../components/ui/slider";
 import { Switch } from "../../../components/ui/switch";
 import Segmented from "../../../components/Segmented";
 import { TEXT } from "../../../lib/text";
@@ -146,7 +146,7 @@ export function ExportPanel({
           largeStep={60}
           value={[from, to]}
           onValueChange={(v) => Array.isArray(v) && v.length === 2 && setRange([v[0]!, v[1]!])}
-          thumb={{ className: "relative after:absolute after:-inset-3.5 after:content-['']" }}
+          thumb={{ className: THUMB_HIT }}
           aria-label="Range to export"
           data-testid="studio-export-range"
         />

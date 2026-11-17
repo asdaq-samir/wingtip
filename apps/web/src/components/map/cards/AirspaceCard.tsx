@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { AirspaceVolume } from "../../../lib/map/sources/overlayTypes";
-import { cn } from "cn";
 import { TEXT } from "../../../lib/text";
+import { TermTable } from "../../CardFacts";
 import { airspaceFacts } from "../../../lib/map/marks/airspaceLabel";
 import { AIRSPACE_LINE } from "../../../lib/map/marks/airspaceMarks";
 import { MapCard } from "../../../lib/map/cards/MapCard";
@@ -61,14 +61,7 @@ export function AirspaceCardBody({ volume, close }: { volume: AirspaceVolume; cl
       // airport's is its picture (MapCard's `pill`).
       pill={{ name: `Class ${volume.airspace_class}`, line: facts.name, colour: AIRSPACE_LINE[volume.airspace_class].color }}
     >
-      <dl className={cn("grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-left", TEXT.row)} data-testid="airspace-card">
-        {rows.map(([term, value]) => (
-          <div key={term} className="contents">
-            <dt className="text-muted-foreground">{term}</dt>
-            <dd className="tabular-nums">{value}</dd>
-          </div>
-        ))}
-      </dl>
+      <TermTable rows={rows} testId="airspace-card" className={TEXT.row} ddClassName="tabular-nums" />
       <AirspaceCall volume={volume} />
       {/* What it takes to go in, each rule with its section (lib/airspaceRules),
           at the owner's ask for cards that say what a pilot does there

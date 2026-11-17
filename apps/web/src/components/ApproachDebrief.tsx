@@ -13,6 +13,7 @@ import { rad } from "../lib/geo";
 import { sameField, transitionWords, type PickedProcedure } from "../lib/procedures";
 import { FINDING_TONE } from "../lib/findings";
 import { TEXT } from "../lib/text";
+import { AltitudeLegend } from "./AltitudeLegend";
 import type { TrackPoint } from "../lib/track";
 import { feet } from "../lib/format";
 
@@ -326,19 +327,13 @@ function ProfileView({ d }: { d: Debriefed }) {
   const flown = track.map((p, i) => `${i ? "L" : "M"}${x(p.toGoNm).toFixed(1)} ${y(p.altFt).toFixed(1)}`).join(" ");
   return (
     <figure className="space-y-1 px-3 py-3" data-testid="approach-profile">
-      <div className={cn("flex justify-between text-muted-foreground tabular-nums", TEXT.note)}>
-        <span>{feet(high)}</span>
-        <span className="flex gap-3">
-          <span>
-            <span className="mr-1 inline-block h-0.5 w-4 bg-procedure align-middle" />
-            Minimums{glidepath ? " · path" : ""}
-          </span>
-          <span>
-            <span className="mr-1 inline-block h-0.5 w-4 bg-foreground align-middle" />
-            Flown
-          </span>
-        </span>
-      </div>
+      <AltitudeLegend
+        high={high}
+        keys={[
+          { colour: "bg-procedure", label: `Minimums${glidepath ? " · path" : ""}` },
+          { colour: "bg-foreground", label: "Flown" },
+        ]}
+      />
       <svg
         viewBox="0 0 300 100"
         preserveAspectRatio="none"

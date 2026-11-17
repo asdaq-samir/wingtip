@@ -7,6 +7,7 @@ import { api } from "../../lib/api/client";
 import type { Pilot } from "../../lib/api/types";
 import { pilotQuery } from "../../lib/queryClient";
 import { AccountGroup } from "./AccountMenu";
+import { NameFieldRow } from "./NameFieldRow";
 
 // The server's own limits (PilotContactRequest): a number is figures and
 // the marks one is written with, a home base an airport identifier.
@@ -63,23 +64,18 @@ function PilotFields({ pilot }: { pilot: Pilot }) {
   return (
     <section aria-label="Pilot details">
       <ListGroup title="For your flight plans">
-        <ListRow id={`${id}-name`} title="Name" description={problem(saveName.error?.message) ?? "As on your pilot certificate"}>
-          <FieldHit htmlFor={`${id}-name`}>
-            <Input
-              id={`${id}-name`}
-              value={name}
-              placeholder="Avery B. Pilot"
-              maxLength={120}
-              className="h-8 w-44 text-right sm:w-56"
-              autoComplete="name"
-              onChange={(e) => setName(e.target.value)}
-              data-testid="pilot-name"
-              onBlur={() => {
-                if (name.trim() && name.trim() !== pilot.fullName) saveName.mutate(name.trim());
-              }}
-            />
-          </FieldHit>
-        </ListRow>
+        <NameFieldRow
+          id={`${id}-name`}
+          title="Name"
+          description={problem(saveName.error?.message) ?? "As on your pilot certificate"}
+          placeholder="Avery B. Pilot"
+          value={name}
+          saved={pilot.fullName}
+          onChange={setName}
+          onSave={saveName.mutate}
+          testId="pilot-name"
+          className="h-8 w-44 text-right sm:w-56"
+        />
         <ListRow
           id={`${id}-phone`}
           title="Phone"
