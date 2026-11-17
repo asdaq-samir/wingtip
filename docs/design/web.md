@@ -812,7 +812,10 @@ by clicking the map, typing an address or a name, up to 9 stops in all
    "Sat 18:00"), no chevron; its picker (`navlog/DepartPicker`) has Done
    at its top and Now at its start only once a time is picked, and the
    calendar is drawn on the sheet with no box of its own
-   (`components/ui/calendar`), as iOS's inline date picker is.
+   (`components/ui/calendar`), as iOS's inline date picker is. FPL's route list draws each airport as a card always, in every
+   layout, the Nav Log's picked row's fill (`bg-foreground/8`, rounded,
+   no border; `features/procedures/routeListStyle`), its runways and
+   procedures opening inside it on a tap; its ident links to its card.
    One strip in every state, FPL's route row on the ground, a dry run and
    in flight, and the training page's too: `components/FigureStrip`, the
    plan's figures and their taps given it by `features/navlog`'s

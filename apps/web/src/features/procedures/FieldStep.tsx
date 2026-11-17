@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { PlaneLanding, PlaneTakeoff } from "lucide-react";
 import { cn } from "cn";
 import { CardThread } from "./routeCard";
-import { CARD_BODY, CARD_GAP, POINT_CARD, ROUTE_LINE } from "./routeListStyle";
+import { CARD_BODY, CARD_GAP, FIELD_CARD, FIELD_GAP, POINT_CARD } from "./routeListStyle";
 import { Collapsible, CollapsibleContent } from "../../components/ui/collapsible";
 import type { Runway } from "../../lib/api/types";
 import { type RunwayEnd, etaAt, groundMinAt, type NavLogRow, type Landing, type ProcedureAirport, type ProcedureKind } from "../plan";
@@ -211,27 +211,32 @@ export function FieldStep({
     const wind = reported === "calm" ? "Calm" : reported ? `${reported.dir.replace(/T$/, "")} ${reported.speed} kt` : null;
     const tank = row ? tanks.get(row.key) : a.role === "Departure" ? tanks.get("departure") : undefined;
     return (
-      // The field a stock Collapsible, its arrow the trigger: aria-expanded
+      // The field a stock Collapsible, its lines the trigger: aria-expanded
       // and aria-controls Base UI's, and the landing's or the takeoff's body
       // its content. A stop's second part, in a section of its own, is
-      // shown with it (a Collapsible has one content).
+      // shown with it (a Collapsible has one content). Always a card, in
+      // every layout, the Nav Log's picked row's fill, and opened it grows
+      // with its runways and procedures inside it (the owner, 2026-11-17:
+      // "show it all the time, tapping just makes it bigger").
       <Collapsible
         key={key}
         open={opened}
         onOpenChange={(next) => toggleField(key, a.ident, next)}
         render={
           <div
-            className={cn("relative", asCards && cn(POINT_CARD, "isolate"), asCards && !last && CARD_GAP)}
+            className={cn(
+              "relative isolate",
+              asCards ? POINT_CARD : FIELD_CARD,
+              !last && (asCards ? CARD_GAP : FIELD_GAP),
+            )}
             data-testid="route-field"
             data-ident={a.ident}
+            data-open={opened || undefined}
           />
         }
       >
-        {asCards && <CardThread first={leads} last={last} />}
-        {!last && !asCards && (
-          <span aria-hidden="true" className="absolute top-3 bottom-0 left-[calc(0.875rem-1px)] w-0.5" style={ROUTE_LINE} />
-        )}
-        <section aria-label={`${a.ident} · ${first.role}`} className={cn(!(opened && parts[1]) && !asCards && "pb-5")}>
+        <CardThread first={leads} last={last} row={!asCards} />
+        <section aria-label={`${a.ident} · ${first.role}`}>
           <FieldHead vm={vm} a={a} mark={mark} end={end} tank={tank} wind={wind} reported={reported} />
           {/* A card's runways and procedures nearly its whole width, at
                         the owner's ask ("we can use all card width for runway and
@@ -241,7 +246,7 @@ export function FieldStep({
           <CollapsibleContent className={asCards ? CARD_BODY : "pl-9.5"}>{partBody(first)}</CollapsibleContent>
         </section>
         {opened && parts[1] && (
-          <section aria-label={`${a.ident} · ${parts[1].role}`} className={asCards ? CARD_BODY : "pl-9.5 pb-5"}>
+          <section aria-label={`${a.ident} · ${parts[1].role}`} className={asCards ? CARD_BODY : "pl-9.5"}>
             {partBody(parts[1])}
           </section>
         )}

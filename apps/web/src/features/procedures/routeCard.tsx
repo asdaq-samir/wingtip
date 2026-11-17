@@ -18,20 +18,23 @@ import { AirportMark } from "../navlog/lazy";
  * last's ends, 32 down, under its mark, on a disc of the card's fill
  * (CardMark), as the mark's grey is see-through.
  */
-export function CardThread({ first, last }: { first: boolean; last: boolean }) {
+export function CardThread({ first, last, row = false }: { first: boolean; last: boolean; row?: boolean }) {
   if (first && last) return null;
-  return (
-    <span
-      aria-hidden="true"
-      style={ROUTE_LINE}
-      className={cn("absolute left-[calc(1.625rem-1px)] -z-10 w-0.5", first ? "top-8" : "top-0", last ? "h-8" : "-bottom-[1.375rem]")}
-    />
-  );
+  // `row`: an airport's card in the box's and the line's lists (FIELD_CARD),
+  // its column 6 in and its mark 8 down, the gap under it FIELD_GAP's 12.
+  const place = row
+    ? cn("left-[calc(1.25rem-1px)]", first ? "top-6" : "top-0", last ? "h-6" : "-bottom-3")
+    : cn("left-[calc(1.625rem-1px)]", first ? "top-8" : "top-0", last ? "h-8" : "-bottom-[1.375rem]");
+  return <span aria-hidden="true" style={ROUTE_LINE} className={cn("absolute -z-10 w-0.5", place)} />;
 }
 
-/** A card's mark on a disc of the card's fill, hiding the line under it. */
+/** A card's mark on a disc of the card's own colour -- the sheet under the
+ *  card's fill -- hiding the line under it, as the mark's grey is
+ *  see-through. */
 export const CardMark = ({ children }: { children: ReactNode }) => (
-  <span className="grid place-items-center rounded-full bg-card">{children}</span>
+  <span className="grid place-items-center rounded-full bg-(--sheet)">
+    <span className="grid place-items-center rounded-full bg-foreground/8">{children}</span>
+  </span>
 );
 
 /** An empty card's mark: the airport symbol, no airspace or weather yet,

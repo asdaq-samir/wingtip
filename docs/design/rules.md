@@ -502,7 +502,14 @@ off by default (the owner, 2026-11-13).
    airports/stops tappable as the navlog does?"), the rest of its lines
    folding its runways and procedures open, one disclosure with no
    chevron beside the symbol (the UI audit's C14), the symbol its menu;
-   a waypoint's or a fix's stays plain. In the Plan's cards the ident is
+   a waypoint's or a fix's stays plain. Every airport of the route is
+   always a card, in every layout -- the Nav Log's picked row's fill and
+   corner, no border or shadow -- and a tap on its lines makes it bigger,
+   its runways and procedures opening inside it, as the Nav Log's note
+   opens inside its row (the owner, 2026-11-17: "show it all the time,
+   tapping just makes it bigger"); the waypoints between stay plain rows
+   in the box's and the line's lists. One card look for the list
+   (`routeListStyle`'s POINT_CARD and FIELD_CARD, one fill). In the Plan's cards the ident is
    the same link, and Change in the menu asks the one search for the
    airport to put in its place. On the
    map the way flown is solid magenta and the others thin dotted lines

@@ -29,7 +29,7 @@ export function FieldHead({
   wind: string | null;
   reported: ReturnType<ProceduresRouteModel["reportedOf"]>;
 }) {
-  const { asCards, isFuelStop, onInfo } = vm;
+  const { isFuelStop, onInfo } = vm;
   return (
     <>
       {/* The airport's lines: a tap anywhere on them -- its fuel, its wind, its time -- opens it, at the owner's ask
@@ -46,7 +46,7 @@ export function FieldHead({
         {/* Centred on the two lines, at the owner's ask ("Center it
                   on the two lines"): the column as tall as they are. */}
         <div className="relative z-10 flex w-7 shrink-0 items-center justify-center">
-          {((face) => (asCards ? <CardMark>{face}</CardMark> : face))(
+          {((face) => <CardMark>{face}</CardMark>)(
             end.menu(
               <span className="relative">
                 {mark}
