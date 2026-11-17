@@ -1,7 +1,7 @@
 import type { ExpressionSpecification, SymbolLayerSpecification } from "maplibre-gl";
 import { useMemo } from "react";
 import { COURSE_MAGENTA } from "../../marks/chartColors";
-import { WAY_CHIP_PLACE, WAY_SHARES, wayAt, wayChip, wayInk, type RouteWay } from "../../route/routeWays";
+import { WAY_CHIP_PLACE, WAY_SHARES, WAY_TEXT_SIZE, wayAt, wayChip, wayInk, type RouteWay } from "../../route/routeWays";
 import { chipLayer, type Layout } from "../markLayers";
 import { useGlLines, type GlRun } from "../useGlLines";
 import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
@@ -26,7 +26,7 @@ const wayChipLayer = (id: string, how: Parameters<typeof chipLayer>[2], shown: b
         ["get", "name"],
         { "text-font": ["literal", GL_FONT] },
       ] as ExpressionSpecification,
-      "text-size": 13,
+      "text-size": WAY_TEXT_SIZE,
       "text-line-height": 1.25,
       "text-justify": "left",
       ...WAY_CHIP_PLACE,
@@ -75,8 +75,11 @@ export function WaysGl({ ways, shown: shown_, onPick }: { ways: RouteWay[]; show
           key: w.key,
           lat,
           lon,
-          picture: wayChip(shown),
-          props: { label: w.label, name: w.name ?? "", gap: w.name ? (shown ? "\n" : " ") : "", shown, ink: wayInk(shown) },
+          picture: wayChip(),
+          // The name under the time only where there is a time: "As typed"
+          // with no airplane has none, and its empty first line set the
+          // name low in a chip twice its height.
+          props: { label: w.label, name: w.name ?? "", gap: w.name && w.label ? (shown ? "\n" : " ") : "", shown, ink: wayInk(shown) },
           onTap: () => onPick(w.key),
         };
       }),

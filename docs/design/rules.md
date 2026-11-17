@@ -513,7 +513,10 @@ off by default (the owner, 2026-11-13).
    the same link, and Change in the menu asks the one search for the
    airport to put in its place. On the
    map the way flown is solid magenta and the others thin dotted lines
-   in the chart's ink, each chip named, the others' chips left out where
+   in the chart's ink, each chip named -- every chip white and small,
+   12 points, quieter than the line: the way flown's words in the map's
+   tint, the others' in the chart's ink (the owner's list, 2026-11-17) --
+   the others' chips left out where
    they would overlap (the owner's pick of the routes canvas, board 5,
    2026-11-16); then the route in order, and
    the actions' bar pinned at the foot, the figures at the pill, both
