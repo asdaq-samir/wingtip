@@ -4,7 +4,7 @@ import { routeName } from "../../../lib/identSchema";
 import type { FlightRules } from "../../../lib/preferences";
 import { Shown, useShown } from "../../../lib/shown";
 import Segmented from "../../../components/Segmented";
-import { ProfileCard } from "../../plan";
+import { ProfileCard } from "../../navlog";
 import { BriefCard, StopsCard, DryRunControls } from "../routePanelParts";
 import { CardLayer } from "../../../components/sheet/CardLayer";
 import { useOpenedOnce } from "../../../components/sheet/useOpenedOnce";

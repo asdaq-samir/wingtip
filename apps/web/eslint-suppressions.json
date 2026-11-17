@@ -14,7 +14,7 @@
       "count": 1
     }
   },
-  "src/features/plan/components/navlog/altitude/AltitudeAdvisor.tsx": {
+  "src/features/navlog/altitude/AltitudeAdvisor.tsx": {
     "no-restricted-syntax": {
       "count": 1
     }

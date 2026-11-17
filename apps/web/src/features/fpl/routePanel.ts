@@ -8,16 +8,16 @@
  * itself, is on a chunk of its own (routeBoxChunk), as the first screen
  * draws it.
  */
-export { NavLogView } from "../plan/lazy";
+export { NavLogView } from "../navlog/lazy";
 export { ProceduresRoute } from "../procedures/lazy";
 export { RouteLine } from "../procedures/lazy";
 export { FlightBriefingView, BriefingNotices, ReviewAskItem, ReviewAskSheet, SaveFlightButton } from "../brief/lazy";
 export { RouteEnds } from "../procedures/lazy";
 export { RouteSplit } from "../plan/lazy";
-export { Kneeboard } from "../plan/lazy";
-export { FlightInputs } from "../plan/lazy";
-export { AltitudeGroup } from "../plan/lazy";
-export { AltitudeProfile } from "../plan/lazy";
+export { Kneeboard } from "../navlog/lazy";
+export { FlightInputs } from "../navlog/lazy";
+export { AltitudeGroup } from "../navlog/lazy";
+export { AltitudeProfile } from "../navlog/lazy";
 export { RouteProblem } from "../plan/lazy";
 export { LocalDuration } from "../plan/lazy";
 export { BriefCard } from "../brief/lazy";

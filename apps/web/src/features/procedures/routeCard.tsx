@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "cn";
 import { ROUTE_LINE } from "./routeListStyle";
 import { colourOf } from "../../lib/map/marks/flightCategory";
-import { AirportMark } from "../plan/lazy";
+import { AirportMark } from "../navlog/lazy";
 
 /**
  * The course's line through the cards, from each card's mark to the

@@ -5,7 +5,7 @@ import { CloudOff } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
 import AccordionSection from "../../components/AccordionSection";
 import { TEXT } from "../../lib/text";
-import { AltitudeReasoning } from "../plan/lazy";
+import { AltitudeReasoning } from "../navlog/lazy";
 import type { Course, Leg, NavLogAltitude, Totals } from "../../lib/api/types";
 import { type BriefingState, clockTime, type BriefingPart } from "../plan";
 import { useFlightBriefing, WEATHER_SOURCE_LABEL } from "./useFlightBriefing";

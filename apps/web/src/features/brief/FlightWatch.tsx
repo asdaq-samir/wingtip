@@ -11,7 +11,7 @@ import { useMinuteClock } from "../../lib/useMinuteClock";
 import { pilotQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
 import SourceChips from "../../components/SourceChips";
-import { DepartPicker } from "../plan/lazy";
+import { DepartPicker } from "../navlog/lazy";
 import { planOf, SAVE_FLIGHT, useSaveRequest } from "./saveFlightRequest";
 import { FieldError } from "../../components/ui/field";
 

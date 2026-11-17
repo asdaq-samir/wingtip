@@ -10,7 +10,7 @@ import { runwayChecks, type RunwayDistance } from "./runwayCheck";
 import { useRunwayPicks, phasesOf, type Phase } from "../plan/lazy";
 import { FINDING_TONE } from "../../lib/findings";
 import FindingIcon from "../../components/FindingIcon";
-import { windOnRunway, useLoad, loadEnvelopeChart } from "../plan";
+import { windOnRunway, useLoad } from "../plan";
 import { TEXT } from "../../lib/text";
 import { altFt, feet, pounds } from "../../lib/format";
 import { armText } from "../../lib/weightBalance";
@@ -18,6 +18,7 @@ import { AirplaneLink } from "../../components/airplane/AirplaneLink";
 import { AskFigure } from "../../components/airplane/AskFigure";
 import { useNotInProfileSummary } from "./notInProfileSummary";
 import { NO_RUNWAYS } from "../../lib/emptyWords";
+import { loadEnvelopeChart } from "../navlog";
 
 /** The envelope's picture: Recharts, loaded with the section. */
 const EnvelopeChart = lazy(() => loadEnvelopeChart());

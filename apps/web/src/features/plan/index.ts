@@ -12,38 +12,47 @@
 export { default as DirectStrip } from "./components/DirectStrip";
 export { default as FplStrip } from "./components/FplStrip";
 export type { EditedPoint, PointAltitude } from "./components/PointAltitudeDialog";
-export { default as ProfileCard } from "./components/ProfileCard";
 export { RecentRoutesPage } from "./components/RecentRoutes";
 export type { RouteParts, RouteProcedure } from "./components/RouteBox";
-export { default as TripFigures } from "./components/TripFigures";
 export type { BriefingPart } from "./components/briefing/sections";
-export { loadFlightChart } from "./components/loadFlightChart";
-export { clearanceAt } from "./components/navlog/altitude/clearance";
-export { type DryRun, type Flown, dryRunAt, dryRunFlown, dryRunOf, runNmAt } from "./components/navlog/dryRun";
-export { type CourseLine, dryRunNext, gpsAhead } from "./components/navlog/flyingTo";
+export { type DryRun, type Flown, dryRunAt, dryRunFlown, dryRunOf, dryRunRow, runNmAt } from "./components/navlog/dryRun";
+export { type CourseLine, dryRunNext, gpsAhead, useFlyingTo } from "./components/navlog/flyingTo";
 export { GoToTab, LEGS, type PanelTab, useTabAsk } from "./components/navlog/panelTab";
 export {
   type NavLogRow,
   type RouteEnds,
+  flownNmOf,
   groundMinAt,
   isLegPoint,
   legOf,
   navLogRows,
+  phaseOf,
+  procedureOf,
+  routeLegs,
   rowPoint,
   savedCheckpoints,
 } from "./components/navlog/rows";
-export { figuresLine, nextLanding } from "./figures";
+export { figuresLine, nextLanding, shortFlights, tripFigures } from "./figures";
 export {
   PLAN_NAME,
   type ReportedWind,
   altFt,
+  bearing,
   ceilingAndVisibility,
   clockTime,
+  cruiseByAltitude,
+  describeFuel,
+  describeSteps,
+  describeTime,
+  economicalWords,
   etaAt,
   feet,
+  feetBelowClouds,
   legsWithoutWind,
   one,
+  plannedWords,
   reportedWind,
+  windAloft,
   windLine,
   windOnRunway,
   windText,
@@ -67,7 +76,7 @@ export {
 export type { PlanAnswer, PlanCourse } from "./hooks/planTypes";
 export type { Landing, ProcedureAirport, ProcedureKind } from "./hooks/procedureTypes";
 export { type AirplaneRow, useAirplaneHits } from "./hooks/useAirplaneHits";
-export { useLegSheet } from "./hooks/useLegSheet";
+export { type Description, descriptionKey } from "./hooks/useCheckpointNotes";
 export { useLoad } from "./hooks/useLoad";
 export { useMapActions } from "./hooks/useMapActions";
 export { type PanelList, type PanelView, useAddressCards, usePanelView } from "./hooks/usePanelView";
@@ -88,6 +97,8 @@ export {
   entryFor,
   exitFor,
   patternSideDeg,
+  pickedEnd,
+  runwayFlown,
   runwayNumber,
   windPick,
 } from "./lib/pattern";
@@ -117,23 +128,8 @@ export { BootMap, RouteMap } from "./routeMapChunk";
 /** NearestCard, on a chunk of its own, as its importer loads it. */
 export const loadNearestCard = () => import("./components/NearestCard");
 
-/** PastFlightChart, on a chunk of its own, as its importer loads it. */
-export const loadPastFlightChart = () => import("./components/PastFlightChart");
-
 /** PointAltitudeDialog, on a chunk of its own, as its importer loads it. */
 export const loadPointAltitudeDialog = () => import("./components/PointAltitudeDialog");
-
-/** RouteLegCard, on a chunk of its own, as its importer loads it. */
-export const loadRouteLegCard = () => import("./components/RouteLegCard");
-
-/** EnvelopeChart, on a chunk of its own, as its importer loads it. */
-export const loadEnvelopeChart = () => import("./components/briefing/EnvelopeChart");
-
-/** MiniProfile, on a chunk of its own, as its importer loads it. */
-export const loadMiniProfile = () => import("./components/navlog/MiniProfile");
-
-/** The nav log's profile chart, on a chunk of its own (the Studio draws with it too). */
-export const loadProfileChart = () => import("./components/navlog/ProfileChart");
 
 /** SearchResultsPage, on a chunk of its own, as its importer loads it. */
 export const loadSearchResultsPage = () => import("./components/search/SearchResultsPage");

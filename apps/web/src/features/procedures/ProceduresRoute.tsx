@@ -4,7 +4,8 @@ import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent } 
 import { sameField } from "../../lib/procedures";
 import { frdOf, isPosition, placeOfPoint, pointName } from "../../lib/identSchema";
 import { etaAt, legOf, rowPoint, type NavLogRow, type ProcedureAirport, loadPointAltitudeDialog } from "../plan";
-import { PointMark, PointFigures } from "../plan/lazy";
+import { PointMark } from "../navlog/lazy";
+import { PointFigures } from "../plan/lazy";
 import { FuelGauge } from "./FuelGauge";
 import { useProceduresRoute, type ProceduresRouteProps } from "./useProceduresRoute";
 import { RouteLine } from "./RouteLine";

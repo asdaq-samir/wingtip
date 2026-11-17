@@ -681,7 +681,7 @@ gone on every platform.
 
 | | Web | iPhone | Android |
 |---|---|---|---|
-| Slider | Base UI Slider, upright (`features/plan/components/navlog/altitude/AltitudeProfile`, its view model `useAltitudePreview`) | See [ios.md](ios.md) | See [android.md](android.md) |
+| Slider | Base UI Slider, upright (`features/navlog/altitude/AltitudeProfile`, its view model `useAltitudePreview`) | See [ios.md](ios.md) | See [android.md](android.md) |
 | Waypoint | Base UI Popover from a tablet's width up, `SheetDialog` on a phone (`altitude/LegAltitude`) | | |
 | Advisor | shadcn Item rows (`altitude/AltitudeAdvisor`) | | |
 | Tests | `altitude/altitude.test.ts`, `navlog/profile.test.ts`; `e2e/plans.spec.ts`, `e2e/plan-cards-heads.spec.ts` | | |

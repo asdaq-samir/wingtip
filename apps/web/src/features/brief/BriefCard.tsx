@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { CardHead } from "../../components/CardHead";
-import { PanelTabs } from "../plan/lazy";
+import { PanelTabs } from "../navlog/lazy";
 import BriefOverview from "./BriefOverview";
 import type { PanelTab } from "../plan";
 import { useLiveRefresh } from "../../lib/liveRefresh";

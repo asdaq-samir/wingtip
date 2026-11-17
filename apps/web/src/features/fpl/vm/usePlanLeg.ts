@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useLegSheet } from "../../plan";
+import { useLegSheet } from "../../navlog";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanFpl } from "./usePlanFpl";

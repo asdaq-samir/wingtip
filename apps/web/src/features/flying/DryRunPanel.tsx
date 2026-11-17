@@ -10,13 +10,11 @@ import {
   playPastFlight,
   positionAt,
   usePastFlight,
-  TripFigures,
   dryRunFlown,
   runNmAt,
   type DryRun,
   type Flown,
   type RouteEnds,
-  loadFlightChart,
 } from "../plan";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
@@ -28,6 +26,7 @@ import { toggleReplay } from "../replay";
 import { routeProfileQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
 import { altFt, feet, wholeNm } from "../../lib/format";
+import { TripFigures, loadFlightChart } from "../navlog";
 import { ForecastStrip, ForecastToggle } from "./ForecastStrip";
 
 const FlightChart = lazy(loadFlightChart);

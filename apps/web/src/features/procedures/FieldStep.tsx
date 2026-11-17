@@ -11,7 +11,7 @@ import { type RunwayEnd, etaAt, groundMinAt, type NavLogRow, type Landing, type 
 import { sameField } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
 import { endFit } from "./runwayFit";
-import { AirportMark, PointMark, DepartPicker } from "../plan/lazy";
+import { AirportMark, PointMark, DepartPicker } from "../navlog/lazy";
 import { colourOf } from "../../lib/map/marks/flightCategory";
 import FixBranch from "./FixBranch";
 import ProcedureMenu from "./ProcedureMenu";

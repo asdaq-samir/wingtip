@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { flightLevel, nm } from "../../../lib/format/figures";
 import { duration } from "../../../lib/format/time";
-import { usePastFlight, dryRunFlown, clearanceAt } from "../../plan";
+import { usePastFlight, dryRunFlown } from "../../plan";
 import { routeProfileQuery } from "../../../lib/queryClient";
+import { clearanceAt } from "../../navlog";
 import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
 
 /**

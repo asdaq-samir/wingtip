@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
 import { aircraftProfilesQuery } from "../../../lib/queryClient";
 import { bookOf, ownOf } from "../../../lib/airplane/figures";
-import { loadMiniProfile } from "../../plan";
+import { loadMiniProfile } from "../../navlog";
 
 // The route from the side, drawn only in the Profile's card: out of the
 // first load as the lists are.

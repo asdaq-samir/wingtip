@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState } from "react";
 import { cn } from "cn";
-import { RouteMap, DRY_RUN, usePastFlight, loadRouteLegCard } from "../../plan";
+import { RouteMap, DRY_RUN, usePastFlight } from "../../plan";
 import { FirstFlight } from "../../first-flight";
 import { FlyingHead } from "../routePanelParts";
 import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
@@ -10,6 +10,7 @@ import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
 import { ReadyToFlyPrompt } from "../../readyToFly";
 import { EngineGate } from "../../../lib/engine/engineGate";
 import { loadAssignedLesson, loadFixCard } from "../../procedures";
+import { loadRouteLegCard } from "../../navlog";
 
 const AssignedLesson = lazy(() => loadAssignedLesson());
 /** What the first screen does not draw, each its own chunk off the first

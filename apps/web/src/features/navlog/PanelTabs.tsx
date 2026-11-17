@@ -1,0 +1,290 @@
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactNode,
+  useEffectEvent,
+  ViewTransition,
+} from "react";
+import { PAGE_STEP, pageStep } from "../../lib/viewTransition";
+import { cn } from "cn";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import { SectionsOpen } from "../../components/sectionLayout";
+import { GoToTab, LEGS, useTabAsk, type PanelTab } from "../plan";
+import { useCardSize } from "../../lib/sheetCards";
+import { holdOpenCard } from "../../lib/openCards";
+import { sheetScroller } from "../../lib/scrollPlace";
+
+/** The panel's tabs in the order the flight is flown, at the owner's pick
+ *  of the redesign ("I like C concept"): Preflight -- the go / no-go and
+ *  what is done at home -- then Depart, En route (the nav log, its profile
+ *  and the weather on the way) and Arrive, each only what that part of the
+ *  flight needs, where they were the Nav Log, the Brief, the Weather and
+ *  Performance, a pilot hunting across four for a field's runway. */
+const TABS: { value: PanelTab; label: string }[] = [
+  { value: "preflight", label: "Preflight" },
+  { value: "depart", label: "Depart" },
+  { value: "enroute", label: "En route" },
+  { value: "arrive", label: "Arrive" },
+];
+/** The pages' order, the overview first, for a step's direction. */
+const PAGE_ORDER: (PanelTab | null)[] = [null, ...TABS.map((t) => t.value)];
+/** On paper every tab, one after another, in the same order. */
+const PRINTED: PanelTab[] = TABS.map((t) => t.value);
+
+/**
+ * The Brief's pages and what is under them (BriefCard's, and the printed
+ * briefing's, NavLogView's), with the page up kept here: a switch draws
+ * this and nothing else -- the pages' contents come in as elements made by
+ * the panel, unchanged by a switch, so React leaves them be. Each tab is kept once opened, hidden, and back
+ * at once, scrolled where it was left -- a switch drew the whole tab
+ * again, 0.4 to 0.75 s of a phone's main thread each time (measured at a
+ * quarter of a laptop's speed), and every tab shared one scroll. Hidden
+ * plainly, not under React's Activity: its effects stopped and started
+ * again on every return, half a second of the Nav Log's. And hidden with
+ * its layout kept (index.css's tab-page, by Base UI's data-hidden), not taken out of it: shown
+ * again from display: none, a tab was laid out from nothing -- 0.6 s of
+ * the Nav Log's on a phone -- and its charts, measured at nothing while
+ * hidden, drawn again from nothing. Preflight is up to begin with.
+ * The legs are FPL's own (NavLogView), not a page here: a section asked
+ * for among them -- the Go / No-Go's fuel, under the legs -- is
+ * `onLegs`'s.
+ */
+export default function PanelTabs({
+  before,
+  contents,
+  notice,
+  printing,
+  marks,
+  onLegs,
+  route,
+  overview: Overview,
+}: {
+  /** What shows before any page, its cards each opening one (`open`):
+   *  the Brief's glance (BriefGlance), at the owner's pick of the redesign
+   *  (D′). A page opened from it goes back to it by the close, a swipe to
+   *  the right or a device's Back (lib/openCards); its tabs stay over it
+   *  for going from page to page. Without one, Preflight is up to begin
+   *  with. */
+  overview?: ComponentType<{ onOpen: (tab: PanelTab) => void; notice?: ReactNode }>;
+  /** Over the tabs: the printed title. */
+  before: ReactNode;
+  contents: Record<PanelTab, ReactNode>;
+  notice?: ReactNode;
+  printing: boolean;
+  /** A tab whose findings (lib/verdict) have something to fix, or to
+   *  look at. */
+  marks?: Partial<Record<PanelTab, "stop" | "caution">>;
+  /** The legs asked for (LEGS): FPL's nav log, under which the fuel is
+   *  checked, in place of the Brief. */
+  onLegs?: () => void;
+  /** Which route the contents are of: drawn just after the frame that
+   *  shows a new one (below). */
+  route: string;
+}) {
+  // The tabs' contents drawn just after the frame that shows a new route,
+  // not in it: the route's box, its figures and the map first, the nav
+  // log's rows and the briefing's sections a moment later, in the
+  // background (useDeferredValue's first value) -- at half the panel ends
+  // at the tabs, and they are out of sight anyway. In the same frame they
+  // held Fly Here's route back 2.5 to 3.6 s at a phone's speed (measured
+  // 2026-10-08). On paper at once.
+  const drawnFor = useDeferredValue(route, "");
+  const drawn = printing || drawnFor === route;
+  // Preflight up to begin with -- whether to go is what is read first --
+  // or the overview where there is one (null).
+  const [tab, setTab] = useState<PanelTab | null>(Overview ? null : "preflight");
+  const [opened, setOpened] = useState<PanelTab[]>(Overview ? [] : ["preflight"]);
+  if (tab && !opened.includes(tab)) setOpened([...opened, tab]);
+  // The pages, laid out whole in the sheet's one scroller (SheetParts),
+  // which scrolls them: its place kept for each page.
+  const pages = useRef<HTMLDivElement>(null);
+  // The card's own head -- its title and the tabs -- sticky at the
+  // scroller's top, the pages passing under it (the owner's ask: "look at
+  // this for the see-through under the top bar").
+  const localHead = useRef<HTMLDivElement>(null);
+  // The tab that was up as a finger or a key pressed one, read at its
+  // click, by when Base UI has made the pressed one the tab up: whether
+  // the tap was on the tab already up.
+  const scrolls = useRef<Partial<Record<PanelTab | "overview", number>>>({});
+  // The section a row in another tab asked for (GoToTab), scrolled to
+  // once its tab is drawn.
+  const wanted = useRef<string | null>(null);
+  const [asked, setAsked] = useState(0);
+  const choose = useCallback(
+    (next: string | null) => {
+      const box = sheetScroller(pages.current);
+      if (box) scrolls.current[tab ?? "overview"] = box.scrollTop;
+      // Slid in as a page of a stack, forward to a later page or from the
+      // overview, back to an earlier one (lib/viewTransition).
+      pageStep(PAGE_ORDER.indexOf(next as PanelTab | null) >= PAGE_ORDER.indexOf(tab), () => setTab(next as PanelTab | null));
+    },
+    [tab],
+  );
+  // A page opened from the overview is what the close, a swipe back and a
+  // device's Back take away first, back to the overview.
+  const paged = !!Overview && tab !== null;
+  const back = useEffectEvent(() => choose(null));
+  useEffect(() => (paged ? holdOpenCard({ close: () => back(), inBar: false }) : undefined), [paged]);
+  const goTo = useCallback(
+    (next: PanelTab, section?: string) => {
+      if (section === LEGS) {
+        onLegs?.();
+        return;
+      }
+      wanted.current = section ?? null;
+      if (section) scrolls.current[next] = 0;
+      choose(next);
+      setAsked((n) => n + 1);
+    },
+    [choose, onLegs],
+  );
+  useLayoutEffect(() => {
+    const box = sheetScroller(pages.current);
+    if (!box) return;
+    box.scrollTop = scrolls.current[tab ?? "overview"] ?? 0;
+    const section = wanted.current;
+    wanted.current = null;
+    if (!section) return;
+    // To the section's top, under the head; twice, the second after a
+    // frame, as the sections above it are laid out only near the screen
+    // (content-visibility) and the first move is on their estimates.
+    const to = () => {
+      const target = box.querySelector(`[data-tab="${tab}"] [data-title="${CSS.escape(section)}"]`);
+      const under = localHead.current?.getBoundingClientRect().bottom ?? box.getBoundingClientRect().top;
+      if (target) box.scrollTop += target.getBoundingClientRect().top - under;
+    };
+    to();
+    const frame = requestAnimationFrame(to);
+    return () => cancelAnimationFrame(frame);
+  }, [tab, asked]);
+  // A page opened from the overview's card, the panel all the way up.
+  const openPage = useCallback(
+    (next: PanelTab) => {
+      goTo(next);
+    },
+    [goTo],
+  );
+  // A tab and section asked for from outside the tabs (useTabAsk): heard
+  // as it is asked, and once drawn, one asked before the tabs were there;
+  // the card they are in all the way up where it asks (its own drawer).
+  const card = useCardSize();
+  const raise = card?.setSize;
+  useEffect(() => {
+    const hear = () => {
+      const { ask, heard } = useTabAsk.getState();
+      if (!ask) return;
+      heard();
+      if (ask.full) raise?.("full");
+      goTo(ask.tab, ask.section);
+    };
+    queueMicrotask(hear);
+    return useTabAsk.subscribe(hear);
+  }, [goTo, raise]);
+  return (
+    // print:h-auto print:overflow-visible: on screen this fills a fixed
+    // viewport height and clips to it, deliberately -- on paper there
+    // is no viewport to clip to, and a route long enough to scroll
+    // would otherwise print only whatever page's worth happened to be
+    // visible.
+    // Laid out whole in the sheet's one scroller, its head sticky at the
+    // top and frosted, the pages passing under it.
+    <Tabs value={tab ?? ""} onValueChange={choose} className="flex shrink-0 flex-col gap-0 print:h-auto">
+      <div ref={localHead} className="frost-head sticky top-(--sheet-head,0px) z-20 flex shrink-0 flex-col print:static">
+        {before}
+        {/* The stock line tabs, as every tab row's (components/ui/tabs), over the
+          scroller so they stay as it scrolls: an icon over its word, at a
+          fixed size (it does not grow with the text, as iOS's tab bar's
+          does not), so the five share the line evenly -- a 24-point glyph
+          over a note's 13, at the pilot's ask: at 20 over 11 the way into
+          the panel was its smallest type, under the content's 17 and 20
+          (the proportion audit, 2026-10-07). A
+          tab whose findings (lib/verdict) have something to fix carries a
+          red mark, something to look at an amber one, as its sections'
+          titles do. */}
+        {/* The route's pages as the same segmented control an airport's
+          card's are (CardTabBar), at the owner's pick of the redesign:
+          words, the glyphs gone, a page with something to fix or look at
+          marked by a dot after its word as before. */}
+        {tab !== null && (
+          <TabsList
+            data-testid="panel-tabs"
+            // The stock 36 at every pointer, never grown to a finger's 44
+            // (CLAUDE.md: controls never grow; the audit's WEB-7): each
+            // segment's 44 a ::before (its ::after the stock indicator),
+            // 7 over and under its 30, the segments' areas meeting.
+            className="mx-4 my-2 w-auto shrink-0 group-data-[orientation=horizontal]/tabs:h-9 print:hidden"
+          >
+            {TABS.map((t) => (
+              <TabsTrigger
+                key={t.value}
+                value={t.value}
+                data-testid={`panel-tab-${t.value}`}
+                aria-description={marks?.[t.value] ? (marks[t.value] === "stop" ? "Warning" : "Caution") : undefined}
+                className="relative min-w-0 pointer-coarse:before:absolute pointer-coarse:before:inset-x-0 pointer-coarse:before:-inset-y-[7px] pointer-coarse:before:content-['']"
+              >
+                <span className="truncate">{t.label}</span>
+                {marks?.[t.value] && (
+                  <span
+                    aria-hidden="true"
+                    className={cn("size-2 shrink-0 rounded-full", marks[t.value] === "stop" ? "bg-destructive" : "bg-caution")}
+                    data-testid={`panel-tab-mark-${t.value}`}
+                    data-finding={marks[t.value]}
+                  />
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        )}
+      </div>
+      <ViewTransition update={PAGE_STEP} enter="none" exit="none" default="none">
+        <div
+          ref={pages}
+          // The bottom inset clears the home indicator on an installed
+          // app, so the last section's content is not under it.
+          // `flight-briefing`: index.css's print rules lay every tab out on
+          // paper.
+          className="flight-briefing @container pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))] print:h-auto print:pb-0"
+          data-testid="brief-scroller"
+        >
+          {/* The notice over every page, but under the verdict on the
+              overview, which says first whether to go (decision 0012; the
+              UI audit's C6, 2026-11-17). */}
+          {tab === null && !printing && Overview ? <Overview onOpen={openPage} notice={notice} /> : notice}
+          <SectionsOpen.Provider value>
+            <GoToTab.Provider value={goTo}>
+              {/* Every page's sections one under another, each under its
+                title, not pills to pick one by, at the owner's ask ("Make
+                the subtabs into sections Legs, Profile"). */}
+              {drawn &&
+                (printing ? PRINTED : TABS.map((t) => t.value).filter((t) => opened.includes(t))).map((t) => {
+                  return (
+                    <TabsContent
+                      key={t}
+                      value={t}
+                      // Kept, and laid out where Base UI would hide it:
+                      // a page not up is skipped by its data-hidden
+                      // (index.css's tab-page), its layout kept for its
+                      // return, and inert by Base UI's own. Printed, every
+                      // page shows.
+                      keepMounted
+                      hidden={false}
+                      data-testid={`panel-${t}`}
+                      data-tab={t}
+                      className={cn("mt-0", !printing && "tab-page")}
+                    >
+                      {contents[t]}
+                    </TabsContent>
+                  );
+                })}
+            </GoToTab.Provider>
+          </SectionsOpen.Provider>
+        </div>
+      </ViewTransition>
+    </Tabs>
+  );
+}
