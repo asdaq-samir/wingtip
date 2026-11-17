@@ -270,7 +270,7 @@ and `glOverlays.ts`):
   (the engine's `own_ship_hex`). A tap opens its card, with Track, which
   rings it on the map.
 - **Terrain and 3D** (`Map3dLayer`, `MapTerrain`, the web's
-  `features/plan/map/terrain`): the 2D chart is shaded (Relief) and 3D
+  `features/plan-map/terrain`): the 2D chart is shaded (Relief) and 3D
   is the map's own round button (`MapCard`; Terrain was taken out of the
   settings on 2026-11-13). Relief shades the planner's terrain tiles
   (`/api/terrain-tile`, terrarium, to {z} 13, a `RasterDemSource`) over

@@ -1,5 +1,5 @@
 {
-  "about": "How high a 3D map stands an airspace volume (the engine's airspace_volume_span), feet MSL, held by the engine (engine/facade/tests/airspace_volume_span.rs) and the web (features/plan/map/terrain/airspaceHeights.test.ts). The limits as the FAA's data has them: special use areas from ADDS's Special_Use_Airspace layer (read 2026-11-12), Class airspace from NASR as the planner sends it. Unlimited, or above it, is drawn to 18,000 ft MSL, where Class A begins (14 CFR 71.33(a)).",
+  "about": "How high a 3D map stands an airspace volume (the engine's airspace_volume_span), feet MSL, held by the engine (engine/facade/tests/airspace_volume_span.rs) and the web (features/plan-map/terrain/airspaceHeights.test.ts). The limits as the FAA's data has them: special use areas from ADDS's Special_Use_Airspace layer (read 2026-11-12), Class airspace from NASR as the planner sends it. Unlimited, or above it, is drawn to 18,000 ft MSL, where Class A begins (14 CFR 71.33(a)).",
   "cases": [
     {
       "about": "A Chicago Class B shelf, 3,000 to 10,000 MSL: no ground needed",

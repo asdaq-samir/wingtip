@@ -2,9 +2,14 @@ import { Suspense, lazy, memo, useEffect, useMemo, useRef, type ComponentProps, 
 import { useQuery } from "@tanstack/react-query";
 import { Mountain } from "lucide-react";
 import { callEngine } from "../../lib/engine/engine";
+import { setPilotView, usePilotView } from "../plan-map";
+import { cn } from "cn";
+import CloseButton from "../../components/CloseButton";
+import RoundButton from "../../components/RoundButton";
+import { Slider } from "../../components/ui/slider";
+import { PlaybackButton, PlaybackToggle, PlaybackToolbar, PlayToggle, SpeedMenu } from "../../components/PlaybackBar";
+import { playbackKey } from "../../components/playbackKeys";
 import {
-  setPilotView,
-  usePilotView,
   REPLAY_SPEEDS,
   pausePastFlight,
   playPastFlight,
@@ -16,12 +21,6 @@ import {
   type Flown,
   type RouteEnds,
 } from "../plan";
-import { cn } from "cn";
-import CloseButton from "../../components/CloseButton";
-import RoundButton from "../../components/RoundButton";
-import { Slider } from "../../components/ui/slider";
-import { PlaybackButton, PlaybackToggle, PlaybackToolbar, PlayToggle, SpeedMenu } from "../../components/PlaybackBar";
-import { playbackKey } from "../../components/playbackKeys";
 import { toggleReplay } from "../replay";
 import { routeProfileQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
@@ -82,7 +81,7 @@ export function DryRunControls({
   // chart: the map's one replay clock's, as every replay's (features/replay).
   const toggle = toggleReplay;
   // The run seen from the pilot's seat over the 3D ground, or the chart
-  // from above (features/plan/map/terrain's PilotCamera): a toggle among the
+  // from above (features/plan-map/terrain's PilotCamera): a toggle among the
   // run's own controls, put back to the chart as the run is put away.
   const pilotView = usePilotView((s) => s.on);
   useEffect(() => () => setPilotView(false), []);

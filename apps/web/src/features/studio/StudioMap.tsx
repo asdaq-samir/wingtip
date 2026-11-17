@@ -4,10 +4,10 @@ import { AirspaceGl } from "../../components/map/layers/AirspaceGl";
 import { LandWaterGl, OverlayGl } from "../../lib/map/gl/layers/BaseGl";
 import { ChartGl } from "../../lib/map/gl/layers/ChartGl";
 import { RadarFrameGl } from "../weather-loop";
-import { loadReplayLayers, loadTerrainGl } from "../plan";
+import { loadReplayLayers, loadTerrainGl } from "../plan-map";
 import { ExportMapGl, type ReplayTrack } from "../replay";
 
-// The one 3D view (features/plan/map/terrain), Plan's and Dev's, and the
+// The one 3D view (features/plan-map/terrain), Plan's and Dev's, and the
 // replayed track's layers: each its own chunk, as on the planner's map.
 const TerrainGl = lazy(loadTerrainGl);
 const ReplayTrackGl = lazy(loadReplayLayers);

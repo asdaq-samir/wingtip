@@ -20,7 +20,7 @@ import { USGS_URL } from "../../lib/map/sources/imagery";
 import { useGoogleSession } from "../../lib/map/sources/googleSession";
 import { googleMapsQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
-import { useTerrainView, useTrueHeightView } from "../plan";
+import { useTerrainView, useTrueHeightView } from "../plan-map";
 
 /**
  * The Map card, what is on the map and nothing else, one screen at a

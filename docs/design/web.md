@@ -1522,7 +1522,7 @@ sheet scrolls one way on a phone:
 **The airspace in 3D (the owner, 2026-11-14: "the class B airspace
 shelves are not differentiating altitudes").** The 3D button stands the
 Class B, C and D, the special use areas and the TFRs up
-(`features/plan/map/terrain/AirspaceVolumesGl`, deck.gl), at their
+(`features/plan-map/terrain/AirspaceVolumesGl`, deck.gl), at their
 heights times the Map card's Heights, and four things tell the altitudes
 apart (`terrain/airspaceShelves`):
 

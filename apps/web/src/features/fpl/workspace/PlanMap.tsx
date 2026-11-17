@@ -1,9 +1,10 @@
 import { Suspense, lazy, useState } from "react";
 import { cn } from "cn";
-import { RouteMap, DRY_RUN, usePastFlight } from "../../plan";
+import { RouteMap } from "../../plan-map";
 import { FirstFlight } from "../../first-flight";
 import { FlyingHead } from "../routePanelParts";
 import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
+import { DRY_RUN, usePastFlight } from "../../plan";
 
 /** An approach the pilot's instructor set them, opened from their
  *  Checkride page (`?lesson=12`): its own chunk, as the lesson's is. */

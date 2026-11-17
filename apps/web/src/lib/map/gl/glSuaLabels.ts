@@ -95,7 +95,7 @@ export function specialUseLabelLayer(font: string[], labelPoints = true): Symbol
 }
 
 /** A tab's look, its text and picture: the chart's tabs and the 3D
- *  view's (features/plan/map/terrain/AirspaceVolumesGl). */
+ *  view's (features/plan-map/terrain/AirspaceVolumesGl). */
 export function suaTabLayout(font: string[]) {
   return {
     "text-font": font,

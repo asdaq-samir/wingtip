@@ -5,7 +5,7 @@ import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
- * The ground under the chart (features/plan/map/terrain): its relief
+ * The ground under the chart (features/plan-map/terrain): its relief
  * shaded over the 2D chart, always (the owner, 2026-11-13, Flat taken
  * out), then stood up in 3D
  * by the map's round 3D button (ThreeDButton) with the

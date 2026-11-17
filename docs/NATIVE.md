@@ -442,7 +442,7 @@ code:
 
 ## 3D and the model weather, the MapKit way (2026-11-12)
 
-The web's 3D (`features/plan/map/terrain`) and its model weather
+The web's 3D (`features/plan-map/terrain`) and its model weather
 (`features/weather-flow`) on the iPhone, built from MapKit's and
 SwiftUI's own parts rather than a copy of the web's WebGL. What MapKit
 can and cannot do here is from Apple's documentation (MKOverlayLevel,

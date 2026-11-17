@@ -21,6 +21,8 @@ export { GoToTab, LEGS, type PanelTab, useTabAsk } from "./components/navlog/pan
 export {
   type NavLogRow,
   type RouteEnds,
+  type RouteLeg,
+  firstFlown,
   flownNmOf,
   groundMinAt,
   isLegPoint,
@@ -90,7 +92,7 @@ export { useRouteLine } from "./hooks/useRouteLine";
 export { useRouteListEdit } from "./hooks/useRouteListEdit";
 export { useRouteTidy } from "./hooks/useRouteTidy";
 export { useRouteWays } from "./hooks/useRouteWays";
-export { nearOf, useSearchResults } from "./hooks/useSearchResults";
+export { nearOf, useSearchResultRows, useSearchResults } from "./hooks/useSearchResults";
 export type { SuaWhen, TfrWhen } from "./lib/passTimes";
 export {
   type RunwayEnd,
@@ -113,22 +115,19 @@ export { readQuery } from "./lib/searchFilters";
 export { useTabSearch } from "./lib/tabSearch";
 export { runwayCrosswindKt } from "./lib/wind";
 export { useWindPicks } from "./lib/windPicks";
-export { useKeepOffline } from "./map/keepStatus";
 export {
   DRY_RUN,
   REPLAY_SPEEDS,
+  type ReplayPoint,
   clearPastFlight,
   pausePastFlight,
   playPastFlight,
   positionAt,
+  stepPastFlight,
   stopPastFlight,
   usePastFlight,
 } from "./map/pastFlight";
-export { useTrueHeightView } from "./map/terrain/heightStretch";
-export { setPilotView, usePilotView } from "./map/terrain/pilotView";
-export { useTerrainView } from "./map/terrain/useTerrainView";
 export { RouteBox } from "./routeBoxChunk";
-export { BootMap, RouteMap } from "./routeMapChunk";
 
 /** NearestCard, on a chunk of its own, as its importer loads it. */
 export const loadNearestCard = () => import("./components/NearestCard");
@@ -138,9 +137,3 @@ export const loadPointAltitudeDialog = () => import("./components/PointAltitudeD
 
 /** SearchResultsPage, on a chunk of its own, as its importer loads it. */
 export const loadSearchResultsPage = () => import("./components/search/SearchResultsPage");
-
-/** A replayed track's layers, on a chunk of its own (the Studio draws with them too). */
-export const loadReplayLayers = () => import("./map/layers/ReplayTrackGl");
-
-/** The one 3D view, on a chunk of its own as the planner's map loads it (the Studio draws with it too). */
-export const loadTerrainGl = () => import("./map/terrain/TerrainGl");

@@ -8,7 +8,7 @@ import { grouped } from "../../lib/format";
 import { windText, type DryRun, type RouteEnds } from "../plan";
 import { TEXT } from "../../lib/text";
 import { CATEGORY_CHIP, CATEGORY_UNKNOWN } from "../../lib/tokens";
-import { hourZ, unavailableWords, zulu, setForecastMode, useForecastMode, useForecastRun } from "../plan/lazy";
+import { hourZ, unavailableWords, zulu, setForecastMode, useForecastMode, useForecastRun } from "../plan-map/lazy";
 
 /** Forecast mode's switch, among the dry run's own controls: the run
  *  played against the forecast for the hours it flies, or not -- the

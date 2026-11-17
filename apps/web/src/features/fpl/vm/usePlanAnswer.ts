@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { useAirplaneChosen } from "../../../lib/preferences";
-import { useKeepOffline, useRouteWays, usePlan, type PlanParams, usePlanSetters } from "../../plan";
+import { useKeepOffline } from "../../plan-map";
 import { useAircraftPick } from "../../aircraft-pick";
+import { useRouteWays, usePlan, type PlanParams, usePlanSetters } from "../../plan";
 import type { PlanRoute } from "./usePlanRoute";
 
 /**
