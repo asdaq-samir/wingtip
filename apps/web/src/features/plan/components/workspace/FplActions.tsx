@@ -1,6 +1,5 @@
 import { useRef, type ReactNode } from "react";
-import { cn } from "cn";
-import { PIN_AT_FOOT, usePinAtFoot } from "../../../../components/sheet/pinAtFoot";
+import { usePinAtFoot } from "../../../../components/sheet/pinAtFoot";
 import { CardAction as Action } from "../../../../components/CardAction";
 import { ICON } from "../../../../lib/icons";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
@@ -79,7 +78,7 @@ export function FplRoute({ vm }: { vm: PlanWorkspaceModel }) {
     <div className="flex w-full min-w-0 flex-1 flex-col">
       <RouteHead vm={vm} />
       <div className="pt-2 pb-1">
-        <div ref={figures} className={cn(PIN_AT_FOOT, PINNED)}>
+        <div ref={figures} className={PINNED}>
           <FlightFigures vm={vm} grow={false} />
         </div>
       </div>
