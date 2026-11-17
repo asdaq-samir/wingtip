@@ -63,13 +63,11 @@ describe("the address", () => {
 });
 
 describe("the address's keys, typed", () => {
-  it("reads flags, the Class B choice, the altitude's plan and a local flight's time as the page did", () => {
-    const address = loadAddress("altitude_nearest=1&brief=1&near=0&class_b=0&altitude_choice=sideways&local_min=45");
+  it("reads flags, the altitude's plan and a local flight's time as the page did", () => {
+    const address = loadAddress("altitude_nearest=1&brief=1&near=0&altitude_choice=sideways&local_min=45");
     expect(address.altitude_nearest).toBe(true);
     expect(address.brief).toBe(true);
     expect(address.near).toBe(false);
-    expect(address.class_b).toBe(false);
-    expect(loadAddress("class_b=1").class_b).toBe(true);
     expect(address.altitude_choice).toBe("fastest");
     expect(address.local_min).toBe(45);
     expect(loadAddress("local_min=50").local_min).toBe(60);
@@ -85,7 +83,7 @@ describe("the address's keys, typed", () => {
   });
 
   it("leaves out what is at its default as text", () => {
-    const address = loadAddress("dep=C81&class_b=1&altitude_choice=fastest&local_min=60&near=0");
+    const address = loadAddress("dep=C81&altitude_choice=fastest&local_min=60&near=0");
     expect(addressParams(address).toString()).toBe("dep=C81");
   });
 

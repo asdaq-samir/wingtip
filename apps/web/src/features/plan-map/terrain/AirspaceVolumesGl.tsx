@@ -284,7 +284,7 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
       openCard(<SuaVolumeCard key={String(p.name)} area={suaOfVolume(p)} colour={colour} />);
     } else {
       const volume = volumeOfTile(picked);
-      openCard(<AirspaceCardBody key={volume.id} volume={volume} close={() => openCard(null)} />);
+      openCard(<AirspaceCardBody key={volume.id} volume={volume} />);
     }
   });
   return null;

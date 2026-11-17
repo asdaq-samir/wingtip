@@ -62,7 +62,6 @@ export const plannerRoute = {
     depart?: string,
     signal?: AbortSignal,
     stops?: string[],
-    classBClearance?: boolean,
     altitudes?: string,
     checkpoints = true,
     rules: "vfr" | "ifr" = "vfr",
@@ -89,7 +88,9 @@ export const plannerRoute = {
           altitude_choice: altitudeChoice && altitudeChoice !== "fastest" ? altitudeChoice : undefined,
           ...airplaneQuery(aircraft),
           depart: depart || undefined,
-          class_b_clearance: classBClearance || undefined,
+          // Always through Class B with the clearance (14 CFR 91.131; the
+          // owner, 2026-11-17): the planner's own default is without.
+          class_b_clearance: true,
           altitudes: altitudes || undefined,
           altitude_starts: altitudeStarts || undefined, // begun there: Start At
           checkpoints: checkpoints ? undefined : false,

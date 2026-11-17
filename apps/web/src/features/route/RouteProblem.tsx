@@ -8,10 +8,9 @@ import { FINDING_TONE } from "../../lib/findings";
 /**
  * No legal altitude for the route: where along it, why as a list, and the
  * ways on -- a stop to route round the high ground (or an altitude of the
- * pilot's own, the cruising altitude's Custom row beside this) -- or,
- * where Class B airspace is what stops it, Fly via (the stop picker, the
- * waypoints round it suggested at its top) and Accept Class B, planned
- * through it for a pilot who will have the clearance. In the cruising
+ * pilot's own, the cruising altitude's Custom row beside this). Class B
+ * is never what stops it: a route is always planned through it with its
+ * clearance (14 CFR 91.131; the owner, 2026-11-17). In the cruising
  * altitude's chip, red, at the pilot's ask (AltitudeGroup): it was a
  * mark beside the Nav Log's title, and before that a line under the
  * route. At rest the route's capsule says so in its chip (PlanWorkspace).
@@ -19,14 +18,10 @@ import { FINDING_TONE } from "../../lib/findings";
 export default function RouteProblem({
   problem,
   onAddStop,
-  onFlyVia,
-  onAcceptClassB,
   onGoRound,
 }: {
   problem: Unflyable;
   onAddStop: () => void;
-  onFlyVia: () => void;
-  onAcceptClassB: () => void;
   /** The way round high ground the airplane cannot climb over, all its
    *  points put in at once (the planner's detour with `via`). */
   onGoRound?: (via: string[], stopIndex: number) => void;
@@ -45,16 +40,7 @@ export default function RouteProblem({
           ))}
         </ul>
       )}
-      {problem.classB ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" size="sm" onClick={onFlyVia} data-testid="unflyable-fly-via">
-            Fly via…
-          </Button>
-          <Button type="button" size="sm" variant="outline" onClick={onAcceptClassB} data-testid="unflyable-accept-class-b">
-            Accept Class B
-          </Button>
-        </div>
-      ) : round && onGoRound ? (
+      {round && onGoRound ? (
         <div className="space-y-2">
           <p className={cn("text-muted-foreground", TEXT.detail)}>
             By {round.via!.join(", ")} · +{wholeNm(round.added_nm)}

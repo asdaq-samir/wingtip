@@ -58,10 +58,6 @@ export function usePlanRoute() {
   // the winds forecast period the planner flies the legs on, gives
   // every checkpoint an ETA, and is what a saved flight is planned for.
   const depart = address.depart ?? "";
-  // Class B accepted unless the pilot avoids it (class_b=0), at the owner's
-  // pick (2026-10-20): planned through it with the clearance it takes
-  // (14 CFR 91.131), said in the altitude's sheet with "Avoid Class B".
-  const classBClearance = address.class_b;
   // The fuel stops the address names (`fuel`), kept as the Routes' cards
   // are browsed (useRouteLine).
   const fuelParam = address.fuel;
@@ -181,7 +177,6 @@ export function usePlanRoute() {
     altitudeChoice,
     depart,
     load,
-    classBClearance,
     altitudes,
     altitudeStarts: address.altitude_starts ?? "",
     procedures,
@@ -218,7 +213,6 @@ export function usePlanRoute() {
     altitudeFt,
     altitudeNearest,
     depart,
-    classBClearance,
     fuelParam,
     altitudes,
     localMin,

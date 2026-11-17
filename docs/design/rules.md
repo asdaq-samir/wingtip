@@ -708,6 +708,8 @@ gone on every platform.
 | Advisor | shadcn Item rows (`altitude/AltitudeAdvisor`) | | |
 | Tests | `altitude/altitude.test.ts`, `navlog/profile.test.ts`; `e2e/plans.spec.ts`, `e2e/plans-altitude.spec.ts`, `e2e/plan-cards-heads.spec.ts` | | |
 
+Class B has no setting (the owner, 2026-11-17: "We don't need the Class B whether setting, keep it true by default in the app"): a route is always planned through it with the clearance it takes (14 CFR 91.131), the Profile saying "Through <name>: clearance needed" with no button, and the address has no `class_b` or `class_b_via` (an old link carrying them ignores them).
+
 ## 7. What rides the sheet, and the map's small print (the owner, 2026-11-11)
 
 1. **The map's own buttons, the radio's, the 3D and the page toggle ride the sheet's

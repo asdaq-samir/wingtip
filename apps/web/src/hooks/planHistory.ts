@@ -115,7 +115,7 @@ export function describeEdit(before: PlanState, after: PlanState): string | null
  *  times, the departure time, the airplane. */
 const PARTS: readonly (readonly [string, readonly string[]])[] = [
   ["Route", ["dep", "dest", "stops", "direct", "was"]],
-  ["Altitude", ["altitude_ft", "altitude_nearest", "altitude_choice", "altitudes", "class_b", "class_b_via"]],
+  ["Altitude", ["altitude_ft", "altitude_nearest", "altitude_choice", "altitudes"]],
   ["Procedures", ["procs", "cross", "holds", "pattern", "takeoff", "auto"]],
   ["Stops", ["fuel", "ground", "alternate"]],
   ["Departure Time", ["depart"]],

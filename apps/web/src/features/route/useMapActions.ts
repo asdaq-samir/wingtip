@@ -19,30 +19,25 @@ type RouteEdits = ReturnType<typeof useRouteEdits>;
 /**
  * What the map's cards and the radio do to the route (usePlanWorkspace),
  * registered while the workspace is up: the VOR and fix cards' Add to
- * Route, Direct To and Avoid Class B (lib/map/cards/pointActions), and the
+ * Route, and Direct To (lib/map/cards/pointActions), and the
  * radio's calls to us and a clearance read back (lib/atcRadio).
  */
 export function useMapActions({
   course,
   planned,
   aircraft,
-  classBAvoided,
   setStops,
   setRoute,
   directToChartPoint,
-  acceptClassB,
   flyAltitude,
   typeProcedures,
 }: {
   course: PlanCourse | null;
   planned: PlannedRoute;
   aircraft: AircraftChoice;
-  /** The pilot avoids Class B (`class_b=0`). */
-  classBAvoided: boolean;
   setStops: RouteEdits["setStops"];
   setRoute: RouteEdits["setRoute"];
   directToChartPoint: (to: { ident: string }) => void;
-  acceptClassB: RouteEdits["acceptClassB"];
   flyAltitude: RouteEdits["flyAltitude"];
   typeProcedures: (typed: TypedProcedure[], route: { dep: string; dest: string }) => Promise<void>;
 }) {
@@ -70,11 +65,10 @@ export function useMapActions({
     usePointActions.setState({
       addToRoute: routed ? addStopAt : null,
       directTo: routed && hasFix ? directToChartPoint : null,
-      avoidClassB: course && !classBAvoided ? () => acceptClassB(false) : null,
       courseLine: course?.course_line ?? null,
     });
-    return () => usePointActions.setState({ addToRoute: null, directTo: null, avoidClassB: null, courseLine: null });
-  }, [course, planned.stops.length, addStopAt, directToChartPoint, hasFix, classBAvoided, acceptClassB]);
+    return () => usePointActions.setState({ addToRoute: null, directTo: null, courseLine: null });
+  }, [course, planned.stops.length, addStopAt, directToChartPoint, hasFix]);
   // The radio's calls to us (lib/atcRadio): ours by the airplane's
   // registration, the one picked or one of the pilot's own; Direct To the
   // place a call said, found near the route, from where the airplane is,

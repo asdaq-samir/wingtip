@@ -103,10 +103,6 @@ export const addressParsers = {
   altitude_choice: parseAsStringLiteral(ALTITUDE_CHOICES).withDefault("fastest"),
   // Points whose own altitude begins there rather than is reached by them.
   altitude_starts: parseAsString,
-  // Class B planned through with its clearance (14 CFR 91.131) unless the
-  // pilot avoids it ("0"), and the waypoint round it then.
-  class_b: createParser({ parse: (v) => v !== "0", serialize: (through: boolean) => (through ? "1" : "0") }).withDefault(true),
-  class_b_via: parseAsString,
   // The picks at the route's fields, each in the text its reader parses
   // (features/plan/fieldLists): runways landed on and left from, the
   // runways picked into the wind, procedures, points' altitudes, crossing
@@ -212,8 +208,6 @@ export const PICK_KEYS = [
   "cross",
   "ground",
   "holds",
-  "class_b",
-  "class_b_via",
   "alternate",
 ] as const satisfies readonly (keyof AddressParsers)[];
 

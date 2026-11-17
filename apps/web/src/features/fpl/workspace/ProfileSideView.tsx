@@ -17,9 +17,6 @@ const MiniProfile = lazy(() => loadMiniProfile());
  *  it the altitude's figures, Class B and why. */
 export default function ProfileSideView({ vm }: { vm: PlanSlices<"brief" | "flight" | "fpl" | "plan" | "route" | "routeList"> }) {
   const {
-    acceptClassB,
-    avoidClassB,
-    classBClearance,
     flyAltitude,
     local,
     planned,
@@ -30,7 +27,7 @@ export default function ProfileSideView({ vm }: { vm: PlanSlices<"brief" | "flig
     setStops,
   } = vm.route;
   const { aircraft, changeAltitudeChoice, course, s, selected } = vm.plan;
-  const { setAddingStop, setNewStopVia, typeStopAt, waypointStops } = vm.routeList;
+  const { setAddingStop, typeStopAt, waypointStops } = vm.routeList;
   const { closeProfileCard } = vm.fpl;
   const { dryRunReady, dryRunning, startDryRun } = vm.flight;
   const { tightLeg, unflyable } = vm.brief;
@@ -74,16 +71,6 @@ export default function ProfileSideView({ vm }: { vm: PlanSlices<"brief" | "flig
                 if (routeEdit === "plan") typeStopAt(routePoints.length - 1);
                 else setAddingStop("stop");
               }}
-              onFlyVia={() => {
-                closeProfileCard();
-                if (routeEdit !== "plan") return setAddingStop("via");
-                // Between the points the ways round go between, as the box
-                // put them (its `asked`).
-                const detours = s.unflyable?.detours ?? [];
-                setNewStopVia(detours.length ? detours : null);
-                typeStopAt(detours.length ? detours[0]!.stop_index + 1 : routePoints.length - 1);
-              }}
-              onAcceptClassB={() => acceptClassB(true)}
               onGoRound={(via, at) => {
                 closeProfileCard();
                 setStops([...planned.stops.slice(0, at), ...via, ...planned.stops.slice(at)]);
@@ -92,9 +79,6 @@ export default function ProfileSideView({ vm }: { vm: PlanSlices<"brief" | "flig
           ) : undefined
         }
         tight={unflyable ? null : tightLeg}
-        classBAvoided={!classBClearance}
-        onAvoidClassB={avoidClassB}
-        onAllowClassB={() => acceptClassB(true)}
         onGoRound={(via, at) => {
           closeProfileCard();
           setStops([...planned.stops.slice(0, at), ...via, ...planned.stops.slice(at)]);

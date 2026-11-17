@@ -826,6 +826,8 @@ by clicking the map, typing an address or a name, up to 9 stops in all
    `profile_clearance`) until Set, Auto in flight; a waypoint's mark opens
    its altitude, Start At or Cross At (a Popover, a sheet on a phone); the
    Altitude Advisor list under it chooses the cruise, the plan's menu gone.
+   Class B is always planned through, with its clearance (14 CFR 91.131;
+   the owner, 2026-11-17): the Profile says so and offers no way round it.
 5. A toast with Undo after a change that takes something away
    (`toast.undo`); and every edit -- the route, the altitude, the
    procedures and stops, the departure time, the airplane -- undone and

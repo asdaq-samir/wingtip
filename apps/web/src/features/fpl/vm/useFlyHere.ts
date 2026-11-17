@@ -36,10 +36,6 @@ function flyHerePlan(
     depart,
     aircraft,
     load: load + 1,
-    // Through Class B unless avoided, as the page plans it (class_b):
-    // left out, the read-ahead was another key, the page's own log
-    // asked for again at the tap.
-    classBClearance: true,
     checkpoints: showWaypoints,
     rules: flightRules,
   };
