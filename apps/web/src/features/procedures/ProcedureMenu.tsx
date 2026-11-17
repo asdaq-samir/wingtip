@@ -186,7 +186,8 @@ export default function ProcedureMenu({
         {look === "button" ? (
           // The one picked's name kept in it for a reader, unseen: the
           // branch's head shows it.
-          <IconButton round
+          <IconButton
+            round
             label={`${ident} ${TITLE[kind].toLowerCase()}: ${label ?? "none picked"}, pick another`}
             data-testid="procedure-kind"
             data-kind={kind}

@@ -36,7 +36,9 @@ export default function NotamLine({ notam, testId }: { notam: RankedNotam; testI
       </div>
       {pinned && <Pin className="mt-1 size-4 shrink-0 text-tint" aria-label="Pinned" />}
       <DropdownMenu>
-        <DropdownMenuTrigger render={<IconButton round label={`More for ${notam.label}`} className="size-8" data-testid={`${testId}-menu`} />}>
+        <DropdownMenuTrigger
+          render={<IconButton round label={`More for ${notam.label}`} className="size-8" data-testid={`${testId}-menu`} />}
+        >
           <Ellipsis className="size-5" aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">

@@ -207,7 +207,8 @@ export default function ShareMenu({
               // microphone is in its twin of a bar: one look for a button
               // in the first row (the owner's list, 2026-11-17), where it
               // was a grey disc with a black glyph beside the tinted toggle.
-              <IconButton round
+              <IconButton
+                round
                 label={planAgain?.stale.length ? `${SHARE_LABEL[card]}: ${planAgain.stale.join(", ")}` : SHARE_LABEL[card]}
                 {...(card === "route" ? { variant: "ghost" as const, className: "size-[32px]" } : {})}
                 data-testid={testId}

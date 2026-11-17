@@ -129,7 +129,8 @@ export function DryRunControls({
         {onFinal && (
           <PlaybackButton
             render={
-              <IconButton round
+              <IconButton
+                round
                 label="Go missed"
                 onClick={onMissed}
                 className={cn("w-auto px-2.5 font-semibold", TEXT.note)}

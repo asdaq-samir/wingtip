@@ -42,7 +42,8 @@ export default function ProfileSideView({ vm }: { vm: PlanSlices<"brief" | "flig
           </Suspense>
         )}
         corner={
-          <IconButton round
+          <IconButton
+            round
             label="Dry run"
             onClick={startDryRun}
             disabled={!dryRunReady}

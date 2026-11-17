@@ -54,7 +54,8 @@ export default function RowMenu(props: RowMenuProps) {
   return (
     <div className={ROW_LIFT}>
       <div className="min-w-0 flex-1">{props.children}</div>
-      <IconButton round
+      <IconButton
+        round
         label={props.label}
         className={ROW_MORE}
         data-testid={props.testId}

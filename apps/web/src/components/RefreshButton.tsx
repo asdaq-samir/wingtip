@@ -17,7 +17,8 @@ import { refreshLive, type LiveCard } from "../lib/liveRefresh";
 export function RefreshNow({ card, label = "Refresh", className }: { card: LiveCard; label?: string; className?: string }) {
   const [busy, setBusy] = useState(false);
   return (
-    <IconButton round
+    <IconButton
+      round
       label={label}
       aria-busy={busy || undefined}
       className={className}
