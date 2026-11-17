@@ -12,11 +12,10 @@
 export { ShareMenu } from "./ShareMenuLazy";
 export { default as DirectStrip } from "./components/DirectStrip";
 export { default as FplStrip } from "./components/FplStrip";
-export type { PointAltitude } from "./components/PointAltitudeDialog";
-export type { ProceduresAt } from "./components/ProceduresRoute";
+export type { EditedPoint, PointAltitude } from "./components/PointAltitudeDialog";
 export { default as ProfileCard } from "./components/ProfileCard";
 export { RecentRoutesPage } from "./components/RecentRoutes";
-export type { RouteParts } from "./components/RouteBox";
+export type { RouteParts, RouteProcedure } from "./components/RouteBox";
 export { default as TripFigures } from "./components/TripFigures";
 export type { BriefingPart } from "./components/briefing/sections";
 export { loadFlightChart } from "./components/loadFlightChart";
@@ -24,16 +23,28 @@ export { clearanceAt } from "./components/navlog/altitude/clearance";
 export { type DryRun, type Flown, dryRunAt, dryRunFlown, dryRunOf, runNmAt } from "./components/navlog/dryRun";
 export { type CourseLine, dryRunNext, gpsAhead } from "./components/navlog/flyingTo";
 export { GoToTab, LEGS, type PanelTab, useTabAsk } from "./components/navlog/panelTab";
-export { type NavLogRow, type RouteEnds, isLegPoint, legOf, navLogRows, rowPoint, savedCheckpoints } from "./components/navlog/rows";
+export {
+  type NavLogRow,
+  type RouteEnds,
+  groundMinAt,
+  isLegPoint,
+  legOf,
+  navLogRows,
+  rowPoint,
+  savedCheckpoints,
+} from "./components/navlog/rows";
 export { figuresLine, nextLanding } from "./figures";
 export {
   PLAN_NAME,
+  type ReportedWind,
   altFt,
   ceilingAndVisibility,
   clockTime,
+  etaAt,
   feet,
   legsWithoutWind,
   one,
+  reportedWind,
   windLine,
   windOnRunway,
   windText,
@@ -42,37 +53,48 @@ export {
 export { briefingLegs } from "./hooks/briefingLegs";
 export { panelNow, riseToSee } from "./hooks/panelNow";
 export {
+  NO_AUTO,
   type PlannedRoute,
   approximateOf,
+  autoOf,
   departureRunways,
   directKeys,
   landingRunways,
   namesRoute,
   procsWithoutDirect,
+  routeBeforeDirect,
   suggestedStopAt,
 } from "./hooks/planAddress";
 export type { PlanAnswer, PlanCourse } from "./hooks/planTypes";
+export type { Landing, ProcedureAirport, ProcedureKind } from "./hooks/procedureTypes";
 export { type AirplaneRow, useAirplaneHits } from "./hooks/useAirplaneHits";
-export { useFieldPatterns } from "./hooks/useFieldPatterns";
 export { useLegSheet } from "./hooks/useLegSheet";
 export { useLoad } from "./hooks/useLoad";
 export { useMapActions } from "./hooks/useMapActions";
 export { type PanelList, type PanelView, useAddressCards, usePanelView } from "./hooks/usePanelView";
 export { type BriefingState, type PlanParams, navlogQuery, usePlan } from "./hooks/usePlan";
 export { usePlanSetters } from "./hooks/usePlanSetters";
-export { drawnOnly, useProcedurePicks } from "./hooks/useProcedurePicks";
 export { useRouteEdits } from "./hooks/useRouteEdits";
 export { useRouteLine } from "./hooks/useRouteLine";
 export { useRouteListEdit } from "./hooks/useRouteListEdit";
 export { useRouteTidy } from "./hooks/useRouteTidy";
 export { useRouteWays } from "./hooks/useRouteWays";
-export { useRunwayPicks } from "./hooks/useRunwayPicks";
 export { nearOf, useSearchResults } from "./hooks/useSearchResults";
 export { useSuggestedStops, withStopsAfter } from "./hooks/useSuggestedStops";
 export type { SuaWhen, TfrWhen } from "./lib/passTimes";
-export { type RunwayEnd, type RunwayPicks, compassWord, entryFor, exitFor, patternSideDeg, runwayNumber } from "./lib/pattern";
+export {
+  type RunwayEnd,
+  type RunwayPicks,
+  type WindPick,
+  compassWord,
+  entryFor,
+  exitFor,
+  patternSideDeg,
+  runwayNumber,
+  windPick,
+} from "./lib/pattern";
 export { type RadioCall, type RadioPhase, callSign, fieldPhases, placeName } from "./lib/radio";
-export { holdsOf, holdsParam } from "./lib/routeHolds";
+export { type Hold, holdWords, holdsOf, holdsParam, lengthCode, lengthOfCode, lengthWords } from "./lib/routeHolds";
 export { sameStops } from "./lib/routeWays";
 export { readQuery } from "./lib/searchFilters";
 export { useStopsAlong } from "./lib/stopsAlong";
@@ -95,17 +117,14 @@ export { useTerrainView } from "./map/terrain/useTerrainView";
 export { RouteBox } from "./routeBoxChunk";
 export { BootMap, RouteMap } from "./routeMapChunk";
 
-/** AssignedLesson, on a chunk of its own, as its importer loads it. */
-export const loadAssignedLesson = () => import("./components/AssignedLesson");
-
-/** FixCard, on a chunk of its own, as its importer loads it. */
-export const loadFixCard = () => import("./components/FixCard");
-
 /** NearestCard, on a chunk of its own, as its importer loads it. */
 export const loadNearestCard = () => import("./components/NearestCard");
 
 /** PastFlightChart, on a chunk of its own, as its importer loads it. */
 export const loadPastFlightChart = () => import("./components/PastFlightChart");
+
+/** PointAltitudeDialog, on a chunk of its own, as its importer loads it. */
+export const loadPointAltitudeDialog = () => import("./components/PointAltitudeDialog");
 
 /** RouteLegCard, on a chunk of its own, as its importer loads it. */
 export const loadRouteLegCard = () => import("./components/RouteLegCard");

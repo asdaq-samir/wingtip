@@ -9,10 +9,10 @@
  * draws it.
  */
 export { NavLogView } from "../plan/lazy";
-export { ProceduresRoute } from "../plan/lazy";
-export { RouteLine } from "../plan/lazy";
+export { ProceduresRoute } from "../procedures/lazy";
+export { RouteLine } from "../procedures/lazy";
 export { FlightBriefingView, BriefingNotices, ReviewAskItem, ReviewAskSheet, SaveFlightButton } from "../brief/lazy";
-export { RouteEnds } from "../plan/lazy";
+export { RouteEnds } from "../procedures/lazy";
 export { RouteSplit } from "../plan/lazy";
 export { Kneeboard } from "../plan/lazy";
 export { FlightInputs } from "../plan/lazy";

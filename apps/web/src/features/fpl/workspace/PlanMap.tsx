@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState } from "react";
 import { cn } from "cn";
-import { RouteMap, DRY_RUN, usePastFlight, loadAssignedLesson, loadFixCard, loadRouteLegCard } from "../../plan";
+import { RouteMap, DRY_RUN, usePastFlight, loadRouteLegCard } from "../../plan";
 import { FirstFlight } from "../../first-flight";
 import { FlyingHead } from "../routePanelParts";
 import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
@@ -9,6 +9,7 @@ import type { PlanWorkspaceModel } from "../vm/usePlanWorkspace";
  *  Checkride page (`?lesson=12`): its own chunk, as the lesson's is. */
 import { ReadyToFlyPrompt } from "../../readyToFly";
 import { EngineGate } from "../../../lib/engine/engineGate";
+import { loadAssignedLesson, loadFixCard } from "../../procedures";
 
 const AssignedLesson = lazy(() => loadAssignedLesson());
 /** What the first screen does not draw, each its own chunk off the first

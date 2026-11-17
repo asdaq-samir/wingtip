@@ -9,7 +9,6 @@ import {
   landingRunways,
   namesRoute,
   type PlannedRoute,
-  drawnOnly,
   useRouteEdits,
   type PlanCourse,
 } from "../../plan";
@@ -21,6 +20,7 @@ import { usePlanHistory } from "../../../hooks/use-plan-history";
 import { picksOf } from "../../../lib/flightLink";
 import { proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
 import { airportQuery, procedureQuery } from "../../../lib/queryClient";
+import { drawnOnly } from "../../procedures";
 
 /**
  * The route as the address has it (usePlanWorkspace): its points, the
