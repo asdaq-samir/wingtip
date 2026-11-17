@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { DepartureWindowStrip } from "../../../departureWindow";
 import { NotamRankingSection } from "../../../notamRanking";
 import type { PanelTab } from "../navlog/panelTab";
@@ -12,11 +13,17 @@ import FlightWatch from "./FlightWatch";
  * ranked for the flight (features/notamRanking), and the flight watch.
  * Nothing of the cards moves: the rest is added round them.
  */
-export default function BriefOverview({ onOpen }: { onOpen: (tab: PanelTab) => void }) {
+export default function BriefOverview({ onOpen, notice }: { onOpen: (tab: PanelTab) => void; notice?: ReactNode }) {
   return (
     <BriefGlance
       onOpen={onOpen}
-      afterVerdict={<DepartureWindowStrip />}
+      // What the briefing could not check, under the verdict and its lines.
+      afterVerdict={
+        <>
+          {notice}
+          <DepartureWindowStrip />
+        </>
+      }
       after={
         <>
           <NotamRankingSection />
