@@ -33,3 +33,19 @@ rules:
           # m per ft, ft per m, ft per NM, m per NM, km per NM, kt per m/s,
           # m/s per kt, NM per km, ft per km, ft/s per kt.
           regex: ^(0\.3048|3\.2808\d*|6076(\.\d+)?|1852(\.0*)?|1\.852|1\.9438\d*|0\.51444?\d*|0\.53995\d*|3280\.8\d*|1\.68781\d*)$
+  - id: degree-scale-outside-geo
+    message: >-
+      Kilometres or metres in a degree written here. The web's flat sums
+      (a nearest-first order, a label's spacing, a camera's offset) take
+      their scale from apps/web/src/lib/geo.ts: KM_PER_DEG, M_PER_DEG,
+      NM_PER_DEG, lonScale, flatDeg2, flatDeg, flatNm. A copy is where a
+      different rounding hides (the audit of 2026-11-16 found three).
+    severity: ERROR
+    languages: [typescript, javascript]
+    paths:
+      exclude: ["apps/web/src/lib/geo.ts"]
+    patterns:
+      - pattern: $N
+      - metavariable-regex:
+          metavariable: $N
+          regex: ^(111\.32|111_?320(\.0*)?)$

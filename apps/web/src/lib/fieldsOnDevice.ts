@@ -1,7 +1,7 @@
 import type { AirportIndex } from "./airportIndex";
 import type { NearestAirport } from "./api/types";
 import { callEngine, type EngineInput } from "./engine/engine";
-import type { LatLon } from "./geo";
+import { lonScale, type LatLon } from "./geo";
 
 /**
  * The fields round a point from the airport index the browser keeps
@@ -29,7 +29,7 @@ const LANDING_SIZE_MAX = 2;
  *  latitude's cosine): only the order the engine is then given, never a
  *  figure shown. */
 export function fieldsNear(index: AirportIndex, at: LatLon, limit: number): DeviceField[] {
-  const shrink = Math.cos((at.lat * Math.PI) / 180);
+  const shrink = lonScale(at.lat);
   const near: [number, number][] = [];
   for (let row = 0; row < index.rows.length; row++) {
     const lat = index.lat[row]!;

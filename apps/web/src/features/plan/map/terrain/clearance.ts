@@ -1,4 +1,4 @@
-import { M_PER_FT, M_PER_NM } from "../../../../lib/geo";
+import { flatNm, lonScale, M_PER_FT, M_PER_NM, NM_PER_DEG } from "../../../../lib/geo";
 import { WORLD_WIDTH_M, latOf, mercX, mercY } from "../../../../lib/map/tileMath";
 import type { AloftPoint } from "./geometry";
 
@@ -44,7 +44,7 @@ export function coursePieces(points: AloftPoint[]): CoursePiece[] {
   for (let i = 1; i < points.length; i++) {
     const p = points[i]!,
       q = points[i - 1]!;
-    since += Math.hypot(p.lat - q.lat, (p.lon - q.lon) * Math.cos((p.lat * Math.PI) / 180)) * 60;
+    since += flatNm(p.lat - q.lat, p.lon - q.lon, p.lat);
     if (legAt(p) !== legAt(q)) {
       // A leg's change kept at both ends: the point before it ends the
       // leg before, this one starts the next.
@@ -72,8 +72,8 @@ export function corridorBounds(points: AloftPoint[], corridorNm: number): [numbe
     lons = points.map((p) => p.lon);
   const north = Math.max(...lats),
     south = Math.min(...lats);
-  const dLat = corridorNm / 60,
-    dLon = corridorNm / (60 * Math.cos((Math.max(Math.abs(north), Math.abs(south)) * Math.PI) / 180));
+  const dLat = corridorNm / NM_PER_DEG,
+    dLon = corridorNm / (NM_PER_DEG * lonScale(Math.max(Math.abs(north), Math.abs(south))));
   return [Math.min(...lons) - dLon, Math.max(south - dLat, -85), Math.max(...lons) + dLon, Math.min(north + dLat, 85)];
 }
 

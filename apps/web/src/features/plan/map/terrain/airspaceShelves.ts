@@ -1,5 +1,6 @@
 import type { SymbolLayerSpecification } from "maplibre-gl";
 import { callEngine } from "../../../../lib/engine/engine";
+import { flatDeg, KM_PER_DEG } from "../../../../lib/geo";
 import { airspaceTab } from "../../../../lib/map/gl/glStyle";
 import { GL_FONT_BOLD } from "../../../../lib/map/gl/layers/common";
 import { rgbOf } from "../../../../lib/rgb";
@@ -65,11 +66,10 @@ export function shelfText(p: Record<string, unknown>): string | null {
   return label?.text ?? null;
 }
 
-/** Kilometres on the plane near `lat`, longitude shrunk by the latitude's
- *  cosine: near enough to space labels a few kilometres apart. */
-const KM_PER_DEG = 111.32;
-const km = (a: number[], b: number[], lat: number) =>
-  Math.hypot((a[0]! - b[0]!) * Math.cos((lat * Math.PI) / 180), a[1]! - b[1]!) * KM_PER_DEG;
+/** Kilometres on the plane near `lat` between two [lon, lat] points
+ *  (lib/geo's flat sums): near enough to space labels a few kilometres
+ *  apart. */
+const km = (a: number[], b: number[], lat: number) => flatDeg(a[1]! - b[1]!, a[0]! - b[0]!, lat) * KM_PER_DEG;
 
 /** Of a ring's points, the index of the one nearest `eye` ([lon, lat]),
  *  the ground under the camera: the shelf's edge facing the viewer. With

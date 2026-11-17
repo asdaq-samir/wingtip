@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import { api } from "../../api/client";
 import type { ChartLayer, Course } from "../../api/types";
 import { diagramPicture, diagramRunwaysPicture } from "../../diagram";
-import { M_PER_NM, rad } from "../../geo";
+import { flatNm, lonScale, M_PER_NM } from "../../geo";
 import { kindCycle, tileUrl } from "../sources/tiles";
 import { tileOf, WORLD_WIDTH_M } from "../tileMath";
 import { routeAnswersAsked } from "./routeAnswers";
@@ -46,7 +46,7 @@ interface KeepProgress {
 /** Tile width in nautical miles at a latitude and zoom: the Web Mercator
  *  world's width shrunk by the parallel's cosine. */
 function tileNm(lat: number, zoom: number): number {
-  return ((WORLD_WIDTH_M / M_PER_NM) * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
+  return ((WORLD_WIDTH_M / M_PER_NM) * lonScale(lat)) / 2 ** zoom;
 }
 
 /** The {z, x, y} of every tile within the corridor, per zoom. */
@@ -61,7 +61,7 @@ export function corridorTiles(line: [number, number][], zooms: number[], corrido
       const reach = Math.ceil(corridorNm / width);
       // Samples every half a tile along the segment, a ring of tiles
       // `reach` deep around each -- the union is the corridor.
-      const segmentNm = Math.hypot((lat1 - lat0) * 60, (lon1 - lon0) * 60 * Math.cos(rad((lat0 + lat1) / 2)));
+      const segmentNm = flatNm(lat1 - lat0, lon1 - lon0, (lat0 + lat1) / 2);
       const steps = Math.max(1, Math.ceil(segmentNm / (width / 2)));
       for (let s = 0; s <= steps; s++) {
         const lat = lat0 + ((lat1 - lat0) * s) / steps;
