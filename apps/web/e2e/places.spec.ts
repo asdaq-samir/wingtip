@@ -77,7 +77,7 @@ test("an airport's card has the field's pictures across its top, its ident over 
   expect(bar.y).toBeGreaterThanOrEqual(actions.y + actions.height);
 
   // Weather: the panel all the way up, the weather's card at the tab's top, its category in the FAA's colour:
-  // with no TAF, a sentence from the report and Now alone; its first row ends in the card's Refresh (the owner, 2026-11-11).
+  // with no TAF, a sentence from the report and no hours; its first row ends in the card's Refresh (the owner, 2026-11-11).
   await card(page).getByTestId("place-tab-weather").click();
   // A tab only switches what is shown (the owner, 2026-11-11): pulled all
   // the way up to read it, as a pilot would.
@@ -85,8 +85,8 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(card(page).getByTestId("place-category")).toBeVisible();
   await expect(card(page).getByTestId("place-forecast-sentence")).toHaveText("VFR now, no forecast for this field.");
   await card(page).getByTestId("place-weather-summary").getByTestId("airport-refresh").click();
-  await expect(card(page).getByTestId("place-hour")).toHaveCount(1);
-  await expect(card(page).getByTestId("place-hour").first()).toContainText("Now");
+  // No TAF, no hours; the report's age once, in the summary (UI audit C10).
+  await expect(card(page).getByTestId("place-hours").or(card(page).getByTestId("place-observed"))).toHaveCount(0);
 
   // Info: the field's elevation and airspace in its facts (the Details only its address, 2026-11-14), and
   // the distance from the route's departure while the pilot's own position is not known.
