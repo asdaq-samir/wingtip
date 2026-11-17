@@ -66,7 +66,7 @@ export const TEXT = {
    *  capitals spaced a tenth of an em, as the ink canvas sets a figure's
    *  label (2026-11-04). */
   label: TYPE_CLASS.label,
-  /** A figure in the Chart ink look (FigureStrip): 26 on 31, bold, in
+  /** A figure in the Chart ink look's canvas: 26 on 31, bold, in
    *  tabular figures -- the Flying screen's size (FLYING_FIGURE), a
    *  weight up, in the text face. */
   figure: TYPE_CLASS.figure,
@@ -93,7 +93,7 @@ export const GROUP_HEADING = `font-semibold uppercase tracking-wide text-muted-f
  *  a touch screen sets them. */
 export const TEXT_POINTS = { caption: TYPE_POINTS.caption, row: TYPE_POINTS.row } as const;
 
-/** A figure pinned at the map panel's foot (FlightLine, FigureStrip), its
+/** A figure pinned at the map panel's foot (FigureStrip), its
  *  value, unit and name small at half and their own size at the pill and
  *  all the way up (MapPanel's --sheet-progress, 0 at half, 1 at the other
  *  two; the owner, 2026-11-05), each with its iOS leading at either end (the audit's P3: 15

@@ -32,10 +32,10 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   // One floating progress line for the whole page (planWords'
   // progressWords). A toast however far out the panel is, at the pilot's
   // ask, where the flight's line said it with the panel out: that line
-  // keeps the figures (FlightLine). A toast takes no tap but its own
+  // keeps the figures (TripFigures). A toast takes no tap but its own
   // controls' (index.css), so the route's box under it from the top still does.
   useProgressToast(progressWords(s.navStage, s.stage, s.briefing.state === "loading"));
-  // The flight's figures before the nav log's, at the pilot's ask for them as soon as can be (FlightLine's `estimate`): this
+  // The flight's figures before the nav log's, at the pilot's ask for them as soon as can be (TripFigures' `estimate`): this
   // route's course distance, the airplane's book cruise speed and burn (its own where set) and its profile's taxi fuel.
   const profile = profiles?.find((p) => p.name === aircraft.profile);
   const cruiseTasKt = cruiseTasOf(aircraft, profiles);

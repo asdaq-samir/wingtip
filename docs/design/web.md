@@ -800,6 +800,10 @@ by clicking the map, typing an address or a name, up to 9 stops in all
 3. The route string field (typed, Enter to compute), as SkyVector's.
 4. The altitude (`FL045` style, decision 0009) and the figure strip at
    the foot: To, Dist, ETE, Fuel (ETE and Fuel only with an airplane).
+   One strip in every state, FPL's route row on the ground, a dry run and
+   in flight, and the training page's too: `components/FigureStrip`, the
+   plan's figures and their taps given it by `features/plan`'s
+   `TripFigures` (`FlightLine` until 2026-11-17).
    The Profile card sets the altitude on the side view
    ([rules.md](rules.md) section 6): the upright Slider previews the
    clearance (red within 100 ft, yellow within 1,000 ft, the engine's

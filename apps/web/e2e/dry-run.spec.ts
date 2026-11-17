@@ -149,7 +149,7 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
   const start = sideDrawer(page).getByTestId("dry-run-start");
   await expect(start).toBeEnabled({ timeout: slow(60_000) });
   const line = sideDrawer(page).getByTestId("flight-line");
-  // Each figure's name as shown: FlightLine's dt also holds the words a
+  // Each figure's name as shown: TripFigures' dt also holds the words a
   // screen reader hears ("To KDLH"), hidden from sight (sr-only).
   const planned = await line.locator("dt > [aria-hidden]").allTextContents();
   expect(planned).toEqual(["To", "Dist", "ETE", "Fuel req"]);

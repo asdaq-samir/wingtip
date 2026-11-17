@@ -22,7 +22,7 @@ export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place 
   const suggested = useSuggestedStops({ totals: s.totals, local: s.local, planned, setStops });
   const { fuelStops, keepFuelStops } = suggested;
   // The first flight's suggested fuel stops, offered where the route's fuel
-  // says it is short (FlightLine), as the route box offers them.
+  // says it is short (TripFigures), as the route box offers them.
   const firstFuelStop = useMemo(() => {
     const first = fuelStops[0];
     if (!first || !first.stops.length) return null;

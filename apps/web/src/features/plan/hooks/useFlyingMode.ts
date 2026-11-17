@@ -10,7 +10,7 @@ import { DRY_RUN, usePastFlight } from "../map/pastFlight";
  * engine's rule (lib/map/position/glide's `underway`), the GPS's or a dry run's --
  * with a route to fly, the planner screen is the flight's: the next
  * checkpoint over the map (FlyingHead), the flight's figures grown at the
- * sheet's foot (FlightLine's `flying`), the map's buttons 60 points with
+ * sheet's foot (TripFigures' `flying`), the map's buttons 60 points with
  * words (MapControls), and the route's box, the tab bar and the chips
  * put away (MapPanel's `flying`) until the airplane is on the ground
  * again: under flying speed for a minute (GROUND_MS), so a slow turn

@@ -10,7 +10,7 @@ const SMALLEST = 0.75;
 interface Fitted {
   value: string;
   unit?: string;
-  /** Drawn with a warning mark before it (FlightLine's fuel short of the
+  /** Drawn with a warning mark before it (TripFigures' fuel short of the
    *  tanks), as wide as 0.8 of the figure's size and its 2 px gap. */
   alert?: boolean;
 }
@@ -22,8 +22,8 @@ export function fitFigures<F>(exact: F[], rounded: F[], fits: (f: F, i: number) 
 }
 
 /**
- * A strip of figures fitted to their columns, the flight's (FlightLine) and
- * a dry run's (FigureStrip) alike: each figure as it is while it fits its
+ * A strip of figures fitted to their columns, the flight's (TripFigures) and
+ * a dry run's alike, on the one FigureStrip: each figure as it is while it fits its
  * column; where one does not (a long trip's "2636.8 nm" at a large text
  * size, an iPhone SE's narrow columns), that one rounded (`rounded`, the
  * caller's: up, so none is ever said short of what it is). Where a rounded

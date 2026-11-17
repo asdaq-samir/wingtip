@@ -496,7 +496,7 @@ export default function NavLogView({
   // this needs; a sortable column here would let a pilot reorder the
   // log into something unflyable (e.g. by Fuel).
   // A desktop's columns: the desk's, and those an airplane gives only with
-  // one picked (NavLogList's rule on a phone, FlightLine's on the strip).
+  // one picked (NavLogList's rule on a phone, TripFigures' on the strip).
   const shownColumns = onDesk ? columns.filter((c) => DESK.has(c.id ?? "") && (airplane || !AIRPLANE.has(c.id ?? ""))) : columns;
   const metaClass = (meta?: { className?: string }) => (onDesk && meta === PAPER ? undefined : meta?.className);
   // With no airplane no tops of climb and descent, as NavLogList has it:

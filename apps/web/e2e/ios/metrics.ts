@@ -231,7 +231,7 @@ export function typeFindings(
           if (!text || !el) continue;
           const rect = el.getBoundingClientRect();
           // Nor a figure set smaller to fit its column, as iOS's
-          // adjustsFontSizeToFitWidth sets one (FlightLine's data-fitted):
+          // adjustsFontSizeToFitWidth sets one (TripFigures' data-fitted):
           // off the scale by design, on a screen too narrow for it.
           if (rect.width <= 1 || rect.height <= 1 || rect.right <= 0 || rect.bottom <= 0 || el.closest(".sr-only, [data-fitted]")) continue;
           const cs = getComputedStyle(el);
