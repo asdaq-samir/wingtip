@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Radio } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
-import { GLASS } from "../lib/mapChrome";
+import { bannerGlass } from "./bannerGlass";
 import Waveform from "./Waveform";
 import { Timer } from "./RadioTimer";
 import { Button } from "./ui/button";
@@ -414,12 +414,7 @@ function RadioCall({ call }: { call: Transmission }) {
   // arriving whole is not read by every reader.
   useAnnounce(`ATC: ${call.text}`, "assertive");
   return (
-    <div
-      className={cn(GLASS, "pointer-events-auto w-full max-w-md rounded-(--radius-banner) py-2 pr-1 pl-3")}
-      role="region"
-      aria-label="Call from ATC"
-      data-testid="radio-call"
-    >
+    <div className={cn(bannerGlass(true), "py-2 pr-1 pl-3")} role="region" aria-label="Call from ATC" data-testid="radio-call">
       <div className="flex items-start gap-2">
         <Radio className="mt-1 size-5 shrink-0 text-tint" aria-hidden="true" />
         <p className={cn("min-w-0 flex-1 font-semibold", TEXT.detail)} data-testid="radio-call-text">
@@ -454,8 +449,8 @@ function RadioCaptions() {
         useAtcRadio.setState((s) => ({ cardOpen: true, cardText: [...s.heard].reverse().find((t) => t.final)?.text ?? s.cardText }))
       }
       className={cn(
-        GLASS,
-        "pointer-events-auto flex w-full max-w-md items-start gap-2 rounded-(--radius-banner) px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        bannerGlass(true),
+        "flex items-start gap-2 px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
       )}
     >
       {/* While an input is metered its level, in the glyph's place and

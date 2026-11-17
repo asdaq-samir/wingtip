@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Map as GlMap } from "maplibre-gl";
 import { cn } from "cn";
 import { M_PER_NM } from "../lib/geo";
-import { GLASS } from "../lib/mapChrome";
+import { bannerGlass } from "./bannerGlass";
 import { TEXT } from "../lib/text";
 
 /** How long the zoom stays said once the map has stopped zooming. */
@@ -83,7 +83,8 @@ export default function ZoomBanner({ map }: { map: GlMap | null }) {
       hidden
       aria-hidden="true"
       data-testid="zoom-banner"
-      className={cn(GLASS, "flex min-h-8 w-fit items-center gap-3 rounded-full px-3 tabular-nums", TEXT.detail)}
+      // The banners' glass, but no taps: it is only read.
+      className={cn(bannerGlass(), "pointer-events-none flex min-h-11 items-center gap-3 px-3 tabular-nums", TEXT.detail)}
     >
       <span className="flex items-baseline gap-1">
         <span className="text-foreground/65">Zoom</span>

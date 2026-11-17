@@ -1,7 +1,8 @@
 import { Check, CircleAlert, Radio } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
-import { CAPSULE_HIT, GLASS } from "../../lib/mapChrome";
+import { CAPSULE_HIT } from "../../lib/mapChrome";
+import { bannerGlass } from "../../components/bannerGlass";
 import { Button } from "../../components/ui/button";
 import { useAnnounce } from "../../lib/announce";
 import { TEXT } from "../../lib/text";
@@ -68,12 +69,7 @@ export default function AtcCard({
   // role="alert" arriving whole is not read by every reader.
   useAnnounce(`ATC: ${card.text}`, "assertive");
   return (
-    <div
-      className={cn(GLASS, "pointer-events-auto w-full max-w-md rounded-(--radius-banner) py-2 pr-1 pl-3")}
-      role="region"
-      aria-label="Call from ATC"
-      data-testid="atc-card"
-    >
+    <div className={cn(bannerGlass(true), "py-2 pr-1 pl-3")} role="region" aria-label="Call from ATC" data-testid="atc-card">
       <div className="flex items-start gap-2">
         <Radio className="mt-1 size-5 shrink-0 text-tint" aria-hidden="true" />
         <p className={cn("min-w-0 flex-1 text-muted-foreground line-clamp-2", TEXT.note)} data-testid="atc-card-heard">

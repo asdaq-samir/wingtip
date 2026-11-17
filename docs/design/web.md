@@ -81,6 +81,13 @@ These hold on every screen below and win over any reference app.
 - **Discrete settings are menus or segmented controls**, not sliders
   (decision 0017).
 - **Errors show where they happen** (`lib/problems`), never in a toast.
+  Over the map every line -- what is ahead, the copilot's message, an
+  airplane's alert, what the app could not do, the field weather's age,
+  the sunlight scheme, the ATC copilot's listening line -- is one banner
+  (`components/MapBanner`: its glyph, its line, more under a tap, its
+  buttons; the map buttons' glass), stacked in the one column
+  (`MapBanners`) eight apart; the radio's and ATC's call cards and the
+  weather loop's bar stand on the same glass (`components/bannerGlass`), 2026-11-17.
   A confirmation with Undo is a Base UI Toast with its action (`lib/toast`
   `toast.undo`), the web's stock pattern, and a control's own
   confirmation ("Copied") an anchored Base UI Toast by that control

@@ -81,6 +81,18 @@ test("it offers a way out, the way out works, and the line goes with the problem
 
   const retry = banner(page).getByRole("button", { name: "Try again" });
   await expect(retry).toBeVisible({ timeout: 20000 });
+  // The map's one banner (MapBanner): on the map buttons' glass at the
+  // banner's corner, a row 44 tall at the least, its glyph, line and
+  // action, as every line over the map is.
+  const look = await banner(page).evaluate((el) => ({
+    glass: el.classList.contains("liquid-glass"),
+    radius: getComputedStyle(el).borderTopLeftRadius,
+    banner: getComputedStyle(el).getPropertyValue("--radius-banner").trim(),
+    height: el.getBoundingClientRect().height,
+  }));
+  expect(look.glass).toBe(true);
+  expect(look.radius).toBe(look.banner);
+  expect(look.height).toBeGreaterThanOrEqual(44);
 
   // The planner comes back.
   await page.unroute("**/api/planner/**");

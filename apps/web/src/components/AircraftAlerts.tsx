@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useQueries, type UseQueryResult } from "@tanstack/react-query";
 import { BellRing } from "lucide-react";
-import { cn } from "cn";
-import { Alert } from "./ui/alert";
-import { Button } from "./ui/button";
 import CloseButton from "./CloseButton";
-import { GLASS } from "../lib/mapChrome";
+import MapBanner, { BannerButton } from "./MapBanner";
 import { airborneNow, alertKey, dismissFired as dismiss, fired, useFiredAlerts, type Watched } from "../lib/aircraftAlerts";
 import type { FlightStatus } from "../lib/api/types";
 import { useOwnShip } from "../lib/map/position/ownShip";
@@ -13,7 +10,6 @@ import { useTracking } from "../lib/map/position/tracking";
 import { usePreferences } from "../lib/preferences";
 import { flightStatusQuery } from "../lib/queryClient";
 import { say } from "../lib/speech";
-import { TEXT } from "../lib/text";
 
 /** Each answer's state and when it came: the same answer is not read twice. */
 const answers = (results: UseQueryResult<FlightStatus>[]) => results.map((r) => ({ data: r.data, at: r.dataUpdatedAt }));
@@ -69,47 +65,39 @@ function useAircraftAlertWatch() {
  * The airplanes' alerts as they go off, on the map with the alerts ahead
  * (MapBanners), at the owner's pick of the redesign: what happened and
  * where ("N654FL landed at KDAW", "Skyhaven · 18:42"), Show opening its
- * card, and the cross putting it away.
+ * card, and the cross putting it away, each the map's one banner (MapBanner).
  */
 export default function AircraftAlerts() {
   useAircraftAlertWatch();
   const shown = useFiredAlerts((s) => s.fired);
   return shown.map((alert) => (
-    <div
+    <MapBanner
       key={alert.id}
-      className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-(--radius-banner)")}
       data-testid="aircraft-alert"
-    >
-      <Alert
-        role="alert"
-        className="flex min-h-11 items-center gap-2 rounded-(--radius-banner) border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0"
-      >
-        <BellRing className="shrink-0 text-tint" />
-        <div className={cn("flex min-w-0 flex-1 flex-col py-1", TEXT.detail)}>
-          <span className="truncate font-semibold text-foreground" data-testid="aircraft-alert-title">
-            {alert.title}
-          </span>
-          {alert.detail && <span className="truncate text-muted-foreground">{alert.detail}</span>}
-        </div>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="shrink-0 rounded-full text-tint"
-          data-testid="aircraft-alert-show"
-          onClick={() => {
-            // Its card, where the planner is open; from another page, the planner on it.
-            const pick = useTracking.getState().pick;
-            if (pick) pick(alert.hex);
-            else window.location.assign(`/app/plan?flight=${alert.hex}`);
-            dismiss(alert.id);
-          }}
-        >
-          Show
-        </Button>
-        {/* The app's one close (CloseButton), as every card's and sheet's. */}
-        <CloseButton label="Dismiss" className="shrink-0" onClick={() => dismiss(alert.id)} data-testid="aircraft-alert-dismiss" />
-      </Alert>
-    </div>
+      role="alert"
+      icon={BellRing}
+      tone="tint"
+      title={alert.title}
+      titleTestId="aircraft-alert-title"
+      sub={alert.detail}
+      actions={
+        <>
+          <BannerButton
+            data-testid="aircraft-alert-show"
+            onClick={() => {
+              // Its card, where the planner is open; from another page, the planner on it.
+              const pick = useTracking.getState().pick;
+              if (pick) pick(alert.hex);
+              else window.location.assign(`/app/plan?flight=${alert.hex}`);
+              dismiss(alert.id);
+            }}
+          >
+            Show
+          </BannerButton>
+          {/* The app's one close (CloseButton), as every card's and sheet's. */}
+          <CloseButton label="Dismiss" className="shrink-0" onClick={() => dismiss(alert.id)} data-testid="aircraft-alert-dismiss" />
+        </>
+      }
+    />
   ));
 }
