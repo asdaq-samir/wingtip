@@ -330,7 +330,6 @@ export function PatternChips({
             )}
             aria-label={`${c.words}${note ? `, ${note}` : ""}, picked: tap for the other runways`}
             data-testid="procedure-pattern"
-            data-fit={c.fit}
             data-folded=""
           >
             {c.face}
@@ -412,7 +411,6 @@ export function PatternChips({
                     className={cn(CHIP, c.ring)}
                     aria-label={`${c.words}${circleNa ? `, no circling on the ${landing!.name}` : !landing && !drawn ? ", not surveyed" : ""}`}
                     data-testid="procedure-pattern"
-                    data-fit={c.fit}
                   >
                     {c.face}
                   </ToggleGroupItem>

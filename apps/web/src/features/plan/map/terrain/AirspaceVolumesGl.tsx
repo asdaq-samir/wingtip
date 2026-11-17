@@ -273,7 +273,7 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
 
   // A tap on a volume opens the card its line on the chart does: a TFR's
   // before the classes', where one stands inside a shelf.
-  useDeckTap([FILLS], 1, TAP.rank.area + 0.5, (picked, event) => {
+  useDeckTap([FILLS], 1, TAP.rank.area + 0.5, (picked) => {
     const p = picked.properties;
     if (p.layer === "tfr") {
       if (typeof p.id !== "string" || !tfrs?.some((t) => t.notam_id === p.id)) return;
@@ -283,7 +283,7 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
       const colour = kindOf(p) === "restricted" ? SUA_INK.restricted : SUA_INK.moa;
       openCard(<SuaVolumeCard key={String(p.name)} area={suaOfVolume(p)} colour={colour} />);
     } else {
-      const volume = volumeOfTile(picked, { lat: event.lngLat.lat, lon: event.lngLat.lng });
+      const volume = volumeOfTile(picked);
       openCard(<AirspaceCardBody key={volume.id} volume={volume} close={() => openCard(null)} />);
     }
   });

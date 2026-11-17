@@ -101,7 +101,7 @@ export function NewStopCard({
  */
 export function HoldRow({ hold, flown, last, onOpen }: { hold: Hold; flown: LegHold | null; last: boolean; onOpen: () => void }) {
   return (
-    <div className="relative flex gap-2.5" data-testid="route-hold" data-fix={hold.fix}>
+    <div className="relative flex gap-2.5" data-testid="route-hold">
       {!last && <span aria-hidden="true" className="absolute top-0 bottom-0 left-[calc(0.875rem-1px)] w-0.5" style={ROUTE_LINE} />}
       <div className="relative flex w-7 shrink-0 justify-center pt-1.5" aria-hidden="true">
         <svg viewBox="0 0 28 16" className="h-4 w-7 rounded-full bg-background">

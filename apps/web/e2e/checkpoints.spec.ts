@@ -106,7 +106,7 @@ test(
     // phone's view leaves some out until closer in (MapLibre's collision).
     await tapMark(page, "route-marks", /^(?:[89]|1\d)$/);
     // On a phone its card comes up in the map's sheet over the route
-    // (MapPopup): put away, the pick kept, for the route's box under it.
+    // (openCard): put away, the pick kept, for the route's box under it.
     if (page.viewportSize()!.width < 768) {
       const card = page.locator("[data-sheet-card]");
       await expect(card).toBeVisible();

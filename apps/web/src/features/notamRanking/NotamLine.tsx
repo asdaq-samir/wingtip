@@ -24,13 +24,7 @@ export default function NotamLine({ notam, testId }: { notam: RankedNotam; testI
   const toggleRead = useNotamMarks((s) => s.toggleRead);
   const [open, setOpen] = useState(false);
   return (
-    <li
-      className="flex gap-2"
-      data-testid={testId}
-      data-notam={notam.id}
-      data-pinned={pinned ? "" : undefined}
-      data-read={read ? "" : undefined}
-    >
+    <li className="flex gap-2" data-testid={testId} data-notam={notam.id} data-pinned={pinned ? "" : undefined}>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         {/* Two lines at most, in full once its name under it opens the NOTAM as sent. */}
         <p

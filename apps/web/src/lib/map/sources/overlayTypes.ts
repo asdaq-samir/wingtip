@@ -29,9 +29,6 @@ export interface AirspaceVolume {
    *  (WKHR_RMK). */
   hours_code: string | null;
   hours_remark: string | null;
-  /** Where its line was tapped. */
-  label_lat: number;
-  label_lon: number;
 }
 
 /** A VOR, VOR/DME or VORTAC (NASR's NAV_BASE). */

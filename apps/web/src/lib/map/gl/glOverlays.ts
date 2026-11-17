@@ -413,7 +413,7 @@ const number = (v: unknown): number | null => (v == null || v === "" || Number.i
 /** A tapped ring of the tiles' `airspace` layer as the volume the
  *  card reads (AirspaceCardBody): its fields are wingtip.vector_tiles'
  *  (CLASS, NAME, IDENT, the floor and ceiling, TNI, WKHR_CODE/RMK). */
-export function volumeOfTile(f: Pick<MapGeoJSONFeature, "properties">, at: { lat: number; lon: number }): AirspaceVolume {
+export function volumeOfTile(f: Pick<MapGeoJSONFeature, "properties">): AirspaceVolume {
   const p = f.properties;
   const floor = number(p.floor_ft) ?? 0;
   return {
@@ -427,8 +427,6 @@ export function volumeOfTile(f: Pick<MapGeoJSONFeature, "properties">, at: { lat
     ceiling_excluded: p.ceiling_excluded === true || p.ceiling_excluded === "true",
     hours_code: text(p.hours_code),
     hours_remark: text(p.hours_remark),
-    label_lat: at.lat,
-    label_lon: at.lon,
   };
 }
 

@@ -97,5 +97,5 @@ export function useLegSheet({
     };
   }, [mapLegs, legAt, directParam, flyingTo, directToPoint, removeStop]);
   const closeLeg = useCallback(() => setLegAt(null), []);
-  return { selectedPoint, selectCandidate, selectPointAt, deselectPoint, routeRows, mapLegs, legAt, setLegAt, openLeg, closeLeg };
+  return { selectedPoint, selectCandidate, selectPointAt, deselectPoint, routeRows, mapLegs, setLegAt, openLeg, closeLeg };
 }

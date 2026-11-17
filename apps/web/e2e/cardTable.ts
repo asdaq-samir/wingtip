@@ -363,5 +363,5 @@ export const CARDS: CardRow[] = [
 ];
 
 // Ask is not a card on the web: its answers are a section of the search's
-// own page (SearchHome's AskSection), and design/screens.json lists `ask`
+// own page (the search's Ask section), and design/screens.json lists `ask`
 // for iOS and Android only, so it has no row here.

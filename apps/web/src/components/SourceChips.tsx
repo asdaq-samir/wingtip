@@ -31,7 +31,6 @@ export default function SourceChips({ sources, testId = "source-chip" }: { sourc
             variant="secondary"
             className="rounded-full text-tint"
             data-testid={testId}
-            data-source={s.id}
             onClick={() => setOpen(s)}
           >
             {s.label}

@@ -9,7 +9,7 @@ test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setu
  * (e2e/ios): WCAG 2 A and AA on the planner's main states -- the search
  * bar, a route's panel out with its sections, the console, the route in
  * every look by day, at night and in sunlight -- no serious or critical
- * violation; and the solid glass, twice the text size and the keyboard. The chart itself (Leaflet's panes and tiles) is
+ * violation; and the solid glass, twice the text size and the keyboard. The chart itself (MapLibre's canvas and tiles) is
  * left out: its markers are named for a screen reader where they matter,
  * and its tiles are pictures of a chart.
  */

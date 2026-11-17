@@ -23,7 +23,7 @@ export type MapOverlay = "none" | "usgs" | "google-map" | "google-satellite";
 export type OverlayStrength = "faint" | "half" | "full";
 
 /** The FAA chart in the dark theme: as printed, or dimmed for night
- *  vision (index.css's chart-tiles); set by Setup's Appearance. */
+ *  vision (lib/map/gl/glStyle's chartPaint); set by Setup's Appearance. */
 export type ChartNight = "normal" | "dimmed";
 /** The chart in bright sunlight (lib/sunlight): its tiles at higher
  *  contrast, the course and the sheets solid white with black figures.

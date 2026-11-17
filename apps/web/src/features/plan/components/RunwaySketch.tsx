@@ -14,8 +14,6 @@ const MARGIN = 8;
  *  scheme. */
 const TURF = CHART.runwaySoft;
 
-type Hole = { x: number; y: number; w: number; h: number };
-
 /** What of a runway is not its turf, as fractions of it from end to end. */
 function pavedOf(turf: [number, number][]): [number, number][] {
   const paved: [number, number][] = [];
@@ -41,35 +39,26 @@ export function RunwaySketch({
   runways,
   lat,
   lon,
-  avoid,
   numberSize = TEXT_POINTS.caption,
 }: {
   runways: Runway[];
   lat: number;
   lon: number;
-  /** A pane laid over the box (the elevation): nothing is drawn under it. */
-  avoid?: HTMLElement | null;
   /** The ends' numbers' size, points: TEXT_POINTS.caption (iOS's Caption 2)
    *  in the card's box, TEXT_POINTS.row full screen (SketchViewer). */
   numberSize?: number;
 }) {
   const box = useRef<SVGSVGElement>(null);
-  const [size, setSize] = useState<{ w: number; h: number; hole: Hole | null } | null>(null);
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   useLayoutEffect(() => {
     const parent = box.current?.parentElement;
     if (!parent) return;
-    const measure = () =>
-      setSize({
-        w: parent.clientWidth,
-        h: parent.clientHeight,
-        hole: avoid ? { x: avoid.offsetLeft, y: avoid.offsetTop, w: avoid.offsetWidth, h: avoid.offsetHeight } : null,
-      });
+    const measure = () => setSize({ w: parent.clientWidth, h: parent.clientHeight });
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(parent);
-    if (avoid) observer.observe(avoid);
     return () => observer.disconnect();
-  }, [avoid]);
+  }, []);
   const drawn = useMemo(() => {
     const strips = stripsOf(runways, lat, lon);
     if (!strips.length || !size || size.w < 2 * MARGIN || size.h < 2 * MARGIN) return null;
@@ -103,31 +92,14 @@ export function RunwaySketch({
           nb: [number, number] = [bx + ux * gap, by + uy * gap];
         return { ax, ay, bx, by, ux, uy, na, nb };
       });
-    // A runway or a number that reaches the pane's corner is drawn smaller
-    // about the box's centre until it clears it, so the pane never hides
-    // a runway end or its number.
-    let scale = fit;
-    const hole = size.hole;
-    const pad = MARGIN / 2;
-    const inHole = (x: number, y: number, rx = 0, ry = 0) =>
-      !!hole && x + rx > hole.x - pad && x - rx < hole.x + hole.w + pad && y + ry > hole.y - pad && y - ry < hole.y + hole.h + pad;
-    if (hole) {
-      const under = (k: number) =>
-        place(k).some((s) => {
-          for (let t = 0; t <= 1; t += 1 / 24) {
-            if (inHole(s.ax + (s.bx - s.ax) * t, s.ay + (s.by - s.ay) * t)) return true;
-          }
-          return [s.na, s.nb].some(([x, y]) => inHole(x, y, numberSize * 0.9, numberSize * 0.6));
-        });
-      while (under(scale) && scale > fit / 4) scale *= 0.95;
-    }
+    const scale = fit;
     const placed = place(scale).map((p, i) => {
       const s = strips[i]!;
       // Wide enough to read at this size, whatever the field's scale.
       const width = Math.max(4, Math.min(10, (s.width_ft / FT_PER_NM) * scale * 3));
       return { ...s, ...p, width };
     });
-    return { w, h, strips: placed, numbers: numbersOf(placed, numberSize, gap, w, h, inHole) };
+    return { w, h, strips: placed, numbers: numbersOf(placed, numberSize, gap, w, h) };
   }, [runways, lat, lon, size, numberSize]);
   return (
     <svg

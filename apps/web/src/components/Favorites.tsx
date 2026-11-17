@@ -90,7 +90,7 @@ export function SmallTile({
   label?: string; // said after its words (WCAG 2.5.3, Label in Name)
   onClick: () => void;
   testId?: string;
-  /** Room for a route's two idents (SavedStrip), not one's. */
+  /** Room for a route's two idents (FplStrip's Saved), not one's. */
   wide?: boolean;
 }) {
   return (

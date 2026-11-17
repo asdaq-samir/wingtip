@@ -77,7 +77,7 @@ export function insetVars(el: HTMLElement | null) {
 
 /** The console's close where it is a layer of the map's panel rather
  *  than a sheet of its own -- on a phone (MapPage) -- for its header to
- *  put it away with (ConsoleHeader): with no sheet round it, it has no
+ *  put it away with (ConsoleClose): with no sheet round it, it has no
  *  sheet's own close, title or description to use. */
 export const ConsoleInPanelContext = createContext<{ close: () => void } | null>(null);
 
@@ -92,7 +92,7 @@ export const PanelSize = createContext<{
 
 /** Whether the console is out, the app's rather than a page's: the two
  *  pages are drawn anew as a developer's Pilot and Developer in its
- *  title (ConsoleHeader) change one for the other, and the console stays
+ *  account menu (AccountMenu) change one for the other, and the console stays
  *  out across the change, the other page's in its place. Not kept past
  *  a reload. */
 export const useConsoleOpen = create<{ open: boolean; setOpen: (open: boolean) => void }>((set) => ({

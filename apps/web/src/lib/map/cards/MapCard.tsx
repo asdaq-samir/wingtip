@@ -38,7 +38,7 @@ export function MapCard({
    *  panel's do, at the pilot's ask for every card to read as Nearest's. */
   media?: ReactNode;
   /** What the pill shows of it on a phone, as an airport's card's head
-   *  drawn small (PillPicture): its name, one line, and its colour on the
+   *  drawn small (CardTitle): its name, one line, and its colour on the
    *  chart behind them, at the owner's ask (2026-10-29). */
   pill?: PillHead;
   /** At the head row's start, where every card has it: its Share

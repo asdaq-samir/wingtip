@@ -443,7 +443,6 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
     ...winds,
     ask,
     landingOf,
-    listOf,
     hasKind,
     pickOf,
     pick,

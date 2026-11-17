@@ -80,7 +80,6 @@ export interface KeptSlice {
   recentRoutes: RecentRoute[];
   addRecentRoute: (route: RecentRoute) => void;
   removeRecentRoute: (key: string) => void;
-  clearRecentRoutes: () => void;
   setMyAircraft: (aircraft: KeptAircraft | null) => void;
   addRecentAircraft: (aircraft: KeptAircraft) => void;
   /** One airplane taken off the Recents (a swipe), or all of them (Clear). */
@@ -124,7 +123,6 @@ export const keptSlice: Slice<KeptSlice> = (set) => ({
   addRecentRoute: (route) =>
     set((s) => ({ recentRoutes: [route, ...s.recentRoutes.filter((r) => recentRouteKey(r) !== recentRouteKey(route))].slice(0, RECENTS) })),
   removeRecentRoute: (key) => set((s) => ({ recentRoutes: s.recentRoutes.filter((r) => recentRouteKey(r) !== key) })),
-  clearRecentRoutes: () => set({ recentRoutes: [] }),
   setMyAircraft: (myAircraft) => set({ myAircraft }),
   addRecentAircraft: (aircraft) =>
     set((s) => ({

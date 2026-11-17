@@ -45,8 +45,6 @@ interface Props {
   bar?: ReactNode;
   /** What the panel is showing: the workspace, or a card open alone over it. */
   layer?: "tab" | "card";
-  /** A card from elsewhere open over the workspace. */
-  cardOver?: boolean;
   /** Pinned at the sheet's foot at every size: the route's figures -- in
    *  the pill its one row. */
   foot?: ReactNode;

@@ -27,7 +27,7 @@ const SHEET = `<svg xmlns="http://www.w3.org/2000/svg" width="1937" height="2970
 const card = (page: Page) => sideDrawer(page).getByTestId("place-card");
 
 /** No photos of the field, so its runways are the card's one picture
- *  (PhotoHead) -- the first page where it has photos (places.spec). */
+ *  (CardPictures) -- the first page where it has photos (places.spec). */
 async function noPhotos(page: Page) {
   await page.route(
     (url) => /\/api\/planner\/airport\/[^/]+\/photos$/.test(url.pathname),

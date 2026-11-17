@@ -22,21 +22,18 @@ const KINDS = [
  * writes no items of its own: the airplane's handbook's are the pilot's
  * to copy, so an empty list offers the phases' headings alone to write
  * under. The ticks are this run's, kept on the page until Start over.
- *
- * `kind` is where it opens, the normal list by default.
+ * It opens on the normal list.
  */
 export default function ChecklistPage({
   airplane,
   name,
-  kind: opening = "normal",
 }: {
   /** The airplane's aircraftKey (lib/aircraftChoice). */
   airplane: string;
   /** Its name, as the editor's label says it ("N12345", "C172"). */
   name: string;
-  kind?: ChecklistKind;
 }) {
-  const [kind, setKind] = useState<ChecklistKind>(opening);
+  const [kind, setKind] = useState<ChecklistKind>("normal");
   const text = useChecklists((s) => checklistText(s.value, airplane, kind));
   // Read by the shared engine, as the iPhone and Android read it.
   const checklist = useMemo(() => checklistOf(text), [text]);

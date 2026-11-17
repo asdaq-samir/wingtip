@@ -49,12 +49,12 @@ test("plan page: a route from an airport to itself is a local flight: the field'
 });
 
 test("plan page: every popup the map opens dismisses the same way", async ({ page }) => {
-  // They did not. The airport and checkpoint popups took Leaflet's
-  // defaults; the Class B card set autoClose and closeOnClick off, so
-  // on the same map the same gesture -- a tap on the chart -- dismissed
-  // one and left the other sitting there, over the markers underneath
-  // it, swallowing their clicks. `MapPopup` gives all of them one
-  // dismissal, and this is the test that says so.
+  // They did not: the airport and checkpoint popups took the map's
+  // defaults while the Class B card turned auto-close and close-on-click
+  // off, so on the same map the same gesture -- a tap on the chart --
+  // dismissed one and left the other sitting there, over the markers
+  // underneath it, swallowing their clicks. The map's openCard gives all
+  // of them one dismissal, and this is the test that says so.
   // Class B on from the start, from the route's ••• menu.
   await routeMenuSwitch(page, "class-b-toggle", true);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -106,8 +106,8 @@ test(
     const zoomOfTiles = () => chartZoom(page);
     const before = await zoomOfTiles();
     // A checkpoint drawn at this zoom: those without room for their dots
-    // wait for the map to come in (RouteMap's useSpaced), and those a
-    // higher mark covers are left out until then (MapLibre's collision).
+    // wait for the map to come in, and those a higher mark covers are
+    // left out until then (MapLibre's collision).
     await tapMark(page, "route-marks", /^\d+$/);
     await expect.poll(zoomOfTiles, { timeout: slow(10000) }).toBeGreaterThan(before);
     await expect.poll(async () => (await drawn(page, "route-line")).length).toBeGreaterThan(0);
@@ -157,7 +157,7 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   }
   await expect.poll(zoomOfTiles, { timeout: slow(10000) }).toBeLessThanOrEqual(5);
   // So far out the route is a few points across: its numbered dots give
-  // way to its two airports' marks (RouteMap's useSpaced, 2026-10-26),
+  // way to its two airports' marks (2026-10-26),
   // the landmarks still drawn.
   // The landmarks' dim dots, in their slate outline.
   await expect.poll(async () => (await drawn(page, "candidate-marks")).length).toBeGreaterThan(0);
@@ -202,7 +202,7 @@ test("my position is the location arrow among the map's buttons, on both pages, 
     await expect(alert).toHaveCount(0);
     await expect(arrow).toHaveAttribute("aria-pressed", "false");
   }
-  // The training page's as well: its map is the same (MapShell).
+  // The training page's as well: its map is the same (GlMapShell).
   await page.goto("/app/dev?dep=C81&dest=KDLH");
   await settle(page);
   await expect(page.locator("[data-map-controls]").getByTestId("my-position-button")).toBeVisible();

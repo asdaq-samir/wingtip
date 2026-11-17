@@ -102,7 +102,6 @@ export function useDepartureWindow() {
     hours,
     best,
     airplane,
-    forecastUntil: query.data?.forecast_until ?? null,
     selected,
     /** The hour picked, or none (the strip's ToggleGroup lets it go). */
     pick: (depart: string | null) => setPicked(depart),

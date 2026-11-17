@@ -639,7 +639,7 @@ test("a tap on an airport on the chart opens its card, a tap elsewhere puts it a
   await expect(card(page).getByTestId("fly-here")).toBeVisible();
 
   // A tap on the chart elsewhere puts it away, as in Maps, the map left at
-  // the zoom the pilot put it (MapShell); the location arrow brings the
+  // the zoom the pilot put it (GlMapShell); the location arrow brings the
   // whole route back, and an airport tapped again brings a card back.
   await tapTheChart(page);
   await expect(page).not.toHaveURL(/[?&]place=/);

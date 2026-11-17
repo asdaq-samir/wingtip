@@ -105,7 +105,7 @@ async function drag(page: Page, dx: number, dy: number) {
   await page.mouse.down();
   await page.mouse.move(from.x + dx, from.y + dy, { steps: 10 });
   await page.mouse.up();
-  // Until the map has stopped: Leaflet carries a drag on a little.
+  // Until the map has stopped: it carries a drag on a little.
   let was = "";
   await expect(async () => {
     const now = await mapAt(page);
@@ -364,7 +364,7 @@ test("with a route drawn, the location arrow goes only between the position and 
 
 /** The field's mark on the screen and not under the card: in the map's
  *  box is not enough, the card covers part of it. The chart's fields are
- *  drawn on a canvas (AirportCanvas), each said on its hook, its dot 12 points across. */
+ *  drawn on a canvas (AirportsGl), each said on its hook, its dot 12 points across. */
 async function fieldClearOfCard(page: Page, ident: string) {
   const viewport = page.viewportSize()!;
   await expect(async () => {

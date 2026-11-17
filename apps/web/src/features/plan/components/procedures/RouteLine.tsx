@@ -71,7 +71,6 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
             value={c.key}
             aria-label={words(c)}
             data-testid="route-line-chip"
-            data-key={c.key}
             className={cn(
               // The search's chips' pill (FilterChips), filled in the tint
               // while it is the way flown; its 44-point area round it.

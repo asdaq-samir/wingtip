@@ -182,10 +182,7 @@ describe("the overlay tiles' layers", () => {
 
 describe("a tapped tile feature", () => {
   it("is the volume the airspace card reads, its tab's words ForeFlight's", () => {
-    const shelf = volumeOfTile(
-      { properties: { class: "B", name: "CHICAGO CLASS B", floor_ft: 3000, ceiling_ft: 10000, number: 7 } },
-      { lat: 42, lon: -88 },
-    );
+    const shelf = volumeOfTile({ properties: { class: "B", name: "CHICAGO CLASS B", floor_ft: 3000, ceiling_ft: 10000, number: 7 } });
     expect(shelf).toMatchObject({
       id: "tile-7",
       airspace_class: "B",
@@ -196,13 +193,10 @@ describe("a tapped tile feature", () => {
     });
     expect(airspaceText(shelf)).toBe("B: 3000–10000");
     // The surface: 0 ft, which the tiles keep.
-    const surface = volumeOfTile({ properties: { class: "C", floor_ft: 0, ceiling_ft: 4800 } }, { lat: 0, lon: 0 });
+    const surface = volumeOfTile({ properties: { class: "C", floor_ft: 0, ceiling_ft: 4800 } });
     expect(airspaceText(surface)).toBe("C: SFC–4800");
     // A Class D under a Class B shelf: up to but not including (TNI).
-    const d = volumeOfTile(
-      { properties: { class: "D", floor_ft: 0, ceiling_ft: 2500, ceiling_excluded: true, hours_code: "NOTAM" } },
-      { lat: 0, lon: 0 },
-    );
+    const d = volumeOfTile({ properties: { class: "D", floor_ft: 0, ceiling_ft: 2500, ceiling_excluded: true, hours_code: "NOTAM" } });
     expect(airspaceText(d)).toBe("D: SFC–<2500");
     expect(d.hours_code).toBe("NOTAM");
   });

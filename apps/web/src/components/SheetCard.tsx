@@ -12,7 +12,7 @@ import { CardId, SheetCardHead, type CardFrame } from "../lib/sheetCards";
 
 /**
  * The app's one card (the card rule's 8; the owner, 2026-11-11: "Are we
- * using two different cards?" -- PanelCard is merged into it): a card over
+ * using two different cards?" -- the panel's card was merged into it): a card over
  * the map's sheet, opened from anywhere on the page: a control's
  * (ResponsivePopover's -- the Map settings, the approaches, an airplane's
  * form), a thing tapped on the chart (the map's openCard -- a checkpoint, a

@@ -29,11 +29,11 @@ function TileAirspace() {
   useGlProbe("airspace-lines", AIRSPACE_LINE_LAYERS, (f) => ({ id: `tile-${f.properties.number}`, cls: f.properties.class }));
   useGlProbe("airspace-edge-labels", ["airspace-labels"], (f) => ({
     id: `tile-${f.properties.number}`,
-    text: airspaceText(volumeOfTile(f, { lat: 0, lon: 0 })),
+    text: airspaceText(volumeOfTile(f)),
     angle: Number(f.properties.angle ?? 0),
   }));
-  useGlTap(AIRSPACE_LINE_LAYERS, TAP.line, TAP.rank.line, (feature, event) => {
-    const volume = volumeOfTile(feature, { lat: event.lngLat.lat, lon: event.lngLat.lng });
+  useGlTap(AIRSPACE_LINE_LAYERS, TAP.line, TAP.rank.line, (feature) => {
+    const volume = volumeOfTile(feature);
     openCard(<AirspaceCardBody key={volume.id} volume={volume} close={() => openCard(null)} />);
   });
   return null;

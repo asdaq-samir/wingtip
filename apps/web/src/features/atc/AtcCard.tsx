@@ -28,7 +28,7 @@ function ReadbackResult({ check }: { check: NonNullable<Card["readback"]>["check
   return (
     <ul className={cn("flex flex-col gap-0.5 text-caution-ink", TEXT.note)} role="status" data-testid="atc-readback">
       {items.map((i) => (
-        <li key={i.item + i.cleared} className="flex items-start gap-1.5" data-required={i.required || undefined}>
+        <li key={i.item + i.cleared} className="flex items-start gap-1.5">
           <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <span>
             {i.said !== null ? `${capital(i.item)}: ${i.said} said, ${i.cleared} given` : `${capital(i.item)} ${i.cleared} not read back`}
@@ -87,7 +87,7 @@ export default function AtcCard({
             const action = can(item);
             const done = card.set.includes(index);
             return (
-              <li key={`${item.kind}-${index}`} className="flex min-h-8 items-center gap-2" data-atc-item={item.kind}>
+              <li key={`${item.kind}-${index}`} className="flex min-h-8 items-center gap-2">
                 <span className={cn("min-w-0 flex-1 font-semibold tabular-nums", TEXT.detail)}>{itemWords(item)}</span>
                 {action &&
                   (done ? (

@@ -41,9 +41,6 @@ export interface WorkspacePieces {
    *  controls over it: an airport's card opened over a route,
    *  as a place in Maps takes the sheet from the directions. */
   alone?: boolean;
-  /** A card open over the place up (an airport's over the plan)
-   *  (MapPanel's `cardOver`). */
-  cardOver?: boolean;
   /** The sheet's first row, and at rest its pill: the planner's one search
    *  (OneSearchField), the developer's places (MapPanel's `bar`). */
   bar?: ReactNode;

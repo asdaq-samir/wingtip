@@ -96,7 +96,6 @@ function MapControlsDrawn() {
         GLASS,
       )}
       data-testid="mic-circle"
-      data-listening={pill || undefined}
     >
       {/* In flight the mic alone grows to 60 points (FLYING_BUTTON), not
           the pill's chips. */}
@@ -198,7 +197,6 @@ function MapControlsDrawn() {
         {(riding) => (
           <div
             data-map-controls=""
-            data-flying={flying || undefined}
             className={cn(
               // Only the buttons take a tap, not the room the pill's width
               // makes beside the group.

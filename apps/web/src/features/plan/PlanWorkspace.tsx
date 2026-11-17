@@ -439,9 +439,6 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         ),
         // A card over the page: its card alone, the page's head gone while it is open, at the pilot's ask.
         alone: cardOpen || briefShown,
-        // Any card over the page it was opened from, its bar its name with Back and the close, at the
-        // owner's asks ("the back button should get it back to fpl"; "replace tabs with a back close button").
-        cardOver: cardOpen || briefShown,
         toEdge: !!place,
         flying,
         // The one search, the first page's first row, and at rest its pill (MapPanel).
