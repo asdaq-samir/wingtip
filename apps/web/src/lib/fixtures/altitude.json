@@ -1,5 +1,5 @@
 {
-  "about": "The altitude rules (engine crate wingtip-altitude, #482 phase 3), held to the planner's own tests from before the move: 14 CFR 91.159 (every 500 ft within 3,000 ft of the ground), 91.179(b) and JO 7110.65 TBL 4-5-1, 91.155(a), the tight altitude under a shelf, Part 95's mountainous areas and the altitude flown where none is legal.",
+  "about": "The altitude rules (engine crate wingtip-altitude, #482 phase 3), held to the planner's own tests from before the move: 14 CFR 91.159 (every 500 ft within 3,000 ft of the ground), 91.179(b) and JO 7110.65 TBL 4-5-1, 91.155(a), the tight altitude under a ceiling, Part 95's mountainous areas and the altitude flown where none is legal.",
   "legal": [
     { "input": { "floor_ft": 2000, "magnetic_course_deg": 0, "rule_from_ft": 4500 }, "first": [2000, 2500, 3000, 3500, 4000, 4500, 5500, 7500] },
     { "input": { "floor_ft": 2000, "ceiling_ft": 2600, "magnetic_course_deg": 270, "rule_from_ft": 4500 }, "first": [2000, 2500] },
@@ -30,13 +30,11 @@
         },
         "where": "540 nm past KDLH"
       },
-      "brief": "Ceiling 14,000 ft: terrain 540 nm past KDLH needs 14,500",
-      "classB": false
+      "brief": "Ceiling 14,000 ft: terrain 540 nm past KDLH needs 14,500"
     },
     {
       "input": { "selection": { "special_use": [{ "name": "P-56", "type": "P" }], "segments": [] } },
-      "brief": "P-56 is prohibited airspace",
-      "classB": false
+      "brief": "P-56 is prohibited airspace"
     }
   ]
 }

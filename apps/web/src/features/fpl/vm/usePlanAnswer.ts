@@ -16,10 +16,15 @@ export function usePlanAnswer({ planned, depart, local, flightRules, ground, pla
   "use no memo"; // As usePlanWorkspace, whose part this is: left to its own memos.
   // The airplane the nav log is computed for (useAircraftPick).
   const { profiles, aircraft, aircraftValue, aircraftChoices, changeAircraft, pickTail } = useAircraftPick();
-  // FPL's Routes (useRouteWays), asked for before the plan.
-  const ways = useRouteWays({ planned, aircraft, depart, local, flightRules });
   const planParams: PlanParams = { ...planInputs, aircraft };
   const s = usePlan(planParams);
+  // The route as planned's highest cruise altitude, its legs': where it
+  // enters Class B there the Routes offer Avoid Class B (14 CFR
+  // 91.131(a)(1)); none before the plan.
+  const altitudeFt = s.legs.length ? Math.max(...s.legs.map((leg) => leg.altitude_ft)) : null;
+  // FPL's Routes (useRouteWays), asked for before the plan, and again at
+  // its altitude once it is planned.
+  const ways = useRouteWays({ planned, aircraft, depart, local, flightRules, altitudeFt });
   // The route's own time and miles: its nav log's once it is planned,
   // the grid's and the course's before (its weather strip's minutes).
   // The grid's minutes are its weather timing's, at a speed the planner
@@ -31,12 +36,13 @@ export function usePlanAnswer({ planned, depart, local, flightRules, ground, pla
   const gridOwnMin = airplane ? (ways.routeWays?.current_along?.bands ?? []).reduce((sum, b) => sum + b.min, 0) : 0;
   // And its minutes on the ground at the fields it lands at (`ground`,
   // else the owner's 30), as the ways count theirs: the nav log's totals
-  // are air time alone, and Your Route read shorter than a way through
+  // are air time alone, and the route as typed read shorter than a way through
   // the same stop (the audit of 2026-10-24).
   const own = {
     minutes: s.totals?.ete_min ?? (gridOwnMin || null),
     nm: s.totals?.distance_nm ?? s.course?.distance_nm ?? null,
     gal: s.totals?.fuel_gal ?? null,
+    altitudeFt,
     ground: (s.course?.stops ?? []).filter((stop) => stop.kind !== "fix").reduce((sum, stop) => sum + (ground[stop.ident] ?? 30), 0),
   };
   // The address's one-change settings (usePlanSetters), a Direct To worked out on the device offline.

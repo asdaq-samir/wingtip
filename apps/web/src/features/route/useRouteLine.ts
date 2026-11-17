@@ -16,6 +16,16 @@ const NO_CHIPS: RouteChip[] = [];
  *  (the chips win their place over the names since the UI audit's B6). */
 const WAY_CHIP_SHARES = [0.3, 0.45, 0.6, 0.75];
 
+/** A chip's way: the route with its fuel stops (`fuel`), Avoid Class B
+ *  (`class_b`, RouteOptions.class_b), else by its stops, as the planner
+ *  made the chip -- a way is the best of several kinds, its own `kind`
+ *  only the first of them. */
+function chipWay(routeWays: RouteOptions | undefined, chip: RouteChip) {
+  if (chip.key === "fuel") return routeWays?.own;
+  if (chip.key === "class_b") return routeWays?.class_b;
+  return routeWays?.options.find((o) => sameStops(o.stops, chip.stops));
+}
+
 /** A card of FPL's route line: a way, its time, miles and fuel, and what
  *  it meets. */
 interface WayCard {
@@ -71,8 +81,7 @@ export function wayCards({
 }): WayCard[] | null {
   const hazards = routeWays?.hazards ?? [];
   const scale = gridScale(routeWays, minutes);
-  const wayOf = (chip: RouteChip) =>
-    chip.key === "fuel" ? routeWays?.own : routeWays?.options.find((o) => sameStops(o.stops, chip.stops));
+  const wayOf = (chip: RouteChip) => chipWay(routeWays, chip);
   const timeOf = (chip: RouteChip): string | null => {
     if (chip.key === "none") return minutes === null ? null : duration(minutes + ground);
     const way = wayOf(chip);
@@ -129,6 +138,7 @@ export function useRouteLine({
   ownGround,
   ownNm,
   ownGal,
+  ownAltitudeFt,
   setStops,
   flightRules,
 }: {
@@ -150,6 +160,9 @@ export function useRouteLine({
   ownGround: number;
   ownNm: number | null;
   ownGal: number | null;
+  /** The route as typed's highest cruise altitude, kept while a way is
+   *  tried (Browsing.ownAltitudeFt). */
+  ownAltitudeFt: number | null;
   setStops: ReturnType<typeof useRouteEdits>["setStops"];
   flightRules: string;
 }) {
@@ -179,12 +192,27 @@ export function useRouteLine({
           ownGround,
           ownNm,
           ownGal,
+          ownAltitudeFt,
           ways: chips.map((c) => c.stops),
         });
       }
       setStops(chip.stops, chip.fuel, true);
     },
-    [browsing, chips, chosenKey, stops, fuelParam, ownWithFuel, ownMinutes, ownGround, ownNm, ownGal, setStops, setBrowsing],
+    [
+      browsing,
+      chips,
+      chosenKey,
+      stops,
+      fuelParam,
+      ownWithFuel,
+      ownMinutes,
+      ownGround,
+      ownNm,
+      ownGal,
+      ownAltitudeFt,
+      setStops,
+      setBrowsing,
+    ],
   );
   // The rules turned to IFR on a chip: the route as typed is the route
   // (the planner's ways are VFR's).
@@ -229,9 +257,7 @@ export function useRouteLine({
         }
         continue;
       }
-      // By its stops, as the planner made the chip: a way is the best of
-      // several kinds, its own `kind` only the first of them.
-      const way = chip.key === "fuel" ? routeWays.own : routeWays.options.find((o) => sameStops(o.stops, chip.stops));
+      const way = chipWay(routeWays, chip);
       if (way) lines.push({ key: chip.key, path: way.path as [number, number][], label: wayTime(way, scale) ?? "", name: chip.label });
     }
     // Each chip where it is whichever others are drawn, by its place among

@@ -66,10 +66,10 @@ pub fn legal_vfr(floor_ft: f64, ceiling_ft: Option<f64>, magnetic_course_deg: f6
 }
 
 /// Where no 500 ft step fits between the floor and the ceiling (a 1,800
-/// ft floor under Chicago's 1,900 ft Class B shelf), the highest whole
-/// hundred under the ceiling that clears the floor: legal below 3,000 ft
-/// above the ground, where 91.159's altitudes do not apply -- under the
-/// shelf, not at it, as its floor is Class B -- but tight, and said so.
+/// ft floor under a 1,900 ft cloud ceiling), the highest whole hundred
+/// under the ceiling that clears the floor: legal below 3,000 ft above
+/// the ground, where 91.159's altitudes do not apply -- under the
+/// ceiling, not at it -- but tight, and said so.
 /// None where nothing fits, there is no ceiling, or it is above where the
 /// rule begins.
 pub fn tight(floor_ft: f64, ceiling_ft: Option<f64>, rule_from_ft: Option<f64>) -> Option<f64> {

@@ -2911,7 +2911,7 @@ export interface EngineContract {
     answer: NightOnTheWayAnswer;
   };
   /**
-   * Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, whether Class B is what stops it, and all of it as one message.
+   * Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, and all of it as one message.
    */
   no_altitude: {
     input: NoAltitudeInput;
@@ -2960,7 +2960,7 @@ export interface EngineContract {
     answer: OurCallAnswer;
   };
   /**
-   * What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, into Class B (91.131), over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.
+   * What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.
    */
   own_altitude_caution: {
     input: OwnAltitudeCautionInput;
@@ -3373,7 +3373,7 @@ export interface EngineContract {
     answer: ReserveMinAnswer;
   };
   /**
-   * The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route and the most filed one with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.
+   * The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.
    */
   route_options: {
     input: RouteOptionsInput;
@@ -3492,7 +3492,7 @@ export interface EngineContract {
     answer: SameFieldAnswer;
   };
   /**
-   * The planner's altitude selection from the data it read: each leg's band (the floor up to the lowest of the Class B shelf, 91.155's distance under the forecast clouds and the service ceiling, none in prohibited airspace; under IFR the service ceiling and an airway's MAA alone), its legal altitudes by its own magnetic course, the route's, the lowest recommended, and icing where a legal altitude reaches the freezing level with moisture.
+   * The planner's altitude selection from the data it read: each leg's band (the floor up to the lower of 91.155's distance under the forecast clouds and the service ceiling, none in prohibited airspace, Class B no ceiling as the route is planned through it with its clearance (14 CFR 91.131(a)(1)); under IFR the service ceiling and an airway's MAA alone), its legal altitudes by its own magnetic course, the route's, the lowest recommended, and icing where a legal altitude reaches the freezing level with moisture.
    */
   select_cruise_altitude: {
     input: SelectCruiseAltitudeInput;
@@ -10157,10 +10157,6 @@ export interface NightOnTheWayInput {
 export interface NoAltitudeInput {
   selection: {};
   between?: string[] | null;
-  via?: {
-    ident?: string;
-    added_nm?: number;
-  } | null;
   where?: string | null;
 }
 export interface NoAltitudeAnswer {
@@ -10168,7 +10164,6 @@ export interface NoAltitudeAnswer {
   brief: string;
   reasons: string[];
   advice: string;
-  class_b: boolean;
   detail: string;
 }
 export interface NotamReadInput {
@@ -11993,6 +11988,14 @@ export interface RouteOptionsInput {
     idents: string[];
   } | null;
   /**
+   * The route as planned with the fixes that keep it out of the Class B it enters at its altitude (class_b_entered, class_b_detours; 14 CFR 91.131(a)(1)), its points between the ends, their idents and which are fields landed at: built as Avoid Class B. Null where it enters none or a leg that does has no way round.
+   */
+  class_b?: {
+    points: [number, number][];
+    idents: string[];
+    landed?: boolean[];
+  } | null;
+  /**
    * Night at either end (14 CFR 91.151's 45 minutes) as the host judged it; missing or null, the engine judges it over the flight's window (sun.rs).
    */
   night?: boolean | null;
@@ -12101,6 +12104,10 @@ export interface RouteOptionsAnswer {
   options: RouteOption[];
   own: RouteOption;
   filed: RouteOption | null;
+  /**
+   * Avoid Class B: the route as planned round the Class B it enters, with its fuel stops (route/options/class_b_way.rs); null where none was asked.
+   */
+  class_b: RouteOption | null;
   current_path: [number, number][];
   direct: number[];
   ends: number[];
@@ -12456,7 +12463,6 @@ export interface SelectCruiseAltitudeInput {
   fixes?: [number, number][] | null;
   breaks_nm?: number[];
   rules?: "vfr" | "ifr" | null;
-  class_b_cleared?: boolean | null;
   /**
    * vfr_floors' or ifr_floors' answer, a floor a leg.
    */
@@ -12466,7 +12472,6 @@ export interface SelectCruiseAltitudeInput {
     gnss_mea_ft?: number | null;
     maa_ft?: number | null;
   } | null;
-  airspace_ceilings_ft?: (number | null)[];
   /**
    * Null on a leg: no airplane, no ceiling of its own.
    */
@@ -12497,8 +12502,6 @@ export interface SelectCruiseAltitudeAnswer {
   eastbound: boolean;
   hemispheric_rule_from_ft: number;
   floor_ft: number;
-  airspace_ceiling_ft?: number | null;
-  class_b_cleared?: boolean;
   service_ceiling_ft: number | null;
   cloud_base_ft?: number | null;
   cloud_station?: string | null;
@@ -12521,7 +12524,6 @@ export interface AltitudeSegment {
   from_nm: number;
   to_nm: number;
   floor_ft: number;
-  airspace_ceiling_ft?: number | null;
   service_ceiling_ft: number | null;
   cloud_base_ft?: number | null;
   cloud_station?: string | null;

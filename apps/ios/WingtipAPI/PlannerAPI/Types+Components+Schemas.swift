@@ -2461,8 +2461,6 @@ extension Components {
             public var bandCeilingFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AltitudeBreakdown/candidates_ft`.
             public var candidatesFt: [Swift.Double]?
-            /// - Remark: Generated from `#/components/schemas/AltitudeBreakdown/class_b_cleared`.
-            public var classBCleared: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/AltitudeBreakdown/cloud_base_ft`.
             public var cloudBaseFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AltitudeBreakdown/cloud_ceiling_ft`.
@@ -2514,7 +2512,6 @@ extension Components {
             ///   - airspaceTransits:
             ///   - bandCeilingFt:
             ///   - candidatesFt:
-            ///   - classBCleared:
             ///   - cloudBaseFt:
             ///   - cloudCeilingFt:
             ///   - cloudClearanceKept:
@@ -2542,7 +2539,6 @@ extension Components {
                 airspaceTransits: [Components.Schemas.AirspaceTransit],
                 bandCeilingFt: Swift.Double? = nil,
                 candidatesFt: [Swift.Double]? = nil,
-                classBCleared: Swift.Bool? = nil,
                 cloudBaseFt: Swift.Double? = nil,
                 cloudCeilingFt: Swift.Double? = nil,
                 cloudClearanceKept: Swift.Bool? = nil,
@@ -2570,7 +2566,6 @@ extension Components {
                 self.airspaceTransits = airspaceTransits
                 self.bandCeilingFt = bandCeilingFt
                 self.candidatesFt = candidatesFt
-                self.classBCleared = classBCleared
                 self.cloudBaseFt = cloudBaseFt
                 self.cloudCeilingFt = cloudCeilingFt
                 self.cloudClearanceKept = cloudClearanceKept
@@ -2599,7 +2594,6 @@ extension Components {
                 case airspaceTransits = "airspace_transits"
                 case bandCeilingFt = "band_ceiling_ft"
                 case candidatesFt = "candidates_ft"
-                case classBCleared = "class_b_cleared"
                 case cloudBaseFt = "cloud_base_ft"
                 case cloudCeilingFt = "cloud_ceiling_ft"
                 case cloudClearanceKept = "cloud_clearance_kept"
@@ -2784,14 +2778,12 @@ extension Components {
                 case unflyableLegs = "unflyable_legs"
             }
         }
-        /// One leg's own band: its floor, the shelf and the clouds over it
-        /// alone, and the legal cruising altitudes between -- what lets a plan
-        /// step down under a Class B shelf and climb again past it.
+        /// One leg's own band: its floor, the clouds and the service ceiling
+        /// over it alone, and the legal cruising altitudes between -- what lets a
+        /// plan step over high ground or under low cloud leg by leg.
         ///
         /// - Remark: Generated from `#/components/schemas/AltitudeSegment`.
         public struct AltitudeSegment: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/AltitudeSegment/airspace_ceiling_ft`.
-            public var airspaceCeilingFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AltitudeSegment/airway`.
             public var airway: Components.Schemas.AirwayAltitudes?
             /// - Remark: Generated from `#/components/schemas/AltitudeSegment/band_ceiling_ft`.
@@ -2837,7 +2829,6 @@ extension Components {
             /// Creates a new `AltitudeSegment`.
             ///
             /// - Parameters:
-            ///   - airspaceCeilingFt:
             ///   - airway:
             ///   - bandCeilingFt:
             ///   - candidatesFt:
@@ -2860,7 +2851,6 @@ extension Components {
             ///   - tight:
             ///   - toNm:
             public init(
-                airspaceCeilingFt: Swift.Double? = nil,
                 airway: Components.Schemas.AirwayAltitudes? = nil,
                 bandCeilingFt: Swift.Double? = nil,
                 candidatesFt: [Swift.Double],
@@ -2883,7 +2873,6 @@ extension Components {
                 tight: Swift.Bool? = nil,
                 toNm: Swift.Double
             ) {
-                self.airspaceCeilingFt = airspaceCeilingFt
                 self.airway = airway
                 self.bandCeilingFt = bandCeilingFt
                 self.candidatesFt = candidatesFt
@@ -2907,7 +2896,6 @@ extension Components {
                 self.toNm = toNm
             }
             public enum CodingKeys: String, CodingKey {
-                case airspaceCeilingFt = "airspace_ceiling_ft"
                 case airway
                 case bandCeilingFt = "band_ceiling_ft"
                 case candidatesFt = "candidates_ft"
@@ -6326,8 +6314,6 @@ extension Components {
             public var altitudeStarts: Swift.String?
             /// - Remark: Generated from `#/components/schemas/DepartureWindowAsk/checkpoints`.
             public var checkpoints: Swift.Bool?
-            /// - Remark: Generated from `#/components/schemas/DepartureWindowAsk/class_b_clearance`.
-            public var classBClearance: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/DepartureWindowAsk/climb_fuel_burn_gph`.
             public var climbFuelBurnGph: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/DepartureWindowAsk/climb_rate_fpm`.
@@ -6402,7 +6388,6 @@ extension Components {
             ///   - altitudes:
             ///   - altitudeStarts:
             ///   - checkpoints:
-            ///   - classBClearance:
             ///   - climbFuelBurnGph:
             ///   - climbRateFpm:
             ///   - climbTasKt:
@@ -6444,7 +6429,6 @@ extension Components {
                 altitudes: Swift.String? = nil,
                 altitudeStarts: Swift.String? = nil,
                 checkpoints: Swift.Bool? = nil,
-                classBClearance: Swift.Bool? = nil,
                 climbFuelBurnGph: Swift.Double? = nil,
                 climbRateFpm: Swift.Double? = nil,
                 climbTasKt: Swift.Double? = nil,
@@ -6486,7 +6470,6 @@ extension Components {
                 self.altitudes = altitudes
                 self.altitudeStarts = altitudeStarts
                 self.checkpoints = checkpoints
-                self.classBClearance = classBClearance
                 self.climbFuelBurnGph = climbFuelBurnGph
                 self.climbRateFpm = climbRateFpm
                 self.climbTasKt = climbTasKt
@@ -6529,7 +6512,6 @@ extension Components {
                 case altitudes
                 case altitudeStarts = "altitude_starts"
                 case checkpoints
-                case classBClearance = "class_b_clearance"
                 case climbFuelBurnGph = "climb_fuel_burn_gph"
                 case climbRateFpm = "climb_rate_fpm"
                 case climbTasKt = "climb_tas_kt"
@@ -6885,9 +6867,9 @@ extension Components {
                 case score
             }
         }
-        /// A named fix that keeps a route out of the Class B airspace it is
-        /// stopped by (wingtip.airspace.detour_waypoint), and where it goes in the
-        /// stops: before the stop at `stop_index`, so on the hop it is for.
+        /// A way round the high ground that leaves a route no altitude
+        /// (wingtip.terrain_detour), and where it goes in the stops: before the
+        /// stop at `stop_index`, so on the hop it is for.
         ///
         /// - Remark: Generated from `#/components/schemas/Detour`.
         public struct Detour: Codable, Hashable, Sendable {
@@ -10139,8 +10121,6 @@ extension Components {
             public var altitudeStarts: Swift.String?
             /// - Remark: Generated from `#/components/schemas/GoNoGoAsk/checkpoints`.
             public var checkpoints: Swift.Bool?
-            /// - Remark: Generated from `#/components/schemas/GoNoGoAsk/class_b_clearance`.
-            public var classBClearance: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/GoNoGoAsk/climb_fuel_burn_gph`.
             public var climbFuelBurnGph: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/GoNoGoAsk/climb_rate_fpm`.
@@ -10210,7 +10190,6 @@ extension Components {
             ///   - altitudes:
             ///   - altitudeStarts:
             ///   - checkpoints:
-            ///   - classBClearance:
             ///   - climbFuelBurnGph:
             ///   - climbRateFpm:
             ///   - climbTasKt:
@@ -10249,7 +10228,6 @@ extension Components {
                 altitudes: Swift.String? = nil,
                 altitudeStarts: Swift.String? = nil,
                 checkpoints: Swift.Bool? = nil,
-                classBClearance: Swift.Bool? = nil,
                 climbFuelBurnGph: Swift.Double? = nil,
                 climbRateFpm: Swift.Double? = nil,
                 climbTasKt: Swift.Double? = nil,
@@ -10288,7 +10266,6 @@ extension Components {
                 self.altitudes = altitudes
                 self.altitudeStarts = altitudeStarts
                 self.checkpoints = checkpoints
-                self.classBClearance = classBClearance
                 self.climbFuelBurnGph = climbFuelBurnGph
                 self.climbRateFpm = climbRateFpm
                 self.climbTasKt = climbTasKt
@@ -10328,7 +10305,6 @@ extension Components {
                 case altitudes
                 case altitudeStarts = "altitude_starts"
                 case checkpoints
-                case classBClearance = "class_b_clearance"
                 case climbFuelBurnGph = "climb_fuel_burn_gph"
                 case climbRateFpm = "climb_rate_fpm"
                 case climbTasKt = "climb_tas_kt"
@@ -12913,8 +12889,8 @@ extension Components {
             public var altitudeSelection: Components.Schemas.AltitudeBreakdown
             /// - Remark: Generated from `#/components/schemas/NavLogAltitude/cautions`.
             public var cautions: [Components.Schemas.AltitudeCaution]?
-            /// - Remark: Generated from `#/components/schemas/NavLogAltitude/class_b_detours`.
-            public var classBDetours: [Components.Schemas.Detour]?
+            /// - Remark: Generated from `#/components/schemas/NavLogAltitude/detours`.
+            public var detours: [Components.Schemas.Detour]?
             /// - Remark: Generated from `#/components/schemas/NavLogAltitude/flown`.
             public var flown: Swift.String?
             /// - Remark: Generated from `#/components/schemas/NavLogAltitude/options`.
@@ -12929,7 +12905,7 @@ extension Components {
             ///   - altitudeFt:
             ///   - altitudeSelection:
             ///   - cautions:
-            ///   - classBDetours:
+            ///   - detours:
             ///   - flown:
             ///   - options:
             ///   - type:
@@ -12939,7 +12915,7 @@ extension Components {
                 altitudeFt: Swift.Double? = nil,
                 altitudeSelection: Components.Schemas.AltitudeBreakdown,
                 cautions: [Components.Schemas.AltitudeCaution]? = nil,
-                classBDetours: [Components.Schemas.Detour]? = nil,
+                detours: [Components.Schemas.Detour]? = nil,
                 flown: Swift.String? = nil,
                 options: [Components.Schemas.AltitudeOption]? = nil,
                 type: Swift.String? = nil
@@ -12949,7 +12925,7 @@ extension Components {
                 self.altitudeFt = altitudeFt
                 self.altitudeSelection = altitudeSelection
                 self.cautions = cautions
-                self.classBDetours = classBDetours
+                self.detours = detours
                 self.flown = flown
                 self.options = options
                 self.type = type
@@ -12960,7 +12936,7 @@ extension Components {
                 case altitudeFt = "altitude_ft"
                 case altitudeSelection = "altitude_selection"
                 case cautions
-                case classBDetours = "class_b_detours"
+                case detours
                 case flown
                 case options
                 case type
@@ -15901,14 +15877,14 @@ extension Components {
             public var chartRevision: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/Plan/chart_tiles_base`.
             public var chartTilesBase: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/Plan/class_b_detours`.
-            public var classBDetours: [Components.Schemas.Detour]?
             /// - Remark: Generated from `#/components/schemas/Plan/course_line`.
             public var courseLine: [[Swift.Double]]
             /// - Remark: Generated from `#/components/schemas/Plan/departure`.
             public var departure: Components.Schemas.AirportEnd
             /// - Remark: Generated from `#/components/schemas/Plan/destination`.
             public var destination: Components.Schemas.AirportEnd
+            /// - Remark: Generated from `#/components/schemas/Plan/detours`.
+            public var detours: [Components.Schemas.Detour]?
             /// - Remark: Generated from `#/components/schemas/Plan/distance_nm`.
             public var distanceNm: Swift.Double
             /// - Remark: Generated from `#/components/schemas/Plan/legs`.
@@ -15938,10 +15914,10 @@ extension Components {
             ///   - chartLayers:
             ///   - chartRevision:
             ///   - chartTilesBase:
-            ///   - classBDetours:
             ///   - courseLine:
             ///   - departure:
             ///   - destination:
+            ///   - detours:
             ///   - distanceNm:
             ///   - legs:
             ///   - maxZoom:
@@ -15962,10 +15938,10 @@ extension Components {
                 chartLayers: [Components.Schemas.ChartLayer],
                 chartRevision: Swift.Int? = nil,
                 chartTilesBase: Swift.String? = nil,
-                classBDetours: [Components.Schemas.Detour]? = nil,
                 courseLine: [[Swift.Double]],
                 departure: Components.Schemas.AirportEnd,
                 destination: Components.Schemas.AirportEnd,
+                detours: [Components.Schemas.Detour]? = nil,
                 distanceNm: Swift.Double,
                 legs: [Components.Schemas.Leg],
                 maxZoom: Swift.Int,
@@ -15986,10 +15962,10 @@ extension Components {
                 self.chartLayers = chartLayers
                 self.chartRevision = chartRevision
                 self.chartTilesBase = chartTilesBase
-                self.classBDetours = classBDetours
                 self.courseLine = courseLine
                 self.departure = departure
                 self.destination = destination
+                self.detours = detours
                 self.distanceNm = distanceNm
                 self.legs = legs
                 self.maxZoom = maxZoom
@@ -16011,10 +15987,10 @@ extension Components {
                 case chartLayers = "chart_layers"
                 case chartRevision = "chart_revision"
                 case chartTilesBase = "chart_tiles_base"
-                case classBDetours = "class_b_detours"
                 case courseLine = "course_line"
                 case departure
                 case destination
+                case detours
                 case distanceNm = "distance_nm"
                 case legs
                 case maxZoom = "max_zoom"
@@ -18213,6 +18189,8 @@ extension Components {
         public struct RouteOptions: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/RouteOptions/chips`.
             public var chips: [Components.Schemas.RouteChip]?
+            /// - Remark: Generated from `#/components/schemas/RouteOptions/class_b`.
+            public var classB: Components.Schemas.RouteOption?
             /// - Remark: Generated from `#/components/schemas/RouteOptions/current`.
             public var current: [Swift.Int]?
             /// - Remark: Generated from `#/components/schemas/RouteOptions/current_along`.
@@ -18237,6 +18215,7 @@ extension Components {
             ///
             /// - Parameters:
             ///   - chips:
+            ///   - classB:
             ///   - current:
             ///   - currentAlong:
             ///   - currentMarginal:
@@ -18249,6 +18228,7 @@ extension Components {
             ///   - unchecked:
             public init(
                 chips: [Components.Schemas.RouteChip]? = nil,
+                classB: Components.Schemas.RouteOption? = nil,
                 current: [Swift.Int]? = nil,
                 currentAlong: Components.Schemas.RouteAlong? = nil,
                 currentMarginal: [Swift.Int]? = nil,
@@ -18261,6 +18241,7 @@ extension Components {
                 unchecked: [Swift.String]
             ) {
                 self.chips = chips
+                self.classB = classB
                 self.current = current
                 self.currentAlong = currentAlong
                 self.currentMarginal = currentMarginal
@@ -18274,6 +18255,7 @@ extension Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case chips
+                case classB = "class_b"
                 case current
                 case currentAlong = "current_along"
                 case currentMarginal = "current_marginal"

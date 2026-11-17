@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_altitude::altitude::calls::call",
-  "description": "The planner's altitude selection from the data it read: each leg's band (the floor up to the lowest of the Class B shelf, 91.155's distance under the forecast clouds and the service ceiling, none in prohibited airspace; under IFR the service ceiling and an airway's MAA alone), its legal altitudes by its own magnetic course, the route's, the lowest recommended, and icing where a legal altitude reaches the freezing level with moisture.",
+  "description": "The planner's altitude selection from the data it read: each leg's band (the floor up to the lower of 91.155's distance under the forecast clouds and the service ceiling, none in prohibited airspace, Class B no ceiling as the route is planned through it with its clearance (14 CFR 91.131(a)(1)); under IFR the service ceiling and an airway's MAA alone), its legal altitudes by its own magnetic course, the route's, the lowest recommended, and icing where a legal altitude reaches the freezing level with moisture.",
   "type": "object",
   "properties": {
     "input": {
@@ -53,12 +53,6 @@
             null
           ]
         },
-        "class_b_cleared": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
         "floors": {
           "type": "array",
           "items": {
@@ -90,15 +84,6 @@
                 "null"
               ]
             }
-          }
-        },
-        "airspace_ceilings_ft": {
-          "type": "array",
-          "items": {
-            "type": [
-              "number",
-              "null"
-            ]
           }
         },
         "service_ceilings_ft": {
@@ -239,15 +224,6 @@
         },
         "floor_ft": {
           "type": "number"
-        },
-        "airspace_ceiling_ft": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "class_b_cleared": {
-          "type": "boolean"
         },
         "service_ceiling_ft": {
           "type": [

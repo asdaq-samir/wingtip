@@ -90,7 +90,6 @@ def join_selections(selections: list[dict], offsets: list[float]) -> dict:
         "candidates_ft": candidates,
         "hemispheric_rule_from_ft": least("hemispheric_rule_from_ft"),
         "floor_ft": max(sel["floor_ft"] for sel in selections),
-        "airspace_ceiling_ft": least("airspace_ceiling_ft"),
         "service_ceiling_ft": least("service_ceiling_ft"),
         "cloud_base_ft": cloud_base_ft,
         "cloud_station": cloud_station,

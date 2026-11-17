@@ -94,6 +94,15 @@ pub struct Fix {
     pub mag_var: Option<f64>,
 }
 
+/// The route round the Class B, as the planner puts it together from
+/// class_b_entered and class_b_detours (classb.rs): its points between the
+/// ends, their idents, and which are fields landed at.
+pub struct ClassBRoute {
+    pub points: Vec<Point>,
+    pub idents: Vec<String>,
+    pub landed: Vec<bool>,
+}
+
 pub struct Ask {
     pub dep: End,
     pub dest: End,
@@ -106,6 +115,11 @@ pub struct Ask {
     pub current_idents: Vec<String>,
     pub current_landed: Vec<bool>,
     pub filed: Option<(Vec<Point>, Vec<String>)>,
+    /// The route as planned with the fixes that keep it out of the Class
+    /// B it enters at its altitude, which of its points are landed at, for
+    /// Avoid Class B (class_b_way.rs); None where it enters none, or a leg
+    /// that does has no way round.
+    pub class_b: Option<ClassBRoute>,
     /// Night at either end, where the host has already judged it; None,
     /// the engine judges it (wingtip_flight::sun) over the window.
     pub night: Option<bool>,

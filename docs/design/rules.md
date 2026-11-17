@@ -491,7 +491,12 @@ off by default (the owner, 2026-11-13).
    drawn, red a stop and amber a caution, its figure in the ground's
    colour so it reads in either theme; a plain count (an airport's
    charts, an airplane's flights) is said in its tab's name, not drawn
-   as a badge (the owner's list, 2026-11-17). The Routes are one row of chips, each a way's name and time, the
+   as a badge (the owner's list, 2026-11-17). The Routes are one row of chips, each a way's name and time --
+   As typed, With Fuel Stops (the route as typed with the fuel stops it
+   needs, each landing with 14 CFR 91.151's reserve, offered only where
+   one is put in; the owner, 2026-11-17: "Suggested routes should also
+   have 'add fuel stops'"), Avoid Weather, Fastest, Over Land, Avoid
+   Class B, Most Filed -- the
    one flown filled, a swipe for more, every unpicked one the same
    neutral look: a way that meets something says so by its amber
    warning mark alone, its name in the text's colour (the owner's list,
@@ -708,7 +713,7 @@ gone on every platform.
 | Advisor | shadcn Item rows (`altitude/AltitudeAdvisor`) | | |
 | Tests | `altitude/altitude.test.ts`, `navlog/profile.test.ts`; `e2e/plans.spec.ts`, `e2e/plans-altitude.spec.ts`, `e2e/plan-cards-heads.spec.ts` | | |
 
-Class B has no setting (the owner, 2026-11-17: "We don't need the Class B whether setting, keep it true by default in the app"): a route is always planned through it with the clearance it takes (14 CFR 91.131), the Profile saying "Through <name>: clearance needed" with no button, and the address has no `class_b` or `class_b_via` (an old link carrying them ignores them).
+Class B has no setting (the owner, 2026-11-17: "We don't need the Class B whether setting, keep it true by default in the app"): a route is always planned through it with the clearance it takes (14 CFR 91.131), the Profile saying "Through <name>: clearance needed" with no button, and the address has no `class_b` or `class_b_via` (an old link carrying them ignores them). The planner has no switch for it either (no `class_b_clearance`; Class B is no ceiling in the engine's band), and a saved flight's picks take no `class_b`. The way round it is one of the Routes, Avoid Class B (the owner: "You can still avoid class B in the suggested routes"): offered once the route is planned and only where it enters Class B at its highest cruise altitude, the best fix round each leg that does put in (the engine's `class_b_entered` and `class_b_detours`, a mile clear of the edge, a VFR waypoint first, no more than 40 nm further), its time, miles and fuel on its chip like the others.
 
 ## 7. What rides the sheet, and the map's small print (the owner, 2026-11-11)
 

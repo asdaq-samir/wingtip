@@ -4,15 +4,16 @@ import { pickAirplane } from "./startState";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
-test("plan page: Class B is always planned through, said with its clearance, with no way to avoid it", async ({ page }) => {
+test("plan page: Class B is always planned through, said with its clearance, with no switch", async ({ page }) => {
   // The owner (2026-11-17): no Class B setting, planned through it with the
-  // clearance (14 CFR 91.131). The planner's own plan, with a Class B on
-  // the side view at its altitude.
-  let asked = "";
+  // clearance (14 CFR 91.131); the planner has no switch to send, and the
+  // way round it is one of the Routes (route-line.spec). The planner's own
+  // plan, with a Class B on the side view at its altitude.
+  let asked: string | null = "unasked";
   await page.route(
     (url) => url.pathname.endsWith("/planner/navlog"),
     async (route) => {
-      asked = new URL(route.request().url()).searchParams.get("class_b_clearance") ?? "";
+      asked = new URL(route.request().url()).searchParams.get("class_b_clearance");
       await route.continue();
     },
   );
@@ -32,7 +33,7 @@ test("plan page: Class B is always planned through, said with its clearance, wit
   await settle(page);
   await controlsInSight(page);
   await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/feet|FL/, { timeout: slow(60000) });
-  expect(asked).toBe("true");
+  expect(asked).toBeNull();
   await openProfile(page);
   await expect(page.getByTestId("class-b-accepted")).toContainText("Through Chicago Class B: clearance needed");
   await expect(page.getByTestId("avoid-class-b")).toHaveCount(0);

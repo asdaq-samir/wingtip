@@ -133,8 +133,7 @@ pub struct Caution {
 /// route's Custom one, or a waypoint's own -- against the band the
 /// planner worked out for each of its legs: under the terrain and
 /// obstacles' floor (14 CFR 91.119, `floor`), off the hemispheric rule
-/// more than 3,000 ft above the ground (91.159(a)), into Class B without
-/// the clearance planned for (91.131), over the airplane's service
+/// more than 3,000 ft above the ground (91.159(a)), over the airplane's service
 /// ceiling, inside the cloud clearance under a forecast base (91.155), in
 /// Class A (71.33(a), 91.135) or past 91.211(a)'s oxygen heights. Under
 /// IFR (the selection's `rules`): under the minimum IFR altitude
@@ -226,9 +225,6 @@ pub fn own_altitude(selection: &Value, legs: &[Value], profile: Option<&Value>) 
                         if east { "odd" } else { "even" }
                     ));
                 }
-            }
-            if let Some(shelf) = num(segment, "airspace_ceiling_ft").filter(|s| alt >= *s) {
-                found.push(format!("Into Class B from {} ft: it needs a clearance (14 CFR 91.131)", grouped(shelf.max(0.0))));
             }
             if let Some(c) = ceiling.filter(|c| alt > *c) {
                 found.push(format!("Over the aircraft's {} ft service ceiling", grouped(c)));

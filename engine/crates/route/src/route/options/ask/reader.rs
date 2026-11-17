@@ -216,6 +216,14 @@ impl Reader<'_> {
             None | Some(Value::Null) => None,
             Some(f) => Some((self.points(f, "points")?.unwrap_or_default(), self.strings(f, "idents")?)),
         };
+        let class_b = match v.get("class_b") {
+            None | Some(Value::Null) => None,
+            Some(c) => Some(ClassBRoute {
+                points: self.points(c, "points")?.unwrap_or_default(),
+                idents: self.strings(c, "idents")?,
+                landed: self.opt_list(c, "landed")?.unwrap_or(&[]).iter().map(|b| matches!(b, Value::Bool(true))).collect(),
+            }),
+        };
         let numbers = |key: &str| -> Result<Option<Vec<f64>>, String> {
             self.opt_list(v, key)?.map(|items| items.iter().map(|x| Ok(x.as_f64().unwrap_or(0.0))).collect()).transpose()
         };
@@ -256,6 +264,7 @@ impl Reader<'_> {
             current_idents: self.strings(v, "current_idents")?,
             current_landed: self.opt_list(v, "current_landed")?.unwrap_or(&[]).iter().map(|b| matches!(b, Value::Bool(true))).collect(),
             filed,
+            class_b,
             night: match v.get("night") {
                 None | Some(Value::Null) => None,
                 Some(Value::Bool(b)) => Some(*b),

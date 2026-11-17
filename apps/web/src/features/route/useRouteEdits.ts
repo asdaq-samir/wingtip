@@ -76,7 +76,7 @@ export function useRouteEdits({
         // the same change, so the planner is not asked once with them.
         // Not while the Routes' cards are browsed (`keepLists`): a way in
         // sight that skips a stop took the stop's approach and ground time
-        // with it, and Your Route came back without them.
+        // with it, and As typed came back without them.
         const lists = fieldListsOf(prev);
         const kept = keepLists ? lists : prunedFieldLists(lists, { dep, stops, dest }, procedureKind);
         // A route changed by hand is the route: a Direct to's own is kept,

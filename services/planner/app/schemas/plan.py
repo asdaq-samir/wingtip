@@ -257,9 +257,10 @@ class Plan(BaseModel):
     altitude_choice: AltitudeChoice | None = None
     #: As the nav log stream's (NavLogAltitude.cautions).
     altitude_cautions: list[AltitudeCaution] = []
-    #: With the Class B clearance, the waypoints that keep the route out
-    #: of the Class B it enters (Detour, best first): "Avoid Class B".
-    class_b_detours: list["Detour"] = []
+    #: Flown at no legal altitude (altitude_anyway), the way round the
+    #: high ground that stops each hop, for the pilot to take or not
+    #: (Detour); none for a pilot's own altitude.
+    detours: list["Detour"] = []
     #: The route flown at each altitude any leg may fly (AltitudeFigure),
     #: lowest first: the altitude wheel's figures.
     altitude_figures: list[AltitudeFigure] = []
@@ -274,9 +275,9 @@ class Plan(BaseModel):
 
 
 class Detour(BaseModel):
-    """A named fix that keeps a route out of the Class B airspace it is
-    stopped by (wingtip.airspace.detour_waypoint), and where it goes in the
-    stops: before the stop at `stop_index`, so on the hop it is for."""
+    """A way round the high ground that leaves a route no altitude
+    (wingtip.terrain_detour), and where it goes in the stops: before the
+    stop at `stop_index`, so on the hop it is for."""
 
     ident: str
     #: What it is to a pilot: "VFR waypoint", "GPS waypoint" (wingtip.fixes).
@@ -286,9 +287,7 @@ class Detour(BaseModel):
     stop_index: int
     #: Where it is: "in Downers Grove" (wingtip.places).
     description: str | None = None
-    #: A way round high ground the airplane cannot climb over
-    #: (wingtip.terrain_detour): every point to fly by, in order, the first of
-    #: them `ident`; empty for a Class B's one waypoint.
+    #: Every point to fly by, in order, the first of them `ident`.
     via: list[str] = []
 
 

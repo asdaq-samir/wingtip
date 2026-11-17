@@ -28,9 +28,9 @@ interface Props {
  * How the cruise altitude was chosen, step by step, in the planner's
  * own order (`wingtip.altitude.select_cruise_altitude` and
  * `wingtip.navlog.altitude_profiles`): the floor from terrain and
- * obstacles, the ceiling from airspace and the airplane -- leg by
- * leg, since a Class B shelf caps only the legs
- * under it -- the hemispheric rule that gives the legal altitudes in
+ * obstacles, the ceiling from the clouds and the airplane -- leg by
+ * leg, since a cloud base caps only the legs under it -- the
+ * hemispheric rule that gives the legal altitudes in
  * between, the four plans made of them and the one being flown, the
  * airplane's performance in the day's air they were flown at, and
  * the weather that was checked but does not move the numbers. Every

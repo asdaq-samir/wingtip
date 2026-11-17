@@ -12,7 +12,6 @@ ROCKIES = {
     "course_magnetic_deg": 80.0,
     "eastbound": True,
     "hemispheric_rule_from_ft": 9000.0,
-    "airspace_ceiling_ft": None,
     "cloud_ceiling_ft": None,
     "candidates_ft": [],
 }

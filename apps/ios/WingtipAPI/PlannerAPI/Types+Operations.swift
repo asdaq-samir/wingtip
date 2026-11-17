@@ -13109,8 +13109,6 @@ public enum Operations {
                 public var glideRatio: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/local-flight/GET/query/depart`.
                 public var depart: Swift.String?
-                /// - Remark: Generated from `#/paths/api/local-flight/GET/query/class_b_clearance`.
-                public var classBClearance: Swift.Bool?
                 /// - Remark: Generated from `#/paths/api/local-flight/GET/query/rules`.
                 public var rules: Swift.String?
                 /// - Remark: Generated from `#/paths/api/local-flight/GET/query/alternate`.
@@ -13159,7 +13157,6 @@ public enum Operations {
                 ///   - taxiFuelGal:
                 ///   - glideRatio:
                 ///   - depart:
-                ///   - classBClearance:
                 ///   - rules:
                 ///   - alternate:
                 ///   - altitudes:
@@ -13194,7 +13191,6 @@ public enum Operations {
                     taxiFuelGal: Swift.Double? = nil,
                     glideRatio: Swift.Double? = nil,
                     depart: Swift.String? = nil,
-                    classBClearance: Swift.Bool? = nil,
                     rules: Swift.String? = nil,
                     alternate: Swift.String? = nil,
                     altitudes: Swift.String? = nil,
@@ -13229,7 +13225,6 @@ public enum Operations {
                     self.taxiFuelGal = taxiFuelGal
                     self.glideRatio = glideRatio
                     self.depart = depart
-                    self.classBClearance = classBClearance
                     self.rules = rules
                     self.alternate = alternate
                     self.altitudes = altitudes
@@ -14170,8 +14165,6 @@ public enum Operations {
                 public var glideRatio: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/navlog/GET/query/depart`.
                 public var depart: Swift.String?
-                /// - Remark: Generated from `#/paths/api/navlog/GET/query/class_b_clearance`.
-                public var classBClearance: Swift.Bool?
                 /// - Remark: Generated from `#/paths/api/navlog/GET/query/rules`.
                 public var rules: Swift.String?
                 /// - Remark: Generated from `#/paths/api/navlog/GET/query/alternate`.
@@ -14220,7 +14213,6 @@ public enum Operations {
                 ///   - taxiFuelGal:
                 ///   - glideRatio:
                 ///   - depart:
-                ///   - classBClearance:
                 ///   - rules:
                 ///   - alternate:
                 ///   - altitudes:
@@ -14255,7 +14247,6 @@ public enum Operations {
                     taxiFuelGal: Swift.Double? = nil,
                     glideRatio: Swift.Double? = nil,
                     depart: Swift.String? = nil,
-                    classBClearance: Swift.Bool? = nil,
                     rules: Swift.String? = nil,
                     alternate: Swift.String? = nil,
                     altitudes: Swift.String? = nil,
@@ -14290,7 +14281,6 @@ public enum Operations {
                     self.taxiFuelGal = taxiFuelGal
                     self.glideRatio = glideRatio
                     self.depart = depart
-                    self.classBClearance = classBClearance
                     self.rules = rules
                     self.alternate = alternate
                     self.altitudes = altitudes
@@ -17555,8 +17545,6 @@ public enum Operations {
                 public var glideRatio: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/plan/GET/query/depart`.
                 public var depart: Swift.String?
-                /// - Remark: Generated from `#/paths/api/plan/GET/query/class_b_clearance`.
-                public var classBClearance: Swift.Bool?
                 /// - Remark: Generated from `#/paths/api/plan/GET/query/rules`.
                 public var rules: Swift.String?
                 /// - Remark: Generated from `#/paths/api/plan/GET/query/alternate`.
@@ -17604,7 +17592,6 @@ public enum Operations {
                 ///   - taxiFuelGal:
                 ///   - glideRatio:
                 ///   - depart:
-                ///   - classBClearance:
                 ///   - rules:
                 ///   - alternate:
                 ///   - altitudes:
@@ -17638,7 +17625,6 @@ public enum Operations {
                     taxiFuelGal: Swift.Double? = nil,
                     glideRatio: Swift.Double? = nil,
                     depart: Swift.String? = nil,
-                    classBClearance: Swift.Bool? = nil,
                     rules: Swift.String? = nil,
                     alternate: Swift.String? = nil,
                     altitudes: Swift.String? = nil,
@@ -17672,7 +17658,6 @@ public enum Operations {
                     self.taxiFuelGal = taxiFuelGal
                     self.glideRatio = glideRatio
                     self.depart = depart
-                    self.classBClearance = classBClearance
                     self.rules = rules
                     self.alternate = alternate
                     self.altitudes = altitudes
@@ -18212,6 +18197,8 @@ public enum Operations {
                 public var minCeilingFt: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/route-options/GET/query/min_visibility_sm`.
                 public var minVisibilitySm: Swift.Double?
+                /// - Remark: Generated from `#/paths/api/route-options/GET/query/altitude_ft`.
+                public var altitudeFt: Swift.Double?
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
@@ -18228,6 +18215,7 @@ public enum Operations {
                 ///   - depart:
                 ///   - minCeilingFt:
                 ///   - minVisibilitySm:
+                ///   - altitudeFt:
                 public init(
                     dep: Swift.String,
                     dest: Swift.String,
@@ -18241,7 +18229,8 @@ public enum Operations {
                     glideRatio: Swift.Double? = nil,
                     depart: Swift.String? = nil,
                     minCeilingFt: Swift.Double? = nil,
-                    minVisibilitySm: Swift.Double? = nil
+                    minVisibilitySm: Swift.Double? = nil,
+                    altitudeFt: Swift.Double? = nil
                 ) {
                     self.dep = dep
                     self.dest = dest
@@ -18256,6 +18245,7 @@ public enum Operations {
                     self.depart = depart
                     self.minCeilingFt = minCeilingFt
                     self.minVisibilitySm = minVisibilitySm
+                    self.altitudeFt = altitudeFt
                 }
             }
             public var query: Operations.RouteOptions.Input.Query
