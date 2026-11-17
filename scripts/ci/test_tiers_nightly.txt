@@ -36,6 +36,7 @@ first-flight.spec.ts
 flying-mode.spec.ts
 forecast-run.spec.ts
 forecast-wind.spec.ts
+fpl-fields.spec.ts
 fpl-route-as.spec.ts
 frequency-copy.spec.ts
 fuel-stops.spec.ts

@@ -27,7 +27,9 @@ These hold on every screen below and win over any reference app.
   table cell works out a course, a time, a fuel figure or a verdict.
 - **No assumed airplane** (decision 0011). With no airplane picked, a
   screen shows what it can without one (To and Dist, magnetic course) and
-  never fills one in.
+  never fills one in: FPL's strip keeps its four columns, the time and
+  the fuel a dash in the tint that asks for one (`TripFigures`; the UI
+  audit's C2, 2026-11-17).
 - **Warn, never limit.** A pilot can always plan and fly what they choose;
   the screen shows the warning beside it, and nothing is greyed out for
   being outside a limit.
@@ -762,7 +764,9 @@ buttons all the way up and while a card slides (index.css), where the
 toggle stays in the pinned row; both go while flying. A card over the
 sheet covers the row, the toggle with it, and the account button rides
 the card's top. The first flight's tip (`FplTip`) points at the toggle
-while it shows FPL, its right edge at the toggle's. The page up is the
+while it shows FPL, its right edge at the toggle's; not all the way up,
+where the toggle has no room over it, and not again once the toggle has
+been tapped to FPL (the UI audit's B5, 2026-11-17). The page up is the
 planner's place (`usePanelView`'s `view`: the plan is FPL, the search
 and the traffic are Search); the toggle picks it as a place is picked
 (`pickPage`), closing whatever card is opening as it is tapped

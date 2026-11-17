@@ -149,6 +149,12 @@ test("an ident the planner does not know is said on its pill, not the map's line
   await expect(said).toContainText("KZZZ isn't an airport or waypoint we know", { timeout: 20000 });
   await expect(page.getByTestId("route-dest").locator("[aria-invalid=true]")).toHaveCount(1);
   await expect(banner(page)).toHaveCount(0);
+  // The figures' To says it too, in red with its mark, the pill's face at
+  // rest; nothing to brief, as nothing to log (the UI audit's B8, 2026-11-17).
+  const to = page.getByTestId("flight-line").getByTestId("navlog-to");
+  await expect(to).toHaveAttribute("data-alert", "true");
+  await expect(to.getByTestId("figure-alert-mark")).toHaveCount(1);
+  await expect(page.getByTestId("route-brief")).toBeDisabled();
   await said.getByTestId("route-unknown-remove").click();
   await expect(page).not.toHaveURL(/KZZZ/);
   await expect(said).toHaveCount(0);
