@@ -239,6 +239,11 @@ export default function RouteBox({
                         finger, a row's, and 14 from md up. Idents in capitals, as they go in. */}
                     <TokenInput
                       ref={field}
+                      // The group's control, so the stock InputGroup draws its
+                      // focus ring round the box while it is typed in, as the
+                      // N-number's and the altitude's do (InlineField): the
+                      // line's own outline is put away, and none showed.
+                      data-slot="input-group-control"
                       onPointerDown={onPress}
                       onClick={onFieldClick}
                       data-testid="route-type"

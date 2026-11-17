@@ -185,6 +185,18 @@ close does.
   pattern (named in each screen below). Focus is always visible and
   distinct from selection; it never drops to `body`
   ([APG keyboard interface][apg-keyboard]).
+  Whatever puts the app's outline away (`outline-none`) draws its own
+  ring or has one drawn round it (the audit of 2026-11-17, every one of
+  them checked with Full Keyboard Access in mind): a stock control's
+  `focus-visible:ring`, React Aria's `data-focus-visible` ring on a list's
+  row and a grip, a field's ring on the group round it (the stock
+  InputGroup's on the N-number, the altitude and the route box; a fine
+  ring in the tint on the search fields, as Apple's field has), a banner's
+  underline. Left without one only what the keyboard never lands on: the
+  sheets' and the dialogs' own boxes and a card's name (focused by the app
+  so a screen reader starts there), a list held by its field's virtual
+  focus (its row lit instead), and the weather loop's hour labels (out of
+  the tab order, the slider beside them the keyboard's).
 - Shortcuts are a second way in, never the only one: "Do not use keyboard
   shortcuts as a substitute for access via navigation." Avoid the OS's,
   assistive technology's and the browser's own keys (address bar, reload,

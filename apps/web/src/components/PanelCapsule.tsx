@@ -68,8 +68,8 @@ export function SearchField({
     >
       {/* 46 tall, as the one search it stands in for is (OneSearchField):
           on the sheet the grey of iOS's search field, on the glass capsule
-          a lighter pane of the glass, no line round it, its 44-point hit
-          area its own. The magnifier drawn fine and grey, as SF Symbols'. */}
+          a lighter pane of the glass, no line round it but the focus's, its
+          44-point hit area its own. The magnifier drawn fine and grey, as SF Symbols'. */}
       <AriaSearchField
         value={value}
         onChange={onChange}
@@ -91,7 +91,11 @@ export function SearchField({
       >
         <InputGroup
           className={cn(
-            "h-[2.875rem] min-w-0 gap-2 rounded-full border-0 px-3.5 text-muted-foreground shadow-none has-[[data-slot=input-group-control]:focus-visible]:ring-0",
+            "h-[2.875rem] min-w-0 gap-2 rounded-full border-0 px-3.5 text-muted-foreground shadow-none",
+            // Focused, a fine ring in the tint round it, as Apple's field
+            // has and the one search's does (OneSearchField), in place of
+            // the stock group's heavier one: it had none at all.
+            "has-[[data-slot=input-group-control]:focus-visible]:ring-1 has-[[data-slot=input-group-control]:focus-visible]:ring-tint",
             PANEL_FIELD,
             TEXT.row,
           )}
