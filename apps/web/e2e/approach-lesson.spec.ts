@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, drawn, openTab, settle, slow } from "./helpers";
+import { closeCard, drawn, openTab, settle, slow, openRoute } from "./helpers";
 
 /**
  * An approach taught (ApproachLesson), at the owner's ask ("do it all",
@@ -107,6 +107,7 @@ test("a picked approach is taught: briefed a step at a time, flown fix by fix wi
   await page.goto("/app/plan?dep=C81&dest=KDLH&procs=KDLH:I09:DLH");
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
   const approach = kdlh.locator("[data-testid=procedure-kind][data-kind=approach]");
   await expect(approach).toContainText("ILS 09 · DLH", { timeout: slow(20000) });

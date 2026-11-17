@@ -102,8 +102,8 @@ interface PointActions {
   onHold?: () => void;
   held?: boolean;
   onInfo?: () => void;
-  /** The route's box opened to type a stop in after it (FPL with the route
-   *  in the plan, lib/preferences RouteEdit). */
+  /** The route's field asked to type a stop in after it (FPL's route open
+   *  to edit). */
   onAddAfter?: () => void;
   /** One place earlier or later in the route: the drag's way without a
    *  drag, for a single tap or click (WCAG 2.5.7, web.md section 3). */

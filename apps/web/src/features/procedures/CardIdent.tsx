@@ -17,11 +17,9 @@ const NO_ROWS: AirportSearchRow[] = [];
  * Escape putting it back; Return takes the first suggestion, as the route
  * box's and the one search's do, or what is typed where none is offered
  * or it is one's ident. The app's neutral fill, a
- * field's, its width the ident's (or the card's, `wide`); over the head's
- * tap that folds the card. In the Plan's every card has one, the two ends'
- * before there is a route (RouteEnds) and a stop's being added
- * (ProceduresRoute), there being no route box there ("I want to
- * completely get rid of the route box for in the plan").
+ * field's, its width the ident's (or the card's, `wide`). The two ends'
+ * cards have one before the route is whole (RouteEnds), the route's field
+ * under them (the one layout, decision 0046).
  */
 export default function CardIdent({
   value,

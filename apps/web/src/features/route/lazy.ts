@@ -9,4 +9,4 @@
 export { default as LocalDuration } from "./LocalDuration";
 export { PointFigures, PointMenu } from "./PointControls";
 export { default as RouteProblem } from "./RouteProblem";
-export { default as RouteSplit } from "./RouteSplit";
+export { default as RouteSummary } from "./RouteSummary";

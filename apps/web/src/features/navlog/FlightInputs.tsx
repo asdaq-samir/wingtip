@@ -154,6 +154,7 @@ export default function FlightInputs({
         <Popover open={suggest.open} onOpenChange={(next) => !next && suggest.dismiss()}>
           <InlineField
             label="Airplane"
+            caption="Airplane"
             testId="aircraft-select"
             widest="N-888MM"
             placeholder=""

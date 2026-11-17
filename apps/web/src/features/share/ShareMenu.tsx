@@ -17,9 +17,8 @@ import { markPackSent, openInForeFlight, packOrigin, packPath, packSent } from "
 import { navLogRows } from "../plan";
 import { useShareLink } from "./useShareLink";
 import { refreshLive } from "../../lib/liveRefresh";
-import type { RouteEdit } from "../../lib/preferences";
 import PlanUndoItems from "./PlanUndoItems";
-import ShowRouteAs, { RouteMapChoices } from "./ShowRouteAs";
+import RouteMapChoices from "./RouteMapChoices";
 
 /** The route as typed: its departure, stops and destination. */
 interface Planned {
@@ -66,7 +65,6 @@ export default function ShareMenu({
   planAgain,
   onShowFuel,
   onClear,
-  showRouteAs,
   look,
 }: {
   /** The route's ••• as a button of FPL's floating bar ("bar", FplTabBar)
@@ -74,9 +72,6 @@ export default function ShareMenu({
    *  "More" (the owner, 2026-11-17: "move everything to the tab bar with a
    *  ... instead of share"); else the first row's round glyph. */
   look?: "bar" | "tile";
-  /** How FPL shows its route, the route box's menu's view options (the
-   *  owner, 2026-11-13: "I want to move fpl layout to the fpl page"). */
-  showRouteAs?: { value: RouteEdit; onChange: (value: RouteEdit) => void };
   /** The suggested fuel stops taken out of the route box, put back. */
   onShowFuel?: () => void;
   /** The route cleared: the route box's menu's last item (the owner,
@@ -276,8 +271,8 @@ export default function ShareMenu({
           {card === "route" && (
             <>
               {/* Before there is a route, only what applies then: the
-                  route's Show Route As (the owner, 2026-11-13), the rest
-                  left out, not greyed. */}
+                  undo, the map's choices and Clear, the rest left out,
+                  not greyed. */}
               {routed && saving(afterMenu(() => setAskingReview(true)))}
               {routed && (
                 <DropdownMenuItem disabled={!fileable} onClick={onFile} data-testid="file-flight-plan">
@@ -323,13 +318,12 @@ export default function ShareMenu({
               Print the nav log
             </DropdownMenuItem>
           )}
-          {/* The page's view options after its actions, as iOS's ••• menus
-              put them, the Clear still last. */}
-          {showRouteAs && (
+          {/* What the map draws of the route after its actions, as iOS's
+              ••• menus put a page's view options, the Clear still last. */}
+          {card === "route" && (
             <>
               {/* A band after the route's actions; none over it alone. */}
               {routed && <DropdownMenuSeparator />}
-              <ShowRouteAs {...showRouteAs} />
               <RouteMapChoices />
             </>
           )}

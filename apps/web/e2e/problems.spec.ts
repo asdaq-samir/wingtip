@@ -145,6 +145,7 @@ test("an ident the planner does not know is said on its pill, not the map's line
   // only word was the map's line, cut off, naming the data set. The pilot
   // typed it; it is said where they typed it, with Remove.
   await page.goto("/app/plan?dep=KUGN&dest=KZZZ");
+  // Open by itself to edit, where the point is said (the one layout).
   const said = page.getByTestId("route-unknown");
   await expect(said).toContainText("KZZZ isn't an airport or waypoint we know", { timeout: 20000 });
   await expect(page.getByTestId("route-dest").locator("[aria-invalid=true]")).toHaveCount(1);

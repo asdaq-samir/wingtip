@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { drawn, grabberTo, openPanel, settle, settled, showTabs, sideDrawer, slow, frontSheet } from "./helpers";
+import { drawn, grabberTo, openPanel, settle, settled, showTabs, sideDrawer, slow, frontSheet, openRoute } from "./helpers";
 import { card } from "./placeCard";
 
 test("an airport's card has four tabs right under its actions, in sight at half, Info first; a tab takes the panel up, and the open one again, down", async ({
@@ -147,6 +147,7 @@ test("the route's Procedures open its destination's card on its approaches, and 
       }),
   );
   await grabberTo(page, "full");
+  await openRoute(page);
   await sideDrawer(page).getByRole("region", { name: "KDLH · Arrive" }).locator("[data-testid=procedure-kind][data-kind=approach]").click();
   // The pull-down's foot opens the field's whole list (ProcedureMenu).
   await page.getByTestId("procedure-menu-all").click();

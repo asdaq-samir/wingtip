@@ -54,9 +54,9 @@ export default function RouteControls({
         </Suspense>
       )}
       {/* The route's ••• at the row's end only before there is a route,
-          for its Show Route As (the owner, 2026-11-13: the layout reachable
-          before there is a route); once there is one it ends FPL's floating
-          bar (FplTabBar; the owner, 2026-11-17: "move everything to the tab
+          for its Undo (a cleared route put back), the map's choices and a
+          half route's Clear; once there is one it ends FPL's floating bar
+          (FplTabBar; the owner, 2026-11-17: "move everything to the tab
           bar with a ... instead of share"). A round button at a fixed 32 in
           points, as iOS's bar buttons keep their size at any text size
           (the FPL audit's A3). */}

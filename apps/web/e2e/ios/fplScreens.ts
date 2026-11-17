@@ -1,5 +1,6 @@
 import { expect } from "@playwright/test";
 import {
+  openRoute,
   controlsInSight,
   grabberTo,
   openProfile,
@@ -39,6 +40,19 @@ export const FPL_SCREENS: Screen[] = [
       await expect(sideDrawer(page).getByTestId("route-recent").first()).toBeVisible();
     },
   },
+  // The route folded to read (the one layout, decision 0046): its line,
+  // the figures, and "Suggested routes" over the chips; the first row's
+  // fields captioned Airplane and Cruise.
+  {
+    name: "FPL, the route folded",
+    ready: async (page) => {
+      await page.goto(`/app/plan?${ROUTE}`);
+      await settle(page);
+      await openPanel(page);
+      await expect(sideDrawer(page).getByTestId("route-summary")).toBeVisible({ timeout: slow(30000) });
+      await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
+    },
+  },
   // The route's Procedures, its fields down a line in the order they are
   // flown, each runway's pattern a chip (the redesign's C), FPL's own all
   // the way up with the tops of climb and descent: the chips' hit areas
@@ -53,6 +67,7 @@ export const FPL_SCREENS: Screen[] = [
       await page.goto(`/app/plan?${ROUTE}`);
       await settle(page);
       await openTab(page, "Nav Log");
+      await openRoute(page);
       await expect(page.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(30000) });
     },
   },
@@ -111,6 +126,7 @@ export const FPL_SCREENS: Screen[] = [
       await page.goto(`/app/plan?${ROUTE}`);
       await settle(page);
       await openTab(page, "Nav Log");
+      await openRoute(page);
       await page
         .getByTestId("procedures")
         .getByRole("region", { name: "KDLH · Arrive" })
@@ -154,6 +170,7 @@ export const FPL_SCREENS: Screen[] = [
       );
       await page.goto(`/app/plan?${ROUTE}&stops=VPBNG,KMSN&view=briefing`);
       await controlsInSight(page);
+      await openRoute(page);
       await expect(page.getByTestId("route-box")).toBeVisible({ timeout: slow(30000) });
       await expect(page.getByTestId("stop")).toHaveCount(2);
     },

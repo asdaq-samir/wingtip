@@ -84,7 +84,6 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
     stopsFull = false,
     fuel = null,
     routeLine = null,
-    edit,
   } = props;
   // The procedure on its own page in the sheet, over its kind's list.
   const [page, setPage] = useState<{ at: ProceduresAt; procedure: ProcedureSummary } | null>(null);
@@ -239,8 +238,6 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
     const nm = row ? alongNm.get(row.key) : undefined;
     return nm ? ` · ${Math.round(nm)} nm` : "";
   };
-  // Each point a card of its own (RouteListEdit's `cards`).
-  const asCards = !!edit?.cards;
   // A field's place among the typed points, for its grip and Add a Stop
   // After: the departure first, the destination last (a round trip's
   // field is both, by its role), a stop its own place between them.
@@ -253,8 +250,6 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
   };
   const tanks = tanksAt(rows, fuel);
   const points = rows.filter((r) => r.kind !== "checkpoint" && r.kind !== "toc" && r.kind !== "tod");
-  // The stop being added, its card before the point at its place.
-  const newAt = asCards && edit?.onInsert ? (edit.newAt ?? null) : null;
   const field = on ? airports.find((a) => sameField(a.ident, on.ident)) : undefined;
   const list = on ? listOf(on.ident) : undefined;
   const chosen = on ? pickOf(on.ident, on.kind) : null;
@@ -300,11 +295,9 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
     openLines,
     destination,
     along,
-    asCards,
     pointIndex,
     tanks,
     points,
-    newAt,
     field,
     list,
     chosen,

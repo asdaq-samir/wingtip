@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { airportSearch, grabberTo, openPanel, settle, sideDrawer } from "./helpers";
+import { airportSearch, grabberTo, openPanel, settle, sideDrawer, openRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 
 /**
@@ -78,6 +78,7 @@ test("a stop in FPL's list is taken out by a full swipe, with the route's Undo",
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   await grabberTo(page, "full");
   const list = sideDrawer(page).getByTestId("procedures");
   const stop = list.locator("[data-swipe-row]").filter({ hasText: "KRYV" }).first();

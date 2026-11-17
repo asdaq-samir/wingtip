@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openPanel, settle, sideDrawer, slow } from "./helpers";
+import { openPanel, openRoute, settle, sideDrawer, slow } from "./helpers";
 import { card } from "./placeCard";
 
 /**
@@ -29,16 +29,17 @@ test("the departure and the destination are one block each, opened and folded by
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   const route = sideDrawer(page).getByTestId("procedures");
   for (const name of ["C81 · Depart", "KDLH · Arrive"]) {
     const field = route.getByRole("region", { name });
     const toggle = field.getByTestId("field-toggle");
     await expect(toggle).toHaveAttribute("aria-expanded", "false", { timeout: slow(30_000) });
     // Its time over its elevation, its wind and its menu, no runways or
-    // procedures under it, and no words for what it is.
+    // procedures under it, and no words for what it is but its role over the ident.
     await expect(field.getByTestId("point-figures")).toBeVisible();
     await expect(field.getByTestId("point-altitude-figure")).toContainText(/\d ft/);
-    await expect(field).not.toContainText(/Depart|Arrive|Destination/);
+    await expect(field).not.toContainText(/Arrive|Fuel stop/);
     await expect(field.getByTestId("procedure-pattern")).toHaveCount(0);
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
@@ -57,6 +58,7 @@ test("a stop is one block, its landing and its takeoff a tap away, and a fuel st
   await page.goto("/app/plan?dep=C81&stops=KMSN&dest=KDLH&fuel=KMSN");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   const route = sideDrawer(page).getByTestId("procedures");
   const stop = route.getByRole("region", { name: "KMSN · Arrive" });
   await expect(stop).toBeVisible({ timeout: slow(30_000) });
@@ -71,6 +73,7 @@ test("a stop is one block, its landing and its takeoff a tap away, and a fuel st
   // A stop of the pilot's own: no pump.
   await page.goto("/app/plan?dep=C81&stops=KMSN&dest=KDLH");
   await openPanel(page);
+  await openRoute(page);
   await expect(route.getByRole("region", { name: "KMSN · Arrive" })).toBeVisible({ timeout: slow(30_000) });
   await expect(route.getByRole("img", { name: "fuel stop" })).toHaveCount(0);
 });
@@ -81,6 +84,7 @@ test("an airport's ident opens its card as the nav log's names do, the rest of i
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   const field = sideDrawer(page).getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
   const toggle = field.getByTestId("field-toggle");
   await expect(toggle).toHaveAttribute("aria-expanded", "false", { timeout: slow(30_000) });
@@ -104,14 +108,11 @@ test("an airport's ident opens its card as the nav log's names do, the rest of i
   await expect(card(page)).toContainText("KDLH", { timeout: slow(15_000) });
 });
 
-test("in the Plan's cards an airport is changed from its menu's Change, by the one search, its ident a link", async ({ page }) => {
-  await page.addInitScript(() => {
-    const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":7}');
-    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, routeEdit: "plan" } }));
-  });
+test("in the route's cards an airport is changed from its menu's Change, by the one search, its ident a link", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   const field = sideDrawer(page).getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
   await expect(field.getByTestId("field-open")).toBeVisible({ timeout: slow(30_000) });
   await expect(field.getByRole("combobox")).toHaveCount(0);

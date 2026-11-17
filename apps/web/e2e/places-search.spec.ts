@@ -116,10 +116,12 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await expect(page).not.toHaveURL(/dep=/);
   await expect(sideDrawer(page).getByTestId("route-type")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("aircraft-select")).toBeEnabled();
-  // With no route the route's menu holds only Show Route As (the owner,
-  // 2026-11-13): nothing to share, save or clear.
+  // With no route the route's menu holds only the map's choices, On the
+  // Map: nothing to share, save or clear, and no choice of layout, the
+  // one layout being all there is.
   await sideDrawer(page).getByTestId("share-route").click();
-  await expect(page.getByTestId("route-edit-select")).toBeVisible();
+  await expect(page.getByTestId("waypoints-toggle")).toBeVisible();
+  await expect(page.getByText("Show Route As")).toHaveCount(0);
   await expect(page.getByTestId("share-link")).toHaveCount(0);
   await expect(page.getByTestId("route-clear")).toHaveCount(0);
   await page.keyboard.press("Escape");

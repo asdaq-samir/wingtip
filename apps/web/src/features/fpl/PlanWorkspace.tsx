@@ -55,7 +55,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   // 2026-11-09): its field the sheet's first row, its results the body's.
   const search = useOneSearch(vm);
   const { view, pickPage } = vm.view;
-  const { altitudeFt, altitudeNearest, depart, flightRules, flyAltitude, planned, routeEdit, routed, setLoad, setRouteEdit } = vm.route;
+  const { altitudeFt, altitudeNearest, depart, flightRules, flyAltitude, planned, routed, setLoad } = vm.route;
   const { aircraft, aircraftChoices, aircraftValue, changeAircraft, changeDepart, course, pickTail, s, selected } = vm.plan;
   const { cardOpen, flight, heldPoint, place } = vm.cards;
   const { filedProcedures } = vm.picks;
@@ -238,7 +238,6 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
       // Nothing to clear on the empty page: its ✕ goes back (RouteControls).
       onClear={card === undefined && vm.route.hasPoints ? vm.routeList.clearRoute : undefined}
-      showRouteAs={card === undefined ? { value: routeEdit, onChange: setRouteEdit } : undefined}
     />
   );
 
@@ -263,7 +262,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           // The route's ••• in the first row only before there is a route:
           // once there is, it ends the floating bar (FlightFoot; the owner,
           // 2026-11-17: "move everything to the tab bar with a ... instead
-          // of share"), and with none its Show Route As stays at hand.
+          // of share"); with none it keeps Undo (a cleared route put back),
+          // the map's choices and a half route's Clear at hand.
           bar: <FplBar strip={<RouteControls vm={vm} flightInputs={flightInputs} share={routed ? null : shareMenu("end")} />} />,
           second: <PlanPage vm={vm} navLog={navLog} more={shareMenu("end", undefined, undefined, "tile")} />,
         },
@@ -285,11 +285,10 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           !place && !heldPoint && !flight && !briefShown && !profileShown
             ? routed && <FlightFoot vm={vm} more={shareMenu("end", undefined, undefined, "bar")} />
             : undefined,
-        // The route as one row under FPL's bar (MapPanel keeps it under the
-        // others' heads). How it shows once whole is the pilot's pick from its
-        // ••• menu's Show Route As (lib/preferences RouteEdit: the box, one
-        // line, or the plan's own rows; the owner, 2026-11-05 and 2026-11-13);
-        // the box again while a stop is typed in or a problem shows; the figures under it (FplRoute).
+        // The route under FPL's bar (MapPanel keeps it under the others'
+        // heads), in its one layout (the owner, 2026-11-17, decision 0046):
+        // folded to its line, the figures and the Routes' chips under it, or
+        // open to edit, its head over the cards in the page (FplRoute).
         route: <FplRoute vm={vm} />,
         console: <PilotPanel />,
       })}

@@ -18,7 +18,7 @@ test("the profile is a card from its button beside the AI brief's, no swipe at t
   await settle(page);
   await grabberTo(page, "half");
   const panel = sideDrawer(page);
-  await expect(panel.getByTestId("procedures")).toBeVisible({ timeout: slow(60_000) });
+  await expect(panel.getByTestId("route-summary")).toBeVisible({ timeout: slow(60_000) });
   await expect(panel.getByTestId("foot-pager")).toHaveCount(0);
   await expect(panel.getByTestId("mini-profile")).toHaveCount(0);
   // The Profile and the Nav Log side by side in the floating bar at the
@@ -42,7 +42,7 @@ test("the profile is a card from its button beside the AI brief's, no swipe at t
   await expect(card.getByTestId("mini-profile")).toBeVisible();
   // Its close: FPL's route again.
   await closeProfile(page);
-  await expect(panel.getByTestId("procedures")).toBeVisible();
+  await expect(panel.getByTestId("route-summary")).toBeVisible();
 });
 
 test("the dry run is the Profile card's: closed, the run is put away and FPL's foot is the flight's figures again", async ({ page }) => {

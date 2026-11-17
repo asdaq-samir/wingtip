@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
+  openRoute,
   cardClose,
   closeCard,
   firstRow,
@@ -62,11 +63,11 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
   await expectDrawnOnce(page, () => closeCard(page, "sheet-card-close").then(() => expect(card).toHaveCount(0)), { maxMoves: 0 });
   await expect(panel).toHaveAttribute("data-panel", "peek");
 
-  // From half, over the route's box: the box out of sight under it, and
+  // From half, over the route's line: the line out of sight under it, and
   // there again as Escape puts it away, the panel still half way and the
   // focus back on the map's button.
   await grabberTo(page, "half");
-  const dest = panel.getByTestId("route-dest");
+  const dest = panel.getByTestId("route-summary");
   await expect(dest).toBeVisible();
   await openMapSettings(page);
   await expect(card).toBeVisible();
@@ -152,6 +153,7 @@ test("the approaches' pull-down is a card in the sheet, and the list it opens ta
   const panel = sideDrawer(page);
   await openTab(page, "Nav Log");
   await expect(panel).toHaveAttribute("data-panel", "full");
+  await openRoute(page);
   const arrive = panel.getByRole("region", { name: "KDLH · Arrive" });
   await arrive.locator("[data-testid=procedure-kind][data-kind=approach]").click({ timeout: slow(30000) });
   const menu = panel.getByTestId("procedure-menu");

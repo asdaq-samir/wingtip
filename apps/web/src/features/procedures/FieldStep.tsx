@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { PlaneLanding, PlaneTakeoff } from "lucide-react";
 import { cn } from "cn";
 import { CardThread } from "./routeCard";
-import { CARD_BODY, CARD_GAP, FIELD_CARD, FIELD_GAP, POINT_CARD } from "./routeListStyle";
+import { FIELD_CARD, FIELD_GAP } from "./routeListStyle";
 import { Collapsible, CollapsibleContent } from "../../components/ui/collapsible";
 import type { Runway } from "../../lib/api/types";
 import { type RunwayEnd, etaAt, groundMinAt, type NavLogRow, type Landing, type ProcedureAirport, type ProcedureKind } from "../plan";
@@ -48,7 +48,6 @@ export function FieldStep({
     ground,
     startMs,
     tanks,
-    asCards,
     openLines,
     windOf,
     pickOf,
@@ -224,29 +223,21 @@ export function FieldStep({
         onOpenChange={(next) => toggleField(key, a.ident, next)}
         render={
           <div
-            className={cn(
-              "relative isolate",
-              asCards ? POINT_CARD : FIELD_CARD,
-              !last && (asCards ? CARD_GAP : FIELD_GAP),
-            )}
+            className={cn("relative isolate", FIELD_CARD, !last && FIELD_GAP)}
             data-testid="route-field"
             data-ident={a.ident}
             data-open={opened || undefined}
           />
         }
       >
-        <CardThread first={leads} last={last} row={!asCards} />
+        <CardThread first={leads} last={last} />
         <section aria-label={`${a.ident} · ${first.role}`}>
           <FieldHead vm={vm} a={a} mark={mark} end={end} tank={tank} wind={wind} reported={reported} />
-          {/* A card's runways and procedures nearly its whole width, at
-                        the owner's ask ("we can use all card width for runway and
-                        arrival approach buttons"), right of the line down its
-                        marks (CARD_BODY): the arrival and the approach then fit
-                        on the runway's line. */}
-          <CollapsibleContent className={asCards ? CARD_BODY : "pl-9.5"}>{partBody(first)}</CollapsibleContent>
+          {/* Its runways and procedures under the ident, inside the card. */}
+          <CollapsibleContent className="pl-9.5">{partBody(first)}</CollapsibleContent>
         </section>
         {opened && parts[1] && (
-          <section aria-label={`${a.ident} · ${parts[1].role}`} className={asCards ? CARD_BODY : "pl-9.5"}>
+          <section aria-label={`${a.ident} · ${parts[1].role}`} className="pl-9.5">
             {partBody(parts[1])}
           </section>
         )}

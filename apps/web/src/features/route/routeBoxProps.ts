@@ -52,14 +52,10 @@ export interface RouteBoxProps extends RouteParts {
    *  (its menu's Remove); the route's menu or FPL's Routes put it back. */
   onHideFuelStop?: (ident: string) => void;
   /** Where a stop asked for (`adding`) is typed in, before the point at
-   *  this place: FPL's list's Add a Stop and Add a Stop After, where the
-   *  list changes the route (lib/preferences RouteEdit). None, before the
+   *  this place: FPL's list's Add a Stop and Add a Stop After, while the
+   *  route is open to edit. None, before the
    *  destination, or where Fly via goes round the Class B. */
   addAt?: number | null;
-  /** The box folded again, at its Done, where a whole route's box is
-   *  folded away (RouteEdit's "folded"): opened from its line, the box
-   *  takes the typing at once. */
-  onDone?: () => void;
   /** A point the planner does not know (usePlan's `unknownPlace`): its
    *  pill in red, a tap on it the search to change it, and a line under
    *  the box saying so with Remove -- where it happened, not the map's

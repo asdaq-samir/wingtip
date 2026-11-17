@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { inSheet, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { inSheet, openPanel, settle, sideDrawer, slow, openRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
 import { recordedStops } from "./recordedStops";
@@ -25,6 +25,7 @@ test("every point's row ends in its time over its altitude and a menu: an airpor
   await recordedStops(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KMSN");
   await openPanel(page);
+  await openRoute(page);
   const route = sideDrawer(page).getByTestId("procedures");
   const madison = route.getByRole("region", { name: "KMSN · Arrive" });
   const altitude = madison.getByTestId("point-altitude-figure");
@@ -86,6 +87,7 @@ test("on a phone a point's altitude is asked in the floating sheet from the bott
   await recordedStops(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KMSN");
   await openPanel(page);
+  await openRoute(page);
   const madison = sideDrawer(page).getByTestId("procedures").getByRole("region", { name: "KMSN · Arrive" });
   await expect(madison.getByTestId("point-altitude-figure")).toHaveAttribute("data-kind", "elev", { timeout: slow(30_000) });
   await inSheet(page, madison.getByTestId("point-menu"));
@@ -155,6 +157,7 @@ test("the pilot's own point off a fix is made from a point's menu or typed as a 
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KMSN");
   await openPanel(page);
+  await openRoute(page);
   const route = sideDrawer(page).getByTestId("procedures");
   const madison = route.getByRole("region", { name: "KMSN · Arrive" });
   await expect(madison.getByTestId("point-figures")).toContainText(/\d\d:\d\d/, { timeout: slow(30_000) });
@@ -171,6 +174,7 @@ test("the pilot's own point off a fix is made from a point's menu or typed as a 
   // point, offered as the pilot's own point: a stop before the destination.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await openPanel(page);
+  await openRoute(page);
   await sideDrawer(page).getByTestId("route-type").fill("vpbng/090/30");
   const own = page.getByTestId("route-own-point");
   await expect(own).toContainText("30 nm on 090° from VPBNG");
@@ -186,6 +190,7 @@ test("a hold is set from a point's menu, course, turns, legs and how long, and i
   // planner makes of it (its entry, its minutes) is the planner's test's.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await openPanel(page);
+  await openRoute(page);
   const route = sideDrawer(page).getByTestId("procedures");
   const duluth = route.getByRole("region", { name: "KDLH · Arrive" });
   await expect(duluth.getByTestId("point-figures")).toContainText(/\d\d:\d\d/, { timeout: slow(60_000) });
@@ -226,6 +231,7 @@ test("a point's menu has its altitude before Remove: an airport's pattern in fee
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=VPBNG");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   const lines = sideDrawer(page).getByTestId("route-slide");
   // The pill's menu is FPL's "⋯"'s, in its words (PointMenuItems).
   const item = page.getByTestId("pill-menu-altitude");

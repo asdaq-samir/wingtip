@@ -1,5 +1,15 @@
 import { test, expect, type Page } from "@playwright/test";
-import { consoleSheet, settle, roleMenu, openPanel, closeSidebarWithTheStockKey, expectDrawerClosed, noTips, sideDrawer } from "./helpers";
+import {
+  consoleSheet,
+  settle,
+  roleMenu,
+  openPanel,
+  openRoute,
+  closeSidebarWithTheStockKey,
+  expectDrawerClosed,
+  noTips,
+  sideDrawer,
+} from "./helpers";
 
 /**
  * The two pages and the switch between them: the Dev-mode switch, the
@@ -65,6 +75,7 @@ test("the route box leads the pill's head the same, signed in or out", async ({ 
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   leads.push(await lead(page));
   const signedOut = await browser.newContext({
     baseURL: new URL(page.url()).origin,
@@ -76,6 +87,7 @@ test("the route box leads the pill's head the same, signed in or out", async ({ 
   await planner.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(planner);
   await openPanel(planner);
+  await openRoute(planner);
   leads.push(await lead(planner));
   await signedOut.close();
   expect(Math.max(...leads) - Math.min(...leads)).toBeLessThanOrEqual(1);

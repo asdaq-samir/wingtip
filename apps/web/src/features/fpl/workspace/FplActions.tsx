@@ -1,11 +1,14 @@
-import { useRef, type ReactNode } from "react";
+import { Suspense, useRef, type ReactNode } from "react";
 import { cn } from "cn";
 import { PIN_AT_FOOT, usePinAtFoot } from "../../../components/sheet/pinAtFoot";
 import { CardAction as Action } from "../../../components/CardAction";
 import { ICON } from "../../../lib/icons";
+import { TEXT } from "../../../lib/text";
+import { RouteLine } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import RouteHead from "./RouteHead";
 import { FlightFigures } from "./FlightFoot";
+import { routeEditing } from "./routeEditing";
 
 /**
  * FPL's actions in flight, one row of four tiles at the top of the flying
@@ -60,11 +63,15 @@ export function FplActions({ vm, more }: { vm: PlanSlices<"brief" | "flight" | "
   );
 }
 
-/** FPL's route row, the flight's figures under it, which are its pill too
- *  (the owner, 2026-11-16: the calculations strip where the action tiles were):
- *  the page's `route` (PlanWorkspace),
- *  a column the row's width, as the sheet lays the route in a row
- *  (MapPage's routeRowOf), where a grid alone had no width. */
+/** FPL's route row (the page's `route`, PlanWorkspace), a column the
+ *  row's width, as the sheet lays the route in a row (MapPage's
+ *  routeRowOf), where a grid alone had no width. Folded (the one layout,
+ *  decision 0046): the route's line, the flight's figures under it, which
+ *  are its pill too (the owner, 2026-11-16: the calculations strip where
+ *  the action tiles were), and the Routes' chips under "Suggested routes"
+ *  (labels C, the owner, 2026-11-17). Open to edit, its head alone: the
+ *  figures go under the cards (RouteEditor) and the chips away, as they
+ *  change the route rather than edit it. */
 export function FplRoute({
   vm,
 }: {
@@ -72,22 +79,35 @@ export function FplRoute({
 }) {
   const { panelOpen } = vm.view;
   const { dryRunning, flying } = vm.flight;
+  const { routeLine } = vm.routeList;
+  const editing = routeEditing(vm);
   // The figures are FPL's pill too, one copy at every size: held on the
   // foot's edge at the pill, and as the sheet goes down they stop there
   // while the route slides on under them (usePinAtFoot), drawn there as
   // the pill (PINNED). On the ground: in flight and in a dry run the foot
-  // holds their own figures.
+  // holds their own figures. Open to edit they are under the cards, and
+  // the route folds as the sheet comes down to the pill (usePlanRouteList).
   const ground = !flying && !dryRunning;
   const figures = useRef<HTMLDivElement>(null);
-  usePinAtFoot(figures, SHEET_FOOT, { on: ground, held: ground && !panelOpen });
+  usePinAtFoot(figures, SHEET_FOOT, { on: ground && !editing, held: ground && !panelOpen });
   return (
     <div className="flex w-full min-w-0 flex-1 flex-col">
       <RouteHead vm={vm} />
-      <div className="pt-2 pb-1">
+      <div className={cn("pt-2 pb-1", editing && "hidden")}>
         <div ref={figures} data-pin-foot="" className={cn(PIN_AT_FOOT, PINNED)}>
-          <FlightFigures vm={vm} grow={false} />
+          {!editing && <FlightFigures vm={vm} grow={false} />}
         </div>
       </div>
+      {!editing && routeLine && (
+        <section aria-label="Suggested routes" className="pt-1" data-testid="route-group">
+          <h3 aria-hidden="true" className={cn("px-1 font-semibold text-muted-foreground", TEXT.note)}>
+            Suggested routes
+          </h3>
+          <Suspense fallback={<div className="h-11" />}>
+            <RouteLine line={routeLine} grouped />
+          </Suspense>
+        </section>
+      )}
     </div>
   );
 }

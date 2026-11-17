@@ -1,4 +1,4 @@
-import type { AircraftProfile, Detour } from "../../lib/api/types";
+import type { AircraftProfile } from "../../lib/api/types";
 import type { BranchFix, PickedProcedure } from "../../lib/procedures";
 import type { Hold, NavLogRow, ProcedureAirport, ProcedureKind } from "../plan";
 import type { PointAltitude } from "../route";
@@ -6,28 +6,16 @@ import type { RouteLineChoices } from "./RouteLine";
 
 type Kind = ProcedureKind;
 
-/** The route changed in FPL's list rather than its box (lib/preferences
- *  RouteEdit), by the points' places in `routePoints`. */
+/** The route changed in FPL's list while it is open to edit (the one
+ *  layout's expanded list, decision 0046), by the points' places in
+ *  `routePoints`. */
 interface RouteListEdit {
-  /** A point dragged by its grip onto another's place. */
+  /** A point dragged by its grip (or held) onto another's place. */
   onMove: (from: number, to: number) => void;
-  /** The route's box opened to type a stop in at this place. */
+  /** The route's field asked to type a stop in at this place. */
   onAddAt: (index: number) => void;
-  /** The point at this place made another, from its card's ident. */
-  onReplace?: (index: number, ident: string) => void;
-  /** A stop being added at this place, an empty card there to type it
-   *  in (In the Plan, which has no route box), and what is typed put in;
-   *  left empty, given up. */
-  newAt?: number | null;
-  /** Fly via's ways round the Class B, offered on that card, best first. */
-  newVia?: Detour[] | null;
-  onInsert?: (index: number, ident: string) => void;
-  onCancelNew?: () => void;
-  /** Each point a card of its own, easier to see as it is dragged (In the
-   *  Plan, the owner's pick of the canvas's option 3 as cards). */
-  cards?: boolean;
-  /** A point changed, from its menu's Change: the route's box opened. */
-  onChange?: () => void;
+  /** The airport at this place made another, from its menu's Change. */
+  onReplace: (index: number, ident: string) => void;
 }
 
 /** What a runway's fit is worked from (features/procedures/runwayFit): the airplane's
@@ -141,7 +129,7 @@ export interface ProceduresRouteProps {
    *  chips, the one picked, and the way to pick one; none, no line. */
   routeLine?: RouteLineChoices | null;
   /** The route changed in the list itself (RouteListEdit): each typed
-   *  point's grip, Add a Stop After in its menu, and Add a Stop at the
-   *  list's end. None, the list as before. */
+   *  point's grip, Change and Add a Stop After in its menu, and Add a Stop
+   *  at the list's end. None, the list as it is read (in flight). */
   edit?: RouteListEdit;
 }

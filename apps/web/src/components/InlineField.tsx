@@ -24,6 +24,7 @@ import { InputGroup, InputGroupInput } from "./ui/input-group";
  */
 export function InlineField({
   label,
+  caption,
   testId,
   widest,
   tabular = false,
@@ -53,6 +54,11 @@ export function InlineField({
   endRoom?: string;
   /** The group's name, for VoiceOver. */
   label: string;
+  /** A small word over the value, inside the pill, saying what the field
+   *  is ("Airplane", "Cruise"): labels C of the one FPL layout's canvas
+   *  (the owner, 2026-11-17). Its words begin the group's name, so what is
+   *  seen is what VoiceOver says (WCAG 2.5.3). */
+  caption?: string;
   testId?: string;
   /** The widest value it takes, for its one width. */
   widest: string;
@@ -77,45 +83,56 @@ export function InlineField({
     inputClassName,
   );
   const shared = { type: "text", autoComplete: "off", enterKeyHint: "done" as const, size: 1, placeholder, ...input };
+  // With a caption the value sits on the second row, the caption on the
+  // first, and the pill grows to hold both (within the bar's 46).
+  const row = caption ? "row-start-2" : "row-start-1";
   return (
     // A row's size to a finger, but no larger than it is at the owner's
     // 17.88 px text (19 px): at 19.65 the two chips and the route's three
     // round buttons came to 10-15 points more than a 390-point phone's
     // line, and the buttons wrapped onto a line of their own (the FPL
     // audit's A3; the owner's route-box-buttons rule, 2026-10-24: one line
-    // at their text sizes). The field is 28 tall whatever its text. The
-    // stock group's line, shade and full width put away for the pill.
+    // at their text sizes). The field is 28 tall whatever its text, and
+    // with its caption 28 and the caption's line. The stock group's line,
+    // shade and full width put away for the pill.
     <InputGroup
       aria-label={label}
       className={cn(
-        "grid h-7 w-auto items-center rounded-full border-0 bg-foreground/8 shadow-none dark:bg-foreground/8",
+        "grid w-auto items-center rounded-full border-0 bg-foreground/8 shadow-none dark:bg-foreground/8",
+        caption ? "h-auto grid-rows-[auto_1.5rem] py-0.5" : "h-7",
         shrink && "shrink-0",
         TEXT.row,
         "pointer-coarse:text-[length:min(1.0625rem,19px)]",
       )}
       data-testid={testId}
     >
-      <span aria-hidden="true" className="invisible col-start-1 row-start-1 flex h-0 overflow-hidden">
+      {caption && (
+        <span
+          aria-hidden="true"
+          className={cn("col-start-1 row-start-1 truncate pt-0.5 pl-2.5 font-medium text-foreground/70", TEXT.caption)}
+          data-testid={testId ? `${testId}-caption` : undefined}
+        >
+          {caption}
+        </span>
+      )}
+      <span aria-hidden="true" className={cn("invisible col-start-1 flex h-0 overflow-hidden", row)}>
         <span className={cn("whitespace-pre pr-1.5 pl-2.5 font-semibold", tabular && "tabular-nums")}>{widest}</span>
         <span className={cn(endRoom, "shrink-0")} />
       </span>
       <span
         aria-hidden="true"
-        className={cn(
-          "invisible col-start-1 row-start-1 h-0 overflow-hidden whitespace-pre pr-1.5 pl-2.5 font-normal",
-          placeholderClassName,
-        )}
+        className={cn("invisible col-start-1 h-0 overflow-hidden whitespace-pre pr-1.5 pl-2.5 font-normal", row, placeholderClassName)}
       >
         {placeholder}
       </span>
       {hint && (
-        <span aria-hidden="true" className="invisible col-start-1 row-start-1 flex h-0 overflow-hidden whitespace-pre pr-1.5 pl-2.5">
+        <span aria-hidden="true" className={cn("invisible col-start-1 flex h-0 overflow-hidden whitespace-pre pr-1.5 pl-2.5", row)}>
           <span className="font-semibold">{hint.start}</span>
           <span className={cn("font-normal", placeholderClassName)}>{hint.words}</span>
           <span className={cn(endRoom, "shrink-0")} />
         </span>
       )}
-      <div className="col-start-1 row-start-1 flex h-full min-w-0 items-center">
+      <div className={cn("col-start-1 flex h-full min-w-0 items-center", row)}>
         <label className="relative flex h-full min-w-0 flex-1 items-center pr-1 after:absolute after:-inset-y-2 after:-left-0.5 after:right-0 after:content-['']">
           {Field ? <Field {...shared} render={<InputGroupInput className={look} />} /> : <InputGroupInput {...shared} className={look} />}
           {hint && input.value === hint.start && (

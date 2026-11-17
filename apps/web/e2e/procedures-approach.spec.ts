@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { cardClose, drawn, openTab, settle, settled, sideDrawer, slow } from "./helpers";
+import { cardClose, drawn, openTab, settle, settled, sideDrawer, slow, openRoute } from "./helpers";
 import { procedureRuns as runs } from "./marks";
 import { pickAirplane } from "./startState";
 import { circuitsOf, openRunways, LIST, DRAWN, ARRIVAL_DRAWN } from "./procedureStubs";
@@ -24,6 +24,7 @@ test("a field's approach is picked on its own page with its transition, drawn on
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const procedures = page.getByTestId("procedures");
   // C81 publishes no departure, so none is offered there; the tops of climb
   // and descent are the nav log's alone (the owner's cleanup: "no need to
@@ -94,6 +95,7 @@ test("a field's approach is picked on its own page with its transition, drawn on
   // Checked in the list, and on its page Remove from Route takes it off
   // the address, and off the map once the sheet is put away.
   await openTab(page, "Nav Log");
+  await openRoute(page);
   await expect(kdlh.locator("[data-testid=procedure-kind][data-kind=approach]")).toContainText("ILS 09 · DLH");
   await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   await page.getByTestId("procedure-menu-all").click();
@@ -140,6 +142,7 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await page.goto("/app/plan?dep=C81&dest=KDLH&pattern=KDLH:27&auto=-");
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const procedures = page.getByTestId("procedures");
   const kdlh = procedures.getByRole("region", { name: "KDLH · Arrive" });
   await expect(kdlh.getByRole("button", { name: /^Runway 27/ })).toHaveAttribute("aria-pressed", "true", { timeout: slow(20000) });
@@ -160,6 +163,7 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await expect(page).toHaveURL(/[?&]pattern=[^&]*KDLH(%3A|:)9(%2C|,|&|$)/);
   await settled(sideDrawer(page));
   await openTab(page, "Nav Log");
+  await openRoute(page);
   await expect(kdlh.getByRole("button", { name: /^Runway 9\b/ })).toHaveAttribute("aria-pressed", "true");
   await expect(kdlh.locator("[data-testid=procedure-kind][data-kind=approach]")).toContainText("ILS 09 · DLH");
   // The field's arrival, a pull-down beside it once the list is in.
@@ -168,6 +172,7 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await expect(page).toHaveURL(/[?&]procs=[^&]*KDLH(%3A|:)SKETC1/);
   await settled(sideDrawer(page));
   await openTab(page, "Nav Log");
+  await openRoute(page);
   // The plate switched off from the approach's pull-down, and on again.
   await kdlh.locator("[data-testid=procedure-kind][data-kind=approach]").click();
   // The one picked is the stock listbox's selected option, as a reader
@@ -199,6 +204,7 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await page.goto(page.url());
   await settle(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   await expect(kdlh.getByTestId("procedure-pattern").first()).toBeVisible({ timeout: slow(20000) });
   await openRunways(kdlh);
   const circle = kdlh.getByRole("button", { name: /^Runway 27/ });

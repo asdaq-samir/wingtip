@@ -51,7 +51,7 @@ test(
     await expect(row.getByTestId("account-button")).toHaveCount(0);
     await expect(sideDrawer(page).getByTestId("sheet-title")).toHaveCount(0);
     await expect(sideDrawer(page).getByRole("tablist", { name: "Tabs" })).toHaveCount(0);
-    await expect(sideDrawer(page).getByLabel(/^(\S+, )?Departure$/)).toContainText("C81");
+    await expect(sideDrawer(page).getByTestId("route-summary")).toContainText("C81");
 
     // Focused: the search's own page, its home list (Favorites, Recents),
     // with no flight on it since the saved flights went to FPL (3eb6e1417),

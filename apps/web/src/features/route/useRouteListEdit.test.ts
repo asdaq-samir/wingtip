@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { insertedRoute, movedRoute, replacedRoute } from "./useRouteListEdit";
+import { movedRoute, replacedRoute } from "./useRouteListEdit";
 
 // Airports by their four letters, a waypoint by its five.
 const isEnd = (p: string) => p.length === 4 || p.startsWith("@");
@@ -18,7 +18,7 @@ describe("a point dragged in FPL's list", () => {
   });
 });
 
-describe("a point made another from its card", () => {
+describe("a point made another from its menu's Change", () => {
   it("takes what is typed, in capitals", () => {
     expect(replacedRoute(["KUGN", "KJVL", "KDLH"], 1, " kmsn ")).toEqual({ dep: "KUGN", stops: ["KMSN"], dest: "KDLH" });
   });
@@ -27,15 +27,5 @@ describe("a point made another from its card", () => {
     expect(replacedRoute(["KUGN", "KJVL", "KDLH"], 1, " ")).toBeNull();
     expect(replacedRoute(["KUGN", "KJVL", "KDLH"], 1, "KUGN")).toBeNull();
     expect(replacedRoute(["KUGN", "KDLH"], 2, "KMSN")).toBeNull();
-  });
-});
-
-describe("a stop typed in at its place", () => {
-  it("is put in there", () => {
-    expect(insertedRoute(["KUGN", "KDLH"], 1, "kjvl")).toEqual({ dep: "KUGN", stops: ["KJVL"], dest: "KDLH" });
-  });
-
-  it("is let go beside the same point", () => {
-    expect(insertedRoute(["KUGN", "KDLH"], 1, "KDLH")).toBeNull();
   });
 });

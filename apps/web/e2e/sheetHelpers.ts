@@ -66,6 +66,24 @@ export async function openPanel(page: Page) {
   await grabberTo(page, "half");
 }
 
+/** FPL's route open to edit (the one layout, decision 0046): once the
+ *  route is whole, a tap on its folded line (route-summary), and its head,
+ *  "Route" and Done, over its airport cards, its field and its figures.
+ *  Already open, as it is, so a spec can ask for it before each edit. */
+export async function openRoute(page: Page) {
+  const panel = sideDrawer(page);
+  const line = panel.getByTestId("route-summary");
+  await expect(line.or(panel.getByTestId("route-done")).first()).toBeVisible({ timeout: slow(30_000) });
+  if (await line.isVisible()) await line.click();
+  await expect(panel.getByTestId("route-done")).toBeVisible();
+}
+
+/** FPL's route folded again by its Done, to its one line. */
+export async function foldRoute(page: Page) {
+  await sideDrawer(page).getByTestId("route-done").click();
+  await expect(sideDrawer(page).getByTestId("route-summary")).toBeVisible();
+}
+
 /** The route cleared by its ••• menu's Clear route (the owner, 2026-11-11). */
 export async function clearTheRoute(page: Page) {
   await openPanel(page);
