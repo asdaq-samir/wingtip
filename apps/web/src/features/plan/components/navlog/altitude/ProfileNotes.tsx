@@ -16,6 +16,10 @@ import AltitudeReasoning from "../../AltitudeReasoning";
  * pilot's own altitude's cautions with the way round high ground; a tight
  * altitude; and how the altitude was chosen, folded.
  */
+/** A note of the route's airspace with its one action at the end: Class
+ *  B avoided with Allow, or flown through with Avoid. */
+const NOTE_ROW = "flex items-center justify-between gap-2 rounded-xl bg-card py-1.5 pr-1.5 pl-3";
+
 export default function ProfileNotes({
   nav,
   legs,
@@ -56,7 +60,7 @@ export default function ProfileNotes({
   return (
     <>
       {classBAvoided ? (
-        <div className="flex items-center justify-between gap-2 rounded-xl bg-card py-1.5 pr-1.5 pl-3" data-testid="class-b-avoided">
+        <div className={NOTE_ROW} data-testid="class-b-avoided">
           <span className={TEXT.detail}>Avoiding Class B</span>
           {onAllowClassB && (
             <Button type="button" size="sm" variant="ghost" className="text-tint" onClick={onAllowClassB}>
@@ -66,7 +70,7 @@ export default function ProfileNotes({
         </div>
       ) : (
         bravo && (
-          <div className="flex items-center justify-between gap-2 rounded-xl bg-card py-1.5 pr-1.5 pl-3" data-testid="class-b-accepted">
+          <div className={NOTE_ROW} data-testid="class-b-accepted">
             <span className={TEXT.detail}>Through {faaWords(bravo.name)}: clearance needed</span>
             {onAvoidClassB && (
               <Button

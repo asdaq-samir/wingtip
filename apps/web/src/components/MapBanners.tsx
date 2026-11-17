@@ -38,7 +38,8 @@ export default function MapBanners({ map }: { map: GlMap | null }) {
  * buttons at the bottom otherwise --
  * what is ahead of own ship in the air (AlertsBanner) first, then an
  * airplane the pilot asked to be told of (AircraftAlerts), then what the
- * app could not do (ProblemBanner). Each its own glass, eight apart; the
+ * app could not do (ProblemBanner). Each the one banner (MapBanner) on
+ * its glass, eight apart, in this one column, the one place they stack; the
  * column takes no taps of its own.
  *
  * Centred, as the toasts are (AppToaster), where they sat at the left:

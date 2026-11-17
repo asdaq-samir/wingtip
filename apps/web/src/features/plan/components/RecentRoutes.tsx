@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { History, Share, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router";
-import { cn } from "cn";
 import { ListPageHead, PillStrip, SmallMark, SmallTile, StripNote } from "../../../components/Favorites";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { ClearList } from "../../../components/RemovableRow";
@@ -9,9 +8,10 @@ import { recentHrefOf } from "../../../lib/flightLink";
 import { placeOfPoint } from "../../../lib/identSchema";
 import { dayMonth } from "../../../lib/format";
 import { recentRouteKey, usePreferences, type RecentRoute } from "../../../lib/preferences";
-import { TEXT } from "../../../lib/text";
 import { whenGroups } from "../lib/whenGroups";
 import RowMenu from "../../../components/RowMenu";
+import EmptyState from "../../../components/EmptyState";
+import { NO_RECENT_ROUTES } from "../../../lib/emptyWords";
 import { cancelled, shareOrCopy } from "../../../lib/share";
 import { showError } from "../../../lib/problems";
 import { describeError } from "../../../lib/api/client";
@@ -92,7 +92,12 @@ export function RecentRoutesPage({ onBack }: { onBack: () => void }) {
           ))}
         </div>
       ) : (
-        <p className={cn("px-1 text-muted-foreground", TEXT.note)}>None yet: the routes planned are kept here.</p>
+        // Nothing to list, as the app's full lists say it (EmptyState, iOS's
+        // ContentUnavailableView), as Saved flights' page does; a grey line
+        // is the strip's (StripNote).
+        <EmptyState icon={<History />} title={NO_RECENT_ROUTES}>
+          The routes planned are kept here.
+        </EmptyState>
       )}
     </>
   );

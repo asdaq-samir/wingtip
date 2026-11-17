@@ -24,7 +24,7 @@ export function feetBelowClouds(ceilingFt: number | null | undefined): number {
  */
 
 /** Total time in decimal hours, as a logbook keeps it: "19.9h", where
- *  the flight's line has no room for "19h 50m" (FlightLine). Up to the
+ *  the flight's line has no room for "19h 50m" (TripFigures). Up to the
  *  next tenth, so the time is never said short of what it is; whole
  *  minutes first, as lib/format's duration's are. */
 export function decimalHours(minutes: number): string {

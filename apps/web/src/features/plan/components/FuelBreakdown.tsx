@@ -22,7 +22,7 @@ function reserveRule(totals: Totals): string {
  * legs flown, the start, taxi and takeoff allowance, any alternate, and
  * the reserve at the cruise burn, summed as the planner sums them
  * (wingtip.navlog.fuel_plan); then the tanks' usable fuel, red where they do
- * not hold it. Opened from the flight's figures (FlightLine); the Brief's
+ * not hold it. Opened from the flight's figures (TripFigures); the Brief's
  * Fuel section says the same for every hop.
  */
 export default function FuelBreakdown({

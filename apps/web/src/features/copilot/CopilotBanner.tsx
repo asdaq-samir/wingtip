@@ -1,18 +1,14 @@
 import { useEffect, useState } from "react";
-import { CircleAlert, Info, TriangleAlert } from "lucide-react";
-import { cn } from "cn";
-import { Alert } from "../../components/ui/alert";
-import { Button } from "../../components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
-import { GLASS } from "../../lib/mapChrome";
+import { CircleAlert, Info, Radio, TriangleAlert } from "lucide-react";
+import MapBanner, { BannerButton } from "../../components/MapBanner";
+import type { BannerTone } from "../../components/bannerGlass";
 import { LATEST_KEPT_MS, useLatestAtcCall } from "../../lib/atc/latestCall";
-import { TEXT } from "../../lib/text";
 import { useFeelOnNew } from "../../lib/haptics";
 import { useCopilot } from "./useCopilot";
 
 /** A warning's red, a caution's amber, as the alerts banner's are; an
  *  advisory in the text's own ink. */
-const INK = { warning: "text-destructive-ink", caution: "text-caution-ink", advisory: "text-foreground" } as const;
+const TONE: Record<"warning" | "caution" | "advisory", BannerTone> = { warning: "warning", caution: "caution", advisory: "plain" };
 
 const ICON = { warning: TriangleAlert, caution: CircleAlert, advisory: Info } as const;
 
@@ -35,15 +31,14 @@ function AtcLine() {
     .filter(Boolean)
     .join(" · ");
   return (
-    <p
-      className={cn(GLASS, "w-fit max-w-full rounded-(--radius-banner) px-3 py-2 tabular-nums", TEXT.detail)}
-      role="status"
+    <MapBanner
+      className="tabular-nums"
       data-testid="copilot-atc-line"
-    >
-      <span className="font-semibold">ATC </span>
-      {atc.line}
-      {set && <span className="text-muted-foreground"> · {set}</span>}
-    </p>
+      icon={Radio}
+      tone="tint"
+      title={`ATC ${atc.line}`}
+      sub={set || undefined}
+    />
   );
 }
 
@@ -58,56 +53,40 @@ export default function CopilotBanner() {
   const { message, dismiss } = useCopilot();
   // A new warning or caution felt as it comes up (lib/haptics); an advisory only shown.
   useFeelOnNew(message && message.level !== "advisory" && !message.elsewhere ? `${message.kind}:${message.title}` : null, "warning");
-  const [open, setOpen] = useState(false);
   if (!message || message.elsewhere) return <AtcLine />;
-  const Icon = ICON[message.level];
   return (
-    <div className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-(--radius-banner)")} data-copilot-banner={message.kind}>
-      <Alert
-        // Told to a screen reader once by useCopilot (lib/announce): a
-        // live region arriving with its words in it is not read by every
-        // reader, and the message is read again with each look.
-        role="region"
-        aria-label="Copilot"
-        className={cn(
-          "flex min-h-11 gap-2 rounded-(--radius-banner) border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0",
-          open ? "items-start *:[svg]:mt-[0.6rem]" : "items-center",
-          INK[message.level],
-        )}
-      >
-        <Icon className="shrink-0" />
-        <Collapsible open={open} onOpenChange={setOpen} className={cn("flex min-w-0 flex-1 flex-col self-stretch", TEXT.detail)}>
-          <CollapsibleTrigger
-            data-testid="copilot-title"
-            className="flex min-w-0 flex-1 flex-col justify-center py-1 text-left outline-none focus-visible:underline"
-          >
-            <span className={cn("block max-w-full font-semibold", !open && "line-clamp-2")}>{message.title}</span>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="flex flex-col gap-1.5 pb-1 text-foreground" data-testid="copilot-detail">
-            {message.detail.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-            {message.sources.map((source) => (
-              <p key={source} className="text-muted-foreground" data-copilot-source="">
-                {source}
-              </p>
-            ))}
-          </CollapsibleContent>
-        </Collapsible>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className={cn("shrink-0 rounded-full text-tint", open && "self-start")}
-          data-testid="copilot-dismiss"
-          onClick={() => {
-            dismiss();
-            setOpen(false);
-          }}
-        >
+    <MapBanner
+      // A new message is a new banner, closed.
+      key={`${message.kind}:${message.title}`}
+      data-copilot-banner={message.kind}
+      // Told to a screen reader once by useCopilot (lib/announce): a
+      // live region arriving with its words in it is not read by every
+      // reader, and the message is read again with each look.
+      role="region"
+      label="Copilot"
+      icon={ICON[message.level]}
+      tone={TONE[message.level]}
+      title={message.title}
+      lines={2}
+      titleTestId="copilot-title"
+      moreTestId="copilot-detail"
+      more={
+        <>
+          {message.detail.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+          {message.sources.map((source) => (
+            <p key={source} className="text-muted-foreground" data-copilot-source="">
+              {source}
+            </p>
+          ))}
+        </>
+      }
+      actions={
+        <BannerButton data-testid="copilot-dismiss" onClick={dismiss}>
           OK
-        </Button>
-      </Alert>
-    </div>
+        </BannerButton>
+      }
+    />
   );
 }

@@ -251,6 +251,9 @@ test("FPL's strip shows Saved or, from its filter, the latest routes planned as 
     await expect(panel.getByTestId("route-recents-clear")).toHaveCount(left - 1);
   }
   await expect(panel.getByTestId("route-recent")).toHaveCount(0);
+  // The page empty says so as the app's full lists do (EmptyState), as
+  // Saved flights' page does.
+  await expect(panel.getByText("No recent routes")).toBeVisible();
   await panel.getByTestId("route-recents-page-close").click();
   await expect(panel.getByTestId("route-recents")).toContainText("None yet");
   await stripShows(page, "fpl-strip-shows", "fpl-shows-saved");

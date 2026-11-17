@@ -14,7 +14,7 @@ import { toggleReplay } from "../../replay";
 import { routeProfileQuery } from "../../../lib/queryClient";
 import { TEXT } from "../../../lib/text";
 import { altFt, feet, wholeNm } from "../../../lib/format";
-import FlightLine from "./FlightLine";
+import TripFigures from "./TripFigures";
 import { dryRunFlown, runNmAt, type DryRun, type Flown } from "./navlog/dryRun";
 import type { RouteEnds } from "./navlog/rows";
 import { loadFlightChart } from "./loadFlightChart";
@@ -288,7 +288,7 @@ function timeAt(run: DryRun, nm: number): number {
  *  distance and time left to it, and the fuel required less what the run
  *  has burnt. They had been figures of their own (Dist left, Time left,
  *  ETA, To burn). */
-export function DryRunFigures({ run, ...line }: { run: DryRun } & Omit<ComponentProps<typeof FlightLine>, "flown" | "grow">) {
+export function DryRunFigures({ run, ...line }: { run: DryRun } & Omit<ComponentProps<typeof TripFigures>, "flown" | "grow">) {
   // As far as the figures say it -- a tenth of a mile and of a gallon, a
   // minute -- so the strip is drawn again only when one changes, not at
   // each of the run's frames: it measures its figures to fit them
@@ -334,4 +334,4 @@ export function DryRunFigures({ run, ...line }: { run: DryRun } & Omit<Component
 }
 
 /** The flight's figures drawn again only for new ones (DryRunFigures). */
-const SteadyLine = memo(FlightLine);
+const SteadyLine = memo(TripFigures);

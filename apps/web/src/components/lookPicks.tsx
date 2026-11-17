@@ -1,10 +1,8 @@
-import type { ReactNode } from "react";
 import { Monitor, Moon, Palette, Sun, SunDim, SunMedium, SunMoon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { BRANDS } from "../lib/brand";
 import { usePreferences, type Brand, type ChartLight, type ChartNight, type OwnShipLook } from "../lib/preferences";
 import { OWN_SHIP_LOOKS, ownShipSvg } from "../lib/map/position/ownShipLook";
-import MenuTile from "./MenuTile";
 import type { PullDownOption } from "./PullDown";
 import { LayerMenuTile } from "./LayerTile";
 
@@ -14,11 +12,12 @@ import { LayerMenuTile } from "./LayerTile";
  * One source for both of their homes, the Map card's Look and
  * the first flight's welcome (WelcomeSheet, the owner, 2026-11-13: "give
  * theme and appearance selection on the welcome screen"): each a
- * PullDown's value, options and setter, drawn as tiles (ThemeTile,
- * AppearanceTile) on the welcome, and as the Map card's Look tiles
- * (ThemeLayerTile, AppearanceLayerTile; LayerMenuTile, the layers' tile
- * with its value under its name and a tap its menu), with Sunlight's
- * after them (SunlightLayerTile; the owner, 2026-11-14: "Sunlight should
+ * PullDown's value, options and setter, drawn as the same two tiles in
+ * both (ThemeTile, AppearanceTile; LayerMenuTile, the layers' tile with
+ * its value under its name and a tap its menu: the welcome had tiles of
+ * its own, a glyph in a disc beside the words, until 2026-11-17), with
+ * Sunlight's after them on the Map card (SunlightTile; the owner,
+ * 2026-11-14: "Sunlight should
  * also move to map settings", "every section should have 4 tiles like
  * Layers one").
  */
@@ -57,8 +56,8 @@ const APPEARANCE_OPTIONS: PullDownOption<Appearance>[] = [
 ];
 
 /** Appearance, read from the two settings it sets (no third): the page's
- *  theme, and in the dark the chart dimmed or as printed; with its mark. */
-function useAppearancePick(): LookPick<Appearance> & { icon: ReactNode } {
+ *  theme, and in the dark the chart dimmed or as printed. */
+function useAppearancePick(): LookPick<Appearance> {
   const { theme, setTheme } = useTheme();
   const chartNight = usePreferences((s) => s.chartNight);
   const setChartNight = usePreferences((s) => s.setChartNight);
@@ -68,32 +67,19 @@ function useAppearancePick(): LookPick<Appearance> & { icon: ReactNode } {
     setTheme(mode);
     setChartNight(night);
   };
-  const icon = value === "dark-bright" ? <SunMoon /> : value === "dark" ? <Moon /> : value === "light" ? <Sun /> : <Monitor />;
-  return { value, onChange, options: APPEARANCE_OPTIONS, icon };
+  return { value, onChange, options: APPEARANCE_OPTIONS };
 }
 
-/** Theme's tile (MenuTile). */
+/** Theme's tile (LayerMenuTile): its value under its name, a tap its menu. */
 export function ThemeTile() {
-  return <MenuTile label="Theme" {...useThemePick()} on={false} testId="brand-select" icon={<Palette />} />;
-}
-
-/** Appearance's tile (MenuTile), its mark the one picked. */
-export function AppearanceTile() {
-  const { icon, ...pick } = useAppearancePick();
-  return <MenuTile label="Appearance" {...pick} on={false} testId="theme-select" icon={icon} />;
-}
-
-/** Theme's tile on the Map card (LayerMenuTile): its value under its
- *  name, a tap its menu. */
-export function ThemeLayerTile() {
   return <LayerMenuTile name="Theme" glyph={Palette} {...useThemePick()} testId="brand-select" />;
 }
 
-/** Appearance's tile on the Map card, its glyph the one picked. */
-export function AppearanceLayerTile() {
-  const { value, onChange, options } = useAppearancePick();
-  const glyph = value === "dark-bright" ? SunMoon : value === "dark" ? Moon : value === "light" ? Sun : Monitor;
-  return <LayerMenuTile name="Appearance" glyph={glyph} value={value} onChange={onChange} options={options} testId="theme-select" />;
+/** Appearance's tile, its glyph the one picked. */
+export function AppearanceTile() {
+  const pick = useAppearancePick();
+  const glyph = pick.value === "dark-bright" ? SunMoon : pick.value === "dark" ? Moon : pick.value === "light" ? Sun : Monitor;
+  return <LayerMenuTile name="Appearance" glyph={glyph} {...pick} testId="theme-select" />;
 }
 
 const SUNLIGHT_OPTIONS: PullDownOption<ChartLight>[] = [
@@ -107,7 +93,7 @@ const SUNLIGHT_OPTIONS: PullDownOption<ChartLight>[] = [
  *  (Auto), or by hand, in the cockpit, where a pilot needs it at a tap; in
  *  the tint while On, as a layer that is on. It was Settings' Display tile
  *  and moved here with the rest of the look (the owner, 2026-11-14). */
-export function SunlightLayerTile() {
+export function SunlightTile() {
   const value = usePreferences((s) => s.chartLight);
   const onChange = usePreferences((s) => s.setChartLight);
   const glyph = value === "on" ? Sun : value === "off" ? SunDim : SunMedium;
@@ -146,7 +132,7 @@ const OWN_SHIP_GLYPHS: Record<OwnShipLook, ReturnType<typeof drawnGlyph>> = {
  *  glyph the one picked, drawn as the chart draws it. The look's fourth
  *  tile at the owner's ask (2026-11-14: "Maybe replace the position with
  *  the choice of own ship?"), back after You on the Map went on 2026-11-13. */
-export function OwnShipLayerTile() {
+export function OwnShipTile() {
   const value = usePreferences((s) => s.ownShipLook);
   const onChange = usePreferences((s) => s.setOwnShipLook);
   return (

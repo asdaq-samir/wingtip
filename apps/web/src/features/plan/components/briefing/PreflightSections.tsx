@@ -1,6 +1,6 @@
 import { lazy, useId } from "react";
 import { cn } from "cn";
-import { OctagonAlert, TriangleAlert } from "lucide-react";
+import { Flag } from "./BriefingBits";
 import AccordionSection from "../../../../components/AccordionSection";
 import AfterPaint from "../../../../components/AfterPaint";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
@@ -88,10 +88,9 @@ export function WeightBalanceSection({
       summary={summary}
       aside={
         result && result.problems.length > 0 ? (
-          <span className={cn("inline-flex items-center gap-1 font-semibold", FINDING_TONE.stop, TEXT.note)} data-testid="wb-flag">
-            <OctagonAlert className="size-3.5" aria-hidden />
+          <Flag finding="stop" testId="wb-flag">
             Out of limits
-          </span>
+          </Flag>
         ) : undefined
       }
     >
@@ -236,18 +235,13 @@ export function TakeoffLandingSection({
       summary={summary}
       aside={
         short.length ? (
-          <span className={cn("inline-flex items-center gap-1 font-semibold", FINDING_TONE.stop, TEXT.note)} data-testid="tl-flag">
-            <OctagonAlert className="size-3.5" aria-hidden />
+          <Flag finding="stop" testId="tl-flag">
             Runway too short
-          </span>
+          </Flag>
         ) : gusty.length ? (
-          <span
-            className={cn("inline-flex items-center gap-1 font-semibold", FINDING_TONE.caution, TEXT.note)}
-            data-testid="crosswind-flag"
-          >
-            <TriangleAlert className="size-3.5" aria-hidden />
+          <Flag finding="caution" testId="crosswind-flag">
             Crosswind
-          </span>
+          </Flag>
         ) : undefined
       }
     >

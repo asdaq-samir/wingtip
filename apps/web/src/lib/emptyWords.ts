@@ -14,3 +14,6 @@ export const NO_RUNWAYS = "No runway data published";
 
 /** A pilot with no flight saved yet. */
 export const NO_FLIGHTS = "No saved flights";
+
+/** No routes planned on this device yet: Recents' full page (EmptyState). */
+export const NO_RECENT_ROUTES = "No recent routes";

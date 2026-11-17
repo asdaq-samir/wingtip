@@ -132,7 +132,7 @@ interface LeftTo {
 }
 
 /** Where the dry run is at `t` against its landings, for the flight's own
- *  figures as it goes (FlightLine's `flown`): the hop it is on (0 the
+ *  figures as it goes (TripFigures' `flown`): the hop it is on (0 the
  *  first, the route's totals' hops in turn), what is left to that hop's
  *  landing and to the last, and the fuel burnt since the hop began. Once
  *  in at a stop, the next hop's. Null with nothing flown yet. */

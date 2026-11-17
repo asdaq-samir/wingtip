@@ -1,7 +1,5 @@
 import { Sun } from "lucide-react";
-import { cn } from "cn";
-import { Button } from "./ui/button";
-import { TEXT } from "../lib/text";
+import MapBanner, { BannerButton } from "./MapBanner";
 import { unseen, useTips } from "../lib/firstRunTips";
 import { usePreferences } from "../lib/preferences";
 import { useSunlight, useSunlightSensor } from "../lib/sunlight";
@@ -11,10 +9,11 @@ const SEEN = "sunlight-banner";
 
 /**
  * The sunlight scheme's one line, the first time it comes on by itself
- * from the light sensor (lib/sunlight): black, as the owner's canvas
- * draws it over the white chart, with Keep off -- the setting to Off in
- * one tap -- and the app's close, either of which keeps it from coming
- * back. Mounted with the map's banners (MapBanners); it runs the scheme
+ * from the light sensor (lib/sunlight), the map's one banner (MapBanner),
+ * whose glass the scheme itself makes solid white, with Keep
+ * off -- the setting to Off in one tap -- and the app's close, either of
+ * which keeps it from coming back. It was black, as the owner's first
+ * canvas drew it, the one banner of its own look. Mounted with the map's banners (MapBanners); it runs the scheme
  * itself (useSunlight) so the attribute is kept whatever is shown.
  */
 export default function SunlightBanner() {
@@ -26,40 +25,28 @@ export default function SunlightBanner() {
   const see = useTips((s) => s.see);
   if (chartLight !== "auto" || !bright || !unseen(seen, SEEN)) return null;
   return (
-    <div
-      role="status"
+    <MapBanner
       data-testid="sunlight-banner"
-      className={cn(
-        "pointer-events-auto flex min-h-11 w-fit max-w-full items-center gap-2 rounded-xl bg-black py-1 pr-1 pl-3 text-white",
-        TEXT.detail,
-      )}
-    >
-      <Sun className="size-5 shrink-0 text-(color:--brand-taxiway-yellow)" strokeWidth={2.5} aria-hidden />
-      <span className="min-w-0 flex-1">Bright light: high-contrast chart on.</span>
-      <Button
-        type="button"
-        size="sm"
-        variant="ghost"
-        className="shrink-0 rounded-full font-semibold text-(color:--brand-taxiway-yellow) hover:bg-white/10 hover:text-(color:--brand-taxiway-yellow)"
-        onClick={() => {
-          setChartLight("off");
-          see(SEEN);
-        }}
-        data-testid="sunlight-keep-off"
-      >
-        Keep off
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant="ghost"
-        className="shrink-0 rounded-full text-white hover:bg-white/10 hover:text-white"
-        onClick={() => see(SEEN)}
-        aria-label="Close"
-        data-testid="sunlight-banner-close"
-      >
-        OK
-      </Button>
-    </div>
+      icon={Sun}
+      tone="tint"
+      title="Bright light: high-contrast chart on."
+      actions={
+        <>
+          <BannerButton
+            className="font-semibold"
+            onClick={() => {
+              setChartLight("off");
+              see(SEEN);
+            }}
+            data-testid="sunlight-keep-off"
+          >
+            Keep off
+          </BannerButton>
+          <BannerButton onClick={() => see(SEEN)} aria-label="Close" data-testid="sunlight-banner-close">
+            OK
+          </BannerButton>
+        </>
+      }
+    />
   );
 }

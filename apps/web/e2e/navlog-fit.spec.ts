@@ -121,7 +121,7 @@ test("a long trip's figures are set smaller to fit the strip, not cut short", as
   await expect(sideDrawer(page).getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
   await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
   const figures = sideDrawer(page).getByTestId("flight-line").locator("dd");
-  // Its unit after a no-break space, the Dist a button to the nav log (FlightLine).
+  // Its unit after a no-break space, the Dist a button to the nav log (TripFigures).
   await expect(figures.filter({ hasText: /\snm$/ }).first()).toHaveText(/^1\d{3}(\.\d)?\snm$/);
   // At the default text size and the two above it, as an iPhone sets the
   // root from Settings' text size (features/shell/dynamicType, which a test browser
@@ -136,7 +136,7 @@ test("a long trip's figures are set smaller to fit the strip, not cut short", as
       .poll(
         // A figure that is a button (Dist, ETE, Fuel) is cut in its own
         // truncated words, its dd left to overflow for the button's 44-point
-        // area (FlightLine), which a measure of the dd took for a cut figure.
+        // area (TripFigures), which a measure of the dd took for a cut figure.
         () =>
           figures.evaluateAll((dds) =>
             dds

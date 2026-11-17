@@ -81,6 +81,13 @@ These hold on every screen below and win over any reference app.
 - **Discrete settings are menus or segmented controls**, not sliders
   (decision 0017).
 - **Errors show where they happen** (`lib/problems`), never in a toast.
+  Over the map every line -- what is ahead, the copilot's message, an
+  airplane's alert, what the app could not do, the field weather's age,
+  the sunlight scheme, the ATC copilot's listening line -- is one banner
+  (`components/MapBanner`: its glyph, its line, more under a tap, its
+  buttons; the map buttons' glass), stacked in the one column
+  (`MapBanners`) eight apart; the radio's and ATC's call cards and the
+  weather loop's bar stand on the same glass (`components/bannerGlass`), 2026-11-17.
   A confirmation with Undo is a Base UI Toast with its action (`lib/toast`
   `toast.undo`), the web's stock pattern, and a control's own
   confirmation ("Copied") an anchored Base UI Toast by that control
@@ -793,6 +800,13 @@ by clicking the map, typing an address or a name, up to 9 stops in all
 3. The route string field (typed, Enter to compute), as SkyVector's.
 4. The altitude (`FL045` style, decision 0009) and the figure strip at
    the foot: To, Dist, ETE, Fuel (ETE and Fuel only with an airplane).
+   One strip in every state, FPL's route row on the ground, a dry run and
+   in flight, and the training page's too: `components/FigureStrip`, the
+   plan's figures and their taps given it by `features/plan`'s
+   `TripFigures` (`FlightLine` until 2026-11-17). In flight the head over
+   the map gives the next checkpoint only while the engine's `in_flight`
+   says the airplane is on the route (`on_route`), as the iPhone's
+   instruments do; off it, the head is Emergency alone (`FlyingHead`).
    The Profile card sets the altitude on the side view
    ([rules.md](rules.md) section 6): the upright Slider previews the
    clearance (red within 100 ft, yellow within 1,000 ft, the engine's
@@ -1302,7 +1316,7 @@ The first time the planner opens with no route on a device
 (`WelcomeSheet`: the stock Drawer on a phone, the stock Dialog from `md`
 up, solid): "Welcome to Wingtip Maps", three rows (Search, like Maps; FPL,
 like your EFB; FAA charts that move like Maps), Theme and Appearance as
-two tiles (`components/lookPicks`' `ThemeTile` and `AppearanceTile`, `MenuTile`; the Map card's Look draws the same picks as the layers' tiles, `ThemeLayerTile` and `AppearanceLayerTile`), applied
+two tiles, the Map card's Look's own (`components/lookPicks`' `ThemeTile` and `AppearanceTile`, the layers' `LayerMenuTile`; 2026-11-17, where the welcome had tiles of its own), applied
 as they are picked, the sheet and the map changing behind it; the owner,
 2026-11-13), and at its foot Apple's permission priming (the owner,
 2026-11-13): with the browser's question still to come, Turn On Location

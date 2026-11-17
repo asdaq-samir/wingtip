@@ -1,8 +1,5 @@
 import { Mic } from "lucide-react";
-import { cn } from "cn";
-import { CAPSULE_HIT, GLASS } from "../../lib/mapChrome";
-import { Button } from "../../components/ui/button";
-import { TEXT } from "../../lib/text";
+import MapBanner, { BannerButton } from "../../components/MapBanner";
 import AtcCard from "./AtcCard";
 import { useAtcCopilot } from "./useAtcCopilot";
 
@@ -11,7 +8,8 @@ import { useAtcCopilot } from "./useAtcCopilot";
  * the pilot has it on: the newest call to us as its card (AtcCard); while
  * flying and not yet listening, one line and a tap to start, since a page
  * may start the microphone only from a tap; flying with no registration
- * to listen for, a line saying so (no airplane is ever assumed).
+ * to listen for, a line saying so (no airplane is ever assumed). The lines
+ * are the map's one banner (MapBanner).
  */
 export default function AtcCopilot() {
   const atc = useAtcCopilot();
@@ -29,36 +27,21 @@ export default function AtcCopilot() {
     );
   }
   if (atc.noTail) {
-    return (
-      <p
-        className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-(--radius-banner) px-3 py-2 text-muted-foreground", TEXT.detail)}
-        role="status"
-        data-testid="atc-no-tail"
-      >
-        ATC: pick your airplane to listen for its call sign
-      </p>
-    );
+    return <MapBanner data-testid="atc-no-tail" icon={Mic} tone="tint" title="ATC: pick your airplane to listen for its call sign" />;
   }
   if (atc.needsTap) {
     return (
-      <div
-        className={cn(GLASS, "pointer-events-auto flex w-fit max-w-full items-center gap-2 rounded-(--radius-banner) py-1 pr-1 pl-3")}
+      <MapBanner
         data-testid="atc-listen"
-      >
-        <Mic className="size-5 shrink-0 text-tint" aria-hidden="true" />
-        <span className={cn("min-w-0", atc.error ? "text-caution-ink" : "text-muted-foreground", TEXT.detail)} role="status">
-          {atc.error ?? "ATC: not listening yet"}
-        </span>
-        <Button
-          size="sm"
-          variant="secondary"
-          className={`${CAPSULE_HIT} shrink-0 text-tint`}
-          onClick={atc.listen}
-          data-testid="atc-listen-start"
-        >
-          Listen
-        </Button>
-      </div>
+        icon={Mic}
+        tone={atc.error ? "caution" : "tint"}
+        title={atc.error ?? "ATC: not listening yet"}
+        actions={
+          <BannerButton onClick={atc.listen} data-testid="atc-listen-start">
+            Listen
+          </BannerButton>
+        }
+      />
     );
   }
   return null;

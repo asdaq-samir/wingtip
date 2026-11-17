@@ -23,7 +23,7 @@ interface Figure {
 interface TripInput {
   totals: Totals | null;
   /** Before the nav log's totals: the course's distance and the book
-   *  cruise speed and burn over it (see FlightLine). */
+   *  cruise speed and burn over it (see TripFigures). */
   estimate?: { distanceNm: number; cruiseTasKt: number | null; fuelBurnGph: number | null; taxiFuelGal?: number | null } | null;
   local: boolean;
   /** The route's destination, the To of a route with no stops. */
@@ -31,10 +31,10 @@ interface TripInput {
   /** The departure time picked, ISO; empty for now. */
   depart?: string;
   /** The arrival's clock time in the time en route's place, the pilot's
-   *  tap on it (FlightLine). */
+   *  tap on it (TripFigures). */
   arrival?: boolean;
   /** With stops, the destination in the next stop's place, the pilot's
-   *  tap on To (FlightLine): the distance and time the whole route's. */
+   *  tap on To (TripFigures): the distance and time the whole route's. */
   toDestination?: boolean;
   /** A dry run flying (dryRunFlown): the same figures from where the
    *  airplane is, at the owner's ask ("Dry run should keep the
@@ -169,7 +169,7 @@ export function shortFlights(totals: Totals | null): { name: string; shortGal: n
     return { name: hop ? `${pointName(hop.departure)} → ${pointName(hop.destination)}` : "", shortGal: s.short_gal };
   });
 }
-/** The figures from the airplane's book alone (FlightLine's `estimate`):
+/** The figures from the airplane's book alone (TripFigures' `estimate`):
  *  the distance as the course has it, and at cruise speed with no wind
  *  the time, and the fuel required at the cruise burn over that time with
  *  the airplane's own start and taxi allowance (none where its profile
