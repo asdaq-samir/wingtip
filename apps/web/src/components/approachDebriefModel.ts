@@ -31,7 +31,7 @@
 import type { ProcedureDrawing } from "../lib/api/types";
 import type { ApproachDebrief as Debriefed, ApproachFinding } from "../lib/engine/contract";
 import { callEngine, type EngineAnswer } from "../lib/engine/engine";
-import type { TrackPoint } from "../lib/track";
+import { enginePoints, type TrackPoint } from "../lib/track";
 
 /** How the course is flown, by the approach's coded identifier (ARINC
  *  424-18 5.10): a localizer's, a GPS's, or another (VOR, NDB, LDA, back
@@ -135,8 +135,6 @@ function shaped(d: Debriefed): ApproachDebrief {
     wayIn: d.way_in,
   };
 }
-
-const enginePoints = (points: TrackPoint[]) => points.map((p) => ({ t: p.t, lat: p.lat, lon: p.lon, alt_ft: p.altFt }));
 
 /** Each time the track flew inbound over the approach's final approach
  *  fix: the attempts at it, as point indices -- from the last one's end,

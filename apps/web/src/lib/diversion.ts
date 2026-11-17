@@ -18,6 +18,7 @@
  * engine's. Its stopwatch's figures are lib/format's (stopwatch).
  */
 import type { EmergencyFields, Leg } from "./api/types";
+import { engineFields } from "./engineFields";
 import { callEngine, type EngineAnswer } from "./engine/engine";
 
 /** The figures a student estimates, and how far off is still reasonable. */
@@ -91,18 +92,6 @@ export function diversionFields(data: EmergencyFields, at: { lat: number; lon: n
     wind: leg.wind ? { from_deg: leg.wind.wind_dir_true_deg, kt: leg.wind.wind_speed_kt } : null,
     variation_deg: null,
     airplane: leg.tas_kt != null ? { cruise_tas_kt: leg.tas_kt } : null,
-    fields: data.fields.map((f) => ({
-      ident: f.ident,
-      name: f.name,
-      lat: f.lat,
-      lon: f.lon,
-      elevation_ft: f.elevation_ft ?? null,
-      runways: f.runways,
-      metar: f.metar ?? null,
-      towered: f.towered,
-      private: f.private,
-      military: f.military ?? null,
-      status: f.status ?? null,
-    })),
+    fields: engineFields(data),
   }).fields;
 }

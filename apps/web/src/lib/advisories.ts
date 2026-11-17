@@ -1,6 +1,6 @@
 import type { Briefing } from "./api/types";
 import { callEngine } from "./engine/engine";
-import { altFt, clockTime, dayMonth, dayMonthYear, weekdayShort, zoneName, zuluTime } from "./format";
+import { altFt, clockTime, dayMonth, dayMonthYear, feet, weekdayShort, zoneName, zuluTime } from "./format";
 
 type GAirmet = Briefing["gairmets"][number];
 type Pirep = Briefing["pireps"][number];
@@ -67,7 +67,7 @@ export function gairmetTitle(g: GAirmet): string {
 /** How high a G-AIRMET reaches: "Freezing level to 22,000 ft",
  *  "5,000 to 18,000 ft"; nothing for one with no altitudes (IFR). */
 export function gairmetAltitudes(g: GAirmet): string | null {
-  const top = g.altitude_high_ft != null && g.altitude_high_ft > 0 ? `${altFt(g.altitude_high_ft)} ft` : null;
+  const top = g.altitude_high_ft != null && g.altitude_high_ft > 0 ? feet(g.altitude_high_ft) : null;
   if (!top) return g.from_freezing_level ? "From the freezing level" : null;
   const bottom = g.from_freezing_level ? "Freezing level" : g.altitude_low_ft != null ? altFt(g.altitude_low_ft) : "Surface";
   return `${bottom} to ${top}`;

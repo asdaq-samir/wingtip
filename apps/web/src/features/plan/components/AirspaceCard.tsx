@@ -10,7 +10,7 @@ import { api } from "../../../lib/api/client";
 import type { AirspaceBand, SaaStatus } from "../../../lib/api/types";
 import { degreesMinutes, minimumsLine, shortAirspaceName } from "../../../lib/airspace";
 import type { LatLon } from "../../../lib/geo";
-import { altFt } from "../../../lib/format";
+import { altFt, feet } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
 import { CardHead } from "../../../components/CardHead";
 import { SheetCard } from "../../../components/SheetCard";
@@ -52,7 +52,7 @@ const CLASS_STYLE: Record<AirspaceBand["class"], string> = {
 };
 
 function range(band: AirspaceBand, ground: number | null): string {
-  const bottom = ground !== null && band.floor_ft <= ground ? "Surface" : `${altFt(band.floor_ft)} ft`;
+  const bottom = ground !== null && band.floor_ft <= ground ? "Surface" : feet(band.floor_ft);
   const top = band.ceiling_ft >= 60000 ? "FL600" : `${altFt(band.ceiling_ft)} ft MSL`;
   return `${bottom} to ${top}`;
 }

@@ -1,6 +1,7 @@
 import type { TrafficAircraft } from "../../../lib/api/types";
 import { callEngine, type EngineAnswer } from "../../../lib/engine/engine";
 import { M_PER_NM, type Geo, type LatLon } from "../../../lib/geo";
+import type { GlRun } from "../../../lib/map/gl/useGlLines";
 import type { Fix } from "../../../lib/map/position/ownShip";
 import { WORLD_WIDTH_M } from "../../../lib/map/tileMath";
 
@@ -148,6 +149,10 @@ export function heightColour(altFt: number | null): string {
   const hue = (120 - 180 * t + 360) % 360;
   return `hsl(${Math.round(hue)} 85% 45%)`;
 }
+
+/** The same as lines to draw: each run at the track's width, 3. */
+export const colourLines = (path: { lat: number; lon: number; altFt: number | null }[]): GlRun[] =>
+  colourRuns(path).map((r) => ({ points: r.points, colour: r.colour, width: 3 }));
 
 /** A path in runs of one colour (heightColour, its height to 1,000 ft),
  *  each run starting where the last ended, so the line is whole: one

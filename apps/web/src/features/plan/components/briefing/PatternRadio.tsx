@@ -5,7 +5,7 @@ import type { Briefing, Leg } from "../../../../lib/api/types";
 import { compassWord, entryFor, exitFor, patternSideDeg, runwayNumber, type RunwayEnd } from "../../lib/pattern";
 import { fieldPhases, type RadioCall, type RadioPhase } from "../../lib/radio";
 import { useRunwayPicks } from "../../lib/useRunwayPicks";
-import { altFt } from "../../format";
+import { altFt, feet } from "../../format";
 import { Mhz } from "../FrequencyRow";
 import { TEXT } from "../../../../lib/text";
 
@@ -181,7 +181,7 @@ function PatternRows({ phase, facilities, courseDeg }: { phase: RadioPhase; faci
               ? `${altFt(pattern.agl_ft)} ft above the field, as the FAA publishes it`
               : `${altFt(pattern.agl_ft)} ft above the field: none published, so AC 90-66C's for a propeller airplane`
           }
-          value={pattern.altitude_ft != null ? `${altFt(pattern.altitude_ft)} ft` : undefined}
+          value={pattern.altitude_ft != null ? feet(pattern.altitude_ft) : undefined}
           data-testid="pattern-altitude"
         />
       )}

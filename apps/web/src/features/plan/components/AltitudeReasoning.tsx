@@ -5,7 +5,7 @@ import { usePrinting } from "../lib/usePrinting";
 import type { AltitudeSegment, Leg, NavLogAltitude, Totals } from "../../../lib/api/types";
 import { cruiseReferenceFt } from "../../../lib/performance";
 import { TEXT } from "../../../lib/text";
-import { flightLevel } from "../../../lib/format";
+import { feet, flightLevel } from "../../../lib/format";
 import { WINDS_MODELLED, windsSource } from "../../../lib/windsAloft";
 import { capitalised, faaWords, suaAltitudes } from "../../../lib/advisories";
 import { altFt, bearing, cruiseByAltitude, describeFuel, describeSteps, describeTime, feetBelowClouds, PLAN_NAME } from "../format";
@@ -187,7 +187,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false, winds
                 : i === runs.length - 1
                   ? "the rest of the way"
                   : `from ${r.from_nm} to ${r.to_nm} nm`;
-            return `${r.band_ceiling_ft === null ? "none" : `${altFt(r.band_ceiling_ft)} ft`} (${why}) ${where}`;
+            return `${r.band_ceiling_ft === null ? "none" : feet(r.band_ceiling_ft)} (${why}) ${where}`;
           })
           .join(", then ")
       : null;
@@ -214,7 +214,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false, winds
   const cloudsLeaveNone = !s.cloud_clearance_kept && s.cloud_base_ft != null;
   const checkedSummary = s.weather_unavailable.includes("ceiling_visibility")
     ? "forecast not checked"
-    : `ceiling ${s.min_ceiling_ft === null ? "none" : `${altFt(s.min_ceiling_ft)} ft`}, ${s.min_visibility_sm ?? "—"} sm`;
+    : `ceiling ${s.min_ceiling_ft === null ? "none" : feet(s.min_ceiling_ft)}, ${s.min_visibility_sm ?? "—"} sm`;
   const specialUse = s.special_use ?? [];
 
   // Each step's conclusion is its row, the figure in it; how it was
@@ -242,7 +242,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false, winds
         : airways.some((a) => a.maa_ft === s.band_ceiling_ft)
           ? "The airway's MAA"
           : null;
-  const ceilingValue = s.band_ceiling_ft !== null ? `${altFt(s.band_ceiling_ft)} ft` : "none";
+  const ceilingValue = s.band_ceiling_ft !== null ? feet(s.band_ceiling_ft) : "none";
   const ifrSteps: Step[] = [
     {
       key: "floor",
@@ -250,7 +250,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false, winds
       // 14 CFR 91.177(a): an airway's MEA, else 1,000 ft (2,000 in the
       // mountains) over the highest obstacle within 4 nm of the course.
       detail: airways.length > 0 ? "The airway's MEA, or obstacles within 4 nm" : "Obstacles within 4 nm, with margin",
-      value: `${altFt(s.floor_ft)} ft`,
+      value: feet(s.floor_ft),
       body: (
         <>
           1,000 ft above the highest obstacle within 4 nm of the course, 2,000 ft over a mountainous area the FAA designates (14 CFR
@@ -309,7 +309,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false, winds
       key: "floor",
       title: "Floor",
       detail: "Terrain and obstacles, with margin",
-      value: `${altFt(s.floor_ft)} ft`,
+      value: feet(s.floor_ft),
       body: (
         <>
           {/* As the planner keeps it (wingtip.terrain): the owner's 1,000 ft over the ground, and 14 CFR 91.119(b) and
@@ -472,7 +472,7 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false, winds
           {s.weather_unavailable.includes("ceiling_visibility")
             ? `The forecast ceiling and visibility could not be checked${ifr ? ". " : ", so no altitude is kept under the clouds. "}`
             : `Forecast for the flight, its temporary changes included: ceiling ${
-                s.min_ceiling_ft === null ? "none" : `${altFt(s.min_ceiling_ft)} ft`
+                s.min_ceiling_ft === null ? "none" : feet(s.min_ceiling_ft)
               }, visibility ${s.min_visibility_sm ?? "—"} sm${
                 s.low_ceiling_or_visibility && !ifr ? `, below the surface-area VFR minimums (${basicMinimums()}) somewhere on the way` : ""
               }. `}

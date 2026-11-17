@@ -9,7 +9,7 @@ import { useAirspace } from "../../../../lib/useAirspace";
 import { airportMarkSvg } from "../../../../lib/map/marks/airportMark";
 import { colourOf } from "../../../../lib/map/marks/flightCategory";
 import { WAYPOINT_MAGENTA } from "../../../../lib/map/marks/chartColors";
-import { altFt, flightLevel } from "../../../../lib/format";
+import { feet, flightLevel } from "../../../../lib/format";
 import { TEXT } from "../../../../lib/text";
 import { PointMenuItems } from "../PointControls";
 import { CONTEXT_MENU, useAfterMenu } from "../pointMenu";
@@ -188,7 +188,7 @@ export default function RoutePill({
             altitude: (
               <span className={cn("flex items-center gap-1", altitude.caution?.length && "text-caution-ink")}>
                 {altitude.caution?.length ? <TriangleAlert className="size-3.5" aria-label="With a caution" /> : null}
-                {waypoint ? flightLevel(altitude.feet) : altitude.feet === null ? "—" : `${altFt(altitude.feet)} ft`}
+                {waypoint ? flightLevel(altitude.feet) : altitude.feet === null ? "—" : feet(altitude.feet)}
               </span>
             ),
           }}

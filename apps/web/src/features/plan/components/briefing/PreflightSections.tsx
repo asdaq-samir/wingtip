@@ -12,7 +12,7 @@ import { FINDING_TONE } from "../../../../lib/findings";
 import FindingIcon from "../../../../components/FindingIcon";
 import { windOnRunway } from "../../format";
 import { TEXT } from "../../../../lib/text";
-import { altFt, pounds } from "../../../../lib/format";
+import { altFt, feet, pounds } from "../../../../lib/format";
 import { useLoad } from "../../hooks/useLoad";
 import { armText } from "../../../../lib/weightBalance";
 import { phasesOf, type Phase } from "./sections";
@@ -290,7 +290,7 @@ export function TakeoffLandingSection({
                       "The longest, no wind reported: the wind indicator decides, and the distances are for calm"
                     )
                   }
-                  value={c.runway ? `${length != null ? `${altFt(length)} ft` : "length unknown"}${c.grass ? " · grass" : ""}` : undefined}
+                  value={c.runway ? `${length != null ? feet(length) : "length unknown"}${c.grass ? " · grass" : ""}` : undefined}
                   data-testid="performance-runway"
                 />
                 {c.distances.map((d) => {
@@ -318,7 +318,7 @@ export function TakeoffLandingSection({
                           </span>
                         </>
                       }
-                      value={`${altFt(d.totalFt)} ft`}
+                      value={feet(d.totalFt)}
                       data-testid={`runway-${d.kind}`}
                     />
                   );
@@ -334,7 +334,7 @@ export function TakeoffLandingSection({
                   <ListRow
                     title="Density altitude"
                     description={`Pressure altitude ${altFt(c.pressureAltFt)} ft${c.tempC != null ? ` · ${Math.round(c.tempC)} °C` : ""} ${c.reported ? "reported" : "(standard day; no report)"}`}
-                    value={`${altFt(Math.round(c.densityAltFt / 10) * 10)} ft`}
+                    value={feet(Math.round(c.densityAltFt / 10) * 10)}
                     data-testid="density-altitude"
                   />
                 )}

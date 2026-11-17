@@ -29,7 +29,7 @@ import { TEXT } from "../../../lib/text";
 import { useTabSearch } from "../lib/tabSearch";
 import { nearSearch } from "./workspace/listSearch";
 import { useDebounced } from "../../../lib/useDebounced";
-import { altFt, wholeNm } from "../../../lib/format";
+import { feet, wholeNm } from "../../../lib/format";
 import { FINDING_TONE } from "../../../lib/findings";
 
 export interface NearFrom {
@@ -169,7 +169,7 @@ function NearestRow({
   const category = field.flight_category;
   const use = field.military === "military" ? "military" : field.private ? "private" : null;
   const parts = [
-    field.longest_runway_ft ? `${altFt(field.longest_runway_ft)} ft` : null,
+    field.longest_runway_ft ? feet(field.longest_runway_ft) : null,
     field.radio ? `${field.radio.kind} ${mhzText(field.radio.mhz)}` : null,
   ].filter(Boolean);
   // Listed whoever owns it, and said by a badge: in an emergency the pilot

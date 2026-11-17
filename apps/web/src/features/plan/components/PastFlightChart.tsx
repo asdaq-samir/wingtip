@@ -3,8 +3,7 @@ import { Area, ComposedChart, Line, ReferenceArea, XAxis, YAxis, usePlotArea, us
 import { ChartContainer, type ChartConfig } from "../../../components/ui/chart";
 import { usePastFlight } from "../map/pastFlight";
 import type { PastFlightPoint, RouteProfile } from "../../../lib/api/types";
-import { clockTime, wholeNm } from "../../../lib/format";
-import { altFt, grouped } from "../../../lib/format";
+import { clockTime, feet, grouped, knots, wholeNm } from "../../../lib/format";
 import { when } from "../../../components/airplane/pastFlightFormat";
 import { distanceTicks } from "./distanceTicks";
 import { TRACES } from "./flightTraces";
@@ -251,8 +250,8 @@ function NowMarks({ nm, alt, kt }: { nm: number; alt: number; kt: number | null 
   const cx = x?.(nm);
   if (cx === undefined || !yAlt || !area) return null;
   const marks = [
-    { key: "alt", dot: yAlt(alt), words: `${altFt(alt)} ft`, colour: "var(--color-alt)" },
-    { key: "kt", dot: kt == null ? undefined : yKt?.(kt), words: `${Math.round(kt ?? 0)} kt`, colour: "var(--color-kt)" },
+    { key: "alt", dot: yAlt(alt), words: feet(alt), colour: "var(--color-alt)" },
+    { key: "kt", dot: kt == null ? undefined : yKt?.(kt), words: knots(kt ?? 0), colour: "var(--color-kt)" },
   ].flatMap((m) => (m.dot === undefined ? [] : [{ ...m, dot: m.dot }]));
   const before = cx > area.x + area.width * 0.6;
   const top = Math.min(...marks.map((m) => m.dot));

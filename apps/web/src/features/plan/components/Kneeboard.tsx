@@ -3,7 +3,7 @@ import type { Briefing, Candidate, Course, Leg, NavLogAltitude, Totals } from ".
 import { kneeboardRadio, mhzText } from "../../../lib/frequencies";
 import { pickedEnd, runwayFlown, runwayNumber } from "../lib/pattern";
 import { useRunwayPicks } from "../lib/useRunwayPicks";
-import { hm, weekdayDayMonthTime } from "../../../lib/format";
+import { feet, hm, weekdayDayMonthTime } from "../../../lib/format";
 import { routeName } from "../../../lib/identSchema";
 import { faaWords } from "../../../lib/advisories";
 import { altFt, feetRange, gal, nm } from "../../../lib/format";
@@ -13,7 +13,7 @@ import { isLegPoint, legOf, navLogRows, rowPoint } from "./navlog/rows";
 /** The altitudes the legs fly: "4,500 ft", or "2,500-3,000 ft" where it steps. */
 function altitudes(legs: Leg[], fallback: number | null | undefined): string | null {
   const alts = legs.map((l) => l.altitude_ft);
-  if (!alts.length) return fallback == null ? null : `${altFt(fallback)} ft`;
+  if (!alts.length) return fallback == null ? null : feet(fallback);
   return feetRange(alts);
 }
 
