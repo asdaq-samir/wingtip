@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { frontSheet, searchAirports, settle, slow } from "./helpers";
+import { frontSheet, grabberTo, searchAirports, settle, slow } from "./helpers";
 import { expectPage, toggle } from "./sheetPages";
 
 /**
@@ -127,5 +127,32 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   await page.goto("/app/plan?dep=C81&dest=KMSN");
   await settle(page);
   await page.waitForTimeout(1500);
+  await expect(tip).toHaveCount(0);
+});
+
+test("the FPL tip stays off the sheet all the way up, and once the toggle has been tapped to FPL it is not shown again", async ({
+  page,
+}) => {
+  // The welcome seen, the tip not (lib/firstRunTips' store).
+  await page.addInitScript(() => localStorage.setItem("wingtip.tips", JSON.stringify({ state: { seen: ["first-flight"] }, version: 0 })));
+  await page.goto("/app/plan?dep=C81&dest=KMSN");
+  await settle(page);
+  const tip = page.getByTestId("fpl-tip");
+  if ((await toggle(page).getAttribute("data-shows")) === "0") await toggle(page).click();
+  await expectPage(page, 0);
+  await grabberTo(page, "half");
+  await expect(tip).toBeVisible({ timeout: slow(15_000) });
+  // All the way up the toggle is at the screen's top, with no room over it:
+  // the tip is not drawn there, over Nearest (the UI audit's B5).
+  await grabberTo(page, "full");
+  await expect(tip).toHaveCount(0);
+  await grabberTo(page, "half");
+  await expect(tip).toBeVisible();
+  // The toggle tapped to FPL: the tip has done its work.
+  await toggle(page).click();
+  await expectPage(page, 1);
+  await toggle(page).click();
+  await expectPage(page, 0);
+  await page.waitForTimeout(1000);
   await expect(tip).toHaveCount(0);
 });

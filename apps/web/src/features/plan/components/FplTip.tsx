@@ -2,6 +2,7 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { cn } from "cn";
 import CloseButton from "../../../components/CloseButton";
 import { usePageToggle } from "../../../components/sheet/pageToggle";
+import { useMapInsets } from "../../../lib/mapChrome";
 import { Popover, PopoverContent, PopoverDescription, PopoverTitle } from "../../../components/ui/popover";
 import { TEXT } from "../../../lib/text";
 
@@ -14,13 +15,18 @@ import { TEXT } from "../../../lib/text";
  * its arrow at it, from no trigger of its own. Its ✕, a tap outside it or
  * Escape put it away for good; it takes no focus, so the map and the
  * sheet stay the pilot's. Nothing while the toggle shows the magnifier
- * (FPL up) or is not drawn (flying, under Settings).
+ * (FPL up) or is not drawn (flying, under Settings), nor with the sheet
+ * all the way up, where the toggle is at the screen's top, the tip had no
+ * room over it and dropped onto Nearest with its arrow at nothing (the UI
+ * audit's B5, 2026-11-17); and once the toggle has been used it is not
+ * shown again (PageToggle sees it), the way it points being known.
  */
 export default function FplTip({ onClose }: { onClose: () => void }) {
   const button = usePageToggle((s) => s.plan);
+  const full = useMapInsets((i) => i.up);
   // Its right edge at the toggle's own, at the row's end, the rest over the
   // map to the left of it.
-  if (!button) return null;
+  if (!button || full) return null;
   return (
     <Popover
       open
