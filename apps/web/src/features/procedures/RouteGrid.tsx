@@ -3,11 +3,14 @@ import { GripVertical } from "lucide-react";
 import { Button, DropIndicator, GridList, GridListItem, useDragAndDrop, type Key } from "react-aria-components";
 import { cn } from "cn";
 import { pointName } from "../../lib/identSchema";
+import { feel } from "../../lib/haptics";
+import { SwipeRow } from "../../components/SwipeRow";
 
 /** One row of FPL's route list: a point, a hold, a field's block, a stop
  *  being added. `point`, a typed point's place among the route's, where
- *  it can be moved. */
-export type RouteItem = { id: string; label: string; point?: number; node: ReactNode };
+ *  it can be moved; `remove`, a stop's Remove, its menu's, also by a
+ *  finger's swipe to the left (SwipeRow). */
+export type RouteItem = { id: string; label: string; point?: number; remove?: { label: string; onRemove: () => void }; node: ReactNode };
 
 /**
  * FPL's route list (ProceduresRoute), React Aria's GridList with its own
@@ -29,6 +32,17 @@ export type RouteItem = { id: string; label: string; point?: number; node: React
  * route's editing) the list has no drag and drop at all, a list of its
  * own (its key), as React Aria asks a drag button of every row of a
  * draggable one and its hooks to be there from the first render or not.
+ *
+ * A finger also picks a point up by a touch and hold anywhere on its row:
+ * React Aria makes the row itself the browser's draggable, and Safari on
+ * the iPhone (iOS 15 on) and Chrome on Android lift it on a long press
+ * with the system's own lift, preview and, on the iPhone, its tap; the
+ * row's words are not selected by the hold (`select-none`, no callout;
+ * a text box in it still is, as Safari's would take no caret).
+ * The grip stays, shown only where the list edits the route, as iOS's
+ * reorder control shows in Edit: the mouse's handle and the keyboard's
+ * and VoiceOver's drag button. A stop's row is also taken out by a swipe
+ * to the left (SwipeRow), its menu's Remove.
  */
 export function RouteGrid({ items, onMove }: { items: RouteItem[]; onMove?: (from: number, to: number) => void }) {
   const points = new Map(items.flatMap((item) => (item.point === undefined ? [] : [[item.id, item.point] as const])));
@@ -42,6 +56,9 @@ export function RouteGrid({ items, onMove }: { items: RouteItem[]; onMove?: (fro
     getAllowedDropOperations: () => ["move"],
     onDragStart: (event) => {
       carried.current = [...event.keys][0] ?? null;
+      // Felt as it lifts where the browser can (Chrome on Android); the
+      // iPhone's own drag gives its own.
+      feel("detent");
     },
     onDragEnd: () => {
       carried.current = null;
@@ -89,10 +106,16 @@ export function RouteGrid({ items, onMove }: { items: RouteItem[]; onMove?: (fro
         <GridListItem
           id={item.id}
           textValue={item.label}
-          className="relative outline-none data-[dragging]:opacity-40 data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring data-[focus-visible]:ring-inset"
+          className="relative outline-none data-[allows-dragging]:select-none data-[allows-dragging]:[-webkit-touch-callout:none] [&_input]:select-text data-[dragging]:opacity-40 data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring data-[focus-visible]:ring-inset"
           data-point={item.point}
         >
-          {item.node}
+          {item.remove ? (
+            <SwipeRow word="Remove" label={item.remove.label} onRemove={item.remove.onRemove}>
+              {item.node}
+            </SwipeRow>
+          ) : (
+            item.node
+          )}
         </GridListItem>
       )}
     </GridList>

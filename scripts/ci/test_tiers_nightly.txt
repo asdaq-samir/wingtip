@@ -114,6 +114,7 @@ stops-waypoints.spec.ts
 studio.spec.ts
 subscription.spec.ts
 sunlight.spec.ts
+swipe-rows.spec.ts
 switch.spec.ts
 tab-consistency.spec.ts
 tap-in-sight.spec.ts

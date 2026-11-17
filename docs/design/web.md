@@ -894,7 +894,12 @@ button: every change is saved as it is made, with Undo in place.
 between rows, Tab through a row's own controls (`keyboardNavigationBehavior`
 "tab", so its text boxes keep their keys); Enter on a handle starts a
 keyboard drag, arrows move it, Enter drops, Escape cancels ([React Aria
-DnD][ra-dnd]). Move Up and Move
+DnD][ra-dnd]). A finger picks a point up by a touch and hold anywhere on
+its row (the row is React Aria's `draggable`, which Safari on the iPhone
+and Chrome on Android lift on a long press with the system's own lift and
+preview; `select-none` and no callout on the row, its text boxes still
+selectable), and takes a stop it typed out by a swipe to the left
+(`SwipeRow`, rules.md section 12; decision 0045). Move Up and Move
 Down in each row's menu are the single-pointer alternative WCAG 2.5.7
 names ([WCAG 2.5.7][wcag-257]); the APG has no drag-and-drop pattern of its
 own ([APG patterns][apg-patterns]). Delete or Backspace on a focused row
@@ -904,7 +909,10 @@ will insert a point; right-click opens the point menu.
 
 **Motion.** The browser's own drag image; the row dragged dimmed and the
 drop line shown where it goes, as React Aria draws them, nothing of our
-own.
+own. A swipe's row follows the finger and settles on Motion's spring at
+`MOTION.page` (none with Reduce Motion), its place closing up at
+`MOTION.fade` as it goes; `feel("detent")` as a drag lifts (Chrome on
+Android) and as a swipe crosses its full-swipe line.
 
 **Avoid.** Dragging as the only way to add or reorder (2.5.7); a figure
 worked out in the row component instead of from the engine; blocking an
@@ -1690,7 +1698,9 @@ that had a stock one: the departure hours (ToggleGroup), the spinners and
 the map's loading mark (Spinner), the fuel stop chip (Button), the route
 pill's long press (ContextMenu's own), pull to refresh (a Refresh button
 in each live card's head, and TanStack Query's focus manager and stale
-times for the rest), swipe to delete (the row menu, RowMenu), the Undo
+times for the rest), swipe to delete (the row menu, RowMenu; a swipe
+came back on 2026-11-17 as React Aria's own recipe on Motion, decision
+0045), the Undo
 rows (Toast with its action), the status chips (Badge), the profile's
 altitude (Slider, upright; a waypoint's altitude a Popover; the Altitude
 Advisor Item rows), "Copied" (an anchored Toast), the flight's

@@ -67,6 +67,7 @@ export default function AircraftFavoriteGroups({
             label={`Remove ${mine.name} as your Airplane`}
             onDelete={() => setMine(null)}
             share={planeLink(mine)}
+            editing={editing}
           >
             {editing ? (
               <ListRow
@@ -95,7 +96,13 @@ export default function AircraftFavoriteGroups({
           <SortableRows label="Favorite airplanes" ids={favorites.map((a) => a.hex)} onMove={move}>
             {favorites.map((a) => (
               <SortableRow key={a.hex} id={a.hex} label={a.name}>
-                <RemovableRow name={a.name} label={`Remove ${a.name} from Favorites`} onDelete={() => remove(a)} share={planeLink(a)}>
+                <RemovableRow
+                  name={a.name}
+                  label={`Remove ${a.name} from Favorites`}
+                  onDelete={() => remove(a)}
+                  share={planeLink(a)}
+                  editing
+                >
                   <ListRow
                     media={<RemoveMinus label={`Remove ${a.name} from Favorites…`} />}
                     title={name(a)}
