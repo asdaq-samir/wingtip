@@ -11,25 +11,15 @@ import functools
 import json
 import math
 import xml.etree.ElementTree as ET
-from datetime import datetime
 
 import wingtip_native
+from wingtip import utc
 
 
 def _number(element, tag: str) -> float | None:
     text = element.findtext(tag)
     try:
         return float(text) if text not in (None, "") else None
-    except ValueError:
-        return None
-
-
-def _when(text: str | None) -> float | None:
-    """An ISO time as the feed writes it ("2026-10-20T01:58:25.921Z"), s."""
-    if not text:
-        return None
-    try:
-        return datetime.fromisoformat(text.replace("Z", "+00:00")).timestamp()
     except ValueError:
         return None
 
@@ -90,7 +80,7 @@ def tracks(xml: str) -> list[tuple[dict, float]]:
             continue
         address = (track.findtext("acAddress") or "").strip().lower()
         lat, lon = _number(track, "lat"), _number(track, "lon")
-        at = _when(track.findtext("mrtTime"))
+        at = utc.epoch_or_none(track.findtext("mrtTime"))
         # "000000" is no address: a target with no Mode S transponder.
         if len(address) != 6 or address == "000000" or lat is None or lon is None or at is None:
             continue

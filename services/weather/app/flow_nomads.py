@@ -27,7 +27,7 @@ from __future__ import annotations
 import time
 from datetime import datetime, timedelta
 
-from wingtip import weather_store
+from wingtip import utc, weather_store
 
 from . import flow_grid, flow_store, nomads
 from .settings import get_settings
@@ -157,7 +157,7 @@ def _first(model: str, runs: list[tuple[datetime, int]], held: dict | None, fall
     "forecast_hour"}, and its file -- None for the file where the part
     held already came from that run, which is not downloaded again."""
     for run, step in runs:
-        source = {"run": iso(run), "forecast_hour": step}
+        source = {"run": utc.iso(run), "forecast_hour": step}
         if held == source:
             return source, None
         if time.time() - NOT_UP.get((model, run, step), 0) < NOT_UP_RETRY_S:
@@ -207,8 +207,4 @@ def part(valid: datetime, now: datetime, held: dict | None, fallback: bool = Fal
 
 
 def back(source: dict) -> tuple[datetime, int]:
-    return datetime.fromisoformat(source["run"].replace("Z", "+00:00")), int(source["forecast_hour"])
-
-
-def iso(at: datetime) -> str:
-    return at.strftime("%Y-%m-%dT%H:%M:%SZ")
+    return utc.parse(source["run"]), int(source["forecast_hour"])

@@ -64,7 +64,7 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 
-from wingtip import weather_store
+from wingtip import utc, weather_store
 from wingtip.engine import ask
 
 from . import flow_aloft, flow_awc, flow_grid, flow_nomads, flow_parts, flow_store
@@ -123,7 +123,7 @@ def _frame(valid: datetime, now: datetime, held: dict | None, latest_awc: dateti
             sources[field] = name
     nomads_key = (parts.get("nomads") or {}).get("key") or {}
     return {
-        "valid": flow_nomads.iso(valid),
+        "valid": utc.iso(valid),
         "parts": parts,
         "key": nomads_key,
         "files": files,
@@ -145,7 +145,7 @@ def fetch(now: datetime | None = None) -> None:
         latest_awc = flow_parts.guarded("awc", lambda: flow_awc.latest_cycle(now), None)
     frames = []
     for valid in frame_times(now):
-        frame = _frame(valid, now, held_frames.get(flow_nomads.iso(valid)), latest_awc, levels)
+        frame = _frame(valid, now, held_frames.get(utc.iso(valid)), latest_awc, levels)
         if frame is not None:
             frames.append(frame)
     if not frames:
@@ -168,7 +168,7 @@ def fetch(now: datetime | None = None) -> None:
         "levels": {k: [lv["id"] for lv in levels[k]] for k in ("wind", "icing", "turbulence")},
         "fields": {k: {"unit": v["unit"], "unscale": list(v["unscale"]), "vector": v["vector"]} for k, v in flow_grid.FIELDS.items()},
     }
-    newest = max(datetime.fromisoformat(f["valid"].replace("Z", "+00:00")) for f in frames)
+    newest = max(utc.parse(f["valid"]) for f in frames)
     weather_store.write("flow", record, fetched_at=time.time(), until=(newest + timedelta(hours=1)).timestamp())
     weather_store.remove_blobs("flow-", names, ".png")
     weather_store.remove_arrays(flow_store.NUMBERS_PREFIX, numbers)

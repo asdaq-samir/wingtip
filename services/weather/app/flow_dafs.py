@@ -35,7 +35,7 @@ from datetime import datetime, timedelta
 import gribberish
 import numpy as np
 import requests
-from wingtip import outside
+from wingtip import outside, utc
 from wingtip.config import REQUEST_HEADERS as HEADERS
 from wingtip.units import M_PER_FT
 
@@ -170,5 +170,5 @@ def frame(valid: datetime, now: datetime, icing_levels: list[str], turbulence_le
         for name, grid in _read(bodies).items():
             files[name] = flow_grid.png_values(field, grid)
         if bodies:
-            key["icing" if field == "icing" else "turbulence"] = {"cycle": f"{cycle:%Y-%m-%dT%H:%M:%SZ}", "forecast_hour": step}
+            key["icing" if field == "icing" else "turbulence"] = {"cycle": utc.iso(cycle), "forecast_hour": step}
     return (key, files) if files else None

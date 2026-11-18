@@ -32,11 +32,10 @@ asks.
 
 import logging
 import time
-from datetime import datetime
 
 import numpy as np
 
-from . import geo, weather_store
+from . import geo, utc, weather_store
 from .engine import ask as _ask
 from .weather_asks import below_vfr_minimums as below_vfr_minimums, forecast_hour as forecast_hour, temperature_at as temperature_at
 from .weather_asks import temperature_at_altitude as temperature_at_altitude, temperatures_aloft as temperatures_aloft
@@ -87,16 +86,6 @@ def _dataset(name: str):
     if not weather_store.servable(record):
         raise WeatherServiceError(f"{_PRODUCT_WORDS.get(name, name)} unavailable from aviationweather.gov just now")
     return record.data
-
-
-def _unix(iso: str | None) -> float | None:
-    """2026-09-20T01:41:00.000Z -> seconds since the epoch."""
-    if not iso:
-        return None
-    try:
-        return datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp()
-    except ValueError:
-        return None
 
 
 # --- METAR ---
@@ -161,7 +150,7 @@ def nearest_report(lat: float, lon: float, exclude: str | None = None, within_nm
         # Before the distance test, so an old near station does not hide a
         # current farther one; a report with no readable time is not known
         # to be current.
-        observed = _unix(report.get("observed_at"))
+        observed = utc.epoch_or_none(report.get("observed_at"))
         if observed is None or time.time() - observed > NEAREST_REPORT_MAX_AGE_S:
             continue
         current.append((ident, report, s_lat, s_lon))

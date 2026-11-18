@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 
 from shapely.geometry import Polygon, shape
 
-from . import airports, emergency, fuelstops, geo, itws, saa, sua, tfr, weather
+from . import airports, emergency, fuelstops, geo, itws, saa, sua, tfr, utc, weather
 
 log = logging.getLogger(__name__)
 
@@ -159,12 +159,7 @@ def areas(path: list[tuple[float, float]], now: float) -> tuple[list[dict], list
 
 def _unix(when: str | float | None) -> float | None:
     """An ISO 8601 time, or seconds, as UNIX seconds; None for none."""
-    if when is None or isinstance(when, (int, float)):
-        return when
-    try:
-        return datetime.fromisoformat(when.replace("Z", "+00:00")).timestamp()
-    except ValueError:
-        return None
+    return when if when is None or isinstance(when, (int, float)) else utc.epoch_or_none(when)
 
 
 def itws_alerts(idents: list[str]) -> list[dict]:

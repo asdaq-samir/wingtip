@@ -36,9 +36,8 @@ from __future__ import annotations
 import re
 import time
 import xml.etree.ElementTree as ET
-from datetime import datetime
 
-from . import live_reports
+from . import live_reports, utc
 
 KIND = "saa"
 #: Statuses that mean an area is in use (AIXM 5.1 CodeStatusAirspaceType).
@@ -70,22 +69,11 @@ def _text(element, name: str) -> str:
     return (found.text or "").strip() if found is not None and found.text else ""
 
 
-def _when(text: str) -> float | None:
-    """An AIXM time ("2026-11-09T14:00:00Z"), s; None for none or an
-    indeterminate one (an open end)."""
-    if not text:
-        return None
-    try:
-        return datetime.fromisoformat(text.replace("Z", "+00:00")).timestamp()
-    except ValueError:
-        return None
-
-
 def _period(element) -> tuple[float | None, float | None]:
     period = _first(element, "TimePeriod")
     if period is None:
         return None, None
-    return _when(_text(period, "beginPosition")), _when(_text(period, "endPosition"))
+    return utc.epoch_or_none(_text(period, "beginPosition")), utc.epoch_or_none(_text(period, "endPosition"))
 
 
 def areas(xml: str) -> list[dict]:

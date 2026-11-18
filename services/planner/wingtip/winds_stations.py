@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from . import geo, weather, weather_store
+from . import geo, utc, weather, weather_store
 from .engine import ask
 
 
@@ -169,7 +169,7 @@ def winds_period(fcst_hr: str = "06") -> dict | None:
     period = getattr(stations, "period", None)
     if not period:
         return None
-    run = _utc(period["run"]) if period.get("run") else None
+    run = utc.parse(period["run"]) if period.get("run") else None
     label = "NOAA GFS" + (f", {run:%H}Z +{period.get('forecast_hour')} h" if run else "")
     return {**period, "modelled": stations.modelled, "source": "gfs-stations", "label": label, "fallback": False, "stale": False}
 
@@ -191,10 +191,6 @@ def station_period_for(depart: datetime | None) -> str:
         depart = depart.replace(tzinfo=timezone.utc)
     for fcst_hr in weather_store.WIND_PERIODS:
         period = weather.winds_period(fcst_hr)
-        if period and _utc(period["use_from"]) <= depart < _utc(period["use_to"]):
+        if period and utc.parse(period["use_from"]) <= depart < utc.parse(period["use_to"]):
             return fcst_hr
     return weather.forecast_hour((depart - datetime.now(timezone.utc)).total_seconds() / 3600)
-
-
-def _utc(text: str) -> datetime:
-    return datetime.fromisoformat(text.replace("Z", "+00:00"))

@@ -14,12 +14,11 @@ AccessConstraints NONE; NOAA's data are in the public domain
 
 from __future__ import annotations
 
-import calendar
 import time
 import xml.etree.ElementTree as ET
 
 import requests
-from wingtip import outside, weather_store
+from wingtip import outside, utc, weather_store
 from wingtip.config import REQUEST_HEADERS as HEADERS
 
 #: nowCOAST's satellite WMS: its capabilities list each layer's times.
@@ -52,12 +51,8 @@ def times_in(capabilities: bytes, now: float) -> dict[str, list[str]]:
                 if dim.get("name") == "time" and dim.text:
                     times = [t.strip() for t in dim.text.split(",") if t.strip()]
             break
-        out[key] = sorted({_iso(t) for t in times if _epoch(t) >= now - KEEP_S})
+        out[key] = sorted({_iso(t) for t in times if utc.epoch(t) >= now - KEEP_S})
     return out
-
-
-def _epoch(iso: str) -> float:
-    return float(calendar.timegm(time.strptime(iso[:19], "%Y-%m-%dT%H:%M:%S")))
 
 
 def _iso(iso: str) -> str:

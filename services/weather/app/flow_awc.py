@@ -45,7 +45,7 @@ from datetime import datetime, timedelta
 
 import numpy as np
 import requests
-from wingtip import outside
+from wingtip import outside, utc
 from wingtip.config import REQUEST_HEADERS
 from wingtip.engine import ask
 
@@ -222,4 +222,4 @@ def frame(valid: datetime, latest: datetime, levels: list[dict]) -> tuple[dict, 
     clouds = _get("cldlayer", {**common, "level": "sfc"})
     for name, values in (cloud_grids(clouds) if clouds else {}).items():
         files[name] = flow_grid.png_values(name, values)
-    return {"cycle": f"{cycle:%Y-%m-%dT%H:%M:%SZ}", "forecast_hour": step}, files, numbers
+    return {"cycle": utc.iso(cycle), "forecast_hour": step}, files, numbers

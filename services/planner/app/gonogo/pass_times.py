@@ -11,17 +11,12 @@ built for the phones as well, does not carry."""
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
+from wingtip import utc
+
 from . import ask
 
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 _MICROSECOND = timedelta(microseconds=1)
-
-
-def instant(text: str) -> datetime:
-    """An ISO time, UTC where it gives no zone, as the planner sends
-    them."""
-    t = datetime.fromisoformat(text)
-    return t if t.tzinfo else t.replace(tzinfo=timezone.utc)
 
 
 def _us(t: datetime) -> int:
@@ -46,7 +41,7 @@ def tfr_when(t: dict, at: datetime) -> str:
     that way."""
 
     def at_us(key):
-        return _us(instant(t[key])) if t.get(key) else None
+        return _us(utc.parse(t[key])) if t.get(key) else None
 
     return ask("gonogo_tfr_when", at_us=_us(at), effective_us=at_us("effective"), expires_us=at_us("expires"))
 

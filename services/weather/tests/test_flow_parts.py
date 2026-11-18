@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from wingtip import weather_store
+from wingtip import utc, weather_store
 
 from app import flow, flow_awc, flow_dafs, flow_grid, flow_nomads, flow_parts, flow_store
 
@@ -93,7 +93,7 @@ def _held_awc(cycle: datetime) -> dict:
     weather_store.write_blob(name, b"png", ".png")
     weather_store.write_array("flowwinds-held", np.zeros((2, 1, 2, 2), dtype=np.float16))
     numbers = {"array": "flowwinds-held", "fields": ["u", "v"], "levels": [{"id": "060", "ft": 6000.0}]}
-    return {"key": {"cycle": flow_nomads.iso(cycle), "forecast_hour": 2}, "files": {"wind": name}, "numbers": numbers}
+    return {"key": {"cycle": utc.iso(cycle), "forecast_hour": 2}, "files": {"wind": name}, "numbers": numbers}
 
 
 def test_an_awc_part_from_a_cycle_within_three_hours_is_not_fetched_again(monkeypatch):

@@ -24,9 +24,8 @@ from __future__ import annotations
 import re
 import time
 import xml.etree.ElementTree as ET
-from datetime import datetime
 
-from . import live_reports
+from . import live_reports, utc
 
 KIND = "departure"
 #: How long an event is kept, s: a day and a half, a flight's day either side.
@@ -37,13 +36,6 @@ _CAMEL = re.compile(r"(?<!^)(?=[A-Z])")
 
 def _local(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
-
-
-def _when(text: str) -> float | None:
-    try:
-        return datetime.fromisoformat(text.replace("Z", "+00:00")).timestamp()
-    except ValueError:
-        return None
 
 
 def event(xml: str) -> dict | None:
@@ -61,7 +53,7 @@ def event(xml: str) -> dict | None:
     times = {}
     for name, text in fields.items():
         if name.endswith("Time") and name != "eventTime":
-            at = _when(text)
+            at = utc.epoch_or_none(text)
             if at is not None:
                 times[_CAMEL.sub("_", name[:-4]).lower()] = at
     return {
@@ -72,7 +64,7 @@ def event(xml: str) -> dict | None:
         "departure": fields.get("departureAirport"),
         "destination": fields.get("destinationAirport"),
         "gate": fields.get("parkingGate"),
-        "event_at": _when(fields.get("eventTime", "")),
+        "event_at": utc.epoch_or_none(fields.get("eventTime", "")),
         "times": times,
     }
 

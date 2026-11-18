@@ -32,7 +32,7 @@ import numpy as np
 import wingtip_native
 from pyproj import Proj
 
-from . import weather_store
+from . import utc, weather_store
 from .units import M_PER_SM, M_TO_FT
 
 log = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class _Grid:
         self.x0, self.dx, self.y0, self.dy = (float(grid[k]) for k in ("x0", "dx", "y0", "dy"))
         self.nx, self.ny = int(grid["nx"]), int(grid["ny"])
         self.proj = Proj(grid["proj"])
-        self.valid = datetime.fromisoformat(grid["valid"].replace("Z", "+00:00"))
+        self.valid = utc.parse(grid["valid"])
         # Missing points are NaN.
         self.values = weather_store.read_array(grid["array"])
         if self.values.shape != (self.ny, self.nx):
@@ -153,10 +153,7 @@ def _forecast_grids() -> list:
         if held is not None and held[0] is record:
             return held[1]
         try:
-            hours = [
-                (datetime.fromisoformat(h["valid"].replace("Z", "+00:00")).timestamp(), _Grid(h["cig"]), _Grid(h["vis"]))
-                for h in record.data["hours"]
-            ]
+            hours = [(utc.epoch(h["valid"]), _Grid(h["cig"]), _Grid(h["vis"])) for h in record.data["hours"]]
         except (KeyError, OSError, ValueError) as err:
             log.warning("GLMP's stored forecast could not be read: %s", err)
             return []

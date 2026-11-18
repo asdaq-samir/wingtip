@@ -186,6 +186,7 @@ engine (#482).
 | `chartlabels_join.py` | Ratings carried onto detections by position. |
 | `features.py` | Feature engineering for the tabular model. |
 | `config.py` | Paths and thresholds, free of heavy imports. |
+| `utc.py` | UTC times as the stores and feeds write them (ISO 8601 with its Z) and seconds since 1970: the one copy for the planner, ingest and weather. |
 
 ## Things that are not obvious
 

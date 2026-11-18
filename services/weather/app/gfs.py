@@ -40,7 +40,7 @@ from datetime import datetime, timedelta, timezone
 
 import numpy as np
 import wingtip_native
-from wingtip import weather_store
+from wingtip import utc, weather_store
 
 from . import nomads
 
@@ -255,7 +255,7 @@ def fetch_period(fcst_hr: str) -> None:
     now = time.time()
     fields, run, step = _fetch(fcst_hr, datetime.fromtimestamp(now, timezone.utc))
     period = period_of(run, step, fcst_hr)
-    until = json.loads(wingtip_native.call("weather_expires_at", json.dumps({"product": "winds", "valid_to": _iso_s(period["use_to"])})))
+    until = json.loads(wingtip_native.call("weather_expires_at", json.dumps({"product": "winds", "valid_to": utc.epoch(period["use_to"])})))
     weather_store.write(
         f"winds-{fcst_hr}",
         {"stations": _at_stations(fields), "period": period},
@@ -273,10 +273,10 @@ def period_of(run: datetime, step: int, fcst_hr: str) -> dict:
     valid = run + timedelta(hours=step)
     _, before, after = _PERIODS.get(fcst_hr, _PERIODS["06"])
     return {
-        "valid_at": _iso(valid),
-        "use_from": _iso(valid - timedelta(hours=before)),
-        "use_to": _iso(valid + timedelta(hours=after)),
-        "run": _iso(run),
+        "valid_at": utc.iso(valid),
+        "use_from": utc.iso(valid - timedelta(hours=before)),
+        "use_to": utc.iso(valid + timedelta(hours=after)),
+        "run": utc.iso(run),
         "forecast_hour": step,
     }
 
@@ -374,11 +374,3 @@ def _at(field: tuple, lat: float, lon: float) -> float | None:
         return None
     value = float(values[i, j])
     return None if math.isnan(value) else value
-
-
-def _iso(at: datetime) -> str:
-    return at.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _iso_s(text: str) -> float:
-    return datetime.fromisoformat(text.replace("Z", "+00:00")).timestamp()
