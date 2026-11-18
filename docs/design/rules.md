@@ -530,7 +530,7 @@ off by default (the owner, 2026-11-13).
    time. A light tick as it settles where the browser has one. In flight the
    four are a row of tiles at the top of the flying drawer and the foot
    the figures, large, with Done flying. The Routes' chips are behind a
-   button at the first row's top right, out above the stops while it is
+   button at the start of the first row, out above the stops while it is
    on (RoutesToggle; the owner, 2026-11-17). What the Brief found
    to act on is the Brief's, which opens with it, not a list on FPL
    (the owner, 2026-11-16: "isn't there a better place for them? Like

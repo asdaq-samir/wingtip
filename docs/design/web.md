@@ -806,7 +806,7 @@ nothing in it eased at the pill); a tap on the held figures raises the
 sheet to half as a tap on the foot does; `feel("detent")`
 as the sheet settles (MapPanel); in flight the tiles are `FplActions`
 at the top of the flying drawer. Under the folded route, `FplRoute`: the
-figures at their own size, the suggested routes' chips behind a button at the first row's top right, beside the search's, out above the stops while it is on (RoutesToggle; the owner, 2026-11-17: "Can suggested routes be a button on top right? Which shows route pills just above the stops"); open to edit, the figures go under the cards (`RouteEditor`) and
+figures at their own size, the suggested routes' chips behind a button at the start of the first row, before the airplane's bar (now as wide as its pills), out above the stops while it is on (RoutesToggle; the owner, 2026-11-17: "Can suggested routes be a button on top right? Which shows route pills just above the stops", then "make the n-number and altitude container pill smaller and add the routes button on the top left"); open to edit, the figures go under the cards (`RouteEditor`) and
 the chips away. The Brief's findings
 to act on are counted on its button in the bar (the cards' `TabCount` with its finding's
 `mark`,

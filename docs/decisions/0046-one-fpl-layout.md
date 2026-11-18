@@ -55,7 +55,7 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    stops by saying how many stops"). Add a Stop is the
    last row, its mark the tint's + and its words in the tint, asking the
    one search (no microphone of its own: the search's field has one).
-   Then the figures; the suggested routes' chips behind a button at the first row's top right, beside the search's, out above the stops while it is on (RoutesToggle; the owner, 2026-11-17: "Can suggested routes be a button on top right? Which shows route pills just above the stops").
+   Then the figures; the suggested routes' chips behind a button at the start of the first row, before the airplane's bar (now as wide as its pills), out above the stops while it is on (RoutesToggle; the owner, 2026-11-17: "Can suggested routes be a button on top right? Which shows route pills just above the stops", then "make the n-number and altitude container pill smaller and add the routes button on the top left").
 2. **A tap on a field's line opens it, and that is all** (the owner: "Each
    timeline line is one 44pt row", "exactly three rows, always"): the line,
    then its wind at the left (the cards' figure, the METAR now or the

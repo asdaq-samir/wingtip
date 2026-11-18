@@ -4,9 +4,10 @@ import { PANEL_FIELD_FILL } from "../../../components/panelField";
 import { useRoutesShown } from "./routesShown";
 
 /**
- * The suggested routes' button at the top right of FPL's first row, beside
- * the search's (the owner, 2026-11-17: "Can suggested routes be a button on
- * top right? Which shows route pills just above the stops"): the stock
+ * The suggested routes' button at the start of FPL's first row, before the
+ * airplane's bar (the owner, 2026-11-17: first "a button on top right ...
+ * Which shows route pills just above the stops", then "add the routes
+ * button on the top left"): the stock
  * Toggle, pressed while the pills are out above the route (FplRoute), in
  * the same 36-point disc and field fill as the page's toggle (PageToggle),
  * filled in the tint while on as the glass toggle's own look, its 44-point
