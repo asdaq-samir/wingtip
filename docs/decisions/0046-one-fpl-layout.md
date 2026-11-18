@@ -123,6 +123,12 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    Here, a link, a Saved flight), is the timeline alone. A point the
    planner does not know keeps the field open, its Remove a tap away, its
    line on the timeline red with why.
+   Amended 2026-11-18 (the owner: "the empty fpl page looks a bit
+   different than filled one", then "yes" to the proposal): an empty or
+   half route is the timeline's own white card, the missing end a grey
+   "Departure" or "Destination" row with a "+" that opens the one search
+   for it, no "Route" title, and "Type or Paste a Route" as the card's
+   last row, which opens the route's field under it; RouteEnds is gone.
 5. **One name for a present position**: "My Location", Apple Maps'
    words (the owner, 2026-11-17), wherever the route shows it -- the folded line (on two
    lines where one has no room, nothing under it), the cards, the pills,
