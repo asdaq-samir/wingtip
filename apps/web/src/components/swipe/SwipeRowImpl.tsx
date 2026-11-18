@@ -33,7 +33,9 @@ export interface SwipeRowProps {
  * keyboard or VoiceOver has the row's menu, whose Remove is the same.
  * Motion's direction lock leaves an upright drag to the list's scroll and
  * the sheet (`data-base-ui-swipe-ignore="x"`: a sideways drag is the
- * row's, an upright one the Drawer's).
+ * row's, an upright one the Drawer's). A press inside
+ * `[data-swipe-row-ignore]` starts no swipe, that part's own sideways
+ * gesture (a scrolling line of chips) kept.
  */
 export function SwipeRowImpl({ word, label, onRemove, children }: SwipeRowProps) {
   const x = useMotionValue(0);
@@ -90,6 +92,11 @@ export function SwipeRowImpl({ word, label, onRemove, children }: SwipeRowProps)
 
   const start = (event: PointerEvent) => {
     dragged.current = false;
+    // A part of the row with a sideways gesture of its own (FPL's opened
+    // field, its runway tray scrolling sideways) keeps it: a swipe starting
+    // there is never the row's Remove (the owner, 2026-11-17: "it's
+    // competing with the remove swipe").
+    if ((event.target as Element).closest("[data-swipe-row-ignore]")) return;
     if (event.pointerType !== "mouse") controls.start(event);
   };
 

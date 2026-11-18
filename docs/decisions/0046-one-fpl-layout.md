@@ -77,7 +77,9 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    field."), no chips. The stock parts carry it: React Aria's GridList the
    list, its drag and drop the hold and the grip that move a point and
    the keyboard's moves; SwipeRow a swipe to the left that takes a stop
-   out (the plan's toast Undo); Base UI's Collapsible the line's opening;
+   out (the plan's toast Undo), started on the line's own row, never in
+   its opened rows, whose runway tray slides sideways (the owner,
+   2026-11-17); Base UI's Collapsible the line's opening;
    Base UI's menus the mark's menu and the chips (`TimelineRoute`,
    `TimelineLine`).
 3. **A point is changed from its mark's menu** (Change, by the one search,
