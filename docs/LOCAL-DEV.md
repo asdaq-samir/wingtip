@@ -291,7 +291,6 @@ All in `scripts/dev/`, each with its usage at its top.
 | `docker-tidy.sh [--dry-run]` | Reclaims Docker disk: images no container uses (`docker image prune -a`), build cache unused for 24 hours, and volumes no container uses except the named caches (`wingtip-cargo-*`, `wingtip-sccache*`, `wingtip-npm*`, `wingtip-format-npm`, `wingtip-m2`, `fp-m2`, `wingtip-check-raw`) and the stacks' own (`wingtip_*`, `fpam_*`, the database among them); never a container; prints the space freed; then `tidy-build-caches.sh` (Shared build caches, below) |
 | `backup-db.sh`, `install-backup.sh` | The nightly database dump (below) |
 | `install-hooks.sh` | Installs the pre-push hook (tsc and ESLint, ruff, `cargo check`, the formatters, and the generated-file and budget checks CI runs -- `screens.sh --check`, `design-tokens.sh --check`, `toolchain.sh --check`, `file_sizes.py`, `brand_guard.py` -- each for what a push changes) |
-| `rename-local.sh` | Once, on a Mac that ran the stack before the rename to Wingtip |
 | `mcp_token.py` | A token for the connector (`/mcp`) from the stack's own sign-in, as Claude gets one; the Inspector and Claude or ChatGPT through a tunnel are in [MCP-CONNECTOR.md](MCP-CONNECTOR.md) |
 
 ### Full throttle without swapping

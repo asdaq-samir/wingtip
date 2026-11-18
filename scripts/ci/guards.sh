@@ -183,7 +183,11 @@ if on ENGINE; then
   start "Engine: clippy" clippy
 fi
 if on FLIGHT; then
-  start "Flight-critical: engine" flight_engine
+  # Where the engine changed, test-engine runs wingtip-engine's tests,
+  # flight_critical among them (the facade uses every crate, so it is
+  # always among those a change reaches): run once there, not compiled a
+  # second time here beside clippy. On the Mac it runs here.
+  { [ -n "${GITHUB_ACTIONS:-}" ] && on ENGINE; } || start "Flight-critical: engine" flight_engine
   start "Flight-critical: planner" flight_planner
 fi
 wait
