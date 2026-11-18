@@ -301,6 +301,9 @@ object WingtipColors {
         /** A joint civil-military field: lime-800 (7.1:1). */
         val StatusJoint = Color(0xFF3F6212)
         const val STATUS_JOINT_HEX = "#3f6212"
+        /** What kind of field it is where it is not an airport (NASR's SITE_TYPE_CODE: Heliport, Seaplane base, Gliderport, Balloonport, Ultralight): cyan-800 (7.3:1), told apart from the use badges' greys and greens beside it. */
+        val StatusSite = Color(0xFF155E75)
+        const val STATUS_SITE_HEX = "#155e75"
         /** An emergency's squawk on a tracked airplane (AIM 6-2-2): the light gun's red, red-600 (4.8:1). */
         val StatusEmergency = Color(0xFFDC2626)
         const val STATUS_EMERGENCY_HEX = "#dc2626"

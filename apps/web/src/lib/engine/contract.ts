@@ -1916,6 +1916,13 @@ export interface EngineContract {
     answer: FieldMilitaryAnswer;
   };
   /**
+   * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport.
+   */
+  field_site_type: {
+    input: FieldSiteTypeInput;
+    answer: FieldSiteTypeAnswer;
+  };
+  /**
    * Whether a field is open, from the FAA's NASR APT_BASE.csv ARPT_STATUS: O operational is open; CI closed indefinitely, CP closed permanently and any other code are closed, and a closed field is never shown or offered as an open one (the owner's hard rule, decision 0043): hidden from the map and every list, and where it appears at all (a search for its ident, its card) labelled with `closed`. `status` null where NASR has no record of the field: not judged, open, unlabelled.
    */
   field_status: {
@@ -6976,6 +6983,18 @@ export interface FieldMilitaryAnswer {
    * military, joint, or null for a field the services do not own.
    */
   military: "military" | "joint" | null;
+}
+export interface FieldSiteTypeInput {
+  /**
+   * NASR APT_BASE's SITE_TYPE_CODE (A, B, C, G, H, U); null where NASR has no record.
+   */
+  site_type?: string | null;
+}
+export interface FieldSiteTypeAnswer {
+  /**
+   * The site's kind in words, or null for an airport.
+   */
+  words: "Balloonport" | "Seaplane base" | "Gliderport" | "Heliport" | "Ultralight" | null;
 }
 export interface FieldStatusInput {
   /**

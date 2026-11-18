@@ -1024,7 +1024,10 @@ stay text beside it, never in the badge.
    0043), `out-of-service` (a navaid), `restricted` (a navaid in service
    with restrictions, NASR's NAV_STATUS: usable, so not out of service),
    `private`, `military` and `joint`
-   (who may use a field), `inAir`, `ground` and `emergency` (a tracked
+   (who may use a field), `site` (what kind of field it is where it is not
+   an airport: Heliport, Seaplane base, Gliderport, Balloonport,
+   Ultralight; the engine's `field_site_type` words for NASR APT_BASE's
+   SITE_TYPE_CODE), `inAir`, `ground` and `emergency` (a tracked
    airplane); and a flight category (`category`, AIM 7-1-7) in its chip
    colour. No card draws its own pill, coloured word or grey line for a
    status.
@@ -1042,7 +1045,9 @@ stay text beside it, never in the badge.
    airplane's card, its search row and its flights (In the air, On the
    ground, an emergency's code); the flight categories in the Brief and
    Nearest; the airport card's line under its name (Closed, Private,
-   Military, Joint use, with the engine's or NASR's words; 2026-11-18).
+   Military, Joint use, with the engine's or NASR's words; 2026-11-18),
+   and beside it the field's site badge where it is not an airport
+   ("Heliport", "Seaplane base"; the owner, 2026-11-18).
    The VOR card's line under its head (Restricted, 2026-11-18). The phones: SwiftUI's and Material 3's own badge or label
    with the same tokens (`WingtipColor.Badge.statusActive` and its
    siblings in Tokens.swift, `Badge.StatusActive` in Tokens.kt), on the

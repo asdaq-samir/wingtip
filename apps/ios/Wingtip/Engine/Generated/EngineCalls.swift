@@ -595,6 +595,11 @@ extension Engine {
         try Self.rule("field_military", EngineContract.FieldMilitaryInput(ownership: ownership, use: use))
     }
 
+    /// The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport.
+    static func fieldSiteType(siteType: String? = nil) throws -> EngineContract.FieldSiteTypeAnswer {
+        try Self.rule("field_site_type", EngineContract.FieldSiteTypeInput(siteType: siteType))
+    }
+
     /// Whether a field is open, from the FAA's NASR APT_BASE.csv ARPT_STATUS: O operational is open; CI closed indefinitely, CP closed permanently and any other code are closed, and a closed field is never shown or offered as an open one (the owner's hard rule, decision 0043): hidden from the map and every list, and where it appears at all (a search for its ident, its card) labelled with `closed`. `status` null where NASR has no record of the field: not judged, open, unlabelled.
     static func fieldStatus(status: String? = nil) throws -> EngineContract.FieldStatusAnswer {
         try Self.rule("field_status", EngineContract.FieldStatusInput(status: status))

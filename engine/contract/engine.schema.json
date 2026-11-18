@@ -9282,6 +9282,51 @@
       ],
       "additionalProperties": false
     },
+    "field_site_type": {
+      "description": "The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FieldSiteTypeInput",
+          "type": "object",
+          "properties": {
+            "site_type": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "NASR APT_BASE's SITE_TYPE_CODE (A, B, C, G, H, U); null where NASR has no record."
+            }
+          }
+        },
+        "answer": {
+          "title": "FieldSiteTypeAnswer",
+          "type": "object",
+          "properties": {
+            "words": {
+              "enum": [
+                "Balloonport",
+                "Seaplane base",
+                "Gliderport",
+                "Heliport",
+                "Ultralight",
+                null
+              ],
+              "description": "The site's kind in words, or null for an airport."
+            }
+          },
+          "required": [
+            "words"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "field_status": {
       "description": "Whether a field is open, from the FAA's NASR APT_BASE.csv ARPT_STATUS: O operational is open; CI closed indefinitely, CP closed permanently and any other code are closed, and a closed field is never shown or offered as an open one (the owner's hard rule, decision 0043): hidden from the map and every list, and where it appears at all (a search for its ident, its card) labelled with `closed`. `status` null where NASR has no record of the field: not judged, open, unlabelled.",
       "type": "object",
@@ -31277,6 +31322,7 @@
     "field_hours",
     "field_mark_rank",
     "field_military",
+    "field_site_type",
     "field_status",
     "field_taf",
     "fields_along",
