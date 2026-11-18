@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { mapStill, settle, settled, sideDrawer, slow } from "./helpers";
+import { drawn, mapStill, settle, settled, sideDrawer, slow } from "./helpers";
 import { setMap3d } from "./mapCard";
 
 // A route's handler still running as the test ends found the page closed
@@ -69,12 +69,18 @@ test("a TFR's card has every card's head, its rule as the regulation and its tim
 
   const card = page.getByTestId("tfr-card");
   await expect(card).toBeVisible();
-  // Opened by its address, as its link opens it.
+  // Opened by its address, as its link opens it, its edge lit in the
+  // selection's yellow while its card is up (the owner, 2026-11-18).
   expect(new URL(page.url()).searchParams.get("tfr")).toBe("6/4116");
+  await expect
+    .poll(async () => (await drawn(page, "tfr-picked")).some((t) => t.id === "6/4116" && t.picked), { timeout: slow(10000) })
+    .toBe(true);
   const head = page.locator("[data-sheet-head]").filter({ visible: true }).last();
-  // Its name centred across the card, Share at the start, ✕ at the end, and
-  // no badge before the name.
-  const name = head.getByRole("heading", { name: "TFR 6/4116" });
+  // Its NOTAM number the name, centred across the card, what it is under it
+  // (the owner, 2026-11-18), Share at the start, ✕ at the end, and no badge
+  // before the name.
+  const name = head.getByRole("heading", { name: "6/4116" });
+  await expect(head.getByTestId("card-sub")).toContainText("TFR");
   const [box, named] = await Promise.all([head.boundingBox(), name.boundingBox()]);
   expect(Math.abs(named!.x + named!.width / 2 - (box!.x + box!.width / 2)), "centred").toBeLessThan(2);
   await expect(head.locator("[data-slot=head-start]").getByTestId("card-share")).toBeVisible();
@@ -99,7 +105,7 @@ test("a TFR's link opens its card, and its Share sends that link", async ({ page
   await page.goto("/app/plan?tfr=6%2F4116");
   const card = page.getByTestId("tfr-card");
   await expect(card).toBeVisible({ timeout: slow(15000) });
-  await expect(page.locator("[data-sheet-head]").filter({ visible: true }).last().getByRole("heading")).toHaveText("TFR 6/4116");
+  await expect(page.locator("[data-sheet-head]").filter({ visible: true }).last().getByRole("heading")).toHaveText("6/4116");
   // Shared where the browser can, copied where not: what it would send.
   await page.evaluate(() => {
     (window as unknown as { sent: unknown[] }).sent = [];

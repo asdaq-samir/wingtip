@@ -21,6 +21,7 @@ import type { OpenFix } from "./FixCard";
 import type { ProcedureAirport, ProceduresAt } from "./ProceduresRoute";
 import type { RouteProcedure } from "../route";
 import { routeBeforeDirect, type PlannedRoute } from "../plan";
+import { pickOnMap, useMapPickOwner } from "../../lib/map/mapPick";
 
 /** The procedures drawn, the queries that have answered. */
 export const drawnOnly = (results: { data?: ProcedureDrawing }[]) => results.flatMap((r) => (r.data ? [r.data] : []));
@@ -134,8 +135,13 @@ export function useProcedurePicks({
     if (!openFixAt) return null;
     const at = routeProcedures.find((p) => sameField(p.ident, openFixAt.field) && p.kind === openFixAt.kind);
     const fix = at?.fixes?.find((f) => f.ident === openFixAt.fix);
+    // Where it is drawn, for its ring on the map while its card is up.
+    const drawn = procedureDrawings
+      .find((d) => sameField(d.airport, openFixAt.field) && d.kind === openFixAt.kind && d.fixes.some((f) => f.ident === openFixAt.fix))
+      ?.fixes.find((f) => f.ident === openFixAt.fix);
     return at && fix
       ? {
+          at: drawn ? { lat: drawn.lat, lon: drawn.lon } : null,
           field: at.ident,
           kind: at.kind,
           procedure: at.label.replace(/ · direct \S+$/, ""),
@@ -144,12 +150,18 @@ export function useProcedurePicks({
           own: crossings[fix.ident] ?? null,
         }
       : null;
-  }, [openFixAt, routeProcedures, crossings]);
+  }, [openFixAt, routeProcedures, procedureDrawings, crossings]);
   const mapDirects = routeProcedures
     .filter((r) => r.direct)
     .map((r) => `${r.ident}:${r.id}:${r.direct}`)
     .join(",");
-  const showFix = useCallback((field: string, kind: RouteProcedure["kind"], fix: string) => setOpenFixAt({ field, kind, fix }), []);
+  // One pick at a time (lib/map/mapPick): a fix's card puts every other
+  // card and ring away, and theirs this one.
+  const showFix = useCallback((field: string, kind: RouteProcedure["kind"], fix: string) => {
+    pickOnMap("fix");
+    setOpenFixAt({ field, kind, fix });
+  }, []);
+  useMapPickOwner("fix", !!openFixAt, () => setOpenFixAt(null));
   const setCrossing = useCallback(
     (fix: string, feet: number | null) => {
       void setAddress((prev) => {

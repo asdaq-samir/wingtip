@@ -18,6 +18,8 @@ import { scoreColor } from "../../lib/scoreScale";
 import { useTerrainView } from "./terrain/useTerrainView";
 import { useRouteAloft } from "./useRouteAloft";
 import CheckpointCard from "./CheckpointCard";
+import RoutePointCard from "./RoutePointCard";
+import { PICK_ZOOM } from "../../lib/map/mapPick";
 import { labelOf, legFactsOf, routeAirports, weatherOf } from "./routeMapFacts";
 
 const NO_PATTERNS: TrafficPattern[] = [];
@@ -144,7 +146,9 @@ export default memo(function RouteMap({
   selectedLeg,
   routeRows,
 }: Props) {
-  const focusZoom = course?.max_zoom ?? 12;
+  // A point picked comes in as an airport's card brings its field (one
+  // rule, rules.md §13), not to the chart's last zoom.
+  const focusZoom = PICK_ZOOM;
   // The pattern just picked, its corners and its entry, to bring in.
   const focusedPattern = useMemo(() => {
     const [ident, end] = (patternFocus ?? "").split(":");
@@ -161,11 +165,13 @@ export default memo(function RouteMap({
   // The route's airports, one array while the course is the same answer.
   const airports = useMemo(() => (course ? routeAirports(course) : []), [course]);
   // The fields that wear a chip of their own already: the route's own,
-  // and the Class B ones, always drawn (ClassBGl).
+  // the Class B ones, always drawn (ClassBGl), and the Stops' and the fuel
+  // stops' while they are pinned (StopMarksGl): the tile layer leaves each
+  // out, so no field's ident is drawn twice (the labels audit, 2026-11-18).
   const { data: classBAirports } = useQuery({ ...classBQuery, enabled: false });
   const chippedFields = useMemo(
-    () => [...airports.filter((a) => a.kind === "airport"), ...(classBAirports ?? [])],
-    [airports, classBAirports],
+    () => [...airports.filter((a) => a.kind === "airport"), ...(classBAirports ?? []), ...stopFields, ...fuelStops],
+    [airports, classBAirports, stopFields, fuelStops],
   );
   // And the route's waypoints, which the VFR waypoints' layer leaves to it.
   const chipped = useMemo(() => new Set([...airports, ...chippedFields].map((a) => a.ident)), [airports, chippedFields]);
@@ -236,7 +242,8 @@ export default memo(function RouteMap({
   // The route's departure, stops and destination, drawn at every zoom: an
   // airport's mark in its class of airspace's look, its dot the field's
   // own current METAR's colour, a tap its card; a waypoint flown through
-  // the chart's magenta pill, a tap brings the map to it.
+  // its ringed dot and name (rules.md §10), a tap its card (RoutePointCard)
+  // and its ring, the map brought to it.
   const glEndpoints = useMemo<GlEndpoint[]>(
     () =>
       !course
@@ -249,6 +256,11 @@ export default memo(function RouteMap({
             space: a.airspace_class ?? (classBAirports?.some((b) => b.ident === a.ident) ? "B" : null),
             colour: chipColourOf(weatherOf(a.ident, airportWeather)),
             select: () => (a.kind === "fix" ? onSelectPoint(a.lat, a.lon) : onSelectPlace(a.ident)),
+            // A point flown through opens its card, as a field opens its own.
+            card:
+              a.kind === "fix" ? (
+                <RoutePointCard key={`${a.ident}@${a.lat},${a.lon}`} name={pointName(a.ident)} kind="Route point" lat={a.lat} lon={a.lon} />
+              ) : undefined,
           })),
     [course, airportWeather, onSelectPoint, onSelectPlace, classBAirports],
   );

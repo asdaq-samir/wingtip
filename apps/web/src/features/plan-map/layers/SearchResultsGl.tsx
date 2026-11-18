@@ -7,6 +7,7 @@ import { GL_FONT_BOLD, TAP } from "../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { useSearchResultRows, useSearchResults } from "../../search";
 import { useGlFit } from "../useGlFit";
+import { pickOnMap } from "../../../lib/map/mapPick";
 
 const SOURCE = "search-results";
 /** MapLibre's own clustering (the owner, 2026-11-10: the results' marks
@@ -107,7 +108,11 @@ export function SearchResultsGl() {
   useGlFit(shown, sent ? `search:${JSON.stringify([sent, filters])}` : null, 11);
   useGlTap(["search-results-point"], TAP.mark, TAP.rank.field, (feature) => {
     const ident = feature.properties.ident as string | undefined;
-    if (ident) useSearchResults.getState().open?.(ident);
+    if (!ident) return;
+    // One pick at a time (lib/map/mapPick): its field's card puts every
+    // other card and ring away.
+    pickOnMap("place");
+    useSearchResults.getState().open?.(ident);
   });
   useGlTap(["search-results-bubble"], TAP.mark, TAP.rank.field, (feature) => {
     const source = map.getSource<GeoJSONSource>(SOURCE);

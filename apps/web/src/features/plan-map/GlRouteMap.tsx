@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useMemo } from "react";
 import type { ChartInfo, Course, Leg, ProcedureDrawing } from "../../lib/api/types";
 import type { StopKind } from "../../lib/stopKinds";
 import type { TrafficPattern } from "../../lib/trafficPattern";
@@ -44,6 +44,17 @@ import ReliefGl from "./terrain/ReliefGl";
 import { coursePoints } from "../../lib/course";
 import { useRouteOnly } from "../../lib/map/routeOnly";
 import { useLineFocus } from "./useLineFocus";
+import RoutePointCard from "./RoutePointCard";
+import { useStopsAlong } from "../stops";
+import { OwnShipCard } from "../../components/map/cards/OwnShipCard";
+
+/** A top of climb's or descent's card (LegPointsGl's tap). */
+const legPointCard = (words: "TOC" | "TOD", at: { lat: number; lon: number }) => (
+  <RoutePointCard key={`${words}@${at.lat},${at.lon}`} name={words} kind={words === "TOC" ? "Top of climb" : "Top of descent"} {...at} />
+);
+
+/** Own ship's card, a tap on it (OwnShipGl), as Maps' My Location's. */
+const OWN_SHIP_CARD = <OwnShipCard />;
 
 /** No checkpoints, while the map shows the route's points alone. */
 const NO_CHECKPOINTS: GlCheckpoint[] = [];
@@ -183,6 +194,10 @@ function EngineLayers(p: GlRouteMapProps) {
   useGlFit(p.focusedProcedure, p.focusedProcedure.length ? p.procedureFocus : null, 12);
   useGlFit(p.focusedPattern, p.focusedPattern.length ? p.patternFocus : null, 13);
   const route = course ? coursePoints(course).map((p) => p.ident) : [];
+  // The Stops' field picked on the chart, ringed as a field whose card is
+  // open is (the owner, 2026-11-18): its row picked in the Stops card too.
+  const pickedStop = useStopsAlong((s) => s.picked);
+  const stopPicked = useMemo(() => p.stopFields.find((f) => f.ident === pickedStop) ?? null, [p.stopFields, pickedStop]);
   const worse = useWorseByArrival(p.briefing, course);
   const terrain = useTerrainView();
   // The weather picked, only while the Map card's Weather is on (the
@@ -226,7 +241,7 @@ function EngineLayers(p: GlRouteMapProps) {
           <WaypointsGl exclude={p.chippedIdents} />
         </>
       )}
-      <AirportsGl selected={p.place} onSelect={p.onSelectPlace} others={p.chipped} route={p.routeBox} worse={worse} />
+      <AirportsGl selected={p.place} picked={stopPicked} onSelect={p.onSelectPlace} others={p.chipped} route={p.routeBox} worse={worse} />
       {p.chart && !routeOnly && <ClassBGl chart={p.chart} route={route} onSelectPlace={p.onSelectPlace} />}
       {!routeOnly && <StopFieldsGl fields={p.stopFields} onSelect={p.onPickStopField ?? p.onSelectPlace} />}
       {course && (
@@ -251,7 +266,7 @@ function EngineLayers(p: GlRouteMapProps) {
           <PatternsGl patterns={p.patterns} />
           <ProceduresGl drawings={p.procedures} crossings={p.crossings} directs={p.directs} onFix={p.onProcedureFix} />
           <LessonGl />
-          <LegPointsGl legs={p.legs} onSelectPoint={p.onSelectPoint} />
+          <LegPointsGl legs={p.legs} onSelectPoint={p.onSelectPoint} cardOf={legPointCard} />
           <HoldTracksGl legs={p.legs} />
         </>
       )}
@@ -261,7 +276,7 @@ function EngineLayers(p: GlRouteMapProps) {
       <EmergencyGl />
       {/* The glide ring the pilot turned on in the Map menu, none in an emergency (EmergencyGl's then). */}
       <GlideRingGl />
-      <OwnShipGl />
+      <OwnShipGl card={OWN_SHIP_CARD} />
       <AheadGl />
       {!routeOnly && <TrafficGl />}
     </>

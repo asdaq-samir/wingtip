@@ -13,6 +13,7 @@ import { setCard, useSheetCards } from "../../../lib/sheetCards";
 import type { ProceduresAt } from "../../procedures";
 import { riseToSee, type PlannedRoute, type PanelView } from "../../plan";
 import { useOpenScreen } from "./useOpenScreen";
+import { pickOnMap, useMapPickOwner } from "../../../lib/map/mapPick";
 
 /** The Stops card's id among the cards (CardLayer), for its pins' taps. */
 export const STOPS_CARD = "stops";
@@ -209,8 +210,13 @@ export function useFplCards({
   // field's card (the owner, 2026-10-28: the card is a tap on the row's
   // ident away).
   const setStopPicked = useStopsAlong((st) => st.setPicked);
+  const stopPicked = useStopsAlong((st) => st.picked);
+  // One pick at a time on the map (lib/map/mapPick): the field's row and
+  // ring put every other card and ring away, and are put away by theirs.
+  useMapPickOwner("stop", !!stopPicked, () => setStopPicked(null));
   const pickStopField = useCallback(
     (ident: string) => {
+      pickOnMap("stop");
       setStopPicked(ident);
       const stops = useSheetCards.getState().stack.find((entry) => entry.id === STOPS_CARD);
       if (stops?.at === "peek") setCard(STOPS_CARD, { at: "half" });

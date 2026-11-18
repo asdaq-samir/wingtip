@@ -1,7 +1,6 @@
 import type { ExpressionSpecification, LineLayerSpecification, Map as MlMap, SymbolLayerSpecification } from "maplibre-gl";
 import { drawSvg } from "../../../lib/map/gl/glLayer";
 import { GL_FONT_BOLD } from "../../../lib/map/gl/layers/common";
-import { MAP_BLUE } from "../../../lib/map/marks/chartColors";
 import { TRAFFIC_COLOURS } from "../../../lib/map/marks/icons";
 import { CHART } from "../../../lib/tokens";
 
@@ -61,14 +60,21 @@ const TAG_PICTURE = "traffic|tag";
 
 /** Every picture the marks wear, as SVG: icons.ts trafficIcon's chevron
  *  and dot with their white casing and soft shadow (drop-shadow-sm at
- *  half the chart's shade), the tracked ring white at 70% inside a 2.5-point ring of
- *  the map's blue (MAP_BLUE, as Maps marks a point held), and the tag's
+ *  half the chart's shade), the tracked ring the one selection ring
+ *  (selectionRing's look, drawn in the picture: Taxiway Yellow, CHART.selected,
+ *  cased white and edged in the shade; the owner, 2026-11-18: one selection
+ *  colour, blue own ship's alone), and the tag's
  *  box, the chart's tag colour at 80% with 4-point corners, stretched to
  *  its words. */
 function pictures(): [string, string, { inset: number }?][] {
   const half = BOX / 2;
   const shadow = `<filter id="s" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="${CHART.shade}" flood-opacity="0.5"/></filter>`;
-  const ring = `<circle cx="${half}" cy="${half}" r="${MARK / 2 + 7 - 1.25}" fill="${CHART.casing}" fill-opacity="0.7" stroke="${MAP_BLUE}" stroke-width="2.5"/>`;
+  const r = MARK / 2 + 7 - 1.25;
+  const ring = [
+    `<circle cx="${half}" cy="${half}" r="${r}" fill="none" stroke="${CHART.shade}" stroke-opacity="0.55" stroke-width="6.5"/>`,
+    `<circle cx="${half}" cy="${half}" r="${r}" fill="none" stroke="${CHART.casing}" stroke-width="4.5"/>`,
+    `<circle cx="${half}" cy="${half}" r="${r}" fill="none" stroke="${CHART.selected}" stroke-width="2.5"/>`,
+  ].join("");
   const out: [string, string, { inset: number }?][] = [];
   for (const near of [true, false])
     for (const arrow of [true, false])

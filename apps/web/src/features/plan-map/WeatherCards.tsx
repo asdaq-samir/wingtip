@@ -1,10 +1,14 @@
 import type { MapPirep, StationWind, WeatherArea } from "../../lib/api/types";
-import { faaWords } from "../../lib/advisories";
+import { capitalised, faaWords } from "../../lib/advisories";
 import { areaWords, routeThrough } from "./weatherMap";
 import { bearing, knots, mapLevel, zuluTime } from "../../lib/format";
 import { WINDS_MODELLED } from "../../lib/windsAloft";
 import { useGeo } from "../../lib/geo";
 import { MapCard } from "../../lib/map/cards/MapCard";
+import { usePointActions } from "../../lib/map/cards/pointActions";
+import { useAreaWhileUp, useRingWhileUp } from "../../lib/map/mapPick";
+import { fixRadialDistance } from "../../lib/navaid";
+import { degreesMinutes } from "../../lib/coords";
 
 /**
  * The weather on the planner's map, at the pilot's pick: the cards a tap
@@ -28,6 +32,8 @@ export function AreaCard({ area, line, altitudeFt }: { area: WeatherArea; line: 
           .join(" ");
   const geo = useGeo();
   const through = line && geo ? routeThrough(geo, area, line, altitudeFt) : null;
+  // Its edge lit while its card is up (WeatherGl).
+  useAreaWhileUp({ kind: "weather", id: String(area.id) });
   return (
     <MapCard title={title} subtitle={[area.severity && faaWords(area.severity), when].filter(Boolean).join(" · ")}>
       <div className="space-y-1 text-left" data-testid="weather-area-card">
@@ -49,12 +55,20 @@ export function AreaCard({ area, line, altitudeFt }: { area: WeatherArea; line: 
   );
 }
 
-/** A PIREP's card, on either map. */
+/** A PIREP's card, on either map: where the report is the name, off the
+ *  nearest VOR in view as a report gives it (its /OV, "JOT 045° 12 nm",
+ *  the engine's fix_radial_distance; AIM 7-1-18), else its latitude and
+ *  longitude; what it is, when and from what under it (the owner,
+ *  2026-11-18: the title is where it is, the line its kind). */
 export function PirepCard({ pirep }: { pirep: MapPirep }) {
+  const stations = usePointActions((s) => s.stations);
+  useRingWhileUp(pirep);
   return (
     <MapCard
-      title={pirep.urgent ? "Urgent PIREP" : "PIREP"}
-      subtitle={[pirep.observed_at && zuluTime(new Date(pirep.observed_at)), pirep.aircraft].filter(Boolean).join(" · ")}
+      title={fixRadialDistance(pirep, stations) ?? degreesMinutes(pirep)}
+      subtitle={[pirep.urgent ? "Urgent PIREP" : "PIREP", pirep.observed_at && zuluTime(new Date(pirep.observed_at)), pirep.aircraft]
+        .filter(Boolean)
+        .join(" · ")}
     >
       <div className="space-y-1 text-left">
         {pirep.altitude_ft != null && <p>At {mapLevel(pirep.altitude_ft)}</p>}
@@ -67,20 +81,26 @@ export function PirepCard({ pirep }: { pirep: MapPirep }) {
   );
 }
 
-/** A station's wind aloft's card, on either map: the station, the
- *  altitude and whose winds they are, the GFS's (lib/windsAloft). */
+/** A station's wind aloft's card, on either map: the station the name,
+ *  the wind and the altitude under it (the owner, 2026-11-18: the title is
+ *  the thing's ident, the line its kind and details), and whose winds they
+ *  are, the GFS's (lib/windsAloft). */
 export function WindCard({ wind, altitudeFt }: { wind: StationWind; altitudeFt: number }) {
+  useRingWhileUp(wind);
   return (
     <MapCard
-      title={`${bearing(wind.dir_true_deg)} true at ${knots(wind.speed_kt)}`}
-      subtitle={`${wind.ident} · at ${mapLevel(altitudeFt)} · ${WINDS_MODELLED}`}
+      title={wind.ident}
+      subtitle={`Wind ${bearing(wind.dir_true_deg)} true at ${knots(wind.speed_kt)} · at ${mapLevel(altitudeFt)}`}
     >
-      {wind.temp_c != null && (
-        <p className="text-left">
-          {wind.temp_c > 0 ? "+" : ""}
-          {wind.temp_c} °C
-        </p>
-      )}
+      <div className="space-y-1 text-left">
+        {wind.temp_c != null && (
+          <p>
+            {wind.temp_c > 0 ? "+" : ""}
+            {wind.temp_c} °C
+          </p>
+        )}
+        <p className="text-muted-foreground">{capitalised(WINDS_MODELLED)}</p>
+      </div>
     </MapCard>
   );
 }

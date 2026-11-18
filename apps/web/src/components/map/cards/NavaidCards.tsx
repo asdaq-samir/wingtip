@@ -9,13 +9,12 @@ import { useOwnFix } from "../../../lib/map/position/ownShip";
 import { PointActions } from "./PointCardActions";
 import type { FixPin, VorPin } from "../../../lib/map/sources/overlayTypes";
 import { MapCard } from "../../../lib/map/cards/MapCard";
-import { degreesMinutes } from "../../../lib/coords";
-import { BLUE } from "../../../lib/useAirspace";
-import { nmAway, useAwayWords } from "../../../lib/useAway";
+import { nmAway } from "../../../lib/useAway";
 import { PointWhere } from "../../../lib/map/cards/PointWhere";
-import { CHART } from "../../../lib/tokens";
 import { CardShareButton } from "../../CardHead";
-import { navaidLink } from "../../../lib/address";
+import { markLink, navaidLink } from "../../../lib/address";
+import { usePointActions } from "../../../lib/map/cards/pointActions";
+import { useRingWhileUp } from "../../../lib/map/mapPick";
 import { shareOrCopy } from "../../../lib/share";
 import { mhzText } from "../../../lib/frequencies";
 
@@ -25,23 +24,11 @@ import { mhzText } from "../../../lib/frequencies";
  * components/map/layers/NavaidsGl).
  */
 
-/** An enroute fix's on its card: the low chart's triangle, as the map's. */
-const TRIANGLE = (
-  <svg className="mx-1 shrink-0" width="16" height="16" viewBox="0 0 10 10" aria-hidden="true">
-    <polygon points="5,1 9.4,8.8 0.6,8.8" fill={CHART.casing} stroke={CHART.fixInk} strokeWidth="1.2" strokeLinejoin="round" />
-  </svg>
-);
-
-/** The chart's colours of the two marks, the ground of their cards' pill:
- *  the VOR's the map's own blue (airspaceMarks' vorIcon), where the card's
- *  was a shade deeper (the owner's pick, 2026-11-03). */
-const VOR_BLUE = BLUE;
-const FIX_INK = CHART.fixInk;
-
 /** Made only once it is opened, so only an open card hears own ship. */
 export function VorCard({ vor }: { vor: VorPin }) {
   const ship = useOwnFix();
-  const away = useAwayWords(vor.lat, vor.lon);
+  // Its ring on the map while its card is up (the one selection ring).
+  useRingWhileUp(vor);
   // The radial the airplane is on and the course back to the station, to
   // its own declination (lib/navaid): what the OBS is set to.
   const on = ship ? radialOf(vor, ship) : null;
@@ -60,17 +47,13 @@ export function VorCard({ vor }: { vor: VorPin }) {
     // Its head as every card's (the card rule's 8): Share at the start, its
     // name centred with its line under it, the close at the end; no
     // hexagon before the name, which the head has no place for (the
-    // owner's iPhone, 2026-11-14, OBK's card).
+    // owner's iPhone, 2026-11-14, OBK's card). Its ident the name, what it
+    // is and its frequency the line ("OBK" / "VORTAC · 113.0", the owner,
+    // 2026-11-18), its own name after them.
     <MapCard
       start={<CardShareButton onShare={share} />}
-      title={
-        <>
-          {vor.ident}
-          <span className="font-normal text-muted-foreground">{vor.kind}</span>
-        </>
-      }
-      subtitle={[vor.name, freq].filter(Boolean).join(" · ") || undefined}
-      pill={{ name: `${vor.ident} ${vor.kind}`, line: [freq, away ?? vor.name].filter(Boolean).join(" · "), colour: VOR_BLUE }}
+      title={vor.ident}
+      subtitle={[vor.kind, freq, vor.name].filter(Boolean).join(" · ")}
     >
       {/* Direct To, Add to Route and its frequency to copy, a full row
           (PointActions); no Favorite, as the Favorites hold airports and
@@ -132,22 +115,19 @@ export function VorCard({ vor }: { vor: VorPin }) {
   );
 }
 
-export function FixCard({ fix, vors }: { fix: FixPin; vors: readonly VorPin[] }) {
-  const away = useAwayWords(fix.lat, fix.lon);
-  // Where it is off the nearest VOR in view, as a controller says it.
-  const frd = fixRadialDistance(fix, vors);
+/** An enroute fix's card: its ident, and what it is and where it is off
+ *  the nearest VOR in view, as a controller says it, under it ("BXCMB" /
+ *  "Fix · JOT 045° 12 nm"); its link (`mark`) for its Share. */
+export function FixCard({ fix }: { fix: FixPin }) {
+  const stations = usePointActions((s) => s.stations);
+  const frd = fixRadialDistance(fix, stations);
+  useRingWhileUp(fix);
+  const share = () =>
+    void shareOrCopy({ title: fix.ident, url: markLink({ kind: "fix", ...fix }, location.origin) }).catch(() => {
+      /* put away, or not allowed: nothing to say */
+    });
   return (
-    <MapCard
-      media={TRIANGLE}
-      title={
-        <>
-          {fix.ident}
-          <span className="font-normal text-muted-foreground">Fix</span>
-        </>
-      }
-      subtitle={frd ?? undefined}
-      pill={{ name: `${fix.ident} fix`, line: frd ?? away ?? degreesMinutes(fix), colour: FIX_INK }}
-    >
+    <MapCard start={<CardShareButton onShare={share} />} title={fix.ident} subtitle={["Fix", frd].filter(Boolean).join(" · ")}>
       <PointActions point={fix} copy={null} />
       <PointWhere lat={fix.lat} lon={fix.lon} />
     </MapCard>

@@ -1,15 +1,15 @@
 import { useWeatherAgeCredit } from "../../../lib/map/marks/weatherAge";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import type { CircleLayerSpecification, MapGeoJSONFeature, SymbolLayerSpecification } from "maplibre-gl";
+import type { MapGeoJSONFeature, SymbolLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useRef } from "react";
 import { api } from "../../../lib/api/client";
 import { airportsQuery } from "../airportsQuery";
 import { colourOf } from "../../../lib/map/marks/flightCategory";
-import { useGlData, useGlLayer, useGlMap, useGlMiss, useGlTap } from "../../../lib/map/gl/glLayer";
+import { useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
 import { setAirportWeather, setOverlayExclusion, setSelectedAirport } from "../../../lib/map/gl/glOverlays";
 import { useGlView } from "../../../lib/map/gl/useGlView";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
-import { GL_FONT_BOLD, TAP } from "../../../lib/map/gl/layers/common";
+import { GL_FONT_BOLD, TAP, selectionRing } from "../../../lib/map/gl/layers/common";
 import MapMarksList from "./MapMarksList";
 import AirportHover from "./AirportHover";
 import { useAirportWeatherShown } from "../../../lib/map/marks/useAirportWeatherShown";
@@ -19,31 +19,21 @@ import { CHART } from "../../../lib/tokens";
 const SELECTED = "airport-selected";
 const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } });
 
-/** The ring round the field whose card is open, in the brand's Taxiway
- *  Yellow (CHART.selected, the owner, 2026-11-09), cased as a picked
- *  point's ring is (RouteExtrasGl): white, then the shade's dark edge, so
- *  it holds over the sectional's towns, as yellow as it is (about 1.6:1
- *  there alone), and its pale greens (1.4:1). */
-const ring = (id: string, color: string, width: number): CircleLayerSpecification => ({
-  id,
-  type: "circle",
-  source: SELECTED,
-  paint: { "circle-radius": 20, "circle-color": "transparent", "circle-stroke-color": color, "circle-stroke-width": width },
-});
-const RING = [
-  ring("airport-selected-edge", `${CHART.shade}8c`, 9),
-  ring("airport-selected-casing", CHART.casing, 6),
-  ring("airport-selected", CHART.selected, 3),
-];
+/** The ring round the field whose card is open, or the Stops' field
+ *  picked: the one ring every pick wears (selectionRing). */
+const RING = selectionRing("airport-selected", SELECTED);
 /** The open card's field's ident, larger and bolder than the chart's
  *  others, white on a dark rim over the ring, as ForeFlight
  *  writes the field it shows (the owner's screenshot over Madison,
  *  2026-11-08); the tile layer leaves its own ident for it out
- *  (setSelectedAirport). Map words, not the page's: no Dynamic Type. */
+ *  (setSelectedAirport). Not where the field wears its own chip (the
+ *  route's, a Class B field's, a stop's, `chipped`): its ident is said
+ *  once, on its chip. Map words, not the page's: no Dynamic Type. */
 const SELECTED_IDENT: SymbolLayerSpecification = {
   id: "airport-selected-ident",
   type: "symbol",
   source: SELECTED,
+  filter: ["!", ["get", "chipped"]],
   layout: {
     "text-field": ["get", "ident"],
     "text-font": GL_FONT_BOLD,
@@ -63,7 +53,11 @@ const IN_VIEW_PATH = "/api/planner/airports/in-view";
 type Props = {
   selected: { ident: string; lat: number; lon: number } | null;
   onSelect: (ident: string | null) => void;
-  /** The fields wearing a chip of their own already: the route's. */
+  /** The Stops' field picked on the chart (its row picked in the Stops
+   *  card, no card of its own): ringed as a field whose card is open is. */
+  picked?: { ident: string; lat: number; lon: number } | null;
+  /** The fields wearing a chip of their own already: the route's, the
+   *  Class B ones, the Stops' and the fuel stops'. */
   others: { ident: string; lat: number; lon: number }[];
   route: { south: number; west: number; north: number; east: number } | null;
   /** The plan's fields whose weather gets worse by the pilot's time
@@ -103,36 +97,37 @@ function useAlongRoute(route: Props["route"]) {
   }).data;
 }
 
-/** The ring round the field whose card is open, a tap's card, a tap on
- *  the chart putting it away; and the specs' view of the marks drawn
- *  (data-airport-marks, useGlProbe). */
+/** The ring round the field whose card is open (or the Stops' field
+ *  picked), a tap's card; and the specs' view of the marks drawn
+ *  (data-airport-marks, useGlProbe). A tap on the chart puts the card away
+ *  with every other pick (GlMapShell, lib/map/mapPick). */
 function useAirportTaps(
-  { selected, onSelect }: Pick<Props, "selected" | "onSelect">,
+  { selected, picked, others, onSelect }: Pick<Props, "selected" | "picked" | "others" | "onSelect">,
   fields: (f: MapGeoJSONFeature) => Record<string, unknown>,
 ) {
-  useGlLayer("marks", { [SELECTED]: empty() }, [...RING, SELECTED_IDENT], "airports");
+  useGlLayer("top", { [SELECTED]: empty() }, [...RING, SELECTED_IDENT]);
+  const ringed = selected ?? picked ?? null;
+  const chipped = !!ringed && others.some((a) => a.ident === ringed.ident);
   const ring = useMemo<GeoJSON.FeatureCollection | null>(
     () =>
-      selected
+      ringed
         ? {
             type: "FeatureCollection",
             features: [
               {
                 type: "Feature",
-                properties: { ident: selected.ident },
-                geometry: { type: "Point", coordinates: [selected.lon, selected.lat] },
+                properties: { ident: ringed.ident, chipped },
+                geometry: { type: "Point", coordinates: [ringed.lon, ringed.lat] },
               },
             ],
           }
         : null,
-    [selected],
+    [ringed, chipped],
   );
   useGlData(SELECTED, ring);
   useGlProbe("selected-airport", ["airport-selected"], () => ({ ring: true }));
   useGlProbe("airport-marks", ["airports"], fields);
   useGlTap(["airports"], TAP.mark, TAP.rank.mark, (feature) => onSelect(String(feature.properties.ident)));
-  // The chart itself tapped: the airport's card put away.
-  useGlMiss(() => onSelect(null));
 }
 
 /** The overlay tiles' airports: the settings' filters and the route's

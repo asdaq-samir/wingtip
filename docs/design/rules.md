@@ -174,7 +174,7 @@ Compose. Nothing here is built by hand where a stock part does it.
     opening sizes (2, and the Detents row below): each card's drawer is
     its own, the sheet under it untouched.
 12. **A flight's figures and its way out sit at the foot of the card in sight**, never on a sheet under it: the dry run's figures and Done flying are the Profile card's foot while it is up, the native pattern of Apple Maps' navigation card with its arrival figures and End (the owner, 2026-11-12: "Just do it the native way"). On the ground, planning, the Profile has no foot strip: FPL's strip under it says the same (the UI audit's L2, 2026-11-17).
-13. **Every thing's card is laid out alike**, the native pattern of Apple Maps' place card: its name, the short line under it (an airport's town, an airplane's type), then its row of action tiles (`CardAction`), then its content (the owner, 2026-11-12: "Just do it the native way").
+13. **Every thing's card is laid out alike**, the native pattern of Apple Maps' place card: its name, the short line under it (an airport's town, an airplane's type), then its row of action tiles (`CardAction`), then its content (the owner, 2026-11-12: "Just do it the native way"). **The name is the thing's ident or name; the line is its kind and details** (the owner, 2026-11-18, the selection audit): "KMSN" / "Dane County Regional · Towered", "OBK" / "VORTAC · 113.0 · Northbrook", "BXCMB" / "Fix · JOT 045° 12 nm", "VPBNG" / "VFR Waypoint", "6/4116" / "TFR · Security" with its badge, a PIREP by where it is ("JOT 045° 12 nm" / "PIREP · 1255Z · C172"), a wind barb by its station ("MSN" / "Wind 270° true at 25 kt · at 9,000 ft"), an airspace by its name ("Chicago Class B" / "Class B"), a checkpoint by its name ("Checkpoint 3 · 12 nm along"), a route point by its name ("WETEV" / "Route point", "TOC" / "Top of climb"), own ship "My Location". No mark or badge before the name: the head has no place for one (the owner's iPhone, 2026-11-14). The name and the line are one line each, cut short, the line a note's 13 points on every card (`CardHeadRow`, and `MapCard` with its sizes), and the line is in the head, so it shows at the pill (10): a point held's place and ground, a past flight's day and times. An airport's full name alone is fitted to its line (`FitLine`), as the owner asked on 2026-11-11. A card with a link has its Share at the head's start: an airport, a VOR, a fix and a VFR waypoint (`mark`), an airspace (`mark`), a TFR, a point held (`at`), an airplane.
 
 | | Web | iPhone (Apple Maps' way) | Android (Google Maps' way) |
 |---|---|---|---|
@@ -1020,8 +1020,9 @@ stay text beside it, never in the badge.
    special-use areas and TFRs at the time the flight passes; a tracked
    airplane's card, its search row and its flights (In the air, On the
    ground, an emergency's code); the flight categories in the Brief and
-   Nearest. The TFR and navaid cards and the airport card take it as they
-   are rebuilt. The phones: SwiftUI's and Material 3's own badge or label
+   Nearest; the airport card's line under its name (Closed, Private,
+   Military, Joint use, with the engine's or NASR's words; 2026-11-18).
+   The navaid card takes it as it is rebuilt. The phones: SwiftUI's and Material 3's own badge or label
    with the same tokens (`WingtipColor.Badge.statusActive` and its
    siblings in Tokens.swift, `Badge.StatusActive` in Tokens.kt), on the
    owner's word (web first). The iPhone's is `Design/StatusBadge`
@@ -1144,6 +1145,60 @@ like iPhone?" Decision [0045](../decisions/0045-row-gestures.md).
 | Swipe | React Aria's iOS List View recipe on Motion (`components/SwipeRow`, `components/swipe`), on RowMenu's `swipe` (not FPL's route: a stop is taken out by its menu's Remove, the owner 2026-11-17); `data-base-ui-swipe-ignore="x"`; a finger or a pen only; its chunk lazy, asked for on a touch screen | Not yet: SwiftUI's `swipeActions`, on the owner's word (decision 0038) | Not yet: Material 3's `SwipeToDismissBox`, on the owner's word |
 | Hold to move | React Aria's `useDragAndDrop` (`RouteGrid`): the row is the browser's own `draggable`, Safari and Chrome lifting it on a long press; the grip is React Aria's drag button | Not yet: `onMove` / `draggable` on the owner's word | Not yet |
 | Tests | `e2e/swipe-rows.spec.ts` (a Recents row, the sheet still); `components/SwipeRow.test.tsx`, `components/swipe/swipeEnd.test.ts`; the hold's drop by `stops-reorder.spec.ts` | -- | -- |
+
+## 13. What is picked on the map (the owner, 2026-11-18)
+
+The selection audit found three selection colours, rings that stayed
+after their cards had gone, cards of different kinds stacked, and half
+the things a pilot can tap with no ring at all. The owner took every
+recommendation.
+
+1. **One thing picked at a time.** A tap on anything on the map --
+   an airport, a VOR, a fix, a VFR waypoint, an airspace's line, a TFR,
+   a weather area, a PIREP, a wind barb, a checkpoint, a point the route
+   turns at, a top of climb or descent, a procedure's fix, a route leg,
+   traffic, own ship, a Stops field -- puts away every other card and
+   ring first, so its card is the only one up and its ring the only
+   ring. A tap on the chart itself puts all of them away; a card's ✕, a
+   swipe or Back puts its ring away with it.
+2. **One selection colour: Taxiway Yellow** (`color.chart.selected`)
+   for everything, cased white and edged in the chart's shade so it
+   holds over the sectional: a point is ringed (radius 20, the same ring
+   for every kind, traffic's drawn in its picture), and an area -- a
+   TFR, a Class B, C or D volume, an AIRMET, SIGMET or G-AIRMET -- lights
+   its edge in the yellow, as the Brief's TFR hover does, while its card
+   is up. A point held is the same ring, with no dot in it. **Blue is
+   own ship's alone.** **The one exception is the route leg**, cased in
+   green while its Route Leg card is up (the owner's ForeFlight choice,
+   2026-11-09): a line, not a point.
+3. **Every point ringed while its card is up**: an airport (from the
+   chart, a list, a route's chip, a Class B chip, a fuel stop, a search
+   result), a VOR, a fix, a VFR waypoint, a PIREP, a wind barb, a
+   checkpoint chosen or not, a route point, a top of climb or descent, a
+   procedure's fix, a point held, a Stops field (whose tap picks its row
+   in the Stops card and rings it, no card of its own).
+4. **A field's ident is said once.** The field whose card is open is
+   written large over its ring, unless it wears a chip of its own -- the
+   route's, a Class B field's, a Stops or fuel stop's -- whose ident is
+   then the one; the tile layer leaves every chipped field out.
+5. **One way the map comes to a pick**: a thing tapped keeps the pilot's
+   zoom and, where it opens a card, is centred above the card's half
+   detent; one picked anywhere else (a list, the Nav Log's row, a
+   timeline line, a link) is brought in to level 9 at least, centred
+   above the half detent, and flown to where it is off the screen.
+6. **Own ship opens a card**, as Apple Maps' My Location does: "My
+   Location", where it is and the GPS's altitude and speed, Nearest (the
+   fields nearest it) and Direct To (the one search asked for the field).
+7. **Every card reached by a link**: a fix's, a VFR waypoint's and an
+   airspace volume's cards are in the address (`mark=fix:BXCMB@lat,lon`,
+   `vfr:`, `airspace:<number>@lat,lon`), as a VOR's (`navaid`), a TFR's
+   (`tfr`) and a point held's (`at`) are.
+
+| | Web | iPhone | Android |
+|---|---|---|---|
+| One pick | `lib/map/mapPick`: each kind's card says how it is put away while it is up (`useMapPickOwner`), a pick puts the others away (`pickOnMap`), a tap on the chart all (GlMapShell); the map's own card's ring goes with it (`openCard`'s companions) | Not yet: on the owner's word (decision 0038) | Not yet |
+| Ring and lit edge | `selectionRing` (lib/map/gl/layers/common), drawn by AirportsGl and PickedGl in the `top` slot; a card rings its point while it is drawn (`useRingWhileUp`) and lights its area (`useAreaWhileUp`: TfrGl's feature state, AirspaceGl's `airspace-picked`, WeatherGl's `wx-area-picked`); traffic's in `trafficMarks`' picture | -- | -- |
+| Tests | `e2e/map-selection.spec.ts` (a ring clears on ✕ and on the chart, a route point opens its card, a new pick replaces the old card, own ship's card); `e2e/weather-map.spec.ts` and `e2e/airspace-lines.spec.ts` (an area lit while its card is up); `lib/address.test.ts` (the `mark` and `at` links) | -- | -- |
 
 ## Changing a rule
 

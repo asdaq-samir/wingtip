@@ -24,11 +24,14 @@ export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
   const ship = useOwnFix();
   const geo = useGeo();
   const from = ship && geo ? areaFrom(geo, rings, ship) : null;
-  const title = `TFR ${tfr.notam_id}`;
+  // Its NOTAM number the name, what it is under it ("4/1234" / "TFR ·
+  // VIP", the owner, 2026-11-18: the title is the thing's ident, the line
+  // its kind and details).
+  const title = tfr.notam_id;
   // Its link, which opens this card (`tfr=`), shared where the device can,
   // copied where not, as every card's Share is.
   const share = () =>
-    void shareOrCopy({ title, url: tfrLink(tfr.notam_id, location.origin) }).catch(() => {
+    void shareOrCopy({ title: `TFR ${title}`, url: tfrLink(tfr.notam_id, location.origin) }).catch(() => {
       /* put away, or not allowed: nothing to say */
     });
   const purpose = tfrPurpose(tfr);
@@ -46,7 +49,7 @@ export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
       // active"): Active, or Later before it starts.
       subtitle={
         <span className="inline-flex items-center gap-2">
-          {tfr.kind}
+          {["TFR", tfr.kind].filter(Boolean).join(" · ")}
           <StatusBadge variant={active ? "active" : "later"} data-testid={`status-${active ? "active" : "later"}`} />
         </span>
       }
@@ -84,7 +87,7 @@ export function TfrCard({ tfr, active }: { tfr: Tfr; active: boolean }) {
  *  the card, its NOTAM's page still there to look at. */
 export function TfrGone({ notamId, failed }: { notamId: string; failed: boolean }) {
   return (
-    <MapCard title={`TFR ${notamId}`}>
+    <MapCard title={notamId} subtitle="TFR">
       <div className="space-y-1 text-left">
         <p>{failed ? "The TFRs didn't load. Check tfr.faa.gov before flight." : "Not on tfr.faa.gov's list now: ended or cancelled."}</p>
         <a

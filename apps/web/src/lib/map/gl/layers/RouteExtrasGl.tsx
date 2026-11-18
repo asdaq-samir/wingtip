@@ -1,11 +1,11 @@
-import type { CircleLayerSpecification, ExpressionSpecification, MapGeoJSONFeature, SymbolLayerSpecification } from "maplibre-gl";
-import { useEffect, useMemo, useEffectEvent } from "react";
+import type { ExpressionSpecification, MapGeoJSONFeature, SymbolLayerSpecification } from "maplibre-gl";
+import { useEffect, useMemo, useEffectEvent, type ReactNode } from "react";
 import type { Leg, ProcedureDrawing } from "../../../api/types";
 import { useGeo, type LatLon } from "../../../geo";
 import { useAirplaneChosen } from "../../../preferences";
 import type { TrafficPattern } from "../../../trafficPattern";
 import { altFt } from "../../../format";
-import { COURSE_MAGENTA, MAP_BLUE } from "../../marks/chartColors";
+import { COURSE_MAGENTA } from "../../marks/chartColors";
 import { FIX_PILL, FIX_PILL_SHIFT } from "../../marks/markPictures";
 import { PATTERN_ARROW, PATTERN_LABEL, PATTERN_WORDS_FROM_ZOOM, TEAL } from "../../marks/patternMarks";
 import { PROCEDURE_INK, PROCEDURE_WORDS_FROM_ZOOM, STALE_INK, fixMarks } from "../../marks/procedureMarks";
@@ -16,7 +16,8 @@ import { useGlLines, type GlRun } from "../useGlLines";
 import { useGlProbe } from "../useGlProbe";
 import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
 import { useGlView } from "../useGlView";
-import { TAP } from "./common";
+import { TAP, selectionRing } from "./common";
+import { useMapRing } from "../../mapPick";
 import { CHART } from "../../../tokens";
 
 /** The level the map is at, the app's, as the camera comes to rest: what
@@ -233,11 +234,21 @@ export function HoldTracksGl({ legs }: { legs: Leg[] }) {
 }
 
 /** Each leg's top of climb and of descent (RouteMap's LegPoints): a pill on
- *  the course, a tap brings the map to it. Under the route's own marks,
+ *  the course, a tap its card (`cardOf`) and its ring, the map brought to
+ *  it. Under the route's own marks,
  *  so it gives way to them: a little above, below or to either side of
  *  its point where one is on it, or left out (MapLibre's variable anchor
  *  and collision; routeMarks). */
-export function LegPointsGl({ legs: allLegs, onSelectPoint }: { legs: Leg[]; onSelectPoint: (lat: number, lon: number) => void }) {
+export function LegPointsGl({
+  legs: allLegs,
+  onSelectPoint,
+  cardOf,
+}: {
+  legs: Leg[];
+  onSelectPoint: (lat: number, lon: number) => void;
+  cardOf: (words: "TOC" | "TOD", at: { lat: number; lon: number }) => ReactNode;
+}) {
+  const { openCard } = useGlMap();
   // No airplane picked, no tops of climb and descent: they are its climb and descent (the owner, 2026-11-08: "don't assume").
   const airplane = useAirplaneChosen();
   const legs = airplane ? allLegs : NO_LEGS;
@@ -258,51 +269,32 @@ export function LegPointsGl({ legs: allLegs, onSelectPoint }: { legs: Leg[]; onS
                   lon: at.lon,
                   text: words,
                   picture: FIX_PILL,
-                  onTap: () => onSelectPoint(at.lat, at.lon),
+                  onTap: () => {
+                    // Its card first, every other pick put away, then its ring (lib/map/mapPick).
+                    openCard(cardOf(words, at), ["point"]);
+                    onSelectPoint(at.lat, at.lon);
+                  },
                 },
               ]
             : [],
         ),
       ),
-    [legs, onSelectPoint],
+    [legs, onSelectPoint, openCard, cardOf],
   );
   useGlSymbols("leg-points", LEG_POINT_LAYERS, marks, { under: ROUTE_MARKS_LOWEST, rank: TAP.rank.checkpoint });
   return null;
 }
 
 const RING_SOURCE = "picked-ring";
-/** The ring round a picked point (Halo: cased both sides), and the held
- *  point's blue dot. */
-const RINGS: CircleLayerSpecification[] = [
-  {
-    id: "picked-ring-outer",
-    type: "circle",
-    source: RING_SOURCE,
-    paint: { "circle-radius": 19, "circle-opacity": 0, "circle-stroke-color": `${CHART.shade}8c`, "circle-stroke-width": 9 },
-  },
-  {
-    id: "picked-ring-inner",
-    type: "circle",
-    source: RING_SOURCE,
-    paint: { "circle-radius": 19, "circle-opacity": 0, "circle-stroke-color": CHART.casing, "circle-stroke-width": 6 },
-  },
-  {
-    id: "picked-ring",
-    type: "circle",
-    source: RING_SOURCE,
-    paint: { "circle-radius": 19, "circle-opacity": 0, "circle-stroke-color": CHART.selected, "circle-stroke-width": 3 },
-  },
-  {
-    id: "held-dot",
-    type: "circle",
-    source: RING_SOURCE,
-    filter: ["get", "held"],
-    paint: { "circle-radius": 6, "circle-color": MAP_BLUE, "circle-stroke-color": CHART.casing, "circle-stroke-width": 2 },
-  },
-];
+/** The one ring round a point picked (selectionRing), a held point's too:
+ *  no blue dot in it, blue being own ship's alone (the owner, 2026-11-18). */
+const RINGS = selectionRing("picked-ring", RING_SOURCE);
 
-/** A point picked (a checkpoint's ring), and a point held on the chart --
- *  a finger held, a right-click -- for its airspace card (HeldPoint). */
+/** A point picked -- the Nav Log's point (`focus`: a checkpoint's, a
+ *  route point's), the point a map card is open for (useMapRing: a VOR, a
+ *  fix, a waypoint, a PIREP, a wind barb) -- and a point held on the chart
+ *  -- a finger held, a right-click -- for its airspace card (HeldPoint),
+ *  each in the one ring. */
 export function PickedGl({
   focus,
   held,
@@ -313,18 +305,20 @@ export function PickedGl({
   onHold: (point: { lat: number; lon: number }) => void;
 }) {
   const { map } = useGlMap();
+  const carded = useMapRing((s) => s.at);
   useGlLayer("top", { [RING_SOURCE]: { type: "geojson", data: { type: "FeatureCollection", features: [] } } }, RINGS);
   const data = useMemo<GeoJSON.FeatureCollection>(
     () => ({
       type: "FeatureCollection",
-      features: [...(focus ? [{ p: focus, held: false }] : []), ...(held ? [{ p: held, held: true }] : [])].map(({ p, held }) => ({
-        type: "Feature",
-        properties: { held },
-        geometry: { type: "Point", coordinates: [p.lon, p.lat] },
-      })),
+      features: [focus, carded, held]
+        .filter((p): p is { lat: number; lon: number } => !!p)
+        .map((p) => ({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [p.lon, p.lat] } })),
     }),
-    [focus, held],
+    [focus, carded, held],
   );
+  // Each ring drawn, for the browser tests: a ring left on the map once its
+  // card has gone is the bug they hold (the selection audit, 2026-11-18).
+  useGlProbe("picked-ring", ["picked-ring"], () => ({ ring: true }));
   useGlData(RING_SOURCE, data);
   const hold = useEffectEvent(onHold);
   useEffect(() => {

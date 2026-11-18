@@ -18,7 +18,6 @@ import { alertsLine } from "../../lib/aircraftAlerts";
 import { planePhotoQuery } from "./planePhoto";
 import { airportQuery, flightQuery, routeQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
-import { knots, reportedAltitude } from "../../lib/format";
 import AircraftAlertMenu from "../../components/airplane/AircraftAlertMenu";
 import { squawkMeaning } from "./squawks";
 import PastFlights from "../../components/airplane/PastFlights";
@@ -270,24 +269,6 @@ export default function FlightCard({
       ),
     },
   ];
-  // The pill's line, at the owner's pick (P5, 2026-10-29): what the
-  // summary says first -- its altitude and ground speed as it writes them
-  // while it is heard, else its chip -- and where it is from and bound;
-  // behind it the photo, or the tint the head draws where there is none.
-  const pillLine = [
-    plane?.altitude_ft != null && reportedAltitude(plane.altitude_ft),
-    plane?.speed_kt != null && knots(plane.speed_kt),
-    !plane && chip,
-    fromIdent && toIdent && fromIdent !== toIdent
-      ? `${fromIdent} → ${toIdent}`
-      : fromIdent
-        ? `From ${fromIdent}`
-        : toIdent
-          ? `To ${toIdent}`
-          : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
   // Its tab kept while the page is open (useCardTab), on Flights back from a past flight; each its own scroll.
   const [tab, setTab] = useCardTab<"info" | "flights">(`flight:${hex}`, "info");
   const [, setTop] = useTabScroll(tab);
@@ -302,7 +283,6 @@ export default function FlightCard({
         onShare={share}
         closeTestId="flight-close"
         shareTestId="flight-share"
-        pill={{ line: pillLine || undefined, picture: photo?.src, tint: !photo }}
       />
       <div className="grid grid-cols-4 gap-2 pt-3">
         {/* Follow filled, the card's first thing to do; nothing to follow

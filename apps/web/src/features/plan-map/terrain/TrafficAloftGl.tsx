@@ -13,6 +13,7 @@ import { addTrafficPictures, trafficLayers, trafficPicture, type TrafficMarkProp
 import { CARRY_S, carriedOn, markTraffic, nearOwnHeight, trafficLabel } from "../../../lib/traffic";
 import { standAtM } from "./trafficAloft";
 import { useGeo, type Geo } from "../../../lib/geo";
+import { pickOnMap } from "../../../lib/map/mapPick";
 
 /** How often the airplanes are carried on along their tracks, ms: the
  *  2D map's own step close in (TrafficGl's FRAME_MS, doubled). */
@@ -136,6 +137,7 @@ function Aloft({ geo }: { geo: Geo }) {
   // A tap on one tracks it, as on the 2D map.
   useGlTap([IDS.marks], TAP.mark, TAP.rank.mark, (feature) => {
     const tapped = String(feature.properties.hex);
+    pickOnMap("flight");
     useTracking.getState().pick?.(tapped, seen.find((r) => r.plane.hex === tapped)?.plane);
   });
   return null;

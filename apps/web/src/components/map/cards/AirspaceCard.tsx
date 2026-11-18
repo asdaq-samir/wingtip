@@ -3,7 +3,10 @@ import type { AirspaceVolume } from "../../../lib/map/sources/overlayTypes";
 import { TEXT } from "../../../lib/text";
 import { TermTable } from "../../CardFacts";
 import { airspaceFacts } from "../../../lib/map/marks/airspaceLabel";
-import { AIRSPACE_LINE } from "../../../lib/map/marks/airspaceMarks";
+import { CardShareButton } from "../../CardHead";
+import { markLink } from "../../../lib/address";
+import { shareOrCopy } from "../../../lib/share";
+import { useAreaWhileUp } from "../../../lib/map/mapPick";
 import { MapCard } from "../../../lib/map/cards/MapCard";
 import { ListGroup, ListRow } from "../../GroupedList";
 import { callTypes, entryRules } from "../../../lib/airspaceRules";
@@ -20,28 +23,22 @@ import { airportQuery } from "../../../lib/queryClient";
  * info").
  */
 
-/** A short length of the volume's line as the map draws it, before its
- *  title: solid blue, solid magenta or dashed blue. */
-function Swatch({ volume }: { volume: AirspaceVolume }) {
-  const line = AIRSPACE_LINE[volume.airspace_class];
-  return (
-    <svg aria-hidden="true" width="28" height="8" viewBox="0 0 28 8" className="mx-1 shrink-0">
-      <line
-        x1="0"
-        y1="4"
-        x2="28"
-        y2="4"
-        stroke={line.color}
-        strokeWidth={line.weight}
-        strokeDasharray={typeof line.dashArray === "string" ? line.dashArray : undefined}
-      />
-    </svg>
-  );
-}
-
-/** A volume's card on whichever map opened it. */
-export function AirspaceCardBody({ volume }: { volume: AirspaceVolume }) {
+/** A volume's card on whichever map opened it: its name the card's, its
+ *  class the line under it ("Chicago Class B" / "Class B", the owner,
+ *  2026-11-18: the title is the thing's name, the line its kind), its edge
+ *  lit while it is up (AirspaceGl), and its link (`mark`, by its number in
+ *  the tiles and where it was tapped, `at`) for its Share. */
+export function AirspaceCardBody({ volume, at }: { volume: AirspaceVolume; at?: { lat: number; lon: number } }) {
   const facts = airspaceFacts(volume);
+  useAreaWhileUp({ kind: "airspace", id: volume.id });
+  const number = volume.id.startsWith("tile-") ? volume.id.slice(5) : null;
+  const share =
+    at && number && /^[A-Z0-9-]{1,12}$/.test(number)
+      ? () =>
+          void shareOrCopy({ title: facts.name, url: markLink({ kind: "airspace", ident: number, ...at }, location.origin) }).catch(() => {
+            /* put away, or not allowed: nothing to say */
+          })
+      : undefined;
   const rows: [string, string][] = [
     ["Floor", facts.floor],
     ["Ceiling", facts.ceiling],
@@ -49,12 +46,9 @@ export function AirspaceCardBody({ volume }: { volume: AirspaceVolume }) {
   if (facts.hours) rows.push(["Hours", facts.hours]);
   return (
     <MapCard
-      media={<Swatch volume={volume} />}
-      title={`Class ${volume.airspace_class}`}
-      subtitle={facts.name}
-      // In the pill its name and place on the ring's own colour, as an
-      // airport's is its picture (MapCard's `pill`).
-      pill={{ name: `Class ${volume.airspace_class}`, line: facts.name, colour: AIRSPACE_LINE[volume.airspace_class].color }}
+      start={share && <CardShareButton onShare={share} />}
+      title={facts.name || `Class ${volume.airspace_class}`}
+      subtitle={`Class ${volume.airspace_class}`}
     >
       <TermTable rows={rows} testId="airspace-card" className={TEXT.row} ddClassName="tabular-nums" />
       <AirspaceCall volume={volume} />

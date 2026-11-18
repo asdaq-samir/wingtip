@@ -3,15 +3,12 @@ import { useDrawnStretch } from "./heightStretch";
 import { PathLayer, SolidPolygonLayer } from "@deck.gl/layers";
 import { LngLat, type Map as MlMap, type SymbolLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useState } from "react";
-import { AirspaceCardBody } from "../../../components/map/cards/AirspaceCard";
 import { deckSlot, useDeckLayers, useDeckTap } from "../../../lib/map/gl/deckLayers";
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../lib/map/gl/glLayer";
-import { volumeOfTile } from "../../../lib/map/gl/glTileFeatures";
-import { SUA_INK } from "../../../lib/map/gl/glStyle";
 import { useGlView } from "../../../lib/map/gl/useGlView";
 import { suaTabLayout } from "../../../lib/map/gl/glSuaLabels";
 import { GL_FONT_BOLD, TAP } from "../../../lib/map/gl/layers/common";
-import { useAddressKey } from "../../../lib/address";
+import { useAddressKey, useMarkKey } from "../../../lib/address";
 import { usePreferences } from "../../../lib/preferences";
 import { tfrsQuery } from "../../../lib/queryClient";
 import { CHART } from "../../../lib/tokens";
@@ -21,6 +18,7 @@ import type { GroundPoint } from "./airspaceHeights";
 import { KINDS, VolumeDrawing, boxOf, classesAt, kindOf, labelsOf, suaOfVolume, volumesQuery, type VolumePiece } from "./airspaceVolumes";
 import { shadeOf, shelfLabelLayer, shelfLabelsOf } from "./airspaceShelves";
 import { SuaVolumeCard } from "./SuaVolumeCard";
+import { pickOnMap } from "../../../lib/map/mapPick";
 
 /**
  * The airspace stood up in 3D, as ForeFlight's 3D view draws it: each
@@ -162,6 +160,7 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
   // A TFR's card is opened by its address (`tfr`), as a tap on it in 2D
   // does (TfrGl, which draws the card), so the two act alike.
   const [, openTfr] = useAddressKey("tfr");
+  const [, openMark] = useMarkKey();
   const eye = useEye(map);
   // The airspace with the Map card's Aeronautical; the TFRs always, a
   // hazard with no switch (the owner, 2026-11-14).
@@ -273,18 +272,20 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
 
   // A tap on a volume opens the card its line on the chart does: a TFR's
   // before the classes', where one stands inside a shelf.
-  useDeckTap([FILLS], 1, TAP.rank.area + 0.5, (picked) => {
+  useDeckTap([FILLS], 1, TAP.rank.area + 0.5, (picked, event) => {
     const p = picked.properties;
     if (p.layer === "tfr") {
       if (typeof p.id !== "string" || !tfrs?.some((t) => t.notam_id === p.id)) return;
-      openCard(null);
+      // One pick at a time (lib/map/mapPick): every other card put away.
+      pickOnMap("tfr");
       void openTfr(p.id);
     } else if (p.layer === "special_use") {
-      const colour = kindOf(p) === "restricted" ? SUA_INK.restricted : SUA_INK.moa;
-      openCard(<SuaVolumeCard key={String(p.name)} area={suaOfVolume(p)} colour={colour} />);
-    } else {
-      const volume = volumeOfTile(picked);
-      openCard(<AirspaceCardBody key={volume.id} volume={volume} />);
+      openCard(<SuaVolumeCard key={String(p.name)} area={suaOfVolume(p)} />);
+    } else if (p.number != null) {
+      // By its address, as a tap on its line on the chart opens it
+      // (AirspaceGl draws the card), its link its Share's.
+      pickOnMap("mark");
+      void openMark({ kind: "airspace", ident: String(p.number), lat: event.lngLat.lat, lon: event.lngLat.lng });
     }
   });
   return null;

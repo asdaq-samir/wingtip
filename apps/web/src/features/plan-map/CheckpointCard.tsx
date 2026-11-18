@@ -5,6 +5,7 @@ import { legFactRows } from "./legFactRows";
 import type { Candidate } from "../../lib/api/types";
 import { MapCard } from "../../lib/map/cards/MapCard";
 import { inkOn, scoreColor } from "../../lib/scoreScale";
+import { useRingWhileUp } from "../../lib/map/mapPick";
 import type { LegFacts } from "./routeMapFacts";
 
 /** What a checkpoint's popup says: the same small card whether the
@@ -13,28 +14,18 @@ import type { LegFacts } from "./routeMapFacts";
  *  written twice, which is why the two drifted into saying the same
  *  thing two ways. */
 export default function CheckpointCard({ candidate, number, leg }: { candidate: Candidate; number?: number; leg?: LegFacts }) {
-  const fill = scoreColor(candidate.predicted_score);
+  // Its ring while its card is up, a candidate's too (the one selection
+  // ring; a chosen one's is the Nav Log's point's as well).
+  useRingWhileUp(candidate);
+  const kind = number === undefined ? "Candidate checkpoint" : `Checkpoint ${number}`;
   return (
     <MapCard
-      // Its dot as the map draws it, numbered in flight order where it is
-      // one of the route's, before its name.
-      media={
-        <span
-          // The number is the checkpoint's place in the flight, which the
-          // title no longer carries, so a screen reader hears it here; an
-          // unnumbered candidate has nothing to say.
-          role={number === undefined ? undefined : "img"}
-          aria-label={number === undefined ? undefined : `Checkpoint ${number}`}
-          aria-hidden={number === undefined ? true : undefined}
-          className="grid size-7 shrink-0 place-items-center rounded-full border-[2.5px] border-background text-(length:--type-caption) leading-[0.8125rem] font-bold shadow-mark outline outline-1 outline-(color:--chart-shade)/45"
-          style={{ backgroundColor: fill, color: inkOn(fill) }}
-        >
-          {number ?? ""}
-        </span>
-      }
-      // The number on its dot, not again before its name.
-      title={candidate.name || "(unnamed)"}
-      subtitle={`${nm(candidate.along_track_nm)} along`}
+      // Its name, and what it is -- its place in the flight -- and how far
+      // along under it, as every card's head (the owner, 2026-11-18); no
+      // numbered dot before the name, which the head has no place for. One
+      // with no name is called by its place in the flight.
+      title={candidate.name || kind}
+      subtitle={`${candidate.name ? `${kind} · ` : ""}${nm(candidate.along_track_nm)} along`}
     >
       {/* The score and what kind of thing it is on one line: two facts
           about the same landmark, each a few characters long, and a

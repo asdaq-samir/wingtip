@@ -60,6 +60,9 @@ export interface GlEndpoint {
   space: AirspaceClass | null;
   fix: boolean;
   select: () => void;
+  /** A point flown through's card (RoutePointCard), opened with its ring
+   *  as a tap selects it; a field's card is the page's (select). */
+  card?: ReactNode;
 }
 
 /** Every checkpoint in sight named from 10, in the app's levels. */
@@ -194,12 +197,24 @@ export function RouteGl({
   const marks = useMemo(
     () =>
       routeMarks(
-        endpoints,
+        // A point's card first, every other pick put away with it (lib/map/
+        // mapPick), then the point selected, its ring kept with the card.
+        endpoints.map((e) =>
+          e.card
+            ? {
+                ...e,
+                select: () => {
+                  openCard(e.card, ["point"]);
+                  e.select();
+                },
+              }
+            : e,
+        ),
         checkpoints.map((c) => ({
           ...c,
           onTap: () => {
+            openCard(c.card, ["point"]);
             c.select();
-            openCard(c.card);
           },
         })),
         (course?.course_line ?? []) as [number, number][],
