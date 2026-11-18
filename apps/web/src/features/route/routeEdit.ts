@@ -37,9 +37,22 @@ export function pointsOf(route: RouteParts): string[] {
  * and changed there.
  */
 export function placeAllowed(route: RouteParts, roundTrip = false): boolean {
-  if (route.stops.some(isPosition)) return false;
+  if (placeRefusal(route)) return false;
   const list = pointsOf(route);
   return !list.some((p, i) => i > 0 && p === list[i - 1]) || (roundTrip && list.length === 2);
+}
+
+/** What FPL's list says under My Location where a move to a stop's
+ *  place is refused (the owner, 2026-11-18): in place, as lib/problems
+ *  has an error said where it happens, never a toast. */
+export const POSITION_AT_END = "My Location can only start or end the route.";
+
+/** Why the route's points may not go where they are, where a pilot is
+ *  told: My Location as a stop (POSITION_AT_END). Null where placeAllowed
+ *  has nothing to say -- a point beside the same, refused unsaid, as the
+ *  list offers no place for it. */
+export function placeRefusal(route: RouteParts): string | null {
+  return route.stops.some(isPosition) ? POSITION_AT_END : null;
 }
 
 /** The route with one visit of a stop taken out: the one at `at` among

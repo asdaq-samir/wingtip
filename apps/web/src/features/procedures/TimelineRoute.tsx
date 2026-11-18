@@ -96,7 +96,7 @@ export default function TimelineRoute({
   const edit = vm.edit && {
     ...vm.edit,
     onMove: (from: number, to: number) => {
-      if (folded && to > 0 && to < routePoints.length - 1) onAllStops();
+      if (folded && to > 0 && to < routePoints.length - 1 && vm.edit!.canMove(from, to)) onAllStops();
       vm.edit!.onMove(from, to);
     },
   };
@@ -184,7 +184,7 @@ export default function TimelineRoute({
   const list = (
     <div ref={card} className={TIMELINE_CARD} data-testid="route-summary">
       {head}
-      <RouteGrid items={items} onMove={edit?.onMove} canMove={edit?.canMove} />
+      <RouteGrid items={items} onMove={edit?.onMove} canMove={edit?.canDrop} />
       {tail}
       {foot ?? (edit && routePoints.length > 1 && <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} />)}
     </div>

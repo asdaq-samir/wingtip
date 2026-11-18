@@ -39,6 +39,15 @@ function askChange(vm: ProceduresRouteModel, ident: string, index: number, stop:
   });
 }
 
+/** The hold sheet (HoldSheet) opened at a point, from its menu's Hold or
+ *  the destination's "+ HOLD" chip: the hold there now, and the leg flown
+ *  to it -- its altitude, and its own magnetic course, the planner's (the
+ *  engine's variation), as the leg's card says it (useLegSheet). */
+export function askHold(vm: ProceduresRouteModel, ident: string, row: NavLogRow | undefined) {
+  const leg = row ? legOf(row) : undefined;
+  vm.setHoldAt({ fix: ident, hold: vm.holdOn(ident), altitudeFt: leg?.altitude_ft ?? null, arrivalDeg: leg?.magnetic_course_deg ?? null });
+}
+
 // The end of a point's row, at the owner's picks ("keep the format of
 // altitude (elev/published/cruising) and eta to the right side of each
 // depart/arrive and waypoints"; "Each stop can have a menu (set altitude,
@@ -64,20 +73,7 @@ export function pointEnd(
     visit?: number;
   },
 ) {
-  const {
-    pointAltitude,
-    directTo,
-    routePoints,
-    positioned,
-    onDirectTo,
-    setEditing,
-    onInfo,
-    stopsFull,
-    setFixFrom,
-    holdOn,
-    setHoldAt,
-    edit,
-  } = vm;
+  const { pointAltitude, directTo, routePoints, positioned, onDirectTo, setEditing, onInfo, stopsFull, setFixFrom, holdOn, edit } = vm;
   const asked = at.to ? pointAltitude(ident, at.waypoint, at.visit) : undefined;
   // A waypoint's cruise to it is this row's own leg's: a fix flown twice
   // read the first visit's at both (the audit's WEB-2). The pilot's own
@@ -125,21 +121,7 @@ export function pointEnd(
         // Held over a point flown over, or before landing at the end:
         // not over a field landed at on the way, where it is left again.
         held={!!holdOn(ident)}
-        onHold={
-          at.holdable
-            ? () => {
-                const leg = at.row ? legOf(at.row) : undefined;
-                setHoldAt({
-                  fix: ident,
-                  hold: holdOn(ident),
-                  altitudeFt: leg?.altitude_ft ?? null,
-                  // The leg's own magnetic course, the planner's (the engine's
-                  // variation), as the leg's card says it (useLegSheet).
-                  arrivalDeg: leg?.magnetic_course_deg ?? null,
-                });
-              }
-            : undefined
-        }
+        onHold={at.holdable ? () => askHold(vm, ident, at.row) : undefined}
         // An airport changed here, by the one search asked for an airport,
         // its ident a link to its card (FieldHead; the owner, 2026-11-17:
         // "Can we make the airports/stops tappable as the navlog does?").

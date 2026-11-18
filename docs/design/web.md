@@ -1026,7 +1026,14 @@ GridList][ra-gridlist], [React Aria DnD][ra-dnd]): FPL's list is
 Favorites' rows are `SortableRows`. Only the typed points are dragged and
 only between them (`getDropOperation`), the move made by `onReorder`'s
 keys; where it will go is the stock `DropIndicator`, a tint line between
-the rows (the owner's pick of the line over a ring round the row). The
+the rows (the owner's pick of the line over a ring round the row). My
+Location starts or ends the route, never a stop: let go between two
+points, the drop is refused, the list stays as it was, and its line says
+"My Location can only start or end the route." in red under it
+(`placeRefusal`, `useRouteListEdit`'s `refusal`; a polite status, no
+toast, the owner 2026-11-18). The destination's line ends its chips with
+"+ HOLD" (`HoldChip`), the hold sheet the menu's Hold… opens, the hold set
+said on it as a picked procedure's name is ("Hold 270° R"). The
 route box's pills are not dragged: a horizontal ListBox's options cannot
 hold the pill's own picker and menu (nested interactive), so a pill is
 moved by its menu's Move Up and Move Down, or by its row in FPL's list.

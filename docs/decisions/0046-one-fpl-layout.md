@@ -80,7 +80,10 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    2026-11-17, so the row fits one line, a reader hearing the whole word):
    a departure's runway and "+ DEP", a stop's landing runway, "+ APCH",
    its takeoff runway, "+ DEP" and when it leaves again, a destination's
-   runway, "+ ARR" and "+ APCH", a
+   runway, "+ ARR", "+ APCH" and "+ HOLD" (the owner, 2026-11-18: the same
+   chip after the others, opening the hold sheet the point's menu's Hold
+   opens, which asks for a leg by distance as it has no default; once set,
+   the hold as the others say their pick, "Hold 270° R ⌄", `HoldChip`), a
    field with no CIFP procedures its runway alone, whose chip says its
    pattern. One line open at a time; the open line tapped again folds, and
    another moves it. While one is open the map centres its field above the
@@ -96,8 +99,12 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    Here are that visit's, and its Remove takes out that visit alone. The stock parts carry it: React Aria's GridList the
    list, its drag and drop the hold and the grip that move a point and
    the keyboard's moves, a point offered no drop line where it may not go
-   (a waypoint at an end; My Location anywhere but an end, never a stop on
-   the way, the owner 2026-11-17; no point beside the same), one rule
+   (a waypoint at an end; no point beside the same) -- but My Location,
+   which starts or ends the route and is never a stop on the way (the
+   owner 2026-11-17), is let go between two points, and the drop refused:
+   the list stays as it was and its line says why in red, in place
+   ("My Location can only start or end the route.", `placeRefusal`; the
+   owner 2026-11-18, lib/problems: no toast) -- one rule
    (`placeAllowed`, features/route/routeEdit) that the moves, Change, Add a
    Stop, Remove and the route box's pills all ask, the menus' Move Up and
    Down offered only where it holds; a stop taken out by its mark's menu's Remove

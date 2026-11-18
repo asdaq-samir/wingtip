@@ -13,6 +13,12 @@ interface RouteListEdit {
   onMove: (from: number, to: number) => void;
   /** Whether that move may be made (useRouteListEdit's movedRoute). */
   canMove: (from: number, to: number) => boolean;
+  /** Whether the list offers a drop there: a move that may be made, or
+   *  one refused with a reason to say (moveRefusal). */
+  canDrop: (from: number, to: number) => boolean;
+  /** The last move refused, by the place of the point carried, and why
+   *  ("My Location can only start or end the route."), said under it. */
+  refusal: { index: number; note: string } | null;
   /** A stop asked of the one search, put in at this place. */
   onAddAt: (index: number) => void;
   /** The airport at this place made another, from its menu's Change. */
