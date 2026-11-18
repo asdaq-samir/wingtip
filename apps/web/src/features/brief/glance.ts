@@ -2,7 +2,7 @@
  * The Brief's glance: each part of the flight in two or three figures, a
  * card each over its page, at the owner's pick of the redesign (D′,
  * 2026-10-22: "that new D looks fine for Brief") -- before you go (the
- * risk, the fuel to spare, the loading), the departure (its weather, the
+ * fuel to spare, the loading), the departure (its weather, the
  * runway, the takeoff over 50 ft, the frequency first called), en route
  * (the lowest ceiling and visibility forecast, the wind aloft) and the
  * arrival (as the departure, with the landing). Worked out where the
@@ -41,7 +41,6 @@ export interface FieldGlance {
 
 export interface BriefGlance {
   before: {
-    risk: { score: number; level: "low" | "caution" | "high" } | null;
     /** The least the tanks hold over the fuel and its reserve, gallons. */
     spareGal: number | null;
     /** Within its limits, or what is not. */

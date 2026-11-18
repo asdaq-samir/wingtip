@@ -3,7 +3,6 @@ import { fieldPhases, windLine, windText, runwayNumber, type useLoad } from "../
 import { fieldCategory } from "../../lib/fieldWeather";
 import { worstOf } from "../../lib/findings";
 import type { VerdictItem } from "../../lib/verdict";
-import type { assess } from "../../lib/frat";
 import type { BriefGlance, FieldGlance } from "./glance";
 import type { runwayChecks } from "./runwayCheck";
 
@@ -21,7 +20,6 @@ interface GlanceInputs {
   picks: Parameters<typeof fieldPhases>[5];
   ownCallSign: Parameters<typeof fieldPhases>[4];
   items: VerdictItem[];
-  assessment: ReturnType<typeof assess> | null;
   leastMarginGal: number | null;
   loaded: ReturnType<typeof useLoad>["result"];
   /** The first stretch's wind aloft (windStretches). */
@@ -44,7 +42,6 @@ export function buildGlance({
   picks,
   ownCallSign,
   items,
-  assessment,
   leastMarginGal,
   loaded,
   wind,
@@ -81,7 +78,6 @@ export function buildGlance({
   const byKey = (keys: VerdictItem["key"][]) => worstOf(items.filter((i) => keys.includes(i.key)).map((i) => i.finding));
   return {
     before: {
-      risk: assessment ? { score: assessment.score, level: assessment.level } : null,
       spareGal: leastMarginGal,
       balance: loaded ? { within: loaded.problems.length === 0, problem: loaded.problems[0] ?? null } : null,
       finding: byKey(["risk", "fuel", "balance", "airspace"]),

@@ -20,7 +20,7 @@ import { usePointActions } from "../../lib/map/cards/pointActions";
 import { useOwnFix, useOwnShip } from "../../lib/map/position/ownShip";
 import { magneticOf } from "../../lib/magnetic";
 import { usePreferences } from "../../lib/preferences";
-import { closeEmergency, useEmergencyOpen } from "../../lib/emergencyStore";
+import { closeEmergency } from "../../lib/emergencyStore";
 import { useAirportIndex } from "../../lib/airportIndex";
 import { fieldsNear } from "../../lib/fieldsOnDevice";
 import { noConnection } from "../../lib/problems";
@@ -43,10 +43,11 @@ const at = (deg: number) => Math.round(deg / STEP_DEG) * STEP_DEG;
  * so (`onDevice`) -- the field picked and its line on
  * the map (lib/map/marks/emergencyLine), the airplane's own emergency checklist
  * opened at the emergency asked (checklistSection), and the MAYDAY filled
- * from all of it (maydayCall). The views only draw what this gives.
+ * from all of it (maydayCall). The views only draw what this gives. Its
+ * sheet is mounted only while Emergency is open (EmergencyHost), so all
+ * of it runs only then.
  */
 export function useEmergency() {
-  const open = useEmergencyOpen((s) => s.open);
   const fix = useOwnFix();
   const showPosition = useOwnShip((s) => s.setEnabled);
   const aircraft = usePreferences((s) => s.aircraft);
@@ -64,7 +65,7 @@ export function useEmergency() {
   const asked = useQuery({
     queryKey: ["emergency", lat, lon, altitude, profile, glideRatio],
     queryFn: () => api.emergencyFields(lat, lon, altitude, profile, glideRatio),
-    enabled: !!open && !!fix,
+    enabled: !!fix,
     staleTime: 60_000,
     placeholderData: (previous) => previous,
     meta: { silent: true },
@@ -80,7 +81,7 @@ export function useEmergency() {
   const keptAirplane = lastAirplane?.key === airplaneKey ? lastAirplane.airplane : null;
   // The planner not to be had -- no connection, or it failed -- the fields
   // from the index the browser keeps, read as Emergency opens.
-  const index = useAirportIndex(!!open, !!open);
+  const index = useAirportIndex(true, true);
   const unanswered = !data && (asked.isError || noConnection(asked));
   const onDevice = unanswered && !!index && !!fix;
   const ranked = useMemo(() => {
@@ -134,7 +135,7 @@ export function useEmergency() {
 
   // The ring and the line to the field picked, on the map while open.
   useEffect(() => {
-    if (!open || !fix) {
+    if (!fix) {
       useEmergencyLine.setState({ drawing: null });
       return;
     }
@@ -145,11 +146,10 @@ export function useEmergency() {
         ring: ranked?.glide?.ring ?? null,
       },
     });
-  }, [open, fix, picked, ranked]);
+  }, [fix, picked, ranked]);
   useEffect(() => () => useEmergencyLine.setState({ drawing: null }), []);
 
   return {
-    open,
     close: closeEmergency,
     fix,
     showPosition: () => showPosition(true),
@@ -159,7 +159,6 @@ export function useEmergency() {
     picked,
     pick,
     phone: pickedData?.phone ?? null,
-    metar: pickedData?.metar?.raw ?? null,
     visibility,
     airplaneName: aircraft.none ? null : shortName(aircraft.label),
     guidance,

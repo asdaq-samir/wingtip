@@ -37,7 +37,7 @@ const field = (ident: string, runway: string, crosswindKt: number) => ({
   finding: "caution" as const,
 });
 const glance: BriefGlance = {
-  before: { risk: null, spareGal: 12.4, balance: null, finding: "ok" },
+  before: { spareGal: 12.4, balance: null, finding: "ok" },
   depart: field("C81", "27", 18),
   enroute: { ceilingFt: null, visibilitySm: null, wind: null, eteMin: null, line: null, finding: "ok" },
   arrive: null,

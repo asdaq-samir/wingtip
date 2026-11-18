@@ -8,6 +8,7 @@ import { aircraftKind } from "../../lib/aircraftKind";
 import { useTracking } from "../../lib/map/position/tracking";
 import { usePreferences, type KeptAircraft } from "../../lib/preferences";
 import { shareOrCopy } from "../../lib/share";
+import { useMinuteClock } from "../../lib/useMinuteClock";
 import { statusLine } from "./airplaneStatus";
 
 /**
@@ -38,6 +39,9 @@ export function useAirplaneCard(tail: string) {
     [hex, tail, record],
   );
   const starred = usePreferences((s) => !!hex && s.favoriteAircraft.some((a) => a.hex === hex));
+  // "landed 20m ago" as of this minute: the compiler keeps a call's answer
+  // while its inputs are the same, so a Date.now() inside it froze the age.
+  const now = useMinuteClock();
   const line = record ? [[record.manufacturer, record.model].filter(Boolean).join(" "), record.year].filter(Boolean).join(", ") : null;
   return {
     record,
@@ -47,7 +51,7 @@ export function useAirplaneCard(tail: string) {
     hex,
     /** Under its name: "Piper PA-28-140, 1971", the registry's; null where it has none. */
     line,
-    status: statusLine(inAir, flights),
+    status: statusLine(inAir, flights, now),
     /** In the air: its flight's card, tracked (FlightCard). */
     track: inAir.state === "flying" ? () => useTracking.getState().pick?.(inAir.plane.hex, inAir.plane) : null,
     airborne: inAir.state === "flying",

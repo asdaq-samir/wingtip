@@ -8,6 +8,7 @@ import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
 import { describeError } from "../../lib/api/client";
 import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
+import { useMinuteClock } from "../../lib/useMinuteClock";
 import { HOUR_FINDING, HOUR_WORD, bestLine, clock, dayOf, hourFigures, hourLabel } from "./hourWords";
 import { useDepartureWindow } from "./useDepartureWindow";
 import { FieldError } from "../../components/ui/field";
@@ -31,10 +32,14 @@ const TILE_TINT = {
  */
 export default function DepartureWindowStrip() {
   const m = useDepartureWindow();
+  // Today as of this minute (useMinuteClock), not a `new Date()` in the
+  // render, which the React Compiler keeps from the first: a strip left
+  // open past midnight named the wrong day.
+  const minute = useMinuteClock();
   // Signed out, nothing: a line asking to sign in sat among the Brief's
   // findings (the owner, 2026-11-16: "How do we make brief less cluttered?").
   if (!m.shown || !m.signedIn) return null;
-  const now = new Date();
+  const now = new Date(minute);
   const title = m.best ? bestLine(m.best, now) : "When to go";
   return (
     <PillSection title={title} testId="departure-window">

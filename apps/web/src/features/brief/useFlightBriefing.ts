@@ -111,7 +111,7 @@ export function useFlightBriefing({
   // logbook's factors, and what the pilot ticks. Published for the Save
   // button, which files it with the flight.
   const own = useOwnAircraft();
-  const { pilot, currency, flownOwn } = own;
+  const { currency, flownOwn } = own;
   const ticked = useRisk((s) => s.ticked);
   const setAssessment = useRisk((s) => s.setAssessment);
   // The engine's fuel and TFR figures, the planner's verdict's too (AV-12).
@@ -225,7 +225,6 @@ export function useFlightBriefing({
         picks,
         ownCallSign,
         items,
-        assessment,
         leastMarginGal,
         loaded,
         wind: stretches[0]?.wind,
@@ -278,7 +277,6 @@ export function useFlightBriefing({
     landings,
     stretches,
     ownCallSign,
-    pilot,
     assessment,
     icing,
     icingForecast,
