@@ -194,9 +194,10 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     if (e.sourceId?.startsWith("chart")) chartIn = true;
     if (e.sourceId === OVERLAY_SOURCE) overlaysIn = true;
   };
+  let revealed = false;
   const reveal = () => {
-    m.off("sourcedata", tileIn);
-    m.off("idle", rested);
+    if (revealed) return;
+    revealed = true;
     window.clearTimeout(latest);
     // Under Reduce Motion index.css stills it (its !important beats this).
     canvas.style.transition = `opacity ${REVEAL_FADE_MS}ms ease-out`;
@@ -205,8 +206,15 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     // For the page's loading mark (MapLoading) to fade as the map comes in.
     el.dispatchEvent(new Event(REVEAL_EVENT));
   };
+  // Ready at its first rest with those tiles drawn, whether or not
+  // REVEAL_LATEST_MS showed it first: marked once a page for Setup's Log
+  // (lib/loadLog), whose probes stop there.
   const rested = () => {
-    if (chartIn && overlaysIn) reveal();
+    if (!chartIn || !overlaysIn) return;
+    m.off("sourcedata", tileIn);
+    m.off("idle", rested);
+    if (!performance.getEntriesByName("map-ready").length) performance.mark("map-ready");
+    reveal();
   };
   const latest = window.setTimeout(reveal, REVEAL_LATEST_MS);
   m.on("sourcedata", tileIn);

@@ -8,14 +8,19 @@ import { keptStore } from "./storage";
  * The same milestones that timing read, from the page as it draws: the
  * first paint, the map made, its first chart tile, the airspace's rings
  * and altitudes, the VORs and fixes and the airports, as the map's
- * probes record what each layer drew (lib/map/gl/useGlProbe), and when the airspace's
- * and the TFRs' answers came in. Milliseconds from the start of the load.
+ * probes record what each layer drew (lib/map/gl/useGlProbe), and when the
+ * TFRs' answer came in. Milliseconds from the start of the load. The
+ * airspace has no answer of its own to wait for: it comes in the overlay
+ * tiles, and its rings drawn are when it is in.
  *
  * Read by looking, five times a second, not by a MutationObserver: the
  * tiles change the page hundreds of times as it loads, and the look is
- * cheap. Done once every milestone is in, at 30 s, or as the page is
- * left; a load in which the map never came (a page without it) is not
- * kept. The last LOADS_KEPT, newest first, on this device only.
+ * cheap. The probes stop once the map is ready (makeMap's `map-ready`
+ * mark: at rest with its chart and overlay tiles drawn), when what they
+ * would record is in; the log is kept once the TFRs' answer is in too, at
+ * 30 s, or as the page is left. A load in which the map never came (a
+ * page without it) is not kept. The last LOADS_KEPT, newest first, on
+ * this device only.
  */
 export interface LoadEntry {
   /** When the load began, ISO. */
@@ -31,7 +36,6 @@ export const MILESTONES = [
   { key: "paint", label: "First paint" },
   { key: "map", label: "Map made" },
   { key: "tile", label: "First chart tile" },
-  { key: "airspaceData", label: "Airspace data in" },
   { key: "rings", label: "Airspace rings" },
   { key: "labels", label: "Airspace altitudes" },
   { key: "navaids", label: "VORs and fixes" },
@@ -70,9 +74,9 @@ const PROBES: Record<string, Milestone> = {
 
 /** Whether the log is still looking at this load for the probe `name`:
  *  the four probes it reads write for it until it is done (lib/map/gl/
- *  useGlProbe), then only for tests. The map's other probes never write
- *  for it: each queries the map's drawn features at every idle, and a
- *  load whose milestones are not all reached looks for 30 s. */
+ *  useGlProbe), until the map is ready, then only for tests. The map's
+ *  other probes never write for it: each queries the map's drawn features
+ *  at every idle, which a pilot's phone need not pay for long. */
 let looking = false;
 export const loadLogLooking = (name: string) => looking && name in PROBES;
 
@@ -109,14 +113,16 @@ export function startLoadLog(win: Window = window) {
       const milestone = PROBES[name];
       if (milestone && drew(probe.getAttribute(`data-${name}`) ?? undefined)) mark(milestone);
     }
-    const airspace = answered("/api/planner/airspace/");
-    if (airspace) mark("airspaceData", airspace.responseEnd);
     const tfrs = answered("/api/planner/tfrs");
     if (tfrs) mark("tfrData", tfrs.responseEnd);
   };
   const timer = win.setInterval(() => {
     look();
-    if (MILESTONES.every((m) => ms[m.key] !== undefined) || perf.now() > GIVE_UP_MS) done();
+    // The map's probes wrote on the idle that made it ready, before this
+    // look read them: what a layer has not drawn by then is off or empty.
+    if (perf.getEntriesByName("map-ready").length) looking = false;
+    const allIn = MILESTONES.every((m) => ms[m.key] !== undefined);
+    if (allIn || (!looking && ms.tfrData !== undefined) || perf.now() > GIVE_UP_MS) done();
   }, LOOK_MS);
   let kept = false;
   function done() {
