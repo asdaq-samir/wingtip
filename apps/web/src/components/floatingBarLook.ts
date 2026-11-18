@@ -36,3 +36,20 @@ export const FLOATING_BAR_ITEM = cn(
   "hover:bg-foreground/10 active:bg-foreground/10 aria-expanded:bg-foreground/10 data-active:bg-foreground/10",
   "dark:hover:bg-foreground/15 dark:active:bg-foreground/15 dark:aria-expanded:bg-foreground/15 dark:data-active:bg-foreground/15",
 );
+
+/** The least room under the bar where there is no home indicator. */
+const EDGE = "4px";
+
+/**
+ * The room under the bar, on a card and on FPL's foot alike: 4 points over
+ * the screen's foot where there is no home indicator, else the indicator's
+ * own inset, never less. Low, as iOS 26's tab bar sits, so FPL's figures at
+ * half clear its top with a stop or a stops' row in the route (the owner's
+ * check, 2026-11-18: they ran 5 to 6 points under it at 12 points of room).
+ * FLOATING_BAR_FOOT_ROOM from a scroller that runs to the screen's foot (a
+ * card's, CardTabBar); FLOATING_BAR_SHEET_ROOM inside a sheet whose
+ * viewport already ends over the indicator (SheetDrawer), none while the
+ * keyboard is up, as the sheet's own edge room (sheet/insets' EDGE_ROOM).
+ */
+export const FLOATING_BAR_FOOT_ROOM = `max(${EDGE}, env(safe-area-inset-bottom))`;
+export const FLOATING_BAR_SHEET_ROOM = `max(0px, calc(${EDGE} - env(safe-area-inset-bottom) - var(--drawer-keyboard-inset, 0px) * 1000))`;

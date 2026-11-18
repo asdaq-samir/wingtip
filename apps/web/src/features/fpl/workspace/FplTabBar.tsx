@@ -6,6 +6,8 @@ import { FloatingBar, FloatingBarButton, TabCount } from "../../../components/Fl
 import { ICON } from "../../../lib/icons";
 import type { PlanSlices } from "../vm/planSlices";
 import { MAKES_WAY } from "../../../components/sheet/pinAtFoot";
+import { EDGE_ROOM } from "../../../components/sheet/insets";
+import { FLOATING_BAR_SHEET_ROOM } from "../../../components/floatingBarLook";
 import { cn } from "cn";
 
 /**
@@ -52,7 +54,15 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
     // pill, where they are held on the foot's edge (data-makes-way,
     // sheet/pinAtFoot's MAKES_WAY; the owner, 2026-11-18: "the main issue
     // is tab bar is not allowing the figures to go past it").
-    <div data-makes-way="" className={cn("pointer-events-none -mx-4 flex justify-center px-4 pt-2", MAKES_WAY)} data-testid="fpl-actions">
+    // Its room under it the floating bar's (FLOATING_BAR_SHEET_ROOM), in
+    // place of the sheet's 8-point edge (EDGE_ROOM) under the foot: the
+    // margin takes back the difference, 4 points with no home indicator.
+    <div
+      data-makes-way=""
+      className={cn("pointer-events-none -mx-4 flex justify-center px-4 pt-2", MAKES_WAY)}
+      style={{ marginBottom: `calc(${FLOATING_BAR_SHEET_ROOM} - ${EDGE_ROOM})` }}
+      data-testid="fpl-actions"
+    >
       {/* The one floating bar's capsule (FloatingBar), the airport
           card's too: glass only on what floats (rules.md). */}
       <Toolbar.Root aria-label="Route" render={<FloatingBar className="pointer-events-auto" />}>

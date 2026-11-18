@@ -2,7 +2,7 @@ import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import { cn } from "cn";
 import { PanelSize, type PanelState } from "../../lib/mapChrome";
 import TabKept from "../TabKept";
-import { AT_PILL, HOLD_AT_EDGE, PILL_BODY, RISEN_FACE } from "./insets";
+import { AT_PILL, EDGE_ROOM, HOLD_AT_EDGE, PILL_BODY, RISEN_FACE } from "./insets";
 import { SheetPage } from "./SheetPages";
 import type { SheetPages } from "../../lib/sheetPages";
 
@@ -21,12 +21,6 @@ function barRowPad(underGrabber: boolean) {
   if (underGrabber) return "h-[4.25rem] pt-4 pb-1.5";
   return cn("h-[4.25rem] pb-3", ROW_PAD);
 }
-/** Eight points at a bottom sheet's foot where there is no home indicator
- *  (its viewport ends over the indicator, SheetDrawer), none while the
- *  keyboard is up: the Drawer's --drawer-keyboard-inset is 0 or a
- *  keyboard's height, so the room less a thousand times it is the room or
- *  nothing. */
-const EDGE_ROOM = "max(0px, calc(8px - env(safe-area-inset-bottom) - var(--drawer-keyboard-inset, 0px) * 1000))";
 /** A bottom sheet's pill under its grabber's 1 rem room: the 4.25 rem
  *  snap point's rest (sheet/insets), where the figures sit at the pill. */
 const PILL_BELOW_GRABBER = "3.25rem";
@@ -296,7 +290,13 @@ export function SheetParts(p: PartsProps) {
         // rem (a name's 18-point line over a value's 25) centred in it.
         figuresPill
           ? "pt-0 pb-0"
-          : cn(fromBottom || size !== "half" ? "pb-1" : "pb-4", size === "half" ? "min-h-0" : "min-h-[3.875rem]", ROW_PAD),
+          : cn(
+              // A floating bar in it (FPL's actions) keeps its own room
+              // under it (FplTabBar, floatingBarLook's FLOATING_BAR_SHEET_ROOM).
+              fromBottom && p.pages?.floats ? "pb-0" : fromBottom || size !== "half" ? "pb-1" : "pb-4",
+              size === "half" ? "min-h-0" : "min-h-[3.875rem]",
+              ROW_PAD,
+            ),
         p.layer === "card" ? "px-0" : "px-4",
         !footShown && "hidden",
         pillFoot ? "border-transparent [&_[data-pill-hides]]:hidden [&>*]:flex-none" : cn("border-border/60", SHEET_BELOW),

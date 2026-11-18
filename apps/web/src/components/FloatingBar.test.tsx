@@ -7,11 +7,10 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
 import { Toolbar } from "@base-ui/react/toolbar";
-import { Info, Plane } from "lucide-react";
+import { Ellipsis, Info, Plane } from "lucide-react";
 import { Tabs } from "./ui/tabs";
 import { CardTabBar } from "./CardTabBar";
 import { FloatingBar, FloatingBarButton } from "./FloatingBar";
-import { TriggerButton } from "../features/share/ShareTrigger";
 
 afterEach(cleanup);
 
@@ -39,7 +38,7 @@ function fplBar() {
   render(
     <Toolbar.Root aria-label="Route" render={<FloatingBar />}>
       <Toolbar.Button render={<FloatingBarButton icon={<Info />} label="Brief" testId="route-brief" />} />
-      <TriggerButton look="bar" card="route" stale={[]} testId="route-more" />
+      <Toolbar.Button render={<FloatingBarButton icon={<Ellipsis />} label="More" testId="route-more" />} />
     </Toolbar.Root>,
   );
 }

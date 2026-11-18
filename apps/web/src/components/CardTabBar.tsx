@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { TabsList, TabsTrigger } from "./ui/tabs";
 import { HOLD_AT_EDGE } from "./sheet/insets";
 import { FloatingBar, FloatingBarFace } from "./FloatingBar";
-import { FLOATING_BAR_COLUMNS, FLOATING_BAR_ITEM } from "./floatingBarLook";
+import { FLOATING_BAR_COLUMNS, FLOATING_BAR_FOOT_ROOM, FLOATING_BAR_ITEM } from "./floatingBarLook";
 
 /** One tab of the bar: its value, its word and its icon (required, so none
  *  is bare), and why to open it where there is a reason -- `hint` said in
@@ -59,7 +59,8 @@ export function CardTabBar<T extends string>({
     // card's 16 points (SheetCard) are the room either side, as FPL's
     // foot's are its bar's, so the bar is capped at the same width on both.
     <div
-      className={cn("pointer-events-none sticky bottom-0 z-10 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", HOLD_AT_EDGE)}
+      className={cn("pointer-events-none sticky bottom-0 z-10 pt-3", HOLD_AT_EDGE)}
+      style={{ paddingBottom: FLOATING_BAR_FOOT_ROOM }}
       data-testid={testId}
     >
       {/* The capsule of glass round the stock list, the list itself clear on it. */}
