@@ -286,6 +286,9 @@ object WingtipColors {
         /** A field or runway NASR or a NOTAM closes (decision 0043): red-800 (8.3:1), a step past Active's so the two are told apart. */
         val StatusClosed = Color(0xFF991B1B)
         const val STATUS_CLOSED_HEX = "#991b1b"
+        /** A navaid in service with restrictions (NASR NAV_RMK): usable, so not out of service's orange; caution's family, yellow-800 (6.8:1). */
+        val StatusRestricted = Color(0xFF854D0E)
+        const val STATUS_RESTRICTED_HEX = "#854d0e"
         /** A navaid or a service out of service: orange-800 (7.3:1). */
         val StatusOutOfService = Color(0xFF9A3412)
         const val STATUS_OUT_OF_SERVICE_HEX = "#9a3412"

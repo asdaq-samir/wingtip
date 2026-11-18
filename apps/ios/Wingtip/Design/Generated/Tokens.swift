@@ -185,6 +185,8 @@ enum WingtipColor {
         static let statusCold = rgb(0x6B7280)
         /// A field or runway NASR or a NOTAM closes (decision 0043): red-800 (8.3:1), a step past Active's so the two are told apart.
         static let statusClosed = rgb(0x991B1B)
+        /// A navaid in service with restrictions (NASR NAV_RMK): usable, so not out of service's orange; caution's family, yellow-800 (6.8:1).
+        static let statusRestricted = rgb(0x854D0E)
         /// A navaid or a service out of service: orange-800 (7.3:1).
         static let statusOutOfService = rgb(0x9A3412)
         /// A private-use field (NASR's use PR): slate-600 (7.6:1).

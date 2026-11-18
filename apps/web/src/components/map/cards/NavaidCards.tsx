@@ -17,6 +17,7 @@ import { usePointActions } from "../../../lib/map/cards/pointActions";
 import { useRingWhileUp } from "../../../lib/map/mapPick";
 import { shareOrCopy } from "../../../lib/share";
 import { mhzText } from "../../../lib/frequencies";
+import StatusBadge from "../../StatusBadge";
 
 /**
  * The cards a tap on a VOR or a low enroute chart fix opens (the map
@@ -55,6 +56,14 @@ export function VorCard({ vor }: { vor: VorPin }) {
       title={vor.ident}
       subtitle={[vor.kind, freq, vor.name].filter(Boolean).join(" · ")}
     >
+      {/* In service with restrictions (NASR NAV_STATUS), as a badge under
+          its head as the airport card's status is (docs/design/rules.md,
+          9): usable, so not Out of service; its remarks below say where. */}
+      {vor.restricted && (
+        <span className="block text-center" data-testid="vor-status">
+          <StatusBadge variant="restricted" />
+        </span>
+      )}
       {/* Direct To, Add to Route and its frequency to copy, a full row
           (PointActions); no Favorite, as the Favorites hold airports and
           airplanes only (lib/preferences). */}
@@ -87,21 +96,14 @@ export function VorCard({ vor }: { vor: VorPin }) {
         {hours && <ListRow title="Hours" value={<span className="text-foreground">{hours}</span>} />}
       </ListGroup>
       {/* Where its signal is not to be used, as the Chart Supplement lists
-          it (NASR NAV_RMK): in the caution colour where it is in service
-          with restrictions. */}
+          it (NASR NAV_RMK): "Restrictions" where it is in service with
+          restrictions, its badge above. */}
       {/* Folded under a row of their own, as the airport card's fuel
           remarks are: a busy station's run to a screenful (STL's). */}
       {(vor.remarks ?? []).length > 0 && (
         <ListGroup>
           <Collapsible>
-            <CollapsibleTrigger
-              render={
-                <ListRow
-                  title={<span className={cn(vor.restricted && "text-caution")}>{vor.restricted ? "Restrictions" : "Remarks"}</span>}
-                  chevron
-                />
-              }
-            />
+            <CollapsibleTrigger render={<ListRow title={vor.restricted ? "Restrictions" : "Remarks"} chevron />} />
             <CollapsibleContent>
               {(vor.remarks ?? []).map((remark) => (
                 <ListRow key={remark} title={<span className={cn("text-muted-foreground", TEXT.detail)}>{remark}</span>} />

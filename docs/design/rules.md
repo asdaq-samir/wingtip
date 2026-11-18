@@ -1021,7 +1021,9 @@ stay text beside it, never in the badge.
    force later), `cold` (a special-use area not in use; "Not scheduled"
    where only its published hours say so, as a NOTAM can still activate
    it), `closed` (a field or runway NASR or a NOTAM closes; decision
-   0043), `out-of-service` (a navaid), `private`, `military` and `joint`
+   0043), `out-of-service` (a navaid), `restricted` (a navaid in service
+   with restrictions, NASR's NAV_STATUS: usable, so not out of service),
+   `private`, `military` and `joint`
    (who may use a field), `inAir`, `ground` and `emergency` (a tracked
    airplane); and a flight category (`category`, AIM 7-1-7) in its chip
    colour. No card draws its own pill, coloured word or grey line for a
@@ -1041,7 +1043,7 @@ stay text beside it, never in the badge.
    ground, an emergency's code); the flight categories in the Brief and
    Nearest; the airport card's line under its name (Closed, Private,
    Military, Joint use, with the engine's or NASR's words; 2026-11-18).
-   The navaid card takes it as it is rebuilt. The phones: SwiftUI's and Material 3's own badge or label
+   The VOR card's line under its head (Restricted, 2026-11-18). The phones: SwiftUI's and Material 3's own badge or label
    with the same tokens (`WingtipColor.Badge.statusActive` and its
    siblings in Tokens.swift, `Badge.StatusActive` in Tokens.kt), on the
    owner's word (web first). The iPhone's is `Design/StatusBadge`

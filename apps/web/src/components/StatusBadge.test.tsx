@@ -16,11 +16,13 @@ describe("StatusBadge", () => {
       <>
         <StatusBadge variant="active" />
         <StatusBadge variant="out-of-service" />
+        <StatusBadge variant="restricted" />
         <StatusBadge variant="inAir" />
       </>,
     );
     expect(screen.getByText("Active").dataset.status).toBe("active");
     expect(screen.getByText("Out of service").dataset.status).toBe("out-of-service");
+    expect(screen.getByText("Restricted").className).toContain("--badge-status-restricted");
     expect(screen.getByText("In the air").dataset.status).toBe("inAir");
   });
 

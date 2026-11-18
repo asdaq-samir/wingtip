@@ -19,6 +19,10 @@ const STATUS = {
   cold: { fill: "bg-(--badge-status-cold)", word: "Cold" },
   /** Closed by NASR or a NOTAM (decision 0043): never shown as open. */
   closed: { fill: "bg-(--badge-status-closed)", word: "Closed" },
+  /** A navaid in service with restrictions (NASR NAV_STATUS "OPERATIONAL
+   *  RESTRICTED"): usable, its remarks saying where not, so not out of
+   *  service. */
+  restricted: { fill: "bg-(--badge-status-restricted)", word: "Restricted" },
   /** A navaid or a service not working. */
   "out-of-service": { fill: "bg-(--badge-status-out-of-service)", word: "Out of service" },
   /** A field's use where it is not public (NASR's use and ownership). */
