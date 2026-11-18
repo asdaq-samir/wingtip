@@ -1,26 +1,28 @@
-"""A route's slow parts started as soon as the route is known, ahead of
-the nav log that needs them: the chart's read along each hop, for its
-checkpoints (app.chart_model), and the ground under it, from USGS's
-point service (wingtip.terrain) -- measured on a new route at 3 to 6 s and
-9 s, one after the other, of the 15 s from the route to its nav log.
-The weather needs nothing started: the weather service keeps it stored
-whatever the route (wingtip.weather_store).
+"""A route's slow part started as soon as the route is known, ahead of
+the nav log that needs it: the ground under it, from USGS's point
+service (wingtip.terrain) -- measured on a new route at 9 s of the 15 s
+from the route to its nav log. The weather needs nothing started: the
+weather service keeps it stored whatever the route (wingtip.weather_store).
+
+Not the chart's read for its checkpoints (app.chart_model): finding
+checkpoints is the pilot's to ask for once the route is drawn, by the
+map's Checkpoints, and nothing finds them before (the owner, 2026-11-18);
+/api/checkpoints and a nav log asked with them start that read.
 
 Asked for by /api/course, the first thing the web app asks for a route,
 and so by the web app reading Fly Here's route ahead as an airport's card
 opens. Each route once in a while, two at a time, on threads of their
 own: a request never waits on it, and what it reads is kept where the
-nav log's own reads find it (the chart's job, shared; the ground's disk
-cache, read once for both callers)."""
+nav log's own reads find it (the ground's disk cache, read once for
+both callers)."""
 
 import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
 from cachetools import TTLCache
-from wingtip import chartlabels, terrain
+from wingtip import terrain
 
-from . import chart_model
 from .router_basics import load_route
 
 log = logging.getLogger(__name__)
@@ -53,12 +55,6 @@ def _read(dep: str, dest: str, stops: str) -> None:
     except Exception:  # noqa: BLE001 -- the route's own requests say what is wrong with it
         return
     hops = [hop for hop in r.hops if hop.length_nm <= MAX_HOP_NM]
-    for hop in hops:
-        # The chart's read is a job of its own: started here, not waited on.
-        try:
-            chart_model.corridor(chartlabels.route_key(hop.dep_ident, hop.dest_ident), wait=False, ahead=True)
-        except Exception:  # noqa: BLE001 -- the checkpoints' own request reports a failed read
-            log.warning("prefetch: the chart along %s -> %s", hop.dep_ident, hop.dest_ident, exc_info=True)
     for hop in hops:
         # The direct line's samples (wingtip.terrain), so the altitude
         # selection finds them on disk where its legs keep to the line; a

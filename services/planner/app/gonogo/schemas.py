@@ -144,7 +144,8 @@ class GoNoGoAsk(BaseModel):
     crossings: str = ""
     holds: str = ""
     ground: str = ""
-    checkpoints: bool = True
+    #: As PlanQuery's: none found unless asked for.
+    checkpoints: bool = False
     #: The day of the flight where the pilot is, "yyyy-mm-dd", that the
     #: logbook's and the airplane's dates are read on; the departure's UTC
     #: day when not given.

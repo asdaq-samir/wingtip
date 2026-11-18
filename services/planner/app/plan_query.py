@@ -163,10 +163,11 @@ class PlanQuery:
     #: night and their times.
     ground: str = ""
     #: Checkpoints between the route's own points, as the planner picks
-    #: them off the chart. False, the legs run from point to point alone
-    #: -- the departure, the stops, the destination -- as a pilot whose
-    #: map shows no waypoints flies it; and nothing is scored for them.
-    checkpoints: bool = True
+    #: them off the chart. False, the default, the legs run from point to
+    #: point alone -- the departure, the stops, the destination -- and
+    #: nothing is read or scored for them: finding checkpoints is the
+    #: pilot's to ask for, by the map's Checkpoints (the owner, 2026-11-18).
+    checkpoints: bool = False
 
     def profile(self) -> dict | None:
         """The airplane: a stock profile with the pilot's own figures over

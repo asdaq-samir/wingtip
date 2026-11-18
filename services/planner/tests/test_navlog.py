@@ -107,7 +107,7 @@ def test_totals_carry_the_fuel_check(messages, monkeypatch):
 
     # No departure time is now: here noon in Chicago (17:00 UTC), by day.
     monkeypatch.setattr(planning, "now", lambda: datetime(2026, 9, 22, 17, 0, tzinfo=timezone.utc))
-    lines = messages(client.get("/api/navlog", params={"dep": "C81", "dest": "KDLH"}))
+    lines = messages(client.get("/api/navlog", params={"dep": "C81", "dest": "KDLH", "checkpoints": True}))
     t = lines[-1]["totals"]
     # The day reserve at the C172's 8.5 gph is 4.25 gal on top of the
     # legs' own fuel (the first leg's climb from the field included);

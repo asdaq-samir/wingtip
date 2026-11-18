@@ -41,19 +41,22 @@ function notesOf(found: RouteNotes): Notes {
  * their own reasons -- how they are saved and kept -- and none of them is
  * the nav log's.
  */
-export function useCheckpointNotes(dep: string, dest: string, stops: string[] = []) {
+export function useCheckpointNotes(dep: string, dest: string, stops: string[] = [], asked = false) {
   const { data: pilot } = useQuery(pilotQuery);
   const pilotId = pilot?.id ?? null;
   const via = stops.join(",");
   const queryKey = ["descriptions", dep, dest, via, pilotId];
   const queryClient = useQueryClient();
   // Signed in only: the notes are a pilot's (the planner's x-gateway).
+  // And only once the pilot has asked for checkpoints (`asked`, the map's
+  // Checkpoints): the planner finds the route's checkpoints to match its
+  // notes to, which is never done before (the owner, 2026-11-18).
   // Fetched once for the route; an edit is written into the same entry.
   const notes =
     useQuery({
       queryKey,
       queryFn: async ({ signal }) => notesOf(await api.checkpointNotes(dep, dest, stops, signal)),
-      enabled: pilotId !== null && !!dep && !!dest,
+      enabled: asked && pilotId !== null && !!dep && !!dest,
       staleTime: Infinity,
       meta: { silent: true },
     }).data ?? NO_NOTES;

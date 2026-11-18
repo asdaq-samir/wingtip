@@ -742,8 +742,8 @@ mark: Base UI Preview Card, desktop only.
 **Primary action.** Fly Here, first and filled, in the actions row under
 the head; it stays in sight while the card scrolls on desktop (the head
 is sticky). As the card opens, the route Fly Here would make is asked
-for ahead: its course, and from a field its checkpoints and nav log as
-the planner's reads ahead (`?ahead=true`, behind any read the pilot waits
+for ahead: its course, and from a field its nav log (and its checkpoints
+while the map's Checkpoints is on) as the planner's reads ahead (`?ahead=true`, behind any read the pilot waits
 on), so the tap finds the planner already on them; closing the card
 without Fly Here stops those requests (`useFlyHere`).
 
@@ -1046,6 +1046,17 @@ present only with an airplane, decision 0011); one row per leg; a totals
 row at the foot; the workings of a leg open beneath it. Phone: a list of
 legs, the selected row's leg grid in shorthand (memory: nav log
 "compact"), the rest one line each.
+
+**Checkpoints only when asked.** Finding checkpoints is an action after
+the route is drawn, the FPL's More menu's Checkpoints (the `waypoints`
+map preference, off by default; the owner, 2026-11-18). Until it is on,
+nothing finds them: the nav log, the figures, the Departure Window and
+every read ahead plan the route point to point (`checkpoints` is false
+unless sent, on /api/plan, /api/navlog and the Go / No-Go), no
+/api/checkpoints or checkpoint notes are asked, and the course starts
+only the ground under the route ahead (`app.prefetch`), never the
+chart's read; `checkpoints_ready` says whether that read is kept, and
+starts nothing.
 
 **Stock parts.** Wingtip's `NavLogView` is TanStack Table v9 over
 shadcn's Table, which is what shadcn's Data Table guide uses

@@ -97,7 +97,7 @@ export function planKeyOf({
   aircraft,
   load,
   altitudes = "",
-  checkpoints = true,
+  checkpoints = false,
   rules = "vfr",
   alternate = "",
   procedures = "",

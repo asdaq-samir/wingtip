@@ -63,7 +63,7 @@ export const plannerRoute = {
     signal?: AbortSignal,
     stops?: string[],
     altitudes?: string,
-    checkpoints = true,
+    checkpoints = false,
     rules: "vfr" | "ifr" = "vfr",
     alternate = "",
     procedures = "",
@@ -90,7 +90,9 @@ export const plannerRoute = {
           depart: depart || undefined,
           altitudes: altitudes || undefined,
           altitude_starts: altitudeStarts || undefined, // begun there: Start At
-          checkpoints: checkpoints ? undefined : false,
+          // Asked for only once the pilot has turned Checkpoints on: the
+          // planner finds none unless asked (the owner, 2026-11-18).
+          checkpoints: checkpoints || undefined,
           // Under IFR (the planner's wingtip.ifr); VFR, the default, unsaid.
           rules: rules === "ifr" ? rules : undefined,
           // The IFR alternate filed, whose fuel is in the totals.

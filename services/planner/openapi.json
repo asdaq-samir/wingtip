@@ -7070,7 +7070,7 @@
             "type": "string"
           },
           "checkpoints": {
-            "default": true,
+            "default": false,
             "title": "Checkpoints",
             "type": "boolean"
           },
@@ -11101,7 +11101,7 @@
             "type": "string"
           },
           "checkpoints": {
-            "default": true,
+            "default": false,
             "title": "Checkpoints",
             "type": "boolean"
           },
@@ -28077,7 +28077,7 @@
     },
     "/api/course": {
       "get": {
-        "description": "Just the course line and its endpoints, through any stops.\n\nSeparate from detection so the chart can draw a line the instant two\nidents are entered. Reading tiles takes seconds even on the fast\npath, and there is no reason a pilot should watch an empty map for\nthem.\n\nAnd the route's slow parts are started here, the first thing the web\napp asks for a route: the chart's read and the ground under it, on\nthreads of their own (app.prefetch), so the nav log asked for beside\nthis finds them under way or done.",
+        "description": "Just the course line and its endpoints, through any stops.\n\nSeparate from detection so the chart can draw a line the instant two\nidents are entered. Reading tiles takes seconds even on the fast\npath, and there is no reason a pilot should watch an empty map for\nthem.\n\nAnd the ground under the route is started here, the first thing the\nweb app asks for a route, on a thread of its own (app.prefetch), so\nthe nav log asked for beside this finds it under way or done. Not the\nchart's read for checkpoints: nothing finds them until the pilot asks\n(/api/checkpoints, or a nav log with checkpoints), the owner's rule\n(2026-11-18). checkpoints_ready only looks at what is kept.",
         "operationId": "course_api_course_get",
         "parameters": [
           {
@@ -30030,7 +30030,7 @@
             "name": "checkpoints",
             "required": false,
             "schema": {
-              "default": true,
+              "default": false,
               "title": "Checkpoints",
               "type": "boolean"
             }
@@ -30664,7 +30664,7 @@
             "name": "checkpoints",
             "required": false,
             "schema": {
-              "default": true,
+              "default": false,
               "title": "Checkpoints",
               "type": "boolean"
             }
@@ -31905,7 +31905,7 @@
             "name": "checkpoints",
             "required": false,
             "schema": {
-              "default": true,
+              "default": false,
               "title": "Checkpoints",
               "type": "boolean"
             }
