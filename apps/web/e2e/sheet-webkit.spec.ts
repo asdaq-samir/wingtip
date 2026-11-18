@@ -88,7 +88,9 @@ test(
     }
 
     // The airport card, a nested drawer of its own over the sheet: its
-    // pinned head at its own scroller's top, its tabs pinned under it.
+    // pinned head at its own scroller's top, and its tabs a bar floating at
+    // its foot (CardTabBar; the owner, 2026-11-14, from Maps' place card),
+    // whole and in the same place with the page at its end and at its top.
     await pick(page, "duluth", "airport");
     const card = page.getByTestId("place-card");
     await expect(card).toBeVisible({ timeout: slow(20_000) });
@@ -96,14 +98,19 @@ test(
     await grabberTo(page, "full");
     await settled(panel(page));
     const cardScroller = page.locator("[data-sheet-card]").filter({ has: card }).locator("[data-sheet-scroll]");
-    await cardScroller.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
     const head = card.getByTestId("card-head-pinned");
     const bar = card.getByRole("tablist");
-    await expect(async () => {
-      const [h, s, b] = [(await head.boundingBox())!, (await cardScroller.boundingBox())!, (await bar.boundingBox())!];
-      expect(Math.abs(h.y - s.y), "the pinned head at the sheet's content top").toBeLessThanOrEqual(2);
-      expect(Math.abs(b.y - (h.y + h.height)), "the tabs pinned under it").toBeLessThanOrEqual(16);
-    }).toPass({ timeout: slow(5_000) });
+    for (const end of [true, false]) {
+      await cardScroller.evaluate((el, toEnd) => el.scrollTo({ top: toEnd ? el.scrollHeight : 0 }), end);
+      await expect(async () => {
+        const [h, s, b] = [(await head.boundingBox())!, (await cardScroller.boundingBox())!, (await bar.boundingBox())!];
+        expect(Math.abs(h.y - s.y), "the pinned head at the sheet's content top").toBeLessThanOrEqual(2);
+        const under = s.y + s.height - (b.y + b.height);
+        expect(under, "the tabs' bar at the card's foot, none of it under the foot").toBeGreaterThanOrEqual(0);
+        expect(under, "the tabs' bar at the card's foot, its own margin over it").toBeLessThanOrEqual(40);
+      }).toPass({ timeout: slow(5_000) });
+      await expect(bar).toBeInViewport({ ratio: 1 });
+    }
 
     // At the pill the card is its title row: its name and ✕ in the pill's room.
     await grabberTo(page, "peek");

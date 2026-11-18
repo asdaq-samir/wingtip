@@ -167,6 +167,8 @@ areas:
       - design/**
       - scripts/ci/content-mtimes.py
       - scripts/build/ios-strings.sh
+      # the build and the tests, as native-ios.yml's test job runs them
+      - scripts/ci/ios_test.sh
       - .github/workflows/native-ios.yml
   android:
     ci: android
@@ -279,6 +281,11 @@ ci_only:
     - scripts/ci/changes_since.sh
     # Every language's formatter, its version and how each is run.
     - scripts/dev/format.sh
+  # The browser specs, for a pull request's own browser run (decision 0044):
+  # the ones it adds or changes run in e2e before it merges; plan.py makes
+  # the list from the files this filter names.
+  specs:
+    - apps/web/e2e/**/*.spec.ts
   # The dependencies' manifests and locks, for dependency-review.
   deps:
     - apps/web/package-lock.json
@@ -291,6 +298,24 @@ ci_only:
     - apps/ios/project.yml
     - .github/workflows/*.yml
     - .github/actions/**
+  # The phone apps' own trees, for the pull request's gate (decision 0044).
+  # A pull request builds an app when it changes the app, its generated
+  # code included (the API models, the engine's calls, the tokens, the
+  # screens). A change to what the app is built from besides -- the engine,
+  # the shared fixtures -- builds it after merge, in the app's own
+  # workflow: the engine's own tests hold the same fixtures, and a build of
+  # ten minutes held every engine change's gate. The areas' `ios` and
+  # `android` paths above stay what check.sh and those workflows read.
+  ios-app:
+    - apps/ios/**
+    - scripts/build/ios-strings.sh
+    - scripts/ci/content-mtimes.py
+    - scripts/ci/ios_test.sh
+    - .github/workflows/native-ios.yml
+  android-app:
+    - apps/android/**
+    - .editorconfig
+    - .github/workflows/native-android.yml
   # The APIs the phones call, for api-compat.
   api:
     - services/planner/openapi.json

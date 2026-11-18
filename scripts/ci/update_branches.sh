@@ -62,8 +62,12 @@ while IFS=$'\t' read -r pr branch updated labelled; do
     fi
   else
     echo "::warning title=Update branches::#$pr $branch: $out"
-    # A 403 or a 429 is GitHub asking for fewer writes: stop.
-    if grep -qE "HTTP (403|429)" <<<"$out"; then exit 0; fi
+    # A 403 or a 429 is GitHub asking for fewer writes: stop, and say so to
+    # the step after this one (pr_conflicts.py), which then does not run.
+    if grep -qE "HTTP (403|429)" <<<"$out"; then
+      echo "stopped=true" >> "${GITHUB_OUTPUT:-/dev/null}"
+      exit 0
+    fi
   fi
 done <<<"$prs"
 echo "Updated $updates pull request(s)."

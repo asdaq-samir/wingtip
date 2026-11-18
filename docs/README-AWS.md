@@ -251,8 +251,8 @@ its settings, but has no images to run until the first push to ECR.
    "Deployment branches and tags" choose "Selected branches and tags"
    with `main` alone. The deploy role trusts only a job in this
    environment (`sub` `repo:<owner>/<repo>:environment:production`), not
-   any workflow on `main`: ci-autofix.yml runs as `main` with an OIDC
-   token while it runs a branch's code. Without the branch rule a
+   any workflow on `main`: ci-autofix.yml runs as `main` while it runs a
+   branch's code. Without the branch rule a
    workflow on any branch could name the environment and get the role;
    a job that names an environment that does not exist creates it with
    no rules at all, so create it first.

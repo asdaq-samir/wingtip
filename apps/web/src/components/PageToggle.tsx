@@ -1,10 +1,11 @@
+import { useCallback, useRef } from "react";
 import { Route, Search } from "lucide-react";
 import { Toggle } from "./ui/toggle";
 import { PANEL_FIELD_FILL } from "./panelField";
 import { useConsoleOpen } from "../lib/mapChrome";
 import { closeEveryCard } from "../lib/openCards";
 import { FPL_TIP, useTips } from "../lib/firstRunTips";
-import { keepPlanButton, usePageToggle } from "./sheet/pageToggle";
+import { keepPlanButton, noteFocus, takeFocus, usePageToggle } from "./sheet/pageToggle";
 
 /**
  * The sheet's two pages, Search and FPL, turned by one round button
@@ -29,17 +30,28 @@ import { keepPlanButton, usePageToggle } from "./sheet/pageToggle";
  */
 export default function PageToggle({ page }: { page: 0 | 1 }) {
   const pages = usePageToggle((s) => s.pages);
+  const self = useRef<HTMLElement | null>(null);
+  // FPL's glyph is where the first flight's tip points (FplTip). And
+  // drawn after a turn, it takes the focus the other page's held.
+  const drawn = useCallback(
+    (el: HTMLElement | null) => {
+      self.current = el;
+      takeFocus(el);
+      return page === 0 ? keepPlanButton(el) : undefined;
+    },
+    [page],
+  );
   if (!pages || pages.at !== page) return null;
   const onSearch = page === 0;
   const Glyph = onSearch ? Route : Search;
   return (
     <Toggle
-      // FPL's glyph is where the first flight's tip points (FplTip).
-      ref={onSearch ? keepPlanButton : undefined}
+      ref={drawn}
       pressed={false}
       // A card over the sheet covers this row; were one opening as it is
       // tapped, it closes them -- You too -- and turns to the other page.
       onPressedChange={() => {
+        noteFocus(self.current);
         closeEveryCard();
         useConsoleOpen.getState().setOpen(false);
         pages.go(onSearch ? 1 : 0);

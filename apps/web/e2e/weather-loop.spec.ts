@@ -90,9 +90,10 @@ test("the radar loop is turned on from the Map menu, plays once loaded, and scru
   await expect(page.getByTestId("weather-loop-play")).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByTestId("weather-loop-time")).toContainText(/Old: \d+m ago|Old: 1h/);
 
-  // Off again from the menu: the bar goes.
+  // Off again from the menu, where it was turned on (the Weather tile's ••• menu): the bar goes.
   await openMapSettings(page);
   await grabberTo(page, "full");
+  await page.getByTestId("weather-more").click();
   await page.getByTestId("weather-loop").click();
   await page.getByTestId("weather-loop-off").click();
   await page.keyboard.press("Escape");

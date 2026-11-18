@@ -76,13 +76,9 @@ jobs:
       # engine_affected.py reads the first such line's crates.
       - if: steps.affected.outputs.contract == 'true'
         run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine --test contract
-      - env:
-          PACKAGES: ${{ steps.affected.outputs.packages }}
-        run: |
-          # shellcheck disable=SC2086  # engine_affected.py's -p flags, one a word
-          cargo test --profile ci --manifest-path engine/Cargo.toml $PACKAGES
       # The committed WebAssembly must be what engine/ builds, or the browser
-      # runs other rules than the planner and the phones.
+      # runs other rules than the planner and the phones. Before the tests,
+      # so a stale one is said without waiting for them.
       - name: The engine's WebAssembly is the committed one
         if: steps.affected.outputs.wasm == 'true'
         run: |
@@ -91,6 +87,11 @@ jobs:
             echo "::error title=Engine wasm out of date::apps/web/src/lib/engine/wingtip-engine.wasm is not what engine/ builds: run scripts/build/build-engine-wasm.sh and commit the file."
             exit 1
           }
+      - env:
+          PACKAGES: ${{ steps.affected.outputs.packages }}
+        run: |
+          # shellcheck disable=SC2086  # engine_affected.py's -p flags, one a word
+          cargo test --profile ci --manifest-path engine/Cargo.toml $PACKAGES
       - if: github.event_name != 'pull_request' && steps.cargo.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
@@ -100,14 +101,19 @@ jobs:
             engine/target
           key: ${{ steps.cargo.outputs.cache-primary-key }}
 
-  # The web front end: the unit tests a change reaches, the build and its
-  # first-load budget, and the generated files (types, the phones' models,
-  # tokens, screens, icons) are the committed ones. Its tsc, ESLint,
-  # Prettier and knip are the guards job's.
+  # The web front end, three legs on a runner each: `tests`, the unit tests
+  # a change reaches; `build`, the build and its first-load budget; and
+  # `generated`, the generated files (types, the phones' models, tokens,
+  # screens, icons). Its tsc, ESLint, Prettier and knip are the guards job's.
   test-web:
+    name: test-web (${{ matrix.part }})
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.test-web == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [tests, build, generated]
     defaults:
       run:
         working-directory: apps/web
@@ -131,28 +137,18 @@ jobs:
       - run: npm run types
       # The iPhone's API generator (swift-openapi-generator), built once per
       # version in .tool-versions by api-models-apps.sh.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      - if: matrix.part == 'generated'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.cache/wingtip/swift-openapi-generator
           key: swift-openapi-generator-${{ hashFiles('.tool-versions') }}
-      # The generated and committed files (the phones' models and engine
-      # calls, tokens, screens, icons), each what its source makes: on a
-      # pull request only those it touched (HEAD^1, the base it lands on).
-      - name: The generated files are the committed ones
+      # On a pull request, the tests and generated files it touched (HEAD^1,
+      # the base it lands on); on main's push and at night, all of them.
+      - name: The unit tests, the build, or the generated files
         working-directory: .
-        run: scripts/ci/web_generated.sh ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
-      # On a pull request, the tests whose files or imports it changed
-      # (Vitest's --changed, against the main it lands on; a change to the
-      # package or Vite's config runs them all); on main's push and at
-      # night, every test.
-      - run: npx vitest run ${{ github.event_name == 'pull_request' && '--changed HEAD^1 --passWithNoTests' || '' }}
-      - run: npx vite build
-      # The JavaScript a phone loads before the planner draws, against a
-      # budget (scripts/first-load.mjs); raise it only with the reason.
-      - run: node scripts/first-load.mjs dist --budget 1100000
-      # Advisory: a known-vulnerable dependency is reported, not blocking.
-      - run: npm audit --audit-level=high
-        continue-on-error: true
+        env:
+          PART: ${{ matrix.part }}
+        run: scripts/ci/web_suite.sh "$PART" ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
 
   # The gateway's JUnit suite, Testcontainers' Postgres on the runner's
   # Docker.
@@ -207,7 +203,8 @@ jobs:
     name: Engine wheel
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
-    # Every change but words alone: the guards' flight-critical imports it.
+    # Every change but words alone: flight-critical imports it (test-python's
+    # `flight` leg, or the planner's own suite when that runs).
     if: needs.changes.outputs.docs-only != 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -317,6 +314,8 @@ jobs:
       sim: ${{ steps.plan.outputs.sim }}
       deps: ${{ steps.plan.outputs.deps }}
       docs-only: ${{ steps.docsonly.outputs.code == 'false' }}
+      specs: ${{ steps.plan.outputs.specs }}
+      spec-shards: ${{ steps.plan.outputs.spec-shards }}
     steps:
       # The filter block below is generated from scripts/areas.yml (the
       # guards job checks it is).
@@ -352,6 +351,7 @@ jobs:
         with:
           # Ignored on a pull request, which diffs against its base.
           base: ${{ steps.base.outputs.sha }}
+          list-files: shell
           filters: |
               # BEGIN generated from scripts/areas.yml by scripts/areas.py: edit that file, then `python3 scripts/areas.py write`
               global:
@@ -368,6 +368,8 @@ jobs:
                 - scripts/areas.py
                 - scripts/ci/changes_since.sh
                 - scripts/dev/format.sh
+              specs:
+                - apps/web/e2e/**/*.spec.ts
               deps:
                 - apps/web/package-lock.json
                 - engine/Cargo.lock
@@ -379,6 +381,16 @@ jobs:
                 - apps/ios/project.yml
                 - .github/workflows/*.yml
                 - .github/actions/**
+              ios-app:
+                - apps/ios/**
+                - scripts/build/ios-strings.sh
+                - scripts/ci/content-mtimes.py
+                - scripts/ci/ios_test.sh
+                - .github/workflows/native-ios.yml
+              android-app:
+                - apps/android/**
+                - .editorconfig
+                - .github/workflows/native-android.yml
               api:
                 - services/planner/openapi.json
                 - services/gateway/openapi.json
@@ -535,6 +547,7 @@ jobs:
                 - design/**
                 - scripts/ci/content-mtimes.py
                 - scripts/build/ios-strings.sh
+                - scripts/ci/ios_test.sh
                 - .github/workflows/native-ios.yml
               android:
                 - apps/android/**
@@ -609,6 +622,9 @@ jobs:
           CHANGED: ${{ steps.filter.outputs.changes }}
           ALL: ${{ steps.base.outputs.all }}
           EVENT: ${{ github.event_name }}
+          SPEC_FILES: ${{ steps.filter.outputs.specs_files }}
+          FORK: ${{ github.event.pull_request.head.repo.fork }}
+          CODE: ${{ steps.docsonly.outputs.code }}
         run: python3 scripts/ci/plan.py
 
   # The browser suite (apps/web/e2e, Playwright) against the stack a pilot
@@ -619,14 +635,18 @@ jobs:
   # After merge (docs/CI.md, "The tiers"; the owner, 2026-11-10): main's
   # push runs the @smoke and @flight-critical tests on the phone project,
   # over two shards; the night runs everything over ten. A pull request
-  # runs none; a failure on main is one issue (nightly-issue.yml). Each
+  # runs only the specs it adds or changes, and "CI passed" does not wait
+  # for them (decision 0044: 4 min 07 s for one spec, #582), so a red one
+  # is seen and holds nothing; a failure on main is one issue
+  # (nightly-issue.yml). Each
   # shard pulls its images and restores its caches in the background and
   # starts each service the moment it can: setup is about a minute and a
   # half. Not after e2e-images, which it would wait on; it pulls the image
   # the moment it is pushed.
   e2e:
     name: e2e (${{ matrix.shard }}/${{ strategy.job-total }})
-    if: github.event_name != 'pull_request'
+    needs: [changes]
+    if: github.event_name != 'pull_request' || needs.changes.outputs.specs != ''
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
     # images go to AWS's x86 machines, and e2e tests the same images.
     runs-on: ubuntu-26.04
@@ -642,8 +662,9 @@ jobs:
       fail-fast: false
       matrix:
         # The smoke set over two shards on main's push (5-9 min of tests on
-        # one, 2026-11-10); everything over ten at night or by hand.
-        shard: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]' || '[1, 2]') }}
+        # one, 2026-11-10); everything over ten at night or by hand; on a
+        # pull request, the specs it adds or changes, three a shard (plan.py).
+        shard: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]' || github.event_name == 'pull_request' && needs.changes.outputs.spec-shards || '[1, 2]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -681,7 +702,10 @@ jobs:
         run: scripts/ci/e2e_stack.sh
       # The planner's two caches first, since it starts once they are in.
       # data/raw's entries, not data/raw itself, so the charts are not archived
-      # twice; the same list is in the step that saves it.
+      # twice; the same list is in the step that saves it. Not the weather,
+      # fetched afresh at every start: a download in flight there is a .part
+      # only root can read, and tar then saved nothing at all (main's push
+      # 43729892948, whose next run had no FAA data when nfdc refused it).
       - name: Restore the planner's reference data
         id: data
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -690,6 +714,7 @@ jobs:
             data/raw/*
             !data/raw/charts.nosync
             !data/raw/chart_tiles.nosync
+            !data/raw/weather
           key: planner-data-v1-${{ hashFiles('data/processed/candidates_*.csv', 'services/planner/wingtip/faa_data.py', 'services/planner/wingtip/airports.py', 'services/planner/wingtip/elevation.py', 'services/planner/wingtip/chart_*.py') }}
           restore-keys: planner-data-v1-
       # The corridor's charts, tiles and detections (a minute of a shard's
@@ -765,13 +790,17 @@ jobs:
           done
           curl -sf http://localhost:8084/ | grep -q '"warm":true' || { echo "the planner never reported itself warm"; exit 1; }
           echo "$(($(date +%s) - T0)) the planner warm" >> /tmp/e2e-out/timeline
-      # The cycle the planner is serving and the corridor reader's code:
-      # what the charts cache is keyed by, at the end of the job.
+      # The cycle the planner is serving, the corridor reader's code, and
+      # the files that say which tiles Keep for the Air asks for: what the
+      # charts cache is keyed by, at the end of the job. The tiles the suite
+      # has cut are in it, so a keep's 1,400 are there to send; saved once a
+      # key, it went eighteen days without them, each cut on every run at
+      # about a second a tile (#584: 520 of them in a test's two minutes).
       - name: The chart cycle
         id: cycle
         if: matrix.shard == 1
         env:
-          READER: ${{ hashFiles('services/planner/wingtip/chartvision.py', 'services/planner/wingtip/chartpalette.py', 'services/planner/wingtip/chartmosaic.py', 'services/planner/wingtip/chartlines.py', 'services/planner/wingtip/chart_line_mask.py', 'services/planner/app/detection.py') }}
+          READER: ${{ hashFiles('services/planner/wingtip/chartvision.py', 'services/planner/wingtip/chartpalette.py', 'services/planner/wingtip/chartmosaic.py', 'services/planner/wingtip/chartlines.py', 'services/planner/wingtip/chart_line_mask.py', 'services/planner/app/detection.py', 'apps/web/src/lib/map/route/keepRoute.ts', 'apps/web/src/lib/map/sources/tiles.ts') }}
           RESTORED: ${{ steps.charts.outputs.cache-matched-key || 'no chart cache' }}
         run: |
           cycle=$(curl -sf http://localhost:8084/api/status | python3 -c 'import json, sys; print(json.load(sys.stdin)["charts"]["cycle"])')
@@ -846,9 +875,10 @@ jobs:
         env:
           IOS_AUDIT: ${{ (github.event_name == 'schedule' || inputs.standards) && '1' || '' }}
           SCREENSHOTS: /out/screens
-          # Every project at night or by hand, the smoke set otherwise. (`cond && '' || x`
-          # is x whatever cond is: '' is false, so it is written the other way round.)
-          PROJECTS: ${{ !(github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '--project=mobile --project=webkit-phone --grep "@smoke|@flight-critical"' || '' }}
+          # Every project at night or by hand, the smoke set on main's push, and on a pull request the
+          # specs it adds or changes on the phone project. (`cond && '' || x` is x whatever cond is:
+          # '' is false, so it is written the other way round.)
+          PROJECTS: ${{ github.event_name == 'pull_request' && format('--project=mobile --pass-with-no-tests {0}', needs.changes.outputs.specs) || !(github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '--project=mobile --project=webkit-phone --grep "@smoke|@flight-critical"' || '' }}
           SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
           # The JSON report, for the flaky tests below (those that passed
           # on their retry): listed in the nightly issue, not failing the run.
@@ -958,6 +988,7 @@ jobs:
             data/raw/*
             !data/raw/charts.nosync
             !data/raw/chart_tiles.nosync
+            !data/raw/weather
           key: ${{ steps.data.outputs.cache-primary-key }}
       # The charts and tiles, once per FAA cycle and reader, this cycle's only,
       # after the tests (the tiles are theirs) and with the corridor's
@@ -995,8 +1026,9 @@ jobs:
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
     # images go to AWS's x86 machines, and e2e tests the same images.
     runs-on: ubuntu-26.04
-    # After merge, with e2e (above).
-    if: github.event_name != 'pull_request'
+    # After merge, with e2e (above), and for a pull request's own specs.
+    needs: [changes]
+    if: github.event_name != 'pull_request' || needs.changes.outputs.specs != ''
     permissions:
       contents: read
       packages: write
@@ -1130,24 +1162,24 @@ jobs:
           fail-on-severity: high
           comment-summary-in-pr: on-failure
 
-  # The quick checks, on one runner, all started at once
-  # (scripts/ci/guards.sh lists them): no aviation rule outside the engine
-  # (CLAUDE.md, #482); CI's own rules (docs/CI.md, "Rules": every test in
-  # one tier and the tiers in shape, warnings fatal, the workflows small,
-  # scripted, pinned and least-privileged); the links, file sizes,
-  # toolchain versions and brand tokens; each language's lint and layout
-  # where a change touched it (ruff, tsc, ESLint, Prettier, knip, rustfmt,
-  # clippy, cargo-machete); and flight-critical, what must never break in
-  # the air (the owner, 2026-11-09), on every change but words alone: the
-  # engine against the FAA's worked examples and the planner's KMSN-KOSH
-  # nav log. The browser's twin is e2e's @flight-critical test; the
-  # phones' run in their native jobs.
+  # The quick checks, three legs on a runner each, each leg's checks all
+  # started at once (scripts/ci/guards.sh lists them). `repo`: no aviation
+  # rule outside the engine (#482), CI's own rules (docs/CI.md, "Rules"),
+  # links, file sizes, versions, brand tokens, ruff, the phones' lint.
+  # `web`: tsc, ESLint, Prettier, knip. `engine`: rustfmt, clippy, machete.
+  # And flight-critical (the owner, 2026-11-09), on every change but words
+  # alone: the engine's FAA examples here (`engine`), or test-engine's where
+  # the engine changed, so they build once; the planner's nav log is
+  # test-python's, which has the engine's wheel, so no leg waits for it.
   guards:
-    name: Guards
+    name: Guards (${{ matrix.part }})
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, engine-wheel]
-    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.engine-wheel.result != 'failure' }}
+    needs: [changes]
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [repo, web, engine]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -1158,17 +1190,17 @@ jobs:
       # uv for the planner's requirements, and its uvx for the pinned ruff
       # and vulture.
       - run: pip install -q uv
-      - if: needs.changes.outputs.test-web == 'true'
+      - if: matrix.part == 'web' && needs.changes.outputs.test-web == 'true'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         id: node
         with:
           node-version-file: .tool-versions
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - if: needs.changes.outputs.test-web == 'true' && steps.node.outputs.cache-hit != 'true'
+      - if: matrix.part == 'web' && needs.changes.outputs.test-web == 'true' && steps.node.outputs.cache-hit != 'true'
         run: echo "::notice title=Cache miss::npm (guards)"
       # Clippy's and flight-critical's builds, as test-engine keeps its own.
-      - if: needs.changes.outputs.test-engine == 'true' || needs.engine-wheel.result == 'success'
+      - if: matrix.part == 'engine' && (needs.changes.outputs.test-engine == 'true' || needs.changes.outputs.docs-only != 'true')
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         id: cargo
         with:
@@ -1179,14 +1211,11 @@ jobs:
             engine/target
           key: cargo-guards-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/Cargo.lock', 'engine/rust-toolchain.toml') }}-${{ hashFiles('engine/**/*.rs') }}
           restore-keys: cargo-guards-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/Cargo.lock', 'engine/rust-toolchain.toml') }}-
-      - if: (needs.changes.outputs.test-engine == 'true' || needs.engine-wheel.result == 'success') && steps.cargo.outputs.cache-matched-key == ''
+      - if: matrix.part == 'engine' && (needs.changes.outputs.test-engine == 'true' || needs.changes.outputs.docs-only != 'true') && steps.cargo.outputs.cache-matched-key == ''
         run: echo "::notice title=Cache miss::cargo-guards"
-      - if: needs.engine-wheel.result == 'success'
-        uses: ./.github/actions/engine-wheel
-        with:
-          mode: install
       - name: The guards
         env:
+          PART: ${{ matrix.part }}
           INSTALL: "true"
           BASE_REF: ${{ github.base_ref || 'main' }}
           ARCH: ${{ needs.changes.outputs.arch }}
@@ -1195,7 +1224,7 @@ jobs:
           ENGINE: ${{ needs.changes.outputs.test-engine }}
           IOS: ${{ needs.changes.outputs.ios }}
           ANDROID: ${{ needs.changes.outputs.android }}
-          FLIGHT: ${{ needs.engine-wheel.result == 'success' }}
+          FLIGHT: ${{ needs.changes.outputs.docs-only != 'true' }}
         run: scripts/ci/guards.sh
       - if: github.event_name != 'pull_request' && steps.cargo.outputs.cache-primary-key != '' && steps.cargo.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -1262,8 +1291,9 @@ jobs:
           retention-days: 30
           path: ${{ runner.temp }}/api-reference
 
-  # The production files: cfn-lint, shellcheck, compose config, caddy
-  # validate. Nothing else runs them before a deploy.
+  # The production files: cfn-lint, compose config, caddy validate. Nothing
+  # else runs them before a deploy; their shell scripts are the guards
+  # job's, with every other one (scripts/ci/shellcheck.sh).
   infra:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -1278,7 +1308,6 @@ jobs:
           python-version-file: .tool-versions
       - run: pip install cfn-lint==1.60.0
       - run: cfn-lint infra/cloudformation/template.yaml
-      - run: shellcheck infra/server/*.sh
       - name: docker compose config (infra/docker-compose.prod.yml)
         run: |
           printf '%s\n' IMAGE_REGISTRY=registry.example/wingtip PUBLIC_HOST=app.example.com \
@@ -1590,13 +1619,13 @@ jobs:
           persist-credentials: false
       - run: scripts/ci/backup_restore.sh
 
-  # This run's minutes, job by job, against docs/CI.md's budget, and the
-  # caches that missed, in the run's summary: warnings, never a failure
-  # (scripts/ci/ci_budget.py). Last, after every job; seconds.
+  # A red run's failures with the command for each (failure_summary.py), then
+  # its minutes against docs/CI.md's budget and the caches that missed
+  # (ci_budget.py): last, never failing, and on a run `halt` cancelled too.
   budget:
     name: CI budget
-    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, e2e, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, backup-restore, passed]
-    if: ${{ !cancelled() }}
+    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, e2e, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, backup-restore, halt, passed]
+    if: always()
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3
     continue-on-error: true
@@ -1610,10 +1639,31 @@ jobs:
         with:
           persist-credentials: false
           sparse-checkout: scripts/ci
-      - name: Minutes and cache misses, against the budget
+      - name: A red run's failures, then minutes and cache misses against the budget
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 scripts/ci/ci_budget.py
+        run: python3 scripts/ci/failure_summary.py && python3 scripts/ci/ci_budget.py
+
+  # A red run ends when its Linux jobs do (decision 0044): each has said
+  # what it found within about four minutes, and only the phones' builds
+  # outlast them, to a verdict already known. Once any of these has failed
+  # the run is cancelled, so "CI passed" fails at once. Pull requests only.
+  halt:
+    name: Stop on red
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review]
+    if: ${{ failure() && github.event_name == 'pull_request' }}
+    timeout-minutes: 2
+    # actions: write, to cancel this run and nothing else.
+    permissions:
+      actions: write
+    steps:
+      - name: The phones' builds stopped, the verdict being known
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: gh run cancel "$RUN_ID"
 
   # The one check main requires (its ruleset); auto-merge-agents.yml merges
   # on it. Tier 1, about three minutes (the owner, 2026-11-10: "3-minute

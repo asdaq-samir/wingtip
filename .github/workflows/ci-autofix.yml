@@ -1,41 +1,43 @@
 name: CI autofix
 
-# What happens when CI fails:
+# What happens when CI fails (the owner, 2026-11-15: "the autofix bot only
+# formats"):
 #
 # - A job GitHub never ran ("not acquired by Runner", as main's run
 #   37366678665 had four) is the runner's fault, not the code's: the
 #   failed jobs run again, once.
-# - On a pull request from Claude's own claude/ branch, Claude reads the
-#   failed jobs' logs, fixes the cause on the branch and pushes ("Fix CI:
-#   ..."), at most twice a branch; after that it only comments.
-# - On anyone else's pull request -- Dependabot's -- it
-#   changes nothing and comments the cause and the fix it would make.
-# - On main's nightly run, a cause in the code is fixed on a new claude/
-#   branch, in a pull request that merges like any of Claude's; a cause
-#   outside it (the FAA's data, a weather service) is an issue.
+# - Otherwise, on an open pull request from a claude/ branch of this
+#   repository, the branch is formatted (scripts/dev/format.sh, for the
+#   languages the pull request changes) and those of its own files that
+#   changed are committed and pushed: once per failed head commit, never
+#   over the bot's own commit, and only while the branch still ends at the
+#   commit that failed (scripts/ci/autofix_format.sh).
+#   It edits nothing else, opens no pull request or issue and comments
+#   nowhere: a failure that is not layout is the branch's own to fix, and
+#   main's is nightly-issue.yml's to report.
 #
-# Claude's pushes and pull requests are the Claude GitHub App's, which
-# start CI as a person's would. It runs the branch's code with write
-# access, as CI does: fine on a repository only its owner pushes to,
-# which this one is (forks' pull requests are left out). Needs what
-# claude-review.yml needs; without a key it still runs a runner's failure again.
+# The token: a push made with the workflow's own GITHUB_TOKEN starts no
+# workflow (update-branches.yml says the same), so the formatting is
+# pushed with MERGE_TOKEN, the owner's, and starts CI like any push of
+# his. Without that secret it is pushed with GITHUB_TOKEN, and CI is then
+# started on the branch by hand (workflow_dispatch).
+#
+# The script that decides and pushes is main's; the formatters and their
+# settings are the branch's, run with no token in their environment. Fine
+# on a repository only its owner pushes to, which this one is (forks'
+# pull requests are left out).
 
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
 
+# contents: the push where there is no MERGE_TOKEN. actions: the rerun,
+# and CI started by hand. pull-requests: finding the branch's own.
 permissions:
   contents: write
-  pull-requests: write
-  issues: write
   actions: write
-  # For claude-code-action alone: it trades this job's OIDC token for the
-  # Claude app's, which is how its pushes start CI. The token says "main"
-  # (a workflow_run runs as the default branch) while the job runs a
-  # branch's code, so nothing outside GitHub may trust "main" alone: AWS's
-  # deploy role trusts only the production environment (template.yaml).
-  id-token: write
+  pull-requests: read
 
 concurrency:
   group: ci-autofix-${{ github.event.workflow_run.head_branch }}
@@ -47,15 +49,12 @@ jobs:
       github.event.workflow_run.conclusion == 'failure' &&
       github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    timeout-minutes: 90
+    timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      BRANCH: ${{ github.event.workflow_run.head_branch }}
-      EVENT: ${{ github.event.workflow_run.event }}
       RUN_ID: ${{ github.event.workflow_run.id }}
       ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
-      HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' || secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
     steps:
       - name: The runner's failure, or the code's
         id: cause
@@ -69,103 +68,36 @@ jobs:
       - name: The runner's -- run the failed jobs again, once
         if: steps.cause.outputs.runner == 'true' && env.ATTEMPT == '1'
         run: gh run rerun "$RUN_ID" --failed
-      - name: No key, nothing more
-        if: steps.cause.outputs.runner != 'true' && env.HAS_KEY != 'true'
-        run: echo "::notice::No ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN secret, so no fix or diagnosis."
 
+      # Main's script, which only reads GitHub to decide: most runs end here.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        if: steps.cause.outputs.runner != 'true' && env.HAS_KEY == 'true'
+        if: steps.cause.outputs.runner != 'true'
         with:
-          ref: ${{ github.event.workflow_run.head_branch }}
-          fetch-depth: 0
-      # The pull request is looked up by its branch: a run the Auto-merge
-      # or Sync workflow started by hand carries none in the event.
-      - name: Fix, diagnose or report
-        id: mode
-        if: steps.cause.outputs.runner != 'true' && env.HAS_KEY == 'true'
-        run: |
-          set -euo pipefail
-          pr=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number // empty')
-          fixes=$(git log --oneline origin/main..HEAD --grep '^Fix CI' | wc -l)
-          if [ "$BRANCH" = main ] && [ "$EVENT" = schedule ]; then mode=nightly
-          elif [ -z "$pr" ]; then mode=
-          elif [[ "$BRANCH" == claude/* ]] && [ "$fixes" -lt 2 ]; then mode=fix
-          else mode=diagnose; fi
-          case "$mode" in
-            fix) task="Fix the cause on this branch, run the checks CLAUDE.md names for what you changed, commit with a message that starts \"Fix CI:\" and says what broke and why, and push to this branch. If the cause is not in the code (a flaky test, an outside service), change nothing and say so in a comment on the pull request." ;;
-            diagnose) task="Change no code. Comment on the pull request with the cause, the failing test or step, and the fix you would make; say plainly if it is not the code (a flaky test, an outside service)." ;;
-            nightly) task="This is main's nightly run. If the cause is in the code, fix it on a new branch claude/nightly-$(date -u +%F), run the checks CLAUDE.md names for what you changed, commit (\"Fix CI: ...\"), push, and open a pull request to main. If the cause is outside the code (the FAA's data, a weather service, a runner), change nothing and open an issue with the cause and what to do -- or comment on an open issue about the same cause rather than opening another." ;;
-            *) task= ;;
-          esac
-          { echo "mode=$mode"; echo "pr=$pr"; echo "task=$task"; } >> "$GITHUB_OUTPUT"
-          echo "${mode:-nothing} (pull request ${pr:-none}, $fixes fixes on $BRANCH so far)"
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
-        if: steps.mode.outputs.mode == 'fix' || steps.mode.outputs.mode == 'nightly'
+          persist-credentials: false
+          sparse-checkout: scripts/ci
+      - name: Whether to format, and which languages
+        id: plan
+        if: steps.cause.outputs.runner != 'true'
+        run: scripts/ci/autofix_format.sh plan
+      # The commit that failed, beside main's script. format.sh fetches each
+      # formatter itself, or skips its language with a note; the Java's wants its JDK
+      # (main's .tool-versions, which the sparse checkout keeps at the root).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        if: steps.plan.outputs.langs != ''
         with:
-          node-version-file: .tool-versions
-          cache: npm
-          cache-dependency-path: apps/web/package-lock.json
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
-        if: steps.mode.outputs.mode == 'fix' || steps.mode.outputs.mode == 'nightly'
-        with:
-          python-version-file: .tool-versions
+          ref: ${{ github.event.workflow_run.head_sha }}
+          path: branch
+          persist-credentials: false
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78  # v6.2.0
-        if: steps.mode.outputs.mode == 'fix' || steps.mode.outputs.mode == 'nightly'
+        if: contains(steps.plan.outputs.langs, 'java')
         with:
           distribution: temurin
           java-version-file: .tool-versions
-          cache: maven
-      - name: The web app's packages
-        if: steps.mode.outputs.mode == 'fix' || steps.mode.outputs.mode == 'nightly'
-        working-directory: apps/web
-        run: npm ci
-      - uses: anthropics/claude-code-action@9eb012b6d0900c2b9eede65ee1758cec4d2973e9  # v1.0.270
-        if: steps.mode.outputs.mode != ''
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # Claude's own pull requests are opened and pushed by the Claude app, a
-          # bot, and the action refuses a bot unless it is named here. Without
-          # it, Claude's pull requests got no review, no fixes and no autofix.
-          # github-actions too: a fix pushed from a workflow starts the
-          # next review as that bot, and the action refused it ("non-human
-          # actor"), so a branch's second review never ran.
-          allowed_bots: claude,github-actions
-          additional_permissions: |
-            actions: read
-          prompt: |
-            REPO: ${{ github.repository }}
-            PR NUMBER: ${{ steps.mode.outputs.pr }}
-            CI failed on ${{ github.event.workflow_run.head_branch }}: ${{ github.event.workflow_run.html_url }}
-
-            Read the failed jobs' logs (`gh run view ${{ github.event.workflow_run.id }} --log-failed`)
-            and their annotations, and find the cause. CLAUDE.md has the project's rules,
-            and the checks skill says how to tell a real failure from a flaky one.
-
-            ${{ steps.mode.outputs.task }}
-          claude_args: |
-            --allowedTools "Skill,Edit,MultiEdit,Write,Read,Glob,Grep,LS,Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(python:*),Bash(python3:*),Bash(pip:*),Bash(mvn:*),Bash(cd:*),Bash(ls:*),Bash(cat:*),Bash(head:*),Bash(tail:*),Bash(grep:*),Bash(find:*),Bash(wc:*),Bash(diff:*),Bash(pytest:*),Bash(ruff:*),Bash(uv:*),Bash(java:*)"
-      # A commit pushed from a workflow starts its pull request's checks as
-      # github-actions[bot], and GitHub holds those for approval
-      # (action_required): on 2026-10-08 the fixes on #107 and #116 sat
-      # there, and a pull request whose CI never runs never merges. They
-      # are this repository's own workflow's commits, so they are approved
-      # here, with the owner's token where there is one. The runs appear a
-      # few seconds after the push: the newest commit is asked after for
-      # two minutes.
-      - name: Let the pushed fix's checks run
-        if: always() && steps.mode.outputs.mode == 'fix'
+      - name: Format, commit the files that changed, and push
+        if: steps.plan.outputs.langs != ''
+        working-directory: branch
         env:
-          GH_TOKEN: ${{ secrets.MERGE_TOKEN || github.token }}
-          GH_REPO: ${{ github.repository }}
-          BRANCH: ${{ github.event.workflow_run.head_branch }}
-        run: |
-          git fetch -q origin "$BRANCH" || exit 0
-          sha=$(git rev-parse FETCH_HEAD)
-          for _ in 1 2 3 4 5 6; do
-            for id in $(gh api "repos/$GH_REPO/actions/runs?head_sha=$sha&status=action_required" --jq '.workflow_runs[].id'); do
-              gh api -X POST "repos/$GH_REPO/actions/runs/$id/approve" > /dev/null && echo "approved run $id on ${sha:0:7}" \
-                || echo "::warning title=Checks held::run $id on ${sha:0:7} waits for approval, and this token cannot give it"
-            done
-            sleep 20
-          done
+          LANGS: ${{ steps.plan.outputs.langs }}
+          PUSH_TOKEN: ${{ secrets.MERGE_TOKEN || github.token }}
+          HAS_MERGE_TOKEN: ${{ secrets.MERGE_TOKEN != '' }}
+        run: ../scripts/ci/autofix_format.sh format

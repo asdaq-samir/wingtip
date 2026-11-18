@@ -1020,8 +1020,7 @@ Resources:
                 # Only a job in the `production` environment: promote.yml's
                 # push-ecr and deploy. Not "any workflow on main" -- the
                 # workflow_run workflows (ci-autofix.yml) run as main too,
-                # with id-token for the Claude app, while running a
-                # branch's code. The environment allows only main to
+                # while running a branch's code. The environment allows only main to
                 # deploy (docs/README-AWS.md), so a branch's workflow that
                 # names it is refused before it gets a token.
                 token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepo}:environment:production"

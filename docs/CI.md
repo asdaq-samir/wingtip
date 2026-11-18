@@ -18,7 +18,7 @@ script can check, and the rest are for whoever writes a test or a job.
    app's build too. Each job's budget, in minutes (`BUDGETS` in
    `scripts/ci/ci_budget.py`): `changes`, `api-compat`,
    `dependency-review` 1; `engine-wheel`, `infra`, `test-jobs`,
-   `test-ingest`, `test-weather` 2; `test-xplane` 1;
+   `test-ingest`, `test-weather`, `test-flight` 2; `test-xplane` 1;
    `guards`, `test-web`, `test-engine`, `test-gateway`, `test-planner`,
    `test-wingtip`, `test-sim` 3; Android 5, iOS 6. After merge: the image builds 4,
    each `e2e` shard 8, main's push 14 in all. The `budget` job writes
@@ -44,9 +44,9 @@ script can check, and the rest are for whoever writes a test or a job.
    and those that use them (`scripts/ci/engine_affected.py`), each Python
    suite's own leg. A pull request of words only (docs, Markdown, skills,
    notebooks) runs `changes` and `guards`' seconds-long checks, nothing
-   else; a web change never builds the phones (only the fixtures and
-   generated code they read do). Yet every app whose inputs a pull
-   request changes is built in tier 1 (#499): the web app's `vite build`,
+   else; a web change never builds the phones (only the code generated
+   into them does). Yet every app a pull request changes is built in
+   tier 1 (#499; its own tree, decision 0044): the web app's `vite build`,
    Android's compile and iOS's build. *Guards:* `scripts/areas.py check`
    keeps the filter the table's; `test_tiers.py` the apps' builds.
 4. **Cache everything; main and the night save, pull requests read.**
@@ -82,6 +82,13 @@ script can check, and the rest are for whoever writes a test or a job.
    Merge the wave's branches into `claude/integration` locally, then push
    it once; in the validation pass, push once per set of fixes, after all
    of the set's own checks have passed, and not again until its run ends.
+   A red run ends when its Linux jobs do (decision
+   [0044](decisions/0044-red-runs-end-early.md)): `halt` waits for every
+   tier-1 job but the phones' builds and cancels the run if one failed,
+   so each has said what it found and nothing runs on to a verdict
+   already known. And the pre-push hook holds a push against the branch
+   it builds on (main, or the wave's), so it refuses only what that push
+   added and is not skipped. *Guard:* `test_tiers.py` (`halt`).
 7. **Never raise a timeout to get green.** A job that runs long is made
    faster (a cache, a smaller set, a split) or moved to the night; its
    budget moves only with the reason in the commit.
@@ -128,7 +135,12 @@ script can check, and the rest are for whoever writes a test or a job.
 12. **Every failure names what failed.** A job puts the failing test and
     its first error on the run as an `::error` annotation and uploads its
     log on failure; no `|| true` hides a check (the few read afterwards
-    are listed, each with why). *Guard:* `workflow_rules.py`
+    are listed, each with why). A red run's summary then gathers them:
+    each failed job's first error and the narrow command that reproduces
+    it on the Mac (`scripts/ci/failure_summary.py`, in the `budget` job,
+    one table a job a row), which is what decision 0042 asks to be run
+    before the fix is pushed. A job that leaves no annotation gets only
+    its failed step and its whole area. *Guard:* `workflow_rules.py`
     (`|| true`).
 13. **A rule is tested once, at the lowest level that can hold it.** An
     aviation rule is tested in the engine against the shared fixtures
@@ -148,6 +160,32 @@ script can check, and the rest are for whoever writes a test or a job.
 16. **Small configuration.** The workflows' lines in all stay within the
     budget in `workflow_rules_allow.txt`, set at the total on
     2026-11-10 and lowered with the tiers. *Guard:* `workflow_rules.py`.
+17. **A generated file is checked before the job builds or tests further**
+    (decision 0044). The iPhone job builds, checks the string catalog,
+    then runs the tests (`scripts/ci/ios_test.sh`): in run 43732738720 it
+    ran 753 s of green tests before the catalog failed it in ten.
+    `test-engine` holds the committed WebAssembly to the engine before
+    `cargo test`; the phones' models, the tokens, the screens and the
+    icons are `test-web`'s own `generated` leg; `python_suite.sh` checks
+    the connector's calls before pytest. *Guard:* `test_tiers.py` (the
+    iPhone job's order).
+18. **A pull request's own browser specs run beside its gate** (decision
+    0044): the specs it adds or changes, on the phone project, in `e2e`,
+    three a shard. "CI passed" does not wait for them: one changed spec
+    took 4 min 07 s (#582: 146 s for the stack while the page was built,
+    30 s of tests), over the three minutes, so a red one is seen on the
+    pull request and in the run's summary and holds no merge. The smoke
+    set and the whole suite stay after merge and at night. *Guard:*
+    `test_tiers.py` (the gate waits for no job that is not tier 1).
+19. **No job waits for what it does not use** (decision 0044). The
+    guards' three legs waited about a minute each for the engine's wheel
+    (run 43783303925), which only the planner's flight-critical test
+    imports: that test is `test-python`'s now, the planner's own suite
+    when it runs and a `flight` leg when it does not
+    (`scripts/ci/plan.py`), and the guards start with the run. The
+    build check makes no `.br` or `.gz` (`WINGTIP_PRECOMPRESS=0`): it
+    reads the JavaScript's own bytes and serves nothing, and they took
+    the build from about 30 s to 89; the images' builds make them.
 
 The guards run in the `guards` job, seconds on every change; run them on
 the Mac with `python3 scripts/ci/<name>.py`, or all of them with
@@ -187,14 +225,14 @@ they are what the budgets allow, to be lowered once runs show them:
 |---|---|---|
 | `changes` | The path filter, and whether a pull request is words only | under 30 s |
 | `engine-wheel` | The engine's Python wheel, once a run, for every job that imports it (cached: seconds; an engine change compiles only what it changed, from main's last build) | 20 s warm, 1-2 min on an engine change |
-| `guards` | Every quick check on one runner, all started at once (`scripts/ci/guards.sh`): the paths filter, the rules boundary, the legal pages, the tiers, warnings fatal, the workflows' rules, the links; file sizes, toolchain versions, the brand tokens, unused Python, the simplicity rules (Semgrep, jscpd, the ratchet); ruff and the Python's layout; where the change touched them, the website, the web app's tsc, ESLint, Prettier, knip and layers, SwiftLint and detekt, the web's engine rules, and the engine's layering, WebAssembly size, cargo-machete, rustfmt and clippy; and flight-critical | 1-3 min (its slowest check: ESLint on a web change, clippy on an engine change) |
-| `test-web` | The generated files are the committed ones, on a pull request only those it touched (`scripts/ci/web_generated.sh`: the phones' models and engine calls, the tokens, the screens, the icons, each by its generator, source and output; they took 1.5 of the job's 3.8 minutes on every web change); Vitest over the tests the change reaches (`--changed`); `vite build` and the first-load budget | 1.5-2.5 min |
-| `test-engine` | `cargo test` over the touched crates, those that use them and the contract test (`scripts/ci/engine_affected.py`); the committed WebAssembly, where its inputs changed | 1-3 min |
-| `test-python` | One leg per suite the change touches: `test-planner`, `test-wingtip`, `test-jobs`, `test-ingest`, `test-weather`, `test-xplane` (`scripts/ci/python_suite.sh`), and `test-sim`, the replay agent's dotnet build, format check and tests (`scripts/ci/sim_suite.sh`) | 1-3 min each |
+| `guards` | Every quick check, in three legs on a runner each (`repo`, `web`, `engine`), each leg's checks all started at once (`scripts/ci/guards.sh`): the paths filter, the rules boundary, the legal pages, the tiers, warnings fatal, the workflows' rules, the links; file sizes, toolchain versions, the brand tokens, unused Python, the simplicity rules (Semgrep, jscpd, the ratchet); ruff and the Python's layout; where the change touched them, the website, the web app's tsc, ESLint, Prettier, knip and layers, SwiftLint and detekt, the web's engine rules, and the engine's layering, WebAssembly size, cargo-machete, rustfmt and clippy; and the engine's flight-critical examples | 1-3 min (its slowest check: ESLint on a web change, clippy on an engine change) |
+| `test-web` | Three legs, a runner each (`scripts/ci/web_suite.sh`; one after the other they were 4.0 minutes, and two at once on one runner slower still): `tests`, Vitest over the tests the change reaches (`--changed`); `build`, `vite build` and the first-load budget; `generated`, the generated files are the committed ones, on a pull request only those it touched (`scripts/ci/web_generated.sh`: the phones' models and engine calls, the tokens, the screens, the icons, each by its generator, source and output) | 1.5-2.5 min |
+| `test-engine` | The committed WebAssembly, where its inputs changed, first; then `cargo test` over the touched crates, those that use them and the contract test (`scripts/ci/engine_affected.py`) | 1-3 min |
+| `test-python` | One leg per suite the change touches: `test-planner`, `test-wingtip`, `test-jobs`, `test-ingest`, `test-weather`, `test-xplane` (`scripts/ci/python_suite.sh`); `test-flight`, the planner's flight-critical test alone, on every change but words that does not run the planner's suite; and `test-sim`, the replay agent's dotnet build, format check and tests (`scripts/ci/sim_suite.sh`) | 1-3 min each |
 | `test-gateway` | The Java's layout and `mvn test`, when the gateway changed | 2-3 min |
 | `api-compat`, `dependency-review`, `infra` | An API document's breaking changes; a manifest's or lock's new advisories; the production files | under 1 min |
 | `android` | `native-android.yml`: the engine (cached), compiled, `testDebugUnitTest lintDebug` with Gradle's caches | 4-5 min |
-| `ios` | `native-ios.yml` with `unit_only`: XcodeGen, the build and the unit tests (`WingtipTests`) on the newest iPhone simulator, DerivedData restored from main | 4-6 min |
+| `ios` | `native-ios.yml` with `unit_only`: XcodeGen, the build, the string catalog held to what the Swift says, then the unit tests (`WingtipTests`) on the newest iPhone simulator (`scripts/ci/ios_test.sh`), DerivedData restored from main | 4-6 min |
 
 A pull request is about 3 minutes in all: `changes`, then the wheel from
 its cache, then `guards` beside the tests. One that changes the engine
@@ -243,22 +281,25 @@ path-filtered workflow stays pending on every pull request it skips), so
 #499 merged with the Android app not compiling (fixed in #501). Now
 `native-android.yml` and `native-ios.yml` are reusable workflows as well
 as their own, and `ci.yml` calls them as the `android` and `ios` jobs
-when `changes` finds the pull request touches what the app builds from
-(scripts/areas.yml); the iPhone's UI smoke is the one part left to
-main's push. `test_tiers.py` fails a `ci.yml` in which a pull request
-would no longer build the web app, Android or iOS:
+when `changes` finds the pull request touches the app's own tree
+(scripts/areas.yml's `ios-app` and `android-app`; decision
+[0044](decisions/0044-red-runs-end-early.md)); the iPhone's UI smoke is
+the one part left to main's push. `test_tiers.py` fails a `ci.yml` in
+which a pull request would no longer build the web app, Android or iOS:
 
-- **Android:** `apps/android/**`, `.editorconfig`, `engine/**`,
-  `apps/web/src/lib/fixtures/**`, `scripts/build/api-models-apps.*`,
-  `scripts/build/engine-contract-apps.*`, `design/**`,
-  `native-android.yml`.
-- **iOS:** `apps/ios/**`, `engine/**`, `apps/web/src/lib/fixtures/**`,
-  `apps/web/src/lib/acs.json`,
-  `services/planner/tests_wingtip/fixtures/native/**`,
-  `scripts/build/api-models-apps.*`, `scripts/build/engine-contract-apps.*`,
-  `design/**`, `scripts/ci/content-mtimes.py`, `native-ios.yml`.
+- **Android:** `apps/android/**` (its generated API models, engine calls,
+  tokens and screens among it), `.editorconfig`, `native-android.yml`.
+- **iOS:** `apps/ios/**` (the same), `scripts/build/ios-strings.sh`,
+  `scripts/ci/ios_test.sh`, `scripts/ci/content-mtimes.py`, `native-ios.yml`.
 - **Both:** a change to `ci.yml` itself, or anything in its `global`
   filter, as for every other job.
+- **Not at the gate, since 2026-11-15:** a change to `engine/**`, the
+  shared fixtures (`apps/web/src/lib/fixtures/**`, `acs.json`, the native
+  fixtures) or `design/**` alone. It held every engine change's gate for
+  a build of 5 to 21 minutes; the engine's own tests hold the same
+  fixtures, and the generated code such a change makes lands under the
+  apps, which does gate. The apps' own workflows still build on those
+  paths after merge, and a break there is main's one `ready` issue.
 
 They are called on pull requests (claude/integration's included) and on
 CI started by hand; main's pushes and the nights run them in their own
@@ -343,6 +384,24 @@ owner's token's merge commit starts CI like the owner's push. One that
 main does not merge into cleanly gets the label `needs-merge`, taken off
 once its branch is current again: merge main into it by hand.
 
+GitHub starts no pull-request workflow on a branch that conflicts with
+its base, so a conflicted pull request shows no failing check: #579 sat
+a day that way (2026-11-14/15). Every open one therefore carries one
+comment saying so (`scripts/ci/pr_conflicts.py`, the same workflow's
+second step: on main's push and four times a day), removed once it
+merges cleanly, so a later conflict is said afresh.
+
+**CI autofix** (`ci-autofix.yml`, `scripts/ci/autofix_format.sh`) only
+formats (the owner, 2026-11-15). A failure that was the runner's reruns
+once. Otherwise, on a failed run of a `claude/` pull request whose
+branch still ends at the commit that failed, it runs
+`scripts/dev/format.sh` for the languages the pull request changed and
+pushes one commit of the pull request's own files among those laid out,
+"CI's formatting only: ...", with `MERGE_TOKEN`, so CI starts again. A
+branch that has been pushed to since is left to its newer run. It edits
+nothing else, opens nothing, comments nowhere and never formats its own
+commit. Main's failures are `nightly-issue.yml`'s alone.
+
 A browser test tagged `@flight-critical` runs on main's push too, with
 the smoke set: the journey a pilot cannot be without in the air (plan, nav
 log, emergency, offline), and the same with the connection gone before
@@ -381,25 +440,26 @@ change needs; a job it skips counts as passing.
 | Job | What it runs |
 |---|---|
 | `changes` | The path filter: which suites, images and phone builds a change touches, and whether it is docs only. Tier 1 |
-| `guards` | Every quick check, all at once on one runner (`scripts/ci/guards.sh`): the paths filter is `scripts/areas.yml`'s; no aviation rule outside the engine (below); the legal pages; CI's own rules (`test_tiers.py`, `warnings_fatal.py`, `workflow_rules.py` with actionlint and zizmor, "Rules" above); every Markdown link (lychee); shellcheck over the scripts; no source file new or grown past 400 lines, nor new past 300 (below, "The layers"), one version of each toolchain, no raw style value outside the tokens, no unused Python, the simplicity rules (below); a phone's SwiftLint or detekt where the change touched it; ruff over every Python suite and the Python's layout; where the change touched them, the website, the web app's types, tsc, ESLint, Prettier and knip, and the engine's layering, WebAssembly size, cargo-machete, rustfmt and clippy; the web's engine rules (`scripts/build/web_rules.py --check`). And **flight-critical**, on every change but words alone: what must never break in the air. The engine against worked examples from the FAA's own texts (`apps/web/src/lib/fixtures/flightCritical.json`: the nav log's wind triangle, groundspeed, heading and fuel from FAA-H-8083-25C ch. 16; 14 CFR 91.159 and 91.179 cruising altitudes; 91.151 and 91.167 reserves; 91.155 minimums; AIM 5-3-8 hold entries; glide at a ratio), and the planner's KMSN to KOSH nav log and nearest fields (`tests/test_flight_critical.py`). Where the engine changed, its worked examples run once, in `test-engine` (wingtip-engine's tests), not again in `guards`. The browser's journey is tagged `@flight-critical` and runs in `e2e`; the phones' twins run in their native jobs. Tier 1 |
+| `guards` | Every quick check, in three legs on a runner each, a leg's checks all at once (`scripts/ci/guards.sh`; `repo` holds those of the whole tree, `web` the web app's, `engine` the engine's and its flight-critical): the paths filter is `scripts/areas.yml`'s; no aviation rule outside the engine (below); the legal pages; CI's own rules (`test_tiers.py`, `warnings_fatal.py`, `workflow_rules.py` with actionlint and zizmor, "Rules" above); every Markdown link (lychee); shellcheck over the scripts; no source file new or grown past 400 lines, nor new past 300 (below, "The layers"), one version of each toolchain, no raw style value outside the tokens, no unused Python, the simplicity rules (below); a phone's SwiftLint or detekt where the change touched it; ruff over every Python suite and the Python's layout; where the change touched them, the website, the web app's types, tsc, ESLint, Prettier and knip, and the engine's layering, WebAssembly size, cargo-machete, rustfmt and clippy; the web's engine rules (`scripts/build/web_rules.py --check`). And **flight-critical**, on every change but words alone: what must never break in the air. The engine against worked examples from the FAA's own texts (`apps/web/src/lib/fixtures/flightCritical.json`: the nav log's wind triangle, groundspeed, heading and fuel from FAA-H-8083-25C ch. 16; 14 CFR 91.159 and 91.179 cruising altitudes; 91.151 and 91.167 reserves; 91.155 minimums; AIM 5-3-8 hold entries; glide at a ratio), and the planner's KMSN to KOSH nav log and nearest fields (`tests/test_flight_critical.py`). Where the engine changed, its worked examples run once, in `test-engine` (wingtip-engine's tests), not again in `guards`. The browser's journey is tagged `@flight-critical` and runs in `e2e`; the phones' twins run in their native jobs. Tier 1 |
 | `test-engine` | The engine's `cargo test`: on a pull request the crates it touched, those that use them and the contract test (`scripts/ci/engine_affected.py`), elsewhere every crate; that the committed WebAssembly matches the engine, where its inputs changed. Tier 1 |
-| `test-web` | `npm run types`, the generated files (the phones' API models and engine calls, the tokens, the screens, the icons) are the committed ones, Vitest (`--changed` on a pull request), `vite build` and the first-load budget. Tier 1 |
+| `test-web` | `npm run types`, then one of three legs of `scripts/ci/web_suite.sh`, each on its own runner: `tests`, Vitest (`--changed` on a pull request); `build`, `vite build` and the first-load budget; `generated`, the generated files (the phones' API models and engine calls, the tokens, the screens, the icons) being the committed ones. Tier 1 |
 | `test-gateway` | The Java's layout and `mvn test`: the gateway's JUnit suite, with a real Postgres in Testcontainers. Tier 1 |
-| `test-python` | One matrix leg per Python suite a change touches (`test-planner`, `test-wingtip`, `test-jobs`, `test-ingest`, `test-weather`, `test-xplane`, the X-Plane driver's): pytest over the suite on its own requirements (`scripts/ci/python_suite.sh`, whose table of legs the Mac's `scripts/dev/check.sh` runs too, with `--local`, and the guards' ruff reads, with `--lint`); the planner's, ingest's, jobs' and weather's legs also run `lint-imports`, and the planner's checks its MCP connector's generated calls (`scripts/build/planner_calls.py --check`). `changes` lists the legs (its `python` output, from each suite's filter in `scripts/areas.yml`); none skips the job, which counts as passing. Tier 1 |
+| `test-python` | One matrix leg per Python suite a change touches (`test-planner`, `test-wingtip`, `test-jobs`, `test-ingest`, `test-weather`, `test-xplane`, the X-Plane driver's): pytest over the suite on its own requirements (`scripts/ci/python_suite.sh`, whose table of legs the Mac's `scripts/dev/check.sh` runs too, with `--local`, and the guards' ruff reads, with `--lint`); the planner's, ingest's, jobs' and weather's legs also run `lint-imports`, and the planner's checks its MCP connector's generated calls (`scripts/build/planner_calls.py --check`). `changes` lists the legs (its `python` output, from each suite's filter in `scripts/areas.yml`, and `flight`, the planner's flight-critical test alone, on every change but words where the planner's own leg is not among them); none skips the job, which counts as passing. Tier 1 |
 | `engine-wheel` | wingtip's Rust extension (`engine/bindings/py`), built once a run by `.github/actions/engine-wheel` (`mode: build`) and uploaded as the `engine-wheel` artifact, which `guards`, `test-python`, `docs` and the flake hunt install (`mode: install`). The wheel's cache is keyed on everything under `engine/` and the toolchains, so a run that leaves the engine alone restores it in seconds; an engine change builds from main's last Cargo build. Main and the night save both. It was built in six jobs before (2026-11-10). Tier 1 |
 | `android`, `ios` | The phone builds (`native-android.yml`, `native-ios.yml` with `unit_only`), when a pull request touches them (above). Tier 1 |
-| `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): the `@smoke` and `@flight-critical` sets over two shards on main's push, everything over ten at night. Tier 2 |
+| `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): the `@smoke` and `@flight-critical` sets over two shards on main's push, everything over ten at night. Tier 2; and on a pull request, the specs it adds or changes alone, beside the gate: "CI passed" does not wait for them (rule 18) |
 | `build-images` | Every service image whose inputs changed; each Python image imports its own code as its last step, so a missing dependency fails the build. Tier 2 |
 | `api-compat` | No breaking change to an OpenAPI document (below). Tier 1 |
-| `infra` | cfn-lint, shellcheck, `docker compose config` and `caddy validate` over the production files. Tier 1 |
+| `infra` | cfn-lint, `docker compose config` and `caddy validate` over the production files (their shell scripts are `guards`' shellcheck). Tier 1 |
 | `dependency-review` | New dependencies' advisories, on a public repository's pull requests that change a manifest or lock (`deps` in `scripts/areas.yml`). Tier 1 |
 | `docs` | The gateway's Javadoc, the API reference and wingtip's pdoc, at night |
 | `standards` | Lighthouse and the speed lab against their thresholds, at night |
 | `flake-hunt-python`, `flake-hunt-web`, `flake-report` | The nightly flake hunt (below) |
 | `passed` | "CI passed", the one check a merge waits on |
+| `halt` | "Stop on red": on a pull request, once every tier-1 job but the phones' builds has ended and one of them failed, the run is cancelled, so "CI passed" fails at once (decision 0044) |
 | `sources` | At night: the live sources the stack reads still answer (`scripts/ci/sources_answer.py`) |
 | `backup-restore` | At night: a dump made by `scripts/dev/backup-db.sh` restored whole into an empty Postgres, its rows and grants counted (`scripts/ci/backup_restore.sh`) |
-| `budget` | Last, never failing: this run's minutes against the budget, its cache misses and the cache store's size (a warning past 9 of GitHub's 10 GB), in the run's summary (`scripts/ci/ci_budget.py`) |
+| `budget` | Last, never failing, and on a cancelled run too (`if: always()`): on a red run, each failed job's first error and the narrow command for it on the Mac (`scripts/ci/failure_summary.py`, rule 12); then this run's minutes against the budget, its cache misses and the cache store's size (a warning past 9 of GitHub's 10 GB), in the run's summary (`scripts/ci/ci_budget.py`) |
 
 Images go to GHCR from main; `promote.yml` copies the ones that passed to
 ECR and deploys them ([README-AWS.md](README-AWS.md#deploys)).

@@ -13,7 +13,11 @@
 #                                              (the guards job, every leg)
 #   scripts/ci/python_suite.sh --where <leg>   its directory and requirements
 #
-#   <leg>: planner, wingtip, jobs, ingest, weather or xplane
+#   <leg>: planner, wingtip, jobs, ingest, weather, xplane or flight
+#
+# `flight` is flight-critical alone (the owner, 2026-11-09: on every change
+# but words): the planner's KMSN-KOSH nav log, on a change that does not
+# run the planner's whole suite, which has it (scripts/ci/plan.py).
 #
 # In CI ruff runs once for every leg in the guards job (scripts/ci/guards.sh),
 # and the engine's wheel is installed by the step before this one, where the
@@ -22,12 +26,13 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 mode=ci
 case "${1:-}" in --local | --lint | --where) mode=${1#--} && shift ;; esac
-leg=${1:?a leg: planner, wingtip, jobs, ingest, weather or xplane}
+leg=${1:?a leg: planner, wingtip, jobs, ingest, weather, xplane or flight}
 
 # The directory it runs in, its requirements there, the code ruff reads,
 # and its tests.
 case "$leg" in
   planner) dir=services/planner req=requirements-dev.txt code="app tests" tests=tests ;;
+  flight) dir=services/planner req=requirements-dev.txt code=tests/test_flight_critical.py tests=tests/test_flight_critical.py ;;
   wingtip) dir=services/planner req=requirements-dev-wingtip.txt code="wingtip tests_wingtip" tests=tests_wingtip ;;
   jobs) dir=services/jobs req=requirements-dev-jobs.txt code="charts crash" tests="charts/tests crash/tests" ;;
   ingest) dir=services/ingest req=requirements-dev.txt code="ingest tests" tests=tests ;;
