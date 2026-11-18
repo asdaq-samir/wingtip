@@ -25,3 +25,14 @@ export function routesOffered(vm: PlanSlices<"flight" | "routeList">): boolean {
 export function routesOut(vm: PlanSlices<"flight" | "routeList">): boolean {
   return vm.routeList.routesShown && routesOffered(vm);
 }
+
+type Ways = PlanSlices<"routeList">["routeList"]["wayLines"];
+/** No suggested routes' ways on the map: one array, so the map is not handed a new one each render. */
+const NO_WAYS: Ways = [];
+
+/** The suggested routes' ways the map draws beside the course (PlanMap):
+ *  all of them while they are out (routesOut), none otherwise -- not the
+ *  route as typed's, nor a way picked, which the course itself is. */
+export function waysOnMap(vm: PlanSlices<"flight" | "routeList">): Ways {
+  return routesOut(vm) ? vm.routeList.wayLines : NO_WAYS;
+}
