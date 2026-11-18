@@ -379,3 +379,18 @@ test("a field NASR lists as closed says so on its card, where a private field's 
   await expect(card(page).getByTestId("place-kind")).toHaveText("Closed indefinitely", { timeout: slow(15000) });
   await expect(card(page).getByTestId("fly-here")).toBeDisabled();
 });
+
+test("a heliport's card says Heliport beside who may land there", async ({ page }) => {
+  // The planner's site_type, the engine's words for NASR's SITE_TYPE_CODE H
+  // (the owner, 2026-11-18: the map draws an H, the card said nothing).
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/IL11"),
+    async (route) => {
+      const answer = await route.fetch();
+      await route.fulfill({ response: answer, json: { ...(await answer.json()), private: true, site_type: "Heliport" } });
+    },
+  );
+  await page.goto("/app/plan?place=IL11");
+  await expect(card(page).getByTestId("place-kind")).toHaveText("Private: permission required", { timeout: slow(15000) });
+  await expect(card(page).getByTestId("place-site")).toHaveText("Heliport");
+});

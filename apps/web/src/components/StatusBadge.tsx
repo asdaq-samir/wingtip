@@ -25,6 +25,9 @@ const STATUS = {
   private: { fill: "bg-(--badge-status-private)", word: "Private" },
   military: { fill: "bg-(--badge-status-military)", word: "Military" },
   joint: { fill: "bg-(--badge-status-joint)", word: "Joint use" },
+  /** What kind of field it is where it is not an airport, its words the
+   *  engine's for NASR's SITE_TYPE_CODE ("Heliport", "Seaplane base"). */
+  site: { fill: "bg-(--badge-status-site)", word: "Heliport" },
   /** A tracked airplane: flying, on the ground, squawking an emergency. */
   inAir: { fill: "bg-(--badge-air)", word: "In the air" },
   ground: { fill: "bg-(--badge-status-ground)", word: "On the ground" },

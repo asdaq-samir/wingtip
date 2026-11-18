@@ -1508,6 +1508,8 @@ extension Components {
             public var region: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/runways`.
             public var runways: [Components.Schemas.Runway]
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/site_type`.
+            public var siteType: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/standard_keying`.
             public var standardKeying: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/status`.
@@ -1560,6 +1562,7 @@ extension Components {
             ///   - radioNotes:
             ///   - region:
             ///   - runways:
+            ///   - siteType:
             ///   - standardKeying:
             ///   - status:
             ///   - surfaceAirspace:
@@ -1603,6 +1606,7 @@ extension Components {
                 radioNotes: [Swift.String]? = nil,
                 region: Swift.String? = nil,
                 runways: [Components.Schemas.Runway],
+                siteType: Swift.String? = nil,
                 standardKeying: Swift.Bool? = nil,
                 status: Swift.String? = nil,
                 surfaceAirspace: Components.Schemas.SurfaceAirspace? = nil,
@@ -1646,6 +1650,7 @@ extension Components {
                 self.radioNotes = radioNotes
                 self.region = region
                 self.runways = runways
+                self.siteType = siteType
                 self.standardKeying = standardKeying
                 self.status = status
                 self.surfaceAirspace = surfaceAirspace
@@ -1690,6 +1695,7 @@ extension Components {
                 case radioNotes = "radio_notes"
                 case region
                 case runways
+                case siteType = "site_type"
                 case standardKeying = "standard_keying"
                 case status
                 case surfaceAirspace = "surface_airspace"

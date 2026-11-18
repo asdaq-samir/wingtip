@@ -193,6 +193,8 @@ enum WingtipColor {
         static let statusMilitary = rgb(0x4D7C0F)
         /// A joint civil-military field: lime-800 (7.1:1).
         static let statusJoint = rgb(0x3F6212)
+        /// What kind of field it is where it is not an airport (NASR's SITE_TYPE_CODE: Heliport, Seaplane base, Gliderport, Balloonport, Ultralight): cyan-800 (7.3:1), told apart from the use badges' greys and greens beside it.
+        static let statusSite = rgb(0x155E75)
         /// An emergency's squawk on a tracked airplane (AIM 6-2-2): the light gun's red, red-600 (4.8:1).
         static let statusEmergency = rgb(0xDC2626)
         /// A tracked airplane on the ground: iOS's dark grey, zinc-600 (7.7:1).

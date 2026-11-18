@@ -29,6 +29,11 @@ class AirportRecord(BaseModel):
     #: Go / No-Go's fields row does: "closed indefinitely (NASR)", not a
     #: bare "closed" (decision 0043). None where NASR has no record of it.
     status: str | None = None
+    #: What kind of landing site it is where it is not an airport, the
+    #: engine's field_site_type words for NASR APT_BASE's SITE_TYPE_CODE
+    #: (B, C, G, H, U): the card says "Heliport" where the map draws an H.
+    #: None for an airport (A) or where NASR has no record of it.
+    site_type: Literal["Balloonport", "Seaplane base", "Gliderport", "Heliport", "Ultralight"] | None = None
 
 
 class Phone(BaseModel):

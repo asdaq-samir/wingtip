@@ -3885,6 +3885,20 @@ enum EngineContract {
         var end: [Double]
     }
 
+    struct FieldSiteTypeAnswer: Codable, Equatable, Sendable {
+        /// The site's kind in words, or null for an airport.
+        var words: String?
+    }
+
+    struct FieldSiteTypeInput: Codable, Equatable, Sendable {
+        /// NASR APT_BASE's SITE_TYPE_CODE (A, B, C, G, H, U); null where NASR has no record.
+        var siteType: String?
+
+        enum CodingKeys: String, CodingKey {
+            case siteType = "site_type"
+        }
+    }
+
     struct FieldStatusAnswer: Codable, Equatable, Sendable {
         /// Whether the field may be shown or offered as an open one.
         var `open`: Bool

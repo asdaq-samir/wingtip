@@ -576,6 +576,9 @@ data class AirportPlace (
     val region: String? = null,
     val runways: List<Runway>,
 
+    @SerialName("site_type")
+    val siteType: String? = null,
+
     @SerialName("standard_keying")
     val standardKeying: Boolean? = null,
 

@@ -87,6 +87,25 @@ pub fn military(ownership: Option<&str>, facility_use: Option<&str>) -> Option<&
 /// gliderport (G), ultralight park (U) and balloonport (B).
 pub const LANDING_SITES: [&str; 5] = ["A", "C", "G", "U", "B"];
 
+/// The words for a field's kind of landing site, from NASR APT_BASE's
+/// SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout: A airport,
+/// B balloonport, C seaplane base, G gliderport, H heliport, U ultralight),
+/// in sentence case as the app sets the FAA's own words: what the airport
+/// card says beside its use, so a heliport the map draws as an H is not
+/// read as an airport. None for an airport (A), the plain kind that needs
+/// no word, and for a code NASR does not list or no code at all. Read
+/// trimmed and in capitals.
+pub fn site_words(code: Option<&str>) -> Option<&'static str> {
+    match code?.trim().to_ascii_uppercase().as_str() {
+        "B" => Some("Balloonport"),
+        "C" => Some("Seaplane base"),
+        "G" => Some("Gliderport"),
+        "H" => Some("Heliport"),
+        "U" => Some("Ultralight"),
+        _ => None,
+    }
+}
+
 /// The runway surfaces the sectional's airport symbol counts as hard (FAA
 /// Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports:
 /// "hard-surfaced runways"), by NASR APT_RWY's SURFACE_TYPE_CODE: asphalt,
@@ -225,6 +244,16 @@ mod tests {
         assert_eq!(closed_words(Some("CI")), Some("Closed indefinitely"));
         assert_eq!(closed_words(Some("CP")), Some("Closed permanently"));
         assert_eq!(closed_words(Some("")), Some("Closed"));
+    }
+
+    // NASR APT_BASE's SITE_TYPE_CODEs: each but the airport's has words.
+    #[test]
+    fn each_site_but_an_airport_is_named() {
+        let words = ["A", "B", "C", "G", "H", "U"].map(|c| site_words(Some(c)));
+        assert_eq!(words, [None, Some("Balloonport"), Some("Seaplane base"), Some("Gliderport"), Some("Heliport"), Some("Ultralight")]);
+        assert_eq!(site_words(Some(" h ")), Some("Heliport"));
+        assert_eq!(site_words(Some("")), None);
+        assert_eq!(site_words(None), None);
     }
 
     // No NASR record: not judged here, so not hidden and not labelled.

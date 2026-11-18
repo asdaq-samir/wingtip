@@ -118,6 +118,7 @@ export const BADGE = {
   statusPrivate: "#475569",
   statusMilitary: "#4d7c0f",
   statusJoint: "#3f6212",
+  statusSite: "#155e75",
   statusEmergency: "#dc2626",
   statusGround: "#52525b",
 };

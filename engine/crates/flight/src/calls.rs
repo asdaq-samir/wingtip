@@ -267,6 +267,21 @@ pub fn field_military(name: &str, v: &Value) -> Result<String, String> {
     Ok(out)
 }
 
+/// `field_site_type`: the words for a field's kind of landing site, from
+/// NASR APT_BASE's SITE_TYPE_CODE (field.rs's site_words):
+/// `{"words": "Heliport" | ... | null}`, null for an airport.
+pub fn field_site_type(name: &str, v: &Value) -> Result<String, String> {
+    let code = match v.get("site_type") {
+        None | Some(Value::Null) => None,
+        Some(Value::String(s)) => Some(s.as_str()),
+        Some(_) => return Err(format!("{name}: \"site_type\" is not a string or null")),
+    };
+    let mut out = String::from("{\"words\":");
+    json::opt_string(&mut out, field::site_words(code));
+    out.push('}');
+    Ok(out)
+}
+
 /// `runway_hard_surface`: whether NASR APT_RWY's SURFACE_TYPE_CODE is a
 /// hard surface (field.rs's hard_surface): `{"hard": bool}`.
 pub fn runway_hard_surface(name: &str, v: &Value) -> Result<String, String> {

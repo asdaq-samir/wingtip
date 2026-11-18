@@ -18,7 +18,11 @@ import { useNotamMarks, useNotamSheet } from "./notamBadges";
  * status badge, as the search's rows and Nearest show them (rules.md §9;
  * the selection audit, 2026-11-18: they were red and grey words), a
  * joint-use field's too; beside the name in brackets, it cut a long name to
- * a few letters at an iPhone's width. After the name, whether the field has
+ * a few letters at an iPhone's width. Beside that badge, what kind of field
+ * it is where it is not an airport, "Heliport" or "Seaplane base" (the
+ * engine's words for NASR's SITE_TYPE_CODE, the planner's `site_type`; the
+ * owner, 2026-11-18: the map draws an H, and the card could not say so).
+ * After the name, whether the field has
  * a control tower, "Towered" or "Non-towered" (NASR's tower type, the
  * planner's `towered`), as Maps says a place's kind beside its name (the
  * owner, 2026-11-14, C1 on the canvas V1d9RDbmY1aczc4LfXed7a): the name
@@ -53,11 +57,19 @@ export function PlaceSubtitle({
         : place?.private
           ? "private"
           : null;
-  const kindLine = status && (
-    <span className="block text-center" data-testid="place-status">
-      <StatusBadge variant={status} data-testid="place-kind">
-        {kind ?? undefined}
-      </StatusBadge>
+  const site = place?.site_type ?? null;
+  const kindLine = (status || site) && (
+    <span className="flex flex-wrap justify-center gap-1" data-testid="place-status">
+      {status && (
+        <StatusBadge variant={status} data-testid="place-kind">
+          {kind ?? undefined}
+        </StatusBadge>
+      )}
+      {site && (
+        <StatusBadge variant="site" data-testid="place-site">
+          {site}
+        </StatusBadge>
+      )}
     </span>
   );
   const towerWords = tower && (

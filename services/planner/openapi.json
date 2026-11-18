@@ -2029,6 +2029,24 @@
             "title": "Runways",
             "type": "array"
           },
+          "site_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Balloonport",
+                  "Seaplane base",
+                  "Gliderport",
+                  "Heliport",
+                  "Ultralight"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Type"
+          },
           "standard_keying": {
             "default": false,
             "title": "Standard Keying",

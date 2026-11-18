@@ -3915,6 +3915,23 @@ object EngineContract {
     )
 
     @Serializable
+    data class FieldSiteTypeAnswer(
+        /**
+         * The site's kind in words, or null for an airport.
+         */
+        val words: String? = null,
+    )
+
+    @Serializable
+    data class FieldSiteTypeInput(
+        /**
+         * NASR APT_BASE's SITE_TYPE_CODE (A, B, C, G, H, U); null where NASR has no record.
+         */
+        @SerialName("site_type")
+        val siteType: String? = null,
+    )
+
+    @Serializable
     data class FieldStatusAnswer(
         /**
          * Whether the field may be shown or offered as an open one.
