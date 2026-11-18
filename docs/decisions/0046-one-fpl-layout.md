@@ -41,8 +41,7 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    airport"),
    its time in the secondary colour (the departure's leave time, a picker;
    the others' arrival, a dash with no airplane) and its grip, iOS's thin
-   light three lines, centred on the whole line, folded or open (the
-   owner, 2026-11-17). No city
+   light three lines on the ident's row (the owner, 2026-11-17). No city
    ("We don't need to say the city name"); the category is the mark's
    colour and in what VoiceOver hears. Where the mark is the point's menu
    (the route being edited) it says "•••" alone, the tint's ellipsis on

@@ -162,81 +162,76 @@ export function TimelineLine({
           />
         )}
       </span>
-      {/* The rows, and the grip beside them at the right, centred on the
-          whole line, folded or open, as Apple Maps' reorder control sits
-          (the owner, 2026-11-17: "those should be vertically centered when
-          stop is unfolded"); the hairline over both. */}
-      <div className={cn("flex min-w-0 flex-1 items-center gap-2 pr-1", !first && "border-t border-border")}>
-        <div className="min-w-0 flex-1">
-          <div className="relative flex h-11 min-w-0 items-center gap-2">
-            {opens && (
-              <CollapsibleTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="inline"
-                    type="button"
-                    data-testid="timeline-toggle"
-                    aria-label={`${point.ident}: runways and procedures`}
-                    className="absolute inset-0 rounded-lg outline-none hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring"
-                  />
-                }
-              />
-            )}
-            {point.field && !point.problem ? (
-              <h3 className="relative z-10 flex shrink-0">
-                <Button
-                  variant="plain"
-                  size="inline"
-                  onClick={() => onInfo(point.ident)}
-                  aria-label={`${point.ident}${point.category ? `, ${point.category}` : ""}: open the airport`}
-                  data-testid="timeline-ident"
-                  className={cn(
-                    "relative shrink-0 font-semibold after:absolute after:-inset-y-3 after:-inset-x-1 after:content-['']",
-                    TEXT.row,
-                  )}
-                >
-                  {point.ident}
-                </Button>
-              </h3>
-            ) : (
-              <span
-                className={cn("min-w-0 truncate font-semibold", point.problem && "text-destructive", TEXT.row)}
-                data-testid="timeline-ident"
-              >
-                {pointName(point.ident)}
-              </span>
-            )}
-            {/* The fuel right after the ident, the time at the right (the
-              owner, 2026-11-17: "Fuel should go right after airport"). */}
-            {tank && <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />}
-            <span className="flex-1" />
-            <span className={cn("relative z-10 shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
-              {point.time}
-            </span>
-          </div>
-          {/* A field it cannot land at, or a point the planner does not
-            know: why, in red, always in sight (decision 0043). */}
-          {point.problem && (
-            <p className={cn("pb-2 text-destructive", TEXT.note)} data-testid="timeline-problem">
-              {point.problem}
-            </p>
-          )}
+      <div className={cn("min-w-0 flex-1 pr-1", !first && "border-t border-border")}>
+        <div className="relative flex h-11 min-w-0 items-center gap-2">
           {opens && (
-            <CollapsibleContent className="space-y-2 pb-2" data-testid="timeline-details">
-              {/* The elevation under the time (the owner, 2026-11-17: "the
-                elevation should be under the time"). */}
-              <div className="flex min-h-6 items-center justify-between gap-2">
-                <WindLine direct={end.direct} wind={windWords(reported)} reported={reported} />
-                {end.elevation}
-              </div>
-              <div className="flex flex-wrap items-center gap-2" data-testid="timeline-chips">
-                {chips}
-              </div>
-            </CollapsibleContent>
+            <CollapsibleTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="inline"
+                  type="button"
+                  data-testid="timeline-toggle"
+                  aria-label={`${point.ident}: runways and procedures`}
+                  className="absolute inset-0 rounded-lg outline-none hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              }
+            />
           )}
+          {point.field && !point.problem ? (
+            <h3 className="relative z-10 flex shrink-0">
+              <Button
+                variant="plain"
+                size="inline"
+                onClick={() => onInfo(point.ident)}
+                aria-label={`${point.ident}${point.category ? `, ${point.category}` : ""}: open the airport`}
+                data-testid="timeline-ident"
+                className={cn(
+                  "relative shrink-0 font-semibold after:absolute after:-inset-y-3 after:-inset-x-1 after:content-['']",
+                  TEXT.row,
+                )}
+              >
+                {point.ident}
+              </Button>
+            </h3>
+          ) : (
+            <span
+              className={cn("min-w-0 truncate font-semibold", point.problem && "text-destructive", TEXT.row)}
+              data-testid="timeline-ident"
+            >
+              {pointName(point.ident)}
+            </span>
+          )}
+          {/* The fuel right after the ident, the time at the right (the
+              owner, 2026-11-17: "Fuel should go right after airport"). */}
+          {tank && <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />}
+          <span className="flex-1" />
+          <span className={cn("relative z-10 shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
+            {point.time}
+          </span>
+          {end.grip && <span className="relative z-10">{end.grip}</span>}
         </div>
-        {end.grip && <span className="relative z-10 shrink-0">{end.grip}</span>}
+        {/* A field it cannot land at, or a point the planner does not
+            know: why, in red, always in sight (decision 0043). */}
+        {point.problem && (
+          <p className={cn("pb-2 text-destructive", TEXT.note)} data-testid="timeline-problem">
+            {point.problem}
+          </p>
+        )}
+        {opens && (
+          <CollapsibleContent className="space-y-2 pb-2" data-testid="timeline-details">
+            {/* The elevation under the time, clear of the grip's column
+                (its 32 points and the gap; the owner, 2026-11-17: "the
+                elevation should be under the time"). */}
+            <div className={cn("flex min-h-6 items-center justify-between gap-2", end.grip && "pr-10")}>
+              <WindLine direct={end.direct} wind={windWords(reported)} reported={reported} />
+              {end.elevation}
+            </div>
+            <div className="flex flex-wrap items-center gap-2" data-testid="timeline-chips">
+              {chips}
+            </div>
+          </CollapsibleContent>
+        )}
       </div>
     </Collapsible>
   );
