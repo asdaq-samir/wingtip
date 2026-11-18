@@ -14,6 +14,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 
 /**
@@ -75,7 +76,10 @@ public class PaperworkService {
                 pilot.getIpcOn(),
                 today);
         List<Due> out = new ArrayList<>(ofPilot(c));
-        for (Aircraft a : aircraft.findByPilotIdOrderByTailNumberAsc(pilot.getId())) {
+        List<Aircraft> theirs = aircraft.findByPilotIdOrderByTailNumberAsc(pilot.getId());
+        Map<Long, List<AircraftDueItem>> kept =
+                items.of(theirs.stream().map(Aircraft::getId).toList());
+        for (Aircraft a : theirs) {
             out.addAll(ofAircraft(
                     a,
                     planner.inspections(
@@ -89,7 +93,7 @@ public class PaperworkService {
                                     ? null
                                     : a.getVorCheckKind().name(),
                             a.getVorCheckErrorDeg()),
-                    items.of(a.getId())));
+                    kept.getOrDefault(a.getId(), List.of())));
         }
         return out;
     }

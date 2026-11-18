@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
+import app.wingtipmaps.gateway.dto.EndorsementKindDto;
 import app.wingtipmaps.gateway.dto.ExperienceItemDto;
 import app.wingtipmaps.gateway.upstream.Upstreams;
 import com.sun.net.httpserver.HttpServer;
@@ -143,5 +144,21 @@ class PlannerClientPilotTest {
         status = 422;
         assertThatThrownBy(() -> client().experience(logbook(), LocalDate.of(2026, 10, 15)))
                 .isInstanceOf(PlannerUnavailableException.class);
+    }
+
+    /** AC 61-65K's catalogue is the engine's and changes only with the
+     *  planner's build: asked once and kept, not asked again for every
+     *  page, signature and record that reads it. */
+    @Test
+    void theEndorsementsCatalogueIsAskedOnceAndKept() {
+        answer = "[{\"code\":\"solo-first\",\"paragraph\":\"A.6\",\"rule\":\"61.87(n)\","
+                + "\"label\":\"Solo flight\",\"template\":\"I certify ...\",\"fields\":[]}]";
+        PlannerClient client = client();
+        assertThat(client.endorsementKinds())
+                .extracting(EndorsementKindDto::code)
+                .containsExactly("solo-first");
+        assertThat(client.endorsementKind("solo-first")).isPresent();
+        assertThat(client.endorsementKind("nothing")).isEmpty();
+        assertThat(asked).hasSize(1);
     }
 }

@@ -73,7 +73,7 @@ public interface PlannerApi {
     Map<String, String> aircraftProblems(@RequestBody Map<String, Object> form);
 
     /** The changes' sources, the two briefings embedded as the JSON they
-     *  came as (PlannerClient.changesAsk), never parsed here. */
+     *  came as (ChangeLines.ask), never parsed here. */
     @PostExchange(url = "/api/words/changes/sources", contentType = MediaType.APPLICATION_JSON_VALUE)
     PlannerWordsSources changeSources(@RequestBody String ask);
 
