@@ -22,17 +22,6 @@ export function awayFrom(geo: Geo, from: LatLon, to: LatLon): string {
   return `${nmAway(geo.distanceNm(from, to))} ${compassPoint(geo.bearingDeg(from, to))}`;
 }
 
-/** How far and which way the point is from the airplane ("12 nm NE of
- *  you"), for a card's pill; none where the position is not known. Read
- *  only while in sight (lib/shown): a card kept hidden under another was
- *  drawn again at every fix. */
-export function useAwayWords(lat: number, lon: number): string | undefined {
-  const ship = useOwnFixShown();
-  // The engine works the figure out; none until its .wasm is there.
-  const geo = useGeo();
-  return ship && geo ? `${awayFrom(geo, ship, { lat, lon })} of you` : undefined;
-}
-
 /** A kept airport's tile's second line -- Home's, the Favorites', the
  *  Recents', the search's and the route pickers' -- how far it is from own
  *  ship's fix as it is, else its town, else its name. Each strip had its

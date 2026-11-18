@@ -1,15 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import {
-  ApiError,
-  describeError,
-  detailOf,
-  GatewayRequest,
-  ndjson,
-  STREAM_QUIET_MS,
-  unknownPlaceIn,
-  unknownPlaceOf,
-  unknownWhy,
-} from "./client";
+import { ApiError, describeError, detailOf, unknownPlaceIn, unknownPlaceOf, unknownWhy } from "./errors";
+import { GatewayRequest, ndjson, STREAM_QUIET_MS } from "./http";
 
 describe("unknownPlaceIn", () => {
   test("a field abroad is outside the US charts, an ident nobody uses unknown, and either said so", () => {

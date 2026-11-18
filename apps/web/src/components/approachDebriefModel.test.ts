@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { ProcedureDrawing } from "../lib/api/types";
-import { attemptsAt, findApproaches, withMinimums, withTransition, type ApproachDebrief } from "./approachDebriefModel";
+import { findApproaches, withMinimums, withTransition, type ApproachDebrief } from "./approachDebriefModel";
 import { FT_PER_NM, rad, geoLoaded } from "../lib/geo";
 import { callEngine } from "../lib/engine/engine";
 import type { TrackPoint } from "../lib/track";
@@ -183,7 +183,6 @@ describe("what it flags", () => {
 
   test("a track that never came near the final approach fix is no approach of it", () => {
     const wide = fly(finalOf(ILS), { off: () => 2, alt: onIls });
-    expect(attemptsAt(ILS, wide)).toEqual([]);
     expect(debriefApproach(ILS, wide)).toBeNull();
     expect(findApproaches([ILS, RNAV], wide)).toEqual([]);
   });
