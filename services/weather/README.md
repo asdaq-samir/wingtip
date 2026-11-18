@@ -30,7 +30,7 @@ until the idle pace has come round. One fetch of a product runs at a time,
 | `winds-06`, `winds-12`, `winds-24` | the GFS 0.25 degree from NOMADS' grib filter, at the old FB stations | 45 min | 2 h | the end of the period's window (FAA Order JO 7110.10 TBL 9-3-1) |
 | `glmp` | Gridded LAMP's hourly issue, ceiling and visibility grids (`.npy` beside the record) | 10 min | 1 h | while it is one of the last three issues |
 | `glmp-forecast` | Gridded LAMP's forecast hours from the same issue, ceiling and visibility, the first 12 (`.npy` beside the record, float16), for the planner's forecast dry run | 10 min | 1 h | half an hour past its last hour |
-| `spc-outlook` | the Storm Prediction Center's Day 1 categorical convective outlook (GeoJSON), for the forecast dry run | 30 min | 1 h | the outlook's own expiry |
+| `spc-outlook` | the Storm Prediction Center's Day 1 categorical convective outlook (GeoJSON), only if changed (ETag), for the forecast dry run | 30 min | 1 h | the outlook's own expiry |
 | `tfrs` | tfr.faa.gov's shapes and each NOTAM's XNOTAM detail | 10 min | 30 min | no limit; ended TFRs left out of a list older than 10 min |
 | `radar` | IEM's record of when the NEXRAD mosaic was made | 2 min | 15 min | no limit |
 | `satellite` | the times of nowCOAST's GOES East and West infrared and visible pictures (its WMS capabilities), the last three hours | 5 min | 30 min | no limit |
