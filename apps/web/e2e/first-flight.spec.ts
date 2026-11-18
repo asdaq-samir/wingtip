@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { frontSheet, grabberTo, searchAirports, settle, slow } from "./helpers";
-import { expectPage, toggle } from "./sheetPages";
+import { expectPage, expectSearchInUse, toggle } from "./sheetPages";
 
 /**
  * The first flight (FirstFlight, useFirstFlight; the owner's option A,
@@ -85,7 +85,8 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   // the destination -- not focused, so no keyboard jumps up.
   await welcome.getByTestId("first-flight-later").click();
   await expect(welcome).toHaveCount(0);
-  await expectPage(page, 0);
+  // The field in use, asking: its Cancel where the toggle rides at rest.
+  await expectSearchInUse(page);
   // Risen from the pill to half, so the search's page is seen (rule 11).
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   const search = page.getByTestId("search-airports");
@@ -140,9 +141,11 @@ test("the FPL tip stays off the sheet all the way up, and once the toggle has be
   await page.goto("/app/plan?dep=C81&dest=KMSN");
   await settle(page);
   const tip = page.getByTestId("fpl-tip");
+  // A route's link opens at the pill, FPL's figures in its row: half way
+  // the first row, and the toggle at its end, are in sight.
+  await grabberTo(page, "half");
   if ((await toggle(page).getAttribute("data-shows")) === "0") await toggle(page).click();
   await expectPage(page, 0);
-  await grabberTo(page, "half");
   await expect(tip).toBeVisible({ timeout: slow(15_000) });
   // All the way up the toggle is at the screen's top, with no room over it:
   // the tip is not drawn there, over Nearest (the UI audit's B5).

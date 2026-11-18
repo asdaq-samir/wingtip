@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { clearTheRoute, grabberTo, settle, sideDrawer, frontSheet, slow } from "./helpers";
-import { expectPage, expectShown, openAirport, showPage } from "./sheetPages";
+import { expectPage, expectSearchInUse, expectShown, openAirport, showPage } from "./sheetPages";
 
 /**
  * Cards over the sheet's two pages, Search and FPL (the owner, 2026-11-11;
@@ -34,7 +34,9 @@ test.describe("cards over the pages", () => {
     await openAirport(page, "KOSH");
     await page.keyboard.press("Escape");
     await expect(page).not.toHaveURL(/[?&]place=/);
-    await expectShown(page, 0);
+    // Search in sight and live, its query kept for the way back
+    // (docs/design/rules.md, the card's row).
+    await expectSearchInUse(page, "KOSH");
   });
 
   test("Find Nearby's Stops open over Search and their close goes back to it", async ({ page }) => {
@@ -58,8 +60,9 @@ test.describe("cards over the pages", () => {
     await openAirport(page, "KOSH");
     await sideDrawer(page).getByTestId("place-card").getByTestId("fly-here").click();
     await expect(page).toHaveURL(/[?&]dest=KOSH/, { timeout: slow(15_000) });
-    // Half a route, cleared by the route box's own ✕ (the owner, 2026-11-18).
-    await sideDrawer(page).getByTestId("route-box-clear").click();
+    // Flown to from where the airplane is, a whole route: cleared from its
+    // ••• (half a route has the route box's own ✕, the owner, 2026-11-18).
+    await clearTheRoute(page);
     await expect(page).not.toHaveURL(/[?&]dest=/);
     await expectShown(page, 1);
     // The route's actions went with it, no ••• in the first row and no ✕

@@ -35,6 +35,20 @@ export async function expectShown(page: Page, at: 0 | 1) {
   await expect(shown.locator("[data-panel-body]")).not.toHaveAttribute("inert");
 }
 
+/** Search up and live with the one search still in use, what was asked or
+ *  typed kept in it (`typed`): a card closed goes back to the search with
+ *  its query (docs/design/rules.md, the card's row), so the field's Cancel
+ *  stands where the toggle rides at rest (OneSearchField). */
+export async function expectSearchInUse(page: Page, typed?: string) {
+  await expect(pages(page)).toHaveAttribute("data-page", "0");
+  const shown = pages(page).locator('[data-sheet-page="0"]');
+  await expect(shown).not.toHaveAttribute("data-hidden");
+  await expect(shown.locator("[data-panel-body]")).not.toHaveAttribute("inert");
+  if (typed !== undefined) await expect(page.getByTestId("search-airports")).toHaveValue(typed);
+  await expect(page.getByTestId("one-search-cancel")).toBeVisible();
+  await expect(toggle(page)).toHaveCount(0);
+}
+
 /** An airport typed into the one search and its card opened, by a
  *  finger's tap (`touch`) or a click. */
 export async function openAirport(page: Page, ident: string, touch = false) {

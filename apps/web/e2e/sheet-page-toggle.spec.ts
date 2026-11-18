@@ -1,6 +1,6 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { consoleSheet, grabberTo, settle, settled, sideDrawer, frontSheet } from "./helpers";
-import { expectPage, expectShown, openAirport, toggle } from "./sheetPages";
+import { expectPage, expectSearchInUse, expectShown, openAirport, toggle } from "./sheetPages";
 
 /**
  * The sheet's two pages, Search and FPL, turned by one round button at
@@ -81,9 +81,10 @@ test("the toggle ends the first row on both pages, the bar before it one size, a
   const search = await measure();
   for (const m of [fpl, search]) {
     // The toggle at the row's end, sixteen in from the sheet's edge, level
-    // with the bar, eight after it.
+    // with the bar; eight after the search's field, which fills to it (FPL's
+    // strip is centred in the row, below).
     expect(m.viewport - m.toggle.right).toBeCloseTo(16, 0);
-    expect(m.toggle.left - m.bar.right).toBeCloseTo(8, 0);
+    if (m === search) expect(m.toggle.left - m.bar.right).toBeCloseTo(8, 0);
     expect(m.toggle.top + m.toggle.h / 2).toBeCloseTo(m.bar.top + m.bar.h / 2, 0);
     // The account button over the sheet's top at the left, under the 3D.
     expect(m.account.bottom).toBeLessThanOrEqual(m.sheet.top);
@@ -199,8 +200,24 @@ test("a route made goes to FPL; Search puts FPL's figures away with its page", a
   await expect(page.getByTestId("panel-foot")).toBeHidden();
 });
 
-test("a drag up or down still sizes the sheet on either page", async ({ page }) => {
+/** A finger put down at (x, y) and moved `dy` down, a frame apart, then
+ *  let go (Chromium's CDP, as swipe-rows.spec's swipe). */
+async function fingerDown(page: Page, x: number, y: number, dy: number) {
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type: string, p?: { x: number; y: number }) =>
+    cdp.send("Input.dispatchTouchEvent", { type, touchPoints: p ? [{ ...p, id: 1 }] : [] });
+  await touch("touchStart", { x, y });
+  for (let i = 1; i <= 12; i++) {
+    await touch("touchMove", { x, y: y + (dy * i) / 12 });
+    await page.waitForTimeout(16);
+  }
+  await touch("touchEnd");
+  await cdp.detach();
+}
+
+test("a drag up or down still sizes the sheet on either page", async ({ page, browserName }) => {
   test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
+  test.skip(browserName !== "chromium", "a finger, by Chromium's CDP");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "half");
@@ -209,13 +226,11 @@ test("a drag up or down still sizes the sheet on either page", async ({ page }) 
     await expectPage(page, at);
     await grabberTo(page, "full");
     await grabberTo(page, "half");
-    // A drag down from the grabber's row lowers it a size, as before.
+    // A finger's drag down from the grabber lowers it a size, as before: a
+    // phone's sheet, so a touch (Chromium's CDP), not a mouse pressed on the
+    // grabber's button.
     const grabber = (await page.getByTestId("sidebar-trigger-button").boundingBox())!;
-    const x = grabber.x + grabber.width / 2;
-    await page.mouse.move(x, grabber.y + 6);
-    await page.mouse.down();
-    await page.mouse.move(x, grabber.y + 200, { steps: 12 });
-    await page.mouse.up();
+    await fingerDown(page, grabber.x + grabber.width / 2, grabber.y + 6, 200);
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
     await settled(sideDrawer(page));
     await expectPage(page, at);
@@ -268,6 +283,11 @@ test("a card open covers the row and its toggle, the account button riding its t
   }
   await page.getByTestId("place-close").last().click();
   await expect(openCards).toHaveCount(0);
+  // Back to the search with its query kept (docs/design/rules.md, the
+  // card's row), its Cancel where the toggle rides; Cancel lets the search
+  // go and the toggle is back.
+  await expectSearchInUse(page, "KOSH");
+  await page.getByTestId("one-search-cancel").click();
   await expect(toggle(page)).toBeVisible();
   await toggle(page).click();
   await expectShown(page, 1);
