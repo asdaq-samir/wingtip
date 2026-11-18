@@ -238,10 +238,10 @@ def route_options(
             if chip["key"] == "filed":
                 chip["stops"] = filed_as
     found.pop("filed", None)
-    # Each chip's route read ahead, its chart and its ground, as a typed
-    # route is (app.prefetch): a tap on one waited on every new hop's
-    # chart read, 18 s for KPWK to KCOS by three fixes (2026-10-27). The
-    # first chip last, as the reads ahead go newest first.
+    # Each chip's route read ahead, the ground under it, as a typed route
+    # is (app.prefetch); its chart's read for checkpoints waits for the
+    # pilot to ask for them (the owner, 2026-11-18). The first chip last,
+    # as the reads ahead go newest first.
     for chip in reversed(chips):
         if chip["key"] != "none":
             prefetch.route(dep, dest, ",".join(chip["stops"]))

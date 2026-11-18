@@ -58,13 +58,15 @@ def course(dep: str, dest: str, stops: str = "") -> Course:
     path, and there is no reason a pilot should watch an empty map for
     them.
 
-    And the route's slow parts are started here, the first thing the web
-    app asks for a route: the chart's read and the ground under it, on
-    threads of their own (app.prefetch), so the nav log asked for beside
-    this finds them under way or done.
+    And the ground under the route is started here, the first thing the
+    web app asks for a route, on a thread of its own (app.prefetch), so
+    the nav log asked for beside this finds it under way or done. Not the
+    chart's read for checkpoints: nothing finds them until the pilot asks
+    (/api/checkpoints, or a nav log with checkpoints), the owner's rule
+    (2026-11-18). checkpoints_ready only looks at what is kept.
     """
     r = load_route(dep, dest, stops)
-    # Asked before the reads below start: read is read, not under way.
+    # Whether the chart along each hop is read and kept: looked at, not started.
     ready = all(chart_model.corridor_kept(chartlabels.route_key(hop.dep_ident, hop.dest_ident)) for hop in r.hops)
     prefetch.route(dep, dest, stops)
     first = r.hops[0]

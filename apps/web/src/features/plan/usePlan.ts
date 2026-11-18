@@ -55,7 +55,7 @@ export function usePlan({
   aircraft,
   load,
   altitudes = "",
-  checkpoints: withCheckpoints = true,
+  checkpoints: withCheckpoints = false,
   localMin = 60,
   rules = "vfr",
   alternate = "",
@@ -323,7 +323,7 @@ export function usePlan({
     return { state: "loading" };
   }, [briefable, hasCourse, briefing.data, briefing.dataUpdatedAt, briefing.error, briefingSavedAt]);
 
-  const notes = useCheckpointNotes(dep, dest, stops);
+  const notes = useCheckpointNotes(dep, dest, stops, withCheckpoints);
 
   return {
     // Not the previous route's, kept as a placeholder, once the route is

@@ -101,7 +101,7 @@ def test_each_flight_climbs_from_its_field_and_comes_down_to_its_own_pattern():
     # own field and tops out once -- C81's on its second leg, past the lake
     # the stub puts 2 nm out, KMSN's on its first -- and each comes down to
     # 1,900, 7.8 nm at three to one plus the 45's 1.7 (AC 90-66C 11.3): 9.5.
-    legs = client.get("/api/plan", params=VIA_MADISON).json()["legs"]
+    legs = client.get("/api/plan", params={**VIA_MADISON, "checkpoints": True}).json()["legs"]
 
     assert [leg["from"] for leg in legs if leg["toc"]] == ["Lake", "KMSN"]
     assert legs[0]["from"] == "C81" and legs[0]["climb_min"] == pytest.approx(legs[0]["ete_min"], abs=0.1)

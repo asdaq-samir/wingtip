@@ -63,7 +63,11 @@ const params: PlanParams = {
   depart: "",
   aircraft: { profile: "c172", label: "Cessna 172" },
   load: 0,
+  // The map's Checkpoints on: the plan these tests are about finds them.
+  checkpoints: true,
 };
+
+const signedIn = { id: 7, displayName: "A. Pilot", email: "a@example.com", developer: false, fullName: null, phone: null, homeBase: null };
 
 const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: queryClient }, children);
 
@@ -144,15 +148,7 @@ describe("checkpoint notes", () => {
   });
 
   test("signed in, the notes kept for the route show, the pilot's own among them", async () => {
-    vi.mocked(api.me).mockResolvedValue({
-      id: 7,
-      displayName: "A. Pilot",
-      email: "a@example.com",
-      developer: false,
-      fullName: null,
-      phone: null,
-      homeBase: null,
-    });
+    vi.mocked(api.me).mockResolvedValue(signedIn);
     vi.mocked(api.checkpointNotes).mockResolvedValue({
       departure_ident: "C81",
       checkpoints: [
@@ -167,15 +163,7 @@ describe("checkpoint notes", () => {
   });
 
   test("after Log out the last pilot's notes are gone", async () => {
-    vi.mocked(api.me).mockResolvedValue({
-      id: 7,
-      displayName: "A. Pilot",
-      email: "a@example.com",
-      developer: false,
-      fullName: null,
-      phone: null,
-      homeBase: null,
-    });
+    vi.mocked(api.me).mockResolvedValue(signedIn);
     vi.mocked(api.saveCheckpointNote).mockResolvedValue(undefined as never);
     const { result } = renderHook(() => usePlan(params), { wrapper });
     await waitFor(() => expect(queryClient.getQueryData(["pilot"])).toBeTruthy());
@@ -185,6 +173,25 @@ describe("checkpoint notes", () => {
     act(() => queryClient.setQueryData(["pilot"], null)); // what Log out does
 
     await waitFor(() => expect(result.current.descriptions[key]).toBeUndefined());
+  });
+});
+
+describe("with Checkpoints off", () => {
+  // Finding checkpoints is the pilot's to ask for once the route is drawn
+  // (the owner, 2026-11-18): until then no request finds any.
+  test("nothing asks the planner for them: not the checkpoints, the nav log's, or their notes", async () => {
+    vi.mocked(api.me).mockResolvedValue(signedIn);
+    vi.mocked(api.navlog).mockImplementation(async function* () {
+      yield* await new Promise<never[]>(() => {});
+    });
+    const { checkpoints: _on, ...off } = params;
+    renderHook(() => usePlan(off), { wrapper });
+    await waitFor(() => expect(queryClient.getQueryData(["pilot"])).toBeTruthy());
+    await waitFor(() => expect(api.navlog).toHaveBeenCalled());
+    await new Promise((done) => setTimeout(done, 100));
+    expect(api.checkpoints).not.toHaveBeenCalled();
+    expect(api.checkpointNotes).not.toHaveBeenCalled();
+    expect(vi.mocked(api.navlog).mock.calls.every((call) => call[9] === false)).toBe(true);
   });
 });
 

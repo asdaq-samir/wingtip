@@ -27,7 +27,7 @@ def test_checkpoints_marks_the_selected_candidates():
 
 
 def test_plan_returns_legs_with_from_and_to_and_totals():
-    resp = client.get("/api/plan", params={"dep": "C81", "dest": "KDLH"})
+    resp = client.get("/api/plan", params={"dep": "C81", "dest": "KDLH", "checkpoints": True})
 
     assert resp.status_code == 200
     body = resp.json()
@@ -79,7 +79,7 @@ def test_a_plan_whose_scoring_hangs_answers_within_the_bound(monkeypatch):
     monkeypatch.setattr(checkpoint_scoring, "score", slow_read)
     monkeypatch.setattr(flight_plan, "COMPUTE_LIMIT_S", 0.3)
     try:
-        resp = client.get("/api/plan", params={"dep": "C81", "dest": "KDLH"})
+        resp = client.get("/api/plan", params={"dep": "C81", "dest": "KDLH", "checkpoints": True})
     finally:
         release.set()
 
@@ -127,12 +127,22 @@ def test_a_local_flight_is_one_airport_to_itself():
     assert client.get("/api/local-flight", params={"dep": "C81", "dest": "KDLH"}).status_code == 422
 
 
-def test_without_checkpoints_the_legs_run_point_to_point_and_nothing_is_scored(monkeypatch, messages):
-    def no_scoring(*args, **kwargs):
-        raise AssertionError("scored with no checkpoints asked for")
+@pytest.mark.parametrize("asked", [{}, {"checkpoints": False}])
+def test_without_checkpoints_the_legs_run_point_to_point_and_nothing_is_found(monkeypatch, messages, asked):
+    """Not asked for, none found: finding checkpoints is the pilot's to
+    ask for once the route is drawn (the owner, 2026-11-18), so neither
+    the plan nor the nav log reads the chart or scores for them."""
 
-    monkeypatch.setattr(checkpoint_scoring, "score", no_scoring)
-    params = {"dep": "C81", "dest": "KDLH", "checkpoints": False}
+    def none_found(*args, **kwargs):
+        raise AssertionError("checkpoints found with none asked for")
+
+    from app import plan_query
+    from app.routers import navlog
+
+    for module, name in ((checkpoint_scoring, "score"), (plan_query, "route_checkpoints"), (navlog, "route_checkpoints")):
+        monkeypatch.setattr(module, name, none_found)
+    monkeypatch.setattr(checkpoint_scoring.chart_model, "corridor", none_found)
+    params = {"dep": "C81", "dest": "KDLH", **asked}
     body = client.get("/api/plan", params=params).json()
     assert body["selected"] == []
     assert [(leg["from"], leg["to"]) for leg in body["legs"]] == [("C81", "KDLH")]

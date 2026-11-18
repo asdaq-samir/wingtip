@@ -1,9 +1,11 @@
-"""A route's slow parts -- the chart's read, the ground under it -- started
-as its course is asked for (app.prefetch), once a route, off the request."""
+"""A route's slow part -- the ground under it -- started as its course is
+asked for (app.prefetch), once a route, off the request; and never the
+chart's read for its checkpoints, which waits for the pilot to ask for
+them (the owner, 2026-11-18)."""
 
 from fastapi.testclient import TestClient
 
-from app import prefetch
+from app import chart_model, prefetch
 from app.main import app
 
 client = TestClient(app)
@@ -11,11 +13,26 @@ client = TestClient(app)
 start_reads = prefetch.route
 
 
+def no_chart_read(*args, **kwargs):
+    raise AssertionError("the chart read for checkpoints none asked for")
+
+
 def test_the_course_starts_the_route_reads(monkeypatch):
     asked = []
     monkeypatch.setattr(prefetch, "route", lambda dep, dest, stops="": asked.append((dep, dest, stops)))
     assert client.get("/api/course", params={"dep": "C81", "dest": "KDLH"}).status_code == 200
     assert asked == [("C81", "KDLH", "")]
+
+
+def test_the_course_reads_no_chart_for_checkpoints(monkeypatch):
+    monkeypatch.setattr(chart_model, "corridor", no_chart_read)
+    monkeypatch.setattr(prefetch.terrain, "floor_profile", lambda start, end, breaks: None)
+    monkeypatch.setattr(prefetch._POOL, "submit", lambda fn, *args: fn(*args))
+    monkeypatch.setattr(prefetch, "_STARTED", type(prefetch._STARTED)(maxsize=8, ttl=600))
+    monkeypatch.setattr(prefetch, "route", start_reads)
+    body = client.get("/api/course", params={"dep": "C81", "dest": "KDLH", "stops": "KMSN"}).json()
+    # Said truthfully all the same: whether the chart is read, not started.
+    assert body["checkpoints_ready"] in (True, False)
 
 
 def test_a_route_is_read_ahead_once_a_while_however_often_its_course_is_asked(monkeypatch):
@@ -28,14 +45,12 @@ def test_a_route_is_read_ahead_once_a_while_however_often_its_course_is_asked(mo
     assert queued == [("C81", "KDLH", ""), ("C81", "KMSN", "")]
 
 
-def test_the_reads_ahead_are_each_hops_chart_and_ground(monkeypatch):
+def test_the_read_ahead_is_each_hops_ground_alone(monkeypatch):
     # Not the weather: the weather service keeps it stored (wingtip.weather_store).
-    charts, grounds = [], []
-    monkeypatch.setattr(prefetch.chart_model, "corridor", lambda route, wait, ahead: charts.append((route, wait, ahead)))
+    grounds = []
+    monkeypatch.setattr(chart_model, "corridor", no_chart_read)
     monkeypatch.setattr(prefetch.terrain, "floor_profile", lambda start, end, breaks: grounds.append(breaks[0]))
     prefetch._read("C81", "KDLH", "KMSN")
-    # Read ahead: behind any read a route's checkpoints wait on (app.chart_model).
-    assert charts == [("C81->KMSN", False, True), ("KMSN->KDLH", False, True)]
     assert grounds == [0.0, 0.0]
 
 
@@ -44,14 +59,13 @@ def test_a_route_that_does_not_load_reads_nothing(monkeypatch):
         raise ValueError("no such airport")
 
     monkeypatch.setattr(prefetch, "load_route", unknown)
-    monkeypatch.setattr(prefetch.chart_model, "corridor", lambda route, wait, ahead: (_ for _ in ()).throw(AssertionError))
+    monkeypatch.setattr(prefetch.terrain, "floor_profile", lambda *args: (_ for _ in ()).throw(AssertionError))
     prefetch._read("ZZZZ", "KDLH", "")
 
 
 def test_a_hop_across_the_country_is_not_read_ahead(monkeypatch):
-    charts = []
-    monkeypatch.setattr(prefetch.chart_model, "corridor", lambda route, wait, ahead: charts.append(route))
-    monkeypatch.setattr(prefetch.terrain, "floor_profile", lambda start, end, breaks: None)
+    grounds = []
+    monkeypatch.setattr(prefetch.terrain, "floor_profile", lambda start, end, breaks: grounds.append(start))
     monkeypatch.setattr(prefetch, "MAX_HOP_NM", 100)
     prefetch._read("C81", "KDLH", "KMSN")  # 82 nm, then 255 nm
-    assert charts == ["C81->KMSN"]
+    assert len(grounds) == 1
