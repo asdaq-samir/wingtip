@@ -1,4 +1,5 @@
 import { useQueries } from "@tanstack/react-query";
+import { useIsMobile } from "../../../hooks/use-mobile";
 import { unknownWhy } from "../../../lib/api/client";
 import { leaveWhen } from "../../../lib/format/leaveWhen";
 import { identOf, isPosition } from "../../../lib/identSchema";
@@ -31,7 +32,8 @@ import { MissingEnd, TypeRow } from "./RouteStart";
  * the end it lacks to pick in its place and the route to type last.
  * Below full, two stops or more are one row, a tap on it taking the sheet
  * all the way up where each is its own (the owner, 2026-11-18); read in
- * flight or a dry run, every stop is listed.
+ * flight or a dry run, and in a desktop's full-height side panel, every
+ * stop is listed.
  */
 export default function RouteTimeline({
   vm,
@@ -48,6 +50,9 @@ export default function RouteTimeline({
   const { waypointStops } = vm.routeList;
   const { panel, setPanel } = vm.view;
   const read = !!vm.flight.flying || !!vm.flight.dryRunning;
+  // From md up the side panel is the window's height at half as at full
+  // (sheet/grabberSizes), so its stops are always listed there.
+  const tall = !useIsMobile();
   const fuel = (fuelParam ?? "").split(",").filter(Boolean);
   // Each field's card, asked once and shared with the route's colours
   // (useFieldColours) and its cards: whether NASR lists it closed.
@@ -112,7 +117,7 @@ export default function RouteTimeline({
       head={half && !planned.dep ? <MissingEnd vm={vm} end="Departure" /> : undefined}
       tail={half && !planned.dest ? <MissingEnd vm={vm} end="Destination" /> : undefined}
       foot={half ? <TypeRow vm={vm} /> : undefined}
-      allStops={read || panel === "full"}
+      allStops={read || tall || panel === "full"}
       onAllStops={() => setPanel("full")}
     />
   );

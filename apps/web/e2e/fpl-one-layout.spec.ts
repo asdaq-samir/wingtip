@@ -109,6 +109,15 @@ test.describe("/app/plan", () => {
     await openPanel(page);
     const drawer = sideDrawer(page);
     const timeline = drawer.getByTestId("route-summary");
+    // From md up the side panel is the window's height at half too, so
+    // every stop is listed there.
+    if (test.info().project.name !== "mobile") {
+      await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDSM", "KOMA", "KLNK", "KGRI", "KDEN"], {
+        timeout: slow(30_000),
+      });
+      await expect(timeline.getByTestId("timeline-stops")).toHaveCount(0);
+      return;
+    }
     await expect(drawer).toHaveAttribute("data-panel", "half");
     await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDEN"], { timeout: slow(30_000) });
     const stops = timeline.getByTestId("timeline-stops");
@@ -121,11 +130,9 @@ test.describe("/app/plan", () => {
     await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDSM", "KOMA", "KLNK", "KGRI", "KDEN"]);
     await expect(stops).toHaveCount(0);
     // Lowered to half again, they are one row again.
-    if (test.info().project.name === "mobile") {
-      await grabberTo(page, "half");
-      await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDEN"]);
-      await expect(stops).toBeVisible();
-    }
+    await grabberTo(page, "half");
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDEN"]);
+    await expect(stops).toBeVisible();
   });
 
   test('a Direct To from where the airplane is reads "My Location", its Direct to line and Cancel folded and open', async ({ page }) => {
