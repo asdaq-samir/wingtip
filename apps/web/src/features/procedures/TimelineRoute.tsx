@@ -5,6 +5,7 @@ import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { isPosition } from "../../lib/identSchema";
+import { markRouteEdit } from "../plan";
 import { useRouteOnly } from "../../lib/map/routeOnly";
 import { sameField } from "../../lib/procedures";
 import { pointEnd } from "./pointEnd";
@@ -125,7 +126,11 @@ export default function TimelineRoute({
           <Collapsible
             open={unfolded}
             // Folding them closes a stop's open line with them.
-            onOpenChange={(next) => useOpenLine.setState(next ? { stops: true } : { stops: false, key: stopOpen ? null : openKey })}
+            // Unfolded, the route grows as an edit's does (riseForFigures).
+            onOpenChange={(next) => {
+              if (next) markRouteEdit();
+              useOpenLine.setState(next ? { stops: true } : { stops: false, key: stopOpen ? null : openKey });
+            }}
             render={<div className="relative z-10 h-0" />}
           >
             <CollapsibleTrigger

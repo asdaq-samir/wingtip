@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { ADDRESS_CLEARED, type SetAddress } from "../../lib/address";
 import type { ProcedureDrawing } from "../../lib/api/types";
-import { fieldListParams, fieldListsOf, prunedFieldLists, NO_DIRECT } from "../plan";
+import { fieldListParams, fieldListsOf, markRouteEdit, prunedFieldLists, NO_DIRECT } from "../plan";
 import { MAX_STOPS, altitudesOf, altitudesParam, departureOf, identOf, routeOf, stopsOf } from "../../lib/identSchema";
 import { sameField, type PickedProcedure } from "../../lib/procedures";
 import { courseQuery, queryClient } from "../../lib/queryClient";
@@ -50,6 +50,9 @@ export function useRouteEdits({
     stops = planned.stops;
   const setRoute = useCallback(
     (parts: RouteParts, fuelAdded: string[] = [], keepLists = false) => {
+      // The pilot's own edit: a route it makes longer may raise the sheet
+      // to keep FPL's figures in sight (riseForFigures).
+      markRouteEdit();
       const { dep, dest } = parts;
       const drawn = { dep: drawnDep, stops, dest: drawnDest };
       if (!dep && !dest) {
@@ -109,6 +112,7 @@ export function useRouteEdits({
     (to: { ident: string }) => {
       const points = [...routePoints];
       if (points.includes(to.ident)) return;
+      markRouteEdit();
       if (planned.dep && planned.dest) points.splice(-1, 0, to.ident);
       else if (planned.dest) points.unshift(to.ident);
       else points.push(to.ident);
