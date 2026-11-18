@@ -4,12 +4,14 @@
  * once, never as the field is left half typed, and a registry's late answer
  * for an airplane picked before never puts it back. The suggestions and the
  * registry are stood in for; the N-number test is the engine's
- * (lib/engine/vitestSetup.ts loads it).
+ * (lib/engine/vitestSetup.ts loads it). And "Pick the airplane" asked from
+ * a card over FPL lands in the field once the card has gone.
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import FlightInputs from "./FlightInputs";
+import { requestAirplanePick, useAirplanePick } from "../../lib/pickAirplane";
 
 // Each tail's registry answer, settled by the test.
 const answers = new Map<string, (record: { profile: string }) => void>();
@@ -90,5 +92,32 @@ describe("FlightInputs' airplane", () => {
       await new Promise((settled) => setTimeout(settled, 10));
     });
     expect(onTailPick).toHaveBeenLastCalledWith("N222B", "PA-28-181");
+  });
+
+  test("Pick the airplane asked from a card over FPL takes the focus back once the card has gone", () => {
+    vi.useFakeTimers({ toFake: ["requestAnimationFrame"] });
+    try {
+      const { input } = pills();
+      // The Brief's card, open over FPL, its action holding the focus.
+      const card = document.createElement("div");
+      card.setAttribute("data-sheet-card", "");
+      card.setAttribute("data-open", "");
+      const action = document.createElement("button");
+      card.append(action);
+      document.body.append(card);
+      act(() => requestAirplanePick());
+      expect(useAirplanePick.getState().pending).toBe(true);
+      // The card closes, its drawer handing the focus back as it goes: to
+      // the action inside it, then the body as it is taken off.
+      card.removeAttribute("data-open");
+      action.focus();
+      card.remove();
+      expect(document.activeElement).toBe(document.body);
+      act(() => vi.advanceTimersByTime(100));
+      expect(document.activeElement).toBe(input);
+      expect(useAirplanePick.getState().pending).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

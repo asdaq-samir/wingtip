@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openBrief, openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
+import { inSheet, openBrief, openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
 import { pickAirplane } from "./startState";
 
 /**
@@ -28,6 +28,8 @@ test("the Brief ends on Ready to fly, its actions fixing in place", async ({ pag
   await expect(ready.getByTestId("ready-line")).toHaveText(/things? left to do before you go|Ready to fly/);
   // One row, folded: its actions and every check under its tap (the owner, 2026-11-16).
   await expect(ready.locator("[data-testid^='ready-action-']")).toHaveCount(0);
+  // Under the Brief's edge as it opens half way: pulled up to, as a finger would (inSheet).
+  await inSheet(page, ready.getByTestId("ready-all"));
   await ready.getByTestId("ready-all").click();
   const actions = ready.locator("[data-testid^='ready-action-']");
   expect(await actions.count()).toBeLessThanOrEqual(3);
@@ -37,6 +39,7 @@ test("the Brief ends on Ready to fly, its actions fixing in place", async ({ pag
   // Every check with them, and the next FAA cycle.
   await expect(ready.getByTestId("ready-next-cycle")).toContainText(/Next FAA data cycle \d{4}/);
   // The fix in place: FPL's own airplane field, focused.
+  await inSheet(page, pick);
   await pick.click();
   await expect(page.locator('[data-testid="aircraft-select"] input')).toBeFocused({ timeout: slow(10_000) });
 });

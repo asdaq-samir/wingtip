@@ -112,20 +112,32 @@ export default function FlightInputs({
   // then -- the store calls its listeners inside the ask -- since iOS gives
   // a field focused outside a tap no keyboard (it was a frame later). Not
   // drawn then, it takes the focus as it is drawn; drawn but not yet in
-  // sight (FPL still coming up), a frame on, as it did before.
+  // sight (FPL still coming up), a frame on, as it did before. Asked from a
+  // card over FPL (the Brief's Ready to Fly), the card goes as FPL comes up
+  // and its drawer hands the focus back as it closes -- to the body, where
+  // the pilot's "Pick the airplane" landed nowhere (ready-to-fly.spec on a
+  // phone): taken again each frame until no card is left over the field,
+  // for a second at most.
   useEffect(() => {
     const focus = () => {
       const input = field.current;
       if (!input?.isConnected) return;
-      input.focus();
-      if (document.activeElement === input) {
-        airplanePickAnswered();
-        return;
-      }
-      requestAnimationFrame(() => {
+      let frames = 0;
+      let still = 0;
+      const take = () => {
         field.current?.focus();
-        airplanePickAnswered();
-      });
+        const kept = document.activeElement === field.current;
+        // No card open or closing, the focus kept two frames running: a
+        // drawer that has just closed hands its focus back the frame after.
+        const over = document.querySelector("[data-sheet-card]:is([data-open], [data-ending-style])");
+        still = kept && !over ? still + 1 : 0;
+        if (still >= 2 || ++frames > 60) {
+          airplanePickAnswered();
+          return;
+        }
+        requestAnimationFrame(take);
+      };
+      take();
     };
     if (useAirplanePick.getState().pending) focus();
     return useAirplanePick.subscribe((now) => {
