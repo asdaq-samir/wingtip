@@ -1,7 +1,7 @@
 import type { Layout } from "../gl/markLayers";
 import type { GlPicture } from "../gl/useGlSymbols";
 import { framed } from "../marks/markPictures";
-import { CHART } from "../../tokens";
+import { CHART, MAP } from "../../tokens";
 import { flatDeg } from "../../geo";
 
 /** A way FPL's route line offers beside the route (its chips), as the map
@@ -11,7 +11,8 @@ export interface RouteWay {
   path: [number, number][];
   /** Its time, "3 h 40 min". */
   label: string;
-  /** Its name, said on its callout while it is the one shown, "Best Weather". */
+  /** Its name, said on its callout while it is the one shown, "Best Weather"
+   *  (in the map's sentence case there, WaysGl's mapWords). */
   name?: string;
   /** Where along it its chip sits, a share of its length: given by the
    *  caller so it holds as the other ways come and go (else by place). */
@@ -43,8 +44,8 @@ export function wayChip(): GlPicture {
 }
 /** The words' ink on each chip. */
 export const wayInk = (shown: boolean) => (shown ? CHART.mapBlueInk : CHART.fixInk);
-/** The words' size, a note's 12: a label on the line, not a sign over it. */
-export const WAY_TEXT_SIZE = 12;
+/** The words' size, the map's usual 12 (map.label): a label on the line, not a sign over it. */
+export const WAY_TEXT_SIZE = MAP.label;
 /** The words' bottom left 4 points left of the tip and 12 above it (the
  *  content's corner at 10, 20; the tip at 14, 32), in ems of their size. */
 export const WAY_CHIP_PLACE: Layout = { "text-anchor": "bottom-left", "text-offset": [-4 / WAY_TEXT_SIZE, -12 / WAY_TEXT_SIZE] };

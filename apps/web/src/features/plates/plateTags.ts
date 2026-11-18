@@ -15,7 +15,9 @@ interface TagLine {
 /** What a fix's tag says, ForeFlight's way (the owner's screenshot,
  *  2026-11-11): its name, its crossing altitude barred as the plate
  *  bars it, the glide slope's or glidepath's altitude at the FAF, and at
- *  a runway its TCH and TDZE. */
+ *  a runway its TCH and TDZE; each figure as every map tag writes one,
+ *  "2,700", feet with no unit and no tick (the owner's pick, 2026-11-18),
+ *  as the plate under it prints its own. */
 export interface TagView {
   key: string;
   ident: string;
@@ -24,7 +26,6 @@ export interface TagView {
   lines: TagLine[];
 }
 
-const feet = (ft: number) => `${altFt(ft)}'`;
 const plain = (text: string): TagLine => ({ text, under: false, over: false });
 
 /**
@@ -41,15 +42,13 @@ export function tagViews(tags: ApproachFixTag[]): TagView[] {
   return tags
     .filter((t) => !t.missed || t.roles.includes("hold"))
     .map((t) => {
-      const lines: TagLine[] = t.altitude
-        ? altitudeLines({ min_ft: t.altitude.min_ft, max_ft: t.altitude.max_ft }).lines.map((l) => ({ ...l, text: `${l.text}'` }))
-        : [];
+      const lines: TagLine[] = t.altitude ? altitudeLines({ min_ft: t.altitude.min_ft, max_ft: t.altitude.max_ft }).lines : [];
       // "GS" an ILS's glide slope, "GP" an RNAV approach's glidepath
       // (the plate's profile view writes them so).
-      if (t.vertical) lines.push(plain(`${t.vertical.kind === "glideslope" ? "GS" : "GP"} ${feet(t.vertical.ft)}`));
+      if (t.vertical) lines.push(plain(`${t.vertical.kind === "glideslope" ? "GS" : "GP"} ${altFt(t.vertical.ft)}`));
       if (t.runway) {
-        lines.push(plain(`TCH ${feet(t.runway.tch_ft)}`));
-        if (t.runway.tdze_ft != null) lines.push(plain(`TDZE ${feet(t.runway.tdze_ft)}`));
+        lines.push(plain(`TCH ${altFt(t.runway.tch_ft)}`));
+        if (t.runway.tdze_ft != null) lines.push(plain(`TDZE ${altFt(t.runway.tdze_ft)}`));
       }
       return { key: `${t.ident}-${t.missed ? "missed" : "approach"}`, ident: t.ident, lat: t.lat, lon: t.lon, lines };
     });

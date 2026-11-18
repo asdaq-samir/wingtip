@@ -1,6 +1,6 @@
 import type { ExpressionSpecification, SymbolLayerSpecification } from "maplibre-gl";
 import { inkOn } from "../../scoreScale";
-import { CHART } from "../../tokens";
+import { CHART, MAP } from "../../tokens";
 import { badgeLayer, chipLayer, pictureLayer } from "../gl/markLayers";
 import type { GlSymbol } from "../gl/useGlSymbols";
 import { ROUTE_PILL, ROUTE_POINT_PILL, dotPicture, fieldMarkPicture, turnDotPicture } from "./markPictures";
@@ -46,7 +46,7 @@ export const ROUTE_MARK_LAYERS: SymbolLayerSpecification[] = [
       "route-field-idents",
       ROUTE_MARKS,
       SORT,
-      { "icon-image": ROUTE_PILL.id, "text-size": 12, "text-anchor": "left", "text-offset": [20 / 12, 0] },
+      { "icon-image": ROUTE_PILL.id, "text-size": MAP.label, "text-anchor": "left", "text-offset": [20 / MAP.label, 0] },
       { "text-color": CHART.casing },
     ),
     filter: KIND("field"),

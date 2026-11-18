@@ -10,6 +10,7 @@ import type { AirspaceVolume } from "../sources/overlayTypes";
 import { chartPair, tileTemplate } from "../sources/tiles";
 import { CHART } from "../../tokens";
 import { NIGHT_BRIGHTNESS } from "./useDarkTheme";
+import { LABEL_SIZE } from "./layers/common";
 
 /**
  * The map's style (the owner, 2026-11-06: "Like ForeFlight, I want
@@ -145,27 +146,6 @@ export const AIRSPACE_INK: Record<AirspaceClass, { colour: string; dash?: number
 const AIRSPACE_FROM: Record<AirspaceClass, number> = { B: 6, C: 7, D: 8, E: 8 };
 export const AIRSPACE_LABELS_FROM = 8;
 
-/** A height in the tab's words: the surface "SFC", else its feet MSL
- *  whole, "2300", as ForeFlight writes them. */
-const feet = (ft: number) => String(Math.round(ft));
-
-/** A volume's altitudes on one line, in its tab on the ring as ForeFlight
- *  writes them (the owner's screenshot over Madison, 2026-11-08): the
- *  class, then the floor and the ceiling in feet MSL with an en dash,
- *  "C: 2300–4900", "B: SFC–10000", "D: SFC–2500"; the surface "SFC". A
- *  ceiling the airspace stops under (UPPER_DESC TNI, "up to but not
- *  including", which the sectional prints as a minus before the figure:
- *  Chart User's Guide, Airspace) is "<3000": a Class D under a Class B
- *  shelf. The figures are the FAA's, as the tiles and the planner carry
- *  them; only the wording is the map's. */
-export function airspaceText(
-  volume: Pick<AirspaceVolume, "airspace_class" | "floor_ft" | "floor_sfc" | "ceiling_ft" | "ceiling_excluded">,
-): string | null {
-  if (volume.ceiling_ft == null) return null;
-  const floor = volume.floor_sfc ? "SFC" : feet(volume.floor_ft);
-  return `${volume.airspace_class}: ${floor}–${volume.ceiling_excluded ? "<" : ""}${feet(volume.ceiling_ft)}`;
-}
-
 export const AIRSPACE_LINE_LAYERS = (["D", "C", "B"] as const).map((c) => `airspace-${c}`);
 
 /** The dark tab an airspace's altitudes sit in (icon-text-fit stretches
@@ -177,16 +157,13 @@ export const airspaceTab = (cls: string) => `airspace|tab|${cls}`;
  *  in the map's first style. */
 export const OVERLAY_SOURCE = "faa-overlays";
 
-/** A figure of a tile's feature as airspaceText writes it: whole feet. */
-const feetOf = (field: string) => ["to-string", ["round", ["get", field]]];
-/** airspaceText as an expression on the overlay tiles' `airspace` and
- *  `airspace_labels` fields (wingtip.vector_tiles): "C: 2300–4900",
- *  "B: SFC–10000", "D: SFC–<3000" -- the floor SFC where it is the
- *  surface (0 ft, as the planner's floor_sfc), the ceiling with "<"
- *  where it is "up to but not including" it (UPPER_DESC TNI). */
-const FLOOR = ["case", ["==", ["coalesce", ["get", "floor_ft"], 0], 0], "SFC", feetOf("floor_ft")];
-const TOP = ["concat", ["case", ["==", ["get", "ceiling_excluded"], true], "<", ""], feetOf("ceiling_ft")];
-const AIRSPACE_TILE_LABEL = ["concat", ["get", "class"], ": ", FLOOR, "–", TOP];
+/** A shelf's altitudes as the sectional writes them, the ceiling over the
+ *  floor in hundreds of feet MSL ("100" over "30", "T" over "SFC", "-30"
+ *  for a Class D): the engine's words (airspace_shelf_label, the Chart
+ *  User's Guide's), which the charts job writes into the tiles'
+ *  `airspace_labels` (`tab`, wingtip.airspace_tabs), the 3D view's shelves
+ *  the same, so the map formats no figure of its own. */
+const AIRSPACE_TAB = ["get", "tab"];
 
 /** A width by zoom, MapLibre's levels from the app's. */
 const byZoom = (stops: [appZoom: number, px: number][]) =>
@@ -216,9 +193,8 @@ const BAND_OFFSET = byZoom(BAND_STOPS.map(([z, w]) => [z, w / 2 + 1.5]));
  *  MapLibre's own collision. From the overlay tiles: the rings their
  *  `airspace` layer's polygons; the labels one a shelf, on its ring and
  *  turned along it, from `airspace_labels` (the charts job's
- *  airspace_label_features), or where an older archive has not got that
- *  layer, along every ring at the spacing as before. Class E is in the
- *  tiles but not drawn. */
+ *  airspace_label_features), none where an older archive has not got that
+ *  layer. Class E is in the tiles but not drawn. */
 export function airspaceLayers(font: string[], labelPoints = true): LayerSpecification[] {
   const from = { source: OVERLAY_SOURCE, "source-layer": "airspace" };
   const lines: LineLayerSpecification[] = (["D", "C", "B"] as const).flatMap((c) => {
@@ -244,61 +220,43 @@ export function airspaceLayers(font: string[], labelPoints = true): LayerSpecifi
       },
     ];
   });
-  const tab = {
-    "text-field": AIRSPACE_TILE_LABEL as never,
-    "text-font": font,
-    "text-size": byZoom([
-      [8, 11],
-      [12, 13],
-    ]),
-    "icon-image": ["concat", "airspace|tab|", ["get", "class"]] as never,
-    "icon-text-fit": "both" as const,
-    "icon-text-fit-padding": [2, 6, 2, 6] as [number, number, number, number],
-    "text-padding": 4,
-    // Never on another tab or an airport's mark (the marks' layers are
-    // above and place first); where tabs compete the nearer class wins
-    // (B, C, D).
-    "text-allow-overlap": false,
-    "icon-allow-overlap": false,
-    "symbol-sort-key": ["match", ["get", "class"], "B", 0, "C", 1, 2] as never,
+  if (!labelPoints) return lines;
+  const labels: SymbolLayerSpecification = {
+    id: "airspace-labels",
+    type: "symbol",
+    source: OVERLAY_SOURCE,
+    "source-layer": "airspace_labels",
+    minzoom: glZoom(AIRSPACE_LABELS_FROM),
+    filter: ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "tab"]],
+    layout: {
+      "text-field": AIRSPACE_TAB as never,
+      "text-font": font,
+      "text-size": byZoom([
+        [8, LABEL_SIZE.small],
+        [12, LABEL_SIZE.large],
+      ]),
+      // The ceiling over the floor, close as the chart sets them.
+      "text-line-height": 1.1,
+      "icon-image": ["concat", "airspace|tab|", ["get", "class"]] as never,
+      "icon-text-fit": "both" as const,
+      "icon-text-fit-padding": [2, 6, 2, 6] as [number, number, number, number],
+      "text-padding": 4,
+      // Never on another tab or an airport's mark (the marks' layers are
+      // above and place first); where tabs compete the nearer class wins
+      // (B, C, D).
+      "text-allow-overlap": false,
+      "icon-allow-overlap": false,
+      "symbol-sort-key": ["match", ["get", "class"], "B", 0, "C", 1, 2] as never,
+      // Along the ring where it sits: the tiles' turn, upright on a
+      // north-up chart, and turned with the chart when the pilot turns the
+      // map, as the sectional's own printed tabs are.
+      "text-rotate": ["get", "angle"],
+      "icon-rotate": ["get", "angle"],
+      "text-rotation-alignment": "map",
+      "icon-rotation-alignment": "map",
+    },
+    paint: { "text-color": CHART.casing },
   };
-  const labels: SymbolLayerSpecification = labelPoints
-    ? {
-        id: "airspace-labels",
-        type: "symbol",
-        source: OVERLAY_SOURCE,
-        "source-layer": "airspace_labels",
-        minzoom: glZoom(AIRSPACE_LABELS_FROM),
-        filter: ["in", ["get", "class"], ["literal", ["B", "C", "D"]]],
-        layout: {
-          ...tab,
-          // Along the ring where it sits: the tiles' turn, upright on a
-          // north-up chart, and turned with the chart when the pilot
-          // turns the map, as the sectional's own printed tabs are.
-          "text-rotate": ["get", "angle"],
-          "icon-rotate": ["get", "angle"],
-          "text-rotation-alignment": "map",
-          "icon-rotation-alignment": "map",
-        },
-        paint: { "text-color": CHART.casing },
-      }
-    : {
-        id: "airspace-labels",
-        type: "symbol",
-        ...from,
-        minzoom: glZoom(AIRSPACE_LABELS_FROM),
-        filter: ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "ceiling_ft"]],
-        layout: {
-          ...tab,
-          "symbol-placement": "line",
-          "symbol-spacing": 320,
-          "text-rotation-alignment": "viewport",
-          "icon-rotation-alignment": "viewport",
-          "text-keep-upright": true,
-          "text-max-angle": 30,
-        },
-        paint: { "text-color": CHART.casing },
-      };
   return [...lines, labels];
 }
 

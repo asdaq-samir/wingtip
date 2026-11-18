@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { CATEGORY, CHART } from "../../../lib/tokens";
 import { useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
 import { cameraOf } from "../../../lib/map/gl/camera";
-import { GL_FONT_BOLD, TAP } from "../../../lib/map/gl/layers/common";
+import { GL_FONT_BOLD, LABEL_SIZE, TAP } from "../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { useSearchResultRows, useSearchResults } from "../../search";
 import { useGlFit } from "../useGlFit";
@@ -35,7 +35,12 @@ const COUNT: SymbolLayerSpecification = {
   type: "symbol",
   source: SOURCE,
   filter: ["has", "point_count"],
-  layout: { "text-field": ["get", "point_count_abbreviated"], "text-font": GL_FONT_BOLD, "text-size": 14, "text-allow-overlap": true },
+  layout: {
+    "text-field": ["get", "point_count_abbreviated"],
+    "text-font": GL_FONT_BOLD,
+    "text-size": LABEL_SIZE.count,
+    "text-allow-overlap": true,
+  },
   paint: { "text-color": CHART.casing },
 };
 /** One result: a round mark in its flight category's colour (AIM 7-1-7's

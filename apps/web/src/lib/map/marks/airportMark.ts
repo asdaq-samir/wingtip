@@ -19,6 +19,12 @@ export const AIRPORT_MARK = 26;
 /** The sectional's ink for a mark whose class is not known yet. */
 const UNKNOWN_GREY = CHART.fieldUnknown;
 
+/** The letters drawn inside a mark's picture (R, M, H; a PIREP's glyph):
+ *  the system's sans serif. A picture is an <img> to the map, which cannot
+ *  reach the page's own Inter, and a <text> with no font is the browser's
+ *  default serif. */
+export const MARK_FONT = "-apple-system, system-ui, sans-serif";
+
 /** The mark itself, as an SVG's markup (the map's field marks, without the
  *  ident beside it): the same symbol off the map, as Nearest's rows lead
  *  with it. */
@@ -33,7 +39,7 @@ export function airportMarkSvg(
   const casing = `stroke="${CHART.casing}" stroke-linecap="round"`;
   const symbol = use
     ? `<circle r="10" fill="${use === "military" ? BLUE : MAGENTA}" ${casing} stroke-width="2"/>` +
-      `<text y="4" text-anchor="middle" font-size="11" font-weight="800" fill="${CHART.casing}">${{ military: "M", private: "R", heliport: "H" }[use]}</text>` +
+      `<text y="4" text-anchor="middle" font-family="${MARK_FONT}" font-size="11" font-weight="800" fill="${CHART.casing}">${{ military: "M", private: "R", heliport: "H" }[use]}</text>` +
       `<circle data-weather="" cx="7.5" cy="7.5" r="4.6" fill="${text(weather)}" ${casing} stroke-width="1.4"/>`
     : (() => {
         // The four ticks, and the white casing round ticks and ring, each one

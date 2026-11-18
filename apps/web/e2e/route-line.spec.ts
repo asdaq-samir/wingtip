@@ -136,6 +136,9 @@ test("FPL's Routes are one row of chips, As typed at first, and a chip tapped is
   await expect.poll(() => planned.length, { timeout: slow(15_000) }).toBeGreaterThan(0);
   // Every way drawn on the chart beside the course, as the chips' probe says (WaysGl).
   await expect.poll(async () => (await drawn(page, "route-way-chips")).length).toBe(2);
+  // Named on the chart in the map's sentence case, the sheet's chip in
+  // Title Case (docs/design/rules.md, the map's words).
+  expect((await drawn(page, "route-way-chips")).map((c) => c.name)).toContain("Avoid weather");
 
   // A chip tapped: the route at once, its fuel stop named, and planned.
   await chips.filter({ hasText: "Avoid Weather" }).click();

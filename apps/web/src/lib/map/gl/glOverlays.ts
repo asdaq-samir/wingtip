@@ -1,13 +1,19 @@
 import type { ExpressionSpecification, LayerSpecification, Map as MlMap, SourceSpecification, SymbolLayerSpecification } from "maplibre-gl";
 import type { OverlayTiles } from "../../api/types";
 import { usePreferences } from "../../preferences";
-import { TOWERED_BLUE, UNTOWERED_MAGENTA } from "../marks/airportMark";
 import { stationPictures } from "../marks/stationModel";
-import { AIRPORT_WEATHER, TILE_AIRPORT_ICON, airportIconSize, airportPictures, TOWERED } from "./airportIcons";
+import {
+  AIRPORT_IDENT_INK,
+  AIRPORT_IDENT_SIZE,
+  AIRPORT_WEATHER,
+  TILE_AIRPORT_ICON,
+  airportIconSize,
+  airportPictures,
+} from "./airportIcons";
 import { overlaySource } from "../sources/overlayTiles";
 import { SLOTS, drawSvg, slotId, type DrawnImage, type Slot } from "./glLayer";
 import { OVERLAY_SOURCE, SUA_LAYERS, airspaceLayers, glZoom, specialUseLayers } from "./glStyle";
-import { GL_FONT_BOLD, LABEL_HALO } from "./layers/common";
+import { GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE, labelByZoom } from "./layers/common";
 import { specialUseLabelLayer } from "./glSuaLabels";
 import { OVERLAY_PICTURES } from "./glOverlayPictures";
 import { CHART } from "../../tokens";
@@ -86,14 +92,14 @@ function airportMarksLayer(from: { source: string; "source-layer"?: string }): S
       "symbol-sort-key": ["get", "rank"],
       "text-field": ["get", "ident"],
       "text-font": GL_FONT_BOLD,
-      "text-size": ["interpolate", ["linear"], ["zoom"], glZoom(AIRPORTS_FARTHEST_ZOOM), 10, glZoom(10), 12, glZoom(13), 13],
+      "text-size": AIRPORT_IDENT_SIZE,
       "text-anchor": "left",
       "text-offset": [1.15, 0],
       // The ident gives way, the mark stays: a busy area keeps its fields.
       "text-optional": true,
       "text-padding": 1,
     },
-    paint: { "text-color": ["case", TOWERED, TOWERED_BLUE, UNTOWERED_MAGENTA], ...LABEL_HALO, "text-opacity": SELECTED_HIDDEN },
+    paint: { "text-color": AIRPORT_IDENT_INK, ...LABEL_HALO, "text-opacity": SELECTED_HIDDEN },
   };
 }
 
@@ -129,7 +135,10 @@ function navaidMarks(
       layout: {
         "text-field": ["case", ["has", "freq"], ["concat", ["get", "ident"], " (", ["get", "freq"], ")"], ["get", "ident"]],
         "text-font": GL_FONT_BOLD,
-        "text-size": ["interpolate", ["linear"], ["zoom"], 6, 10, 10, 12],
+        "text-size": labelByZoom([
+          [6, LABEL_SIZE.small],
+          [10, LABEL_SIZE.normal],
+        ]),
         "text-variable-anchor": ["left", "right"],
         "text-radial-offset": 1.1,
         "text-justify": "auto",
@@ -196,7 +205,10 @@ function runwayLayers(): LayerSpecification[] {
       layout: {
         "text-field": ["get", "end_id"],
         "text-font": GL_FONT_BOLD,
-        "text-size": ["interpolate", ["linear"], ["zoom"], 12.5, 10, 16, 16],
+        "text-size": labelByZoom([
+          [12.5, LABEL_SIZE.small],
+          [16, LABEL_SIZE.runway],
+        ]),
         "text-rotation-alignment": "map",
         "text-rotate": ["get", "heading"],
         // Up the number's own page, which is down the runway from its end.

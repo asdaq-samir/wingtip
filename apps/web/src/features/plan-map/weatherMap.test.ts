@@ -1,7 +1,10 @@
 import { describe, expect, test } from "vitest";
 import type { WeatherArea } from "../../lib/api/types";
 import { mapLevel } from "../../lib/format";
-import { areaWords, inside, pirepMark, routeThrough } from "./weatherMap";
+import { areaLabel, areaWords, inside, pirepMark, routeThrough } from "./weatherMap";
+import { callEngine } from "../../lib/engine/engine";
+import { hazardTextInk } from "../../lib/map/weatherColours";
+import { WEATHER } from "../../lib/tokens";
 import { geoLoaded } from "../../lib/geo";
 
 // The engine's geodesic rules, loaded by the setup file (vitestSetup).
@@ -77,5 +80,19 @@ describe("the weather drawn on the map", () => {
     });
     expect(pirepMark({ lat: 0, lon: 0, altitude_ft: 4500, icing: "LGT", urgent: false })).toMatchObject({ glyph: "❄\uFE0E", level: "045" });
     expect(pirepMark({ lat: 0, lon: 0, altitude_ft: 3000, urgent: true })).toMatchObject({ glyph: "!" });
+  });
+
+  test("labels each area along its outline with its hazard and its top", () => {
+    const short = callEngine("gairmet_hazards", {}).labels;
+    // A G-AIRMET in AWC's own short words (the flow layer's), a SIGMET by
+    // its kind and the engine's word for its code.
+    expect(areaLabel(icing, short)).toBe("Ice to FL160");
+    expect(areaLabel(turb, short)).toBe("SIGMET Turbulence to FL200");
+    expect(areaLabel({ ...turb, kind: "convective", hazard: null, high_ft: null }, short)).toBe("Convective SIGMET");
+  });
+
+  test("writes turbulence's words in a deeper amber, legible on the map's white", () => {
+    expect(hazardTextInk(WEATHER.turbulence)).toBe(WEATHER.turbulenceText);
+    expect(hazardTextInk(WEATHER.icing)).toBe(WEATHER.icing);
   });
 });

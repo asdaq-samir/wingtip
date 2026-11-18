@@ -9,6 +9,7 @@ import { useDarkTheme } from "../useDarkTheme";
 import { chartPaint, chartStyle, type ChartStyle } from "../glStyle";
 import { CLOSE_MAX_ZOOM, chartFade } from "../closeZoom";
 import { CloseImageryGl } from "./CloseImageryGl";
+import { LABEL_NIGHT } from "./common";
 import { useCloseImagery } from "../useCloseImagery";
 
 /**
@@ -67,6 +68,11 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
   useEffect(() => {
     if (none) map.setMaxZoom(CLOSE_MAX_ZOOM);
   }, [map, none]);
+  // The labels' halos dimmed after dark with the page's theme (common's
+  // HALO_COLOUR reads it), not glaring white over the night's chart.
+  useEffect(() => {
+    if (map.style) map.setGlobalStateProperty(LABEL_NIGHT, dark);
+  }, [map, dark]);
   const kinds = parts
     .map((p) => /\/(?:chart-tile\/)?([a-z_]+)\/\{z\}/.exec(Object.values(p.spec.sources).at(-1)?.tiles?.[0] ?? "")?.[1] ?? "")
     .join(" ");

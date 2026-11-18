@@ -86,8 +86,13 @@ test("a tap on the plate opens its card; Show Annotations and Hide Plate change 
   const card = await openPlateCard(page, PLATE);
   const tags = () => drawnMarks(page, "plate-tags");
   const tag = async (ident: string) => (await tags()).find((t) => t.ident === ident) ?? null;
-  expect(String((await tag("POBER"))!.lines)).toContain("GS 2,610'");
-  expect(String((await tag("RW36"))!.lines)).toContain("TCH 53'");
+  // Each figure as every map tag writes one: no unit, no tick.
+  expect(String((await tag("POBER"))!.lines)).toContain("GS 2,610");
+  expect(String((await tag("RW36"))!.lines)).not.toContain("'");
+  expect(String((await tag("RW36"))!.lines)).toContain("TCH 53");
+  // Each fix tagged once: the plate's tag, the procedure's own fix left
+  // with its diamond (the owner's pick, 2026-11-18).
+  expect((await drawn(page, "procedure-fixes")).find((f) => f.ident === "POBER")?.tag).toBe("");
   await expect(page.getByRole("heading", { name: "KOSH ILS or LOC rwy 36" })).toBeVisible();
   await expect(card.getByRole("slider", { name: "Plate transparency" })).toBeVisible();
 

@@ -2,6 +2,7 @@ import type { SymbolLayerSpecification } from "maplibre-gl";
 import { CHART } from "../../tokens";
 import type { Stretch } from "./glLayer";
 import { AIRSPACE_LABELS_FROM, OVERLAY_SOURCE, SUA_INK, glZoom } from "./glStyle";
+import { LABEL_SIZE, labelByZoom } from "./layers/common";
 
 /**
  * The special-use areas' tabs, as ForeFlight writes them on a MOA's or a
@@ -81,8 +82,9 @@ export function specialUseLabelLayer(font: string[], labelPoints = true): Symbol
     layout: {
       ...tab,
       "text-field": TAB_TEXT as never,
-      // Along the side where it sits, upright already; the map never
-      // turns (GlMapShell), so the chart's north is the screen's.
+      // Along the side where it sits, upright on a north-up chart, and
+      // turned with the chart when the pilot turns the map, as the
+      // sectional's own printed tabs are (the Class tabs' look).
       "text-rotate": ["get", "angle"],
       "icon-rotate": ["get", "angle"],
       "text-rotation-alignment": "map",
@@ -99,7 +101,10 @@ export function specialUseLabelLayer(font: string[], labelPoints = true): Symbol
 export function suaTabLayout(font: string[]) {
   return {
     "text-font": font,
-    "text-size": ["interpolate", ["linear"], ["zoom"], glZoom(8), 11, glZoom(12), 13] as never,
+    "text-size": labelByZoom([
+      [glZoom(8), LABEL_SIZE.small],
+      [glZoom(12), LABEL_SIZE.large],
+    ]),
     "text-line-height": 1.15,
     "icon-image": ["case", restricted, suaTab("restricted"), suaTab("moa")] as never,
     "icon-text-fit": "both" as const,

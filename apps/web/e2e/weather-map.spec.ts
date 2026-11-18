@@ -96,6 +96,9 @@ test(
     // The area on the map's canvas, as its probe says (WeatherGl).
     const areas = async () => (await drawn(page, "weather-areas")).filter((a) => a.colour === "#c2410c");
     await expect.poll(async () => (await areas()).length, { timeout: slow(30000) }).toBeGreaterThan(0);
+    // Its short label along its outline: what it is and its top, as the
+    // map writes a level.
+    expect((await areas())[0]!.label).toBe("Convective SIGMET to FL450");
     // The marks on the canvas too, as their probe says (WeatherGl's wx-marks).
     await expect.poll(async () => (await drawn(page, "wx-marks")).filter((m) => m.kind === "pirep" && m.text === "065").length).toBe(1);
     await expect.poll(() => asked.some((u) => u.searchParams.get("altitude_ft") === "9000")).toBe(true);

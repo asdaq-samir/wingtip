@@ -26,7 +26,9 @@ the same card:
 
 Each with `label`, one point inside its largest polygon where the map
 writes its name, so an area drawn as several polygons, or crossing many
-tiles, is named once.
+tiles, is named once; a special use area with `tab`, the engine's words
+for it, "M-BRADY NOR*:" over "3600-17999", as the 2D chart's tab writes
+it (wingtip.airspace_tabs), None for a piece the FAA marks EXCLUSION.
 """
 
 from __future__ import annotations
@@ -38,7 +40,7 @@ import numpy as np
 import shapely
 from shapely.geometry.polygon import orient
 
-from . import airspace, cycle_pack, phone_pack_shapes, sua
+from . import airspace, airspace_tabs, cycle_pack, phone_pack_shapes, sua
 
 #: The classes drawn as volumes, by the shapefile's CLASS.
 CLASSES = ("B", "C", "D", "E")
@@ -139,5 +141,6 @@ def volumes_in(box: tuple[float, float, float, float], classes: tuple[str, ...] 
                 continue
             geometry = _shape(pack, "sua", int(k))
             if geometry is not None:
-                features.append(_feature({**area, "layer": "special_use"}, geometry))
+                tab = airspace_tabs.special_use_tab(area)
+                features.append(_feature({**area, "layer": "special_use", "tab": tab["text"] if tab else None}, geometry))
     return {"type": "FeatureCollection", "features": features, "cycle": pack.cycle}

@@ -312,6 +312,9 @@ object WingtipColors {
         const val ICING_HEX = "#2563eb"
         val Turbulence = Color(0xFFD97706)
         const val TURBULENCE_HEX = "#d97706"
+        /** Turbulence's words on the map's white (a PIREP's level, an area's label): the amber deepened to 5:1, where the area's own is 3.2:1, under WCAG's 4.5:1 for small text. */
+        val TurbulenceText = Color(0xFFB45309)
+        const val TURBULENCE_TEXT_HEX = "#b45309"
         val Ifr = Color(0xFF7C3AED)
         const val IFR_HEX = "#7c3aed"
         /** Mountains obscured. */
@@ -1206,6 +1209,13 @@ object WingtipMap {
     const val AIRSPACE_FADED = 0.35
     const val AIRSPACE_HELD = 1.8
     const val AIRSPACE_LABEL_FADED = 0.6
+    const val LABEL_SMALL = 11
+    const val LABEL = 12
+    const val LABEL_LARGE = 13
+    const val LABEL_COUNT = 14
+    const val LABEL_RUNWAY = 16
+    const val LABEL_HALO = 2
+    const val LABEL_HALO_NIGHT = 0.6
 }
 
 /** Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers. */

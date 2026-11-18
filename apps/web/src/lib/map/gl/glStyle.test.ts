@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { ChartInfo } from "../../api/types";
-import type { AirspaceVolume } from "../sources/overlayTypes";
-import type { LineLayerSpecification } from "maplibre-gl";
+import type { LineLayerSpecification, SymbolLayerSpecification } from "maplibre-gl";
 import {
   absoluteTiles,
   airspaceLayers,
-  airspaceText,
   OVERLAY_SOURCE,
   chartPaint,
   chartStyle,
@@ -93,21 +91,14 @@ describe("chartStyle", () => {
 });
 
 describe("airspaceLayers", () => {
-  const volume = {
-    id: "ORD-B-1",
-    airspace_class: "B",
-    floor_ft: 3000,
-    floor_sfc: false,
-    ceiling_ft: 10000,
-    ceiling_excluded: false,
-  } as unknown as AirspaceVolume;
-
-  it("writes a volume's floor and ceiling in feet MSL, as ForeFlight's tab does", () => {
-    expect(airspaceText(volume)).toBe("B: 3000–10000");
-    // Madison's Class C shelf (the owner's ForeFlight screenshot).
-    expect(airspaceText({ ...volume, airspace_class: "C", floor_ft: 2300, ceiling_ft: 4900 })).toBe("C: 2300–4900");
-    expect(airspaceText({ ...volume, airspace_class: "D", floor_ft: 0, floor_sfc: true, ceiling_ft: 2500 })).toBe("D: SFC–2500");
-    expect(airspaceText({ ...volume, ceiling_ft: null })).toBeNull();
+  it("writes each shelf's tab in the engine's words the tiles carry, ceiling over floor", () => {
+    const label = airspaceLayers(["Inter"]).find((l) => l.id === "airspace-labels") as SymbolLayerSpecification;
+    // "100" over "30", the sectional's (wingtip.airspace_tabs): the map
+    // formats no figure of its own.
+    expect(label.layout!["text-field"]).toEqual(["get", "tab"]);
+    expect(label.filter).toEqual(["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "tab"]]);
+    // No tab where an older archive has no label points.
+    expect(airspaceLayers(["Inter"], false).map((l) => l.id)).not.toContain("airspace-labels");
   });
 
   it("draws the tiles' rings each with its band along the inside, Class E left out", () => {

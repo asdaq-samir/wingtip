@@ -107,7 +107,7 @@ export function PatternsGl({ patterns }: { patterns: TrafficPattern[] }) {
         : patterns.flatMap((p) => {
             const downwind = p.legs.find((l) => l.name === "Downwind");
             const downwindAt = downwind && along(downwind.from, downwind.to, 0.5);
-            const downwindWords = `${p.traffic === "right" ? "Right" : "Left"} downwind ${p.runway}${p.altitudeFt != null ? ` · ${altFt(p.altitudeFt)} ft` : ""}`;
+            const downwindWords = `${p.traffic === "right" ? "Right" : "Left"} downwind ${p.runway}${p.altitudeFt != null ? ` · ${altFt(p.altitudeFt)}` : ""}`;
             const entryAt = p.kind === "departure" ? p.entry.to : p.entry.from;
             const entryWords = p.kind === "departure" ? `${p.entry.name} · ${p.runway}` : p.entry.name;
             const at = (point: LatLon, key: string) => ({ key: `${p.ident}-${p.runway}-${key}`, lat: point.lat, lon: point.lon });
@@ -150,11 +150,15 @@ export function ProceduresGl({
   drawings,
   crossings,
   directs,
+  plated = NONE_PLATED,
   onFix,
 }: {
   drawings: ProcedureDrawing[];
   crossings: Record<string, number>;
   directs: string;
+  /** Whether an approach's plate tags its fixes (features/plates'
+   *  usePlateTagged): its tags then say the pilot's own lines alone. */
+  plated?: (d: ProcedureDrawing) => boolean;
   onFix?: (field: string, kind: ProcedureDrawing["kind"], fix: string) => void;
 }) {
   const level = useGlLevel();
@@ -203,6 +207,7 @@ export function ProceduresGl({
             !!d.stale,
             fix.missed ? null : (crossings[fix.ident] ?? null),
             directs.split(",").includes(`${d.airport}:${d.id}:${fix.ident}`),
+            plated(d),
           );
           return {
             key: `${d.airport}-${d.id}-${d.transition ?? ""}-${fix.ident}`,
@@ -215,7 +220,7 @@ export function ProceduresGl({
           };
         }),
       ),
-    [drawings, words, crossings, directs, onFix],
+    [drawings, words, crossings, directs, plated, onFix],
   );
   useGlSymbols("procedure-fixes", PROCEDURE_LAYERS, marks);
   return null;
@@ -338,3 +343,4 @@ export function PickedGl({
 }
 
 const NO_LEGS: Leg[] = [];
+const NONE_PLATED = () => false;

@@ -7,6 +7,7 @@ import { AirspaceCardBody } from "../../../components/map/cards/AirspaceCard";
 import { deckSlot, useDeckLayers, useDeckTap } from "../../../lib/map/gl/deckLayers";
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../lib/map/gl/glLayer";
 import { volumeOfTile } from "../../../lib/map/gl/glTileFeatures";
+import { applyOverlaySettings } from "../../../lib/map/gl/overlayFilters";
 import { SUA_INK } from "../../../lib/map/gl/glStyle";
 import { useGlView } from "../../../lib/map/gl/useGlView";
 import { suaTabLayout } from "../../../lib/map/gl/glSuaLabels";
@@ -44,8 +45,9 @@ import { SuaVolumeCard } from "./SuaVolumeCard";
  * tops, their words the true altitudes. Only the volumes in view are asked for, and far out
  * only Class B and the special use areas (KINDS' `from`).
  *
- * Each area's name is a tab of the chart's look at its top (a MapLibre
- * symbol lifted to it, symbol-height-offset), and each Class B, C and D
+ * Each area's name and limits are a tab of the chart's look at its top,
+ * the 2D tab's words (a MapLibre symbol lifted to it,
+ * symbol-height-offset), and each Class B, C and D
  * shelf's altitudes as the sectional writes them, "100" over "30", at its
  * top on the edge nearest the camera, placed before the names where they
  * meet (and after the airports' and navaids' marks); each volume is shaded by its floor,
@@ -146,7 +148,10 @@ const LABEL_LAYER: SymbolLayerSpecification = {
   source: LABELS,
   layout: {
     ...suaTabLayout(GL_FONT_BOLD),
-    "text-field": ["get", "name"],
+    // The engine's tab, name over limits ("M-BRADY NOR*:" over
+    // "3600-17999"), as the 2D chart's tab writes it (the volumes' `tab`,
+    // wingtip.airspace_tabs); the name alone where it has none.
+    "text-field": ["coalesce", ["get", "tab"], ["get", "name"]],
     // At the area's top, metres above the sea (MapLibre 6.6's stock
     // symbol elevation), not on the ground under it.
     "symbol-height-offset": ["get", "top_m"],
@@ -256,7 +261,10 @@ export default function AirspaceVolumesGl({ altitudes = null }: { altitudes?: nu
     map.on("styledata", hide);
     return () => {
       map.off("styledata", hide);
-      if (map.style) GROUND_TABS.forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, "visibility", "visible"));
+      // Back as the settings have them, not all shown: with Aeronautical
+      // off or the route's points alone, the tabs stay hidden with their
+      // rings.
+      applyOverlaySettings(map);
     };
   }, [map]);
 

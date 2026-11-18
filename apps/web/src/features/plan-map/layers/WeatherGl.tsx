@@ -6,16 +6,19 @@ import type {
   Map as MlMap,
   SymbolLayerSpecification,
 } from "maplibre-gl";
+import { callEngine } from "../../../lib/engine/engine";
+import { hazardTextInk } from "../../../lib/map/weatherColours";
+import { MAP } from "../../../lib/tokens";
 import { useMemo } from "react";
 import { api } from "../../../lib/api/client";
-import { areaColour } from "../weatherMap";
+import { areaColour, areaLabel } from "../weatherMap";
 import { AreaCard, PirepCard, WindCard } from "../WeatherCards";
 import { PIREP_SHIFT, pirepMarks, weatherBoxOf, windBarb } from "../weatherLayer";
 import { useWeatherLayers } from "../../../lib/map/sources/weatherLayers";
 import { WINDS_MODELLED } from "../../../lib/windsAloft";
 import { useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
-import { TAP } from "../../../lib/map/gl/layers/common";
+import { GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE, TAP } from "../../../lib/map/gl/layers/common";
 import { chipLayer, pictureLayer } from "../../../lib/map/gl/markLayers";
 import { useGlSymbols, type GlSymbol } from "../../../lib/map/gl/useGlSymbols";
 import { useGlView } from "../../../lib/map/gl/useGlView";
@@ -25,8 +28,10 @@ const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollectio
 
 const AREAS = "wx-areas";
 /** An advisory's area bold, a forecast's (a G-AIRMET) dashed, each in its
- *  hazard's colour over a wash of it (weatherMap areaColour). */
-const AREA_LAYERS: (FillLayerSpecification | LineLayerSpecification)[] = [
+ *  hazard's colour over a wash of it (weatherMap areaColour), and its short
+ *  label along its outline (areaLabel) in that colour's text ink, as the
+ *  flow layer's G-AIRMETs and AWC's own map label theirs. */
+const AREA_LAYERS: (FillLayerSpecification | LineLayerSpecification | SymbolLayerSpecification)[] = [
   { id: "wx-area-fill", type: "fill", source: AREAS, paint: { "fill-color": ["get", "colour"], "fill-opacity": 0.12 } },
   {
     id: "wx-area-line",
@@ -41,6 +46,20 @@ const AREA_LAYERS: (FillLayerSpecification | LineLayerSpecification)[] = [
     source: AREAS,
     filter: ["get", "forecast"],
     paint: { "line-color": ["get", "colour"], "line-width": 2, "line-dasharray": [3, 2.5] },
+  },
+  {
+    id: "wx-area-label",
+    type: "symbol",
+    source: AREAS,
+    layout: {
+      "symbol-placement": "line",
+      "symbol-spacing": 320,
+      "text-field": ["get", "label"],
+      "text-font": GL_FONT_BOLD,
+      "text-size": LABEL_SIZE.small,
+      "text-max-angle": 30,
+    },
+    paint: { "text-color": ["get", "ink"], ...LABEL_HALO },
   },
 ];
 
@@ -69,22 +88,27 @@ export function WeatherGl({ line, altitudeFt }: { line: [number, number][] | nul
   useGlLayer("areas", { [AREAS]: empty() }, AREA_LAYERS);
   // Faded in as the first answer comes, not snapped on over the chart.
   useGlFadeIn(AREA_LAYERS, !!data);
-  const areaFeatures = useMemo<GeoJSON.FeatureCollection | null>(
-    () =>
-      areas && data
-        ? {
-            type: "FeatureCollection",
-            features: data.advisories.map((a) => ({
-              type: "Feature",
-              properties: { id: a.id, colour: areaColour(a), forecast: a.kind === "gairmet" },
-              geometry: { type: "Polygon", coordinates: [(a.coords as [number, number][]).map(([lat, lon]) => [lon, lat])] },
-            })),
-          }
-        : null,
-    [areas, data],
-  );
+  const areaFeatures = useMemo<GeoJSON.FeatureCollection | null>(() => {
+    const short = areas && data ? callEngine("gairmet_hazards", {}).labels : {};
+    return areas && data
+      ? {
+          type: "FeatureCollection",
+          features: data.advisories.map((a) => ({
+            type: "Feature",
+            properties: {
+              id: a.id,
+              colour: areaColour(a),
+              ink: hazardTextInk(areaColour(a)),
+              label: areaLabel(a, short),
+              forecast: a.kind === "gairmet",
+            },
+            geometry: { type: "Polygon", coordinates: [(a.coords as [number, number][]).map(([lat, lon]) => [lon, lat])] },
+          })),
+        }
+      : null;
+  }, [areas, data]);
   useGlData(AREAS, areaFeatures);
-  useGlProbe("weather-areas", ["wx-area-fill"], (f) => ({ id: f.properties.id, colour: f.properties.colour }));
+  useGlProbe("weather-areas", ["wx-area-fill"], (f) => ({ id: f.properties.id, colour: f.properties.colour, label: f.properties.label }));
   useGlTap(["wx-area-fill"], 1, TAP.rank.area + 1, (feature) => {
     const a = data?.advisories.find((q) => q.id === feature.properties.id);
     if (a) openCard(<AreaCard key={a.id} area={a} line={line} altitudeFt={altitudeFt} />);
@@ -143,7 +167,7 @@ const MARK_LAYERS: SymbolLayerSpecification[] = [
       "wx-pireps",
       MARKS,
       {},
-      { "text-size": 12, "text-offset": [PIREP_SHIFT, 0] },
+      { "text-size": MAP.label, "text-offset": [PIREP_SHIFT, 0] },
       { "text-color": ["get", "colour"] as ExpressionSpecification },
     ),
     filter: KIND("pirep"),

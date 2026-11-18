@@ -1,6 +1,7 @@
 import type { ExpressionSpecification, SymbolLayerSpecification } from "maplibre-gl";
 import { CHART } from "../../tokens";
-import { GL_FONT, GL_FONT_BOLD, LABEL_HALO } from "./layers/common";
+import { GL_FONT, GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE } from "./layers/common";
+import { AIRPORT_IDENT_INK, AIRPORT_IDENT_SIZE } from "./airportIcons";
 
 /**
  * The symbol layers the app's own marks are drawn with (useGlSymbols):
@@ -40,8 +41,11 @@ export function pictureLayer(id: string, source: string, how: Giving = {}, layou
   return { id, type: "symbol", source, layout: { "icon-image": ICON, ...giving(how), ...layout } };
 }
 
-/** A picture with its words beside it on the chart's white halo, as the
- *  chart letters a field: its ident in bold to the right of its mark. */
+/** A field's mark with its ident beside it on the chart's white halo, as
+ *  the chart letters a field: in bold to the right of its mark, in the
+ *  tiles' fields' ink and size (airportIcons' AIRPORT_IDENT_INK and
+ *  AIRPORT_IDENT_SIZE), by the feature's `towered`, so a Class B field or
+ *  a stop reads as the same field would on the chart. */
 export function labelledLayer(
   id: string,
   source: string,
@@ -57,14 +61,14 @@ export function labelledLayer(
       "icon-image": ICON,
       "text-field": TEXT,
       "text-font": GL_FONT_BOLD,
-      "text-size": 11,
+      "text-size": AIRPORT_IDENT_SIZE,
       "text-anchor": "left",
       // Just clear of a field's 26-point mark.
       "text-offset": [1.3, 0],
       ...giving(how),
       ...layout,
     },
-    paint: { "text-color": CHART.fixInk, ...LABEL_HALO, ...paint },
+    paint: { "text-color": AIRPORT_IDENT_INK, ...LABEL_HALO, ...paint },
   };
 }
 
@@ -87,7 +91,7 @@ export function chipLayer(
       "icon-text-fit": "both",
       "text-field": TEXT,
       "text-font": bold ? GL_FONT_BOLD : GL_FONT,
-      "text-size": 11,
+      "text-size": LABEL_SIZE.small,
       ...giving(how),
       ...layout,
     },
@@ -102,7 +106,7 @@ export function badgeLayer(id: string, source: string, how: Giving = {}, paint: 
     id,
     type: "symbol",
     source,
-    layout: { "icon-image": ICON, "text-field": TEXT, "text-font": GL_FONT_BOLD, "text-size": 11, ...giving(how) },
+    layout: { "icon-image": ICON, "text-field": TEXT, "text-font": GL_FONT_BOLD, "text-size": LABEL_SIZE.small, ...giving(how) },
     paint: { "text-color": ["get", "ink"] as ExpressionSpecification, ...paint },
   };
 }

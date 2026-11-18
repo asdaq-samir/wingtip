@@ -79,7 +79,13 @@ export function WaysGl({ ways, shown: shown_, onPick }: { ways: RouteWay[]; show
           // The name under the time only where there is a time: "As typed"
           // with no airplane has none, and its empty first line set the
           // name low in a chip twice its height.
-          props: { label: w.label, name: w.name ?? "", gap: w.name && w.label ? (shown ? "\n" : " ") : "", shown, ink: wayInk(shown) },
+          props: {
+            label: w.label,
+            name: mapWords(w.name ?? ""),
+            gap: w.name && w.label ? (shown ? "\n" : " ") : "",
+            shown,
+            ink: wayInk(shown),
+          },
           onTap: () => onPick(w.key),
         };
       }),
@@ -88,6 +94,16 @@ export function WaysGl({ ways, shown: shown_, onPick }: { ways: RouteWay[]; show
   useGlSymbols("route-way-chips", WAY_LAYERS, marks);
   return null;
 }
+
+/** A way's name as the map writes words, in sentence case: its chip's
+ *  title in the sheet, "Best Weather", is "Best weather" on the chart,
+ *  an ident or a code in capitals kept ("Via KMSN"); docs/design/rules.md,
+ *  the map's exception to decision 0021. */
+const mapWords = (title: string) =>
+  title
+    .split(" ")
+    .map((word, i) => (i > 0 && /^[A-Z][a-z]+$/.test(word) ? word.toLowerCase() : word))
+    .join(" ");
 
 /** The other ways' dots, in line widths: short dashes as far apart again. */
 const WAY_DOTS = [1, 2];

@@ -202,6 +202,8 @@ enum WingtipColor {
         static let convective = rgb(0xC2410C)
         static let icing = rgb(0x2563EB)
         static let turbulence = rgb(0xD97706)
+        /// Turbulence's words on the map's white (a PIREP's level, an area's label): the amber deepened to 5:1, where the area's own is 3.2:1, under WCAG's 4.5:1 for small text.
+        static let turbulenceText = rgb(0xB45309)
         static let ifr = rgb(0x7C3AED)
         /// Mountains obscured.
         static let mountains = rgb(0x78716C)
@@ -984,6 +986,13 @@ enum WingtipMap {
     static let airspaceFaded: Double = 0.35
     static let airspaceHeld: Double = 1.8
     static let airspaceLabelFaded: Double = 0.6
+    static let labelSmall: Double = 11
+    static let label: Double = 12
+    static let labelLarge: Double = 13
+    static let labelCount: Double = 14
+    static let labelRunway: Double = 16
+    static let labelHalo: Double = 2
+    static let labelHaloNight: Double = 0.6
 }
 
 /// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.

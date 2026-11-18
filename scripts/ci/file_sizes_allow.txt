@@ -22,7 +22,7 @@ services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService
 services/gateway/src/test/java/app/wingtipmaps/gateway/controller/AircraftControllerTest.java 424
 services/gateway/src/test/java/app/wingtipmaps/gateway/controller/PlannerProxyControllerTest.java 543
 services/ingest/ingest/swim.py 411
-services/jobs/charts/overlays.py 653
+services/jobs/charts/overlays.py 652
 services/jobs/charts/tests/test_overlays.py 791
 services/planner/wingtip/charts.py 2336
 services/weather/app/gfs.py 402

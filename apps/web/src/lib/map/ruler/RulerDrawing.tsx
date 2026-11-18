@@ -45,7 +45,7 @@ export function RulerDrawing({ drawn, spoken }: { drawn: Placed | null; spoken: 
             ))}
           </svg>
           <div
-            className="absolute flex flex-col items-stretch rounded-lg bg-black/70 px-2.5 py-1 font-semibold text-white tabular-nums"
+            className="absolute flex flex-col items-stretch rounded-lg bg-(--chart-tag)/80 px-2.5 py-1 font-semibold text-white tabular-nums"
             style={{
               left: drawn.middle.x,
               top: drawn.middle.y,

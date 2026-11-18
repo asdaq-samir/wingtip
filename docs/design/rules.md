@@ -1145,6 +1145,72 @@ like iPhone?" Decision [0045](../decisions/0045-row-gestures.md).
 | Hold to move | React Aria's `useDragAndDrop` (`RouteGrid`): the row is the browser's own `draggable`, Safari and Chrome lifting it on a long press; the grip is React Aria's drag button | Not yet: `onMove` / `draggable` on the owner's word | Not yet |
 | Tests | `e2e/swipe-rows.spec.ts` (a Recents row, the sheet still); `components/SwipeRow.test.tsx`, `components/swipe/swipeEnd.test.ts`; the hold's drop by `stops-reorder.spec.ts` | -- | -- |
 
+## 13. The map's words (the owner, 2026-11-18)
+
+The owner took the map labels audit's recommendations on 2026-11-18. Every
+word and figure drawn on the map, on all three apps, follows these rules:
+
+1. **Airspace is written as the sectional writes it.** A Class B or C
+   shelf is its ceiling over its floor in hundreds of feet MSL ("100"
+   over "30", "100" over "SFC"). A Class C ceiling that stops under the
+   Class B is "T". A Class D is its ceiling alone, with a minus where it
+   is "from the surface to, but not including" ("-30"). The source is the
+   FAA Aeronautical Chart User's Guide, 9 July 2026, VFR Terms and
+   Symbols, Airspace, p. 16, and its legend, p. 52. The 2D chart and the
+   3D view say the same words. The words are the engine's
+   (`airspace_shelf_label`), and no app formats them. The charts job
+   writes them into the overlay tiles (`airspace_labels.tab`,
+   `wingtip.airspace_tabs`), and the 3D view asks the engine for them. A
+   special use area's tab is the engine's `special_use_tab` ("M-BRADY
+   NOR*:" over "3600-17999") in 2D and in 3D. The 3D view's volumes carry
+   it as `tab`.
+2. **A fix is tagged once.** Where an approach's plate is on the map with
+   Show Annotations on, the plate's tag names the fix and gives its
+   figures. The procedure's own tag then keeps only the pilot's own lines
+   (Cross, Direct to, OUT OF DATE), or is left off. With plates off, the
+   procedure's tag says it all.
+3. **Codes in capitals, words in sentence case.** The FAA's codes and
+   idents keep their capitals: TOC, TOD, IAF, FAF, OUT OF DATE, KMSN.
+   Words on the map are in sentence case: "Right downwind 27", "Direct
+   to", "Avoid weather". This is the map's exception to decision
+   [0021](../decisions/0021-title-case-labels.md). The sheet's own labels
+   stay in Title Case, so a route's chip reads "Avoid Weather" in the
+   sheet and "Avoid weather" on its line.
+4. **A figure on a map tag has no unit and no tick.** Write "3,000", not
+   "3,000 ft" or "3,000'". This covers the pattern's altitude, a
+   procedure's and a plate's altitudes (GS, TCH and TDZE among them), and
+   traffic's height when own ship's is unknown. On a chart MSL is implied.
+   Weather and TCAS codes keep their source's form: a PIREP's "065", a
+   METAR's "CIG 008", the traffic's "+05".
+5. **One type scale, one font.** Map labels use the sizes in
+   `design/tokens.json` `map.label-*`: 11 (`label-small`, the floor no
+   label goes under), 12, 13, the 14 of a cluster's count and the 16 of a
+   runway's number close in. They are set in Inter in every look. A
+   letter inside a mark's picture (R, M, H, a PIREP's glyph) is the
+   system's sans serif (`MARK_FONT`), never the browser's default serif.
+6. **Halos dim after dark.** The white halo (`map.label-halo`, 2 px) is
+   white at `map.label-halo-night` (0.6) in the page's dark theme, read
+   from `useDarkTheme`.
+7. **A field's ident looks the same whoever draws it.** Its colour is
+   blue where it is towered and magenta where it is not, as the chart
+   sets it. Its size follows the zoom. This holds on the tiles, a Class B
+   field's mark and a stop's mark.
+8. **Hazards are named on their outlines.** Each SIGMET, AIRMET and
+   G-AIRMET carries its hazard and its top along its outline ("Ice to
+   FL160", "Convective SIGMET to FL450"). A TFR carries its NOTAM number
+   ("6/4116"). Words in a hazard's colour must reach 4.5:1 on white, so
+   turbulence's amber is deepened for words (`weather.turbulence-text`).
+9. **No new range or leg labels.** Nothing is added to the range rings
+   or the legs.
+10. **Only own ship is an HTML marker.** The replay's airplane is drawn
+    with the traffic's own layers (`trafficMarks`), and its height is
+    lifted with it in 3D.
+
+| | Web | iPhone | Android |
+|---|---|---|---|
+| Where | `lib/map/gl/layers/common` (`LABEL_SIZE`, `LABEL_HALO`, `labelByZoom`), `glStyle`'s `airspaceLayers`, `glSuaLabels`, `airportIcons`' `AIRPORT_IDENT_INK`/`_SIZE`, `procedureMarks`' `fixMarks(plated)`, `plates/plateLook`'s `usePlateTagged`, `plan-map/weatherMap`'s `areaLabel`, `TfrGl`, `TracksGl`'s `ReplayGl` | Not yet, on the owner's word (decision 0038): the tokens are generated for it | Not yet: the same |
+| Tests | `glStyle.test`, `glOverlays.test`, `procedureMarks.test`, `plateTags.test`, `weatherMap.test`; `airspace-lines.spec`, `plates-map.spec`, `weather-map.spec`, `route-line.spec`; the tiles' `tab` in `services/jobs/charts/tests/test_overlays.py`, `services/planner/tests_wingtip/test_airspace_tabs.py` | -- | -- |
+
 ## Changing a rule
 
 A rule here changes only when the owner says so (the `owner` label). Then

@@ -12,7 +12,7 @@ import json
 
 import pytest
 from shapely.geometry import Polygon
-from wingtip import sua
+from wingtip import airspace_tabs, sua
 
 from charts import sua_labels
 
@@ -70,13 +70,13 @@ def _row(base, **fields):
     ],
 )
 def test_the_tab_is_the_engines_from_the_faas_row(row, expected):
-    tab = sua_labels.tab_words(sua._area(row))
+    tab = airspace_tabs.special_use_tab(sua._area(row))
     assert tab["text"].startswith(f"{expected[0]}:\n")
     assert (tab["name"], tab["floor_ft"], tab["floor_ref"], tab["ceiling_ft"], tab["ceiling_ref"]) == expected
 
 
 def test_a_piece_cut_out_of_its_area_has_no_tab():
-    assert sua_labels.tab_words(sua._area(BRADY_LOW_EXCLUDED)) is None
+    assert airspace_tabs.special_use_tab(sua._area(BRADY_LOW_EXCLUDED)) is None
 
 
 class _Pack:

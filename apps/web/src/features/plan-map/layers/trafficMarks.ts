@@ -1,6 +1,6 @@
 import type { ExpressionSpecification, LineLayerSpecification, Map as MlMap, SymbolLayerSpecification } from "maplibre-gl";
 import { drawSvg } from "../../../lib/map/gl/glLayer";
-import { GL_FONT_BOLD } from "../../../lib/map/gl/layers/common";
+import { GL_FONT_BOLD, LABEL_SIZE } from "../../../lib/map/gl/layers/common";
 import { MAP_BLUE } from "../../../lib/map/marks/chartColors";
 import { TRAFFIC_COLOURS } from "../../../lib/map/marks/icons";
 import { CHART } from "../../../lib/tokens";
@@ -45,8 +45,9 @@ const MARK = 16;
 /** The picture's box, points: room for the tracked ring (7 out from the
  *  chevron's box, 2.5 wide) and its shadow round the 16. */
 const BOX = 34;
-/** The words' size and line, points (--type-caption, 14 a line). */
-const TAG_SIZE = 11;
+/** The words' size and line, points (the map's smallest, map.label-small;
+ *  14 a line). */
+const TAG_SIZE = LABEL_SIZE.small;
 const TAG_LINE = 14;
 /** The tag's top under the airplane's middle, and how far its box is
  *  drawn inside MapLibre's line box, points. */
@@ -59,7 +60,7 @@ export const trafficPicture = (near: boolean, hasTrack: boolean, tracked = false
   `traffic|${near ? "near" : "far"}|${hasTrack ? "arrow" : "dot"}${tracked ? "|tracked" : ""}`;
 const TAG_PICTURE = "traffic|tag";
 
-/** Every picture the marks wear, as SVG: icons.ts trafficIcon's chevron
+/** Every picture the marks wear, as SVG: the traffic's chevron
  *  and dot with their white casing and soft shadow (drop-shadow-sm at
  *  half the chart's shade), the tracked ring white at 70% inside a 2.5-point ring of
  *  the map's blue (MAP_BLUE, as Maps marks a point held), and the tag's

@@ -4,8 +4,8 @@ import type { LineLayerSpecification, SymbolLayerSpecification } from "maplibre-
 import { api } from "../../lib/api/client";
 import { callEngine } from "../../lib/engine/engine";
 import { useGlData, useGlLayer } from "../../lib/map/gl/glLayer";
-import { GL_FONT_BOLD, LABEL_HALO } from "../../lib/map/gl/layers/common";
-import { areaColour } from "../../lib/map/weatherColours";
+import { GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE } from "../../lib/map/gl/layers/common";
+import { areaColour, hazardTextInk } from "../../lib/map/weatherColours";
 import type { FlowFrame } from "./useWeatherFlow";
 
 const SOURCE = "flow-gairmets";
@@ -34,10 +34,10 @@ const LAYERS: (LineLayerSpecification | SymbolLayerSpecification)[] = [
       "symbol-placement": "line",
       "text-field": ["get", "label"],
       "text-font": GL_FONT_BOLD,
-      "text-size": 11,
+      "text-size": LABEL_SIZE.small,
       "symbol-spacing": 320,
     },
-    paint: { "text-color": ["get", "colour"], ...LABEL_HALO },
+    paint: { "text-color": ["get", "ink"], ...LABEL_HALO },
   },
 ];
 
@@ -68,7 +68,7 @@ export function FlowAirmets({ frame }: { frame: FlowFrame }) {
         .filter((a) => a.kind === "gairmet")
         .map((a) => ({
           type: "Feature",
-          properties: { colour: areaColour(a), label: labels[a.hazard ?? ""] ?? a.hazard ?? "" },
+          properties: { colour: areaColour(a), ink: hazardTextInk(areaColour(a)), label: labels[a.hazard ?? ""] ?? a.hazard ?? "" },
           // The outline closed, its last point back at its first.
           geometry: { type: "LineString", coordinates: [...a.coords, a.coords[0]!].map((c) => [c[1]!, c[0]!]) },
         })),

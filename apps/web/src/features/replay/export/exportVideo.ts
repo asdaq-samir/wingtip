@@ -1,12 +1,12 @@
 import type { Map as MlMap } from "maplibre-gl";
 import { audioSpan, type AudioSync } from "../../../lib/replay/audioSync";
 import { toSrt, type Caption } from "../../../lib/replay/captions";
-import { positionAt, usePastFlight } from "../../../lib/replay/clock";
+import { usePastFlight } from "../../../lib/replay/clock";
 import { renderFrames, type FrameRange, type FrameSink } from "../../../lib/replay/frameLoop";
 import { replayView, showView } from "../camera/cameraView";
 import { DISCLAIMER, drawOverlay, type OverlayScene } from "./drawOverlay";
 import type { ExportChoice } from "./exportOptions";
-import { drawAirplane, drawMapFrame, withMapSized } from "./mapFrames";
+import { drawMapFrame, withMapSized } from "./mapFrames";
 
 /** What a video is made of: the frames' range, its size and choices, the
  *  overlays' scene, the captions for the SRT, and the radio, if any. */
@@ -132,7 +132,6 @@ export async function exportReplay(
             },
             mapOut.ctx,
           );
-          await drawAirplane(job.map, positionAt(usePastFlight.getState().points, t), mapOut.ctx);
           overOut.ctx.clearRect(0, 0, size.width, size.height);
           drawOverlay(overOut.ctx, scene, t);
           if (!layers) mapOut.ctx.drawImage(overOut.canvas, 0, 0);
