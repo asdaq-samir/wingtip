@@ -116,11 +116,15 @@ def pytest_suites() -> list[str]:
 
 
 def ruff_in_ci() -> list[str]:
-    """ruff over every Python suite, in ci.yml's guards job."""
-    guards = text("scripts/ci/guards.sh")
+    """ruff over every Python suite, in ci.yml's guards job: each service's
+    suite a leg of scripts/ci/python_suite.sh's table, and guards.sh's
+    ruff_check linting every leg of it (python_suite.sh --lint)."""
+    table = dict(re.findall(r"^\s+(\w+)\) dir=(\S+)", text("scripts/ci/python_suite.sh"), re.M))
+    looped = re.search(r"for leg in ([\w ]+); do\s+scripts/ci/python_suite\.sh --lint", text("scripts/ci/guards.sh"))
+    linted = {table[leg] for leg in (looped[1].split() if looped else []) if leg in table}
     suites = [p.parent.name for p in sorted(ROOT.glob("services/*/requirements-dev*.txt"))]
-    missing = sorted({s for s in suites if not re.search(rf"cd services/{s} && \"\$\{{ruff\[@\]\}}\" check ", guards)})
-    return [f"scripts/ci/guards.sh: no `ruff check` over services/{s}" for s in missing]
+    missing = sorted({s for s in suites if f"services/{s}" not in linted})
+    return [f"scripts/ci/guards.sh: no `ruff check` over services/{s} (python_suite.sh --lint)" for s in missing]
 
 
 def main() -> int:

@@ -58,7 +58,7 @@ export function overlayPictures(): Promise<Map<string, DrawnImage>> {
 
 /** The airports' zooms, in the app's levels: the farthest out any
  *  is drawn. Within it each field is in the tiles from its own zoom by
- *  its tier (AIRPORT_MIN_ZOOM in services/jobs/charts/overlays.py):
+ *  its tier (AIRPORT_MIN_ZOOM in services/jobs/charts/overlay_layers.py):
  *  towered, then the long hard runways, other public fields, private
  *  ones, heliports. */
 const AIRPORTS_FARTHEST_ZOOM = 4;

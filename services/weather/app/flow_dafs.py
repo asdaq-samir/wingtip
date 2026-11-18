@@ -39,7 +39,7 @@ from wingtip import outside
 from wingtip.config import REQUEST_HEADERS as HEADERS
 from wingtip.units import M_PER_FT
 
-from . import flow_grid
+from . import flow_grid, nomads
 
 log = logging.getLogger(__name__)
 
@@ -70,16 +70,11 @@ def _index(product: str, cycle: datetime, step: int) -> list[tuple[int, int | No
     key = (product, cycle, step)
     if time.time() - _NOT_UP.get(key, 0) < NOT_UP_RETRY_S:
         return None
-    try:
-        resp = outside.get(_url(product, cycle, step) + ".idx", headers=HEADERS, timeout=30)
-    except requests.RequestException as err:
-        raise DafsUnavailable(f"NOMADS did not answer: {err}") from err
-    if resp.status_code == 404:
+    body = nomads.get(_url(product, cycle, step) + ".idx", error=DafsUnavailable, grib=False)
+    if body is None:
         _NOT_UP[key] = time.time()
         return None
-    if not resp.ok:
-        raise DafsUnavailable(f"NOMADS answered {resp.status_code}")
-    return parse_index(resp.text)
+    return parse_index(body.decode("utf-8", "replace"))
 
 
 def parse_index(text: str) -> list[tuple[int, int | None, str, str]]:

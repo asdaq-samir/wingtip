@@ -27,18 +27,14 @@ from __future__ import annotations
 import time
 from datetime import datetime, timedelta
 
-import requests
-from wingtip import outside, weather_store
-from wingtip.config import REQUEST_HEADERS as HEADERS
+from wingtip import weather_store
 
-from . import flow_grid, flow_store
+from . import flow_grid, flow_store, nomads
 from .settings import get_settings
 
-GFS_URL = "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl"
 HRRR_URL = "https://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl"
-#: A GFS run is on NOMADS about three and a half hours after its hour
-#: (app.gfs); an HRRR run's first hours about 50 minutes after its own.
-GFS_POSTED_AFTER = timedelta(hours=4)
+#: An HRRR run's first hours are on NOMADS about 50 minutes after its
+#: hour (the GFS's run: nomads.gfs_run).
 HRRR_POSTED_AFTER = timedelta(minutes=55)
 #: The HRRR's every-hour runs go to 18 hours (NOAA GSL, HRRR v4).
 HRRR_LAST_STEP = 18
@@ -57,26 +53,12 @@ class NomadsUnavailable(RuntimeError):
     """NOMADS gave no run of the model asked for."""
 
 
-def gfs_run(now: datetime) -> datetime:
-    latest = (now - GFS_POSTED_AFTER).replace(minute=0, second=0, microsecond=0)
-    return latest - timedelta(hours=latest.hour % 6)
-
-
 def hrrr_run(now: datetime) -> datetime:
     return (now - HRRR_POSTED_AFTER).replace(minute=0, second=0, microsecond=0)
 
 
 def download(url: str, params: dict) -> bytes | None:
-    try:
-        resp = outside.get(url, params=params, headers=HEADERS, timeout=60)
-    except requests.RequestException as err:
-        raise NomadsUnavailable(f"NOMADS did not answer: {err}") from err
-    # A run not posted yet is a 404, or an HTML page saying so.
-    if resp.status_code == 404 or not resp.content.startswith(b"GRIB"):
-        return None
-    if not resp.ok:
-        raise NomadsUnavailable(f"NOMADS answered {resp.status_code}")
-    return resp.content
+    return nomads.get(url, params, error=NomadsUnavailable, timeout=60)
 
 
 def grouped(url: str, params: dict, groups) -> bytes | None:
@@ -94,8 +76,8 @@ def grouped(url: str, params: dict, groups) -> bytes | None:
 
 def gfs(run: datetime, step: int, groups=flow_grid.GFS_GROUPS) -> bytes | None:
     box = {"toplat": flow_grid.NORTH, "bottomlat": flow_grid.SOUTH, "leftlon": flow_grid.WEST, "rightlon": flow_grid.EAST}
-    params = {"dir": f"/gfs.{run:%Y%m%d}/{run:%H}/atmos", "file": f"gfs.t{run:%H}z.pgrb2.0p25.f{step:03d}", "subregion": "", **box}
-    return grouped(GFS_URL, params, groups)
+    params = {"dir": nomads.gfs_dir(run), "file": f"gfs.t{run:%H}z.pgrb2.0p25.f{step:03d}", "subregion": "", **box}
+    return grouped(nomads.GFS_FILTER_URL, params, groups)
 
 
 def hrrr(run: datetime, step: int, groups=flow_grid.FILTER_GROUPS) -> bytes | None:
@@ -161,7 +143,7 @@ def tries(valid: datetime, now: datetime) -> dict[str, list[tuple[datetime, int]
             step = int((valid - run).total_seconds() // 3600)
             if 0 <= step <= HRRR_LAST_STEP:
                 out["hrrr"].append((run, step))
-    latest = gfs_run(now)
+    latest = nomads.gfs_run(now)
     for n in range(RUNS_TRIED):
         run = latest - timedelta(hours=6 * n)
         # Hour 0 has no precipitation rate or cloud cover of its own (the

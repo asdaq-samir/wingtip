@@ -54,10 +54,19 @@ def areas_of(outlook: dict) -> list[dict]:
 def fetch_outlook() -> None:
     """The Day 1 outlook fetched and stored, held to its expiry. Raises
     fetch.FetchFailed where SPC does not answer, ValueError where the body
-    is not GeoJSON; the stored copy left in place."""
-    resp = fetch.get(URL)
-    areas = areas_of(resp.json())
+    is not GeoJSON; the stored copy left in place. Asked only if it has
+    changed since the stored copy (its validators, as aviationweather.gov's
+    files are): the outlook is issued five times a day and asked for every
+    half hour, so most asks are a 304 with nothing to read."""
+    held = weather_store.read("spc-outlook")
+    validators = (held.meta.get("validators") if held else None) or None
+    resp = fetch.get(URL, validators=validators)
+    if held is not None and getattr(resp, "status_code", None) == 304:
+        areas = held.data
+    else:
+        areas = areas_of(resp.json())
+        validators = fetch.validators_of(resp)
     # An outlook with no area (no thunder forecast anywhere) says nothing
     # of its own times: held a day, the outlook's own span.
     until = max((a["valid_to"] for a in areas if a["valid_to"]), default=time.time() + 86400)
-    weather_store.write("spc-outlook", areas, fetched_at=time.time(), until=until)
+    weather_store.write("spc-outlook", areas, fetched_at=time.time(), until=until, meta={"validators": validators})

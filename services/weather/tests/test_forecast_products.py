@@ -54,3 +54,33 @@ def test_the_outlooks_areas_as_lat_lon_rings():
             "coords": [[28.0, -95.0], [28.0, -96.0], [29.0, -96.0], [28.0, -95.0]],
         }
     ]
+
+
+def test_an_unchanged_outlook_is_not_read_again(monkeypatch):
+    outlook = {
+        "features": [
+            {
+                "properties": {"LABEL": "TSTM", "VALID": "202611092000", "EXPIRE": "202611101200"},
+                "geometry": {"type": "Polygon", "coordinates": [[[-95.0, 28.0], [-96.0, 28.0], [-96.0, 29.0], [-95.0, 28.0]]]},
+            }
+        ]
+    }
+    asked = []
+
+    class Answer:
+        def __init__(self, status):
+            self.status_code, self.headers = status, {"ETag": '"v1"'}
+
+        def json(self):
+            assert self.status_code == 200, "a 304 is not read"
+            return outlook
+
+    def get(url, validators=None):
+        asked.append(validators)
+        return Answer(304 if validators else 200)
+
+    monkeypatch.setattr(spc.fetch, "get", get)
+    spc.fetch_outlook()
+    spc.fetch_outlook()
+    assert asked == [None, {"If-None-Match": '"v1"'}]
+    assert [a["label"] for a in spc.weather_store.read("spc-outlook").data] == ["TSTM"]

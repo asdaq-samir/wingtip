@@ -9,10 +9,6 @@ FROM wingtip-base
 
 WORKDIR /workspace/services/ingest
 
-# The data folder is the user's (the base made appuser): the stacks mount
-# theirs over it, the one the planner mounts, where the stores are.
-RUN mkdir -p /workspace/data && chown appuser:appuser /workspace/data
-
 # mdbtools' mdb-export reads the NTSB's Access database a table at a time
 # (ingest.ntsb, which says why it over a Python reader).
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \

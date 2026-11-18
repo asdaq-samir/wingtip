@@ -23,6 +23,7 @@ from wingtip import glmp as planner_glmp
 from wingtip import weather_store
 
 from app import glmp
+from app import nomads as nomads_app
 
 FIXTURES = Path(__file__).parent / "glmp"
 FIRST = (42.30, -88.10)
@@ -62,7 +63,7 @@ def nomads(monkeypatch):
             raise requests.ConnectionError("no route to NOMADS")
         return Answer(200, state["grids"][field]) if hour in state["up"] else Answer(404)
 
-    monkeypatch.setattr(glmp.outside, "get", get)
+    monkeypatch.setattr(nomads_app.outside, "get", get)
     return state
 
 

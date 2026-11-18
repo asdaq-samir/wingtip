@@ -11,7 +11,8 @@ from pathlib import Path
 
 from wingtip import field_status
 
-from .overlays import AIRPORT_MIN_ZOOM, _feature, _meets, _number, _rows, runways_by_site
+from .nasr_layers import _number, _rows, runways_by_site
+from .overlay_layers import AIRPORT_MIN_ZOOM, _feature, _meets
 
 #: NASR's SITE_TYPE_CODE (APT_BASE).
 SITE_TYPES = {"A": "airport", "H": "heliport", "C": "seaplane", "G": "gliderport", "U": "ultralight", "B": "balloonport"}

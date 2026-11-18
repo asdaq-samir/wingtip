@@ -93,9 +93,16 @@ class _Message:
 
 
 def test_a_message_is_read_from_its_bytes_or_its_string_and_one_neither_reads_is_empty():
-    assert swim.body(_Message(raw=MESSAGE.encode())) == MESSAGE
-    assert swim.body(_Message(text=MESSAGE)) == MESSAGE
-    assert swim.body(_Message()) == ""
+    assert swim.raw(_Message(raw=MESSAGE.encode())) == MESSAGE.encode()
+    assert swim.raw(_Message(text=MESSAGE)) == MESSAGE
+    assert swim.raw(_Message()) == ""
+
+
+def test_a_tracks_code_says_its_emergency_in_the_ads_b_words():
+    # The engine's squawk_meaning (AIM 6-2-2, 6-3-4, 6-4-2), in readsb's words.
+    for code, emergency in (("7700", "general"), ("7600", "nordo"), ("7500", "unlawful"), ("1200", None)):
+        found = swim.tracks(MESSAGE.replace("<reportedBeaconCode>1200<", f"<reportedBeaconCode>{code}<"))
+        assert found[0][0]["emergency"] == emergency
 
 
 def test_the_tracks_kept_are_those_round_a_view_and_the_followed_ones(monkeypatch):
