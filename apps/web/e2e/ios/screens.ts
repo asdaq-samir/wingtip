@@ -33,7 +33,7 @@ export const SCREENS: Screen[] = [
     // (FPL's own, the nav log a sheet of its own, the Brief a card of its own).
     name: "flight planning drawer",
     ready: async (page) => {
-      await page.goto(`/app/plan?${ROUTE}&view=briefing`);
+      await page.goto(`/app/plan?${ROUTE}&view=full`);
       await expect(sideDrawer(page).getByTestId("route-head").or(sideDrawer(page).getByTestId("route-summary")).first()).toBeVisible({
         timeout: slow(30000),
       });
@@ -45,7 +45,7 @@ export const SCREENS: Screen[] = [
     // Share, the figures at the card's foot.
     name: "route panel, half way",
     ready: async (page) => {
-      await page.goto(`/app/plan?${ROUTE}&view=briefing`);
+      await page.goto(`/app/plan?${ROUTE}&view=full`);
       await expect(sideDrawer(page).getByTestId("route-brief")).toBeVisible({ timeout: slow(30000) });
       await controlsInSight(page);
       // The plan in, its figures whole: not judged fading in.
@@ -56,7 +56,7 @@ export const SCREENS: Screen[] = [
   {
     name: "nav log, a leg open",
     ready: async (page) => {
-      await page.goto(`/app/plan?${ROUTE}&view=briefing`);
+      await page.goto(`/app/plan?${ROUTE}&view=full`);
       // Not tapped when it is up already: a tap on the tab up takes the
       // panel back to half, and the map's tooltips came up under the
       // pointer where the panel had been, fading in, read at 1:1 (P15).
@@ -83,7 +83,7 @@ export const SCREENS: Screen[] = [
   ).map(([tab, shown]): Screen => ({
     name: `panel, ${tab} tab`,
     ready: async (page) => {
-      await page.goto(`/app/plan?${ROUTE}&view=briefing`);
+      await page.goto(`/app/plan?${ROUTE}&view=full`);
       await page.getByTestId("navlog-fuel").waitFor({ timeout: slow(120000) });
       await openTab(page, tab);
       if (tab === "En route") await openSection(page, "Along the Route");

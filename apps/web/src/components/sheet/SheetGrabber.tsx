@@ -2,6 +2,7 @@ import { Button as BaseButton } from "@base-ui/react/button";
 import { useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { cn } from "cn";
 import { GRABBER_BAR, type PanelState } from "../../lib/mapChrome";
+import { SHEET_SIZES, tapTo } from "./grabberSizes";
 
 const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
 
@@ -19,16 +20,16 @@ const BOX = "absolute inset-x-0 z-30 mx-auto flex h-4 w-14 transform-gpu print:h
 const edge = (at: "top" | "bottom") => (at === "top" ? "top-0 items-start pt-1.25" : "bottom-0 items-end pb-1.25");
 const RING = "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset";
 
-/** The sheet's sizes from the grabber: a tap cycles them, small to big and
- *  back; the Up and Down arrows step them, for a keyboard and VoiceOver. */
-function useSizes(size: PanelState, ask: (s: PanelState) => void) {
+/** The sheet's sizes from the grabber: a tap cycles `sizes`, small to big
+ *  and back; the Up and Down arrows step all three, for a keyboard and VoiceOver. */
+function useSizes(size: PanelState, ask: (s: PanelState) => void, sizes: readonly PanelState[]) {
   const [was, setWas] = useState(size);
   const [rising, setRising] = useState(true);
   if (size !== was) {
     setWas(size);
     setRising(RANK[size] > RANK[was]);
   }
-  const cycle = () => ask(size === "peek" || size === "full" ? "half" : rising ? "full" : "peek");
+  const cycle = () => ask(tapTo(size, rising, sizes));
   const arrows = (event: ReactKeyboardEvent) => {
     if (event.key === "ArrowUp" && size !== "full") ask(size === "peek" ? "half" : "full");
     else if (event.key === "ArrowDown" && size !== "peek") ask(size === "full" ? "half" : "peek");
@@ -51,13 +52,16 @@ export function SheetGrabber({
   size,
   ask,
   at,
+  sizes = SHEET_SIZES,
 }: {
   label: string;
   size: PanelState;
   ask: (s: PanelState) => void;
   at: "top" | "bottom";
+  /** The sizes a tap cycles (SHEET_SIZES, or the side panel's SIDE_SIZES). */
+  sizes?: readonly PanelState[];
 }) {
-  const { cycle, arrows } = useSizes(size, ask);
+  const { cycle, arrows } = useSizes(size, ask, sizes);
   return (
     <BaseButton
       aria-label={label}

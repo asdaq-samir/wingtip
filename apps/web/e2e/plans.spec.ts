@@ -14,6 +14,7 @@ import {
   settle,
   sideDrawer,
   slow,
+  openPanel,
 } from "./helpers";
 import { pickAirplane } from "./startState";
 import { departTime, fillTime } from "./ariaFields";
@@ -34,7 +35,7 @@ test(
     test.slow();
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
-    await page.getByTestId("sidebar-trigger-button").click();
+    await openPanel(page);
     // The sections start closed: the altitude is in the nav log's own.
     await openTab(page, "Nav Log");
     // The cruising altitude arrives with the nav log stream, after the
@@ -123,7 +124,7 @@ test(
 test("plan page: a departure time gives every checkpoint its time, and the nav log's line the arrival", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openTab(page, "Nav Log");
   const table = page.getByRole("table", { name: /Navigation log from/i });
   const times = table.getByTestId("navlog-row-eta");

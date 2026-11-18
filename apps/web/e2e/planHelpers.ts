@@ -41,7 +41,7 @@ async function panelFull(page: Page) {
  *  toggle, and the URL says so. */
 export async function openBriefing(page: Page) {
   await grabberTo(page, "full");
-  await expect(page).toHaveURL(/[?&]view=briefing/);
+  await expect(page).toHaveURL(/[?&]view=full/);
   await expectDrawerOpen(page);
 }
 

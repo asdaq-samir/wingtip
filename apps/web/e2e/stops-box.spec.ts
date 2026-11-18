@@ -25,7 +25,7 @@ test("a flight saved with a stop is filed with it and the altitude set there, an
     filed.push(route.request().postDataJSON());
     return route.fulfill({ status: 201, json: { id: 1 } });
   });
-  await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KMSN&altitudes=KMSN:2400&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KMSN&altitudes=KMSN:2400&view=full");
   const save = page.getByTestId("save-flight-button");
   await controlsInSight(page);
   // Save, in the route's Share menu.

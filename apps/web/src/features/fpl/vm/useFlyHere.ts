@@ -178,7 +178,7 @@ export function useFlyHere({
       if (from) next.dep = from;
       if (depart) next.depart = depart;
       // The route at the height the card was, as Maps' directions are.
-      if (panelNow.current === "full") next.view = "briefing";
+      if (panelNow.current === "full") next.view = "full";
       // The route's own questions asked now, at the tap, not once the page
       // has drawn it: the draw is a second of a phone's (at 4x), and the
       // planner's chart read and terrain for a new position are the slow part

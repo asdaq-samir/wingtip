@@ -52,7 +52,7 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "full");
-  await expect(page).toHaveURL(/[?&]view=briefing/);
+  await expect(page).toHaveURL(/[?&]view=full/);
   const box = await openedDrawerBox(page);
   expect(box).not.toBeNull();
   expect(Math.abs(box!.width - devBox!.width)).toBeLessThan(2);
@@ -232,11 +232,11 @@ test("plan page: the drawer closes the way the stock components close, and nothi
   await expect(page.locator("[data-sheet-card][data-open]")).toHaveCount(0);
   await closeSidebarWithTheStockKey(page);
   await expectDrawerClosed(page);
-  await expect(page).not.toHaveURL(/[?&]view=briefing/);
+  await expect(page).not.toHaveURL(/[?&]view=full/);
 });
 
 test("plan page: a pasted briefing link opens the panel, and its grabber closes and reopens it", { tag: "@smoke" }, async ({ page }) => {
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   const drawer = sideDrawer(page);
   await expect(drawer).toBeVisible();
@@ -250,23 +250,28 @@ test("plan page: a pasted briefing link opens the panel, and its grabber closes 
   // this drawer and now does nothing.
   await page.keyboard.press("n");
   await page.waitForTimeout(300);
-  await expect(page).toHaveURL(/[?&]view=briefing/);
+  await expect(page).toHaveURL(/[?&]view=full/);
 
   const grabber = page.getByTestId("sidebar-trigger-button");
   // Down a size at a tap: half, the address dropping the parameter, the
   // route's line and its chips' Share in sight; then the pill, its one
-  // line; back all the way up.
-  await grabber.click();
-  await expect(drawer).toHaveAttribute("data-panel", "half");
-  await expect(page).not.toHaveURL(/[?&]view=briefing/);
-  await expect(drawer.getByTestId("route-summary")).toBeVisible();
-  await expect(drawer.getByTestId("share-route")).toBeVisible();
+  // line; back all the way up. The side panel is in or out, half and all
+  // the way up one box there: a tap puts it away (sheet/grabberSizes).
+  const side = page.viewportSize()!.width >= 768;
+  if (!side) {
+    await grabber.click();
+    await expect(drawer).toHaveAttribute("data-panel", "half");
+    await expect(page).not.toHaveURL(/[?&]view=full/);
+    await expect(drawer.getByTestId("route-summary")).toBeVisible();
+    await expect(drawer.getByTestId("share-route")).toBeVisible();
+  }
   await grabber.click();
   await expectDrawerClosed(page);
+  await expect(page).not.toHaveURL(/[?&]view=full/);
   await expect(drawer.getByTestId("flight-line")).toBeVisible();
 
   await grabberTo(page, "full");
-  await expect(page).toHaveURL(/[?&]view=briefing/);
+  await expect(page).toHaveURL(/[?&]view=full/);
   await expect(drawer.getByTestId("flight-line")).toBeVisible();
 });
 
@@ -282,13 +287,24 @@ test("plan page: the panel's grabber cycles it up and back down, a tap on the ma
   const grabber = page.getByTestId("sidebar-trigger-button");
   const panel = sideDrawer(page);
   const size = () => panel.getAttribute("data-panel");
-  for (const height of ["half", "full", "half", "peek"]) {
-    await grabber.click();
-    await expect.poll(size).toBe(height);
-  }
+  // The side panel in and out at each tap, never all the way up, the same
+  // box as half there, where a tap moved nothing (the owner's Mac,
+  // 2026-11-18; sheet/grabberSizes).
+  const side = viewport.width >= 768;
+  if (side)
+    for (let tap = 0; tap < 3; tap++) {
+      const was = await size();
+      await grabber.click();
+      await expect.poll(size).toBe(was === "peek" ? "half" : "peek");
+    }
+  else
+    for (const height of ["half", "full", "half", "peek"]) {
+      await grabber.click();
+      await expect.poll(size).toBe(height);
+    }
   await grabberTo(page, "full");
   await grabber.click();
-  await expect.poll(size).toBe("half");
+  await expect.poll(size).toBe(side ? "peek" : "half");
   await grabberTo(page, "full");
   await expectDrawerOpen(page);
   // Not modal: the map beside the card stays live, and a click there is

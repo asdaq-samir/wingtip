@@ -40,7 +40,7 @@ test("the console's role menu flips to the dev page, the console staying out, an
   // useDevMode's own).
   await roles.pilot.click();
   // The planner as it was, all the way up being its address's (`view`).
-  await page.waitForURL(/\/app\/plan(\?view=briefing)?$/);
+  await page.waitForURL(/\/app\/plan(\?view=full)?$/);
 });
 
 test("the panel's head looks the same on both pages: the console's role says which one this is", async ({ page }) => {

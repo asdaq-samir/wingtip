@@ -134,7 +134,12 @@ These hold on every screen below and win over any reference app.
 - **Desktop** is a window at least 1024 px wide with a fine pointer
   (`hooks/use-desktop.ts`: `(min-width: 1024px) and (pointer: fine)`). The
   panel is a side panel the window's height, beside the map. An iPad held
-  wide, all touch, keeps the phone's layout.
+  wide, all touch, keeps the phone's layout. It is in (its pill) or out:
+  half and full are the same box there, so a click on its grabber puts it
+  in or out (`sheet/grabberSizes`' `SIDE_SIZES`), where cycling the phone's
+  three sizes asked for full from half and nothing moved (the owner's Mac,
+  2026-11-18). The arrow keys still step all three, full being what a
+  link names (`?view=full`).
 - **Phone** (and touch tablets) is the map with one sheet over it, at three
   detents (pill, half, full), as decision 0018 sets. They are the stock
   Drawer's own snap points, fixed values in its own units, the same for

@@ -55,7 +55,7 @@ test("a quiet day is low, what the pilot ticks raises it, and Save files it with
     });
   });
 
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   const drawer = sideDrawer(page);

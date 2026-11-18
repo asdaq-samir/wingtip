@@ -63,7 +63,7 @@ async function signedInWithAnswer(page: Page) {
 
 test("the Brief says when to go: an hour strip under the verdict, the best window over it, a tap saying why", async ({ page }) => {
   await signedInWithAnswer(page);
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);
@@ -112,7 +112,7 @@ test("signed out, the Brief has no When to go and the planner is not asked", asy
       return route.fulfill({ status: 401, body: "" });
     },
   );
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);

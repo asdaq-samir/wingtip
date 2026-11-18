@@ -16,6 +16,7 @@ import {
   navLogScroller,
   navLogSheet,
   settled,
+  openPanel,
 } from "./helpers";
 import { drawnMarks, tapMark } from "./marks";
 import { pickAirplane } from "./startState";
@@ -30,7 +31,7 @@ test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setu
 test("plan page: a click or Enter selects a nav log checkpoint, with the briefing drawer open over the map", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   // The nav log, in its own sheet from the route's box.
   await openNavLog(page);
   const table = page.getByRole("table", { name: /Navigation log from/i });
@@ -226,7 +227,7 @@ test("plan page: iOS never zooms the page in on a phone's field: every field but
   if (!viewport || viewport.width >= 768) return; // `md` and up keep the small type
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   // The description boxes are in the nav log's section, closed until
   // its title is clicked, and each under its own row, closed until
   // that row is selected.

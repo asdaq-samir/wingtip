@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { slow, settle, openTab, openSection, openConsole } from "./helpers";
+import { slow, settle, openTab, openSection, openConsole, openPanel } from "./helpers";
 import { NO_OWN_FIGURES } from "./airplaneMocks";
 
 /**
@@ -22,7 +22,7 @@ test("under VFR the flight plan flies direct, with no alternate, and says where 
   });
   await page.goto("/app/plan?dep=KMSN&dest=KOSH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openTab(page, "Brief");
   await openSection(page, "Flight Plan");
   const form = page.getByTestId("flight-plan");
@@ -102,7 +102,7 @@ test("items 10 and 19 come from the airplane's page, the pilot's and the persons
   });
   await page.goto("/app/plan?dep=KMSN&dest=KOSH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openTab(page, "Brief");
   await openSection(page, "Flight Plan");
   const form = page.getByTestId("flight-plan");
@@ -167,7 +167,7 @@ test("where Flight Service is connected, the form is filed from here in the pilo
   const depart = new Date(Math.ceil(Date.now() / 3600_000 + 3) * 3600_000).toISOString();
   await page.goto(`/app/plan?dep=KMSN&dest=KOSH&depart=${encodeURIComponent(depart)}`);
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openTab(page, "Brief");
   await openSection(page, "Flight Plan");
   const form = page.getByTestId("flight-plan");

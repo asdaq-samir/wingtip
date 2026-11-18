@@ -28,10 +28,10 @@ describe("the address", () => {
     // setter keeps).
     const { hook } = setUp("dep=C81&dest=KDLH");
     await act(async () => {
-      void hook.result.current.setAddress((prev) => ({ view: prev.view ? null : "briefing" }));
+      void hook.result.current.setAddress((prev) => ({ view: prev.view ? null : "full" }));
       void hook.result.current.setAddress((prev) => ({ stops: "KMSN", view: prev.view }));
     });
-    expect(hook.result.current.address.view).toBe("briefing");
+    expect(hook.result.current.address.view).toBe("full");
     expect(hook.result.current.address.stops).toBe("KMSN");
   });
 
@@ -46,11 +46,11 @@ describe("the address", () => {
   });
 
   it("writes the keys a change names and leaves the rest, null taking one out", async () => {
-    const { hook, written } = setUp("dep=C81&dest=KDLH&place=KMSN&view=briefing");
+    const { hook, written } = setUp("dep=C81&dest=KDLH&place=KMSN&view=full");
     await act(async () => {
       await hook.result.current.setAddress({ place: null, dest: "KOSH", stops: undefined, near: true });
     });
-    expect(Object.fromEntries(new URLSearchParams(written.at(-1)))).toEqual({ dep: "C81", dest: "KOSH", view: "briefing", near: "1" });
+    expect(Object.fromEntries(new URLSearchParams(written.at(-1)))).toEqual({ dep: "C81", dest: "KOSH", view: "full", near: "1" });
   });
 
   it("is a change alone over every key cleared", async () => {
