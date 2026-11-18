@@ -11,14 +11,9 @@ export {
   frontSheet,
   showTabs,
   openPanel,
-  openRoute,
-  foldRoute,
-  timelineLine,
-  clearTheRoute,
   grabberTo,
   sheetUpToType,
   inSheet,
-  controlsInSight,
   expectDrawerClosed,
   expectDrawerOpen,
   closeSidebarWithTheStockKey,
@@ -27,8 +22,8 @@ export {
   openSidebar,
   closeCard,
   cardClose,
-  suggestedRoutes,
 } from "./sheetHelpers";
+export { openRoute, foldRoute, timelineLine, clearTheRoute, controlsInSight, suggestedRoutes } from "./routeHelpers";
 export {
   openConsole,
   openSetup,
