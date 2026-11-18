@@ -108,6 +108,21 @@ def test_the_tiles_answer_what_they_can_and_epqs_the_rest(tmp_path, monkeypatch)
     assert asked == [(42.5, -88.5)]
 
 
+def test_a_tiles_points_are_read_a_few_at_a_time_and_all_answered(monkeypatch):
+    """A cloud tile's points each cost a request: read a few to a thread
+    rather than all on one, so a route's ground comes in about a second."""
+    reads = []
+
+    def dem_heights(name, points):
+        reads.append((name, len(points)))
+        return {p: 100.0 for p in points}
+
+    monkeypatch.setattr(elevation_sources, "dem_heights", dem_heights)
+    keys = [(42.01 + i / 100, -88.5) for i in range(10)]
+    assert elevation_sources.from_tiles(keys) == {k: 100.0 for k in keys}
+    assert sorted(n for _, n in reads) == [2, 4, 4] and {name for name, _ in reads} == {"n43w089"}
+
+
 def test_a_tile_that_cannot_be_read_leaves_its_points_to_epqs(tmp_path, monkeypatch):
     def unreadable(name, points):
         raise OSError("no such tile")
