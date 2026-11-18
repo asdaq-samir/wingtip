@@ -147,6 +147,12 @@ def nearest_report(lat: float, lon: float, exclude: str | None = None, within_nm
         s_lat, s_lon = report.get("lat"), report.get("lon")
         if ident == exclude or s_lat is None or s_lon is None or not np.isfinite([s_lat, s_lon]).all():  # NaN: argmin's least
             continue
+        # Nor a place off the earth: the METAR table's -99.99 for a station
+        # it has no position for (KQFT, 2026-11-18) gave a NaN distance,
+        # argmin took it as the least, and every field with no report of
+        # its own was told of none near it.
+        if not (-90 <= s_lat <= 90 and -180 <= s_lon <= 180):
+            continue
         # Before the distance test, so an old near station does not hide a
         # current farther one; a report with no readable time is not known
         # to be current.
