@@ -26,7 +26,7 @@ const useOpenLine = create<{ key: string | null; route: string }>(() => ({ key: 
 const focusStops = { asked: false };
 
 /**
- * FPL's route on the ground (the one layout, decision 0046; the owner's
+ * FPL's route on the ground (the one layout, decision 0047; the owner's
  * two-row timeline, 2026-11-17: "Yes let's try that"), where it is read
  * and edited at once, the sheet at half: one grouped list, Apple Maps'
  * Directions' look, a line a point (TimelineLine). React Aria's GridList

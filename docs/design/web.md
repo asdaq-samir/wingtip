@@ -854,7 +854,7 @@ from `lib/verdict` through `planWords`' `findingRows`), the findings
 themselves the Brief's). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
 a turn of the page moves nothing and the head's first row, and the map's
 room, stay the same. The route is the row under FPL's bar (`RouteHead`),
-in its one layout (the owner, 2026-11-17; decision 0046): folded, one
+in its one layout (the owner, 2026-11-17; decision 0047): folded, one
 Base UI Button (`route/RouteSummary`, `aria-expanded` false), both ends'
 idents with their names, the stops counted, a chevron in the tint; open
 (`routeEditing`), a head, "Route" (the same disclosure, `aria-expanded`
@@ -940,7 +940,7 @@ by clicking the map, typing an address or a name, up to 9 stops in all
 ([Google Maps directions][gmaps-directions]).
 
 **Structure, top to bottom.** One layout (the owner, 2026-11-17;
-decision 0046), folded to read and opened to edit, as iOS's lists keep
+decision 0047), folded to read and opened to edit, as iOS's lists keep
 Edit and Done.
 1. Folded: the route's one line, both ends' idents over their names, the
    stops counted between, a chevron; a tap opens it. Under it the figures;
@@ -1057,7 +1057,7 @@ its row (the row is React Aria's `draggable`, which Safari on the iPhone
 and Chrome on Android lift on a long press with the system's own lift and
 preview; `select-none` and no callout on the row, its text boxes still
 selectable), and takes a stop it typed out by a swipe to the left
-(`SwipeRow`, rules.md section 12; decision 0045). Move Up and Move
+(`SwipeRow`, rules.md section 12; decision 0046). Move Up and Move
 Down in each row's menu are the single-pointer alternative WCAG 2.5.7
 names ([WCAG 2.5.7][wcag-257]); the APG has no drag-and-drop pattern of its
 own ([APG patterns][apg-patterns]). Delete or Backspace on a focused row
@@ -1885,7 +1885,7 @@ pill's long press (ContextMenu's own), pull to refresh (a Refresh button
 in each live card's head, and TanStack Query's focus manager and stale
 times for the rest), swipe to delete (the row menu, RowMenu; a swipe
 came back on 2026-11-17 as React Aria's own recipe on Motion, decision
-0045), the Undo
+0046), the Undo
 rows (Toast with its action), the status chips (Badge), the profile's
 altitude (Slider, upright; a waypoint's altitude a Popover; the Altitude
 Advisor Item rows), "Copied" (an anchored Toast), the flight's

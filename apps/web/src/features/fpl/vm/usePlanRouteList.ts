@@ -16,7 +16,7 @@ import { useRoutesShown } from "./useRoutesShown";
 /**
  * FPL's route as a list and a line (usePlanWorkspace): its timeline, its
  * points edited in place (useRouteListEdit), its field open while it is
- * not yet whole or is typed in (decision 0046), a point dropped on the
+ * not yet whole or is typed in (decision 0047), a point dropped on the
  * map into it, its close, the Routes' chips (useRouteLine), and whether
  * they are out (useRoutesShown).
  */
@@ -122,7 +122,7 @@ export function usePlanRouteList(
   const shown = useRoutesShown(line.routeLine ? `${planned.dep}-${planned.dest}` : null);
   // The route open to edit while there is no whole route -- a new plan,
   // half a route, its timeline with the ends to pick -- and while a route
-  // is typed or pasted into its field (RouteEditor), till its Done (decision 0046, the owner's
+  // is typed or pasted into its field (RouteEditor), till its Done (decision 0047, the owner's
   // two-row timeline of 2026-11-17: the timeline is where the route is
   // edited, at any height of the sheet). Made whole by a pick of the one
   // search, or arriving whole from elsewhere -- Fly Here, a link, a Saved

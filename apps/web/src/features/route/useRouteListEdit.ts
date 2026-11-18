@@ -72,7 +72,7 @@ export function endedRoute(parts: RouteParts, role: "Departure" | "Destination",
 /**
  * FPL's list of the route's points changed in place (usePlanWorkspace),
  * while the route is open to edit (the one layout's expanded list; the
- * owner, 2026-11-17, decision 0046): a point dragged to another's place,
+ * owner, 2026-11-17, decision 0047): a point dragged to another's place,
  * made another from its menu's Change, a stop typed in at its place by
  * the route's field (RouteBox's `addAt`), an end it lacks picked -- and
  * which stops are flown through rather than landed at.

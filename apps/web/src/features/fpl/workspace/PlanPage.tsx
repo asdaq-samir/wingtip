@@ -19,7 +19,7 @@ const FplStrip = fromChunk(loadFplStrip, (m) => m.default).Part;
  * mounted under whatever is open over it and on paper. Its cards, the
  * Brief, the Nav Log, the Profile and the Stops, are over the sheet beside
  * it (PlanCards), kept in flight when no page is drawn. The route is its
- * timeline in the row over this page (RouteHead, decision 0046); its field
+ * timeline in the row over this page (RouteHead, decision 0047); its field
  * and figures open under it here once asked for, by the timeline's Type or
  * Paste a Route or More's Type the Route (RouteEditor); in flight the
  * route read (the nav log's list). With no route, the timeline's card with

@@ -11,7 +11,7 @@ const UNIT =
  *  its whole name for a screen reader, which read "MH" as "M H". */
 export function Heading({ name, unit, spoken }: { name: string; unit?: string; spoken: string }) {
   // An abbreviation a pilot may not know is a tap for its meaning
-  // (components/Explain; decision 0044), named whole for a screen reader.
+  // (components/Explain; decision 0045), named whole for a screen reader.
   if (name in EXPLAINED)
     return (
       <span className="inline-flex flex-col items-end leading-[1.125rem]">

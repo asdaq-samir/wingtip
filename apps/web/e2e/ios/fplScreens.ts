@@ -40,7 +40,7 @@ export const FPL_SCREENS: Screen[] = [
       await expect(sideDrawer(page).getByTestId("route-recent").first()).toBeVisible();
     },
   },
-  // The route folded to read (the one layout, decision 0046): its line,
+  // The route folded to read (the one layout, decision 0047): its line,
   // the figures (the suggested routes behind the first row's button); the first row's
   // fields bare, no captions (their names are VoiceOver's).
   {

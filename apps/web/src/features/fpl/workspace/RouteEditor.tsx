@@ -10,7 +10,7 @@ import { FlightFigures } from "./FlightFoot";
 
 /**
  * FPL's route's field, open under its timeline (RouteHead) once asked for
- * (routeBoxOpen; decision 0046): the timeline's Type or Paste a Route
+ * (routeBoxOpen; decision 0047): the timeline's Type or Paste a Route
  * before the route is whole, More's Type the Route after. The route's
  * field to type or paste a whole route in, read by the engine's route_read
  * as it always was (RouteBox); and once the route is whole its figures

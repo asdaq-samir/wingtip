@@ -303,7 +303,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
             ? routed && <FlightFoot vm={vm} more={shareMenu("end", undefined, undefined, "bar")} />
             : undefined,
         // The route under FPL's bar (MapPanel keeps it under the others'
-        // heads), in its one layout (the owner, 2026-11-17, decision 0046):
+        // heads), in its one layout (the owner, 2026-11-17, decision 0047):
         // folded to its line, the figures and the Routes' chips under it, or
         // open to edit, its head over the cards in the page (FplRoute).
         route: <FplRoute vm={vm} />,

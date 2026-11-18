@@ -6,7 +6,7 @@ import type { RouteLineChoices } from "./RouteLine";
 
 type Kind = ProcedureKind;
 
-/** The route changed on FPL's timeline (decision 0046), by the points'
+/** The route changed on FPL's timeline (decision 0047), by the points'
  *  places in `routePoints`. */
 interface RouteListEdit {
   /** A point dragged by its grip (or held) onto another's place. */

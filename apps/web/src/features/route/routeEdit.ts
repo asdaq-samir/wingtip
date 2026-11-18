@@ -129,7 +129,7 @@ export function withTyped(shape: RouteShape, fresh: string[], at: number | null)
 /**
  * Words typed, read: a route typed whole as a pilot files it first read by
  * the engine (`route_read`, AIM Appendix 4: DCT out, item 15's speed and
- * level group the cruise, "LEXOR/N0467F380" the point; decision 0044), then
+ * level group the cruise, "LEXOR/N0467F380" the point; decision 0045), then
  * the points among the words, each as a stop's ident, and the SIDs and
  * STARs typed among them ("KMSP BAEE1 BAE ... OSH OSHH2 KATW", lib/procedures'
  * TYPED_PROCEDURE), which are the route's procedures, not points -- each

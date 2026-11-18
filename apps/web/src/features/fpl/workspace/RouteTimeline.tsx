@@ -14,7 +14,7 @@ import type { ProceduresRouteProps } from "../../procedures/lazy";
 import { MissingEnd, TypeRow } from "./RouteStart";
 
 /**
- * FPL's route on the ground, the one layout (decision 0046) and where it
+ * FPL's route on the ground, the one layout (decision 0047) and where it
  * is edited (the owner's two-row timeline, 2026-11-17): the plan's points
  * in order for the procedures' timeline (TimelineRoute) -- the departure,
  * every stop (an airport, a waypoint or an airway typed), the destination

@@ -9,7 +9,7 @@ import { closeCard, grabberTo, openPanel, settled, sideDrawer, slow } from "./sh
  */
 
 /** FPL's route's field open over its timeline (the one layout, decision
- *  0046): the timeline is where the route is edited -- a tap on a field's
+ *  0047): the timeline is where the route is edited -- a tap on a field's
  *  line opens its runways and procedures, the mark is its menu, a hold or
  *  the grip moves it -- and the route's field, to type or paste it in,
  *  opens from the route's ••• (Type the Route), Done folding it away. A

@@ -485,7 +485,7 @@ off by default (the owner, 2026-11-13).
    field's size, the page toggle at its end, so a turn of the page changes
    only what is in the bar; under it the route in its one layout (the
    owner, 2026-11-17, "Ok let's try it"; decision
-   [0046](../decisions/0046-one-fpl-layout.md)), never in the bar: its timeline, read and edited at
+   [0047](../decisions/0047-one-fpl-layout.md)), never in the bar: its timeline, read and edited at
    once at any height of the sheet (the owner's two-row timeline,
    2026-11-17) -- one rounded group in Apple Maps' Directions' look, a
    44-point line a point: its mark a filled circle with a white glyph (My
@@ -509,7 +509,7 @@ off by default (the owner, 2026-11-13).
    under the timeline ("Route" over it, Done after) with no route, half a
    route, an unknown point, or from the route's ••• (Type the Route), the
    figures under it and the Routes' chips put away; a present position is "My Location" (Apple Maps' words)
-   wherever the route shows it, never an ident (decision 0046); under the
+   wherever the route shows it, never an ident (decision 0047); under the
    timeline the route's figures (To,
    Distance, Time, Fuel: short words in sentence case, the distance whole
    miles, "1,334 nm", the owner's list, 2026-11-17) at their own size, always
@@ -990,7 +990,7 @@ as the stock toggle's button style, and Look, Theme and Appearance as
 menus (2026-11-14), with no overlay row (Google's tiles are not drawn on the iPhone, and the USGS
 imagery already comes in by itself close in). Show Route As (Route Box or
 Strip) is in the route's ••• menu, the empty route's too; the web has one
-layout since 2026-11-17 (decision 0046), the iPhone's to follow at the
+layout since 2026-11-17 (decision 0047), the iPhone's to follow at the
 owner's word.
 
 On Android (Google Maps' way, 2026-11-13): every card, You and the Map
@@ -1091,7 +1091,7 @@ Android follows on the owner's word.
 
 The owner: make FPL and its nested drawers easier for every pilot, new and
 experienced, "no redundancies and less clutter", "Do it all but keep it
-less cluttered". Decision [0044](../decisions/0044-fpl-for-every-pilot.md).
+less cluttered". Decision [0045](../decisions/0045-fpl-for-every-pilot.md).
 
 1. **One drawer head.** Every card, and every form a card opens, has the
    one head of the card rule's 8: the title centred at a card's size, one
@@ -1143,7 +1143,7 @@ less cluttered". Decision [0044](../decisions/0044-fpl-for-every-pilot.md).
 ## 12. A list's rows: swipe to remove, hold to move (the owner, 2026-11-17)
 
 The owner: "Can we add swipe gesture to remove and hold/drag to move etc
-like iPhone?" Decision [0045](../decisions/0045-row-gestures.md).
+like iPhone?" Decision [0046](../decisions/0046-row-gestures.md).
 
 1. **A swipe to the left removes.** On every row whose menu has Remove
    (the Recents and Favorites, airports' and airplanes', Home, your

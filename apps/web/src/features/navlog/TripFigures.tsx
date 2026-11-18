@@ -51,7 +51,7 @@ const seen = (f: { value: string; unit?: string }) => (f.unit ? `${f.value} ${f.
 /** The strip's names as shown (FigureStrip's `label`). */
 const LABEL: Record<string, string> = { Dist: "Distance", ETE: "Time", Fuel: "Fuel" };
 
-/** The names a tap explains (components/Explain; decision 0044): the time
+/** The names a tap explains (components/Explain; decision 0045): the time
  *  en route, the arrival, the fuel required. */
 const EXPLAIN: Record<string, ExplainedTerm> = { ETE: "ETE", ETA: "ETA", Fuel: "Fuel req" };
 
@@ -174,7 +174,7 @@ export default function TripFigures({
       }))
       // An airplane's figure before the nav log's totals and with no
       // estimate is still coming: its shape, the dash kept for "needs an
-      // airplane" (decision 0044).
+      // airplane" (decision 0045).
       .map((f) => (airplane && !totals && f.value === "—" && f.name !== "To" ? { ...f, waiting: true } : f))
       // In flight (a dry run too) no To: the flying head over the map names
       // the next point, and the strip keeps four columns for the distance,

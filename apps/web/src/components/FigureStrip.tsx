@@ -23,7 +23,7 @@ export interface StripFigure {
    *  it: "Dist 102.4 nm" was read as letters. */
   said?: string;
   /** Still coming (the nav log not in yet): its shape, not a dash, which
-   *  means only "needs an airplane" (FigureWait; decision 0044). */
+   *  means only "needs an airplane" (FigureWait; decision 0045). */
   waiting?: boolean;
   /** What a tap on its name explains (lib/explain), where it has one. */
   explain?: ExplainedTerm;

@@ -65,7 +65,7 @@ export function FplActions({ vm, more }: { vm: PlanSlices<"brief" | "flight" | "
 /** FPL's route row (the page's `route`, PlanWorkspace), a column the
  *  row's width, as the sheet lays the route in a row (MapPage's
  *  routeRowOf), where a grid alone had no width. The route's timeline
- *  (the one layout, decision 0046, where it is read and edited), the
+ *  (the one layout, decision 0047, where it is read and edited), the
  *  flight's figures under it, which are its pill too (the owner,
  *  2026-11-16: the calculations strip where the action tiles were), and
  *  the suggested routes' chips over it while the first row's button has

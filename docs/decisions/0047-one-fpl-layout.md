@@ -1,4 +1,4 @@
-# 0046. FPL has one route layout: folded to read, opened to edit
+# 0047. FPL has one route layout: folded to read, opened to edit
 
 - **Date:** 2026-11-17
 - **Status:** Accepted

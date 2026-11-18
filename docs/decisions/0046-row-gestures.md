@@ -1,4 +1,4 @@
-# 0045. A row is swiped away and held to move, by React Aria's own recipe and the browser's own drag
+# 0046. A row is swiped away and held to move, by React Aria's own recipe and the browser's own drag
 
 - **Date:** 2026-11-17
 - **Status:** Accepted

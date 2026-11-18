@@ -10,7 +10,7 @@ import { useRouteListProps } from "./useRouteListProps";
 
 /**
  * The route under FPL's first row (PlanWorkspace's `route`), in its one
- * layout (decision 0046): its timeline (RouteTimeline), where it is read
+ * layout (decision 0047): its timeline (RouteTimeline), where it is read
  * and edited at once. With no point yet, the same card with the two ends
  * to pick and the route to type (EmptyRoute; the owner, 2026-11-18: "the
  * empty fpl page looks a bit different than filled one"), no head over

@@ -77,7 +77,7 @@ export default function ShareMenu({
   /** The suggested fuel stops taken out of the route box, put back. */
   onShowFuel?: () => void;
   /** The route's field opened over its timeline, to type or paste the
-   *  route in whole (RouteEditor; decision 0046). */
+   *  route in whole (RouteEditor; decision 0047). */
   onTypeRoute?: () => void;
   /** The route cleared: the route box's menu's last item (the owner,
    *  2026-11-11: "Instead of clear button, move that to the …"). */

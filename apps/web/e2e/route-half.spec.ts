@@ -29,7 +29,7 @@ test("the route's field is under FPL's bar and the route's cards, the airplane's
 }) => {
   // The owner, 2026-11-14: the N-number strip with its buttons the sheet's
   // first row's bar; half a route is open to edit (the one layout, decision
-  // 0046), its field under its timeline once its Type or Paste a Route
+  // 0047), its field under its timeline once its Type or Paste a Route
   // opens it (the owner, 2026-11-18).
   await page.setViewportSize({ width: 390, height: 844 });
   await ownersText(page);

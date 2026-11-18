@@ -16,7 +16,7 @@ import { planFromSearch } from "./oneSearch";
 import { fromRest } from "./startState";
 
 /**
- * FPL's one layout (decision 0046, the owner's two-row timeline of
+ * FPL's one layout (decision 0047, the owner's two-row timeline of
  * 2026-11-17): the route a timeline, read and edited at once with the
  * sheet where the pilot left it, the figures and the Routes' chips under
  * it. A line a point, Apple Maps' Directions' look: its mark (its menu),

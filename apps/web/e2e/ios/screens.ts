@@ -29,7 +29,7 @@ export const SCREENS: Screen[] = [
   },
   {
     // All the way up: the route open to edit (on a phone the sheet's
-    // height opens it, decision 0046), its cards, its field and the figures
+    // height opens it, decision 0047), its cards, its field and the figures
     // (FPL's own, the nav log a sheet of its own, the Brief a card of its own).
     name: "flight planning drawer",
     ready: async (page) => {
