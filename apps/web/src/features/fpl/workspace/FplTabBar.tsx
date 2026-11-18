@@ -6,6 +6,8 @@ import { CardAction as Action } from "../../../components/CardAction";
 import { GlassBar, TabCount } from "../../../components/CardTabBar";
 import { ICON } from "../../../lib/icons";
 import type { PlanSlices } from "../vm/planSlices";
+import { MAKES_WAY } from "../../../components/sheet/pinAtFoot";
+import { cn } from "cn";
 
 /**
  * FPL's actions as a floating glass bar at the sheet's foot (the owner,
@@ -47,12 +49,18 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
     // sheet's whole width, out over the foot's 16-point sides (SheetParts'
     // px-4): narrower, the airport cards' fill (drawn out past the column,
     // FIELD_CARD) showed its edges either side of a lighter box round the
-    // bar, a box in a box. Its top, the fade's, is where the route's
-    // figures held at the foot stop while the bar is out (data-pin-edge,
-    // sheet/pinAtFoot), over it rather than under it.
+    // bar, a box in a box. Never an edge the route's figures stop at: they
+    // pass under it as anything does, and it moves down out of their way
+    // as the sheet goes down toward the pill, where they are held on the
+    // foot's edge (data-makes-way, sheet/pinAtFoot's MAKES_WAY; the owner,
+    // 2026-11-18: "the main issue is tab bar is not allowing the figures to
+    // go past it").
     <div
-      data-pin-edge=""
-      className="pointer-events-none -mx-4 -mt-6 flex justify-center bg-linear-to-b from-transparent to-(--sheet) to-50% px-4 pt-8"
+      data-makes-way=""
+      className={cn(
+        "pointer-events-none -mx-4 -mt-6 flex justify-center bg-linear-to-b from-transparent to-(--sheet) to-50% px-4 pt-8",
+        MAKES_WAY,
+      )}
       data-testid="fpl-actions"
     >
       {/* The glass capsule, the airport card's bar's (CardTabBar): glass
