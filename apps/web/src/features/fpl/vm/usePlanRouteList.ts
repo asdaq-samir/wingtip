@@ -10,12 +10,14 @@ import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
 import type { PlanViewModel } from "./usePlanView";
 import { coursePoints } from "../../../lib/course";
+import { useRoutesShown } from "./useRoutesShown";
 
 /**
  * FPL's route as a list and a line (usePlanWorkspace): its timeline, its
  * points edited in place (useRouteListEdit), its field open while it is
  * not yet whole or is typed in (decision 0046), a point dropped on the
- * map into it, its close, and the Routes' chips (useRouteLine).
+ * map into it, its close, the Routes' chips (useRouteLine), and whether
+ * they are out (useRoutesShown).
  */
 export function usePlanRouteList(
   route: PlanRoute,
@@ -102,6 +104,9 @@ export function usePlanRouteList(
     setStops,
     flightRules,
   });
+  // The suggested routes out for this route's two ends, put away as they
+  // change or the ways go (useRoutesShown).
+  const shown = useRoutesShown(line.routeLine ? `${planned.dep}-${planned.dest}` : null);
   // The route's field (RouteEditor) open over the timeline while there
   // is no whole route -- a new plan, half a route -- and while a route is
   // typed or pasted into it, till its Done (decision 0046, the owner's
@@ -133,6 +138,7 @@ export function usePlanRouteList(
   return {
     ...edit,
     ...line,
+    ...shown,
     addingStop,
     setAddingStop,
     addingChange,

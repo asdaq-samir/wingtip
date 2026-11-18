@@ -46,6 +46,18 @@ const BAR = "4.25rem";
  *  idents smeared (the owner's iPhone, 2026-11-17). Frosted all the way
  *  up, where the body scrolls on under it. */
 const SOLID_BAND = "bg-(--sheet)";
+/** The band all the way up: frosted only settled there, where the body
+ *  scrolls under it, and the sheet's solid ground while it moves -- a
+ *  finger on it (Base UI's data-swiping) and on till it has settled
+ *  (data-risen, SheetDrawer). Picked by the settled size alone, a slow
+ *  drag down from all the way up kept the frost, the backdrop-filter
+ *  Safari redraws under the card every frame of a slide, the stripes'
+ *  cause (the owner's list, 2026-11-18). */
+const FULL_BAND = cn(
+  "frost-head",
+  "group-data-swiping/sheet:bg-(--sheet) group-data-swiping/sheet:[-webkit-backdrop-filter:none] group-data-swiping/sheet:[backdrop-filter:none]",
+  "group-data-risen/sheet:bg-(--sheet) group-data-risen/sheet:[-webkit-backdrop-filter:none] group-data-risen/sheet:[backdrop-filter:none]",
+);
 /** A band risen with the sheet from the pill: on its ground, and over the body, as at half. */
 const RISEN_BAND =
   "group-data-swiping/sheet:bg-(--sheet) group-data-risen/sheet:bg-(--sheet) group-data-swiping/sheet:z-20 group-data-risen/sheet:z-20";
@@ -229,10 +241,11 @@ export function SheetParts(p: PartsProps) {
         // Sticky at the scroller's top, frosted wherever the body runs on
         // up under it, the grabber's room inside it (the owner's iPhone,
         // 2026-11-11: clear, the list showed through the band); on a
-        // phone only all the way up, solid below (SOLID_BAND).
+        // phone only settled all the way up, solid below (SOLID_BAND) and
+        // while it moves (FULL_BAND).
         className={cn(
           "sticky top-0 flex shrink-0 flex-col",
-          !atPill ? cn("z-20", p.onPhone && size !== "full" ? SOLID_BAND : "frost-head") : rises && RISEN_BAND,
+          !atPill ? cn("z-20", !p.onPhone ? "frost-head" : size !== "full" ? SOLID_BAND : FULL_BAND) : rises && RISEN_BAND,
         )}
       >
         {band}

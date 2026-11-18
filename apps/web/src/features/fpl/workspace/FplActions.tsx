@@ -7,8 +7,7 @@ import { RouteLine } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import RouteHead from "./RouteHead";
 import { FlightFigures } from "./FlightFoot";
-import { routeEditing } from "./routeEditing";
-import { useRoutesShown } from "./routesShown";
+import { routeEditing, routesOut } from "./routeEditing";
 
 /**
  * FPL's actions in flight, one row of four tiles at the top of the flying
@@ -82,7 +81,7 @@ export function FplRoute({
   const { dryRunning, flying } = vm.flight;
   const { routeLine } = vm.routeList;
   const editing = routeEditing(vm);
-  const routesShown = useRoutesShown((s) => s.shown);
+  const routesShown = routesOut(vm);
   // The figures are FPL's pill too, one copy at every size: held on the
   // foot's edge at the pill, and as the sheet goes down they stop there
   // while the route slides on under them (usePinAtFoot), drawn there as
@@ -98,7 +97,7 @@ export function FplRoute({
           first row's button is on (RoutesToggle; the owner, 2026-11-17:
           "Which shows route pills just above the stops"), where they were a
           section under the figures. */}
-      {routesShown && !editing && routeLine && (
+      {routesShown && routeLine && (
         <section aria-label="Suggested routes" className="pb-2" data-testid="route-group">
           <Suspense fallback={<div className="h-11" />}>
             <RouteLine line={routeLine} grouped />

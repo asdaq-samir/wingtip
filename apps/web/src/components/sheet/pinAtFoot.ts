@@ -44,6 +44,15 @@ export const PIN_AT_FOOT =
  * pill, where the rest of the head is not, and its backing, FplRoute's
  * PINNED), at the pill and, a frame at a time, while a finger has the
  * sheet or it settles.
+ *
+ * Off the pill (`held` false) a floating bar in the foot (its top marked
+ * data-pin-edge, FPL's actions, FplTabBar) is the edge: the row stops just
+ * over it, not on the foot's own edge under it. The foot is drawn over the
+ * sheet's head (SheetParts' z-30, so the bar is never under the route), and
+ * held on the foot's edge the figures slid in under the bar and its fade
+ * as a finger pulled the sheet down from half, hidden there (the owner's
+ * iPhone, 2026-11-18). At the pill the bar is put away (RISEN_OVER) and
+ * the row is the pill itself, on the foot's edge as before.
  */
 export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, { on, held }: { on: boolean; held: boolean }) {
   const dragging = usePanelDragging((d) => d.dragging);
@@ -54,7 +63,8 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     heldNow.current = held;
   }, [held]);
   // The room, measured before the page is drawn, so the row is never seen
-  // where it would be unheld.
+  // where it would be unheld; again as it is held or let go, the edge the
+  // bar's off the pill and the foot's at it (restingEdge).
   useLayoutEffect(() => {
     const row = ref.current;
     if (!row) return;
@@ -72,7 +82,7 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       // hiding the departure" (2026-11-17). Measured again as it comes back.
       if (edge && edge.getClientRects().length === 0) return;
       const natural = row.getBoundingClientRect().bottom - moved(row) - moved(row.closest(SHEET));
-      const room = restingEdge(edge) - natural;
+      const room = restingEdge(edge, heldNow.current) - natural;
       row.style.setProperty("--pin-room", `${room}px`);
       row.toggleAttribute("data-pinned", heldNow.current || moved(row.closest(SHEET)) > room);
     };
@@ -87,7 +97,7 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       resized.disconnect();
       removeEventListener("resize", measure);
     };
-  }, [on, foot, ref]);
+  }, [on, foot, ref, held]);
   // Whether it is held now.
   useEffect(() => {
     const row = ref.current;
@@ -124,8 +134,11 @@ function moved(el: Element | null) {
 /** Where the foot's edge is once the sheet is at rest: its place now with
  *  its own and the sheet's transforms taken off, which cancel at rest (the
  *  foot is moved back by the sheet's offset, sheet/insets' HOLD_AT_EDGE),
- *  so one place at every moment of a drag and a settle. */
-function restingEdge(foot: HTMLElement | null) {
+ *  so one place at every moment of a drag and a settle. Off the pill the
+ *  top of a floating bar in it (data-pin-edge), where there is one. */
+function restingEdge(foot: HTMLElement | null, held: boolean) {
   if (!foot) return window.innerHeight;
-  return foot.getBoundingClientRect().bottom - moved(foot) - moved(foot.closest(SHEET));
+  const bar = held ? null : foot.querySelector<HTMLElement>("[data-pin-edge]");
+  const at = bar && bar.getClientRects().length > 0 ? bar.getBoundingClientRect().top : foot.getBoundingClientRect().bottom;
+  return at - moved(foot) - moved(foot.closest(SHEET));
 }
