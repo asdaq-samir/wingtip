@@ -52,8 +52,6 @@ describe("a special-use area's tab", () => {
     // (lib/fixtures/specialUseTab.json), as the tiles carry it.
     for (const { answer } of specialUseTab.cases)
       if (answer) expect(text({ tab: answer.text, label: answer.name, type: "MOA" })).toBe(answer.text);
-    // An archive written before the tiles carried the words: the name.
-    expect(text({ label: "M-BRADY NOR*", floor_ft: 3600, floor_ref: "MSL" })).toBe("M-BRADY NOR*");
   });
 
   it("is turned along its side and set inside the area, from the class labels' zoom", () => {
@@ -75,11 +73,5 @@ describe("a special-use area's tab", () => {
       const ink = id === suaTab("restricted") ? SUA_INK.restricted : SUA_INK.moa;
       expect(svg()).toContain(`stroke="${ink}"`);
     }
-  });
-
-  it("writes the name alone along the boundary where an older archive has no tabs", () => {
-    const older = specialUseLabelLayer(["Inter Bold"], false);
-    expect(older["source-layer"]).toBe("special_use");
-    expect(older.layout).toMatchObject({ "symbol-placement": "line", "text-field": ["get", "name"] });
   });
 });

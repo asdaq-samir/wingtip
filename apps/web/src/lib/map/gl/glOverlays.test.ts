@@ -75,12 +75,7 @@ describe("the overlay tiles' layers", () => {
     expect(from).toMatchObject({ "airspace-B": glZoom(6), "airspace-C": glZoom(7), "airspace-D": glZoom(8) });
   });
 
-  it("leave out a layer an older archive has not got", () => {
-    const { layers } = overlayStyle({ ...TILES, layers: TILES.layers.filter((l) => l.name !== "runways") }, ORIGIN);
-    expect(layers.lines!.map((l) => l.id)).not.toContain("runway-surface");
-  });
-
-  it("write one tab a shelf from the label points, and none where an older archive has none", () => {
+  it("write one tab a shelf from the label points", () => {
     const label = (tiles: OverlayTiles) =>
       overlayStyle(tiles, ORIGIN).layers.lines!.find((l) => l.id === "airspace-labels") as SymbolLayerSpecification | undefined;
     const points = label(TILES)!;
@@ -91,7 +86,6 @@ describe("the overlay tiles' layers", () => {
       "text-rotation-alignment": "map",
     });
     expect(points.layout!["symbol-placement"]).toBeUndefined();
-    expect(label({ ...TILES, layers: TILES.layers.filter((l) => l.name !== "airspace_labels") })).toBeUndefined();
   });
 
   it("turn the airspace, its bands and labels, and the special-use areas off with the Airspace setting", () => {

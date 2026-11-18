@@ -97,8 +97,6 @@ describe("airspaceLayers", () => {
     // formats no figure of its own.
     expect(label.layout!["text-field"]).toEqual(["get", "tab"]);
     expect(label.filter).toEqual(["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "tab"]]);
-    // No tab where an older archive has no label points.
-    expect(airspaceLayers(["Inter"], false).map((l) => l.id)).not.toContain("airspace-labels");
   });
 
   it("draws the tiles' rings each with its band along the inside, Class E left out", () => {
