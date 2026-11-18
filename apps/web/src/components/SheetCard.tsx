@@ -129,10 +129,13 @@ export function SheetCard({
     // A tap on the chart puts it away, as a tap outside the sheets put
     // them away -- what the tap opens is what shows, where it opened under
     // it out of sight. Not the map's own buttons, nor the panel or
-    // anything else on the page.
+    // anything else on the page, nor a map of a dialog the card opened
+    // over everything: a plate full screen is pages on a MapLibre map of
+    // their own (AirportDiagramViewer), and a tap or a double tap on it
+    // put the plate's card, and the viewer with it, away (plates-map.spec).
     if (details.reason === "outside-press") {
       const at = details.event.target instanceof Element ? details.event.target : null;
-      if (!at?.closest(".maplibregl-map") || at.closest("[data-map-controls], .maplibregl-ctrl")) return details.cancel();
+      if (!at?.closest(".maplibregl-map") || at.closest("[data-map-controls], .maplibregl-ctrl, [role=dialog]")) return details.cancel();
     }
     // Escape puts the top one away, ahead of the sheet's own Escape (which
     // lowers it) as the default is then prevented: back a page of the

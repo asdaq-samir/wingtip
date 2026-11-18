@@ -96,7 +96,6 @@ function Pages({ placed, all, mark }: ReturnType<typeof laidOut> & { mark: PageM
       container: box.current,
       style,
       bounds: bounds(placed[0]!.box),
-      maxBounds: bounds(all),
       maxZoom: MAX_ZOOM,
       attributionControl: false,
       dragRotate: false,
@@ -106,10 +105,28 @@ function Pages({ placed, all, mark }: ReturnType<typeof laidOut> & { mark: PageM
     });
     map.touchZoomRotate.disableRotation();
     const fit = () => {
-      const whole = map.cameraForBounds(bounds(placed[0]!.box))?.zoom;
+      const first = placed[0]!.box;
+      const whole = map.cameraForBounds(bounds(first))?.zoom;
       if (whole === undefined) return;
+      // The pages dragged no further than the first page whole leaves
+      // round it: MapLibre zooms in until the view is inside its
+      // maxBounds, and the pages' own box, its shape not a phone's tall
+      // screen's, cut the page's sides at the furthest out (plates-map
+      // spec). Half the screen across and down, in the pages' degrees at
+      // that zoom (MapLibre's world 512 points round), a point to spare.
+      const box = map.getContainer();
+      const half = (points: number) => ((points + 2) * 360) / (512 * 2 ** whole) / 2;
+      const [x, y] = [(first[0] + first[2]) / 2, (first[1] + first[3]) / 2];
+      map.setMaxBounds(
+        bounds([
+          Math.min(all[0], x - half(box.clientWidth)),
+          Math.min(all[1], y - half(box.clientHeight)),
+          Math.max(all[2], x + half(box.clientWidth)),
+          Math.max(all[3], y + half(box.clientHeight)),
+        ]),
+      );
       map.setMinZoom(Math.min(whole, MAX_ZOOM));
-      if (map.getZoom() < whole) map.fitBounds(bounds(placed[0]!.box), { duration: 0 });
+      if (map.getZoom() < whole) map.fitBounds(bounds(first), { duration: 0 });
     };
     map.on("load", fit);
     map.on("resize", fit);

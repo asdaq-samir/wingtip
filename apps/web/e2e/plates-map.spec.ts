@@ -214,11 +214,17 @@ test.describe("own ship on the plate full screen", () => {
       const b = (await mark.boundingBox())!;
       return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
     };
-    const frame = (await viewer.locator("[data-pages]").boundingBox())!;
-    const scale = Math.min(frame.width / SHEET.width, frame.height / SHEET.height);
-    const top = frame.y + frame.height / 2 - (SHEET.height * scale) / 2;
-    await expect.poll(async () => Math.abs((await centre()).x - (frame.x + frame.width / 2)), { timeout: slow(5_000) }).toBeLessThan(3);
-    expect(Math.abs((await centre()).y - (top + ON_FINAL.y * SHEET.height * scale))).toBeLessThan(3);
+    // Measured again until the viewer is at rest: the stock Dialog opens
+    // from a little smaller (its own motion), and the page measured on its
+    // way in put the mark 10 points off where it lands.
+    const off = async () => {
+      const frame = (await viewer.locator("[data-pages]").boundingBox())!;
+      const scale = Math.min(frame.width / SHEET.width, frame.height / SHEET.height);
+      const top = frame.y + frame.height / 2 - (SHEET.height * scale) / 2;
+      const c = await centre();
+      return Math.max(Math.abs(c.x - (frame.x + frame.width / 2)), Math.abs(c.y - (top + ON_FINAL.y * SHEET.height * scale)));
+    };
+    await expect.poll(off, { timeout: slow(5_000) }).toBeLessThan(3);
 
     // A double tap beside it zooms in twice about the tap: the mark goes
     // twice as far from that point, on its place on the page.
