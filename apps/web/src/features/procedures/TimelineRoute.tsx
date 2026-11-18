@@ -112,15 +112,18 @@ export default function TimelineRoute({
   // first stop's row once the sheet is up and they are listed -- a frame
   // on, after React Aria's list has put it on the row after the one gone.
   const card = useRef<HTMLDivElement>(null);
+  // Looked at as the row unfolds (or this list is drawn anew, unfolded),
+  // not after every render.
+  const firstStop = stops[0]?.ident ?? "";
   useEffect(() => {
     if (folded || !focusStops.asked) return;
-    const ident = CSS.escape(stops[0]?.ident ?? "");
+    const ident = CSS.escape(firstStop);
     const frame = requestAnimationFrame(() => {
       focusStops.asked = false;
       card.current?.querySelector(`[data-testid=timeline-line][data-ident="${ident}"]`)?.closest<HTMLElement>("[role=row]")?.focus();
     });
     return () => cancelAnimationFrame(frame);
-  });
+  }, [folded, firstStop]);
   const items: RouteItem[] = shown.map((point, i) => {
     if (!point)
       return {
