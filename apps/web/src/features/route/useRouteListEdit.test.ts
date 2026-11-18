@@ -13,6 +13,12 @@ describe("a point dragged in FPL's list", () => {
     expect(movedRoute(["KUGN", "VPBNG", "KDLH"], 1, 0, isEnd)).toBeNull();
   });
 
+  it("keeps My Location at an end: to the other end, never a stop", () => {
+    expect(movedRoute(["@42.2,-87.9", "KMSN", "KDLH"], 0, 2, isEnd)).toEqual({ dep: "KMSN", stops: ["KDLH"], dest: "@42.2,-87.9" });
+    expect(movedRoute(["@42.2,-87.9", "KMSN", "KDLH"], 0, 1, isEnd)).toBeNull();
+    expect(movedRoute(["KUGN", "KMSN", "@42.2,-87.9"], 2, 1, isEnd)).toBeNull();
+  });
+
   it("is not moved beside the same point", () => {
     expect(movedRoute(["KUGN", "KMSN", "KDLH", "KMSN"], 3, 2, isEnd)).toBeNull();
   });

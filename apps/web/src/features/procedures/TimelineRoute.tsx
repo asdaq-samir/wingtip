@@ -146,7 +146,7 @@ export default function TimelineRoute({ points, ...props }: ProceduresRouteProps
     // Never wider than the sheet: a row laid out past the card is clipped,
     // not a sideways scroll of the panel (the iOS audit's rule).
     <div className="overflow-x-clip rounded-(--radius-banner) bg-card px-3" data-testid="route-summary">
-      <RouteGrid items={items} onMove={edit?.onMove} />
+      <RouteGrid items={items} onMove={edit?.onMove} canMove={edit?.canMove} />
       {edit && routePoints.length > 1 && <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} />}
     </div>
   );

@@ -44,12 +44,29 @@ export type RouteItem = { id: string; label: string; point?: number; node: React
  * reorder control shows in Edit: the mouse's handle and the keyboard's
  * and VoiceOver's drag button.
  */
-export function RouteGrid({ items, onMove }: { items: RouteItem[]; onMove?: (from: number, to: number) => void }) {
+export function RouteGrid({
+  items,
+  onMove,
+  canMove,
+}: {
+  items: RouteItem[];
+  onMove?: (from: number, to: number) => void;
+  /** Whether a point may go there; none offered where it may not. */
+  canMove?: (from: number, to: number) => boolean;
+}) {
   const points = new Map(items.flatMap((item) => (item.point === undefined ? [] : [[item.id, item.point] as const])));
   // The row picked up: only a point is put down anywhere.
   const carried = useRef<Key | null>(null);
   const movable = !!onMove && points.size > 0;
   const fixed = items.flatMap((item) => (item.point === undefined ? [item.id] : []));
+  // The place a carried point takes, before or after the point it is let
+  // go beside, counted once it has left its own place.
+  const placeOf = (carriedKey: string, besideKey: string, side: "before" | "after" | "on") => {
+    const from = points.get(carriedKey);
+    const at = points.get(besideKey);
+    if (from === undefined || at === undefined) return null;
+    return (side === "after" ? at + 1 : at) - (from < at ? 1 : 0);
+  };
   const { dragAndDropHooks } = useDragAndDrop({
     isDisabled: !movable,
     getItems: (keys) => [...keys].map((key) => ({ "text/plain": items.find((item) => item.id === key)?.label ?? String(key) })),
@@ -63,23 +80,18 @@ export function RouteGrid({ items, onMove }: { items: RouteItem[]; onMove?: (fro
     onDragEnd: () => {
       carried.current = null;
     },
-    // Beside a point, from a point; never onto a row.
-    getDropOperation: (target) =>
-      target.type === "item" &&
-      target.dropPosition !== "on" &&
-      points.has(String(target.key)) &&
-      carried.current !== null &&
-      points.has(String(carried.current))
-        ? "move"
-        : "cancel",
+    // Beside a point, from a point, where it may go; never onto a row.
+    getDropOperation: (target) => {
+      if (target.type !== "item" || target.dropPosition === "on" || carried.current === null) return "cancel";
+      const to = placeOf(String(carried.current), String(target.key), target.dropPosition);
+      const from = points.get(String(carried.current));
+      return to === null || from === undefined || (to !== from && canMove && !canMove(from, to)) ? "cancel" : "move";
+    },
     onReorder: ({ keys, target }) => {
-      const from = points.get(String([...keys][0]));
-      const at = points.get(String(target.key));
-      if (from === undefined || at === undefined) return;
-      // Before or after the point it was let go beside, counted once the
-      // point moved has left its own place.
-      const to = (target.dropPosition === "after" ? at + 1 : at) - (from < at ? 1 : 0);
-      if (to !== from) onMove?.(from, to);
+      const key = String([...keys][0]);
+      const from = points.get(key);
+      const to = placeOf(key, String(target.key), target.dropPosition);
+      if (from !== undefined && to !== null && to !== from) onMove?.(from, to);
     },
     // The stock line between the rows where it will go.
     renderDropIndicator: (target) => (

@@ -7,14 +7,17 @@ import { askSearchPick } from "../../lib/oneSearch";
 /** The route's points with one moved from `from` to `to`, as FPL's list
  *  drags them: the ends kept airports or a position (`isEnd`), as the box
  *  keeps them -- a waypoint is flown through, never taken off from or
- *  landed at -- and no point beside the same; null where the move would
- *  break either. */
+ *  landed at --, My Location (a position) at an end alone, where the
+ *  route starts from or comes back to where the airplane is, never a stop
+ *  on the way (the owner, 2026-11-17), and no point beside the same; null
+ *  where the move would break any. */
 export function movedRoute(points: string[], from: number, to: number, isEnd: (point: string) => boolean): RouteParts | null {
   const next = [...points];
   const [moved] = next.splice(from, 1);
   if (moved === undefined || next.length < 1) return null;
   next.splice(to, 0, moved);
   if (!isEnd(next[0]!) || !isEnd(next.at(-1)!) || next.some((p, i) => i > 0 && p === next[i - 1])) return null;
+  if (next.slice(1, -1).some(isPosition)) return null;
   return { dep: next[0]!, stops: next.slice(1, -1), dest: next.at(-1)! };
 }
 
@@ -99,14 +102,23 @@ export function useRouteListEdit({
   // A point dragged by its grip (or held) in FPL's list onto another's
   // place, as the field's pills are moved (movedRoute), and the route
   // planned again.
-  const movePoint = useCallback(
+  const moved = useCallback(
     (from: number, to: number) => {
       const isEnd = (p: string) => (!!identOf(p) && !waypointStops.has(p)) || isPosition(p);
-      const moved = movedRoute(routePoints, from, to, isEnd);
-      if (moved) setRoute(moved);
+      return movedRoute(routePoints, from, to, isEnd);
     },
-    [routePoints, waypointStops, setRoute],
+    [routePoints, waypointStops],
   );
+  const movePoint = useCallback(
+    (from: number, to: number) => {
+      const next = moved(from, to);
+      if (next) setRoute(next);
+    },
+    [moved, setRoute],
+  );
+  // Whether a move may be made at all, asked as a point is carried: the
+  // list offers no drop line where it may not go, and the menu no Move.
+  const canMove = useCallback((from: number, to: number) => moved(from, to) !== null, [moved]);
   // An airport made another from its menu's Change, the one search's
   // pick; only a point the same as its neighbour's is let go, a leg of none.
   const replacePoint = useCallback(
@@ -117,8 +129,8 @@ export function useRouteListEdit({
     [routePoints, setRoute],
   );
   const listEdit = useMemo(
-    () => ({ onMove: movePoint, onAddAt: typeStopAt, onReplace: replacePoint }),
-    [movePoint, typeStopAt, replacePoint],
+    () => ({ onMove: movePoint, canMove, onAddAt: typeStopAt, onReplace: replacePoint }),
+    [movePoint, canMove, typeStopAt, replacePoint],
   );
   return { waypointStops, routeOpen, setRouteOpen, addAt, setAddAt, typeStopAt, listEdit };
 }

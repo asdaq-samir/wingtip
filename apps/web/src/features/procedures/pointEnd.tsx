@@ -144,9 +144,15 @@ export function pointEnd(
         onAddAfter={
           edit && at.index !== undefined && at.index < routePoints.length - 1 && !stopsFull ? () => edit.onAddAt(at.index! + 1) : undefined
         }
-        onMoveUp={edit && at.index !== undefined && at.index > 0 ? () => edit.onMove(at.index!, at.index! - 1) : undefined}
+        onMoveUp={
+          edit && at.index !== undefined && at.index > 0 && edit.canMove(at.index, at.index - 1)
+            ? () => edit.onMove(at.index!, at.index! - 1)
+            : undefined
+        }
         onMoveDown={
-          edit && at.index !== undefined && at.index < routePoints.length - 1 ? () => edit.onMove(at.index!, at.index! + 1) : undefined
+          edit && at.index !== undefined && at.index < routePoints.length - 1 && edit.canMove(at.index, at.index + 1)
+            ? () => edit.onMove(at.index!, at.index! + 1)
+            : undefined
         }
         onRemove={stopRemoval(vm, ident, at.stop)?.onRemove}
       />

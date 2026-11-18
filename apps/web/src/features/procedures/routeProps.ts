@@ -11,6 +11,8 @@ type Kind = ProcedureKind;
 interface RouteListEdit {
   /** A point dragged by its grip (or held) onto another's place. */
   onMove: (from: number, to: number) => void;
+  /** Whether that move may be made (useRouteListEdit's movedRoute). */
+  canMove: (from: number, to: number) => boolean;
   /** A stop asked of the one search, put in at this place. */
   onAddAt: (index: number) => void;
   /** The airport at this place made another, from its menu's Change. */
