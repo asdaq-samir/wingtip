@@ -118,6 +118,7 @@ export default function TripFigures({
   const [breakdownOpen, setBreakdownOpen] = useState(false);
   const stops = (totals?.hops.length ?? 0) > 0;
   const input = { totals, estimate, local, destination, depart, arrival, toDestination: stops && toDestination, flown, statute };
+  const toLabel = stops && !local && !toDestination ? "Leg" : "Dest";
   // No airplane picked: the route's own figures alone, To and Dist --
   // the time and the fuel are an airplane's, and none is assumed (the
   // owner, 2026-11-08: "only show the distance and the things you can
@@ -157,12 +158,20 @@ export default function TripFigures({
           ? { ...f, alert: true, said: `${f.said ?? f.value} ${unknownWhy(unknown)}` }
           : f,
       )
-      // Each named in a short word in sentence case, "To", "Distance",
+      // Each named in a short word in sentence case, "Leg" or "Dest", "Distance",
       // "Time", "Fuel" (the owner's list, 2026-11-17), where "TO / DIST /
       // ETE / FUEL REQ" were capitals and shorthand; the fuel is still the
       // fuel required, said so in its name to a screen reader and in its
       // breakdown (FuelBreakdown).
-      .map((f) => ({ ...f, label: LABEL[f.name] ?? (f.name === "ETA" ? `Arrival ${zoneName()}` : f.name), explain: EXPLAIN[f.name] }))
+      // The To named for what it reaches (the owner, 2026-11-18: "Replace
+      // To with Leg or Dest when tapped"): "Leg" while it is the next stop,
+      // "Dest" while it is the destination, which it always is with no stops
+      // and on a flight to the field itself.
+      .map((f) => ({
+        ...f,
+        label: f.name === "To" ? toLabel : (LABEL[f.name] ?? (f.name === "ETA" ? `Arrival ${zoneName()}` : f.name)),
+        explain: EXPLAIN[f.name],
+      }))
       // An airplane's figure before the nav log's totals and with no
       // estimate is still coming: its shape, the dash kept for "needs an
       // airplane" (decision 0044).
@@ -237,7 +246,7 @@ export default function TripFigures({
           size="inline"
           onClick={() => setToDestination(!toDestination)}
           data-testid="to-toggle"
-          aria-label={`${said}: show the ${toDestination ? "next stop" : "destination"}`}
+          aria-label={`${toLabel}, ${said}: show the ${toDestination ? "next stop" : "destination"}`}
           className={AREA}
         >
           {face}

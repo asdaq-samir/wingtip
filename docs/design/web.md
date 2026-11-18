@@ -921,8 +921,11 @@ Edit and Done.
 3. The route string field (typed or pasted, Enter to compute), as
    SkyVector's, under the rows, and the figures under it.
 4. The altitude (`FL045` style, decision 0009) and the figure strip at
-   the foot: To, Distance, Time, Fuel (Time and Fuel only with an
-   airplane), named in short words in sentence case. A distance in a
+   the foot: Leg or Dest, Distance, Time, Fuel (Time and Fuel only with
+   an airplane), named in short words in sentence case. The first is
+   "Leg" while it shows the next stop and "Dest" once a tap shows the
+   destination, as it always is on a route with no stops (the owner,
+   2026-11-18). A distance in a
    summary -- the strip, the route's chips, the Profile's axis, a card's
    line, a saved flight -- is whole miles with the thousands' comma,
    "1,334 nm" (`wholeNm`); tenths are the nav log's legs' (the owner's
