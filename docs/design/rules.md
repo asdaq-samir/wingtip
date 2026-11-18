@@ -945,8 +945,11 @@ way: three homes, and every control in one of them.
    sunlight and remove it from the appearance?"; `ChartLookRows`). The
    Dimmer is how far the chart's tiles are dimmed, kept for light and for
    dark apart (none and half by default, the night's look before it), to
-   at most 70%; greyed while Sunlight is on, which draws the chart at full
-   brightness, keeping its value. Contrast is an offset on the look's own
+   at most 70%; greyed while Sunlight is on by day, which draws the chart
+   at full brightness, keeping its value. At night (the dark theme) the
+   Dimmer holds in sunlight too, its row enabled and with no note, so a
+   light sensor misreading in a dark cockpit cannot blind the pilot (the
+   owner, 2026-11-18); sunlight still adds its contrast. Contrast is an offset on the look's own
    contrast by day, at night or in sunlight, -30% to +40%, 0 the look as it
    is. Both set the chart's layers as they move. Appearance's Dark +
    Bright went with them: the night's look of the route, the sky and the

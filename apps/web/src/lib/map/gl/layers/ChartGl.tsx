@@ -71,7 +71,7 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
   const kinds = parts
     .map((p) => /\/(?:chart-tile\/)?([a-z_]+)\/\{z\}/.exec(Object.values(p.spec.sources).at(-1)?.tiles?.[0] ?? "")?.[1] ?? "")
     .join(" ");
-  const brightness = chartBrightness(dim, sunlight);
+  const brightness = chartBrightness(dim, sunlight, night);
   const look = sunlight ? "bright" : brightness < 1 ? "dimmed" : "normal";
   useEffect(() => {
     const el = map.getContainer();

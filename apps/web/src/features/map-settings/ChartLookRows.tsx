@@ -1,6 +1,6 @@
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Slider, THUMB_HIT } from "../../components/ui/slider";
-import { CONTRAST_MAX, CONTRAST_MIN, DIM_MAX, LOOK_STEP } from "../../lib/map/chartLook";
+import { CONTRAST_MAX, CONTRAST_MIN, DIM_MAX, LOOK_STEP, sunlightUndims } from "../../lib/map/chartLook";
 import { useChartLook } from "../../lib/map/gl/useChartLook";
 import { usePreferences } from "../../lib/preferences";
 
@@ -21,24 +21,26 @@ const one = (v: number | readonly number[]) => (Array.isArray(v) ? (v[0] ?? 0) :
  *
  * Dimmer: how far the chart's tiles are dimmed, the value kept for the
  * appearance now drawn (lib/prefs chartDim: light and dark each their own),
- * from none to DIM_MAX. Greyed while Sunlight is on, when the chart is at
- * full brightness, keeping its value for after. Contrast: an offset on the
+ * from none to DIM_MAX. Greyed while Sunlight is on by day, when the chart
+ * is at full brightness, keeping its value for after; at night it holds in
+ * sunlight too (chartBrightness), so it stays enabled, with no note. Contrast: an offset on the
  * look's own contrast (day, night or sunlight), 0 the look as it is.
  */
 export default function ChartLookRows() {
   const { night, sunlight, dim, contrast } = useChartLook();
   const setDim = usePreferences((s) => s.setChartDim);
   const setContrast = usePreferences((s) => s.setChartContrast);
+  const undimmed = sunlightUndims(sunlight, night);
   return (
     <ListGroup>
-      <ListRow title="Dimmer" description={sunlight ? "Full brightness in sunlight" : undefined}>
+      <ListRow title="Dimmer" description={undimmed ? "Full brightness in sunlight" : undefined}>
         <Slider
           className="w-40"
           min={0}
           max={DIM_MAX}
           step={LOOK_STEP}
           value={dim}
-          disabled={sunlight}
+          disabled={undimmed}
           onValueChange={(v) => setDim(night ? "dark" : "light", one(v))}
           // Across, its own; up and down, still the sheet's.
           data-base-ui-swipe-ignore="x"

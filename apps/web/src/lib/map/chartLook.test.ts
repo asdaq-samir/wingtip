@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { chartPaint } from "./gl/glStyle";
-import { CONTRAST_MAX, CONTRAST_MIN, DEFAULT_CHART_DIM, DIM_MAX, NIGHT_DIM, chartBrightness, chartContrast } from "./chartLook";
+import {
+  CONTRAST_MAX,
+  CONTRAST_MIN,
+  DEFAULT_CHART_DIM,
+  DIM_MAX,
+  NIGHT_DIM,
+  chartBrightness,
+  chartContrast,
+  sunlightUndims,
+} from "./chartLook";
 
 describe("the chart's Dimmer and Contrast", () => {
   it("dims the dark theme to half and the light theme not at all by default, as before the Dimmer", () => {
@@ -12,17 +21,29 @@ describe("the chart's Dimmer and Contrast", () => {
   it("draws the Dimmer as 1 less the dim, no deeper than DIM_MAX", () => {
     expect(chartPaint(true, false, 0)?.["raster-brightness-max"]).toBe(1);
     expect(chartPaint(false, false, 0.25)?.["raster-brightness-max"]).toBe(0.75);
-    expect(chartBrightness(DIM_MAX, false)).toBe(0.3);
-    expect(chartBrightness(5, false)).toBe(0.3);
-    expect(chartBrightness(-1, false)).toBe(1);
+    expect(chartBrightness(DIM_MAX, false, false)).toBe(0.3);
+    expect(chartBrightness(5, false, true)).toBe(0.3);
+    expect(chartBrightness(-1, false, false)).toBe(1);
   });
 
-  it("draws sunlight at full brightness whatever the Dimmer, its contrast still offset", () => {
-    expect(chartPaint(true, true, 0.6, 0.1)).toMatchObject({
+  it("draws sunlight by day at full brightness whatever the Dimmer, its contrast still offset", () => {
+    expect(chartPaint(false, true, 0.6, 0.1)).toMatchObject({
       "raster-brightness-max": 1,
       "raster-contrast": 0.3,
       "raster-saturation": 0.2,
     });
+    expect(sunlightUndims(true, false)).toBe(true);
+  });
+
+  it("keeps the dark Dimmer in sunlight at night, so a misread sensor cannot blind the pilot, adding sunlight's contrast", () => {
+    expect(chartPaint(true, true, 0.6, 0.1)).toMatchObject({
+      "raster-brightness-max": 0.4,
+      "raster-contrast": 0.3,
+      "raster-saturation": 0.2,
+    });
+    expect(chartPaint(true, true)?.["raster-brightness-max"]).toBe(1 - NIGHT_DIM);
+    expect(sunlightUndims(true, true)).toBe(false);
+    expect(sunlightUndims(false, false)).toBe(false);
   });
 
   it("adds Contrast to the look's own, by day, at night and in sunlight, leaving the saturation", () => {

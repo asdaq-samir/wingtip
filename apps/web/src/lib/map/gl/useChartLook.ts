@@ -18,6 +18,6 @@ export function useChartLook() {
 /** The chart's raster-brightness-max now (chartBrightness), for the
  *  imagery close in and the land and water round the chart, dimmed with it. */
 export function useChartBrightness(): number {
-  const { dim, sunlight } = useChartLook();
-  return chartBrightness(dim, sunlight);
+  const { dim, sunlight, night } = useChartLook();
+  return chartBrightness(dim, sunlight, night);
 }

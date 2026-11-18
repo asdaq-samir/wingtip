@@ -42,10 +42,19 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 const round2 = (v: number) => Math.round(v * 100) / 100;
 
 /** The chart's raster-brightness-max: 1 less the dim, within 0 to
- *  DIM_MAX; in sunlight always 1, the full brightness a sunlit screen
- *  needs, whatever the Dimmer says (it keeps its value for after). */
-export function chartBrightness(dim: number, sunlight: boolean): number {
-  return sunlight ? 1 : round2(1 - clamp(dim, 0, DIM_MAX));
+ *  DIM_MAX. In sunlight by day always 1, the full brightness a sunlit
+ *  screen needs, whatever the Dimmer says (it keeps its value for after).
+ *  At night (the dark theme) the Dimmer holds even in sunlight: a light
+ *  sensor misreading in a dark cockpit must not blind the pilot at full
+ *  brightness (the owner, 2026-11-18); sunlight's contrast still adds. */
+export function chartBrightness(dim: number, sunlight: boolean, night: boolean): number {
+  return sunlightUndims(sunlight, night) ? 1 : round2(1 - clamp(dim, 0, DIM_MAX));
+}
+
+/** Whether sunlight sets the chart at full brightness over the Dimmer:
+ *  by day only, so the Dimmer row is greyed exactly then. */
+export function sunlightUndims(sunlight: boolean, night: boolean): boolean {
+  return sunlight && !night;
 }
 
 /** The chart's raster-contrast: the look's own plus the pilot's offset

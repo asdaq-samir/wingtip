@@ -18,9 +18,12 @@ import { usePreferences, type ChartLight } from "./preferences";
  * (SunlightBanner).
  *
  * The chart's tiles take it in their raster paint (glStyle chartPaint):
- * more contrast and colour, and full brightness whatever the Map card's
- * Dimmer says (lib/map/chartLook), the Dimmer greyed out but keeping its
- * value for after; the Contrast slider's offset still adds to sunlight's.
+ * more contrast and colour, and by day full brightness whatever the Map
+ * card's Dimmer says (lib/map/chartLook), the Dimmer greyed out but
+ * keeping its value for after. In the dark theme the Dimmer holds even in
+ * sunlight (chartBrightness), so a light sensor misreading in a dark
+ * cockpit cannot blind the pilot; the Contrast slider's offset still adds
+ * to sunlight's.
  * The airspace rings and the course are WebGL lines whose widths are
  * paint properties (glStyle), which no stylesheet reaches: they stay at
  * their width in sunlight.
@@ -87,7 +90,7 @@ function stopSensor() {
 }
 
 /** Whether the sunlight scheme is on, for what only reads it (the
- *  chart's brightness, the Dimmer greyed): no sensor started, which
+ *  chart's brightness, the Dimmer greyed by day): no sensor started, which
  *  useSunlight does once. */
 export function useSunlightOn(): boolean {
   const chartLight = usePreferences((s) => s.chartLight);

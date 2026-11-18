@@ -81,7 +81,7 @@ export function chartPaint(
     // 2026-10-28), and between whole levels linear sampling keeps the
     // chart's type from shimmering as a pinch passes through them.
     "raster-resampling": "linear",
-    "raster-brightness-max": chartBrightness(dim, sunlight),
+    "raster-brightness-max": chartBrightness(dim, sunlight, night),
     "raster-contrast": chartContrast(sunlight ? 0.2 : night ? 0.13 : DAY_CONTRAST, contrast),
     "raster-saturation": sunlight ? 0.2 : night ? 0 : DAY_SATURATION,
   };

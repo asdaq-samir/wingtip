@@ -6,9 +6,11 @@ import { openMapSettings, pickControl, settle, slow } from "./helpers";
  * the owner, 2026-11-18: "can we have a dimmer and contrast sliders under
  * sunlight and remove it from the appearance?"): each the stock slider,
  * set on the chart's layers as it moves (ChartGl's paint, no style made
- * again), read back from the map at rest. Sunlight draws the chart at full
- * brightness, the Dimmer greyed but keeping its value; Contrast still adds
- * to sunlight's. In the light theme, whose chart is undimmed by default.
+ * again), read back from the map at rest. Sunlight by day draws the chart
+ * at full brightness, the Dimmer greyed but keeping its value; Contrast
+ * still adds to sunlight's. In the light theme, whose chart is undimmed by
+ * default. At night (the dark theme) the Dimmer holds in sunlight, so a
+ * misread light sensor cannot blind the pilot (the owner, 2026-11-18).
  */
 
 /** One paint property of the base chart's layer as the map draws it
@@ -55,6 +57,7 @@ test("the Dimmer and Contrast sliders set the chart's paint as they move, and su
   // the contrast offset on sunlight's 0.2.
   await pickControl(page, "sunlight-select", "sunlight-on");
   await expect(dimmer).toBeDisabled();
+  await expect(look.getByText("Full brightness in sunlight")).toBeVisible();
   await expect(dimmer).toHaveAttribute("aria-valuetext", "70%");
   await expect.poll(() => chartPaintOf(page, "data-chart-brightness")).toBe(1);
   await expect.poll(() => chartPaintOf(page, "data-chart-contrast")).toBe(0.3);
@@ -67,4 +70,31 @@ test("the Dimmer and Contrast sliders set the chart's paint as they move, and su
   await settle(page);
   await expect.poll(() => chartPaintOf(page, "data-chart-brightness"), { timeout: slow(15_000) }).toBe(0.3);
   await expect.poll(() => chartPaintOf(page, "data-chart-contrast")).toBe(0.2);
+});
+
+test.describe("at night", () => {
+  test.use({ colorScheme: "dark" });
+
+  test("sunlight keeps the dark Dimmer, the row enabled with no note, and adds its contrast", async ({ page }) => {
+    test.setTimeout(slow(60_000));
+    await page.goto("/app/plan?dep=C81&dest=KDLH");
+    await settle(page);
+    // The dark theme's default Dimmer: half.
+    await expect.poll(() => chartPaintOf(page, "data-chart-brightness"), { timeout: slow(15_000) }).toBe(0.5);
+
+    await openMapSettings(page);
+    const look = page.getByTestId("map-look");
+    const dimmer = look.getByRole("slider", { name: "Dimmer" });
+    await pickControl(page, "sunlight-select", "sunlight-on");
+    await expect(dimmer).toBeEnabled();
+    await expect(look.getByText("Full brightness in sunlight")).toHaveCount(0);
+    await expect.poll(() => chartPaintOf(page, "data-chart-brightness")).toBe(0.5);
+    // Sunlight's own contrast, 0.2, not the night's 0.13.
+    await expect.poll(() => chartPaintOf(page, "data-chart-contrast")).toBe(0.2);
+
+    // Still the pilot's to set, in sunlight too.
+    await dimmer.focus();
+    await page.keyboard.press("End");
+    await expect.poll(() => chartPaintOf(page, "data-chart-brightness")).toBe(0.3);
+  });
 });
