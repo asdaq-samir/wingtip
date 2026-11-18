@@ -10,10 +10,6 @@ FROM wingtip-base
 
 WORKDIR /workspace/services/weather
 
-# The data folder is the user's (the base made appuser): the stacks mount
-# theirs over it.
-RUN mkdir -p /workspace/data && chown appuser:appuser /workspace/data
-
 COPY services/weather/requirements.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 

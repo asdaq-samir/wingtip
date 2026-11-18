@@ -73,20 +73,6 @@ def configured(feed: str) -> bool:
     return all((settings.swim_host, settings.swim_username, settings.swim_password, _feed(feed, "vpn"), _feed(feed, "queue")))
 
 
-def body(message) -> str:
-    """A message's text, read from its bytes first: the client raises on
-    some of the feed's messages when asked for a string, and one message
-    it can't read must not drop the connection. Empty where neither reads."""
-    for read in (message.get_payload_as_bytes, message.get_payload_as_string):
-        try:
-            payload = read()
-        except Exception:  # noqa: BLE001 -- the client's error for a payload of the other kind
-            continue
-        if payload:
-            return payload.decode("utf-8", "replace") if isinstance(payload, (bytes, bytearray)) else payload
-    return ""
-
-
 #: How far a facility's tracks can lie from one another, nm: one STARS
 #: facility's message holds the tracks of its own radars, 60 nm round each
 #: terminal radar (the ASR-9's and ASR-11's instrumented range, FAA
@@ -114,12 +100,18 @@ def _in_view(lat: float, lon: float, views, margin: float) -> bool:
 
 def raw(message) -> bytes | str:
     """A message's bytes as they came, handed on so a handler looks in them
-    before it decodes them; its text where the client has no bytes."""
-    try:
-        payload = message.get_payload_as_bytes()
-    except Exception:  # noqa: BLE001 -- the client's error for a payload of the other kind
-        payload = None
-    return payload if payload else body(message)
+    before it decodes them; its text where the client has no bytes. The
+    client raises on some of the feed's messages when asked for the other
+    kind, and one message it can't read must not drop the connection:
+    empty where neither reads."""
+    for read in (message.get_payload_as_bytes, message.get_payload_as_string):
+        try:
+            payload = read()
+        except Exception:  # noqa: BLE001 -- the client's error for a payload of the other kind
+            continue
+        if payload:
+            return payload
+    return ""
 
 
 def _names_one(data: bytes | str, followed) -> bool:
