@@ -4,7 +4,7 @@ first ask and fetched whole or in ranges."""
 
 import pytest
 from fastapi.testclient import TestClient
-from wingtip import charts, offline_charts, phone_pack, tile_archive, vector_tiles
+from wingtip import chart_serving, config, offline_charts, phone_pack, tile_archive, vector_tiles
 from wingtip.geo import tile_xy
 
 from app.main import app
@@ -15,8 +15,8 @@ CYCLE = "10-29-2026"
 
 @pytest.fixture
 def held(tmp_path, monkeypatch):
-    monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path)
-    monkeypatch.setattr(charts, "serving_cycle", lambda: CYCLE)
+    monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path)
+    monkeypatch.setattr(chart_serving, "serving_cycle", lambda: CYCLE)
     monkeypatch.setattr(offline_charts, "warm", lambda cycle, regions: None)
     monkeypatch.setattr(vector_tiles, "tiles_index", lambda: {"name": "2026-10-29-v4-0badf00d", "bytes": 1234})
     monkeypatch.setattr(
@@ -30,8 +30,8 @@ def held(tmp_path, monkeypatch):
 
 
 def test_none_packed_yet_is_a_404(tmp_path, monkeypatch):
-    monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path)
-    monkeypatch.setattr(charts, "serving_cycle", lambda: CYCLE)
+    monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path)
+    monkeypatch.setattr(chart_serving, "serving_cycle", lambda: CYCLE)
     assert client.get("/api/offline-charts").status_code == 404
 
 

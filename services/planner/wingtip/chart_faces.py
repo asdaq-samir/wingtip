@@ -4,14 +4,11 @@ and split_antimeridian for a sheet that crosses 180), and the lines the
 FAA's own masking left across the chart (find_masked_lines,
 remove_masked_lines).
 
-Split out of wingtip.charts, which keeps the catalogue, the chart cycles,
-rendering, publishing and serving. This is the part that changes on its
-own: every chart commit between 2026-09-23's two simplicity assessments
-was raster cleaning or edge detection, and none touched anything else
-in the module. wingtip.charts calls in here while preparing a sheet, and
-while warping a tile (read_rgb, without_raster_rim); this calls back into wingtip.charts for the chart
-kinds and sheets, through the module rather than its names, so either
-can be imported first.
+Split out of wingtip.charts before the rest of it was (2026-09-23): every
+chart commit between that day's two simplicity assessments was raster
+cleaning or edge detection. wingtip.chart_prepare calls in here while
+preparing a sheet, and wingtip.chart_rerender to clean one already on
+disk; this reads the chart kinds from wingtip.chart_kinds.
 """
 
 from __future__ import annotations
@@ -20,20 +17,16 @@ import logging
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import numpy as np
 
-from . import charts
 from .chart_masked_lines import find_masked_lines, remove_masked_lines
-from .chart_raster import WHITE_MIN_CHANNEL, read_rgb, without_raster_rim
+from .chart_kinds import SECTIONAL, Box, ChartKind
+from .chart_raster import WHITE_MIN_CHANNEL, read_rgb
 
-if TYPE_CHECKING:
-    from .charts import Box, ChartKind
-
-# wingtip.charts reaches the face, the masked-line cleaning and the raster's
-# colours through this module; they live in chart_masked_lines and chart_raster.
-__all__ = ["detect_face", "find_masked_lines", "read_rgb", "remove_masked_lines", "split_antimeridian", "without_raster_rim"]
+# The chart pipeline reaches the face and the masked-line cleaning through
+# this module; the cleaning lives in chart_masked_lines.
+__all__ = ["detect_face", "find_masked_lines", "remove_masked_lines", "split_antimeridian"]
 
 log = logging.getLogger(__name__)
 
@@ -351,7 +344,7 @@ def detect_face(path: Path, kind: ChartKind) -> tuple[Box, Box, Path | None]:
         # By key, not identity: a ChartKind that crossed into a render
         # process, or a module run as __main__, is a copy, not this
         # module's own SECTIONAL.
-        if how == "neatline" and kind.key == charts.SECTIONAL.key:
+        if how == "neatline" and kind.key == SECTIONAL.key:
             position = _snap(position)
         log.info("%s: %s edge at %.4f (%s)", path.name, edge, position, how)
         face.append(position)

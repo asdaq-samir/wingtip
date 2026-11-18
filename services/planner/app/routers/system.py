@@ -13,7 +13,7 @@ from pathlib import Path
 
 import requests
 from fastapi import APIRouter, HTTPException
-from wingtip import chartlabels, charts, checkpoint_notes, data_cycles, model_registry, retry, weather
+from wingtip import chart_cycle, chart_upkeep, chartlabels, checkpoint_notes, data_cycles, model_registry, retry, weather
 from wingtip.terrain import DEFAULT_FAA_CACHE_DIR
 
 from .. import chart_model, chart_refresh, errors
@@ -252,7 +252,7 @@ def status() -> Status:
             faa_files=_faa_files(),
             weather=_weather_datasets(),
             charts={
-                **charts.status(),
+                **chart_upkeep.status(),
                 "refresh_window": CHARTS_REFRESH_WINDOW,
                 "refresh_workers": CHARTS_REFRESH_WORKERS,
                 "next": chart_cycle_check.status(),
@@ -278,7 +278,7 @@ def refresh_charts() -> ChartRefreshStarted:
         raise HTTPException(
             501, f"The charts job starts through the dev-services sidecar, which this planner has none of. By hand: {CHARTS_BY_HAND}"
         )
-    return ChartRefreshStarted(started=started, current_cycle=charts.current_cycle())
+    return ChartRefreshStarted(started=started, current_cycle=chart_cycle.current_cycle())
 
 
 @router.post("/api/retrain", openapi_extra=DEVELOPER)

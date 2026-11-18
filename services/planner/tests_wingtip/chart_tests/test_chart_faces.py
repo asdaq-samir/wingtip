@@ -7,7 +7,7 @@ import pytest
 import rasterio
 from rasterio.transform import from_bounds
 from rasterio.warp import transform_bounds
-from wingtip import chart_faces, charts
+from wingtip import chart_faces, chart_grid, chart_kinds, chart_render, chart_sheets, chart_warp
 
 from .helpers import PALETTE, _palette_raster, _rgb_raster
 
@@ -36,7 +36,7 @@ def test_a_tile_coarser_than_the_sheet_keeps_a_thin_line_as_a_fainter_one(tmp_pa
     from rasterio.warp import transform_bounds
 
     bbox = transform_bounds("EPSG:4326", "EPSG:3857", *box)
-    rgb, coverage = charts._warp_rgb(tmp_path / "sheet.tif", bbox, 256, 256, 41.05)
+    rgb, coverage = chart_warp.warp_rgb(tmp_path / "sheet.tif", bbox, 256, 256, 41.05)
     assert rgb.shape == (256, 256, 3)
     # Covered through, but for the scan's rim at the raster's own edge.
     assert coverage[8:-8, 8:-8].min() > 0.99
@@ -56,15 +56,15 @@ def test_render_and_detect_read_three_band_rasters_too(tmp_path):
     rgb[899:901, 250:, :] = 0  # south neatline
     rgb[100:900, 249:252, :] = 0  # west neatline
     _rgb_raster(tmp_path / "ifr.tif", box, rgb)
-    raster = charts.Raster(tmp_path / "ifr.tif", face=box, envelope=box)
-    tile = charts.render_tile([raster], 63, 94, 8)  # 91.4W to 90W, inside the tinted part
+    raster = chart_sheets.Raster(tmp_path / "ifr.tif", face=box, envelope=box)
+    tile = chart_render.render_tile([raster], 63, 94, 8)  # 91.4W to 90W, inside the tinted part
     assert tile is not None and tuple(tile[128, 128]) == (216, 232, 206, 255)
     # An IFR sheet's border is the sheet's own straight rows and
     # columns: the chart area is the widest stretch between ruling
     # lines -- here from the west line to the raster's east edge and
     # from the raster's top to the south line -- and comes with a mask
     # raster that keeps the collar out of the face's corners.
-    envelope, face, mask = chart_faces.detect_face(tmp_path / "ifr.tif", charts.IFR_LOW)
+    envelope, face, mask = chart_faces.detect_face(tmp_path / "ifr.tif", chart_kinds.IFR_LOW)
     assert face[0] == pytest.approx(-91.0, abs=0.03)
     assert face[1] == pytest.approx(40.4, abs=0.1)
     assert face[2] == pytest.approx(-88.0, abs=0.03)
@@ -72,15 +72,15 @@ def test_render_and_detect_read_three_band_rasters_too(tmp_path):
     assert mask is not None and mask.exists()
     # Rendered with the whole envelope as its face, the mask alone
     # keeps the legend column west of the border transparent.
-    masked = charts.Raster(tmp_path / "ifr.tif", face=box, envelope=box, mask=mask)
-    tile = charts.render_tile([masked], 63, 94, 8)  # 91.4W to 90W
-    west, _, east, _ = charts.tile_bbox_wgs84(63, 94, 8)
+    masked = chart_sheets.Raster(tmp_path / "ifr.tif", face=box, envelope=box, mask=mask)
+    tile = chart_render.render_tile([masked], 63, 94, 8)  # 91.4W to 90W
+    west, _, east, _ = chart_grid.tile_bbox_wgs84(63, 94, 8)
     col = int((-91.2 - west) / (east - west) * 256)
     assert tile[128, col, 3] == 0
     assert tuple(tile[128, 200]) == (216, 232, 206, 255)
     # The sectional method on the same raster, for comparison, reads
     # the neatline as a geographic line, and has no mask.
-    envelope, face, mask = chart_faces.detect_face(tmp_path / "ifr.tif", charts.SECTIONAL)
+    envelope, face, mask = chart_faces.detect_face(tmp_path / "ifr.tif", chart_kinds.SECTIONAL)
     assert face[0] == pytest.approx(-91.0, abs=0.02)
     assert mask is None
 
@@ -114,7 +114,7 @@ def test_a_sheet_across_the_antimeridian_is_measured_unwrapped_and_drawn_in_two(
         ds.write(data, 1)
         ds.write_colormap(1, PALETTE)
 
-    envelope, face, _ = chart_faces.detect_face(tmp_path / "aleut.tif", charts.SECTIONAL)
+    envelope, face, _ = chart_faces.detect_face(tmp_path / "aleut.tif", chart_kinds.SECTIONAL)
     assert envelope[0] < 180 < envelope[2] < 200  # unwrapped: east carried on past 180
     assert envelope[0] < face[0] < face[2] < envelope[2]
     parts = chart_faces.split_antimeridian(face, envelope)
@@ -160,7 +160,7 @@ def test_a_straight_bordered_face_reaches_the_bow_of_its_top_edge(tmp_path):
     # area, whole, in pooled blocks of four rows: rows 16 to 231.
     corner, middle = lat_at(36, 16), lat_at(500, 16)
     assert middle > corner + 0.3
-    _, face, _ = chart_faces.detect_face(tmp_path / "conic.tif", charts.IFR_LOW)
+    _, face, _ = chart_faces.detect_face(tmp_path / "conic.tif", chart_kinds.IFR_LOW)
     assert face[3] == pytest.approx(middle, abs=0.05)
     assert face[1] == pytest.approx(lat_at(36, 232), abs=0.05)
 
@@ -207,8 +207,8 @@ def test_two_straight_bordered_sheets_meet_without_daylight(tmp_path):
 
     rasters = []
     for name in ("a", "b"):
-        envelope, face, mask = chart_faces.detect_face(tmp_path / f"{name}.tif", charts.IFR_LOW)
-        rasters.append(charts.Raster(tmp_path / f"{name}.tif", face=face, envelope=envelope, mask=mask))
+        envelope, face, mask = chart_faces.detect_face(tmp_path / f"{name}.tif", chart_kinds.IFR_LOW)
+        rasters.append(chart_sheets.Raster(tmp_path / f"{name}.tif", face=face, envelope=envelope, mask=mask))
     assert rasters[0].face[1] <= rasters[1].face[3]  # the masks meet or overlap
 
     seam_lat = rasterio.warp.transform("EPSG:3857", "EPSG:4326", [west], [b_top])[1][0]
@@ -216,9 +216,9 @@ def test_two_straight_bordered_sheets_meet_without_daylight(tmp_path):
         n = 2**zoom
         x = int((-89.0 + 180.0) / 360.0 * n)
         y = int((1.0 - math.log(math.tan(math.radians(seam_lat)) + 1.0 / math.cos(math.radians(seam_lat))) / math.pi) / 2.0 * n)
-        tile = charts.render_tile(rasters, x, y, zoom)
+        tile = chart_render.render_tile(rasters, x, y, zoom)
         assert tile is not None
-        lons, lats = charts._tile_lons(x, zoom), charts._tile_lats(y, zoom)
+        lons, lats = chart_grid.tile_lons(x, zoom), chart_grid.tile_lats(y, zoom)
         inside = ((lons > -91.9) & (lons < -88.1))[None, :] & ((lats > 36.1) & (lats < 43.9))[:, None]
         assert (tile[:, :, 3][inside] == 255).all(), f"daylight at zoom {zoom}"
         # Clear of the line, each side is its own sheet's colour.

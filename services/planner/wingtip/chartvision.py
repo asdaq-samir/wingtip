@@ -21,7 +21,7 @@ blue, urban tint a specific yellow, sampled from real tiles (see
 PALETTE). Classification is by tolerant colour relationships rather
 than exact match: the tiles used to arrive JPEG-compressed from a
 hosted map service, and the same tests carried over unchanged when the
-source became the FAA's own palette rasters (wingtip.charts).
+source became the FAA's own palette rasters (wingtip.chart_tiles).
 
 What this does NOT do is name anything. A detected blue blob is a usable
 checkpoint before anyone knows it is called Nepco Lake; names are a

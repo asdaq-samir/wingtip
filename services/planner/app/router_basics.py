@@ -42,7 +42,7 @@ SHARED_CACHE = "public, max-age=300, s-maxage=3600"
 
 #: The chart the map draws, for every pilot: its cycle changes once in
 #: 56 days, and the planner itself holds the published one for a minute
-#: (wingtip.charts.serving_cycle), so a minute here, in the browser and at
+#: (wingtip.chart_serving.serving_cycle), so a minute here, in the browser and at
 #: the CDN. The old cycle's tiles stay published for months, so a page a
 #: minute behind a new cycle still draws a whole chart.
 CHART_CACHE = "public, max-age=60"

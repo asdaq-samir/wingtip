@@ -4,7 +4,7 @@ edited, keeps only its "Type: message" for the pages that follow it."""
 
 import logging
 
-from wingtip import charts, chartvision
+from wingtip import chart_serving, chartvision
 
 from app import chart_reader, detection
 
@@ -13,8 +13,8 @@ C81, KDLH = (42.3172, -88.0905), (46.8421, -92.1936)
 
 def test_a_failed_read_is_logged_with_its_traceback(tmp_path, monkeypatch, caplog):
     monkeypatch.setattr(detection, "CHART_TILE_CACHE_DIR", tmp_path)
-    monkeypatch.setattr(charts, "serving_cycle", lambda: "2026-09-03")
-    monkeypatch.setattr(charts, "tiles_revision", lambda cycle: 0)
+    monkeypatch.setattr(chart_serving, "serving_cycle", lambda: "2026-09-03")
+    monkeypatch.setattr(chart_serving, "tiles_revision", lambda cycle: 0)
 
     def broken(start, end, half_width_nm):
         yield from ()

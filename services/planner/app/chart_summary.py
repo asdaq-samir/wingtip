@@ -3,7 +3,7 @@
 so the map has them with no second request): the zoom range, the
 serving cycle and every chart kind with its sheets."""
 
-from wingtip import charts
+from wingtip import chart_coverage, chart_kinds, chart_serving
 from wingtip.config import VFR_SECTIONAL_MAX_ZOOM, VFR_SECTIONAL_MIN_ZOOM
 
 from .schemas.plan import ChartLayer, ChartSheet
@@ -21,26 +21,26 @@ def chart_layers() -> list[ChartLayer]:
             max_zoom=k.max_zoom,
             base=k.base,
             over=list(k.over),
-            cycle=(cycle := charts.serving_cycle_of(k.key)),
-            revision=charts.tiles_revision(cycle),
-            scales=charts.tile_scales(k.key),
+            cycle=(cycle := chart_serving.serving_cycle_of(k.key)),
+            revision=chart_serving.tiles_revision(cycle),
+            scales=chart_serving.tile_scales(k.key),
             sheets=[]
             if k.base
             else [
-                ChartSheet(name=name, label=charts.sheet_label(k, name), west=w, south=s, east=e, north=n)
-                for name, (w, s, e, n) in charts.sheets(k)
+                ChartSheet(name=name, label=chart_kinds.sheet_label(k, name), west=w, south=s, east=e, north=n)
+                for name, (w, s, e, n) in chart_coverage.sheets(k)
             ],
         )
-        for k in charts.KINDS.values()
+        for k in chart_kinds.KINDS.values()
     ]
 
 
 def chart_summary() -> dict:
-    cycle = charts.serving_cycle()
+    cycle = chart_serving.serving_cycle()
     return {
         "max_zoom": VFR_SECTIONAL_MAX_ZOOM,
         "min_zoom": VFR_SECTIONAL_MIN_ZOOM,
         "chart_cycle": cycle,
-        "chart_revision": charts.tiles_revision(cycle),
+        "chart_revision": chart_serving.tiles_revision(cycle),
         "chart_layers": chart_layers(),
     }

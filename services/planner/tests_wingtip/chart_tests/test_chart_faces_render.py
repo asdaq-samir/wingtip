@@ -5,7 +5,7 @@ import dataclasses
 import numpy as np
 import pytest
 from rasterio.warp import transform_bounds
-from wingtip import chart_faces, charts
+from wingtip import chart_faces, chart_grid, chart_kinds, chart_render, chart_sheets
 
 from .helpers import PALETTE, _palette_raster
 
@@ -36,13 +36,13 @@ def test_render_leaves_a_sheets_own_leaning_edge_transparent(tmp_path):
         ds.write_colormap(1, PALETTE)
     with rasterio.open(tmp_path / "utm.tif") as src:
         envelope = tuple(transform_bounds(src.crs, "EPSG:4326", *src.bounds))
-    raster = charts.Raster(tmp_path / "utm.tif", face=envelope, envelope=envelope)
+    raster = chart_sheets.Raster(tmp_path / "utm.tif", face=envelope, envelope=envelope)
 
     # A tile row along the raster's east edge: every pixel there is
     # either the chart's tint or transparent, never paper.
     west, south, east, north = envelope
-    x0, x1, y0, y1 = charts._tile_range(envelope, 9)
-    rgba = charts.render_tile([raster], x1, (y0 + y1) // 2, 9)
+    x0, x1, y0, y1 = chart_grid.tile_range(envelope, 9)
+    rgba = chart_render.render_tile([raster], x1, (y0 + y1) // 2, 9)
     assert rgba is not None
     opaque = rgba[:, :, 3] == 255
     assert opaque.any() and not opaque.all()
@@ -55,15 +55,15 @@ def test_render_composites_two_sheets_and_clips_each_to_its_face(tmp_path):
     _palette_raster(tmp_path / "left.tif", left_box, np.full((512, 512), 1, np.uint8))
     _palette_raster(tmp_path / "right.tif", right_box, np.full((512, 512), 2, np.uint8))
     rasters = [
-        charts.Raster(tmp_path / "left.tif", face=left_box, envelope=left_box),
-        charts.Raster(tmp_path / "right.tif", face=right_box, envelope=right_box),
+        chart_sheets.Raster(tmp_path / "left.tif", face=left_box, envelope=left_box),
+        chart_sheets.Raster(tmp_path / "right.tif", face=right_box, envelope=right_box),
     ]
 
     # Tile 65/94 at zoom 8 straddles the seam at 88W and the sheets'
     # north edge at 43N.
-    rgba = charts.render_tile(rasters, 65, 94, 8)
+    rgba = chart_render.render_tile(rasters, 65, 94, 8)
     assert rgba is not None and rgba.shape == (256, 256, 4)
-    west, _, east, _ = charts.tile_bbox_wgs84(65, 94, 8)
+    west, _, east, _ = chart_grid.tile_bbox_wgs84(65, 94, 8)
 
     def col(lon):
         return int((lon - west) / (east - west) * 256)
@@ -73,7 +73,7 @@ def test_render_composites_two_sheets_and_clips_each_to_its_face(tmp_path):
     assert rgba[2, 128, 3] == 0  # north of both faces: transparent
     assert rgba[200, col(-88.3) - 1 : col(-87.7), 3].all()  # nothing missing along the seam
 
-    assert charts.render_tile(rasters, 65, 80, 8) is None  # far to the north
+    assert chart_render.render_tile(rasters, 65, 80, 8) is None  # far to the north
 
 
 def test_detect_face_reads_neatlines_and_where_the_chart_runs_out(tmp_path):
@@ -100,16 +100,16 @@ def test_detect_face_reads_neatlines_and_where_the_chart_runs_out(tmp_path):
     data[row(43.6) : row(41.0), col(-91.0) - 1 : col(-91.0) + 2] = 7  # west neatline
     _palette_raster(tmp_path / "sheet.tif", box, data)
 
-    envelope, face, _ = chart_faces.detect_face(tmp_path / "sheet.tif", charts.SECTIONAL)
+    envelope, face, _ = chart_faces.detect_face(tmp_path / "sheet.tif", chart_kinds.SECTIONAL)
     assert envelope == pytest.approx(box, abs=1e-3)
     west, south, east, north = face
     assert west == -91.0 and south == 41.0  # neatlines, snapped
     assert -88.35 <= east <= -88.0  # the sheet's own edge, less the margin
     assert 43.3 <= north <= 43.55  # under the boxes, less the margin
 
-    # `python -m wingtip.charts` runs wingtip.charts as __main__, whose SECTIONAL
-    # is an equal but different object from the one chart_faces sees:
-    # the sheet must still be read as a sectional (snapped edges).
-    same_kind = dataclasses.replace(charts.SECTIONAL)
-    assert same_kind is not charts.SECTIONAL
+    # A kind equal to the sectional but not the same object (a module run
+    # as __main__ has its own, as `python -m wingtip.charts` once did) is
+    # still read as a sectional (snapped edges).
+    same_kind = dataclasses.replace(chart_kinds.SECTIONAL)
+    assert same_kind is not chart_kinds.SECTIONAL
     assert chart_faces.detect_face(tmp_path / "sheet.tif", same_kind)[1] == face

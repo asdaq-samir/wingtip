@@ -134,18 +134,24 @@ def _cifp_edition() -> date | None:
     return cifp_effective(held[-1]) if held else None
 
 
-def _charts_edition(charts) -> str | None:
+def _charts_edition() -> str | None:
     """The cycle the map draws, from disk or the held answer only
-    (charts.serving_cycle can fetch, and this is polled): the newest
+    (chart_serving.serving_cycle can fetch, and this is polled): the newest
     complete sectional pyramid. None when there is none, as the cloud
     pointer is not read here: a row that would only say the FAA's current
     cycle is in force says nothing."""
+    from . import chart_cycle, chart_serving, config
+
     try:
-        held = charts._serving_cache["value"]
-        if charts.CHART_TILES_URL and held:
+        held = chart_serving.held_serving_cycle()
+        if config.CHART_TILES_URL and held:
             return held
         return next(
-            (c for c in charts._cycles_on_disk(charts.CHART_TILE_CACHE_DIR) if charts.in_force(c) and charts.pyramid_complete(c, ("sec",))),
+            (
+                c
+                for c in chart_cycle.cycles_on_disk(config.CHART_TILE_CACHE_DIR)
+                if chart_cycle.in_force(c) and chart_serving.pyramid_complete(c, ("sec",))
+            ),
             None,
         )
     except Exception:  # noqa: BLE001 -- the status of the others is still worth having
@@ -161,7 +167,7 @@ def status(on: date | None = None) -> list[dict]:
     pyramid on disk. The d-TPP and the Chart Supplement
     are not here: they are fetched for the cycle in force on the day they
     are asked for (wingtip.publications), never kept past it."""
-    from . import charts, phone_pack
+    from . import phone_pack
     from .terrain import DEFAULT_FAA_CACHE_DIR
 
     out = []
@@ -169,7 +175,7 @@ def status(on: date | None = None) -> list[dict]:
         if (base / "APT_BASE.csv").exists():
             out.append(entry("nasr", "Airports, frequencies and navaids", "airac", _nasr_edition(base), on))
             break
-    served = _charts_edition(charts)
+    served = _charts_edition()
     if served:
         out.append(entry("charts", "Charts", "chart", chart_effective(served), on))
     cifp = _cifp_edition()

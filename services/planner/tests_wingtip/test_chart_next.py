@@ -8,7 +8,18 @@ from datetime import date, datetime, timezone
 
 import pytest
 
-from wingtip import chart_next, charts, data_cycles
+from wingtip import (
+    chart_archives,
+    chart_coverage,
+    chart_cycle,
+    chart_kinds,
+    chart_next,
+    chart_upkeep,
+    chart_render,
+    chart_serving,
+    config,
+    data_cycles,
+)
 
 
 def utc(text: str) -> datetime:
@@ -41,10 +52,10 @@ def test_the_swap_is_at_0901z_on_the_effective_date():
     after = chart_next.plan(utc("2026-12-24T09:01"))
     assert after.in_force == date(2026, 12, 24) and after.next == date(2027, 2, 18)
     assert not after.staging
-    assert not charts.in_force("12-24-2026", utc("2026-12-24T09:00"))
-    assert charts.in_force("12-24-2026", utc("2026-12-24T09:01"))
-    assert charts.in_force("10-29-2026", utc("2026-12-24T09:00"))
-    assert charts.in_force("not-a-cycle")
+    assert not chart_cycle.in_force("12-24-2026", utc("2026-12-24T09:00"))
+    assert chart_cycle.in_force("12-24-2026", utc("2026-12-24T09:01"))
+    assert chart_cycle.in_force("10-29-2026", utc("2026-12-24T09:00"))
+    assert chart_cycle.in_force("not-a-cycle")
 
 
 @pytest.mark.parametrize("asked, held", [(60, 55), (56, 55), (-3, 0), (0, 0), (14, 14)])
@@ -80,25 +91,25 @@ def test_what_the_planners_check_asks_for():
 
 @pytest.fixture
 def disk(tmp_path, monkeypatch):
-    monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
-    monkeypatch.setattr(charts, "CHARTS_DIR", tmp_path / "charts")
-    monkeypatch.setattr(charts, "_serving_cache", {"value": None, "at": 0.0})
-    monkeypatch.setattr(charts, "_kind_serving", {})
-    monkeypatch.setattr(charts, "current_cycle", lambda *a, **k: "10-29-2026")
+    monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
+    monkeypatch.setattr(config, "CHARTS_DIR", tmp_path / "charts")
+    monkeypatch.setattr(chart_serving, "_serving_cache", {"value": None, "at": 0.0})
+    monkeypatch.setattr(chart_serving, "_kind_serving", {})
+    monkeypatch.setattr(chart_cycle, "current_cycle", lambda *a, **k: "10-29-2026")
     return tmp_path
 
 
 def _complete(cycle):
-    for kind in charts.KINDS:
-        charts._write_pyramid_status(
+    for kind in chart_kinds.KINDS:
+        chart_serving.write_pyramid_status(
             cycle,
             {
                 "kind": kind,
                 "zooms": [3],
-                "sheets": sorted(charts.COVERAGE[kind]),
+                "sheets": sorted(chart_coverage.COVERAGE[kind]),
                 "finished_at": "t",
                 "tiles": 1,
-                "renderer": charts.RENDERER_VERSION,
+                "renderer": chart_render.RENDERER_VERSION,
             },
         )
 
@@ -107,15 +118,15 @@ def test_a_staged_cycle_is_not_served_before_its_date(disk, monkeypatch):
     _complete("10-29-2026")
     _complete("12-24-2026")
     monkeypatch.setattr(data_cycles, "in_force_day", lambda now=None: date(2026, 12, 23))
-    assert charts.serving_cycle() == "10-29-2026"
-    assert charts.serving_cycle_of("ifr_low") == "10-29-2026"
-    assert data_cycles._charts_edition(charts) == "10-29-2026"
+    assert chart_serving.serving_cycle() == "10-29-2026"
+    assert chart_serving.serving_cycle_of("ifr_low") == "10-29-2026"
+    assert data_cycles._charts_edition() == "10-29-2026"
     # On its date, past 0901Z: the map goes over at its next look.
     monkeypatch.setattr(data_cycles, "in_force_day", lambda now=None: date(2026, 12, 24))
-    monkeypatch.setattr(charts, "_serving_cache", {"value": None, "at": 0.0})
-    monkeypatch.setattr(charts, "_kind_serving", {})
-    assert charts.serving_cycle() == "12-24-2026"
-    assert charts.serving_cycle_of("ifr_low") == "12-24-2026"
+    monkeypatch.setattr(chart_serving, "_serving_cache", {"value": None, "at": 0.0})
+    monkeypatch.setattr(chart_serving, "_kind_serving", {})
+    assert chart_serving.serving_cycle() == "12-24-2026"
+    assert chart_serving.serving_cycle_of("ifr_low") == "12-24-2026"
 
 
 def test_a_refresh_does_not_prune_before_the_cycle_is_in_force(disk, monkeypatch):
@@ -123,13 +134,13 @@ def test_a_refresh_does_not_prune_before_the_cycle_is_in_force(disk, monkeypatch
     # map's until 0901Z.
     _complete("10-29-2026")
     _complete("12-24-2026")
-    monkeypatch.setattr(charts, "current_cycle", lambda *a, **k: "12-24-2026")
-    monkeypatch.setattr(charts, "pack_complete", lambda cycle, kinds=None: {})
+    monkeypatch.setattr(chart_cycle, "current_cycle", lambda *a, **k: "12-24-2026")
+    monkeypatch.setattr(chart_archives, "pack_complete", lambda cycle, kinds=None: {})
     monkeypatch.setattr(data_cycles, "in_force_day", lambda now=None: date(2026, 12, 23))
-    charts.refresh(publish_bucket=None)
+    chart_upkeep.refresh(publish_bucket=None)
     assert (disk / "tiles" / "10-29-2026").exists()
     monkeypatch.setattr(data_cycles, "in_force_day", lambda now=None: date(2026, 12, 24))
-    charts.refresh(publish_bucket=None)
+    chart_upkeep.refresh(publish_bucket=None)
     assert not (disk / "tiles" / "10-29-2026").exists()
 
 

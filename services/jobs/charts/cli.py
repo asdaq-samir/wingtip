@@ -15,10 +15,10 @@ entry point):
   cycles before it deleted. It takes a turn among the machine's heavy
   work first (charts.turn). The planner starts it (app.chart_refresh,
   CHARTS_CYCLE_AUTO) through the dev-services sidecar.
-- `refresh`: the chart cycle alone (wingtip.charts.refresh), published to
+- `refresh`: the chart cycle alone (wingtip.chart_upkeep.refresh), published to
   CHART_TILES_BUCKET where one is set: the AWS scheduled task.
 - `pack`: every finished kind's loose tiles into its archives
-  (wingtip.charts.pack_complete), which `refresh` does at the end of its
+  (wingtip.chart_archives.pack_complete), which `refresh` does at the end of its
   passes; on its own, the one-off conversion of a cycle drawn before
   there were archives.
 - `prepare` fetches every sheet, `pyramid` renders every tile, `check`
@@ -29,7 +29,8 @@ entry point):
 
 Every one resumes where a stopped one left off. They were
 `python -m wingtip.charts` in the planner's image until the jobs split
-(#535); wingtip.charts keeps the work, this keeps the asking.
+(#535); wingtip's chart modules (wingtip.charts maps them) keep the
+work, this keeps the asking.
 """
 
 from __future__ import annotations
@@ -40,7 +41,21 @@ import os
 import sys
 from pathlib import Path
 
-from wingtip import altitude, chart_next, charts
+from wingtip import (
+    altitude,
+    chart_archives,
+    chart_cycle,
+    chart_grid,
+    chart_kinds,
+    chart_next,
+    chart_prepare,
+    chart_publish,
+    chart_pyramid,
+    chart_upkeep,
+    chart_rerender,
+    chart_serving,
+    config,
+)
 from wingtip.config import CHART_TILES_BUCKET, get_settings
 
 from . import next_cycle, overlays, turn
@@ -81,12 +96,12 @@ def main(argv: list | None = None) -> int:
     for name in ("run", "overlays", "prepare", "pyramid", "refresh", "check", "publish", "unmask", "pack", "next"):
         p = sub.add_parser(name)
         if name in ("prepare", "pyramid"):
-            p.add_argument("--kind", nargs="+", choices=list(charts.KINDS), default=list(charts.KINDS))
+            p.add_argument("--kind", nargs="+", choices=list(chart_kinds.KINDS), default=list(chart_kinds.KINDS))
         if name == "prepare":
             p.add_argument("--redetect", action="store_true", help="run the face detection again on sheets already on disk")
         if name in ("run", "pyramid", "refresh", "unmask"):
             # A pyramid's default comes from the memory there is
-            # (wingtip.charts.pyramid_workers): a fixed 4 was killed for
+            # (wingtip.chart_workers.pyramid_workers): a fixed 4 was killed for
             # memory at @2x.
             p.add_argument("--workers", type=int, default=None if name == "pyramid" else 2)
         if name == "next":
@@ -107,7 +122,7 @@ def main(argv: list | None = None) -> int:
             p.add_argument("--zooms", help="e.g. 5-12; the kind's own range by default")
             p.add_argument(
                 "--scales",
-                default=",".join(map(str, charts.TILE_SCALES)),
+                default=",".join(map(str, chart_grid.TILE_SCALES)),
                 help="the densities to draw, e.g. 2 to add the high-density tiles to a finished pyramid",
             )
             p.add_argument(
@@ -126,7 +141,7 @@ def main(argv: list | None = None) -> int:
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     if getattr(args, "tiles_dir", None):
-        charts.CHART_TILE_CACHE_DIR = Path(args.tiles_dir)
+        config.CHART_TILE_CACHE_DIR = Path(args.tiles_dir)
 
     if args.command == "overlays":
         return _overlays()
@@ -146,16 +161,16 @@ def main(argv: list | None = None) -> int:
 
 def _locked(args, parser) -> int:
     """The runs that write the cycle's tiles, or its publish ledger, hold
-    the refresh lock (wingtip.charts.refresh_lock) for their whole life. A
+    the refresh lock (wingtip.chart_upkeep.refresh_lock) for their whole life. A
     refresh or a pyramid that finds it held leaves the running one to it;
     an unmask waits, then renders its tiles again on what that run left; a
     publish waits rather than write back a ledger an unmask has struck
     tiles off."""
     if args.command in ("refresh", "pyramid", "unmask", "publish", "pack", "next"):
         wait = args.command in ("unmask", "publish", "pack")
-        with charts.refresh_lock(wait=wait) as got:
+        with chart_upkeep.refresh_lock(wait=wait) as got:
             if not got:
-                log.info("a refresh, pyramid or unmask is already running on %s; leaving it to that", charts.CHART_TILE_CACHE_DIR)
+                log.info("a refresh, pyramid or unmask is already running on %s; leaving it to that", config.CHART_TILE_CACHE_DIR)
                 return 0 if args.command in ("refresh", "next") else 1
             return _run(args, parser)
     return _run(args, parser)
@@ -163,11 +178,11 @@ def _locked(args, parser) -> int:
 
 def _run(args, parser) -> int:
     if args.command == "prepare":
-        prepared = charts.prepare_all(tuple(args.kind), redetect=args.redetect)
-        log.info("%d charts ready under %s", len(prepared), charts.CHARTS_DIR)
+        prepared = chart_prepare.prepare_all(tuple(args.kind), redetect=args.redetect)
+        log.info("%d charts ready under %s", len(prepared), config.CHARTS_DIR)
         return 0
     if args.command == "unmask":
-        changed = charts.unmask_prepared(args.cycle, workers=args.workers, again=args.again)
+        changed = chart_rerender.unmask_prepared(args.cycle, workers=args.workers, again=args.again)
         log.info("masked lines removed: %s", {k: len(v) for k, v in changed.items()} or "none left to remove")
         return 0
     if args.command == "next":
@@ -176,34 +191,34 @@ def _run(args, parser) -> int:
         log.info("next cycle: %s", state)
         return 1 if state == chart_next.FAILED else 0
     if args.command == "refresh":
-        cycle = charts.refresh(workers=args.workers, publish_bucket=args.bucket)
-        log.info("cycle %s complete; serving %s", cycle, charts.serving_cycle())
+        cycle = chart_upkeep.refresh(workers=args.workers, publish_bucket=args.bucket)
+        log.info("cycle %s complete; serving %s", cycle, chart_serving.serving_cycle())
         return 0
     if args.command == "publish":
         if not args.bucket:
             parser.error("publish needs --bucket or CHART_TILES_BUCKET")
-        count = charts.publish(args.cycle or charts.serving_cycle(), args.bucket)
+        count = chart_publish.publish(args.cycle or chart_serving.serving_cycle(), args.bucket)
         log.info("%d tiles uploaded", count)
         return 0
     if args.command == "pack":
-        for cycle in args.cycle or charts._cycles_on_disk(charts.CHART_TILE_CACHE_DIR):
-            log.info("%s: packed %s", cycle, charts.pack_complete(cycle) or "nothing (no finished kind with loose tiles)")
+        for cycle in args.cycle or chart_cycle.cycles_on_disk(config.CHART_TILE_CACHE_DIR):
+            log.info("%s: packed %s", cycle, chart_archives.pack_complete(cycle) or "nothing (no finished kind with loose tiles)")
         return 0
     if args.command == "check":
-        gaps = charts.face_gaps()
+        gaps = chart_prepare.face_gaps()
         for a, b, gap in gaps:
             print(f"GAP {gap:.3f} deg between {a} and {b}")
-        print(f"{len(gaps)} gaps between adjacent sheets ({charts.serving_cycle()})")
+        print(f"{len(gaps)} gaps between adjacent sheets ({chart_serving.serving_cycle()})")
         return 1 if gaps else 0
     zooms = None
     if args.zooms:
         lo, _, hi = args.zooms.partition("-")
         zooms = tuple(range(int(lo), int(hi or lo) + 1))
     for key in args.kind:
-        kind = charts.KINDS[key]
-        scales = tuple(int(s) for s in args.scales.split(",") if int(s) in charts.TILE_SCALES)
-        count = charts.render_pyramid(
+        kind = chart_kinds.KINDS[key]
+        scales = tuple(int(s) for s in args.scales.split(",") if int(s) in chart_grid.TILE_SCALES)
+        count = chart_pyramid.render_pyramid(
             kind, zooms=zooms and tuple(z for z in zooms if kind.min_zoom <= z <= kind.max_zoom), workers=args.workers, scales=scales
         )
-        log.info("%s: %d tiles written under %s", key, count, charts.CHART_TILE_CACHE_DIR)
+        log.info("%s: %d tiles written under %s", key, count, config.CHART_TILE_CACHE_DIR)
     return 0

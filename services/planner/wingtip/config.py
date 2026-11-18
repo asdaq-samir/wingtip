@@ -63,8 +63,8 @@ MIN_LABELED_ROWS = 30
 
 # The VFR charts themselves: the FAA publishes every sectional and
 # terminal area chart as a georeferenced TIFF, free, on the 56-day
-# chart cycle. wingtip.charts downloads the ones a route needs and renders
-# the map's tiles from them -- the chart exactly as printed, served by
+# chart cycle. wingtip.chart_prepare downloads the ones a route needs, and
+# wingtip.chart_render draws the map's tiles from them -- the chart exactly as printed, served by
 # this app, with no hosted map service in between. (Two came and went
 # before this: the FAA's own ArcGIS tile cache, which went behind a
 # login around 2026-09-03, then Texas A&M's public mirror of the same
@@ -107,7 +107,7 @@ class Settings(BaseSettings):
     chart_tiles_bucket: str | None = None
     #: The key prefix inside that bucket.
     chart_tiles_prefix: str = "tiles"
-    #: How many chart sheets may be downloaded and prepared at once (wingtip.charts).
+    #: How many chart sheets may be downloaded and prepared at once (wingtip.chart_prepare).
     charts_prepare_at_once: int = 2
     #: Whether a tile may download a sheet it needs (CHARTS_FETCH_FOR_TILES=0 in CI).
     charts_fetch_for_tiles: bool = True
