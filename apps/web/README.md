@@ -18,7 +18,7 @@ component (`MapPage`) in two modes:
   minutes by day, 45 at night) the fuel check holds the tanks against.
   Printed, the log is a landscape page with blank ATA and
   fuel-remaining columns to fill in in flight. Opened wide
-  (`?view=briefing`, or the sidebar toggle), the same drawer is the
+  (`?view=full`, or the sidebar toggle), the same drawer is the
   FAA-sequence briefing: the nav log with the briefing's sections
   under it and Print in its header, the map still beside it. The
   pilot console drops down over the map from the header: sign-in, the

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { settle, slow, openNavLog, navLogSheet } from "./helpers";
+import { settle, slow, openNavLog, navLogSheet, openPanel } from "./helpers";
 
 /**
  * Show the work (LegWorkings): the selected leg's wind triangle worked
@@ -8,7 +8,7 @@ import { settle, slow, openNavLog, navLogSheet } from "./helpers";
 test("a leg's heading worked out, and a student's magnetic heading marked", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openNavLog(page);
   const rows = navLogSheet(page).locator("[data-kind=checkpoint]");
   await expect(rows.first()).toBeVisible({ timeout: slow(120000) });

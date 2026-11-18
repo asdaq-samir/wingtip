@@ -59,7 +59,7 @@ test("the nav log fits a phone's panel with long names, five-figure altitudes an
     },
   );
   const depart = new Date(Date.now() + 26 * 3600_000).toISOString().slice(0, 16);
-  await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${encodeURIComponent(depart)}&view=briefing`);
+  await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${encodeURIComponent(depart)}&view=full`);
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   await openNavLog(page);

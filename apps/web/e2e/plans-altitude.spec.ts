@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, openProfile, settle, slow } from "./helpers";
+import { controlsInSight, openProfile, settle, slow, openPanel } from "./helpers";
 import { pickAirplane } from "./startState";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
@@ -140,7 +140,7 @@ test("the altitude's figures are taken whole as it is tapped, and its Done flies
   // deletes, three figures and a tap elsewhere.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await controlsInSight(page);
   const input = page.getByTestId("altitude-input");
   await expect(input).toHaveValue(/^FL-\d{3}$/, { timeout: slow(60000) });

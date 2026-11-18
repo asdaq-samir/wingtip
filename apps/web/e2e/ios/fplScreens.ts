@@ -168,7 +168,7 @@ export const FPL_SCREENS: Screen[] = [
         (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname) && url.searchParams.get("stops") === "VPBNG,KMSN",
         (route) => route.abort(),
       );
-      await page.goto(`/app/plan?${ROUTE}&stops=VPBNG,KMSN&view=briefing`);
+      await page.goto(`/app/plan?${ROUTE}&stops=VPBNG,KMSN&view=full`);
       await controlsInSight(page);
       await openRoute(page);
       await expect(page.getByTestId("route-box")).toBeVisible({ timeout: slow(30000) });
@@ -195,7 +195,7 @@ export const FPL_SCREENS: Screen[] = [
             }) + "\n",
         }),
       );
-      await page.goto(`/app/plan?${ROUTE}&view=briefing`);
+      await page.goto(`/app/plan?${ROUTE}&view=full`);
       await controlsInSight(page);
       await openProfile(page);
       await expect(page.getByTestId("unflyable-add-stop")).toBeVisible();
@@ -219,7 +219,7 @@ export const FPL_SCREENS: Screen[] = [
   {
     name: "departure picker",
     ready: async (page) => {
-      await page.goto(`/app/plan?${ROUTE}&view=briefing`);
+      await page.goto(`/app/plan?${ROUTE}&view=full`);
       await controlsInSight(page);
       await page.getByTestId("depart-date").click({ timeout: slow(30000) });
       await page.locator('[data-slot="calendar"] td [role="button"]:not([aria-disabled="true"]):not([data-outside-month])').last().click();
@@ -243,7 +243,7 @@ export const FPL_SCREENS: Screen[] = [
   {
     name: "local flight",
     ready: async (page) => {
-      await page.goto("/app/plan?dep=C81&dest=C81&view=briefing");
+      await page.goto("/app/plan?dep=C81&dest=C81&view=full");
       await expect(page.locator('[data-slot="section-summary"]').first()).toContainText("Aloft", { timeout: slow(30000) });
       // Its fuel required among the figures.
       await openTab(page, "Local");

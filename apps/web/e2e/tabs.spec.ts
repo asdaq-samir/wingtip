@@ -30,7 +30,7 @@ async function briefingAs(page: Page, change: (json: Record<string, unknown>) =>
 }
 
 async function planned(page: Page) {
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
 }
@@ -225,7 +225,7 @@ test(
 );
 
 test("a route from the pilot's position has a section for its airports alone, none for the position", async ({ page }) => {
-  await page.goto("/app/plan?dep=%4042.2340%2C-87.9877%2C700&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=%4042.2340%2C-87.9877%2C700&dest=KDLH&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   const drawer = sideDrawer(page);

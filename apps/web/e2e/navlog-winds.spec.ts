@@ -25,7 +25,7 @@ test("a winds outage never reads as an altitude the pilot typed", async ({ page 
     await route.fulfill({ status: 200, contentType: "application/x-ndjson", body: cut.map((m) => JSON.stringify(m)).join("\n") + "\n" });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openTab(page, "Nav Log");
   await controlsInSight(page);
 

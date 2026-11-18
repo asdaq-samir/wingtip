@@ -271,8 +271,10 @@ test.describe("/app/plan", () => {
       if (phone) expect(Math.abs(grabber.y - panelBox.y)).toBeLessThan(2);
       else expect(Math.abs(grabber.y + grabber.height - (panelBox.y + panelBox.height))).toBeLessThan(2);
     }).toPass({ timeout: 10_000 });
-    // Taps cycle it: on up from half, then back down to the pill.
-    for (const height of ["full", "half", "peek"]) {
+    // Taps cycle it: on up from half, then back down to the pill. The side
+    // panel is in or out, half and all the way up one box there, so a click
+    // puts it away at once (sheet/grabberSizes; the owner's Mac, 2026-11-18).
+    for (const height of phone ? ["full", "half", "peek"] : ["peek"]) {
       await page.getByTestId("sidebar-trigger-button").click();
       await expect(frontSheet(page)).toHaveAttribute("data-panel", height);
     }

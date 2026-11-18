@@ -74,7 +74,7 @@ test("a TFR in force when the flight gets there is flagged, one that starts late
     await route.fulfill({ response, body });
   });
 
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   // Counted on FPL's Brief button (FplTabBar), the Preflight marked for

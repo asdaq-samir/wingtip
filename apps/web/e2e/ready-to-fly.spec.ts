@@ -12,7 +12,7 @@ import { pickAirplane } from "./startState";
  */
 
 test("the Brief ends on Ready to fly, its actions fixing in place", async ({ page }) => {
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   // The plan in, with no airplane: its distance, never a fuel figure.
   await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/DIST/i, { timeout: slow(120_000) });

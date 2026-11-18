@@ -16,7 +16,7 @@ test("Print offers the kneeboard card, and prints it alone on half-letter paper"
         `${document.documentElement.className}|${document.querySelector("style[data-kneeboard]")?.textContent ?? ""}`;
     };
   });
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
 

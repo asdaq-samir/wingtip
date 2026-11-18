@@ -81,6 +81,6 @@ test("the route cleared all the way up leaves the sheet all the way up", async (
   await clearTheRoute(page);
   await expect(page).not.toHaveURL(/[?&]dest=/);
   await expect(page).not.toHaveURL(/[?&]dep=/);
-  await expect(page).toHaveURL(/[?&]view=briefing/);
+  await expect(page).toHaveURL(/[?&]view=full/);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
 });

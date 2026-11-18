@@ -18,7 +18,7 @@ const route = { dep: "KMSN", stops: "KJVL,KRFD", dest: "KDPA" };
 
 describe("planHistory", () => {
   it("keeps the plan's keys only", () => {
-    const params = new URLSearchParams({ ...route, place: "KORD", view: "briefing", procs: "KDPA:R02R" });
+    const params = new URLSearchParams({ ...route, place: "KORD", view: "full", procs: "KDPA:R02R" });
     expect(planStateOf(params)).toEqual({ ...route, procs: "KDPA:R02R" });
   });
 

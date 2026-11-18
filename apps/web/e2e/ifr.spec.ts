@@ -1,5 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, closeNavLog, controlsInSight, emptyPlan, openNavLog, openProfile, openSection, openTab, settle, slow } from "./helpers";
+import {
+  closeCard,
+  closeNavLog,
+  controlsInSight,
+  emptyPlan,
+  openNavLog,
+  openProfile,
+  openSection,
+  openTab,
+  settle,
+  slow,
+  openPanel,
+} from "./helpers";
 import { pickAirplane } from "./startState";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
@@ -27,7 +39,7 @@ test("under IFR the altitude is chosen from the minimum IFR altitude by directio
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openTab(page, "Nav Log");
   await controlsInSight(page);
   const why = page.getByTestId("altitude-why");
@@ -113,7 +125,7 @@ test("under IFR an airway in the route is flown fix by fix, its published MEA th
   // Appleton.
   await page.goto("/app/plan?dep=C81&dest=KATW&stops=BAE,V191,OSH&procs=C81:BAEE1:BAE,KATW:OSHH2:OSH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openNavLog(page);
   const log = page.getByRole("table", { name: /Navigation log from/i });
   await expect(log).toContainText("CORIR", { timeout: slow(90000) });
@@ -245,7 +257,7 @@ test("under IFR the Weather tab says whether an alternate is needed, files one w
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openTab(page, "Weather");
   await openSection(page, "Alternate");
   const section = page.getByTestId("alternate");

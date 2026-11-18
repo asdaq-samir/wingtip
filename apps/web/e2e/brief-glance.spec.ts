@@ -59,7 +59,7 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
       weather_unavailable: [],
     });
   });
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);
@@ -116,7 +116,7 @@ test("a private destination is a line of the Brief: land only with the owner's p
   // IL11, Donald Alfred Gade, private (NASR FACILITY_USE_CODE PR), its
   // phone NASR APT_CON's; the engine's gonogo_field_permission row, after
   // the tabs' findings.
-  await page.goto("/app/plan?dep=C81&dest=IL11&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=IL11&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);

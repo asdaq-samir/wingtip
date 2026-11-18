@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { slow, settle, openTab, openSection } from "./helpers";
+import { slow, settle, openTab, openSection, openPanel } from "./helpers";
 
 /**
  * The Brief's Passengers: 14 CFR 91.107's briefing ticked off for the
@@ -14,7 +14,7 @@ test("the passengers are briefed as 91.107 asks, and sent the flight", async ({ 
   });
   await page.goto("/app/plan?dep=KMSN&dest=KOSH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openTab(page, "Brief");
   await openSection(page, "Passengers");
   const section = page.getByTestId("passengers");

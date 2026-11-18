@@ -39,8 +39,8 @@ const RouteForm = lazy(() => import("../../components/RouteForm"));
  * route, how far the panel is out, the console) lives here once.
  *
  * How far the panel is out is the address on the pilot's page while it
- * is all the way out (`?view=briefing`), so a pasted link lands on the
- * briefing and the back button leaves it; the rest of the time, and on
+ * is all the way out (`?view=full`), so a pasted link lands with it
+ * all the way out and the back button lowers it; the rest of the time, and on
  * the developer's page, it is plain state.
  */
 export default function MapPage({ mode }: { mode: Mode }) {
@@ -104,8 +104,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
   // is out of sight (lib/airportIndex).
   useWarmAirportIndex(mode === "pilot");
   useHomeAirportSync(); // the account's home base and this device's home airport, one field
-  const briefingInAddress = address.view === "briefing";
-  const panel: PanelState = mode === "pilot" ? (briefingInAddress ? "full" : localPanel === "full" ? "peek" : localPanel) : localPanel;
+  const fullInAddress = address.view === "full";
+  const panel: PanelState = mode === "pilot" ? (fullInAddress ? "full" : localPanel === "full" ? "peek" : localPanel) : localPanel;
   // The panel moves the moment the address says so: nuqs changes the
   // address's state at once, where React Router landed a navigation in a
   // transition, which a busy page (the plan streaming in) held back, and
@@ -114,10 +114,10 @@ export default function MapPage({ mode }: { mode: Mode }) {
   const setPanel = useCallback(
     (next: PanelState) => {
       setLocalPanel(next);
-      if (mode !== "pilot" || (next === "full") === briefingInAddress) return;
-      void setAddress({ view: next === "full" ? "briefing" : null });
+      if (mode !== "pilot" || (next === "full") === fullInAddress) return;
+      void setAddress({ view: next === "full" ? "full" : null });
     },
-    [mode, briefingInAddress, setAddress],
+    [mode, fullInAddress, setAddress],
   );
 
   // The console, the account page: opened from the account button over

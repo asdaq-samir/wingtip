@@ -120,7 +120,7 @@ export const addressParsers = {
   depart: parseAsString,
   local_min: parseAsNumberLiteral(LOCAL_MINUTES).withDefault(60),
   // The sheet all the way up, where the pilot left it.
-  view: parseAsStringLiteral(["briefing"] as const),
+  view: parseAsStringLiteral(["full"] as const),
   // What is open over the sheet: an airport's card, the airspace over a
   // point held, an airplane tracked by its ICAO address and one of its past
   // flights by its takeoff's time, Nearest and the place it is from,

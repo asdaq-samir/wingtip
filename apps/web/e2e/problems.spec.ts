@@ -348,7 +348,7 @@ test("the chart underneath stays draggable while a toast is showing", async ({ p
 // takes no tap but its own controls', so the route's box under it does.
 test("with the panel out, the progress is a toast and the flight's line keeps its figures", async ({ page }) => {
   await holdCourse(page);
-  await page.goto(`${PLAN}&view=briefing`);
+  await page.goto(`${PLAN}&view=full`);
   await expect(toasts(page).filter({ hasText: "Drawing Route" })).toHaveCount(1, { timeout: 20000 });
   await expect(page.getByTestId("flight-line")).not.toContainText("Plotting");
 });

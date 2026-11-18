@@ -49,7 +49,7 @@ test("the search bar, with no route", async ({ page }) => {
 });
 
 test("a route's panel out, each of its tabs", async ({ page }) => {
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   for (const tab of ["Nav Log", "Weather", "Brief", "Performance"] as const) {

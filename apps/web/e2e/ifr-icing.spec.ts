@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openSection, openTab, settle, slow } from "./helpers";
+import { openSection, openTab, settle, slow, openPanel } from "./helpers";
 import { pickAirplane } from "./startState";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
@@ -86,7 +86,7 @@ test("under IFR a leg in cloud at or above the freezing level is icing possible,
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openTab(page, "Brief");
   const weather = page.getByTestId("verdict-weather");
   await expect(weather).toContainText(/Icing possible at [\d,]+ ft: the freezing level at 2,000 ft, in cloud; 1 pilot report of icing/, {
@@ -177,7 +177,7 @@ test("under IFR the AWC's forecast icing at the altitude flown is a caution, leg
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openTab(page, "Brief");
   const weather = page.getByTestId("verdict-weather");
   await expect(weather).toContainText(/Forecast icing, moderate, at [\d,]+ ft on leg 1/, { timeout: slow(90000) });
