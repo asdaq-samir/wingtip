@@ -35,7 +35,7 @@ object WingtipColors {
         /** A VFR waypoint's magenta, the sectional's: the one it draws a field with no tower in. */
         val Waypoint = Color(0xFFC0309F)
         const val WAYPOINT_HEX = "#c0309f"
-        /** iOS's systemBlue, the blue Maps draws its own marks in: the position dot, a point held on the chart, a procedure's Direct to. Not the tint, which is a step deeper for words on white. */
+        /** iOS's systemBlue, the blue Maps draws its own marks in: the position dot, a search's results, a flown track, a procedure's Direct to. A point held on the chart is ringed in color.chart.selected's yellow. Not the tint, which is a step deeper for words on white. */
         val MapBlue = Color(0xFF007AFF)
         const val MAP_BLUE_HEX = "#007aff"
         /** Map blue a step deeper, for words on the chart's white chips (the route's way label): 5.4:1 on white, where map blue's #007aff is 4.0:1, under WCAG 1.4.3's 4.5 for 12-point text. The chips stay white in the dark, as the chart does, so one value (the owner, 2026-11-17: "Yes to all recs"). */
