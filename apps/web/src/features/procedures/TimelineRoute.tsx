@@ -73,7 +73,9 @@ export default function TimelineRoute({ points, ...props }: ProceduresRouteProps
           // A small pill on the hairline between the lines either side of
           // it, no row of its own (the owner, 2026-11-17: "Instead of stops
           // row can we make a small pill at the separator"): the stock
-          // secondary button at its smallest, rounded, at the text's start,
+          // secondary button at its smallest, rounded, centred on the hairline
+          // (from the text's start, 2.75 rem in, to the end; the owner: "Center
+          // the stops pull"),
           // its 44-point area a pseudo-element over the hairline. The line
           // under it draws the hairline it sits on.
           <div className="relative z-10 h-0">
@@ -84,7 +86,7 @@ export default function TimelineRoute({ points, ...props }: ProceduresRouteProps
               onClick={() => useOpenLine.setState(unfolded ? { stops: false, key: stopOpen ? null : openKey } : { stops: true })}
               aria-expanded={unfolded}
               data-testid="timeline-more"
-              className="absolute top-0 left-11 -translate-y-1/2 rounded-full after:absolute after:-inset-x-2 after:-inset-y-2.5 after:content-['']"
+              className="absolute top-0 left-[calc(50%+1.375rem)] -translate-1/2 rounded-full after:absolute after:-inset-x-2 after:-inset-y-2.5 after:content-['']"
             >
               {words}
               <ChevronDown
