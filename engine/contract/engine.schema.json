@@ -3702,6 +3702,40 @@
       ],
       "additionalProperties": false
     },
+    "average_groundspeed_kt": {
+      "description": "The average ground speed over a stretch, knots: its miles over its hours (FAA-H-8083-25C, PHAK ch. 16); null where no time passed. The copilot's planned speed (the nav log's distance over its time en route) and a past flight's (the miles flown over its time aloft).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AverageGroundspeedKtInput",
+          "type": "object",
+          "properties": {
+            "distance_nm": {
+              "type": "number"
+            },
+            "minutes": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "distance_nm",
+            "minutes"
+          ]
+        },
+        "answer": {
+          "title": "AverageGroundspeedKtAnswer",
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "aviation_grid_bands": {
       "description": "The Aviation Weather Center's words for its icing and turbulence grids (aviationweather.gov GFA help, read 2026-11-12): icing severity by category, 0 none, 1 trace, 2 light, 3 moderate, 4 heavy; turbulence by EDR, (m^2/s^3)^1/3, from each word's threshold in the weight class's row: light (< 15,500 lb) 0.13, 0.16, 0.36, 0.64; medium 0.15, 0.20, 0.44, 0.79; heavy 0.17, 0.24, 0.54, 0.96.",
       "type": "object",
@@ -5856,6 +5890,97 @@
           "required": [
             "search_ft",
             "reach_deg"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "copilot_flight": {
+      "description": "The planned flight the in-flight copilot starts from: the fuel at takeoff (the fuel aboard at the start less the taxi allowance, never below none), the plan's ground speed (its distance over its time en route, PHAK ch. 16) and whether anyone but the pilot is aboard for 14 CFR 61.57(a) and (b)'s passenger currency (a station of the load other than the pilot's, the baggage's or the cargo's with weight in it). Each figure null where the plan has none.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CopilotFlightInput",
+          "type": "object",
+          "properties": {
+            "fuel_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "taxi_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "distance_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ete_min": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "stations": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "lb": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          },
+          "required": []
+        },
+        "answer": {
+          "title": "CopilotFlightAnswer",
+          "type": "object",
+          "properties": {
+            "fuel_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "planned_gs_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "passengers": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "fuel_gal",
+            "planned_gs_kt",
+            "passengers"
           ]
         }
       },
@@ -9693,6 +9818,107 @@
         "answer": {
           "title": "FiledSpeedAnswer",
           "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "filed_times": {
+      "description": "FAA Form 7233-4's item 16 total EET and item 19 endurance (AIM Appendix 4: HHMM; E/ the fuel endurance time). The EET is the nav log's minutes rounded up; the endurance the fuel aboard at the cruise burn rounded down: the highest burn of the legs flown at cruise (no phase), never a climb's or a descent's, else the airplane's own cruise burn. Each null where the plan cannot say.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FiledTimesInput",
+          "type": "object",
+          "properties": {
+            "ete_min": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "fuel_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "legs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "phase": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "fuel_burn_gph": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            },
+            "cruise_burn_gph": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "legs"
+          ]
+        },
+        "answer": {
+          "title": "FiledTimesAnswer",
+          "type": "object",
+          "properties": {
+            "burn_gph": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "eet_minutes": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "eet": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "endurance_minutes": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "endurance": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "burn_gph",
+            "eet_minutes",
+            "eet",
+            "endurance_minutes",
+            "endurance"
+          ]
         }
       },
       "required": [
@@ -14723,6 +14949,39 @@
       ],
       "additionalProperties": false
     },
+    "hold_inbound_deg": {
+      "description": "A hold's inbound course, 0 to 360, from the course the pilot gives: as given where it is the inbound one, its reciprocal where it is the outbound one (AIM 5-3-8: the outbound leg is flown on the inbound course's reciprocal).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "HoldInboundDegInput",
+          "type": "object",
+          "properties": {
+            "course_deg": {
+              "type": "number"
+            },
+            "outbound": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "course_deg"
+          ]
+        },
+        "answer": {
+          "title": "HoldInboundDegAnswer",
+          "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "hold_length_read": {
       "description": "A hold's length from its code (\"2T\", \"10M\"), or null.",
       "type": "object",
@@ -15477,6 +15736,27 @@
       ],
       "additionalProperties": false
     },
+    "ifr_alternate_not_required": {
+      "description": "Why a destination needs no IFR alternate, in 14 CFR 91.169(b)'s own figures: an instrument approach, and a forecast of at least 2,000 ft and 3 sm for an hour before and after the ETA ((b)(2)(i), the \"1-2-3\").",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "IfrAlternateNotRequiredInput",
+          "type": "object",
+          "properties": {},
+          "required": []
+        },
+        "answer": {
+          "title": "IfrAlternateNotRequiredAnswer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "ifr_alternate_window": {
       "description": "The window, unix seconds, a field's TAF is read over for 14 CFR 91.169: the destination's from an hour before to an hour after the ETA (91.169(b)(2)(i), aircraft other than helicopters); an alternate's the ETA there alone, at the estimated time of arrival at the alternate airport (91.169(c)).",
       "type": "object",
@@ -16058,7 +16338,7 @@
       "additionalProperties": false
     },
     "inspections_due": {
-      "description": "The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given.",
+      "description": "The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given. With them `due`, the list the gateway shows and reminds of: each named and with its rule (an AD its own number and 14 CFR 39.7).",
       "type": "object",
       "properties": {
         "input": {
@@ -16131,6 +16411,75 @@
                   "type": "null"
                 }
               ]
+            },
+            "tail_number": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The airplane's registration, for the reminders' words."
+            },
+            "for_hire": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Flown for hire, so the 100-hour inspection applies (91.409(b))."
+            },
+            "elt_battery_due_on": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "YYYY-MM-DD, the date marked on the transmitter (91.207(c))."
+            },
+            "kept": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "description": "The owner's own items: an AD (14 CFR part 39) or anything else.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "kind": {
+                    "enum": [
+                      "AD",
+                      "OTHER"
+                    ]
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "reference": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "due_on": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "YYYY-MM-DD"
+                  },
+                  "due_at_hours": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "kind",
+                  "title"
+                ]
+              }
             }
           }
         },
@@ -16198,6 +16547,13 @@
                   "type": "null"
                 }
               ]
+            },
+            "due": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PaperworkDue"
+              },
+              "description": "Each recorded one, named and cited, in order: the annual, the 100-hour (for hire), the ELT and its battery, the static system, the transponder, the VOR check (where within its limit), then the owner's dated items."
             }
           },
           "required": [
@@ -16206,7 +16562,8 @@
             "static_check_until",
             "transponder_check_until",
             "hundred_hour_due_at_hours",
-            "vor_check"
+            "vor_check",
+            "due"
           ],
           "additionalProperties": false
         }
@@ -18059,7 +18416,8 @@
               "type": [
                 "number",
                 "null"
-              ]
+              ],
+              "description": "Feet MSL as the GPS gives it; said to the hundred feet (AIM 4-2-9: the thousands plus the hundreds)."
             },
             "fuel_min": {
               "type": [
@@ -19878,6 +20236,42 @@
       ],
       "additionalProperties": false
     },
+    "nm_along": {
+      "description": "How far along the route each leg ends, nm: the running sum of the legs' miles, a null (a departure's row, no leg) adding nothing.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NmAlongInput",
+          "type": "object",
+          "properties": {
+            "legs_nm": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          },
+          "required": [
+            "legs_nm"
+          ]
+        },
+        "answer": {
+          "title": "NmAlongAnswer",
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "no_altitude": {
       "description": "Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, and all of it as one message.",
       "type": "object",
@@ -21477,6 +21871,13 @@
             "trackingInWindow": {
               "type": "boolean",
               "description": "Intercepting and tracking courses logged in them (61.57(c)(1)(iii))."
+            },
+            "due": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PaperworkDue"
+              },
+              "description": "What falls due, each named and cited: the flight review (61.56(c)), the medical (61.23), passengers by day and at night (61.57(a), (b)), instrument currency (61.57(c)), each where it can be had."
             }
           },
           "required": [
@@ -21496,7 +21897,8 @@
             "ipcNeededAfter",
             "approachesInWindow",
             "holdingInWindow",
-            "trackingInWindow"
+            "trackingInWindow",
+            "due"
           ],
           "additionalProperties": false
         }
@@ -22403,6 +22805,43 @@
         "answer": {
           "title": "ProcedureLegNmAnswer",
           "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "procedure_path_figures": {
+      "description": "The figures a flown procedure path is drawn with: a hold entry's standard-rate turn radius at the 120 kt holds are drawn at (AIM 5-3-8), nm; and the join from vectors to final, 3 nm outside the final's first fix (2 miles outside the approach gate, which is 1 mile outside the FAF: FAA Order JO 7110.65 5-9-1a1, the Pilot/Controller Glossary) at 30 degrees (JO 7110.65 TBL 5-9-1).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedurePathFiguresInput",
+          "type": "object",
+          "properties": {},
+          "required": []
+        },
+        "answer": {
+          "title": "ProcedurePathFiguresAnswer",
+          "type": "object",
+          "properties": {
+            "hold_turn_nm": {
+              "type": "number"
+            },
+            "vectors_join_nm": {
+              "type": "number"
+            },
+            "vectors_intercept_deg": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "hold_turn_nm",
+            "vectors_join_nm",
+            "vectors_intercept_deg"
+          ]
         }
       },
       "required": [
@@ -30765,6 +31204,7 @@
     "approach_transition",
     "arrival_circuit",
     "atc_call",
+    "average_groundspeed_kt",
     "aviation_grid_bands",
     "awc_airsigmets_read",
     "awc_gairmets_read",
@@ -30796,6 +31236,7 @@
     "compass_word",
     "congested_points",
     "congested_reach",
+    "copilot_flight",
     "copilot_watch",
     "csv_rows",
     "ctaf_of",
@@ -30846,6 +31287,7 @@
     "filed_rnav",
     "filed_route",
     "filed_speed",
+    "filed_times",
     "filed_wake",
     "filed_zzzz",
     "fix_radial_distance",
@@ -30908,6 +31350,7 @@
     "handbook_read_check",
     "hold_entry",
     "hold_figures",
+    "hold_inbound_deg",
     "hold_length_read",
     "hold_length_write",
     "hold_read",
@@ -30919,6 +31362,7 @@
     "icing_severity",
     "ifr_alternate_check",
     "ifr_alternate_destination",
+    "ifr_alternate_not_required",
     "ifr_alternate_window",
     "ifr_alternates_ranked",
     "ifr_floors",
@@ -30965,6 +31409,7 @@
     "navlog_with_descents",
     "night_at_either_end",
     "night_on_the_way",
+    "nm_along",
     "no_altitude",
     "notam_read",
     "notam_subject",
@@ -30998,6 +31443,7 @@
     "procedure_hold",
     "procedure_hold_leg_nm",
     "procedure_leg_nm",
+    "procedure_path_figures",
     "procedure_reversal",
     "procedure_turn",
     "procedures_read",
@@ -36278,6 +36724,61 @@
         "lon"
       ],
       "description": "Own ship as the GPS has it."
+    },
+    "PaperworkDue": {
+      "title": "PaperworkDue",
+      "description": "One thing that falls due, named and with the rule that asks for it, for the gateway's Coming up list and reminders (PaperworkService), which adds only the days and hours left.",
+      "type": "object",
+      "properties": {
+        "what": {
+          "type": "string",
+          "description": "flight-review, medical, day-passengers, night-passengers, instrument; annual, hundred-hour, elt, elt-battery, static, transponder, vor-check; item (an owner's own)."
+        },
+        "itemId": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "The owner's item it is, where it is one."
+        },
+        "label": {
+          "type": "string"
+        },
+        "rule": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The rule that asks for it: \"14 CFR 61.56(c)\"; an AD's own number with 14 CFR 39.7; an owner's other item its own reference, or none."
+        },
+        "until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD, its last good day; null where it falls due by hours."
+        },
+        "dueAtHours": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "lead": {
+          "type": "string",
+          "description": "The reminder sentence's start, to which the day is added."
+        }
+      },
+      "required": [
+        "what",
+        "itemId",
+        "label",
+        "rule",
+        "until",
+        "dueAtHours",
+        "lead"
+      ],
+      "additionalProperties": false
     },
     "PatternLegPoint": {
       "title": "PatternLegPoint",

@@ -32,6 +32,7 @@ pub fn hold(name: &str, v: &Value) -> Result<String, String> {
                 ask.opt_num("altitude_ft")?,
             ));
         }
+        "hold_inbound_deg" => json::number(&mut out, holding::inbound_of(ask.num("course_deg")?, ask.opt_bool("outbound")?)),
         "holding_leg_minutes" => json::number(&mut out, holding::leg_minutes(ask.opt_num("altitude_ft")?)),
         "hold_entry" => {
             json::string(&mut out, holding::entry(ask.num("arrival_deg")?, ask.num("inbound_deg")?, ask.opt_str("turns")? != "left").key())

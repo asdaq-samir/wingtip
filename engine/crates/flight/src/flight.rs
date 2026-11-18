@@ -41,6 +41,35 @@ pub fn wind_triangle(true_course_deg: f64, tas_kt: f64, wind_from_deg: f64, wind
     (gs > 0.0).then(|| (wca, (true_course_deg + wca).rem_euclid(360.0), gs))
 }
 
+/// The average ground speed over a stretch, knots: its miles over its
+/// hours (FAA-H-8083-25C, PHAK ch. 16, "Flight Planning": ground speed
+/// is the distance flown over the time it took). Not a number (null to
+/// the host) where no time passed: a speed of a flight that has not
+/// begun is not one. The copilot's planned speed (the nav log's miles
+/// over its minutes) and a past flight's (the miles flown over its time
+/// aloft) are both this one.
+pub fn average_groundspeed_kt(distance_nm: f64, minutes: f64) -> f64 {
+    if minutes > 0.0 && distance_nm.is_finite() {
+        distance_nm / (minutes / 60.0)
+    } else {
+        f64::NAN
+    }
+}
+
+/// How far along the route each of its legs ends, nm: the running sum of
+/// the legs' miles, a leg with none (a departure's row) adding nothing,
+/// so a row's line under its name says "Stop · 241 nm" from the start.
+pub fn nm_along(legs_nm: &[Option<f64>]) -> Vec<f64> {
+    let mut at = 0.0;
+    legs_nm
+        .iter()
+        .map(|nm| {
+            at += nm.filter(|n| n.is_finite()).unwrap_or(0.0);
+            at
+        })
+        .collect()
+}
+
 /// Which half of 14 CFR 91.159's rule a magnetic course is in: 000-179
 /// flies odd thousands plus 500, 180-359 even thousands plus 500.
 pub fn is_eastbound(magnetic_course_deg: f64) -> bool {
@@ -159,6 +188,20 @@ pub const ISA_TROPOPAUSE_FT: f64 = 11_000.0 / M_PER_FT;
 pub fn isa_pressure_hpa(altitude_ft: f64) -> f64 {
     let ft = altitude_ft.clamp(LOWEST_FT, ISA_TROPOPAUSE_FT);
     ISA_SEA_LEVEL_HPA * (1.0 - LAPSE_OVER_T0_PER_FT * ft).powf(PRESSURE_EXPONENT)
+}
+
+#[cfg(test)]
+mod speed_tests {
+    use super::*;
+
+    #[test]
+    fn the_average_ground_speed_is_the_miles_over_the_hours() {
+        // PHAK ch. 16: 120 nm in 1 h 30 min is 80 kt.
+        assert_eq!(average_groundspeed_kt(120.0, 90.0), 80.0);
+        assert!(average_groundspeed_kt(120.0, 0.0).is_nan());
+        assert!(average_groundspeed_kt(120.0, -5.0).is_nan());
+        assert_eq!(nm_along(&[None, Some(12.5), Some(30.0), None, Some(7.5)]), vec![0.0, 12.5, 42.5, 42.5, 50.0]);
+    }
 }
 
 #[cfg(test)]

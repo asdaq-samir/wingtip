@@ -48,7 +48,7 @@
             "string",
             "null"
           ],
-          "description": "As a controller gives it: \"BAE 245° 12 nm\"."
+          "description": "As a controller gives it: \"BAE 245\u00b0 12 nm\"."
         },
         "heading_mag_deg": {
           "type": [
@@ -60,7 +60,8 @@
           "type": [
             "number",
             "null"
-          ]
+          ],
+          "description": "Feet MSL as the GPS gives it; said to the hundred feet (AIM 4-2-9: the thousands plus the hundreds)."
         },
         "fuel_min": {
           "type": [

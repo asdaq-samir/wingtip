@@ -140,6 +140,13 @@
         "trackingInWindow": {
           "type": "boolean",
           "description": "Intercepting and tracking courses logged in them (61.57(c)(1)(iii))."
+        },
+        "due": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PaperworkDue"
+          },
+          "description": "What falls due, each named and cited: the flight review (61.56(c)), the medical (61.23), passengers by day and at night (61.57(a), (b)), instrument currency (61.57(c)), each where it can be had."
         }
       },
       "required": [
@@ -159,7 +166,8 @@
         "ipcNeededAfter",
         "approachesInWindow",
         "holdingInWindow",
-        "trackingInWindow"
+        "trackingInWindow",
+        "due"
       ],
       "additionalProperties": false
     }

@@ -50,6 +50,13 @@ pub struct Facts {
     pub souls: Option<f64>,
 }
 
+/// The altitude as a pilot says it: to the hundred feet, "the separate
+/// digits of the thousands plus the hundreds" (AIM 4-2-9), so a GPS
+/// altitude of 4,537 ft is said "4,500 ft", never to the foot.
+pub fn said_altitude_ft(ft: f64) -> f64 {
+    (ft / 100.0).round() * 100.0
+}
+
 /// The call's lines in the AIM's order, and the parts left to say.
 pub fn call_lines(f: &Facts) -> (Vec<String>, Vec<&'static str>) {
     let mut missing = vec![];
@@ -67,7 +74,7 @@ pub fn call_lines(f: &Facts) -> (Vec<String>, Vec<&'static str>) {
     let intentions = part(f.intentions.clone(), "intentions");
     let position = part(f.position.clone(), "position");
     let heading = part(f.heading_mag_deg.map(|h| format!("heading {}", bearing(h).trim_end_matches('°'))), "heading");
-    let altitude = part(f.altitude_ft.map(|a| format!("{} ft", grouped(a))), "altitude");
+    let altitude = part(f.altitude_ft.map(|a| format!("{} ft", grouped(said_altitude_ft(a)))), "altitude");
     let fuel = part(f.fuel_min.map(|m| format!("{} minutes of fuel", m.round() as i64)), "fuel in minutes");
     let souls = part(f.souls.map(|n| format!("{} people on board", n.round() as i64)), "people on board");
     let mut lines = vec!["MAYDAY, MAYDAY, MAYDAY".to_owned(), station, format!("{who}, {kind}"), nature];
@@ -216,6 +223,10 @@ mod tests {
         assert_eq!(lines[5], "BAE 245° 12 nm, heading 360");
         assert_eq!(lines[6], "4,500 ft");
         assert_eq!(missing, vec!["fuel in minutes", "people on board"]);
+        // Said to the hundred feet (AIM 4-2-9), either side of the half.
+        assert_eq!(said_altitude_ft(4537.0), 4500.0);
+        assert_eq!(said_altitude_ft(4550.0), 4600.0);
+        assert_eq!(call_lines(&Facts { altitude_ft: Some(4549.9), ..facts }).0[6], "4,500 ft");
     }
 
     #[test]

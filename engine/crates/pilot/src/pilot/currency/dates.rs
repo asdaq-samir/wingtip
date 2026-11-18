@@ -55,10 +55,20 @@ pub fn currency_json(name: &str, entries: &[Entry], dates: &Dates) -> Result<Str
         member(out, key);
         out.push_str(if v { "true" } else { "false" });
     };
-    opt(&mut out, "dayPassengersUntil", passengers_until(entries, &Entry::landings));
-    opt(&mut out, "nightPassengersUntil", passengers_until(entries, &|e| e.night_landings));
+    let day_passengers = passengers_until(entries, &Entry::landings);
+    let night_passengers = passengers_until(entries, &|e| e.night_landings);
+    let review_until = review.map(|r| end_of_month_after(r, FLIGHT_REVIEW_MONTHS));
+    let due = crate::pilot::paperwork::pilot_due(crate::pilot::paperwork::PilotDays {
+        flight_review_until: review_until.clone(),
+        medical_expires_on: dates.medical_expires_on.map(str::to_owned),
+        day_passengers_until: day_passengers.clone(),
+        night_passengers_until: night_passengers.clone(),
+        instrument_until: instrument.map(end_of_month),
+    });
+    opt(&mut out, "dayPassengersUntil", day_passengers);
+    opt(&mut out, "nightPassengersUntil", night_passengers);
     opt(&mut out, "flightReviewOn", dates.flight_review_on.map(str::to_owned));
-    opt(&mut out, "flightReviewUntil", review.map(|r| end_of_month_after(r, FLIGHT_REVIEW_MONTHS)));
+    opt(&mut out, "flightReviewUntil", review_until);
     opt(&mut out, "medicalExpiresOn", dates.medical_expires_on.map(str::to_owned));
     num(&mut out, "totalHours", tenth(entries.iter().map(|e| e.total).sum()));
     num(&mut out, "nightHours", tenth(entries.iter().map(|e| e.night).sum()));
@@ -72,6 +82,9 @@ pub fn currency_json(name: &str, entries: &[Entry], dates: &Dates) -> Result<Str
     int(&mut out, "approachesInWindow", in_window(entries, month).map(|e| e.approaches).sum());
     flag(&mut out, "holdingInWindow", in_window(entries, month).any(|e| e.holding));
     flag(&mut out, "trackingInWindow", in_window(entries, month).any(|e| e.tracking));
+    // What falls due, each named and cited (paperwork.rs).
+    member(&mut out, "due");
+    crate::pilot::paperwork::write(&mut out, &due);
     out.push('}');
     Ok(out)
 }

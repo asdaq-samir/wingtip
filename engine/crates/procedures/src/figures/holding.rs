@@ -68,6 +68,14 @@ pub fn leg_minutes(altitude_ft: Option<f64>) -> f64 {
     }
 }
 
+/// A hold's inbound course from the course the pilot gives, inbound or
+/// outbound: the outbound leg is flown on the inbound course's reciprocal
+/// (AIM 5-3-8, FIG 5-3-3's standard pattern), so an outbound course is
+/// turned 180 degrees; 0 to 360, north as 0.
+pub fn inbound_of(course_deg: f64, outbound: bool) -> f64 {
+    py_mod(if outbound { course_deg + 180.0 } else { course_deg }, 360.0)
+}
+
 /// The entry an airplane arriving on `arrival_deg` (its magnetic course to
 /// the fix) makes into a hold whose inbound course is `inbound_deg`
 /// (wingtip.holds.entry). AIM 5-3-8 j.3 (and its figure) places the sectors

@@ -8,6 +8,7 @@ import { ceilingAndVisibility } from "../plan";
 import { useAlternate, type AlternateWhere } from "./useAlternate";
 import { FieldError } from "../../components/ui/field";
 import { TEXT } from "../../lib/text";
+import { callEngine } from "../../lib/engine/engine";
 
 function standing(check: AlternateCheck): string {
   return check.good === true
@@ -47,9 +48,7 @@ export default function AlternateSection(where: AlternateWhere) {
                 <ListRow
                   title={data.destination.required ? "An alternate is required" : "No alternate required"}
                   description={
-                    data.destination.required
-                      ? data.destination.reasons.join(" ")
-                      : "An approach, and 2,000 ft and 3 sm an hour either side of the ETA (14 CFR 91.169(b))."
+                    data.destination.required ? data.destination.reasons.join(" ") : callEngine("ifr_alternate_not_required", {})
                   }
                   value={ceilingAndVisibility(data.destination.ceiling_ft, data.destination.visibility_sm)}
                   data-testid="alternate-destination"
@@ -89,10 +88,10 @@ export default function AlternateSection(where: AlternateWhere) {
                   <ListRow title="Take it off" onClick={() => file(null)} data-testid="alternate-remove" />
                 </ListGroup>
               )}
-              {/* Fields with a TAF within 100 nm, at or above their alternate
-                minimums at the ETA there: 600 ft and 2 sm with an ILS, 800 ft
-                and 2 sm without (14 CFR 91.169(c)); those that publish their
-                own after, for the pilot to check against them. */}
+              {/* Fields with a TAF near enough, at or above their alternate
+                minimums at the ETA there (the engine's ifr_alternate_check,
+                14 CFR 91.169(c)); those that publish their own after, for the
+                pilot to check against them. */}
               <ListGroup title="Alternates that will do">
                 {data.suggestions.length === 0 ? (
                   <ListRow title="None found" description="File one you have checked yourself." />

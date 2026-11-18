@@ -511,5 +511,40 @@
    "validTo": 200,
    "inForce": false
   }
+ ],
+ "averageGroundspeed": [
+  {
+   "distance_nm": 120,
+   "minutes": 90,
+   "kt": 80.0
+  },
+  {
+   "distance_nm": 120,
+   "minutes": 0,
+   "kt": null
+  },
+  {
+   "distance_nm": 290,
+   "minutes": 150,
+   "kt": 116.0
+  }
+ ],
+ "nmAlong": [
+  {
+   "legs_nm": [
+    null,
+    12.5,
+    30,
+    null,
+    7.5
+   ],
+   "along": [
+    0.0,
+    12.5,
+    42.5,
+    42.5,
+    50.0
+   ]
+  }
  ]
 }

@@ -274,5 +274,74 @@
       "tas_kt": null,
       "changes": []
     }
+  ],
+  "times": [
+    {
+      "name": "A first leg climbed whole at 13 gph, cruise legs at 9.5 and 10 gph, a descent at 6: 40 gal at the cruise's highest, 10 gph, is 4 h; the EET 119.2 min rounded up",
+      "ete_min": 119.2,
+      "fuel_gal": 40,
+      "legs": [
+        {
+          "phase": "climb",
+          "fuel_burn_gph": 13
+        },
+        {
+          "phase": null,
+          "fuel_burn_gph": 9.5
+        },
+        {
+          "fuel_burn_gph": 10
+        },
+        {
+          "phase": "descent",
+          "fuel_burn_gph": 6
+        }
+      ],
+      "cruise_burn_gph": 8.4,
+      "answer": {
+        "burn_gph": 10.0,
+        "eet_minutes": 120,
+        "eet": "0200",
+        "endurance_minutes": 240,
+        "endurance": "0400"
+      }
+    },
+    {
+      "name": "A hop climbed and descended whole: the airplane's own cruise burn, 8.4 gph; 38 gal is 271.4 min, to the minute below",
+      "ete_min": 14.0,
+      "fuel_gal": 38,
+      "legs": [
+        {
+          "phase": "climb",
+          "fuel_burn_gph": 12
+        },
+        {
+          "phase": "descent",
+          "fuel_burn_gph": 6
+        }
+      ],
+      "cruise_burn_gph": 8.4,
+      "answer": {
+        "burn_gph": 8.4,
+        "eet_minutes": 14,
+        "eet": "0014",
+        "endurance_minutes": 271,
+        "endurance": "0431"
+      }
+    },
+    {
+      "name": "No fuel and no burn: nothing to say",
+      "ete_min": null,
+      "fuel_gal": null,
+      "legs": [],
+      "cruise_burn_gph": null,
+      "answer": {
+        "burn_gph": null,
+        "eet_minutes": null,
+        "eet": null,
+        "endurance_minutes": null,
+        "endurance": null
+      }
+    }
   ]
 }

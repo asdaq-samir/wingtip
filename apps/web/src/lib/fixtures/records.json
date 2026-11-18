@@ -140,7 +140,45 @@
         "annual_until": "2026-10-31",
         "elt_until": "2026-10-31",
         "static_check_until": "2026-02-28",
-        "transponder_check_until": null
+        "transponder_check_until": null,
+        "due": [
+          {
+            "what": "annual",
+            "itemId": null,
+            "label": "Annual inspection",
+            "rule": "14 CFR 91.409(a)",
+            "until": "2026-10-31",
+            "dueAtHours": null,
+            "lead": "The airplane's annual inspection runs out"
+          },
+          {
+            "what": "elt",
+            "itemId": null,
+            "label": "ELT inspection",
+            "rule": "14 CFR 91.207(d)",
+            "until": "2026-10-31",
+            "dueAtHours": null,
+            "lead": "The airplane's ELT inspection runs out"
+          },
+          {
+            "what": "static",
+            "itemId": null,
+            "label": "Altimeter and static system",
+            "rule": "14 CFR 91.411(a)",
+            "until": "2026-02-28",
+            "dueAtHours": null,
+            "lead": "The airplane's altimeter and static system test runs out"
+          },
+          {
+            "what": "vor-check",
+            "itemId": null,
+            "label": "VOR check for IFR",
+            "rule": "14 CFR 91.171(a)(2)",
+            "until": "2026-12-01",
+            "dueAtHours": null,
+            "lead": "The airplane's VOR check runs out"
+          }
+        ]
       }
     },
     {
@@ -161,7 +199,126 @@
         "annual_until": null,
         "elt_until": null,
         "static_check_until": null,
-        "transponder_check_until": null
+        "transponder_check_until": null,
+        "due": []
+      }
+    },
+    {
+      "name": "N12345, flown for hire: the 100-hour (91.409(b)), the ELT battery's marked date (91.207(c)), an AD cited by its number and 14 CFR 39.7, an owner's item by its own reference, and an undated item not listed",
+      "input": {
+        "tail_number": "N12345",
+        "for_hire": true,
+        "annual_on": "2025-11-20",
+        "hundred_hour_at_hours": 2250.0,
+        "transponder_check_on": "2025-01-03",
+        "elt_battery_due_on": "2026-11-15",
+        "kept": [
+          {
+            "id": 40,
+            "kind": "AD",
+            "title": "Oil filter adapter",
+            "reference": "AD 2011-10-09",
+            "due_on": "2026-12-01",
+            "due_at_hours": null
+          },
+          {
+            "id": 41,
+            "kind": "AD",
+            "title": "Seat rails",
+            "reference": "AD 2011-10-01",
+            "due_on": null,
+            "due_at_hours": null
+          },
+          {
+            "id": 42,
+            "kind": "AD",
+            "title": "Fuel caps",
+            "reference": null,
+            "due_on": null,
+            "due_at_hours": 2400.0
+          },
+          {
+            "id": 43,
+            "kind": "OTHER",
+            "title": "Prop overhaul",
+            "reference": "Hartzell SB 61",
+            "due_on": "2027-03-01",
+            "due_at_hours": null
+          }
+        ]
+      },
+      "answer": {
+        "hundred_hour_due_at_hours": 2350.0,
+        "vor_check": null,
+        "annual_until": "2026-11-30",
+        "elt_until": null,
+        "static_check_until": null,
+        "transponder_check_until": "2027-01-31",
+        "due": [
+          {
+            "what": "annual",
+            "itemId": null,
+            "label": "Annual inspection",
+            "rule": "14 CFR 91.409(a)",
+            "until": "2026-11-30",
+            "dueAtHours": null,
+            "lead": "N12345's annual inspection runs out"
+          },
+          {
+            "what": "hundred-hour",
+            "itemId": null,
+            "label": "100-hour inspection",
+            "rule": "14 CFR 91.409(b)",
+            "until": null,
+            "dueAtHours": 2350.0,
+            "lead": "N12345's 100-hour inspection is due"
+          },
+          {
+            "what": "elt-battery",
+            "itemId": null,
+            "label": "ELT battery",
+            "rule": "14 CFR 91.207(c)",
+            "until": "2026-11-15",
+            "dueAtHours": null,
+            "lead": "N12345's ELT battery is to be replaced by"
+          },
+          {
+            "what": "transponder",
+            "itemId": null,
+            "label": "Transponder",
+            "rule": "14 CFR 91.413(a)",
+            "until": "2027-01-31",
+            "dueAtHours": null,
+            "lead": "N12345's transponder test runs out"
+          },
+          {
+            "what": "item",
+            "itemId": 40,
+            "label": "Oil filter adapter",
+            "rule": "AD 2011-10-09, 14 CFR 39.7",
+            "until": "2026-12-01",
+            "dueAtHours": null,
+            "lead": "N12345: AD 2011-10-09 (Oil filter adapter) is due"
+          },
+          {
+            "what": "item",
+            "itemId": 42,
+            "label": "Fuel caps",
+            "rule": "14 CFR 39.7",
+            "until": null,
+            "dueAtHours": 2400.0,
+            "lead": "N12345: Fuel caps is due"
+          },
+          {
+            "what": "item",
+            "itemId": 43,
+            "label": "Prop overhaul",
+            "rule": "Hartzell SB 61",
+            "until": "2027-03-01",
+            "dueAtHours": null,
+            "lead": "N12345: Prop overhaul is due"
+          }
+        ]
       }
     }
   ],

@@ -6105,6 +6105,14 @@
             "description": "90 days after the third most recent landing (14 CFR 61.57(a)).",
             "title": "Daypassengersuntil"
           },
+          "due": {
+            "description": "What falls due, each named and cited (61.56(c), 61.23, 61.57(a)-(c)).",
+            "items": {
+              "$ref": "#/components/schemas/PaperworkDue"
+            },
+            "title": "Due",
+            "type": "array"
+          },
           "flightReviewOn": {
             "anyOf": [
               {
@@ -6248,7 +6256,8 @@
           "ipcNeededAfter",
           "approachesInWindow",
           "holdingInWindow",
-          "trackingInWindow"
+          "trackingInWindow",
+          "due"
         ],
         "title": "Currency",
         "type": "object"
@@ -11989,6 +11998,14 @@
             "description": "The end of the 12th calendar month after (14 CFR 91.409(a)).",
             "title": "Annualuntil"
           },
+          "due": {
+            "description": "Each recorded one named and cited, then the owner's dated items (an AD by 14 CFR 39.7).",
+            "items": {
+              "$ref": "#/components/schemas/PaperworkDue"
+            },
+            "title": "Due",
+            "type": "array"
+          },
           "eltUntil": {
             "anyOf": [
               {
@@ -12057,13 +12074,14 @@
           "staticCheckUntil",
           "transponderCheckUntil",
           "hundredHourDueAtHours",
-          "vorCheck"
+          "vorCheck",
+          "due"
         ],
         "title": "Inspections",
         "type": "object"
       },
       "InspectionsAsk": {
-        "description": "The days the airplane's inspections and checks were done, and the\nhours of its last 100-hour; each left out where not recorded.",
+        "description": "The days the airplane's inspections and checks were done, and the\nhours of its last 100-hour; each left out where not recorded. With the\nairplane's registration, whether it is flown for hire, its ELT\nbattery's marked date and the owner's items, for the list of what\nfalls due (`due`).",
         "properties": {
           "annualOn": {
             "anyOf": [
@@ -12077,6 +12095,18 @@
             ],
             "title": "Annualon"
           },
+          "eltBatteryDueOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eltbatterydueon"
+          },
           "eltOn": {
             "anyOf": [
               {
@@ -12089,6 +12119,11 @@
             ],
             "title": "Elton"
           },
+          "forHire": {
+            "default": false,
+            "title": "Forhire",
+            "type": "boolean"
+          },
           "hundredHourAtHours": {
             "anyOf": [
               {
@@ -12099,6 +12134,14 @@
               }
             ],
             "title": "Hundredhourathours"
+          },
+          "kept": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/KeptItem"
+            },
+            "title": "Kept",
+            "type": "array"
           },
           "staticCheckOn": {
             "anyOf": [
@@ -12111,6 +12154,17 @@
               }
             ],
             "title": "Staticcheckon"
+          },
+          "tailNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tailnumber"
           },
           "transponderCheckOn": {
             "anyOf": [
@@ -12297,6 +12351,68 @@
           "heard"
         ],
         "title": "ItwsProduct",
+        "type": "object"
+      },
+      "KeptItem": {
+        "description": "An owner's own item: an AD (14 CFR part 39) or anything else, with\nits next day or hours.",
+        "properties": {
+          "dueAtHours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dueathours"
+          },
+          "dueOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dueon"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "AD",
+              "OTHER"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title"
+        ],
+        "title": "KeptItem",
         "type": "object"
       },
       "Leg": {
@@ -16251,6 +16367,81 @@
           }
         },
         "title": "OwnAirplane",
+        "type": "object"
+      },
+      "PaperworkDue": {
+        "description": "One thing that falls due, named and with the rule that asks for it\n(the engine's PaperworkDue), for the gateway's Coming up list and its\nreminders, which add only the days and hours left.",
+        "properties": {
+          "dueAtHours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dueathours"
+          },
+          "itemId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Itemid"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "lead": {
+            "description": "The reminder sentence's start, to which the day is added.",
+            "title": "Lead",
+            "type": "string"
+          },
+          "rule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "14 CFR 61.56(c); an AD its own number and 14 CFR 39.7; an owner's item its reference.",
+            "title": "Rule"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          },
+          "what": {
+            "title": "What",
+            "type": "string"
+          }
+        },
+        "required": [
+          "what",
+          "itemId",
+          "label",
+          "rule",
+          "until",
+          "dueAtHours",
+          "lead"
+        ],
+        "title": "PaperworkDue",
         "type": "object"
       },
       "PastFlight": {

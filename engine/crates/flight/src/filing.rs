@@ -128,6 +128,40 @@ pub fn endurance_minutes(fuel_gal: f64, burn_gph: f64) -> Option<i64> {
     (burn_gph > 0.0 && fuel_gal >= 0.0 && fuel_gal.is_finite()).then(|| (fuel_gal / burn_gph * 60.0).floor() as i64)
 }
 
+/// Item 16's total estimated elapsed time in whole minutes, "from
+/// departure to destination in hours (H) and minutes (M), format HHMM"
+/// (AIM Appendix 4, 8): the nav log's minutes to the minute above, the
+/// safe side of a time that starts search and rescue's clock (`duration`).
+/// None where the time is not a figure.
+pub fn eet_minutes(ete_min: f64) -> Option<i64> {
+    (ete_min.is_finite() && ete_min >= 0.0).then(|| ete_min.ceil() as i64)
+}
+
+/// A leg as item 19's endurance reads it: the phase the nav log flew it
+/// in ("climb", "descent"; none for the cruise) and its fuel flow.
+pub struct BurnLeg<'a> {
+    pub phase: Option<&'a str>,
+    pub burn_gph: Option<f64>,
+}
+
+/// The fuel flow item 19's endurance is worked at: "fuel endurance time in
+/// hours and minutes" (AIM Appendix 4, item 19 E/; FAA Form 7233-1 block
+/// 12, the usable fuel on board in hours and minutes) is how long the fuel
+/// lasts flown as the flight is flown, at cruise. So the cruise legs'
+/// burn, never a climb's (which read short) or a descent's (which read
+/// long, the unsafe way); where the plan steps between altitudes, the
+/// highest of their burns, the shorter endurance. With no leg flown at
+/// cruise (a hop climbed and descended whole), the airplane's own cruise
+/// burn, `cruise_burn_gph`; None where neither is a positive figure.
+pub fn endurance_burn_gph(legs: &[BurnLeg], cruise_burn_gph: Option<f64>) -> Option<f64> {
+    let positive = |b: &f64| b.is_finite() && *b > 0.0;
+    legs.iter()
+        .filter(|l| l.phase.is_none_or(|p| p.is_empty() || p == "cruise"))
+        .filter_map(|l| l.burn_gph.filter(positive))
+        .reduce(f64::max)
+        .or(cruise_burn_gph.filter(positive))
+}
+
 /// Item 18's date of flight, "DOF/YYMMDD", where the flight is not on the
 /// day it is filed (AIM Appendix 4, TBL 4-1); None on the same day, or for
 /// a day not written "YYYY-MM-DD". Both days are UTC's.
@@ -174,6 +208,21 @@ mod tests {
         assert_eq!(route(&["LEXOR/N0467F380"], |_| false, None, None), "LEXOR/N0467F380");
         assert_eq!(wake(Some(15_500.0)), Some("L"));
         assert_eq!(wake(Some(15_501.0)), None);
+    }
+
+    #[test]
+    fn eet_rounds_up_and_endurance_is_at_the_cruise_burn() {
+        assert_eq!(eet_minutes(119.2), Some(120));
+        assert_eq!(eet_minutes(120.0), Some(120));
+        assert_eq!(eet_minutes(f64::NAN), None);
+        let leg = |phase: Option<&'static str>, burn: f64| BurnLeg { phase, burn_gph: Some(burn) };
+        // A first leg climbed whole at 13 gph, then the cruise at 9.5 and
+        // 10, and the descent at 6: the cruise's highest, 10.
+        let legs = [leg(Some("climb"), 13.0), leg(None, 9.5), leg(None, 10.0), leg(Some("descent"), 6.0)];
+        assert_eq!(endurance_burn_gph(&legs, Some(8.4)), Some(10.0));
+        // No leg at cruise: the airplane's own cruise burn.
+        assert_eq!(endurance_burn_gph(&legs[..1], Some(8.4)), Some(8.4));
+        assert_eq!(endurance_burn_gph(&[], None), None);
     }
 
     #[test]

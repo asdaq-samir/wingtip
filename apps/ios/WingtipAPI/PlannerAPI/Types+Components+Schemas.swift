@@ -5402,6 +5402,10 @@ extension Components {
             ///
             /// - Remark: Generated from `#/components/schemas/Currency/dayPassengersUntil`.
             public var dayPassengersUntil: Swift.String?
+            /// What falls due, each named and cited (61.56(c), 61.23, 61.57(a)-(c)).
+            ///
+            /// - Remark: Generated from `#/components/schemas/Currency/due`.
+            public var due: [Components.Schemas.PaperworkDue]
             /// - Remark: Generated from `#/components/schemas/Currency/flightReviewOn`.
             public var flightReviewOn: Swift.String?
             /// The end of the 24th calendar month after the flight review's (61.56(c)).
@@ -5446,6 +5450,7 @@ extension Components {
             ///   - approachesInWindow: Approaches logged in the 6 calendar months before this one (61.57(c)(1)(i)).
             ///   - crossCountryHours:
             ///   - dayPassengersUntil: 90 days after the third most recent landing (14 CFR 61.57(a)).
+            ///   - due: What falls due, each named and cited (61.56(c), 61.23, 61.57(a)-(c)).
             ///   - flightReviewOn:
             ///   - flightReviewUntil: The end of the 24th calendar month after the flight review's (61.56(c)).
             ///   - flights:
@@ -5464,6 +5469,7 @@ extension Components {
                 approachesInWindow: Swift.Int,
                 crossCountryHours: Swift.Double,
                 dayPassengersUntil: Swift.String? = nil,
+                due: [Components.Schemas.PaperworkDue],
                 flightReviewOn: Swift.String? = nil,
                 flightReviewUntil: Swift.String? = nil,
                 flights: Swift.Int,
@@ -5482,6 +5488,7 @@ extension Components {
                 self.approachesInWindow = approachesInWindow
                 self.crossCountryHours = crossCountryHours
                 self.dayPassengersUntil = dayPassengersUntil
+                self.due = due
                 self.flightReviewOn = flightReviewOn
                 self.flightReviewUntil = flightReviewUntil
                 self.flights = flights
@@ -5501,6 +5508,7 @@ extension Components {
                 case approachesInWindow
                 case crossCountryHours
                 case dayPassengersUntil
+                case due
                 case flightReviewOn
                 case flightReviewUntil
                 case flights
@@ -10864,6 +10872,10 @@ extension Components {
             ///
             /// - Remark: Generated from `#/components/schemas/Inspections/annualUntil`.
             public var annualUntil: Swift.String?
+            /// Each recorded one named and cited, then the owner's dated items (an AD by 14 CFR 39.7).
+            ///
+            /// - Remark: Generated from `#/components/schemas/Inspections/due`.
+            public var due: [Components.Schemas.PaperworkDue]
             /// The end of the 12th calendar month after (91.207(d)).
             ///
             /// - Remark: Generated from `#/components/schemas/Inspections/eltUntil`.
@@ -10886,6 +10898,7 @@ extension Components {
             ///
             /// - Parameters:
             ///   - annualUntil: The end of the 12th calendar month after (14 CFR 91.409(a)).
+            ///   - due: Each recorded one named and cited, then the owner's dated items (an AD by 14 CFR 39.7).
             ///   - eltUntil: The end of the 12th calendar month after (91.207(d)).
             ///   - hundredHourDueAtHours: 100 hours of time in service after the last (91.409(b)).
             ///   - staticCheckUntil: The end of the 24th calendar month after (91.411(a)).
@@ -10893,6 +10906,7 @@ extension Components {
             ///   - vorCheck:
             public init(
                 annualUntil: Swift.String? = nil,
+                due: [Components.Schemas.PaperworkDue],
                 eltUntil: Swift.String? = nil,
                 hundredHourDueAtHours: Swift.Double? = nil,
                 staticCheckUntil: Swift.String? = nil,
@@ -10900,6 +10914,7 @@ extension Components {
                 vorCheck: Components.Schemas.VorCheckOutput? = nil
             ) {
                 self.annualUntil = annualUntil
+                self.due = due
                 self.eltUntil = eltUntil
                 self.hundredHourDueAtHours = hundredHourDueAtHours
                 self.staticCheckUntil = staticCheckUntil
@@ -10908,6 +10923,7 @@ extension Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case annualUntil
+                case due
                 case eltUntil
                 case hundredHourDueAtHours
                 case staticCheckUntil
@@ -10916,18 +10932,29 @@ extension Components {
             }
         }
         /// The days the airplane's inspections and checks were done, and the
-        /// hours of its last 100-hour; each left out where not recorded.
+        /// hours of its last 100-hour; each left out where not recorded. With the
+        /// airplane's registration, whether it is flown for hire, its ELT
+        /// battery's marked date and the owner's items, for the list of what
+        /// falls due (`due`).
         ///
         /// - Remark: Generated from `#/components/schemas/InspectionsAsk`.
         public struct InspectionsAsk: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/InspectionsAsk/annualOn`.
             public var annualOn: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/InspectionsAsk/eltBatteryDueOn`.
+            public var eltBatteryDueOn: Swift.String?
             /// - Remark: Generated from `#/components/schemas/InspectionsAsk/eltOn`.
             public var eltOn: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/InspectionsAsk/forHire`.
+            public var forHire: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/InspectionsAsk/hundredHourAtHours`.
             public var hundredHourAtHours: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/InspectionsAsk/kept`.
+            public var kept: [Components.Schemas.KeptItem]?
             /// - Remark: Generated from `#/components/schemas/InspectionsAsk/staticCheckOn`.
             public var staticCheckOn: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/InspectionsAsk/tailNumber`.
+            public var tailNumber: Swift.String?
             /// - Remark: Generated from `#/components/schemas/InspectionsAsk/transponderCheckOn`.
             public var transponderCheckOn: Swift.String?
             /// - Remark: Generated from `#/components/schemas/InspectionsAsk/vorCheck`.
@@ -10936,31 +10963,47 @@ extension Components {
             ///
             /// - Parameters:
             ///   - annualOn:
+            ///   - eltBatteryDueOn:
             ///   - eltOn:
+            ///   - forHire:
             ///   - hundredHourAtHours:
+            ///   - kept:
             ///   - staticCheckOn:
+            ///   - tailNumber:
             ///   - transponderCheckOn:
             ///   - vorCheck:
             public init(
                 annualOn: Swift.String? = nil,
+                eltBatteryDueOn: Swift.String? = nil,
                 eltOn: Swift.String? = nil,
+                forHire: Swift.Bool? = nil,
                 hundredHourAtHours: Swift.Double? = nil,
+                kept: [Components.Schemas.KeptItem]? = nil,
                 staticCheckOn: Swift.String? = nil,
+                tailNumber: Swift.String? = nil,
                 transponderCheckOn: Swift.String? = nil,
                 vorCheck: Components.Schemas.VorCheckAsk? = nil
             ) {
                 self.annualOn = annualOn
+                self.eltBatteryDueOn = eltBatteryDueOn
                 self.eltOn = eltOn
+                self.forHire = forHire
                 self.hundredHourAtHours = hundredHourAtHours
+                self.kept = kept
                 self.staticCheckOn = staticCheckOn
+                self.tailNumber = tailNumber
                 self.transponderCheckOn = transponderCheckOn
                 self.vorCheck = vorCheck
             }
             public enum CodingKeys: String, CodingKey {
                 case annualOn
+                case eltBatteryDueOn
                 case eltOn
+                case forHire
                 case hundredHourAtHours
+                case kept
                 case staticCheckOn
+                case tailNumber
                 case transponderCheckOn
                 case vorCheck
             }
@@ -11102,6 +11145,56 @@ extension Components {
                 case heard
                 case name
                 case product
+            }
+        }
+        /// An owner's own item: an AD (14 CFR part 39) or anything else, with
+        /// its next day or hours.
+        ///
+        /// - Remark: Generated from `#/components/schemas/KeptItem`.
+        public struct KeptItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/KeptItem/dueAtHours`.
+            public var dueAtHours: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/KeptItem/dueOn`.
+            public var dueOn: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/KeptItem/id`.
+            public var id: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/KeptItem/kind`.
+            public var kind: Swift.String
+            /// - Remark: Generated from `#/components/schemas/KeptItem/reference`.
+            public var reference: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/KeptItem/title`.
+            public var title: Swift.String
+            /// Creates a new `KeptItem`.
+            ///
+            /// - Parameters:
+            ///   - dueAtHours:
+            ///   - dueOn:
+            ///   - id:
+            ///   - kind:
+            ///   - reference:
+            ///   - title:
+            public init(
+                dueAtHours: Swift.Double? = nil,
+                dueOn: Swift.String? = nil,
+                id: Swift.Int,
+                kind: Swift.String,
+                reference: Swift.String? = nil,
+                title: Swift.String
+            ) {
+                self.dueAtHours = dueAtHours
+                self.dueOn = dueOn
+                self.id = id
+                self.kind = kind
+                self.reference = reference
+                self.title = title
+            }
+            public enum CodingKeys: String, CodingKey {
+                case dueAtHours
+                case dueOn
+                case id
+                case kind
+                case reference
+                case title
             }
         }
         /// One dead-reckoning leg. `wind` is None when no winds-aloft station
@@ -14583,6 +14676,67 @@ extension Components {
                 case inspections
                 case squawks
                 case vorCheck = "vor_check"
+            }
+        }
+        /// One thing that falls due, named and with the rule that asks for it
+        /// (the engine's PaperworkDue), for the gateway's Coming up list and its
+        /// reminders, which add only the days and hours left.
+        ///
+        /// - Remark: Generated from `#/components/schemas/PaperworkDue`.
+        public struct PaperworkDue: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PaperworkDue/dueAtHours`.
+            public var dueAtHours: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/PaperworkDue/itemId`.
+            public var itemId: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/PaperworkDue/label`.
+            public var label: Swift.String
+            /// The reminder sentence's start, to which the day is added.
+            ///
+            /// - Remark: Generated from `#/components/schemas/PaperworkDue/lead`.
+            public var lead: Swift.String
+            /// 14 CFR 61.56(c); an AD its own number and 14 CFR 39.7; an owner's item its reference.
+            ///
+            /// - Remark: Generated from `#/components/schemas/PaperworkDue/rule`.
+            public var rule: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PaperworkDue/until`.
+            public var until: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PaperworkDue/what`.
+            public var what: Swift.String
+            /// Creates a new `PaperworkDue`.
+            ///
+            /// - Parameters:
+            ///   - dueAtHours:
+            ///   - itemId:
+            ///   - label:
+            ///   - lead: The reminder sentence's start, to which the day is added.
+            ///   - rule: 14 CFR 61.56(c); an AD its own number and 14 CFR 39.7; an owner's item its reference.
+            ///   - until:
+            ///   - what:
+            public init(
+                dueAtHours: Swift.Double? = nil,
+                itemId: Swift.Int? = nil,
+                label: Swift.String,
+                lead: Swift.String,
+                rule: Swift.String? = nil,
+                until: Swift.String? = nil,
+                what: Swift.String
+            ) {
+                self.dueAtHours = dueAtHours
+                self.itemId = itemId
+                self.label = label
+                self.lead = lead
+                self.rule = rule
+                self.until = until
+                self.what = what
+            }
+            public enum CodingKeys: String, CodingKey {
+                case dueAtHours
+                case itemId
+                case label
+                case lead
+                case rule
+                case until
+                case what
             }
         }
         /// One past flight's reports, for its track log and its replay.

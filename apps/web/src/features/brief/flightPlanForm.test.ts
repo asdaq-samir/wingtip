@@ -5,7 +5,6 @@ import {
   cruisingSpeed,
   flightPlanForms,
   formText,
-  hhmmForm,
   personsOnBoard,
   routeItem,
   withPersonsOnBoard,
@@ -77,9 +76,6 @@ describe("the FAA flight plan form, filled in from a plan", () => {
     // Flight levels from 18,000 ft (14 CFR 91.121(a)(2)).
     expect(cruisingLevel(17_999)).toBe("A180");
     expect(cruisingLevel(18_000)).toBe("F180");
-    expect(hhmmForm(65)).toBe("0105");
-    expect(hhmmForm(600)).toBe("1000");
-    expect(hhmmForm(119.6)).toBe("0200");
   });
 
   it("an airway between the fixes it is joined and left at, DCT between fixes flown direct", () => {
@@ -122,6 +118,18 @@ describe("the FAA flight plan form, filled in from a plan", () => {
     expect(form!.items.find((f) => f.key === "departure")!.note).toContain("DEP/C81");
     expect(form!.items.find((f) => f.key === "destination")!.note).toBeUndefined();
     expect(form!.items.find((f) => f.key === "endurance")!.note).toBe("38 gal at 8.5 gph.");
+  });
+
+  it("item 19's endurance is at the cruise burn, not a first leg's climb (AIM Appendix 4, E/)", () => {
+    // The first leg climbed whole at 13 gph read 38 gal as 2 h 55 min; the
+    // cruise's 8.5 gph is 4 h 28 min, as the form asks.
+    const climb = { ...leg("C81", "BAE", 6000, 75, 13), phase: "climb" } as Leg;
+    const [form] = flightPlanForms({ ...BASE, legs: [climb, ...BASE.legs.slice(1)] });
+    expect(value(form!, "endurance")).toBe("0428");
+    expect(form!.items.find((f) => f.key === "endurance")!.note).toBe("38 gal at 8.5 gph.");
+    // No leg at cruise: the airplane's own cruise burn.
+    const [hop] = flightPlanForms({ ...BASE, legs: [climb], aircraft: { ...BASE.aircraft, cruiseBurnGph: 9.5 } });
+    expect(value(hop!, "endurance")).toBe("0400");
   });
 
   it("ZZZZ by NASR's ICAO_ID where the field's card had it (AIM Appendix 4)", () => {
@@ -284,7 +292,6 @@ describe("the FAA flight plan form, filled in from a plan", () => {
 describe("the shared filing form fixture", () => {
   it.each(filingFormFixture.cruisingSpeed)("$tasKt kt: $item", ({ tasKt, item }) => expect(cruisingSpeed(tasKt)).toBe(item));
   it.each(filingFormFixture.cruisingLevel)("$altitudeFt ft: $item", ({ altitudeFt, item }) => expect(cruisingLevel(altitudeFt)).toBe(item));
-  it.each(filingFormFixture.hhmm)("$minutes min: $item", ({ minutes, item }) => expect(hhmmForm(minutes)).toBe(item));
   it.each(filingFormFixture.route)("$stops: $item", ({ stops, airways, item }) => {
     expect(routeItem(stops, (stop) => airways.includes(stop))).toBe(item);
   });

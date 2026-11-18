@@ -230,6 +230,11 @@ extension Engine {
         try Self.rule("atc_call", EngineContract.AtcCallInput(text: text, tail: tail, prior: prior))
     }
 
+    /// The average ground speed over a stretch, knots: its miles over its hours (FAA-H-8083-25C, PHAK ch. 16); null where no time passed. The copilot's planned speed (the nav log's distance over its time en route) and a past flight's (the miles flown over its time aloft).
+    static func averageGroundspeedKt(distanceNm: Double, minutes: Double) throws -> Double? {
+        try Self.rule("average_groundspeed_kt", EngineContract.AverageGroundspeedKtInput(distanceNm: distanceNm, minutes: minutes))
+    }
+
     /// The Aviation Weather Center's words for its icing and turbulence grids (aviationweather.gov GFA help, read 2026-11-12): icing severity by category, 0 none, 1 trace, 2 light, 3 moderate, 4 heavy; turbulence by EDR, (m^2/s^3)^1/3, from each word's threshold in the weight class's row: light (< 15,500 lb) 0.13, 0.16, 0.36, 0.64; medium 0.15, 0.20, 0.44, 0.79; heavy 0.17, 0.24, 0.54, 0.96.
     static func aviationGridBands() throws -> EngineContract.AviationGridBandsAnswer {
         try Self.rule("aviation_grid_bands", EngineContract.AviationGridBandsInput())
@@ -383,6 +388,11 @@ extension Engine {
     /// How far round a point the host looks for towns before congested_points measures it against them: 2,500 ft, a quarter past 14 CFR 91.119(b)'s 'horizontal radius of 2,000 feet', so a town at the radius's edge is always a candidate; in degrees of latitude (sixty nautical miles each), divided by the cosine of the farthest latitude asked (held to 0.2 and over, the latitude to 89 degrees) so it is short in no direction.
     static func congestedReach(lat: Double) throws -> EngineContract.CongestedReachAnswer {
         try Self.rule("congested_reach", EngineContract.CongestedReachInput(lat: lat))
+    }
+
+    /// The planned flight the in-flight copilot starts from: the fuel at takeoff (the fuel aboard at the start less the taxi allowance, never below none), the plan's ground speed (its distance over its time en route, PHAK ch. 16) and whether anyone but the pilot is aboard for 14 CFR 61.57(a) and (b)'s passenger currency (a station of the load other than the pilot's, the baggage's or the cargo's with weight in it). Each figure null where the plan has none.
+    static func copilotFlight(fuelGal: Double? = nil, taxiGal: Double? = nil, distanceNm: Double? = nil, eteMin: Double? = nil, stations: [EngineContract.CopilotFlightInputStationsItem]? = nil) throws -> EngineContract.CopilotFlightAnswer {
+        try Self.rule("copilot_flight", EngineContract.CopilotFlightInput(fuelGal: fuelGal, taxiGal: taxiGal, distanceNm: distanceNm, eteMin: eteMin, stations: stations))
     }
 
     /// The in-flight copilot: from own ship and the live data, the messages that change what the pilot should do, most pressing first (warning, caution, advisory; then the kinds' order), each with the words to show and speak and its sources. Warns, never limits.
@@ -633,6 +643,11 @@ extension Engine {
     /// Item 15's cruising speed on FAA Form 7233-4: the true airspeed in knots, "N" and four figures (AIM Appendix 4: "N0450").
     static func filedSpeed(tasKt: Double) throws -> String {
         try Self.rule("filed_speed", EngineContract.FiledSpeedInput(tasKt: tasKt))
+    }
+
+    /// FAA Form 7233-4's item 16 total EET and item 19 endurance (AIM Appendix 4: HHMM; E/ the fuel endurance time). The EET is the nav log's minutes rounded up; the endurance the fuel aboard at the cruise burn rounded down: the highest burn of the legs flown at cruise (no phase), never a climb's or a descent's, else the airplane's own cruise burn. Each null where the plan cannot say.
+    static func filedTimes(eteMin: Double? = nil, fuelGal: Double? = nil, legs: [EngineContract.FiledTimesInputLegsItem], cruiseBurnGph: Double? = nil) throws -> EngineContract.FiledTimesAnswer {
+        try Self.rule("filed_times", EngineContract.FiledTimesInput(eteMin: eteMin, fuelGal: fuelGal, legs: legs, cruiseBurnGph: cruiseBurnGph))
     }
 
     /// Item 9's wake turbulence category: "L" for a maximum certificated takeoff weight of 15,500 lb or less (AIM Appendix 4, from FAA Order JO 7360.1), null where the weight is not known or is more.
@@ -945,6 +960,11 @@ extension Engine {
         try Self.rule("hold_figures", EngineContract.HoldFiguresInput(hold: hold, tasKt: tasKt))
     }
 
+    /// A hold's inbound course, 0 to 360, from the course the pilot gives: as given where it is the inbound one, its reciprocal where it is the outbound one (AIM 5-3-8: the outbound leg is flown on the inbound course's reciprocal).
+    static func holdInboundDeg(courseDeg: Double, outbound: Bool? = nil) throws -> Double {
+        try Self.rule("hold_inbound_deg", EngineContract.HoldInboundDegInput(courseDeg: courseDeg, outbound: outbound))
+    }
+
     /// A hold's length from its code ("2T", "10M"), or null.
     static func holdLengthRead(text: String) throws -> OpenAPIValueContainer? {
         try Self.rule("hold_length_read", EngineContract.HoldLengthReadInput(text: text))
@@ -1000,6 +1020,11 @@ extension Engine {
         try Self.rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident: ident, approaches: approaches, forecast: forecast, private: `private`, military: military))
     }
 
+    /// Why a destination needs no IFR alternate, in 14 CFR 91.169(b)'s own figures: an instrument approach, and a forecast of at least 2,000 ft and 3 sm for an hour before and after the ETA ((b)(2)(i), the "1-2-3").
+    static func ifrAlternateNotRequired() throws -> String {
+        try Self.rule("ifr_alternate_not_required", EngineContract.IfrAlternateNotRequiredInput())
+    }
+
     /// The window, unix seconds, a field's TAF is read over for 14 CFR 91.169: the destination's from an hour before to an hour after the ETA (91.169(b)(2)(i), aircraft other than helicopters); an alternate's the ETA there alone, at the estimated time of arrival at the alternate airport (91.169(c)).
     static func ifrAlternateWindow(eta: Double, `for`: String) throws -> EngineContract.IfrAlternateWindowAnswer {
         try Self.rule("ifr_alternate_window", EngineContract.IfrAlternateWindowInput(eta: eta, for: `for`))
@@ -1025,9 +1050,9 @@ extension Engine {
         try Self.rule("in_flight", EngineContract.InFlightInput(fix: fix, line: line, points: points, legs: legs, fuelStartGal: fuelStartGal, fuelFullGal: fuelFullGal, taxiFuelGal: taxiFuelGal, refuelAt: refuelAt, nowS: nowS))
     }
 
-    /// The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given.
-    static func inspectionsDue(annualOn: String? = nil, eltOn: String? = nil, staticCheckOn: String? = nil, transponderCheckOn: String? = nil, hundredHourAtHours: Double? = nil, vorCheck: EngineContract.InspectionsDueInputVorCheck? = nil) throws -> EngineContract.InspectionsDueAnswer {
-        try Self.rule("inspections_due", EngineContract.InspectionsDueInput(annualOn: annualOn, eltOn: eltOn, staticCheckOn: staticCheckOn, transponderCheckOn: transponderCheckOn, hundredHourAtHours: hundredHourAtHours, vorCheck: vorCheck))
+    /// The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given. With them `due`, the list the gateway shows and reminds of: each named and with its rule (an AD its own number and 14 CFR 39.7).
+    static func inspectionsDue(annualOn: String? = nil, eltOn: String? = nil, staticCheckOn: String? = nil, transponderCheckOn: String? = nil, hundredHourAtHours: Double? = nil, vorCheck: EngineContract.InspectionsDueInputVorCheck? = nil, tailNumber: String? = nil, forHire: Bool? = nil, eltBatteryDueOn: String? = nil, kept: [EngineContract.InspectionsDueInputKeptItem]? = nil) throws -> EngineContract.InspectionsDueAnswer {
+        try Self.rule("inspections_due", EngineContract.InspectionsDueInput(annualOn: annualOn, eltOn: eltOn, staticCheckOn: staticCheckOn, transponderCheckOn: transponderCheckOn, hundredHourAtHours: hundredHourAtHours, vorCheck: vorCheck, tailNumber: tailNumber, forHire: forHire, eltBatteryDueOn: eltBatteryDueOn, kept: kept))
     }
 
     /// The first day an instructor's page lists what they signed: the same day 3 years before today, as 14 CFR 61.189(c) has an instructor keep their records "for at least 3 years" (a 29 February the 28th in a year without one).
@@ -1230,6 +1255,11 @@ extension Engine {
         try Self.rule("night_on_the_way", EngineContract.NightOnTheWayInput(start: start, end: end, departS: departS, minutes: minutes))
     }
 
+    /// How far along the route each leg ends, nm: the running sum of the legs' miles, a null (a departure's row, no leg) adding nothing.
+    static func nmAlong(legsNm: [Double?]) throws -> [Double] {
+        try Self.rule("nm_along", EngineContract.NmAlongInput(legsNm: legsNm))
+    }
+
     /// Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, and all of it as one message.
     static func noAltitude(selection: [String: OpenAPIValueContainer], between: [String]? = nil, `where`: String? = nil) throws -> EngineContract.NoAltitudeAnswer {
         try Self.rule("no_altitude", EngineContract.NoAltitudeInput(selection: selection, between: between, where: `where`))
@@ -1393,6 +1423,11 @@ extension Engine {
     /// How far a procedure's leg with no fix of its own to end at is drawn, nm (ARINC 424-18 5.21): an FC leg its coded distance from its fix; a leg flown to an altitude (FA, CA, VA) from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; any other (to a DME distance, a radial, an intercept, a manual termination) 2 nm.
     static func procedureLegNm(path: String, distanceNm: Double? = nil, altitudeFt: Double? = nil, knownFt: Double? = nil) throws -> Double {
         try Self.rule("procedure_leg_nm", EngineContract.ProcedureLegNmInput(path: path, distanceNm: distanceNm, altitudeFt: altitudeFt, knownFt: knownFt))
+    }
+
+    /// The figures a flown procedure path is drawn with: a hold entry's standard-rate turn radius at the 120 kt holds are drawn at (AIM 5-3-8), nm; and the join from vectors to final, 3 nm outside the final's first fix (2 miles outside the approach gate, which is 1 mile outside the FAF: FAA Order JO 7110.65 5-9-1a1, the Pilot/Controller Glossary) at 30 degrees (JO 7110.65 TBL 5-9-1).
+    static func procedurePathFigures() throws -> EngineContract.ProcedurePathFiguresAnswer {
+        try Self.rule("procedure_path_figures", EngineContract.ProcedurePathFiguresInput())
     }
 
     /// The course reversal flown where a procedure's path turns `turn_deg` at a fix (AIM 5-4-9): "coded" -- the chart's hold in lieu of a procedure turn or its procedure turn there, entered -- where one is coded at the fix and the path turns more than 90° there, come to from its far side (from the near side a pilot is lined up already and makes none, as on a NoPT route, 14 CFR 91.175(j)); else "teardrop" where the path doubles back more than 120° at a fix past the procedure's first; else null.

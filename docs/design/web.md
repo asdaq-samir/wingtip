@@ -688,7 +688,8 @@ photo in the pictures); and
 `/api/traffic/find`, the live sources, seconds when adsb.lol's API is
 busy, for whether it is in the air. Flights is `PastFlights` by that
 address with a ▶ on each row (`play`), each opening `PastFlightCard`
-(`?flight=&past=`) over the card. The one search's N-number row
+(`?flight=&past=`) over the card, in a chunk of its own fetched at that
+tap (`flying/LazyPastFlightCard`), not with the route panel's. The one search's N-number row
 (`useOneSearch`) reads the same two queries, its type at once and
 whether it is in the air under it, so the card opens on answers already
 in hand. The FPL's airplane field suggests from the same rows as it is typed

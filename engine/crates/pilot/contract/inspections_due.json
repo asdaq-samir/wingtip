@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_pilot::pilot::records::call",
-  "description": "The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given.",
+  "description": "The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given. With them `due`, the list the gateway shows and reminds of: each named and with its rule (an AD its own number and 14 CFR 39.7).",
   "type": "object",
   "properties": {
     "input": {
@@ -73,6 +73,75 @@
               "type": "null"
             }
           ]
+        },
+        "tail_number": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The airplane's registration, for the reminders' words."
+        },
+        "for_hire": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Flown for hire, so the 100-hour inspection applies (91.409(b))."
+        },
+        "elt_battery_due_on": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD, the date marked on the transmitter (91.207(c))."
+        },
+        "kept": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "The owner's own items: an AD (14 CFR part 39) or anything else.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "kind": {
+                "enum": [
+                  "AD",
+                  "OTHER"
+                ]
+              },
+              "title": {
+                "type": "string"
+              },
+              "reference": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "due_on": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "YYYY-MM-DD"
+              },
+              "due_at_hours": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "title"
+            ]
+          }
         }
       }
     },
@@ -140,6 +209,13 @@
               "type": "null"
             }
           ]
+        },
+        "due": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PaperworkDue"
+          },
+          "description": "Each recorded one, named and cited, in order: the annual, the 100-hour (for hire), the ELT and its battery, the static system, the transponder, the VOR check (where within its limit), then the owner's dated items."
         }
       },
       "required": [
@@ -148,7 +224,8 @@
         "static_check_until",
         "transponder_check_until",
         "hundred_hour_due_at_hours",
-        "vor_check"
+        "vor_check",
+        "due"
       ],
       "additionalProperties": false
     }

@@ -11,6 +11,7 @@ import { THREE_FIGURES } from "../../components/ui/numberFormats";
 import { lengthCode, lengthOfCode, lengthWords, type Hold } from "../plan";
 import { legMinutes } from "../../lib/holdEntry";
 import { bearing } from "../../lib/format";
+import { callEngine } from "../../lib/engine/engine";
 import { TEXT } from "../../lib/text";
 
 /** The point a hold is being set at: its ident, the hold there now, the
@@ -85,18 +86,22 @@ function HoldForm({ at, onSet }: { at: HoldAt; onSet: (fix: string, hold: Hold |
   const [right, setRight] = useState(was?.right ?? true);
   const [timed, setTimed] = useState(was ? "min" in was.leg : true);
   const [legMin, setLegMin] = useState(was && "min" in was.leg ? was.leg.min : legMinutes(at.altitudeFt ?? 0));
-  const [legNm, setLegNm] = useState(was && "nm" in was.leg ? was.leg.nm : 4);
+  // A leg by distance has no length of its own: "the controller or the
+  // instrument approach procedure chart will specify the length of the
+  // outbound leg" (AIM 5-3-8), so the pilot picks the one they were given.
+  const [legNm, setLegNm] = useState<number | null>(was && "nm" in was.leg ? was.leg.nm : null);
   const [length, setLength] = useState(was ? lengthCode(was.length) : "2T");
   const deg = course ?? Number.NaN;
-  const valid = deg >= 0 && deg <= 360;
+  const valid = deg >= 0 && deg <= 360 && (timed || legNm != null);
   const set = () => {
     if (!valid) return;
-    const inbound = (way === "in" ? deg : deg + 180) % 360;
+    // The inbound course, an outbound one's reciprocal (the engine's, AIM 5-3-8).
+    const inbound = callEngine("hold_inbound_deg", { course_deg: deg, outbound: way === "out" });
     onSet(at.fix, {
       fix: at.fix,
       inbound,
       right,
-      leg: timed ? { min: legMin } : { nm: legNm },
+      leg: timed || legNm == null ? { min: legMin } : { nm: legNm },
       length: lengthOfCode(length) ?? { turns: 2 },
     });
   };
@@ -169,7 +174,8 @@ function HoldForm({ at, onSet }: { at: HoldAt; onSet: (fix: string, hold: Hold |
             ) : (
               <PullDown
                 label="Leg distance"
-                value={`${legNm}`}
+                value={legNm != null ? `${legNm}` : ""}
+                placeholder="Length"
                 options={LEG_NM.map((n) => ({ value: `${n}`, label: `${n} nm` }))}
                 onChange={(v) => setLegNm(Number(v))}
                 testId="hold-leg-nm"

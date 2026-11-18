@@ -2446,6 +2446,11 @@ data class Currency (
      */
     val dayPassengersUntil: String? = null,
 
+    /**
+     * What falls due, each named and cited (61.56(c), 61.23, 61.57(a)-(c)).
+     */
+    val due: List<PaperworkDue>,
+
     val flightReviewOn: String? = null,
 
     /**
@@ -2486,6 +2491,31 @@ data class Currency (
 
     val totalHours: Double,
     val trackingInWindow: Boolean
+)
+
+/**
+ * One thing that falls due, named and with the rule that asks for it
+ * (the engine's PaperworkDue), for the gateway's Coming up list and its
+ * reminders, which add only the days and hours left.
+ */
+@Serializable
+data class PaperworkDue (
+    val dueAtHours: Double? = null,
+    val itemId: Int? = null,
+    val label: String,
+
+    /**
+     * The reminder sentence's start, to which the day is added.
+     */
+    val lead: String,
+
+    /**
+     * 14 CFR 61.56(c); an AD its own number and 14 CFR 39.7; an owner's item its reference.
+     */
+    val rule: String? = null,
+
+    val until: String? = null,
+    val what: String
 )
 
 /**
@@ -4529,6 +4559,11 @@ data class Inspections (
     val annualUntil: String? = null,
 
     /**
+     * Each recorded one named and cited, then the owner's dated items (an AD by 14 CFR 39.7).
+     */
+    val due: List<PaperworkDue>,
+
+    /**
      * The end of the 12th calendar month after (91.207(d)).
      */
     val eltUntil: String? = null,
@@ -4568,16 +4603,37 @@ data class VorCheck (
 
 /**
  * The days the airplane's inspections and checks were done, and the
- * hours of its last 100-hour; each left out where not recorded.
+ * hours of its last 100-hour; each left out where not recorded. With the
+ * airplane's registration, whether it is flown for hire, its ELT
+ * battery's marked date and the owner's items, for the list of what
+ * falls due (`due`).
  */
 @Serializable
 data class InspectionsAsk (
     val annualOn: String? = null,
+    val eltBatteryDueOn: String? = null,
     val eltOn: String? = null,
+    val forHire: Boolean? = null,
     val hundredHourAtHours: Double? = null,
+    val kept: List<KeptItem>? = null,
     val staticCheckOn: String? = null,
+    val tailNumber: String? = null,
     val transponderCheckOn: String? = null,
     val vorCheck: VorCheckAsk? = null
+)
+
+/**
+ * An owner's own item: an AD (14 CFR part 39) or anything else, with
+ * its next day or hours.
+ */
+@Serializable
+data class KeptItem (
+    val dueAtHours: Double? = null,
+    val dueOn: String? = null,
+    val id: Int,
+    val kind: String,
+    val reference: String? = null,
+    val title: String
 )
 
 /**
