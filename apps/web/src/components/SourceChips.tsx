@@ -2,7 +2,7 @@ import { useState } from "react";
 import { cn } from "cn";
 import { Button } from "./ui/button";
 import SheetDialog from "./SheetDialog";
-import type { Source } from "../lib/api/flightWatch";
+import type { BriefingSource as Source } from "../lib/api/types";
 import { TEXT } from "../lib/text";
 
 /**

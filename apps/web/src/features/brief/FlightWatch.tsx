@@ -3,8 +3,8 @@ import { useMutation, useMutationState, useQuery, useQueryClient } from "@tansta
 import { cn } from "cn";
 import { Switch } from "../../components/ui/switch";
 import { api, describeError } from "../../lib/api/client";
-import type { SaveFlightRequest } from "../../lib/api/types";
-import { flightWatch, type FlightWatch as Watch } from "../../lib/api/flightWatch";
+import type { FlightWatch as Watch, SaveFlightRequest } from "../../lib/api/types";
+import { flightWatch } from "../../lib/api/flightWatch";
 import { useBriefPlan, type FlightToSave } from "../../lib/briefPlan";
 import { clockTime } from "../../lib/format";
 import { useMinuteClock } from "../../lib/useMinuteClock";
@@ -158,7 +158,7 @@ export default function FlightWatch() {
           </div>
         ) : (
           <p className={cn("px-1 text-muted-foreground tabular-nums", TEXT.note)} data-testid="flight-watch-quiet">
-            Checked {clockTime(new Date(watch.data.checkedAt))}, nothing has changed
+            {watch.data.checkedAt ? `Checked ${clockTime(new Date(watch.data.checkedAt))}, nothing has changed` : "Not checked yet"}
           </p>
         ))}
     </section>

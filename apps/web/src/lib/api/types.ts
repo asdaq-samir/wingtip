@@ -328,6 +328,14 @@ export type FlightShare = Gateway["FlightShareDto"];
 export type SharedFlight = Gateway["SharedFlightDto"];
 /** A flight's flown track as saved to the account (lib/track). */
 export type SavedTrack = Gateway["TrackDto"];
+/** The watch on a saved flight (`/api/flights/{id}/watch`, FlightWatch):
+ *  the gateway checks its weather and NOTAMs again until it leaves and
+ *  says what changed, each line with the reports it rests on. `checkedAt`
+ *  is null until its first check. */
+export type FlightWatch = Gateway["FlightWatchDto"];
+/** A report a line rests on, as it was sent: shown raw, never
+ *  reformatted (SourceChips). */
+export type BriefingSource = Gateway["BriefingSourceDto"];
 /** POST /api/flights body -- files (replacing any previous one) a nav
  *  log for a route this pilot planned. */
 export type SaveFlightRequest = Gateway["SaveFlightRequest"];
