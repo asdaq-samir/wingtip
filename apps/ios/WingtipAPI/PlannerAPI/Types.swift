@@ -619,7 +619,7 @@ public protocol APIProtocol: Sendable {
     /// to a field, in the planner's air on the way there at `altitude_ft` --
     /// the winds and temperature aloft for the hour (wingtip.weather, the FD
     /// period for `depart`, now by default), the airplane's true airspeed and
-    /// burn in that air (wingtip.performance) and the variation (wingtip.magnetic,
+    /// burn in that air (the engine's wingtip_flight::performance) and the variation (wingtip.magnetic,
     /// the WMM) -- the true course and distance, the wind triangle, the
     /// magnetic heading, ground speed, time and fuel, each step in words;
     /// and the student's estimates (`mh`, `gs`, `ete`, `fuel`) checked
@@ -1059,7 +1059,7 @@ public protocol APIProtocol: Sendable {
     /// them in its own air: the cruise figures are the aeroplane's at a
     /// reference altitude on a standard day, and the forecast temperature
     /// at the leg's altitude gives the density altitude they are flown at
-    /// (wingtip.performance). depart, an ISO time (UTC when naive), picks the
+    /// (the engine's wingtip_flight::performance). depart, an ISO time (UTC when naive), picks the
     /// winds-aloft forecast period the legs are flown on -- the 6-, 12- or
     /// 24-hour product, whichever is valid closest to the departure;
     /// without it, the 6-hour product, i.e. about now -- and whether the
@@ -2434,7 +2434,7 @@ extension APIProtocol {
     /// to a field, in the planner's air on the way there at `altitude_ft` --
     /// the winds and temperature aloft for the hour (wingtip.weather, the FD
     /// period for `depart`, now by default), the airplane's true airspeed and
-    /// burn in that air (wingtip.performance) and the variation (wingtip.magnetic,
+    /// burn in that air (the engine's wingtip_flight::performance) and the variation (wingtip.magnetic,
     /// the WMM) -- the true course and distance, the wind triangle, the
     /// magnetic heading, ground speed, time and fuel, each step in words;
     /// and the student's estimates (`mh`, `gs`, `ete`, `fuel`) checked
@@ -3150,7 +3150,7 @@ extension APIProtocol {
     /// them in its own air: the cruise figures are the aeroplane's at a
     /// reference altitude on a standard day, and the forecast temperature
     /// at the leg's altitude gives the density altitude they are flown at
-    /// (wingtip.performance). depart, an ISO time (UTC when naive), picks the
+    /// (the engine's wingtip_flight::performance). depart, an ISO time (UTC when naive), picks the
     /// winds-aloft forecast period the legs are flown on -- the 6-, 12- or
     /// 24-hour product, whichever is valid closest to the departure;
     /// without it, the 6-hour product, i.e. about now -- and whether the

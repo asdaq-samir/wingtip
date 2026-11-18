@@ -122,7 +122,7 @@ class Totals(BaseModel):
     rules: FlightRules = "vfr"
     #: Under IFR with an alternate filed: the leg on to it, whose fuel is
     #: in `fuel_required_gal` before the reserve (14 CFR 91.167(a)(2)).
-    alternate: "AlternateLeg | None" = None
+    alternate: AlternateLeg | None = None
     #: A route with stops: each flight between two landings with its own
     #: fuel check, the tanks filled at each stop -- the route's own fuel
     #: figures are None then (wingtip.planning.route_totals). Empty without.
@@ -219,7 +219,7 @@ class AircraftProfile(BaseModel):
     #: from the -140 to the -181.
     designator: str | None = None
     #: The power `cruise_tas_kt` and `fuel_burn_gph` are at, in percent,
-    #: at wingtip.performance's reference altitude on a standard day. None:
+    #: at the engine's reference altitude on a standard day. None:
     #: no power model, its TAS and burn as given at every altitude and no
     #: other airplane's power assumed (wingtip_flight::performance).
     cruise_power_pct: float | None = None

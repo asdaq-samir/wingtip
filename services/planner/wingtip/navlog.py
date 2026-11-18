@@ -19,12 +19,6 @@ from .geo import distance_nm
 from .magnetic import magnetic_variation_deg
 from .winds_aloft import air_at, later
 
-# 14 CFR 91.151(a): VFR needs fuel to the destination plus 30 minutes at
-# normal cruise by day, 45 at night -- the engine's figures
-# (wingtip_flight::flight::reserve_min), for the planner's fuel stops.
-DAY_RESERVE_MIN = engine("reserve_min", ifr=False, night=False)
-NIGHT_RESERVE_MIN = engine("reserve_min", ifr=False, night=True)
-
 
 def fixes(dep_ident: str, dest_ident: str, start: tuple, end: tuple, selected: list) -> list:
     """The nav log flies departure -> checkpoints -> destination. The

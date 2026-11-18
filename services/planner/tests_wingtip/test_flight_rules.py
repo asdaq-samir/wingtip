@@ -14,7 +14,6 @@ from pathlib import Path
 import pytest
 from pygeomag import GeoMag
 
-from wingtip import navlog, performance
 from wingtip.engine import ask as engine
 from wingtip.magnetic import magnetic_variation_deg
 
@@ -44,13 +43,12 @@ def test_cruising_altitudes_are_91_159s(case):
 def test_the_reserves_are_91_151s_and_91_167s():
     for case in FIXTURE["reserve"]:
         assert engine("reserve_min", ifr=case["ifr"], night=case["night"]) == case["minutes"]
-    assert (navlog.DAY_RESERVE_MIN, navlog.NIGHT_RESERVE_MIN) == (30.0, 45.0)
 
 
 def test_density_and_pressure_altitude():
     for case in FIXTURE["densityAltitude"]:
-        sigma = performance.density_ratio(case["pressureAltitudeFt"], case["oatC"])
-        assert performance.density_altitude_ft(sigma) == pytest.approx(case["densityAltitudeFt"], abs=1e-6)
+        sigma = engine("density_ratio", altitude_ft=case["pressureAltitudeFt"], oat_c=case["oatC"])
+        assert engine("density_altitude_ft", sigma=sigma) == pytest.approx(case["densityAltitudeFt"], abs=1e-6)
     for case in FIXTURE["pressureAltitude"]:
         got = engine("pressure_altitude_ft", elevation_ft=case["elevationFt"], altimeter_inhg=case["altimeterInHg"])
         # The handbook's table (FAA-H-8083-25C Figure 11-3) is whole feet off

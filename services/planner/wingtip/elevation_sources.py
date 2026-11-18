@@ -122,19 +122,30 @@ def dem_heights(name: str, points: list) -> dict:
     return {p: v for p, v in zip(points, values) if (nodata is None or v != nodata) and v > -500}
 
 
+#: Points read on one thread, and threads at once. A cloud tile's points are
+#: each a range request of their own, a third of a second, and one thread a
+#: tile read them one after another: a new route's side view waited 13 to
+#: 22 s on them (60 points C81-KORD 13.3 s, 2026-11-18). Four points a
+#: thread on sixteen read the same heights in 1.9 s; GDAL keeps the tile's
+#: header for the process, so opening it again for each four costs nothing.
+POINTS_A_READ = 4
+READERS = 16
+
+
 def from_tiles(keys: list) -> dict:
-    """Every key the tiles can answer, each tile read on a thread of its
-    own; a tile that cannot be read answers none of its points."""
+    """Every key the tiles can answer, a few points of a tile to a thread;
+    a read that fails answers none of its points, which EPQS then does."""
     by_tile: dict = {}
     for key in keys:
         name = dem_name(*key)
         if name is not None:
             by_tile.setdefault(name, []).append(key)
     found: dict = {}
-    if not by_tile:
+    reads = [(name, ks[i : i + POINTS_A_READ]) for name, ks in by_tile.items() for i in range(0, len(ks), POINTS_A_READ)]
+    if not reads:
         return found
-    with ThreadPoolExecutor(max_workers=min(8, len(by_tile))) as ex:
-        futures = [ex.submit(dem_heights, name, tile_keys) for name, tile_keys in by_tile.items()]
+    with ThreadPoolExecutor(max_workers=min(READERS, len(reads))) as ex:
+        futures = [ex.submit(dem_heights, name, tile_keys) for name, tile_keys in reads]
         for future in as_completed(futures):
             try:
                 found.update(future.result())

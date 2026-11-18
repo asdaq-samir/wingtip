@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from wingtip import airspace, altitude, performance, sua, terrain, weather
+from wingtip import airspace, altitude, sua, terrain, weather
 from wingtip.engine import ask as engine
 
 
@@ -260,7 +260,7 @@ def test_a_station_far_from_the_leg_does_not_cap_it(sources):
 def test_the_service_ceiling_is_where_it_is_in_the_forecast_air(sources):
     # 15 degC warmer than a standard day all the way up: the 14,000 ft
     # service ceiling, a density altitude, is 12,000 ft or so of altitude.
-    sources["temperatures"] = [(h, performance.isa_temp_c(h) + 15) for h in (6000.0, 9000.0, 12000.0, 18000.0)]
+    sources["temperatures"] = [(h, engine("isa_temp_c", altitude_ft=h) + 15) for h in (6000.0, 9000.0, 12000.0, 18000.0)]
 
     result = altitude.select_cruise_altitude(DEP, DEST, PROFILE, fixes=[DEP, DOGLEG, DEST])
 
