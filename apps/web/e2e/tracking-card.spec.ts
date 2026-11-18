@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, frontSheet, grabberTo, settle, settled, showSearch, sideDrawer, slow } from "./helpers";
+import { closeCard, frontSheet, grabberTo, inSheet, settle, settled, showSearch, sideDrawer, slow } from "./helpers";
 import { DETAIL, sky } from "./trackingSky";
 
 test.afterEach(async ({ page }) => {
@@ -28,7 +28,9 @@ test("an airplane opened is in the Aircraft card's Recents, and one starred on i
   await expect(home.getByTestId("pill-aircraft-favorite")).toHaveCount(1);
   await expect(home.getByTestId("pill-aircraft-favorite")).toContainText("N14511");
   await expect(home.getByTestId("airport-recents").getByTestId("aircraft-recent").first()).toContainText("N14511");
-  // A tile opens its card again.
+  // A tile opens its card again, pulled into sight first: the Favorites
+  // sit under Nearest and Find Nearby, below the half sheet's edge.
+  await inSheet(page, home.getByTestId("pill-aircraft-favorite"));
   await home.getByTestId("pill-aircraft-favorite").click();
   await expect(page).toHaveURL(/[?&]flight=a0b7d8/);
   await expect(page.getByTestId("flight-card").getByTestId("flight-favorite")).toHaveAttribute("aria-pressed", "true");

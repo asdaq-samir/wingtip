@@ -284,7 +284,9 @@ export default function FlightCard({
         closeTestId="flight-close"
         shareTestId="flight-share"
       />
-      <div className="grid grid-cols-4 gap-2 pt-3">
+      {/* Every tile 56 tall (min-h-14), as the airport card's are (PlaceActions):
+          the two cards' actions at the same places (the owner, 2026-11-14). */}
+      <div className="grid grid-cols-4 gap-2 pt-3 *:min-h-14">
         {/* Follow filled, the card's first thing to do; nothing to follow
             where it is not heard now: greyed, not pressed. */}
         <TogglePrimitive
@@ -342,7 +344,7 @@ export default function FlightCard({
       {/* Its pages under the glass bar at the card's foot, Info's starting with its facts in a strip and its
           pictures, as the airport card has them (C1; the owner, 2026-11-14: "make sure the airplane card
           looks similar to airport card"; "Switching tabs should not show those"). */}
-      <CardTabPages tab={tab} onPick={setTab} top={setTop} bar={<CardTabBar onPick={setTab} tabs={TABS} />}>
+      <CardTabPages tab={tab} onPick={setTab} top={setTop} bar={<CardTabBar tabTestId="flight-tab-" onPick={setTab} tabs={TABS} />}>
         <CardTabPanel value="info" className="pt-0">
           <AirplaneFacts record={detail?.faa} type={detail?.type ?? plane?.type ?? null} year={detail?.year} testId="flight-facts" />
           <CardPictures slides={slides} label={`${name}: ${photo ? "its photo, and " : ""}where it has flown`} />
