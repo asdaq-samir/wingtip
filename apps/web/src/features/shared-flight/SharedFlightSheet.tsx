@@ -42,7 +42,9 @@ function NavLogRows({ vm }: { vm: SharedFlightPreview }) {
     <ListGroup
       title="Nav Log"
       footer={
-        vm.totals ? `${wholeNm(vm.totals.nm)} · ${vm.totals.minutes != null ? hm(vm.totals.minutes) : "—"} · ${gal(vm.totals.gal)}` : undefined
+        vm.totals
+          ? `${wholeNm(vm.totals.nm)} · ${vm.totals.minutes != null ? hm(vm.totals.minutes) : "—"} · ${gal(vm.totals.gal)}`
+          : undefined
       }
     >
       {vm.navLog.map((c) => (

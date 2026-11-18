@@ -48,7 +48,11 @@ export const EXPLAINED = {
     source: PHAK,
   },
   // PHAK, Navigation: groundspeed, the true airspeed with the wind's effect.
-  GS: { name: "Groundspeed", sentence: "The airplane's speed over the ground: its true airspeed with the wind's push or pull.", source: PHAK },
+  GS: {
+    name: "Groundspeed",
+    sentence: "The airplane's speed over the ground: its true airspeed with the wind's push or pull.",
+    source: PHAK,
+  },
   // PHAK, Navigation (and Flight Instruments): true airspeed, corrected for altitude and temperature.
   TAS: {
     name: "True airspeed",
@@ -58,7 +62,11 @@ export const EXPLAINED = {
   // PHAK, Navigation: the time en route, distance over groundspeed.
   ETE: { name: "Estimated time en route", sentence: "How long the flight or leg takes: the distance over the groundspeed.", source: PHAK },
   // PHAK, Navigation: the departure time plus the time en route.
-  ETA: { name: "Estimated time of arrival", sentence: "When the airplane gets there: the departure time plus the time en route.", source: PHAK },
+  ETA: {
+    name: "Estimated time of arrival",
+    sentence: "When the airplane gets there: the departure time plus the time en route.",
+    source: PHAK,
+  },
   // PHAK, Navigation: a cross-country's plan works the climb out to its top,
   // then the cruise.
   TOC: { name: "Top of climb", sentence: "Where the climb ends and the cruise begins, at the altitude planned.", source: PHAK },

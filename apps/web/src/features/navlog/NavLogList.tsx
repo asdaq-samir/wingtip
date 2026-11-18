@@ -343,7 +343,7 @@ export function NavLogList({
                               6.0 nm · · 2,500 ft" (the audit's WEB-39). */}
                           {airplane && <span aria-hidden="true"> · </span>}
                           <span role="cell">
-                            {!airplane ? null : leg ? (leg.ete_min === null ? "unflyable" : `${one(leg.ete_min)} min`) : <FigureWait />}
+                            {!airplane ? null : leg ? leg.ete_min === null ? "unflyable" : `${one(leg.ete_min)} min` : <FigureWait />}
                           </span>
                           {altitude && <span aria-hidden="true"> · </span>}
                           <span role="cell">{altitude}</span>

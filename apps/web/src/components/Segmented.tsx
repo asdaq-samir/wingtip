@@ -63,7 +63,11 @@ export default function Segmented({
       )}
     >
       {options.map((o) => (
-        <ToggleGroupItem key={o.value} value={o.value} className={cn(SEGMENT, compact ? "h-6 min-w-[44px] rounded-full px-2 text-[length:min(0.8125rem,14px)]" : "h-7")}>
+        <ToggleGroupItem
+          key={o.value}
+          value={o.value}
+          className={cn(SEGMENT, compact ? "h-6 min-w-[44px] rounded-full px-2 text-[length:min(0.8125rem,14px)]" : "h-7")}
+        >
           {o.icon}
           {o.label}
         </ToggleGroupItem>

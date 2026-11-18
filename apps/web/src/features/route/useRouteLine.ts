@@ -198,21 +198,7 @@ export function useRouteLine({
       }
       setStops(chip.stops, chip.fuel, true);
     },
-    [
-      browsing,
-      chips,
-      chosenKey,
-      stops,
-      fuelParam,
-      ownWithFuel,
-      ownMinutes,
-      ownGround,
-      ownNm,
-      ownGal,
-      ownAltitudeFt,
-      setStops,
-      setBrowsing,
-    ],
+    [browsing, chips, chosenKey, stops, fuelParam, ownWithFuel, ownMinutes, ownGround, ownNm, ownGal, ownAltitudeFt, setStops, setBrowsing],
   );
   // The rules turned to IFR on a chip: the route as typed is the route
   // (the planner's ways are VFR's).

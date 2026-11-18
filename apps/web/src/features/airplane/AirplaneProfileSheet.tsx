@@ -219,12 +219,7 @@ export default function AirplaneProfileSheet() {
             tabTestId="airplane-tab-"
             onPick={setTab}
             tabs={[
-              {
-                value: "flights",
-                label: "Flights",
-                icon: History,
-                hint: card.flightCount ? String(card.flightCount) : null,
-              },
+              { value: "flights", label: "Flights", icon: History, hint: card.flightCount ? String(card.flightCount) : null },
               { value: "info", label: "Info", icon: Info },
               { value: "figures", label: "Figures", icon: Gauge },
             ]}

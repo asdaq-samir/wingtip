@@ -57,12 +57,7 @@ export function PlaceTabBar({
           ),
         },
         { value: "runways", label: "Runways", icon: PlaneLanding },
-        {
-          value: "diagrams",
-          label: "Charts",
-          icon: FileText,
-          hint: charts > 0 ? String(charts) : null,
-        },
+        { value: "diagrams", label: "Charts", icon: FileText, hint: charts > 0 ? String(charts) : null },
       ]}
     />
   );

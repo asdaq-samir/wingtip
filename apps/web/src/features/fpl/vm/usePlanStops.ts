@@ -55,16 +55,7 @@ export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place 
   });
   useEffect(() => prefetchAhead(), [aheadKey]); // keyed on the route and the plan's choices
   // The map's cards' and the radio's actions on the route (useMapActions).
-  useMapActions({
-    course,
-    planned,
-    aircraft,
-    setStops,
-    setRoute,
-    directToChartPoint,
-    flyAltitude,
-    typeProcedures,
-  });
+  useMapActions({ course, planned, aircraft, setStops, setRoute, directToChartPoint, flyAltitude, typeProcedures });
   return {
     ...suggested,
     // The suggested stop the airport's card is open on, where it is one: its
