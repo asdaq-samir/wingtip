@@ -58,7 +58,7 @@ export default function FilterChips() {
     </Toggle>
   );
   return (
-    <div className="-mx-4 flex gap-2 overflow-x-auto overscroll-x-contain px-4 pb-1 [scrollbar-width:none]">
+    <div className="-mx-4 flex gap-2 overflow-x-auto overscroll-x-contain px-4 pb-1">
       <Button
         variant="outline"
         size="sm"

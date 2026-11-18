@@ -320,6 +320,11 @@ Base UI's own `Drawer.VirtualKeyboardProvider` (`--drawer-keyboard-inset`
 on the viewport), which also scrolls the field typed into into sight
 over it.
 
+No page draws a scroll bar, on the web at any size (the owner,
+2026-11-18: "No visible bar needed on any page"): everything scrolls by
+touch, wheel and keys with its bar out of sight, as an iPhone's lists do.
+One rule for every scroller (`styles/feel.css`), none per component.
+
 ## 3. The tests that hold the card and scrolling rules
 
 The owner, 2026-11-10: "Can we have tests for opening/closing and

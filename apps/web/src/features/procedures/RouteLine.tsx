@@ -81,7 +81,7 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
         disabled={line.stale}
         // Room above and under for the chips' 44-point areas, which a
         // scrolling row would cut off.
-        className="flex w-full justify-start gap-2 overflow-x-auto overscroll-x-contain py-1.5 [scrollbar-width:none]"
+        className="flex w-full justify-start gap-2 overflow-x-auto overscroll-x-contain py-1.5"
       >
         {line.chips.map((c) => (
           <ToggleGroupItem

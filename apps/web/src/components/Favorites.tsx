@@ -250,7 +250,7 @@ export function StripNote({ children, status = false }: { children: ReactNode; s
   );
 }
 
-const STRIP = "-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1 [scrollbar-width:none]";
+const STRIP = "-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1";
 /** A pill's row of small tiles, sliding sideways where more than fit (`className`: strips laid into it). */
 export function PillStrip({ children, testId, className }: { children: ReactNode; testId?: string; className?: string }) {
   return (

@@ -71,9 +71,7 @@ export function CardFacts({ testId, fit, children }: { testId: string; fit?: boo
       data-base-ui-swipe-ignore={fit ? undefined : "x"}
       className={cn(
         "flex pt-4",
-        fit
-          ? "flex-wrap justify-between gap-x-2 gap-y-3"
-          : "-mx-4 gap-6 overflow-x-auto overscroll-x-contain px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        fit ? "flex-wrap justify-between gap-x-2 gap-y-3" : "-mx-4 gap-6 overflow-x-auto overscroll-x-contain px-4",
       )}
       data-testid={testId}
     >

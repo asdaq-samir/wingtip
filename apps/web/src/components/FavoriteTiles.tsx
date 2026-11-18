@@ -33,7 +33,7 @@ export function FavoriteTiles({
   const away = useAway();
   return (
     // Out to the sheet's edges as it scrolls, its margin kept inside.
-    <div className="-mx-4 flex gap-4 overflow-x-auto overscroll-x-contain px-4 pb-1 [scrollbar-width:none]" data-testid="favorites">
+    <div className="-mx-4 flex gap-4 overflow-x-auto overscroll-x-contain px-4 pb-1" data-testid="favorites">
       {(home || onAddHome) && (
         <SmallTile
           mark={<SmallMark icon={<House />} className="bg-(--badge-home) text-white" />}

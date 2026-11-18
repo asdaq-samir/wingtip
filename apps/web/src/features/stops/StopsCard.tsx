@@ -228,7 +228,7 @@ export default function StopsCard({
           if (v[0]) setPick(v[0] as StopPick);
         }}
         aria-label="Kind of stop"
-        className="-mx-4 mt-3 w-auto items-stretch overflow-x-auto overscroll-x-contain rounded-none px-4 py-1.5 [scrollbar-width:none]"
+        className="-mx-4 mt-3 w-auto items-stretch overflow-x-auto overscroll-x-contain rounded-none px-4 py-1.5"
       >
         {PICK_ORDER.map((kind) => (
           <ToggleGroupItem

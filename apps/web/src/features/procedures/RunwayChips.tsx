@@ -83,7 +83,7 @@ export function Chips({
       ref={row}
       data-slides=""
       className={cn(
-        "relative -my-1.5 min-w-0 flex-1 overflow-x-auto overscroll-x-contain py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "relative -my-1.5 min-w-0 flex-1 overflow-x-auto overscroll-x-contain py-1.5",
         flushStart ? "-mr-1.5 pr-1.5" : "-mx-1.5 px-1.5",
         trailing && "flex items-center gap-3",
       )}
