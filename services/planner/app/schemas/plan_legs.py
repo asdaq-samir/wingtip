@@ -88,7 +88,7 @@ class Leg(BaseModel):
     exceeds true airspeed, i.e. the leg cannot be flown.
 
     The true airspeed and fuel flow are the aeroplane's in the leg's own
-    air (wingtip.performance): its cruise figures are at a reference
+    air (the engine's wingtip_flight::performance): its cruise figures are at a reference
     altitude on a standard day, and the forecast temperature at this
     altitude gives the density altitude they are flown at, at the power
     it allows -- the cruise power, or less where full throttle cannot

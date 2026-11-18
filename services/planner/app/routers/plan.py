@@ -171,7 +171,7 @@ def plan(q: Annotated[PlanQuery, Depends()]) -> Plan:
     them in its own air: the cruise figures are the aeroplane's at a
     reference altitude on a standard day, and the forecast temperature
     at the leg's altitude gives the density altitude they are flown at
-    (wingtip.performance). depart, an ISO time (UTC when naive), picks the
+    (the engine's wingtip_flight::performance). depart, an ISO time (UTC when naive), picks the
     winds-aloft forecast period the legs are flown on -- the 6-, 12- or
     24-hour product, whichever is valid closest to the departure;
     without it, the 6-hour product, i.e. about now -- and whether the

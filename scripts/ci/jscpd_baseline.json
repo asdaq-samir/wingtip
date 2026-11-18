@@ -27,6 +27,5 @@
  "services/gateway/src/main/java/app/wingtipmaps/gateway/controller/InstructorController.java | services/gateway/src/main/java/app/wingtipmaps/gateway/controller/TrainingController.java": 1,
  "services/gateway/src/main/java/app/wingtipmaps/gateway/domain/AircraftDueItem.java | services/gateway/src/main/java/app/wingtipmaps/gateway/domain/Squawk.java": 1,
  "services/gateway/src/main/java/app/wingtipmaps/gateway/domain/FlightTrack.java | services/gateway/src/main/java/app/wingtipmaps/gateway/domain/FlightWatch.java": 1,
- "services/gateway/src/main/java/app/wingtipmaps/gateway/dto/FlightDto.java | services/gateway/src/main/java/app/wingtipmaps/gateway/dto/FlightSummaryDto.java": 2,
- "services/planner/wingtip/congested.py | services/planner/wingtip/terrain.py": 1
+ "services/gateway/src/main/java/app/wingtipmaps/gateway/dto/FlightDto.java | services/gateway/src/main/java/app/wingtipmaps/gateway/dto/FlightSummaryDto.java": 2
 }

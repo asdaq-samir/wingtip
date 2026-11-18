@@ -219,7 +219,7 @@ class AircraftProfile(BaseModel):
     #: from the -140 to the -181.
     designator: str | None = None
     #: The power `cruise_tas_kt` and `fuel_burn_gph` are at, in percent,
-    #: at wingtip.performance's reference altitude on a standard day. None:
+    #: at the engine's reference altitude on a standard day. None:
     #: no power model, its TAS and burn as given at every altitude and no
     #: other airplane's power assumed (wingtip_flight::performance).
     cruise_power_pct: float | None = None
