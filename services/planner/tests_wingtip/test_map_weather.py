@@ -3,7 +3,7 @@ OurAirports' runways.csv, and a field's METAR as the map's marks read it."""
 
 import pandas as pd
 
-from wingtip import airports, map_weather
+from wingtip import airport_tables, map_weather
 
 
 def test_a_fields_open_runways_ends_with_their_true_headings(tmp_path, monkeypatch):
@@ -15,7 +15,9 @@ def test_a_fields_open_runways_ends_with_their_true_headings(tmp_path, monkeypat
             {"airport_ident": "KDLH", "le_ident": "14", "he_ident": "32", "le_heading_degT": 140.0, "he_heading_degT": 320.0, "closed": 1},
         ]
     ).to_csv(path, index=False)
-    monkeypatch.setattr(airports, "RUNWAYS_CACHE_PATH", path)
+    # map_weather reads the path from airport_tables, where the split put
+    # it (airports only re-exports it), so the test's table is the one read.
+    monkeypatch.setattr(airport_tables, "RUNWAYS_CACHE_PATH", path)
     monkeypatch.setattr(map_weather, "load_runways", lambda: pd.read_csv(path, low_memory=False))
     assert map_weather.end_headings("kdlh") == [[["09L", 87.0], ["27R", 267.0]], [["03", None], ["21", None]]]
     assert map_weather.end_headings("1D2") == []

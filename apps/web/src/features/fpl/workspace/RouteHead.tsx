@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useRef } from "react";
 import { cn } from "cn";
+import SectionTitle from "../../../components/SectionTitle";
 import { Button } from "../../../components/ui/button";
 import { TEXT } from "../../../lib/text";
 import { RouteTimeline } from "../routePanelParts";
@@ -47,9 +48,11 @@ export default function RouteHead({
     <div ref={head} className="flex min-w-0 flex-1 flex-col gap-2" data-testid={editing ? "route-editing" : "route-folded"}>
       {editing && wholeRoute && (
         <div className="flex h-11 items-center justify-between gap-2 pl-1">
-          <h2 className={cn("font-semibold", TEXT.title)} data-testid="route-head">
+          {/* The shared section title, in the drawer title's 17-point
+              semibold it has always had over the typed route. */}
+          <SectionTitle className={cn("font-semibold", TEXT.title)} data-testid="route-head">
             Route
-          </h2>
+          </SectionTitle>
           <Button
             variant="plain"
             size="inline"

@@ -54,7 +54,9 @@ def test_a_chart_that_would_not_read_is_reported_inside_the_navlog_stream(monkey
 
     monkeypatch.setattr(checkpoint_scoring, "score", unread)
 
-    resp = client.get("/api/navlog", params={"dep": "C81", "dest": "KDLH"})
+    # Checkpoints asked for: the chart is read only to choose them, and
+    # they are off unless asked (c01b66108).
+    resp = client.get("/api/navlog", params={"dep": "C81", "dest": "KDLH", "checkpoints": "true"})
 
     assert resp.status_code == 200
     detail = "the chart along C81->KDLH could not be read: tile fetch failed"
