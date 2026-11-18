@@ -483,8 +483,8 @@ off by default (the owner, 2026-11-13).
    grey triangle), the mark its menu (Change by the one search, Direct To,
    Set Altitude, Hold, Add a Stop After, Move, Remove); the route's magenta
    in short rounded dashes between the marks; after a hairline inset to the
-   text its ident (a link to its card), the fuel in the tanks there, its
-   time (the departure's a picker) and its grip; no city; past four points
+   text its ident (a link to its card), the fuel in the tanks there right
+   after it, at the right its time (the departure's a picker) and its grip; no city; past four points
    "3 more stops", a tap showing them; Add a Stop the last row, by the one
    search; a hold or the grip moves a point, a swipe to the left takes a
    stop out, the plan's toast Undo putting either back. A tap on a field's

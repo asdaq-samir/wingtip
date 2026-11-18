@@ -202,8 +202,10 @@ export function TimelineLine({
               {pointName(point.ident)}
             </span>
           )}
-          <span className="flex-1" />
+          {/* The fuel right after the ident, the time at the right (the
+              owner, 2026-11-17: "Fuel should go right after airport"). */}
           {tank && <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />}
+          <span className="flex-1" />
           <span className={cn("relative z-10 shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
             {point.time}
           </span>
@@ -218,7 +220,10 @@ export function TimelineLine({
         )}
         {opens && (
           <CollapsibleContent className="space-y-2 pb-2" data-testid="timeline-details">
-            <div className="flex min-h-6 items-center justify-between gap-2">
+            {/* The elevation under the time, clear of the grip's column
+                (its 32 points and the gap; the owner, 2026-11-17: "the
+                elevation should be under the time"). */}
+            <div className={cn("flex min-h-6 items-center justify-between gap-2", end.grip && "pr-10")}>
               <WindLine direct={end.direct} wind={windWords(reported)} reported={reported} />
               {end.elevation}
             </div>

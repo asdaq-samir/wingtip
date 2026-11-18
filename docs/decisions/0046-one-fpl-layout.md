@@ -36,7 +36,9 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    marks the route's magenta in Apple's short rounded dashes ("make lines
    magenta"); after a hairline inset to the text, as iOS's grouped lists
    have it, its ident at the body size (a link to its airport's card), the
-   fuel in the tanks there (as the cards had it; none with no airplane),
+   fuel in the tanks there right after it (as the cards had it; none with
+   no airplane; the owner, 2026-11-17: "Fuel should go right after
+   airport"),
    its time in the secondary colour (the departure's leave time, a picker;
    the others' arrival, a dash with no airplane) and its grip. No city
    ("We don't need to say the city name"); the category is the mark's
@@ -52,7 +54,7 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    timeline line is one 44pt row", "exactly three rows, always"): the line,
    then its wind at the left (the cards' figure, the METAR now or the
    forecast for when the airplane is there) and its elevation at the
-   right, then one row of chips, wrapping where they do not fit -- the
+   right, under the time (the owner, 2026-11-17), then one row of chips, wrapping where they do not fit -- the
    runway (its line folded to the one picked, RunwayTray, headed "RWY"
    where it had the landing's or the takeoff's glyph, the owner 2026-11-17) and its kinds of
    procedure, each picked one its short name's chip ("ILS 26 ⌄",
