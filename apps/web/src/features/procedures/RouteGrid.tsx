@@ -139,7 +139,9 @@ export function PointGrip({ ident }: { ident: string }) {
       data-base-ui-swipe-ignore=""
       className="relative grid size-8 shrink-0 cursor-grab touch-none place-items-center rounded-full text-muted-foreground outline-none select-none after:absolute after:-inset-1.5 after:content-[''] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring"
     >
-      <Menu className="size-6" strokeWidth={1.5} aria-hidden />
+      {/* Thin and light, as iOS's: its lines a constant hairline-weight
+          stroke at any size, in the tertiary grey. */}
+      <Menu className="size-5 text-muted-foreground/60" strokeWidth={1.25} absoluteStrokeWidth aria-hidden />
     </Button>
   );
 }

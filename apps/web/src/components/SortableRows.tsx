@@ -77,7 +77,7 @@ export function MoveHandle({ label }: { label: string }) {
       data-base-ui-swipe-ignore=""
       className="relative inline-flex size-9 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground outline-none after:absolute after:-inset-1 after:content-[''] hover:bg-muted data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring"
     >
-      <Menu className="size-6" strokeWidth={1.5} aria-hidden />
+      <Menu className="size-5 text-muted-foreground/60" strokeWidth={1.25} absoluteStrokeWidth aria-hidden />
     </Button>
   );
 }
