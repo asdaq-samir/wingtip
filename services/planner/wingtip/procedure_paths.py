@@ -16,6 +16,7 @@ turns an airplane onto it.
 from __future__ import annotations
 
 import math
+from functools import cache
 
 from . import geo
 from . import holds as vfr_holds
@@ -26,15 +27,13 @@ from .engine import ask as engine
 #: decimals of a degree (wingtip.procedures).
 SAME_PLACE_NM = 0.05
 
-#: Vectors join the final this far out from its first fix, nm, INTERCEPT_DEG off its course: "at least 2 miles outside the
-#: approach gate", which is 1 mile outside the FAF (JO 7110.65 5-9-1a1; P/CG), at Table 5-9-1's most, 30 degrees.
-INTERCEPT_NM, INTERCEPT_DEG = 1.0 + 2.0, 30.0
-#: The least offset of a downwind to the final, nm: the join's own, 3 x sin 30 = 1.5. No FAA text sets a radar downwind's
-#: (FAA-H-8083-3C ch. 8's 1/2 to 1 mile is a visual pattern's); AV-17 found a bare 4.0 here.
-DOWNWIND_NM = INTERCEPT_NM * math.sin(math.radians(INTERCEPT_DEG))
-#: A standard-rate turn's radius in a hold's entry, nm: at the 120 knots
-#: the chart's holds are drawn at (the engine's paths.rs, hold_turn_nm).
-ENTRY_TURN_NM = 120 * (120 / 3600) / (2 * math.pi)
+
+@cache
+def _figures() -> dict:
+    """The engine's procedure_path_figures: a hold entry's turn radius
+    (hold_turn_nm) and the join from vectors to final, 3 nm out from the
+    final's first fix at 30 degrees (JO 7110.65 5-9-1a1, TBL 5-9-1)."""
+    return engine("procedure_path_figures")
 
 
 def _bearing(a: tuple, b: tuple) -> float:
@@ -168,12 +167,9 @@ def missed_path(drawing: dict, start: tuple) -> dict | None:
 def vectors_join(final: list, start: tuple) -> list:
     """The way an approach flown from vectors (no transition picked) is
     joined, as a controller vectors an airplane onto it: from outside the
-    final's first fix, straight to a point three miles back from it on the
-    side the airplane comes from, 30° off the final's course, and onto the
-    final there; from inside it -- the field between the airplane and the
-    final's start -- first out to that side, then a downwind DOWNWIND_NM
-    off the final (or as far as the airplane already is) to abeam its
-    first fix and three miles on, and a base to that point.
+    final's first fix, straight to the engine's join point back from it on
+    the side the airplane comes from, and onto the final there; from inside
+    it, out to that side, a downwind to abeam the join and a base to it.
     Empty where the final is too short to say which way it runs."""
     if len(final) < 2:
         return []
@@ -182,18 +178,22 @@ def vectors_join(final: list, start: tuple) -> list:
     off = ((_bearing(first, start) - course + 540) % 360) - 180
     distance = geo.distance_nm(*first, *start)
     side = 1 if off >= 0 else -1
-    join = _toward(first, course + 180 - INTERCEPT_DEG * side, INTERCEPT_NM)
+    join_nm, join_deg = _figures()["vectors_join_nm"], _figures()["vectors_intercept_deg"]
+    join = _toward(first, course + 180 - join_deg * side, join_nm)
     # How far ahead of the first fix the airplane is, toward the runway or
     # past it, and how far to the side of the final.
     along = distance * math.cos(math.radians(off))
     if along <= 0:
         return [join]
-    aside = max(DOWNWIND_NM, abs(distance * math.sin(math.radians(off))))
+    # The least offset of a downwind, the join's own (3 x sin 30 = 1.5 nm): no
+    # FAA text sets a radar downwind's (FAA-H-8083-3C ch. 8's is visual).
+    downwind_nm = join_nm * math.sin(math.radians(join_deg))
+    aside = max(downwind_nm, abs(distance * math.sin(math.radians(off))))
 
     def at(along_nm: float) -> tuple:
         return _toward(_toward(first, course, along_nm), course + 90 * side, aside)
 
-    return [at(along), at(0.0), at(-INTERCEPT_NM), join]
+    return [at(along), at(0.0), at(-join_nm), join]
 
 
 def _teardrop(fix: tuple, cin: float, cout: float) -> list:
@@ -212,9 +212,11 @@ def _teardrop(fix: tuple, cin: float, cout: float) -> list:
     return [out, *curve, inbound, fix]
 
 
-def _arc_from(p: tuple, heading: float, sweep: float, r: float = ENTRY_TURN_NM) -> list:
+def _arc_from(p: tuple, heading: float, sweep: float) -> list:
     """A turn from `p` on `heading` through `sweep` degrees -- to the right
-    where positive -- at radius `r`: its points after `p`."""
+    where positive -- at a hold entry's standard-rate radius (the engine's
+    hold_turn_nm): its points after `p`."""
+    r = _figures()["hold_turn_nm"]
     side = 1 if sweep > 0 else -1
     center = _toward(p, heading + 90 * side, r)
     start = heading - 90 * side
