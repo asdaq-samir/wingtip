@@ -24,7 +24,10 @@ export interface SuggestionGroup {
  */
 export default function AirplaneSuggestions({ groups }: { groups: SuggestionGroup[] }) {
   return (
-    <ComboboxList className="max-h-80">
+    // As tall as 20rem, and no taller than the room the stock list has
+    // under the field (--available-height, less its own padding), the
+    // stock cap a plain max-h-80 overrode: a short phone page ran it off.
+    <ComboboxList className="max-h-[min(20rem,calc(var(--available-height)-2.25rem))]">
       {groups.map((g) => (
         <ComboboxGroup key={g.heading} data-testid={`aircraft-suggestions-${g.heading.split(" ")[0]!.toLowerCase()}`}>
           <ComboboxLabel>{g.heading}</ComboboxLabel>

@@ -885,6 +885,18 @@ enum EngineContract {
         }
     }
 
+    struct AltitudeTypedAnswer: Codable, Equatable, Sendable {
+        /// The altitude to plan, ft MSL; null where none can be.
+        var ft: Double?
+        /// Why there is no ft, or the warning a planned one carries; null where there is none.
+        var reason: String?
+    }
+
+    struct AltitudeTypedInput: Codable, Equatable, Sendable {
+        var text: String
+        var ifr: Bool?
+    }
+
     struct ApproachAlongNmInput: Codable, Equatable, Sendable {
         var path: [EngineContract.ApproachAlongNmInputPathItem]?
         var at: EngineContract.ApproachAlongNmInputAt

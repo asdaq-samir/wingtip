@@ -5,7 +5,7 @@
 //! planned at (limits.rs) and FAA Form 7233-4's items (filing.rs), as the
 //! planner's wingtip_native functions of the same names work them out.
 
-use crate::{based, field, filing, flight, limits, route_read, sun};
+use crate::{based, field, filing, flight, limits, route_read, sun, typed};
 use wingtip_core::ask::Ask;
 use wingtip_core::json::{self, Value};
 
@@ -67,7 +67,7 @@ pub fn night(name: &str, v: &Value) -> Result<String, String> {
 }
 
 /// The altitudes a flight may be planned at (limits.rs: 71.33, 91.119(c),
-/// 91.121, 91.159, 91.179).
+/// 91.121, 91.159, 91.179), and one typed, read (typed.rs: 1.1, 71.33).
 #[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn altitudes(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
@@ -87,6 +87,14 @@ pub fn altitudes(name: &str, v: &Value) -> Result<String, String> {
             out.push('}');
         }
         "altitude_allowed" => out.push_str(&limits::allowed(ask.num("ft")?, ask.opt_bool("ifr")?).to_string()),
+        "altitude_typed" => {
+            let read = typed::read(ask.str("text")?, ask.opt_bool("ifr")?);
+            out.push_str("{\"ft\":");
+            json::opt_number(&mut out, read.ft);
+            out.push_str(",\"reason\":");
+            json::opt_string(&mut out, read.reason);
+            out.push('}');
+        }
         "vfr_altitudes" => {
             out.push('[');
             for (i, ft) in limits::vfr_altitudes(ask.opt_num("from_ft")?.unwrap_or(1000.0)).iter().enumerate() {

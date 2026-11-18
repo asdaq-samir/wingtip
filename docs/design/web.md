@@ -680,6 +680,20 @@ stay in the text once something is typed; empty, the field shows its
 stock placeholder, "N-_____" and "FL-___". Its suggestions are the
 registry's record alone, no live find. No airplane picked shows "No
 airplane picked" and Pick Airplane, never a default type (decision 0011).
+An N-number typed is taken on Enter (the keyboard's Done) or a suggestion
+picked, never as the field is left, which lets go of it ("N4" half typed
+was taken as the airplane), and a registry's answer for a tail asked
+before the last is dropped. "Pick an airplane" focuses the field within
+the tap that asked, so iOS gives it its keyboard. The altitude typed is
+read by the engine's `altitude_typed` (14 CFR 1.1's three figures of a
+flight level, or feet in four or five, nothing guessed: "0450" or six
+figures are no altitude) and flown once on Enter, Done or leaving it;
+four or more figures show as typed, without "FL-". Warn, never limit: a
+VFR figure in Class A or an IFR one above FL410 is flown, and one that
+cannot be (under 500 ft, over FL600, unreadable) stays in red; either
+way the engine's reason is said under the pill (`altitude-note`) and is
+the field's description, with what is flown and why (`altitude-why`).
+Done sits at the pill's start, over the airplane's pill in the same bar.
 
 **Structure, a tracked flight's card** (`FlightCard`), the same way (C1,
 2026-11-14): the head (callsign, what it is and who flies it, Share, ✕);

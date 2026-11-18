@@ -20,6 +20,7 @@ export const WEB_RULES = [
   "altitude_change",
   "altitude_lines",
   "altitude_said",
+  "altitude_typed",
   "approach_along_nm",
   "approach_attempts",
   "approach_brief",

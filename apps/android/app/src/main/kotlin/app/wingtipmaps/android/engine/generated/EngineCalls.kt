@@ -163,6 +163,12 @@ fun Engine.altitudeSaid(ft: Double): Result<String> =
     rule("altitude_said", EngineContract.AltitudeSaidInput(ft = ft))
 
 /**
+ * A cruise altitude as a pilot types it, read to feet: a flight level's three figures in hundreds of feet ("075", "FL075", "FL-075"; 14 CFR 1.1), or feet in four or five figures ("7500", "7,500"), rounded to the hundred. Nothing is guessed: four or five figures starting with 0, six or more, under 500 ft MSL (the planning floor, limits.rs) or above FL600 (Class A's top, 71.33(a)) give no ft and the reason. Warn, never limit: VFR in Class A (18,000 ft MSL up, 71.33(a), 91.135(a)) and IFR above FL410 (91.179(b)) give the ft with the reason as a warning. Nothing typed gives neither.
+ */
+fun Engine.altitudeTyped(text: String, ifr: Boolean? = null): Result<EngineContract.AltitudeTypedAnswer> =
+    rule("altitude_typed", EngineContract.AltitudeTypedInput(text = text, ifr = ifr))
+
+/**
  * How far along a path a place is, nm.
  */
 fun Engine.approachAlongNm(path: List<EngineContract.ApproachAlongNmInputPathItem>? = null, at: EngineContract.ApproachAlongNmInputAt): Result<Double> =

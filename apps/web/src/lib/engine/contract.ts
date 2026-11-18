@@ -1272,6 +1272,13 @@ export interface EngineContract {
     answer: AltitudeSaidAnswer;
   };
   /**
+   * A cruise altitude as a pilot types it, read to feet: a flight level's three figures in hundreds of feet ("075", "FL075", "FL-075"; 14 CFR 1.1), or feet in four or five figures ("7500", "7,500"), rounded to the hundred. Nothing is guessed: four or five figures starting with 0, six or more, under 500 ft MSL (the planning floor, limits.rs) or above FL600 (Class A's top, 71.33(a)) give no ft and the reason. Warn, never limit: VFR in Class A (18,000 ft MSL up, 71.33(a), 91.135(a)) and IFR above FL410 (91.179(b)) give the ft with the reason as a warning. Nothing typed gives neither.
+   */
+  altitude_typed: {
+    input: AltitudeTypedInput;
+    answer: AltitudeTypedAnswer;
+  };
+  /**
    * How far along a path a place is, nm.
    */
   approach_along_nm: {
@@ -4439,6 +4446,20 @@ export interface AltitudeLinesAnswer {
 }
 export interface AltitudeSaidInput {
   ft: number;
+}
+export interface AltitudeTypedInput {
+  text: string;
+  ifr?: boolean | null;
+}
+export interface AltitudeTypedAnswer {
+  /**
+   * The altitude to plan, ft MSL; null where none can be.
+   */
+  ft: number | null;
+  /**
+   * Why there is no ft, or the warning a planned one carries; null where there is none.
+   */
+  reason: string | null;
 }
 export interface ApproachAlongNmInput {
   path?:

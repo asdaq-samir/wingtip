@@ -896,6 +896,24 @@ object EngineContract {
     )
 
     @Serializable
+    data class AltitudeTypedAnswer(
+        /**
+         * The altitude to plan, ft MSL; null where none can be.
+         */
+        val ft: Double? = null,
+        /**
+         * Why there is no ft, or the warning a planned one carries; null where there is none.
+         */
+        val reason: String? = null,
+    )
+
+    @Serializable
+    data class AltitudeTypedInput(
+        val text: String,
+        val ifr: Boolean? = null,
+    )
+
+    @Serializable
     data class ApproachAlongNmInput(
         val path: List<EngineContract.ApproachAlongNmInputPathItem>? = null,
         val at: EngineContract.ApproachAlongNmInputAt,
