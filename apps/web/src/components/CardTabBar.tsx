@@ -1,16 +1,10 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { TabsList, TabsTrigger } from "./ui/tabs";
-import { TEXT } from "../lib/text";
 import { HOLD_AT_EDGE } from "./sheet/insets";
-
-/** Each trigger's hit area, the trigger itself, 56 tall in the 64-point bar
- *  (the stacked icon and word, the same on every tab so nothing moves on a
- *  switch), the triggers meeting side by side, so over 44 points: controls
- *  never grow (CLAUDE.md). `::before`, as the stock trigger's `::after` is
- *  its underline. */
-const TRIGGER_AREA = "before:absolute before:inset-0 before:content-['']";
+import { FloatingBar, FloatingBarFace } from "./FloatingBar";
+import { FLOATING_BAR_COLUMNS, FLOATING_BAR_ITEM } from "./floatingBarLook";
 
 /** One tab of the bar: its value, its word and its icon (required, so none
  *  is bare), and why to open it where there is a reason -- `hint` said in
@@ -18,45 +12,6 @@ const TRIGGER_AREA = "before:absolute before:inset-0 before:content-['']";
  *  over the icon's corner is not words. Every tab's name is its aria-label,
  *  as only the picked tab shows its word. */
 export type CardTab<T extends string> = { value: T; label: string; icon: LucideIcon; hint?: string | null; badge?: ReactNode };
-
-/** A count of findings over an icon's corner (FPL's Brief and Profile):
- *  red where one is a stop, amber where all are cautions, the one meaning
- *  of each colour wherever a badge is drawn (the owner's list, 2026-11-17).
- *  Its figure in the ground's colour, which reads on either -- dark on the
- *  night's light red and amber, light on the day's deep ones -- where white
- *  on the night's red and black on the day's amber did not. A plain count
- *  (an airport's charts, an airplane's flights) is no badge: it is said in
- *  the tab's name, and a black disc over a tab read as one more alert. */
-export function TabCount({ count, testId, mark }: { count: number; testId?: string; mark: "stop" | "caution" }) {
-  return (
-    <span
-      aria-hidden
-      data-testid={testId}
-      data-finding={mark}
-      className={cn(
-        "pointer-events-none absolute -top-2 left-full -ml-2 min-w-4 rounded-full px-1 text-center leading-4 font-semibold tabular-nums text-background",
-        mark === "stop" ? "bg-destructive" : "bg-caution",
-        TEXT.caption,
-      )}
-    >
-      {count}
-    </span>
-  );
-}
-
-/** The floating bar's capsule of glass, a card's tabs' (CardTabBar) and
- *  FPL's actions' (FplTabBar) alike: glass only on what floats over the
- *  map (rules.md), the bar's own blur and fill. What a stock part hands
- *  the element it renders (FplTabBar's Base UI Toolbar: its role, its ref
- *  and the arrows' keys) goes on the capsule itself. */
-export function GlassBar({ className, ...rest }: ComponentProps<"div">) {
-  return (
-    <div
-      {...rest}
-      className={cn("liquid-glass rounded-full p-1 [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)]", className)}
-    />
-  );
-}
 
 /**
  * A card's tabs in a floating bar at the card's foot, as Apple Maps' place
@@ -69,15 +24,14 @@ export function GlassBar({ className, ...rest }: ComponentProps<"div">) {
  * Tabs' list of icons (the owner, 2026-11-14: "can you make the tabs icons
  * instead so it takes less space?"), then made like an iOS 26
  * tab bar (the owner, 2026-11-14: "more like this with similar size and see
- * through"): a compact 64-point capsule, as narrow as its tabs need and centred, every tab its
+ * through"): the one floating bar (FloatingBar), FPL's actions' too, the
+ * same height and width (the owner, 2026-11-18), centred, every tab its
  * icon with its word under it in equal columns, the picked tab in the tint
- * on a soft lighter pill, each named by its aria-label.
+ * on the soft lighter pill, each named by its aria-label.
  *
- * The bar is glass (liquid-glass): it floats over the card, the one place
- * glass is kept on the web (rules.md; the owner, 2026-11-10: glass only on
- * what floats over the map, its buttons). Denser than the map buttons'
- * glass, as Apple's floating bars are: the material's bar fill and blur
- * (design/tokens.json material.bar-*) in place of the glass's own, so the
+ * The bar is glass: it floats over the card, the one place glass is kept
+ * on the web (rules.md; the owner, 2026-11-10: glass only on what floats
+ * over the map, its buttons), the bar's denser fill and blur, so the
  * words read on the frost over a photo, 4.5:1 or more by day and night.
  * Put last in the card's CardTabPages, which pins its pages under the head.
  */
@@ -101,26 +55,30 @@ export function CardTabBar<T extends string>({
   return (
     // Sticky at the foot of the card's scroller, the page scrolling under it;
     // in the flow at the pages' end, so its own room is the last row's room
-    // to clear it. Only the capsule takes taps.
+    // to clear it. Only the capsule takes taps. No sides of its own: the
+    // card's 16 points (SheetCard) are the room either side, as FPL's
+    // foot's are its bar's, so the bar is capped at the same width on both.
     <div
-      className={cn("pointer-events-none sticky bottom-0 z-10 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", HOLD_AT_EDGE)}
+      className={cn("pointer-events-none sticky bottom-0 z-10 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", HOLD_AT_EDGE)}
       data-testid={testId}
     >
       {/* The capsule of glass round the stock list, the list itself clear on it. */}
-      <GlassBar className="pointer-events-auto mx-auto w-fit max-w-full">
+      <FloatingBar className="pointer-events-auto mx-auto">
         <TabsList
           activateOnFocus
-          className="inline-grid max-w-full auto-cols-fr grid-flow-col rounded-full bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-14"
+          className={cn(
+            "h-auto w-full rounded-full bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-auto",
+            FLOATING_BAR_COLUMNS,
+          )}
         >
           {tabs.map((t) => (
             <TabsTrigger
               key={t.value}
               value={t.value}
               className={cn(
-                // The picked tab in the tint on a soft lighter pill, as iOS 26's tab bar, not a solid fill.
-                "group/tab h-full min-w-0 flex-none flex-col gap-0.5 rounded-full px-3 data-active:bg-foreground/10 data-active:text-primary data-active:shadow-none dark:data-active:border-transparent dark:data-active:bg-foreground/15 dark:data-active:text-primary group-data-[variant=default]/tabs-list:data-active:shadow-none",
-                TEXT.row,
-                TRIGGER_AREA,
+                FLOATING_BAR_ITEM,
+                // The picked tab in the tint, as iOS 26's tab bar, on the bar's soft pill.
+                "data-active:text-primary dark:data-active:border-transparent dark:data-active:text-primary group-data-[variant=default]/tabs-list:data-active:shadow-none",
               )}
               disabled={disabled}
               aria-label={t.hint ? `${t.label}, ${t.hint}` : t.label}
@@ -129,17 +87,11 @@ export function CardTabBar<T extends string>({
               // it was dragged to (the owner, 2026-11-11).
               onClick={() => onPick(t.value)}
             >
-              {/* The icon's own box carries the badge over its corner. */}
-              <span className="relative flex shrink-0">
-                <t.icon aria-hidden className="size-6" />
-                {t.badge}
-              </span>
-              {/* Every tab's word under its icon, the bar's columns equal. */}
-              <span className={cn("h-4 leading-4 whitespace-nowrap", TEXT.badge)}>{t.label}</span>
+              <FloatingBarFace icon={<t.icon aria-hidden />} badge={t.badge} label={t.label} />
             </TabsTrigger>
           ))}
         </TabsList>
-      </GlassBar>
+      </FloatingBar>
     </div>
   );
 }

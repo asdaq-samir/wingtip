@@ -606,7 +606,7 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    then the tabs, Info, Weather, Runways, Charts (`place/PlaceTabBar` on
    the shared `CardTabBar`, the pages in `CardTabPages`; each tab an icon
    from lucide-react, required on `CardTab` (Info, CloudSun, PlaneLanding,
-   FileText), every tab with its word under it (12 points, `TEXT.badge`) in equal columns, 56 points tall in a compact, centred 64-point bar, the picked one in the tint on a soft `foreground/10` pill, all named
+   FileText), every tab with its word under it (`TEXT.tabBar`, 12 on 16 regular, iOS 26's tab bar) in equal columns, each 48 points tall in the one floating bar FPL's actions share (`components/FloatingBar`: the capsule, `FloatingBarFace`, and `floatingBarLook`'s item and width; the owner, 2026-11-18: "Yes make it common ... apply the same height and width for both"), 56 tall and 300 wide at the default size (`min-w-[min(18.75rem,100%)]`, in rem so it grows with the text as the words do: wide enough for the four-item bars round their widest word, "Runways", never narrower than its words, capped at the room inside the sheet's 16-point sides, the same on a card and on FPL's foot), the picked one in the tint on a soft `foreground/10` pill, all named
    by aria-label, the dot and count over the icon's corner; a tab picked
    opens at its own top, just under the actions (`useTabScroll`'s
    `scrollOnPick`: the pages' top where the card was scrolled into the last
@@ -622,7 +622,7 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    card, the one place glass stays (rules.md; the owner, 2026-11-10), at
    the denser bar fill and blur (`material.bar-fill` 0.6, `bar-blur` 30: the content scrolling under it
    shows through, blurred, as an iOS 26 tab bar's does). The
-   stock Tabs' list, its triggers 56 points tall (their `::before` the
+   stock Tabs' list, its triggers the bar's 48-point items (their own
    hit area), the picked one's icon and word in the tint;
    Weather carries the dot of the field's own report's category (the
    FAA's colour), Charts the count of its charts, each named with its
@@ -800,10 +800,10 @@ everything to the tab bar with a ... instead of share") are the floating
 glass bar at the sheet's foot
 from half up, `FplTabBar` in `FlightFoot`: Base UI's stock Toolbar (one
 tab stop, the arrows between its buttons, the APG toolbar, as the
-playback bars are) drawn as the cards' tabs' capsule (`CardTabBar`'s
-`GlassBar`, held at the foot as they are by sheet/insets'
-`HOLD_AT_EDGE`), each button a `Toolbar.Button` rendering a `CardAction`
-in its `bar` look and opening its card, the ••• the route's
+playback bars are) rendered as the one floating bar the cards' tabs
+are drawn in (`FloatingBar`, the same height and width), each button a
+`Toolbar.Button` rendering a `FloatingBarButton` and opening its card,
+the ••• the route's
 `ShareMenu` in its `look="bar"`, its menu's trigger rendering a
 `Toolbar.Button` (`"tile"` in flight's `FplActions`); the airport and
 airplane cards' bar stays the stock Tabs (`CardTabBar`), being tabs, not
