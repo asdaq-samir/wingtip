@@ -96,10 +96,11 @@ export function Step({
       <section aria-label={title} className={cn("min-w-0 flex-1 space-y-3", field ? "pb-5" : "pb-4")}>
         <div className="relative flex items-center gap-2">
           <div className="flex min-w-0 flex-1 flex-col">
-            <span className="flex min-w-0 items-center gap-1">
+            {/* A box, not a span: the icon may be a block (FuelGauge's stock Meter is a div). */}
+            <div className="flex min-w-0 items-center gap-1">
               <Name className={cn("truncate", field ? "font-semibold" : "font-normal", TEXT.row)}>{title}</Name>
               {icon}
-            </span>
+            </div>
             {sub && <span className={cn("truncate text-muted-foreground", TEXT.note)}>{sub}</span>}
           </div>
           {figures}
