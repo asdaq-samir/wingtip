@@ -200,7 +200,7 @@ the Studio, the developer's page.
 
 The radio's captions use Whisper on the device; behind the gateway its
 model downloads from huggingface.co and its CDN, which the gateway's
-content security policy allows (`ModelHosts`).
+content security policy allows (`ContentSecurityPolicy`).
 
 ## What is still a seam
 

@@ -167,14 +167,14 @@ One job per class.
 | Package | What lives there |
 |---|---|
 | `controller/` | HTTP endpoints. `PlannerProxyController` forwards `/api/planner/*` to `planner`; `GlobalExceptionHandler` turns exceptions into JSON; `MagicLinkController` is the email sign-in flow's own two steps (request, verify). |
-| `service/` | The records' logic: `PilotService`, `AircraftService`, `FlightService`, `LogbookService` and the rest, each scoped to the signed-in pilot; `PlannerClient`, the planner asked on this app's own behalf; `ReminderService` and `FlightWatchService`, the scheduled mail. |
+| `service/` | The records' logic: `PilotService`, `AircraftService`, `FlightService`, `LogbookService` and the rest, each scoped to the signed-in pilot; `PlannerClient`, the planner asked on this app's own behalf; `InstructorService` (a student's instructors, their reviews and an instructor's page) beside `EndorsementSigning` (an instructor's signature and its voiding) and `InstructorMail` (the mail between them); `ReminderService` and `FlightWatchService`, the scheduled mail. |
 | `repository/` | Spring Data interfaces. No implementations — Spring writes them. |
 | `domain/` | JPA entities: `Pilot`, `Aircraft`, `Flight`, `FlightCheckpoint`, `MagicLink`, `LogbookEntry`, `Endorsement` and the rest. |
 | `dto/` | Request and response shapes, kept separate from entities so the API and the schema can change independently. |
-| `security/` | `SecurityConfig` (what is public), `OAuthClientsConfig` (builds Google/Apple's client registrations in Java, not YAML — Apple's own secret is a signed JWT no static property could hold), `MagicLinkAuthenticationToken` (the session's own principal after a magic-link sign-in), `DeveloperOnly` (whether the caller holds the developer role, read from their row on every request), `SignInOptions` (whether anyone can sign in here at all), and `CsrfCookieFilter` (forces the `XSRF-TOKEN` cookie to actually be written — see below). |
+| `security/` | `SecurityConfig` (what is public), `OAuthClientsConfig` (builds Google/Apple's client registrations in Java, not YAML — Apple's own secret is a signed JWT no static property could hold), `MagicLinkAuthenticationToken` (the session's own principal after a magic-link sign-in), `DeveloperOnly` (whether the caller holds the developer role, read from their row on every request), `SignInOptions` (whether anyone can sign in here at all), and `ContentSecurityPolicy` (the page's CSP and every host beyond this origin it allows). |
 | `config/` | `WebMvcConfig` — static-resource and SPA routing. |
 
-Thirty-one migrations, in `resources/db/migration/`. The first five: routes, then normalised
+Forty-four migrations, in `resources/db/migration/`. The first five: routes, then normalised
 checkpoints, then pilots/aircraft/flights, then Apple's own subject
 column plus the magic-link table, then dropping the routes pair again
 once `planner` owned scoring and nothing here read them.
@@ -268,16 +268,12 @@ it cannot be.
 command above mounts `/var/run/docker.sock`; without it the persistence
 tests cannot start their Postgres.
 
-**`CsrfCookieFilter` exists because the `XSRF-TOKEN` cookie is written
-lazily.** `CookieCsrfTokenRepository` with
-`CsrfTokenRequestAttributeHandler` — the standard setup — only writes the
-cookie once something reads `csrfToken.getToken()` during the request,
-which a server-rendered template does and a JSON-only API never does.
-Without the filter no response carried the cookie, `apps/web/`'s `client.ts`
-had no token to echo back, and every POST/DELETE failed CSRF validation —
-reported as a 401 by Spring Security's own `HttpStatusEntryPoint`, since the caller is anonymous.
-The filter forces the token to materialise on every request, the pattern
-Spring's own docs recommend for an SPA.
+**CSRF is Spring Security's single-page setup.** `csrf.spa()` writes the
+`XSRF-TOKEN` cookie on every response and reads the header `apps/web/`'s
+`client.ts` echoes back; no filter of this app's forces it any more (the
+`CsrfCookieFilter` that once did is gone). A refused token is answered
+401 by Spring Security's own `HttpStatusEntryPoint`, as the caller is
+anonymous.
 
 **The planner proxy pins HTTP/1.1.** The JDK `HttpClient` defaults to
 attempting an HTTP/2 upgrade, which uvicorn (HTTP/1.1 only) rejects with
