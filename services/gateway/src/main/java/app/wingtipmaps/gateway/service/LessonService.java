@@ -53,19 +53,19 @@ public class LessonService {
     private final InstructorLinkRepository links;
     private final CrossCountryReviewRepository reviews;
     private final FlightService flights;
-    private final InstructorService instructors;
+    private final InstructorMail mail;
 
     public LessonService(
             ApproachLessonRepository lessons,
             InstructorLinkRepository links,
             CrossCountryReviewRepository reviews,
             FlightService flights,
-            InstructorService instructors) {
+            InstructorMail mail) {
         this.lessons = lessons;
         this.links = links;
         this.reviews = reviews;
         this.flights = flights;
-        this.instructors = instructors;
+        this.mail = mail;
     }
 
     // ---- The instructor's side
@@ -106,8 +106,8 @@ public class LessonService {
                         .append(note)
                         .append('"'));
         body.append("\n\nOpen Logbook, then Checkride, to brief it, fly it and take its quiz.")
-                .append(instructors.openLine());
-        instructors.send(student.getEmail(), by + " set you the " + name + " at " + field, body.toString());
+                .append(mail.openLine());
+        mail.send(student.getEmail(), by + " set you the " + name + " at " + field, body.toString());
         return lesson;
     }
 
