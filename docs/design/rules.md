@@ -508,7 +508,8 @@ off by default (the owner, 2026-11-13).
    form in their place (the owner's pick of the stock fit, 2026-11-17); in
    flight and in a dry run no To, which the flying head names, so Distance,
    Time, Fuel and the GPS altitude are its four columns; and at the sheet's foot from
-   half up a floating glass bar, the airport card's tab bar's capsule,
+   half up a floating glass bar, the airport card's tab bar's capsule
+   round Base UI's stock Toolbar (one tab stop, the arrows between them),
    of four buttons: Brief, Nav Log and Profile, each opening its card
    over FPL, and the route's •••, "More", its one menu -- undo and redo,
    its link, Open in ForeFlight, the checkpoints, the kneeboard, Save,
@@ -543,7 +544,9 @@ off by default (the owner, 2026-11-13).
    as a badge (the owner's list, 2026-11-17). A fuel stop is no
    caution: its pump on the field's symbol is in the tint and its tanks'
    gauge in the text's colour, never the amber (the owner, 2026-11-17:
-   "Yes to all recs"). Winds stay as they are, by the owner's choice the
+   "Yes to all recs"). The gauge is React Aria's stock Meter
+   (`procedures/FuelGauge`), heard as "Fuel in the tanks" with its
+   gallons as its value. Winds stay as they are, by the owner's choice the
    same day: no "T" after the direction in FPL's rows (his "No need to put
    T next to wind"), "°T" in the Brief and the Nav Log, where a true wind
    unmarked reads as the magnetic one a tower gives (the UI audit's A7).

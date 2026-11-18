@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { TabsList, TabsTrigger } from "./ui/tabs";
@@ -46,14 +46,15 @@ export function TabCount({ count, testId, mark }: { count: number; testId?: stri
 
 /** The floating bar's capsule of glass, a card's tabs' (CardTabBar) and
  *  FPL's actions' (FplTabBar) alike: glass only on what floats over the
- *  map (rules.md), the bar's own blur and fill. */
-export function GlassBar({ className, children }: { className?: string; children: ReactNode }) {
+ *  map (rules.md), the bar's own blur and fill. What a stock part hands
+ *  the element it renders (FplTabBar's Base UI Toolbar: its role, its ref
+ *  and the arrows' keys) goes on the capsule itself. */
+export function GlassBar({ className, ...rest }: ComponentProps<"div">) {
   return (
     <div
+      {...rest}
       className={cn("liquid-glass rounded-full p-1 [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)]", className)}
-    >
-      {children}
-    </div>
+    />
   );
 }
 
