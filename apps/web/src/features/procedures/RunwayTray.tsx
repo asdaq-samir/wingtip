@@ -102,7 +102,11 @@ export function PartTray({
   // and approach pills be next to the runway when runway is collapsed?").
   const foldable = part.line.chosen !== null && a.runways !== null;
   return (
-    <div className="flex items-center gap-2" data-testid="field-part" data-role={part.role}>
+    // The row's width and no wider (FPL's chips row wraps): sized to its
+    // runways and pull-downs it ran past the card, and a slide on the open
+    // tray panned the whole sheet sideways (the owner's screenshot,
+    // 2026-11-17), where they are to slide inside the tray's own scroller.
+    <div className="flex w-full min-w-0 items-center gap-2" data-testid="field-part" data-role={part.role}>
       <RunwayTray
         a={a}
         role={part.role}
