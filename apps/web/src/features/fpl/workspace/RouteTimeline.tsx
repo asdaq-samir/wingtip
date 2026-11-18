@@ -29,12 +29,15 @@ import { MissingEnd, TypeRow } from "./RouteStart";
  * route is at twice is its own (visitAt): its time is that visit's. No city on a line (the owner, 2026-11-17: "We don't need to say
  * the city name"); a Direct To's start is My Location. Half a route has
  * the end it lacks to pick in its place and the route to type last.
+ * Below full, two stops or more are one row, a tap on it taking the sheet
+ * all the way up where each is its own (the owner, 2026-11-18); read in
+ * flight or a dry run, every stop is listed.
  */
 export default function RouteTimeline({
   vm,
   props,
 }: {
-  vm: PlanSlices<"brief" | "flight" | "leg" | "plan" | "route" | "routeList">;
+  vm: PlanSlices<"brief" | "flight" | "leg" | "plan" | "route" | "routeList" | "view">;
   /** The route's fields and points as the procedures draw them (useRouteListProps). */
   props: ProceduresRouteProps;
 }) {
@@ -43,6 +46,7 @@ export default function RouteTimeline({
   const { routeRows } = vm.leg;
   const { metarCategory } = vm.brief;
   const { waypointStops } = vm.routeList;
+  const { panel, setPanel } = vm.view;
   const read = !!vm.flight.flying || !!vm.flight.dryRunning;
   const fuel = (fuelParam ?? "").split(",").filter(Boolean);
   // Each field's card, asked once and shared with the route's colours
@@ -108,6 +112,8 @@ export default function RouteTimeline({
       head={half && !planned.dep ? <MissingEnd vm={vm} end="Departure" /> : undefined}
       tail={half && !planned.dest ? <MissingEnd vm={vm} end="Destination" /> : undefined}
       foot={half ? <TypeRow vm={vm} /> : undefined}
+      allStops={read || panel === "full"}
+      onAllStops={() => setPanel("full")}
     />
   );
 }

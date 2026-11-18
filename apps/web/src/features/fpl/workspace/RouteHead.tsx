@@ -22,7 +22,7 @@ import { useRouteListProps } from "./useRouteListProps";
 export default function RouteHead({
   vm,
 }: {
-  vm: PlanSlices<"brief" | "cards" | "flight" | "leg" | "picks" | "plan" | "route" | "routeList" | "stops">;
+  vm: PlanSlices<"brief" | "cards" | "flight" | "leg" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
 }) {
   const { hasPoints, wholeRoute } = vm.route;
   const { foldRoute } = vm.routeList;

@@ -1,12 +1,13 @@
 import type { ComponentProps, ReactNode } from "react";
-import { Keyboard, Plus } from "lucide-react";
+import { ChevronsUpDown, Keyboard, Plus } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { TEXT } from "../../lib/text";
+import { stopsNames, stopsTitle } from "./stopsRow";
 
 // The rows of FPL's timeline that are an action rather than a point
-// (TimelineRoute's card): Add a Stop, an end of the route still to pick,
-// and the route typed or pasted. One look for all of them, a filled
+// (TimelineRoute's card): the stops below full, Add a Stop, an end of the
+// route still to pick, and the route typed or pasted. One look for all of them, a filled
 // point's line (TimelineLine) drawn the same way: a 32-point circle in the
 // marks' column, the words after the inset hairline, a 44-point row.
 
@@ -80,6 +81,34 @@ function TimelineAction({
       </Button>
       {trailing && <span className="absolute top-1/2 right-0 flex -translate-y-1/2 items-center">{trailing}</span>}
     </div>
+  );
+}
+
+/**
+ * The stops between the two ends as one row of the timeline below full
+ * (the owner, 2026-11-18: "let's just show the stops as another row in
+ * between"; listedPoints): the tint's wash with the expand glyph in the
+ * marks' column, "2 Stops" in the tint and their idents after it in grey,
+ * cut short where they do not fit, the route's magenta on down to the
+ * destination. A tap takes the sheet all the way up, where every stop is
+ * its own row ("when the card is full, no need to show that because it
+ * expands to show all the stops"), so the route never grows at half.
+ */
+export function StopsRow({ idents, onShowAll }: { idents: string[]; onShowAll: () => void }) {
+  const { line, label } = stopsNames(idents);
+  return (
+    <TimelineAction
+      mark={<RowMark filled={false} glyph={<ChevronsUpDown className="size-4" strokeWidth={2.4} aria-hidden />} />}
+      line
+      onClick={onShowAll}
+      aria-label={label}
+      data-testid="timeline-stops"
+    >
+      <span className="shrink-0">{stopsTitle(idents.length)}</span>
+      <span className="ml-2 min-w-0 truncate text-muted-foreground" data-testid="timeline-stops-idents">
+        {line}
+      </span>
+    </TimelineAction>
   );
 }
 

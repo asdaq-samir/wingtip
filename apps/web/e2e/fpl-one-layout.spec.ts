@@ -27,7 +27,7 @@ import { fromRest } from "./startState";
  */
 test.describe("/app/plan", () => {
   // auth.setup starts every test with the fields open (wingtip.fieldsOpen),
-  // which also leaves the stops unfolded; here they start as a pilot's do.
+  // which also lists every stop; here they start as a pilot's do.
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       try {
@@ -55,11 +55,9 @@ test.describe("/app/plan", () => {
 
     const timeline = drawer.getByTestId("route-summary");
     await expect(timeline).toBeVisible({ timeout: slow(30_000) });
-    // A stop folds into one line between the ends, a tap unfolding it.
-    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDEN"], { timeout: slow(30_000) });
-    await expect(timeline.getByTestId("timeline-more")).toHaveText("1 stop");
-    await timeline.getByTestId("timeline-more").click();
-    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KOMA", "KDEN"]);
+    // One stop is its own row at half, no stops' row for it.
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KOMA", "KDEN"], { timeout: slow(30_000) });
+    await expect(timeline.getByTestId("timeline-stops")).toHaveCount(0);
     // No city on a line (the owner: "We don't need to say the city name").
     await expect(timeline).not.toContainText("Chicago");
     await expect(timeline.getByTestId("timeline-line")).toHaveCount(3);
@@ -102,18 +100,32 @@ test.describe("/app/plan", () => {
     await expect(page.getByTestId("place-card")).toBeVisible();
   });
 
-  test("any stops fold into one line between the ends, a tap unfolding them and another folding them", async ({ page }) => {
+  test("below full the stops are one row between the ends, a tap taking the sheet up where each is its own row", async ({ page }) => {
+    // The owner, 2026-11-18: "let's just show the stops as another row in
+    // between. And when the card is full, no need to show that because it
+    // expands to show all the stops".
     await page.goto("/app/plan?dep=KORD&stops=KDSM,KOMA,KLNK,KGRI&dest=KDEN");
     await settle(page);
     await openPanel(page);
-    const timeline = sideDrawer(page).getByTestId("route-summary");
+    const drawer = sideDrawer(page);
+    const timeline = drawer.getByTestId("route-summary");
+    await expect(drawer).toHaveAttribute("data-panel", "half");
     await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDEN"], { timeout: slow(30_000) });
-    await expect(timeline.getByTestId("timeline-more")).toHaveText("4 stops");
-    // A tap on it shows them all, another folds them again.
-    await timeline.getByTestId("timeline-more").click();
+    const stops = timeline.getByTestId("timeline-stops");
+    await expect(stops).toHaveAccessibleName("4 stops: KDSM, KOMA, KLNK, KGRI. Show all");
+    await expect(stops).toContainText("4 Stops");
+    // A row as tall as a point's.
+    expect((await stops.boundingBox())!.height).toBeLessThan(46);
+    await stops.click();
+    await expect(drawer).toHaveAttribute("data-panel", "full");
     await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDSM", "KOMA", "KLNK", "KGRI", "KDEN"]);
-    await timeline.getByTestId("timeline-more").click();
-    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDEN"]);
+    await expect(stops).toHaveCount(0);
+    // Lowered to half again, they are one row again.
+    if (test.info().project.name === "mobile") {
+      await grabberTo(page, "half");
+      await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDEN"]);
+      await expect(stops).toBeVisible();
+    }
   });
 
   test('a Direct To from where the airplane is reads "My Location", its Direct to line and Cancel folded and open', async ({ page }) => {

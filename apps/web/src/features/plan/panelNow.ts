@@ -31,12 +31,12 @@ export function riseToSee(setPanel: (next: PanelState) => void) {
  *  figures within a second or two. */
 const EDIT_MS = 5000;
 
-/** When the pilot last edited the route (a stop added, moved or changed, the
- *  stops unfolded), for riseForFigures; forgotten as the pilot moves the
+/** When the pilot last edited the route (a stop added, moved or changed),
+ *  for riseForFigures; forgotten as the pilot moves the
  *  sheet themselves. A holder, as panelNow is. */
 const routeEdit: { at: number } = { at: -Infinity };
 
-/** The pilot edited the route just now (useRouteEdits, the timeline's fold). */
+/** The pilot edited the route just now (useRouteEdits, a point dropped in). */
 export function markRouteEdit() {
   routeEdit.at = performance.now();
 }
@@ -49,7 +49,7 @@ export function forgetRouteEdit() {
 /**
  * The one other size the app gives the sheet (the owner, 2026-11-18,
  * "figures disappear" when a stop was added): at half, a route the pilot
- * just made longer -- a stop added, the stops unfolded -- that pushes
+ * just made longer -- a stop added -- that pushes
  * FPL's figures under the actions' floating bar at rest goes all the way
  * up, where the route and its figures are both in sight. Never on a load or
  * a link (no edit), never once the pilot has moved the sheet since, and

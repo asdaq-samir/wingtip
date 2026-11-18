@@ -30,9 +30,10 @@ test.afterEach(async ({ page }) => {
 /** A field's line opened by a tap on it, off its ident. */
 async function openLine(page: Page, ident: string) {
   const line = timelineLine(page, ident);
-  // A stop is in the stops' folded line until it is unfolded.
-  const stops = sideDrawer(page).getByTestId("timeline-more");
-  if ((await stops.count()) > 0 && (await stops.getAttribute("aria-expanded")) === "false") await stops.click();
+  // Below full, two stops or more are one row, a tap on it taking the
+  // sheet all the way up where each is its own.
+  const stops = sideDrawer(page).getByTestId("timeline-stops");
+  if ((await stops.count()) > 0) await stops.click();
   await line.getByTestId("timeline-toggle").click();
   await expect(line).toHaveAttribute("data-open", "");
 }
@@ -74,10 +75,9 @@ test("a stop opens to its landing and its takeoff, and a fuel stop wears the pum
   await settle(page);
   await openPanel(page);
   const stop = timelineLine(page, "KMSN");
-  // The stop is in the stops' folded line until it is unfolded.
-  await expect(sideDrawer(page).getByTestId("timeline-more")).toBeVisible({ timeout: slow(30_000) });
-  await sideDrawer(page).getByTestId("timeline-more").click();
+  // One stop is its own row, never in a stops' row.
   await expect(stop).toBeVisible({ timeout: slow(30_000) });
+  await expect(sideDrawer(page).getByTestId("timeline-stops")).toHaveCount(0);
   // The pump is a zero-size sr-only img: its mark is drawn, not its box.
   await expect(stop.getByTestId("timeline-fuel")).toBeVisible();
   await expect(stop.getByRole("img", { name: "fuel stop" })).toHaveCount(1);
@@ -88,8 +88,6 @@ test("a stop opens to its landing and its takeoff, and a fuel stop wears the pum
   // A stop of the pilot's own: no pump.
   await page.goto("/app/plan?dep=C81&stops=KMSN&dest=KDLH");
   await openPanel(page);
-  await expect(sideDrawer(page).getByTestId("timeline-more")).toBeVisible({ timeout: slow(30_000) });
-  await sideDrawer(page).getByTestId("timeline-more").click();
   await expect(timelineLine(page, "KMSN")).toBeVisible({ timeout: slow(30_000) });
   await expect(sideDrawer(page).getByRole("img", { name: "fuel stop" })).toHaveCount(0);
 });

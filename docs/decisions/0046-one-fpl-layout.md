@@ -56,7 +56,13 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    they are out, its trigger the pill, whose area keeps a point above and
    below it, off the rows either side, and is never dragged. A point moved
    unfolds them, and a route changed closes the open line, as its key is
-   its place. Add a Stop is the
+   its place. Amended 2026-11-18 (the owner: "let's just show the stops
+   as another row in between. And when the card is full, no need to show
+   that because it expands to show all the stops"): the pill is gone.
+   Below full, two stops or more are one row of the card between the
+   ends, "2 Stops" and their idents in grey, a tap taking the sheet all
+   the way up; at full every stop is its own row and there is no stops'
+   row; one stop is always its own row. Add a Stop is the
    last row, its mark the tint's + and its words in the tint, asking the
    one search (no microphone of its own: the search's field has one).
    Then the figures; the suggested routes' chips behind a button at the start of the first row, before the airplane's bar (now as wide as its pills), out above the stops while it is on (RoutesToggle; the owner, 2026-11-17: "Can suggested routes be a button on top right? Which shows route pills just above the stops", then "make the n-number and altitude container pill smaller and add the routes button on the top left").

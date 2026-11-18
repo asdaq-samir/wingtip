@@ -1,31 +1,29 @@
-import { useEffect, type ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { create } from "zustand";
-import { cn } from "cn";
-import { Button } from "../../components/ui/button";
-import { Collapsible, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { isPosition } from "../../lib/identSchema";
-import { markRouteEdit } from "../plan";
 import { useRouteOnly } from "../../lib/map/routeOnly";
 import { sameField } from "../../lib/procedures";
 import { pointEnd } from "./pointEnd";
 import { RouteGrid, type RouteItem } from "./RouteGrid";
 import { RouteSheets } from "./RouteSheets";
 import { TimelineLine, TimelineMark, type TimelinePoint } from "./TimelineLine";
-import { AddStopRow, TIMELINE_CARD } from "./TimelineRows";
+import { listedPoints } from "./stopsRow";
+import { AddStopRow, StopsRow, TIMELINE_CARD } from "./TimelineRows";
 import { visitRow } from "./visits";
 import type { ProceduresRouteProps } from "./routeProps";
 import { toggleField, useProceduresRoute } from "./useProceduresRoute";
 
 export type { TimelinePoint } from "./TimelineLine";
 
-/** The one line open to its runways and procedures, by its key, and the
- *  stops unfolded (null: as they start, folded but where the fields open at
- *  first), kept while the page is: the timeline is drawn again as the
- *  sheet moves. The open line's key is for the route it was opened on
- *  (`route`): a line's key is its place, and a route changed puts another
- *  point there. */
-const useOpenLine = create<{ key: string | null; stops: boolean | null; route: string }>(() => ({ key: null, stops: null, route: "" }));
+/** The one line open to its runways and procedures, by its key, kept
+ *  while the page is: the timeline is drawn again as the sheet moves. The
+ *  open line's key is for the route it was opened on (`route`): a line's
+ *  key is its place, and a route changed puts another point there. */
+const useOpenLine = create<{ key: string | null; route: string }>(() => ({ key: null, route: "" }));
+
+/** The stops' row tapped, its focus to go to the first stop once they are
+ *  listed: a holder, as the timeline may be drawn anew as the sheet goes up. */
+const focusStops = { asked: false };
 
 /**
  * FPL's route on the ground (the one layout, decision 0046; the owner's
@@ -40,23 +38,28 @@ const useOpenLine = create<{ key: string | null; stops: boolean | null; route: s
  * a field's line opens it, Base UI's Collapsible: its wind and elevation,
  * then its runway and procedure chips -- Base UI's menus (RunwayTray,
  * ProcedureMenu) -- one line open at a time, the map centred on it above
- * the sheet with the route's points alone (lib/map/routeOnly). Any stops
- * between the two ends fold into a small pill on the hairline, "2 stops", a tap unfolding
- * them and another folding them again (the owner, 2026-11-17: "With any
- * stops in between dep and dest, we can fold the stops by saying how many
- * stops etc and then unfold when tapped"), a stock Collapsible's trigger;
- * a stop whose line is open keeps them unfolded, and a point moved
- * unfolds them, so it is never moved out of sight. Add a Stop is the last row, asking the one search;
+ * the sheet with the route's points alone (lib/map/routeOnly). Below
+ * full, two stops or more between the ends are one row of the card, "2
+ * Stops" and their idents (StopsRow), a tap taking the sheet all the way
+ * up, where every stop is its own row and there is no stops' row (the
+ * owner, 2026-11-18: "let's just show the stops as another row in between.
+ * And when the card is full, no need to show that because it expands to
+ * show all the stops"); one stop is its own row (listedPoints). A stop
+ * whose line is open, or that cannot be flown to, keeps them listed, and a
+ * point moved in among them takes the sheet up, so it is never moved out
+ * of sight. Add a Stop is the last row, asking the one search;
  * before the route is whole, half a route's other end to pick and the
  * route typed (FPL's RouteTimeline, its `head`, `tail` and `foot`). The sheets the
  * route opens are its (RouteSheets). In a dry run it is read, no line
- * opening and no menus.
+ * opening and no menus, every stop listed.
  */
 export default function TimelineRoute({
   points,
   head,
   tail,
   foot,
+  allStops,
+  onAllStops,
   ...props
 }: ProceduresRouteProps & {
   points: TimelinePoint[];
@@ -67,26 +70,37 @@ export default function TimelineRoute({
   /** The card's last row where it is not Add a Stop: before the route is
    *  whole, the route typed or pasted (TypeRouteRow). */
   foot?: ReactNode;
+  /** Every stop its own row: the sheet at full, or the route read. */
+  allStops: boolean;
+  /** The sheet taken all the way up, where every stop is listed. */
+  onAllStops: () => void;
 }) {
   const vm = useProceduresRoute(props);
   const { airports, routePoints, stopsFull } = vm;
-  // A point moved, from its menu or by a drop beside an end, unfolds the
-  // stops: one carried among them is not hidden in the fold.
-  const edit = vm.edit && {
-    ...vm.edit,
-    onMove: (from: number, to: number) => {
-      useOpenLine.setState({ stops: true });
-      vm.edit!.onMove(from, to);
-    },
-  };
-  const moving = { ...vm, edit };
   const keyOf = (p: TimelinePoint) => `${p.role}:${p.ident}:${p.index}`;
   const route = routePoints.join(" ");
   const openKey = useOpenLine((s) => (s.route === route ? s.key : null));
   useEffect(() => {
     if (useOpenLine.getState().route !== route) useOpenLine.setState({ route, key: null });
   }, [route]);
-  const all = useOpenLine((s) => s.stops) ?? vm.openAtFirst;
+  const stops = points.slice(1, -1);
+  // A pilot's one open stop keeps them listed; the specs' fields, each
+  // open at first (openAtFirst), list them all as they work on them; a
+  // stop that cannot be flown to keeps its why in sight (decision 0043).
+  const all = allStops || vm.openAtFirst || stops.some((p) => p.problem || openKey === keyOf(p));
+  const shown = listedPoints(points, all);
+  const folded = shown.includes(null);
+  // A point moved, from its menu or by a drop beside an end, in among
+  // stops that are one row takes the sheet up to list them: one carried
+  // among them is not hidden in the row.
+  const edit = vm.edit && {
+    ...vm.edit,
+    onMove: (from: number, to: number) => {
+      if (folded && to > 0 && to < routePoints.length - 1) onAllStops();
+      vm.edit!.onMove(from, to);
+    },
+  };
+  const moving = { ...vm, edit };
   const open = points.find((p) => keyOf(p) === openKey) ?? null;
   // The map: the route's points alone and the open line's centred.
   const focus = open && edit ? open.ident : null;
@@ -94,65 +108,34 @@ export default function TimelineRoute({
     useRouteOnly.setState({ on: focus !== null, focus });
   }, [focus]);
   useEffect(() => () => useRouteOnly.setState({ on: false, focus: null }), []);
-  const stops = points.slice(1, -1);
-  const count = stops.length;
-  // A pilot's one open stop keeps them unfolded; the specs' fields, each
-  // open at first (openAtFirst), start them unfolded (`all`) and the pill
-  // still folds them.
-  const stopOpen = !vm.openAtFirst && stops.some((p) => openKey === keyOf(p));
-  const unfolded = all || stopOpen;
-  // The ends, and between them the stops' one line: the stops after it
-  // where unfolded, as a disclosure row's rows follow it.
-  const shown = count === 0 ? points : [points[0]!, null, ...(unfolded ? stops : []), points.at(-1)!];
+  // The stops' row tapped: the focus, which went with the row, on the
+  // first stop's row once the sheet is up and they are listed -- a frame
+  // on, after React Aria's list has put it on the row after the one gone.
+  const card = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (folded || !focusStops.asked) return;
+    const ident = CSS.escape(stops[0]?.ident ?? "");
+    const frame = requestAnimationFrame(() => {
+      focusStops.asked = false;
+      card.current?.querySelector(`[data-testid=timeline-line][data-ident="${ident}"]`)?.closest<HTMLElement>("[role=row]")?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  });
   const items: RouteItem[] = shown.map((point, i) => {
-    if (!point) {
-      const words = `${count} ${count === 1 ? "stop" : "stops"}`;
+    if (!point)
       return {
         id: "stops",
-        label: words,
+        label: `${stops.length} stops`,
         node: (
-          // A small pill on the hairline between the lines either side of
-          // it, no row of its own (the owner, 2026-11-17: "Instead of stops
-          // row can we make a small pill at the separator"): the stock
-          // secondary button at its smallest, rounded, centred on the hairline
-          // (from the text's start, 2.75 rem in, to the end; the owner: "Center
-          // the stops pull"),
-          // its area a pseudo-element over the hairline. The line
-          // under it draws the hairline it sits on. Base UI's Collapsible
-          // holds whether they are out, its trigger the pill (aria-expanded
-          // its own); the stops it shows are the list's rows. Its area only
-          // a point above and below the pill, short of the rows either side
-          // (the owner took a smaller area here over one that lay on them).
-          <Collapsible
-            open={unfolded}
-            // Folding them closes a stop's open line with them.
-            // Unfolded, the route grows as an edit's does (riseForFigures).
-            onOpenChange={(next) => {
-              if (next) markRouteEdit();
-              useOpenLine.setState(next ? { stops: true } : { stops: false, key: stopOpen ? null : openKey });
+          <StopsRow
+            idents={stops.map((p) => p.ident)}
+            onShowAll={() => {
+              focusStops.asked = true;
+              onAllStops();
             }}
-            render={<div className="relative z-10 h-0" />}
-          >
-            <CollapsibleTrigger
-              render={
-                <Button
-                  variant="secondary"
-                  size="xs"
-                  data-testid="timeline-more"
-                  className="absolute top-0 left-[calc(50%+1.375rem)] -translate-1/2 rounded-full after:absolute after:-inset-x-2 after:-inset-y-1 after:content-['']"
-                />
-              }
-            >
-              {words}
-              <ChevronDown
-                className={cn("size-3.5 transition-transform motion-reduce:transition-none", unfolded && "rotate-180")}
-                aria-hidden
-              />
-            </CollapsibleTrigger>
-          </Collapsible>
+          />
         ),
       };
-    }
     const field = point.field ? airports.find((a) => a.role === point.role && sameField(a.ident, point.ident)) : undefined;
     // Its visit's row of the nav log, for its tanks, its leg's altitude and
     // a hold's course in: a point the route is at twice has two (visitRow).
@@ -196,7 +179,7 @@ export default function TimelineRoute({
     };
   });
   const list = (
-    <div className={TIMELINE_CARD} data-testid="route-summary">
+    <div ref={card} className={TIMELINE_CARD} data-testid="route-summary">
       {head}
       <RouteGrid items={items} onMove={edit?.onMove} canMove={edit?.canMove} />
       {tail}
