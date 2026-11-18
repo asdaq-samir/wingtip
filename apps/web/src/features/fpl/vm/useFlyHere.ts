@@ -9,7 +9,6 @@ import { feel } from "../../../lib/haptics";
 import { positionNow, useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePreferences } from "../../../lib/preferences";
 import { chartCycle, checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
-import { loadRoutePanel } from "../routePanelParts";
 import { panelNow, riseToSee, type PlannedRoute, navlogQuery, type PlanParams } from "../../plan";
 
 /** Fly Here's plan from `from` to the card's airport, as the page will ask
@@ -94,25 +93,6 @@ export function useFlyHere({
     },
     [planned.dep, planned.dest],
   );
-  // Once the page is idle: the route panel's code (routePanel), so it is
-  // in hand before a route is; and the routes from Home to each Favorite,
-  // the ones flown most, their courses asked for so the planner reads
-  // their charts and ground ahead (app.prefetch) -- at the pilot's ask
-  // for a fast app, a new route's chart read being 3 to 6 s of its nav
-  // log. Six at the most, once a page.
-  useEffect(() => {
-    const idle = window.requestIdleCallback ?? ((go: () => void) => window.setTimeout(go, 2000));
-    const cancel = window.cancelIdleCallback ?? window.clearTimeout;
-    const handle = idle(() => {
-      void loadRoutePanel();
-      const { homeAirport, favoriteAirports } = usePreferences.getState();
-      if (!homeAirport) return;
-      for (const fav of favoriteAirports.filter((f) => f.ident !== homeAirport.ident).slice(0, 6)) {
-        void queryClient.prefetchQuery(courseQuery(homeAirport.ident, fav.ident));
-      }
-    });
-    return () => cancel(handle);
-  }, []);
   // The airport Fly Here was tapped for: its card goes as the route comes,
   // and what was read ahead for it is then the page's to wait on, not to
   // be let go (below).

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { WorkspaceProps } from "../../../lib/workspace";
-import { prefetchPilotPanel } from "../routePanelParts";
+import { usePrefetchWhenIdle } from "./usePrefetchWhenIdle";
 import { panelNow } from "../../plan";
 import { usePlanAhead } from "./usePlanAhead";
 import { usePlanRoute, useRecentRoute } from "./usePlanRoute";
@@ -36,10 +36,7 @@ import { usePlanBrief } from "./usePlanBrief";
  */
 export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "panel" | "setPanel">) {
   "use no memo"; // Left to its own memos, as it always was: compiled, it put 18 KB on the first load.
-  useEffect(() => {
-    const later = window.setTimeout(prefetchPilotPanel, 2000);
-    return () => window.clearTimeout(later);
-  }, []);
+  usePrefetchWhenIdle();
   // The panel's size as of now, for what a tap does with it: read when
   // tapped, not a dependency, so a turn of the sheet does not make every
   // handler new and with them the route's list, the nav log and the
