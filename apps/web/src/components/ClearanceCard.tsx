@@ -184,11 +184,7 @@ export default function ClearanceCard({
                 disabled={listening && !onRadio}
                 render={<IconButton label={onRadio ? "Stop" : "Listen"} data-testid="clearance-toggle" className={ROW_MIC} />}
               >
-                {onRadio ? (
-                  <Square className="size-5" strokeWidth={1.5} aria-hidden="true" />
-                ) : (
-                  <Mic className="size-5" strokeWidth={1.5} aria-hidden="true" />
-                )}
+                <MicGlyph on={onRadio} />
               </Toggle>
             )
           }
@@ -248,11 +244,7 @@ export default function ClearanceCard({
                   <IconButton label={readingBack ? "Stop" : "Read back again"} data-testid="clearance-readback-mic" className={ROW_MIC} />
                 }
               >
-                {readingBack ? (
-                  <Square className="size-5" strokeWidth={1.5} aria-hidden="true" />
-                ) : (
-                  <Mic className="size-5" strokeWidth={1.5} aria-hidden="true" />
-                )}
+                <MicGlyph on={readingBack} />
               </Toggle>
             )
           }
@@ -331,4 +323,10 @@ export default function ClearanceCard({
       {problem && <FieldError data-testid="clearance-error">{problem}</FieldError>}
     </div>
   );
+}
+
+/** A row's mic: a stop square while it listens. */
+function MicGlyph({ on }: { on: boolean }) {
+  const Glyph = on ? Square : Mic;
+  return <Glyph className="size-5" strokeWidth={1.5} aria-hidden="true" />;
 }

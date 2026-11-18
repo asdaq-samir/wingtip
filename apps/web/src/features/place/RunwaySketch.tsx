@@ -15,6 +15,17 @@ const MARGIN = 8;
 const TURF = CHART.runwaySoft;
 
 /** What of a runway is not its turf, as fractions of it from end to end. */
+/** The line along a runway from `from` to `to` (fractions of its length),
+ *  each end drawn in by `inset` px. */
+function along(s: { ax: number; ay: number; bx: number; by: number; ux: number; uy: number }, from: number, to: number, inset = 0) {
+  return {
+    x1: s.ax + (s.bx - s.ax) * from + s.ux * inset,
+    y1: s.ay + (s.by - s.ay) * from + s.uy * inset,
+    x2: s.ax + (s.bx - s.ax) * to - s.ux * inset,
+    y2: s.ay + (s.by - s.ay) * to - s.uy * inset,
+  };
+}
+
 function pavedOf(turf: [number, number][]): [number, number][] {
   const paved: [number, number][] = [];
   let at = 0;
@@ -120,26 +131,14 @@ export function RunwaySketch({
           {/* Its turf over the paving, the part the remarks say (C81's
               south-west 1,000 ft), or all of a turf runway. */}
           {s.turf.map(([from, to]) => (
-            <line
-              key={`${from}-${to}`}
-              data-turf=""
-              x1={s.ax + (s.bx - s.ax) * from}
-              y1={s.ay + (s.by - s.ay) * from}
-              x2={s.ax + (s.bx - s.ax) * to}
-              y2={s.ay + (s.by - s.ay) * to}
-              stroke={TURF}
-              strokeWidth={s.width}
-            />
+            <line key={`${from}-${to}`} data-turf="" {...along(s, from, to)} stroke={TURF} strokeWidth={s.width} />
           ))}
           {/* A dotted line of light down the turf, so it is told from
               paving by its texture and not by its green alone. */}
           {s.turf.map(([from, to]) => (
             <line
               key={`dots-${from}-${to}`}
-              x1={s.ax + (s.bx - s.ax) * from}
-              y1={s.ay + (s.by - s.ay) * from}
-              x2={s.ax + (s.bx - s.ax) * to}
-              y2={s.ay + (s.by - s.ay) * to}
+              {...along(s, from, to)}
               stroke="white"
               strokeOpacity={0.7}
               strokeWidth={Math.max(1, s.width / 4)}
@@ -151,10 +150,7 @@ export function RunwaySketch({
           {pavedOf(s.turf).map(([from, to]) => (
             <line
               key={`${from}-${to}`}
-              x1={s.ax + (s.bx - s.ax) * from + s.ux * 3}
-              y1={s.ay + (s.by - s.ay) * from + s.uy * 3}
-              x2={s.ax + (s.bx - s.ax) * to - s.ux * 3}
-              y2={s.ay + (s.by - s.ay) * to - s.uy * 3}
+              {...along(s, from, to, 3)}
               className="stroke-background"
               strokeWidth={0.9}
               strokeDasharray="3.5 3"
@@ -166,10 +162,7 @@ export function RunwaySketch({
               <line
                 key={`closed-${from}-${to}`}
                 data-closed-part={s.ends.join("/")}
-                x1={s.ax + (s.bx - s.ax) * from}
-                y1={s.ay + (s.by - s.ay) * from}
-                x2={s.ax + (s.bx - s.ax) * to}
-                y2={s.ay + (s.by - s.ay) * to}
+                {...along(s, from, to)}
                 className="stroke-background"
                 strokeOpacity={0.65}
                 strokeWidth={s.width + 1}

@@ -261,12 +261,8 @@ export function PillStrip({ children, testId, className }: { children: ReactNode
 }
 
 /** A strip's tile's round mark, the Favorites tile's size (PlaceTile). */
-export function SmallMark({ icon, className, style }: { icon: ReactNode; className?: string; style?: CSSProperties }) {
-  return (
-    <span className={cn("grid size-14 place-items-center rounded-full [&_svg]:size-6", className)} style={style} aria-hidden="true">
-      {icon}
-    </span>
-  );
+export function SmallMark({ className, ...mark }: { icon: ReactNode; className?: string; style?: CSSProperties }) {
+  return <Mark {...mark} className={cn("size-14 [&_svg]:size-6", className)} />;
 }
 
 /** An airport's own chart symbol, small, as the map draws it
