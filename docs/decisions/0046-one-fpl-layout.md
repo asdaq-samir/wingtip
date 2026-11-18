@@ -47,7 +47,9 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    (the route being edited) it says "•••" alone, the tint's ellipsis on
    its wash (the owner, 2026-11-17: "Make the left buttons say ... only"),
    the category then in the ident's label alone. Any stops between the two ends
-   fold into one line, "2 stops ⌄", a tap unfolding them and another
+   fold into a small pill on the hairline between them, "2 stops ⌄" (the
+   stock secondary button at its smallest, no row of its own: the owner,
+   2026-11-17, "make a small pill at the separator"), a tap unfolding them and another
    folding them again, a stop's open line keeping them out (the owner,
    2026-11-17: "With any stops in between dep and dest, we can fold the
    stops by saying how many stops"). Add a Stop is the

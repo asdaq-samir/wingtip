@@ -6,7 +6,6 @@ import { Button } from "../../components/ui/button";
 import { isPosition } from "../../lib/identSchema";
 import { useRouteOnly } from "../../lib/map/routeOnly";
 import { sameField } from "../../lib/procedures";
-import { TEXT } from "../../lib/text";
 import { pointEnd } from "./pointEnd";
 import { RouteGrid, type RouteItem } from "./RouteGrid";
 import { AddStopRow } from "./RouteRows";
@@ -36,7 +35,7 @@ const useOpenLine = create<{ key: string | null; stops: boolean }>(() => ({ key:
  * then its runway and procedure chips -- Base UI's menus (RunwayTray,
  * ProcedureMenu) -- one line open at a time, the map centred on it above
  * the sheet with the route's points alone (lib/map/routeOnly). Any stops
- * between the two ends fold into one line, "2 stops", a tap unfolding
+ * between the two ends fold into a small pill on the hairline, "2 stops", a tap unfolding
  * them and another folding them again (the owner, 2026-11-17: "With any
  * stops in between dep and dest, we can fold the stops by saying how many
  * stops etc and then unfold when tapped"); a stop whose line is open
@@ -71,26 +70,25 @@ export default function TimelineRoute({ points, ...props }: ProceduresRouteProps
         id: "stops",
         label: words,
         node: (
-          <div className="flex gap-3">
-            {/* The route's magenta on through the line, under the marks. */}
-            <span className="relative w-8 shrink-0">
-              <span
-                aria-hidden="true"
-                className="absolute -top-1 -bottom-1 left-1/2 -translate-x-1/2 border-l-[3px] border-dotted border-course"
-              />
-            </span>
+          // A small pill on the hairline between the lines either side of
+          // it, no row of its own (the owner, 2026-11-17: "Instead of stops
+          // row can we make a small pill at the separator"): the stock
+          // secondary button at its smallest, rounded, at the text's start,
+          // its 44-point area a pseudo-element over the hairline. The line
+          // under it draws the hairline it sits on.
+          <div className="relative z-10 h-0">
             <Button
-              variant="plain"
-              size="inline"
+              variant="secondary"
+              size="xs"
               // Folding them closes a stop's open line with them.
               onClick={() => useOpenLine.setState(unfolded ? { stops: false, key: stopOpen ? null : openKey } : { stops: true })}
               aria-expanded={unfolded}
               data-testid="timeline-more"
-              className={cn("h-11 flex-1 justify-between border-t border-border pr-1 text-muted-foreground", TEXT.row)}
+              className="absolute top-0 left-11 -translate-y-1/2 rounded-full after:absolute after:-inset-x-2 after:-inset-y-2.5 after:content-['']"
             >
               {words}
               <ChevronDown
-                className={cn("size-5 transition-transform motion-reduce:transition-none", unfolded && "rotate-180")}
+                className={cn("size-3.5 transition-transform motion-reduce:transition-none", unfolded && "rotate-180")}
                 aria-hidden
               />
             </Button>
