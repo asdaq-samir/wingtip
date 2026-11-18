@@ -40,29 +40,19 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
   const { altitudeMark, briefMark } = vm.brief;
   const found = findingRows(useVerdict((v) => v.items)).length;
   return (
-    // Over a fade to the sheet's own colour from a little above it, as
-    // iOS 26 fades what scrolls under a floating bar (its scroll edge
-    // effect): at half the route's rows ran on under the glass and showed
-    // through it, half read ("Pick an airplane" under Share; the UI
-    // audit's B1, 2026-11-17). The fade's room taken back from above, so
-    // the bar stays where it was; only the capsule takes taps. Across the
-    // sheet's whole width, out over the foot's 16-point sides (SheetParts'
-    // px-4): narrower, the airport cards' fill (drawn out past the column,
-    // FIELD_CARD) showed its edges either side of a lighter box round the
-    // bar, a box in a box. Never an edge the route's figures stop at: they
-    // pass under it as anything does, and it moves down out of their way
-    // as the sheet goes down toward the pill, where they are held on the
-    // foot's edge (data-makes-way, sheet/pinAtFoot's MAKES_WAY; the owner,
-    // 2026-11-18: "the main issue is tab bar is not allowing the figures to
-    // go past it").
-    <div
-      data-makes-way=""
-      className={cn(
-        "pointer-events-none -mx-4 -mt-6 flex justify-center bg-linear-to-b from-transparent to-(--sheet) to-50% px-4 pt-8",
-        MAKES_WAY,
-      )}
-      data-testid="fpl-actions"
-    >
+    // See-through, as the airport card's bar is (CardTabBar): the route
+    // runs on under the glass, whose own denser bar fill and blur keep its
+    // words readable (the owner, 2026-11-18: "tabs bar is not see through?
+    // Is it different then airport card?"), where a fade to the sheet's
+    // solid colour behind it (the UI audit's B1) hid the route as a white
+    // band. Across the sheet's whole width, out over the foot's 16-point
+    // sides (SheetParts' px-4); only the capsule takes taps. Never an edge
+    // the route's figures stop at: they pass under it as anything does,
+    // and it moves down out of their way as the sheet goes down toward the
+    // pill, where they are held on the foot's edge (data-makes-way,
+    // sheet/pinAtFoot's MAKES_WAY; the owner, 2026-11-18: "the main issue
+    // is tab bar is not allowing the figures to go past it").
+    <div data-makes-way="" className={cn("pointer-events-none -mx-4 flex justify-center px-4 pt-2", MAKES_WAY)} data-testid="fpl-actions">
       {/* The glass capsule, the airport card's bar's (CardTabBar): glass
           only on what floats (rules.md). Each button 56 tall in its
           columns, side by side, so their areas are over 44 points. */}
