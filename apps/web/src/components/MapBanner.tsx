@@ -25,9 +25,10 @@ type Props = Omit<ComponentProps<"div">, "title" | "role"> & {
   /** Its buttons at the end (BannerButton, CloseButton). */
   actions?: ReactNode;
   /** How a screen reader takes it: `status` by default; `region` where
-   *  the caller says it once itself (lib/announce), `alert` for a moment
-   *  that must interrupt. */
-  role?: "status" | "alert" | "region";
+   *  the caller says it once itself (lib/announce). */
+  role?: "status" | "region";
+  /** A moment that must interrupt: the stock Alert's own role="alert". */
+  urgent?: boolean;
   label?: string;
   /** Two lines before it is cut short, where the line is the message. */
   lines?: 1 | 2;
@@ -57,6 +58,7 @@ export default function MapBanner({
   more,
   actions,
   role = "status",
+  urgent = false,
   label,
   lines = 1,
   titleTestId,
@@ -79,7 +81,8 @@ export default function MapBanner({
   return (
     <div className={cn(bannerGlass(), className)} {...rest}>
       <Alert
-        role={role}
+        // The stock Alert is role="alert" itself; any other role replaces it.
+        {...(urgent ? {} : { role })}
         aria-label={label}
         className={cn(
           "flex min-h-11 gap-2 rounded-(--radius-banner) border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0",
