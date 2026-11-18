@@ -79,8 +79,14 @@ const FIELD_WORDS = 4;
 function fieldAfter(toks: Token[], from: number): string | null {
   const at = toks.findIndex((t, i) => i >= from && FIELD_AFTER.has(t.word));
   if (at < 0) return null;
+  return fieldFrom(toks, at + 1);
+}
+
+/** The field's words from `start` on, a "the" before them skipped, up to
+ *  a word that ends a name or "airport"; null where none is. */
+function fieldFrom(toks: Token[], start: number): string | null {
   const words: Token[] = [];
-  for (let i = at + 1; i < toks.length && words.length < FIELD_WORDS; i++) {
+  for (let i = start; i < toks.length && words.length < FIELD_WORDS; i++) {
     const t = toks[i]!;
     if (t.word === "the" && !words.length) continue;
     if (FIELD_ENDS.has(t.word) || t.word === "airport") break;
@@ -169,12 +175,5 @@ function destinationOf(toks: Token[]): string | null {
       t.word === "to" && i > 0 && (TRIP_WORDS.has(toks[i - 1]!.word) || (toks[i - 1]!.word === "me" && toks[i - 2]?.word === "take")),
   );
   if (to < 0) return null;
-  const words: Token[] = [];
-  for (let i = to + 1; i < toks.length && words.length < FIELD_WORDS; i++) {
-    const t = toks[i]!;
-    if (t.word === "the" && !words.length) continue;
-    if (FIELD_ENDS.has(t.word) || t.word === "airport") break;
-    words.push(t);
-  }
-  return placeWords(words) || null;
+  return fieldFrom(toks, to + 1);
 }

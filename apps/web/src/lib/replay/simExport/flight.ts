@@ -92,6 +92,17 @@ export function altitudeWords(segment: Pick<SimSegment, "msl" | "setting_hpa">):
 export const ESTIMATED_WORDS =
   "Estimated, not measured (ADS-B sends none of them): heading (the track; the wind is not known), pitch and bank (from the climb and the turn), landing gear, flaps and lights (by phase of flight). Nothing is drawn across a gap in the reports.";
 
+/** What a GPX or KML file says of itself, its altitudes in metres: the
+ *  airplane, whose reports, the altitude, and what is estimated. */
+export function metresFileWords(segments: SimSegment[], meta: SimMeta): string[] {
+  return [
+    meta.model && `Airplane: ${meta.model}${meta.icaoType ? ` (${meta.icaoType})` : ""}.`,
+    meta.credit && `Reports: ${meta.credit}.`,
+    segments[0] && altitudeWords(segments[0]).replace("feet", "metres"),
+    ESTIMATED_WORDS,
+  ].filter((line): line is string => !!line);
+}
+
 /** A file's name: the tail and the start, "N14511-2026-11-10-0101Z". */
 export function fileStem(meta: SimMeta, t: number): string {
   const iso = new Date(t * 1000).toISOString();

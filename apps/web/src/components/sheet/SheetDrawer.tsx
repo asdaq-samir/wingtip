@@ -2,7 +2,7 @@ import { useEffect, type ComponentProps, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, usePanelDragging } from "../../lib/mapChrome";
-import { MOTION } from "../../lib/tokens";
+import { SETTLE_MS } from "./insets";
 import { sheetTopRef } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
 
@@ -185,7 +185,7 @@ export function SheetDrawer({
 /** The popup's element, telling the page while a finger drags the sheet
  *  (usePanelDragging): what is drawn under the pill is drawn as it comes.
  *  Held from the finger's first move until the sheet has settled, the
- *  Drawer's own time after the lift (MOTION.drawer), and marked on the
+ *  Drawer's own time after the lift (insets' SETTLE_MS), and marked on the
  *  popup (data-risen) for sheet/insets' faces: Base UI's data-swiping goes
  *  the moment the finger lifts, a frame before the sheet's new size is
  *  told, and what had risen with it dipped out and back (the owner,
@@ -220,6 +220,3 @@ function Told({ swiping, ...own }: ComponentProps<"div"> & { swiping: boolean })
   const risen = usePanelDragging((d) => d.dragging);
   return <div {...own} data-risen={risen ? "" : undefined} />;
 }
-
-/** The Drawer's settle after a lift, and a frame to spare. */
-const SETTLE_MS = MOTION.drawer * 1000 + 50;

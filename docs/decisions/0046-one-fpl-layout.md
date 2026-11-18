@@ -158,7 +158,8 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    the first row is the N-number and the altitude alone. A route just
    cleared is put back by Undo at the empty route box's end (the plan's
    own Undo, `lib/planUndo`), shown till a new route is started; half a
-   route is cleared by the box's stock ✕ (`SearchFieldClear`); the
+   route is cleared by the box's stock ✕ (`ui/field-clear`'s
+   `FieldClearButton`, Base UI's Button); the
    Checkpoints switch is More's once the route is drawn ("Finding
    checkpoints is an action after we draw the route"); typing a whole
    route is the empty box's own field; and Print waits for a route.

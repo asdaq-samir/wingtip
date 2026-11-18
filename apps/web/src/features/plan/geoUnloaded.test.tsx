@@ -26,38 +26,31 @@ async function unloaded() {
     fix: { lat: 42.3246, lon: -88.0741, accuracyM: 10, speedKt: 0, headingDeg: null, altitudeFt: null, at: Date.now() },
   });
   const { PointWhere } = await import("../../lib/map/cards/PointWhere");
-  const { useAway, useAwayWords } = await import("../../lib/useAway");
-  return { ...library, engine, PointWhere, useAway, useAwayWords };
+  const { useAway } = await import("../../lib/useAway");
+  return { ...library, engine, PointWhere, useAway };
 }
 
 describe("the distances before the engine is there", () => {
   test("draw without the figure, then with it", { timeout: 30_000 }, async () => {
-    const { act, engine, render, screen, PointWhere, useAway, useAwayWords } = await unloaded();
+    const { act, engine, render, screen, PointWhere, useAway } = await unloaded();
     expect(engine.engineLoaded()).toBe(false);
     // Waukegan (KUGN), a dozen miles east-northeast of Campbell.
     const at = { lat: 42.4222, lon: -87.8679 };
-    function Pill() {
-      return <p data-testid="pill">{useAwayWords(at.lat, at.lon) ?? "none"}</p>;
-    }
     function Tile() {
       return <p data-testid="tile">{useAway()({ ident: "KUGN", name: "Waukegan National", municipality: "Waukegan", ...at })}</p>;
     }
     render(
       <>
         <PointWhere {...at} />
-        <Pill />
         <Tile />
       </>,
     );
-    // Drawn, each without its figure: the card's place, the pill's
-    // nothing, the tile's town.
+    // Drawn, each without its figure: the card's place and the tile's town.
     expect(screen.getByTestId("point-where").textContent).not.toMatch(/nm/);
-    expect(screen.getByTestId("pill").textContent).toBe("none");
     expect(screen.getByTestId("tile").textContent).toBe("Waukegan");
 
     await act(() => engine.loadEngine(readFileSync(wasm)));
     expect(screen.getByTestId("point-where").textContent).toMatch(/1\d nm (NE|E) of you/);
-    expect(screen.getByTestId("pill").textContent).toMatch(/^1\d nm (NE|E) of you$/);
     expect(screen.getByTestId("tile").textContent).toMatch(/^1\d nm$/);
   });
 });

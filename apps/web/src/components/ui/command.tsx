@@ -4,10 +4,7 @@ import * as React from "react";
 import { Autocomplete as AutocompletePrimitive } from "@base-ui/react/autocomplete";
 import { cn } from "cn";
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
 import { FIELD_CLEAR, FieldClearGlyph } from "@/components/ui/field-clear";
-import { SearchIcon } from "lucide-react";
 
 /**
  * shadcn's Command, on Base UI's Autocomplete where it was on cmdk: a field
@@ -61,52 +58,6 @@ function Command({
         {children}
       </div>
     </CommandRoot>
-  );
-}
-
-function CommandDialog({
-  title = "Command Palette",
-  description = "Search for a command to run...",
-  children,
-  className,
-  ...props
-}: Omit<React.ComponentProps<typeof Dialog>, "children"> & {
-  title?: string;
-  description?: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Dialog {...props}>
-      <DialogContent className={cn("top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0", className)}>
-        <DialogHeader className="sr-only">
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        {children}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/** The field, in shadcn's input group with its glass. */
-function CommandInput({ className, ...props }: AutocompletePrimitive.Input.Props) {
-  return (
-    <div data-slot="command-input-wrapper" className="p-1 pb-0">
-      <InputGroup className="h-8! rounded-lg! border-input/30 bg-input/30 shadow-none! *:data-[slot=input-group-addon]:pl-2!">
-        <AutocompletePrimitive.Input
-          data-slot="command-input"
-          className={cn(
-            "w-full text-sm pointer-coarse:text-(length:--type-row) outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
-            className,
-          )}
-          {...props}
-        />
-        <InputGroupAddon>
-          <SearchIcon className="size-4 shrink-0 opacity-50" />
-        </InputGroupAddon>
-      </InputGroup>
-    </div>
   );
 }
 
@@ -212,11 +163,9 @@ function CommandShortcut({ className, ...props }: React.ComponentProps<"span">) 
 export {
   Command,
   CommandClear,
-  CommandDialog,
   CommandEmpty,
   CommandField,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
   CommandRoot,

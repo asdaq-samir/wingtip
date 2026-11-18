@@ -5,17 +5,16 @@ import TabKept from "../TabKept";
 import { AT_PILL, EDGE_ROOM, HOLD_AT_EDGE, PILL_BODY, RISEN_FACE } from "./insets";
 import { SheetPage } from "./SheetPages";
 import type { SheetPages } from "../../lib/sheetPages";
+import { PointerTapDiv } from "./PointerTapDiv";
 
 /** The first row's room under the grabber: ten points, the grabber's bar
  *  in it four from the edge. */
-import { PointerTapDiv } from "./PointerTapDiv";
 const ROW_PAD = "pt-2.5";
 /** The one search's row, its 46-point field (OneSearchField) sixteen in
  *  from either side as everything in the sheet is (the sheet audit's
  *  F-P1, F-P2, 2026-11-10): on a bottom sheet under the grabber's 16-point
  *  room (SheetGrabber, the least iOS keeps: the owner, 2026-11-13) and six
- *  over its foot, 68 (BAR_ALONE); else ten over it and twelve under, 68
- *  (BAR). The pill is this row alone: the title row
+ *  over its foot, 68; else ten over it and twelve under, 68 (BAR_HEIGHT). The pill is this row alone: the title row
  *  over it went for the map's room (the owner, 2026-11-10). */
 function barRowPad(underGrabber: boolean) {
   if (underGrabber) return "h-[4.25rem] pt-4 pb-1.5";
@@ -24,9 +23,8 @@ function barRowPad(underGrabber: boolean) {
 /** A bottom sheet's pill under its grabber's 1 rem room: the 4.25 rem
  *  snap point's rest (sheet/insets), where the figures sit at the pill. */
 const PILL_BELOW_GRABBER = "3.25rem";
-/** Those rows' heights, for what pins under them (--sheet-head). */
-const BAR_ALONE = "4.25rem";
-const BAR = "4.25rem";
+/** That row's height either way, for what pins under it (--sheet-head). */
+const BAR_HEIGHT = "4.25rem";
 
 /** Under the head, the body and the foot a shade darker than the glass
  *  over them, the grey of notes and the blue of tappable words a step
@@ -69,9 +67,8 @@ export interface PartsProps {
   layer: "tab" | "card";
   flying: boolean;
   size: PanelState;
+  /** At the pill: the body out of sight and of the keyboard's reach. */
   atPill: boolean;
-  /** The pill at rest: the body out of sight and of the keyboard's reach. */
-  resting: boolean;
   /** A phone's bottom sheet (else a top sheet or the side panel). */
   fromBottom: boolean;
   onPhone: boolean;
@@ -128,8 +125,7 @@ export function SheetParts(p: PartsProps) {
   // The route's figures the pill's one row on a phone's bottom sheet.
   const figuresPill = pillFoot && footShown && p.onPhone && fromBottom && !p.flying;
   const bandOnly = !!p.bar && p.barShown && !headerShown;
-  const barHeight = p.fromBottom ? BAR_ALONE : BAR;
-  const sheetHead = bandOnly ? barHeight : "0px";
+  const sheetHead = bandOnly ? BAR_HEIGHT : "0px";
   // On a phone, what stays in sight at the sheet's free edge while the
   // popup, laid out at its full height, slides: moved back by the Drawer's
   // own offset and the finger's (its CSS variables), on its curve, and the
@@ -200,7 +196,7 @@ export function SheetParts(p: PartsProps) {
           </header>
         )}
         {shown && (!atPill || risen) && p.controls && (
-          <div className={cn("flex flex-wrap items-center gap-x-2 gap-y-3 px-3 pt-1 print:hidden", "pb-1.5")}>{p.controls}</div>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-3 px-3 pt-1 pb-1.5 print:hidden">{p.controls}</div>
         )}
       </div>
     );
@@ -249,16 +245,16 @@ export function SheetParts(p: PartsProps) {
           "flex min-h-0 flex-1 flex-col",
           size !== "peek" && !fromBottom && "pb-4",
           SHEET_BELOW,
-          cardsUp ? "invisible" : p.resting && (alone ? AT_PILL : PILL_BODY),
+          cardsUp ? "invisible" : atPill && (alone ? AT_PILL : PILL_BODY),
           !p.onPhone && size === "peek" && "hidden",
         )}
-        inert={off || cardsUp || (p.resting && !alone)}
+        inert={off || cardsUp || (atPill && !alone)}
         data-panel-body=""
         // On a phone, Drawer.Content's own mark: a mouse dragged across the
         // body selects its words rather than moving the sheet (a finger
         // still moves it, where the body's lists are not scrolling).
         data-drawer-content={p.onPhone ? "" : undefined}
-        onClick={p.resting && alone ? (event) => tapOpens(event, p.onFootTap) : undefined}
+        onClick={atPill && alone ? (event) => tapOpens(event, p.onFootTap) : undefined}
       >
         {/* Not put away under a card (TabKept's `away`): a card's content is
             drawn in it (SheetCard, the Brief, Settings) and opens while it

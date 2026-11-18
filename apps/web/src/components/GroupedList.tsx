@@ -1,6 +1,7 @@
 import { Children, Fragment, useId, type ComponentProps, type ReactNode } from "react";
 import { Link } from "react-router";
 import { Check, ChevronRight, ExternalLink } from "lucide-react";
+import { Button as BaseButton } from "@base-ui/react/button";
 import { Radio as RadioPrimitive } from "@base-ui/react/radio";
 import { RadioGroup } from "./ui/radio-group";
 import { cn } from "cn";
@@ -272,12 +273,7 @@ export function ListRow({
         size="sm"
         className="group min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted"
         render={
-          <RadioPrimitive.Root
-            value={radio}
-            nativeButton
-            disabled={buttonProps.disabled}
-            render={<button type="button" {...buttonProps} />}
-          >
+          <RadioPrimitive.Root value={radio} nativeButton disabled={buttonProps.disabled} render={<BaseButton {...buttonProps} />}>
             {body}
           </RadioPrimitive.Root>
         }
@@ -289,11 +285,7 @@ export function ListRow({
       <Item
         size="sm"
         className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 text-left hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50 pointer-coarse:active:bg-muted"
-        render={
-          <button type="button" {...buttonProps}>
-            {body}
-          </button>
-        }
+        render={<BaseButton {...buttonProps}>{body}</BaseButton>}
       />
     );
   }

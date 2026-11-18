@@ -27,12 +27,6 @@ export function keptRoute(fields: string[], alternate: string | null): string {
   return `${fields.join("-")}|${alternate ?? ""}`;
 }
 
-/** The record for `route`, if it is the route last kept. */
-export function keptRecord(route: string): KeptRecord | null {
-  const record = keptRecordStore().getState().value;
-  return record?.route === route ? record : null;
-}
-
 /** For signing out: the route kept is the pilot's own. */
 export function forgetKeptRecord() {
   keptRecordStore().setState({ value: null });

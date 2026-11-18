@@ -8,17 +8,15 @@ import { gatewayRecords } from "./gatewayRecords";
 export {
   ApiError,
   describeError,
-  detailOf,
   errorMessage,
   failIfNotOk,
   isDropped,
   isUnknownPlace,
   unknownPlaceIn,
-  unknownPlaceOf,
   unknownWhy,
   type UnknownPlace,
 } from "./errors";
-export { csrfHeaders, data, gateway, GatewayRequest, ndjson, planner, STREAM_QUIET_MS } from "./http";
+export { csrfHeaders, data, gateway, planner } from "./http";
 
 /**
  * Every call the pages make. Both servers' calls go through

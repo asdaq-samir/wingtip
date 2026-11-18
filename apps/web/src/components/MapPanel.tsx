@@ -209,7 +209,6 @@ export default function MapPanel(props: Props) {
     flying,
     size,
     atPill,
-    resting: atPill,
     fromBottom: bottomSheet,
     onPhone,
     desktop,

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { forgetKeptRecord, keptRecord, keptRecordStore, keptRoute, readyKept } from "./keptRecord";
+import { forgetKeptRecord, keptRecordStore, keptRoute, readyKept } from "./keptRecord";
 
 describe("what Keep for the Air holds, for Ready to fly", () => {
   beforeEach(() => forgetKeptRecord());
@@ -8,11 +8,14 @@ describe("what Keep for the Air holds, for Ready to fly", () => {
     expect(readyKept(null)).toEqual({ on_board: [], missing: [], size_mb: null });
   });
 
-  test("a keep's record is the route's alone, its size in megabytes", () => {
+  test("a keep's record, its size in megabytes; a route's key names its alternate", () => {
     const route = keptRoute(["KOSH", "KMSN"], "KJVL");
-    keptRecordStore().setState({ value: { route, at: 1, onBoard: ["briefing", "notams"], missing: ["plates"], bytes: 2_500_000 } });
-    expect(readyKept(keptRecord(route))).toEqual({ on_board: ["briefing", "notams"], missing: ["plates"], size_mb: 2.5 });
-    expect(keptRecord(keptRoute(["KOSH", "KMSN"], null))).toBeNull();
+    expect(readyKept({ route, at: 1, onBoard: ["briefing", "notams"], missing: ["plates"], bytes: 2_500_000 })).toEqual({
+      on_board: ["briefing", "notams"],
+      missing: ["plates"],
+      size_mb: 2.5,
+    });
+    expect(keptRoute(["KOSH", "KMSN"], null)).not.toBe(route);
   });
 
   test("signing out forgets which route was kept", () => {

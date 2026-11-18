@@ -133,13 +133,6 @@ function shaped(d: Debriefed): ApproachDebrief {
   };
 }
 
-/** Each time the track flew inbound over the approach's final approach
- *  fix: the attempts at it, as point indices -- from the last one's end,
- *  to the next one's start. */
-export function attemptsAt(d: ProcedureDrawing, points: TrackPoint[]): { faf: number; from: number; to: number }[] {
-  return callEngine("approach_attempts", { drawing: d, points: enginePoints(points) });
-}
-
 /**
  * A debrief held to the pilot's minimums, the DA or MDA they flew to (the
  * CIFP has none): under them before a missed approach is flying below

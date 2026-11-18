@@ -1,7 +1,7 @@
 import { flushSync } from "react-dom";
 import { cn } from "cn";
 import { Button } from "../../../components/ui/button";
-import { SearchFieldClear } from "../../../components/ui/search-field";
+import { FieldClearButton } from "../../../components/ui/field-clear";
 import { usePlanUndo } from "../../../lib/planUndo";
 import { TEXT } from "../../../lib/text";
 import { EndRow, TIMELINE_CARD, TypeRouteRow } from "../../procedures";
@@ -30,7 +30,7 @@ export function TypeRow({ vm }: { vm: StartSlices }) {
   };
   const trailing =
     hasPoints && !routed ? (
-      <SearchFieldClear aria-label="Clear the route" onPress={clearRoute} data-testid="route-box-clear" />
+      <FieldClearButton aria-label="Clear the route" onClick={clearRoute} data-testid="route-box-clear" />
     ) : !hasPoints && routeUndo ? (
       <Button
         variant="plain"

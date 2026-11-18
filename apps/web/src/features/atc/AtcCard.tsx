@@ -9,6 +9,7 @@ import { TEXT } from "../../lib/text";
 import type { AtcCard as Card } from "./atcCards";
 import type { AtcItem } from "./atcEngine";
 import { ACTION_LABEL, itemWords, type ItemAction } from "./atcWords";
+import { capitalised } from "../../lib/capitals";
 
 /** A chip's 32 points made 44 to a finger without growing (the app's
  *  rule): a pseudo-element round it, the rows gap-2 so the areas meet. */
@@ -32,15 +33,15 @@ function ReadbackResult({ check }: { check: NonNullable<Card["readback"]>["check
         <li key={i.item + i.cleared} className="flex items-start gap-1.5">
           <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <span>
-            {i.said !== null ? `${capital(i.item)}: ${i.said} said, ${i.cleared} given` : `${capital(i.item)} ${i.cleared} not read back`}
+            {i.said !== null
+              ? `${capitalised(i.item)}: ${i.said} said, ${i.cleared} given`
+              : `${capitalised(i.item)} ${i.cleared} not read back`}
           </span>
         </li>
       ))}
     </ul>
   );
 }
-
-const capital = (words: string) => words.charAt(0).toUpperCase() + words.slice(1);
 
 /**
  * A call to us as the ATC copilot read it: what was said, then each item

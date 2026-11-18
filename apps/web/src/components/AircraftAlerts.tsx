@@ -74,7 +74,7 @@ export default function AircraftAlerts() {
     <MapBanner
       key={alert.id}
       data-testid="aircraft-alert"
-      role="alert"
+      urgent
       icon={BellRing}
       tone="tint"
       title={alert.title}

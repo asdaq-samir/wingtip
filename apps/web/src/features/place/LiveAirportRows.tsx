@@ -11,6 +11,7 @@ import { datisQuery, rvrQuery } from "../../lib/liveReports";
 import { usePreferences } from "../../lib/preferences";
 import { rvrRows } from "./rvrRows";
 import { useShown } from "../../lib/shown";
+import { capitalised } from "../../lib/capitals";
 
 /**
  * The field's D-ATIS, on the card's Weather tab, where the tower's data
@@ -31,7 +32,7 @@ export function DigitalAtisRows({ ident }: { ident: string }) {
         // The engine's read_datis answer, read_atis's shape (the planner
         // passes it on as a plain object).
         const reading = b.reading as unknown as AtisReading;
-        const which = b.which ? `${b.which.charAt(0).toUpperCase()}${b.which.slice(1)} D-ATIS` : "D-ATIS";
+        const which = b.which ? `${capitalised(b.which)} D-ATIS` : "D-ATIS";
         const remarks = datisRemarks(b.text);
         // The words as sent and the credit close the broadcast, under its
         // remarks where it has any.

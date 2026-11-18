@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { Button as BaseButton } from "@base-ui/react/button";
 import { cn } from "cn";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { EXPLAINED, type ExplainedTerm } from "../lib/explain";
-import { TEXT } from "../lib/text";
+import type { ExplainedTerm } from "../lib/explain";
+import { loadPopups, usePopups } from "./popupsChunk";
 
 /**
  * An abbreviation or a figure's name that says what it means when tapped
@@ -11,6 +11,11 @@ import { TEXT } from "../lib/text";
  * popover its whole name, one plain sentence and where it comes from
  * (lib/explain). No label is added beside it, so the screen reads as it
  * did. A tap on it is its own, never the row's under it.
+ *
+ * The popover and its words are on the popups' chunk (ExplainPopover,
+ * popupsChunk), out of the first load the route's figures are drawn in:
+ * until it is in, the word is a plain button, and a tap on it opens the
+ * popover once it is.
  */
 export default function Explain({
   term,
@@ -25,28 +30,36 @@ export default function Explain({
   spoken?: string;
   className?: string;
 }) {
-  const what = EXPLAINED[term];
+  const popups = usePopups();
+  const [asked, setAsked] = useState(false);
+  const word = children ?? term;
+  const trigger = {
+    className: cn(
+      // A 44-point area up and down by a pseudo-element, the word's own
+      // size unchanged (decision 0030).
+      "relative inline cursor-help rounded-sm text-tint outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+      className,
+    ),
+    "aria-label": `${spoken ?? children ?? term}: what it means`,
+    onKeyDown: (event: { stopPropagation: () => void }) => event.stopPropagation(),
+    "data-testid": `explain-${term.replace(/\s+/g, "-").toLowerCase()}`,
+  };
+  if (popups)
+    return (
+      <popups.ExplainPopover term={term} defaultOpen={asked} trigger={{ ...trigger, onClick: (event) => event.stopPropagation() }}>
+        {word}
+      </popups.ExplainPopover>
+    );
   return (
-    <Popover>
-      <PopoverTrigger
-        className={cn(
-          // A 44-point area up and down by a pseudo-element, the word's own
-          // size unchanged (decision 0030).
-          "relative inline cursor-help rounded-sm text-tint outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-          className,
-        )}
-        aria-label={`${spoken ?? children ?? term}: what it means`}
-        onClick={(event) => event.stopPropagation()}
-        onKeyDown={(event) => event.stopPropagation()}
-        data-testid={`explain-${term.replace(/\s+/g, "-").toLowerCase()}`}
-      >
-        {children ?? term}
-      </PopoverTrigger>
-      <PopoverContent className="w-72 gap-1.5" data-testid="explain-popover">
-        <p className={cn("font-semibold text-foreground", TEXT.row)}>{what.name}</p>
-        <p className={cn("text-foreground", TEXT.detail)}>{what.sentence}</p>
-        <p className={cn("text-muted-foreground", TEXT.note)}>{what.source}</p>
-      </PopoverContent>
-    </Popover>
+    <BaseButton
+      {...trigger}
+      onClick={(event) => {
+        event.stopPropagation();
+        setAsked(true);
+        void loadPopups();
+      }}
+    >
+      {word}
+    </BaseButton>
   );
 }

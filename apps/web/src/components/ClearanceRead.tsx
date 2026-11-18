@@ -4,9 +4,9 @@ import FrequencyButton from "./FrequencyButton";
 import { threeFigures } from "../lib/format";
 import type { Clearance, ClearedItem, Found } from "../lib/clearance";
 import { altitudeWords } from "../lib/readback";
+import { capitalised, eachCapitalised } from "../lib/capitals";
 
 /** The clearance's own words in Title Case, as a name is written. */
-const capital = (words: string) => words.replace(/\b[a-z]/g, (ch) => ch.toUpperCase());
 
 /** One named line of a row's detail: a CRAFT item, a route, an altitude. */
 export function Line({ name, children }: { name: string; children: ReactNode }) {
@@ -36,7 +36,7 @@ function RouteWords({ items, asFiled, found }: { items: ClearedItem[]; asFiled: 
       parts.push(
         picked
           ? `${picked.id}${picked.transition ? `.${picked.transition}` : ""}`
-          : `${capital(item.name)} ${item.number} ${item.kind}${item.transition ? `, ${capital(item.transition)} transition` : ""}`,
+          : `${eachCapitalised(item.name)} ${item.number} ${item.kind}${item.transition ? `, ${eachCapitalised(item.transition)} transition` : ""}`,
       );
     }
   }
@@ -62,7 +62,7 @@ function altitudeLine(c: Clearance): string | null {
   if (c.expectFt !== null) parts.push(`expect ${altitudeWords(c.expectFt)}${c.expectMin ? ` ${c.expectMin} min after departure` : ""}`);
   if (!parts.length) return null;
   const line = parts.join(", ");
-  return line.charAt(0).toUpperCase() + line.slice(1);
+  return capitalised(line);
 }
 
 /**
@@ -78,7 +78,7 @@ export function ClearanceElements({ clearance, places, heard }: { clearance: Cle
   ) : places?.limit?.ident ? (
     <ClearancePlace place={places.limit} />
   ) : (
-    clearance.limit && capital(clearance.limit)
+    clearance.limit && eachCapitalised(clearance.limit)
   );
   const altitude = altitudeLine(clearance);
   return (
@@ -94,7 +94,7 @@ export function ClearanceElements({ clearance, places, heard }: { clearance: Cle
           {altitude && <Line name="Altitude">{altitude}</Line>}
           {clearance.frequency && (
             <Line name="Frequency">
-              <FrequencyButton mhz={clearance.frequency} name={capital(clearance.facility ?? "")} named />
+              <FrequencyButton mhz={clearance.frequency} name={eachCapitalised(clearance.facility ?? "")} named />
             </Line>
           )}
           {clearance.squawk && <Line name="Transponder">{clearance.squawk}</Line>}

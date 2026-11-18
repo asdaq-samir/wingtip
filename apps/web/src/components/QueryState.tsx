@@ -71,13 +71,7 @@ export default function QueryState({
       </>
     );
     return row ? (
-      <ListRow
-        title={
-          <span role="alert" className={cn(FINDING_TONE.stop, TEXT.detail)}>
-            {words}
-          </span>
-        }
-      />
+      <ListRow title={<FieldError className={cn(FINDING_TONE.stop, TEXT.detail)}>{words}</FieldError>} />
     ) : (
       <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.note)}>{words}</FieldError>
     );
