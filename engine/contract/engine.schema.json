@@ -2682,37 +2682,6 @@
       ],
       "additionalProperties": false
     },
-    "approach_descent_fpm": {
-      "description": "The descent rate on the path, ft/min (the TPP's rate of descent table).",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "ApproachDescentFpmInput",
-          "type": "object",
-          "properties": {
-            "gs_kt": {
-              "type": "number"
-            },
-            "angle_deg": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "gs_kt",
-            "angle_deg"
-          ]
-        },
-        "answer": {
-          "title": "ApproachDescentFpmAnswer",
-          "type": "number"
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "approach_find": {
       "description": "The approaches a track flew, each debriefed.",
       "type": "object",
@@ -6920,75 +6889,6 @@
       ],
       "additionalProperties": false
     },
-    "debrief_marked": {
-      "description": "The web's debrief (its figures, snake_case, no marks) marked against ACS PA.VI.A's tolerances as `debrief` marks its own, with the tolerances.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "DebriefMarkedInput",
-          "type": "object",
-          "properties": {
-            "debrief": {
-              "type": "object",
-              "description": "The debrief's figures as `debrief` gives them, unmarked: legs, passes, patterns and the rest."
-            }
-          },
-          "required": [
-            "debrief"
-          ]
-        },
-        "answer": {
-          "title": "DebriefMarkedAnswer",
-          "type": "object",
-          "properties": {
-            "debrief": {
-              "type": "object"
-            },
-            "tolerances": {
-              "type": "object",
-              "properties": {
-                "altitude_ft": {
-                  "type": "number"
-                },
-                "course_deg": {
-                  "type": "number"
-                },
-                "off_route_nm": {
-                  "type": "number"
-                },
-                "eta_min": {
-                  "type": "number"
-                },
-                "pattern_nm": {
-                  "type": "number"
-                },
-                "pattern_ft": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "altitude_ft",
-                "course_deg",
-                "off_route_nm",
-                "eta_min",
-                "pattern_nm",
-                "pattern_ft"
-              ]
-            }
-          },
-          "required": [
-            "debrief",
-            "tolerances"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "density_altitude_ft": {
       "description": "The altitude at which a standard day's air has density sigma.",
       "type": "object",
@@ -10005,41 +9905,6 @@
           },
           "required": [
             "floor_ft"
-          ]
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
-    "floor_caution": {
-      "description": "What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "FloorCautionInput",
-          "type": "object",
-          "properties": {
-            "segment": {
-              "type": "object",
-              "description": "A selection's segment: floor_ft, highest_ft, highest_is_obstacle, obstacle_type, obstacle_clearance_ft, congested."
-            },
-            "altitude_ft": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "segment",
-            "altitude_ft"
-          ]
-        },
-        "answer": {
-          "title": "FloorCautionAnswer",
-          "type": [
-            "string",
-            "null"
           ]
         }
       },
@@ -14766,33 +14631,6 @@
       ],
       "additionalProperties": false
     },
-    "highest_under_clouds_ft": {
-      "description": "The highest altitude that keeps 14 CFR 91.155(a)'s distance below a cloud base (MSL): 500 ft under it, 1,000 ft at or above 10,000 ft MSL.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "HighestUnderCloudsFtInput",
-          "type": "object",
-          "properties": {
-            "cloud_base_ft": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "cloud_base_ft"
-          ]
-        },
-        "answer": {
-          "title": "HighestUnderCloudsFtAnswer",
-          "type": "number"
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "hold_entry": {
       "description": "The entry into a route's hold for an airplane arriving on a course (AIM 5-3-8 j.3's sectors, read by the course flown).",
       "type": "object",
@@ -18113,37 +17951,6 @@
             "segments",
             "leave"
           ]
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
-    "lowest_vfr_cruising_altitude": {
-      "description": "The lowest VFR cruising altitude at or above a floor for a magnetic course: odd thousands plus 500 eastbound, even westbound (14 CFR 91.159(a)).",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "LowestVfrCruisingAltitudeInput",
-          "type": "object",
-          "properties": {
-            "floor_ft": {
-              "type": "number"
-            },
-            "magnetic_course_deg": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "floor_ft",
-            "magnetic_course_deg"
-          ]
-        },
-        "answer": {
-          "title": "LowestVfrCruisingAltitudeAnswer",
-          "type": "number"
         }
       },
       "required": [
@@ -30946,7 +30753,6 @@
     "approach_category",
     "approach_coaching",
     "approach_debrief",
-    "approach_descent_fpm",
     "approach_find",
     "approach_fix_tags",
     "approach_guidance",
@@ -30998,7 +30804,6 @@
     "datis_remarks",
     "debrief",
     "debrief_airborne",
-    "debrief_marked",
     "density_altitude_ft",
     "density_ratio",
     "departure_circuit",
@@ -31046,7 +30851,6 @@
     "fix_radial_distance",
     "flight_category",
     "floor_along_path",
-    "floor_caution",
     "floor_corridor_nm",
     "flow_cell",
     "flow_levels",
@@ -31102,7 +30906,6 @@
     "groundspeed_kt",
     "handbook_figures",
     "handbook_read_check",
-    "highest_under_clouds_ft",
     "hold_entry",
     "hold_figures",
     "hold_length_read",
@@ -31137,7 +30940,6 @@
     "logbook_read_check",
     "logbook_track_places",
     "lost_comms",
-    "lowest_vfr_cruising_altitude",
     "magnetic_variation",
     "mayday_call",
     "mode_c_veil",

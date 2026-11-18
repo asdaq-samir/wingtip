@@ -36,7 +36,10 @@ fn the_cruising_altitudes_are_91_159s_and_91_179s() {
 fn the_distance_under_the_clouds() {
     let f = fixture();
     for case in f["underClouds"].as_array().unwrap() {
-        assert_eq!(ask("highest_under_clouds_ft", json!({ "cloud_base_ft": case["cloud_base_ft"] })).as_f64(), case["answer"].as_f64());
+        assert_eq!(
+            Some(wingtip_engine::altitude::clouds::highest_under_ft(case["cloud_base_ft"].as_f64().unwrap())),
+            case["answer"].as_f64()
+        );
     }
 }
 

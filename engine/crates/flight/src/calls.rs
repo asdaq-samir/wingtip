@@ -20,7 +20,6 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         "density_ratio" => flight::density_ratio(ask.num("altitude_ft")?, ask.num("oat_c")?),
         "density_altitude_ft" => flight::density_altitude_ft(ask.num("sigma")?),
         "pressure_altitude_ft" => flight::pressure_altitude_ft(ask.num("elevation_ft")?, ask.num("altimeter_inhg")?),
-        "lowest_vfr_cruising_altitude" => flight::lowest_vfr_cruising_altitude(ask.num("floor_ft")?, ask.num("magnetic_course_deg")?),
         "is_eastbound" => return Ok(flight::is_eastbound(ask.num("magnetic_course_deg")?).to_string()),
         "groundspeed_kt" => flight::groundspeed_kt(
             ask.num("true_course_deg")?,
@@ -279,5 +278,19 @@ pub fn usual_base(name: &str, v: &Value) -> Result<String, String> {
     ));
     json::number(&mut out, based::MIN_SHARE);
     out.push('}');
+    Ok(out)
+}
+
+/// A field's ident as its FAA one, and whether two name one field
+/// (field.rs, `bare_field`, `same_field`).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
+pub fn field_ident(name: &str, v: &Value) -> Result<String, String> {
+    let ask = Ask::new(name, v);
+    let mut out = String::new();
+    match name {
+        "bare_field" => json::string(&mut out, &field::bare_field(ask.str("ident")?)),
+        "same_field" => out.push_str(if field::same_field(ask.str("a")?, ask.str("b")?) { "true" } else { "false" }),
+        _ => return Err(format!("the engine has no rule called {name:?}")),
+    }
     Ok(out)
 }

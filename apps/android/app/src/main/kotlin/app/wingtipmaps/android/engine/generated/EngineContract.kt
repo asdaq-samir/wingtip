@@ -1149,14 +1149,6 @@ object EngineContract {
         val passed: Int,
     )
 
-    @Serializable
-    data class ApproachDescentFpmInput(
-        @SerialName("gs_kt")
-        val gsKt: Double,
-        @SerialName("angle_deg")
-        val angleDeg: Double,
-    )
-
     /**
      * What the CIFP says of an approach besides its legs (wingtip.approach_facts): its runway, the altitudes coded beside a fix's limits, and the levels of service authorised.
      */
@@ -3041,36 +3033,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class DebriefMarkedAnswer(
-        val debrief: Map<String, JsonElement>,
-        val tolerances: EngineContract.DebriefMarkedAnswerTolerances,
-    )
-
-    @Serializable
-    data class DebriefMarkedAnswerTolerances(
-        @SerialName("altitude_ft")
-        val altitudeFt: Double,
-        @SerialName("course_deg")
-        val courseDeg: Double,
-        @SerialName("off_route_nm")
-        val offRouteNm: Double,
-        @SerialName("eta_min")
-        val etaMin: Double,
-        @SerialName("pattern_nm")
-        val patternNm: Double,
-        @SerialName("pattern_ft")
-        val patternFt: Double,
-    )
-
-    @Serializable
-    data class DebriefMarkedInput(
-        /**
-         * The debrief's figures as `debrief` gives them, unmarked: legs, passes, patterns and the rest.
-         */
-        val debrief: Map<String, JsonElement>,
-    )
-
-    @Serializable
     data class DensityAltitudeFtInput(
         val sigma: Double,
     )
@@ -4105,16 +4067,6 @@ object EngineContract {
          */
         @SerialName("lowest_ground_ft")
         val lowestGroundFt: Double? = null,
-    )
-
-    @Serializable
-    data class FloorCautionInput(
-        /**
-         * A selection's segment: floor_ft, highest_ft, highest_is_obstacle, obstacle_type, obstacle_clearance_ft, congested.
-         */
-        val segment: Map<String, JsonElement>,
-        @SerialName("altitude_ft")
-        val altitudeFt: Double,
     )
 
     @Serializable
@@ -6256,12 +6208,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class HighestUnderCloudsFtInput(
-        @SerialName("cloud_base_ft")
-        val cloudBaseFt: Double,
-    )
-
-    @Serializable
     data class HoldEntryInput(
         /**
          * The magnetic course flown to the fix.
@@ -7608,14 +7554,6 @@ object EngineContract {
         val name: String? = null,
         @SerialName("minimum_ft")
         val minimumFt: Double? = null,
-    )
-
-    @Serializable
-    data class LowestVfrCruisingAltitudeInput(
-        @SerialName("floor_ft")
-        val floorFt: Double,
-        @SerialName("magnetic_course_deg")
-        val magneticCourseDeg: Double,
     )
 
     @Serializable

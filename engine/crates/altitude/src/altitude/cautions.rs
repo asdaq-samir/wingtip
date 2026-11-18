@@ -263,6 +263,19 @@ mod tests {
         assert!(oxygen(Some(15500.0), Some(&v(r#"{"pressurized": true}"#))).is_empty());
     }
 
+    /// The shared fixture's 91.119 floors (apps/web/src/lib/fixtures/
+    /// cautions.json, from the planner's test_floor_caution.py).
+    #[test]
+    fn the_91_119_floor_by_the_rules_own_figure() {
+        let fixture = v(include_str!("../../../../../apps/web/src/lib/fixtures/cautions.json"));
+        let cases = fixture.get("floor").and_then(Value::as_array).unwrap();
+        assert!(!cases.is_empty());
+        for case in cases {
+            let got = floor(case.get("segment").unwrap(), case.get("altitude_ft").and_then(Value::as_f64).unwrap());
+            assert_eq!(got.as_deref(), case.get("answer").and_then(Value::as_str), "{case:?}");
+        }
+    }
+
     #[test]
     fn the_article_goes_with_the_figure_said() {
         let seg = v(

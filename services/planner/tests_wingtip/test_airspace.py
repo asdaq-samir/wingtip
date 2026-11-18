@@ -93,36 +93,9 @@ def test_absent_file_is_rejected(tmp_path):
     assert _shapefile_is_complete(tmp_path / "nope.shp") is False
 
 
-# --- the hemispheric cruising-altitude rule ---
+# --- the classes that take a clearance ---
 
 from wingtip.airspace import CLEARANCE_CLASSES  # noqa: E402
-from wingtip.engine import ask as engine  # noqa: E402
-
-
-def lowest_vfr_cruising_altitude(floor_ft, course):
-    return engine("lowest_vfr_cruising_altitude", floor_ft=floor_ft, magnetic_course_deg=course)
-
-
-EAST, WEST = 90.0, 270.0
-
-
-@pytest.mark.parametrize(
-    "floor_ft, bearing, expected",
-    [
-        (3000, WEST, 4500),  # KDSM->KOMA: the case that used to give 12,500
-        (2200, WEST, 2500),
-        (3000, EAST, 3500),
-        (2200, EAST, 3500),  # 2,500 is a westbound altitude, so climb to 3,500
-        (4500, WEST, 4500),  # already legal and eastbound-correct: unchanged
-        (4600, WEST, 6500),  # just above one, so the next in the same band
-    ],
-)
-def test_lowest_legal_altitude_above_the_floor(floor_ft, bearing, expected):
-    assert lowest_vfr_cruising_altitude(floor_ft, bearing) == expected
-
-
-def test_bearing_wraps():
-    assert lowest_vfr_cruising_altitude(3000, 630.0) == lowest_vfr_cruising_altitude(3000, 270.0)
 
 
 def test_only_class_b_takes_a_clearance():

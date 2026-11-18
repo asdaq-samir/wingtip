@@ -224,7 +224,7 @@ pub use tokens::*;
 mod route;
 pub use route::*;
 mod impl_clearance;
-pub use impl_clearance::*;
+use impl_clearance::*;
 mod cleared;
 pub use cleared::*;
 mod said;

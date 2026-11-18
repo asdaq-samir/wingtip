@@ -115,20 +115,6 @@ pub fn items_json(items: &[Item]) -> String {
     out
 }
 
-pub fn finding_json(found: Option<(&str, String)>) -> String {
-    match found {
-        None => "null".into(),
-        Some((finding, detail)) => {
-            let mut out = String::from("{\"finding\":");
-            json::string(&mut out, finding);
-            out.push_str(",\"detail\":");
-            json::string(&mut out, &detail);
-            out.push('}');
-            out
-        }
-    }
-}
-
 /// Strings as JSON, for the planner's lists.
 pub fn strings_json(items: &[String]) -> String {
     let mut out = String::new();

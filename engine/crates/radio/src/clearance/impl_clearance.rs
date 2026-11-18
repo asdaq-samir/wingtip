@@ -69,19 +69,6 @@ impl Clearance {
     }
 }
 
-/// Two idents one field: "KDLH" and "DLH" (the web's sameField).
-pub fn same_field(a: &str, b: &str) -> bool {
-    fn bare(s: &str) -> String {
-        let s = s.trim().to_uppercase();
-        if s.len() == 4 && s.starts_with('K') && s[1..].bytes().all(|c| c.is_ascii_alphanumeric()) {
-            s[1..].to_owned()
-        } else {
-            s
-        }
-    }
-    bare(a) == bare(b)
-}
-
 pub(super) fn is_airway(s: &str) -> bool {
     let b = s.as_bytes();
     b.len() >= 2 && b.len() <= 5 && matches!(b[0], b'V' | b'T' | b'J' | b'Q') && b[1..].iter().all(u8::is_ascii_digit)

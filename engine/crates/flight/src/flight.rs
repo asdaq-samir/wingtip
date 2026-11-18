@@ -178,3 +178,28 @@ mod isa_tests {
         assert!(isa_pressure_hpa(18_000.0) > 500.0 && isa_pressure_hpa(19_000.0) < 500.0);
     }
 }
+
+#[cfg(test)]
+mod cruising_tests {
+    use super::*;
+
+    #[test]
+    fn the_lowest_vfr_cruising_altitude_is_91_159s_first_above_the_floor() {
+        // 14 CFR 91.159(a): eastbound (000-179) odd thousands plus 500,
+        // westbound (180-359) even thousands plus 500; the planner's cases
+        // from before the move (tests_wingtip/test_airspace.py).
+        let (east, west) = (90.0, 270.0);
+        // KDSM to KOMA, the case that once gave 12,500.
+        assert_eq!(lowest_vfr_cruising_altitude(3000.0, west), 4500.0);
+        assert_eq!(lowest_vfr_cruising_altitude(2200.0, west), 2500.0);
+        assert_eq!(lowest_vfr_cruising_altitude(2200.0, 328.0), 2500.0);
+        assert_eq!(lowest_vfr_cruising_altitude(3000.0, east), 3500.0);
+        // 2,500 is a westbound altitude, so eastbound climbs to 3,500.
+        assert_eq!(lowest_vfr_cruising_altitude(2200.0, east), 3500.0);
+        // Already legal and on its side: unchanged; just above it, the next.
+        assert_eq!(lowest_vfr_cruising_altitude(4500.0, west), 4500.0);
+        assert_eq!(lowest_vfr_cruising_altitude(4600.0, west), 6500.0);
+        // A course past 360 wraps.
+        assert_eq!(lowest_vfr_cruising_altitude(3000.0, 630.0), lowest_vfr_cruising_altitude(3000.0, west));
+    }
+}

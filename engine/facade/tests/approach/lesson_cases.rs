@@ -130,7 +130,7 @@ pub(super) fn radio() -> Value {
 }
 
 pub(super) fn fpm(gs: f64, angle: f64) -> f64 {
-    ask("approach_descent_fpm", json!({"gs_kt": gs, "angle_deg": angle})).as_f64().unwrap()
+    wingtip_engine::approach::lesson::descent_fpm(gs, angle)
 }
 
 #[test]

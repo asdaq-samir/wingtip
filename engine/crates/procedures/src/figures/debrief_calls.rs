@@ -1,13 +1,12 @@
 //! The debrief by name (engine/facade/src/call.rs looks each up from its
 //! contract file): a flight against its flown track (ACS PA.VI.A,
-//! debrief.rs), the web's debrief marked as /api/debrief marks its own,
-//! and the runs of a track in the air.
+//! debrief.rs) and the runs of a track in the air.
 
 use super::debrief;
-use crate::json::{self, Value};
+use crate::json::Value;
 use wingtip_core::ask::{num_in, opt_num_in, Ask};
 
-/// `debrief`, `debrief_marked` and `debrief_airborne`.
+/// `debrief` and `debrief_airborne`.
 #[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
@@ -28,7 +27,6 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             };
             Ok(debrief::answer_json(&checkpoints, &points, &patterns))
         }
-        "debrief_marked" => marked(&ask),
         "debrief_airborne" => {
             let runs = debrief::airborne(&points(&ask)?);
             let mut out = String::from("[");
@@ -43,67 +41,6 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         }
         _ => Err(format!("the engine has no rule called {name:?}")),
     }
-}
-
-/// The web's debrief (its figures, snake_case, with no marks) marked as
-/// /api/debrief marks its own -- each leg, pass and pattern against ACS
-/// PA.VI.A's tolerances -- with the tolerances beside it: `{"debrief",
-/// "tolerances"}`. The rest of the debrief goes back as it came.
-fn marked(ask: &Ask) -> Result<String, String> {
-    let n = ask.name;
-    let Some(Value::Object(members)) = ask.v.get("debrief") else {
-        return Err(format!("{n}: \"debrief\" is not an object"));
-    };
-    let num = |v: &Value, k: &str| opt_num_in(n, v, k);
-    let opt = |v: Option<f64>| v.map_or(Value::Null, Value::Number);
-    let mut marked: Vec<(String, Value)> = Vec::new();
-    for (key, value) in members {
-        let items = || value.as_array().ok_or_else(|| format!("{n}: \"{key}\" is not a list"));
-        let with = |item: &Value, extra: Vec<(&str, Value)>| -> Result<Value, String> {
-            let Value::Object(fields) = item else { return Err(format!("{n}: an item of \"{key}\" is not an object")) };
-            let mut fields = fields.clone();
-            fields.retain(|(k, _)| !extra.iter().any(|(e, _)| e == k));
-            fields.extend(extra.into_iter().map(|(k, v)| (k.to_owned(), v)));
-            Ok(Value::Object(fields))
-        };
-        let value = match key.as_str() {
-            "legs" => Value::Array(
-                items()?
-                    .iter()
-                    .map(|l| with(l, vec![("ok", Value::Bool(debrief::leg_ok(num(l, "worst_alt_ft")?, num(l, "worst_off_nm")?)))]))
-                    .collect::<Result<_, _>>()?,
-            ),
-            "passes" => Value::Array(
-                items()?
-                    .iter()
-                    .map(|p| {
-                        let category = p.get("category").and_then(Value::as_str).unwrap_or("");
-                        let (landed, late, ok) = debrief::pass_marks(category, num(p, "due_min")?, num(p, "passed_min")?);
-                        with(p, vec![("landed", Value::Bool(landed)), ("late_min", opt(late)), ("ok", ok.map_or(Value::Null, Value::Bool))])
-                    })
-                    .collect::<Result<_, _>>()?,
-            ),
-            "patterns" => Value::Array(
-                items()?
-                    .iter()
-                    .map(|e| {
-                        let alt = num(e, "alt_ft")?.ok_or_else(|| format!("{n}: a pattern's \"alt_ft\" is missing"))?;
-                        let pattern = num(e, "pattern_ft")?.ok_or_else(|| format!("{n}: a pattern's \"pattern_ft\" is missing"))?;
-                        let (off, ok) = debrief::pattern_marks(alt, pattern);
-                        with(e, vec![("off_ft", Value::Number(off)), ("ok", Value::Bool(ok))])
-                    })
-                    .collect::<Result<_, _>>()?,
-            ),
-            _ => value.clone(),
-        };
-        marked.push((key.clone(), value));
-    }
-    let mut out = String::from("{\"debrief\":");
-    json::value(&mut out, &Value::Object(marked));
-    out.push_str(",\"tolerances\":");
-    out.push_str(&debrief::tolerances_json());
-    out.push('}');
-    Ok(out)
 }
 
 fn checkpoints(ask: &Ask) -> Result<Vec<debrief::Checkpoint>, String> {

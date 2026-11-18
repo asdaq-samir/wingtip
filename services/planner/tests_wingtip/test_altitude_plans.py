@@ -15,10 +15,6 @@ def is_eastbound(course):
     return engine("is_eastbound", magnetic_course_deg=course)
 
 
-def lowest_vfr_cruising_altitude(floor_ft, course):
-    return engine("lowest_vfr_cruising_altitude", floor_ft=floor_ft, magnetic_course_deg=course)
-
-
 def legal_cruising_altitudes(floor_ft, ceiling_ft, course, rule_from_ft=None):
     return engine(
         "legal_cruising_altitudes", floor_ft=floor_ft, ceiling_ft=ceiling_ft, magnetic_course_deg=course, rule_from_ft=rule_from_ft
@@ -44,11 +40,6 @@ PROFILE = {
 def _standard_day(monkeypatch):
     """No forecast temperatures: every leg flies a standard day's air."""
     monkeypatch.setattr(navlog, "air_at", _winds({}))
-
-
-def test_lowest_legal_altitude_follows_the_hemispheric_rule():
-    assert lowest_vfr_cruising_altitude(2200.0, 328.0) == 2500.0  # westbound: even thousands + 500
-    assert lowest_vfr_cruising_altitude(2200.0, 90.0) == 3500.0  # eastbound: odd thousands + 500
 
 
 def test_the_hemisphere_is_decided_once_for_the_page_to_name():

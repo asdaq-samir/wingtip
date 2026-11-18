@@ -6,10 +6,11 @@
 //! ITWS's alerts (AIM 4-3-7). Each says where its figure comes from.
 
 use crate::fields::{self, Pick, Weather};
-use crate::input::{same_field, Field};
+use crate::input::Field;
 use crate::message::{minutes_words, zulu, Level, Message};
 use crate::watch::Flight;
 use wingtip_core::geo;
+use wingtip_flight::field::same_field;
 use wingtip_flight::{field, sun};
 use wingtip_procedures::figures::debrief::AIRBORNE_KT;
 use wingtip_procedures::figures::words::{ceiling_and_visibility, js_num};
