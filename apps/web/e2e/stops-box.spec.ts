@@ -180,8 +180,12 @@ test("a long route's box is one row that slides sideways to the rest, faded wher
   expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1);
   expect(box.scrollWidth).toBeGreaterThan(box.clientWidth + 40);
   expect(box.mask).toContain("gradient");
-  // Slid to its end: the destination whole in sight.
+  // Slid to its end: the destination whole in sight. All the way up the
+  // timeline lists each of the ten points as its own row, the route's
+  // field under them past the screen's foot: the sheet scrolled to it
+  // first, as a finger does.
   const destination = sideDrawer(page).getByTestId("route-dest");
+  await lines.scrollIntoViewIfNeeded();
   await lines.evaluate((el) => el.scrollTo(el.scrollWidth, 0));
   await expect(destination).toBeInViewport({ ratio: 1 });
 });

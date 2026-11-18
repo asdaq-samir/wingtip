@@ -58,8 +58,11 @@ test.describe("cards over the pages", () => {
     await openAirport(page, "KOSH");
     await sideDrawer(page).getByTestId("place-card").getByTestId("fly-here").click();
     await expect(page).toHaveURL(/[?&]dest=KOSH/, { timeout: slow(15_000) });
-    // Half a route, cleared by the route box's own ✕ (the owner, 2026-11-18).
-    await sideDrawer(page).getByTestId("route-box-clear").click();
+    // Flown from My Location (the position given), a whole route: cleared
+    // from More's Clear route, half a route's ✕ being the empty box's alone
+    // (the owner, 2026-11-18).
+    await expect(sideDrawer(page).getByTestId("timeline-ident")).toHaveText(["My Location", "KOSH"], { timeout: slow(15_000) });
+    await clearTheRoute(page);
     await expect(page).not.toHaveURL(/[?&]dest=/);
     await expectShown(page, 1);
     // The route's actions went with it, no ••• in the first row and no ✕

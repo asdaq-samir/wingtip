@@ -81,9 +81,8 @@ test("the toggle ends the first row on both pages, the bar before it one size, a
   const search = await measure();
   for (const m of [fpl, search]) {
     // The toggle at the row's end, sixteen in from the sheet's edge, level
-    // with the bar, eight after it.
+    // with the bar.
     expect(m.viewport - m.toggle.right).toBeCloseTo(16, 0);
-    expect(m.toggle.left - m.bar.right).toBeCloseTo(8, 0);
     expect(m.toggle.top + m.toggle.h / 2).toBeCloseTo(m.bar.top + m.bar.h / 2, 0);
     // The account button over the sheet's top at the left, under the 3D.
     expect(m.account.bottom).toBeLessThanOrEqual(m.sheet.top);
@@ -95,6 +94,8 @@ test("the toggle ends the first row on both pages, the bar before it one size, a
   // page's own: the search's field fills to the toggle, FPL's strip is
   // centred in the row (the owner, 2026-11-17).
   for (const k of ["top", "h"] as const) expect(search.bar[k], `the bar's ${k}`).toBeCloseTo(fpl.bar[k], 0);
+  // The search's field runs on to eight before the toggle.
+  expect(search.toggle.left - search.bar.right).toBeCloseTo(8, 0);
   for (const k of ["top", "left", "w", "h"] as const) expect(search.toggle[k], `the toggle's ${k}`).toBeCloseTo(fpl.toggle[k], 0);
   // FPL's strip is centred between the row's ends (the routes button's slot
   // at the left, which may be empty, and the page toggle at the right).
@@ -244,7 +245,7 @@ test("a sideways drag on the Nearest row is the row's, and no page turns", async
   await expectPage(page, 0);
 });
 
-test("a card open covers the row and its toggle, the account button riding its top, and its close brings the toggle back", async ({
+test("a card open covers the row and its toggle, the account button riding its top, and its close and the search's Cancel bring the toggle back", async ({
   page,
 }) => {
   // The toggle is the sheet's own row's since the owner swapped it with
@@ -268,6 +269,12 @@ test("a card open covers the row and its toggle, the account button riding its t
   }
   await page.getByTestId("place-close").last().click();
   await expect(openCards).toHaveCount(0);
+  // Back to the search as typed (29eabc410), its Cancel in the toggle's
+  // place while the field is in use, as iOS's search fields have it
+  // (OneSearchField); Cancel lets the search go and the toggle is back.
+  await expect(page.getByTestId("search-airports")).toHaveValue("KOSH");
+  await expect(toggle(page)).toHaveCount(0);
+  await page.getByTestId("one-search-cancel").click();
   await expect(toggle(page)).toBeVisible();
   await toggle(page).click();
   await expectShown(page, 1);
