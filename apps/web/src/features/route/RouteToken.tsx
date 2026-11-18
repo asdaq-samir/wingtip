@@ -193,7 +193,12 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
       {last && (!hasDest || box.focused || box.typedAtEnd) && (
         <ArrowRight className={ARROW} aria-hidden="true" data-testid="route-arrow-on" />
       )}
-      {last && !hasDest && !box.typedAtEnd && (
+      {/* The word for what is asked, only while the box is not typed in:
+          drawn in the last point's token, the caret came after it, and
+          "C81 → Destination|" read as if the word were typed (the owner,
+          2026-11-18: "Why the word Destination before the cursor?"); the
+          timeline's own Destination row says what is missing. */}
+      {last && !hasDest && !box.typedAtEnd && !box.focused && (
         <span aria-hidden="true" className={ASKING}>
           Destination
         </span>
