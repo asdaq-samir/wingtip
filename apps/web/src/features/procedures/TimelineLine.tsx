@@ -20,13 +20,22 @@ export interface TimelinePoint {
   role: ProcedureAirport["role"];
   /** Its place among the route's typed points (routePoints). */
   index: number;
+  /** How many times the route is at it before, and which visit this is
+   *  where it is at it more than once (visitAt): its nav log row's and
+   *  its own altitude's. */
+  seen: number;
+  visit: number | undefined;
   /** Its time: the departure's leave time, the others' arrival. */
   time: ReactNode;
   /** Its flight category from its latest METAR; none with no report. */
   category: string | null;
   /** Why it cannot be flown to, in red under it: a point the planner does
-   *  not know, or a field NASR lists as closed (decision 0043). */
+   *  not know, a field NASR lists as closed (decision 0043), or a field
+   *  whose card could not be had to say. */
   problem: string | null;
+  /** A field whose card has not said yet whether it is open: its line
+   *  does not open to its runways and procedures till it has (0043). */
+  checking: boolean;
   /** A fuel stop the plan or the pilot picked. */
   fuelStop: boolean;
   /** An airport, not My Location or a waypoint. */
@@ -109,7 +118,8 @@ export function TimelineLine({
   onOpen: (open: boolean) => void;
 }) {
   const { onInfo, tanks, reportedOf } = vm;
-  const opens = !!field && !!vm.edit && !point.problem;
+  // Never opened to land at before the field is known open (decision 0043).
+  const opens = !!field && !!vm.edit && !point.problem && !point.checking;
   const tank = point.role === "Departure" ? tanks.get("departure") : row ? tanks.get(row.key) : undefined;
   const reported = reportedOf(point.ident);
   const parts = field ? fieldParts(vm, field, row) : [];

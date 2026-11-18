@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { normalizeDeg } from "../../lib/geo";
 import { sameField, type PickedProcedure } from "../../lib/procedures";
 import type { EditedPoint } from "../route";
 import type { HoldAt } from "./HoldSheet";
@@ -50,8 +49,8 @@ export function useRouteSheets({ holds, rows, askHold }: { holds: Hold[]; rows: 
           fix,
           hold: holdOn(fix),
           altitudeFt: leg.altitude_ft,
-          // Magnetic = true - variation, east positive (the leg's own).
-          arrivalDeg: normalizeDeg(leg.true_course_deg - leg.magnetic_variation_deg),
+          // The leg's own magnetic course, the planner's (useLegSheet's).
+          arrivalDeg: leg.magnetic_course_deg ?? null,
         },
       });
     }

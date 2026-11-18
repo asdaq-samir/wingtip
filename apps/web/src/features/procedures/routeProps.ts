@@ -102,8 +102,9 @@ export interface ProceduresRouteProps {
   onDirectTo: (ident: string | null) => void;
   /** A point's card (an airport's, a waypoint's), from its menu. */
   onInfo: (ident: string) => void;
-  /** A stop taken out of the route, from its menu. */
-  onRemove: (ident: string) => void;
+  /** A stop taken out of the route, from its menu: the visit at `at`
+   *  among the route's points, not every visit of it. */
+  onRemove: (ident: string, at?: number) => void;
   /** The pilot's own point off one of the route's, flown over after it
    *  (FixFromDialog): "VPBNG/090/30". */
   onCreateFix: (after: string, ident: string) => void;

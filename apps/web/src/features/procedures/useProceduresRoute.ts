@@ -33,6 +33,12 @@ export const DAY_MIN = 24 * 60;
  *  seconds untouched. */
 export const useOpenRunwayLines = create<{ open: string[] }>(() => ({ open: [] }));
 
+/** A runway line opened or folded, by its key: in the list once at most. */
+export const setRunwayLine = (key: string, open: boolean) =>
+  useOpenRunwayLines.setState((s) => ({
+    open: open ? (s.open.includes(key) ? s.open : [...s.open, key]) : s.open.filter((k) => k !== key),
+  }));
+
 /** The route's fields toggled from how they start -- folded to one row --
  *  by their part and field ("Stop:KMSN"): kept while the page is, as the
  *  list is drawn again. A field folded folds its runway lines with it

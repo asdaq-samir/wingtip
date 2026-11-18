@@ -8,6 +8,7 @@ import { courseQuery, queryClient } from "../../lib/queryClient";
 import { feel } from "../../lib/haptics";
 import { rebasedRoute } from "./routeRebase";
 import type { RouteParts } from "./RouteBox";
+import { withoutStop } from "./routeEdit";
 
 /** A picked procedure's kind, from its drawing where it has been asked for:
  *  what prunedFieldLists needs to keep an approach only where the route
@@ -168,10 +169,16 @@ export function useRouteEdits({
       setRoute({ dep: planned.dep, stops, dest: planned.dest }, fuelAdded, keepLists),
     [setRoute, planned.dep, planned.dest],
   );
-  // A stop taken out from its menu in FPL's list, as from its pill's.
+  // A stop taken out from its menu in FPL's list, as from its pill's: the
+  // visit tapped, by its place among the route's points (`at`), else the
+  // first -- never every visit of a point the route is at twice -- and not
+  // where that would put a point straight after itself (withoutStop).
   const removeStop = useCallback(
-    (ident: string) => setStops(planned.stops.filter((stop) => !sameField(stop, ident))),
-    [setStops, planned.stops],
+    (ident: string, at?: number) => {
+      const next = withoutStop({ dep: planned.dep, stops: planned.stops, dest: planned.dest }, ident, at);
+      if (next) setStops(next.stops);
+    },
+    [setStops, planned.dep, planned.stops, planned.dest],
   );
   // The pilot's own point (FixFromDialog), flown over straight after the
   // point it was made off: the first stop after the departure, before the

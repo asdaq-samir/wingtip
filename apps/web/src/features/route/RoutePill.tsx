@@ -25,6 +25,7 @@ import { holdGuard } from "./holdGuard";
  *  ask. Any of them, the ends too (routeEdit's withoutPoint). */
 export default function RoutePill({
   onStep,
+  canStep,
   last,
   ident,
   waypoint,
@@ -44,6 +45,8 @@ export default function RoutePill({
 }: {
   /** It, a place earlier (-1) or later (1): its menu's Move Up and Down. */
   onStep: (by: -1 | 1) => void;
+  /** Whether a step that way leaves every point where it may go. */
+  canStep: (by: -1 | 1) => boolean;
   last: boolean;
   ident: string;
   waypoint: boolean;
@@ -184,8 +187,8 @@ export default function RoutePill({
             onDirect,
             onAltitude: onEditAltitude,
             onInfo: onOpen,
-            onMoveUp: index > 0 ? () => onStep(-1) : undefined,
-            onMoveDown: last ? undefined : () => onStep(1),
+            onMoveUp: index > 0 && canStep(-1) ? () => onStep(-1) : undefined,
+            onMoveDown: !last && canStep(1) ? () => onStep(1) : undefined,
             onRemove,
             altitude: (
               <span className={cn("flex items-center gap-1", altitude.caution?.length && "text-caution-ink")}>

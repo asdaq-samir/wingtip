@@ -88,6 +88,9 @@ export function useRouteBox({
     if (route) send(route);
     return route;
   };
+  // Whether the box would take a new list (routeOf: each point where it
+  // may go), for the moves its pills' menus offer.
+  const canChange = (list: string[]) => routeOf(list, hasDep, hasDest, isEnd) !== null;
   const remove = (i: number) => {
     const route = withoutPoint(shape, i);
     if (route) send(route);
@@ -266,6 +269,7 @@ export function useRouteBox({
     full,
     roleOf,
     change,
+    canChange,
     remove,
     value,
     onValue,

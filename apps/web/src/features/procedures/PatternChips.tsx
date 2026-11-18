@@ -8,7 +8,7 @@ import type { Runway } from "../../lib/api/types";
 import { runwayNumber, type RunwayEnd, type WindPick, type Landing, type ProcedureAirport } from "../plan";
 import { trafficPattern } from "../../lib/trafficPattern";
 import type { EndFit } from "./runwayFit";
-import { useOpenRunwayLines } from "./useProceduresRoute";
+import { setRunwayLine, useOpenRunwayLines } from "./useProceduresRoute";
 import { CHIP } from "./routeListStyle";
 import { Chips, NONE, TRAY_BODY } from "./RunwayChips";
 
@@ -86,8 +86,7 @@ export function PatternChips({
   // foot and its body.
   const key = `${a.ident}:${label ?? ""}`;
   const open = useOpenRunwayLines((s) => s.open.includes(key));
-  const setOpen = (next: boolean) =>
-    useOpenRunwayLines.setState((s) => ({ open: next ? [...s.open, key] : s.open.filter((k) => k !== key) }));
+  const setOpen = (next: boolean) => setRunwayLine(key, next);
   const chip = (runway: Runway, end: RunwayEnd) => {
     const id = runwayNumber(end.ident);
     const windward = into === id;

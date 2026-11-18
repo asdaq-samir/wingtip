@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 import { create } from "zustand";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
+import { Collapsible, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { isPosition } from "../../lib/identSchema";
 import { useRouteOnly } from "../../lib/map/routeOnly";
 import { sameField } from "../../lib/procedures";
@@ -11,15 +12,19 @@ import { RouteGrid, type RouteItem } from "./RouteGrid";
 import { AddStopRow } from "./RouteRows";
 import { RouteSheets } from "./RouteSheets";
 import { TimelineLine, TimelineMark, type TimelinePoint } from "./TimelineLine";
+import { visitRow } from "./visits";
 import type { ProceduresRouteProps } from "./routeProps";
 import { toggleField, useProceduresRoute } from "./useProceduresRoute";
 
 export type { TimelinePoint } from "./TimelineLine";
 
 /** The one line open to its runways and procedures, by its key, and the
- *  stops unfolded, kept while the page is: the timeline is drawn again as
- *  the sheet moves. */
-const useOpenLine = create<{ key: string | null; stops: boolean }>(() => ({ key: null, stops: false }));
+ *  stops unfolded (null: as they start, folded but where the fields open at
+ *  first), kept while the page is: the timeline is drawn again as the
+ *  sheet moves. The open line's key is for the route it was opened on
+ *  (`route`): a line's key is its place, and a route changed puts another
+ *  point there. */
+const useOpenLine = create<{ key: string | null; stops: boolean | null; route: string }>(() => ({ key: null, stops: null, route: "" }));
 
 /**
  * FPL's route on the ground (the one layout, decision 0046; the owner's
@@ -38,17 +43,32 @@ const useOpenLine = create<{ key: string | null; stops: boolean }>(() => ({ key:
  * between the two ends fold into a small pill on the hairline, "2 stops", a tap unfolding
  * them and another folding them again (the owner, 2026-11-17: "With any
  * stops in between dep and dest, we can fold the stops by saying how many
- * stops etc and then unfold when tapped"); a stop whose line is open
- * keeps them unfolded. Add a Stop is the last row, asking the one search. The sheets the
+ * stops etc and then unfold when tapped"), a stock Collapsible's trigger;
+ * a stop whose line is open keeps them unfolded, and a point moved
+ * unfolds them, so it is never moved out of sight. Add a Stop is the last row, asking the one search. The sheets the
  * route opens are its (RouteSheets). In a dry run it is read, no line
  * opening and no menus.
  */
 export default function TimelineRoute({ points, ...props }: ProceduresRouteProps & { points: TimelinePoint[] }) {
   const vm = useProceduresRoute(props);
-  const { airports, edit, routePoints, stopsFull } = vm;
+  const { airports, routePoints, stopsFull } = vm;
+  // A point moved, from its menu or by a drop beside an end, unfolds the
+  // stops: one carried among them is not hidden in the fold.
+  const edit = vm.edit && {
+    ...vm.edit,
+    onMove: (from: number, to: number) => {
+      useOpenLine.setState({ stops: true });
+      vm.edit!.onMove(from, to);
+    },
+  };
+  const moving = { ...vm, edit };
   const keyOf = (p: TimelinePoint) => `${p.role}:${p.ident}:${p.index}`;
-  const openKey = useOpenLine((s) => s.key);
-  const all = useOpenLine((s) => s.stops);
+  const route = routePoints.join(" ");
+  const openKey = useOpenLine((s) => (s.route === route ? s.key : null));
+  useEffect(() => {
+    if (useOpenLine.getState().route !== route) useOpenLine.setState({ route, key: null });
+  }, [route]);
+  const all = useOpenLine((s) => s.stops) ?? vm.openAtFirst;
   const open = points.find((p) => keyOf(p) === openKey) ?? null;
   // The map: the route's points alone and the open line's centred.
   const focus = open && edit ? open.ident : null;
@@ -58,7 +78,10 @@ export default function TimelineRoute({ points, ...props }: ProceduresRouteProps
   useEffect(() => () => useRouteOnly.setState({ on: false, focus: null }), []);
   const stops = points.slice(1, -1);
   const count = stops.length;
-  const stopOpen = stops.some((p) => (vm.openAtFirst ? vm.isOpen(keyOf(p)) : openKey === keyOf(p)));
+  // A pilot's one open stop keeps them unfolded; the specs' fields, each
+  // open at first (openAtFirst), start them unfolded (`all`) and the pill
+  // still folds them.
+  const stopOpen = !vm.openAtFirst && stops.some((p) => openKey === keyOf(p));
   const unfolded = all || stopOpen;
   // The ends, and between them the stops' one line: the stops after it
   // where unfolded, as a disclosure row's rows follow it.
@@ -76,38 +99,43 @@ export default function TimelineRoute({ points, ...props }: ProceduresRouteProps
           // secondary button at its smallest, rounded, centred on the hairline
           // (from the text's start, 2.75 rem in, to the end; the owner: "Center
           // the stops pull"),
-          // its 44-point area a pseudo-element over the hairline. The line
-          // under it draws the hairline it sits on.
-          <div className="relative z-10 h-0">
-            <Button
-              variant="secondary"
-              size="xs"
-              // Folding them closes a stop's open line with them.
-              onClick={() => useOpenLine.setState(unfolded ? { stops: false, key: stopOpen ? null : openKey } : { stops: true })}
-              aria-expanded={unfolded}
-              data-testid="timeline-more"
-              className="absolute top-0 left-[calc(50%+1.375rem)] -translate-1/2 rounded-full after:absolute after:-inset-x-2 after:-inset-y-2.5 after:content-['']"
+          // its area a pseudo-element over the hairline. The line
+          // under it draws the hairline it sits on. Base UI's Collapsible
+          // holds whether they are out, its trigger the pill (aria-expanded
+          // its own); the stops it shows are the list's rows. Its area only
+          // a point above and below the pill, short of the rows either side
+          // (the owner took a smaller area here over one that lay on them).
+          <Collapsible
+            open={unfolded}
+            // Folding them closes a stop's open line with them.
+            onOpenChange={(next) => useOpenLine.setState(next ? { stops: true } : { stops: false, key: stopOpen ? null : openKey })}
+            render={<div className="relative z-10 h-0" />}
+          >
+            <CollapsibleTrigger
+              render={
+                <Button
+                  variant="secondary"
+                  size="xs"
+                  data-testid="timeline-more"
+                  className="absolute top-0 left-[calc(50%+1.375rem)] -translate-1/2 rounded-full after:absolute after:-inset-x-2 after:-inset-y-1 after:content-['']"
+                />
+              }
             >
               {words}
               <ChevronDown
                 className={cn("size-3.5 transition-transform motion-reduce:transition-none", unfolded && "rotate-180")}
                 aria-hidden
               />
-            </Button>
-          </div>
+            </CollapsibleTrigger>
+          </Collapsible>
         ),
       };
     }
     const field = point.field ? airports.find((a) => a.role === point.role && sameField(a.ident, point.ident)) : undefined;
-    // Its row of the nav log, for its tanks, its leg's altitude and a hold's course in.
-    const row = vm.rows.find((r) =>
-      point.role === "Departure"
-        ? r.kind === "departure"
-        : point.role === "Destination"
-          ? r.kind === "destination"
-          : r.kind === "stop" && "airport" in r && sameField(r.airport.ident, point.ident),
-    );
-    const end = pointEnd(vm, point.ident, {
+    // Its visit's row of the nav log, for its tanks, its leg's altitude and
+    // a hold's course in: a point the route is at twice has two (visitRow).
+    const row = visitRow(vm.rows, point.role, point.ident, point.seen);
+    const end = pointEnd(moving, point.ident, {
       time: point.time,
       waypoint: !point.field && !isPosition(point.ident),
       elevationFt: field?.elevationFt ?? null,
@@ -116,6 +144,7 @@ export default function TimelineRoute({ points, ...props }: ProceduresRouteProps
       holdable: point.role === "Destination" || (!point.field && !isPosition(point.ident)),
       row,
       index: point.index,
+      visit: point.visit,
     });
     const mark = <TimelineMark point={point} position={isPosition(point.ident)} more={!!edit} />;
     const key = keyOf(point);
@@ -125,7 +154,7 @@ export default function TimelineRoute({ points, ...props }: ProceduresRouteProps
       point: edit ? point.index : undefined,
       node: (
         <TimelineLine
-          vm={vm}
+          vm={moving}
           point={point}
           row={row}
           field={field}
@@ -137,7 +166,9 @@ export default function TimelineRoute({ points, ...props }: ProceduresRouteProps
           // (useProceduresRoute's openAtFirst), as they work on their
           // runways and procedures; a pilot's one at a time.
           open={vm.openAtFirst ? vm.isOpen(key) : openKey === key}
-          onOpen={(next) => (vm.openAtFirst ? toggleField(key, point.ident, next) : useOpenLine.setState({ key: next ? key : null }))}
+          onOpen={(next) =>
+            vm.openAtFirst ? toggleField(key, point.ident, next) : useOpenLine.setState({ key: next ? key : null, route })
+          }
         />
       ),
     };

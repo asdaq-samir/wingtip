@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { normalizeDeg } from "../../lib/geo";
 import { sameField } from "../../lib/procedures";
 import { altFt } from "../../lib/format";
 import { isFixIdent, isPosition, pointName, visitKey } from "../../lib/identSchema";
@@ -10,27 +9,30 @@ import type { ProceduresRouteModel } from "./useProceduresRoute";
 import { PointGrip } from "./RouteGrid";
 
 /** A stop's Remove, where its row's menu has one: one the pilot typed,
- *  taken out of the route by the menu's own handler (its Undo the plan's). */
-function stopRemoval(vm: ProceduresRouteModel, ident: string, stop: boolean): { label: string; onRemove: () => void } | undefined {
+ *  taken out of the route by the menu's own handler (its Undo the plan's)
+ *  -- this visit alone, by its place (`index`), where the route is at the
+ *  point more than once. */
+function stopRemoval(vm: ProceduresRouteModel, ident: string, stop: boolean, index?: number): (() => void) | undefined {
   if (!stop || !vm.routePoints.some((p) => sameField(p, ident))) return undefined;
-  return { label: `Remove ${pointName(ident)} from the route`, onRemove: () => vm.onRemove(ident) };
+  return () => vm.onRemove(ident, index);
 }
 
 /**
  * A point of the route changed, the owner's "Changeable by tapping"
  * (2026-11-17, Apple Maps' Directions as the model): the one search asked
  * for the point to put in its place, My Location first where the point is
- * not it already, and the pick put there (a Direct To's start changed is a
- * route from there; the plan's Undo takes it back). A stop may be a fix;
- * an end is an airport or My Location.
+ * an end and not it already, and the pick put there (a Direct To's start
+ * changed is a route from there; the plan's Undo takes it back). A stop
+ * may be a fix, never My Location (placeAllowed); an end is an airport or
+ * My Location.
  */
-function askChange(vm: ProceduresRouteModel, ident: string, index: number, fixes: boolean) {
+function askChange(vm: ProceduresRouteModel, ident: string, index: number, stop: boolean, fixes: boolean) {
   const edit = vm.edit;
   if (!edit) return;
   askSearchPick({
     label: `In place of ${pointName(ident)}`,
     fixes,
-    position: !isPosition(ident),
+    position: !isPosition(ident) && !stop,
     onPick: (picked) => {
       if (!sameField(picked, ident)) edit.onReplace(index, isPosition(picked) ? picked : picked.toUpperCase());
     },
@@ -131,8 +133,9 @@ export function pointEnd(
                   fix: ident,
                   hold: holdOn(ident),
                   altitudeFt: leg?.altitude_ft ?? null,
-                  // Magnetic = true - variation, east positive (the leg's own).
-                  arrivalDeg: leg ? normalizeDeg(leg.true_course_deg - leg.magnetic_variation_deg) : null,
+                  // The leg's own magnetic course, the planner's (the engine's
+                  // variation), as the leg's card says it (useLegSheet).
+                  arrivalDeg: leg?.magnetic_course_deg ?? null,
                 });
               }
             : undefined
@@ -140,7 +143,7 @@ export function pointEnd(
         // An airport changed here, by the one search asked for an airport,
         // its ident a link to its card (FieldHead; the owner, 2026-11-17:
         // "Can we make the airports/stops tappable as the navlog does?").
-        onChange={edit && at.index !== undefined ? () => askChange(vm, ident, at.index!, at.stop || at.waypoint) : undefined}
+        onChange={edit && at.index !== undefined ? () => askChange(vm, ident, at.index!, at.stop, at.stop || at.waypoint) : undefined}
         onAddAfter={
           edit && at.index !== undefined && at.index < routePoints.length - 1 && !stopsFull ? () => edit.onAddAt(at.index! + 1) : undefined
         }
@@ -154,7 +157,7 @@ export function pointEnd(
             ? () => edit.onMove(at.index!, at.index! + 1)
             : undefined
         }
-        onRemove={stopRemoval(vm, ident, at.stop)?.onRemove}
+        onRemove={stopRemoval(vm, ident, at.stop, at.index)}
       />
     ),
     // Its grip, where the list changes the route: by its place among the
