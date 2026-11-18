@@ -20,9 +20,7 @@ services/gateway/src/main/java/app/wingtipmaps/gateway/security/SecurityConfig.j
 services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 531
 services/gateway/src/test/java/app/wingtipmaps/gateway/controller/AircraftControllerTest.java 424
 services/gateway/src/test/java/app/wingtipmaps/gateway/controller/PlannerProxyControllerTest.java 543
-services/ingest/ingest/swim.py 411
-services/jobs/charts/overlays.py 652
+services/ingest/ingest/swim.py 403
 services/jobs/charts/tests/test_overlays.py 791
 services/planner/wingtip/charts.py 2336
-services/weather/app/gfs.py 402
 services/weather/tests/test_aviationweather.py 557

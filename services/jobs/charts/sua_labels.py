@@ -24,7 +24,7 @@ import math
 
 from wingtip import airspace_tabs
 
-from .overlays import SPECIAL_USE_MIN_ZOOM, _feature, _meets, _orient
+from .overlay_layers import SPECIAL_USE_MIN_ZOOM, _feature, _meets, _orient
 
 
 def _edge_place(geometry) -> tuple[tuple[float, float], float, int]:
@@ -35,7 +35,7 @@ def _edge_place(geometry) -> tuple[tuple[float, float], float, int]:
     map to set the tab just inside the line. In a plane tangent at the
     side's middle (east scaled by the cosine of the latitude), the web
     map's own angle near it (Mercator is conformal). The outer ring runs
-    counter-clockwise (overlays._orient), so the area is on its left."""
+    counter-clockwise (overlay_layers._orient), so the area is on its left."""
     polygon = max(getattr(geometry, "geoms", [geometry]), key=lambda p: p.area)
     ring = list(polygon.exterior.coords)
     k = math.cos(math.radians(polygon.centroid.y))
