@@ -25,10 +25,13 @@ test("the profile is a card from its button beside the AI brief's, no swipe at t
   // sheet's foot (FplTabBar; the owner, 2026-11-16).
   await expect(panel.getByTestId("fpl-actions").getByTestId("route-navlog")).toBeVisible();
   const card = await openProfile(page);
-  // Named Profile, its cruise and clearance verdict the short line under
-  // the name, as the cards canvas draws it (95f9e953b's ProfileLine).
+  // Named Profile, by how much the cruise clears the ground the short line
+  // under the name (ProfileLine): the cruise itself is the side view's tag
+  // and FPL's altitude, not said again (the owner's list, 2026-11-17).
   await expect(card.getByTestId("profile-name")).toHaveText("Profile");
-  await expect(card.getByTestId("card-sub").first()).toContainText(/^Cruise /);
+  await expect(card.getByTestId("card-sub").first()).toHaveText(/^Clears terrain by [\d,]+ ft$|^[\d,]+ ft below terrain$/, {
+    timeout: slow(60_000),
+  });
   await expect(card.getByTestId("mini-profile")).toBeVisible();
   // Flown in the card, in the side view's place (the owner's "profile
   // should play the dry run within profile card"); stopped, the side view
