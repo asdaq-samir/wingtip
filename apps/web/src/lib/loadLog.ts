@@ -68,10 +68,13 @@ const PROBES: Record<string, Milestone> = {
   "airport-marks": "airports",
 };
 
-/** Whether the log is still looking at this load: the map's probes write
- *  for it until it is done (lib/map/gl/useGlProbe), then only for tests. */
+/** Whether the log is still looking at this load for the probe `name`:
+ *  the four probes it reads write for it until it is done (lib/map/gl/
+ *  useGlProbe), then only for tests. The map's other probes never write
+ *  for it: each queries the map's drawn features at every idle, and a
+ *  load whose milestones are not all reached looks for 30 s. */
 let looking = false;
-export const loadLogLooking = () => looking;
+export const loadLogLooking = (name: string) => looking && name in PROBES;
 
 /** Started once, as the app starts (main.tsx). */
 export function startLoadLog(win: Window = window) {

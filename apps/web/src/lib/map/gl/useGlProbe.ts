@@ -31,7 +31,7 @@ export function useGlProbe(name: string, layers: string[], fields: (f: MapGeoJSO
     el.setAttribute(attr, "[]");
     map.getContainer().appendChild(el);
     const write = () => {
-      if (!testDriven() && !loadLogLooking()) return;
+      if (!testDriven() && !loadLogLooking(name)) return;
       const present = ids.split(",").filter((l) => map.getLayer(l));
       const seen = new Set<string>();
       const out: Record<string, unknown>[] = [];
@@ -82,7 +82,7 @@ export function useGlProbe(name: string, layers: string[], fields: (f: MapGeoJSO
     // once its marks are placed (map.spec's airports under a finger's pan).
     let timer = 0;
     const came = (e: MapSourceDataEvent) => {
-      if (!e.tile || timer || !map.isMoving() || (!testDriven() && !loadLogLooking())) return;
+      if (!e.tile || timer || !map.isMoving() || (!testDriven() && !loadLogLooking(name))) return;
       timer = window.setTimeout(() => {
         timer = 0;
         write();
