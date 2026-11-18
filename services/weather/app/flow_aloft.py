@@ -30,11 +30,10 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import datetime
 
-import gribberish
 import numpy as np
 from wingtip.units import K_AT_0C, M_PER_FT, MS_TO_KT
 
-from . import flow_grid
+from . import flow_grid, nomads
 
 #: The GFS's 0.5- and 1-degree files come every third forecast hour
 #: (NOMADS' gfs.tHHz.pgrb2full.0p50.f000, f003 ...; 0.25 degree, hourly,
@@ -58,23 +57,11 @@ WORLD_BOUNDS = (-180.5, -90.5, 179.5, 90.5)
 Download = Callable[[str, dict, tuple], "bytes | None"]
 
 
-def _messages(body: bytes):
-    offset = 0
-    while offset < len(body):
-        message = gribberish.parse_grib_message(body, offset)
-        offset += message.metadata.message_size
-        yield message
-
-
-def _dir(run: datetime) -> str:
-    return f"/gfs.{run:%Y%m%d}/{run:%H}/atmos"
-
-
 def column_body(download: Download, run: datetime, step: int, hpa: list[float], wind: bool = False) -> bytes | None:
     """The GFS's TMP and HGT at `hpa`, boxed to the layer; with `wind`,
     its UGRD and VGRD there too (AWC's levels' fallback, app.flow)."""
     box = {"toplat": flow_grid.NORTH, "bottomlat": flow_grid.SOUTH, "leftlon": flow_grid.WEST, "rightlon": flow_grid.EAST}
-    params = {"dir": _dir(run), "file": f"gfs.t{run:%H}z.pgrb2full.0p50.f{step:03d}", "subregion": "", **box}
+    params = {"dir": nomads.gfs_dir(run), "file": f"gfs.t{run:%H}z.pgrb2full.0p50.f{step:03d}", "subregion": "", **box}
     names = ("TMP", "HGT", "UGRD", "VGRD") if wind else ("TMP", "HGT")
     return download(GFS_HALF_URL, params, ((names, tuple(f"{int(p)}_mb" for p in hpa)),))
 
@@ -84,7 +71,7 @@ def read_columns(body: bytes) -> tuple[np.ndarray, dict[str, np.ndarray]]:
     first), and by name ("HGT" gpm, "TMP" C, "UGRD" and "VGRD" kt where
     given) each levels x rows x cols."""
     found: dict[str, dict[float, np.ndarray]] = {}
-    for message in _messages(body):
+    for message in nomads.messages(body):
         meta = message.metadata
         if meta.level_type != "isobaric surface" or meta.var_abbrev not in ("TMP", "HGT", "UGRD", "VGRD"):
             continue
@@ -150,7 +137,7 @@ def at_levels_half(body: bytes, wind_levels: list[dict], flight_levels_from_ft: 
 
 
 def world_body(download: Download, run: datetime, step: int) -> bytes | None:
-    params = {"dir": _dir(run), "file": f"gfs.t{run:%H}z.pgrb2.1p00.f{step:03d}"}
+    params = {"dir": nomads.gfs_dir(run), "file": f"gfs.t{run:%H}z.pgrb2.1p00.f{step:03d}"}
     return download(GFS_WORLD_URL, params, ((("UGRD", "VGRD"), ("10_m_above_ground",)),))
 
 
@@ -159,7 +146,7 @@ def world_wind(body: bytes) -> tuple[np.ndarray, np.ndarray]:
     first, its columns from 180 W east (the file's run from 0 E), none
     inside the layer's box."""
     found = {}
-    for message in _messages(body):
+    for message in nomads.messages(body):
         meta = message.metadata
         if meta.var_abbrev in ("UGRD", "VGRD"):
             found[meta.var_abbrev] = np.asarray(message.data(), dtype=np.float64).reshape(meta.grid_shape)
