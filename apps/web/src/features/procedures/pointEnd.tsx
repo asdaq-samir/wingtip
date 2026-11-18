@@ -7,12 +7,11 @@ import { PointFigures, PointMenu } from "../route/lazy";
 import { askSearchPick } from "../../lib/oneSearch";
 import { legOf, type NavLogRow } from "../plan";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
-import { PointGrip, type RouteItem } from "./RouteGrid";
+import { PointGrip } from "./RouteGrid";
 
 /** A stop's Remove, where its row's menu has one: one the pilot typed,
- *  taken out of the route by the menu's own handler (its Undo the plan's).
- *  Its row's swipe to the left does the same (RouteGrid, SwipeRow). */
-export function stopRemoval(vm: ProceduresRouteModel, ident: string, stop: boolean): RouteItem["remove"] {
+ *  taken out of the route by the menu's own handler (its Undo the plan's). */
+function stopRemoval(vm: ProceduresRouteModel, ident: string, stop: boolean): { label: string; onRemove: () => void } | undefined {
   if (!stop || !vm.routePoints.some((p) => sameField(p, ident))) return undefined;
   return { label: `Remove ${pointName(ident)} from the route`, onRemove: () => vm.onRemove(ident) };
 }
@@ -155,6 +154,5 @@ export function pointEnd(
     // Its grip, where the list changes the route: by its place among the
     // typed points.
     grip: edit && at.index !== undefined ? <PointGrip ident={ident} /> : null,
-    remove: stopRemoval(vm, ident, at.stop),
   };
 }

@@ -1119,9 +1119,9 @@ like iPhone?" Decision [0045](../decisions/0045-row-gestures.md).
 
 | | Web | iPhone | Android |
 |---|---|---|---|
-| Swipe | React Aria's iOS List View recipe on Motion (`components/SwipeRow`, `components/swipe`), on RowMenu's `swipe` and RouteGrid's `remove`; `data-base-ui-swipe-ignore="x"`; a finger or a pen only; its chunk lazy, asked for on a touch screen | Not yet: SwiftUI's `swipeActions`, on the owner's word (decision 0038) | Not yet: Material 3's `SwipeToDismissBox`, on the owner's word |
+| Swipe | React Aria's iOS List View recipe on Motion (`components/SwipeRow`, `components/swipe`), on RowMenu's `swipe` (not FPL's route: a stop is taken out by its menu's Remove, the owner 2026-11-17); `data-base-ui-swipe-ignore="x"`; a finger or a pen only; its chunk lazy, asked for on a touch screen | Not yet: SwiftUI's `swipeActions`, on the owner's word (decision 0038) | Not yet: Material 3's `SwipeToDismissBox`, on the owner's word |
 | Hold to move | React Aria's `useDragAndDrop` (`RouteGrid`): the row is the browser's own `draggable`, Safari and Chrome lifting it on a long press; the grip is React Aria's drag button | Not yet: `onMove` / `draggable` on the owner's word | Not yet |
-| Tests | `e2e/swipe-rows.spec.ts` (a Recents row, a stop and its Undo, the sheet still); `components/SwipeRow.test.tsx`, `components/swipe/swipeEnd.test.ts`; the hold's drop by `stops-reorder.spec.ts` | -- | -- |
+| Tests | `e2e/swipe-rows.spec.ts` (a Recents row, the sheet still); `components/SwipeRow.test.tsx`, `components/swipe/swipeEnd.test.ts`; the hold's drop by `stops-reorder.spec.ts` | -- | -- |
 
 ## Changing a rule
 

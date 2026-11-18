@@ -76,10 +76,10 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    says why in red under its line ("Closed permanently. Pick another
    field."), no chips. The stock parts carry it: React Aria's GridList the
    list, its drag and drop the hold and the grip that move a point and
-   the keyboard's moves; SwipeRow a swipe to the left that takes a stop
-   out (the plan's toast Undo), started on the line's own row, never in
-   its opened rows, whose runway tray slides sideways (the owner,
-   2026-11-17); Base UI's Collapsible the line's opening;
+   the keyboard's moves; a stop taken out by its mark's menu's Remove
+   alone (the plan's toast Undo): the hand-built swipe to the left fought
+   the runway tray's sideways slide and was dropped (the owner,
+   2026-11-17: "We don't have to do the swipe to remove"); Base UI's Collapsible the line's opening;
    Base UI's menus the mark's menu and the chips (`TimelineRoute`,
    `TimelineLine`).
 3. **A point is changed from its mark's menu** (Change, by the one search,

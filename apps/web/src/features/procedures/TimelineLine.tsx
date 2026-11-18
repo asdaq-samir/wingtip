@@ -219,7 +219,7 @@ export function TimelineLine({
           </p>
         )}
         {opens && (
-          <CollapsibleContent className="space-y-2 pb-2" data-testid="timeline-details" data-swipe-row-ignore="">
+          <CollapsibleContent className="space-y-2 pb-2" data-testid="timeline-details">
             {/* The elevation under the time, clear of the grip's column
                 (its 32 points and the gap; the owner, 2026-11-17: "the
                 elevation should be under the time"). */}

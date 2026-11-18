@@ -4,13 +4,14 @@ import { Button, DropIndicator, GridList, GridListItem, useDragAndDrop, type Key
 import { cn } from "cn";
 import { pointName } from "../../lib/identSchema";
 import { feel } from "../../lib/haptics";
-import { SwipeRow } from "../../components/SwipeRow";
 
 /** One row of FPL's route list: a point, a hold, a field's block, a stop
  *  being added. `point`, a typed point's place among the route's, where
- *  it can be moved; `remove`, a stop's Remove, its menu's, also by a
- *  finger's swipe to the left (SwipeRow). */
-export type RouteItem = { id: string; label: string; point?: number; remove?: { label: string; onRemove: () => void }; node: ReactNode };
+ *  it can be moved. A stop is taken out by its menu's Remove alone: the
+ *  row's swipe to the left (SwipeRow, hand-built on Motion) fought the
+ *  runway tray's own sideways slide, and the owner let it go (2026-11-17:
+ *  "We don't have to do the swipe to remove"). */
+export type RouteItem = { id: string; label: string; point?: number; node: ReactNode };
 
 /**
  * FPL's route list (ProceduresRoute), React Aria's GridList with its own
@@ -41,8 +42,7 @@ export type RouteItem = { id: string; label: string; point?: number; remove?: { 
  * a text box in it still is, as Safari's would take no caret).
  * The grip stays, shown only where the list edits the route, as iOS's
  * reorder control shows in Edit: the mouse's handle and the keyboard's
- * and VoiceOver's drag button. A stop's row is also taken out by a swipe
- * to the left (SwipeRow), its menu's Remove.
+ * and VoiceOver's drag button.
  */
 export function RouteGrid({ items, onMove }: { items: RouteItem[]; onMove?: (from: number, to: number) => void }) {
   const points = new Map(items.flatMap((item) => (item.point === undefined ? [] : [[item.id, item.point] as const])));
@@ -111,13 +111,7 @@ export function RouteGrid({ items, onMove }: { items: RouteItem[]; onMove?: (fro
           )}
           data-point={item.point}
         >
-          {item.remove ? (
-            <SwipeRow word="Remove" label={item.remove.label} onRemove={item.remove.onRemove}>
-              {item.node}
-            </SwipeRow>
-          ) : (
-            item.node
-          )}
+          {item.node}
         </GridListItem>
       )}
     </GridList>

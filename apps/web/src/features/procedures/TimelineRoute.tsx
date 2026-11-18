@@ -104,7 +104,6 @@ export default function TimelineRoute({ points, ...props }: ProceduresRouteProps
       id: key,
       label: point.ident,
       point: edit ? point.index : undefined,
-      remove: edit ? end.remove : undefined,
       node: (
         <TimelineLine
           vm={vm}

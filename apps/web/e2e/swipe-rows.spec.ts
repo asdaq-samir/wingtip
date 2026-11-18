@@ -1,6 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { airportSearch, grabberTo, openPanel, settle, sideDrawer, openRoute } from "./helpers";
-import { stopsAre } from "./stopsParam";
+import { airportSearch, grabberTo, settle, sideDrawer } from "./helpers";
 
 /**
  * A list's row swiped to the left, as iOS's lists' rows are (SwipeRow,
@@ -68,25 +67,4 @@ test("an airport's Recents row is taken off by a swipe, and the sheet stays", as
   await swipeLeft(page, next, width * 0.8);
   await expect(recents).toHaveCount(1);
   await expect(recents.first()).toContainText("C81");
-});
-
-test("a stop in FPL's list is taken out by a full swipe, with the route's Undo", async ({ page }) => {
-  await page.route(
-    (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname),
-    (route) => route.abort(),
-  );
-  await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN");
-  await settle(page);
-  await openPanel(page);
-  await openRoute(page);
-  await grabberTo(page, "full");
-  const list = sideDrawer(page).getByTestId("procedures");
-  const stop = list.locator("[data-swipe-row]").filter({ hasText: "KRYV" }).first();
-  await expect(stop).toBeVisible();
-  const width = (await stop.boundingBox())!.width;
-  await swipeLeft(page, stop, width * 0.8);
-  await expect(page).toHaveURL(stopsAre("KMSN"));
-  // Its Undo, the plan's (use-plan-history), brings it back.
-  await page.getByRole("button", { name: "Undo" }).first().tap();
-  await expect(page).toHaveURL(stopsAre("KRYV,KMSN"));
 });
