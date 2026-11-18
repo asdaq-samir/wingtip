@@ -2,7 +2,6 @@ import { useId, useLayoutEffect, useRef } from "react";
 import { create } from "zustand";
 import { ArrowLeftRight, ChevronDown } from "lucide-react";
 import { cn } from "cn";
-import { CAPSULE_HIT } from "../../lib/mapChrome";
 import IconButton from "../../components/IconButton";
 import CloseButton from "../../components/CloseButton";
 import { Button } from "../../components/ui/button";
@@ -15,6 +14,7 @@ import { runwayNumber } from "../plan";
 import { usePreferences } from "../../lib/preferences";
 import { transitionWords, type PickedProcedure } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
+import { chipLook } from "./chipLook";
 import { faaWords } from "../../lib/advisories";
 import QueryState from "../../components/QueryState";
 import type { UseQueryResult } from "@tanstack/react-query";
@@ -209,15 +209,7 @@ export default function ProcedureMenu({
             data-testid="procedure-kind"
             data-kind={kind}
             data-look={look}
-            className={cn(
-              CAPSULE_HIT,
-              "h-8 justify-start gap-0.5 text-left font-semibold",
-              // A kind to add whole, "+ Approach", the row wrapping it under
-              // where it has no room: shrunk, it read "+ A…" at the owner's
-              // text size (2026-11-13). A picked one's name kept to a chip.
-              look === "add" ? "shrink-0 px-3" : "min-w-0 shrink max-w-[10rem] px-2.5",
-              TEXT.detail,
-            )}
+            className={chipLook(look === "add")}
             aria-label={`${ident} ${TITLE[kind].toLowerCase()}: ${label ?? "none picked"}`}
           >
             {look === "add" ? <span>+ {CHIP[kind]}</span> : <span className="truncate">{label ?? SHORT[kind]}</span>}

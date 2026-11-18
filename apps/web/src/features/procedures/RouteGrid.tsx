@@ -53,7 +53,8 @@ export function RouteGrid({
 }: {
   items: RouteItem[];
   onMove?: (from: number, to: number) => void;
-  /** Whether a point may go there; none offered where it may not. */
+  /** Whether a point may be let go there; no drop line where it may not.
+   *  A drop refused with a reason is offered, and refused by `onMove`. */
   canMove?: (from: number, to: number) => boolean;
 }) {
   const points = new Map(items.flatMap((item) => (item.point === undefined ? [] : [[item.id, item.point] as const])));

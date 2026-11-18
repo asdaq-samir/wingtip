@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { identOf, isAirwayToken, isPosition } from "../../lib/identSchema";
 import type { RouteParts } from "./RouteBox";
-import { placeAllowed } from "./routeEdit";
+import { placeAllowed, placeRefusal } from "./routeEdit";
 import type { PlanCourse } from "../plan";
 import { askSearchPick } from "../../lib/oneSearch";
 
@@ -13,12 +13,27 @@ import { askSearchPick } from "../../lib/oneSearch";
  *  on the way, and no point beside the same (placeAllowed); null where the
  *  move would break any. */
 export function movedRoute(points: string[], from: number, to: number, isEnd: (point: string) => boolean): RouteParts | null {
+  const next = reordered(points, from, to);
+  if (!next || !isEnd(next[0]!) || !isEnd(next.at(-1)!)) return null;
+  return partsIfAllowed(next);
+}
+
+/** Why a move is refused, said under the point carried: My Location to a
+ *  stop's place (placeRefusal). Null for a move let through, or one
+ *  refused unsaid, where the list offers no drop line (a waypoint at an
+ *  end, a point beside the same). */
+export function moveRefusal(points: string[], from: number, to: number): string | null {
+  const next = reordered(points, from, to);
+  return next ? placeRefusal({ dep: next[0]!, stops: next.slice(1, -1), dest: next.at(-1)! }) : null;
+}
+
+/** The points with the one at `from` put at `to`; null where there is none. */
+function reordered(points: string[], from: number, to: number): string[] | null {
   const next = [...points];
   const [moved] = next.splice(from, 1);
   if (moved === undefined || next.length < 1) return null;
   next.splice(to, 0, moved);
-  if (!isEnd(next[0]!) || !isEnd(next.at(-1)!)) return null;
-  return partsIfAllowed(next);
+  return next;
 }
 
 /** The points as the route's parts where each may go there (placeAllowed). */
@@ -141,16 +156,31 @@ export function useRouteListEdit({
     },
     [routePoints, waypointStops],
   );
+  // A move refused with a reason (moveRefusal: My Location to a stop's
+  // place): the list as it was, and why under the point carried, till the
+  // route changes (the owner, 2026-11-18; lib/problems: said where it
+  // happens, no toast).
+  const [refused, setRefused] = useState<{ route: string; index: number; note: string } | null>(null);
+  const routeKey = routePoints.join(" ");
   const movePoint = useCallback(
     (from: number, to: number) => {
       const next = moved(from, to);
+      const note = next ? null : moveRefusal(routePoints, from, to);
+      setRefused(note ? { route: routeKey, index: from, note } : null);
       if (next) setRoute(next);
     },
-    [moved, setRoute],
+    [moved, routePoints, routeKey, setRoute],
   );
   // Whether a move may be made at all, asked as a point is carried: the
-  // list offers no drop line where it may not go, and the menu no Move.
+  // menu offers no Move where it may not go. The list offers a drop line
+  // there too where the refusal is said (canDrop), so the drop is made,
+  // the list stays as it was and the note says why.
   const canMove = useCallback((from: number, to: number) => moved(from, to) !== null, [moved]);
+  const canDrop = useCallback(
+    (from: number, to: number) => canMove(from, to) || moveRefusal(routePoints, from, to) !== null,
+    [canMove, routePoints],
+  );
+
   // An airport made another from its menu's Change, the one search's
   // pick; only a point the same as its neighbour's is let go, a leg of none.
   const replacePoint = useCallback(
@@ -161,8 +191,15 @@ export function useRouteListEdit({
     [routePoints, setRoute],
   );
   const listEdit = useMemo(
-    () => ({ onMove: movePoint, canMove, onAddAt: typeStopAt, onReplace: replacePoint }),
-    [movePoint, canMove, typeStopAt, replacePoint],
+    () => ({
+      onMove: movePoint,
+      canMove,
+      canDrop,
+      refusal: refused?.route === routeKey ? { index: refused.index, note: refused.note } : null,
+      onAddAt: typeStopAt,
+      onReplace: replacePoint,
+    }),
+    [movePoint, canMove, canDrop, refused, routeKey, typeStopAt, replacePoint],
   );
   return { waypointStops, routeOpen, setRouteOpen, addAt, setAddAt, typeStopAt, pickEnd, listEdit };
 }

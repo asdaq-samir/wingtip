@@ -182,3 +182,45 @@ test("a procedure picked is its short name's chip on its field's line, and its f
   await cardClose(page, "fix-card-close").click();
   await expect(card).toHaveCount(0);
 });
+
+test('the destination\'s chips end with "+ HOLD", which opens the hold sheet asking for the leg, and then says the hold set', async ({
+  page,
+}) => {
+  // The owner, 2026-11-18: a hold chip on the destination's line, after
+  // its procedures' ("+ ARR", "+ APCH"), the same chip; the sheet the
+  // point's menu's Hold opens; a leg by distance has no default (AIM
+  // 5-3-8: the controller or the chart gives it), so Add Hold waits for it.
+  await page.route(
+    (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
+    (route) =>
+      route.request().url().includes("/KDLH/procedures")
+        ? route.fulfill({ json: LIST })
+        : route.fulfill({ json: { airport: "C81", cycle: "261001", procedures: [] } }),
+  );
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openTab(page, "Nav Log");
+  const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
+  const hold = kdlh.getByTestId("hold-chip");
+  await expect(hold).toHaveText("+ HOLD", { timeout: slow(20000) });
+  await expect(hold).toHaveAttribute("data-look", "add");
+  // Last, after the procedures' chips.
+  const order = await kdlh
+    .getByTestId("timeline-chips")
+    .locator("[data-testid=procedure-kind], [data-testid=hold-chip]")
+    .evaluateAll((chips) => chips.map((c) => c.getAttribute("data-testid")));
+  expect(order.at(-1)).toBe("hold-chip");
+  expect(order.length).toBeGreaterThan(1);
+  await hold.click();
+  const sheet = page.getByTestId("hold-sheet");
+  await expect(sheet).toContainText("Hold at KDLH");
+  await sheet.getByTestId("hold-course").fill("270");
+  await sheet.getByRole("button", { name: "Distance" }).click();
+  await expect(sheet.getByTestId("hold-set")).toBeDisabled();
+  await sheet.getByTestId("hold-leg-nm").click();
+  await page.getByRole("option", { name: "5 nm" }).click();
+  await sheet.getByTestId("hold-set").click();
+  await expect(page).toHaveURL(/[?&]holds=KDLH(%3A|:)270(%3A|:)R(%3A|:)5N(%3A|:)2T(&|$)/);
+  await expect(hold).toHaveText("Hold 270° R");
+  await expect(hold).toHaveAttribute("data-look", "chip");
+});

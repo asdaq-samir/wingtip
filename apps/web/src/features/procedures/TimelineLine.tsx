@@ -12,7 +12,8 @@ import { WindLine } from "./FieldHead";
 import { fieldParts, kindMenu, kindPicked, windWords } from "./fieldParts";
 import { PartTray } from "./RunwayTray";
 import { TIMELINE_THREAD } from "./TimelineRows";
-import type { pointEnd } from "./pointEnd";
+import { askHold, type pointEnd } from "./pointEnd";
+import { HoldChip } from "./HoldChip";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
 /** One point of FPL's timeline as the plan gives it (RouteTimeline). */
@@ -121,12 +122,15 @@ export function TimelineLine({
   const { onInfo, tanks, reportedOf } = vm;
   // Never opened to land at before the field is known open (decision 0043).
   const opens = !!field && !!vm.edit && !point.problem && !point.checking;
+  // A move of this point refused, why under it (useRouteListEdit).
+  const refused = vm.edit?.refusal?.index === point.index ? vm.edit.refusal.note : null;
   const tank = point.role === "Departure" ? tanks.get("departure") : row ? tanks.get(row.key) : undefined;
   const reported = reportedOf(point.ident);
   const parts = field ? fieldParts(vm, field, row) : [];
   // Each part's tray, a stop's takeoff a region of its own as the list
   // read in flight names it ("KMSN · Depart"); a procedure picked as its
-  // short name's chip ("ILS 26 ⌄"), a kind not picked as "+ Approach".
+  // short name's chip ("ILS 26 ⌄"), a kind not picked as "+ APCH"; the
+  // destination's hold last ("+ HOLD").
   const chips = parts.map((part, i) => {
     const tray = (
       <PartTray
@@ -134,7 +138,13 @@ export function TimelineLine({
         vm={vm}
         a={field!}
         part={part}
-        trailing={part.kinds.map((k) => kindMenu(vm, field!, k, kindPicked(vm, field!, k) ? "chip" : "add"))}
+        trailing={[
+          ...part.kinds.map((k) => kindMenu(vm, field!, k, kindPicked(vm, field!, k) ? "chip" : "add")),
+          // The destination's hold after its procedures (HoldChip).
+          ...(point.role === "Destination" && part.role === "Arrive"
+            ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]
+            : []),
+        ]}
       />
     );
     return i === 0 ? (
@@ -224,6 +234,12 @@ export function TimelineLine({
             {point.problem}
           </p>
         )}
+        {/* A move of it the route cannot take, said where it was tried
+            (lib/problems: in place, no toast); polite, as a screen
+            reader's drop is said. */}
+        <p role="status" className={cn("text-destructive empty:hidden", refused && "pb-2", TEXT.note)} data-testid="timeline-refusal">
+          {refused}
+        </p>
         {opens && (
           <CollapsibleContent className="space-y-2 pb-2" data-testid="timeline-details">
             {/* The elevation under the time, clear of the grip's column

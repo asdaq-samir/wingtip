@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   placeAllowed,
+  placeRefusal,
+  POSITION_AT_END,
   pointsOf,
   readTyped,
   releaseTyped,
@@ -141,6 +143,14 @@ describe("where a point may go", () => {
   it("keeps My Location at an end, never a stop on the way", () => {
     expect(placeAllowed(route("@42.2,-87.9", ["KMSN"], "KDLH"))).toBe(true);
     expect(placeAllowed(route("KUGN", ["@42.2,-87.9"], "KDLH"))).toBe(false);
+    expect(placeAllowed(route("KUGN", ["KMSN"], "@42.2,-87.9"))).toBe(true);
+  });
+
+  it("says why My Location may not be a stop, and nothing where the refusal is unsaid", () => {
+    expect(placeRefusal(route("KUGN", ["KMSN", "@42.2,-87.9"], "KDLH"))).toBe(POSITION_AT_END);
+    expect(POSITION_AT_END).toBe("My Location can only start or end the route.");
+    expect(placeRefusal(route("@42.2,-87.9", ["KMSN"], "KDLH"))).toBeNull();
+    expect(placeRefusal(route("KUGN", ["KMSN", "KMSN"], "KDLH"))).toBeNull();
   });
 
   it("puts no point straight after itself, but for a local flight where asked", () => {

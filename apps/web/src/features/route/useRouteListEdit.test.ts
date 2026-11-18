@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { addedRoute, endedRoute, movedRoute, replacedRoute } from "./useRouteListEdit";
+import { addedRoute, endedRoute, moveRefusal, movedRoute, replacedRoute } from "./useRouteListEdit";
+import { POSITION_AT_END } from "./routeEdit";
 
 // Airports by their four letters, a waypoint by its five.
 const isEnd = (p: string) => p.length === 4 || p.startsWith("@");
@@ -17,6 +18,13 @@ describe("a point dragged in FPL's list", () => {
     expect(movedRoute(["@42.2,-87.9", "KMSN", "KDLH"], 0, 2, isEnd)).toEqual({ dep: "KMSN", stops: ["KDLH"], dest: "@42.2,-87.9" });
     expect(movedRoute(["@42.2,-87.9", "KMSN", "KDLH"], 0, 1, isEnd)).toBeNull();
     expect(movedRoute(["KUGN", "KMSN", "@42.2,-87.9"], 2, 1, isEnd)).toBeNull();
+  });
+
+  it("says why My Location is not moved to a stop's place, and nothing for a move let through or refused unsaid", () => {
+    expect(moveRefusal(["@42.2,-87.9", "KMSN", "KDLH"], 0, 1)).toBe(POSITION_AT_END);
+    expect(moveRefusal(["KUGN", "KMSN", "@42.2,-87.9"], 2, 1)).toBe(POSITION_AT_END);
+    expect(moveRefusal(["@42.2,-87.9", "KMSN", "KDLH"], 0, 2)).toBeNull();
+    expect(moveRefusal(["KUGN", "KMSN", "KDLH", "KMSN"], 3, 2)).toBeNull();
   });
 
   it("is not moved beside the same point", () => {

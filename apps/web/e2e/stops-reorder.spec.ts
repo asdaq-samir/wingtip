@@ -111,6 +111,34 @@ test("a point's grip in FPL's list moves it anywhere, by a mouse or the keyboard
   await expect(page).toHaveURL(stopsAre("KRYV,KMSN"));
 });
 
+// My Location starts or ends the route, never a stop on the way (the
+// owner, 2026-11-17 and 2026-11-18): put down between two points, the
+// drop is refused, the list stays as it was, and why is said under it,
+// in place (lib/problems), not in a toast.
+test("My Location put down in the middle of the route stays where it was, and its line says why", async ({ page }) => {
+  await page.route(
+    (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname),
+    (route) => route.abort(),
+  );
+  await page.goto("/app/plan?dep=@42.2333,-87.9883&stops=KMSN&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  await openRoute(page);
+  const list = sideDrawer(page).getByTestId("procedures");
+  const grip = list.getByTestId("route-grip").first();
+  await expect(list.getByTestId("timeline-ident").first()).toHaveText("My Location");
+  await grip.focus();
+  await page.keyboard.press("Enter");
+  const at = () => page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? "");
+  for (let i = 0; i < 12 && !/between .*KMSN.* and .*KDLH/i.test(await at()); i++) await page.keyboard.press("ArrowDown");
+  expect(await at()).toMatch(/between .*KMSN.* and .*KDLH/i);
+  await page.keyboard.press("Enter");
+  await expect(list.getByTestId("timeline-refusal").first()).toHaveText("My Location can only start or end the route.");
+  await expect(list.getByTestId("timeline-ident")).toHaveText(["My Location", "KMSN", "KDLH"]);
+  await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
+  await expect(page).toHaveURL(stopsAre("KMSN"));
+});
+
 test.describe("on a touch screen", () => {
   test.use({ hasTouch: true });
 
