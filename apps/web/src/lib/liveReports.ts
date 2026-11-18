@@ -12,6 +12,7 @@ import { callEngine, engineLoaded, type EngineInput } from "./engine/engine";
 import { zuluTime } from "./format";
 import type { FlowProgram, ItwsProduct, SaaStatus } from "./api/types";
 import type { VerdictInput } from "./verdict";
+import { capitalised } from "./capitals";
 
 type Feed = EngineInput<"live_feed_refresh">["feed"];
 
@@ -110,7 +111,7 @@ export function itwsLines(products: ItwsProduct[]): string[] {
  *  45 min"; a restriction is no program and gives none. */
 export function programLine(p: FlowProgram): string | null {
   if (p.restriction || !p.program) return null;
-  const name = p.program.charAt(0).toUpperCase() + p.program.slice(1);
+  const name = capitalised(p.program);
   const until = p.ends != null ? ` until ${zulu(p.ends)}` : "";
   const delay = p.average_delay_min != null ? `, delays average ${p.average_delay_min} min` : "";
   return `${name} at ${p.airport}${until}${delay}`;

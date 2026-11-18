@@ -12,10 +12,10 @@ import { say } from "../lib/speech";
 import { TEXT } from "../lib/text";
 import { openEmergency } from "../lib/emergencyStore";
 import { readBackNow } from "../lib/radioListeningLoad";
+import { eachCapitalised } from "../lib/capitals";
 
-const capital = (words: string) => words.replace(/\b[a-z]/g, (ch) => ch.toUpperCase());
 /** A place's words as a chip says them: spelled idents as they are. */
-const named = (words: string) => (/[a-z]/.test(words) ? capital(words) : words);
+const named = (words: string) => (/[a-z]/.test(words) ? eachCapitalised(words) : words);
 
 const CHIP = "rounded-full text-tint";
 

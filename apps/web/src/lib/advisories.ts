@@ -24,11 +24,7 @@ export function titleCase(text: string): string {
   return callEngine("title_case", { text }) as string;
 }
 
-/** The first letter a capital, the rest as it is: "road or rail" as "Road
- *  or rail", a line of the app's own words opening a row. */
-export function capitalised(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
+export { capitalised } from "./capitals";
 
 /**
  * The FAA's capitalised text -- a special-use area's times of use, a
