@@ -202,24 +202,6 @@ export function SheetCard({
   // card's, MapCard).
   const headSlot = useMemo(() => (title === undefined ? { slot, startSlot, headingId } : null), [title, slot, startSlot, headingId]);
   if (!target) return null;
-  if (!head)
-    return createPortal(
-      // Laid out whole in its drawer's scroller, its room over its first
-      // line the grabber's (--pinned-room), which its pinned head reaches
-      // up over; there at once as it opens, still while the sheet moves
-      // round it (the owner: "Is the airport and aircraft card same
-      // style?").
-      <div
-        ref={fromMarker}
-        className="relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
-        data-testid={testId}
-      >
-        <CardId.Provider value={id}>
-          <EngineGate>{children}</EngineGate>
-        </CardId.Provider>
-      </div>,
-      target,
-    );
   // Its own close at its head's end; or the caller's action in its place.
   const end =
     (closeButton ?? (action === undefined && !leading)) ? (
@@ -227,32 +209,46 @@ export function SheetCard({
     ) : (
       action
     );
+  // A card's content waits for the engine (EngineGate), its head and
+  // grabber not: cards are kept drawn from the page's first paint
+  // (keepMounted), before the .wasm is in, and what they ask the engine as
+  // they draw threw there -- the Nav Log's totals, then the Brief's call
+  // sign (radio_call_sign), each "Part of the app didn't load" (the owner's
+  // iPhone and firstDraw.test, 2026-11-11). One gate for every card, not
+  // one per call.
+  const body = (
+    <CardId.Provider value={id}>
+      <EngineGate>{children}</EngineGate>
+    </CardId.Provider>
+  );
   return createPortal(
     // Laid out whole in its drawer's scroller, from the sheet's corner (its
-    // close where every card's is).
-    <div className="relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)] print:hidden">
-      {/* The one head row (CardHeadRow): its name at the left at a card's
-          size and the close at the right end; a form's Cancel and Save at
-          the two ends, the name between them; pinned at the card's top,
-          the card scrolling under it (the owner, 2026-11-10). Where the
-          content draws its name (a map card's, MapCard), its slot. */}
-      {title === undefined ? (
-        <CardHeadSlot slot={setSlot} startSlot={setStartSlot} leading={leading} end={end} />
+    // close where every card's is), its room over its first line the
+    // grabber's (--pinned-room), which a content's pinned head reaches up
+    // over; there at once as it opens, still while the sheet moves round
+    // it (the owner: "Is the airport and aircraft card same style?").
+    <div
+      ref={head ? undefined : fromMarker}
+      className="relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
+      data-testid={head ? undefined : testId}
+    >
+      {!head ? (
+        body
       ) : (
-        <CardHeadRow name={title} sub={description} nameId={headingId} leading={leading} wrap end={end} hidden={titleHidden} />
+        <>
+          {/* The one head row (CardHeadRow): its name at the left at a card's
+              size and the close at the right end; a form's Cancel and Save at
+              the two ends, the name between them; pinned at the card's top,
+              the card scrolling under it (the owner, 2026-11-10). Where the
+              content draws its name (a map card's, MapCard), its slot. */}
+          {title === undefined ? (
+            <CardHeadSlot slot={setSlot} startSlot={setStartSlot} leading={leading} end={end} />
+          ) : (
+            <CardHeadRow name={title} sub={description} nameId={headingId} leading={leading} wrap end={end} hidden={titleHidden} />
+          )}
+          <SheetCardHead.Provider value={headSlot}>{body}</SheetCardHead.Provider>
+        </>
       )}
-      <CardId.Provider value={id}>
-        {/* A card's content waits for the engine (EngineGate), its head and
-            grabber not: cards are kept drawn from the page's first paint
-            (keepMounted), before the .wasm is in, and what they ask the
-            engine as they draw threw there -- the Nav Log's totals, then the
-            Brief's call sign (radio_call_sign), each "Part of the app didn't
-            load" (the owner's iPhone and firstDraw.test, 2026-11-11). One
-            gate for every card, not one per call. */}
-        <SheetCardHead.Provider value={headSlot}>
-          <EngineGate>{children}</EngineGate>
-        </SheetCardHead.Provider>
-      </CardId.Provider>
     </div>,
     target,
   );

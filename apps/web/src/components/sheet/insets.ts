@@ -9,6 +9,10 @@ import { MOTION, SIZE } from "../../lib/tokens";
  *  the sheet on. */
 export const DRAWER_MS = MOTION.drawer * 1000;
 
+/** The Drawer's settle after a lift, and a frame to spare: how long what
+ *  follows the sheet keeps following once the finger is off. */
+export const SETTLE_MS = DRAWER_MS + 50;
+
 /**
  * The sheet's three snap points in the stock Drawer's own units, the same
  * for the sheet and every card over it (the owner, 2026-11-11: the

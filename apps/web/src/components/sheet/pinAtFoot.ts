@@ -1,9 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
-import { MOTION } from "../../lib/tokens";
 import { usePanelDragging } from "../../lib/mapChrome";
-
-/** How long a sheet takes to come to rest at a size, a frame to spare. */
-const SETTLE_MS = MOTION.drawer * 1000 + 50;
+import { SETTLE_MS } from "./insets";
 
 /**
  * The row held by its CSS, as the sheet's foot is (sheet/insets'
