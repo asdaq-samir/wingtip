@@ -8,4 +8,4 @@
 
 export { DryRunControls, DryRunFigures } from "./DryRunPanel";
 export { default as FlyingHead } from "./FlyingHead";
-export { default as PastFlightCard } from "./PastFlightCard";
+export { default as PastFlightCard } from "./LazyPastFlightCard";

@@ -34,6 +34,7 @@ approach_quiz
 approach_scene
 approach_transition
 atc_call
+average_groundspeed_kt
 aviation_grid_bands
 bearing_deg
 best_fields
@@ -50,6 +51,7 @@ cloud_clearance_at_ft
 cloud_cover
 compass_point
 compass_word
+copilot_flight
 copilot_watch
 csv_rows
 data_cycle
@@ -77,12 +79,11 @@ faa_words
 field_hours
 field_taf
 filed_dof
-filed_duration
-filed_endurance
 filed_level
 filed_rnav
 filed_route
 filed_speed
+filed_times
 filed_wake
 filed_zzzz
 fix_radial_distance
@@ -128,6 +129,7 @@ gonogo_tfr_when
 gonogo_under_minimums
 great_circles
 handbook_figures
+hold_inbound_deg
 hold_length_read
 hold_length_write
 hold_write
@@ -135,6 +137,7 @@ holding
 holding_leg_minutes
 holds_read
 icing_severity
+ifr_alternate_not_required
 in_flight
 kept_age
 kneeboard_radio
@@ -154,6 +157,7 @@ navlog_fuel_plan
 navlog_leg
 navlog_totals
 night_at_either_end
+nm_along
 notam_read
 notam_subject
 our_call

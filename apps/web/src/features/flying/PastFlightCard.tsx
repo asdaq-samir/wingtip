@@ -11,6 +11,7 @@ import type { PastFlightPoint, PastFlights, PastFlightSummary } from "../../lib/
 import { clockTime, feet, knots, wholeNm } from "../../lib/format";
 import { compassPoint } from "../../lib/compass";
 import { useGeo } from "../../lib/geo";
+import { callEngine } from "../../lib/engine/engine";
 import { REPLAY_SPEEDS, positionAt, stopPastFlight, usePastFlight } from "../plan";
 import { usePreferences } from "../../lib/preferences";
 import { CameraMenu, ReplayTimeline } from "../replay";
@@ -79,7 +80,10 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
   // The miles flown are the engine's (lib/geo): their rows wait for it.
   const geo = useGeo();
   const flown = useMemo(() => geo?.legsNm(points).reduce((sum, nm) => sum + nm, 0) ?? null, [geo, points]);
-  const hours = (flight.on - flight.off) / 3600;
+  // The miles flown over the time aloft (the engine's average_groundspeed_kt),
+  // asked only once the miles are, the engine's too.
+  const speed =
+    flown !== null ? callEngine("average_groundspeed_kt", { distance_nm: flown, minutes: (flight.on - flight.off) / 60 }) : null;
   const value = (text: string) => <span className="font-semibold text-foreground tabular-nums">{text}</span>;
   return (
     <ListGroup title="Flight">
@@ -142,7 +146,7 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
               </RowBadge>
             }
             title="Average ground speed"
-            value={value(hours > 0 ? knots(flown / hours) : "—")}
+            value={value(speed != null ? knots(speed) : "—")}
           />
         </>
       )}

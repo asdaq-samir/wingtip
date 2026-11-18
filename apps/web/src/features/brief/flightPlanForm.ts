@@ -71,6 +71,9 @@ export interface FormInput {
     equipment?: string | null;
     surveillance?: string | null;
     colour?: string | null;
+    /** The airplane's own cruise burn, gph: item 19's endurance where no
+     *  leg of the flight is flown at cruise. */
+    cruiseBurnGph?: number | null;
   };
   /** The pilot in command, item 19 C/: their name as their certificate
    *  gives it, their telephone number and home base, where they said. */
@@ -96,12 +99,6 @@ export const cruisingSpeed = (tasKt: number): string => callEngine("filed_speed"
 /** Item 15's level, "F350" at and above 18,000 ft and "A080" below it
  *  (14 CFR 91.121(a)(2), AIM Appendix 4): the engine's `filed_level`. */
 export const cruisingLevel = (altitudeFt: number): string => callEngine("filed_level", { ft: altitudeFt });
-
-/** Hours and minutes in four figures, HHMM (items 16 and 19), the minutes
- *  rounded first: the engine's `filed_duration`. Its callers round up the
- *  time en route and down the endurance before, to err on the safe side
- *  of each. */
-export const hhmmForm = (minutes: number): string => callEngine("filed_duration", { minutes });
 
 /** Item 15's route between the departure and the destination: airways
  *  between the fixes they are joined and left at, and DCT between two
@@ -223,8 +220,18 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
         .join(" ") || undefined,
     );
 
+    // Item 16's total EET rounded up and item 19's endurance at the cruise
+    // burn rounded down (the engine's `filed_times`, AIM Appendix 4): the
+    // burn of the legs flown at cruise, never the climb's or the descent's.
+    const fuel = i === 0 ? (input.fuelGal ?? totals?.usable_fuel_gal ?? null) : (totals?.usable_fuel_gal ?? null);
+    const times = callEngine("filed_times", {
+      ete_min: totals?.ete_min ?? null,
+      fuel_gal: fuel,
+      legs: hop.legs.map((leg) => ({ phase: leg.phase ?? null, fuel_burn_gph: leg.fuel_burn_gph ?? null })),
+      cruise_burn_gph: input.aircraft.cruiseBurnGph ?? null,
+    });
     add("16", "destination", "Destination", hop.destination, zzzz(hop.destination, "DEST", input.icaoIds));
-    add("16", "eet", "Total EET", totals?.ete_min != null ? hhmmForm(Math.ceil(totals.ete_min)) : null);
+    add("16", "eet", "Total EET", times.eet);
     const alternate = ifr && last ? input.alternate : null;
     if (alternate) add("16", "alternate", "Alternate", alternate, zzzz(alternate, "ALTN", input.icaoIds));
 
@@ -233,17 +240,13 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
     const dof = depart ? callEngine("filed_dof", { depart: depart.toISOString(), today: input.now.toISOString() }) : null;
     if (dof) add("18", "other", "Other information", dof);
 
-    // Item 19's endurance: the fuel aboard at the cruise burn, to the
-    // minute below (the engine's `filed_endurance`).
-    const fuel = i === 0 ? (input.fuelGal ?? totals?.usable_fuel_gal ?? null) : (totals?.usable_fuel_gal ?? null);
-    const burn = first?.fuel_burn_gph;
-    const enduranceMinutes = fuel != null && burn ? callEngine("filed_endurance", { fuel_gal: fuel, burn_gph: burn }) : null;
+    const burn = times.burn_gph;
     add(
       "19",
       "endurance",
       "Endurance",
-      enduranceMinutes != null ? hhmmForm(enduranceMinutes) : null,
-      fuel != null && burn ? `${Math.round(fuel * 10) / 10} gal at ${Math.round(burn * 10) / 10} gph.` : undefined,
+      times.endurance,
+      fuel != null && burn != null ? `${Math.round(fuel * 10) / 10} gal at ${Math.round(burn * 10) / 10} gph.` : undefined,
     );
 
     // Item 19's persons on board (P/), the pilot's to type in the Brief
@@ -266,7 +269,8 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
 
     const value = (key: string) => items.find((f) => f.key === key)?.value ?? null;
     const needed = ["ident", "type", "speed", "level", "route"].map(value);
-    const eetMinutes = totals?.ete_min != null ? Math.ceil(totals.ete_min) : null;
+    const eetMinutes = times.eet_minutes;
+    const enduranceMinutes = times.endurance_minutes;
     const filing: FlightPlanFilingRequest | null =
       depart && eetMinutes && enduranceMinutes && needed.every(Boolean)
         ? {

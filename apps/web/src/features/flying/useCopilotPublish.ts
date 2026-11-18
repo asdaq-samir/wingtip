@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import type { AircraftProfile, Totals } from "../../lib/api/types";
 import { publishCopilotFlight } from "../../lib/copilot/flight";
+import { callEngine } from "../../lib/engine/engine";
 import { useLoad } from "../plan";
 
 /**
@@ -25,28 +26,44 @@ export function useCopilotPublish({
 }) {
   const { loading, load } = useLoad(aircraft, totals?.fuel_gal ?? null);
   const startGal = load?.fuelGal ?? totals?.usable_fuel_gal ?? aircraft?.usable_fuel_gal ?? null;
-  const fuelGal = startGal != null ? Math.max(0, startGal - (totals?.taxi_gal ?? 0)) : null;
-  // A seat other than the pilot's with weight in it: the load's stations
-  // by their POH names. The pilot's own station ("Pilot and front
-  // passenger") is not counted, so a front-seat passenger alone is not
-  // seen; the copilot then says less, never something untrue.
-  const passengers =
-    !!loading &&
-    !!load &&
-    loading.stations.some((station, i) => !/pilot|baggage|cargo/i.test(station.name) && (load.stationsLb[i] ?? 0) > 0);
-  const distance = totals?.distance_nm ?? null;
-  const ete = totals?.ete_min ?? null;
-  const plannedGsKt = distance && ete ? distance / (ete / 60) : null;
+  const taxiGal = totals?.taxi_gal ?? null;
+  const distanceNm = totals?.distance_nm ?? null;
+  const eteMin = totals?.ete_min ?? null;
+  // The load's stations by their handbook names, as one string, so the
+  // flight is published again only when a weight changes.
+  const stations = JSON.stringify(loading && load ? loading.stations.map((s, i) => ({ name: s.name, lb: load.stationsLb[i] ?? 0 })) : []);
   const alternate = totals?.alternate?.ident ?? null;
   const tasKt = aircraft?.cruise_tas_kt ?? null;
   const burnGph = aircraft?.fuel_burn_gph ?? null;
   const ifr = rules.toLowerCase() === "ifr";
+  const planned = !!dest && !!line && line.length >= 2 && !!totals;
   useEffect(() => {
-    if (!dest || !line || line.length < 2 || !totals) {
+    if (!planned) {
       publishCopilotFlight(null);
       return;
     }
-    publishCopilotFlight({ dest, alternate, rules: ifr ? "IFR" : "VFR", line, plannedGsKt, tasKt, burnGph, fuelGal, passengers });
+    // The fuel at takeoff, the plan's ground speed and whether anyone but
+    // the pilot is aboard are the engine's (copilot_flight): from the
+    // load's fuel (else the plan's tanks, else the airplane's), the taxi
+    // allowance, the plan's miles and minutes, and the load's stations.
+    const flight = callEngine("copilot_flight", {
+      fuel_gal: startGal,
+      taxi_gal: taxiGal,
+      distance_nm: distanceNm,
+      ete_min: eteMin,
+      stations: JSON.parse(stations) as { name: string; lb: number }[],
+    });
+    publishCopilotFlight({
+      dest,
+      alternate,
+      rules: ifr ? "IFR" : "VFR",
+      line: line!,
+      plannedGsKt: flight.planned_gs_kt,
+      tasKt,
+      burnGph,
+      fuelGal: flight.fuel_gal,
+      passengers: flight.passengers,
+    });
     return () => publishCopilotFlight(null);
-  }, [dest, alternate, ifr, line, totals, plannedGsKt, tasKt, burnGph, fuelGal, passengers]);
+  }, [planned, dest, alternate, ifr, line, startGal, taxiGal, distanceNm, eteMin, stations, tasKt, burnGph]);
 }

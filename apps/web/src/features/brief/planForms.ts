@@ -70,6 +70,8 @@ export function planFormsOf({
       equipment: flownOwn?.equipment ?? null,
       surveillance: flownOwn?.surveillance ?? null,
       colour: flownOwn?.colour ?? null,
+      // Item 19's endurance where no leg is flown at cruise.
+      cruiseBurnGph: nav?.aircraft?.fuel_burn_gph ?? null,
     },
     // Item 19's pilot in command, from their own page (Pilot details, in Setup).
     pilot: pilot ? { name: pilot.fullName ?? null, phone: pilot.phone ?? null, homeBase: pilot.homeBase ?? null } : null,

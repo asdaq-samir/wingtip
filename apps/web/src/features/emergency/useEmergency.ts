@@ -124,7 +124,8 @@ export function useEmergency() {
           position: fix ? positionWords(fix, stations, data?.fields[0] ?? nearestOf(ranked)) : null,
           // The airplane's own heading now, as the GPS tracks it, magnetic.
           heading_mag_deg: fix?.headingDeg != null ? magneticOf(fix.headingDeg, variationAt(fix)) : null,
-          altitude_ft: fix?.altitudeFt != null ? Math.round(fix.altitudeFt / 100) * 100 : null,
+          // As the GPS gives it: the engine says it to the hundred feet (AIM 4-2-9).
+          altitude_ft: fix?.altitudeFt ?? null,
           fuel_min: number(fuelMin),
           souls: number(souls),
         },

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 import { useQueries } from "@tanstack/react-query";
+import { callEngine } from "../../lib/engine/engine";
 import { useWindPicks, legOf, type NavLogRow, type Landing, type ProcedureAirport, type ProcedureKind } from "../plan";
 import type { ProcedureList, ProcedureSummary } from "../../lib/api/types";
 import { plateQuery, proceduresQuery } from "../../lib/queryClient";
@@ -234,12 +235,9 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
   const destination = airports.find((a) => a.role === "Destination");
   // How far along the route each row is, nm: what its line under its name
   // says, as mock A of the owner's rows has it ("Stop · 241 nm").
-  const alongNm = new Map<string, number>();
-  rows.reduce((nm, r) => {
-    const at = nm + (legOf(r)?.distance_nm ?? 0);
-    alongNm.set(r.key, at);
-    return at;
-  }, 0);
+  // The running sum of the rows' miles is the engine's (nm_along).
+  const sums = callEngine("nm_along", { legs_nm: rows.map((r) => legOf(r)?.distance_nm ?? null) });
+  const alongNm = new Map(rows.map((r, i) => [r.key, sums[i] ?? 0]));
   const along = (row: NavLogRow | undefined) => {
     const nm = row ? alongNm.get(row.key) : undefined;
     return nm ? ` · ${Math.round(nm)} nm` : "";
