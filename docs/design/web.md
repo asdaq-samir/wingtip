@@ -124,9 +124,10 @@ These hold on every screen below and win over any reference app.
   2026-11-11): text is selectable, so a METAR, a NOTAM or a frequency is
   copied with a long press, and only buttons, tabs and the map take no
   selection (`index.css`).
-- **Words:** "airplane" (decision 0020), Title Case labels (0021), no
-  explanatory footnotes (0019), FAA text in sentence case with its codes
-  kept, raw reports as sent.
+- **Words:** "airplane" (decision 0020), Title Case labels (0021; the
+  map's words are sentence case with their codes in capitals, rules.md
+  §13), no explanatory footnotes (0019), FAA text in sentence case with
+  its codes kept, raw reports as sent.
 
 ## The web platform, today
 
@@ -1772,8 +1773,8 @@ apart (`terrain/airspaceShelves`):
   shelf's next, MapLibre's collision keeping whichever fit, as the
   sectional writes it: the ceiling over the floor in hundreds of feet MSL, "100" over "30", "100"
   over "SFC", a Class C's "T", a Class D's ceiling alone ("-30"), in the
-  2D chart's airspace tab (the engine's `airspace_shelf_label`; the FAA's
-  Chart User's Guide). Lifted with MapLibre's
+  2D chart's airspace tab, the same words the tab on the ground says (the
+  engine's `airspace_shelf_label`; the FAA's Chart User's Guide). Lifted with MapLibre's
   `symbol-height-offset`, kept apart by MapLibre's own collision and
   placed after the airports' and navaids' marks, which they never hide,
   and before the special use areas' names where they meet at a low tilt;
@@ -1788,6 +1789,19 @@ apart (`terrain/airspaceShelves`):
   legible (`map.airspace-label-faded`); whether a volume holds an
   altitude is the engine's (`airspace_volume_span`'s `holds`). With no
   plan nothing is faded.
+
+**The map's words** follow [rules.md](rules.md) §13 (the owner,
+2026-11-18). The 2D chart's Class B, C and D tabs are the sectional's
+ceiling over floor, the same words as the 3D shelves'. The tiles carry
+them as `airspace_labels.tab`, the engine's, so `glStyle` formats no
+figure. A special use area's 3D tab is its 2D tab. A fix is tagged once:
+the plate's tag wins while a plate is drawn with its annotations. Codes
+are in capitals and words in sentence case. A tag's figures have no unit
+or tick. Sizes come from `map.label-*`, never under 11. Halos dim with
+the dark theme: `ChartGl` sets the map's `labelNight` global state, and
+`common`'s halo expression reads it. Weather areas and TFRs are named
+along their outlines. The replay's airplane is the traffic's own symbol
+layers, not an HTML marker.
 
 **Desktop.** Apple Maps on the web uses a left side panel there; Wingtip
 keeps its side panel, with the same search row at its top.

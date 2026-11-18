@@ -126,6 +126,7 @@ export const WEATHER = {
   convective: "#c2410c",
   icing: "#2563eb",
   turbulence: "#d97706",
+  turbulenceText: "#b45309",
   ifr: "#7c3aed",
   mountains: "#78716c",
   shear: "#be185d",
@@ -272,6 +273,13 @@ export const MAP = {
   airspaceFaded: 0.35,
   airspaceHeld: 1.8,
   airspaceLabelFaded: 0.6,
+  labelSmall: 11,
+  label: 12,
+  labelLarge: 13,
+  labelCount: 14,
+  labelRunway: 16,
+  labelHalo: 2,
+  labelHaloNight: 0.6,
 } as const;
 
 /** A colour-ramp stop: the value in the field's unit and its colour as [r, g, b, 255ths], as weatherlayers-gl takes it. */

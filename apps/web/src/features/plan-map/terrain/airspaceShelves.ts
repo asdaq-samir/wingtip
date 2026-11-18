@@ -2,7 +2,7 @@ import type { SymbolLayerSpecification } from "maplibre-gl";
 import { callEngine } from "../../../lib/engine/engine";
 import { flatDeg, KM_PER_DEG } from "../../../lib/geo";
 import { airspaceTab } from "../../../lib/map/gl/glStyle";
-import { GL_FONT_BOLD } from "../../../lib/map/gl/layers/common";
+import { GL_FONT_BOLD, LABEL_SIZE } from "../../../lib/map/gl/layers/common";
 import { rgbOf } from "../../../lib/rgb";
 import { CHART, MAP } from "../../../lib/tokens";
 import type { AloftPoint } from "./geometry";
@@ -160,7 +160,7 @@ export function shelfLabelLayer(id: string, source: string): SymbolLayerSpecific
     layout: {
       "text-field": ["get", "text"],
       "text-font": GL_FONT_BOLD,
-      "text-size": 12,
+      "text-size": LABEL_SIZE.normal,
       "text-line-height": 1.1,
       "text-anchor": "bottom",
       "text-pitch-alignment": "viewport",

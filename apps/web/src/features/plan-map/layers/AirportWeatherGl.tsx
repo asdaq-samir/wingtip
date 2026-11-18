@@ -3,7 +3,7 @@ import type { ExpressionSpecification, SymbolLayerSpecification } from "maplibre
 import type { AirportPin } from "../../../lib/api/types";
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../lib/map/gl/glLayer";
 import { glZoom } from "../../../lib/map/gl/glStyle";
-import { GL_FONT_BOLD, LABEL_HALO } from "../../../lib/map/gl/layers/common";
+import { GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE } from "../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { weatherMarksOf } from "../../../lib/map/marks/airportWeather";
 import { airportWeatherDrawn } from "../../../lib/map/marks/airportWeatherPrefs";
@@ -40,7 +40,7 @@ const wind = (id: string, filter: ExpressionSpecification): SymbolLayerSpecifica
     ...ROTATE_ON_MAP,
     "text-field": ["get", "variable"],
     "text-font": GL_FONT_BOLD,
-    "text-size": 11,
+    "text-size": LABEL_SIZE.small,
     "text-anchor": "top",
     "text-offset": [0, 1.3],
     "text-padding": 1,
@@ -62,7 +62,7 @@ const LINES: SymbolLayerSpecification = {
   layout: {
     "text-field": ["get", "lines"],
     "text-font": GL_FONT_BOLD,
-    "text-size": 11,
+    "text-size": LABEL_SIZE.small,
     "text-anchor": "right",
     "text-justify": "right",
     "text-offset": [-1.5, 0],

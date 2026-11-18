@@ -42,7 +42,9 @@ export function FuelStopsGl({ stops, onSelect }: { stops: StopPin[]; onSelect: (
             lon: s.lon,
             text: pointName(s.ident),
             picture: fieldMarkPicture(place?.airspace_class ?? null, colourOf(place?.metar?.flight_category), use),
-            props: { kind: "field" },
+            // Its ident in the chart's ink for it (labelledLayer): blue
+            // where NASR lists a tower, as the tiles' field's.
+            props: { kind: "field", towered: place?.towered === true },
             onTap: () => onSelect(s.ident),
           },
           {

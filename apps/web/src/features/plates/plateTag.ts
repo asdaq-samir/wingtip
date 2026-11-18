@@ -1,7 +1,7 @@
 import { drawTag } from "../../lib/map/gl/drawTag";
 import type { Layout } from "../../lib/map/gl/markLayers";
 import type { GlPicture } from "../../lib/map/gl/useGlSymbols";
-import { CHART } from "../../lib/tokens";
+import { CHART, MAP } from "../../lib/tokens";
 import type { TagView } from "./plateTags";
 
 /** A fix's tag over its plate (TagView): a dark chip above the fix, so
@@ -16,7 +16,7 @@ export function plateTag(tag: Pick<TagView, "ident" | "lines">): GlPicture {
   ];
   return {
     id: `plate-tag|${JSON.stringify(lines)}`,
-    draw: () => drawTag({ lines, background: CHART.tag, size: 13, lineHeight: 16, padX: 6, padY: 2, radius: 6, centred: true }),
+    draw: () => drawTag({ lines, background: CHART.tag, size: MAP.labelLarge, lineHeight: 16, padX: 6, padY: 2, radius: 6, centred: true }),
   };
 }
 

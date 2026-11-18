@@ -344,9 +344,9 @@ def test_each_class_b_c_and_d_shelf_has_one_label_on_its_ring(sources):
         ring = shapes[p["number"]]
         rings = [q.exterior for q in getattr(ring, "geoms", [ring])]
         assert min(r.distance(shapely.Point(f["geometry"]["coordinates"])) for r in rings) < 1e-6
-    # The figures the map writes the label from: O'Hare's surface area's.
+    # Its figures and the engine's words, ceiling over floor: O'Hare's surface area's.
     surface = next(f for f in labels if f["properties"]["class"] == "B" and f["properties"]["floor_ft"] == 0)
-    assert {"ceiling_ft": 10000.0, "ceiling_excluded": False}.items() <= surface["properties"].items()
+    assert {"ceiling_ft": 10000.0, "ceiling_excluded": False, "tab": "100\nSFC"}.items() <= surface["properties"].items()
 
 
 def test_a_round_rings_label_is_north_north_west_along_the_ring():
@@ -563,7 +563,7 @@ def test_the_archive_is_pmtiles_of_vector_tiles_with_its_layers_and_fields(built
     layers = {layer["id"]: layer for layer in meta["vector_layers"]}
     assert set(layers) == set(vector_tiles.LAYERS)
     assert {"class", "local_type", "floor_ft", "floor_ref", "ceiling_ft", "name", "ident"} <= set(layers["airspace"]["fields"])
-    assert {"class", "floor_ft", "ceiling_ft", "angle", "number"} <= set(layers["airspace_labels"]["fields"])
+    assert {"class", "tab", "floor_ft", "ceiling_ft", "angle", "number"} <= set(layers["airspace_labels"]["fields"])
     assert {"type", "name", "floor_ft", "ceiling_ft", "times_of_use"} <= set(layers["special_use"]["fields"])
     assert {"label", "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref", "angle", "side"} <= set(layers["special_use_labels"]["fields"])
     assert {"ident", "name", "towered", "airspace", "hard_ft", "longest_ft", "use", "rank", "size"} <= set(layers["airports"]["fields"])

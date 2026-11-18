@@ -30,6 +30,23 @@ export function areaWords(area: WeatherArea): { title: string; altitudes: string
   };
 }
 
+/** An area's short label along its outline on the map: what it warns of
+ *  in a few letters and its top, "Ice to FL180", "SIGMET Turbulence to
+ *  FL350". A G-AIRMET's hazard as AWC's own map labels it (the engine's
+ *  gairmet_hazards `labels`, as the flow layer's outlines are: `short`,
+ *  asked once for every area); a SIGMET's or AIRMET's its kind and the
+ *  engine's word for its code (sigmet_hazard); the top as the map writes a
+ *  level (mapLevel), none where the area gives none. */
+export function areaLabel(area: WeatherArea, short: Record<string, string>): string {
+  const hazard =
+    area.kind === "convective"
+      ? "Convective SIGMET"
+      : area.kind === "gairmet"
+        ? (short[area.hazard ?? ""] ?? area.hazard ?? "G-AIRMET")
+        : `${area.kind === "airmet" ? "AIRMET" : "SIGMET"}${area.hazard ? ` ${callEngine("sigmet_hazard", { hazard: area.hazard, kind: null })}` : ""}`;
+  return area.high_ft == null ? hazard : `${hazard} to ${mapLevel(area.high_ft)}`;
+}
+
 /** Whether a point is inside an area's outline ([lat, lon] pairs), by
  *  the even-odd rule: areas are a few hundred miles across, near enough
  *  flat for it. */

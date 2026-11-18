@@ -33,7 +33,7 @@ import { TrafficGl } from "./layers/TrafficGl";
 import { WeatherGl } from "./layers/WeatherGl";
 import { WeatherLoopGl } from "../weather-loop";
 import { FlowGl } from "../weather-flow";
-import { PlatesGl } from "../plates";
+import { PlatesGl, usePlateTagged } from "../plates";
 import { FaaChart } from "../../components/AirportDiagram";
 import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
 import { usePreferences } from "../../lib/preferences";
@@ -190,6 +190,8 @@ function EngineLayers(p: GlRouteMapProps) {
   // and the model weather's flow layer, its own chunk.
   // The route's points alone while a line of FPL's timeline is open (routeOnly), its point centred.
   const routeOnly = useRouteOnly((s) => s.on);
+  // Which approaches their plates tag, so a fix is tagged once.
+  const plated = usePlateTagged();
   useLineFocus(course);
   const weather = usePreferences((s) => s.weather) && !routeOnly;
   const loop = useWeatherLayers((s) => s.loop !== "off") && weather;
@@ -249,7 +251,7 @@ function EngineLayers(p: GlRouteMapProps) {
           {dryRunning && <ReplayGl asOwnShip />}
           {dryRunning && <ForecastRunGl />}
           <PatternsGl patterns={p.patterns} />
-          <ProceduresGl drawings={p.procedures} crossings={p.crossings} directs={p.directs} onFix={p.onProcedureFix} />
+          <ProceduresGl drawings={p.procedures} crossings={p.crossings} directs={p.directs} plated={plated} onFix={p.onProcedureFix} />
           <LessonGl />
           <LegPointsGl legs={p.legs} onSelectPoint={p.onSelectPoint} />
           <HoldTracksGl legs={p.legs} />

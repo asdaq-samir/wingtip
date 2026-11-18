@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Marker } from "maplibre-gl";
+import type { GeoJSONSource } from "maplibre-gl";
 import { useEffect, useMemo, useRef } from "react";
 import { pastFlightQuery } from "../../../lib/airplane/pastFlightsQuery";
 import type { Course } from "../../../lib/api/types";
 import { flightQuery } from "../../../lib/queryClient";
 import { altFt } from "../../../lib/format";
 import { useFlownTrack } from "../../../lib/map/position/flownTrack";
-import { TRAFFIC_COLOURS, trafficIcon, trafficTag } from "../../../lib/map/marks/icons";
 import { useLegHighlight } from "../../../lib/legHighlight";
 import { useMapHover } from "../../../lib/map/marks/mapHover";
 import { useOwnFix } from "../../../lib/map/position/ownShip";
@@ -15,8 +14,11 @@ import { useOwnTrail } from "../../../lib/map/position/ownTrail";
 import { positionAt, stepPastFlight, usePastFlight, type ReplayPoint } from "../../plan";
 import { colourLines } from "../../../lib/traffic";
 import { useTracking } from "../../../lib/map/position/tracking";
-import { useGlMap } from "../../../lib/map/gl/glLayer";
-import { iconMarker, setMarkerIcon } from "../../../lib/map/gl/htmlMarker";
+import { EMPTY, useGlLayer, useGlMap } from "../../../lib/map/gl/glLayer";
+import { addTrafficPictures, trafficLayers, trafficPicture, type TrafficMarkProps } from "./trafficMarks";
+import { useTerrainView } from "../terrain/useTerrainView";
+import { useDrawnStretch } from "../terrain/heightStretch";
+import { standAtM } from "../terrain/trafficAloft";
 import { useGlFit } from "../useGlFit";
 import { picked, pilotMoved } from "../../../lib/map/gl/pilotCamera";
 import { cameraOf } from "../../../lib/map/gl/camera";
@@ -135,18 +137,39 @@ export function LegHoverGl() {
   return null;
 }
 
+const REPLAY = "replay-airplane";
+const REPLAY_SOURCES = {
+  [REPLAY]: { type: "geojson" as const, data: EMPTY },
+  [`${REPLAY}-trends`]: { type: "geojson" as const, data: EMPTY },
+};
+/** The traffic's own layers (trafficMarks), the replay's airplane drawn as
+ *  a target of the traffic is, where it was an HTML marker: the map's own
+ *  symbols, its height lifted with it in 3D. */
+const REPLAY_LAYERS = trafficLayers(
+  { marks: `${REPLAY}-marks`, tags: `${REPLAY}-tags`, trends: `${REPLAY}-trend-lines` },
+  { points: REPLAY, trends: `${REPLAY}-trends` },
+);
+
 /** A replay's airplane along a past flight's path, or -- `asOwnShip`, the
  *  planned flight's dry run -- own ship flown along it (useReplayMarker). */
 export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
   const { map } = useGlMap();
-  // The airplane, turned with the map, and its height upright under it.
-  const marker = useRef<{ mark: Marker; tag: Marker } | null>(null);
+  // The airplane, turned with the map, ringed as the one followed, and its
+  // height upright under it ("4,500", as every map tag writes a figure),
+  // in 3D at that height over the ground (TrafficAloftGl's standAtM).
+  useGlLayer("top", REPLAY_SOURCES, REPLAY_LAYERS);
+  useEffect(() => addTrafficPictures(map), [map]);
+  const raised = useTerrainView().mode === "3d";
+  const stretch = useDrawnStretch();
+  const lift = useRef({ raised, stretch });
   useEffect(() => {
-    const drop = () => {
-      marker.current?.mark.remove();
-      marker.current?.tag.remove();
-      marker.current = null;
+    lift.current = { raised, stretch };
+  }, [raised, stretch]);
+  useEffect(() => {
+    const show = (data: GeoJSON.FeatureCollection) => {
+      if (map.style) map.getSource<GeoJSONSource>(REPLAY)?.setData(data);
     };
+    const drop = () => show(EMPTY);
     let frame = 0,
       last = performance.now(),
       stepping = false,
@@ -194,17 +217,22 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
         return;
       }
       const height = here.alt_ft == null ? null : Math.round(here.alt_ft / 100) * 100;
-      const icon = trafficIcon(here.track_deg ?? null, TRAFFIC_COLOURS.far, 0, true);
-      const tag = trafficTag(TRAFFIC_COLOURS.far, altFt(height), null, true);
-      const point: [number, number] = [here.lon, here.lat];
-      if (!marker.current)
-        marker.current = { mark: iconMarker(icon).setLngLat(point).addTo(map), tag: iconMarker(tag).setLngLat(point).addTo(map) };
-      else {
-        marker.current.mark.setLngLat(point);
-        marker.current.tag.setLngLat(point);
-        setMarkerIcon(marker.current.mark, icon);
-        setMarkerIcon(marker.current.tag, tag);
-      }
+      const { raised, stretch } = lift.current;
+      const ground = raised ? (map.queryTerrainElevation([here.lon, here.lat]) ?? 0) : 0;
+      const properties: TrafficMarkProps = {
+        hex: REPLAY,
+        icon: trafficPicture(false, here.track_deg != null, true),
+        track: here.track_deg ?? 0,
+        tracked: true,
+        label: height == null ? "" : altFt(height),
+        callsign: "",
+        ink: CHART.casing,
+        alt_m: raised ? standAtM(height, ground, stretch) : 0,
+      };
+      show({
+        type: "FeatureCollection",
+        features: [{ type: "Feature", geometry: { type: "Point", coordinates: [here.lon, here.lat] }, properties }],
+      });
       // Not while a replay's camera has the map (features/replay/camera,
       // which marks the map's container): it keeps the airplane in sight.
       if (playing && !pilotMoved() && !map.getContainer().dataset.replayCamera) {

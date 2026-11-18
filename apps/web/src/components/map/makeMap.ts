@@ -6,6 +6,33 @@ import "../../lib/map/gl/worker";
 // The app's own typeface for the map's words (MapLibre draws them from
 // the font file, no glyph server): the Latin subset the page loads.
 import interUrl from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
+
+/** The characters the Latin file of Inter holds, as fontsource's own CSS
+ *  declares them (@fontsource-variable/inter, wght.css's latin face): the
+ *  traffic's climb and descent arrows (U+2191, U+2193) and the minus among
+ *  them, which a range of Latin-1 and punctuation alone left to MapLibre's
+ *  fallback drawing. */
+const INTER_LATIN = [
+  "U+0000-00FF",
+  "U+0131",
+  "U+0152-0153",
+  "U+02BB-02BC",
+  "U+02C6",
+  "U+02DA",
+  "U+02DC",
+  "U+0304",
+  "U+0308",
+  "U+0329",
+  "U+2000-206F",
+  "U+20AC",
+  "U+2122",
+  "U+2191",
+  "U+2193",
+  "U+2212",
+  "U+2215",
+  "U+FEFF",
+  "U+FFFD",
+];
 import type { MapInsets } from "../../lib/mapChrome";
 import { watchMapErrors } from "./mapErrors";
 import type { OverlayTiles } from "../../lib/api/types";
@@ -81,8 +108,8 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
     // The same variable font under a second name: MapLibre draws a name
     // with "Bold" in it at weight 700 (GL_FONT_BOLD, the chart's labels).
     "font-faces": {
-      Inter: [{ url: interUrl, "unicode-range": ["U+0000-00FF", "U+2000-206F"] }],
-      "Inter Bold": [{ url: interUrl, "unicode-range": ["U+0000-00FF", "U+2000-206F"] }],
+      Inter: [{ url: interUrl, "unicode-range": INTER_LATIN }],
+      "Inter Bold": [{ url: interUrl, "unicode-range": INTER_LATIN }],
     },
   };
   const m = new maplibregl.Map({

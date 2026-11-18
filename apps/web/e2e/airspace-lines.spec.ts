@@ -3,7 +3,7 @@ import { airportMark, drawn, openMapSettings, slow } from "./helpers";
 
 /**
  * The Class B, C and D over the chart, with their altitudes as the
- * sectional words them, written along their lines as ForeFlight's, and
+ * sectional writes them, ceiling over floor, along their lines, and
  * the VORs (AirspaceGl, NavaidsGl, from the overlay tiles): on
  * unless turned off, the owner's pick of the map's looks. Against the
  * real planner and its overlay tiles of the FAA airspace file, as the point is that the lines
@@ -35,16 +35,16 @@ test("Chicago's airspace is drawn over the chart with its altitudes, and the swi
   // O'Hare's card brings the map in on it, close enough for the labels.
   await page.goto("/app/plan?place=KORD");
   await expect.poll(() => lines(page), { timeout: slow(30000) }).toBeGreaterThan(5);
-  // The altitudes on the rings in their dark tabs, as ForeFlight writes
-  // them (2026-11-08): the floor and the ceiling in feet MSL, O'Hare's
-  // shelves among them ("B: 3000–10000"), and a Class D's from the
-  // surface ("D: SFC–<3000" under a Class B shelf). The surface area's
-  // "B: SFC–10000" is a small ring round KORD's own mark, its label
-  // skipped there.
-  await expect.poll(async () => (await labels(page)).some((l) => /^B: (SFC|\d+)–10000$/.test(l.text)), { timeout: slow(15000) }).toBe(true);
+  // The altitudes on the rings in their dark tabs, as the sectional
+  // writes them (the engine's words in the tiles, the owner's pick,
+  // 2026-11-18): the ceiling over the floor in hundreds of feet MSL,
+  // O'Hare's shelves among them ("100" over "30"), and a Class D its
+  // ceiling alone, a minus where it stops under a Class B shelf ("-30");
+  // the same words the 3D view stands at each shelf's top.
+  await expect.poll(async () => (await labels(page)).some((l) => /^100\n(SFC|\d+)$/.test(l.text)), { timeout: slow(15000) }).toBe(true);
   const written = await labels(page);
-  expect(written.some((l) => /^D: SFC–<?\d+$/.test(l.text))).toBe(true);
-  expect(written.some((l) => /^[BC]: \d+–\d+$/.test(l.text))).toBe(true);
+  expect(written.some((l) => /^-?\d+$/.test(l.text))).toBe(true);
+  expect(written.some((l) => /^\d+\n\d+$/.test(l.text))).toBe(true);
   expect(written.length).toBeGreaterThan(3);
   // One a shelf, not one every few hundred pixels round its ring.
   expect(new Set(written.map((l) => l.id)).size).toBe(written.length);

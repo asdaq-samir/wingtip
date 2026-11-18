@@ -21,7 +21,7 @@ import {
   selectedLegFilter,
 } from "../glRoute";
 import { useGlProbe } from "../useGlProbe";
-import { GL_FONT, TAP } from "./common";
+import { GL_FONT, LABEL_HALO, LABEL_SIZE, TAP } from "./common";
 import { useGlSymbols } from "../useGlSymbols";
 import { WAY_SHOWN_LAYER } from "./WaysGl";
 import { LEG_RANK, LEG_REACH, nearestLeg, type GlLeg } from "../legTap";
@@ -94,7 +94,7 @@ const NAMES: SymbolLayerSpecification = {
   layout: {
     "text-field": ["get", "name"],
     "text-font": GL_FONT,
-    "text-size": 12,
+    "text-size": LABEL_SIZE.normal,
     "text-variable-anchor": ["left", "right"],
     // Clear of its own dot's picture, which MapLibre's collision sees whole:
     // 16 points from its middle (markPictures' dotPicture, 26 across and 3
@@ -104,7 +104,7 @@ const NAMES: SymbolLayerSpecification = {
     "text-justify": "auto",
     "symbol-sort-key": ["get", "number"],
   },
-  paint: { "text-color": CHART.fixInk, "text-halo-color": CHART.casing, "text-halo-width": 2 },
+  paint: { "text-color": CHART.fixInk, ...LABEL_HALO },
 };
 
 /**

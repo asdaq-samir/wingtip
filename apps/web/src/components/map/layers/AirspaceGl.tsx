@@ -1,7 +1,7 @@
 import { AirspaceCardBody } from "../cards/AirspaceCard";
 import { useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
 import { volumeOfTile } from "../../../lib/map/gl/glTileFeatures";
-import { AIRSPACE_LINE_LAYERS, airspaceText } from "../../../lib/map/gl/glStyle";
+import { AIRSPACE_LINE_LAYERS } from "../../../lib/map/gl/glStyle";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { TAP } from "../../../lib/map/gl/layers/common";
 
@@ -29,7 +29,7 @@ function TileAirspace() {
   useGlProbe("airspace-lines", AIRSPACE_LINE_LAYERS, (f) => ({ id: `tile-${f.properties.number}`, cls: f.properties.class }));
   useGlProbe("airspace-edge-labels", ["airspace-labels"], (f) => ({
     id: `tile-${f.properties.number}`,
-    text: airspaceText(volumeOfTile(f)),
+    text: f.properties.tab,
     angle: Number(f.properties.angle ?? 0),
   }));
   useGlTap(AIRSPACE_LINE_LAYERS, TAP.line, TAP.rank.line, (feature) => {

@@ -54,7 +54,13 @@ export function ClassBGl({
                 lon: a.lon,
                 text: a.ident,
                 picture: fieldMarkPicture("B", colourOf(a.flight_category)),
-                props: { title: `${a.ident} · ${a.name} · ${a.flight_category ?? "no report"}`, weather: colourOf(a.flight_category) },
+                // Its ident blue as the chart's (labelledLayer): a Class
+                // B's primary field, towered.
+                props: {
+                  title: `${a.ident} · ${a.name} · ${a.flight_category ?? "no report"}`,
+                  weather: colourOf(a.flight_category),
+                  towered: true,
+                },
                 onTap: () => {
                   if (onSelectPlace) onSelectPlace(a.ident);
                   else cameraOf(map).pick([a.lon, a.lat], { zoom: Math.max(map.getZoom(), glZoom(overlayFromZoom)), duration: 600 });

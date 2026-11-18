@@ -15,8 +15,15 @@ import { useRouteOnly } from "../routeOnly";
  * map shows the route's points alone (lib/map/routeOnly).
  */
 export function watchOverlayFilters(map: MlMap): () => void {
-  const apply = () => applyOverlayFilters(map, useEmergencyOpen.getState().open != null, useRouteOnly.getState().on);
+  const apply = () => applyOverlaySettings(map);
   apply();
   const stops = [usePreferences.subscribe(apply), useEmergencyOpen.subscribe(apply), useRouteOnly.subscribe(apply)];
   return () => stops.forEach((stop) => stop());
+}
+
+/** The settings' filters as they stand now, once: what a layer that hid
+ *  some of the tiles' layers for a while (the 3D view's, over the chart's
+ *  own tabs) gives back, so a layer the settings hide stays hidden. */
+export function applyOverlaySettings(map: MlMap) {
+  applyOverlayFilters(map, useEmergencyOpen.getState().open != null, useRouteOnly.getState().on);
 }

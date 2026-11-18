@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { FeatureCollection, Geometry } from "geojson";
-import type { FillLayerSpecification, LineLayerSpecification } from "maplibre-gl";
+import type { FillLayerSpecification, LineLayerSpecification, SymbolLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo } from "react";
 import { useMapHover } from "../../../lib/map/marks/mapHover";
 import { CHART } from "../../../lib/tokens";
@@ -10,7 +10,7 @@ import { SheetCard } from "../../../components/SheetCard";
 import { TfrCard, TfrGone } from "../TfrCard";
 import { TFR_RED, inForce } from "../tfrMarks";
 import { useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
-import { TAP } from "../../../lib/map/gl/layers/common";
+import { GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE, TAP } from "../../../lib/map/gl/layers/common";
 
 const SOURCE = "tfrs";
 // Each TFR's NOTAM number its feature's id (promoteId), for MapLibre's
@@ -52,7 +52,23 @@ const LINE_LATER: LineLayerSpecification = {
   filter: ["!", ["get", "active"]],
   paint: { "line-color": TFR_RED, "line-width": 2, "line-dasharray": [3, 2.5] },
 };
-const ALL = [...LAYERS, LINE, LINE_LATER];
+/** Its NOTAM number along its edge ("6/1234"), as a chart's area carries
+ *  its name: the number the pilot is briefed by and looks it up with. */
+const LABEL: SymbolLayerSpecification = {
+  id: "tfrs-label",
+  type: "symbol",
+  source: SOURCE,
+  layout: {
+    "symbol-placement": "line",
+    "symbol-spacing": 320,
+    "text-field": ["get", "id"],
+    "text-font": GL_FONT_BOLD,
+    "text-size": LABEL_SIZE.small,
+    "text-max-angle": 30,
+  },
+  paint: { "text-color": TFR_RED, ...LABEL_HALO },
+};
+const ALL = [...LAYERS, LINE, LINE_LATER, LABEL];
 
 /** The TFR a mouse rests on in the Brief (lib/map/marks/mapHover): its
  *  edge again, wide, in the selection's yellow over its red, drawn where

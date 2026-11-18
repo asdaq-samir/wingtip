@@ -3,8 +3,10 @@ import { pirepMark } from "./weatherMap";
 import { callEngine } from "../../lib/engine/engine";
 import { stylePicture, type GlPicture } from "../../lib/map/gl/useGlSymbols";
 import { framed } from "../../lib/map/marks/markPictures";
+import { MARK_FONT } from "../../lib/map/marks/airportMark";
+import { hazardTextInk } from "../../lib/map/weatherColours";
 import { barbId } from "../../lib/map/marks/stationModel";
-import { CHART } from "../../lib/tokens";
+import { CHART, MAP } from "../../lib/tokens";
 
 // The weather on the planner's map, at the pilot's pick: where its box
 // comes from, and its marks (features/plan-map/layers/WeatherGl draws
@@ -29,7 +31,8 @@ export function weatherBoxOf(b: Bounds) {
 }
 
 /** A PIREP's chip on the map: its hazard's glyph and its level, in the
- *  hazard's colour, on white edged in it. The glyph is drawn on the chip
+ *  hazard's colour (the level's words in its text ink, hazardTextInk), on
+ *  white edged in it. The glyph is drawn on the chip
  *  (it is not among the map's Inter's letters), the level is the layer's
  *  words in it, the chip stretched to them; PIREP_SHIFT centres the chip
  *  on the report's point. */
@@ -39,16 +42,16 @@ export function pirepMarks(p: MapPirep): { picture: GlPicture; text: string; col
     `pirep|${glyph}|${colour}`,
     () =>
       `<rect x="1" y="1" width="38" height="20" rx="10" fill="${CHART.casing}" stroke="${colour}" stroke-width="2"/>` +
-      `<text x="7" y="15.5" font-family="-apple-system, system-ui, sans-serif" font-weight="700" font-size="12" fill="${colour}">${glyph}</text>`,
+      `<text x="7" y="15.5" font-family="${MARK_FONT}" font-weight="700" font-size="12" fill="${colour}">${glyph}</text>`,
     40,
     22,
     { inset: 10, x: [19, 27], y: [10.5, 11.5], content: [20, 4, 33, 18] },
   );
-  return { picture, text: level, colour };
+  return { picture, text: level, colour: hazardTextInk(colour) };
 }
 /** The level's shift right of the point, ems of its 12 points: the chip
  *  runs 20 points left of the words and 7 right. */
-export const PIREP_SHIFT = 6.5 / 12;
+export const PIREP_SHIFT = 6.5 / MAP.label;
 
 /** A station's wind aloft as the station model's barb (stationModel's
  *  pictures, which the chart's airport weather wears too): its flags,

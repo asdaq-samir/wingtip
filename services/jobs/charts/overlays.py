@@ -19,8 +19,8 @@ FAA's own data set, its attributes the fields named below:
   Class A, 18,000 ft MSL per 14 CFR 71.33, for "up to but not including"
   it), UPPER_DESC TNI, WKHR_CODE and WKHR_RMK.
 - `airspace_labels`: a point a Class B, C or D volume of that file, where
-  the map writes its altitudes on its ring, with their figures and the
-  text's turn (airspace_label_features).
+  the map writes its altitudes on its ring, with the engine's words for
+  them (`tab`), their figures and the text's turn (airspace_label_features).
 - `special_use`: the FAA's special use airspace feature service (ADDS),
   as the cycle pack holds it: NAME, TYPE_CODE, LOWER_*/UPPER_*, TIMESOFUSE,
   GMTOFFSET/DST_CODE and CONT_AGENT, read as wingtip.sua reads them.
@@ -62,7 +62,7 @@ import time
 from functools import lru_cache
 from pathlib import Path
 
-from wingtip import cycle_pack, geo, phone_pack_shapes, vector_tiles
+from wingtip import airspace_tabs, cycle_pack, geo, phone_pack_shapes, vector_tiles
 from wingtip.atomic import atomic_path
 from wingtip.units import M_PER_FT, M_PER_NM
 from wingtip.vector_tiles import INDEX, LAYERS, VERSION, archive_name
@@ -244,12 +244,10 @@ def _label_place(geometry, centre: tuple[float, float]) -> tuple[tuple[float, fl
 
 def airspace_label_features(pack, bbox=None):
     """The `airspace_labels` layer's lines of GeoJSON: one point a Class
-    B, C or D volume with a ceiling, on its ring (_label_place), with
-    the figures its label is written from (the map writes the words) and
-    `angle`, the text's turn. One a shelf, where the ring's own line
-    placement put a label every few hundred pixels and one in each tile
-    the ring crossed: three "C: 49–23" round Madison (the owner,
-    2026-11-08)."""
+    B, C or D volume with a ceiling, on its ring (_label_place), with `tab`,
+    the engine's words the map draws ("49" over "23", airspace_tabs), its
+    figures, and `angle`, the text's turn. One a shelf, where the ring's
+    own line placement put three round Madison (the owner, 2026-11-08)."""
     numbers = phone_pack_shapes._controlled_numbers(pack)
     volumes = []
     for record, number, geometry in zip(pack.attrs("airspace"), numbers, pack.geometries("airspace")):
@@ -276,6 +274,7 @@ def airspace_label_features(pack, bbox=None):
         yield _feature(
             {
                 "class": volume["class"],
+                "tab": airspace_tabs.shelf_tab(volume),
                 "floor_ft": volume["floor_ft"],
                 "ceiling_ft": volume["ceiling_ft"],
                 "ceiling_excluded": volume["ceiling_excluded"],
