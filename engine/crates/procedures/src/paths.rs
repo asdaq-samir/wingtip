@@ -11,6 +11,7 @@
 
 use crate::geo::{angle_between, bearing_deg, destination, distance_nm, py_mod};
 use crate::json::{self, Value};
+use wingtip_core::ask::opt_num_in as opt_num;
 
 /// A hold drawn at a light airplane's speed: a one-minute leg (AIM 5-3-8,
 /// at or below 14,000 ft MSL) and standard-rate turns (3° a second) at
@@ -147,14 +148,6 @@ pub fn climb_nm(altitude_ft: Option<f64>, known_ft: Option<f64>) -> f64 {
 
 fn num(name: &str, v: &Value, key: &str) -> Result<f64, String> {
     v.get(key).and_then(Value::as_f64).ok_or_else(|| format!("{name}: \"{key}\" is not a number"))
-}
-
-fn opt_num(name: &str, v: &Value, key: &str) -> Result<Option<f64>, String> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
 }
 
 fn point(name: &str, v: &Value, key: &str) -> Result<P, String> {

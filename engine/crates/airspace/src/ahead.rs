@@ -20,6 +20,7 @@
 
 use crate::geo::{self, destination};
 use crate::json::{self, Value};
+use crate::pack::{f64_at, u32_at};
 use crate::{pack::Pack, sort::StableSort, sua_limit};
 
 /// How far ahead the airspace is looked at: the minutes it takes to find
@@ -173,14 +174,6 @@ fn at(track: &Track, i: usize) -> Alert {
         lon: round_to(track.lons[i], 5),
         ..Default::default()
     }
-}
-
-fn f64_at(b: &[u8], o: usize) -> Option<f64> {
-    b.get(o..o + 8).map(|s| f64::from_le_bytes(s.try_into().unwrap()))
-}
-
-fn u32_at(b: &[u8], o: usize) -> Option<u32> {
-    b.get(o..o + 4).map(|s| u32::from_le_bytes(s.try_into().unwrap()))
 }
 
 fn text<'a>(run: &'a [u8], r: &[u8], o: usize) -> Option<&'a str> {

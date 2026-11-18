@@ -12,6 +12,7 @@ use super::{number, object, opt_number, py_round, py_sum, LegAir, Obj, Profile, 
 use crate::{json::Value, sort::StableSort};
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 use wingtip_flight::performance::Climber;
 
 /// The plans, in the order the page lists them.
@@ -72,7 +73,7 @@ pub struct Flights<'a> {
     profile: Option<&'a Profile>,
     air: &'a [LegAir],
     pub climber: Option<Climber>,
-    cache: RefCell<HashMap<(usize, u64), Obj>>,
+    cache: RefCell<HashMap<(usize, u64), Rc<Obj>>>,
 }
 
 impl<'a> Flights<'a> {
@@ -88,11 +89,12 @@ impl<'a> Flights<'a> {
         Ok(Flights { name, fixes, profile, air, climber: profile.map(|p| Climber::new(&p.airplane)), cache: RefCell::new(HashMap::new()) })
     }
 
-    /// Leg `i` flown at `altitude_ft`.
-    pub fn leg_at(&self, i: usize, altitude_ft: f64) -> R<Obj> {
+    /// Leg `i` flown at `altitude_ft`, worked once: the plans' search asks
+    /// each leg at each altitude many times, so it is kept and shared.
+    pub fn leg_at(&self, i: usize, altitude_ft: f64) -> R<Rc<Obj>> {
         let key = (i, altitude_ft.to_bits());
         if let Some(leg) = self.cache.borrow().get(&key) {
-            return Ok(leg.clone());
+            return Ok(Rc::clone(leg));
         }
         let air = &self.air[i];
         let leg = leg_between(
@@ -104,12 +106,13 @@ impl<'a> Flights<'a> {
             air.at(self.name, i, altitude_ft)?,
             air.variation_deg,
         )?;
-        self.cache.borrow_mut().insert(key, leg.clone());
+        let leg = Rc::new(leg);
+        self.cache.borrow_mut().insert(key, Rc::clone(&leg));
         Ok(leg)
     }
 
     fn legs_flown(&self, altitudes: &[f64], start_ft: Option<f64>) -> R<Vec<Obj>> {
-        let legs = altitudes.iter().enumerate().map(|(i, a)| self.leg_at(i, *a)).collect::<R<Vec<_>>>()?;
+        let legs = altitudes.iter().enumerate().map(|(i, a)| self.leg_at(i, *a).map(|l| (*l).clone())).collect::<R<Vec<_>>>()?;
         match (self.profile, &self.climber) {
             (Some(profile), Some(climber)) => with_climbs(&legs, start_ft, profile, climber),
             _ => Ok(legs),
@@ -129,12 +132,14 @@ fn best_path(
     for (i, options) in candidates.iter().enumerate() {
         let mut layer: Vec<(f64, f64, Option<f64>)> = Vec::with_capacity(options.len());
         for &a in options {
+            // The leg's own cost is the same from every altitude before it.
+            let leg = leg_cost(i, a)?;
             let entry = if i == 0 {
-                (a, leg_cost(i, a)? + step_cost(i, None, a)?, None)
+                (a, leg + step_cost(i, None, a)?, None)
             } else {
                 let mut chosen: Option<(f64, f64)> = None;
                 for &(p, c, _) in &best[i - 1] {
-                    let cost = c + leg_cost(i, a)? + step_cost(i, Some(p), a)?;
+                    let cost = c + leg + step_cost(i, Some(p), a)?;
                     let better = match chosen {
                         None => true,
                         Some((bc, bp)) => cost < bc || (cost == bc && p < bp),

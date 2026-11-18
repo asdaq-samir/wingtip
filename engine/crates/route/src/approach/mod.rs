@@ -35,6 +35,7 @@ pub mod scene;
 pub mod tags;
 
 use crate::json::Value;
+pub(crate) use wingtip_core::ask::{num_in as num, opt_num_in as opt_num};
 pub(crate) use wingtip_core::units::{FT_PER_M, FT_PER_NM};
 
 /// A fix of the procedure: its place, its roles ("IAF", "IF", "FACF",
@@ -117,18 +118,6 @@ pub struct Drawing {
 }
 
 type R<T> = Result<T, String>;
-
-pub(crate) fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
-
-pub(crate) fn num(name: &str, v: &Value, key: &str) -> R<f64> {
-    opt_num(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
-}
 
 pub(crate) fn opt_str(name: &str, v: &Value, key: &str) -> R<Option<String>> {
     match v.get(key) {

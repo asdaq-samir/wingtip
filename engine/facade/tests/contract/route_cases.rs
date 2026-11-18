@@ -89,9 +89,6 @@ pub(super) fn cases(c: &mut Checker) {
             json!({ "selection": case["selection"], "legs": case["legs"], "between": case["between"], "profile": case.get("profile") }),
         );
     }
-    for case in cautions["floor"].as_array().unwrap() {
-        c.ask("floor_caution", json!({ "segment": case["segment"], "altitude_ft": case["altitude_ft"] }));
-    }
     c.ask("prohibited_caution", json!({ "selection": cautions["prohibited"][0]["selection"] }));
     for case in cautions["alternate_destination"].as_array().unwrap() {
         c.ask(

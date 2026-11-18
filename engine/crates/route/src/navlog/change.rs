@@ -15,6 +15,7 @@ use super::legs::wind_triangle;
 use super::{Profile, R};
 use crate::json::{self, Value};
 use crate::motion::profile::DESCENT_FT_PER_NM;
+use wingtip_core::ask::{num_in as num, opt_num_in as opt_num};
 use wingtip_flight::flight::isa_temp_c;
 use wingtip_flight::performance::Climber;
 
@@ -95,18 +96,6 @@ pub fn change(along_nm: f64, from_ft: f64, to_ft: f64, mode: Mode, profile: Opti
         // Not known where the profile gives no climb fuel flow.
         gallons: p.airplane.climb_burn_gph().map(|_| climb.gallons),
     }
-}
-
-fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
-
-fn num(name: &str, v: &Value, key: &str) -> R<f64> {
-    opt_num(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
 }
 
 /// `altitude_change`, JSON in and out.

@@ -13,7 +13,7 @@
 //! route from the point on it nearest the airplane, each `look_ahead_nm`
 //! long. Geometry only: no figure here is an aviation rule.
 
-use crate::geo::{bearing_deg, box_around, destination, distance_nm, track_nm};
+use crate::geo::{bearing_deg, box_around, destination, distance_and_bearing, distance_nm, track_nm};
 use crate::json::Value;
 use crate::pack_query::region_of;
 use crate::sort::StableSort;
@@ -64,7 +64,7 @@ fn along_route(lat: f64, lon: f64, route: &[(f64, f64)], look_nm: f64) -> Vec<Ah
     let mut ahead_at_start = 0.0;
     for w in route[first..].windows(2) {
         let (a, b) = (w[0], w[1]);
-        let (length, course) = (distance_nm(a.0, a.1, b.0, b.1), bearing_deg(a.0, a.1, b.0, b.1));
+        let (length, course) = distance_and_bearing(a.0, a.1, b.0, b.1);
         let mut s = from;
         loop {
             let ahead = ahead_at_start + (s - from);

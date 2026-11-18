@@ -11,11 +11,7 @@ import {
   pathBetween,
 } from "./approachLesson";
 import { stopwatch } from "./format";
-import { callEngine } from "./engine/engine";
 
-// The engine's names behind the lesson's sentences, asked through the
-// .wasm as approach_brief asks them inside the engine.
-const descentFpm = (gsKt: number, angleDeg: number) => callEngine("approach_descent_fpm", { gs_kt: gsKt, angle_deg: angleDeg });
 const SEE_THE_PLATE = "See the plate";
 
 /** KDLH's ILS 09 via DLH as the CIFP of 29 Oct 2026 codes it: DL the IAF
@@ -143,19 +139,6 @@ const RADIO: Frequency[] = [
   { type: "TWR", description: "DULUTH TWR", frequency_mhz: 118.3 },
   { type: "GND", description: "GND", frequency_mhz: 121.9 },
 ];
-
-describe("descentFpm", () => {
-  it("is the FAA's rate of descent table: ground speed x 101.3 x tan(angle)", () => {
-    // The TPP's Rate of Descent Table, 3.0°: 318 at 60 kt, 478 at 90, 637 at 120.
-    expect(descentFpm(60, 3)).toBeCloseTo(318, 0);
-    expect(descentFpm(90, 3)).toBeCloseTo(478, 0);
-    expect(descentFpm(120, 3)).toBeCloseTo(637, 0);
-    // About ground speed x 5.3 on 3.00°.
-    expect(descentFpm(100, 3) / 100).toBeCloseTo(5.3, 1);
-    // Steeper is faster: 3.5° at 90 kt, 557.
-    expect(descentFpm(90, 3.5)).toBeCloseTo(557, 0);
-  });
-});
 
 describe("approachCategory", () => {
   it("is 14 CFR 97.3's, by VREF or 1.3 VSO", () => {

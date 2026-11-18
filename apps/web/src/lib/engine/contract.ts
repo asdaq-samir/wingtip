@@ -86,7 +86,6 @@ export type ApproachCoachingAnswer = {
   altitude_ft: number | null;
 }[];
 export type ApproachDebriefAnswer = ApproachDebrief | null;
-export type ApproachDescentFpmAnswer = number;
 export type ApproachFindAnswer = ApproachDebrief[];
 export type ApproachGuidanceAnswer = "localizer" | "gps" | "other";
 export type ApproachLessonPathAnswer = {
@@ -335,7 +334,6 @@ export type FiledWakeAnswer = string | null;
 export type FiledZzzzAnswer = boolean;
 export type FixRadialDistanceAnswer = string | null;
 export type FlightCategoryAnswer = "VFR" | "MVFR" | "IFR" | "LIFR" | null;
-export type FloorCautionAnswer = string | null;
 export type FloorCorridorNmAnswer = number;
 export type FlowCellAnswer = {
   /**
@@ -567,7 +565,6 @@ export type HandbookFuelRead = {
    */
   usable?: number | null;
 } | null;
-export type HighestUnderCloudsFtAnswer = number;
 export type HoldEntryAnswer = "direct" | "teardrop" | "parallel";
 export type HoldLengthReadAnswer =
   | {
@@ -707,7 +704,6 @@ export type LogbookPageTotals = {
   night_landings?: number | null;
   approaches?: number | null;
 } | null;
-export type LowestVfrCruisingAltitudeAnswer = number;
 export type MagneticVariationAnswer = number;
 export type ModeCVeilAnswer = {
   ident: string;
@@ -1321,13 +1317,6 @@ export interface EngineContract {
     answer: ApproachDebriefAnswer;
   };
   /**
-   * The descent rate on the path, ft/min (the TPP's rate of descent table).
-   */
-  approach_descent_fpm: {
-    input: ApproachDescentFpmInput;
-    answer: ApproachDescentFpmAnswer;
-  };
-  /**
    * The approaches a track flew, each debriefed.
    */
   approach_find: {
@@ -1685,13 +1674,6 @@ export interface EngineContract {
     answer: DebriefAirborneAnswer;
   };
   /**
-   * The web's debrief (its figures, snake_case, no marks) marked against ACS PA.VI.A's tolerances as `debrief` marks its own, with the tolerances.
-   */
-  debrief_marked: {
-    input: DebriefMarkedInput;
-    answer: DebriefMarkedAnswer;
-  };
-  /**
    * The altitude at which a standard day's air has density sigma.
    */
   density_altitude_ft: {
@@ -2019,13 +2001,6 @@ export interface EngineContract {
   floor_along_path: {
     input: FloorAlongPathInput;
     answer: FloorAlongPathAnswer;
-  };
-  /**
-   * What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.
-   */
-  floor_caution: {
-    input: FloorCautionInput;
-    answer: FloorCautionAnswer;
   };
   /**
    * How far either side of the course the VFR floor counts the ground's obstacles: 5 nm, wider than 14 CFR 91.119(b)'s 2,000 ft and 91.177(a)(2)'s 4 nm, so the floor tolerates the airplane off its line. The 3D map colours the ground against the plan within it.
@@ -2413,13 +2388,6 @@ export interface EngineContract {
     answer: HandbookReadCheck;
   };
   /**
-   * The highest altitude that keeps 14 CFR 91.155(a)'s distance below a cloud base (MSL): 500 ft under it, 1,000 ft at or above 10,000 ft MSL.
-   */
-  highest_under_clouds_ft: {
-    input: HighestUnderCloudsFtInput;
-    answer: HighestUnderCloudsFtAnswer;
-  };
-  /**
    * The entry into a route's hold for an airplane arriving on a course (AIM 5-3-8 j.3's sectors, read by the course flown).
    */
   hold_entry: {
@@ -2656,13 +2624,6 @@ export interface EngineContract {
   lost_comms: {
     input: LostCommsInput;
     answer: LostCommsAnswer;
-  };
-  /**
-   * The lowest VFR cruising altitude at or above a floor for a magnetic course: odd thousands plus 500 eastbound, even westbound (14 CFR 91.159(a)).
-   */
-  lowest_vfr_cruising_altitude: {
-    input: LowestVfrCruisingAltitudeInput;
-    answer: LowestVfrCruisingAltitudeAnswer;
   };
   /**
    * Magnetic variation, degrees east (west negative), the World Magnetic Model's (WMM) at a place and day, as wingtip.magnetic works it out.
@@ -4792,10 +4753,6 @@ export interface ApproachFinding {
    */
   minimums?: boolean;
 }
-export interface ApproachDescentFpmInput {
-  gs_kt: number;
-  angle_deg: number;
-}
 export interface ApproachFindInput {
   drawings?: ProcedureDrawing[] | null;
   points?: TrackPoint[] | null;
@@ -6068,23 +6025,6 @@ export interface DebriefAnswer {
 export interface DebriefAirborneInput {
   points: TrackPoint[];
 }
-export interface DebriefMarkedInput {
-  /**
-   * The debrief's figures as `debrief` gives them, unmarked: legs, passes, patterns and the rest.
-   */
-  debrief: {};
-}
-export interface DebriefMarkedAnswer {
-  debrief: {};
-  tolerances: {
-    altitude_ft: number;
-    course_deg: number;
-    off_route_nm: number;
-    eta_min: number;
-    pattern_nm: number;
-    pattern_ft: number;
-  };
-}
 export interface DensityAltitudeFtInput {
   sigma: number;
 }
@@ -7169,13 +7109,6 @@ export interface FloorAlongPathInput {
 export interface FloorAlongPathAnswer {
   floor_ft: number;
   lowest_ground_ft?: number | null;
-}
-export interface FloorCautionInput {
-  /**
-   * A selection's segment: floor_ft, highest_ft, highest_is_obstacle, obstacle_type, obstacle_clearance_ft, congested.
-   */
-  segment: {};
-  altitude_ft: number;
 }
 export interface FloorCorridorNmInput {}
 export interface FlowCellInput {
@@ -8378,9 +8311,6 @@ export interface HandbookProfile {
   climb_fuel_burn_gph: number | null;
   usable_fuel_gal: number | null;
 }
-export interface HighestUnderCloudsFtInput {
-  cloud_base_ft: number;
-}
 export interface HoldEntryInput {
   /**
    * The magnetic course flown to the fix.
@@ -9332,10 +9262,6 @@ export interface LostCommsAnswer {
     words: string;
   }[];
   leave: string;
-}
-export interface LowestVfrCruisingAltitudeInput {
-  floor_ft: number;
-  magnetic_course_deg: number;
 }
 export interface MagneticVariationInput {
   lat: number;

@@ -5,15 +5,11 @@
 //! written is here.
 
 use crate::limits::is_flight_level;
+use wingtip_core::text::js_round;
 
 /// Item 9's wake turbulence category L: a maximum certificated takeoff
 /// weight of 15,500 lb or less (AIM Appendix 4, from FAA Order JO 7360.1).
 pub const LIGHT_WAKE_MAX_LB: f64 = 15_500.0;
-
-/// JavaScript's Math.round, half up, as the web wrote the figures.
-fn js_round(v: f64) -> i64 {
-    (v + 0.5).floor() as i64
-}
 
 /// Item 15's cruising speed: the true airspeed in knots, "N" and four
 /// figures (AIM Appendix 4: "N0450").

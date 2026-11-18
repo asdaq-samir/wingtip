@@ -205,12 +205,6 @@ fun Engine.approachDebrief(drawing: EngineContract.ProcedureDrawing, points: Lis
     rule("approach_debrief", EngineContract.ApproachDebriefInput(drawing = drawing, points = points, attempt = attempt, minimumsFt = minimumsFt))
 
 /**
- * The descent rate on the path, ft/min (the TPP's rate of descent table).
- */
-fun Engine.approachDescentFpm(gsKt: Double, angleDeg: Double): Result<Double> =
-    rule("approach_descent_fpm", EngineContract.ApproachDescentFpmInput(gsKt = gsKt, angleDeg = angleDeg))
-
-/**
  * The approaches a track flew, each debriefed.
  */
 fun Engine.approachFind(drawings: List<EngineContract.ProcedureDrawing>? = null, points: List<EngineContract.TrackPoint>? = null, picked: String? = null, minimumsFt: Double? = null): Result<List<EngineContract.ApproachDebrief>> =
@@ -517,12 +511,6 @@ fun Engine.debriefAirborne(points: List<EngineContract.TrackPoint>): Result<List
     rule("debrief_airborne", EngineContract.DebriefAirborneInput(points = points))
 
 /**
- * The web's debrief (its figures, snake_case, no marks) marked against ACS PA.VI.A's tolerances as `debrief` marks its own, with the tolerances.
- */
-fun Engine.debriefMarked(debrief: Map<String, JsonElement>): Result<EngineContract.DebriefMarkedAnswer> =
-    rule("debrief_marked", EngineContract.DebriefMarkedInput(debrief = debrief))
-
-/**
  * The altitude at which a standard day's air has density sigma.
  */
 fun Engine.densityAltitudeFt(sigma: Double): Result<Double> =
@@ -803,12 +791,6 @@ fun Engine.flightCategory(ceilingFt: Double? = null, visibilitySm: Double? = nul
  */
 fun Engine.floorAlongPath(floors: List<EngineContract.FloorAlongPathInputFloorsItem>): Result<EngineContract.FloorAlongPathAnswer> =
     rule("floor_along_path", EngineContract.FloorAlongPathInput(floors = floors))
-
-/**
- * What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.
- */
-fun Engine.floorCaution(segment: Map<String, JsonElement>, altitudeFt: Double): Result<String?> =
-    rule("floor_caution", EngineContract.FloorCautionInput(segment = segment, altitudeFt = altitudeFt))
 
 /**
  * How far either side of the course the VFR floor counts the ground's obstacles: 5 nm, wider than 14 CFR 91.119(b)'s 2,000 ft and 91.177(a)(2)'s 4 nm, so the floor tolerates the airplane off its line. The 3D map colours the ground against the plan within it.
@@ -1141,12 +1123,6 @@ fun Engine.handbookReadCheck(speedUnit: String? = null, cruiseSpeedKind: String?
     rule("handbook_read_check", EngineContract.HandbookReadCheckInput(speedUnit = speedUnit, cruiseSpeedKind = cruiseSpeedKind, distanceUnit = distanceUnit, weightUnit = weightUnit, armUnit = armUnit, fuelUnit = fuelUnit, burnUnit = burnUnit, cruise = cruise, climb = climb, glide = glide, takeoff = takeoff, landing = landing, empty = empty, maxTakeoffWeight = maxTakeoffWeight, envelope = envelope, fuel = fuel))
 
 /**
- * The highest altitude that keeps 14 CFR 91.155(a)'s distance below a cloud base (MSL): 500 ft under it, 1,000 ft at or above 10,000 ft MSL.
- */
-fun Engine.highestUnderCloudsFt(cloudBaseFt: Double): Result<Double> =
-    rule("highest_under_clouds_ft", EngineContract.HighestUnderCloudsFtInput(cloudBaseFt = cloudBaseFt))
-
-/**
  * The entry into a route's hold for an airplane arriving on a course (AIM 5-3-8 j.3's sectors, read by the course flown).
  */
 fun Engine.holdEntry(arrivalDeg: Double, inboundDeg: Double, turns: String? = null): Result<String> =
@@ -1349,12 +1325,6 @@ fun Engine.logbookTrackPlaces(points: List<EngineContract.TrackPoint>): Result<E
  */
 fun Engine.lostComms(segments: List<EngineContract.LostCommsInputSegmentsItem>, assignedFt: Double? = null, expectedFt: Double? = null, expectedFrom: Int? = null, approachFix: Boolean? = null, efc: String? = null, eta: String? = null): Result<EngineContract.LostCommsAnswer> =
     rule("lost_comms", EngineContract.LostCommsInput(segments = segments, assignedFt = assignedFt, expectedFt = expectedFt, expectedFrom = expectedFrom, approachFix = approachFix, efc = efc, eta = eta))
-
-/**
- * The lowest VFR cruising altitude at or above a floor for a magnetic course: odd thousands plus 500 eastbound, even westbound (14 CFR 91.159(a)).
- */
-fun Engine.lowestVfrCruisingAltitude(floorFt: Double, magneticCourseDeg: Double): Result<Double> =
-    rule("lowest_vfr_cruising_altitude", EngineContract.LowestVfrCruisingAltitudeInput(floorFt = floorFt, magneticCourseDeg = magneticCourseDeg))
 
 /**
  * Magnetic variation, degrees east (west negative), the World Magnetic Model's (WMM) at a place and day, as wingtip.magnetic works it out.

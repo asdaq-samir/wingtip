@@ -50,6 +50,7 @@
 use crate::json::{self, Value};
 use crate::time::parse_iso;
 use wingtip_core::sort::StableSort;
+use wingtip_flight::field::same_field;
 
 /// How many are said first, each with its line; the rest are folded.
 pub const TOP: usize = 3;
@@ -129,19 +130,6 @@ pub fn read(text: &str) -> Read {
     r
 }
 
-/// "KOSH" and "OSH" alike, as a domestic NOTAM names a field.
-fn same_field(a: &str, b: &str) -> bool {
-    let bare = |s: &str| {
-        let s = s.trim().to_ascii_uppercase();
-        if s.len() == 4 && s.starts_with('K') && s.chars().all(|c| c.is_ascii_alphabetic()) {
-            s[1..].to_owned()
-        } else {
-            s
-        }
-    };
-    !a.trim().is_empty() && bare(a) == bare(b)
-}
-
 /// "4,500 ft", "FL180" past 17,999 ft (14 CFR 91.121's transition, the
 /// flight levels from 18,000 ft).
 fn feet(ft: f64) -> String {
@@ -199,7 +187,9 @@ fn rank_one(n: &Value, v: &Value) -> Ranked {
     }
     let location = n.get("location").and_then(Value::as_str).unwrap_or("");
     let fields = v.get("fields").and_then(Value::as_array).unwrap_or(&[]);
-    let field = fields.iter().find(|f| same_field(location, f.get("ident").and_then(Value::as_str).unwrap_or("")));
+    // A NOTAM with no location is no field's.
+    let field =
+        fields.iter().find(|f| !location.trim().is_empty() && same_field(location, f.get("ident").and_then(Value::as_str).unwrap_or("")));
     let ident = field.and_then(|f| f.get("ident")).and_then(Value::as_str).map(str::to_owned);
     let role = field.and_then(|f| f.get("role")).and_then(Value::as_str).map(str::to_owned);
     let window = field.unwrap_or(v);

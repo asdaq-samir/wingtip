@@ -6,8 +6,8 @@
 //! procedure's fix sets its crossing altitudes (lib/procedures
 //! altitudeLines).
 
-use super::points::bare_field;
 use super::{all, normal, trim, upper_alnum};
+use wingtip_flight::field::bare_field;
 
 /// A procedure picked at a field: the field, the procedure's coded
 /// identifier ("I08-Y"), its transition -- none for an approach from

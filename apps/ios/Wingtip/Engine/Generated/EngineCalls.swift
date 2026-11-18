@@ -170,11 +170,6 @@ extension Engine {
         try Self.rule("approach_debrief", EngineContract.ApproachDebriefInput(drawing: drawing, points: points, attempt: attempt, minimumsFt: minimumsFt))
     }
 
-    /// The descent rate on the path, ft/min (the TPP's rate of descent table).
-    static func approachDescentFpm(gsKt: Double, angleDeg: Double) throws -> Double {
-        try Self.rule("approach_descent_fpm", EngineContract.ApproachDescentFpmInput(gsKt: gsKt, angleDeg: angleDeg))
-    }
-
     /// The approaches a track flew, each debriefed.
     static func approachFind(drawings: [EngineContract.ProcedureDrawing]? = nil, points: [EngineContract.TrackPoint]? = nil, picked: String? = nil, minimumsFt: Double? = nil) throws -> [EngineContract.ApproachDebrief] {
         try Self.rule("approach_find", EngineContract.ApproachFindInput(drawings: drawings, points: points, picked: picked, minimumsFt: minimumsFt))
@@ -430,11 +425,6 @@ extension Engine {
         try Self.rule("debrief_airborne", EngineContract.DebriefAirborneInput(points: points))
     }
 
-    /// The web's debrief (its figures, snake_case, no marks) marked against ACS PA.VI.A's tolerances as `debrief` marks its own, with the tolerances.
-    static func debriefMarked(debrief: [String: OpenAPIValueContainer]) throws -> EngineContract.DebriefMarkedAnswer {
-        try Self.rule("debrief_marked", EngineContract.DebriefMarkedInput(debrief: debrief))
-    }
-
     /// The altitude at which a standard day's air has density sigma.
     static func densityAltitudeFt(sigma: Double) throws -> Double {
         try Self.rule("density_altitude_ft", EngineContract.DensityAltitudeFtInput(sigma: sigma))
@@ -668,11 +658,6 @@ extension Engine {
     /// The floor of a leg flown along a path other than its own line -- a departure (SID), an arrival (STAR) or an approach flown in its place: of the leg's own floor and the floors under each piece of the path (vfr_floors' or ifr_floors' answers, the leg's own first), the highest, the leg's own on a tie, with the lowest ground under any of them. The airplane is over all of the path at its cruising altitude until it comes down, so 14 CFR 91.119's clearances (VFR) or 91.177(a)(2)'s (IFR) hold over all of it; a procedure's published altitudes (91.177(a)(1), Part 97) may be lower, so this errs high (the aviation audit's AV-2).
     static func floorAlongPath(floors: [EngineContract.FloorAlongPathInputFloorsItem]) throws -> EngineContract.FloorAlongPathAnswer {
         try Self.rule("floor_along_path", EngineContract.FloorAlongPathInput(floors: floors))
-    }
-
-    /// What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.
-    static func floorCaution(segment: [String: OpenAPIValueContainer], altitudeFt: Double) throws -> String? {
-        try Self.rule("floor_caution", EngineContract.FloorCautionInput(segment: segment, altitudeFt: altitudeFt))
     }
 
     /// How far either side of the course the VFR floor counts the ground's obstacles: 5 nm, wider than 14 CFR 91.119(b)'s 2,000 ft and 91.177(a)(2)'s 4 nm, so the floor tolerates the airplane off its line. The 3D map colours the ground against the plan within it.
@@ -950,11 +935,6 @@ extension Engine {
         try Self.rule("handbook_read_check", EngineContract.HandbookReadCheckInput(speedUnit: speedUnit, cruiseSpeedKind: cruiseSpeedKind, distanceUnit: distanceUnit, weightUnit: weightUnit, armUnit: armUnit, fuelUnit: fuelUnit, burnUnit: burnUnit, cruise: cruise, climb: climb, glide: glide, takeoff: takeoff, landing: landing, empty: empty, maxTakeoffWeight: maxTakeoffWeight, envelope: envelope, fuel: fuel))
     }
 
-    /// The highest altitude that keeps 14 CFR 91.155(a)'s distance below a cloud base (MSL): 500 ft under it, 1,000 ft at or above 10,000 ft MSL.
-    static func highestUnderCloudsFt(cloudBaseFt: Double) throws -> Double {
-        try Self.rule("highest_under_clouds_ft", EngineContract.HighestUnderCloudsFtInput(cloudBaseFt: cloudBaseFt))
-    }
-
     /// The entry into a route's hold for an airplane arriving on a course (AIM 5-3-8 j.3's sectors, read by the course flown).
     static func holdEntry(arrivalDeg: Double, inboundDeg: Double, turns: String? = nil) throws -> String {
         try Self.rule("hold_entry", EngineContract.HoldEntryInput(arrivalDeg: arrivalDeg, inboundDeg: inboundDeg, turns: turns))
@@ -1123,11 +1103,6 @@ extension Engine {
     /// The planner's /api/lost-comms answer (14 CFR 91.185): VFR's words, the routes in the rule's order (c)(1), each segment's altitude (c)(2) and when to leave the clearance limit (c)(3).
     static func lostComms(segments: [EngineContract.LostCommsInputSegmentsItem], assignedFt: Double? = nil, expectedFt: Double? = nil, expectedFrom: Int? = nil, approachFix: Bool? = nil, efc: String? = nil, eta: String? = nil) throws -> EngineContract.LostCommsAnswer {
         try Self.rule("lost_comms", EngineContract.LostCommsInput(segments: segments, assignedFt: assignedFt, expectedFt: expectedFt, expectedFrom: expectedFrom, approachFix: approachFix, efc: efc, eta: eta))
-    }
-
-    /// The lowest VFR cruising altitude at or above a floor for a magnetic course: odd thousands plus 500 eastbound, even westbound (14 CFR 91.159(a)).
-    static func lowestVfrCruisingAltitude(floorFt: Double, magneticCourseDeg: Double) throws -> Double {
-        try Self.rule("lowest_vfr_cruising_altitude", EngineContract.LowestVfrCruisingAltitudeInput(floorFt: floorFt, magneticCourseDeg: magneticCourseDeg))
     }
 
     /// Magnetic variation, degrees east (west negative), the World Magnetic Model's (WMM) at a place and day, as wingtip.magnetic works it out.

@@ -19,6 +19,7 @@ use crate::callsign::{self, Who};
 use crate::instruction::{self, Item};
 use crate::json::{self, Value};
 use crate::readback;
+use wingtip_core::ask::opt_str_in as opt_str;
 
 /// How soon after a call to us a transmission with no call sign may be
 /// our readback, s: a readback follows at once, and a controller's next
@@ -68,14 +69,6 @@ pub fn who(text: &str, tail: Option<&str>, prior: Option<(&str, f64)>) -> Who {
         Who::FromUs
     } else {
         Who::Other
-    }
-}
-
-fn opt_str<'a>(name: &str, v: &'a Value, key: &str) -> Result<Option<&'a str>, String> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::String(s)) => Ok(Some(s)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a string")),
     }
 }
 

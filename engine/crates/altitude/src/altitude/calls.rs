@@ -8,20 +8,9 @@ use super::select;
 use super::words;
 use super::{cautions, clouds, congested, cruising, profile_calls};
 use crate::json::{self, Value};
+pub(super) use wingtip_core::ask::{num_in as num, opt_num_in as opt_num};
 
 pub(super) type R<T> = Result<T, String>;
-
-pub(super) fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
-
-pub(super) fn num(name: &str, v: &Value, key: &str) -> R<f64> {
-    opt_num(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
-}
 
 pub(super) fn list<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a [Value]> {
     match v.get(key) {
@@ -116,7 +105,6 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                 cruising::legal_vfr(floor, ceiling, course, opt_num(name, v, "rule_from_ft")?)
             }))
         }
-        "highest_under_clouds_ft" => Ok(number(Some(clouds::highest_under_ft(num(name, v, "cloud_base_ft")?)))),
         "cloud_clearance_at_ft" => Ok(number(Some(clouds::clearance_at_ft(num(name, v, "altitude_ft")?)))),
         "congested_points" => congested_points(name, v),
         "profile_clearance" => profile_calls::profile_clearance(name, v),
@@ -222,10 +210,6 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                     ("reasons", Value::Array(c.reasons.into_iter().map(Value::String).collect())),
                 ])),
             })
-        }
-        "floor_caution" => {
-            let segment = v.get("segment").ok_or_else(|| format!("{name}: \"segment\" is missing"))?;
-            Ok(written(&cautions::floor(segment, num(name, v, "altitude_ft")?).map_or(Value::Null, Value::String)))
         }
         "prohibited_caution" => {
             let selection = v.get("selection").ok_or_else(|| format!("{name}: \"selection\" is missing"))?;

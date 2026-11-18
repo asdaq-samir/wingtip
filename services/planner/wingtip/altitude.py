@@ -151,7 +151,7 @@ def select_cruise_altitude(
 
     The clouds do cap it: each leg keeps 14 CFR 91.155's distance below
     the lowest ceiling the TAFs near it forecast for the flight
-    (highest_under_clouds_ft), where the forecast ceiling was only
+    (the engine's clouds::highest_under_ft), where the forecast ceiling was only
     reported before. The whole route's band keeps under the lowest of
     them. Where the clouds leave a
     leg no altitude at all, the leg keeps its band without them and

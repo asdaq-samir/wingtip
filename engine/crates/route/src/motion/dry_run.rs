@@ -32,7 +32,7 @@
 use super::profile::{f, maybe, plan_profile, rows_of, Kind, ProfilePoint, Row, DESCENT_FT_PER_NM};
 use super::{num, opt_bool};
 use crate::figures::words::js_round;
-use crate::geo::{bearing_deg, destination, distance_nm};
+use crate::geo::{bearing_deg, destination, distance_and_bearing, distance_nm};
 use crate::json::{self, Value};
 
 /// Where the airplane is put along the route between the nav log's rows,
@@ -140,7 +140,8 @@ fn between(a: LatLon, b: LatLon, f: f64) -> LatLon {
     if f >= 1.0 {
         return b;
     }
-    destination(a.0, a.1, bearing_deg(a.0, a.1, b.0, b.1), distance_nm(a.0, a.1, b.0, b.1) * f)
+    let (nm, course) = distance_and_bearing(a.0, a.1, b.0, b.1);
+    destination(a.0, a.1, course, nm * f)
 }
 
 /// The distance along a path to each of its points, nm.

@@ -26,7 +26,6 @@ export const WEB_RULES = [
   "approach_brief",
   "approach_category",
   "approach_coaching",
-  "approach_descent_fpm",
   "approach_find",
   "approach_fix_tags",
   "approach_guidance",

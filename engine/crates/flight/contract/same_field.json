@@ -1,5 +1,5 @@
 {
-  "x-call": "wingtip_route::route::answers::answer",
+  "x-call": "wingtip_flight::calls::field_ident",
   "description": "Whether a and b name one field (KSTL and STL).",
   "type": "object",
   "properties": {

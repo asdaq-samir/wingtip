@@ -92,7 +92,6 @@ pub(super) fn cases(c: &mut Checker) {
     c.ask("density_altitude_ft", json!({ "sigma": 0.85 }));
     c.ask("pressure_altitude_ft", json!({ "elevation_ft": 1200, "altimeter_inhg": 30.12 }));
     c.ask("is_eastbound", json!({ "magnetic_course_deg": 95 }));
-    c.ask("lowest_vfr_cruising_altitude", json!({ "floor_ft": 3200, "magnetic_course_deg": 270 }));
     c.ask("distance_nm", json!({ "lat1": 46.84, "lon1": -92.19, "lat2": 38.75, "lon2": -90.37 }));
     c.ask("region_of", json!({ "lat": 41.9, "lon": -87.9 }));
 }

@@ -77,7 +77,7 @@ pub struct Flight {
 }
 
 fn find(fields: &[Field], ident: &str) -> Option<Field> {
-    fields.iter().find(|f| input::same_field(&f.ident, ident)).cloned()
+    fields.iter().find(|f| wingtip_flight::field::same_field(&f.ident, ident)).cloned()
 }
 
 fn str_of(name: &str, v: &Value, key: &str) -> R<String> {

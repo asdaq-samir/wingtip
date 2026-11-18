@@ -3,8 +3,8 @@
 //! Morse identifier, its service volume, and a fix's place off the
 //! nearest VOR as a controller gives it. The web's lib/navaid had these.
 
-use crate::figures::words::js_round_f;
-use crate::geo::{bearing_deg, distance_nm};
+use crate::figures::words::{js_round_f, norm360};
+use crate::geo::{distance_and_bearing, distance_nm};
 
 /// A VOR as its card has it: where it is and the declination its radials
 /// are aligned to (NASR NAV_BASE MAG_VARN, east positive).
@@ -16,15 +16,10 @@ pub struct Station {
     pub mag_var: Option<f64>,
 }
 
-/// A direction from 0 up to 360 (JavaScript's `((d % 360) + 360) % 360`).
-fn normalize(deg: f64) -> f64 {
-    ((deg % 360.0) + 360.0) % 360.0
-}
-
 /// Degrees as a VOR's radial or a course is said: three figures, 360 for
 /// north ("the 360 radial"), never 000.
 pub fn three_figures(deg: f64) -> String {
-    let whole = js_round_f(normalize(deg)) as i64 % 360;
+    let whole = js_round_f(norm360(deg)) as i64 % 360;
     format!("{:03}", if whole == 0 { 360 } else { whole })
 }
 
@@ -38,8 +33,9 @@ pub fn three_figures(deg: f64) -> String {
 pub fn radial_of(station: &Station, lat: f64, lon: f64) -> Option<(f64, f64, f64)> {
     let var = station.mag_var?;
     // Magnetic = true - east variation.
-    let radial = normalize(bearing_deg(station.lat, station.lon, lat, lon) - var);
-    Some((radial, normalize(radial + 180.0), distance_nm(station.lat, station.lon, lat, lon)))
+    let (nm, bearing) = distance_and_bearing(station.lat, station.lon, lat, lon);
+    let radial = norm360(bearing - var);
+    Some((radial, norm360(radial + 180.0), nm))
 }
 
 /// A point off the nearest of `stations` that has a declination, as a

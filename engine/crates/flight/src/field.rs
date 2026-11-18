@@ -169,6 +169,27 @@ pub fn mark_rank(site_type: &str, facility_use: &str, towered: bool, hard_ft: u3
     MarkRank { tier, order: class * RUNWAY_ROOM + (RUNWAY_ROOM - 1 - hard_ft.min(RUNWAY_ROOM - 1)), size }
 }
 
+/// A field's FAA ident, trimmed and uppercased: a field in the contiguous
+/// US whose FAA location identifier is three letters is named by ICAO with
+/// a K before them (FAA JO 7350.9, Location Identifiers), and the CIFP, a
+/// domestic NOTAM or a pilot may use either, so a K and three letters or
+/// figures is the three. "kdlh" is DLH; "KABCD" and "K12" stay as they are.
+/// The one copy for the route, the clearance, the NOTAMs and the in-flight
+/// copilot.
+pub fn bare_field(ident: &str) -> String {
+    let s = ident.trim().to_ascii_uppercase();
+    if s.len() == 4 && s.starts_with('K') && s.bytes().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()) {
+        s[1..].to_owned()
+    } else {
+        s
+    }
+}
+
+/// Whether two idents name one field: "KOSH" and "OSH" (bare_field).
+pub fn same_field(a: &str, b: &str) -> bool {
+    bare_field(a) == bare_field(b)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

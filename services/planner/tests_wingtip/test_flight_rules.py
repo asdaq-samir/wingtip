@@ -36,7 +36,6 @@ def test_the_wind_triangle_is_the_fixtures(case):
 
 @pytest.mark.parametrize("case", FIXTURE["cruisingAltitude"], ids=lambda c: f"{c['floorFt']}@{c['courseDeg']}")
 def test_cruising_altitudes_are_91_159s(case):
-    assert engine("lowest_vfr_cruising_altitude", floor_ft=case["floorFt"], magnetic_course_deg=case["courseDeg"]) == case["altitudeFt"]
     assert engine("is_eastbound", magnetic_course_deg=case["courseDeg"]) == case["eastbound"]
 
 

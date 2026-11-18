@@ -1153,16 +1153,6 @@ enum EngineContract {
         var passed: Int
     }
 
-    struct ApproachDescentFpmInput: Codable, Equatable, Sendable {
-        var gsKt: Double
-        var angleDeg: Double
-
-        enum CodingKeys: String, CodingKey {
-            case gsKt = "gs_kt"
-            case angleDeg = "angle_deg"
-        }
-    }
-
     /// What the CIFP says of an approach besides its legs (wingtip.approach_facts): its runway, the altitudes coded beside a fix's limits, and the levels of service authorised.
     struct ApproachFacts: Codable, Equatable, Sendable {
         var runway: EngineContract.ApproachFactsRunway?
@@ -3041,34 +3031,6 @@ enum EngineContract {
         }
     }
 
-    struct DebriefMarkedAnswer: Codable, Equatable, Sendable {
-        var debrief: [String: OpenAPIValueContainer]
-        var tolerances: EngineContract.DebriefMarkedAnswerTolerances
-    }
-
-    struct DebriefMarkedAnswerTolerances: Codable, Equatable, Sendable {
-        var altitudeFt: Double
-        var courseDeg: Double
-        var offRouteNm: Double
-        var etaMin: Double
-        var patternNm: Double
-        var patternFt: Double
-
-        enum CodingKeys: String, CodingKey {
-            case altitudeFt = "altitude_ft"
-            case courseDeg = "course_deg"
-            case offRouteNm = "off_route_nm"
-            case etaMin = "eta_min"
-            case patternNm = "pattern_nm"
-            case patternFt = "pattern_ft"
-        }
-    }
-
-    struct DebriefMarkedInput: Codable, Equatable, Sendable {
-        /// The debrief's figures as `debrief` gives them, unmarked: legs, passes, patterns and the rest.
-        var debrief: [String: OpenAPIValueContainer]
-    }
-
     struct DensityAltitudeFtInput: Codable, Equatable, Sendable {
         var sigma: Double
     }
@@ -4047,17 +4009,6 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case floorFt = "floor_ft"
             case lowestGroundFt = "lowest_ground_ft"
-        }
-    }
-
-    struct FloorCautionInput: Codable, Equatable, Sendable {
-        /// A selection's segment: floor_ft, highest_ft, highest_is_obstacle, obstacle_type, obstacle_clearance_ft, congested.
-        var segment: [String: OpenAPIValueContainer]
-        var altitudeFt: Double
-
-        enum CodingKeys: String, CodingKey {
-            case segment
-            case altitudeFt = "altitude_ft"
         }
     }
 
@@ -6101,14 +6052,6 @@ enum EngineContract {
         var num: String?
     }
 
-    struct HighestUnderCloudsFtInput: Codable, Equatable, Sendable {
-        var cloudBaseFt: Double
-
-        enum CodingKeys: String, CodingKey {
-            case cloudBaseFt = "cloud_base_ft"
-        }
-    }
-
     struct HoldEntryInput: Codable, Equatable, Sendable {
         /// The magnetic course flown to the fix.
         var arrivalDeg: Double
@@ -7428,16 +7371,6 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case name
             case minimumFt = "minimum_ft"
-        }
-    }
-
-    struct LowestVfrCruisingAltitudeInput: Codable, Equatable, Sendable {
-        var floorFt: Double
-        var magneticCourseDeg: Double
-
-        enum CodingKeys: String, CodingKey {
-            case floorFt = "floor_ft"
-            case magneticCourseDeg = "magnetic_course_deg"
         }
     }
 

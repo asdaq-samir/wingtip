@@ -5,29 +5,10 @@ use super::holds::{self, Hold, Leg, Length};
 use super::picks::{self, Pick};
 use super::points;
 use crate::json::{self, Value};
+use wingtip_core::ask::{num_in as num, opt_num_in as opt_num, opt_str_in as opt_text};
 
 fn text<'a>(name: &str, v: &'a Value, key: &str) -> Result<&'a str, String> {
     v.get(key).and_then(Value::as_str).ok_or_else(|| format!("{name}: \"{key}\" is missing or not a string"))
-}
-
-fn opt_text<'a>(name: &str, v: &'a Value, key: &str) -> Result<Option<&'a str>, String> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::String(s)) => Ok(Some(s)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a string")),
-    }
-}
-
-fn opt_num(name: &str, v: &Value, key: &str) -> Result<Option<f64>, String> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
-
-fn num(name: &str, v: &Value, key: &str) -> Result<f64, String> {
-    opt_num(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
 }
 
 fn hold_json(out: &mut String, hold: &Hold) {
@@ -236,8 +217,6 @@ pub fn answer(name: &str, v: &Value) -> Result<String, String> {
             let written = points::frd_ident(text(name, v, "base")?, num(name, v, "course")?, num(name, v, "distance_nm")?);
             json::string(&mut out, &written);
         }
-        "bare_field" => json::string(&mut out, &points::bare_field(text(name, v, "ident")?)),
-        "same_field" => out.push_str(if points::same_field(text(name, v, "a")?, text(name, v, "b")?) { "true" } else { "false" }),
         _ => return Err(format!("the engine has no rule called {name:?}")),
     }
     Ok(out)

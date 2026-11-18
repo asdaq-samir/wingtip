@@ -15,26 +15,7 @@ pub mod script;
 
 use crate::json::{self, Value};
 use radio::Frequency;
-
-fn opt_text<'a>(name: &str, v: &'a Value, key: &str) -> Result<Option<&'a str>, String> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::String(s)) => Ok(Some(s)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a string")),
-    }
-}
-
-fn opt_num(name: &str, v: &Value, key: &str) -> Result<Option<f64>, String> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
-
-fn num(name: &str, v: &Value, key: &str) -> Result<f64, String> {
-    opt_num(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
-}
+use wingtip_core::ask::{num_in as num, opt_num_in as opt_num, opt_str_in as opt_text};
 
 fn list<'a>(name: &str, v: &'a Value, key: &str) -> Result<&'a [Value], String> {
     v.get(key).and_then(Value::as_array).ok_or_else(|| format!("{name}: \"{key}\" is missing or not a list"))

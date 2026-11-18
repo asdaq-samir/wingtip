@@ -14,7 +14,6 @@ pub(super) fn cases(c: &mut Checker) {
     for case in altitude["noAltitude"].as_array().unwrap() {
         c.ask("no_altitude", case["input"].clone());
     }
-    c.ask("highest_under_clouds_ft", json!({ "cloud_base_ft": 6000 }));
     c.ask("cloud_clearance_at_ft", json!({ "altitude_ft": 10500 }));
     c.ask("ifr_obstacle_radius_nm", json!({}));
     c.ask("airway_floor_ft", json!({ "mea_ft": null, "gnss_mea_ft": 4000 }));
@@ -40,23 +39,6 @@ pub(super) fn cases(c: &mut Checker) {
     c.ask("hold_entry", json!({ "arrival_deg": 150, "inbound_deg": 360 }));
     c.ask("hold_entry", json!({ "arrival_deg": 150, "inbound_deg": 360, "turns": "left" }));
     c.ask("magnetic_variation", json!({ "lat": 46.84, "lon": -92.19, "year": 2026.5 }));
-    let debriefed = call(
-        "debrief_marked",
-        &json!({ "debrief": {
-        "legs": [{ "from": "A", "to": "B", "worst_alt_ft": 150, "worst_off_nm": 1.2 }],
-        "passes": [{ "name": "B", "category": "destination", "due_min": 18, "passed_min": 21 }],
-        "patterns": [{ "ident": "B", "alt_ft": 1800, "pattern_ft": 1700 }],
-        "notes": [],
-    } })
-        .to_string(),
-    )
-    .unwrap();
-    let debriefed: Value = serde_json::from_str(&debriefed).unwrap();
-    // PA.VI.A's tolerances: 200 ft held, a pattern within 100 ft (PA.III.B.S5).
-    assert_eq!(debriefed["debrief"]["legs"][0]["ok"], json!(true));
-    assert_eq!(debriefed["debrief"]["patterns"][0]["ok"], json!(true));
-    assert_eq!(debriefed["tolerances"]["altitude_ft"], json!(200.0));
-    c.ask("debrief_marked", json!({ "debrief": { "legs": [], "passes": [], "patterns": [] } }));
 
     // The approaches at KBUR, as the planner's /api/procedure draws them.
     let kbur = fixture("approachKbur.json");

@@ -11,10 +11,6 @@ from wingtip import airspace, altitude, sua, terrain, weather
 from wingtip.engine import ask as engine
 
 
-def under_clouds(base_ft):
-    return engine("highest_under_clouds_ft", cloud_base_ft=base_ft)
-
-
 PROFILE = {"service_ceiling_ft": 14000, "cruise_tas_kt": 110}
 DEP, DEST = (45.0, -90.0), (46.0, -90.0)  # due north
 DOGLEG = (45.5, -89.85)  # east of the line
@@ -222,14 +218,6 @@ def test_a_leg_keeps_500_ft_under_the_clouds_forecast_near_it(sources):
     assert max(second["candidates_ft"]) == 4500 and second["cloud_clearance_kept"] is True
     # The whole route keeps under the lowest cloud anywhere on it.
     assert result["cloud_base_ft"] == 5500 and result["band_ceiling_ft"] == 5000
-
-
-def test_at_10000_ft_and_above_the_clouds_are_kept_1000_ft_above(sources):
-    assert under_clouds(6000.0) == 5500.0
-    assert under_clouds(12000.0) == 11000.0
-    # 500 ft under a 10,800 ft base is 10,300 -- but at 10,000 and above
-    # the rule is 1,000 ft, so the highest is just under 10,000.
-    assert 9500.0 < under_clouds(10800.0) < 10000.0
 
 
 def test_clouds_too_low_over_the_floor_are_said_and_the_leg_keeps_its_band(sources):
