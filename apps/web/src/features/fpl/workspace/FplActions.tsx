@@ -1,8 +1,10 @@
-import { Suspense, useRef, type ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { cn } from "cn";
 import { PIN_AT_FOOT, usePinAtFoot } from "../../../components/sheet/pinAtFoot";
 import { CardAction as Action } from "../../../components/CardAction";
 import { ICON } from "../../../lib/icons";
+import { usePanelDragging } from "../../../lib/mapChrome";
+import { forgetRouteEdit, riseForFigures } from "../../plan";
 import { RouteLine } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import RouteHead from "./RouteHead";
@@ -90,7 +92,22 @@ export function FplRoute({
   // the route folds as the sheet comes down to the pill (usePlanRouteList).
   const ground = !flying && !dryRunning;
   const figures = useRef<HTMLDivElement>(null);
-  usePinAtFoot(figures, SHEET_FOOT, { on: ground && !editing, held: ground && !panelOpen });
+  // A route the pilot just made longer at half, its figures pushed under
+  // the actions' bar, goes all the way up so they stay in sight
+  // (riseForFigures; the owner, 2026-11-18), unless the pilot has moved
+  // the sheet since.
+  const { setPanel, panel } = vm.view;
+  const onCovered = useCallback(() => riseForFigures(setPanel), [setPanel]);
+  // The pilot's own move of the sheet since -- a drag, or the sheet lowered
+  // (the grabber, a key; the app itself never lowers it) -- keeps it where
+  // they put it.
+  const dragging = usePanelDragging((d) => d.dragging);
+  const was = useRef(panel);
+  useEffect(() => {
+    if (dragging || SIZE_RANK[panel] < SIZE_RANK[was.current]) forgetRouteEdit();
+    was.current = panel;
+  }, [dragging, panel]);
+  usePinAtFoot(figures, SHEET_FOOT, { on: ground && !editing, held: ground && !panelOpen, onCovered });
   return (
     <div className="flex w-full min-w-0 flex-1 flex-col">
       {/* The suggested routes' pills just above the stops, out while the
@@ -113,6 +130,9 @@ export function FplRoute({
     </div>
   );
 }
+
+/** The sheet's sizes, smallest first, to tell the sheet lowered. */
+const SIZE_RANK = { peek: 0, half: 1, full: 2 } as const;
 
 /** FPL's foot, held at the sheet's visible edge, the pill's figures on it. */
 const SHEET_FOOT = '[data-testid="panel-foot"]';

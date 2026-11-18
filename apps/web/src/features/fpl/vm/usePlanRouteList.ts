@@ -5,7 +5,7 @@ import { useGeo, type LatLon } from "../../../lib/geo";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { ADDRESS_CLEARED } from "../../../lib/address";
 import type { PanelState } from "../../../lib/mapChrome";
-import { riseToSee, directKeys, procsWithoutDirect } from "../../plan";
+import { riseToSee, directKeys, markRouteEdit, procsWithoutDirect } from "../../plan";
 import { useRouteListEdit, useRouteLine } from "../../route";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
@@ -58,6 +58,7 @@ export function usePlanRouteList(
   const dropIntoRoute = useCallback(
     (ident: string, at: LatLon, then: "add" | "direct" | "hold") => {
       if (!geo || !course) return;
+      markRouteEdit();
       const points = coursePoints(course);
       const index = geo.bestStopIndex(points, at);
       const ship = useOwnShip.getState();
