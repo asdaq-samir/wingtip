@@ -41,7 +41,7 @@ export const FPL_SCREENS: Screen[] = [
     },
   },
   // The route folded to read (the one layout, decision 0046): its line,
-  // the figures, and "Suggested routes" over the chips; the first row's
+  // the figures (the suggested routes behind the first row's button); the first row's
   // fields captioned Airplane and Cruise.
   {
     name: "FPL, the route folded",

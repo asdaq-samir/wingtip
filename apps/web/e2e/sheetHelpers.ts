@@ -295,3 +295,12 @@ export async function closeCard(page: Page, closeTestId: string) {
 export function cardClose(page: Page, testId: string) {
   return page.getByTestId(testId);
 }
+
+/** The suggested routes' chips, put out above the route by the first row's
+ *  button (RoutesToggle) where they are not out already. */
+export async function suggestedRoutes(page: Page): Promise<Locator> {
+  const toggle = sideDrawer(page).getByTestId("routes-toggle");
+  await expect(toggle).toBeVisible({ timeout: slow(30_000) });
+  if ((await toggle.getAttribute("aria-pressed")) !== "true") await toggle.click();
+  return sideDrawer(page).getByTestId("route-line");
+}

@@ -14,12 +14,13 @@ import { SHEET_BAR } from "../../../components/panelField";
  * it (PageToggle). The route, folded or open to edit, is the row under it
  * (RouteHead), never in it.
  */
-export default function FplBar({ strip }: { strip: ReactNode }) {
+export default function FplBar({ strip, routes }: { strip: ReactNode; routes?: ReactNode }) {
   return (
     <div className="flex w-full items-center gap-2">
       <div className={cn("flex items-center pr-1 pl-1.5", SHEET_BAR)} data-testid="route-strip">
         {strip}
       </div>
+      {routes}
       <PageToggle page={1} />
     </div>
   );

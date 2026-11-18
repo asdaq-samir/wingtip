@@ -3,12 +3,12 @@ import { cn } from "cn";
 import { PIN_AT_FOOT, usePinAtFoot } from "../../../components/sheet/pinAtFoot";
 import { CardAction as Action } from "../../../components/CardAction";
 import { ICON } from "../../../lib/icons";
-import { TEXT } from "../../../lib/text";
 import { RouteLine } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import RouteHead from "./RouteHead";
 import { FlightFigures } from "./FlightFoot";
 import { routeEditing } from "./routeEditing";
+import { useRoutesShown } from "./routesShown";
 
 /**
  * FPL's actions in flight, one row of four tiles at the top of the flying
@@ -69,8 +69,8 @@ export function FplActions({ vm, more }: { vm: PlanSlices<"brief" | "flight" | "
  *  (the one layout, decision 0046, where it is read and edited), the
  *  flight's figures under it, which are its pill too (the owner,
  *  2026-11-16: the calculations strip where the action tiles were), and
- *  the Routes' chips under "Suggested routes" (labels C, the owner,
- *  2026-11-17). While the route's field is open (RouteEditor) the figures
+ *  the suggested routes' chips over it while the first row's button has
+ *  them out (RoutesToggle; the owner, 2026-11-17). While the route's field is open (RouteEditor) the figures
  *  go under it and the chips away, as they change the route rather than
  *  edit it. */
 export function FplRoute({
@@ -82,6 +82,7 @@ export function FplRoute({
   const { dryRunning, flying } = vm.flight;
   const { routeLine } = vm.routeList;
   const editing = routeEditing(vm);
+  const routesShown = useRoutesShown((s) => s.shown);
   // The figures are FPL's pill too, one copy at every size: held on the
   // foot's edge at the pill, and as the sheet goes down they stop there
   // while the route slides on under them (usePinAtFoot), drawn there as
@@ -93,22 +94,23 @@ export function FplRoute({
   usePinAtFoot(figures, SHEET_FOOT, { on: ground && !editing, held: ground && !panelOpen });
   return (
     <div className="flex w-full min-w-0 flex-1 flex-col">
+      {/* The suggested routes' pills just above the stops, out while the
+          first row's button is on (RoutesToggle; the owner, 2026-11-17:
+          "Which shows route pills just above the stops"), where they were a
+          section under the figures. */}
+      {routesShown && !editing && routeLine && (
+        <section aria-label="Suggested routes" className="pb-2" data-testid="route-group">
+          <Suspense fallback={<div className="h-11" />}>
+            <RouteLine line={routeLine} grouped />
+          </Suspense>
+        </section>
+      )}
       <RouteHead vm={vm} />
       <div className={cn("pt-2 pb-1", editing && "hidden")}>
         <div ref={figures} data-pin-foot="" className={cn(PIN_AT_FOOT, PINNED)}>
           {!editing && <FlightFigures vm={vm} grow={false} />}
         </div>
       </div>
-      {!editing && routeLine && (
-        <section aria-label="Suggested routes" className="pt-1" data-testid="route-group">
-          <h3 aria-hidden="true" className={cn("px-1 font-semibold text-muted-foreground", TEXT.note)}>
-            Suggested routes
-          </h3>
-          <Suspense fallback={<div className="h-11" />}>
-            <RouteLine line={routeLine} grouped />
-          </Suspense>
-        </section>
-      )}
     </div>
   );
 }

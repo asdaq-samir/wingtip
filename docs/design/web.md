@@ -806,8 +806,7 @@ nothing in it eased at the pill); a tap on the held figures raises the
 sheet to half as a tap on the foot does; `feel("detent")`
 as the sheet settles (MapPanel); in flight the tiles are `FplActions`
 at the top of the flying drawer. Under the folded route, `FplRoute`: the
-figures at their own size, then "Suggested routes" over the Routes'
-chips; open to edit, the figures go under the cards (`RouteEditor`) and
+figures at their own size, the suggested routes' chips behind a button at the first row's top right, beside the search's, out above the stops while it is on (RoutesToggle; the owner, 2026-11-17: "Can suggested routes be a button on top right? Which shows route pills just above the stops"); open to edit, the figures go under the cards (`RouteEditor`) and
 the chips away. The Brief's findings
 to act on are counted on its button in the bar (the cards' `TabCount` with its finding's
 `mark`,
@@ -900,8 +899,8 @@ by clicking the map, typing an address or a name, up to 9 stops in all
 decision 0046), folded to read and opened to edit, as iOS's lists keep
 Edit and Done.
 1. Folded: the route's one line, both ends' idents over their names, the
-   stops counted between, a chevron; a tap opens it. Under it the figures
-   and "Suggested routes" over the Routes' chips.
+   stops counted between, a chevron; a tap opens it. Under it the figures;
+   the suggested routes behind the first row's button (RoutesToggle).
 2. Open: "Route" and Done over the route as rows: each airport a card,
    its role over its ident, each point with its kind's mark and a drag
    handle; between rows, the leg's figures the engine returns; Add a Stop

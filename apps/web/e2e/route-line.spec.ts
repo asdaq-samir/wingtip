@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { drawn, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { drawn, openPanel, settle, sideDrawer, slow, suggestedRoutes } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
@@ -117,7 +117,7 @@ test("FPL's Routes are one row of chips, As typed at first, and a chip tapped is
   await openPanel(page);
   // No Routes button: the chips do its job.
   await expect(sideDrawer(page).getByTestId("route-routes")).toHaveCount(0);
-  const line = sideDrawer(page).getByTestId("route-line");
+  const line = await suggestedRoutes(page);
   const chips = line.getByTestId("route-line-chip");
   // One row of chips, each its name and time (the owner's pick of the
   // routes canvas, 2026-11-16): None, the route as typed, planned at once
@@ -155,7 +155,7 @@ test("the routes' chips and their ways stay, whichever is picked", async ({ page
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  const line = sideDrawer(page).getByTestId("route-line");
+  const line = await suggestedRoutes(page);
   await line
     .getByTestId("route-line-chip")
     .filter({ hasText: "Fastest" })
@@ -187,7 +187,7 @@ test("another airplane picked keeps the Routes row in its place, dimmed, till it
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  const line = sideDrawer(page).getByTestId("route-line");
+  const line = await suggestedRoutes(page);
   await expect(line.getByTestId("route-line-chip").first()).toHaveText(/^As typed/, { timeout: slow(30_000) });
   // Whether the row is on the page, every frame from the pick on: it went
   // for half a second at every change of airplane, the list under it
@@ -228,7 +228,7 @@ test("a way that is the best of several kinds is named short on its chip, in ful
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  const chip = sideDrawer(page).getByTestId("route-line").getByTestId("route-line-chip").nth(1);
+  const chip = (await suggestedRoutes(page)).getByTestId("route-line-chip").nth(1);
   await expect(chip).toHaveText(/^Avoid Weather \+2/, { timeout: slow(30_000) });
   await expect(chip).toHaveAccessibleName(/^Avoid Weather & Fastest & Over Land, /);
 });
@@ -265,7 +265,7 @@ test("Avoid Class B is asked at the planned altitude, shown as a chip like the o
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  const chips = sideDrawer(page).getByTestId("route-line").getByTestId("route-line-chip");
+  const chips = (await suggestedRoutes(page)).getByTestId("route-line-chip");
   await expect(chips).toHaveText([/^As typed/, /^Avoid Weather/, /^Fastest/, /^Avoid Class B/], { timeout: slow(30_000) });
   // Its own miles and fuel, as every way's.
   await expect(chips.last()).toHaveAccessibleName(/^Avoid Class B, .*360 nm, 26\.2 gal/);
@@ -299,7 +299,7 @@ test("a route short of fuel is offered With Fuel Stops, tapped the route with th
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  const chips = sideDrawer(page).getByTestId("route-line").getByTestId("route-line-chip");
+  const chips = (await suggestedRoutes(page)).getByTestId("route-line-chip");
   await expect(chips).toHaveText([/^As typed/, /^With Fuel Stops/, /^Fastest/], { timeout: slow(30_000) });
   await expect(chips.nth(1)).toHaveAccessibleName(/^With Fuel Stops, .*\d+ nm, \d+\.\d gal/);
   await chips.filter({ hasText: "With Fuel Stops" }).click();

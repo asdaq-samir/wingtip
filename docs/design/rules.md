@@ -529,9 +529,9 @@ off by default (the owner, 2026-11-13).
    the risen face (the actions' bar) fades in, in the sheet's settle
    time. A light tick as it settles where the browser has one. In flight the
    four are a row of tiles at the top of the flying drawer and the foot
-   the figures, large, with Done flying. Between the figures and the
-   Routes' chips only their heading, "Suggested routes" (labels C,
-   2026-11-17; nothing else, the owner, 2026-11-16). What the Brief found
+   the figures, large, with Done flying. The Routes' chips are behind a
+   button at the first row's top right, out above the stops while it is
+   on (RoutesToggle; the owner, 2026-11-17). What the Brief found
    to act on is the Brief's, which opens with it, not a list on FPL
    (the owner, 2026-11-16: "isn't there a better place for them? Like
    brief"): the Brief's button carries their count on its glyph's

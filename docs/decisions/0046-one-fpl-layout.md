@@ -55,7 +55,7 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    stops by saying how many stops"). Add a Stop is the
    last row, its mark the tint's + and its words in the tint, asking the
    one search (no microphone of its own: the search's field has one).
-   Then the figures; "Suggested routes" over the Routes' chips.
+   Then the figures; the suggested routes' chips behind a button at the first row's top right, beside the search's, out above the stops while it is on (RoutesToggle; the owner, 2026-11-17: "Can suggested routes be a button on top right? Which shows route pills just above the stops").
 2. **A tap on a field's line opens it, and that is all** (the owner: "Each
    timeline line is one 44pt row", "exactly three rows, always"): the line,
    then its wind at the left (the cards' figure, the METAR now or the
@@ -124,7 +124,7 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
 6. **Labels C**, but the first row's: the "Airplane" and "Cruise"
    captions came out the same day (the owner: "No need for airplane and
    cruise labels"), the fields' names VoiceOver's as before; each card's role over its
-   ident; "Suggested routes" over the chips. The figures keep their own
+   ident; the suggested routes behind the first row's button. The figures keep their own
    short names and explain on tap.
 7. **Gone**: Show Route As and the `routeEdit` preference (persisted
    preferences are read as they are and the key is no longer written),

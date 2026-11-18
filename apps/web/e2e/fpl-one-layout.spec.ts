@@ -43,7 +43,11 @@ test.describe("/app/plan", () => {
     for (const line of await timeline.getByTestId("timeline-line").all()) expect((await line.boundingBox())!.height).toBeLessThan(46);
     await expect(timeline.getByTestId("timeline-add-stop")).toBeVisible();
     await expect(drawer.getByTestId("flight-line")).toBeVisible();
-    await expect(drawer.getByTestId("route-group")).toContainText("Suggested routes", { timeout: slow(30_000) });
+    // The suggested routes behind the first row's button, out above the stops.
+    await expect(drawer.getByTestId("route-group")).toHaveCount(0);
+    await drawer.getByTestId("routes-toggle").click({ timeout: slow(30_000) });
+    await expect(drawer.getByTestId("route-group")).toBeVisible();
+    await drawer.getByTestId("routes-toggle").click();
     await expect(drawer.getByTestId("route-box")).toHaveCount(0);
     await expect(drawer.getByTestId("route-done")).toHaveCount(0);
     await expect(drawer.getByTestId("route-summary-open")).toHaveCount(0);

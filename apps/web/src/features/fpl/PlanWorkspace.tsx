@@ -27,6 +27,7 @@ import FlightFoot from "./workspace/FlightFoot";
 import { FplRoute } from "./workspace/FplActions";
 import RouteControls from "./workspace/RouteControls";
 import FplBar from "./workspace/FplBar";
+import { RoutesToggle } from "./workspace/RoutesToggle";
 import OneSearchField from "./search/OneSearchField";
 import { useOneSearch } from "./search/useOneSearch";
 
@@ -270,7 +271,13 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           // 2026-11-17: "move everything to the tab bar with a ... instead
           // of share"); with none it keeps Undo (a cleared route put back),
           // the map's choices and a half route's Clear at hand.
-          bar: <FplBar strip={<RouteControls vm={vm} flightInputs={flightInputs} share={routed ? null : shareMenu("end")} />} />,
+          // The suggested routes' button beside the search's, where there are some (RoutesToggle).
+          bar: (
+            <FplBar
+              strip={<RouteControls vm={vm} flightInputs={flightInputs} share={routed ? null : shareMenu("end")} />}
+              routes={vm.routeList.routeLine && !flying ? <RoutesToggle /> : null}
+            />
+          ),
           second: <PlanPage vm={vm} navLog={navLog} more={shareMenu("end", undefined, undefined, "tile")} />,
         },
         // The one search's Autocomplete round the whole panel: its field (the first row) and its list (the body) one combobox.
