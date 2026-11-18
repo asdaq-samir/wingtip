@@ -130,9 +130,16 @@ export async function consolePage(scope: Page | Locator, name: "Account" | "Guid
     await tab.click();
     return;
   }
-  // Back to You from the pages open on it, one close at a time.
+  // Back to You from the pages open on it, one close at a time. A page may
+  // go by itself as it is reached -- the console drawn afresh on the dev
+  // page lets Pilot Details go (switch.spec) -- and its close with it: then
+  // it is back already, and the loop looks again.
   const back = scope.getByRole("button", { name: /^Back to (?!the map)/ }).locator("visible=true");
-  while (await back.count()) await back.first().click();
+  while (await back.count())
+    await back
+      .first()
+      .click({ timeout: 5000 })
+      .catch(() => undefined);
   if (name === "Account") return;
   for (const id of ["settings-row", "help-row", `${name.toLowerCase()}-link`]) {
     const row = scope.getByTestId(id);

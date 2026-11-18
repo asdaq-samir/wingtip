@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import {
+  consolePage,
   consoleSheet,
   settle,
   roleMenu,
@@ -31,8 +32,15 @@ test("the console's role menu flips to the dev page, the console staying out, an
   // out -- the developer's now.
   await roles.developer.click();
   await page.waitForURL(/\/app\/dev/);
-  // Its Setup the pilot's with the developer's Status row (DevPanel).
-  await expect(consoleSheet(page).getByRole("button", { name: /^Status/ })).toBeVisible({ timeout: 15000 });
+  // The dev page drawn, its console out again: drawn afresh there, the
+  // page open in it (Pilot Details, the role's menu) went with the old one.
+  await settle(page);
+  await expect(consoleSheet(page)).toBeVisible();
+  // Its You the pilot's, with the developer's own Status under Settings'
+  // Help & About (DevPanel; the owner, 2026-11-13): the stack's Services
+  // with the pilot's status.
+  await consolePage(consoleSheet(page), "Status");
+  await expect(consoleSheet(page).getByRole("button", { name: /^Services/ })).toBeVisible({ timeout: 15000 });
   roles = await roleMenu(page);
   await expect(roles.developer).toHaveAttribute("aria-checked", "true");
 

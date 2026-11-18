@@ -110,7 +110,7 @@ export function HelpPage({ pages }: { pages: HelpPages }) {
           <PageRow page="guide" title="Guide" testId="guide-link" />
           {/* How old the plan's data is, and what is kept through a dropped
               connection, for every pilot (the owner, 2026-11-04). */}
-          <PageRow page="status" title="Status" />
+          <PageRow page="status" title="Status" testId="status-link" />
           {/* When the map's layers showed at this device's loads (lib/loadLog). */}
           <PageRow page="log" title="Log" />
           <PageRow page="about" title="About" testId="about-link" />
