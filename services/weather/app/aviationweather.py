@@ -33,9 +33,9 @@ import gzip
 import logging
 import time
 
-from wingtip import weather_store
+from wingtip import utc, weather_store
 from wingtip.engine import ask as _ask
-from wingtip.weather import RECENT_WIND_HOURS, _unix
+from wingtip.weather import RECENT_WIND_HOURS
 
 from . import fetch
 
@@ -107,7 +107,7 @@ def keep_recent_winds(metars: dict, now: float) -> None:
     winds = dict(held.data) if held and isinstance(held.data, dict) else {}
     for ident, report in metars.items():
         direction, speed = report.get("wind_dir_true_deg"), report.get("wind_speed_kt")
-        observed = _unix(report.get("observed_at"))
+        observed = utc.epoch_or_none(report.get("observed_at"))
         if direction is None or not speed or speed <= 0 or observed is None:
             continue
         if ident not in winds or winds[ident]["observed"] < observed:
