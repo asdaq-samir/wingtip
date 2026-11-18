@@ -22,7 +22,6 @@ export const WEB_RULES = [
   "altitude_said",
   "altitude_typed",
   "approach_along_nm",
-  "approach_attempts",
   "approach_brief",
   "approach_category",
   "approach_coaching",
