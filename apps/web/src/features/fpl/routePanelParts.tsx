@@ -17,7 +17,11 @@ export const { Part: PilotPanel, prefetch: prefetchPilotPanel } = fromChunk(load
 // then: a part under lazy() alone waits once the first time it is drawn,
 // chunk in hand or not, and a part first drawn as its tab opened hid the
 // whole panel -- its tabs, with the focus in them -- while it did.
-type RoutePanel = typeof import("./routePanel");
+// The chunk's type read from its import(), not from a `typeof import()`
+// type, which the layers check reads as a static import and so as a loop
+// through every part of the chunk that reads the view model.
+const importRoutePanel = () => import("./routePanel");
+type RoutePanel = Awaited<ReturnType<typeof importRoutePanel>>;
 type PropsOf<C> = C extends ComponentType<infer P extends object> ? P : never;
 let routePanel: RoutePanel | null = null;
 // Asked for once the page has painted, not as its first render draws the
@@ -43,7 +47,7 @@ const painted = new Promise<void>((resolve) => {
   // Where no paint is reported (a hidden tab, an old browser), soon anyway.
   window.setTimeout(resolve, 3000);
 });
-export const loadRoutePanel = () => painted.then(() => import("./routePanel")).then((m) => (routePanel = m));
+export const loadRoutePanel = () => painted.then(importRoutePanel).then((m) => (routePanel = m));
 // Each part drawn again only when its own props change (memo): the
 // workspace renders at each answer that streams in, and the route's box,
 // the chips and the nav log were all drawn again each time -- 60 to 85 ms
