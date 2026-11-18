@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AircraftProfile, LessonProgressRequest, Training } from "../../lib/api/types";
+import type { LessonProgressRequest, Training } from "../../lib/api/types";
 import { api } from "../../lib/api/client";
 import { lessonPicked } from "../../lib/assignedLessons";
 import { trainingQuery } from "../../lib/queryClient";
@@ -15,7 +15,7 @@ import type { FromInstructor } from "./LessonParts";
  * Where it is no longer theirs -- taken back, or the instructor gone --
  * it closes.
  */
-export default function AssignedLesson({ id, aircraft, onClose }: { id: number; aircraft: AircraftProfile | null; onClose: () => void }) {
+export default function AssignedLesson({ id, onClose }: { id: number; onClose: () => void }) {
   const queryClient = useQueryClient();
   const { data: training, isSuccess } = useQuery(trainingQuery);
   const lesson = training?.lessons.find((l) => l.id === id) ?? null;
@@ -59,5 +59,5 @@ export default function AssignedLesson({ id, aircraft, onClose }: { id: number; 
         : undefined,
     [lesson, once, send, report.error],
   );
-  return <ApproachLesson at={at} aircraft={aircraft} onClose={onClose} from={from} />;
+  return <ApproachLesson at={at} onClose={onClose} from={from} />;
 }

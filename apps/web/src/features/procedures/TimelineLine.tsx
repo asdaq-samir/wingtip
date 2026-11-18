@@ -11,6 +11,7 @@ import { FuelGauge } from "./FuelGauge";
 import { WindLine } from "./FieldHead";
 import { fieldParts, kindMenu, kindPicked, windWords } from "./fieldParts";
 import { PartTray } from "./RunwayTray";
+import { TIMELINE_THREAD } from "./TimelineRows";
 import type { pointEnd } from "./pointEnd";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
@@ -165,12 +166,7 @@ export function TimelineLine({
           under it into the next line, centred under the marks. */}
       <span className="relative flex w-8 shrink-0 justify-center">
         <span className="relative z-10 flex h-11 items-center">{mark}</span>
-        {!last && (
-          <span
-            aria-hidden="true"
-            className="absolute top-10 -bottom-1 left-1/2 -translate-x-1/2 border-l-[3px] border-dotted border-course"
-          />
-        )}
+        {!last && <span aria-hidden="true" className={TIMELINE_THREAD} />}
       </span>
       <div className={cn("min-w-0 flex-1 pr-1", !first && "border-t border-border")}>
         <div className="relative flex h-11 min-w-0 items-center gap-2">

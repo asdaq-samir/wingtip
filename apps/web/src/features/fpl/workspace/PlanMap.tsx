@@ -35,19 +35,8 @@ export default function PlanMap({
   const { crossings, routed, setRoute } = vm.route;
   const { course, s, selected } = vm.plan;
   const { heldPoint, holdPoint, nearOpen, selectPlaceOnChart } = vm.cards;
-  const {
-    directTo,
-    fitAircraft,
-    flownPatterns,
-    mapDirects,
-    mapProcedures,
-    openFix,
-    patternFocus,
-    procedureFocus,
-    setCrossing,
-    setOpenFixAt,
-    showFix,
-  } = vm.picks;
+  const { directTo, flownPatterns, mapDirects, mapProcedures, openFix, patternFocus, procedureFocus, setCrossing, setOpenFixAt, showFix } =
+    vm.picks;
   const { nearestPoints, placePin, startPin } = vm.map;
   const { fuelStopPins } = vm.stops;
   const { lineKey, pickWay } = vm.routeList;
@@ -131,7 +120,7 @@ export default function PlanMap({
         <Suspense fallback={null}>
           {/* The lesson's track is turned by the engine (lib/geo's bearingDeg). */}
           <EngineGate>
-            <AssignedLesson key={lessonOpen} id={lessonOpen} aircraft={fitAircraft} onClose={closeLesson} />
+            <AssignedLesson key={lessonOpen} id={lessonOpen} onClose={closeLesson} />
           </EngineGate>
         </Suspense>
       )}

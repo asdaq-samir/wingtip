@@ -35,7 +35,6 @@ export function RouteSheets({ vm, children }: { vm: ProceduresRouteModel; childr
     onPointAltitude,
     onCreateFix,
     onHoldSet,
-    fit,
     on,
     procedure,
     setPage,
@@ -79,7 +78,7 @@ export function RouteSheets({ vm, children }: { vm: ProceduresRouteModel; childr
       )}
       {lessonUsed && (
         <Suspense fallback={null}>
-          <ApproachLesson at={lesson} aircraft={fit?.aircraft ?? null} onClose={() => setLesson(null)} />
+          <ApproachLesson at={lesson} onClose={() => setLesson(null)} />
         </Suspense>
       )}
       {/* On a phone its card opens at half whatever it covers, the

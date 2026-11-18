@@ -55,10 +55,8 @@ export interface Workings {
 }
 
 /** The engine's flag on a leg whose climb's fuel it could not count, the
- *  profile having no climb fuel flow (NavLogLeg's climb_fuel_unknown).
- *  TODO(claude/planner-follow): the planner's Leg schema gains it; read it
- *  from the generated type once it is there. */
-const climbFuelUnknown = (leg: Leg) => (leg as Leg & { climb_fuel_unknown?: boolean | null }).climb_fuel_unknown === true;
+ *  profile having no climb fuel flow (NavLogLeg's climb_fuel_unknown). */
+const climbFuelUnknown = (leg: Leg) => leg.climb_fuel_unknown === true;
 
 /** A leg worked out, or null for one that cannot be (no wind is a calm
  *  leg; a wind faster than the airplane, no leg at all). `phase`: the

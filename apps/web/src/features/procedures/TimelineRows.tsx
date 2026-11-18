@@ -5,6 +5,11 @@ import { Button } from "../../components/ui/button";
 import { TEXT } from "../../lib/text";
 import { stopsNames, stopsTitle } from "./stopsRow";
 
+/** The route's magenta in short rounded dashes from under a line's mark
+ *  into the next line, centred under the marks (TimelineLine's and the
+ *  rows here). */
+export const TIMELINE_THREAD = "absolute top-10 -bottom-1 left-1/2 -translate-x-1/2 border-l-[3px] border-dotted border-course";
+
 // The rows of FPL's timeline that are an action rather than a point
 // (TimelineRoute's card): the stops below full, Add a Stop, an end of the
 // route still to pick, and the route typed or pasted. One look for all of them, a filled
@@ -61,12 +66,7 @@ function TimelineAction({
       >
         <span className="relative flex h-11 w-8 shrink-0 items-center justify-center">
           <span className="relative z-10">{mark}</span>
-          {line && (
-            <span
-              aria-hidden="true"
-              className="absolute top-10 -bottom-1 left-1/2 -translate-x-1/2 border-l-[3px] border-dotted border-course"
-            />
-          )}
+          {line && <span aria-hidden="true" className={TIMELINE_THREAD} />}
         </span>
         <span
           className={cn(

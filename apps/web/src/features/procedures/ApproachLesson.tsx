@@ -9,7 +9,6 @@ import { Button } from "../../components/ui/button";
 import { Skeleton } from "../../components/ui/skeleton";
 import { useIsMobile } from "../../hooks/use-mobile";
 import { approachBrief, coachingSteps, lessonPath, pathBetween, type LessonInput } from "../../lib/approachLesson";
-import type { AircraftProfile } from "../../lib/api/types";
 import { useGeo } from "../../lib/geo";
 import { endLessonMap, useLessonMap } from "../../lib/map/route/lessonMap";
 import type { PickedProcedure } from "../../lib/procedures";
@@ -38,14 +37,6 @@ const PAGES = [
  *  it in still air -- the pilot's to change, said on the control. */
 const SPEEDS = [70, 90, 120] as const;
 
-/** A speed of the airplane's own figures, where its profile carries one
- *  (its POH's VREF, or its VSO): none of the app's profiles do yet, and
- *  then no category is said. */
-function speedOf(aircraft: AircraftProfile | null | undefined, key: "vref_kt" | "vso_kt"): number | null {
-  const value = (aircraft as Record<string, unknown> | null | undefined)?.[key];
-  return typeof value === "number" && value > 0 ? value : null;
-}
-
 /**
  * An approach taught, at the owner's ask ("do it all", 2026-10-30), from
  * a picked approach's Learn This Approach (ProcedureMenu): Brief, Fly and
@@ -59,12 +50,10 @@ function speedOf(aircraft: AircraftProfile | null | undefined, key: "vref_kt" | 
  */
 export default function ApproachLesson({
   at,
-  aircraft,
   onClose,
   from,
 }: {
   at: PickedProcedure | null;
-  aircraft: AircraftProfile | null;
   onClose: () => void;
   /** Set by an instructor (AssignedLesson); none from a picked approach's menu. */
   from?: FromInstructor;
@@ -75,11 +64,8 @@ export default function ApproachLesson({
   // The lesson off the chart as it is put away, whichever way.
   useEffect(() => (at ? endLessonMap : undefined), [at]);
   const input = useMemo<LessonInput | null>(
-    () =>
-      drawing
-        ? { drawing, frequencies: field?.frequencies ?? null, vrefKt: speedOf(aircraft, "vref_kt"), vsoKt: speedOf(aircraft, "vso_kt") }
-        : null,
-    [drawing, field, aircraft],
+    () => (drawing ? { drawing, frequencies: field?.frequencies ?? null } : null),
+    [drawing, field],
   );
   return (
     <ResponsivePopover
