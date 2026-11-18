@@ -134,7 +134,7 @@ export function FieldStep({
           className={cn("relative isolate", FIELD_CARD, !last && FIELD_GAP)}
           data-testid="route-field"
           data-ident={a.ident}
-          data-open={opened || undefined}
+          data-open={opened ? "" : undefined}
         />
       }
     >

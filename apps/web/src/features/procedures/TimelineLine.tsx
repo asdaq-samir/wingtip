@@ -168,7 +168,7 @@ export function TimelineLine({
           aria-label={parts[0] ? `${point.ident} · ${parts[0].role}` : undefined}
           data-testid="timeline-line"
           data-ident={point.ident}
-          data-open={(opens && open) || undefined}
+          data-open={opens && open ? "" : undefined}
         />
       }
     >

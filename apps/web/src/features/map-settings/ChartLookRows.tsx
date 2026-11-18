@@ -35,7 +35,10 @@ export default function ChartLookRows() {
     <ListGroup>
       <ListRow title="Dimmer" description={undimmed ? "Full brightness in sunlight" : undefined}>
         <Slider
-          className="w-40"
+          // Its own width, in place of the stock Slider's w-full: in a row's
+          // trailing actions that came to 0 wide, and Base UI hid the thumbs it
+          // could not place (the browser suite, 2026-11-18).
+          className="data-horizontal:w-40"
           min={0}
           max={DIM_MAX}
           step={LOOK_STEP}
@@ -50,7 +53,7 @@ export default function ChartLookRows() {
       </ListRow>
       <ListRow title="Contrast">
         <Slider
-          className="w-40"
+          className="data-horizontal:w-40" // the Dimmer's width, as above
           min={CONTRAST_MIN}
           max={CONTRAST_MAX}
           step={LOOK_STEP}
