@@ -50,7 +50,7 @@ export const PIN_AT_FOOT =
  * foot (the owner, 2026-11-18: "the main issue is tab bar is not allowing
  * the figures to go past it"). Held over the bar's top, the figures
  * covered a short panel's route (an iPhone in landscape at half: the
- * departure's row alone in sight, the stops' pill cut in half); held on
+ * departure's row alone in sight, the stops' row cut in half); held on
  * the foot's edge under a bar that stayed, a slow pull down from half hid
  * them under the bar and its fade. The script measures the bar's room
  * too (--pin-bar-room on the bar, barRoom); the bar's own CSS does the

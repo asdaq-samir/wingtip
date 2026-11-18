@@ -154,8 +154,8 @@ mod aloft_tests {
 
     #[test]
     fn the_service_ceiling_comes_down_on_a_warm_day_and_up_on_a_cold_one() {
-        // wingtip.performance's test of altitude_at_density_altitude, kept
-        // with the call the altitude selection now asks.
+        // The planner's old test of altitude_at_density_altitude, kept with
+        // the call the altitude selection now asks.
         use wingtip_flight::flight::isa_temp_c;
         let plus = |dev: f64| vec![(0.0, isa_temp_c(0.0) + dev), (20000.0, isa_temp_c(20000.0) + dev)];
         assert_eq!(service_ceiling_on_the_day(13500.0, &plus(0.0)), 13500.0);

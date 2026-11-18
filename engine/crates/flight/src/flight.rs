@@ -1,8 +1,8 @@
 //! The flight's own figures, one copy for the planner and the phones:
 //! the wind triangle, VFR cruising altitudes, the fuel reserve and the
-//! atmosphere. Each is the planner's (wingtip.navlog, wingtip.altitude,
-//! wingtip.performance) written again here, and services/planner/tests_wingtip/test_flight_rules.py
-//! holds the two to the same answer; the web's TypeScript copy of the
+//! atmosphere. Each was once the planner's own and is asked from here
+//! now; services/planner/tests_wingtip/test_flight_rules.py holds the
+//! planner's calls to the shared fixture; the web's TypeScript copy of the
 //! wind triangle (lib/diversion) is held to the same fixture
 //! (apps/web/src/lib/fixtures/flightRules.json).
 
@@ -101,7 +101,7 @@ pub fn reserve_min(ifr: bool, night: bool) -> f64 {
 // The International Standard Atmosphere below the tropopause (ICAO Doc
 // 7488): sea level 15 C (288.15 K), a lapse of 6.5 K a kilometre
 // (0.0019812 C a foot), and the exponent pressure falls off by, g/(R L);
-// density's is one less. wingtip.performance's constants, the same digits.
+// density's is one less. The performance module works from these.
 pub const ISA_SEA_LEVEL_C: f64 = 15.0;
 pub const ISA_LAPSE_C_PER_FT: f64 = 0.0019812;
 const SEA_LEVEL_K: f64 = ISA_SEA_LEVEL_C + KELVIN_AT_0_C;

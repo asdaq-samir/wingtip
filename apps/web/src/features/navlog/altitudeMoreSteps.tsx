@@ -91,7 +91,7 @@ export function plansStep(nav: NavLogAltitude, plansAbove: boolean, winds: Total
 /** The airplane's cruise in each leg's own air, a step; none with no airplane
  *  or with legs from a planner that did not say. */
 export function performanceSteps(nav: NavLogAltitude, legs: Leg[]): Step[] {
-  // The airplane's cruise in each leg's own air (wingtip.performance): its
+  // The airplane's cruise in each leg's own air (the engine's wingtip_flight::performance): its
   // figures are its own at the reference altitude on a standard day, and
   // each leg's are worked out for the forecast temperature at its
   // altitude. Legs from a planner that did not say have none.

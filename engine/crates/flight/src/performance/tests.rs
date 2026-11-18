@@ -1,5 +1,5 @@
-//! wingtip.performance's own tests (services/planner/tests_wingtip/
-//! test_performance.py), moved with it.
+//! The performance module's tests, moved from the planner with it (#482
+//! phase 4).
 use super::*;
 
 fn c172() -> Airplane {

@@ -35,8 +35,8 @@ const DESK = new Set(["waypoint", "alt", "dist", "tc", "wind", "mh", "gs", "ete"
  *  heading, groundspeed, time and fuel, which need its airspeed and burn. */
 const AIRPLANE = new Set(["mh", "gs", "ete", "fuel"]);
 
-/** The leg's true airspeed, in its own air (the planner's
- *  wingtip.performance): it varies with the altitude and the forecast
+/** The leg's true airspeed, in its own air (the engine's
+ *  wingtip_flight::performance): it varies with the altitude and the forecast
  *  temperature, so each leg has its own. A dash from a planner that did
  *  not say. */
 export function tas(leg: Leg): string {
@@ -151,7 +151,7 @@ export function navLogColumns({
       meta: PAPER,
       cell: ({ row }) => {
         const leg = legOf(row.original);
-        return leg ? (leg.wind ? windAloft(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt) : "no data") : <FigureWait />;
+        return leg ? leg.wind ? windAloft(leg.wind.wind_dir_true_deg, leg.wind.wind_speed_kt) : "no data" : <FigureWait />;
       },
     },
     {
@@ -195,7 +195,7 @@ export function navLogColumns({
       meta: PAPER,
       cell: ({ row }) => {
         const leg = legOf(row.original);
-        return leg ? (leg.groundspeed_kt === null ? "—" : Math.round(leg.groundspeed_kt)) : <FigureWait />;
+        return leg ? leg.groundspeed_kt === null ? "—" : Math.round(leg.groundspeed_kt) : <FigureWait />;
       },
     },
     {
@@ -203,7 +203,7 @@ export function navLogColumns({
       header: () => <Heading name="ETE" unit="min" spoken="Time en route, minutes" />,
       cell: ({ row }) => {
         const leg = legOf(row.original);
-        return leg ? (leg.ete_min === null ? "unflyable" : one(leg.ete_min)) : <FigureWait />;
+        return leg ? leg.ete_min === null ? "unflyable" : one(leg.ete_min) : <FigureWait />;
       },
     },
     {

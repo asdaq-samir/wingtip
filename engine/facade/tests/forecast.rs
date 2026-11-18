@@ -213,8 +213,8 @@ fn isa_plus(dev_c: f64) -> Value {
         .collect::<Vec<_>>())
 }
 
-// wingtip.performance's test of the Python copy, which this call
-// replaces (services/planner/tests_wingtip/test_performance.py).
+// The test the planner's Python copy had, kept for the call that
+// replaced it (#482 phase 4).
 #[test]
 fn the_service_ceiling_comes_down_on_a_warm_day_and_up_on_a_cold_one() {
     let at = |dev: f64| ask("service_ceiling_on_the_day", json!({"book_ft": 13500, "profile": isa_plus(dev)})).as_f64().unwrap();
