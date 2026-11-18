@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openMapSettings, pickControl, settle, slow } from "./helpers";
+import { mapLook, openMapSettings, pickControl, settle, slow } from "./helpers";
 
 /**
  * The chart's Dimmer and Contrast (the Map card's Look, under its tiles;
@@ -29,7 +29,7 @@ test("the Dimmer and Contrast sliders set the chart's paint as they move, and su
   await expect.poll(() => chartPaintOf(page, "data-chart-contrast")).toBe(0.1);
 
   await openMapSettings(page);
-  const look = page.getByTestId("map-look");
+  const look = await mapLook(page);
   // The Appearance menu has no Dark + Bright: the Dimmer took its place.
   await look.getByTestId("theme-select").click();
   await expect(page.getByTestId("theme-dark")).toBeVisible();
@@ -83,7 +83,7 @@ test.describe("at night", () => {
     await expect.poll(() => chartPaintOf(page, "data-chart-brightness"), { timeout: slow(15_000) }).toBe(0.5);
 
     await openMapSettings(page);
-    const look = page.getByTestId("map-look");
+    const look = await mapLook(page);
     const dimmer = look.getByRole("slider", { name: "Dimmer" });
     await pickControl(page, "sunlight-select", "sunlight-on");
     await expect(dimmer).toBeEnabled();

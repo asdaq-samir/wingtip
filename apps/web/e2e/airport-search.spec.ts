@@ -15,8 +15,10 @@ import { stopsAre } from "./stopsParam";
 const airport = (ident: string, name: string) => ({ ident, name, municipality: null, region: "US-MN" });
 
 /** The route's destination changed: from its pill's menu, a tap on it
- *  opening the airport's card (RouteBox). */
+ *  opening the airport's card (RouteBox), in the route's field opened from
+ *  the route's ••• (Type the Route; decision 0047). */
 async function changeDestination(page: Page) {
+  await openRoute(page);
   await page.getByLabel(/^(\S+, )?Destination$/).click({ button: "right" });
   await page.getByTestId("pill-menu-change").click();
 }

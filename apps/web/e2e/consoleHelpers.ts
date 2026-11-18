@@ -21,9 +21,19 @@ export async function openSetup(page: Page) {
   await expandConsole(page);
 }
 
+/** The Map card's Look in sight. Since its Dimmer and Contrast came under its
+ *  tiles (ChartLookRows, 2026-11-18) it is under the half card's edge, where
+ *  its rows are not drawn for a reader or a tap: the card raised to reach it,
+ *  as a finger does (inSheet). */
+export async function mapLook(page: Page) {
+  const look = page.getByTestId("map-look");
+  await inSheet(page, look);
+  return look;
+}
+
 /** A look row set from its menu: Theme, Appearance and Sunlight in the Map card's Look (LookChoice). */
 export async function pickControl(page: Page, control: "theme-select" | "brand-select" | "sunlight-select", item: string) {
-  await page.getByTestId("map-look").getByTestId(control).click();
+  await (await mapLook(page)).getByTestId(control).click();
   await page.getByTestId(item).click();
 }
 

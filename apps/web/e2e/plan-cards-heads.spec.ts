@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeNavLog, closeProfile, controlsInSight, openBrief, openNavLog, openProfile, settle, slow } from "./helpers";
+import { closeNavLog, closeProfile, controlsInSight, navLogScroller, openBrief, openNavLog, openProfile, settle, slow } from "./helpers";
 
 /**
  * The Profile, Nav Log and Brief cards as a pilot with no airplane picked
@@ -46,8 +46,9 @@ test("nav log and brief: no zero count, the dashes said, the plan line in the Br
   await settle(page);
   await controlsInSight(page);
   const sheet = await openNavLog(page);
-  // With no airplane the time and fuel are none of the planner's: said so.
-  await expect(sheet.getByTestId("card-sub")).toContainText(/nm · no airplane picked$/, { timeout: slow(60_000) });
+  // With no airplane the time and fuel are none of the planner's: said so,
+  // under the card's name, in its head over the legs (navLogScroller).
+  await expect(navLogScroller(page).getByTestId("card-sub")).toContainText(/nm · no airplane picked$/, { timeout: slow(60_000) });
   await expect(sheet).not.toContainText("0 Checkpoints");
   await expect(sheet).not.toContainText("leaving");
   await closeNavLog(page);

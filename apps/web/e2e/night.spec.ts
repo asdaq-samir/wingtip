@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openMapSettings, pickControl, settle, slow } from "./helpers";
+import { mapLook, openMapSettings, pickControl, settle, slow } from "./helpers";
 
 /**
  * Night: in the dark theme the sheets are the cockpit palette's navy and
@@ -39,7 +39,7 @@ test("in the dark theme the page is the night's navy and only the chart's tiles 
   // The Dimmer at 0: the chart as printed, and kept so across a reload.
   // The browser's dark on System is read as System, not Dark.
   await openMapSettings(page);
-  const look = page.getByTestId("map-look");
+  const look = await mapLook(page);
   await expect(look.getByTestId("theme-select")).toHaveAttribute("aria-label", "Appearance: System");
   const dimmer = look.getByRole("slider", { name: "Dimmer" });
   await expect(dimmer).toHaveAttribute("aria-valuetext", "50%");

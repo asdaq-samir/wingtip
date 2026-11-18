@@ -95,9 +95,9 @@ test("Nearest opens as a card half way up, a field over it as a layer, and its c
   await showPlan(page);
   await expect(card).toHaveCount(0);
   // The sheet where it was left, half way (the card rule's 11: nothing
-  // raises or lowers it), the route's nav log on FPL.
+  // raises or lowers it), the route's timeline on FPL (decision 0047).
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
-  await expect(sideDrawer(page).getByTestId("navlog-scroller")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("route-summary")).toBeVisible();
 });
 
 test(

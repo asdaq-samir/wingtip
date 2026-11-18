@@ -28,6 +28,7 @@ export {
   openConsole,
   openSetup,
   pickControl,
+  mapLook,
   openMapSettings,
   expandConsole,
   roleMenu,

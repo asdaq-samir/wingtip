@@ -7,7 +7,6 @@ import {
   sideDrawer,
   openBrief,
   briefPage,
-  openBriefing,
   openTab,
   grabberTo,
   panelTabs,
@@ -199,8 +198,10 @@ test("plan page: the briefing's nav log scrolls inside the drawer, not the page"
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
 
-  await openBriefing(page);
-  const scroller = page.getByTestId("navlog-scroller");
+  // The nav log is its own card over FPL (decision 0047), its legs in its
+  // own scroller; FPL's sheet holds the route's timeline.
+  await openNavLog(page);
+  const scroller = navLogScroller(page);
   await expect(scroller).toBeVisible();
   await settled(page.locator("body"));
 

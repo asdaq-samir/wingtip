@@ -111,7 +111,7 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
   await grabberTo(page, "half");
   await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
-  await expect(page.getByLabel(/^(\S+, )?Departure$/)).toContainText("C81");
+  await expect(sideDrawer(page).getByTestId("route-summary")).toContainText("C81");
   await clearTheRoute(page);
   await expect(page).not.toHaveURL(/dep=/);
   await expect(sideDrawer(page).getByTestId("timeline-type-route")).toBeVisible();

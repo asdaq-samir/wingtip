@@ -64,8 +64,11 @@ export async function tapTheChart(page: Page) {
         });
       const clear = (x: number, y: number) =>
         offLine(x, y) && marks.every((m) => x < m.left - 30 || x > m.right + 30 || y < m.top - 30 || y > m.bottom + 30);
-      for (let fy = 0.85; fy > 0.1; fy -= 0.1) {
-        for (let fx = 0.15; fx < 0.9; fx += 0.1) {
+      // A grid of 5% steps: a pick flies the map in to the thing picked
+      // (lib/map/mapPick), its card over the lower half, and at that zoom the
+      // marks crowd what is left; a 10% grid found no point clear of them.
+      for (let fy = 0.9; fy > 0.04; fy -= 0.05) {
+        for (let fx = 0.1; fx < 0.92; fx += 0.05) {
           const x = r.left + r.width * fx,
             y = r.top + r.height * fy;
           const hit = document.elementFromPoint(x, y);
