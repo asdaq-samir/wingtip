@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Fuel, Navigation, Plane, Triangle, X } from "lucide-react";
+import { Ellipsis, Fuel, Navigation, Plane, Triangle, X } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
@@ -40,8 +40,22 @@ export interface TimelinePoint {
  * the location arrow; an airport its flight category's colour (the map's,
  * grey with no report) with an airplane, a fuel stop's the pump; a
  * waypoint a grey triangle; one that cannot be flown to the red with ✕.
+ * Where it is the point's menu (`more`, while the route is edited) it says
+ * "•••" alone, the tint's ellipsis on the tint's wash, as iOS's More button
+ * (the owner, 2026-11-17: "Make the left buttons say ... only"); a fuel
+ * stop still told to a reader, the category in its ident's label.
  */
-export function TimelineMark({ point, position }: { point: TimelinePoint; position: boolean }) {
+export function TimelineMark({ point, position, more = false }: { point: TimelinePoint; position: boolean; more?: boolean }) {
+  if (more)
+    return (
+      <span
+        className="grid size-8 place-items-center rounded-full bg-tint/12 text-tint"
+        data-testid={point.fuelStop ? "timeline-fuel" : undefined}
+      >
+        <Ellipsis className="size-5" strokeWidth={2.4} aria-hidden />
+        {point.fuelStop && <span role="img" aria-label="fuel stop" />}
+      </span>
+    );
   const Glyph = point.problem ? X : position ? Navigation : !point.field ? Triangle : point.fuelStop ? Fuel : Plane;
   return (
     <span

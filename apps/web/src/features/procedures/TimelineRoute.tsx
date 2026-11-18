@@ -98,7 +98,7 @@ export default function TimelineRoute({ points, ...props }: ProceduresRouteProps
       row,
       index: point.index,
     });
-    const mark = <TimelineMark point={point} position={isPosition(point.ident)} />;
+    const mark = <TimelineMark point={point} position={isPosition(point.ident)} more={!!edit} />;
     const key = keyOf(point);
     return {
       id: key,

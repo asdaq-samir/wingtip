@@ -40,7 +40,10 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    its time in the secondary colour (the departure's leave time, a picker;
    the others' arrival, a dash with no airplane) and its grip. No city
    ("We don't need to say the city name"); the category is the mark's
-   colour and in what VoiceOver hears. Past four points the middle ones
+   colour and in what VoiceOver hears. Where the mark is the point's menu
+   (the route being edited) it says "•••" alone, the tint's ellipsis on
+   its wash (the owner, 2026-11-17: "Make the left buttons say ... only"),
+   the category then in the ident's label alone. Past four points the middle ones
    fold into "N more stops", a tap showing them all. Add a Stop is the
    last row, its mark the tint's + and its words in the tint, asking the
    one search (no microphone of its own: the search's field has one).
