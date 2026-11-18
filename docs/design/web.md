@@ -529,7 +529,15 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    in Address's place: the address is the town link and the Info tab's
    row; the owner, 2026-11-11) (`lib/cardActions`;
    `docs/design/icons.md`). Refresh is at the right of the Weather tab's
-   first row.
+   first row. Opened while the pilot adds a stop (FPL's Add a Stop or the
+   route box's arrow asked the one search, `SearchPick.stop`, and a field
+   was opened from its page or the map), the row is Add Stop (filled,
+   first, where Fly Here was, putting the field in where the pilot asked,
+   as a row picked in the search would), Call, Favorite and Address (the
+   field in Maps), with no Fly Here (the owner, 2026-11-18: "replace fly
+   here with add stop. And at the add fourth button for address";
+   `CARD_ACTIONS.airportAsStop`). A closed field's Add Stop stays greyed
+   with its reason (decision 0043).
    Laid out after Apple Maps' place card since 2026-11-14 (the owner,
    with Maps' Teriyaki Madness card: "How can we make our airport card
    more similar to this? Can tabs be similar to that floating buttons

@@ -108,6 +108,7 @@ export function useRouteListEdit({
       askSearchPick({
         label: "Add a Stop",
         fixes: true,
+        stop: true,
         onPick: (picked) => {
           const added = addedRoute(routePoints, index, picked);
           if (added) setRoute(added);

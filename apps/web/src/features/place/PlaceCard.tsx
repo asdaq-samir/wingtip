@@ -66,6 +66,7 @@ export default function PlaceCard({
   onStarted,
   stop,
   arrival,
+  asStop,
 }: {
   ident: string;
   /** What the distance is measured from where own ship has no fix: the
@@ -91,6 +92,9 @@ export default function PlaceCard({
    *  (ISO; null for now) and how long until it lands, minutes, for the
    *  hour its forecast marks. */
   arrival?: { depart: string | null; minutes: number };
+  /** Opened while the pilot adds a stop: Add Stop first, in Fly Here's
+   *  place, and Address last (PlaceActions). */
+  asStop?: boolean;
 }) {
   // Asked again every five minutes in sight (lib/shown): its METAR stayed the one it opened with (the audit's finding).
   const asked = { ...airportQuery(ident), refetchInterval: 5 * 60_000, subscribed: useShown() };
@@ -261,6 +265,7 @@ export default function PlaceCard({
             onAddStop={onAddStop}
             addStopOff={addStopOff}
             time={flyTime}
+            asStop={asStop}
           />
           {place && stop && <StopStrip ident={place.ident} stop={stop} />}
         </>

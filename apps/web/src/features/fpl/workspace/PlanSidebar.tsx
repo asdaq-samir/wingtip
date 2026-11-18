@@ -108,6 +108,10 @@ export default function PlanSidebar({
     ) : flight ? (
       <FlightCard key={flight} hex={flight} onOpenPast={selectPast} onClose={closeFlight} onOpenAirport={selectPlace} />
     ) : null;
+  // A stop asked for (FPL's Add a Stop) while the card is up, opened from
+  // the search's page or the map: its Add Stop is the pick, put in where
+  // the pilot asked, as a row tapped in the search would be.
+  const stopAsked = !!model.pick?.stop;
   // The airport's card, in the panel's body.
   const placeCard = place && (
     <Waits>
@@ -124,6 +128,11 @@ export default function PlanSidebar({
           void flyHere(to);
         }}
         onAddStop={(to) => {
+          if (stopAsked) {
+            closePlace();
+            model.pickIdent(to.ident);
+            return;
+          }
           model.letGo();
           if (suggestedAt) keepFuelStops(suggestedAt.after, [place]);
           else addStop(to);
@@ -138,6 +147,7 @@ export default function PlanSidebar({
               : undefined
         }
         stop={suggestedAt?.stop}
+        asStop={stopAsked}
         // The route's destination: when the flight lands there -- en route and on the ground at its
         // stops (Totals.ground_min) after it leaves, as the figures' ETA -- for its forecast's hour.
         arrival={
