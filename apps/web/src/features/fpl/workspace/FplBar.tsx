@@ -21,6 +21,9 @@ export default function FplBar({ strip, routes }: { strip: ReactNode; routes?: R
   return (
     <div className="flex w-full items-center gap-2">
       {routes}
+      {/* The bar in the row's middle, between the two round buttons (the
+          owner, 2026-11-17: "Center the n number and fl pills"). */}
+      <span className="flex-1" />
       <div className={cn("flex items-center pr-1 pl-1.5", SHEET_BAR, "w-fit flex-none")} data-testid="route-strip">
         {strip}
       </div>
