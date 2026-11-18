@@ -419,7 +419,10 @@ jobs:
                 - engine/**
               ingest:
                 - services/ingest/**
+                - services/Dockerfile.base
                 - services/planner/wingtip/**
+                - services/planner/requirements-wingtip.txt
+                - engine/**
               weather:
                 - services/weather/**
                 - services/Dockerfile.base

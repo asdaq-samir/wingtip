@@ -47,7 +47,7 @@ out=$(mktemp -d)
 trap 'rm -rf "$out"' EXIT
 on() { [ "${!1:-true}" != false ]; }
 CARGO_MACHETE=0.9.2
-RUFF=$(scripts/build/toolchain.sh get ruff)
+RUFF_VERSION=$(scripts/build/toolchain.sh get ruff)
 
 # NAME CMD...: started in the background, its output and status kept.
 start() {
@@ -67,18 +67,18 @@ need() {
 }
 
 ruff_check() {
-  local ruff=(ruff)
-  if [ "$(ruff --version 2>/dev/null)" != "ruff $RUFF" ]; then
+  local leg
+  RUFF=ruff
+  if [ "$(ruff --version 2>/dev/null)" != "ruff $RUFF_VERSION" ]; then
     need uvx || return $?
-    ruff=(uvx -q "ruff@$RUFF")
+    RUFF="uvx -q ruff@$RUFF_VERSION"
   fi
-  # Each suite from its own directory, as its job ran it, so each finds
-  # the settings it always has.
-  (cd services/planner && "${ruff[@]}" check app tests wingtip tests_wingtip) &&
-    (cd services/ingest && "${ruff[@]}" check ingest tests) &&
-    (cd services/weather && "${ruff[@]}" check app tests) &&
-    (cd services/jobs && "${ruff[@]}" check charts crash) &&
-    (cd tools/xplane-driver && "${ruff[@]}" check .)
+  export RUFF
+  # Each suite from its own directory, as its job runs it, so each finds
+  # the settings it always has (scripts/ci/python_suite.sh's table).
+  for leg in planner wingtip ingest weather jobs xplane; do
+    scripts/ci/python_suite.sh --lint "$leg" || return 1
+  done
 }
 
 # The branch a change is held against, fetched once for every check that
