@@ -10,7 +10,7 @@ https://cdn:9443, https://localhost:9443 {
 	tls internal
 
 	# /tiles/* is the S3 bucket: serving.json and the cycle's archives, laid out as
-	# wingtip.charts.publish uploads it.
+	# wingtip.chart_publish.publish uploads it.
 	handle_path /tiles/* {
 		root * /srv/tiles
 		header Cache-Control "public, max-age=2419200, immutable"

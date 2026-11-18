@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # The charts job (services/jobs/charts): the FAA chart cycle's raster tiles
-# (wingtip.charts' refresh) and the map's overlay tiles (charts.overlays,
+# (wingtip.chart_upkeep's refresh) and the map's overlay tiles (charts.overlays,
 # tippecanoe), built once a cycle in a container of their own, so the
 # planner only serves them. `python -m charts <command>` is the entry
 # point; services/jobs/README.md says how each is run.

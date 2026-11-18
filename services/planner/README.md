@@ -175,7 +175,7 @@ Dev console's System tab shows the sheets prepared and the pyramid's
 progress.
 
 A change to how a tile is drawn goes with a bump of
-`wingtip.charts.RENDERER_VERSION`. The next refresh then counts the cycle
+`wingtip.chart_render.RENDERER_VERSION`. The next refresh then counts the cycle
 as due, draws every tile again (serving the old ones meanwhile), and
 bumps the tile revision at the end, as `unmask` does below.
 
@@ -205,7 +205,7 @@ download, which is on otherwise, whatever the charts do; and so do the
 NASR and obstacle files: `FAA_DATA_AUTO_REFRESH=0` turns off the check
 for their new editions, four times a day otherwise.) All of that
 policy -- the window, the due check, the worker counts -- is
-`app/chart_refresh.py`; the charts job and `wingtip.charts` do the work it
+`app/chart_refresh.py`; the charts job and wingtip's chart modules do the work it
 asks for. `docker compose run --rm charts check` looks for daylight between adjacent sheets, which is
 what a mis-detected sheet edge would show up as; the one it always
 reports, between the Caribbean 1 chart and Jacksonville west of 83W,
