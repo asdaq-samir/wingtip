@@ -26,6 +26,11 @@ const TITLE: Record<Kind, string> = { approach: "Approach", arrival: "Arrival", 
  *  owner's ask ("make the selections to be more compact: Arrive,
  *  Approach, Depart"). */
 const SHORT: Record<Kind, string> = { approach: "Approach", arrival: "Arrive", departure: "Depart" };
+/** A kind to add, on its chip: the FAA's contractions (FAA Order JO 7340.2,
+ *  Contractions: ARR, APCH, DEP), at the owner's ask (2026-11-17: "shorten
+ *  arrival to ARR and approach to APCH") so the row stays on one line. A
+ *  reader still hears the whole word (its aria-label). */
+const CHIP: Record<Kind, string> = { approach: "APCH", arrival: "ARR", departure: "DEP" };
 const ALL: Record<Kind, string> = { approach: "All approaches…", arrival: "All arrivals…", departure: "All departures…" };
 /** The one failure both the pull-down and the procedures sheet say. */
 export const PROCEDURES_FAILED = "The FAA's procedures could not be fetched.";
@@ -215,7 +220,7 @@ export default function ProcedureMenu({
             )}
             aria-label={`${ident} ${TITLE[kind].toLowerCase()}: ${label ?? "none picked"}`}
           >
-            {look === "add" ? <span>+ {TITLE[kind]}</span> : <span className="truncate">{label ?? SHORT[kind]}</span>}
+            {look === "add" ? <span>+ {CHIP[kind]}</span> : <span className="truncate">{label ?? SHORT[kind]}</span>}
             {look !== "add" && <ChevronDown className="size-4 shrink-0" aria-hidden />}
           </Button>
         )}

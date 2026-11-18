@@ -54,9 +54,11 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    procedure, each picked one its short name's chip ("ILS 26 ⌄",
    ProcedureMenu's menu as it was: transition, plate, Learn This Approach,
    another, none; taking one off gives the plan's toast Undo) and each not
-   picked "+ Approach": a departure's runway and "+ Departure", a stop's
-   landing runway, "+ Approach", its takeoff runway, "+ Departure" and when
-   it leaves again, a destination's runway, "+ Arrival" and "+ Approach", a
+   picked "+ APCH" in the FAA's contractions (JO 7340.2; the owner
+   2026-11-17, so the row fits one line, a reader hearing the whole word):
+   a departure's runway and "+ DEP", a stop's landing runway, "+ APCH",
+   its takeoff runway, "+ DEP" and when it leaves again, a destination's
+   runway, "+ ARR" and "+ APCH", a
    field with no CIFP procedures its runway alone, whose chip says its
    pattern. One line open at a time; the open line tapped again folds, and
    another moves it. While one is open the map centres its field above the

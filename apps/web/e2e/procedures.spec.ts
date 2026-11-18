@@ -191,10 +191,10 @@ test("a field's departure is picked after its runways, as its arrival and approa
   const kord = page.getByTestId("procedures").getByRole("region", { name: "KORD · Depart" });
   const menu = kord.locator("[data-testid=procedure-kind][data-kind=departure]");
   await expect(menu).toBeVisible({ timeout: slow(20000) });
-  // None picked: a dashed "+ Departure" after the runways, at the owner's
+  // None picked: a "+ DEP" after the runways, at the owner's
   // pick ("Can the selection for procedures be after runways so when
   // selected can expand", option C).
-  await expect(menu).toHaveText(/^\+ Departure/);
+  await expect(menu).toHaveText(/^\+ DEP/);
   await expect(menu).toHaveAttribute("data-look", "add");
   const chips = kord.getByTestId("procedure-pattern").locator("visible=true").first();
   await expect(chips).toBeVisible();
