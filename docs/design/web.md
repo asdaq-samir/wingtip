@@ -667,15 +667,15 @@ address with a ▶ on each row (`play`), each opening `PastFlightCard`
 whether it is in the air under it, so the card opens on answers already
 in hand. The FPL's airplane field suggests from the same rows as it is typed
 (`navlog/useAirplaneSuggestions` over `features/plan/useAirplaneHits`). The
-N-number's and the cruise altitude's pills are Base UI's stock Combobox
-since 2026-11-17, through shadcn's wrapper (`components/ui/combobox`, its
+N-number's pill is Base UI's stock Combobox since 2026-11-17, and the
+cruise altitude's shadcn's stock InputGroup, no list (the owner,
+2026-11-17: "No need for drop down for FL"), the N-number's through shadcn's wrapper (`components/ui/combobox`, its
 rows in the menu look): `ComboboxInput` in the pill `navlog/pillLook` sets
 (28 tall, round, the route box's fill, a fixed width, never under 16 px,
 the airplane giving way first), where it was a field of our own
 (`InlineField`, gone) round an Autocomplete and a Popover. The airplane's
 list is its suggestions, each a pick and never the field's value; the
-altitude's is the Altitude Advisor's levels, with its chevron, the one
-flown ticked, a pick flown as that figure typed. The fixed "N-" and "FL-"
+altitude is typed alone, its levels the Profile's. The fixed "N-" and "FL-"
 stay in the text once something is typed; empty, the field shows its
 stock placeholder, "N-_____" and "FL-___". Its suggestions are the
 registry's record alone, no live find. No airplane picked shows "No

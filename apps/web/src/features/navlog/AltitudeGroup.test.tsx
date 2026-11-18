@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 /**
- * FPL's altitude pill on the stock Combobox (ui/combobox): its pill and
- * its "FL-" format kept, a figure typed flown as before, and the levels the
- * Altitude Advisor offers in its list, a pick flown as that figure typed.
+ * FPL's altitude pill on the stock InputGroup (ui/input-group): its pill
+ * and its "FL-" format kept, a figure typed flown as before, and no list of
+ * levels (the owner, 2026-11-17: "No need for drop down for FL").
  * The engine's wasm is loaded for every test file (lib/engine/vitestSetup.ts).
  */
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -30,9 +30,9 @@ function pill(props: Partial<Parameters<typeof AltitudeGroup>[0]> = {}) {
 }
 
 describe("AltitudeGroup", () => {
-  test("is the stock combobox in the pill, the altitude flown as FL-065", () => {
+  test("is the stock input group in the pill, the altitude flown as FL-065, no list", () => {
     const { input, group } = pill();
-    expect(input.getAttribute("role")).toBe("combobox");
+    expect(input.getAttribute("role")).toBeNull();
     expect(group.getAttribute("data-slot")).toBe("input-group");
     expect(group.getAttribute("aria-label")).toBe("Cruise altitude");
     expect(group.className).toMatch(/\bh-7\b/);
@@ -53,18 +53,5 @@ describe("AltitudeGroup", () => {
     expect(input.value).toBe("FL-075");
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onFlyAltitude).toHaveBeenCalledWith(7500);
-  });
-
-  test("its list offers the advisor's levels, a pick flown as typed", async () => {
-    const { input, onFlyAltitude } = pill();
-    act(() => input.focus());
-    fireEvent.keyDown(input, { key: "ArrowDown" });
-    const levels = await screen.findAllByTestId("altitude-level");
-    const words = levels.map((l) => l.textContent);
-    expect(words).toContain("FL-045");
-    expect(words).toContain("FL-065");
-    fireEvent.click(levels.find((l) => l.textContent === "FL-045")!);
-    expect(onFlyAltitude).toHaveBeenCalledWith(4500);
-    expect(onFlyAltitude).toHaveBeenCalledTimes(1);
   });
 });

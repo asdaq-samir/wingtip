@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { cn } from "cn";
-import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from "../../components/ui/combobox";
+import { InputGroup, InputGroupInput } from "../../components/ui/input-group";
 import { Button } from "../../components/ui/button";
 import type { Leg, NavLogAltitude } from "../../lib/api/types";
 import type { FlightRules } from "../../lib/preferences";
@@ -8,7 +8,7 @@ import { TEXT } from "../../lib/text";
 import { flightLevel } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 import { useEngineReady } from "../../lib/engine/useEngineReady";
-import { advisorRows, cruiseOf } from "./altitude/plans";
+import { cruiseOf } from "./altitude/plans";
 import { PILL, PILL_FIELD } from "./pillLook";
 
 /** What the empty field says: an example of what it takes, at the owner's
@@ -120,78 +120,33 @@ export default function AltitudeGroup({
       : nav?.flown === null
         ? "no altitude: no winds"
         : "not yet planned";
-  // The levels the app offers, the Altitude Advisor's (the engine's
-  // altitude_advisor, highest first), worked out only while the list is
-  // open; those that start with what is typed once something is, and those
-  // a figure typed would not fly (the engine's altitude_allowed, below)
-  // shown but not to be picked.
-  const [listOpen, setListOpen] = useState(false);
-  const digits = (typed ?? "").replace(/\D/g, "");
-  const levels = listOpen
-    ? advisorRows(nav, flying)
-        .map((r) => r.altitude_ft)
-        .filter((ft) => (digits.length >= 4 ? String(ft) : flightLevel(ft).slice(3)).startsWith(digits))
-    : [];
-  // Set as a level is picked, so the blur after it flies nothing more.
-  const picked = useRef(false);
-  // A level lit by the arrows (the list's own highlight).
-  const lit = useRef(false);
-  const field = useRef<HTMLInputElement | null>(null);
-  // The figures' selection a tap asked for, put back as the tap ends (onClick).
-  const tapEnd = useRef<(() => void) | null>(null);
   return (
-    // The stock Combobox (ui/combobox, shadcn's on Base UI's) in the pill
-    // the airplane's is (pillLook), at the owner's ask ("N-number should
-    // look similar to altitude"): a figure typed as before, or a level
-    // picked from its list, each flown as a figure typed is (`fly`). Its
-    // value is the altitude flown, ticked in the list; what is typed is
-    // the pilot's (inputValue), never put back to a label by the part.
-    <Combobox<number>
-      value={flying}
-      onValueChange={(ft) => {
-        if (ft === null) return;
-        picked.current = true;
-        setTyped(null);
-        fly(String(ft));
-        field.current?.blur();
-      }}
-      itemToStringLabel={(ft) => flightLevel(ft)}
-      // "FL-" in the field's own text, not a label beside it: iOS keeps a
-      // few points inside an input's edge, which set the figures apart from
-      // it ("FL- 125" on the owner's phone, 2026-10-27).
-      inputValue={shown ? `FL-${shown}` : ""}
-      onInputValueChange={(next, details) => {
-        if (details.reason !== "input-change") return;
-        setTyped(next.toUpperCase().replace(/^FL-?/, "").replace(/\D/g, "").slice(0, 5));
-      }}
-      open={listOpen && levels.length > 0}
-      onOpenChange={setListOpen}
-      onItemHighlighted={(ft) => {
-        lit.current = ft !== undefined;
-      }}
-    >
-      <ComboboxInput
-        className={cn(PILL, "shrink-0")}
-        group={{ "aria-label": "Cruise altitude", "data-testid": "altitude-group" }}
+    // The stock InputGroup (ui/input-group) in the pill the airplane's is
+    // (pillLook), at the owner's ask ("N-number should look similar to
+    // altitude"): a figure typed, flown as before (`fly`). No list of
+    // levels and no chevron, at the owner's word (2026-11-17: "No need for
+    // drop down for FL"): the levels are the Profile's.
+    <InputGroup className={cn(PILL, "w-auto shrink-0")} aria-label="Cruise altitude" data-testid="altitude-group">
+      <InputGroupInput
         // As wide as "FL-000", whatever is in it.
-        inputClassName={cn(PILL_FIELD, "w-[calc(7ch+0.75rem)] tabular-nums", problem ? "text-destructive-ink" : "text-foreground")}
-        ref={field}
+        className={cn(PILL_FIELD, "w-[calc(7ch+0.75rem)] tabular-nums", problem ? "text-destructive-ink" : "text-foreground")}
+        // "FL-" in the field's own text, not a label beside it: iOS keeps a
+        // few points inside an input's edge, which set the figures apart
+        // from it ("FL- 125" on the owner's phone, 2026-10-27).
+        value={shown ? `FL-${shown}` : ""}
+        onChange={(e) => setTyped(e.currentTarget.value.toUpperCase().replace(/^FL-?/, "").replace(/\D/g, "").slice(0, 5))}
         placeholder={placeholder(engineReady)}
         enterKeyHint="done"
         inputMode="numeric"
         aria-label="Cruise altitude, a flight level or feet"
         onKeyDown={(e) => {
-          tapEnd.current = null;
-          // Enter on a level lit by the arrows is the list's (it picks it);
-          // else the figure typed, flown as before.
-          if (e.key === "Enter" && !(listOpen && lit.current)) {
+          if (e.key === "Enter") {
             e.preventDefault();
             fly();
             e.currentTarget.blur();
           }
-          // Escape with the list away lets go of what is typed; with it
-          // open, the stock part closes it.
-          if (e.key === "Escape" && !listOpen) setTyped(null);
+          // Escape lets go of what is typed.
+          if (e.key === "Escape") setTyped(null);
         }}
         // Its figures taken whole as it is tapped, as iOS selects a field
         // whose value is replaced: the caret fell between "FL" and "-",
@@ -210,83 +165,56 @@ export default function AltitudeGroup({
           };
           pick();
           requestAnimationFrame(pick);
-          // And once more as the tap ends: the stock list opens on the
-          // press, which can hold the frame past the press's own caret,
-          // put at the tap's point as it lifts ("FL-07503" in WebKit).
-          tapEnd.current = pick;
-        }}
-        onClick={() => {
-          const pick = tapEnd.current;
-          tapEnd.current = null;
-          // A frame on, after the caret WebKit puts once the click is done.
-          if (pick) requestAnimationFrame(pick);
         }}
         onBlur={() => {
           setEditing(false);
-          if (picked.current) picked.current = false;
-          else fly();
+          fly();
           setTyped(null);
         }}
         data-testid="altitude-input"
-      >
-        {/* No button of its own at its end, at the owner's ask (2026-10-27:
+      />
+      {/* No button of its own at its end, at the owner's ask (2026-10-27:
             "No need for a separate profile button"), and no caution's dot
             there either: that is on the route's Profile button now
             (PlanWorkspace's altitudeMark). What the altitude is and why
             stays in its name for VoiceOver. */}
-        {(profiled || entered) && (
-          <span
-            role="img"
-            aria-label={`Cruising altitude${rules === "ifr" ? " under IFR" : ""}, ${why}${!problem && tight ? ", tight" : ""}${!problem && cautions.length ? ", your altitude has a caution" : ""}`}
-            data-testid="altitude-why"
-            className="relative flex size-0 shrink-0"
-          />
-        )}
-        {/* Done while it is typed in: the number pad iOS gives a numeric
+      {(profiled || entered) && (
+        <span
+          role="img"
+          aria-label={`Cruising altitude${rules === "ifr" ? " under IFR" : ""}, ${why}${!problem && tight ? ", tight" : ""}${!problem && cautions.length ? ", your altitude has a caution" : ""}`}
+          data-testid="altitude-why"
+          className="relative flex size-0 shrink-0"
+        />
+      )}
+      {/* Done while it is typed in: the number pad iOS gives a numeric
               field has no Return, so the altitude went in only when the
               field was left (the FPL audit's A6). Over the route's buttons
               beside it, which wait while the keyboard is up, the field
               itself not widened for it (its one width, InlineField). */}
-        {editing && (
-          <span className="relative flex size-0 shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onMouseDown={(e) => e.preventDefault()}
-              onPointerDown={(e) => e.preventDefault()}
-              // Its blur flies what was typed (the field's onBlur).
-              onClick={() => (document.activeElement as HTMLElement | null)?.blur()}
-              data-testid="altitude-done"
-              // The stock small Button, a card's capsule floating over the
-              // route's buttons: the card's fill and its soft edge. Centred
-              // by its top, not a translate, which the stock press's own
-              // one-point nudge would replace.
-              className={cn(
-                "absolute top-[calc(50%-0.875rem)] left-2 z-20 h-7 rounded-full border-0 bg-card px-3 font-semibold shadow-(--depth-float)",
-                "after:absolute after:-inset-2 after:content-['']",
-                TEXT.row,
-              )}
-            >
-              Done
-            </Button>
-          </span>
-        )}
-      </ComboboxInput>
-      <ComboboxContent data-testid="altitude-levels">
-        <ComboboxList>
-          {levels.map((ft) => (
-            <ComboboxItem
-              key={ft}
-              value={ft}
-              disabled={!callEngine("altitude_allowed", { ft, ifr: rules === "ifr" })}
-              className="tabular-nums"
-              data-testid="altitude-level"
-            >
-              {flightLevel(ft)}
-            </ComboboxItem>
-          ))}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
+      {editing && (
+        <span className="relative flex size-0 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onMouseDown={(e) => e.preventDefault()}
+            onPointerDown={(e) => e.preventDefault()}
+            // Its blur flies what was typed (the field's onBlur).
+            onClick={() => (document.activeElement as HTMLElement | null)?.blur()}
+            data-testid="altitude-done"
+            // The stock small Button, a card's capsule floating over the
+            // route's buttons: the card's fill and its soft edge. Centred
+            // by its top, not a translate, which the stock press's own
+            // one-point nudge would replace.
+            className={cn(
+              "absolute top-[calc(50%-0.875rem)] left-2 z-20 h-7 rounded-full border-0 bg-card px-3 font-semibold shadow-(--depth-float)",
+              "after:absolute after:-inset-2 after:content-['']",
+              TEXT.row,
+            )}
+          >
+            Done
+          </Button>
+        </span>
+      )}
+    </InputGroup>
   );
 }
