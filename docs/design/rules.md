@@ -508,7 +508,8 @@ off by default (the owner, 2026-11-13).
    form in their place (the owner's pick of the stock fit, 2026-11-17); in
    flight and in a dry run no To, which the flying head names, so Distance,
    Time, Fuel and the GPS altitude are its four columns; and at the sheet's foot from
-   half up a floating glass bar, the airport card's tab bar's capsule,
+   half up a floating glass bar, the airport card's tab bar's capsule
+   round Base UI's stock Toolbar (one tab stop, the arrows between them),
    of four buttons: Brief, Nav Log and Profile, each opening its card
    over FPL, and the route's •••, "More", its one menu -- undo and redo,
    its link, Open in ForeFlight, the checkpoints, the kneeboard, Save,

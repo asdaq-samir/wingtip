@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { done } from "../../lib/doneNote";
 import { FileArchive, FileText, Fuel, Keyboard, Link2, MapPinned, Printer, RotateCw, Send, Trash2 } from "lucide-react";
+import { Toolbar } from "@base-ui/react/toolbar";
 import { TriggerButton, TriggerFace } from "./ShareTrigger";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../components/ResponsivePopover";
 import {
@@ -173,6 +174,7 @@ export default function ShareMenu({
     window.setTimeout(() => packChanged((n) => n + 1), 0);
     done("Sent to ForeFlight", { detail: "Then tap Open in ForeFlight again" });
   };
+  const trigger = <TriggerButton look={look} card={card} stale={planAgain?.stale ?? []} testId={testId} />;
 
   return (
     // The review's sheet, from the menu's item, placed by the Share
@@ -196,7 +198,9 @@ export default function ShareMenu({
         }}
       >
         <ResponsivePopoverAnchor asChild>
-          <DropdownMenuTrigger render={<TriggerButton look={look} card={card} stale={planAgain?.stale ?? []} testId={testId} />}>
+          {/* In FPL's floating bar a button of its Toolbar (FplTabBar),
+              in the arrows' roving focus, as the NOTAM filters' menus are. */}
+          <DropdownMenuTrigger render={look === "bar" ? <Toolbar.Button render={trigger} /> : trigger}>
             {!look && <TriggerFace card={card} stale={planAgain?.stale ?? []} />}
           </DropdownMenuTrigger>
         </ResponsivePopoverAnchor>

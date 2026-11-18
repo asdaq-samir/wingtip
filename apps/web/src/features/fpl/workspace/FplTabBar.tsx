@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
+import { Toolbar } from "@base-ui/react/toolbar";
 import { useVerdict } from "../../../lib/verdict";
 import { findingRows } from "../vm/planWords";
 import { CardAction as Action } from "../../../components/CardAction";
@@ -24,6 +25,12 @@ import type { PlanSlices } from "../vm/planSlices";
  * are the Brief's, which opens with them (the owner, 2026-11-16: "isn't
  * there a better place for them? Like brief"), not a list on FPL. The
  * Profile's own altitude caution the same, a 1. Both said in their names.
+ *
+ * The capsule is Base UI's stock Toolbar (the owner, 2026-11-17: stock
+ * parts where they avoid bugs): one tab stop, the arrows between its
+ * buttons (the APG toolbar), as the playback bars are (PlaybackBar), and
+ * each button a Toolbar.Button rendering its CardAction, the ••• the
+ * route's menu's trigger rendering one (ShareMenu's `look="bar"`).
  */
 export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan">; more: ReactNode }) {
   const { course } = vm.plan;
@@ -48,9 +55,11 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
       {/* The glass capsule, the airport card's bar's (CardTabBar): glass
           only on what floats (rules.md). Each button 56 tall in its
           columns, side by side, so their areas are over 44 points. */}
-      <GlassBar className="pointer-events-auto grid h-16 max-w-full auto-cols-fr grid-flow-col">
-        <Action
-          bar
+      <Toolbar.Root
+        aria-label="Route"
+        render={<GlassBar className="pointer-events-auto grid h-16 max-w-full auto-cols-fr grid-flow-col" />}
+      >
+        <BarAction
           icon={
             <span className="relative flex">
               <ICON.brief />
@@ -66,9 +75,8 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
           testId="route-brief"
           data-finding={briefMark ?? undefined}
         />
-        <Action bar icon={<ICON.navLog />} label="Nav Log" onClick={openNavLogCard} disabled={!course} testId="route-navlog" />
-        <Action
-          bar
+        <BarAction icon={<ICON.navLog />} label="Nav Log" onClick={openNavLogCard} disabled={!course} testId="route-navlog" />
+        <BarAction
           icon={
             <span className="relative flex">
               <ICON.profile />
@@ -88,7 +96,15 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
           testId="route-profile"
         />
         {more}
-      </GlassBar>
+      </Toolbar.Root>
     </div>
   );
+}
+
+/** One of the bar's buttons: a Toolbar.Button drawn as a CardAction in
+ *  its bar look, which takes the button's ref, keys and roving tab stop. A
+ *  greyed one is left out of the arrows' way, as a native disabled button
+ *  is out of the Tab key's (focusableWhenDisabled off). */
+function BarAction({ disabled, ...action }: Omit<ComponentProps<typeof Action>, "bar">) {
+  return <Toolbar.Button disabled={disabled} focusableWhenDisabled={false} render={<Action bar {...action} />} />;
 }

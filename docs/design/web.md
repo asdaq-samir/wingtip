@@ -776,10 +776,16 @@ the Brief, the Nav Log, the Profile and the route's ••• ("More", the
 route's one menu with its sharing; the owner, 2026-11-17: "move
 everything to the tab bar with a ... instead of share") are the floating
 glass bar at the sheet's foot
-from half up, `FplTabBar` in `FlightFoot`, `CardAction`s in its `bar` look
-in the cards' tabs' capsule (`CardTabBar`'s `GlassBar`, held at the
-foot as they are by sheet/insets' `HOLD_AT_EDGE`), each opening its card, the ••• the route's
-`ShareMenu` in its `look="bar"` (`"tile"` in flight's `FplActions`), out of sight at the pill under the figures
+from half up, `FplTabBar` in `FlightFoot`: Base UI's stock Toolbar (one
+tab stop, the arrows between its buttons, the APG toolbar, as the
+playback bars are) drawn as the cards' tabs' capsule (`CardTabBar`'s
+`GlassBar`, held at the foot as they are by sheet/insets'
+`HOLD_AT_EDGE`), each button a `Toolbar.Button` rendering a `CardAction`
+in its `bar` look and opening its card, the ••• the route's
+`ShareMenu` in its `look="bar"`, its menu's trigger rendering a
+`Toolbar.Button` (`"tile"` in flight's `FplActions`); the airport and
+airplane cards' bar stays the stock Tabs (`CardTabBar`), being tabs, not
+buttons; out of sight at the pill under the figures
 (sheet/insets' `RISEN_OVER`, in sight only while a finger has the
 sheet). The figures under the route are FPL's pill too, one copy at
 every size: components/sheet/pinAtFoot's `usePinAtFoot` holds them on
