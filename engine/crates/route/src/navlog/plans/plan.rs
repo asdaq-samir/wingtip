@@ -68,9 +68,9 @@ impl Plan<'_> {
             None => self.candidates.iter().flatten().copied().fold(f64::INFINITY, f64::min),
         };
         let from = |prev: Option<f64>| prev.unwrap_or(start_ft);
-        let climb_step = |i: usize, prev: Option<f64>, a: f64| climb_penalty_min(from(prev), a, profile, climber, Some(&f.leg_at(i, a)?));
+        let climb_step = |i: usize, prev: Option<f64>, a: f64| climb_penalty_min(from(prev), a, profile, climber, Some(&*f.leg_at(i, a)?));
         let fuel_step =
-            |i: usize, prev: Option<f64>, a: f64| climb_fuel_penalty_gal(from(prev), a, profile, climber, Some(&f.leg_at(i, a)?));
+            |i: usize, prev: Option<f64>, a: f64| climb_fuel_penalty_gal(from(prev), a, profile, climber, Some(&*f.leg_at(i, a)?));
         let fixed_step = |_: usize, prev: Option<f64>, a: f64| Ok(if prev.is_some_and(|p| p != a) { STEP_PENALTY_FT_NM } else { 0.0 });
         let minutes = |i: usize, a: f64| Ok(f.leg_at(i, a)?.opt("ete_min")?.unwrap_or(f64::INFINITY));
         let gallons = |i: usize, a: f64| Ok(f.leg_at(i, a)?.opt("fuel_gal")?.unwrap_or(f64::INFINITY));
