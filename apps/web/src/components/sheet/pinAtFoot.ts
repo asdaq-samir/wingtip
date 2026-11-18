@@ -57,24 +57,10 @@ export const PIN_AT_FOOT =
  * the foot's edge under a bar that stayed, a slow pull down from half hid
  * them under the bar and its fade. The script measures the bar's room
  * too (--pin-bar-room on the bar, barRoom); the bar's own CSS does the
- * rest. A row pushed down under the bar at rest (grewUnderBar: the route
- * above it grown) is told to `onCovered`, where FPL raises the sheet after
- * the pilot's own edit (riseForFigures).
+ * rest.
  */
-export function usePinAtFoot(
-  ref: RefObject<HTMLElement | null>,
-  foot: string,
-  { on, held, onCovered }: { on: boolean; held: boolean; onCovered?: () => void },
-) {
+export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, { on, held }: { on: boolean; held: boolean }) {
   const dragging = usePanelDragging((d) => d.dragging);
-  // Where the row's foot was at the last measure, to tell a row pushed down
-  // (the route above it grown) from one measured again; and the covered
-  // hook as of now, read in the measure rather than measuring again for it.
-  const lastNatural = useRef<number | null>(null);
-  const covered = useRef(onCovered);
-  useLayoutEffect(() => {
-    covered.current = onCovered;
-  }, [onCovered]);
   // Whether it is held at rest, for a measure made between this hook's
   // effects (below).
   const heldNow = useRef(held);
@@ -108,12 +94,7 @@ export function usePinAtFoot(
       row.style.setProperty("--pin-room", `${room}px`);
       row.toggleAttribute("data-pinned", pinnedNow(heldNow.current, moved(row.closest(SHEET)), room));
       const bar = edge?.querySelector<HTMLElement>("[data-makes-way]");
-      if (!bar) return;
-      const roomToBar = barRoom(restingTop(bar), natural);
-      bar.style.setProperty("--pin-bar-room", `${roomToBar}px`);
-      const was = lastNatural.current;
-      lastNatural.current = natural;
-      if (grewUnderBar(was, natural, roomToBar, restingOffset(row.closest(SHEET)))) covered.current?.();
+      if (bar) bar.style.setProperty("--pin-bar-room", `${barRoom(restingTop(bar), natural)}px`);
     };
     measure();
     const resized = new ResizeObserver(measure);
@@ -175,20 +156,6 @@ function restingEdge(foot: HTMLElement | null) {
 function restingTop(bar: HTMLElement) {
   const foot = bar.closest('[data-testid="panel-foot"]');
   return bar.getBoundingClientRect().top - moved(bar) - moved(foot) - moved(bar.closest(SHEET));
-}
-
-/** The sheet's offset at the size it rests at (Base UI's --sheet-offset,
- *  sheet/insets), the finger's own movement left out. */
-function restingOffset(sheet: Element | null) {
-  return sheet ? parseFloat(getComputedStyle(sheet).getPropertyValue("--sheet-offset")) || 0 : 0;
-}
-
-/** Whether the row was just pushed down (its foot lower than at the last
- *  measure) to under the floating bar's top with the sheet at rest: the
- *  sheet slid `offset` down from all the way up, where the row's foot is
- *  `barRoom` above the bar's top. The first measure is no push. */
-export function grewUnderBar(was: number | null, natural: number, barRoom: number, offset: number) {
-  return was !== null && natural > was && barRoom < offset;
 }
 
 /** Whether the row is held now: always at the pill, else once the sheet

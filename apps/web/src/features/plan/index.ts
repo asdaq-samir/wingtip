@@ -58,7 +58,7 @@ export {
   rowPoint,
   savedCheckpoints,
 } from "./navLogRows";
-export { panelNow, riseToSee, markRouteEdit, forgetRouteEdit, riseForFigures } from "./panelNow";
+export { panelNow, riseToSee } from "./panelNow";
 export { GoToTab, LEGS, type PanelTab, useTabAsk } from "./panelTab";
 export type { SuaWhen, TfrWhen } from "./passTimes";
 export {
