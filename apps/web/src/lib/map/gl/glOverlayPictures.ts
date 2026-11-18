@@ -1,6 +1,6 @@
 import { BLUE } from "../../useAirspace";
 import { CHART } from "../../tokens";
-import type { Stretch } from "./glLayer";
+import type { Stretch } from "./drawSvg";
 import { AIRSPACE_INK, SUA_INK, airspaceTab, suaHatch } from "./glStyle";
 import { SUA_TAB_PICTURES } from "./glSuaLabels";
 

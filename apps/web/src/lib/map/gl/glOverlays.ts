@@ -11,7 +11,8 @@ import {
   airportPictures,
 } from "./airportIcons";
 import { overlaySource } from "../sources/overlayTiles";
-import { SLOTS, drawSvg, slotId, type DrawnImage, type Slot } from "./glLayer";
+import { SLOTS, slotId, type Slot } from "./glLayer";
+import { drawSvg, type DrawnImage } from "./drawSvg";
 import { OVERLAY_SOURCE, SUA_LAYERS, airspaceLayers, glZoom, specialUseLayers } from "./glStyle";
 import { GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE, labelByZoom } from "./layers/common";
 import { specialUseLabelLayer } from "./glSuaLabels";
@@ -232,40 +233,34 @@ const NAVAID_TILE_LAYERS = ["navaids", "navaids-idents", "fixes", "fixes-idents"
 const ROUTE_ONLY_HIDDEN = ["airports", "vfr-waypoints", "vfr-waypoints-idents"];
 
 /** The overlay tiles' source and layers, by the slot each is drawn under
- *  (glLayer's SLOTS), for the map's first style; the layers of a layer the
- *  archive has not got (an older build's) left out. */
+ *  (glLayer's SLOTS), for the map's first style. Every archive is built
+ *  at the charts job's vector_tiles.VERSION, so each has every layer
+ *  drawn here; nothing is in the field to stay compatible with. */
 export function overlayStyle(
   tiles: OverlayTiles,
   origin?: string,
 ): { source: SourceSpecification; layers: Partial<Record<Slot, LayerSpecification[]>> } {
-  const has = new Set(tiles.layers.map((l) => l.name));
   const from = (layer: string) => ({ source: OVERLAY_SOURCE, "source-layer": layer });
   const lines: LayerSpecification[] = [
-    ...(has.has("runways") ? runwayLayers() : []),
-    ...(has.has("special_use") ? specialUseLayers() : []),
-    ...(has.has("airspace") ? airspaceLayers(GL_FONT_BOLD, has.has("airspace_labels")) : []),
-    ...(has.has("special_use") ? [specialUseLabelLayer(GL_FONT_BOLD, has.has("special_use_labels"))] : []),
+    ...runwayLayers(),
+    ...specialUseLayers(),
+    ...airspaceLayers(GL_FONT_BOLD),
+    specialUseLabelLayer(GL_FONT_BOLD),
   ];
   const marks: LayerSpecification[] = [
-    ...(has.has("navaids")
-      ? navaidMarks("navaids", from("navaids"), "vor", {
-          filter: ["in", ["get", "kind"], ["literal", VOR_KINDS]],
-          minzoom: glZoom(VOR_ZOOM),
-        })
-      : []),
-    ...(has.has("fixes")
-      ? [
-          ...navaidMarks("fixes", from("fixes"), "fix", {
-            filter: ["all", ["==", ["get", "enroute_low"], true], ["!=", ["get", "vfr"], true]],
-            minzoom: glZoom(FIX_ZOOM),
-          }),
-          ...navaidMarks("vfr-waypoints", from("fixes"), "vfr", {
-            filter: ["all", ["==", ["get", "vfr"], true], notOwn(ROUTE_WAYPOINTS)],
-            minzoom: glZoom(FIX_ZOOM),
-          }),
-        ]
-      : []),
-    ...(has.has("airports") ? [airportMarksLayer(from("airports"))] : []),
+    ...navaidMarks("navaids", from("navaids"), "vor", {
+      filter: ["in", ["get", "kind"], ["literal", VOR_KINDS]],
+      minzoom: glZoom(VOR_ZOOM),
+    }),
+    ...navaidMarks("fixes", from("fixes"), "fix", {
+      filter: ["all", ["==", ["get", "enroute_low"], true], ["!=", ["get", "vfr"], true]],
+      minzoom: glZoom(FIX_ZOOM),
+    }),
+    ...navaidMarks("vfr-waypoints", from("fixes"), "vfr", {
+      filter: ["all", ["==", ["get", "vfr"], true], notOwn(ROUTE_WAYPOINTS)],
+      minzoom: glZoom(FIX_ZOOM),
+    }),
+    airportMarksLayer(from("airports")),
   ];
   return { source: overlaySource(tiles, origin), layers: { lines, marks } };
 }

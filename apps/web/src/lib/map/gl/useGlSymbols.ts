@@ -1,6 +1,7 @@
 import type { GeoJSONSource, MapGeoJSONFeature, Map as MlMap, SymbolLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useRef } from "react";
-import { EMPTY, drawSvg, useGlFadeIn, useGlLayer, useGlMap, type DrawnImage, type Slot, type Stretch } from "./glLayer";
+import { EMPTY, useGlFadeIn, useGlLayer, useGlMap, type Slot } from "./glLayer";
+import { drawSvg, type DrawnImage, type Stretch } from "./drawSvg";
 import { TAP } from "./layers/common";
 import { useGlProbe } from "./useGlProbe";
 

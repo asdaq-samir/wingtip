@@ -1,7 +1,7 @@
 import type { AirspaceClass } from "../../preferences";
 import { CHART } from "../../tokens";
 import { svgPicture, type GlPicture } from "../gl/useGlSymbols";
-import type { Stretch } from "../gl/glLayer";
+import type { Stretch } from "../gl/drawSvg";
 import { AIRPORT_MARK, airportMarkSvg, text } from "./airportMark";
 import { WAYPOINT_MAGENTA } from "./chartColors";
 
