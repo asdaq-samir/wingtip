@@ -66,6 +66,9 @@ def test_inspections_answer_the_shared_fixture():
         "static_check_on": "staticCheckOn",
         "transponder_check_on": "transponderCheckOn",
         "hundred_hour_at_hours": "hundredHourAtHours",
+        "tail_number": "tailNumber",
+        "for_hire": "forHire",
+        "elt_battery_due_on": "eltBatteryDueOn",
     }
     for case in RECORDS["inspections"]:
         given = case["input"]
@@ -73,16 +76,26 @@ def test_inspections_answer_the_shared_fixture():
         if given.get("vor_check"):
             v = given["vor_check"]
             ask["vorCheck"] = {"on": v["on"], "kind": v["kind"], "errorDeg": v["error_deg"]}
+        ask["kept"] = [
+            {
+                "id": k["id"],
+                "kind": k["kind"],
+                "title": k["title"],
+                "reference": k["reference"],
+                "dueOn": k["due_on"],
+                "dueAtHours": k["due_at_hours"],
+            }
+            for k in given.get("kept", [])
+        ]
         answer = client.post("/api/aircraft/inspections", json=ask)
         assert answer.status_code == 200, answer.text
         body, want = answer.json(), case["answer"]
         assert body["annualUntil"] == want["annual_until"] and body["staticCheckUntil"] == want["static_check_until"]
         assert body["hundredHourDueAtHours"] == want["hundred_hour_due_at_hours"]
-        assert body["vorCheck"] == {
-            "limitDeg": want["vor_check"]["limit_deg"],
-            "within": want["vor_check"]["within"],
-            "until": want["vor_check"]["until"],
-        }
+        vor = want["vor_check"]
+        assert body["vorCheck"] == (vor and {"limitDeg": vor["limit_deg"], "within": vor["within"], "until": vor["until"]})
+        # The list the gateway shows, each named and cited, passed through as the engine gives it.
+        assert body["due"] == want["due"]
 
 
 def test_endorsement_fill_answers_the_shared_fixture():

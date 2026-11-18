@@ -194,7 +194,7 @@ public class PlannerClient {
     }
 
     /** The columns the planner's rules read, as its LogbookEntry has them. */
-    private static List<PlannerLogbookEntry> entriesOf(List<LogbookEntry> entries) {
+    static List<PlannerLogbookEntry> entriesOf(List<LogbookEntry> entries) {
         return entries.stream()
                 .map(e -> new PlannerLogbookEntry(e.getFlownOn())
                         .totalHours(decimal(e.getTotalHours()))
@@ -360,7 +360,7 @@ public class PlannerClient {
         return n == null ? null : n.doubleValue();
     }
 
-    private static BigDecimal decimal(Double d) {
+    static BigDecimal decimal(Double d) {
         return d == null ? null : BigDecimal.valueOf(d);
     }
 

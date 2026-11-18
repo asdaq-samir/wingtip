@@ -203,9 +203,11 @@ airplanes the annual, the 100-hour where the owner says it is flown for
 hire (91.409(a), (b)), the ELT's inspection and battery (91.207(d), (c)),
 the static system (91.411(a)), the transponder (91.413(a)), the VOR check
 (91.171(a)(2)) and the owner's own due items, an AD's status kept as
-91.417(a)(2)(v) asks (`aircraft_due_items`, V32). Every day in it is the
-engine's (through the planner) or the owner's; the service only names
-each one, cites its rule and counts the days and hours left.
+91.417(a)(2)(v) asks (`aircraft_due_items`, V32). Each item, its name,
+the rule it cites (an AD its own number and 14 CFR 39.7) and its day or
+hours are the engine's `pilot_currency` and `inspections_due` (`due`,
+through the planner: `PaperworkClient`); the service only keys each one
+for its reminder and counts the days and hours left.
 `GET /api/paperwork` is the apps' "Coming up"; `ReminderService` emails
 the dated ones 30 and 7 days before, keyed in `reminders_sent` by what
 they are ("aircraft-12-annual", "item-40"), so each is sent once. The
