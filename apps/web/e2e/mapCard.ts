@@ -42,19 +42,20 @@ export async function setMap3d(page: Page, on: boolean) {
 }
 
 /** The route's ••• menu's map switch -- Checkpoints (`waypoints-toggle`),
- *  since the Map card's layers became four (the owner, 2026-11-14) -- turned over on
- *  the planner before a route is loaded, remembered per browser, so the
- *  route loaded after shows it. */
-export async function routeMenuSwitch(page: Page, testId: "waypoints-toggle", on: boolean) {
-  await page.goto("/app/plan");
+ *  since the Map card's layers became four (the owner, 2026-11-14) -- turned over
+ *  in More on a route drawn (only then: the owner, 2026-11-18), remembered
+ *  per browser, so the route loaded after shows it. */
+export async function routeMenuSwitch(page: Page, testId: "waypoints-toggle", on: boolean, route = "/app/plan?dep=C81&dest=KDLH") {
+  await page.goto(route);
   await settle(page);
   await openPanel(page);
   await controlsInSight(page);
-  await sideDrawer(page).getByTestId("share-route").click();
+  const more = sideDrawer(page).getByTestId("share-route").locator("visible=true").first();
+  await more.click();
   const item = page.getByTestId(testId);
   await expect(item).toHaveAttribute("aria-checked", String(!on));
   await item.click();
-  await sideDrawer(page).getByTestId("share-route").click();
+  await more.click();
   await expect(page.getByTestId(testId)).toHaveAttribute("aria-checked", String(on));
   await page.keyboard.press("Escape");
 }

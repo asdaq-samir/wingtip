@@ -97,11 +97,14 @@ export function timelineLine(page: Page, ident: string): Locator {
   return sideDrawer(page).locator(`[data-testid="timeline-line"][data-ident="${ident}"]`);
 }
 
-/** The route cleared by its ••• menu's Clear route (the owner, 2026-11-11). */
+/** The route cleared: half a route by the route box's ✕, a route by
+ *  More's Clear route (the owner, 2026-11-11 and 2026-11-18). */
 export async function clearTheRoute(page: Page) {
   await openPanel(page);
   await controlsInSight(page);
-  await sideDrawer(page).getByTestId("share-route").click();
+  const boxClear = sideDrawer(page).getByTestId("route-box-clear");
+  if (await boxClear.isVisible()) return boxClear.click();
+  await sideDrawer(page).getByTestId("share-route").locator("visible=true").first().click();
   await page.getByTestId("route-clear").click();
 }
 

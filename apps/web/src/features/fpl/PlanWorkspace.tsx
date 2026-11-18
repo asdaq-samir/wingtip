@@ -244,7 +244,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           ? () => vm.routeList.setRouteOpen(true)
           : undefined
       }
-      // Nothing to clear on the empty page: its ✕ goes back (RouteControls).
+      // The route's Clear, last in More; half a route's is the route box's ✕
+      // (RouteEditor), and the empty page has nothing to clear.
       onClear={card === undefined && vm.route.hasPoints ? vm.routeList.clearRoute : undefined}
     />
   );
@@ -267,15 +268,17 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           at: view === "plan" ? 1 : 0,
           go: pickPage,
           floats: !flying && !vm.flight.dryRunning,
-          // The route's ••• in the first row only before there is a route:
-          // once there is, it ends the floating bar (FlightFoot; the owner,
-          // 2026-11-17: "move everything to the tab bar with a ... instead
-          // of share"); with none it keeps Undo (a cleared route put back),
-          // the map's choices and a half route's Clear at hand.
+          // The first row is the airplane's strip alone: the route's •••
+          // is the floating bar's More once there is a route (FlightFoot;
+          // the owner, 2026-11-17: "move everything to the tab bar with a
+          // ... instead of share"), and before one nothing of it is wanted
+          // there (the owner, 2026-11-18): a cleared route's Undo and a
+          // half route's ✕ are the route box's own (RouteEditor), and the
+          // checkpoints come after the route is drawn.
           // The suggested routes' button beside the search's, where there are some (RoutesToggle).
           bar: (
             <FplBar
-              strip={<RouteControls vm={vm} flightInputs={flightInputs} share={routed ? null : shareMenu("end")} />}
+              strip={<RouteControls vm={vm} flightInputs={flightInputs} />}
               routes={routesOffered(vm) ? <RoutesToggle shown={vm.routeList.routesShown} onShown={vm.routeList.setRoutesShown} /> : null}
             />
           ),

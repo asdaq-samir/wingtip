@@ -284,9 +284,6 @@ export default function ShareMenu({
           )}
           {card === "route" && (
             <>
-              {/* Before there is a route, only what applies then: the
-                  undo, the map's choices and Clear, the rest left out,
-                  not greyed. */}
               {routed && saving(afterMenu(() => setAskingReview(true)))}
               {routed && (
                 <DropdownMenuItem disabled={!fileable} onClick={onFile} data-testid="file-flight-plan">
@@ -333,11 +330,12 @@ export default function ShareMenu({
             </DropdownMenuItem>
           )}
           {/* What the map draws of the route after its actions, as iOS's
-              ••• menus put a page's view options, the Clear still last. */}
-          {card === "route" && (
+              ••• menus put a page's view options, the Clear still last:
+              only once there is a route (the owner, 2026-11-18: "Finding
+              checkpoints is an action after we draw the route"). */}
+          {card === "route" && routed && (
             <>
-              {/* A band after the route's actions; none over it alone. */}
-              {routed && <DropdownMenuSeparator />}
+              <DropdownMenuSeparator />
               <RouteMapChoices />
             </>
           )}

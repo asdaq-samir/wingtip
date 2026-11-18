@@ -85,6 +85,8 @@ export default function RouteBox({
   onHideFuelStop,
   addAt = null,
   unknownPoint = null,
+  onClear,
+  onUndo,
 }: RouteBoxProps) {
   // Each by its own name: three of them are refs (the field, the row and
   // its content), which the compiler keeps apart from what is drawn.
@@ -277,6 +279,22 @@ export default function RouteBox({
                 React Aria's field clear (ui/search-field), its press keeping
                 the focus in the box; the TokenField has no clear slot. */}
             {typed.text && <SearchFieldClear aria-label="Clear what is typed" onPress={clearTyped} className="mt-1 mr-1" />}
+            {/* Nothing typed: half a route cleared by the same stock ✕, and
+                the empty box's Undo, the route just cleared put back. */}
+            {!typed.text && onClear && points.length > 0 && (
+              <SearchFieldClear aria-label="Clear the route" onPress={onClear} className="mt-1 mr-1" data-testid="route-box-clear" />
+            )}
+            {!typed.text && onUndo && !points.length && (
+              <Button
+                variant="plain"
+                size="inline"
+                onClick={onUndo}
+                data-testid="route-undo"
+                className={cn("relative mt-1 mr-1 px-1 text-tint after:absolute after:-inset-2 after:content-['']", TEXT.row)}
+              >
+                Undo
+              </Button>
+            )}
           </InputGroup>
           {/* The suggestions under the box: the typing stays in the box,
             where the picker's sheet from the top would take the focus to a

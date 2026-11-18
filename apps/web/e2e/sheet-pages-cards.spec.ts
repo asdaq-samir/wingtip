@@ -58,17 +58,16 @@ test.describe("cards over the pages", () => {
     await openAirport(page, "KOSH");
     await sideDrawer(page).getByTestId("place-card").getByTestId("fly-here").click();
     await expect(page).toHaveURL(/[?&]dest=KOSH/, { timeout: slow(15_000) });
-    await page.getByTestId("share-route").first().click();
-    await page.getByTestId("route-clear").click();
+    // Half a route, cleared by the route box's own ✕ (the owner, 2026-11-18).
+    await sideDrawer(page).getByTestId("route-box-clear").click();
     await expect(page).not.toHaveURL(/[?&]dest=/);
     await expectShown(page, 1);
-    // The route's actions went with it, the menu left with its Show Route
-    // As alone (the owner, 2026-11-13); no ✕ of its own beside it, the
-    // page toggle at the bar's end going back to the search (the owner,
-    // 2026-11-14: the two did the same).
-    await page.getByTestId("share-route").first().click();
-    await expect(page.getByTestId("route-clear")).toHaveCount(0);
-    await page.keyboard.press("Escape");
+    // The route's actions went with it, no ••• in the first row and no ✕
+    // of its own, the page toggle at the bar's end going back to the
+    // search (the owner, 2026-11-14: the two did the same); the empty box's
+    // Undo instead.
+    await expect(sideDrawer(page).getByTestId("route-strip").getByTestId("share-route")).toHaveCount(0);
+    await expect(sideDrawer(page).getByTestId("route-undo")).toBeVisible();
     await expect(sideDrawer(page).getByTestId("route-close")).toHaveCount(0);
   });
 });

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { SearchNear } from "../../../lib/useAirportSearch";
+import { usePlanUndo } from "../../../lib/planUndo";
 import { coverCard, useSheetCards } from "../../../lib/sheetCards";
 import { RouteEnds } from "../routePanelParts";
 // The route's field, on a chunk of its own: the first screen draws it.
@@ -20,18 +21,22 @@ export default function RouteEditor({
 }: {
   vm: PlanSlices<"brief" | "cards" | "flight" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
 }) {
-  const { directParam, hasPoints, planned, setPointAltitude, setRoute, wholeRoute } = vm.route;
+  const { directParam, hasPoints, planned, routed, setPointAltitude, setRoute, wholeRoute } = vm.route;
   const { directToPoint, s } = vm.plan;
   const { selectPlace } = vm.cards;
   const { openProcedures, routeProcedures, typeProcedures } = vm.picks;
   const { fuelStops, hideFuelStop, keepFuelStops } = vm.stops;
-  const { addAt, addingChange, addingStop, setEditorFocused, waypointStops } = vm.routeList;
+  const { addAt, addingChange, addingStop, clearRoute, setEditorFocused, waypointStops } = vm.routeList;
   const { airspaceOf, altitudeAt, metarColour, searchNear } = vm.brief;
   // A stop asked for from a card (the profile's no-legal-altitude problem,
   // its Add a Stop): asked of the field once the card has gone. Under it the
   // sheet is inert (SheetParts, while a card is up), and the field's focus
   // as it was asked went nowhere (plans.spec, "no legal altitude").
   const covered = useSheetCards((c) => !!coverCard(c.stack));
+  // The empty box's Undo while the plan's last step took the route away
+  // (a clear, or its last point removed), gone once a new one is started:
+  // the plan's one Undo (lib/planUndo), as More's is.
+  const routeUndo = usePlanUndo((u) => (u.undoName === "Route" ? u.undo : null));
   return (
     <div
       className="flex flex-col px-4 pb-2"
@@ -84,6 +89,10 @@ export default function RouteEditor({
               onDirectTo={directToPoint}
               unknownPoint={s.unknownPlace}
               addAt={addAt}
+              // Half a route cleared by the box's ✕ (the owner, 2026-11-18);
+              // a route planned, by More's Clear.
+              onClear={hasPoints && !routed ? clearRoute : undefined}
+              onUndo={!hasPoints && routeUndo ? routeUndo : undefined}
             />
           </SearchNear.Provider>
         </Suspense>

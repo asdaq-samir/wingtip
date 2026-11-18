@@ -54,6 +54,31 @@ test("a cleared route comes back from the toast's Undo, and again from the keybo
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
 });
 
+test("a cleared route comes back from the empty route box's Undo, which goes once a new route is started", async ({ page }) => {
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  await pastSettling(page);
+
+  // No ••• in the first row before there is a route (the owner, 2026-11-18).
+  await clearTheRoute(page);
+  await expect(page).not.toHaveURL(/[?&]dep=/);
+  await expect(sideDrawer(page).getByTestId("route-strip").getByTestId("share-route")).toHaveCount(0);
+  const undo = sideDrawer(page).getByTestId("route-undo");
+  await undo.click();
+  await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
+  await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
+
+  // Cleared again and a new route started: no Undo in the box.
+  await clearTheRoute(page);
+  await expect(undo).toBeVisible();
+  await sideDrawer(page).getByTestId("route-type").click();
+  await page.keyboard.insertText("KMSN");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/[?&](dep|dest)=KMSN(&|$)/);
+  await expect(undo).toHaveCount(0);
+});
+
 test("a stop taken out comes back from the Undo toast that names it", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN");
   await settle(page);
