@@ -227,32 +227,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
 /// the towns near it alone and sends each outline once.
 fn congested_points(name: &str, v: &Value) -> R<String> {
     let bad = || format!("{name}: an area is not [[[[lon, lat], ...], ...], ...]");
-    let areas: Vec<congested::Area> = list(name, v, "areas")?
-        .iter()
-        .map(|a| {
-            a.as_array()
-                .ok_or_else(bad)?
-                .iter()
-                .map(|rings| {
-                    rings
-                        .as_array()
-                        .ok_or_else(bad)?
-                        .iter()
-                        .map(|ring| {
-                            ring.as_array()
-                                .ok_or_else(bad)?
-                                .iter()
-                                .map(|p| match p.as_array() {
-                                    Some([x, y]) => Ok((x.as_f64().ok_or_else(bad)?, y.as_f64().ok_or_else(bad)?)),
-                                    _ => Err(bad()),
-                                })
-                                .collect()
-                        })
-                        .collect()
-                })
-                .collect()
-        })
-        .collect::<R<_>>()?;
+    let areas: Vec<congested::Area> = list(name, v, "areas")?.iter().map(|a| wingtip_core::ask::polygons(a, &bad)).collect::<R<_>>()?;
     let candidates = match v.get("candidates") {
         None | Some(Value::Null) => None,
         Some(Value::Array(c)) => Some(c),

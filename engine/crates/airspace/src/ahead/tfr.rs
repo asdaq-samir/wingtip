@@ -19,7 +19,7 @@ pub(super) struct Tfr {
 }
 
 /// Polygons as rings of (lon, lat): each polygon its outline and holes.
-pub(super) type Polygons = Vec<Vec<Vec<(f64, f64)>>>;
+pub(super) type Polygons = wingtip_core::ask::Polygons;
 
 /// Whether polygons hold a point: inside an odd number of one polygon's
 /// rings (its outline and not a hole), by the even-odd rule.

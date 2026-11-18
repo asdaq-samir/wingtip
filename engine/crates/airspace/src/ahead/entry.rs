@@ -37,26 +37,7 @@ pub(super) fn opt_list<'a>(name: &str, v: &'a Value, key: &str) -> R<Option<&'a 
 /// `"polygons"`: [[ring, hole, ...], ...], each ring [[lon, lat], ...].
 pub(super) fn polygons_of(name: &str, v: &Value) -> R<Polygons> {
     let bad = || format!("{name}: \"polygons\" is not [[[[lon, lat], ...], ...], ...]");
-    let list = v.get("polygons").and_then(Value::as_array).ok_or_else(bad)?;
-    list.iter()
-        .map(|rings| {
-            rings
-                .as_array()
-                .ok_or_else(bad)?
-                .iter()
-                .map(|ring| {
-                    ring.as_array()
-                        .ok_or_else(bad)?
-                        .iter()
-                        .map(|p| match p.as_array() {
-                            Some([x, y]) => Ok((x.as_f64().ok_or_else(bad)?, y.as_f64().ok_or_else(bad)?)),
-                            _ => Err(bad()),
-                        })
-                        .collect()
-                })
-                .collect()
-        })
-        .collect()
+    wingtip_core::ask::polygons(v.get("polygons").ok_or_else(bad)?, &bad)
 }
 
 pub(super) struct Own {
