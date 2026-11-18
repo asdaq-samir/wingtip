@@ -122,7 +122,11 @@ Compose. Nothing here is built by hand where a stock part does it.
    and the search Filters' groups too, no small grey capitals over a
    section: the owner, 2026-11-11); a close `CloseButton` (`CardClose` on a card a
    device's Back holds); a list's row `ListRow`; nothing to show
-   `EmptyState`; two or three choices `Segmented`.
+   `EmptyState`; two or three choices `Segmented`. A discrete setting is
+   a menu or a segmented control, never a slider (decision 0017); a
+   continuous one, such as the Map card's Dimmer and Contrast, is the
+   stock `Slider`, its thumb's 44-point reach a pseudo-element's
+   (`THUMB_HIT`) and its name its row's.
    `scripts/ci/shared_parts_guard.py` fails a heading or a ✕ drawn by
    hand, past its allow-list of what is rightly its own (a form sheet's
    Cancel, title and Done; a page's content heading).
@@ -926,7 +930,8 @@ way: three homes, and every control in one of them.
    Aloft, Radar and Model Weather as submenus, each off by default),
    Traffic, and Private & Military (drawn whatever it says while the
    Emergency Assistant is open), two by two, every tile one size and
-   every name on one line; then Look's tiles: Theme, Appearance and
+   every name on one line; then Look's tiles: Theme, Appearance (System,
+   Light or Dark) and
    Sunlight, each its value under its name and a tap its menu, Sunlight
    in the tint while On, and Own Ship, how own ship is drawn on the
    chart -- the Airplane (the default), a Twin, a Jet or the Arrow, a dot
@@ -934,7 +939,18 @@ way: three homes, and every control in one of them.
    owner, 2026-11-14: "Maybe replace the position with the choice of own
    ship?"; You on the Map's pick, back) (Sunlight was Settings' Display until the owner's
    "Sunlight should also move to map settings", 2026-11-14; Settings has
-   no Display now). Every section is four tiles two by two in the layers'
+   no Display now); under Look's tiles, at their edges, the chart's
+   Dimmer and Contrast as two grouped-list rows with a slider each (the
+   owner, 2026-11-18: "can we have a dimmer and contrast sliders under
+   sunlight and remove it from the appearance?"; `ChartLookRows`). The
+   Dimmer is how far the chart's tiles are dimmed, kept for light and for
+   dark apart (none and half by default, the night's look before it), to
+   at most 70%; greyed while Sunlight is on, which draws the chart at full
+   brightness, keeping its value. Contrast is an offset on the look's own
+   contrast by day, at night or in sunlight, -30% to +40%, 0 the look as it
+   is. Both set the chart's layers as they move. Appearance's Dark +
+   Bright went with them: the night's look of the route, the sky and the
+   rest follows the dark theme alone. Every section is four tiles two by two in the layers'
    size and form, the sections lined up (the owner, 2026-11-14: "every
    section should have 4 tiles like Layers one"): the Chart and Base map tiles their picture as the
    face and their name on one line in the name's place, the one picked

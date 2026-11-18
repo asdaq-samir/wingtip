@@ -285,11 +285,11 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* The chart at night (Setup's Appearance, Dark, lib/preferences
-   chartNight): its tiles alone are dimmed, by the map's own raster paint
-   (lib/map/gl/glStyle chartPaint, the brightness and contrast these tiles
-   had here as a CSS filter). Where a tile is not in yet, the night's
-   ground. */
+/* The map in the dark theme: where a tile is not in yet, the night's
+   ground. The chart's tiles alone are dimmed, by the map's own raster
+   paint (lib/map/gl/glStyle chartPaint, the Map card's Dimmer and
+   Contrast), where they had a CSS filter here once; no stylesheet reads
+   the dimming. */
 .dark .maplibregl-map {
   background: var(--background);
 }

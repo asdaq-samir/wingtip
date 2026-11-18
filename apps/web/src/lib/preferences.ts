@@ -8,10 +8,10 @@ import type { RecentAirport } from "./prefs/keptTypes";
 import { LOOK_KEPT, lookSlice } from "./prefs/lookSlice";
 import { MAP_KEPT, mapSlice } from "./prefs/mapSlice";
 import type { Preferences } from "./prefs/state";
-import { keptAsIs } from "./storage";
+import { keptTheme, migratePreferences } from "./prefs/migrate";
 
 export { BASE_CHARTS, HEIGHT_STRETCHES } from "./prefs/mapSlice";
-export type { BaseChart, HeightStretch, ChartLight, ChartNight, MapOverlay, OverlayStrength } from "./prefs/mapTypes";
+export type { BaseChart, HeightStretch, ChartLight, MapOverlay, OverlayStrength } from "./prefs/mapTypes";
 export type { Brand, FlightRules, NavEdge, OwnShipLook } from "./prefs/lookTypes";
 export { airplaneChosen, NO_AIRPLANE, STOCK_C172 } from "./prefs/airplaneSlice";
 export type { RouteWeather } from "./prefs/airplaneTypes";
@@ -34,10 +34,11 @@ export const usePreferences = create<Preferences>()(
   persist((...a) => ({ ...mapSlice(...a), ...lookSlice(...a), ...airplaneSlice(...a), ...keptSlice(...a), ...alertsSlice(...a) }), {
     name: "wingtip.preferences",
     // Nothing is launched yet, so a browser's preferences from an older
-    // version are read as they are, no step bringing an old shape forward
-    // (the owner: break freely until launch); see keptAsIs.
-    version: 11,
-    migrate: keptAsIs<Preferences>,
+    // version are read as they are (the owner: break freely until launch;
+    // see keptAsIs), but for Appearance's Dark + Bright, which became the
+    // Dimmer's dark value of 0 in version 12 (prefs/migrate).
+    version: 12,
+    migrate: (kept, version) => migratePreferences(kept, version, keptTheme()),
     partialize: keptPreferences,
   }),
 );

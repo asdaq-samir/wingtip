@@ -1,5 +1,6 @@
 import type { Filters, FilterKey } from "../pointFilters";
 import type { StopPick } from "../stopKinds";
+import type { ChartDim } from "../map/chartLook";
 
 /** The base chart: none, the sectional, or an IFR enroute chart. None
  *  draws no FAA chart, only the overlay picked, if any, over the plain
@@ -14,9 +15,6 @@ export type MapOverlay = "none" | "usgs" | "google-map" | "google-satellite";
 /** How strongly the overlay covers the chart. */
 export type OverlayStrength = "faint" | "half" | "full";
 
-/** The FAA chart in the dark theme: as printed, or dimmed for night
- *  vision (lib/map/gl/glStyle's chartPaint); set by Setup's Appearance. */
-export type ChartNight = "normal" | "dimmed";
 /** The chart in bright sunlight (lib/sunlight): its tiles at higher
  *  contrast, the course and the sheets solid white with black figures.
  *  Auto turns it on from the phone's light sensor where the browser has
@@ -78,8 +76,13 @@ export interface MapSlice {
   keepOffline: boolean;
   /** The training map's filters: which points are drawn and walked. */
   filters: Filters;
-  /** The chart in the dark theme (ChartGl), dimmed unless asked for as printed. */
-  chartNight: ChartNight;
+  /** How far the chart's tiles are dimmed (lib/map/chartLook), one for
+   *  each appearance, the Map card's Dimmer setting the one drawn: none
+   *  in the light theme and the night's half in the dark unless moved. */
+  chartDim: ChartDim;
+  /** The Map card's Contrast: an offset on the chart's own contrast by
+   *  day, at night or in sunlight, 0 that look as it is (chartContrast). */
+  chartContrast: number;
   /** The chart in sunlight (lib/sunlight): from the light sensor, on, or off. */
   chartLight: ChartLight;
   /** The map stood up in 3D, the map's 3D button (ThreeDButton). */
@@ -103,7 +106,8 @@ export interface MapSlice {
   setOverlayStrength: (overlayStrength: OverlayStrength) => void;
   setKeepOffline: (keepOffline: boolean) => void;
   setFilter: (key: FilterKey, on: boolean) => void;
-  setChartNight: (chartNight: ChartNight) => void;
+  setChartDim: (appearance: keyof ChartDim, dim: number) => void;
+  setChartContrast: (chartContrast: number) => void;
   setChartLight: (chartLight: ChartLight) => void;
   setThreeD: (threeD: boolean) => void;
   setHeightStretch: (heightStretch: HeightStretch) => void;

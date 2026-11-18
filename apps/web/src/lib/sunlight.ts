@@ -17,7 +17,10 @@ import { usePreferences, type ChartLight } from "./preferences";
  * comes on by itself a banner says so with a one-tap Keep off
  * (SunlightBanner).
  *
- * The chart's tiles take it in their raster paint (glStyle chartPaint).
+ * The chart's tiles take it in their raster paint (glStyle chartPaint):
+ * more contrast and colour, and full brightness whatever the Map card's
+ * Dimmer says (lib/map/chartLook), the Dimmer greyed out but keeping its
+ * value for after; the Contrast slider's offset still adds to sunlight's.
  * The airspace rings and the course are WebGL lines whose widths are
  * paint properties (glStyle), which no stylesheet reaches: they stay at
  * their width in sunlight.
@@ -81,6 +84,15 @@ function stopSensor() {
   sensor?.stop();
   sensor = null;
   useSunlightSensor.setState({ bright: false });
+}
+
+/** Whether the sunlight scheme is on, for what only reads it (the
+ *  chart's brightness, the Dimmer greyed): no sensor started, which
+ *  useSunlight does once. */
+export function useSunlightOn(): boolean {
+  const chartLight = usePreferences((s) => s.chartLight);
+  const bright = useSunlightSensor((s) => s.bright);
+  return sunlightOn(chartLight, bright);
 }
 
 /** The scheme kept on <html> as `data-chart-light` ("bright" or

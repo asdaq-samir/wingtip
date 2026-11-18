@@ -5,7 +5,6 @@ import type { AirspaceClass } from "../../../preferences";
 import { courseColour } from "../../marks/chartColors";
 import { ROUTE_FIX_NAMES, ROUTE_MARKS, ROUTE_MARK_LAYERS, routeMarks } from "../../marks/routeMarks";
 import { turnSide } from "../../marks/routeTurns";
-import { usePreferences } from "../../../preferences";
 import { useSunlight } from "../../../sunlight";
 import { useGlData, useGlLayer, useGlMap, useGlPaint, useGlTap } from "../glLayer";
 import { useDarkTheme } from "../useDarkTheme";
@@ -147,9 +146,8 @@ export function RouteGl({
   useGlLayer("top", MARK_SOURCES, [CANDIDATE_DOTS, NAMES]);
   // The casing follows the look, as the chart's paint does (ChartGl).
   const sunlight = useSunlight();
-  const dark = useDarkTheme();
-  const chartNight = usePreferences((s) => s.chartNight);
-  const night = dark && chartNight === "dimmed";
+  // The night's colours in the dark theme, as the page's.
+  const night = useDarkTheme();
   useGlPaint(["route-edge"], routeEdgePaint(night, sunlight));
   useGlPaint(["route-outer"], routeOuterPaint(night, sunlight));
   useGlPaint(["route-casing"], routeCasingPaint(night));

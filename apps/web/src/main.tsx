@@ -41,6 +41,7 @@ import "@fontsource/barlow/latin-700.css";
 import { loadEngine } from "./lib/engine/engine";
 import { preconnectTiles, preloadFirstLoad } from "./lib/preloads";
 import { usePreferences } from "./lib/preferences";
+import { THEME_KEY } from "./lib/prefs/migrate";
 import { takeSharedLinkFrom } from "./features/shared-flight";
 
 // The shared Rust engine (lib/engine), asked for first: the rules it
@@ -267,7 +268,7 @@ const render = () =>
         sets it, next-themes keeps it and puts the `dark` class on
         <html>, which is what every colour token in index.css keys off
         (and what the Toaster below already reads). */}
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="wingtip.theme" disableTransitionOnChange>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey={THEME_KEY} disableTransitionOnChange>
         <QueryClientProvider client={queryClient}>
           {/* No tooltip provider: each tooltip opens at once (its trigger's
           delay 0, popups/IconTip), as the provider's did, and the

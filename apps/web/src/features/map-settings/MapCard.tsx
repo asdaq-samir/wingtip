@@ -30,7 +30,8 @@ import { useTerrainView, useTrueHeightView } from "../plan-map";
  * as the overlay's, the owner, 2026-11-14), the overlay
  * over them with its strength, in 3D how tall it stands its heights
  * (HeightsChoice), the four layers as tiles (MapLayers), and the app's
- * Look, Theme, Appearance, Sunlight and Position, last (LookChoice; the owner, 2026-11-14). How the
+ * Look, Theme, Appearance, Sunlight and Own Ship, and the chart's Dimmer and
+ * Contrast under them, last (LookChoice; the owner, 2026-11-14 and 2026-11-18). How the
  * map behaves -- the airport weather, the glide ring, the alerts, keeping
  * the charts, where the data comes from -- is the app's Settings, which
  * the gear at the card's head opens at its Map group (option A of the

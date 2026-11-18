@@ -1,4 +1,5 @@
 import { DEFAULT_FILTERS } from "../pointFilters";
+import { DEFAULT_CHART_DIM } from "../map/chartLook";
 import type { Slice } from "./slice";
 import type { BaseChart, HeightStretch, MapSlice } from "./mapTypes";
 
@@ -23,7 +24,8 @@ export const MAP_KEPT = [
   "overlayStrength",
   "keepOffline",
   "filters",
-  "chartNight",
+  "chartDim",
+  "chartContrast",
   "chartLight",
   "threeD",
   "heightStretch",
@@ -43,7 +45,8 @@ export const mapSlice: Slice<MapSlice> = (set) => ({
   overlayStrength: "half",
   keepOffline: false,
   filters: DEFAULT_FILTERS,
-  chartNight: "dimmed",
+  chartDim: DEFAULT_CHART_DIM,
+  chartContrast: 0,
   chartLight: "auto",
   threeD: false,
   heightStretch: 3,
@@ -60,7 +63,8 @@ export const mapSlice: Slice<MapSlice> = (set) => ({
   setOverlayStrength: (overlayStrength) => set({ overlayStrength }),
   setKeepOffline: (keepOffline) => set({ keepOffline }),
   setFilter: (key, on) => set((s) => ({ filters: { ...s.filters, [key]: on } })),
-  setChartNight: (chartNight) => set({ chartNight }),
+  setChartDim: (appearance, dim) => set((s) => ({ chartDim: { ...s.chartDim, [appearance]: dim } })),
+  setChartContrast: (chartContrast) => set({ chartContrast }),
   setChartLight: (chartLight) => set({ chartLight }),
   setThreeD: (threeD) => set({ threeD }),
   setHeightStretch: (heightStretch) => set({ heightStretch }),
