@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import type { PanelState } from "../../../lib/mapChrome";
 import type { PanelList } from "../../plan";
 import { usePlaceCards } from "./usePlaceCards";
@@ -15,9 +16,14 @@ export function usePlanCards({ address, setAddress }: PlanRoute, setPanel: (stat
   const { list, closeList } = placeCards.cards;
   // That list put away, where it is the one open: a search field's focus
   // and an Add take the list's place.
-  const listAway = (name: PanelList) => {
-    if (list === name) closeList();
-  };
+  // The same function while the list is (useCallback): this hook is not
+  // compiled, and the search's compiled hooks are keyed on it.
+  const listAway = useCallback(
+    (name: PanelList) => {
+      if (list === name) closeList();
+    },
+    [list, closeList],
+  );
   return {
     ...placeCards,
     ...placeCards.cards,

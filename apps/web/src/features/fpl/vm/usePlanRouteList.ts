@@ -29,7 +29,7 @@ export function usePlanRouteList(
   "use no memo"; // As usePlanWorkspace, whose part this is: left to its own memos.
   const { planned, hasPoints, routePoints, setRoute, setStops, setAddress, wholeRoute, fuelParam, flightRules } = route;
   // A stop being typed into the route's field (RouteBox's own Add a Stop).
-  const [addingStop, setAddingStop] = useState<false | "stop">(false);
+  const [addingStop, setAddingStop] = useState(false);
   // FPL's list edited in place (useRouteListEdit).
   const { setAddAt, ...edit } = useRouteListEdit({
     dep: planned.dep,
@@ -41,7 +41,7 @@ export function usePlanRouteList(
   });
   const addingChange = useCallback(
     (open: boolean) => {
-      setAddingStop(open ? "stop" : false);
+      setAddingStop(open);
       if (!open) setAddAt(null);
     },
     [setAddAt],
@@ -145,7 +145,7 @@ export function usePlanRouteList(
   // timeline red with why. Before the route is whole the timeline is
   // open to edit with the field folded till it is asked for (the owner,
   // 2026-11-18: the empty route drawn as the whole one is).
-  const boxOpen = edit.routeOpen || !!addingStop || !!s.unknownPlace;
+  const boxOpen = edit.routeOpen || addingStop || !!s.unknownPlace;
   const routeFolded = wholeRoute && !boxOpen;
   const { setRouteOpen } = edit;
   // Done: the field folded away, the timeline alone.
@@ -159,7 +159,6 @@ export function usePlanRouteList(
     ...line,
     ...shown,
     addingStop,
-    setAddingStop,
     addingChange,
     holdAsk,
     dropIntoRoute,

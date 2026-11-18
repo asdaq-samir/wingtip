@@ -63,7 +63,7 @@ export default function RouteEditor({
               onAltitudeChange={setPointAltitude}
               onChange={setRoute}
               onTypedProcedures={typeProcedures}
-              adding={!!addingStop && !covered}
+              adding={addingStop && !covered}
               onAddingChange={addingChange}
               procedures={routeProcedures}
               onProcedures={openProcedures}

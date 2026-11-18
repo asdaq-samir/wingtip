@@ -36,7 +36,12 @@ export function usePlanRoute() {
   // map and the box are not drawn again for nothing at each render.
   const stopsParam = address.stops;
   const stops = useMemo(() => stopsOf(stopsParam), [stopsParam]);
-  const planned: PlannedRoute = { dep: departureOf(address.dep), dest: identOf(address.dest), stops };
+  // One object while its three are the same: the compiled hooks it is
+  // handed (the field colours, the flight to save, the map's pins) keep
+  // their work keyed on it, which a new object at each render undid.
+  const dep = departureOf(address.dep);
+  const dest = identOf(address.dest);
+  const planned: PlannedRoute = useMemo(() => ({ dep, dest, stops }), [dep, dest, stops]);
   // The pilot's own points named POS1 on, in the route's order, before
   // anything draws their names (pointName).
   nameOwnPoints(stops);

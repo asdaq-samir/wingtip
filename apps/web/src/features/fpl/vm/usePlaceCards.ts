@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState, useEffectEvent } from "react";
+import { useCallback, useEffect, useState, useEffectEvent } from "react";
 import { addressPoint, type Address, type SetAddress } from "../../../lib/address";
 import type { PanelState } from "../../../lib/mapChrome";
 import { takePlace, useWanted } from "../../../lib/navigation/wanted";
-import { useAddressCards, type PanelView } from "../../plan";
+import { useAddressCards } from "../../plan";
 import { pickOnMap, useMapPickOwner } from "../../../lib/map/mapPick";
 
 /**
@@ -31,16 +31,6 @@ export function usePlaceCards({
   // FPL's Brief, a card over it (BriefCard): `?brief=1`, kept for FPL as
   // its other cards are (usePanelView).
   const briefOpen = address.brief;
-  // The tab an airplane's card was opened over from the route box's
-  // N-number (openAirplaneCard), and the tab setter, set once the tabs
-  // are (usePanelView, in the workspace): its close goes back there, FPL,
-  // not to the search under it (the owner's "when closing the card,
-  // it doesn't go back to fpl").
-  const airplaneFrom = useRef<PanelView | null>(null);
-  const backToView = useRef<(view: PanelView) => void>(() => {});
-  const setBackToView = useCallback((go: (view: PanelView) => void) => {
-    backToView.current = go;
-  }, []);
   // The route's Approaches: the destination's card, opened on them. Which
   // field's, until its card has opened on them (PlaceCard's onStarted).
   const [approachesOf, setApproachesOf] = useState<string | null>(null);
@@ -74,14 +64,8 @@ export function usePlaceCards({
   // An airport's card closed: the card under it, an airplane's or
   // Nearest's, at the size it was left at (its own drawer's).
   const closePlace = useCallback(() => selectPlace(null), [selectPlace]);
-  // An airplane's card closed: back to the tab it was opened over, where
-  // that was another (airplaneFrom).
-  const closeFlight = useCallback(() => {
-    selectFlight(null);
-    const from = airplaneFrom.current;
-    airplaneFrom.current = null;
-    if (from) backToView.current(from);
-  }, [selectFlight]);
+  // An airplane's card closed: the place under it as it was.
+  const closeFlight = useCallback(() => selectFlight(null), [selectFlight]);
   const selectPlaceOnChart = useCallback(
     (ident: string | null) => {
       // A tap on the chart past Nearest's list leaves it: its own drawer
@@ -109,17 +93,5 @@ export function usePlaceCards({
   // Each put away by another kind's pick or a tap on the chart (GlMapShell).
   useMapPickOwner("place", !!place, closePlace);
   useMapPickOwner("held", !!heldPoint, () => void setAddress({ at: null }));
-  return {
-    cards,
-    cardOpen,
-    briefOpen,
-    setBackToView,
-    approachesOf,
-    setApproachesOf,
-    selectPlace,
-    closePlace,
-    closeFlight,
-    selectPlaceOnChart,
-    holdPoint,
-  };
+  return { cards, cardOpen, briefOpen, approachesOf, setApproachesOf, selectPlace, closePlace, closeFlight, selectPlaceOnChart, holdPoint };
 }

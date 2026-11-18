@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePanelDragging, type PanelState } from "../../../lib/mapChrome";
 import { usePanelView } from "../../plan";
 import type { PlanRoute } from "./usePlanRoute";
@@ -12,7 +12,7 @@ import type { PlanCards } from "./usePlanCards";
  */
 export function usePlanView(
   { planned, load, routed, hasPoints, address, setAddress }: PlanRoute,
-  { cards, setBackToView }: PlanCards,
+  { cards }: PlanCards,
   panel: PanelState,
   setPanel: (state: PanelState) => void,
 ) {
@@ -36,11 +36,6 @@ export function usePlanView(
   // speed, the 23 Oct profile).
   const [opened, setOpened] = useState(() => [view]);
   if (!opened.includes(view)) setOpened([...opened, view]);
-  // An airplane's card's close goes back to the place it was opened over
-  // (usePlaceCards' closeFlight), by the view's own setter.
-  useEffect(() => {
-    setBackToView(setViewPick);
-  }, [setBackToView, setViewPick]);
   // The strips and lists drawn under the pill too while the sheet is on
   // the move, so they are there as it comes up: read as one answer with
   // the size, so a move between half and full -- where they are drawn

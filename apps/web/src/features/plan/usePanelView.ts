@@ -243,8 +243,7 @@ export function usePanelView({
   // the first the search's page; the cards over either closed by the
   // toggle and not kept.
   const pickPage = useCallback((page: number) => pickView(page ? "plan" : "search", true), [pickView]);
-  const pickLater = useCallback((next: PanelView) => setViewPick(next), []);
   // "Pick an airplane" asked from a screen that needs one (lib/pickAirplane).
   usePickAirplaneRequest(pickView);
-  return { view, setViewPick: pickLater, pickView, pickPage };
+  return { view, setViewPick, pickView, pickPage };
 }
