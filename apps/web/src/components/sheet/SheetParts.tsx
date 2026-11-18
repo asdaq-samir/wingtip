@@ -37,9 +37,18 @@ const BAR = "4.25rem";
 /** Under the head, the body and the foot a shade darker than the glass
  *  over them, the grey of notes and the blue of tappable words a step
  *  darker on it for WCAG's 4.5:1 (design/tokens.json's -shade tokens). */
-/** A band risen with the sheet from the pill: frosted, and over the body, as at half. */
+/** The head band's ground where nothing scrolls under it: a phone's sheet
+ *  at the pill and half, whose body does not scroll (index.css's one
+ *  scrolling rule), so the frost would blur the sheet's own flat colour
+ *  into the same colour. Solid there, not frosted: iPhone Safari redrew a
+ *  backdrop-filter under the route's card every frame the sheet slid, and
+ *  a slow drag up from half drew the card in fine horizontal stripes, its
+ *  idents smeared (the owner's iPhone, 2026-11-17). Frosted all the way
+ *  up, where the body scrolls on under it. */
+const SOLID_BAND = "bg-(--sheet)";
+/** A band risen with the sheet from the pill: on its ground, and over the body, as at half. */
 const RISEN_BAND =
-  "group-data-swiping/sheet:frost-head group-data-risen/sheet:frost-head group-data-swiping/sheet:z-20 group-data-risen/sheet:z-20";
+  "group-data-swiping/sheet:bg-(--sheet) group-data-risen/sheet:bg-(--sheet) group-data-swiping/sheet:z-20 group-data-risen/sheet:z-20";
 
 export const SHEET_BELOW = "[--muted-foreground:var(--muted-foreground-shade)] [--tint:var(--tint-shade)] print:bg-transparent";
 
@@ -219,8 +228,12 @@ export function SheetParts(p: PartsProps) {
         onClick={rises ? (event) => tapOpens(event, p.onFootTap) : undefined}
         // Sticky at the scroller's top, frosted wherever the body runs on
         // up under it, the grabber's room inside it (the owner's iPhone,
-        // 2026-11-11: clear, the list showed through the band).
-        className={cn("sticky top-0 flex shrink-0 flex-col", !atPill ? "frost-head z-20" : rises && RISEN_BAND)}
+        // 2026-11-11: clear, the list showed through the band); on a
+        // phone only all the way up, solid below (SOLID_BAND).
+        className={cn(
+          "sticky top-0 flex shrink-0 flex-col",
+          !atPill ? cn("z-20", p.onPhone && size !== "full" ? SOLID_BAND : "frost-head") : rises && RISEN_BAND,
+        )}
       >
         {band}
       </PointerTapDiv>
