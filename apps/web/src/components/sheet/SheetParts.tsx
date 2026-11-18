@@ -257,8 +257,12 @@ export function SheetParts(p: PartsProps) {
         // One box at the pill and all the way up, the figures centred
         // in it at their large size; at half small, the box only as tall
         // as they are (the owner, 2026-11-05). What gives way in the
-        // pill (data-pill-hides) is put away there.
-        "relative z-10 flex shrink-0 flex-col justify-center border-t print:hidden",
+        // pill (data-pill-hides) is put away there. Over the scroller's
+        // sticky head band (frost-head, z-20) as well as its body: FPL's
+        // route timeline lives in that band, and at half it runs down past
+        // the sheet's edge, where at z-10 it was drawn over the actions'
+        // floating bar and hid it (the owner's iPhone, 2026-11-17).
+        "relative z-30 flex shrink-0 flex-col justify-center border-t print:hidden",
         fromBottom && follows,
         // The figures as the pill's one row (FPL's, not flying): under
         // the grabber's 1 rem room, the rest of the pill's 4.25 rem
