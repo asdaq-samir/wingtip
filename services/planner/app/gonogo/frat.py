@@ -16,37 +16,12 @@ compares them."""
 
 from . import ask
 
-#: At these points the assessment is amber, and at these red (the
-#: engine's frat::CAUTION_FROM and HIGH_FROM, held to them by the tests).
-CAUTION_FROM = 6
-HIGH_FROM = 12
-
-LEVEL_NAME = {"low": "Low", "caution": "Raised", "high": "High"}
-
-LEVEL_WORDS = {
-    "low": "Go, with the usual care.",
-    "caution": "Bring it down where you can (a later time, a shorter leg, an instructor along), or talk it over.",
-    "high": "Don't go as planned.",
-}
-
-#: How far a 91.213(d) determination reaches: VFR by day, by day and
-#: night, or every kind of flight (91.205(b)-(d)).
-REACH = {"VFR_DAY": 0, "VFR": 1, "ALL": 2}
-
-
-def _unmarked(f: dict) -> dict:
-    return {k: v for k, v in f.items() if k != "finding"}
-
 
 def self_checks() -> list[dict]:
     """What only the pilot can say, ticked where it is so -- the IMSAFE
     checklist and PAVE's pressures and unfamiliarity -- in the order shown,
     each in its group, with no mark (RiskAssessment.tsx draws none)."""
     return ask("gonogo_self_checks")
-
-
-#: The self checks as the web's SELF_CHECKS lists them.
-SELF_CHECKS = [{k: v for k, v in _unmarked(c).items() if k != "stop" or v} for c in self_checks()]
 
 
 def assessment(f: dict) -> dict:

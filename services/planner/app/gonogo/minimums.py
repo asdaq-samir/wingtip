@@ -13,15 +13,6 @@ from . import ask
 #: included (knots).
 NO_MINIMUMS = {"ceiling_ft": None, "visibility_sm": None, "crosswind_kt": None, "wind_kt": None}
 
-#: The choices each minimum is picked from (menus, not sliders), the web's
-#: MINIMUM_CHOICES: the native app's menus read the same.
-MINIMUM_CHOICES = {
-    "ceiling_ft": [1000, 1500, 2000, 2500, 3000, 4000, 5000],
-    "visibility_sm": [3, 4, 5, 6, 8, 10],
-    "crosswind_kt": [5, 8, 10, 12, 15, 17, 20],
-    "wind_kt": [10, 15, 20, 25, 30, 35],
-}
-
 
 def under_minimums(m: dict, briefing: dict, landings: list[str], dest: str) -> list[str]:
     """Where the briefing's weather is under the minimums, each a

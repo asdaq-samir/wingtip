@@ -14,7 +14,6 @@ from pathlib import Path
 import pytest
 from pygeomag import GeoMag
 
-from wingtip import navlog
 from wingtip.engine import ask as engine
 from wingtip.magnetic import magnetic_variation_deg
 
@@ -44,7 +43,6 @@ def test_cruising_altitudes_are_91_159s(case):
 def test_the_reserves_are_91_151s_and_91_167s():
     for case in FIXTURE["reserve"]:
         assert engine("reserve_min", ifr=case["ifr"], night=case["night"]) == case["minutes"]
-    assert (navlog.DAY_RESERVE_MIN, navlog.NIGHT_RESERVE_MIN) == (30.0, 45.0)
 
 
 def test_density_and_pressure_altitude():
