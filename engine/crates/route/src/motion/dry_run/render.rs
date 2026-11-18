@@ -1,4 +1,5 @@
 use super::*;
+use crate::motion::track::{open_point, TrackPoint};
 
 /// The run as JSON: {"points": [{t, lat, lon, alt_ft, gs_kt, track_deg}],
 /// "along_nm", "fuel_gal", "row_t", "bends": [{route, run}], "missable",
@@ -6,17 +7,7 @@ use super::*;
 pub fn to_json(run: &DryRun) -> String {
     let mut out = String::from("{\"points\":[");
     for (i, p) in run.points.iter().enumerate() {
-        if i > 0 {
-            out.push(',');
-        }
-        out.push_str("{\"t\":");
-        json::number(&mut out, p.t);
-        out.push_str(",\"lat\":");
-        json::number(&mut out, p.lat);
-        out.push_str(",\"lon\":");
-        json::number(&mut out, p.lon);
-        out.push_str(",\"alt_ft\":");
-        json::opt_number(&mut out, p.alt_ft);
+        open_point(&mut out, i, &TrackPoint { t: p.t, lat: p.lat, lon: p.lon, alt_ft: p.alt_ft });
         out.push_str(",\"gs_kt\":");
         json::opt_number(&mut out, p.gs_kt);
         out.push_str(",\"track_deg\":");

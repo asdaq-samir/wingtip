@@ -229,23 +229,30 @@ pub(super) fn read_rule(v: &Value) -> Result<String, String> {
         Ok(points) => {
             out.push_str("{\"points\":[");
             for (i, p) in points.iter().enumerate() {
-                if i > 0 {
-                    out.push(',');
-                }
-                out.push_str("{\"t\":");
-                json::number(&mut out, p.t);
-                out.push_str(",\"lat\":");
-                json::number(&mut out, p.lat);
-                out.push_str(",\"lon\":");
-                json::number(&mut out, p.lon);
-                out.push_str(",\"alt_ft\":");
-                json::opt_number(&mut out, p.alt_ft);
+                open_point(&mut out, i, p);
                 out.push('}');
             }
             out.push_str("]}");
         }
     }
     Ok(out)
+}
+
+/// Point `i` of a list as JSON, a comma before all but the first,
+/// `{"t", "lat", "lon", "alt_ft"` and left open: a track's point closes
+/// it, a dry run's adds its speed and track first.
+pub(super) fn open_point(out: &mut String, i: usize, p: &TrackPoint) {
+    if i > 0 {
+        out.push(',');
+    }
+    out.push_str("{\"t\":");
+    json::number(out, p.t);
+    out.push_str(",\"lat\":");
+    json::number(out, p.lat);
+    out.push_str(",\"lon\":");
+    json::number(out, p.lon);
+    out.push_str(",\"alt_ft\":");
+    json::opt_number(out, p.alt_ft);
 }
 
 /// `thin_track`: the points kept, each as it came, from `{"points",
