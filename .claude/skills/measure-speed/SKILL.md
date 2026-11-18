@@ -36,6 +36,7 @@ Profile before guessing. Every speed claim needs a before number, an after numbe
 - **The map (MapLibre GL, `lib/map/gl`):**
   - `useGlData` sends a source's GeoJSON to MapLibre's worker with `setData` whenever its `data` is a new object, so build it in a memo or from the query's own answer, never fresh at each render.
   - Layers read the view through `useGlView`, which changes once per whole level or new box, never per frame of a pinch or pan. A layer that listens to the map's `move` itself renders every frame.
+  - A GeoJSON source is tiled and drawn at every frame while any drawn layer uses it, empty or not. `useGlData` and `useGlSymbols` give an empty one's layers no zoom to draw at (`drawnWithData`); a layer that sets its data another way should call it too. With 29 of 43 sources empty at rest, that took a pan's median frame from 100 to 67 ms at 4x (2026-11-18).
   - `useGlLayer` reads its sources and layers once; a style that changes goes through `useGlPaint` (`setPaintProperty`), not a new spec.
 - **Objects that are new on every render** (`?? []`, a hook returning a fresh object) break memo. Use a module constant such as `NONE`.
 - **A route's first draw** goes in one `flushSync`, not a transition, because GPS fixes every second restart a transition. Ask for the route's queries at the tap. Keep the page off per-fix renders (`useOwnShipNear`), and let the components that show distances read the fix themselves.

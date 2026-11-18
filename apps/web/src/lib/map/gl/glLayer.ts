@@ -270,8 +270,45 @@ export function useGlData(source: string, data: GeoJSON.GeoJSON | null) {
   const { map } = useGlMap();
   useEffect(() => {
     map.getSource<GeoJSONSource>(source)?.setData(data ?? EMPTY);
+    drawnWithData(map, source, data);
   }, [map, source, data]);
 }
+
+/** The highest zoom MapLibre has: a layer whose range starts there is
+ *  drawn at no level. */
+const NO_LEVEL = 24;
+
+/** A source with nothing in it left out of the frame, its layers given no
+ *  level to draw at, and their own levels back as data comes. MapLibre
+ *  keeps tiles only of a source a drawn layer uses: at rest on a route,
+ *  29 of the map's 43 sources were empty (the glide ring, a lesson, the
+ *  emergency's, the patterns ...), each tiled and drawn again at every
+ *  frame of a pan. Leaving them out took a pan's median frame from 100 to
+ *  67 ms and its JavaScript from 1.50 to 1.24 s at CPU 4x (2026-11-18). By zoom range, not
+ *  visibility, which the settings set on some of these layers
+ *  (AirportWeatherGl). */
+export function drawnWithData(map: MlMap, source: string, data: GeoJSON.GeoJSON | null) {
+  if (!map.style) return;
+  const empty = !data || (data.type === "FeatureCollection" && data.features.length === 0);
+  let kept = ranges.get(map);
+  if (!kept) ranges.set(map, (kept = new Map()));
+  for (const id of map.getLayersOrder()) {
+    const layer = map.getLayer(id);
+    if (!layer || !("source" in layer) || layer.source !== source) continue;
+    const was = kept.get(id);
+    if (empty && layer.minzoom !== NO_LEVEL) {
+      // A spec with no range reads back as undefined, which
+      // setLayerZoomRange would leave as it is: MapLibre's own 0 to 24.
+      kept.set(id, [layer.minzoom ?? 0, layer.maxzoom ?? NO_LEVEL]);
+      map.setLayerZoomRange(id, NO_LEVEL, NO_LEVEL);
+    } else if (!empty && was) {
+      kept.delete(id);
+      map.setLayerZoomRange(id, was[0], was[1]);
+    }
+  }
+}
+/** Each hidden layer's own zoom range, to give back. */
+const ranges = new WeakMap<MlMap, Map<string, [number, number]>>();
 
 /** Paint properties set on layers as they change: a theme, the night.
  *  Set again whenever the style changes and a layer has not got them: a
