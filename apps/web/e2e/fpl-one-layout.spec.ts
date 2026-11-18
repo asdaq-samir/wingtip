@@ -30,7 +30,11 @@ test.describe("/app/plan", () => {
 
     const timeline = drawer.getByTestId("route-summary");
     await expect(timeline).toBeVisible({ timeout: slow(30_000) });
-    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KOMA", "KDEN"], { timeout: slow(30_000) });
+    // A stop folds into one line between the ends, a tap unfolding it.
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDEN"], { timeout: slow(30_000) });
+    await expect(timeline.getByTestId("timeline-more")).toHaveText("1 stop");
+    await timeline.getByTestId("timeline-more").click();
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KOMA", "KDEN"]);
     // No city on a line (the owner: "We don't need to say the city name").
     await expect(timeline).not.toContainText("Chicago");
     await expect(timeline.getByTestId("timeline-line")).toHaveCount(3);
@@ -69,16 +73,18 @@ test.describe("/app/plan", () => {
     await expect(page.getByTestId("place-card")).toBeVisible();
   });
 
-  test("past four points the middle stops fold into one line, the next stop always shown", async ({ page }) => {
+  test("any stops fold into one line between the ends, a tap unfolding them and another folding them", async ({ page }) => {
     await page.goto("/app/plan?dep=KORD&stops=KDSM,KOMA,KLNK,KGRI&dest=KDEN");
     await settle(page);
     await openPanel(page);
     const timeline = sideDrawer(page).getByTestId("route-summary");
-    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDSM", "KDEN"], { timeout: slow(30_000) });
-    await expect(timeline.getByTestId("timeline-more")).toHaveText("3 more stops");
-    // A tap on it shows them all.
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDEN"], { timeout: slow(30_000) });
+    await expect(timeline.getByTestId("timeline-more")).toHaveText("4 stops");
+    // A tap on it shows them all, another folds them again.
     await timeline.getByTestId("timeline-more").click();
     await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDSM", "KOMA", "KLNK", "KGRI", "KDEN"]);
+    await timeline.getByTestId("timeline-more").click();
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDEN"]);
   });
 
   test('a Direct To from where the airplane is reads "My Location", its Direct to line and Cancel folded and open', async ({ page }) => {

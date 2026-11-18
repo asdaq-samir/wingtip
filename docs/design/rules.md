@@ -484,8 +484,8 @@ off by default (the owner, 2026-11-13).
    Set Altitude, Hold, Add a Stop After, Move, Remove); the route's magenta
    in short rounded dashes between the marks; after a hairline inset to the
    text its ident (a link to its card), the fuel in the tanks there right
-   after it, at the right its time (the departure's a picker) and its grip; no city; past four points
-   "3 more stops", a tap showing them; Add a Stop the last row, by the one
+   after it, at the right its time (the departure's a picker) and its grip; no city; any stops between
+   the ends folded into "2 stops ⌄", a tap unfolding and folding them; Add a Stop the last row, by the one
    search; a hold or the grip moves a point, a swipe to the left takes a
    stop out, the plan's toast Undo putting either back. A tap on a field's
    line opens it, one at a time: its wind at the left and elevation at the

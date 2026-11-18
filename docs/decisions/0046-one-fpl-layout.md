@@ -46,8 +46,11 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    colour and in what VoiceOver hears. Where the mark is the point's menu
    (the route being edited) it says "•••" alone, the tint's ellipsis on
    its wash (the owner, 2026-11-17: "Make the left buttons say ... only"),
-   the category then in the ident's label alone. Past four points the middle ones
-   fold into "N more stops", a tap showing them all. Add a Stop is the
+   the category then in the ident's label alone. Any stops between the two ends
+   fold into one line, "2 stops ⌄", a tap unfolding them and another
+   folding them again, a stop's open line keeping them out (the owner,
+   2026-11-17: "With any stops in between dep and dest, we can fold the
+   stops by saying how many stops"). Add a Stop is the
    last row, its mark the tint's + and its words in the tint, asking the
    one search (no microphone of its own: the search's field has one).
    Then the figures; "Suggested routes" over the Routes' chips.

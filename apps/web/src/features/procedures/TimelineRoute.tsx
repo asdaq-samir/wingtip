@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { ChevronDown } from "lucide-react";
 import { create } from "zustand";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
@@ -16,12 +17,10 @@ import { toggleField, useProceduresRoute } from "./useProceduresRoute";
 
 export type { TimelinePoint } from "./TimelineLine";
 
-/** Past this many lines the middle ones fold into one (the canvas's six). */
-const MOST_LINES = 4;
-
-/** The one line open to its runways and procedures, by its key, kept while
- *  the page is: the timeline is drawn again as the sheet moves. */
-const useOpenLine = create<{ key: string | null }>(() => ({ key: null }));
+/** The one line open to its runways and procedures, by its key, and the
+ *  stops unfolded, kept while the page is: the timeline is drawn again as
+ *  the sheet moves. */
+const useOpenLine = create<{ key: string | null; stops: boolean }>(() => ({ key: null, stops: false }));
 
 /**
  * FPL's route on the ground (the one layout, decision 0046; the owner's
@@ -29,25 +28,28 @@ const useOpenLine = create<{ key: string | null }>(() => ({ key: null }));
  * and edited at once, the sheet at half: one grouped list, Apple Maps'
  * Directions' look, a line a point (TimelineLine). React Aria's GridList
  * carries the list (RouteGrid): a hold or the grip moves a point, the
- * keyboard's and VoiceOver's moves its drag button's; SwipeRow takes a
- * stop out with a swipe to the left (the plan's toast Undo puts it back);
+ * keyboard's and VoiceOver's moves its drag button's; a stop is taken out
+ * by its menu's Remove (the plan's toast Undo puts it back);
  * the mark is the point's menu (PointMenu: Change by the one search,
  * Direct To, Set Altitude, Hold, Add a Stop After, Move, Remove). A tap on
  * a field's line opens it, Base UI's Collapsible: its wind and elevation,
  * then its runway and procedure chips -- Base UI's menus (RunwayTray,
  * ProcedureMenu) -- one line open at a time, the map centred on it above
- * the sheet with the route's points alone (lib/map/routeOnly). Past four
- * points the middle ones fold into "N more stops", a tap showing them
- * all. Add a Stop is the last row, asking the one search. The sheets the
+ * the sheet with the route's points alone (lib/map/routeOnly). Any stops
+ * between the two ends fold into one line, "2 stops", a tap unfolding
+ * them and another folding them again (the owner, 2026-11-17: "With any
+ * stops in between dep and dest, we can fold the stops by saying how many
+ * stops etc and then unfold when tapped"); a stop whose line is open
+ * keeps them unfolded. Add a Stop is the last row, asking the one search. The sheets the
  * route opens are its (RouteSheets). In a dry run it is read, no line
  * opening and no menus.
  */
 export default function TimelineRoute({ points, ...props }: ProceduresRouteProps & { points: TimelinePoint[] }) {
   const vm = useProceduresRoute(props);
   const { airports, edit, routePoints, stopsFull } = vm;
-  const [all, setAll] = useState(false);
   const keyOf = (p: TimelinePoint) => `${p.role}:${p.ident}:${p.index}`;
   const openKey = useOpenLine((s) => s.key);
+  const all = useOpenLine((s) => s.stops);
   const open = points.find((p) => keyOf(p) === openKey) ?? null;
   // The map: the route's points alone and the open line's centred.
   const focus = open && edit ? open.ident : null;
@@ -55,25 +57,42 @@ export default function TimelineRoute({ points, ...props }: ProceduresRouteProps
     useRouteOnly.setState({ on: focus !== null, focus });
   }, [focus]);
   useEffect(() => () => useRouteOnly.setState({ on: false, focus: null }), []);
-  const folded = !all && points.length > MOST_LINES;
-  const shown = folded ? [points[0]!, points[1]!, null, points.at(-1)!] : points;
+  const stops = points.slice(1, -1);
+  const count = stops.length;
+  const stopOpen = stops.some((p) => (vm.openAtFirst ? vm.isOpen(keyOf(p)) : openKey === keyOf(p)));
+  const unfolded = all || stopOpen;
+  // The ends, and between them the stops' one line: the stops after it
+  // where unfolded, as a disclosure row's rows follow it.
+  const shown = count === 0 ? points : [points[0]!, null, ...(unfolded ? stops : []), points.at(-1)!];
   const items: RouteItem[] = shown.map((point, i) => {
     if (!point) {
-      const count = points.length - 3;
+      const words = `${count} ${count === 1 ? "stop" : "stops"}`;
       return {
-        id: "more",
-        label: `${count} more stops`,
+        id: "stops",
+        label: words,
         node: (
           <div className="flex gap-3">
-            <span className="w-8 shrink-0" />
+            {/* The route's magenta on through the line, under the marks. */}
+            <span className="relative w-8 shrink-0">
+              <span
+                aria-hidden="true"
+                className="absolute -top-1 -bottom-1 left-1/2 -translate-x-1/2 border-l-[3px] border-dotted border-course"
+              />
+            </span>
             <Button
               variant="plain"
               size="inline"
-              onClick={() => setAll(true)}
+              // Folding them closes a stop's open line with them.
+              onClick={() => useOpenLine.setState(unfolded ? { stops: false, key: stopOpen ? null : openKey } : { stops: true })}
+              aria-expanded={unfolded}
               data-testid="timeline-more"
-              className={cn("h-11 flex-1 border-t border-border text-muted-foreground", TEXT.row)}
+              className={cn("h-11 flex-1 justify-between border-t border-border pr-1 text-muted-foreground", TEXT.row)}
             >
-              {count} more {count === 1 ? "stop" : "stops"}
+              {words}
+              <ChevronDown
+                className={cn("size-5 transition-transform motion-reduce:transition-none", unfolded && "rotate-180")}
+                aria-hidden
+              />
             </Button>
           </div>
         ),

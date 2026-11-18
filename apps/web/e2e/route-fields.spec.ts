@@ -30,6 +30,9 @@ test.afterEach(async ({ page }) => {
 /** A field's line opened by a tap on it, off its ident. */
 async function openLine(page: Page, ident: string) {
   const line = timelineLine(page, ident);
+  // A stop is in the stops' folded line until it is unfolded.
+  const stops = sideDrawer(page).getByTestId("timeline-more");
+  if ((await stops.count()) > 0 && (await stops.getAttribute("aria-expanded")) === "false") await stops.click();
   await line.getByTestId("timeline-toggle").click();
   await expect(line).toHaveAttribute("data-open", "");
 }
