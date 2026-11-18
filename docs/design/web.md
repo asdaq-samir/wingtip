@@ -60,7 +60,12 @@ These hold on every screen below and win over any reference app.
   0.97 MB on 2026-11-17: what the first screen does not draw (Recents in
   full, FPL's strip under an empty route, Ready to Fly's prompt, the
   figures offer, the developer's route form) is on chunks asked for
-  after it (`lib/fromChunk`).
+  after it (`lib/fromChunk`). It had grown to 1.09 MB a day later, and
+  is 0.96 MB (959,581 bytes) on 2026-11-18: an abbreviation's popover
+  (Explain) is on the popups' chunk with Base UI's anchoring, a keep for
+  the air on its own, and React Aria is off it whole -- a ✕ outside its
+  SearchField is `ui/field-clear`'s Base UI `FieldClearButton`, never
+  `SearchFieldClear`, which brought 169 KB of it in through one row.
 - **A return visit fetches nothing but the worker's own check.** The
   service worker precaches the app shell, every first-load chunk and the
   engine's `.wasm` (`globPatterns`), so a second load is served from it
