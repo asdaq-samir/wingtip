@@ -7,7 +7,7 @@
 
 use super::{num, opt, rad};
 use crate::figures::words::{grouped, js_round};
-use crate::geo::{angle_between, bearing_deg, destination, distance_nm, Flat};
+use crate::geo::{angle_between, destination, distance_and_bearing, distance_nm, Flat};
 use crate::json::{self, Value};
 
 /// Within this of own ship's height an airplane is drawn amber, the traffic
@@ -222,7 +222,7 @@ pub(super) fn marks_rule(v: &Value) -> Result<String, String> {
             near_own_height(ft, own)
         };
         let apart = match (at, opt(n, p, "lat")?, opt(n, p, "lon")?) {
-            (Some((lat, lon)), Some(plat), Some(plon)) => Some((distance_nm(lat, lon, plat, plon), bearing_deg(lat, lon, plat, plon))),
+            (Some((lat, lon)), Some(plat), Some(plon)) => Some(distance_and_bearing(lat, lon, plat, plon)),
             _ => None,
         };
         out.push_str("{\"label\":");

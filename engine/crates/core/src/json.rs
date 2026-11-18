@@ -5,30 +5,45 @@
 //! its place (float_roundtrip, a formatter writing the same bytes) grew the web's module 32,150 bytes raw and
 //! 16,286 gzipped on 2026-11-12, past wasm_size.py's raw budget, so this stays until the budget has room.
 
-/// A string, quoted and escaped (RFC 8259, section 7).
+use std::fmt::Write;
+
+/// A string, quoted and escaped (RFC 8259, section 7). The runs between
+/// the bytes that need escaping are copied whole, as nearly every string
+/// an answer carries has none.
 pub fn string(out: &mut String, s: &str) {
+    out.reserve(s.len() + 2);
     out.push('"');
-    for c in s.chars() {
-        match c {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
-            c => out.push(c),
+    let mut from = 0;
+    for (i, b) in s.bytes().enumerate() {
+        let escaped = match b {
+            b'"' => "\\\"",
+            b'\\' => "\\\\",
+            b'\n' => "\\n",
+            b'\r' => "\\r",
+            b'\t' => "\\t",
+            b if b < 0x20 => "",
+            _ => continue,
+        };
+        out.push_str(&s[from..i]);
+        if escaped.is_empty() {
+            let _ = write!(out, "\\u{b:04x}");
+        } else {
+            out.push_str(escaped);
         }
+        from = i + 1;
     }
+    out.push_str(&s[from..]);
     out.push('"');
 }
 
 /// A number as Python's json writes a float: the shortest that reads
 /// back the same, with a ".0" on a whole one. Not a number is null.
+/// Written straight into the answer, with no string of its own.
 pub fn number(out: &mut String, v: f64) {
     if !v.is_finite() {
         out.push_str("null");
     } else {
-        out.push_str(&format!("{v:?}"));
+        let _ = write!(out, "{v:?}");
     }
 }
 
@@ -135,6 +150,10 @@ impl Reader<'_> {
         self.eat(b'"')?;
         let mut out = Vec::new();
         loop {
+            // The run up to the next quote or backslash, copied whole.
+            let run = self.b.get(self.at..)?.iter().position(|&c| c == b'"' || c == b'\\')?;
+            out.extend_from_slice(&self.b[self.at..self.at + run]);
+            self.at += run;
             let c = *self.b.get(self.at)?;
             self.at += 1;
             match c {

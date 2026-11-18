@@ -4,6 +4,23 @@
 //! each caller rounds its number its own way first, as its words always
 //! have, and hands the whole number's digits here.
 
+/// JavaScript's Math.round: halves up, toward +infinity (the one copy:
+/// procedures' figures::words and flight's filing use it).
+/// Not floor(n + 0.5), whose sum rounds 0.49999999999999994 up to 1.
+pub fn js_round(n: f64) -> i64 {
+    js_round_f(n) as i64
+}
+
+/// Math.round as a double, for figures past an i64's reach.
+pub fn js_round_f(n: f64) -> f64 {
+    let floor = n.floor();
+    if n - floor >= 0.5 {
+        floor + 1.0
+    } else {
+        floor
+    }
+}
+
 /// The digits of a whole number, with a leading '-' where it has one,
 /// with a comma before each three from the right: "12500" to "12,500",
 /// "-4000" to "-4,000". Anything but ASCII digits after the sign is left
