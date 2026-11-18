@@ -204,15 +204,12 @@ test("plan page: the nav log is computed for an airplane the pilot picks in its 
   // is a choice (the owner's "Why is it showing C172?").
   const picker = page.getByTestId("aircraft-input");
   await expect(picker).toBeVisible();
-  // A fixed N before it and no placeholder (the owner, 2026-10-27).
-  await expect(picker).toHaveAttribute("placeholder", "");
-  await expect(page.getByTestId("aircraft-select")).toContainText("N");
-  await expect(picker).toHaveValue("N-");
-  // And five grey underscores after it, the five places an N-number has, the
-  // field as wide as five characters (the owner, 2026-11-04); gone once a
-  // number is typed.
-  const hint = page.getByTestId("aircraft-select-hint");
-  await expect(hint).toHaveText("N-_____");
+  // Empty, the stock field's placeholder: the N and five blanks, the five
+  // places an N-number has, the field as wide as five characters (the
+  // owner, 2026-10-27 and 2026-11-04); the N kept in the text once a number
+  // is typed.
+  await expect(picker).toHaveValue("");
+  await expect(picker).toHaveAttribute("placeholder", "N-_____");
   await expect(picker).toHaveAccessibleName("Airplane, N-number: none picked; pick one for times and fuel");
   // An N-number typed is added at once, its type looked up behind it (the
   // owner's "You can do the lookup in the background") -- here a made-up
@@ -225,7 +222,6 @@ test("plan page: the nav log is computed for an airplane the pilot picks in its 
   await picker.fill("N181PA");
   await picker.press("Enter");
   await expect(picker).toHaveValue("N-181PA");
-  await expect(hint).toHaveCount(0);
   // No card button at its end since the owner's "we don't need the info
   // for n number" (2026-10-27).
   await expect(page.getByTestId("aircraft-card-button")).toHaveCount(0);
@@ -297,7 +293,7 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
   await controlsInSight(page);
   const mark = page.getByTestId("altitude-why");
   await expect(mark).toHaveAccessibleName(/no legal altitude/);
-  await expect(page.getByTestId("altitude-input")).toHaveValue("FL-");
+  await expect(page.getByTestId("altitude-input")).toHaveValue("");
   const problem = page.getByTestId("route-problem");
   await expect(problem).toHaveCount(0);
   // By its slot: on a phone the chip's sheet hides the page from the

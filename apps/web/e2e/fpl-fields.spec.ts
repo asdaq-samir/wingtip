@@ -15,7 +15,8 @@ test("the N-number field takes an N typed first as its own, and says in red what
   await settle(page);
   await controlsInSight(page);
   const picker = page.getByTestId("aircraft-input");
-  await expect(picker).toHaveValue("N-");
+  // Empty with no airplane: the stock field's placeholder, "N-_____".
+  await expect(picker).toHaveValue("");
   // "N12" after the fixed "N-" read "N-N12", which no list matched.
   await picker.fill("N-N12");
   await expect(picker).toHaveValue("N-12");
@@ -25,7 +26,7 @@ test("the N-number field takes an N typed first as its own, and says in red what
   await expect(picker).toHaveAttribute("aria-invalid", "true");
   // Escape lets go of what was typed.
   await picker.press("Escape");
-  await expect(picker).toHaveValue("N-");
+  await expect(picker).toHaveValue("");
   await expect(picker).not.toHaveAttribute("aria-invalid");
 });
 

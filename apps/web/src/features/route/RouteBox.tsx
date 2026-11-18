@@ -240,7 +240,7 @@ export default function RouteBox({
                       ref={field}
                       // The group's control, so the stock InputGroup draws its
                       // focus ring round the box while it is typed in, as the
-                      // N-number's and the altitude's do (InlineField): the
+                      // N-number's and the altitude's do (navlog/pillLook): the
                       // line's own outline is put away, and none showed.
                       data-slot="input-group-control"
                       onPointerDown={onPress}

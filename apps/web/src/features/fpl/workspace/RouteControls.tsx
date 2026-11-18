@@ -21,7 +21,7 @@ export default function RouteControls({
   return (
     // One line, never wrapped: it is FPL's bar (FplBar), the one search's
     // field's size (the owner, 2026-11-14), so the airplane and the
-    // altitude give way (InlineField's shrink) before the buttons do.
+    // altitude give way (navlog/pillLook) before the buttons do.
     <div className="flex w-full min-w-0 flex-nowrap items-center gap-x-1">
       {/* The chips' room while their code comes (routePanel). */}
       <Suspense fallback={<span className="h-9 w-48" aria-hidden="true" />}>{flightInputs}</Suspense>

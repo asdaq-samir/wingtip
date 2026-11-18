@@ -1,15 +1,15 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { cn } from "cn";
 import { useQueryClient } from "@tanstack/react-query";
 import { N_NUMBER, profileOfRegistered, shortName } from "../../lib/aircraftChoice";
 import { registeredQuery } from "../../lib/airplane/lookup";
-import { InlineField } from "../../components/InlineField";
 import { useEngineReady } from "../../lib/engine/useEngineReady";
 import { airplanePickAnswered, useAirplanePick } from "../../lib/pickAirplane";
 import DepartPicker from "./DepartPicker";
-import AirplaneSuggestions from "./AirplaneSuggestions";
+import AirplaneSuggestions, { type SuggestionRow } from "./AirplaneSuggestions";
 import { useAirplaneSuggestions } from "./useAirplaneSuggestions";
-import { CommandField, CommandRoot } from "../../components/ui/command";
-import { Popover, PopoverContent } from "../../components/ui/popover";
+import { Combobox, ComboboxContent, ComboboxInput } from "../../components/ui/combobox";
+import { PILL, PILL_FIELD } from "./pillLook";
 
 /**
  * The two inputs the nav log is computed from, in the planning panel's
@@ -93,23 +93,17 @@ export default function FlightInputs({
   };
   // The suggestions as it is typed (the owner's S1, 2026-11-14), from the one search's own source.
   const suggest = useAirplaneSuggestions({ typed, engineReady, aircraftOptions, onAircraftChange, onTailPick, take });
-  const pick = (run: () => void) => {
+  const field = useRef<HTMLInputElement | null>(null);
+  const pick = (row: SuggestionRow) => {
     picked.current = true;
-    run();
+    row.pick();
     setTyped(null);
     field.current?.blur();
   };
-  // "Pick an airplane" asked from a screen that needs one (lib/pickAirplane):
-  // this field takes the focus once drawn, the frame after FPL is picked.
-  const field = useRef<HTMLInputElement | null>(null);
-  // The suggestions are placed under the field (Base UI's Positioner takes it as `anchor`).
-  const [anchor, setAnchor] = useState<HTMLInputElement | null>(null);
-  const setField = useCallback((el: HTMLInputElement | null) => {
-    field.current = el;
-    setAnchor(el);
-  }, []);
   // A suggestion lit by the arrows (the list's own highlight).
   const lit = useRef(false);
+  // "Pick an airplane" asked from a screen that needs one (lib/pickAirplane):
+  // this field takes the focus once drawn, the frame after FPL is picked.
   const pickAsked = useAirplanePick((s) => s.pending);
   useEffect(() => {
     if (!pickAsked) return;
@@ -119,108 +113,86 @@ export default function FlightInputs({
     });
     return () => cancelAnimationFrame(frame);
   }, [pickAsked]);
+  // The N fixed before what is typed, in the field's own text, at the
+  // owner's ask (2026-10-27: "add a - after N"): a US registration always
+  // starts with it. In the text, not a label beside it: iOS keeps a few
+  // points inside an input's edge, which set the number apart from it
+  // ("N- 654FL" on the owner's phone). Empty, the field shows its
+  // placeholder, "N-" and five blanks, one for each place a US
+  // registration has after the N (14 CFR 47.15(b): at most five; the owner,
+  // 2026-11-04), the stock input's own placeholder rather than grey blanks
+  // laid over the text.
+  const rest = shown.replace(/^N-?/, "");
   return (
     <>
-      {/* A field as the altitude's is, at the owner's ask ("N-number should
-          look similar to altitude"), the same field (InlineField): typed
-          in, its card's button at its end once there is one. */}
-      {/* With none picked, "N-" and then five underscores in grey, blanks, one for each
-          place a US registration has after the N (14 CFR 47.15(b): at most
-          five), as the empty altitude shows "FL-___" (the owner, 2026-11-04:
-          "n should have five underscores after it"): the field is as wide
-          as five characters picked or not, at the owner's ask ("N number
-          should be fixed width for 5 letters/numbers", 2026-11-04), where
-          "Pick airplane" had set it wider. */}
-      <CommandRoot
-        value={`N-${shown.replace(/^N-?/, "")}`}
-        onValueChange={(next) => {
+      {/* Base UI's stock Combobox (ui/combobox, shadcn's), where it was an
+          Autocomplete round a field of our own and a Popover: what is typed
+          is the pilot's (inputValue), each suggestion an action rather than
+          a value kept, so nothing is ever selected and the field's words
+          are never put back to a label. No chevron: until something is
+          typed there is no list to open. */}
+      <Combobox<SuggestionRow>
+        value={null}
+        onValueChange={(row) => row && pick(row)}
+        itemToStringLabel={(row) => row.title}
+        inputValue={rest ? `N-${rest}` : ""}
+        onInputValueChange={(next, details) => {
+          // Only what the pilot types: the stock part's own resets (to the
+          // label of a value, here none) would empty what is half typed.
+          if (details.reason !== "input-change") return;
           picked.current = false;
-          // The field's N is fixed before what is typed, so an N typed
-          // first ("N12", as a pilot writes it) is that N, not a second
-          // one: it read "N-N12", which no list matched (the UI audit's
-          // B4, 2026-11-17).
-          const rest = next
+          // An N typed first ("N12", as a pilot writes it) is that N, not
+          // a second one: it read "N-N12", which no list matched (the UI
+          // audit's B4, 2026-11-17).
+          const letters = next
             .toUpperCase()
             .replace(/^N-?/, "")
             .replace(/[^A-Z0-9]/g, "")
             .replace(/^N+/, "")
             .slice(0, 5);
-          setTyped(rest ? `N${rest}` : "");
+          setTyped(letters ? `N${letters}` : "");
         }}
+        open={suggest.open}
+        onOpenChange={(next) => !next && suggest.dismiss()}
         onItemHighlighted={(item) => {
           lit.current = item !== undefined;
         }}
       >
-        <Popover open={suggest.open} onOpenChange={(next) => !next && suggest.dismiss()}>
-          <InlineField
-            label="Airplane"
-            testId="aircraft-select"
-            widest="N-888MM"
-            placeholder=""
-            endRoom="w-0"
-            // The one field to give way at a larger text size, the
-            // altitude beside it keeping its figures and VFR/IFR their
-            // segments (the owner's list, 2026-11-17): at 19.65 px the
-            // altitude went blank where this kept its width.
-            hint={{ start: "N-", words: "_____" }}
-            field={CommandField}
-            input={{
-              // The N fixed before it, the rest typed, at the owner's ask
-              // (2026-10-27: "N- can stay static while the rest of the number
-              // can be entered", "add a - after N"): a US registration always
-              // starts with it. In the field's own text, not a label beside it:
-              // iOS keeps a few points inside an input's edge, which set the
-              // number apart from it ("N- 654FL" on the owner's phone). Its
-              // words are the list's root's (CommandRoot), which writes them.
-              autoCapitalize: "characters",
-              autoCorrect: "off",
-              spellCheck: false,
-              value: `N-${shown.replace(/^N-?/, "")}`,
-              "aria-label": shown ? "Airplane, N-number" : "Airplane, N-number: none picked; pick one for times and fuel",
-              // What is typed that no registration can be ("KOSH") said in
-              // red as it is typed, by the engine's own test (N_NUMBER),
-              // where it was taken in silence and nothing came of it.
-              "aria-invalid": wrong || undefined,
-              // Base UI's own keys on the field, none overridden: its list is
-              // inline and always open (CommandRoot), so its Enter acts only
-              // on a lit row and its Escape not at all.
-              onKeyDown: (e) => {
-                // Enter on a suggestion lit by the arrows is the list's (it picks it); else
-                // what is typed, committed as before.
-                if (e.key === "Enter" && !(suggest.open && lit.current)) {
-                  e.preventDefault();
-                  commit();
-                  (e.target as HTMLInputElement).blur();
-                }
-                // Escape closes the list first, then lets go of what is typed.
-                if (e.key === "Escape") {
-                  if (suggest.open) suggest.dismiss();
-                  else setTyped(null);
-                }
-              },
-              onBlur: commit,
-              ref: setField,
-              "data-testid": "aircraft-input",
-            }}
-            inputClassName={wrong ? "text-destructive" : "text-foreground"}
-          />
-          <PopoverContent
-            anchor={anchor}
-            align="start"
-            sideOffset={6}
-            className="w-72 max-w-[calc(100vw-16px)] gap-0 p-1"
-            // The typing stays in the field: a press on a row would take the focus first, and the
-            // field's blur commit what was half typed.
-            initialFocus={false}
-            finalFocus={false}
-            onPointerDown={(e) => e.preventDefault()}
-            onMouseDown={(e) => e.preventDefault()}
-            data-testid="aircraft-suggestions"
-          >
-            <AirplaneSuggestions groups={suggest.groups} onPick={pick} />
-          </PopoverContent>
-        </Popover>
-      </CommandRoot>
+        <ComboboxInput
+          showTrigger={false}
+          className={PILL}
+          group={{ "aria-label": "Airplane", "data-testid": "aircraft-select" }}
+          // As wide as "N-888MM", five places after the N, whatever is in it.
+          inputClassName={cn(PILL_FIELD, "w-[calc(8ch+0.75rem)]", wrong ? "text-destructive" : "text-foreground")}
+          ref={field}
+          placeholder="N-_____"
+          enterKeyHint="done"
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+          aria-label={shown ? "Airplane, N-number" : "Airplane, N-number: none picked; pick one for times and fuel"}
+          // What is typed that no registration can be ("KOSH") said in red
+          // as it is typed, by the engine's own test (N_NUMBER).
+          aria-invalid={wrong || undefined}
+          onKeyDown={(e) => {
+            // Enter on a suggestion lit by the arrows is the list's (it
+            // picks it); else what is typed, committed as before.
+            if (e.key === "Enter" && !(suggest.open && lit.current)) {
+              e.preventDefault();
+              commit();
+              e.currentTarget.blur();
+            }
+            // Escape with the list away lets go of what is typed; with it
+            // open, the stock part closes it.
+            if (e.key === "Escape" && !suggest.open) setTyped(null);
+          }}
+          onBlur={commit}
+          data-testid="aircraft-input"
+        />
+        <ComboboxContent data-testid="aircraft-suggestions">
+          <AirplaneSuggestions groups={suggest.groups} />
+        </ComboboxContent>
+      </Combobox>
       {altitude}
       {onDepartChange && <DepartPicker value={depart} onChange={onDepartChange} />}
     </>
