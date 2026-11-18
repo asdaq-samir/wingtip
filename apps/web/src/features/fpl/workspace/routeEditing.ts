@@ -13,11 +13,12 @@ export function routeEditing(vm: PlanSlices<"flight" | "routeList">): boolean {
 }
 
 /** Whether FPL offers its suggested routes (RoutesToggle): there are ways
- *  to suggest, on the ground, and the route's field not open -- the ways
- *  change the route rather than edit it, so the toggle went on doing
- *  nothing while the field was open. */
+ *  to suggest, on the ground, not in a dry run, and the route's field not
+ *  open -- the ways change the route rather than edit it, so the toggle
+ *  went on doing nothing while the field was open, and a dry run flies the
+ *  route as it is, its ways no more than clutter on its map. */
 export function routesOffered(vm: PlanSlices<"flight" | "routeList">): boolean {
-  return !!vm.routeList.routeLine && !vm.flight.flying && !routeEditing(vm);
+  return !!vm.routeList.routeLine && !vm.flight.flying && !vm.flight.dryRunning && !routeEditing(vm);
 }
 
 /** Whether the suggested routes are out: their pills over the route

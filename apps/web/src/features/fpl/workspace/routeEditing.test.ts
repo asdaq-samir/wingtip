@@ -31,10 +31,11 @@ function vm({
   shown = false,
   folded = true,
   flying = false,
+  dryRunning = false,
   offered = true,
-}: { shown?: boolean; folded?: boolean; flying?: boolean; offered?: boolean } = {}) {
+}: { shown?: boolean; folded?: boolean; flying?: boolean; dryRunning?: boolean; offered?: boolean } = {}) {
   return {
-    flight: { flying, dryRunning: false },
+    flight: { flying, dryRunning },
     routeList: {
       routesShown: shown,
       routeFolded: folded,
@@ -57,8 +58,8 @@ describe("waysOnMap", () => {
     expect(waysOnMap(vm({ shown: true }))).toEqual([typed, weather]);
   });
 
-  test("none while the route's field is open or in flight, the toggle on or not", () => {
-    for (const state of [{ folded: false }, { flying: true }]) {
+  test("none while the route's field is open, in flight or in a dry run, the toggle on or not", () => {
+    for (const state of [{ folded: false }, { flying: true }, { dryRunning: true }]) {
       expect(routesOut(vm({ shown: true, ...state }))).toBe(false);
       expect(waysOnMap(vm({ shown: true, ...state }))).toEqual([]);
     }
