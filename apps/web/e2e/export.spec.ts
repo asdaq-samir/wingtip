@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { settle, slow, controlsInSight } from "./helpers";
-import { markWith } from "./marks";
+import { drawnMarks } from "./marks";
 
 /**
  * The route to ForeFlight, which sends it on to the panel's GPS
@@ -11,7 +11,10 @@ import { markWith } from "./marks";
 async function routeWithCheckpoints(page: Page) {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await expect.poll(markWith(page, "route-marks", "1"), { timeout: slow(30000) }).not.toBeNull();
+  // A checkpoint drawn: at the route's zoom their badges give way to each
+  // other (MapLibre's collision), so not every number, the first among them.
+  const checkpoints = async () => (await drawnMarks(page, "route-marks")).filter((m) => m.kind === "checkpoint").length;
+  await expect.poll(checkpoints, { timeout: slow(30000) }).toBeGreaterThan(0);
   // Share is in the route's ••• at the chips' row's end (the owner, 2026-11-17).
   await controlsInSight(page);
 }
