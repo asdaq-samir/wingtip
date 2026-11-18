@@ -113,14 +113,24 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
             // Enter would take the lit row of the older answer, and it has
             // no prop for rows that are not the answer yet, so its handler
             // is kept from running (its documented way, preventBaseUIHandler).
-            // Rows that answer after the typing are lit by Base UI itself
-            // since 1.9 (autoHighlight for asynchronous results, #5818),
-            // where this took the first by hand.
             const rows = model.airports.length + model.waypoints.length;
             if (e.key === "Enter" && model.pick && model.typed && (!model.answered || rows === 0)) {
               e.preventDefault();
               e.preventBaseUIHandler();
               model.pickIdent(model.typed);
+            } else if (e.key === "Enter" && model.pick && model.typed && !e.currentTarget.getAttribute("aria-activedescendant")) {
+              // Rows that answered after the typing (the planner's lookup on
+              // a slow link) come in with none lit, Base UI 1.9's fix for
+              // asynchronous results (#5818) notwithstanding: no
+              // aria-activedescendant and no data-highlighted row
+              // (airport-search.spec), so its Enter did nothing. Enter takes
+              // the first, as it would have been lit.
+              const first = model.airports[0]?.ident ?? model.waypoints[0]?.ident;
+              if (first) {
+                e.preventDefault();
+                e.preventBaseUIHandler();
+                model.pickIdent(first);
+              }
             }
           }}
           // The browser's own clear put away for the field's (CommandClear),
