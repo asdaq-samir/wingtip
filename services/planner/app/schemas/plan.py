@@ -122,7 +122,7 @@ class Totals(BaseModel):
     rules: FlightRules = "vfr"
     #: Under IFR with an alternate filed: the leg on to it, whose fuel is
     #: in `fuel_required_gal` before the reserve (14 CFR 91.167(a)(2)).
-    alternate: "AlternateLeg | None" = None
+    alternate: AlternateLeg | None = None
     #: A route with stops: each flight between two landings with its own
     #: fuel check, the tanks filled at each stop -- the route's own fuel
     #: figures are None then (wingtip.planning.route_totals). Empty without.
