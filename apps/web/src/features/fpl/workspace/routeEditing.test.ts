@@ -4,7 +4,7 @@
 import { describe, expect, test } from "vitest";
 import type { RouteWay } from "../../../lib/map/route/routeWays";
 import type { PlanSlices } from "../vm/planSlices";
-import { routesOut, waysOnMap } from "./routeEditing";
+import { routeBoxOpen, routesOut, waysOnMap } from "./routeEditing";
 
 const typed: RouteWay = {
   key: "own",
@@ -33,12 +33,14 @@ function vm({
   flying = false,
   dryRunning = false,
   offered = true,
-}: { shown?: boolean; folded?: boolean; flying?: boolean; dryRunning?: boolean; offered?: boolean } = {}) {
+  boxOpen = false,
+}: { shown?: boolean; folded?: boolean; flying?: boolean; dryRunning?: boolean; offered?: boolean; boxOpen?: boolean } = {}) {
   return {
     flight: { flying, dryRunning },
     routeList: {
       routesShown: shown,
       routeFolded: folded,
+      boxOpen,
       routeLine: offered ? { chips: [], picked: "none", onPick: () => {}, stale: false } : null,
       wayLines: [typed, weather],
     },
@@ -67,5 +69,20 @@ describe("waysOnMap", () => {
 
   test("none where there are no ways to suggest", () => {
     expect(waysOnMap(vm({ shown: true, offered: false }))).toEqual([]);
+  });
+});
+
+describe("routeBoxOpen", () => {
+  test("the route's field under the timeline once asked for, open to edit on the ground", () => {
+    expect(routeBoxOpen(vm({ folded: false, boxOpen: true }))).toBe(true);
+  });
+
+  test("folded into its Type or Paste a Route row till then, a new plan's or half a route's", () => {
+    expect(routeBoxOpen(vm({ folded: false }))).toBe(false);
+  });
+
+  test("never in flight or a dry run", () => {
+    expect(routeBoxOpen(vm({ folded: false, boxOpen: true, flying: true }))).toBe(false);
+    expect(routeBoxOpen(vm({ folded: false, boxOpen: true, dryRunning: true }))).toBe(false);
   });
 });

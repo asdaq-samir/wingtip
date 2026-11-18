@@ -31,7 +31,14 @@ export function usePlanRouteList(
   // A stop being typed into the route's field (RouteBox's own Add a Stop).
   const [addingStop, setAddingStop] = useState<false | "stop">(false);
   // FPL's list edited in place (useRouteListEdit).
-  const { setAddAt, ...edit } = useRouteListEdit({ stops: planned.stops, course, routePoints, setRoute });
+  const { setAddAt, ...edit } = useRouteListEdit({
+    dep: planned.dep,
+    dest: planned.dest,
+    stops: planned.stops,
+    course,
+    routePoints,
+    setRoute,
+  });
   const addingChange = useCallback(
     (open: boolean) => {
       setAddingStop(open ? "stop" : false);
@@ -113,9 +120,9 @@ export function usePlanRouteList(
   // The suggested routes out for this route's two ends, put away as they
   // change or the ways go (useRoutesShown).
   const shown = useRoutesShown(line.routeLine ? `${planned.dep}-${planned.dest}` : null);
-  // The route's field (RouteEditor) open over the timeline while there
-  // is no whole route -- a new plan, half a route -- and while a route is
-  // typed or pasted into it, till its Done (decision 0046, the owner's
+  // The route open to edit while there is no whole route -- a new plan,
+  // half a route, its timeline with the ends to pick -- and while a route
+  // is typed or pasted into its field (RouteEditor), till its Done (decision 0046, the owner's
   // two-row timeline of 2026-11-17: the timeline is where the route is
   // edited, at any height of the sheet). Made whole by a pick of the one
   // search, or arriving whole from elsewhere -- Fly Here, a link, a Saved
@@ -131,9 +138,15 @@ export function usePlanRouteList(
     if (wholeRoute && !wasWhole) edit.setRouteOpen(editorFocused);
     if (!hasPoints) edit.setRouteOpen(false);
   }
-  // A point the planner does not know keeps the field open, which says so
-  // with its Remove (RouteBox), its line on the timeline red with why.
-  const routeFolded = wholeRoute && !edit.routeOpen && !addingStop && !s.unknownPlace;
+  // The route's field open (RouteEditor): asked for -- the timeline's Type
+  // or Paste a Route before the route is whole, More's Type the Route
+  // after -- a stop being typed into it, or a point the planner does not
+  // know, which it says with its Remove (RouteBox), its line on the
+  // timeline red with why. Before the route is whole the timeline is
+  // open to edit with the field folded till it is asked for (the owner,
+  // 2026-11-18: the empty route drawn as the whole one is).
+  const boxOpen = edit.routeOpen || !!addingStop || !!s.unknownPlace;
+  const routeFolded = wholeRoute && !boxOpen;
   const { setRouteOpen } = edit;
   // Done: the field folded away, the timeline alone.
   const foldRoute = useCallback(() => {
@@ -151,6 +164,7 @@ export function usePlanRouteList(
     holdAsk,
     dropIntoRoute,
     clearRoute,
+    boxOpen,
     routeFolded,
     foldRoute,
     setEditorFocused,

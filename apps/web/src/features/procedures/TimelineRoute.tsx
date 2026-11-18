@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { create } from "zustand";
 import { cn } from "cn";
@@ -9,9 +9,9 @@ import { useRouteOnly } from "../../lib/map/routeOnly";
 import { sameField } from "../../lib/procedures";
 import { pointEnd } from "./pointEnd";
 import { RouteGrid, type RouteItem } from "./RouteGrid";
-import { AddStopRow } from "./RouteRows";
 import { RouteSheets } from "./RouteSheets";
 import { TimelineLine, TimelineMark, type TimelinePoint } from "./TimelineLine";
+import { AddStopRow, TIMELINE_CARD } from "./TimelineRows";
 import { visitRow } from "./visits";
 import type { ProceduresRouteProps } from "./routeProps";
 import { toggleField, useProceduresRoute } from "./useProceduresRoute";
@@ -45,11 +45,28 @@ const useOpenLine = create<{ key: string | null; stops: boolean | null; route: s
  * stops in between dep and dest, we can fold the stops by saying how many
  * stops etc and then unfold when tapped"), a stock Collapsible's trigger;
  * a stop whose line is open keeps them unfolded, and a point moved
- * unfolds them, so it is never moved out of sight. Add a Stop is the last row, asking the one search. The sheets the
+ * unfolds them, so it is never moved out of sight. Add a Stop is the last row, asking the one search;
+ * before the route is whole, half a route's other end to pick and the
+ * route typed (FPL's RouteTimeline, its `head`, `tail` and `foot`). The sheets the
  * route opens are its (RouteSheets). In a dry run it is read, no line
  * opening and no menus.
  */
-export default function TimelineRoute({ points, ...props }: ProceduresRouteProps & { points: TimelinePoint[] }) {
+export default function TimelineRoute({
+  points,
+  head,
+  tail,
+  foot,
+  ...props
+}: ProceduresRouteProps & {
+  points: TimelinePoint[];
+  /** Rows before the points' and after them, in the card: half a route's
+   *  end still to pick (EndRow), the line running on to and from it. */
+  head?: ReactNode;
+  tail?: ReactNode;
+  /** The card's last row where it is not Add a Stop: before the route is
+   *  whole, the route typed or pasted (TypeRouteRow). */
+  foot?: ReactNode;
+}) {
   const vm = useProceduresRoute(props);
   const { airports, routePoints, stopsFull } = vm;
   // A point moved, from its menu or by a drop beside an end, unfolds the
@@ -160,8 +177,8 @@ export default function TimelineRoute({ points, ...props }: ProceduresRouteProps
           field={field}
           end={end}
           mark={edit ? end.menu(mark, true) : mark}
-          first={i === 0}
-          last={i === shown.length - 1}
+          first={i === 0 && !head}
+          last={i === shown.length - 1 && !tail}
           // The browser specs' fields open at first, each its own
           // (useProceduresRoute's openAtFirst), as they work on their
           // runways and procedures; a pilot's one at a time.
@@ -174,11 +191,11 @@ export default function TimelineRoute({ points, ...props }: ProceduresRouteProps
     };
   });
   const list = (
-    // Never wider than the sheet: a row laid out past the card is clipped,
-    // not a sideways scroll of the panel (the iOS audit's rule).
-    <div className="overflow-x-clip rounded-(--radius-banner) bg-card px-3" data-testid="route-summary">
+    <div className={TIMELINE_CARD} data-testid="route-summary">
+      {head}
       <RouteGrid items={items} onMove={edit?.onMove} canMove={edit?.canMove} />
-      {edit && routePoints.length > 1 && <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} />}
+      {tail}
+      {foot ?? (edit && routePoints.length > 1 && <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} />)}
     </div>
   );
   // Read in a dry run, the list read under it has the sheets.

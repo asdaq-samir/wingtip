@@ -46,21 +46,33 @@ export function addedRoute(points: string[], at: number, ident: string): RoutePa
   return next[at] ? partsIfAllowed(next) : null;
 }
 
+/** The route with an end it lacks picked (FPL's timeline's Departure or
+ *  Destination row, the one search's pick): an airport in capitals, or My
+ *  Location (a position) as it is. */
+export function endedRoute(parts: RouteParts, role: "Departure" | "Destination", picked: string): RouteParts {
+  const ident = isPosition(picked) ? picked : picked.trim().toUpperCase();
+  return role === "Departure" ? { ...parts, dep: ident } : { ...parts, dest: ident };
+}
+
 /**
  * FPL's list of the route's points changed in place (usePlanWorkspace),
  * while the route is open to edit (the one layout's expanded list; the
  * owner, 2026-11-17, decision 0046): a point dragged to another's place,
  * made another from its menu's Change, a stop typed in at its place by
- * the route's field (RouteBox's `addAt`) -- and which stops are flown
- * through rather than landed at.
+ * the route's field (RouteBox's `addAt`), an end it lacks picked -- and
+ * which stops are flown through rather than landed at.
  */
 export function useRouteListEdit({
+  dep,
+  dest,
   stops,
   course,
   routePoints,
   setRoute,
 }: {
-  /** The route's stops as typed. */
+  /** The route's ends and stops as typed. */
+  dep: string;
+  dest: string;
   stops: string[];
   course: PlanCourse | null;
   /** The route's points as typed, the departure first. */
@@ -104,6 +116,20 @@ export function useRouteListEdit({
     },
     [routePoints, setRoute],
   );
+  // An end the route lacks (a new plan, half a route), from its row on
+  // FPL's timeline: by the one search, as a point is changed, My Location
+  // offered first, as Maps' From offers it.
+  const pickEnd = useCallback(
+    (role: "Departure" | "Destination") => {
+      askSearchPick({
+        label: role,
+        fixes: false,
+        position: true,
+        onPick: (picked) => setRoute(endedRoute({ dep, stops, dest }, role, picked)),
+      });
+    },
+    [dep, stops, dest, setRoute],
+  );
   // A point dragged by its grip (or held) in FPL's list onto another's
   // place, as the field's pills are moved (movedRoute), and the route
   // planned again.
@@ -137,5 +163,5 @@ export function useRouteListEdit({
     () => ({ onMove: movePoint, canMove, onAddAt: typeStopAt, onReplace: replacePoint }),
     [movePoint, canMove, typeStopAt, replacePoint],
   );
-  return { waypointStops, routeOpen, setRouteOpen, addAt, setAddAt, typeStopAt, listEdit };
+  return { waypointStops, routeOpen, setRouteOpen, addAt, setAddAt, typeStopAt, pickEnd, listEdit };
 }

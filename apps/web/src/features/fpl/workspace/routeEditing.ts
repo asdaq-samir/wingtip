@@ -12,6 +12,14 @@ export function routeEditing(vm: PlanSlices<"flight" | "routeList">): boolean {
   return !vm.routeList.routeFolded;
 }
 
+/** Whether the route's field (RouteEditor) is open under the timeline:
+ *  the route open to edit and the field asked for (usePlanRouteList's
+ *  `boxOpen`). A new plan and half a route have it folded into their
+ *  timeline's Type or Paste a Route till it is asked for. */
+export function routeBoxOpen(vm: PlanSlices<"flight" | "routeList">): boolean {
+  return routeEditing(vm) && vm.routeList.boxOpen;
+}
+
 /** Whether FPL offers its suggested routes (RoutesToggle): there are ways
  *  to suggest, on the ground, not in a dry run, and the route's field not
  *  open -- the ways change the route rather than edit it, so the toggle

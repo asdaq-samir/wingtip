@@ -834,8 +834,12 @@ idents with their names, the stops counted, a chevron in the tint; open
 true) and Done, the focus kept on the toggle and the change said by
 React Aria's live announcer, over the page's airport cards
 (`ProceduresRoute`, its edits `useRouteListEdit`), then `RouteEditor`:
-with no route the two ends' cards (`RouteEnds`), the route's field
-(`RouteBox`) and the figures. On a phone the sheet's height drives it
+the route's field (`RouteBox`) and the figures. Before the route is
+whole there is no head: the timeline's own card (`RouteStart`'s
+`EmptyRoute`, half a route's in `RouteTimeline`), the ends still to pick
+as rows of it (the owner, 2026-11-18: "the empty fpl page looks a bit
+different than filled one"), and the field folded into its last row,
+Type or Paste a Route, till that row opens it. On a phone the sheet's height drives it
 (usePlanRouteList): open at the full snap point, folded at half and the
 pill, never while the field has the focus (`editorFocused`); the line's
 tap sets the full snap point (`openRoute`) and Done sets half
@@ -917,9 +921,21 @@ Edit and Done.
 2. Open: "Route" and Done over the route as rows: each airport a card,
    its role over its ident, each point with its kind's mark and a drag
    handle; between rows, the leg's figures the engine returns; Add a Stop
-   at the end.
+   at the end. A new plan, and half a route, are the same card with no
+   head (the owner, 2026-11-18): each end still to pick a row in its
+   place, its role ("Departure", "Destination") in a placeholder's grey
+   and a + on the tint's wash where a point's "•••" is, the course's
+   dotted line and the hairlines as a whole route's
+   (`procedures/TimelineRows`' `EndRow`); a tap asks the one search for
+   it, My Location first (`useRouteListEdit`'s `pickEnd`), as a point's
+   Change does. The end it has is its own row as on a whole route.
 3. The route string field (typed or pasted, Enter to compute), as
-   SkyVector's, under the rows, and the figures under it.
+   SkyVector's, under the rows, and the figures under it. Before the
+   route is whole it is folded into the card's last row, where Add a Stop
+   is after: "Type or Paste a Route", in the tint, after a filled tint
+   circle with More's keyboard glyph (`TypeRouteRow`); a tap opens the
+   field under the card, focused in the tap so a phone's keyboard comes
+   up (`routeBoxOpen`). On a whole route More's Type the Route opens it.
 4. The altitude (`FL045` style, decision 0009) and the figure strip at
    the foot: Leg or Dest, Distance, Time, Fuel (Time and Fuel only with
    an airplane), named in short words in sentence case. The first is
@@ -967,10 +983,11 @@ Edit and Done.
    `features/share/PlanUndoItems` over `lib/planUndo`), the history kept
    in the tab's session across a reload (rules.md §11). Before there is
    a route there is no •••: a route just cleared comes back from Undo at
-   the empty route box's end (`RouteEditor`'s `onUndo`, the same
+   the end of the empty route's Type or Paste a Route row (the field's
+   own while it is open, `RouteEditor`'s `onUndo`; the same
    `lib/planUndo`), till a new one is started, and half a route is
-   cleared by the box's stock ✕ (`onClear`; the owner, 2026-11-18).
-6. The empty route box says what it takes ("From, to, or a whole
+   cleared by the stock ✕ in the same place (the owner, 2026-11-18).
+6. The empty route field says what it takes ("From, to, or a whole
    route"); a route typed whole is read by the engine's `route_read`
    (DCT out, item 15's speed and level group the cruise).
 

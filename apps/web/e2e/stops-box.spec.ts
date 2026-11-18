@@ -210,9 +210,9 @@ test("an airport's card adds it as the route's next stop; a card of the route's 
   await page.getByTestId("place-add-stop").click();
   await expect(page).toHaveURL(/[?&]dep=KDLH/);
   await expect(page).not.toHaveURL(/[?&]dest=/);
-  // The route's box, at the pill's size.
+  // The route's timeline, at the pill's size: the destination to pick.
   await controlsInSight(page);
-  await expect(sideDrawer(page).getByTestId("route-type")).toHaveAttribute("data-placeholder", "Destination");
+  await expect(sideDrawer(page).getByTestId("timeline-pick-dest")).toHaveText("Destination");
 });
 
 test("the route's airports are marked by their airspace's ring and their weather's dot", async ({ page }) => {

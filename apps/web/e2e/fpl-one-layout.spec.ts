@@ -12,6 +12,7 @@ import {
   slow,
   suggestedRoutes,
 } from "./helpers";
+import { planFromSearch } from "./oneSearch";
 import { fromRest } from "./startState";
 
 /**
@@ -20,8 +21,8 @@ import { fromRest } from "./startState";
  * sheet where the pilot left it, the figures and the Routes' chips under
  * it. A line a point, Apple Maps' Directions' look: its mark (its menu),
  * its ident (a link to its card), its time and its grip; no city. A new
- * plan, or a route typed in, has the route's field open under it till
- * Done. Show Route As and its three layouts are gone, and the opened
+ * plan is the same card, its two ends to pick and the route to type; a
+ * route typed in has the route's field open under it till Done. Show Route As and its three layouts are gone, and the opened
  * Directions list with them.
  */
 test.describe("/app/plan", () => {
@@ -136,21 +137,28 @@ test.describe("/app/plan", () => {
     await expect(page).not.toHaveURL(/[?&]direct=/);
   });
 
-  test("a new plan opens its field, its two ends' cards to fill, no Done; a route typed in keeps it till Done", async ({ page }) => {
+  test("a new plan is the timeline's card, its two ends to pick, no head; a route typed in keeps its field till Done", async ({ page }) => {
     await page.goto("/app/plan");
     await settle(page);
-    await emptyPlan(page);
+    await openPanel(page);
+    await planFromSearch(page);
     const drawer = sideDrawer(page);
-    await expect(drawer.getByTestId("route-head")).toHaveText("Route");
+    // The empty route drawn as a whole one is (the owner, 2026-11-18): the
+    // two ends in a placeholder's words, the route to type last, its field
+    // folded till asked for, no "Route" over it and no Done.
+    const empty = drawer.getByTestId("route-empty");
+    await expect(empty).toBeVisible();
+    await expect(empty.getByRole("button", { name: "Pick the departure" })).toBeVisible();
+    await expect(empty.getByRole("button", { name: "Pick the destination" })).toBeVisible();
+    await expect(empty.getByTestId("timeline-type-route")).toHaveText("Type or Paste a Route");
+    await expect(drawer.getByTestId("route-head")).toHaveCount(0);
     await expect(drawer.getByTestId("route-done")).toHaveCount(0);
-    const ends = drawer.getByTestId("route-ends");
-    await expect(ends.getByRole("combobox", { name: "Departure" }).or(ends.getByRole("textbox", { name: "Departure" }))).toBeVisible();
-    await expect(ends.getByRole("combobox", { name: "Destination" }).or(ends.getByRole("textbox", { name: "Destination" }))).toBeVisible();
-    await expect(drawer.getByTestId("route-type")).toBeVisible();
+    await expect(drawer.getByTestId("route-type")).toHaveCount(0);
 
-    // A whole route pasted into the field keeps it open, the pilot still
-    // at it, till Done folds it.
-    await drawer.getByTestId("route-type").click();
+    // Its Type or Paste a Route opens the field, focused; a whole route
+    // pasted into it keeps it open, the pilot still at it, till Done folds it.
+    await empty.getByTestId("timeline-type-route").click();
+    await expect(drawer.getByTestId("route-type")).toBeFocused();
     await page.keyboard.insertText("KORD KOMA KDEN");
     await page.keyboard.press("Enter");
     await expect(drawer.getByTestId("route-done")).toBeVisible({ timeout: slow(30_000) });

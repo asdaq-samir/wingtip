@@ -29,12 +29,14 @@ test("the route's field is under FPL's bar and the route's cards, the airplane's
 }) => {
   // The owner, 2026-11-14: the N-number strip with its buttons the sheet's
   // first row's bar; half a route is open to edit (the one layout, decision
-  // 0046), its field under its cards.
+  // 0046), its field under its timeline once its Type or Paste a Route
+  // opens it (the owner, 2026-11-18).
   await page.setViewportSize({ width: 390, height: 844 });
   await ownersText(page);
   await page.goto(ROUTE);
   await settle(page);
   await openPanel(page);
+  await sideDrawer(page).getByTestId("timeline-type-route").click();
   const box = sideDrawer(page).getByTestId("route-box");
   const m = await box.evaluate((el) => {
     const strip = document.querySelector('[data-testid="route-strip"]')!.getBoundingClientRect();
@@ -72,7 +74,7 @@ test("a field of half a route offers its procedures whole, with no runways' outl
   }
 });
 
-test("the box's Departure asks for it in the search, where the airplane is first, and a pick plans from there", async ({
+test("the timeline's Departure asks for it in the search, where the airplane is first, and a pick plans from there", async ({
   page,
   context,
 }) => {
@@ -84,11 +86,13 @@ test("the box's Departure asks for it in the search, where the airplane is first
   await page.goto(ROUTE);
   await settle(page);
   await openPanel(page);
-  // The word itself is the ask, as a field's placeholder takes the tap.
-  await sideDrawer(page).getByTestId("route-box").getByText("Departure", { exact: true }).click();
+  // Its row in the departure's place, a placeholder's word, is the ask.
+  await sideDrawer(page).getByTestId("timeline-pick-dep").click();
   const here = page.getByTestId("search-do-my-position");
   await expect(here).toBeVisible({ timeout: slow(10_000) });
   await here.click();
   await expect(page).toHaveURL(/dep=%40|dep=@/);
-  await expect(sideDrawer(page).getByTestId("route-dep")).toContainText("My Location");
+  await expect(sideDrawer(page).getByTestId("timeline-line").first().getByTestId("timeline-ident")).toHaveText("My Location", {
+    timeout: slow(30_000),
+  });
 });

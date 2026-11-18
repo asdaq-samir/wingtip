@@ -6,7 +6,7 @@ import { loadFplStrip } from "../../search";
 import { fromChunk } from "../../../lib/fromChunk";
 import { FplActions } from "./FplActions";
 import { RouteEditor } from "../routePanelParts";
-import { routeEditing } from "./routeEditing";
+import { routeBoxOpen, routeEditing } from "./routeEditing";
 import type { PlanSlices } from "../vm/planSlices";
 
 /** The strip under an empty route, off the first load (scripts/first-load.mjs):
@@ -20,10 +20,11 @@ const FplStrip = fromChunk(loadFplStrip, (m) => m.default).Part;
  * Brief, the Nav Log, the Profile and the Stops, are over the sheet beside
  * it (PlanCards), kept in flight when no page is drawn. The route is its
  * timeline in the row over this page (RouteHead, decision 0046); its field
- * and figures open under it here while it is not yet whole or is typed in
- * (RouteEditor); in flight the route read (the nav log's list). With no route,
- * the two ends' cards to fill and the field, and the flights saved and the
- * routes planned last under them, nothing between (the owner, 2026-11-11:
+ * and figures open under it here once asked for, by the timeline's Type or
+ * Paste a Route or More's Type the Route (RouteEditor); in flight the
+ * route read (the nav log's list). With no route, the timeline's card with
+ * the two ends to pick over this page, and the flights saved and the
+ * routes planned last under it, nothing between (the owner, 2026-11-11:
  * "We don't need plan a flight either with two buttons"; the search is the
  * other page, its toggle beside FPL's bar).
  */
@@ -56,7 +57,7 @@ export default function PlanPage({
         </div>
         {navLog}
       </div>
-      {editing && (
+      {routeBoxOpen(vm) && (
         // Its room while its code comes: the field's own line.
         <Suspense fallback={<div className="mx-4 mt-2 h-10 rounded-(--radius-banner) bg-card" />}>
           <RouteEditor vm={vm} />

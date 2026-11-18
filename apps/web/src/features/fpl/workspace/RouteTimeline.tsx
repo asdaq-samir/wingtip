@@ -10,6 +10,7 @@ import { TimelineRoute, visitAt, visitRow, type TimelinePoint } from "../../proc
 import { etaAt } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
 import type { ProceduresRouteProps } from "../../procedures/lazy";
+import { MissingEnd, TypeRow } from "./RouteStart";
 
 /**
  * FPL's route on the ground, the one layout (decision 0046) and where it
@@ -26,7 +27,8 @@ import type { ProceduresRouteProps } from "../../procedures/lazy";
  * and its line does not open to its runways and procedures; where the
  * card could not be had, its line says so. Each visit of a point the
  * route is at twice is its own (visitAt): its time is that visit's. No city on a line (the owner, 2026-11-17: "We don't need to say
- * the city name"); a Direct To's start is My Location.
+ * the city name"); a Direct To's start is My Location. Half a route has
+ * the end it lacks to pick in its place and the route to type last.
  */
 export default function RouteTimeline({
   vm,
@@ -36,7 +38,7 @@ export default function RouteTimeline({
   /** The route's fields and points as the procedures draw them (useRouteListProps). */
   props: ProceduresRouteProps;
 }) {
-  const { depart, fuelParam, planned, routePoints } = vm.route;
+  const { depart, fuelParam, planned, routePoints, wholeRoute } = vm.route;
   const { aircraft, changeDepart, s } = vm.plan;
   const { routeRows } = vm.leg;
   const { metarCategory } = vm.brief;
@@ -96,5 +98,16 @@ export default function RouteTimeline({
       field,
     };
   });
-  return <TimelineRoute {...props} points={points} />;
+  // Half a route, open to edit: the end it lacks in its place, and the
+  // route typed or pasted where Add a Stop is on a whole one (RouteStart).
+  const half = !read && !wholeRoute;
+  return (
+    <TimelineRoute
+      {...props}
+      points={points}
+      head={half && !planned.dep ? <MissingEnd vm={vm} end="Departure" /> : undefined}
+      tail={half && !planned.dest ? <MissingEnd vm={vm} end="Destination" /> : undefined}
+      foot={half ? <TypeRow vm={vm} /> : undefined}
+    />
+  );
 }

@@ -3,7 +3,7 @@ import { CAPSULE_HIT, GLASS_PICKED } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
 
 // The classes and styles FPL's route list (ProceduresRoute) and its parts
-// share: its cards (routeCard, RouteEnds), its rows (procedures/RouteRows,
+// share: its cards (routeCard), its rows (procedures/RouteRows,
 // FieldStep) and its chips (procedures/PatternChips, ProcedureSheet).
 
 /** The line that joins the route's points down FPL's list, in the course's

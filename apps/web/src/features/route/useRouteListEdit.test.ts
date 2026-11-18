@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addedRoute, movedRoute, replacedRoute } from "./useRouteListEdit";
+import { addedRoute, endedRoute, movedRoute, replacedRoute } from "./useRouteListEdit";
 
 // Airports by their four letters, a waypoint by its five.
 const isEnd = (p: string) => p.length === 4 || p.startsWith("@");
@@ -53,5 +53,24 @@ describe("a stop added from FPL's timeline", () => {
 
   it("is never My Location", () => {
     expect(addedRoute(["KUGN", "KMSN", "KDLH"], 2, "@42.2,-87.9")).toBeNull();
+  });
+});
+
+describe("an end the route lacks, picked from its row on FPL's timeline", () => {
+  it("is put in its place, in capitals, the rest kept", () => {
+    expect(endedRoute({ dep: "", stops: [], dest: "" }, "Departure", " kmsn ")).toEqual({ dep: "KMSN", stops: [], dest: "" });
+    expect(endedRoute({ dep: "KMSN", stops: ["KJVL"], dest: "" }, "Destination", "kdlh")).toEqual({
+      dep: "KMSN",
+      stops: ["KJVL"],
+      dest: "KDLH",
+    });
+  });
+
+  it("takes My Location as it is", () => {
+    expect(endedRoute({ dep: "", stops: [], dest: "KDLH" }, "Departure", "@42.2,-87.9")).toEqual({
+      dep: "@42.2,-87.9",
+      stops: [],
+      dest: "KDLH",
+    });
   });
 });

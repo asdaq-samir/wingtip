@@ -54,7 +54,7 @@ test("a cleared route comes back from the toast's Undo, and again from the keybo
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
 });
 
-test("a cleared route comes back from the empty route box's Undo, which goes once a new route is started", async ({ page }) => {
+test("a cleared route comes back from the empty route's Undo, which goes once a new route is started", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -69,10 +69,12 @@ test("a cleared route comes back from the empty route box's Undo, which goes onc
   await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
 
-  // Cleared again and a new route started: no Undo in the box.
+  // Cleared again and a new route started in the field Type or Paste a
+  // Route opens, focused: no Undo then.
   await clearTheRoute(page);
   await expect(undo).toBeVisible();
-  await sideDrawer(page).getByTestId("route-type").click();
+  await sideDrawer(page).getByTestId("timeline-type-route").click();
+  await expect(sideDrawer(page).getByTestId("route-type")).toBeFocused();
   await page.keyboard.insertText("KMSN");
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/[?&](dep|dest)=KMSN(&|$)/);

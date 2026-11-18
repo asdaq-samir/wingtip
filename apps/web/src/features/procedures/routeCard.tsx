@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "cn";
 import { ROUTE_LINE } from "./routeListStyle";
-import { colourOf } from "../../lib/map/marks/flightCategory";
-import { AirportMark } from "../navlog/lazy";
 
 /**
  * The course's line through the cards, from each card's mark to the
@@ -32,13 +30,3 @@ export const CardMark = ({ children }: { children: ReactNode }) => (
     <span className="grid place-items-center rounded-full bg-foreground/8">{children}</span>
   </span>
 );
-
-/** An empty card's mark: the airport symbol, no airspace or weather yet,
- *  faded, on the grey disc an airport's mark has (PointMenu's face). */
-export function EmptyMark() {
-  return (
-    <span className="-mx-1 grid size-9 place-items-center rounded-full bg-foreground/8 opacity-50">
-      <AirportMark airspaceClass={null} colour={colourOf(null)} size={22} />
-    </span>
-  );
-}

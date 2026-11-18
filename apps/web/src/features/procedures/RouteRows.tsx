@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { cn } from "cn";
 import { ROUTE_LINE } from "./routeListStyle";
@@ -109,27 +109,5 @@ export function Step({
         {children}
       </section>
     </div>
-  );
-}
-
-/** A stop before the destination, as Maps' Add Stop is, the last row of
- *  FPL's timeline (TimelineRoute): the stock Button, a whole row's width
- *  and a 44-point row (the audit's WEB-18), its mark Apple Maps' -- a
- *  filled circle in the tint with a white + -- and its words in the tint,
- *  after the timeline's inset hairline. */
-export function AddStopRow({ disabled, onClick }: { disabled: boolean; onClick: () => void }) {
-  return (
-    <Button
-      variant="ghost"
-      disabled={disabled}
-      onClick={onClick}
-      data-testid="timeline-add-stop"
-      className={cn("h-11 w-full justify-start gap-3 px-0 text-tint hover:bg-transparent", TEXT.row)}
-    >
-      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-tint text-white">
-        <Plus className="size-4" strokeWidth={2.6} aria-hidden />
-      </span>
-      <span className="flex h-full flex-1 items-center border-t border-border">Add a Stop</span>
-    </Button>
   );
 }

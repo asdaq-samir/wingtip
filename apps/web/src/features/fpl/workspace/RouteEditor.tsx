@@ -2,19 +2,19 @@ import { Suspense } from "react";
 import { SearchNear } from "../../../lib/useAirportSearch";
 import { usePlanUndo } from "../../../lib/planUndo";
 import { coverCard, useSheetCards } from "../../../lib/sheetCards";
-import { RouteEnds } from "../routePanelParts";
-// The route's field, on a chunk of its own: the first screen draws it.
+// The route's field, on a chunk of its own, asked for beside the first
+// script (main.tsx) so it is in hand at the first Type or Paste a Route.
 import { RouteBox } from "../../route";
 import type { PlanSlices } from "../vm/planSlices";
 import { FlightFigures } from "./FlightFoot";
 
 /**
- * FPL's route's field, open under its timeline (RouteHead) while there is
- * no whole route or one is typed in (routeEditing; decision 0046): with no
- * route its two ends' cards to fill (RouteEnds); the route's field to type
- * or paste a whole route in, read by the engine's route_read as it always
- * was (RouteBox); and once the route is whole its figures under it,
- * changing as it is edited, till Done.
+ * FPL's route's field, open under its timeline (RouteHead) once asked for
+ * (routeBoxOpen; decision 0046): the timeline's Type or Paste a Route
+ * before the route is whole, More's Type the Route after. The route's
+ * field to type or paste a whole route in, read by the engine's route_read
+ * as it always was (RouteBox); and once the route is whole its figures
+ * under it, changing as it is edited, till Done.
  */
 export default function RouteEditor({
   vm,
@@ -47,18 +47,6 @@ export default function RouteEditor({
         if (!event.currentTarget.contains(event.relatedTarget)) setEditorFocused(false);
       }}
     >
-      {/* Half a route lists its fields over the field (the list above), and
-          the field says the end it lacks. */}
-      {!hasPoints && (
-        <Suspense fallback={<div className="h-[7.75rem]" />}>
-          <RouteEnds
-            dep={planned.dep}
-            dest={planned.dest}
-            onDep={(dep) => setRoute({ dep, stops: planned.stops, dest: planned.dest })}
-            onDest={(dest) => setRoute({ dep: planned.dep, stops: planned.stops, dest })}
-          />
-        </Suspense>
-      )}
       {/* The route's field: a whole route typed or pasted, its points as
           pills; its room while its code comes, the box's own line. */}
       <div className="pt-2">

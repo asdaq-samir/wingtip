@@ -675,7 +675,7 @@ keyboard too; where it rides and the sheet on the screen's foot; a
 44-point toggle and the one grabber bar) and, for the cards
 over the pages, [`e2e/sheet-pages-cards.spec.ts`](../../apps/web/e2e/sheet-pages-cards.spec.ts)
 (`@smoke`: Fly Here from an airport's card lands on FPL, live); FPL's one
-layout, folded and opened, its labels and a new plan's cards, in
+layout, folded and opened, its labels and a new plan's card, in
 [`e2e/fpl-one-layout.spec.ts`](../../apps/web/e2e/fpl-one-layout.spec.ts)
 (nightly).
 
@@ -1071,6 +1071,9 @@ less cluttered". Decision [0044](../decisions/0044-fpl-for-every-pilot.md).
    route typed whole ("KPWK V100 KLAS", "N0110A065 KPWK DCT OBK V100
    KLAS"), the engine reading the words (`route_read`, AIM Appendix 4);
    the empty field says what it takes ("From, to, or a whole route").
+   On the web, before the route is whole, the field is folded into the
+   route's card's last row, "Type or Paste a Route", the ends still to
+   pick rows of the same card (the owner, 2026-11-18).
 3. **Explain on tap.** An abbreviation (MH, MC, ETE, TOC, TOD, FL, the VFR
    and IFR levels ...) is a tap on the word itself, in the tint, which
    opens one plain sentence with its source in the stock Popover; nothing
