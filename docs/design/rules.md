@@ -258,7 +258,7 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    picked tab in the tint on a soft lighter pill, Weather with the field's category dot
    and Charts with its count. Each tab is an icon (Info, CloudSun,
    PlaneLanding, FileText; the owner, 2026-11-14: "make the tabs icons
-   instead so it takes less space"), every tab showing its word under its icon (the owner, 2026-11-14, from an iOS 26 tab bar: "similar size and see through"), in a compact 64-point capsule, as narrow as its tabs need and centred, with equal columns, the glass much more see-through (`material.bar-fill` 0.6, the blur kept), so nothing moves on a switch, each named by its aria-label
+   instead so it takes less space"), every tab showing its word under its icon (the owner, 2026-11-14, from an iOS 26 tab bar: "similar size and see through"), in the one floating bar FPL's actions are drawn in too (`components/FloatingBar`; the owner, 2026-11-18: "Yes make it common. Also I meant shorter not narrower, but apply the same height and width for both"): items 48 points tall in a 56-point capsule, the glyph 24 over the word on the `tab-bar` type (12/16 regular, iOS 26's tab bar), 300 points wide (18.75 rem, growing with the text size as the words do, capped at the room there is, never narrower than its words, 4 points over the screen's foot or the home indicator's inset, so FPL's figures at half clear it), centred, with equal columns, the glass much more see-through (`material.bar-fill` 0.6, the blur kept), so nothing moves on a switch, each named by its aria-label
    ("Weather, VFR"), the dot and count over the icon's corner. The bar is glass because it floats over the
    card (the owner's decision of 2026-11-10 keeps glass for what floats).
    This replaces T4's tabs under the actions and its one-line report.
@@ -515,7 +515,8 @@ off by default (the owner, 2026-11-13).
    form in their place (the owner's pick of the stock fit, 2026-11-17); in
    flight and in a dry run no To, which the flying head names, so Distance,
    Time, Fuel and the GPS altitude are its four columns; and at the sheet's foot from
-   half up a floating glass bar, the airport card's tab bar's capsule
+   half up a floating glass bar, the one floating bar the airport card's
+   tabs are drawn in, the same height and width (`FloatingBar`, 2026-11-18),
    round Base UI's stock Toolbar (one tab stop, the arrows between them),
    of four buttons: Brief, Nav Log and Profile, each opening its card
    over FPL, and the route's •••, "More", its one menu -- undo and redo,

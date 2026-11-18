@@ -2,19 +2,21 @@ import type { ComponentProps, ReactNode } from "react";
 import { Toolbar } from "@base-ui/react/toolbar";
 import { useVerdict } from "../../../lib/verdict";
 import { findingRows } from "../vm/planWords";
-import { CardAction as Action } from "../../../components/CardAction";
-import { GlassBar, TabCount } from "../../../components/CardTabBar";
+import { FloatingBar, FloatingBarButton, TabCount } from "../../../components/FloatingBar";
 import { ICON } from "../../../lib/icons";
 import type { PlanSlices } from "../vm/planSlices";
 import { MAKES_WAY } from "../../../components/sheet/pinAtFoot";
+import { EDGE_ROOM } from "../../../components/sheet/insets";
+import { FLOATING_BAR_SHEET_ROOM } from "../../../components/floatingBarLook";
 import { cn } from "cn";
 
 /**
  * FPL's actions as a floating glass bar at the sheet's foot (the owner,
  * 2026-11-16: "make those action buttons as tab bar again and move the
  * calculations strip to where the action buttons are now"): Brief, Nav Log,
- * Profile, each its 24-point glyph over its word in one capsule,
- * as the airport card's tabs are drawn (CardTabBar), but buttons, not tabs:
+ * Profile, each its 24-point glyph over its word in one capsule, the one
+ * floating bar the airport card's tabs are drawn in too (FloatingBar, the
+ * same height and width; the owner, 2026-11-18), but buttons, not tabs:
  * each opens its card over FPL as the tiles did (the owner's pick, "Bar
  * look, open cards"), and last the route's one menu, ••• "More" (`more`,
  * ShareMenu's bar look; the owner, 2026-11-17: "move everything to the tab
@@ -23,7 +25,7 @@ import { cn } from "cn";
  * From half up; at the pill the figures alone, large (FlightFoot).
  * What the Brief found to act on is counted on its glyph's corner, red
  * where one is a stop, amber where all are cautions (CardTabBar's
- * TabCount, the one badge, each colour one meaning): the findings themselves
+ * FloatingBar's TabCount, the one badge, each colour one meaning): the findings themselves
  * are the Brief's, which opens with them (the owner, 2026-11-16: "isn't
  * there a better place for them? Like brief"), not a list on FPL. The
  * Profile's own altitude caution the same, a 1. Both said in their names.
@@ -31,7 +33,7 @@ import { cn } from "cn";
  * The capsule is Base UI's stock Toolbar (the owner, 2026-11-17: stock
  * parts where they avoid bugs): one tab stop, the arrows between its
  * buttons (the APG toolbar), as the playback bars are (PlaybackBar), and
- * each button a Toolbar.Button rendering its CardAction, the ••• the
+ * each button a Toolbar.Button rendering a FloatingBarButton, the ••• the
  * route's menu's trigger rendering one (ShareMenu's `look="bar"`).
  */
 export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan">; more: ReactNode }) {
@@ -52,21 +54,21 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
     // pill, where they are held on the foot's edge (data-makes-way,
     // sheet/pinAtFoot's MAKES_WAY; the owner, 2026-11-18: "the main issue
     // is tab bar is not allowing the figures to go past it").
-    <div data-makes-way="" className={cn("pointer-events-none -mx-4 flex justify-center px-4 pt-2", MAKES_WAY)} data-testid="fpl-actions">
-      {/* The glass capsule, the airport card's bar's (CardTabBar): glass
-          only on what floats (rules.md). Each button 56 tall in its
-          columns, side by side, so their areas are over 44 points. */}
-      <Toolbar.Root
-        aria-label="Route"
-        render={<GlassBar className="pointer-events-auto grid h-16 max-w-full auto-cols-fr grid-flow-col" />}
-      >
+    // Its room under it the floating bar's (FLOATING_BAR_SHEET_ROOM), in
+    // place of the sheet's 8-point edge (EDGE_ROOM) under the foot: the
+    // margin takes back the difference, 4 points with no home indicator.
+    <div
+      data-makes-way=""
+      className={cn("pointer-events-none -mx-4 flex justify-center px-4 pt-2", MAKES_WAY)}
+      style={{ marginBottom: `calc(${FLOATING_BAR_SHEET_ROOM} - ${EDGE_ROOM})` }}
+      data-testid="fpl-actions"
+    >
+      {/* The one floating bar's capsule (FloatingBar), the airport
+          card's too: glass only on what floats (rules.md). */}
+      <Toolbar.Root aria-label="Route" render={<FloatingBar className="pointer-events-auto" />}>
         <BarAction
-          icon={
-            <span className="relative flex">
-              <ICON.brief />
-              {briefMark && found > 0 && <TabCount count={found} mark={briefMark} testId="route-brief-count" />}
-            </span>
-          }
+          icon={<ICON.brief />}
+          badge={briefMark && found > 0 && <TabCount count={found} mark={briefMark} testId="route-brief-count" />}
           label="Brief"
           spoken={briefMark && found > 0 ? `Brief, ${found} ${found === 1 ? "finding" : "findings"} to look at` : undefined}
           onClick={openBrief}
@@ -78,12 +80,8 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
         />
         <BarAction icon={<ICON.navLog />} label="Nav Log" onClick={openNavLogCard} disabled={!course} testId="route-navlog" />
         <BarAction
-          icon={
-            <span className="relative flex">
-              <ICON.profile />
-              {altitudeMark && <TabCount count={1} mark="caution" testId="route-profile-count" />}
-            </span>
-          }
+          icon={<ICON.profile />}
+          badge={altitudeMark && <TabCount count={1} mark="caution" testId="route-profile-count" />}
           label="Profile"
           spoken={
             altitudeMark === "caution"
@@ -102,10 +100,10 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
   );
 }
 
-/** One of the bar's buttons: a Toolbar.Button drawn as a CardAction in
- *  its bar look, which takes the button's ref, keys and roving tab stop. A
- *  greyed one is left out of the arrows' way, as a native disabled button
- *  is out of the Tab key's (focusableWhenDisabled off). */
-function BarAction({ disabled, ...action }: Omit<ComponentProps<typeof Action>, "bar">) {
-  return <Toolbar.Button disabled={disabled} focusableWhenDisabled={false} render={<Action bar {...action} />} />;
+/** One of the bar's buttons: a Toolbar.Button drawn as the bar's
+ *  FloatingBarButton, which takes the button's ref, keys and roving tab
+ *  stop. A greyed one is left out of the arrows' way, as a native disabled
+ *  button is out of the Tab key's (focusableWhenDisabled off). */
+function BarAction({ disabled, ...action }: ComponentProps<typeof FloatingBarButton>) {
+  return <Toolbar.Button disabled={disabled} focusableWhenDisabled={false} render={<FloatingBarButton {...action} />} />;
 }

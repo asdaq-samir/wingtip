@@ -2,6 +2,7 @@ import type { ComponentProps } from "react";
 import { Ellipsis, Share } from "lucide-react";
 import IconButton from "../../components/IconButton";
 import { CardAction } from "../../components/CardAction";
+import { FloatingBarButton } from "../../components/FloatingBar";
 import type { RouteCard } from "../../lib/openCards";
 
 const SHARE_LABEL: Record<"route" | RouteCard, string> = {
@@ -36,6 +37,18 @@ export function TriggerButton({
   ComponentProps<"button">,
   "children" | "onClick" | "disabled"
 >) {
+  // In FPL's floating bar, one of its items (FloatingBar).
+  if (look === "bar")
+    return (
+      <FloatingBarButton
+        icon={<Ellipsis />}
+        badge={<StaleMark stale={stale} />}
+        label={SHARE_LABEL.route}
+        spoken={stale.length ? `More: ${stale.join(", ")}` : undefined}
+        testId={testId}
+        {...trigger}
+      />
+    );
   if (look)
     return (
       <CardAction
@@ -48,7 +61,6 @@ export function TriggerButton({
         label={SHARE_LABEL.route}
         spoken={stale.length ? `More: ${stale.join(", ")}` : undefined}
         testId={testId}
-        bar={look === "bar"}
         {...trigger}
       />
     );

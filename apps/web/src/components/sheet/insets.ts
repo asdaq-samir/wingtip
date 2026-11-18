@@ -85,6 +85,14 @@ export const RISEN_FACE = `${PILL_BODY} group-data-risen/sheet:visible`;
  *  recording, 2026-11-16: "Still see the flicker at the end"). */
 export const RISEN_OVER = `${PILL_BODY} ${HANDED} opacity-0 group-data-swiping/sheet:opacity-100`;
 
+/** Eight points at a bottom sheet's foot where there is no home indicator
+ *  (its viewport ends over the indicator, SheetDrawer), none while the
+ *  keyboard is up: the Drawer's --drawer-keyboard-inset is 0 or a
+ *  keyboard's height, so the room less a thousand times it is the room or
+ *  nothing. SheetParts' spacer at the foot; a floating bar in the foot
+ *  takes some of it back (FplTabBar). */
+export const EDGE_ROOM = "max(0px, calc(8px - env(safe-area-inset-bottom) - var(--drawer-keyboard-inset, 0px) * 1000))";
+
 /** Held at a sheet's free edge however far the sheet is slid: moved back by
  *  the Drawer's snap offset and the finger's movement, on its curve, held
  *  still under a finger -- the foot's figures and bar (SheetParts), a
