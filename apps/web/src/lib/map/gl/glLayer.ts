@@ -303,7 +303,13 @@ export function drawnWithData(map: MlMap, source: string, data: GeoJSON.GeoJSON 
       map.setLayerZoomRange(id, NO_LEVEL, NO_LEVEL);
     } else if (!empty && was) {
       kept.delete(id);
-      map.setLayerZoomRange(id, was[0], was[1]);
+      // Given back only if it is still hidden by this: a layer whose range
+      // its owner set while it was hidden (AirportWeatherGl's station model
+      // from zoom 10) keeps that one, where giving back the range kept
+      // before put the station model, its barbs and its "10 SM" on every
+      // field at the whole country's zoom (the owner's screenshot,
+      // 2026-11-18).
+      if (layer.minzoom === NO_LEVEL) map.setLayerZoomRange(id, was[0], was[1]);
     }
   }
 }

@@ -44,4 +44,19 @@ describe("drawnWithData", () => {
     drawnWithData(map, "dots", ONE);
     expect(layers.get("dots-names")).toMatchObject({ minzoom: 8, maxzoom: 14 });
   });
+
+  it("keeps a range the layer's owner set while it was hidden", () => {
+    // AirportWeatherGl sets its station model from zoom 10 as the setting
+    // is read, which can be while its source is still empty: the data
+    // coming must not put back the range from before (every zoom).
+    const { map, layers } = fakeMap();
+    drawnWithData(map, "dots", EMPTY);
+    map.setLayerZoomRange("dots", 10, 24);
+    drawnWithData(map, "dots", ONE);
+    expect(layers.get("dots")).toMatchObject({ minzoom: 10, maxzoom: 24 });
+    // And hidden again when it empties, given back its owner's range after.
+    drawnWithData(map, "dots", EMPTY);
+    drawnWithData(map, "dots", ONE);
+    expect(layers.get("dots")).toMatchObject({ minzoom: 10, maxzoom: 24 });
+  });
 });
