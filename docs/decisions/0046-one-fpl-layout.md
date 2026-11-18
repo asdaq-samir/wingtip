@@ -52,7 +52,11 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    2026-11-17, "make a small pill at the separator"), a tap unfolding them and another
    folding them again, a stop's open line keeping them out (the owner,
    2026-11-17: "With any stops in between dep and dest, we can fold the
-   stops by saying how many stops"). Add a Stop is the
+   stops by saying how many stops"); Base UI's Collapsible holds whether
+   they are out, its trigger the pill, whose area keeps a point above and
+   below it, off the rows either side, and is never dragged. A point moved
+   unfolds them, and a route changed closes the open line, as its key is
+   its place. Add a Stop is the
    last row, its mark the tint's + and its words in the tint, asking the
    one search (no microphone of its own: the search's field has one).
    Then the figures; the suggested routes' chips behind a button at the start of the first row, before the airplane's bar (now as wide as its pills), out above the stops while it is on (RoutesToggle; the owner, 2026-11-17: "Can suggested routes be a button on top right? Which shows route pills just above the stops", then "make the n-number and altitude container pill smaller and add the routes button on the top left").
@@ -79,18 +83,25 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    waypoint open nothing. A field NASR lists as closed (the engine's
    field_status, decision 0043), or a point the planner does not know,
    says why in red under its line ("Closed permanently. Pick another
-   field."), no chips. The stock parts carry it: React Aria's GridList the
+   field."), no chips; a field whose card has not yet said whether it is
+   open does not open, and one whose card could not be had says so in
+   red there. Each visit of a point the route is at twice is its own
+   line: its time, fuel, altitude (its own by visit, `visitKey`) and Hold
+   Here are that visit's, and its Remove takes out that visit alone. The stock parts carry it: React Aria's GridList the
    list, its drag and drop the hold and the grip that move a point and
    the keyboard's moves, a point offered no drop line where it may not go
    (a waypoint at an end; My Location anywhere but an end, never a stop on
-   the way, the owner 2026-11-17), the menu's Move Up and Down likewise; a stop taken out by its mark's menu's Remove
+   the way, the owner 2026-11-17; no point beside the same), one rule
+   (`placeAllowed`, features/route/routeEdit) that the moves, Change, Add a
+   Stop, Remove and the route box's pills all ask, the menus' Move Up and
+   Down offered only where it holds; a stop taken out by its mark's menu's Remove
    alone (the plan's toast Undo): the hand-built swipe to the left fought
    the runway tray's sideways slide and was dropped (the owner,
    2026-11-17: "We don't have to do the swipe to remove"); Base UI's Collapsible the line's opening;
    Base UI's menus the mark's menu and the chips (`TimelineRoute`,
    `TimelineLine`).
 3. **A point is changed from its mark's menu** (Change, by the one search,
-   My Location offered first where the point is not it; a Direct To's
+   My Location offered first where an end is not it, never for a stop; a Direct To's
    start changed a route from there), as are Direct To, Set Altitude, Hold
    Here, Create a Fix, Add a Stop After, Move Up and Down and Remove;
    "Runways & Procedures" left the menu, the line's tap its home. The

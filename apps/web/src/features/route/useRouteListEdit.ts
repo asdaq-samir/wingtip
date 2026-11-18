@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { identOf, isAirwayToken, isPosition } from "../../lib/identSchema";
 import type { RouteParts } from "./RouteBox";
+import { placeAllowed } from "./routeEdit";
 import type { PlanCourse } from "../plan";
 import { askSearchPick } from "../../lib/oneSearch";
 
@@ -9,36 +10,40 @@ import { askSearchPick } from "../../lib/oneSearch";
  *  keeps them -- a waypoint is flown through, never taken off from or
  *  landed at --, My Location (a position) at an end alone, where the
  *  route starts from or comes back to where the airplane is, never a stop
- *  on the way (the owner, 2026-11-17), and no point beside the same; null
- *  where the move would break any. */
+ *  on the way, and no point beside the same (placeAllowed); null where the
+ *  move would break any. */
 export function movedRoute(points: string[], from: number, to: number, isEnd: (point: string) => boolean): RouteParts | null {
   const next = [...points];
   const [moved] = next.splice(from, 1);
   if (moved === undefined || next.length < 1) return null;
   next.splice(to, 0, moved);
-  if (!isEnd(next[0]!) || !isEnd(next.at(-1)!) || next.some((p, i) => i > 0 && p === next[i - 1])) return null;
-  if (next.slice(1, -1).some(isPosition)) return null;
-  return { dep: next[0]!, stops: next.slice(1, -1), dest: next.at(-1)! };
+  if (!isEnd(next[0]!) || !isEnd(next.at(-1)!)) return null;
+  return partsIfAllowed(next);
+}
+
+/** The points as the route's parts where each may go there (placeAllowed). */
+function partsIfAllowed(next: string[]): RouteParts | null {
+  const parts = { dep: next[0]!, stops: next.slice(1, -1), dest: next.at(-1)! };
+  return placeAllowed(parts) ? parts : null;
 }
 
 /** The route's points with the one at `at` made `ident` (its menu's
- *  Change, the one search's pick): null where it is empty or the same as
- *  its neighbour's, a leg of none. */
+ *  Change, the one search's pick): null where it is empty or may not go
+ *  there (placeAllowed: the same as its neighbour's, or My Location as a
+ *  stop). */
 export function replacedRoute(points: string[], at: number, ident: string): RouteParts | null {
   if (at < 0 || at >= points.length) return null;
   const next = [...points];
   next[at] = ident.trim().toUpperCase();
-  if (!next[at] || next.some((p, i) => i > 0 && p === next[i - 1])) return null;
-  return { dep: next[0]!, stops: next.slice(1, -1), dest: next.at(-1)! };
+  return next[at] ? partsIfAllowed(next) : null;
 }
 
 /** The route's points with `ident` put in at `at` (Add a Stop): null
- *  where it would sit beside the same point, a leg of none. */
+ *  where it may not go there (placeAllowed). */
 export function addedRoute(points: string[], at: number, ident: string): RouteParts | null {
   if (at < 1 || at >= points.length) return null;
   const next = [...points.slice(0, at), ident.trim().toUpperCase(), ...points.slice(at)];
-  if (!next[at] || next.some((p, i) => i > 0 && p === next[i - 1])) return null;
-  return { dep: next[0]!, stops: next.slice(1, -1), dest: next.at(-1)! };
+  return next[at] ? partsIfAllowed(next) : null;
 }
 
 /**

@@ -5,7 +5,7 @@ import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "../../components/ui/collapsible";
 import type { ProcedureAirport } from "../plan";
 import { TRAY_HEAD } from "./RunwayChips";
-import { useOpenRunwayLines, type ProceduresRouteModel } from "./useProceduresRoute";
+import { setRunwayLine, type ProceduresRouteModel } from "./useProceduresRoute";
 import type { FieldPart } from "./fieldParts";
 
 /** The tray's head: "RWY", the FAA's contraction (FAA Order JO 7340.2), in
@@ -52,9 +52,7 @@ function RunwayTray({
   return (
     <Collapsible
       open={foldable && lineOpen}
-      onOpenChange={(next) =>
-        useOpenRunwayLines.setState((st) => ({ open: next ? [...st.open, lineKey] : st.open.filter((k) => k !== lineKey) }))
-      }
+      onOpenChange={(next) => setRunwayLine(lineKey, next)}
       render={<div className="flex min-w-0 flex-1 items-start" />}
     >
       {foldable ? (

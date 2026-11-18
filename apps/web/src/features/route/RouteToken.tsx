@@ -40,6 +40,8 @@ interface TokenBox {
   onDirectTo?: (ident: string | null) => void;
   /** The points as a new list, the ends where they were. */
   change: (list: string[]) => void;
+  /** Whether the box would take that list: a move offered only where so. */
+  canChange: (list: string[]) => boolean;
   remove: (i: number) => void;
   editAltitude: (ident: string) => void;
   /** The arrow before point `before` tapped: a stop asked for there. */
@@ -76,6 +78,7 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
   const procs = first ? procedures.filter((p) => sameField(p.ident, point)) : [];
   const waypoint = waypoints.has(point);
   const unknown = box.unknown === point;
+  const stepped = (by: -1 | 1) => points.map((p, j) => (j === i ? points[i + by]! : j === i + by ? point : p));
   const fuel = !last && first ? fuelStops.filter((f) => sameField(f.departure, point)).slice(0, 1) : [];
   return (
     // In the sheet's own type, as the box's pills were, not the field's
@@ -128,8 +131,11 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
           />
         ))}
       <RoutePill
-        // A place earlier or later: the two neighbours swapped.
-        onStep={(by) => box.change(points.map((p, j) => (j === i ? points[i + by]! : j === i + by ? point : p)))}
+        // A place earlier or later: the two neighbours swapped, offered
+        // only where each point may go there (placeAllowed: My Location
+        // never a stop, no point beside the same).
+        onStep={(by) => box.change(stepped(by))}
+        canStep={(by) => i + by >= 0 && i + by < points.length && box.canChange(stepped(by))}
         last={last}
         ident={point}
         waypoint={waypoint}

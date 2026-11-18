@@ -2,10 +2,11 @@ import { useQueries } from "@tanstack/react-query";
 import { unknownWhy } from "../../../lib/api/client";
 import { leaveWhen } from "../../../lib/format/leaveWhen";
 import { identOf, isPosition } from "../../../lib/identSchema";
+import { NO_CONNECTION, noConnection } from "../../../lib/problems";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
 import { DepartPicker } from "../../navlog/lazy";
-import { TimelineRoute, type TimelinePoint } from "../../procedures/lazy";
+import { TimelineRoute, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
 import { etaAt } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
 import type { ProceduresRouteProps } from "../../procedures/lazy";
@@ -21,7 +22,10 @@ import type { ProceduresRouteProps } from "../../procedures/lazy";
  * it is a fuel stop, and what keeps it from being flown to: a point the
  * planner does not know, or a field NASR lists as closed (its card's
  * label, the engine's field_status; decision 0043), with "Pick another
- * field." No city on a line (the owner, 2026-11-17: "We don't need to say
+ * field." Until its card says whether it is open, a field is `checking`
+ * and its line does not open to its runways and procedures; where the
+ * card could not be had, its line says so. Each visit of a point the
+ * route is at twice is its own (visitAt): its time is that visit's. No city on a line (the owner, 2026-11-17: "We don't need to say
  * the city name"); a Direct To's start is My Location.
  */
 export default function RouteTimeline({
@@ -43,16 +47,28 @@ export default function RouteTimeline({
   // (useFieldColours) and its cards: whether NASR lists it closed.
   const fields = routePoints.filter((p) => !isPosition(p) && !!identOf(p) && !waypointStops.has(p));
   const cards = useQueries({ queries: fields.map((ident) => ({ ...airportQuery(ident), staleTime: 10 * 60_000 })) });
-  const closedOf = (ident: string) => cards[fields.indexOf(ident)]?.data?.closed ?? null;
-  const timeOf = (ident: string, role: TimelinePoint["role"]) => {
+  const cardOf = (ident: string) => cards[fields.indexOf(ident)];
+  // Whether NASR lists it closed, the engine's word on its card; until the
+  // card is in, not known (`checking`), never taken as open (decision
+  // 0043), and where it could not be had, said in its line.
+  const statusOf = (ident: string) => {
+    const card = cardOf(ident);
+    if (card?.data) return { closed: card.data.closed ?? null, checking: false, failed: null };
+    if (card?.isError || (card && noConnection(card)))
+      return {
+        closed: null,
+        checking: true,
+        failed: noConnection(card)
+          ? `${NO_CONNECTION}. Whether ${ident} is open is not known.`
+          : `Whether ${ident} is open could not be checked.`,
+      };
+    return { closed: null, checking: true, failed: null };
+  };
+  const timeOf = (ident: string, role: TimelinePoint["role"], seen: number) => {
     if (role === "Departure")
       return read ? depart ? leaveWhen(new Date(depart)) : "Now" : <DepartPicker value={depart} onChange={changeDepart} look="time" />;
     if (aircraft.none) return "—";
-    const row = routeRows.find(
-      (r) =>
-        (r.kind === "stop" || r.kind === "destination") &&
-        (role === "Destination" ? r.kind === "destination" : "airport" in r && sameField(r.airport.ident, ident)),
-    );
+    const row = visitRow(routeRows, role, ident, seen);
     return row ? etaAt(depart || new Date().toISOString(), row.minutesFlown) : "—";
   };
   const points: TimelinePoint[] = routePoints.map((ident, index) => {
@@ -64,14 +80,18 @@ export default function RouteTimeline({
           : "Stop";
     const field = fields.includes(ident);
     const unknown = s.unknownPlace?.ident && sameField(s.unknownPlace.ident, ident) ? unknownWhy(s.unknownPlace) : null;
-    const closed = field ? closedOf(ident) : null;
+    const status = field ? statusOf(ident) : { closed: null, checking: false, failed: null };
+    const { seen, visit } = visitAt(routePoints, index);
     return {
       ident,
       role,
       index,
-      time: timeOf(ident, role),
+      seen,
+      visit,
+      time: timeOf(ident, role, seen),
       category: unknown || !field ? null : metarCategory(ident),
-      problem: unknown ?? (closed ? `${closed}. Pick another field.` : null),
+      problem: unknown ?? (status.closed ? `${status.closed}. Pick another field.` : status.failed),
+      checking: status.checking,
       fuelStop: role === "Stop" && fuel.some((f) => sameField(f, ident)),
       field,
     };

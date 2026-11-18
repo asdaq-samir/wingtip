@@ -1,6 +1,6 @@
-import { MAX_STOPS, stopOf } from "../../lib/identSchema";
+import { MAX_STOPS, isPosition, stopOf } from "../../lib/identSchema";
 import { callEngine } from "../../lib/engine/engine";
-import { TYPED_PROCEDURE, type TypedProcedure } from "../../lib/procedures";
+import { sameField, TYPED_PROCEDURE, type TypedProcedure } from "../../lib/procedures";
 
 /** The route as the box changes it: either end may be missing (half a
  *  route, the other end still to be typed), and neither means none. */
@@ -27,18 +27,46 @@ export function pointsOf(route: RouteParts): string[] {
 }
 
 /**
+ * Where a point may go, the one rule every change of the route's points
+ * asks (a move, a Change, an Add a Stop, a removal, the box's list): My
+ * Location (a present position) at an end alone, where the route starts
+ * from or comes back to where the airplane is, never a stop on the way
+ * (the owner, 2026-11-17); and no point straight after itself, a leg of
+ * none (KDLH, KDLH, KMDW) -- but, where `roundTrip`, a route of one
+ * airport twice, a local flight, which the box lets through to be said
+ * and changed there.
+ */
+export function placeAllowed(route: RouteParts, roundTrip = false): boolean {
+  if (route.stops.some(isPosition)) return false;
+  const list = pointsOf(route);
+  return !list.some((p, i) => i > 0 && p === list[i - 1]) || (roundTrip && list.length === 2);
+}
+
+/** The route with one visit of a stop taken out: the one at `at` among
+ *  the route's points where that is the stop, else its first, never every
+ *  visit of it; null where it is not a stop, or where taking it out puts
+ *  a point straight after itself (placeAllowed). */
+export function withoutStop(route: RouteParts, ident: string, at?: number): RouteParts | null {
+  const offset = route.dep ? 1 : 0;
+  const placed = at === undefined ? -1 : at - offset;
+  const i = placed >= 0 && sameField(route.stops[placed] ?? "", ident) ? placed : route.stops.findIndex((s) => sameField(s, ident));
+  if (i < 0) return null;
+  const next = { ...route, stops: route.stops.filter((_, j) => j !== i) };
+  return placeAllowed(next, true) ? next : null;
+}
+
+/**
  * A list of points back into the route's parts, the ends kept where they
- * were. No end a waypoint, no more stops than the planner takes, and no
- * point straight after itself (KDLH, KDLH, KMDW) -- but a route of one
- * airport twice is let through, to be said (PlanWorkspace's notice) and
- * changed in the box. Null where the list breaks one of those.
+ * were. No end a waypoint, no more stops than the planner takes, and each
+ * point where it may go (placeAllowed) -- a route of one airport twice let
+ * through, to be said (PlanWorkspace's notice) and changed in the box.
+ * Null where the list breaks one of those.
  */
 export function routeOf(list: string[], withDep: boolean, withDest: boolean, isEnd: (ident: string) => boolean): RouteParts | null {
   const d = withDep && list.length ? list[0]! : "";
   const a = withDest && list.length > (d ? 1 : 0) ? list.at(-1)! : "";
   const route = { dep: d, stops: list.slice(d ? 1 : 0, a ? list.length - 1 : list.length), dest: a };
-  const repeats = list.some((p, i) => i > 0 && p === list[i - 1]) && list.length !== 2;
-  if ((d && !isEnd(d)) || (a && !isEnd(a)) || route.stops.length > MAX_STOPS || repeats) return null;
+  if ((d && !isEnd(d)) || (a && !isEnd(a)) || route.stops.length > MAX_STOPS || !placeAllowed(route, true)) return null;
   return route;
 }
 

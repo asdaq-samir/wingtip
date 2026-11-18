@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from "react";
+import { useRef, type DragEvent, type ReactNode } from "react";
 import { Menu } from "lucide-react";
 import { Button, DropIndicator, GridList, GridListItem, useDragAndDrop, type Key } from "react-aria-components";
 import { cn } from "cn";
@@ -29,7 +29,9 @@ export type RouteItem = { id: string; label: string; point?: number; node: React
  *
  * Only rows with a grip are draggable: the rest are React Aria's
  * disabledKeys for selection alone (disabledBehavior "selection"), so
- * their own controls still answer. Where no row can move (outside the
+ * their own controls still answer -- which React Aria still lets a mouse or
+ * a held finger lift, so the browser's drag from one of them (the stops'
+ * pill, a hold) is turned down before it reaches its row (`fixedDrag`). Where no row can move (outside the
  * route's editing) the list has no drag and drop at all, a list of its
  * own (its key), as React Aria asks a drag button of every row of a
  * draggable one and its hooks to be there from the first render or not.
@@ -101,32 +103,43 @@ export function RouteGrid({
       />
     ),
   });
+  // A drag begun on a row that is no point (no data-point): the browser's
+  // own turned down before React Aria's row hears of it.
+  const fixedDrag = (event: DragEvent<HTMLDivElement>) => {
+    const row = (event.target as Element).closest?.("[role=row]");
+    if (row && !row.hasAttribute("data-point")) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
   return (
-    <GridList
-      aria-label="The route"
-      key={movable ? "movable" : "fixed"}
-      items={items}
-      dragAndDropHooks={movable ? dragAndDropHooks : undefined}
-      disabledKeys={fixed}
-      disabledBehavior="selection"
-      keyboardNavigationBehavior="tab"
-      disallowTypeAhead
-      className="outline-none"
-      data-testid="procedures"
-    >
-      {(item) => (
-        <GridListItem
-          id={item.id}
-          textValue={item.label}
-          className={cn(
-            "relative outline-none data-[allows-dragging]:select-none data-[allows-dragging]:[-webkit-touch-callout:none] [&_input]:select-text data-[dragging]:opacity-40 data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring data-[focus-visible]:ring-inset",
-          )}
-          data-point={item.point}
-        >
-          {item.node}
-        </GridListItem>
-      )}
-    </GridList>
+    <div onDragStartCapture={movable ? fixedDrag : undefined}>
+      <GridList
+        aria-label="The route"
+        key={movable ? "movable" : "fixed"}
+        items={items}
+        dragAndDropHooks={movable ? dragAndDropHooks : undefined}
+        disabledKeys={fixed}
+        disabledBehavior="selection"
+        keyboardNavigationBehavior="tab"
+        disallowTypeAhead
+        className="outline-none"
+        data-testid="procedures"
+      >
+        {(item) => (
+          <GridListItem
+            id={item.id}
+            textValue={item.label}
+            className={cn(
+              "relative outline-none data-[allows-dragging]:select-none data-[allows-dragging]:[-webkit-touch-callout:none] [&_input]:select-text data-[dragging]:opacity-40 data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring data-[focus-visible]:ring-inset",
+            )}
+            data-point={item.point}
+          >
+            {item.node}
+          </GridListItem>
+        )}
+      </GridList>
+    </div>
   );
 }
 

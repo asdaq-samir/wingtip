@@ -34,6 +34,11 @@ describe("a point made another from its menu's Change", () => {
     expect(replacedRoute(["KUGN", "KJVL", "KDLH"], 1, "KUGN")).toBeNull();
     expect(replacedRoute(["KUGN", "KDLH"], 2, "KMSN")).toBeNull();
   });
+
+  it("never makes a stop My Location, which goes at an end alone", () => {
+    expect(replacedRoute(["KUGN", "KJVL", "KDLH"], 1, "@42.2,-87.9")).toBeNull();
+    expect(replacedRoute(["KUGN", "KJVL", "KDLH"], 0, "@42.2,-87.9")).toEqual({ dep: "@42.2,-87.9", stops: ["KJVL"], dest: "KDLH" });
+  });
 });
 
 describe("a stop added from FPL's timeline", () => {
@@ -44,5 +49,9 @@ describe("a stop added from FPL's timeline", () => {
   it("is not put beside the same point, nor before the departure", () => {
     expect(addedRoute(["KUGN", "KMSN", "KDLH"], 2, "KMSN")).toBeNull();
     expect(addedRoute(["KUGN", "KDLH"], 0, "KMSN")).toBeNull();
+  });
+
+  it("is never My Location", () => {
+    expect(addedRoute(["KUGN", "KMSN", "KDLH"], 2, "@42.2,-87.9")).toBeNull();
   });
 });

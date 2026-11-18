@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { pointsOf, readTyped, releaseTyped, routeOf, withoutPoint, withTyped, type RouteShape } from "./routeEdit";
+import {
+  placeAllowed,
+  pointsOf,
+  readTyped,
+  releaseTyped,
+  routeOf,
+  withoutPoint,
+  withoutStop,
+  withTyped,
+  type RouteShape,
+} from "./routeEdit";
 
 // Airports are four letters here, waypoints five (a fix's ident).
 const isEnd = (ident: string) => ident.length === 4 || ident.length === 3;
@@ -122,5 +132,47 @@ describe("a SID or STAR typed last, held till what follows it", () => {
   it("gives out one typed last as the typing is done", () => {
     const held = { current: [] };
     expect(releaseTyped(held, ["OSHH2"], readTyped(["OSHH2"], true).procedures, true).map((p) => p.name)).toEqual(["OSHH2"]);
+  });
+});
+
+describe("where a point may go", () => {
+  const route = (dep: string, stops: string[], dest: string) => ({ dep, stops, dest });
+
+  it("keeps My Location at an end, never a stop on the way", () => {
+    expect(placeAllowed(route("@42.2,-87.9", ["KMSN"], "KDLH"))).toBe(true);
+    expect(placeAllowed(route("KUGN", ["@42.2,-87.9"], "KDLH"))).toBe(false);
+  });
+
+  it("puts no point straight after itself, but for a local flight where asked", () => {
+    expect(placeAllowed(route("KUGN", ["KMSN", "KMSN"], "KDLH"))).toBe(false);
+    expect(placeAllowed(route("KDLH", [], "KDLH"))).toBe(false);
+    expect(placeAllowed(route("KDLH", [], "KDLH"), true)).toBe(true);
+  });
+
+  it("is the box's rule too: a list with My Location as a stop is not taken", () => {
+    expect(routeOf(["KUGN", "@42.2,-87.9", "KDLH"], true, true, (p) => p.length === 4 || p.startsWith("@"))).toBeNull();
+  });
+});
+
+describe("a stop taken out from its menu", () => {
+  const route = { dep: "C81", stops: ["VPBNG", "KMSN", "VPBNG"], dest: "KDLH" };
+
+  it("takes out the visit tapped, by its place, not every visit", () => {
+    expect(withoutStop(route, "VPBNG", 3)).toEqual({ dep: "C81", stops: ["VPBNG", "KMSN"], dest: "KDLH" });
+    expect(withoutStop(route, "VPBNG", 1)).toEqual({ dep: "C81", stops: ["KMSN", "VPBNG"], dest: "KDLH" });
+  });
+
+  it("takes out the first visit where no place is given or the place is another point's", () => {
+    expect(withoutStop(route, "VPBNG")).toEqual({ dep: "C81", stops: ["KMSN", "VPBNG"], dest: "KDLH" });
+    expect(withoutStop(route, "VPBNG", 2)).toEqual({ dep: "C81", stops: ["KMSN", "VPBNG"], dest: "KDLH" });
+  });
+
+  it("is not taken out where a point would follow itself, nor where it is no stop", () => {
+    expect(withoutStop({ dep: "C81", stops: ["VPBNG", "KMSN", "VPBNG"], dest: "KDLH" }, "KMSN", 2)).toBeNull();
+    expect(withoutStop(route, "KDLH", 4)).toBeNull();
+  });
+
+  it("leaves a local flight where the one stop of a round trip goes", () => {
+    expect(withoutStop({ dep: "KDLH", stops: ["KMSN"], dest: "KDLH" }, "KMSN", 1)).toEqual({ dep: "KDLH", stops: [], dest: "KDLH" });
   });
 });
