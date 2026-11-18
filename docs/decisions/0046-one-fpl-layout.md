@@ -50,7 +50,8 @@ editing with Edit and Done. The owner, 2026-11-17: "Ok let's try it".
    then its wind at the left (the cards' figure, the METAR now or the
    forecast for when the airplane is there) and its elevation at the
    right, then one row of chips, wrapping where they do not fit -- the
-   runway (its line folded to the one picked, RunwayTray) and its kinds of
+   runway (its line folded to the one picked, RunwayTray, headed "RWY"
+   where it had the landing's or the takeoff's glyph, the owner 2026-11-17) and its kinds of
    procedure, each picked one its short name's chip ("ILS 26 ⌄",
    ProcedureMenu's menu as it was: transition, plate, Learn This Approach,
    another, none; taking one off gives the plan's toast Undo) and each not

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { PlaneLanding, PlaneTakeoff, type LucideIcon } from "lucide-react";
 import { cn } from "cn";
+import { TEXT } from "../../lib/text";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleTrigger } from "../../components/ui/collapsible";
 import type { ProcedureAirport } from "../plan";
@@ -8,12 +8,23 @@ import { TRAY_HEAD } from "./RunwayChips";
 import { useOpenRunwayLines, type ProceduresRouteModel } from "./useProceduresRoute";
 import type { FieldPart } from "./fieldParts";
 
-/** A landing's or a takeoff's tray in a field's step: its glyph and its
- *  runway chips (FieldStep's partBody). */
+/** The tray's head: "RWY", the FAA's contraction (FAA Order JO 7340.2), in
+ *  place of the landing's or the takeoff's glyph, at the owner's ask
+ *  (2026-11-17: "instead of the landing glyph, just use RWY"); a reader
+ *  hears which it is, a landing's or a takeoff's. */
+function RunwayWord({ role }: { role: "Arrive" | "Depart" }) {
+  return (
+    <span role="img" aria-label={role === "Arrive" ? "landing" : "takeoff"} className={cn(TEXT.detail, "font-semibold")}>
+      RWY
+    </span>
+  );
+}
+
+/** A landing's or a takeoff's tray in a field's step: its head (RunwayWord)
+ *  and its runway chips (FieldStep's partBody). */
 function RunwayTray({
   a,
   role,
-  Glyph,
   lineKey,
   foldable,
   lineOpen,
@@ -21,15 +32,14 @@ function RunwayTray({
 }: {
   a: ProcedureAirport;
   role: "Arrive" | "Depart";
-  Glyph: LucideIcon;
   lineKey: string;
   foldable: boolean;
   lineOpen: boolean;
   /** The runway chips, with the pull-downs after them as their trailing part. */
   chips: ReactNode;
 }) {
-  // The glyph and its runways one tray, at the owner's pick of the canvas (2026-10-27, G2, artifact
-  //  JMQabZH2W33kzmvUuahbad): the landing's or the takeoff's glyph at its head, the runway picked after it
+  // The head and its runways one tray, at the owner's pick of the canvas (2026-10-27, G2, artifact
+  //  JMQabZH2W33kzmvUuahbad): "RWY" at its head (RunwayWord; it was the landing's or the takeoff's glyph), the runway picked after it
   //  with its arrow while it is folded, every runway in it while it is open. The head is the line's button
   //  where it folds, a tap on it opening or folding it, as a tap on the runway picked opens it; it was a
   //  small arrow after the glyph ("the arrow next to runway can be next to the depart/arrive symbol"). The
@@ -61,11 +71,11 @@ function RunwayTray({
             />
           }
         >
-          <Glyph className="size-5" aria-hidden />
+          <RunwayWord role={role} />
         </CollapsibleTrigger>
       ) : (
         <span className={cn(TRAY_HEAD, a.runways?.length === 0 && "rounded-r-full")}>
-          <Glyph className="size-5" aria-label={role === "Arrive" ? "landing" : "takeoff"} role="img" />
+          <RunwayWord role={role} />
         </span>
       )}
       <div className={cn("min-w-0 flex-1", a.runways?.length === 0 && "pl-2")}>{chips}</div>
@@ -73,7 +83,7 @@ function RunwayTray({
   );
 }
 
-/** A part's tray: its glyph and runway chips (RunwayTray), what follows
+/** A part's tray: its head and runway chips (RunwayTray), what follows
  *  them (`trailing`, the kinds' pull-downs) and, for a stop's takeoff,
  *  when it leaves again. */
 export function PartTray({
@@ -96,7 +106,6 @@ export function PartTray({
       <RunwayTray
         a={a}
         role={part.role}
-        Glyph={part.role === "Arrive" ? PlaneLanding : PlaneTakeoff}
         lineKey={part.line.key}
         foldable={foldable}
         lineOpen={vm.openLines.includes(part.line.key)}
