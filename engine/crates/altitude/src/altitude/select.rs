@@ -12,6 +12,7 @@ use super::track::Point;
 use crate::flight::is_eastbound;
 use crate::geo::{bearing_deg, py_mod};
 use crate::json::Value;
+use wingtip_core::ask::opt_num_in as opt_num;
 
 type R<T> = Result<T, String>;
 
@@ -120,14 +121,6 @@ fn point(name: &str, v: Option<&Value>) -> R<Point> {
             lon.as_f64().ok_or(format!("{name}: a point's lon is not a number"))?,
         )),
         _ => Err(format!("{name}: a point is not [lat, lon]")),
-    }
-}
-
-fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
     }
 }
 

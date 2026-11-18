@@ -44,15 +44,21 @@ pub struct Pack<'a> {
     sections: Vec<(String, usize, usize)>,
 }
 
-fn u32_at(b: &[u8], o: usize) -> Option<u32> {
+/// A little-endian figure at byte `o` of a pack's bytes, None past their
+/// end: the one reader of each width for every module that reads a pack.
+pub(crate) fn u32_at(b: &[u8], o: usize) -> Option<u32> {
     b.get(o..o + 4).map(|s| u32::from_le_bytes(s.try_into().unwrap()))
+}
+
+pub(crate) fn i32_at(b: &[u8], o: usize) -> Option<i32> {
+    b.get(o..o + 4).map(|s| i32::from_le_bytes(s.try_into().unwrap()))
 }
 
 fn u64_at(b: &[u8], o: usize) -> Option<u64> {
     b.get(o..o + 8).map(|s| u64::from_le_bytes(s.try_into().unwrap()))
 }
 
-fn f64_at(b: &[u8], o: usize) -> Option<f64> {
+pub(crate) fn f64_at(b: &[u8], o: usize) -> Option<f64> {
     b.get(o..o + 8).map(|s| f64::from_le_bytes(s.try_into().unwrap()))
 }
 

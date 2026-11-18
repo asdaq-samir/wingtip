@@ -4,17 +4,7 @@
 //! them (crate::pack). Both give the same answer at every point, as pyshp
 //! and shapely gave it, which services/planner/tests_wingtip/test_native.py holds them to.
 
-fn i32_at(b: &[u8], o: usize) -> Option<i32> {
-    b.get(o..o + 4).map(|s| i32::from_le_bytes(s.try_into().unwrap()))
-}
-
-fn u32_at(b: &[u8], o: usize) -> Option<u32> {
-    b.get(o..o + 4).map(|s| u32::from_le_bytes(s.try_into().unwrap()))
-}
-
-fn f64_at(b: &[u8], o: usize) -> Option<f64> {
-    b.get(o..o + 8).map(|s| f64::from_le_bytes(s.try_into().unwrap()))
-}
+use crate::pack::{f64_at, i32_at, u32_at};
 
 /// The rule over all of a shape's rings: inside more of its outer rings
 /// (clockwise, as the shapefile format draws them) than of its holes, or

@@ -58,6 +58,8 @@
 
 use crate::geo;
 use crate::json::{self, Value};
+use crate::pack::f64_at;
+use crate::pack::u32_at;
 use crate::{pack::Pack, sort::StableSort};
 
 /// The planner's defaults: at most this many fields, and this many VORs.
@@ -87,14 +89,6 @@ pub(crate) type Pt = (f64, f64);
 /// (west, south, east, north): min lon, min lat, max lon, max lat, as a
 /// layer's boxes are.
 pub(crate) type Bbox = [f64; 4];
-
-fn u32_at(b: &[u8], o: usize) -> Option<u32> {
-    b.get(o..o + 4).map(|s| u32::from_le_bytes(s.try_into().unwrap()))
-}
-
-pub(crate) fn f64_at(b: &[u8], o: usize) -> Option<f64> {
-    b.get(o..o + 8).map(|s| f64::from_le_bytes(s.try_into().unwrap()))
-}
 
 pub(crate) fn text_at<'a>(names: &'a [u8], record: &[u8], at: usize) -> Option<&'a str> {
     let (o, l) = (u32_at(record, at)? as usize, u32_at(record, at + 4)? as usize);

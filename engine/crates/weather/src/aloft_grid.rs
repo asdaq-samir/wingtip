@@ -27,6 +27,7 @@
 
 use crate::json::{self, Value};
 use crate::winds::{self, WindAt};
+use wingtip_core::ask::{num_in as num, opt_num_in as opt_num};
 use wingtip_core::sort::StableSort;
 
 /// One level of a grid column: its altitude and, where the grid has
@@ -122,18 +123,6 @@ pub fn aloft_at(hours: &[Hour], at_s: f64, altitude_ft: f64) -> Aloft {
     let span = pair[1].valid_s - pair[0].valid_s;
     let frac = if span > 0.0 { (at_s - pair[0].valid_s) / span } else { 0.0 };
     Aloft { wind: between_winds(a.wind, b.wind, frac), temp_c: between(a.temp_c, b.temp_c, frac) }
-}
-
-fn opt_num(name: &str, v: &Value, key: &str) -> Result<Option<f64>, String> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
-
-fn num(name: &str, v: &Value, key: &str) -> Result<f64, String> {
-    opt_num(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
 }
 
 fn hours(name: &str, v: &Value) -> Result<Vec<Hour>, String> {

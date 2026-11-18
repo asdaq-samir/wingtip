@@ -4,24 +4,9 @@
 use super::filters;
 use super::registry;
 use crate::json::{self, Value};
+use wingtip_core::ask::{opt_num_in as opt_num, opt_str_in as opt_str};
 
 type R<T> = Result<T, String>;
-
-fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
-
-fn opt_str<'a>(name: &str, v: &'a Value, key: &str) -> R<Option<&'a str>> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::String(s)) => Ok(Some(s)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a string")),
-    }
-}
 
 fn flag(out: &mut String, b: bool) {
     out.push_str(if b { "true" } else { "false" });

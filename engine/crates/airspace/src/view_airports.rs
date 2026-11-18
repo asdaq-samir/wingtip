@@ -12,7 +12,8 @@
 //! hard runway: below the fields of their tier that have one, never above.
 
 use crate::json;
-use crate::view::{attrs_of, f64_at, in_box, Bbox, AIRPORT_LIMIT};
+use crate::pack::f64_at;
+use crate::view::{attrs_of, in_box, Bbox, AIRPORT_LIMIT};
 use crate::{pack::Pack, sort::StableSort};
 
 struct Pin {

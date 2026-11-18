@@ -4,22 +4,10 @@
 use super::{awc, field, hours, route};
 use crate::json::{self, Value};
 use crate::{metar, winds};
+use wingtip_core::ask::{num_in as num, opt_num_in as opt_num};
 use wingtip_core::sort::StableSort;
 
 type R<T> = Result<T, String>;
-
-/// A member that is a number, or None where it is missing or null.
-fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
-
-fn num(name: &str, v: &Value, key: &str) -> R<f64> {
-    opt_num(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
-}
 
 fn opt_bool(name: &str, v: &Value, key: &str) -> R<bool> {
     match v.get(key) {

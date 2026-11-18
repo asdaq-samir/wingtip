@@ -70,6 +70,15 @@ pub fn num_in(name: &str, v: &Value, key: &str) -> Result<f64, String> {
     opt_num_in(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
 }
 
+/// Member `key` of `v` as a string, None where missing or null.
+pub fn opt_str_in<'a>(name: &str, v: &'a Value, key: &str) -> Result<Option<&'a str>, String> {
+    match v.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(s)) => Ok(Some(s)),
+        Some(_) => Err(format!("{name}: \"{key}\" is not a string")),
+    }
+}
+
 /// A list of strings as a JSON array.
 pub fn strings(out: &mut String, items: &[String]) {
     out.push('[');

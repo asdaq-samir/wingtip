@@ -42,6 +42,7 @@ pub mod ground;
 pub mod holds;
 pub mod trip;
 
+use wingtip_core::ask::{num_in as num, opt_num_in as opt_num};
 use wingtip_core::json::{self, Value};
 use wingtip_procedures::figures::debrief::{airborne, ground_speeds, Point, AIRBORNE_KT};
 use wingtip_route::approach::Drawing;
@@ -59,18 +60,6 @@ pub struct Field {
 }
 
 type R<T> = Result<T, String>;
-
-fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
-
-fn num(name: &str, v: &Value, key: &str) -> R<f64> {
-    opt_num(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
-}
 
 fn opt_str(name: &str, v: &Value, key: &str) -> R<Option<String>> {
     match v.get(key) {
