@@ -1,11 +1,8 @@
 import type { PastFlightSummary } from "../../lib/api/types";
-import { clockTime, duration } from "../../lib/format";
+import { clockTime, dayMonth, duration, weekdayShort } from "../../lib/format";
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-/** "Sat 11 Oct", this device's day, written by hand as lib/format writes times. */
-export const dayOf = (at: Date) => `${DAYS[at.getDay()]} ${at.getDate()} ${MONTHS[at.getMonth()]}`;
+/** "Sat 11 Oct", this device's day (lib/format's weekday and day). */
+export const dayOf = (at: Date) => `${weekdayShort(at)} ${dayMonth(at)}`;
 
 /** A time from the planner, seconds since 1970, as a Date. */
 export const when = (s: number) => new Date(s * 1000);
@@ -52,5 +49,5 @@ export function placeOf(field: { city?: string | null; region?: string | null; n
  *  airplane's sketch has room for. */
 export function shortWhen(at: Date, today: Date = new Date()): string {
   const same = at.getFullYear() === today.getFullYear() && at.getMonth() === today.getMonth() && at.getDate() === today.getDate();
-  return same ? clockTime(at) : `${at.getDate()} ${MONTHS[at.getMonth()]}`;
+  return same ? clockTime(at) : dayMonth(at);
 }
