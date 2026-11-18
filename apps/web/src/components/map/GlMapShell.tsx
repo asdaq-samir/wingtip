@@ -23,9 +23,8 @@ import { watchOverlayFilters } from "../../lib/map/gl/overlayFilters";
 import { glZoom } from "../../lib/map/gl/glStyle";
 import { RulerGl } from "../../lib/map/gl/layers/RulerGl";
 import { cameraOf } from "../../lib/map/gl/camera";
+import { PICK_ZOOM, pickOnMap, putAwayPicks, useMapPickOwner, type PickKind } from "../../lib/map/mapPick";
 
-/** RouteMap's: how close in an airport's card brings the map. */
-const PLACE_ZOOM = 9;
 /** The longest the map waits, before it is made, for the overlay tiles'
  *  name and the overlays' pictures to put in its first style: past it, it
  *  is made without them and they come in as they arrive. */
@@ -41,7 +40,9 @@ let parked: { map: maplibregl.Map; holder: HTMLDivElement; timer: number } | nul
 
 interface Props {
   course: Course | null;
-  /** A checkpoint picked: the map flies to it, in to `focusZoom`. */
+  /** A point picked (a checkpoint, a route point, the Nav Log's row): the
+   *  map brought to it as an airport's card brings its field, in to
+   *  `focusZoom` at least where it was not tapped. */
   focus: { lat: number; lon: number } | null;
   focusZoom: number;
   /** The airport whose card is open: the map flies to it. */
@@ -202,7 +203,30 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     [registry],
   );
   const [card, setCard] = useState<ReactNode | null>(null);
-  const closeCard = useCallback(() => setCard(null), []);
+  // What was picked with the card (a checkpoint's ring, lib/map/mapPick),
+  // put away with it, so its ✕ leaves no ring on the map.
+  // Held in state, not a ref, as the taps' registry is: read only in the
+  // handlers.
+  const [companions] = useState(() => new Set<PickKind>());
+  const closeCard = useCallback(() => {
+    setCard(null);
+    const also = [...companions];
+    companions.clear();
+    putAwayPicks(also);
+  }, [companions]);
+  // A card opened from the map: one pick, every other kind's card and
+  // ring put away first (lib/map/mapPick); null puts it away.
+  const openCard = useCallback(
+    (next: ReactNode | null, also: readonly PickKind[] = []) => {
+      if (!next) return closeCard();
+      pickOnMap(["card", ...also]);
+      companions.clear();
+      for (const kind of also) companions.add(kind);
+      setCard(next);
+    },
+    [closeCard, companions],
+  );
+  useMapPickOwner("card", !!card, closeCard);
   useEffect(() => {
     if (!map) return;
     const tap = (e: MapMouseEvent) => {
@@ -217,8 +241,9 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
           return;
         }
       }
-      // The chart itself tapped: a card open is put away.
-      setCard(null);
+      // The chart itself tapped: every card and ring open put away
+      // (lib/map/mapPick), the map's own with them.
+      pickOnMap(null);
       for (const miss of registry.misses) miss(e);
     };
     map.on("click", tap);
@@ -227,8 +252,8 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     };
   }, [map, registry, noteTap]);
   const api = useMemo<GlMapApi | null>(
-    () => (map ? { map, addTap, addMiss, openCard: setCard, overlays } : null),
-    [map, addTap, addMiss, overlays],
+    () => (map ? { map, addTap, addMiss, openCard, overlays } : null),
+    [map, addTap, addMiss, openCard, overlays],
   );
   // The last tree's layers this one has not drawn again, taken away once
   // its own are in (children's effects run before this one's).
@@ -275,44 +300,45 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     return useMapInsets.subscribe(follow);
   }, [follow]);
 
-  // A point picked -- a checkpoint, an airport's card -- brought into
-  // sight, in close enough, as FocusOn; every follow ends (the camera's pick).
-  const flyTo = useCallback(
+  // A thing picked -- an airport's card, a route point's or a checkpoint's,
+  // the Nav Log's row -- centred in the room above the card's detent as the
+  // card starts up, in the commit that opens it: one move, centre and
+  // padding together, on the sheet's curve and time (the owner,
+  // 2026-11-17: "It should be instant"). The room is the detent the card
+  // opens at (half, cardOpening; useSlidingSheet's `half`), known as it
+  // opens, not measured once it is up, as it was: the map waited for the
+  // card to settle and moved after it, 820 ms after the tap on a phone's
+  // CPU. One rule for every kind (the selection audit, 2026-11-18; rules.md
+  // §14): a thing tapped keeps the pilot's zoom; one picked elsewhere is
+  // brought in to `zoom` at least (PICK_ZOOM), and flown to if it is off
+  // the screen. A route point's was its own, in to the chart's last zoom
+  // at twice the sheet's time with no room for the card, so it could land
+  // under it.
+  const bringIn = useCallback(
     (point: { lat: number; lon: number } | null, zoom: number) => {
       if (!map || !point) return;
-      cameraOf(map).pick([point.lon, point.lat], { zoom: Math.max(map.getZoom(), glZoom(zoom)), duration: flight() });
+      const at: [number, number] = [point.lon, point.lat];
+      const tapped = takeTap();
+      const half = useSlidingSheet.getState().half;
+      const pad = { ...padOf(insetsRef.current), ...(half ? { bottom: half } : {}) };
+      const p = map.project(at),
+        box = map.getContainer();
+      const near = !!tapped || (p.x >= 0 && p.y >= 0 && p.x <= box.clientWidth && p.y <= box.clientHeight);
+      cameraOf(map).pick(at, {
+        zoom: tapped ? map.getZoom() : Math.max(map.getZoom(), glZoom(zoom)),
+        pad,
+        duration: near ? DRAWER_MS : flight(),
+        easing: drawerEasing,
+      });
     },
-    [map],
+    [map, takeTap],
   );
   useEffect(() => {
-    flyTo(focus, focusZoom);
-  }, [flyTo, focus, focusZoom]);
-  // An airport's card opened -- tapped on the chart, picked in a list, a
-  // route's row or the search -- centres its field in the room above the
-  // card's detent as the card starts up, in the commit that opens it: one
-  // move, centre and padding together, on the sheet's curve and time (the
-  // owner, 2026-11-17: "It should be instant"). The room is the detent the
-  // card opens at (half, cardOpening; useSlidingSheet's `half`), known as
-  // it opens, not measured once it is up, as it was: the map waited for the
-  // card to settle and moved after it, 820 ms after the tap on a phone's
-  // CPU. A field tapped keeps the pilot's zoom; one picked elsewhere is
-  // brought in to PLACE_ZOOM, and flown to if it is off the screen.
+    bringIn(focus, focusZoom);
+  }, [bringIn, focus, focusZoom]);
   useEffect(() => {
-    if (!map || !place) return;
-    const at: [number, number] = [place.lon, place.lat];
-    const tapped = takeTap();
-    const half = useSlidingSheet.getState().half;
-    const pad = { ...padOf(insetsRef.current), ...(half ? { bottom: half } : {}) };
-    const p = map.project(at),
-      box = map.getContainer();
-    const near = !!tapped || (p.x >= 0 && p.y >= 0 && p.x <= box.clientWidth && p.y <= box.clientHeight);
-    cameraOf(map).pick(at, {
-      zoom: tapped ? map.getZoom() : Math.max(map.getZoom(), glZoom(PLACE_ZOOM)),
-      pad,
-      duration: near ? DRAWER_MS : flight(),
-      easing: drawerEasing,
-    });
-  }, [map, place, takeTap]);
+    bringIn(place, PICK_ZOOM);
+  }, [bringIn, place]);
 
   return (
     <div className="relative h-full w-full">

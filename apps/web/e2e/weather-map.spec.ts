@@ -162,5 +162,10 @@ test(
       await expect(card).toBeVisible({ timeout: 3000 });
     }).toPass({ timeout: slow(30000) });
     await expect(card.getByTestId("weather-area-route")).toContainText(/Your route crosses it for \d+ nm/);
+    // Its edge lit in the selection's yellow while its card is up, and dark
+    // again once its ✕ puts it away (the owner, 2026-11-18).
+    await expect.poll(async () => (await drawn(page, "wx-area-picked")).length, { timeout: slow(10000) }).toBeGreaterThan(0);
+    await page.getByTestId("sheet-card-close").filter({ visible: true }).last().click();
+    await expect.poll(async () => (await drawn(page, "wx-area-picked")).length, { timeout: slow(10000) }).toBe(0);
   },
 );

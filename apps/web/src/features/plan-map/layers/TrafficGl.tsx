@@ -22,6 +22,7 @@ import { cameraOf } from "../../../lib/map/gl/camera";
 import { useTerrainView } from "../terrain/useTerrainView";
 import { addTrafficPictures, trafficLayers, trafficPicture, type TrafficMarkProps } from "./trafficMarks";
 import { PastFlightGl, TrackedPathGl } from "./TracksGl";
+import { pickOnMap } from "../../../lib/map/mapPick";
 
 /** Asked every five seconds, each airplane carried on
  *  between answers a frame at a time (more often closer in), blended over
@@ -132,6 +133,8 @@ function Traffic({ geo }: { geo: Geo }) {
   // middle, the 44-point target every mark has.
   useGlTap([IDS.marks], TAP.mark, TAP.rank.mark, (feature) => {
     const tapped = String(feature.properties.hex);
+    // One pick at a time (lib/map/mapPick): its card puts every other away.
+    pickOnMap("flight");
     const { pick, seen } = useTracking.getState();
     pick?.(tapped, seen.find((r) => r.plane.hex === tapped)?.plane);
     // Followed again: the map's tap, a pick, ended every follow just

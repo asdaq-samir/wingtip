@@ -184,7 +184,13 @@ has one link format for a place and for directions on every platform
 (`design/screens.json`, `?open=<id>`, with `place`, `dep`, `dest`, `stops`,
 `flight` beside it; `docs/navigation.md`). Keep every card and screen
 reachable that way, and make the browser's Back go back one level, as the
-close does.
+close does. The map's cards are in the address too: `place`, `navaid`,
+`tfr`, `at` (a point held) and, since the selection audit (2026-11-18),
+`mark` for a fix, a VFR waypoint or an airspace volume
+(`fix:BXCMB@42.1234,-88.2345`, `vfr:`, `airspace:<number>@lat,lon`;
+`lib/address`'s `markLink`), each card's Share sending its link. One thing
+is picked on the map at a time, in one yellow (rules.md, 14;
+`lib/map/mapPick`).
 
 ### Keyboard
 

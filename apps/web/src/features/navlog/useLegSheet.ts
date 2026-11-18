@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { Candidate } from "../../lib/api/types";
 import { sameField } from "../../lib/procedures";
+import { pickOnMap, useMapPickOwner } from "../../lib/map/mapPick";
 import { useFlyingTo, navLogRows, routeLegs, type PlanAnswer, type PlanCourse } from "../plan";
 import type { RouteLegView } from "./RouteLegCard";
 
@@ -55,6 +56,11 @@ export function useLegSheet({
   const selectCandidate = useCallback((c: Candidate) => selectPoint({ lat: c.lat, lon: c.lon }), [selectPoint]);
   const selectPointAt = useCallback((lat: number, lon: number) => selectPoint({ lat, lon }), [selectPoint]);
   const deselectPoint = useCallback(() => selectPoint(null), [selectPoint]);
+  // Its ring put away by any other pick, a tap on the chart, or the card
+  // it was picked with closing (lib/map/mapPick, GlMapShell's openCard):
+  // it was kept till the route changed, a second yellow ring beside the
+  // next field picked (the selection audit, 2026-11-18).
+  useMapPickOwner("point", !!selectedPoint, deselectPoint);
   // The route in order in FPL, the nav log's place: its fields with their
   // runways and procedures, and the tops of climb and descent and the
   // fixes flown through, by the nav log's rows.
@@ -102,5 +108,11 @@ export function useLegSheet({
     };
   }, [mapLegs, routeRows, legAt, directParam, flyingTo, directToPoint, removeStop]);
   const closeLeg = useCallback(() => setLegAt(null), []);
-  return { selectedPoint, selectCandidate, selectPointAt, deselectPoint, routeRows, mapLegs, setLegAt, openLeg, closeLeg };
+  // A leg's sheet is one pick as every card is (lib/map/mapPick).
+  const selectLeg = useCallback((key: string | null) => {
+    if (key) pickOnMap("leg");
+    setLegAt(key);
+  }, []);
+  useMapPickOwner("leg", !!legAt, closeLeg);
+  return { selectedPoint, selectCandidate, selectPointAt, deselectPoint, routeRows, mapLegs, setLegAt: selectLeg, openLeg, closeLeg };
 }

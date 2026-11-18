@@ -9,7 +9,7 @@ import type {
 import { callEngine } from "../../../lib/engine/engine";
 import { hazardTextInk } from "../../../lib/map/weatherColours";
 import { MAP } from "../../../lib/tokens";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { api } from "../../../lib/api/client";
 import { areaColour, areaLabel } from "../weatherMap";
 import { AreaCard, PirepCard, WindCard } from "../WeatherCards";
@@ -22,6 +22,8 @@ import { GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE, TAP } from "../../../lib/map/gl/l
 import { chipLayer, pictureLayer } from "../../../lib/map/gl/markLayers";
 import { useGlSymbols, type GlSymbol } from "../../../lib/map/gl/useGlSymbols";
 import { useGlView } from "../../../lib/map/gl/useGlView";
+import { useMapRing } from "../../../lib/map/mapPick";
+import { CHART } from "../../../lib/tokens";
 
 const REFRESH_MS = 5 * 60_000;
 const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } });
@@ -62,6 +64,17 @@ const AREA_LAYERS: (FillLayerSpecification | LineLayerSpecification | SymbolLaye
     paint: { "text-color": ["get", "ink"], ...LABEL_HALO },
   },
 ];
+/** The area whose card is open, its edge again, wide, in the selection's
+ *  yellow, as a TFR picked is lit (the owner, 2026-11-18); none till one
+ *  is (its filter set from useMapRing). */
+const PICKED_AREA: LineLayerSpecification = {
+  id: "wx-area-picked",
+  type: "line",
+  source: AREAS,
+  filter: ["boolean", false],
+  layout: { "line-join": "round" },
+  paint: { "line-color": CHART.selected, "line-width": 5, "line-opacity": 0.9 },
+};
 
 /**
  * The weather on the map at the pilot's pick (useWeatherLayers): the
@@ -72,7 +85,7 @@ const AREA_LAYERS: (FillLayerSpecification | LineLayerSpecification | SymbolLaye
  * area, a PIREP or a barb opens its card.
  */
 export function WeatherGl({ line, altitudeFt }: { line: [number, number][] | null; altitudeFt: number | null }) {
-  const { openCard } = useGlMap();
+  const { map, openCard } = useGlMap();
   const { areas, pireps, winds } = useWeatherLayers();
   const { box } = useGlView(weatherBox, "rest");
   const windsFt = winds === "off" ? null : winds === "plan" ? (altitudeFt ?? 9000) : winds;
@@ -85,7 +98,13 @@ export function WeatherGl({ line, altitudeFt }: { line: [number, number][] | nul
     meta: { silent: true },
   });
 
-  useGlLayer("areas", { [AREAS]: empty() }, AREA_LAYERS);
+  useGlLayer("areas", { [AREAS]: empty() }, [...AREA_LAYERS, PICKED_AREA]);
+  // The one whose card is open lit (AreaCard's useAreaWhileUp).
+  const lit = useMapRing((s) => (s.area?.kind === "weather" ? s.area.id : null));
+  useEffect(() => {
+    if (map.getLayer(PICKED_AREA.id)) map.setFilter(PICKED_AREA.id, ["==", ["to-string", ["get", "id"]], lit ?? "-"]);
+  }, [map, lit]);
+  useGlProbe("wx-area-picked", [PICKED_AREA.id], (f) => ({ id: f.properties.id }));
   // Faded in as the first answer comes, not snapped on over the chart.
   useGlFadeIn(AREA_LAYERS, !!data);
   const areaFeatures = useMemo<GeoJSON.FeatureCollection | null>(() => {

@@ -24,6 +24,8 @@ import { saaQuery, saaWords } from "../../lib/liveReports";
 import StatusBadge from "../../components/StatusBadge";
 import { useClock } from "../../lib/useMinuteClock";
 import { suaWhen } from "../plan/lazy";
+import { pointLink } from "../../lib/address";
+import { shareOrCopy } from "../../lib/share";
 
 /** One of a band's rules on a line of its own, its glyph before it: the
  *  weather minimums, what it takes to go in, what the airplane carries,
@@ -164,24 +166,28 @@ export default function AirspaceCard({
         // The point itself as the card's name, its name off the nearest
         // fix where it has one: the sheet's own title already says
         // Airspace, and the card said it again under it (the UI audit,
-        // 2026-11-09).
+        // 2026-11-09). Where it is and the ground there the line under the
+        // name, in sight at the pill too (the card rule's 10; the selection
+        // audit, 2026-11-18: it scrolled away with the body); the fix's own
+        // name under the head.
         name={named?.ident ?? "Dropped Pin"}
         nameTestId="airspace-name"
-        line={
-          <>
+        sub={
+          <span data-testid="airspace-where">
             {degreesMinutes(point)}
             {ground !== null && ` · ground ${altFt(ground)} ft`}
-            {naming && (
-              <>
-                <br />
-                {named ? named.name : <SkeletonLine className="w-32" />}
-              </>
-            )}
-          </>
+          </span>
         }
-        lineClassName="tabular-nums"
-        lineTestId="airspace-where"
+        line={naming ? named ? named.name : <SkeletonLine className="w-32" /> : undefined}
+        lineTestId="airspace-named"
         onClose={onClose}
+        // Its link (`at`), which opens this card, as every card with one
+        // has its Share.
+        onShare={() =>
+          void shareOrCopy({ title: named?.ident ?? "Dropped Pin", url: pointLink(point, location.origin) }).catch(() => {
+            /* put away, or not allowed: nothing to say */
+          })
+        }
         closeTestId="airspace-close"
       />
       {/* The point into the route, as Maps' dropped pin's card offers its

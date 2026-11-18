@@ -1,3 +1,4 @@
+import type { PickKind } from "../mapPick";
 import { createContext, useContext, useEffect, useRef, type ReactNode, useEffectEvent } from "react";
 import { prefersReducedMotion } from "../../motion";
 import type {
@@ -98,8 +99,10 @@ export interface GlMapApi {
    *  away (an airport's, which the page holds). */
   addMiss: (miss: (event: MapMouseEvent) => void) => () => void;
   /** A card in the map's sheet (SheetCard), for what a tap on the map
-   *  opens; null puts it away. */
-  openCard: (card: ReactNode | null) => void;
+   *  opens, every other pick put away first (lib/map/mapPick), and `also`
+   *  what was picked with it and goes with it (a point's ring); null puts
+   *  it away. */
+  openCard: (card: ReactNode | null, also?: readonly PickKind[]) => void;
   /** Whether the map has the cycle's overlay tiles (glOverlays): its
    *  airspace, airports, navaids, fixes and runways drawn per tile from
    *  the archive, a layer of them adding only its taps, its filters and

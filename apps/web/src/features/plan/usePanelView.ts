@@ -7,6 +7,7 @@ import { choosePastFlight, clearPastFlight, usePastFlight } from "./pastFlight";
 import { track, useTracking } from "../../lib/map/position/tracking";
 import { usePickAirplaneRequest } from "./usePickAirplaneRequest";
 import { riseToSee } from "./panelNow";
+import { useMapPickOwner } from "../../lib/map/mapPick";
 
 /**
  * What the planner's sheet shows under its one search (the owner's
@@ -117,6 +118,12 @@ export function useAddressCards(address: Address, setAddress: SetAddress, setPan
     },
     [setAddress],
   );
+  // Put away by another pick on the map (lib/map/mapPick): its card and
+  // its past flight's alone, what is under them left as it is.
+  useMapPickOwner("flight", !!flight, () => {
+    track(null);
+    void setAddress({ flight: null, past: null });
+  });
   // The address's flight and list into the tracking the map draws from
   // (lib/map/position/tracking), and the map's tap on an airplane back to here.
   useEffect(() => {

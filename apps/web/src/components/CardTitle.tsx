@@ -4,7 +4,7 @@ import { cn } from "cn";
 import CloseButton from "./CloseButton";
 import IconButton from "./IconButton";
 import { CardHeadRow } from "./CardHead";
-import { closeTopCard, useHeldCard, type PillHead } from "../lib/openCards";
+import { closeTopCard, useHeldCard } from "../lib/openCards";
 import { TEXT } from "../lib/text";
 
 /**
@@ -16,8 +16,7 @@ import { TEXT } from "../lib/text";
  * a line under that scrolling with the card; at the row's start its share,
  * the name centred, and at its end its close, which goes back one card, as
  * every card's does: two buttons at most (the owner, 2026-11-11: the star
- * a Favorite tile in the card's action row). What the
- * pill shows of it down at its smallest is its own (`pill`).
+ * a Favorite tile in the card's action row).
  */
 export function CardTitle({
   title,
@@ -26,7 +25,6 @@ export function CardTitle({
   line,
   onClose,
   onShare,
-  pill,
   testId,
   titleTestId,
   subtitleTestId,
@@ -42,14 +40,13 @@ export function CardTitle({
   line?: ReactNode;
   onClose: () => void;
   onShare?: () => void;
-  pill?: PillHead;
   testId: string;
   titleTestId: string;
   subtitleTestId?: string;
   closeTestId: string;
   shareTestId?: string;
 }) {
-  useHeldCard(onClose, onShare, true, pill);
+  useHeldCard(onClose, onShare, true);
   const close = () => {
     if (!closeTopCard()) onClose();
   };

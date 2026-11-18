@@ -7,13 +7,10 @@ import { useGlMap } from "../../lib/map/gl/glLayer";
 import { cameraOf } from "../../lib/map/gl/camera";
 import { glZoom } from "../../lib/map/gl/glStyle";
 import { sameField } from "../../lib/procedures";
+import { PICK_ZOOM } from "../../lib/map/mapPick";
 import { padOf } from "../../components/map/makeMap";
 import { DRAWER_MS } from "../../components/sheet/insets";
 import { drawerEasing } from "../../components/map/drawerEasing";
-
-/** In close enough to see a field's runways' pattern, as a place's card
- *  brings one in (GlMapShell's PLACE_ZOOM). */
-const LINE_ZOOM = 9;
 
 /**
  * The point of FPL's timeline whose line is open (lib/map/routeOnly's
@@ -31,7 +28,7 @@ export function useLineFocus(course: Course | null) {
     if (!point) return;
     const half = useSlidingSheet.getState().half;
     cameraOf(map).pick([point.lon, point.lat], {
-      zoom: Math.max(map.getZoom(), glZoom(LINE_ZOOM)),
+      zoom: Math.max(map.getZoom(), glZoom(PICK_ZOOM)),
       pad: { ...padOf(useMapInsets.getState()), ...(half ? { bottom: half } : {}) },
       duration: DRAWER_MS,
       easing: drawerEasing,

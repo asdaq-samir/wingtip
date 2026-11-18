@@ -3,6 +3,7 @@ import { addressPoint, type Address, type SetAddress } from "../../../lib/addres
 import type { PanelState } from "../../../lib/mapChrome";
 import { takePlace, useWanted } from "../../../lib/navigation/wanted";
 import { useAddressCards, type PanelView } from "../../plan";
+import { pickOnMap, useMapPickOwner } from "../../../lib/map/mapPick";
 
 /**
  * The cards over the planner's tabs (usePlanWorkspace): an airport's, the
@@ -88,17 +89,26 @@ export function usePlaceCards({
       // A card closed by a tap on the chart leaves the sheet under it at
       // the size the pilot left it (the owner, 2026-11-11).
       if (!ident && nearOpen && !place) return;
+      // One pick at a time on the map (lib/map/mapPick): a field's card,
+      // from its mark, a route's chip or a Class B field's, puts every other
+      // card and ring away -- the airplane's too, where a list's pick opens
+      // over it.
+      if (ident) pickOnMap("place");
       selectPlace(ident);
     },
     [selectPlace, nearOpen, place],
   );
   const holdPoint = useCallback(
     (point: { lat: number; lon: number }) => {
+      pickOnMap("held");
       void setAddress({ at: addressPoint(point), place: null });
       // A point held on the chart: its card half way (AirspaceCard's `opens`).
     },
     [setAddress],
   );
+  // Each put away by another kind's pick or a tap on the chart (GlMapShell).
+  useMapPickOwner("place", !!place, closePlace);
+  useMapPickOwner("held", !!heldPoint, () => void setAddress({ at: null }));
   return {
     cards,
     cardOpen,

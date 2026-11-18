@@ -1,6 +1,6 @@
 import { Button as BaseButton } from "@base-ui/react/button";
-import { cn } from "cn";
 import FitLine from "../../components/FitLine";
+import StatusBadge from "../../components/StatusBadge";
 import type { AirportPlace } from "../../lib/api/types";
 import { NotamBadge, NotamSheet } from "./NotamBadge";
 import { useNotamMarks, useNotamSheet } from "./notamBadges";
@@ -14,9 +14,11 @@ import { useNotamMarks, useNotamSheet } from "./notamBadges";
  * should show the notam"), its hit area 44 points by a pseudo-element, the
  * line no taller. Under it, the field's one use line where it has one (the
  * owner, 2026-11-13: one line on every app, the engine's words, "Private:
- * permission required"), or NASR's closed label in the warning ink
- * (decision 0043): beside the name in brackets, it cut a long name to a
- * few letters at an iPhone's width. After the name, whether the field has
+ * permission required"), or NASR's closed label (decision 0043), each a
+ * status badge, as the search's rows and Nearest show them (rules.md §9;
+ * the selection audit, 2026-11-18: they were red and grey words), a
+ * joint-use field's too; beside the name in brackets, it cut a long name to
+ * a few letters at an iPhone's width. After the name, whether the field has
  * a control tower, "Towered" or "Non-towered" (NASR's tower type, the
  * planner's `towered`), as Maps says a place's kind beside its name (the
  * owner, 2026-11-14, C1 on the canvas V1d9RDbmY1aczc4LfXed7a): the name
@@ -40,9 +42,22 @@ export function PlaceSubtitle({
 }) {
   const mark = useNotamMarks(ident, place).field;
   const sheet = useNotamSheet();
-  const kindLine = kind && (
-    <span className={cn("block truncate text-center", place?.closed && "font-semibold text-destructive-ink")} data-testid="place-kind">
-      {kind}
+  // Who may use it, or that it is closed, as a badge (StatusBadge's
+  // closed, military, joint, private), its words the engine's or NASR's.
+  const status = place?.closed
+    ? "closed"
+    : place?.military === "military"
+      ? "military"
+      : place?.military === "joint"
+        ? "joint"
+        : place?.private
+          ? "private"
+          : null;
+  const kindLine = status && (
+    <span className="block text-center" data-testid="place-status">
+      <StatusBadge variant={status} data-testid="place-kind">
+        {kind ?? undefined}
+      </StatusBadge>
     </span>
   );
   const towerWords = tower && (

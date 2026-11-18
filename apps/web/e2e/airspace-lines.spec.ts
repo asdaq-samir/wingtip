@@ -99,11 +99,18 @@ test("a tap on a Class D ring opens its card, with its ceiling and hours", async
   await page.mouse.click(at.x, at.y);
   const card = page.getByTestId("airspace-card");
   await expect(card).toBeVisible({ timeout: slow(10000) });
-  // Named "Class D": on a phone in the card's head, or in its pill's
-  // (MapCard's pill) over it, a heading; over the chart on a desktop, in
-  // the popup's head, a line of its own (MapCard's), as CI's desktop
-  // project found it (run 41014180625).
-  await expect(page.getByRole("heading", { name: "Class D" }).first()).toBeAttached();
+  // Its name the card's, "Class D" the line under it in its head (the
+  // owner, 2026-11-18: the title is the thing's name, the line its kind).
+  await expect(
+    page
+      .getByTestId("card-sub")
+      .filter({ hasText: /^Class D$/ })
+      .first(),
+  ).toBeAttached();
+  // Opened by its address, as its link opens it, its edge lit in the
+  // selection's yellow while its card is up.
+  expect(new URL(page.url()).searchParams.get("mark")).toMatch(/^airspace:/);
+  await expect.poll(async () => (await drawn(page, "airspace-picked")).length, { timeout: slow(10000) }).toBeGreaterThan(0);
   await expect(card).toContainText("Ceiling");
   await expect(card).toContainText(/\d,\d{3} ft MSL/);
   await expect(card).toContainText("Hours");

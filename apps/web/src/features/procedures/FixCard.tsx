@@ -12,6 +12,7 @@ import { TEXT } from "../../lib/text";
 import { altFt } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 import { capitalised } from "../../lib/advisories";
+import { useRingWhileUp } from "../../lib/map/mapPick";
 
 /** The fix whose card is open: its field, its procedure's name as the
  *  route's box says it, and the fix. */
@@ -23,6 +24,8 @@ export interface OpenFix {
   direct: boolean;
   /** The pilot's own altitude to cross it at, feet; null, the chart's. */
   own: number | null;
+  /** Where it is drawn on the map, for its ring while its card is up. */
+  at: { lat: number; lon: number } | null;
 }
 
 /**
@@ -48,8 +51,12 @@ export default function FixCard({
 }) {
   if (!open) return null;
   return (
+    // Its ident the name and what it is under it, as the chart's fix card
+    // has them ("BXCMB" / "Fix · IAF · I22 · KELD"; the selection audit,
+    // 2026-11-18: it had the bare ident and the line in its body).
     <SheetCard
       title={open.fix.ident}
+      description={["Fix", ...fixRoles(open.fix), open.procedure, open.field].join(" · ")}
       onClose={onClose}
       testId="fix-card"
       action={<CloseButton onClick={onClose} data-testid="fix-card-close" />}
@@ -71,6 +78,8 @@ function FixCardBody({
   onCross: (fix: string, feet: number | null) => void;
 }) {
   const { fix, own, direct } = open;
+  // Its ring on the map while its card is up (the one selection ring).
+  useRingWhileUp(open.at);
   // As typed (React Aria's NumberField, in the pilot's locale).
   const [typed, setTyped] = useState<number | null>(own);
   const feet = typed ?? Number.NaN;
@@ -78,10 +87,8 @@ function FixCardBody({
   // planner takes one: the engine's altitude_allowed.
   const valid = Number.isInteger(feet) && callEngine("altitude_allowed", { ft: feet });
   const charted = altitudeLines(fix).words;
-  const roles = fixRoles(fix);
   return (
     <div className="flex flex-col gap-3">
-      <p className={cn("text-center text-muted-foreground", TEXT.note)}>{[...roles, open.procedure, open.field].join(" · ")}</p>
       <Button
         type="button"
         size="lg"

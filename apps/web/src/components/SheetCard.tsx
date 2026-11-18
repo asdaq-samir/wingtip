@@ -1,4 +1,4 @@
-import { isValidElement, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode, useEffectEvent } from "react";
+import { isValidElement, useCallback, useEffect, useId, useMemo, useState, type ReactNode, useEffectEvent } from "react";
 import { createPortal } from "react-dom";
 import { EngineGate } from "../lib/engine/engineGate";
 import type { Drawer } from "@base-ui/react/drawer";
@@ -7,7 +7,7 @@ import { CardHeadRow } from "./CardHead";
 import { HeadGrid } from "./HeadGrid";
 import { PinnedHead } from "./PinnedHead";
 import { useCardFrame } from "./sheet/useCardFrame";
-import { holdOpenCard, setCardPill, type OpenCard, type PillHead } from "../lib/openCards";
+import { holdOpenCard, type OpenCard } from "../lib/openCards";
 import { CardId, SheetCardHead, type CardFrame } from "../lib/sheetCards";
 
 /**
@@ -102,16 +102,6 @@ export function SheetCard({
   const ownId = useId();
   const id = cardId ?? ownId;
   const headingId = `${id}-name`;
-  // Its entry among the open cards, for what its content says the pill
-  // shows of it (a map card's, MapCard's `pill`).
-  const held = useRef<OpenCard | null>(null);
-  // Kept for the entry too: the content's effect runs before this card's
-  // own, which holds the entry.
-  const pillGiven = useRef<PillHead | undefined>(undefined);
-  const setPill = useCallback((pill: PillHead | undefined) => {
-    pillGiven.current = pill;
-    if (held.current) setCardPill(held.current, pill);
-  }, []);
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   const [startSlot, setStartSlot] = useState<HTMLElement | null>(null);
   // A close of the caller's own in the head (`action`, the app's
@@ -129,13 +119,8 @@ export function SheetCard({
   useEffect(() => {
     // Its content's head holds it where it draws one (CardHead, CardTitle).
     if (!head) return;
-    const entry: OpenCard = { close: () => backNow(), pill: pillGiven.current };
-    held.current = entry;
-    const release = holdOpenCard(entry);
-    return () => {
-      held.current = null;
-      release();
-    };
+    const entry: OpenCard = { close: () => backNow() };
+    return holdOpenCard(entry);
   }, [head]);
 
   // The Drawer's word on Escape, a tap on the chart, ... as it was the
@@ -215,10 +200,7 @@ export function SheetCard({
 
   // The name in its own head row, where the content draws it (a map
   // card's, MapCard).
-  const headSlot = useMemo(
-    () => (title === undefined ? { slot, startSlot, headingId, setPill } : null),
-    [title, slot, startSlot, headingId, setPill],
-  );
+  const headSlot = useMemo(() => (title === undefined ? { slot, startSlot, headingId } : null), [title, slot, startSlot, headingId]);
   if (!target) return null;
   if (!head)
     return createPortal(

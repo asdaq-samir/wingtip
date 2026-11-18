@@ -120,10 +120,13 @@ test("a VFR waypoint on the chart is a magenta triangle with its ident, and its 
     }
     await expect(add).toBeVisible({ timeout: 3000 });
   }).toPass({ timeout: slow(15000) });
-  // What it is beside its ident, where it is on a line of its own: in its popup over the chart, or
-  // on a phone its card in the map's sheet (openCard), its name and line in its head beside its close.
+  // Its ident the name, what it is the line under it (the owner,
+  // 2026-11-18), in its card's head; opened by its address, as its link
+  // opens it.
   const popup = page.locator(".maplibregl-popup, [data-sheet-card]");
-  await expect(popup.getByText("VFR waypoint", { exact: true })).toBeVisible();
+  await expect(popup.getByRole("heading", { name: "VPBNG" })).toBeVisible();
+  await expect(popup.getByTestId("card-sub").filter({ hasText: "VFR Waypoint" })).toBeVisible();
+  expect(new URL(page.url()).searchParams.get("mark")).toMatch(/^vfr:VPBNG@/);
   // Where: off the nearest VOR, as a controller places it (WaypointCard's
   // fixRadialDistance); the overlay tiles' waypoints carry no description,
   // and the stubbed "3 nm SW of Campbell" went with the in-view layer.

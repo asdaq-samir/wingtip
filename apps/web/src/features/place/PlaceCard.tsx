@@ -15,7 +15,6 @@ import PlaceActions from "./PlaceActions";
 import { ApiError } from "../../lib/api/client";
 import type { AirportPlace } from "../../lib/api/types";
 import { useGeo, type LatLon } from "../../lib/geo";
-import { reportedWind } from "../plan";
 import { placeWeather } from "./placeWeather";
 import { awayOf, distanceOf, kindOf, knownOf, zonedClock } from "./placeCardWords";
 import { runwaysLeftOut, stripsOf } from "./runwayDrawing";
@@ -31,7 +30,6 @@ import { PlaceRunwaysTab } from "./PlaceRunwaysTab";
 import { PlaceWeatherTab } from "./PlaceWeatherTab";
 import { PlaceSubtitle } from "./PlaceSubtitle";
 import { PlaceTabBar, type PlaceTab } from "./PlaceTabBar";
-import { runwaysPictureOf } from "./runwayPicks";
 import { useFlyHereMinutes } from "./flyHereTime";
 import { useShown } from "../../lib/shown";
 import StatusBadge from "../../components/StatusBadge";
@@ -204,20 +202,6 @@ export default function PlaceCard({
   const ident4 = place?.ident ?? ident;
   // The Charts tab's count: the d-TPP's charts it lists, the diagram once.
   const charts = (place?.procedures ?? []).filter((c) => c.kind !== "APD").length + (place?.airport_diagram_url ? 1 : 0);
-  // The pill's line and picture, at the owner's pick (P5, 2026-10-29): the
-  // category as the chip says it ("≈" where it is not the field's own),
-  // the reported wind as FPL's list writes it, and the name; the head's
-  // first picture -- the aerial, else the FAA diagram's runways where it
-  // is drawn, none for the sketch, drawn in the page.
-  const pillWind = metar ? reportedWind(metar.wind_dir_true_deg, metar.wind_speed_kt, metar.wind_gust_kt) : null;
-  const pillLine = [
-    category && (weather?.category ? category : `≈ ${category}`),
-    pillWind && (pillWind === "calm" ? "Calm" : `${pillWind.dir} ${pillWind.speed}`),
-    name && name !== ident4 ? name : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-  const pillPicture = photos?.aerial_url ?? (place && sketched ? (runwaysPictureOf(place, noRunwaysPicture) ?? undefined) : undefined);
   const share = () =>
     void shareOrCopy({ title: place?.name ?? ident, url: `${location.origin}/app/plan?place=${place?.ident ?? ident}` }).catch(() => {});
   return (
@@ -252,7 +236,6 @@ export default function PlaceCard({
             onShare={share}
             closeTestId="place-close"
             shareTestId="place-share"
-            pill={{ line: pillLine || undefined, picture: pillPicture }}
           />
           <PlaceActions
             place={place ?? null}

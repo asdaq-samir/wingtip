@@ -11,6 +11,8 @@ import { TfrCard, TfrGone } from "../TfrCard";
 import { TFR_RED, inForce } from "../tfrMarks";
 import { useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
 import { GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE, TAP } from "../../../lib/map/gl/layers/common";
+import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
+import { pickOnMap, useMapPickOwner } from "../../../lib/map/mapPick";
 
 const SOURCE = "tfrs";
 // Each TFR's NOTAM number its feature's id (promoteId), for MapLibre's
@@ -70,9 +72,11 @@ const LABEL: SymbolLayerSpecification = {
 };
 const ALL = [...LAYERS, LINE, LINE_LATER, LABEL];
 
-/** The TFR a mouse rests on in the Brief (lib/map/marks/mapHover): its
- *  edge again, wide, in the selection's yellow over its red, drawn where
- *  its feature state says it is hovered. */
+/** The TFR a mouse rests on in the Brief (lib/map/marks/mapHover), and the
+ *  one whose card is open (the owner, 2026-11-18: an area picked lights
+ *  its edge, as the Brief's hover does): its edge again, wide, in the
+ *  selection's yellow over its red, drawn where its feature state says it
+ *  is hovered or picked. */
 const HOVER: LineLayerSpecification = {
   id: "tfr-hover-line",
   type: "line",
@@ -81,7 +85,12 @@ const HOVER: LineLayerSpecification = {
   paint: {
     "line-color": CHART.selected,
     "line-width": 5,
-    "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.9, 0],
+    "line-opacity": [
+      "case",
+      ["any", ["boolean", ["feature-state", "hover"], false], ["boolean", ["feature-state", "picked"], false]],
+      0.9,
+      0,
+    ],
   },
 };
 const DRAWN = [...ALL, HOVER];
@@ -119,7 +128,7 @@ export function TfrGl() {
   useGlData(SOURCE, features);
   // The one under the mouse in the Brief, lit by its feature state; none
   // on a touch screen.
-  const { map, openCard } = useGlMap();
+  const { map } = useGlMap();
   const hovered = useMapHover((s) => s.tfr);
   useEffect(() => {
     if (!hovered || !map.getSource(SOURCE)) return;
@@ -129,17 +138,28 @@ export function TfrGl() {
       if (map.style && map.getSource(SOURCE)) map.setFeatureState(feature, { hover: false });
     };
   }, [map, hovered, features]);
+  // The one whose card is open lit the same way, while it is.
+  useEffect(() => {
+    if (!open || !map.getSource(SOURCE)) return;
+    const feature = { source: SOURCE, id: open };
+    map.setFeatureState(feature, { picked: true });
+    return () => {
+      if (map.style && map.getSource(SOURCE)) map.setFeatureState(feature, { picked: false });
+    };
+  }, [map, open, features]);
+  useGlProbe("tfr-picked", ["tfrs-fill", "tfrs-fill-later"], (f) => ({ id: f.properties.id, picked: f.state.picked === true }));
   useGlTap(["tfrs-fill", "tfrs-fill-later"], 1, TAP.rank.area, (feature) => {
     const id = feature.properties.id;
     if (typeof id !== "string" || !data?.some((t) => t.notam_id === id)) return;
-    // The map's own card (a checkpoint's) put away, as a tap on another
-    // thing does, and this one opened by its address.
-    openCard(null);
+    // Every other card and ring put away (lib/map/mapPick), and this one
+    // opened by its address.
+    pickOnMap("tfr");
     void setOpen(id);
   });
+  const close = () => void setOpen(null);
+  useMapPickOwner("tfr", !!open, close);
   if (!open) return null;
   const tfr = data?.find((t) => t.notam_id === open);
-  const close = () => void setOpen(null);
   if (tfr)
     return (
       <SheetCard onClose={close}>

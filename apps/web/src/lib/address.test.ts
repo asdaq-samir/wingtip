@@ -2,7 +2,17 @@
 import { act, renderHook } from "@testing-library/react";
 import { withNuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing";
 import { describe, expect, it } from "vitest";
-import { ADDRESS_CLEARED, addressParams, loadAddress, navaidLink, tfrLink, useAddress, useAddressKey } from "./address";
+import {
+  ADDRESS_CLEARED,
+  addressParams,
+  loadAddress,
+  markLink,
+  navaidLink,
+  pointLink,
+  tfrLink,
+  useAddress,
+  useAddressKey,
+} from "./address";
 
 /** The workspace's whole address and one key read on its own, as the page
  *  has them, over an address of their own; each write to it kept. */
@@ -108,5 +118,20 @@ describe("the address's keys, typed", () => {
     // No place, or no ident: no card.
     expect(loadAddress("navaid=OBK").navaid).toBeNull();
     expect(loadAddress("navaid=@42.2,-87.9").navaid).toBeNull();
+  });
+
+  it("opens a fix's, a VFR waypoint's and an airspace's card by its kind, ident and place, from the link its Share sends", () => {
+    const link = markLink({ kind: "fix", ident: "BXCMB", lat: 42.12341, lon: -88.23456 }, "https://wingtipmaps.app");
+    expect(link).toBe("https://wingtipmaps.app/app/plan?mark=fix%3ABXCMB%4042.1234%2C-88.2346");
+    expect(loadAddress(new URL(link).search).mark).toEqual({ kind: "fix", ident: "BXCMB", lat: 42.1234, lon: -88.2346 });
+    expect(loadAddress("mark=airspace:1234@41.98,-87.9").mark).toEqual({ kind: "airspace", ident: "1234", lat: 41.98, lon: -87.9 });
+    // Another kind, or no place: no card.
+    expect(loadAddress("mark=vor:OBK@42.2,-87.9").mark).toBeNull();
+    expect(loadAddress("mark=vfr:VPXYZ").mark).toBeNull();
+  });
+
+  it("opens a point held's card from the link its Share sends", () => {
+    const link = pointLink({ lat: 42.31723, lon: -88.09051 }, "https://wingtipmaps.app");
+    expect(loadAddress(new URL(link).search).at).toEqual({ lat: 42.3172, lon: -88.0905 });
   });
 });
