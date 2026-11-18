@@ -213,8 +213,13 @@ def test_the_runways_picked_are_flown_off_the_runway_and_into_the_pattern(monkey
         }
 
     monkeypatch.setattr(flight_procedures, "_field_runway", runway)
-    plain = client.get("/api/plan", params=VIA_MADISON).json()
-    flown = client.get("/api/plan", params={**VIA_MADISON, "runways": "C81:9,KMSN:27", "patterns": "KMSN:27,KDLH:9"}).json()
+    # With checkpoints, as when it was written: each hop is then more than
+    # one leg, so the first leg only leaves and the last only lands. With
+    # none (the default since 2026-11-18) C81 to Madison is one leg that
+    # does both, and says it lands.
+    asked = {**VIA_MADISON, "checkpoints": "true"}
+    plain = client.get("/api/plan", params=asked).json()
+    flown = client.get("/api/plan", params={**asked, "runways": "C81:9,KMSN:27", "patterns": "KMSN:27,KDLH:9"}).json()
     first, last = flown["legs"][0], flown["legs"][-1]
     c81, dlh = airport("C81"), airport("KDLH")
     assert first["procedure"]["path"][0] == [round(c81["lat"], 6), round(c81["lon"] - 0.01, 6)]
