@@ -11,7 +11,7 @@ from apscheduler.schedulers.base import BaseScheduler
 from wingtip import (
     airspace,
     altitude,
-    charts,
+    chart_prepare,
     faa_data,
     faa_editions,
     fixes,
@@ -79,7 +79,7 @@ def _prepare_corridor_charts() -> None:
             # the daily refresh fetching the rest -- and a stack started
             # from nothing with that refresh off, CI's, had no IFR chart
             # for the tests that switch to one.
-            charts.prepare_for_bbox((min(lons), min(lats), max(lons), max(lats)), kinds=("sec", "tac", "ifr_low", "ifr_area"))
+            chart_prepare.prepare_for_bbox((min(lons), min(lats), max(lons), max(lats)), kinds=("sec", "tac", "ifr_low", "ifr_area"))
 
 
 def check_faa_editions() -> None:

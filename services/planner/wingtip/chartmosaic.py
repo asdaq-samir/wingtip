@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from PIL import Image
 
-from . import charts, geo
+from . import chart_coverage, chart_grid, chart_kinds, chart_prepare, chart_tiles, geo
 from .chartpalette import _COLOUR_BITS, GRATICULE_HALF_WIDTH_PX, GRATICULE_STEP_DEG, _colour_table
 from .config import VFR_SECTIONAL_MAX_ZOOM
 from .geo import distance_nm, tile_lat_lon, tile_xy
@@ -73,7 +73,7 @@ def corridor_tiles(start: tuple, end: tuple, half_width_nm: float, zoom: int = D
 
 def fetch_tile(x: int, y: int, zoom: int = DEFAULT_ZOOM) -> Image.Image | None:
     """One sectional tile as RGB, rendered from the FAA's own raster by
-    wingtip.charts (and cached there on disk, so a second route through the
+    wingtip.chart_tiles (and cached there on disk, so a second route through the
     same area reads it back instantly). None where no chart covers the
     tile -- open water, Canada -- so one missing tile leaves a hole in
     the mosaic rather than failing the whole read.
@@ -84,7 +84,7 @@ def fetch_tile(x: int, y: int, zoom: int = DEFAULT_ZOOM) -> Image.Image | None:
     transparency of an uncovered corner is white here, since the
     detector's road-and-rail class looks for black.
     """
-    return charts.tile_image(x, y, zoom, kind="sec")
+    return chart_tiles.tile_image(x, y, zoom, kind="sec")
 
 
 @dataclass
@@ -180,11 +180,11 @@ def build_mosaic(tiles: list, zoom: int = DEFAULT_ZOOM, max_workers: int = 8) ->
     canvas = np.zeros((height, width, 3), dtype=np.uint8)
     covered = np.zeros((height, width), dtype=bool)
 
-    west, south, _, _ = charts.tile_bbox_wgs84(x0, y1, zoom)
-    _, _, east, north = charts.tile_bbox_wgs84(x1, y0, zoom)
-    charts.prepare_for_bbox((west, south, east, north), kinds=("sec",))
+    west, south, _, _ = chart_grid.tile_bbox_wgs84(x0, y1, zoom)
+    _, _, east, north = chart_grid.tile_bbox_wgs84(x1, y0, zoom)
+    chart_prepare.prepare_for_bbox((west, south, east, north), kinds=("sec",))
 
-    cached = sum(1 for x, y in tiles if charts.tile_cached(x, y, zoom, "sec"))
+    cached = sum(1 for x, y in tiles if chart_tiles.tile_cached(x, y, zoom, "sec"))
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         results = pool.map(lambda t: (t, fetch_tile(t[0], t[1], zoom)), tiles)
         missing = 0
@@ -233,11 +233,11 @@ def _has_chart(block: list, zoom: int) -> bool:
     """
     xs = [x for x, _ in block]
     ys = [y for _, y in block]
-    west, south, _, _ = charts.tile_bbox_wgs84(min(xs), max(ys), zoom)
-    _, _, east, north = charts.tile_bbox_wgs84(max(xs), min(ys), zoom)
+    west, south, _, _ = chart_grid.tile_bbox_wgs84(min(xs), max(ys), zoom)
+    _, _, east, north = chart_grid.tile_bbox_wgs84(max(xs), min(ys), zoom)
     return any(
         west < sheet_east and sheet_west < east and south < sheet_north and sheet_south < north
-        for _, (sheet_west, sheet_south, sheet_east, sheet_north) in charts.sheets(charts.SECTIONAL)
+        for _, (sheet_west, sheet_south, sheet_east, sheet_north) in chart_coverage.sheets(chart_kinds.SECTIONAL)
     )
 
 

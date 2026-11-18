@@ -4,10 +4,9 @@ chart around it, and the sheet is written back (find_masked_lines,
 remove_masked_lines). The reasons a band is told from a label are in
 wingtip.chart_bands.
 
-Split out of wingtip.chart_faces. wingtip.charts reaches these through
-wingtip.chart_faces; this calls back into wingtip.charts for the
-overviews, through the module rather than its names, so either can be
-imported first.
+Split out of wingtip.chart_faces, through which the chart pipeline
+reaches these; the overviews a cleaned sheet is given again are
+wingtip.chart_sheets'.
 """
 
 from __future__ import annotations
@@ -17,8 +16,8 @@ from pathlib import Path
 
 import numpy as np
 
-from . import charts
 from .atomic import atomic_path
+from .chart_sheets import build_overviews
 from .chart_bands import (
     BAND_BLOCK,
     band_candidates,
@@ -147,6 +146,6 @@ def remove_masked_lines(path: Path, faces: list, known: tuple = ()) -> tuple:
             dst.write(data, 1)
             dst.update_tags(**tags)
             dst.update_tags(1, **band_tags)
-        charts.build_overviews(tmp)
+        build_overviews(tmp)
     log.info("%s: %d masked-line pixels given back their tint, in %d area(s)", path.name, changed, len(boxes))
     return tuple(boxes)

@@ -15,7 +15,7 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import numpy as np
-from wingtip import charts, chartvision
+from wingtip import chart_coverage, chart_kinds, chart_serving, chart_sheets, chartvision
 from wingtip.atomic import atomic_path
 from wingtip.config import CHART_TILE_CACHE_DIR, get_settings
 
@@ -52,8 +52,8 @@ BITS_PER_KIND = 5
 def cells_dir(cycle: str | None = None) -> Path:
     """The cells of the cycle the planner serves, named as its kept reads
     are (app.detection._kept_path): by tile revision and reader."""
-    cycle = cycle or charts.serving_cycle()
-    return LANDMARKS_ROOT / cycle / f"landmarks-r{charts.tiles_revision(cycle)}-{detection._READER}"
+    cycle = cycle or chart_serving.serving_cycle()
+    return LANDMARKS_ROOT / cycle / f"landmarks-r{chart_serving.tiles_revision(cycle)}-{detection._READER}"
 
 
 def cell_path(root: Path, cell: tuple) -> Path:
@@ -166,7 +166,7 @@ def build_cell(cell: tuple, root: Path) -> Path:
 def sheet_cells(names: list | None = None) -> list:
     """The cells under the named sectionals, every sectional's by default."""
     cells = set()
-    for name, (west, south, east, north) in charts.sheets(charts.SECTIONAL):
+    for name, (west, south, east, north) in chart_coverage.sheets(chart_kinds.SECTIONAL):
         if names and name not in names:
             continue
         x0, y0 = (int(v) // TILE_PX for v in chartvision.latlon_to_global_px(north, west, ZOOM))
@@ -206,7 +206,11 @@ def build_on_disk(cycle: str | None = None) -> int:
     low priority. A sectional not prepared here is not fetched for it:
     the whole set is 7 GB, the daily refresh's to bring (app.chart_refresh),
     and its cells are read the next start after. Returns the cells built."""
-    names = [name for name, _ in charts.sheets(charts.SECTIONAL) if charts._latest_on_disk(charts.SECTIONAL, name) is not None]
+    names = [
+        name
+        for name, _ in chart_coverage.sheets(chart_kinds.SECTIONAL)
+        if chart_sheets.latest_on_disk(chart_kinds.SECTIONAL, name) is not None
+    ]
     if not names:
         return 0
     return build(names, workers=1, cycle=cycle, initializer=_low_priority)

@@ -4,7 +4,7 @@
 
 import pytest
 
-from wingtip import charts, offline_charts, offline_regions, tile_archive
+from wingtip import chart_cycle, chart_kinds, chart_serving, config, offline_charts, offline_regions, tile_archive
 from wingtip.geo import tile_xy
 
 CYCLE = "10-29-2026"
@@ -24,7 +24,7 @@ DEN = [_tile(39.86, -104.67, z) for z in (8, 12)]
 @pytest.fixture
 def cache(tmp_path, monkeypatch):
     """A cycle whose sectional archive holds tiles over Chicago and Denver."""
-    monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path)
+    monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path)
     tiles = [(z, x, y, 10, lambda t=(z, x, y): f"png{t}"[:10].ljust(10).encode()) for z, x, y in ORD + DEN]
     tile_archive.write(tmp_path / CYCLE / "sec.pmtiles", tiles, {"kind": "sec"})
     return tmp_path
@@ -53,9 +53,9 @@ def test_a_drawn_box_is_snapped_and_bounded():
 
 def test_the_tiles_of_a_region_are_those_its_boxes_touch():
     chicago = offline_regions.find("Chicago")
-    wanted = set(offline_charts.tiles(chicago, charts.SECTIONAL))
+    wanted = set(offline_charts.tiles(chicago, chart_kinds.SECTIONAL))
     assert set(ORD) <= wanted and not set(DEN) & wanted
-    assert {z for z, _, _ in wanted} == set(range(charts.SECTIONAL.min_zoom, charts.SECTIONAL.max_zoom + 1))
+    assert {z for z, _, _ in wanted} == set(range(chart_kinds.SECTIONAL.min_zoom, chart_kinds.SECTIONAL.max_zoom + 1))
 
 
 def test_a_cut_holds_the_region_tiles_and_its_estimate_is_its_size(cache):
@@ -83,14 +83,14 @@ def test_no_tiles_or_no_archive_is_no_cut(cache):
     assert offline_charts.estimate(CYCLE, offline_regions.find("Chicago"), "sec@2x") is None
     assert offline_charts.cut("../etc", offline_regions.find("Chicago"), "sec") is None
     assert offline_charts.parse_archive("sec@3x") is None
-    assert offline_charts.parse_archive("ifr_low@2x") == (charts.IFR_LOW, 2)
+    assert offline_charts.parse_archive("ifr_low@2x") == (chart_kinds.IFR_LOW, 2)
 
 
 def test_the_cycles_now_and_ahead(cache, monkeypatch):
-    monkeypatch.setattr(charts, "serving_cycle", lambda: CYCLE)
+    monkeypatch.setattr(chart_serving, "serving_cycle", lambda: CYCLE)
     assert offline_charts.cycles() == (CYCLE, None)
     tile_archive.write(cache / "12-24-2026" / "sec.pmtiles", [(8, 1, 1, 1, lambda: b"x")], {})
-    monkeypatch.setattr(charts, "in_force", lambda c: c == CYCLE)
+    monkeypatch.setattr(chart_cycle, "in_force", lambda c: c == CYCLE)
     assert offline_charts.cycles() == (CYCLE, "12-24-2026")
 
 

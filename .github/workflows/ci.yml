@@ -690,7 +690,7 @@ jobs:
             data/raw/*
             !data/raw/charts.nosync
             !data/raw/chart_tiles.nosync
-          key: planner-data-v1-${{ hashFiles('data/processed/candidates_*.csv', 'services/planner/wingtip/faa_data.py', 'services/planner/wingtip/airports.py', 'services/planner/wingtip/elevation.py', 'services/planner/wingtip/charts.py') }}
+          key: planner-data-v1-${{ hashFiles('data/processed/candidates_*.csv', 'services/planner/wingtip/faa_data.py', 'services/planner/wingtip/airports.py', 'services/planner/wingtip/elevation.py', 'services/planner/wingtip/chart_*.py') }}
           restore-keys: planner-data-v1-
       # The corridor's charts, tiles and detections (a minute of a shard's
       # processors to read again), keyed by cycle and reader code.

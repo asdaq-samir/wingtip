@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 import pytest
 
 from charts import next_cycle
-from wingtip import chart_next, charts
+from wingtip import chart_archives, chart_coverage, chart_cycle, chart_kinds, chart_next, chart_render, chart_serving, chart_upkeep, config
 
 
 def utc(text: str) -> datetime:
@@ -19,25 +19,25 @@ def utc(text: str) -> datetime:
 
 @pytest.fixture
 def disk(tmp_path, monkeypatch):
-    monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
-    monkeypatch.setattr(charts, "CHARTS_DIR", tmp_path / "charts")
-    monkeypatch.setattr(charts, "_serving_cache", {"value": None, "at": 0.0})
-    monkeypatch.setattr(charts, "_kind_serving", {})
-    monkeypatch.setattr(charts, "current_cycle", lambda *a, **k: "10-29-2026")
+    monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
+    monkeypatch.setattr(config, "CHARTS_DIR", tmp_path / "charts")
+    monkeypatch.setattr(chart_serving, "_serving_cache", {"value": None, "at": 0.0})
+    monkeypatch.setattr(chart_serving, "_kind_serving", {})
+    monkeypatch.setattr(chart_cycle, "current_cycle", lambda *a, **k: "10-29-2026")
     return tmp_path
 
 
 def _complete(cycle):
-    for kind in charts.KINDS:
-        charts._write_pyramid_status(
+    for kind in chart_kinds.KINDS:
+        chart_serving.write_pyramid_status(
             cycle,
             {
                 "kind": kind,
                 "zooms": [3],
-                "sheets": sorted(charts.COVERAGE[kind]),
+                "sheets": sorted(chart_coverage.COVERAGE[kind]),
                 "finished_at": "t",
                 "tiles": 1,
-                "renderer": charts.RENDERER_VERSION,
+                "renderer": chart_render.RENDERER_VERSION,
             },
         )
 
@@ -53,8 +53,8 @@ def test_the_jobs_run_through_a_cycle(disk, monkeypatch):
         _complete(cycle)
         return True
 
-    monkeypatch.setattr(charts, "build_cycle", build)
-    monkeypatch.setattr(charts, "pack_complete", lambda cycle, kinds=None: {})
+    monkeypatch.setattr(chart_upkeep, "build_cycle", build)
+    monkeypatch.setattr(chart_archives, "pack_complete", lambda cycle, kinds=None: {})
 
     # Before the lead: nothing but the word of when.
     assert next_cycle.run(now=utc("2026-11-09T12:00")) == chart_next.WAITING
@@ -92,7 +92,7 @@ def test_a_failed_build_is_said_and_raised(disk, monkeypatch):
     def broken(cycle, workers=None, step=None):
         raise OSError("No space left on device")
 
-    monkeypatch.setattr(charts, "build_cycle", broken)
+    monkeypatch.setattr(chart_upkeep, "build_cycle", broken)
     with pytest.raises(OSError):
         next_cycle.run(now=utc("2026-12-18T12:00"), is_published=lambda c: True)
     status = chart_next.read_status()

@@ -5,7 +5,17 @@ by range requests -- and written again when tiles are drawn again."""
 
 import pytest
 
-from wingtip import charts, tile_archive
+from wingtip import (
+    chart_archives,
+    chart_coverage,
+    chart_grid,
+    chart_kinds,
+    chart_rerender,
+    chart_serving,
+    chart_tiles,
+    config,
+    tile_archive,
+)
 
 CYCLE = "10-29-2026"
 
@@ -42,21 +52,21 @@ def test_a_rewritten_archive_is_read_afresh(tmp_path):
 @pytest.fixture
 def cache(tmp_path, monkeypatch):
     """A tile cache whose sectional pyramid is finished, at both densities."""
-    monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
-    monkeypatch.setattr(charts, "CHART_TILES_URL", None)
-    monkeypatch.setattr(charts, "TILE_SCALES", (1, 2))
-    monkeypatch.setattr(charts, "serving_cycle_of", lambda kind: CYCLE)
+    monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
+    monkeypatch.setattr(config, "CHART_TILES_URL", None)
+    monkeypatch.setattr(chart_grid, "TILE_SCALES", (1, 2))
+    monkeypatch.setattr(chart_serving, "serving_cycle_of", lambda kind: CYCLE)
     root = tmp_path / "tiles" / CYCLE / "sec" / "8" / "65"
     root.mkdir(parents=True)
     (root / "94.png").write_bytes(b"plain")
     (root / "94@2x.png").write_bytes(b"sharp")
     (root / "95.none").touch()
-    charts._write_pyramid_status(
+    chart_serving.write_pyramid_status(
         CYCLE,
         {
             "kind": "sec",
             "zooms": [8],
-            "sheets": sorted(charts.COVERAGE["sec"]),
+            "sheets": sorted(chart_coverage.COVERAGE["sec"]),
             "finished_at": "t",
             "tiles": 1,
             "current_pass": None,
@@ -67,18 +77,18 @@ def cache(tmp_path, monkeypatch):
 
 
 def test_a_finished_kind_is_packed_and_served_from_its_archives(cache, monkeypatch):
-    assert charts.pack_complete(CYCLE) == {"sec": 2}
+    assert chart_archives.pack_complete(CYCLE) == {"sec": 2}
     assert sorted(p.name for p in (cache / CYCLE).glob("*.pmtiles")) == ["sec.pmtiles", "sec@2x.pmtiles"]
     assert not (cache / CYCLE / "sec").exists()  # the loose files, the marker and the folders gone
-    monkeypatch.setattr(charts, "rasters_covering", lambda *a, **k: pytest.fail("a packed tile is never drawn"))
-    assert charts.tile_png(65, 94, 8, "sec") == b"plain"
-    assert charts.tile_png(65, 94, 8, "sec", scale=2) == b"sharp"
+    monkeypatch.setattr(chart_tiles, "rasters_covering", lambda *a, **k: pytest.fail("a packed tile is never drawn"))
+    assert chart_tiles.tile_png(65, 94, 8, "sec") == b"plain"
+    assert chart_tiles.tile_png(65, 94, 8, "sec", scale=2) == b"sharp"
     # Not in the archive: no tile here, as the .none marker said.
-    assert charts.tile_png(65, 95, 8, "sec") is None
-    assert charts.tile_cached(65, 94, 8, "sec") and not charts.tile_cached(65, 95, 8, "sec")
+    assert chart_tiles.tile_png(65, 95, 8, "sec") is None
+    assert chart_tiles.tile_cached(65, 94, 8, "sec") and not chart_tiles.tile_cached(65, 95, 8, "sec")
     # Packed again with no loose tiles: the archives stay as they are.
-    assert charts.pack_complete(CYCLE) == {}
-    assert charts.tile_png(65, 94, 8, "sec") == b"plain"
+    assert chart_archives.pack_complete(CYCLE) == {}
+    assert chart_tiles.tile_png(65, 94, 8, "sec") == b"plain"
 
 
 def test_a_pass_over_some_zooms_keeps_the_rest_of_the_archive(cache):
@@ -88,41 +98,41 @@ def test_a_pass_over_some_zooms_keeps_the_rest_of_the_archive(cache):
     zooms were lost when its far ones were drawn)."""
     old = [(z, x, y, 3, lambda: b"old") for z, x, y in ((9, 130, 189), (8, 65, 94), (8, 65, 95))]
     tile_archive.write(cache / CYCLE / "sec.pmtiles", old, {})
-    assert charts.pack_complete(CYCLE) == {"sec": 3}
-    assert charts.tile_png(130, 189, 9, "sec") == b"old"  # another zoom: kept
-    assert charts.tile_png(65, 94, 8, "sec") == b"plain"  # drawn again: the new one
-    assert charts.tile_png(65, 95, 8, "sec") is None  # marked as none: dropped
+    assert chart_archives.pack_complete(CYCLE) == {"sec": 3}
+    assert chart_tiles.tile_png(130, 189, 9, "sec") == b"old"  # another zoom: kept
+    assert chart_tiles.tile_png(65, 94, 8, "sec") == b"plain"  # drawn again: the new one
+    assert chart_tiles.tile_png(65, 95, 8, "sec") is None  # marked as none: dropped
 
 
 def test_a_kind_mid_pass_is_not_packed(cache):
     """A pass under way keeps the last finished pass's record, complete,
     beside half a pyramid of loose tiles."""
-    record = charts.pyramid_status(CYCLE)["sec"]
-    charts._write_pyramid_status(CYCLE, {**record, "current_pass": {"started_at": "t", "done": 0, "total": 2}})
-    assert charts.pack_complete(CYCLE) == {}
+    record = chart_serving.pyramid_status(CYCLE)["sec"]
+    chart_serving.write_pyramid_status(CYCLE, {**record, "current_pass": {"started_at": "t", "done": 0, "total": 2}})
+    assert chart_archives.pack_complete(CYCLE) == {}
     assert (cache / CYCLE / "sec" / "8" / "65" / "94.png").exists()
 
 
 def test_tiles_drawn_again_go_into_the_archive_and_the_revision_moves(cache, monkeypatch):
-    charts.pack_complete(CYCLE)
+    chart_archives.pack_complete(CYCLE)
     tile_archive.write(cache / CYCLE / "sec.pmtiles", [*_tiles((8, 65, 94), (8, 66, 94))], {})
     drawn = {(65, 94): b"cleaned", (66, 94): None}
-    monkeypatch.setattr(charts, "_rerender_tile", lambda args: drawn.get((args[2], args[3]), False))
-    box = charts.tile_bbox_wgs84(65, 94, 8)
-    wide = (box[0], box[1], charts.tile_bbox_wgs84(66, 94, 8)[2] - 0.01, box[3])
+    monkeypatch.setattr(chart_rerender, "_rerender_tile", lambda args: drawn.get((args[2], args[3]), False))
+    box = chart_grid.tile_bbox_wgs84(65, 94, 8)
+    wide = (box[0], box[1], chart_grid.tile_bbox_wgs84(66, 94, 8)[2] - 0.01, box[3])
     # 65/94 at both densities drawn again; 66/94 drawn as nothing.
-    assert charts.rerender_tiles(charts.KINDS["sec"], [wide], CYCLE, workers=0) == 2
-    assert charts.tile_png(65, 94, 8, "sec") == b"cleaned"
-    assert charts.tile_png(65, 94, 8, "sec", scale=2) == b"cleaned"
-    assert charts.tile_png(66, 94, 8, "sec") is None  # no sheet draws it any more
-    assert charts.tiles_revision(CYCLE) == 1
+    assert chart_rerender.rerender_tiles(chart_kinds.KINDS["sec"], [wide], CYCLE, workers=0) == 2
+    assert chart_tiles.tile_png(65, 94, 8, "sec") == b"cleaned"
+    assert chart_tiles.tile_png(65, 94, 8, "sec", scale=2) == b"cleaned"
+    assert chart_tiles.tile_png(66, 94, 8, "sec") is None  # no sheet draws it any more
+    assert chart_serving.tiles_revision(CYCLE) == 1
 
 
 def test_the_published_archive_is_read_by_range_requests(cache, monkeypatch):
-    charts.pack_complete(CYCLE)
+    chart_archives.pack_complete(CYCLE)
     body = (cache / CYCLE / "sec.pmtiles").read_bytes()
-    monkeypatch.setattr(charts, "CHART_TILES_URL", "https://d123.cloudfront.net/tiles")
-    monkeypatch.setattr(charts, "_serving_cache", {"value": None, "at": 0.0})
+    monkeypatch.setattr(config, "CHART_TILES_URL", "https://d123.cloudfront.net/tiles")
+    monkeypatch.setattr(chart_serving, "_serving_cache", {"value": None, "at": 0.0})
     monkeypatch.setattr(tile_archive, "_remote", {})
     pointer = {"cycle": CYCLE, "revision": 3, "archives": {"sec": {"1": "sec-abc.pmtiles"}}}
     asked = []
@@ -149,12 +159,12 @@ def test_the_published_archive_is_read_by_range_requests(cache, monkeypatch):
         asked.append(url)
         return Response(url, headers if url.endswith(".pmtiles") else None)
 
-    monkeypatch.setattr(charts.requests, "get", get)
-    assert charts.tile_png(65, 94, 8, "sec") == b"plain"
-    assert charts.tile_png(65, 95, 8, "sec") is None
-    assert charts.tiles_revision(CYCLE) == 3
+    monkeypatch.setattr(chart_serving.requests, "get", get)
+    assert chart_tiles.tile_png(65, 94, 8, "sec") == b"plain"
+    assert chart_tiles.tile_png(65, 95, 8, "sec") is None
+    assert chart_serving.tiles_revision(CYCLE) == 3
     assert set(asked) == {"https://d123.cloudfront.net/tiles/serving.json", f"https://d123.cloudfront.net/tiles/{CYCLE}/sec-abc.pmtiles"}
     # The header and directory once; then a tile is one request of its own bytes.
     before = len(asked)
-    charts.tile_png(65, 94, 8, "sec")
+    chart_tiles.tile_png(65, 94, 8, "sec")
     assert len(asked) == before + 1

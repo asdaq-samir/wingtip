@@ -10,7 +10,7 @@ starts none of them.
 |---|---|---|
 | [`retrain/`](retrain) | The training run: `python -m wingtip.pipeline run` retrains, evaluates and promotes the chart model (and the landmark model where the ratings are enough), each promoted only if it beats the one serving | `wingtip.pipeline`, `wingtip.chartmodel`, `wingtip.model_registry` (shared with the planner, which loads the promoted model) |
 | [`crash/`](crash) | The Studio's crash leads ([docs/STUDIO-PIPELINE.md](../../docs/STUDIO-PIPELINE.md)): the FAA's statements and notices read into leads, each lead's identity checked by the engine's `occurrence_identity` against the FAA's registry and an ADS-B track, and a kit made for each confirmed one; it keeps its own schedule, a run every half hour (`python -m crash every`, the compose service `crash-leads`) | `crash/cli.py`; `wingtip.crash_drafts` (shared with the planner, which serves the drafts) |
-| [`charts/`](charts) | A new FAA chart cycle fetched, rendered and packed into one PMTiles archive per kind and density; the map's overlay tiles (tippecanoe) from the planner's cycle pack; publishing to S3 | `charts/cli.py` (the commands), `charts/overlays.py` (the vector tiles, its layers in `overlay_layers.py` and `nasr_layers.py`); `wingtip.charts` and `wingtip.tile_archive` (shared with the planner, which serves the tiles) |
+| [`charts/`](charts) | A new FAA chart cycle fetched, rendered and packed into one PMTiles archive per kind and density; the map's overlay tiles (tippecanoe) from the planner's cycle pack; publishing to S3 | `charts/cli.py` (the commands), `charts/overlays.py` (the vector tiles, its layers in `overlay_layers.py` and `nasr_layers.py`); wingtip's chart modules (`wingtip.charts` maps them) and `wingtip.tile_archive` (shared with the planner, which serves the tiles) |
 
 Chart vision (`wingtip.chartvision`) stays in the planner: it reads the
 chart along a pilot's route as the route is planned, which is serving
@@ -61,7 +61,7 @@ and `charts-overlays` whenever its cycle pack has no overlay tiles.
 `CHARTS_CYCLE_LEAD_DAYS` (7) days before the FAA's next 56-day cycle: it
 fetches, renders and packs that cycle into its own folder while the
 current one serves, and the map goes over to it at 0901Z on its
-effective date (`charts.in_force`); the next run after deletes the old
+effective date (`wingtip.chart_cycle.in_force`); the next run after deletes the old
 cycle. It waits for a turn among the Mac's heavy work, through
 `scripts/dev/one-at-a-time.sh`'s lock in `/tmp` (`charts/turn.py`).
 `CHARTS_CYCLE_AUTO=0` turns that off (production and CI have it off: the

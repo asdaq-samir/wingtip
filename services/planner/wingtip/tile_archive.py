@@ -1,5 +1,5 @@
 """A kind's chart tiles at one density as one PMTiles archive: written by
-the charts job once its pyramid is complete (wingtip.charts.pack_pyramid),
+the charts job once its pyramid is complete (wingtip.chart_archives.pack_pyramid),
 read a tile at a time by the planner, from the disk or, on AWS, by HTTP
 range requests to the published copy.
 
@@ -230,7 +230,7 @@ def over_http(url: str, session, timeout: float = 10) -> Archive | None:
     """The published archive at url, read by HTTP range requests through
     `session` (requests'), its directories kept; None where it cannot be
     read. A published archive's name changes with its contents
-    (wingtip.charts.publish), so what is kept never goes stale."""
+    (wingtip.chart_publish.publish), so what is kept never goes stale."""
     held = _remote.get(url)
     if held is not None:
         return held

@@ -5,7 +5,7 @@ the states, and a box drawn on the map. Each is a name and the boxes
 (wingtip.offline_charts).
 
 A sheet's box is its raster envelope as the FAA's FGDC metadata gives it
-(wingtip.charts.COVERAGE), collar included, so the cut holds every tile
+(wingtip.chart_coverage.COVERAGE), collar included, so the cut holds every tile
 the sheet itself draws. A state's boxes are the bounds of the Census
 Bureau's 2024 cartographic boundary file (cb_2024_us_state_20m, read
 2026-11-09; offline_states.json), widened by 0.005 degrees and rounded,
@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
-from . import charts
+from . import chart_coverage
 
 Box = tuple[float, float, float, float]
 
@@ -58,7 +58,7 @@ def _states() -> dict:
 def sheets() -> list[Region]:
     """Every sectional sheet, the two Caribbean VFR charts among them."""
     out = []
-    for name, entry in sorted(charts.COVERAGE["sec"].items()):
+    for name, entry in sorted(chart_coverage.COVERAGE["sec"].items()):
         boxes = tuple(tuple(b) for b in (entry if isinstance(entry[0], tuple) else (entry,)))
         out.append(Region(name, name.replace("_", " ").replace(" VFR", ""), "sheet", boxes))
     return out

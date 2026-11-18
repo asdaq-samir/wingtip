@@ -2,8 +2,8 @@
 paper border of a scan.
 
 Shared by wingtip.chart_faces (finding the face) and the masked-line
-cleaning (wingtip.chart_bands, wingtip.chart_masked_lines), and used by
-wingtip.charts through wingtip.chart_faces. Split out so none of them
+cleaning (wingtip.chart_bands, wingtip.chart_masked_lines), and by the
+tile warp (wingtip.chart_warp). Split out so none of them
 needs the others for the raster's own colours.
 """
 
@@ -28,8 +28,8 @@ def palette(src) -> np.ndarray | None:
 
 def read_rgb(src, window=None, out_shape=None) -> np.ndarray:
     """A window of the raster as (rows, cols, 3) RGB, whichever way the
-    file stores its colours. wingtip.charts reads a tile's warp through this
-    too."""
+    file stores its colours. wingtip.chart_warp reads a tile's warp through
+    this too."""
     lut = palette(src)
     if lut is None:
         shape = None if out_shape is None else (3, *out_shape)

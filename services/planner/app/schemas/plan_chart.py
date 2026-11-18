@@ -29,13 +29,13 @@ class ChartLayer(BaseModel):
     over: list[str] = []
     # For an overlay, its sheets and their extents.
     sheets: list[ChartSheet] = []
-    # The cycle this kind is drawn from (wingtip.charts.serving_cycle_of) and
+    # The cycle this kind is drawn from (wingtip.chart_serving.serving_cycle_of) and
     # its tiles' revision there: each kind goes over to a new cycle as its
     # own pyramid is finished, so the map's tile URLs carry its own.
     cycle: str | None = None
     revision: int = 0
     # The pixel densities its tiles were drawn at there
-    # (wingtip.charts.tile_scales): 1, the 256-pixel tiles, and 2 when
+    # (wingtip.chart_serving.tile_scales): 1, the 256-pixel tiles, and 2 when
     # the same z/x/y also comes as a 512-pixel tile named {y}@2x.png,
     # which a 2x or 3x screen draws in its place.
     scales: list[int] = [1]

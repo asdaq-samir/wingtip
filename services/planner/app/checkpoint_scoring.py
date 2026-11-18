@@ -17,7 +17,7 @@ import threading
 
 from cachetools import LRUCache
 from fastapi import HTTPException
-from wingtip import chartlabels, charts, faa_data, geo, model_registry, places
+from wingtip import chart_serving, chartlabels, faa_data, geo, model_registry, places
 from wingtip.engine import ask as engine
 from wingtip.terrain import DEFAULT_FAA_CACHE_DIR
 
@@ -101,8 +101,8 @@ def score(dep: str, dest: str) -> list:
 def _scored(dep: str, dest: str) -> list:
     """The chart's detections within HALF_WIDTH_NM of the course, scored,
     in along-track order, remembered per route."""
-    cycle = charts.serving_cycle()
-    key = (cycle, charts.tiles_revision(cycle), _mtime_or_none(model_registry.CHART_CURRENT_DIR / "metrics.json"))
+    cycle = chart_serving.serving_cycle()
+    key = (cycle, chart_serving.tiles_revision(cycle), _mtime_or_none(model_registry.CHART_CURRENT_DIR / "metrics.json"))
     with _SCORE_CACHE_LOCK:
         cached = _SCORE_CACHE.get((dep, dest))
         if cached is not None and cached["key"] == key:

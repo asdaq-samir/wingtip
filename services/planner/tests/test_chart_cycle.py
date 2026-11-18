@@ -6,7 +6,7 @@ carries the next cycle's pyramid."""
 from datetime import date
 
 import pytest
-from wingtip import chart_next, charts
+from wingtip import chart_next, chart_serving, chart_upkeep, config
 
 from app import chart_refresh
 from app.chart_cycle import check
@@ -24,26 +24,26 @@ def started(monkeypatch):
     names: list = []
     monkeypatch.setattr(dev_services, "start", lambda name: names.append(name) or True)
     monkeypatch.setattr(check, "AUTO", True)
-    monkeypatch.setattr(charts, "refresh_running", lambda: False)
+    monkeypatch.setattr(chart_upkeep, "refresh_running", lambda: False)
     monkeypatch.setattr(chart_next, "read_status", lambda root=None: None)
     return names
 
 
 def test_staged_in_the_window_once_the_current_cycle_is_done(monkeypatch, started):
     monkeypatch.setattr(chart_next, "question", lambda **kw: (_plan(), "stage"))
-    monkeypatch.setattr(charts, "refresh_due", lambda: False)
+    monkeypatch.setattr(chart_upkeep, "refresh_due", lambda: False)
 
     monkeypatch.setattr(chart_refresh, "in_window", lambda *a, **k: False)
     assert check.maybe_stage_next() is None and started == []
     # The current cycle still due: that one first.
     monkeypatch.setattr(chart_refresh, "in_window", lambda *a, **k: True)
-    monkeypatch.setattr(charts, "refresh_due", lambda: True)
+    monkeypatch.setattr(chart_upkeep, "refresh_due", lambda: True)
     assert check.maybe_stage_next() is None and started == []
     # A render running: left to it.
-    monkeypatch.setattr(charts, "refresh_due", lambda: False)
-    monkeypatch.setattr(charts, "refresh_running", lambda: True)
+    monkeypatch.setattr(chart_upkeep, "refresh_due", lambda: False)
+    monkeypatch.setattr(chart_upkeep, "refresh_running", lambda: True)
     assert check.maybe_stage_next() is None and started == []
-    monkeypatch.setattr(charts, "refresh_running", lambda: False)
+    monkeypatch.setattr(chart_upkeep, "refresh_running", lambda: False)
     assert check.maybe_stage_next() == "stage"
     assert started == [check.SERVICE]
 
@@ -62,9 +62,9 @@ def test_the_switch_off_starts_nothing(monkeypatch, started):
 
 
 def test_the_status_carries_the_next_cycles_pyramid(tmp_path, monkeypatch):
-    monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
+    monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
     monkeypatch.setattr(chart_next, "report", lambda auto, lead: {"cycle": "12-24-2026", "state": "staging"})
-    charts._write_pyramid_status(
+    chart_serving.write_pyramid_status(
         "12-24-2026", {"kind": "sec", "zooms": [3], "sheets": [], "finished_at": None, "tiles": 0, "current_pass": {"done": 3, "total": 53}}
     )
     status = check.status()

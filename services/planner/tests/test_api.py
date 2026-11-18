@@ -44,12 +44,12 @@ def test_aircraft_profiles_lists_the_stock_profiles():
 def test_a_chart_tile_no_sheet_covers_is_an_empty_204_kept_as_long_as_a_drawn_one(monkeypatch):
     # It was a 404: an error in the browser's console for every tile of sea
     # or Canada round the country as the planner opens.
-    from wingtip import charts
+    from wingtip import chart_tiles
 
-    monkeypatch.setattr(charts, "tile_png", lambda x, y, z, kind, scale=1: None)
+    monkeypatch.setattr(chart_tiles, "tile_png", lambda x, y, z, kind, scale=1: None)
     empty = client.get("/api/chart-tile/sec/4/1/8.png")
     assert empty.status_code == 204 and empty.content == b""
-    monkeypatch.setattr(charts, "tile_png", lambda x, y, z, kind, scale=1: b"\x89PNG")
+    monkeypatch.setattr(chart_tiles, "tile_png", lambda x, y, z, kind, scale=1: b"\x89PNG")
     drawn = client.get("/api/chart-tile/sec/4/3/6.png")
     assert drawn.status_code == 200 and drawn.headers["content-type"] == "image/png"
     assert empty.headers["cache-control"] == drawn.headers["cache-control"]
@@ -59,10 +59,10 @@ def test_a_chart_tile_no_sheet_covers_is_an_empty_204_kept_as_long_as_a_drawn_on
 
 
 def test_the_512_pixel_tile_is_the_same_address_with_at_2x(monkeypatch):
-    from wingtip import charts
+    from wingtip import chart_tiles
 
     asked = []
-    monkeypatch.setattr(charts, "tile_png", lambda x, y, z, kind, scale=1: asked.append((kind, z, x, y, scale)) or b"\x89PNG")
+    monkeypatch.setattr(chart_tiles, "tile_png", lambda x, y, z, kind, scale=1: asked.append((kind, z, x, y, scale)) or b"\x89PNG")
     assert client.get("/api/chart-tile/sec/4/3/6@2x.png").status_code == 200
     assert client.get("/api/chart-tile/tac/11/522/757.png").status_code == 200
     assert asked == [("sec", 4, 3, 6, 2), ("tac", 11, 522, 757, 1)]

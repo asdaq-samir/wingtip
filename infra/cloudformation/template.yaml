@@ -815,7 +815,7 @@ Resources:
   # refresh (services/jobs/charts) every day -- a no-op until the FAA
   # publishes a new cycle, then it fetches the country's sheets, draws the
   # pyramid, packs each kind into its archives and publishes them to the
-  # tiles bucket (wingtip.charts.publish), serving.json last, so every
+  # tiles bucket (wingtip.chart_publish.publish), serving.json last, so every
   # planner moves to the new cycle at once. Spot: an interrupted run
   # starts over the next day, the old cycle served until then. Under $1
   # a cycle.

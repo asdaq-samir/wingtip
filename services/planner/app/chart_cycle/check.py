@@ -5,7 +5,7 @@ started here through the dev-services sidecar, as app.chart_refresh starts
 the current cycle's: inside the same window (CHARTS_REFRESH_WINDOW), from
 CHARTS_CYCLE_LEAD_DAYS before the next cycle's date, so that cycle is
 complete on disk before it takes effect and the map goes over to it at
-0901Z on the date (wingtip.charts.in_force); and at any hour after the
+0901Z on the date (wingtip.chart_cycle.in_force); and at any hour after the
 swap, to delete the cycles before it. Its own switch, CHARTS_CYCLE_AUTO
 (on in the compose stack, 0 in production and CI), since the current
 cycle's check and this are separate decisions. It waits while the current
@@ -14,7 +14,7 @@ cycle is still due: that one first.
 
 import logging
 
-from wingtip import chart_next, charts
+from wingtip import chart_next, chart_serving, chart_upkeep
 
 from .. import chart_refresh
 from .. import dev_services
@@ -37,10 +37,10 @@ def maybe_stage_next() -> str | None:
         return None
     try:
         plan, what = chart_next.question(lead_days=LEAD_DAYS)
-        if what is None or charts.refresh_running():
+        if what is None or chart_upkeep.refresh_running():
             return None
         if what == "stage":
-            if charts.refresh_due():
+            if chart_upkeep.refresh_due():
                 log.info("next chart cycle %s waits for the current one's render", plan.next_name)
                 return None
             if not chart_refresh.in_window():
@@ -66,8 +66,8 @@ def status() -> dict | None:
         report = chart_next.report(AUTO, LEAD_DAYS)
         cycle = report["cycle"]
         report["progress"] = {
-            key: {**record, "complete": charts.pyramid_complete(cycle, (key,)), "missing": charts.pyramid_missing(cycle, key)}
-            for key, record in charts.pyramid_status(cycle).items()
+            key: {**record, "complete": chart_serving.pyramid_complete(cycle, (key,)), "missing": chart_serving.pyramid_missing(cycle, key)}
+            for key, record in chart_serving.pyramid_status(cycle).items()
         }
         return report
     except Exception:  # noqa: BLE001 -- the rest of the snapshot is still worth having

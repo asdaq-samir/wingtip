@@ -7,7 +7,7 @@ import numpy as np
 import rasterio
 from rasterio.transform import from_bounds
 from rasterio.warp import transform_bounds
-from wingtip import charts
+from wingtip import chart_kinds, chart_sheets
 
 C81 = (42.3225, -88.0742)  # Campbell, Grayslake IL
 
@@ -49,7 +49,7 @@ def _rgb_raster(path, box_deg, rgb):
 def _sheet(tmp_path, name: str, box: tuple, value: int):
     path = tmp_path / f"{name.lower()}.tif"
     _palette_raster(path, box, np.full((512, 512), value, np.uint8))
-    return charts.Chart(charts.SECTIONAL, name, "10-29-2026", (charts.Raster(path, face=box, envelope=box),), "now")
+    return chart_sheets.Chart(chart_kinds.SECTIONAL, name, "10-29-2026", (chart_sheets.Raster(path, face=box, envelope=box),), "now")
 
 
 LEFT, RIGHT = (-90.0, 41.0, -88.0, 43.0), (-88.0, 41.0, -86.0, 43.0)
