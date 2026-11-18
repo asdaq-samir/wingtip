@@ -335,7 +335,11 @@ for (const path of PAGES) {
       // in the page toggle on either page.
       await showTabs(page);
       await expect(page.getByTestId("account-button")).toBeVisible();
-      expect(await sideDrawer(page).getByTestId("account-button").count()).toBe(0);
+      // A circle of its own over the map (MapControls' AccountCircle), riding
+      // the front sheet's top as the map's buttons do (OnSheetTop, so in its
+      // popup), never in the sheet's own rows.
+      await expect(page.locator("[data-map-food]").getByTestId("account-button")).toBeVisible();
+      expect(await sideDrawer(page).getByTestId("sheet-pages").getByTestId("account-button").count()).toBe(0);
       await expect(sideDrawer(page).getByTestId("sheet-page-toggle")).toBeVisible();
       await page.goto(path);
       await settle(page);

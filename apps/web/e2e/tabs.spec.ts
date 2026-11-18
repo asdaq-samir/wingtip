@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, sideDrawer, slow, openTab, openSection, panelTabs, openBrief, closeCard } from "./helpers";
+import { settle, sideDrawer, slow, openTab, openSection, panelTabs, openBrief, closeCard, inSheet } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -251,7 +251,14 @@ test("the Brief opens on whether to go and a card for each part of the flight, a
   const glance = drawer.getByTestId("brief-glance");
   await expect(glance.getByTestId("brief-verdict")).toContainText(/^No-go as planned: Weather/, { timeout: slow(30_000) });
   await expect(glance.getByTestId("brief-glance-enroute")).toHaveAttribute("data-finding", "stop");
-  await expect(glance.getByTestId("brief-glance-enroute")).toContainText("VFR not recommended: KDLH currently reporting IFR");
+  // Said once, in the weather's own line over the cards, the En route card
+  // not repeating it (the owner, 2026-11-16: "How do we make brief less
+  // cluttered?", 5c55321c4).
+  await expect(glance.getByTestId("brief-line-weather")).toHaveAttribute("data-finding", "stop");
+  await expect(glance.getByTestId("brief-line-weather").getByTestId("brief-line-words")).toContainText(
+    "VFR not recommended: KDLH currently reporting IFR",
+  );
+  await expect(glance.getByTestId("brief-glance-enroute")).not.toContainText("VFR not recommended");
   // The verdict the one red wash: a no-go card as plain as the others, its
   // red in its icon and figures alone (the design review, 2026-10-28).
   const fill = (id: string) => glance.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundColor);
@@ -262,6 +269,9 @@ test("the Brief opens on whether to go and a card for each part of the flight, a
   await expect(glance.getByTestId("brief-glance-arrive")).toContainText(/Runway/);
   await expect(panelTabs(page)).toHaveCount(0);
 
+  // Under the Brief's edge as it opens half way, its lines over the cards:
+  // pulled up to, as a finger would (inSheet).
+  await inSheet(page, glance.getByTestId("brief-glance-enroute"));
   await glance.getByTestId("brief-glance-enroute").click();
   await expect(panelTabs(page).getByRole("tab", { name: "En route", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(glance).toHaveCount(0);

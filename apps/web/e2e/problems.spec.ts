@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { clearTheRoute, settled as settledLocator, grabberTo, openPanel, openRoute } from "./helpers";
+import { clearTheRoute, settled as settledLocator, grabberTo, inSheet, openPanel, openRoute } from "./helpers";
 
 /**
  * What a pilot meets when things go wrong, and the toasts that are left.
@@ -163,6 +163,8 @@ test("an ident the planner does not know is said on its pill, not the map's line
   await expect(to).toHaveAttribute("data-alert", "true");
   await expect(to.getByTestId("figure-alert-mark")).toHaveCount(1);
   await expect(page.getByTestId("route-brief")).toBeDisabled();
+  // Its Remove reached as a finger would, the sheet pulled up to it (inSheet).
+  await inSheet(page, said.getByTestId("route-unknown-remove"));
   await said.getByTestId("route-unknown-remove").click();
   await expect(page).not.toHaveURL(/KZZZ/);
   await expect(said).toHaveCount(0);
@@ -324,6 +326,9 @@ test("the chart underneath stays draggable while a toast is showing", async ({ p
   // Sonner gives its container and cards pointer-events, so the band
   // they occupy was swallowing wheel and drag events meant for the
   // map. A pilot moving the chart should not have to wait out a toast.
+  // The progress toast here lets the pointer through (index.css): a toast
+  // with words to read is held under a touch (15e8f6b28), but one saying
+  // what is under way has nothing to hold.
   await holdCourse(page);
   await page.goto(PLAN);
 

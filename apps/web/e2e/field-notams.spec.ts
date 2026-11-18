@@ -63,7 +63,9 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   await expect(badge).toHaveAttribute("data-kind", "runway");
   await expect(badge).toContainText("Closed");
   await expect(card(page).getByTestId("notam-badge")).toHaveCount(1);
-  // A tap on the runway's row opens that NOTAM in full.
+  // A tap on the runway's row opens that NOTAM in full: reached as a finger
+  // would, clear of the card's floating tabs (inSheet).
+  await inSheet(page, runway);
   await runway.click();
   const opened = page.getByTestId("place-notam-full");
   await expect(opened).toContainText("Runway 09/27 closed.");

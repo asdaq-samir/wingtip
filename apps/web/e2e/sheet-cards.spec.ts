@@ -5,6 +5,7 @@ import {
   closeCard,
   firstRow,
   grabberTo,
+  inSheet,
   openMapSettings,
   openTab,
   panelTabs,
@@ -282,7 +283,10 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
   const radio = page.getByTestId("mic-circle");
 
   // All the way up, a NOTAM's card over it at half: the buttons give way.
-  await place.getByTestId("place-notam").first().click();
+  // Its row reached as a finger would, clear of the card's floating tabs.
+  const row = place.getByTestId("place-notam").first();
+  await inSheet(page, row);
+  await row.click();
   const notam = sideDrawer(page).getByTestId("place-notam-card");
   await expect(notam).toHaveAttribute("data-panel", "half");
   await settled(notam);
@@ -295,8 +299,11 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
   // the buttons over the airport card's top, in sight.
   await notam.getByTestId("sheet-card-close").click();
   await expect(notam).toHaveCount(0);
+  // At half the row is under the card's edge, where no finger reaches it
+  // (the NOTAMs come after the pictures and the details): opened from the
+  // keyboard, as it is focusable there.
   await grabberTo(page, "half");
-  await place.getByTestId("place-notam").first().click();
+  await row.press("Enter");
   await expect(notam).toHaveAttribute("data-panel", "half");
   await settled(notam);
   await expect(notam.locator("[data-map-controls]")).toHaveCount(1);

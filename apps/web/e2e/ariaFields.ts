@@ -8,6 +8,8 @@ import { inSheet } from "./helpers";
  */
 export async function fillDate(field: Locator, iso: string) {
   const [year, month, day] = iso.split("-");
+  // In a card opened half way, the field may be under its edge (inSheet).
+  await inSheet(field.page(), field);
   // The year first and the day last: into an empty field, the day's
   // second digit is the one that makes a whole date, so it is given once,
   // not once a digit of the year (0002, 0020, 0202, 2026).

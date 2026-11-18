@@ -119,12 +119,26 @@ export async function inSheet(page: Page, locator: Locator) {
     // A bottom sheet's edge is the screen's foot; a top sheet's, its own;
     // either way above the route's figures pinned at its foot.
     const foot = sheet.querySelector("[data-testid=panel-foot]")?.getBoundingClientRect();
-    const edge = Math.min(box.top < 0 ? box.bottom : window.innerHeight, foot && foot.height > 0 ? foot.top : Infinity);
+    // A card's floating tab bar (CardTabBar) holds at that edge too.
+    const tabs = [...sheet.querySelectorAll("[data-testid$=tab-bar] > *")].find((b) => !b.contains(el))?.getBoundingClientRect();
+    const edge = Math.min(
+      box.top < 0 ? box.bottom : window.innerHeight,
+      foot && foot.height > 0 ? foot.top : Infinity,
+      tabs && tabs.height > 0 ? tabs.top : Infinity,
+    );
     return el.getBoundingClientRect().bottom > edge + 1;
   });
   if (under) await grabberTo(page, "full");
   await settled(panel);
   await locator.scrollIntoViewIfNeeded();
+  // All the way up a card's page scrolls under its pinned head and its
+  // floating tab bar: one under either is scrolled clear, to the middle, as
+  // a finger would, not tapped through them.
+  await locator.evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    const hit = document.elementFromPoint(box.left + box.width / 2, box.top + Math.min(box.height / 2, 20));
+    if (hit && !el.contains(hit) && hit.closest("[data-sheet-head], [data-testid$=tab-bar]")) el.scrollIntoView({ block: "center" });
+  });
 }
 
 /** At rest: only its head in sight. */

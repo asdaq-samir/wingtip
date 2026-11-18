@@ -11,7 +11,6 @@ import { airportSearch, grabberTo, settle, sideDrawer } from "./helpers";
  * phone, a touch screen with no hover.
  */
 test.use({ hasTouch: true, isMobile: true });
-test.skip(({ browserName }, info) => browserName !== "chromium" || info.project.name !== "mobile", "a phone's finger, by Chromium's CDP");
 
 /** A finger put down near the row's right end and moved left by `dx`, a
  *  frame apart, then let go. */
@@ -30,7 +29,10 @@ async function swipeLeft(page: Page, row: Locator, dx: number) {
   await cdp.detach();
 }
 
-test("an airport's Recents row is taken off by a swipe, and the sheet stays", async ({ page }) => {
+test("an airport's Recents row is taken off by a swipe, and the sheet stays", async ({ page, browserName }, info) => {
+  // A condition's callback is handed the fixtures alone, not the test's
+  // info, so the project is read here, in the test.
+  test.skip(browserName !== "chromium" || info.project.name !== "mobile", "a phone's finger, by Chromium's CDP");
   await page.addInitScript(() => {
     if (sessionStorage.getItem("swipe-seeded")) return;
     sessionStorage.setItem("swipe-seeded", "1");

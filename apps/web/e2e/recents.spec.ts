@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { airportSearch, clearTheRoute, grabberTo, settle, sideDrawer, stripShows } from "./helpers";
+import { airportSearch, clearTheRoute, grabberTo, inSheet, settle, sideDrawer, stripShows } from "./helpers";
+import { showPage } from "./sheetPages";
 
 /**
  * The Recents taken off one at a time, from each row's menu -- its ••• or
@@ -15,7 +16,9 @@ import { airportSearch, clearTheRoute, grabberTo, settle, sideDrawer, stripShows
  * too").
  */
 
-const AIRPORTS = [
+/** A kept airport: where it is too, for its picture card (RecentCards). */
+type Kept = { ident: string; name: string; municipality: string; lat?: number; lon?: number };
+const AIRPORTS: Kept[] = [
   { ident: "KDLH", name: "Duluth International Airport", municipality: "Duluth" },
   { ident: "KMSP", name: "Minneapolis-St Paul International Airport", municipality: "Minneapolis" },
   { ident: "C81", name: "Campbell Airport", municipality: "Grayslake" },
@@ -35,6 +38,12 @@ async function seed(page: Page, recentAirports = AIRPORTS, recentRoutes: unknown
     },
     { recentAirports, recentAircraft: AIRCRAFT, recentRoutes },
   );
+}
+
+/** The question's own Clear: the list's Clear has the same name, and a
+ *  click on the last of them before the question was up took the list's. */
+async function confirmClear(page: Page) {
+  await page.getByRole("alertdialog").getByRole("button", { name: "Clear", exact: true }).click();
 }
 
 /** The airports' Recents in full, all the way up: the list their title
@@ -108,15 +117,17 @@ test("a row's ••• takes an airport off the Recents, and Clear takes them a
   await expect(ask).toHaveCount(0);
   await expect(recents).toHaveCount(1);
   await panel.getByTestId("recents-clear").click();
-  await page.getByRole("button", { name: "Clear", exact: true }).last().click();
+  await confirmClear(page);
   await expect(recents).toHaveCount(0);
 });
 
-test("the airports' Recents are tiles with their chart's symbols, newest first, and their title lists them, Back to the search", async ({
+test("the airports' Recents are picture cards of their chart, newest first, and their title lists them, Back to the search", async ({
   page,
 }) => {
   await seed(page, [
-    ...AIRPORTS,
+    // Where it is kept, its card is the sectional round it (RecentCards).
+    { ...AIRPORTS[0], lat: 46.8421, lon: -92.1936 },
+    ...AIRPORTS.slice(1),
     { ident: "KMSN", name: "Dane County Regional Airport", municipality: "Madison" },
     { ident: "KOSH", name: "Wittman Regional Airport", municipality: "Oshkosh" },
   ]);
@@ -125,9 +136,10 @@ test("the airports' Recents are tiles with their chart's symbols, newest first, 
   await airportSearch(page);
   await grabberTo(page, "full");
   const panel = sideDrawer(page);
-  // As the Favorites' tiles: each its chart
-  // symbol and its ident, its town under it with own ship off, at the
-  // owner's ask ("Recents should also have symbols instead of a list").
+  // Picture cards sliding sideways, as Apple Maps on the web shows its
+  // guides (the owner's screenshot, 2026-11-10, where they were tiles with
+  // the chart's symbol): each the sectional's own tile round the field, at
+  // zoom 10, its ident and name over the picture's foot.
   // The Recents a section of the one search's own page (no filter).
   await expect(sideDrawer(page).getByTestId("search-home")).toBeVisible();
   const section = panel.getByTestId("airport-recents");
@@ -135,7 +147,7 @@ test("the airports' Recents are tiles with their chart's symbols, newest first, 
   await expect(tiles).toHaveCount(5);
   await expect(tiles.first()).toContainText("KDLH");
   await expect(tiles.first()).toContainText("Duluth");
-  await expect(tiles.first().locator("svg")).not.toHaveCount(0);
+  await expect(tiles.first().locator("img")).toHaveAttribute("src", /\/sec\/10\/\d+\/\d+/);
   // A tap opens the field's card, as a Favorite's does.
   await tiles.nth(2).click();
   await expect(page).toHaveURL(/[?&]place=C81/);
@@ -184,7 +196,7 @@ test("the airplanes' Recents follow the airports' on the search's page and in fu
   await expect(recents.first()).toContainText("N200XY");
 
   await panel.getByTestId("recents-clear").click();
-  await page.getByRole("button", { name: "Clear", exact: true }).last().click();
+  await confirmClear(page);
   await expect(recents).toHaveCount(0);
   await expect(panel.getByTestId("airport-recent")).toHaveCount(0);
 });
@@ -202,6 +214,9 @@ test("FPL's strip shows Saved or, from its filter, the latest routes planned as 
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "half");
+  // FPL's strip, under its empty route: with no route the sheet opens on
+  // Search, which no longer shows Saved (3eb6e1417), so FPL by its toggle.
+  await showPage(page, 1);
   const panel = sideDrawer(page);
   // Saved first; the Recents from the strip's filter, as every tab's lists
   // are: each title the way to the list in full, in the tint.
@@ -219,8 +234,10 @@ test("FPL's strip shows Saved or, from its filter, the latest routes planned as 
   // The rest, all the way up, and a tap on the oldest plans it again.
   await section.getByTestId("route-recents-more").click();
   await expect(panel.getByTestId("route-recents-page")).toBeVisible();
-  const all = panel.getByTestId("route-recent");
+  // The page's rows: FPL's strip under it keeps its tiles, out of sight.
+  const all = panel.getByTestId("route-recent").locator("visible=true");
   await expect(all).toHaveCount(4);
+  await inSheet(page, all.last()); // the oldest, under a half sheet's edge
   await all.last().click();
   await expect(page).toHaveURL(/[?&]dep=C81&dest=KMSN/);
   // Kept first once the planner has answered it.
@@ -242,12 +259,12 @@ test("FPL's strip shows Saved or, from its filter, the latest routes planned as 
   await expect(page.getByTestId("route-recent-share")).toBeVisible();
   await expect(page.getByRole("menuitem")).toHaveText(["Share", "Remove"]);
   await page.getByTestId("route-recent-remove").click();
-  await expect(panel.getByTestId("route-recent")).toHaveCount(3);
+  await expect(all).toHaveCount(3);
   // Clear at each heading's right, asked first, until none is left: the
   // strip says none yet then, and Saved is back from its filter.
   for (let left = await panel.getByTestId("route-recents-clear").count(); left > 0; left--) {
     await panel.getByTestId("route-recents-clear").first().click();
-    await page.getByRole("button", { name: "Clear", exact: true }).last().click();
+    await confirmClear(page);
     await expect(panel.getByTestId("route-recents-clear")).toHaveCount(left - 1);
   }
   await expect(panel.getByTestId("route-recent")).toHaveCount(0);
@@ -264,6 +281,7 @@ test("Saved's title opens the flights in full with Back to FPL, as the Recents' 
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "half");
+  await showPage(page, 1); // Saved is FPL's, as above
   const panel = sideDrawer(page);
   await panel.getByTestId("pill-section-saved-more").click();
   await expect(page).toHaveURL(/[?&]saved=1/);

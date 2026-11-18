@@ -23,8 +23,10 @@ test("a pick-one is the pull-down: a list of the choices, the picked one's tick 
   await trigger.click();
   const menu = page.getByRole("listbox");
   await expect(menu).toBeVisible();
-  // The app's menu look, the same as every action menu's (ui/menuLook).
-  expect(await menu.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("14px");
+  // The app's menu look, the same as every action menu's (ui/menuLook), on
+  // the popup the listbox sits in (Base UI's Select.List inside its Popup).
+  const popup = page.locator("[data-slot=select-content]").filter({ has: menu });
+  expect(await popup.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("14px");
   // The one picked ticked, its tick at the row's left and its words after.
   const picked = menu.getByRole("option", { name: "1h", exact: true });
   await expect(picked).toHaveAttribute("aria-selected", "true");
