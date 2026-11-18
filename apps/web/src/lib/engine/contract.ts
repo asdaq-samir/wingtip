@@ -178,6 +178,7 @@ export type AtcItem =
       runway: string;
       what: "land" | "takeoff" | "option" | "hold short" | "line up and wait" | null;
     };
+export type AverageGroundspeedKtAnswer = number | null;
 export type AwcAirsigmetsReadAnswer = {}[];
 export type AwcGairmetsReadAnswer = {}[];
 export type AwcPirepsReadAnswer = {}[];
@@ -566,6 +567,7 @@ export type HandbookFuelRead = {
   usable?: number | null;
 } | null;
 export type HoldEntryAnswer = "direct" | "teardrop" | "parallel";
+export type HoldInboundDegAnswer = number;
 export type HoldLengthReadAnswer =
   | {
       turns: number;
@@ -583,6 +585,7 @@ export type HoldsReadAnswer = {
   hold: RouteHold | null;
 }[];
 export type IcingSeverityAnswer = "None" | "Trace" | "Light" | "Moderate" | "Heavy" | null;
+export type IfrAlternateNotRequiredAnswer = string;
 export type IfrAlternatesRankedAnswer = {}[];
 export type IfrFloorsAnswer = {
   floor_ft: number;
@@ -740,6 +743,7 @@ export type NavLogWithClimbsAnswer = NavLogLeg[];
 export type NavLogWithDescentsAnswer = NavLogLeg[];
 export type NightAtEitherEndAnswer = boolean;
 export type NightOnTheWayAnswer = boolean;
+export type NmAlongAnswer = number[];
 export type NotamsFnsAnswer = {
   id: string;
   icao_id: string | null;
@@ -1401,6 +1405,13 @@ export interface EngineContract {
     answer: AtcCallAnswer;
   };
   /**
+   * The average ground speed over a stretch, knots: its miles over its hours (FAA-H-8083-25C, PHAK ch. 16); null where no time passed. The copilot's planned speed (the nav log's distance over its time en route) and a past flight's (the miles flown over its time aloft).
+   */
+  average_groundspeed_kt: {
+    input: AverageGroundspeedKtInput;
+    answer: AverageGroundspeedKtAnswer;
+  };
+  /**
    * The Aviation Weather Center's words for its icing and turbulence grids (aviationweather.gov GFA help, read 2026-11-12): icing severity by category, 0 none, 1 trace, 2 light, 3 moderate, 4 heavy; turbulence by EDR, (m^2/s^3)^1/3, from each word's threshold in the weight class's row: light (< 15,500 lb) 0.13, 0.16, 0.36, 0.64; medium 0.15, 0.20, 0.44, 0.79; heavy 0.17, 0.24, 0.54, 0.96.
    */
   aviation_grid_bands: {
@@ -1616,6 +1627,13 @@ export interface EngineContract {
   congested_reach: {
     input: CongestedReachInput;
     answer: CongestedReachAnswer;
+  };
+  /**
+   * The planned flight the in-flight copilot starts from: the fuel at takeoff (the fuel aboard at the start less the taxi allowance, never below none), the plan's ground speed (its distance over its time en route, PHAK ch. 16) and whether anyone but the pilot is aboard for 14 CFR 61.57(a) and (b)'s passenger currency (a station of the load other than the pilot's, the baggage's or the cargo's with weight in it). Each figure null where the plan has none.
+   */
+  copilot_flight: {
+    input: CopilotFlightInput;
+    answer: CopilotFlightAnswer;
   };
   /**
    * The in-flight copilot: from own ship and the live data, the messages that change what the pilot should do, most pressing first (warning, caution, advisory; then the kinds' order), each with the words to show and speak and its sources. Warns, never limits.
@@ -1966,6 +1984,13 @@ export interface EngineContract {
   filed_speed: {
     input: FiledSpeedInput;
     answer: FiledSpeedAnswer;
+  };
+  /**
+   * FAA Form 7233-4's item 16 total EET and item 19 endurance (AIM Appendix 4: HHMM; E/ the fuel endurance time). The EET is the nav log's minutes rounded up; the endurance the fuel aboard at the cruise burn rounded down: the highest burn of the legs flown at cruise (no phase), never a climb's or a descent's, else the airplane's own cruise burn. Each null where the plan cannot say.
+   */
+  filed_times: {
+    input: FiledTimesInput;
+    answer: FiledTimesAnswer;
   };
   /**
    * Item 9's wake turbulence category: "L" for a maximum certificated takeoff weight of 15,500 lb or less (AIM Appendix 4, from FAA Order JO 7360.1), null where the weight is not known or is more.
@@ -2402,6 +2427,13 @@ export interface EngineContract {
     answer: HoldFiguresAnswer;
   };
   /**
+   * A hold's inbound course, 0 to 360, from the course the pilot gives: as given where it is the inbound one, its reciprocal where it is the outbound one (AIM 5-3-8: the outbound leg is flown on the inbound course's reciprocal).
+   */
+  hold_inbound_deg: {
+    input: HoldInboundDegInput;
+    answer: HoldInboundDegAnswer;
+  };
+  /**
    * A hold's length from its code ("2T", "10M"), or null.
    */
   hold_length_read: {
@@ -2479,6 +2511,13 @@ export interface EngineContract {
     answer: IfrAlternateDestinationAnswer;
   };
   /**
+   * Why a destination needs no IFR alternate, in 14 CFR 91.169(b)'s own figures: an instrument approach, and a forecast of at least 2,000 ft and 3 sm for an hour before and after the ETA ((b)(2)(i), the "1-2-3").
+   */
+  ifr_alternate_not_required: {
+    input: IfrAlternateNotRequiredInput;
+    answer: IfrAlternateNotRequiredAnswer;
+  };
+  /**
    * The window, unix seconds, a field's TAF is read over for 14 CFR 91.169: the destination's from an hour before to an hour after the ETA (91.169(b)(2)(i), aircraft other than helicopters); an alternate's the ETA there alone, at the estimated time of arrival at the alternate airport (91.169(c)).
    */
   ifr_alternate_window: {
@@ -2514,7 +2553,7 @@ export interface EngineContract {
     answer: InFlightAnswer;
   };
   /**
-   * The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given.
+   * The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given. With them `due`, the list the gateway shows and reminds of: each named and with its rule (an AD its own number and 14 CFR 39.7).
    */
   inspections_due: {
     input: InspectionsDueInput;
@@ -2801,6 +2840,13 @@ export interface EngineContract {
     answer: NightOnTheWayAnswer;
   };
   /**
+   * How far along the route each leg ends, nm: the running sum of the legs' miles, a null (a departure's row, no leg) adding nothing.
+   */
+  nm_along: {
+    input: NmAlongInput;
+    answer: NmAlongAnswer;
+  };
+  /**
    * Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, and all of it as one message.
    */
   no_altitude: {
@@ -3030,6 +3076,13 @@ export interface EngineContract {
   procedure_leg_nm: {
     input: ProcedureLegNmInput;
     answer: ProcedureLegNmAnswer;
+  };
+  /**
+   * The figures a flown procedure path is drawn with: a hold entry's standard-rate turn radius at the 120 kt holds are drawn at (AIM 5-3-8), nm; and the join from vectors to final, 3 nm outside the final's first fix (2 miles outside the approach gate, which is 1 mile outside the FAF: FAA Order JO 7110.65 5-9-1a1, the Pilot/Controller Glossary) at 30 degrees (JO 7110.65 TBL 5-9-1).
+   */
+  procedure_path_figures: {
+    input: ProcedurePathFiguresInput;
+    answer: ProcedurePathFiguresAnswer;
   };
   /**
    * The course reversal flown where a procedure's path turns `turn_deg` at a fix (AIM 5-4-9): "coded" -- the chart's hold in lieu of a procedure turn or its procedure turn there, entered -- where one is coded at the fix and the path turns more than 90° there, come to from its far side (from the near side a pilot is lined up already and makes none, as on a NoPT route, 14 CFR 91.175(j)); else "teardrop" where the path doubles back more than 120° at a fix past the procedure's first; else null.
@@ -4998,6 +5051,10 @@ export interface AtcCallAnswer {
   who: "to_us" | "from_us" | "other";
   items: AtcItem[];
 }
+export interface AverageGroundspeedKtInput {
+  distance_nm: number;
+  minutes: number;
+}
 export interface AviationGridBandsInput {}
 export interface AviationGridBandsAnswer {
   icing: {
@@ -5705,6 +5762,23 @@ export interface CongestedReachAnswer {
    * The reach in degrees, never short of search_ft in any direction.
    */
   reach_deg: number;
+}
+export interface CopilotFlightInput {
+  fuel_gal?: number | null;
+  taxi_gal?: number | null;
+  distance_nm?: number | null;
+  ete_min?: number | null;
+  stations?:
+    | {
+        name: string;
+        lb?: number | null;
+      }[]
+    | null;
+}
+export interface CopilotFlightAnswer {
+  fuel_gal: number | null;
+  planned_gs_kt: number | null;
+  passengers: boolean;
 }
 export interface CopilotWatchInput {
   now_s: number;
@@ -7035,6 +7109,22 @@ export interface FiledRouteInput {
 export interface FiledSpeedInput {
   tas_kt: number;
 }
+export interface FiledTimesInput {
+  ete_min?: number | null;
+  fuel_gal?: number | null;
+  legs: {
+    phase?: string | null;
+    fuel_burn_gph?: number | null;
+  }[];
+  cruise_burn_gph?: number | null;
+}
+export interface FiledTimesAnswer {
+  burn_gph: number | null;
+  eet_minutes: number | null;
+  eet: string | null;
+  endurance_minutes: number | null;
+  endurance: string | null;
+}
 export interface FiledWakeInput {
   max_takeoff_lb?: number | null;
 }
@@ -8352,6 +8442,10 @@ export interface HoldFiguresAnswer {
   held_min: number;
   turn_radius_nm: number;
 }
+export interface HoldInboundDegInput {
+  course_deg: number;
+  outbound?: boolean | null;
+}
 export interface HoldLengthReadInput {
   text: string;
 }
@@ -8599,6 +8693,7 @@ export interface IfrAlternateDestinationAnswer {
   required: boolean;
   reasons: string[];
 }
+export interface IfrAlternateNotRequiredInput {}
 export interface IfrAlternateWindowInput {
   eta: number;
   for: "destination" | "alternate";
@@ -8698,6 +8793,34 @@ export interface InspectionsDueInput {
     kind: "VOT" | "REPAIR_STATION" | "GROUND" | "AIRBORNE" | "RADIAL" | "DUAL";
     error_deg: number;
   } | null;
+  /**
+   * The airplane's registration, for the reminders' words.
+   */
+  tail_number?: string | null;
+  /**
+   * Flown for hire, so the 100-hour inspection applies (91.409(b)).
+   */
+  for_hire?: boolean | null;
+  /**
+   * YYYY-MM-DD, the date marked on the transmitter (91.207(c)).
+   */
+  elt_battery_due_on?: string | null;
+  /**
+   * The owner's own items: an AD (14 CFR part 39) or anything else.
+   */
+  kept?:
+    | {
+        id: number;
+        kind: "AD" | "OTHER";
+        title: string;
+        reference?: string | null;
+        /**
+         * YYYY-MM-DD
+         */
+        due_on?: string | null;
+        due_at_hours?: number | null;
+      }[]
+    | null;
 }
 export interface InspectionsDueAnswer {
   /**
@@ -8722,6 +8845,40 @@ export interface InspectionsDueAnswer {
     within: boolean;
     until: string;
   } | null;
+  /**
+   * Each recorded one, named and cited, in order: the annual, the 100-hour (for hire), the ELT and its battery, the static system, the transponder, the VOR check (where within its limit), then the owner's dated items.
+   */
+  due: PaperworkDue[];
+}
+/**
+ * One thing that falls due, named and with the rule that asks for it, for the gateway's Coming up list and reminders (PaperworkService), which adds only the days and hours left.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "PaperworkDue".
+ */
+export interface PaperworkDue {
+  /**
+   * flight-review, medical, day-passengers, night-passengers, instrument; annual, hundred-hour, elt, elt-battery, static, transponder, vor-check; item (an owner's own).
+   */
+  what: string;
+  /**
+   * The owner's item it is, where it is one.
+   */
+  itemId: number | null;
+  label: string;
+  /**
+   * The rule that asks for it: "14 CFR 61.56(c)"; an AD's own number with 14 CFR 39.7; an owner's other item its own reference, or none.
+   */
+  rule: string | null;
+  /**
+   * YYYY-MM-DD, its last good day; null where it falls due by hours.
+   */
+  until: string | null;
+  dueAtHours: number | null;
+  /**
+   * The reminder sentence's start, to which the day is added.
+   */
+  lead: string;
 }
 export interface InstructorRecordsSinceInput {
   /**
@@ -9287,6 +9444,9 @@ export interface MaydayCallInput {
    */
   position?: string | null;
   heading_mag_deg?: number | null;
+  /**
+   * Feet MSL as the GPS gives it; said to the hundred feet (AIM 4-2-9: the thousands plus the hundreds).
+   */
   altitude_ft?: number | null;
   fuel_min?: number | null;
   souls?: number | null;
@@ -9896,6 +10056,9 @@ export interface NightOnTheWayInput {
   depart_s: number;
   minutes: number;
 }
+export interface NmAlongInput {
+  legs_nm: (number | null)[];
+}
 export interface NoAltitudeInput {
   selection: {};
   between?: string[] | null;
@@ -10410,6 +10573,10 @@ export interface PilotCurrencyAnswer {
    * Intercepting and tracking courses logged in them (61.57(c)(1)(iii)).
    */
   trackingInWindow: boolean;
+  /**
+   * What falls due, each named and cited: the flight review (61.56(c)), the medical (61.23), passengers by day and at night (61.57(a), (b)), instrument currency (61.57(c)), each where it can be had.
+   */
+  due: PaperworkDue[];
 }
 export interface PilotExperienceInput {
   entries: LogbookEntry[];
@@ -10587,6 +10754,12 @@ export interface ProcedureLegNmInput {
   distance_nm?: number | null;
   altitude_ft?: number | null;
   known_ft?: number | null;
+}
+export interface ProcedurePathFiguresInput {}
+export interface ProcedurePathFiguresAnswer {
+  hold_turn_nm: number;
+  vectors_join_nm: number;
+  vectors_intercept_deg: number;
 }
 export interface ProcedureReversalInput {
   turn_deg: number;

@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_procedures::figures::calls::hold",
+  "description": "A hold's inbound course, 0 to 360, from the course the pilot gives: as given where it is the inbound one, its reciprocal where it is the outbound one (AIM 5-3-8: the outbound leg is flown on the inbound course's reciprocal).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "HoldInboundDegInput",
+      "type": "object",
+      "properties": {
+        "course_deg": {
+          "type": "number"
+        },
+        "outbound": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "course_deg"
+      ]
+    },
+    "answer": {
+      "title": "HoldInboundDegAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

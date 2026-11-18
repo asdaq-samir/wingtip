@@ -159,5 +159,33 @@
       "altitudeFt": 17500,
       "minutes": 1.5
     }
-  ]
+  ],
+  "inbound": [
+    {
+      "course_deg": 270,
+      "outbound": false,
+      "inbound_deg": 270.0
+    },
+    {
+      "course_deg": 270,
+      "outbound": true,
+      "inbound_deg": 90.0
+    },
+    {
+      "course_deg": 180,
+      "outbound": true,
+      "inbound_deg": 0.0
+    },
+    {
+      "course_deg": 360,
+      "outbound": false,
+      "inbound_deg": 0.0
+    }
+  ],
+  "pathFigures": {
+    "about": "A hold entry's standard-rate turn at 120 kt, 2/pi nm (a full turn, 4 nm round, in two minutes); vectors join the final 3 nm outside its first fix (JO 7110.65 5-9-1a1: at least 2 miles outside the approach gate, which is 1 mile outside the FAF, P/CG) at 30 degrees (TBL 5-9-1).",
+    "hold_turn_nm": 0.6366197723675814,
+    "vectors_join_nm": 3.0,
+    "vectors_intercept_deg": 30.0
+  }
 }

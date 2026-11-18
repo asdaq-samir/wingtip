@@ -121,5 +121,59 @@
       "with": { "ahead": [{ "id": "terrain", "kind": "terrain", "level": "warning", "name": "Terrain ahead" }] },
       "expect": { "kind": "ahead", "level": "warning", "elsewhere": true }
     }
+  ],
+  "flight": [
+    {
+      "name": "40 gal less 1.4 taxi; 150 nm in 75 min is 120 kt; weight in the rear seats is a passenger",
+      "input": {
+        "fuel_gal": 40,
+        "taxi_gal": 1.4,
+        "distance_nm": 150,
+        "ete_min": 75,
+        "stations": [
+          {
+            "name": "Pilot and front passenger",
+            "lb": 340
+          },
+          {
+            "name": "Rear passengers",
+            "lb": 150
+          },
+          {
+            "name": "Baggage area 1",
+            "lb": 20
+          }
+        ]
+      },
+      "answer": {
+        "fuel_gal": 38.6,
+        "planned_gs_kt": 120.0,
+        "passengers": true
+      }
+    },
+    {
+      "name": "The pilot's station and the baggage only: no passenger the copilot can see; less fuel than the taxi's is none",
+      "input": {
+        "fuel_gal": 1,
+        "taxi_gal": 1.4,
+        "distance_nm": null,
+        "ete_min": null,
+        "stations": [
+          {
+            "name": "Pilot and front passenger",
+            "lb": 340
+          },
+          {
+            "name": "Baggage area 1",
+            "lb": 40
+          }
+        ]
+      },
+      "answer": {
+        "fuel_gal": 0.0,
+        "planned_gs_kt": null,
+        "passengers": false
+      }
+    }
   ]
 }

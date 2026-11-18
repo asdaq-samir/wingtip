@@ -1,0 +1,55 @@
+{
+  "title": "PaperworkDue",
+  "description": "One thing that falls due, named and with the rule that asks for it, for the gateway's Coming up list and reminders (PaperworkService), which adds only the days and hours left.",
+  "type": "object",
+  "properties": {
+    "what": {
+      "type": "string",
+      "description": "flight-review, medical, day-passengers, night-passengers, instrument; annual, hundred-hour, elt, elt-battery, static, transponder, vor-check; item (an owner's own)."
+    },
+    "itemId": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "The owner's item it is, where it is one."
+    },
+    "label": {
+      "type": "string"
+    },
+    "rule": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The rule that asks for it: \"14 CFR 61.56(c)\"; an AD's own number with 14 CFR 39.7; an owner's other item its own reference, or none."
+    },
+    "until": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "YYYY-MM-DD, its last good day; null where it falls due by hours."
+    },
+    "dueAtHours": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "lead": {
+      "type": "string",
+      "description": "The reminder sentence's start, to which the day is added."
+    }
+  },
+  "required": [
+    "what",
+    "itemId",
+    "label",
+    "rule",
+    "until",
+    "dueAtHours",
+    "lead"
+  ],
+  "additionalProperties": false
+}

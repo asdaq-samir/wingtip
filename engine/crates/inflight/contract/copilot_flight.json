@@ -1,0 +1,92 @@
+{
+  "x-call": "wingtip_inflight::call",
+  "description": "The planned flight the in-flight copilot starts from: the fuel at takeoff (the fuel aboard at the start less the taxi allowance, never below none), the plan's ground speed (its distance over its time en route, PHAK ch. 16) and whether anyone but the pilot is aboard for 14 CFR 61.57(a) and (b)'s passenger currency (a station of the load other than the pilot's, the baggage's or the cargo's with weight in it). Each figure null where the plan has none.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CopilotFlightInput",
+      "type": "object",
+      "properties": {
+        "fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "taxi_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "distance_nm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ete_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "stations": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "lb": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        }
+      },
+      "required": []
+    },
+    "answer": {
+      "title": "CopilotFlightAnswer",
+      "type": "object",
+      "properties": {
+        "fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "planned_gs_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "passengers": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "fuel_gal",
+        "planned_gs_kt",
+        "passengers"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

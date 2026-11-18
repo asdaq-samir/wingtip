@@ -21,6 +21,27 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         "density_altitude_ft" => flight::density_altitude_ft(ask.num("sigma")?),
         "pressure_altitude_ft" => flight::pressure_altitude_ft(ask.num("elevation_ft")?, ask.num("altimeter_inhg")?),
         "is_eastbound" => return Ok(flight::is_eastbound(ask.num("magnetic_course_deg")?).to_string()),
+        "average_groundspeed_kt" => flight::average_groundspeed_kt(ask.num("distance_nm")?, ask.num("minutes")?),
+        "nm_along" => {
+            let legs = ask
+                .list("legs_nm")?
+                .iter()
+                .map(|nm| match nm {
+                    Value::Null => Ok(None),
+                    Value::Number(n) => Ok(Some(*n)),
+                    _ => Err(format!("{name}: \"legs_nm\" is not a list of numbers or nulls")),
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            out.push('[');
+            for (i, nm) in flight::nm_along(&legs).iter().enumerate() {
+                if i > 0 {
+                    out.push(',');
+                }
+                json::number(&mut out, *nm);
+            }
+            out.push(']');
+            return Ok(out);
+        }
         "groundspeed_kt" => flight::groundspeed_kt(
             ask.num("true_course_deg")?,
             ask.num("wind_from_deg")?,
@@ -136,6 +157,8 @@ pub fn filed(name: &str, v: &Value) -> Result<String, String> {
             Some(m) => out.push_str(&m.to_string()),
             None => out.push_str("null"),
         },
+        // Item 16's EET and item 19's endurance, each in minutes and HHMM.
+        "filed_times" => filed_times(&ask, &mut out)?,
         "filed_dof" => json::opt_string(&mut out, filing::date_of_flight(ask.str("depart")?, ask.str("today")?).as_deref()),
         "filed_rnav" => {
             let airways: Vec<&str> = match v.get("airways") {
@@ -150,6 +173,43 @@ pub fn filed(name: &str, v: &Value) -> Result<String, String> {
         _ => json::string(&mut out, &filed_route(&ask)?),
     }
     Ok(out)
+}
+
+/// `filed_times`: item 16's total EET rounded up and item 19's endurance
+/// at the cruise burn rounded down (filing.rs), each in minutes and HHMM,
+/// and the burn the endurance was worked at; null where the plan cannot say.
+fn filed_times(ask: &Ask, out: &mut String) -> Result<(), String> {
+    let name = ask.name;
+    let legs = match ask.v.get("legs") {
+        None | Some(Value::Null) => Vec::new(),
+        Some(Value::Array(list)) => list
+            .iter()
+            .map(|l| {
+                let phase = match l.get("phase") {
+                    None | Some(Value::Null) => None,
+                    Some(Value::String(p)) => Some(p.as_str()),
+                    Some(_) => return Err(format!("{name}: a leg's \"phase\" is not a string")),
+                };
+                Ok(filing::BurnLeg { phase, burn_gph: wingtip_core::ask::opt_num_in(name, l, "fuel_burn_gph")? })
+            })
+            .collect::<Result<Vec<_>, String>>()?,
+        Some(_) => return Err(format!("{name}: \"legs\" is not a list")),
+    };
+    let eet = ask.opt_num("ete_min")?.and_then(filing::eet_minutes);
+    let burn = filing::endurance_burn_gph(&legs, ask.opt_num("cruise_burn_gph")?);
+    let endurance = ask.opt_num("fuel_gal")?.zip(burn).and_then(|(fuel, burn)| filing::endurance_minutes(fuel, burn));
+    let minutes = |out: &mut String, key: &str, m: Option<i64>| {
+        out.push_str(&format!(",\"{key}_minutes\":"));
+        out.push_str(&m.map_or_else(|| "null".to_owned(), |m| m.to_string()));
+        out.push_str(&format!(",\"{key}\":"));
+        json::opt_string(out, m.map(|m| filing::duration(m as f64)).as_deref());
+    };
+    out.push_str("{\"burn_gph\":");
+    json::opt_number(out, burn);
+    minutes(out, "eet", eet);
+    minutes(out, "endurance", endurance);
+    out.push('}');
+    Ok(())
 }
 
 /// Item 15's route from its stops, airways and procedures.

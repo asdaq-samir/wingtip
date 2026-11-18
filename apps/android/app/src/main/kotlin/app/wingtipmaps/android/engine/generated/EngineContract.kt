@@ -1641,6 +1641,13 @@ object EngineContract {
     )
 
     @Serializable
+    data class AverageGroundspeedKtInput(
+        @SerialName("distance_nm")
+        val distanceNm: Double,
+        val minutes: Double,
+    )
+
+    @Serializable
     data class AviationGridBandsAnswer(
         val icing: List<EngineContract.AviationGridBandsAnswerIcingItem>,
         val turbulence: EngineContract.AviationGridBandsAnswerTurbulence,
@@ -2678,6 +2685,34 @@ object EngineContract {
         val tempC: Double? = null,
         @SerialName("flight_category")
         val flightCategory: String? = null,
+    )
+
+    @Serializable
+    data class CopilotFlightAnswer(
+        @SerialName("fuel_gal")
+        val fuelGal: Double? = null,
+        @SerialName("planned_gs_kt")
+        val plannedGsKt: Double? = null,
+        val passengers: Boolean,
+    )
+
+    @Serializable
+    data class CopilotFlightInput(
+        @SerialName("fuel_gal")
+        val fuelGal: Double? = null,
+        @SerialName("taxi_gal")
+        val taxiGal: Double? = null,
+        @SerialName("distance_nm")
+        val distanceNm: Double? = null,
+        @SerialName("ete_min")
+        val eteMin: Double? = null,
+        val stations: List<EngineContract.CopilotFlightInputStationsItem>? = null,
+    )
+
+    @Serializable
+    data class CopilotFlightInputStationsItem(
+        val name: String,
+        val lb: Double? = null,
     )
 
     @Serializable
@@ -4002,6 +4037,36 @@ object EngineContract {
     data class FiledSpeedInput(
         @SerialName("tas_kt")
         val tasKt: Double,
+    )
+
+    @Serializable
+    data class FiledTimesAnswer(
+        @SerialName("burn_gph")
+        val burnGph: Double? = null,
+        @SerialName("eet_minutes")
+        val eetMinutes: Int? = null,
+        val eet: String? = null,
+        @SerialName("endurance_minutes")
+        val enduranceMinutes: Int? = null,
+        val endurance: String? = null,
+    )
+
+    @Serializable
+    data class FiledTimesInput(
+        @SerialName("ete_min")
+        val eteMin: Double? = null,
+        @SerialName("fuel_gal")
+        val fuelGal: Double? = null,
+        val legs: List<EngineContract.FiledTimesInputLegsItem>,
+        @SerialName("cruise_burn_gph")
+        val cruiseBurnGph: Double? = null,
+    )
+
+    @Serializable
+    data class FiledTimesInputLegsItem(
+        val phase: String? = null,
+        @SerialName("fuel_burn_gph")
+        val fuelBurnGph: Double? = null,
     )
 
     @Serializable
@@ -6243,6 +6308,13 @@ object EngineContract {
     )
 
     @Serializable
+    data class HoldInboundDegInput(
+        @SerialName("course_deg")
+        val courseDeg: Double,
+        val outbound: Boolean? = null,
+    )
+
+    @Serializable
     data class HoldingAnswer(
         val entry: String,
         @SerialName("entry_name")
@@ -6533,6 +6605,12 @@ object EngineContract {
     )
 
     @Serializable
+    class IfrAlternateNotRequiredInput {
+        override fun equals(other: Any?): Boolean = other is IfrAlternateNotRequiredInput
+        override fun hashCode(): Int = 0
+    }
+
+    @Serializable
     data class IfrAlternatesRankedInput(
         val checks: List<Map<String, JsonElement>>,
         val limit: Double? = null,
@@ -6762,6 +6840,10 @@ object EngineContract {
         val hundredHourDueAtHours: Double? = null,
         @SerialName("vor_check")
         val vorCheck: EngineContract.InspectionsDueAnswerVorCheck? = null,
+        /**
+         * Each recorded one, named and cited, in order: the annual, the 100-hour (for hire), the ELT and its battery, the static system, the transponder, the VOR check (where within its limit), then the owner's dated items.
+         */
+        val due: List<EngineContract.PaperworkDue>,
     )
 
     @Serializable
@@ -6798,6 +6880,40 @@ object EngineContract {
         val hundredHourAtHours: Double? = null,
         @SerialName("vor_check")
         val vorCheck: EngineContract.InspectionsDueInputVorCheck? = null,
+        /**
+         * The airplane's registration, for the reminders' words.
+         */
+        @SerialName("tail_number")
+        val tailNumber: String? = null,
+        /**
+         * Flown for hire, so the 100-hour inspection applies (91.409(b)).
+         */
+        @SerialName("for_hire")
+        val forHire: Boolean? = null,
+        /**
+         * YYYY-MM-DD, the date marked on the transmitter (91.207(c)).
+         */
+        @SerialName("elt_battery_due_on")
+        val eltBatteryDueOn: String? = null,
+        /**
+         * The owner's own items: an AD (14 CFR part 39) or anything else.
+         */
+        val kept: List<EngineContract.InspectionsDueInputKeptItem>? = null,
+    )
+
+    @Serializable
+    data class InspectionsDueInputKeptItem(
+        val id: Int,
+        val kind: String,
+        val title: String,
+        val reference: String? = null,
+        /**
+         * YYYY-MM-DD
+         */
+        @SerialName("due_on")
+        val dueOn: String? = null,
+        @SerialName("due_at_hours")
+        val dueAtHours: Double? = null,
     )
 
     @Serializable
@@ -7603,6 +7719,9 @@ object EngineContract {
         val position: String? = null,
         @SerialName("heading_mag_deg")
         val headingMagDeg: Double? = null,
+        /**
+         * Feet MSL as the GPS gives it; said to the hundred feet (AIM 4-2-9: the thousands plus the hundreds).
+         */
         @SerialName("altitude_ft")
         val altitudeFt: Double? = null,
         @SerialName("fuel_min")
@@ -8442,6 +8561,12 @@ object EngineContract {
     )
 
     @Serializable
+    data class NmAlongInput(
+        @SerialName("legs_nm")
+        val legsNm: List<Double?>,
+    )
+
+    @Serializable
     data class NNumberInput(
         val text: String? = null,
     )
@@ -8905,6 +9030,35 @@ object EngineContract {
         val fix: EngineContract.OwnShipFix? = null,
     )
 
+    /**
+     * One thing that falls due, named and with the rule that asks for it, for the gateway's Coming up list and reminders (PaperworkService), which adds only the days and hours left.
+     */
+    @Serializable
+    data class PaperworkDue(
+        /**
+         * flight-review, medical, day-passengers, night-passengers, instrument; annual, hundred-hour, elt, elt-battery, static, transponder, vor-check; item (an owner's own).
+         */
+        val what: String,
+        /**
+         * The owner's item it is, where it is one.
+         */
+        val itemId: Int? = null,
+        val label: String,
+        /**
+         * The rule that asks for it: "14 CFR 61.56(c)"; an AD's own number with 14 CFR 39.7; an owner's other item its own reference, or none.
+         */
+        val rule: String? = null,
+        /**
+         * YYYY-MM-DD, its last good day; null where it falls due by hours.
+         */
+        val until: String? = null,
+        val dueAtHours: Double? = null,
+        /**
+         * The reminder sentence's start, to which the day is added.
+         */
+        val lead: String,
+    )
+
     @Serializable
     data class PassengerBriefingAnswerItem(
         val key: String,
@@ -9081,6 +9235,10 @@ object EngineContract {
          * Intercepting and tracking courses logged in them (61.57(c)(1)(iii)).
          */
         val trackingInWindow: Boolean,
+        /**
+         * What falls due, each named and cited: the flight review (61.56(c)), the medical (61.23), passengers by day and at night (61.57(a), (b)), instrument currency (61.57(c)), each where it can be had.
+         */
+        val due: List<EngineContract.PaperworkDue>,
     )
 
     @Serializable
@@ -9442,6 +9600,22 @@ object EngineContract {
         @SerialName("known_ft")
         val knownFt: Double? = null,
     )
+
+    @Serializable
+    data class ProcedurePathFiguresAnswer(
+        @SerialName("hold_turn_nm")
+        val holdTurnNm: Double,
+        @SerialName("vectors_join_nm")
+        val vectorsJoinNm: Double,
+        @SerialName("vectors_intercept_deg")
+        val vectorsInterceptDeg: Double,
+    )
+
+    @Serializable
+    class ProcedurePathFiguresInput {
+        override fun equals(other: Any?): Boolean = other is ProcedurePathFiguresInput
+        override fun hashCode(): Int = 0
+    }
 
     @Serializable
     data class ProcedureReversalInput(

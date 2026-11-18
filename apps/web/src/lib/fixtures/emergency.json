@@ -61,5 +61,19 @@
     { "titles": ["Engine fire in flight", "Electrical fire"], "want": null, "index": null },
     { "titles": ["Engine fire in flight", "Electrical fire in flight"], "want": "Electrical fire in flight", "index": 1 },
     { "titles": [], "want": null, "index": null }
+  ],
+  "maydayAltitude": [
+    {
+      "altitude_ft": 4537,
+      "said": "4,500 ft"
+    },
+    {
+      "altitude_ft": 4550,
+      "said": "4,600 ft"
+    },
+    {
+      "altitude_ft": 982,
+      "said": "1,000 ft"
+    }
   ]
 }

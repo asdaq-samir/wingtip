@@ -314,6 +314,15 @@ pub fn window(eta: f64, destination: bool) -> (f64, f64) {
 }
 
 /// The rule `name` worked on `v`.
+/// `ifr_alternate_not_required`: why no alternate is needed, in 91.169(b)'s
+/// own figures (a function of its own: the web's module asks it alone).
+pub fn not_required(_name: &str, _v: &Value) -> R<String> {
+    let (ft, sm) = (grouped(DESTINATION_CEILING_FT), g(DESTINATION_VISIBILITY_SM));
+    let mut out = String::new();
+    json::string(&mut out, &format!("An approach, and {ft} ft and {sm} sm an hour either side of the ETA (14 CFR 91.169(b))."));
+    Ok(out)
+}
+
 pub fn call(name: &str, v: &Value) -> R<String> {
     let answer = match name {
         "ifr_alternate_window" => {

@@ -1,0 +1,38 @@
+{
+  "x-call": "wingtip_procedures::paths::call",
+  "description": "The figures a flown procedure path is drawn with: a hold entry's standard-rate turn radius at the 120 kt holds are drawn at (AIM 5-3-8), nm; and the join from vectors to final, 3 nm outside the final's first fix (2 miles outside the approach gate, which is 1 mile outside the FAF: FAA Order JO 7110.65 5-9-1a1, the Pilot/Controller Glossary) at 30 degrees (JO 7110.65 TBL 5-9-1).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProcedurePathFiguresInput",
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "answer": {
+      "title": "ProcedurePathFiguresAnswer",
+      "type": "object",
+      "properties": {
+        "hold_turn_nm": {
+          "type": "number"
+        },
+        "vectors_join_nm": {
+          "type": "number"
+        },
+        "vectors_intercept_deg": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "hold_turn_nm",
+        "vectors_join_nm",
+        "vectors_intercept_deg"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

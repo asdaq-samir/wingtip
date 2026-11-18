@@ -29,6 +29,17 @@ pub fn hold_turn_nm() -> f64 {
     HOLD_SPEED_KT * (120.0 / 3600.0) / (2.0 * std::f64::consts::PI)
 }
 
+/// Vectors to final, as a controller turns an airplane onto an approach
+/// from vectors (no transition picked): onto the final approach course
+/// "at least 2 miles outside the approach gate" (FAA Order JO 7110.65,
+/// 5-9-1a1), the gate "1 mile from the final approach fix on the side
+/// away from the airport" (Pilot/Controller Glossary, "Approach gate") --
+/// 3 nm outside the final's first fix -- at TBL 5-9-1's most for 2 miles
+/// or more from the gate, 30 degrees (5-9-2). The planner's
+/// procedure_paths joins the final there (`procedure_path_figures`).
+pub const VECTORS_JOIN_NM: f64 = 1.0 + 2.0;
+pub const VECTORS_INTERCEPT_DEG: f64 = 30.0;
+
 /// How long a leg with no end is drawn, nm: about a turn's worth at a
 /// light airplane's speed, enough to show which way it goes.
 pub const OPEN_LEG_NM: f64 = 2.0;
@@ -207,6 +218,18 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         "procedure_hold_leg_nm" => {
             let mut out = String::new();
             json::opt_number(&mut out, hold_leg_nm(opt_num(name, v, "minutes")?, opt_num(name, v, "distance_nm")?));
+            Ok(out)
+        }
+        // The figures the planner's procedure_paths draws a flown path
+        // with: a hold entry's turn and the join from vectors.
+        "procedure_path_figures" => {
+            let mut out = String::from("{\"hold_turn_nm\":");
+            json::number(&mut out, hold_turn_nm());
+            out.push_str(",\"vectors_join_nm\":");
+            json::number(&mut out, VECTORS_JOIN_NM);
+            out.push_str(",\"vectors_intercept_deg\":");
+            json::number(&mut out, VECTORS_INTERCEPT_DEG);
+            out.push('}');
             Ok(out)
         }
         _ => Err(format!("the engine has no rule called {name:?}")),

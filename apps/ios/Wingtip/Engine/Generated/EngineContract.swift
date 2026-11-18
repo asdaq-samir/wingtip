@@ -1633,6 +1633,16 @@ enum EngineContract {
         }
     }
 
+    struct AverageGroundspeedKtInput: Codable, Equatable, Sendable {
+        var distanceNm: Double
+        var minutes: Double
+
+        enum CodingKeys: String, CodingKey {
+            case distanceNm = "distance_nm"
+            case minutes
+        }
+    }
+
     struct AviationGridBandsAnswer: Codable, Equatable, Sendable {
         var icing: [EngineContract.AviationGridBandsAnswerIcingItem]
         var turbulence: EngineContract.AviationGridBandsAnswerTurbulence
@@ -2652,6 +2662,39 @@ enum EngineContract {
             case tempC = "temp_c"
             case flightCategory = "flight_category"
         }
+    }
+
+    struct CopilotFlightAnswer: Codable, Equatable, Sendable {
+        var fuelGal: Double?
+        var plannedGsKt: Double?
+        var passengers: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case fuelGal = "fuel_gal"
+            case plannedGsKt = "planned_gs_kt"
+            case passengers
+        }
+    }
+
+    struct CopilotFlightInput: Codable, Equatable, Sendable {
+        var fuelGal: Double?
+        var taxiGal: Double?
+        var distanceNm: Double?
+        var eteMin: Double?
+        var stations: [EngineContract.CopilotFlightInputStationsItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case fuelGal = "fuel_gal"
+            case taxiGal = "taxi_gal"
+            case distanceNm = "distance_nm"
+            case eteMin = "ete_min"
+            case stations
+        }
+    }
+
+    struct CopilotFlightInputStationsItem: Codable, Equatable, Sendable {
+        var name: String
+        var lb: Double?
     }
 
     struct CopilotMessage: Codable, Equatable, Sendable {
@@ -3945,6 +3988,46 @@ enum EngineContract {
 
         enum CodingKeys: String, CodingKey {
             case tasKt = "tas_kt"
+        }
+    }
+
+    struct FiledTimesAnswer: Codable, Equatable, Sendable {
+        var burnGph: Double?
+        var eetMinutes: Int?
+        var eet: String?
+        var enduranceMinutes: Int?
+        var endurance: String?
+
+        enum CodingKeys: String, CodingKey {
+            case burnGph = "burn_gph"
+            case eetMinutes = "eet_minutes"
+            case eet
+            case enduranceMinutes = "endurance_minutes"
+            case endurance
+        }
+    }
+
+    struct FiledTimesInput: Codable, Equatable, Sendable {
+        var eteMin: Double?
+        var fuelGal: Double?
+        var legs: [EngineContract.FiledTimesInputLegsItem]
+        var cruiseBurnGph: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case eteMin = "ete_min"
+            case fuelGal = "fuel_gal"
+            case legs
+            case cruiseBurnGph = "cruise_burn_gph"
+        }
+    }
+
+    struct FiledTimesInputLegsItem: Codable, Equatable, Sendable {
+        var phase: String?
+        var fuelBurnGph: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case phase
+            case fuelBurnGph = "fuel_burn_gph"
         }
     }
 
@@ -6089,6 +6172,16 @@ enum EngineContract {
         }
     }
 
+    struct HoldInboundDegInput: Codable, Equatable, Sendable {
+        var courseDeg: Double
+        var outbound: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case courseDeg = "course_deg"
+            case outbound
+        }
+    }
+
     struct HoldingAnswer: Codable, Equatable, Sendable {
         var entry: String
         var entryName: String
@@ -6396,6 +6489,9 @@ enum EngineContract {
         }
     }
 
+    struct IfrAlternateNotRequiredInput: Codable, Equatable, Sendable {
+    }
+
     struct IfrAlternatesRankedInput: Codable, Equatable, Sendable {
         var checks: [[String: OpenAPIValueContainer]]
         var limit: Double?
@@ -6620,6 +6716,8 @@ enum EngineContract {
         var transponderCheckUntil: String?
         var hundredHourDueAtHours: Double?
         var vorCheck: EngineContract.InspectionsDueAnswerVorCheck?
+        /// Each recorded one, named and cited, in order: the annual, the 100-hour (for hire), the ELT and its battery, the static system, the transponder, the VOR check (where within its limit), then the owner's dated items.
+        var due: [EngineContract.PaperworkDue]
 
         enum CodingKeys: String, CodingKey {
             case annualUntil = "annual_until"
@@ -6628,6 +6726,7 @@ enum EngineContract {
             case transponderCheckUntil = "transponder_check_until"
             case hundredHourDueAtHours = "hundred_hour_due_at_hours"
             case vorCheck = "vor_check"
+            case due
         }
     }
 
@@ -6654,6 +6753,14 @@ enum EngineContract {
         var transponderCheckOn: String?
         var hundredHourAtHours: Double?
         var vorCheck: EngineContract.InspectionsDueInputVorCheck?
+        /// The airplane's registration, for the reminders' words.
+        var tailNumber: String?
+        /// Flown for hire, so the 100-hour inspection applies (91.409(b)).
+        var forHire: Bool?
+        /// YYYY-MM-DD, the date marked on the transmitter (91.207(c)).
+        var eltBatteryDueOn: String?
+        /// The owner's own items: an AD (14 CFR part 39) or anything else.
+        var kept: [EngineContract.InspectionsDueInputKeptItem]?
 
         enum CodingKeys: String, CodingKey {
             case annualOn = "annual_on"
@@ -6662,6 +6769,29 @@ enum EngineContract {
             case transponderCheckOn = "transponder_check_on"
             case hundredHourAtHours = "hundred_hour_at_hours"
             case vorCheck = "vor_check"
+            case tailNumber = "tail_number"
+            case forHire = "for_hire"
+            case eltBatteryDueOn = "elt_battery_due_on"
+            case kept
+        }
+    }
+
+    struct InspectionsDueInputKeptItem: Codable, Equatable, Sendable {
+        var id: Int
+        var kind: String
+        var title: String
+        var reference: String?
+        /// YYYY-MM-DD
+        var dueOn: String?
+        var dueAtHours: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case kind
+            case title
+            case reference
+            case dueOn = "due_on"
+            case dueAtHours = "due_at_hours"
         }
     }
 
@@ -7417,6 +7547,7 @@ enum EngineContract {
         /// As a controller gives it: "BAE 245° 12 nm".
         var position: String?
         var headingMagDeg: Double?
+        /// Feet MSL as the GPS gives it; said to the hundred feet (AIM 4-2-9: the thousands plus the hundreds).
         var altitudeFt: Double?
         var fuelMin: Double?
         var souls: Double?
@@ -8343,6 +8474,14 @@ enum EngineContract {
         }
     }
 
+    struct NmAlongInput: Codable, Equatable, Sendable {
+        var legsNm: [Double?]
+
+        enum CodingKeys: String, CodingKey {
+            case legsNm = "legs_nm"
+        }
+    }
+
     struct NNumberInput: Codable, Equatable, Sendable {
         var text: String?
     }
@@ -8746,6 +8885,22 @@ enum EngineContract {
         var fix: EngineContract.OwnShipFix?
     }
 
+    /// One thing that falls due, named and with the rule that asks for it, for the gateway's Coming up list and reminders (PaperworkService), which adds only the days and hours left.
+    struct PaperworkDue: Codable, Equatable, Sendable {
+        /// flight-review, medical, day-passengers, night-passengers, instrument; annual, hundred-hour, elt, elt-battery, static, transponder, vor-check; item (an owner's own).
+        var what: String
+        /// The owner's item it is, where it is one.
+        var itemId: Int?
+        var label: String
+        /// The rule that asks for it: "14 CFR 61.56(c)"; an AD's own number with 14 CFR 39.7; an owner's other item its own reference, or none.
+        var rule: String?
+        /// YYYY-MM-DD, its last good day; null where it falls due by hours.
+        var until: String?
+        var dueAtHours: Double?
+        /// The reminder sentence's start, to which the day is added.
+        var lead: String
+    }
+
     struct PassengerBriefingAnswerItem: Codable, Equatable, Sendable {
         var key: String
         var title: String
@@ -8889,6 +9044,8 @@ enum EngineContract {
         var holdingInWindow: Bool
         /// Intercepting and tracking courses logged in them (61.57(c)(1)(iii)).
         var trackingInWindow: Bool
+        /// What falls due, each named and cited: the flight review (61.56(c)), the medical (61.23), passengers by day and at night (61.57(a), (b)), instrument currency (61.57(c)), each where it can be had.
+        var due: [EngineContract.PaperworkDue]
     }
 
     struct PilotCurrencyInput: Codable, Equatable, Sendable {
@@ -9264,6 +9421,21 @@ enum EngineContract {
             case altitudeFt = "altitude_ft"
             case knownFt = "known_ft"
         }
+    }
+
+    struct ProcedurePathFiguresAnswer: Codable, Equatable, Sendable {
+        var holdTurnNm: Double
+        var vectorsJoinNm: Double
+        var vectorsInterceptDeg: Double
+
+        enum CodingKeys: String, CodingKey {
+            case holdTurnNm = "hold_turn_nm"
+            case vectorsJoinNm = "vectors_join_nm"
+            case vectorsInterceptDeg = "vectors_intercept_deg"
+        }
+    }
+
+    struct ProcedurePathFiguresInput: Codable, Equatable, Sendable {
     }
 
     struct ProcedureReversalInput: Codable, Equatable, Sendable {
