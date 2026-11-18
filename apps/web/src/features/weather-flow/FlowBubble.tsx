@@ -179,7 +179,7 @@ function Said({ over, figure, under }: { over: string | null; figure: string; un
 /** A value's small white pill, its figure alone (Apple Weather's
  *  temperature map, the owner's screenshot, 2026-11-12): degrees C, the
  *  legend's unit, rounded; a dash where the model has none. */
-export function FlowPill({ value, testId }: { value: number | null; testId?: string }) {
+function FlowPill({ value, testId }: { value: number | null; testId?: string }) {
   return (
     <span
       className={cn(

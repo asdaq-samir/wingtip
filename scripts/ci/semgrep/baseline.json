@@ -3,8 +3,7 @@
   "tools/xplane-driver/wingtip_replay/track.py": 1
  },
  "html-marker-on-the-map": {
-  "apps/web/src/features/weather-flow/FlowBubble.tsx": 1,
-  "apps/web/src/features/weather-flow/FlowPins.tsx": 1
+  "apps/web/src/features/weather-flow/FlowBubble.tsx": 1
  },
  "planner-http-by-hand-java": {
   "services/gateway/src/main/java/app/wingtipmaps/gateway/monitoring/UptimeWatch.java": 1
