@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { drawn, grabberTo, openPanel, settle, settled, showTabs, sideDrawer, slow, frontSheet, openRoute } from "./helpers";
+import { drawn, grabberTo, openPanel, settle, settled, showPlan, showTabs, sideDrawer, slow, frontSheet, openRoute } from "./helpers";
+import { showPage } from "./oneSearch";
 import { card } from "./placeCard";
 
 test("an airport's card has four tabs right under its actions, in sight at half, Info first; a tab takes the panel up, and the open one again, down", async ({
@@ -42,12 +43,13 @@ test("an airport's card has four tabs right under its actions, in sight at half,
   await expect(runways).toContainText(/Runway \d/);
 
   // Charts: the airport's (none from the FAA: the card's sketch instead),
-  // and its approach as the FAA prints its title.
+  // and its approach's title in the FAA's codes, its words in sentence
+  // case (the engine's faa_words: "ILS or LOC rwy 36").
   await card(page).getByTestId("place-tab-diagrams").click();
   const charts = card(page).getByRole("tabpanel").getByTestId("place-charts");
   await expect(charts.getByTestId("airport-diagram-sketch")).toContainText("A sketch of the runways");
   const approach = charts.getByTestId("terminal-chart");
-  await expect(approach).toHaveText(/RNAV \(GPS\) RWY 24/);
+  await expect(approach).toHaveText(/RNAV \(GPS\) rwy 24/);
   // Shown in the app (airport-diagram.spec), not a link out of it.
   await expect(approach).not.toHaveAttribute("href", /.*/);
 
@@ -109,7 +111,10 @@ test("the route's Procedures open its destination's card on its approaches, and 
   // Nearest is the search's own page's (its Nearest section), not a button
   // on the map's left; the map's own buttons stay on its right.
   await expect(page.locator("[data-map-controls-left]")).toHaveCount(0);
+  // The one search is the sheet's other page, behind FPL's while a route
+  // is up (the page toggle at the first row's end).
   await showTabs(page);
+  await showPage(page, 0);
   await expect(page.getByTestId("search-airports")).toBeVisible();
   const settings = page.locator("[data-map-controls]").getByTestId("map-settings-button");
   const width = page.viewportSize()!.width;
@@ -146,6 +151,7 @@ test("the route's Procedures open its destination's card on its approaches, and 
             },
       }),
   );
+  await showPlan(page);
   await grabberTo(page, "full");
   await openRoute(page);
   await sideDrawer(page).getByRole("region", { name: "KDLH · Arrive" }).locator("[data-testid=procedure-kind][data-kind=approach]").click();
@@ -171,7 +177,9 @@ test("the route's Procedures open its destination's card on its approaches, and 
 // stood empty under its ident with the map on the pilot's position.
 test("a Favorite's card names it and the map goes to it before the card's answer is in", async ({ page }) => {
   await page.addInitScript(() => {
-    const kept = { ident: "KBUR", name: "Hollywood Burbank/Bob Hope Airport", municipality: "Burbank", lat: 34.2007, lon: -118.3587 };
+    // Named as NASR files it (field_use.named), as the planner's lists
+    // and its search name it too.
+    const kept = { ident: "KBUR", name: "Hollywood Burbank", municipality: "Burbank", lat: 34.2007, lon: -118.3587 };
     localStorage.setItem("wingtip.preferences", JSON.stringify({ state: { favoriteAirports: [kept] }, version: 0 }));
   });
   let answer: () => void = () => {};
@@ -188,7 +196,7 @@ test("a Favorite's card names it and the map goes to it before the card's answer
   await page.goto("/app/plan?place=KBUR");
   await settle(page);
   await expect(card(page).getByTestId("place-name")).toHaveText("KBUR");
-  await expect(card(page).getByTestId("place-full-name")).toContainText("Hollywood Burbank/Bob Hope Airport");
+  await expect(card(page).getByTestId("place-full-name")).toContainText("Hollywood Burbank");
   await expect(card(page).getByTestId("fly-here")).toBeDisabled();
   // The field's ring drawn on the chart, in sight: a layer of the map now,
   // read through its probe (AirportsGl's selected-airport), not an HTML mark.

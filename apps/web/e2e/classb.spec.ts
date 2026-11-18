@@ -1,5 +1,6 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { chartZoom, grabberTo, openMapSettings, sideDrawer, slow, tapNear } from "./helpers";
+import { grabberTo, mapStill, openMapSettings, sideDrawer, slow, tapNear } from "./helpers";
+import { mapZoom } from "./mapZoom";
 import { markWith, tapMark } from "./marks";
 
 /**
@@ -140,20 +141,32 @@ test("a tap a little off one's mark opens its card, as off any airport on the ch
   await tapNear(page, ord(page), /[?&]place=KORD(&|$)/);
 });
 
-test("on the training map, which has no card, a tap goes to the field at its terminal chart's zoom", async ({ page }) => {
-  // Pinning from a route view would draw nothing -- the FAA publishes
-  // terminal charts from zoom 10 and a whole route fits at about 6 --
-  // so the tap goes to where the sheet is.
+test("on the training map, which has no card, a tap brings the field to the map's middle at the pilot's zoom", async ({ page }) => {
+  // The terminal chart is drawn over the sectional at every zoom (the
+  // owner, 2026-11-16: "just keep the TAC all the time"), so the tap no
+  // longer goes in to where it starts, and a thing tapped keeps the
+  // pilot's zoom (docs/design/rules.md §14, 5): O'Hare comes to the
+  // middle, the TAC drawn there, the zoom the pilot's.
   await mockClassB(page);
   await page.goto("/app/dev?dep=C81&dest=KDLH");
   await expect.poll(ord(page), { timeout: 20000 }).not.toBeNull();
+  await expect(page.getByTestId("gl-map")).toHaveAttribute("data-chart-kinds", "sec tac");
 
-  // The chart's tile level drawn (ChartGl's data-chart-zoom).
-  const tileZoom = () => chartZoom(page);
-  const before = await tileZoom();
+  await mapStill(page);
+  const before = await mapZoom(page);
   await tapMark(page, "class-b-fields", "KORD");
-  await expect.poll(tileZoom, { timeout: 20000 }).toBeGreaterThanOrEqual(10);
-  expect(before).toBeLessThan(10);
+  // GlMapShell's data-center, the map's middle once at rest.
+  const middle = async () => (await page.getByTestId("gl-map").getAttribute("data-center"))!.split(",").map(Number);
+  await expect
+    .poll(
+      async () => {
+        const [lat, lon] = await middle();
+        return Math.hypot(lat - 41.978, lon + 87.908);
+      },
+      { timeout: 20000 },
+    )
+    .toBeLessThan(0.05);
+  expect(await mapZoom(page)).toBeCloseTo(before, 2);
   await expect(page.locator(".maplibregl-popup")).toHaveCount(0);
 });
 

@@ -102,19 +102,29 @@ test("the pictures open on the runways, and the Weather tab opens on the forecas
     },
     taf: tafFromNow(),
   });
-  // Its aerial too, so the order is the card's and not the photos' absence.
+  // Its aerial too, held until the runways are drawn, as it comes on a
+  // phone: from its own query, after the card.
+  let aerial: () => void = () => {};
+  const held = new Promise<void>((go) => {
+    aerial = go;
+  });
   await page.route(
     (url) => url.pathname.endsWith("/api/planner/airport/KDLH/photos"),
-    (route) => route.fulfill({ json: { aerial_url: "/api/planner/airport-aerial/KDLH.jpg", photo: null } }),
+    async (route) => {
+      await held;
+      await route.fulfill({ json: { aerial_url: "/api/planner/airport-aerial/KDLH.jpg", photo: null } });
+    },
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
   await settle(page);
-  // The aerial the first page of the pictures, the runways after it (the
-  // owner's ask, 2026-10-29).
+  // The pictures open on the runways, and the aerial that comes after them
+  // goes after them, never in front of the one in view (FL-23).
   const pages = card(page).getByTestId("place-pictures").locator('[data-slot="carousel-item"]');
+  await expect(pages.nth(0).getByTestId("place-runway-sketch")).toBeVisible({ timeout: slow(15000) });
+  aerial();
   await expect(pages).toHaveCount(2, { timeout: slow(15000) });
-  await expect(pages.nth(0).getByTestId("place-aerial")).toHaveCount(1);
-  await expect(pages.nth(1).getByTestId("place-runway-sketch")).toBeVisible();
+  await expect(pages.nth(0).getByTestId("place-runway-sketch")).toBeVisible();
+  await expect(pages.nth(1).getByTestId("place-aerial")).toHaveCount(1);
 
   // The weather's card at the top of the Weather tab.
   await card(page).getByTestId("place-tab-weather").click();
@@ -122,9 +132,11 @@ test("the pictures open on the runways, and the Weather tab opens on the forecas
   // the way up to read it, as a pilot would.
   await grabberTo(page, "full");
   // The sentence, written from the TAF: when it goes MVFR and what does
-  // it, until when, and the gust (features/place/hourly).
+  // it, until when, and the gust (features/place/hourly), each time with
+  // the device's zone beside it (placeCardWords' zonedClock: "02:00 CST",
+  // the FPL audit's A19).
   await expect(card(page).getByTestId("place-forecast-sentence")).toHaveText(
-    /^Ceilings lowering to 2,500 ft around \d\d:00, MVFR until \d\d:00\. Gusts up to 22 kt\.$/,
+    /^Ceilings lowering to 2,500 ft around \d\d:00 [A-Z][\w+-]*, MVFR until \d\d:00 [A-Z][\w+-]*\. Gusts up to 22 kt\.$/,
   );
   // Under it the hours, Now first from the report, then each hour of the
   // TAF, its ceiling and its wind as FPL writes a field's.
@@ -176,8 +188,9 @@ test('a field with no report wears the nearest station\'s category as "≈" with
   await expect(from).toContainText("Nearest report, 6.2 nm E");
   await expect(from).toContainText("KUGN 102152Z");
   // When it was observed on its row, where a footnote said it was not
-  // this field's own (the title says it is the nearest's).
-  await expect(from).toContainText(/\d{4}Z · (just now|(\d+h )?\d+[hm] ago)/);
+  // this field's own (the title says it is the nearest's), in the words
+  // every report's time is said in (Observed, amber once it is old).
+  await expect(from.getByTestId("observed")).toHaveText(/^Observed \d{4}Z, (just now|(\d+h )?\d+[hm] ago)$/);
 
   // Twelve miles off: the report still said, no chip.
   await page.unrouteAll({ behavior: "ignoreErrors" });
@@ -225,7 +238,8 @@ test("an airport's card calls the field and finds it in Maps, from the FAA's air
       const answer = await route.fetch();
       await route.fulfill({
         response: answer,
-        json: { ...(await answer.json()), phone: "218-727-2968", address: "4701 Grinden Dr, Duluth, MN 55811" },
+        // Its name as NASR files it, which Maps is asked for.
+        json: { ...(await answer.json()), name: "Duluth Intl", phone: "218-727-2968", address: "4701 Grinden Dr, Duluth, MN 55811" },
       });
     },
   );
@@ -243,7 +257,7 @@ test("an airport's card calls the field and finds it in Maps, from the FAA's air
   await expect(card(page).getByTestId("place-call")).toHaveAttribute("href", "tel:218-727-2968", { timeout: slow(15000) });
   await expect(card(page).getByTestId("place-address")).toHaveAttribute(
     "href",
-    "https://maps.apple.com/?q=Duluth%20International%20Airport&address=4701%20Grinden%20Dr%2C%20Duluth%2C%20MN%2055811",
+    "https://maps.apple.com/?q=Duluth%20Intl&address=4701%20Grinden%20Dr%2C%20Duluth%2C%20MN%2055811",
   );
 
   // A field the FAA lists no phone for: Call greyed, and the Info tab's Address by where it is.
