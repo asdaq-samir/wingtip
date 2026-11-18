@@ -12,7 +12,7 @@ import ProfileLine from "./ProfileLine";
 import type { PlanSlices } from "../vm/planSlices";
 import ProfileSideView from "./ProfileSideView";
 import Waits from "./Waits";
-import { STOPS_CARD } from "../vm/useFplCards";
+import { STOPS_CARD } from "../vm/useStopsPins";
 
 /** The flight rules a route is planned under, as the Profile card's switch
  *  offers them. */

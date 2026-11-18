@@ -1,22 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useState } from "react";
 import type { Address, SetAddress } from "../../../lib/address";
 import type { PanelState } from "../../../lib/mapChrome";
 import { useRadioActions } from "../../../lib/atcRadio";
 import { lessonOf } from "../../../lib/lessonLink";
 import { usePreferences } from "../../../lib/preferences";
 import { sameField } from "../../../lib/procedures";
-import { stopsAlongQuery, stopsNearQuery } from "../../../lib/queryClient";
-import { kindsOf, type StopKind } from "../../../lib/stopKinds";
+import type { StopKind } from "../../../lib/stopKinds";
 import { useStopsAlong } from "../../stops";
-import { setCard, useSheetCards } from "../../../lib/sheetCards";
 import type { ProceduresAt } from "../../procedures";
 import { riseToSee, type PlannedRoute, type PanelView } from "../../plan";
 import { useOpenScreen } from "./useOpenScreen";
-import { pickOnMap, useMapPickOwner } from "../../../lib/map/mapPick";
-
-/** The Stops card's id among the cards (CardLayer), for its pins' taps. */
-export const STOPS_CARD = "stops";
+import { useStopsPins } from "./useStopsPins";
 
 /**
  * The cards over FPL and the lists in full (usePlanWorkspace): the Brief,
@@ -26,7 +20,8 @@ export const STOPS_CARD = "stops";
  * from the pill raises the sheet to half so it is seen, and nothing else
  * sizes the sheet: it keeps the size the pilot left it at, opening or
  * closing (riseToSee; the owner, 2026-11-11). With the Stops' own
- * questions and pins, and the microphone's commands that open them.
+ * questions and pins (useStopsPins), and the microphone's commands that
+ * open them.
  */
 export function useFplCards({
   view,
@@ -61,9 +56,10 @@ export function useFplCards({
   setProceduresShown: (at: ProceduresAt) => void;
 }) {
   // The Nav Log's card, from the route's menu, where FPL shows the route in
-  // order (NavLogView's `route`).
-  const [navLogOpen, setNavLogOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  // order (NavLogView's `route`), or the Profile's: one at a time.
+  const [fplCard, setFplCard] = useState<"navlog" | "profile" | null>(null);
+  const navLogOpen = fplCard === "navlog";
+  const profileOpen = fplCard === "profile";
   // The Brief in sight: FPL's, over a route.
   const briefShown = briefOpen && view === "plan" && routed;
   // The Nav Log, a card over FPL as the Brief is (PlanPage).
@@ -83,51 +79,8 @@ export function useFplCards({
   const stopsShown = stopsOpen && (view === "plan" || view === stopsFrom) && !briefShown && !navLogShown && !profileShown;
   // The same whatever the tab: what FPL keeps under the others (TabKept).
   const briefHere = briefOpen && routed;
-  // Where the Stops are looked for: along the course while one is drawn
-  // (the owner, 2026-10-26), else round own ship (StopsCard).
-  const stopsRoute = useMemo(
-    () => (routed && !local && planned.dest ? { dep: planned.dep, dest: `${planned.dest}`, stops: planned.stops.join(",") } : null),
-    [routed, local, planned.dep, planned.dest, planned.stops],
-  );
-  const stopsAt = useMemo(() => (fix ? { lat: fix.lat, lon: fix.lon } : null), [fix]);
-  const stopsRadius = usePreferences((p) => p.stopsRadiusNm);
-  const stopKind = usePreferences((p) => p.stopKind);
-  // Along the route or round the pilot, as the sheet's pull-down picks
-  // (StopsCard): along it where there is one, until the pilot says.
-  const stopsScopePicked = useStopsAlong((st) => st.scope);
-  const setStopsScope = useStopsAlong((st) => st.setScope);
-  const stopsScope = stopsRoute ? (stopsScopePicked ?? "route") : "near";
-  // Asked for as soon as there is a route (or a position), not at the
-  // button's tap: the planner reads each field's places and outline from
-  // Overture the first time, half a minute for a long route's forty, and
-  // the owner waited on it ("why is it taking a long time to see these
-  // fly in airports", 2026-10-26). Not for each Routes card swiped past.
-  // Pinned only while the sheet is open (the same queries as the sheet's).
-  const { data: stopsNear } = useQuery({
-    ...stopsNearQuery(stopsAt?.lat ?? 0, stopsAt?.lon ?? 0, stopsRadius),
-    enabled: !!stopsAt && (!stopsRoute || stopsScope === "near"),
-  });
-  const { data: stopsAlong } = useQuery({
-    ...stopsAlongQuery(stopsRoute?.dep ?? "", stopsRoute?.dest ?? "", stopsRoute?.stops ?? ""),
-    enabled: !!stopsRoute,
-  });
-  const stopsFound = stopsScope === "route" ? stopsAlong : stopsNear;
-  // Each field's stacked pins, the kind picked alone where one is (the
-  // owner's "With a kind picked, that kind's pin only"). A suggested fuel
-  // stop keeps its own pin, not stacked over (the owner's "when food is
-  // shown, don't hide the fuel", 2026-10-26).
-  const stopFieldPins = useMemo(
-    () =>
-      stopsShown && stopsFound
-        ? stopsFound.fields.flatMap((f) => {
-            const kinds = kindsOf(f).filter((k) => stopKind === "all" || k === stopKind);
-            return kinds.length && !fuelStopPins.some((p) => p.ident === f.ident)
-              ? [{ ident: f.ident, lat: f.lat, lon: f.lon, kinds }]
-              : [];
-          })
-        : undefined,
-    [stopsShown, stopsFound, stopKind, fuelStopPins],
-  );
+  const stopsPins = useStopsPins({ stopsShown, routed, local, planned, fix, fuelStopPins });
+  const { setStopsScope } = stopsPins;
   // FPL's saved flights in full, a card over it (SAVED's title).
   const savedOpen = address.saved;
   // An approach set by their instructor, open over the map until closed.
@@ -161,19 +114,17 @@ export function useFplCards({
   // opening by the card rule (CardStack), the sheet under it left as it is.
   const openNavLogCard = useCallback(() => {
     setStopsOpen(false);
-    setNavLogOpen(true);
-    setProfileOpen(false);
+    setFplCard("navlog");
   }, [setStopsOpen]);
-  const closeNavLogCard = useCallback(() => setNavLogOpen(false), []);
+  const closeNavLogCard = useCallback(() => setFplCard((card) => (card === "navlog" ? null : card)), []);
   // The side view the same way, from its button beside the nav log's, at
   // the owner's ask ("profile view can move next to the navlog button and
   // open like brief and navlog opens instead of the swipe").
   const openProfileCard = useCallback(() => {
     setStopsOpen(false);
-    setProfileOpen(true);
-    setNavLogOpen(false);
+    setFplCard("profile");
   }, [setStopsOpen]);
-  const closeProfileCard = useCallback(() => setProfileOpen(false), []);
+  const closeProfileCard = useCallback(() => setFplCard((card) => (card === "profile" ? null : card)), []);
   // The map's Stops put away, the sheet where it is, on the page they were
   // opened from.
   const closeStops = useCallback(() => {
@@ -187,8 +138,7 @@ export function useFplCards({
   const openStops = useCallback(() => {
     setStopsOpen(true);
     setStopsFrom(view);
-    setNavLogOpen(false);
-    setProfileOpen(false);
+    setFplCard(null);
     void setAddress({ brief: null, place: null });
   }, [setStopsOpen, setAddress, view]);
   // Find Nearby's tile (the Airport tab): the Stops round the pilot, that
@@ -204,25 +154,6 @@ export function useFplCards({
   );
   // Put away with the planner.
   useEffect(() => () => setStopsOpen(false), [setStopsOpen]);
-  // A field's pin tapped on the chart: its row picked in the Stops card,
-  // the card half way up from its pill so the row is in sight (its own
-  // drawer's snap point, as useCardSize sets it), where the tap opened the
-  // field's card (the owner, 2026-10-28: the card is a tap on the row's
-  // ident away).
-  const setStopPicked = useStopsAlong((st) => st.setPicked);
-  const stopPicked = useStopsAlong((st) => st.picked);
-  // One pick at a time on the map (lib/map/mapPick): the field's row and
-  // ring put every other card and ring away, and are put away by theirs.
-  useMapPickOwner("stop", !!stopPicked, () => setStopPicked(null));
-  const pickStopField = useCallback(
-    (ident: string) => {
-      pickOnMap("stop");
-      setStopPicked(ident);
-      const stops = useSheetCards.getState().stack.find((entry) => entry.id === STOPS_CARD);
-      if (stops?.at === "peek") setCard(STOPS_CARD, { at: "half" });
-    },
-    [setStopPicked],
-  );
   // The legs asked for from the Brief: FPL in its place, the sheet at the
   // size the pilot left it (half from the pill).
   const showLegs = useCallback(() => {
@@ -267,11 +198,7 @@ export function useFplCards({
     profileOpen,
     stopsShown,
     briefHere,
-    stopsRoute,
-    stopsAt,
-    stopsScope,
-    setStopsScope,
-    stopFieldPins,
+    ...stopsPins,
     savedOpen,
     lessonOpen,
     closeLesson,
@@ -285,7 +212,6 @@ export function useFplCards({
     closeProfileCard,
     closeStops,
     findNearby,
-    pickStopField,
     showLegs,
     openNearest,
     closeNearest,
