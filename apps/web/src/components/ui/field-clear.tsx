@@ -1,4 +1,7 @@
+import type { ComponentProps } from "react";
+import { Button as BaseButton } from "@base-ui/react/button";
 import { X } from "lucide-react";
+import { cn } from "cn";
 
 // Apart from ui/search-field, so a field that is not React Aria's (Base
 // UI's Autocomplete, ui/command's CommandClear) draws the same clear
@@ -14,4 +17,17 @@ export const FIELD_CLEAR =
 /** The cross in it, drawn heavy as SF Symbols' xmark.circle.fill. */
 export function FieldClearGlyph() {
   return <X className="size-3" strokeWidth={3} aria-hidden="true" />;
+}
+
+/** The clear on its own, for what is folded to a row while its field is
+ *  shut (FPL's half route): Base UI's Button in the clear's look. React
+ *  Aria's (ui/search-field's SearchFieldClear) is for inside its
+ *  SearchField, and drew all of React Aria into the first load from here
+ *  (169 KB unminified, 2026-11-18). */
+export function FieldClearButton({ className, ...props }: Omit<ComponentProps<typeof BaseButton>, "children">) {
+  return (
+    <BaseButton data-slot="clear-button" className={cn(FIELD_CLEAR, className)} {...props}>
+      <FieldClearGlyph />
+    </BaseButton>
+  );
 }
