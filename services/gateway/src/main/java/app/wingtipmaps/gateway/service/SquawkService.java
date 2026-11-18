@@ -5,8 +5,11 @@ import app.wingtipmaps.gateway.domain.Squawk;
 import app.wingtipmaps.gateway.dto.SquawkDto;
 import app.wingtipmaps.gateway.dto.SquawkRequest;
 import app.wingtipmaps.gateway.repository.SquawkRepository;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 /** A pilot's airplane's squawks: listed newest first, added, changed (or
@@ -29,11 +32,15 @@ public class SquawkService {
                         .toList());
     }
 
-    /** The airplane's open squawks, for its risk on the day. */
-    public List<SquawkDto> open(Long aircraftId) {
-        return squawks.findByAircraftIdAndFixedOnIsNullOrderByReportedOnDescIdDesc(aircraftId).stream()
-                .map(SquawkService::toDto)
-                .toList();
+    /** Each airplane's open squawks, newest first, for its risk on the
+     *  day: one query for them all; an airplane with none is not a key. */
+    public Map<Long, List<SquawkDto>> openOf(Collection<Long> aircraftIds) {
+        return aircraftIds.isEmpty()
+                ? Map.of()
+                : squawks.findByAircraftIdInAndFixedOnIsNullOrderByReportedOnDescIdDesc(aircraftIds).stream()
+                        .collect(Collectors.groupingBy(
+                                s -> s.getAircraft().getId(),
+                                Collectors.mapping(SquawkService::toDto, Collectors.toList())));
     }
 
     public Optional<SquawkDto> add(Pilot pilot, Long aircraftId, SquawkRequest r) {

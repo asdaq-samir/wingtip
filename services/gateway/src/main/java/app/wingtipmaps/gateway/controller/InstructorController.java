@@ -8,6 +8,7 @@ import app.wingtipmaps.gateway.dto.InstructorRequest;
 import app.wingtipmaps.gateway.dto.SignRequest;
 import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.TrainingDto;
+import app.wingtipmaps.gateway.service.EndorsementSigning;
 import app.wingtipmaps.gateway.service.InstructorService;
 import app.wingtipmaps.gateway.service.LessonService;
 import app.wingtipmaps.gateway.service.LogbookService;
@@ -36,13 +37,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class InstructorController {
 
     private final InstructorService instructors;
+    private final EndorsementSigning signing;
     private final LessonService lessons;
     private final TrainingService training;
     private final LogbookService logbook;
 
     public InstructorController(
-            InstructorService instructors, LessonService lessons, TrainingService training, LogbookService logbook) {
+            InstructorService instructors,
+            EndorsementSigning signing,
+            LessonService lessons,
+            TrainingService training,
+            LogbookService logbook) {
         this.instructors = instructors;
+        this.signing = signing;
         this.lessons = lessons;
         this.training = training;
         this.logbook = logbook;
@@ -94,7 +101,7 @@ public class InstructorController {
     public ResponseEntity<TrainingDto> sign(
             Pilot pilot, @PathVariable Long studentId, @Valid @RequestBody SignRequest request) {
         return ResponseEntity.of(instructors.student(pilot, studentId).map(student -> {
-            instructors.sign(pilot, student, request, Instant.now());
+            signing.sign(pilot, student, request, Instant.now());
             return recordOf(pilot, student);
         }));
     }
@@ -130,7 +137,7 @@ public class InstructorController {
     /** One they signed, voided for a correction. */
     @PostMapping("/endorsements/{id}/void")
     public ResponseEntity<InstructorDto> voidEndorsement(Pilot pilot, @PathVariable Long id) {
-        return changed(pilot, instructors.voidEndorsement(pilot, id, Instant.now()));
+        return changed(pilot, signing.voidEndorsement(pilot, id, Instant.now()));
     }
 
     /** A solo cross-country turned down, and why. */
