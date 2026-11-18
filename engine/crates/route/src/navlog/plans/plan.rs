@@ -71,17 +71,11 @@ impl Plan<'_> {
         let climb_step = |i: usize, prev: Option<f64>, a: f64| climb_penalty_min(from(prev), a, profile, climber, Some(&*f.leg_at(i, a)?));
         let fuel_step =
             |i: usize, prev: Option<f64>, a: f64| climb_fuel_penalty_gal(from(prev), a, profile, climber, Some(&*f.leg_at(i, a)?));
-        let fixed_step = |_: usize, prev: Option<f64>, a: f64| Ok(if prev.is_some_and(|p| p != a) { STEP_PENALTY_FT_NM } else { 0.0 });
         let minutes = |i: usize, a: f64| Ok(f.leg_at(i, a)?.opt("ete_min")?.unwrap_or(f64::INFINITY));
         let gallons = |i: usize, a: f64| Ok(f.leg_at(i, a)?.opt("fuel_gal")?.unwrap_or(f64::INFINITY));
-        let low = |i: usize, a: f64| Ok(a * f.leg_at(i, a)?.num("distance_nm")?);
-        let high = |i: usize, a: f64| Ok(-a * f.leg_at(i, a)?.num("distance_nm")?);
-        let paths = [
-            best_path(&self.candidates, &low, &fixed_step)?,
-            best_path(&self.candidates, &high, &fixed_step)?,
-            best_path(&self.candidates, &minutes, &climb_step)?,
-            best_path(&self.candidates, &gallons, &fuel_step)?,
-        ];
+        let [lowest, highest] = self.band_paths()?;
+        let paths =
+            [lowest, highest, best_path(&self.candidates, &minutes, &climb_step)?, best_path(&self.candidates, &gallons, &fuel_step)?];
 
         // The plans' own legs carry their climbs, so the times and fuel
         // compared are the climbs' included; the legs are the truth. With no
@@ -93,21 +87,8 @@ impl Plan<'_> {
             let t = totals(&legs)?;
             let climb_min = py_round(py_sum(legs.iter().map(|l| l.opt("climb_min")).collect::<R<Vec<_>>>()?.into_iter().flatten()), 1);
             let tailwind = tailwind_kt(&legs)?;
-            let plan = object(vec![
-                ("steps", Value::Array(steps(altitudes, &legs)?)),
-                // Only where a leg had no legal altitude under the cap, or
-                // the profile says oxygen or a pressurised cabin.
-                ("needs_oxygen", Value::Bool(altitudes.iter().any(|a| *a > OXYGEN_CAP_FT))),
-                ("ete_min", t.get("ete_min").cloned().unwrap_or(Value::Null)),
-                ("fuel_gal", t.get("fuel_gal").cloned().unwrap_or(Value::Null)),
-                ("climb_penalty_min", number(climb_min)),
-                ("tailwind_kt", opt_number(tailwind)),
-                ("unflyable_legs", t.get("unflyable_legs").cloned().unwrap_or(Value::Null)),
-                ("legs_without_wind", t.get("legs_without_wind").cloned().unwrap_or(Value::Null)),
-                ("legs", Value::Array(legs.into_iter().map(Obj::value).collect())),
-                ("totals", t),
-            ]);
-            plans.push((kind.to_string(), plan));
+            let flown = [member(&t, "ete_min"), member(&t, "fuel_gal"), number(climb_min), opt_number(tailwind)];
+            plans.push((kind.to_string(), plan_object(altitudes, legs, t, flown)?));
         }
 
         Ok(object(vec![("plans", Value::Object(plans)), ("by_altitude", Value::Array(self.by_altitude()?))]))
@@ -117,30 +98,26 @@ impl Plan<'_> {
     /// as an airplane's plans pick them (STEP_PENALTY_FT_NM), its legs'
     /// courses and miles, and nothing an airplane would make of them.
     pub(super) fn band_plans(&self) -> R<Value> {
+        let paths = self.band_paths()?;
+        let mut plans = Vec::with_capacity(2);
+        for (kind, altitudes) in PLAN_KINDS.iter().zip(&paths) {
+            let legs = self.flights.legs_flown(altitudes, self.departure_elevation_ft)?;
+            let t = totals(&legs)?;
+            let flown = [Value::Null, Value::Null, Value::Null, Value::Null];
+            plans.push((kind.to_string(), plan_object(altitudes, legs, t, flown)?));
+        }
+        Ok(object(vec![("plans", Value::Object(plans)), ("by_altitude", Value::Array(self.by_altitude()?))]))
+    }
+
+    /// The lowest and highest profiles overall, each allowed to step only
+    /// where the change is worth STEP_PENALTY_FT_NM: the band's two plans,
+    /// which an airplane's plans and the plans with none both start from.
+    fn band_paths(&self) -> R<[Vec<f64>; 2]> {
         let f = &self.flights;
         let fixed_step = |_: usize, prev: Option<f64>, a: f64| Ok(if prev.is_some_and(|p| p != a) { STEP_PENALTY_FT_NM } else { 0.0 });
         let low = |i: usize, a: f64| Ok(a * f.leg_at(i, a)?.num("distance_nm")?);
         let high = |i: usize, a: f64| Ok(-a * f.leg_at(i, a)?.num("distance_nm")?);
-        let paths = [best_path(&self.candidates, &low, &fixed_step)?, best_path(&self.candidates, &high, &fixed_step)?];
-        let mut plans = Vec::with_capacity(2);
-        for (kind, altitudes) in PLAN_KINDS.iter().zip(&paths) {
-            let legs = f.legs_flown(altitudes, self.departure_elevation_ft)?;
-            let t = totals(&legs)?;
-            let plan = object(vec![
-                ("steps", Value::Array(steps(altitudes, &legs)?)),
-                ("needs_oxygen", Value::Bool(altitudes.iter().any(|a| *a > OXYGEN_CAP_FT))),
-                ("ete_min", Value::Null),
-                ("fuel_gal", Value::Null),
-                ("climb_penalty_min", Value::Null),
-                ("tailwind_kt", Value::Null),
-                ("unflyable_legs", t.get("unflyable_legs").cloned().unwrap_or(Value::Null)),
-                ("legs_without_wind", t.get("legs_without_wind").cloned().unwrap_or(Value::Null)),
-                ("legs", Value::Array(legs.into_iter().map(Obj::value).collect())),
-                ("totals", t),
-            ]);
-            plans.push((kind.to_string(), plan));
-        }
-        Ok(object(vec![("plans", Value::Object(plans)), ("by_altitude", Value::Array(self.by_altitude()?))]))
+        Ok([best_path(&self.candidates, &low, &fixed_step)?, best_path(&self.candidates, &high, &fixed_step)?])
     }
 
     /// The route flown at each altitude any leg may fly, for the altitude
@@ -156,12 +133,38 @@ impl Plan<'_> {
             let t = totals(&legs)?;
             by_altitude.push(object(vec![
                 ("altitude_ft", number(target)),
-                ("ete_min", t.get("ete_min").cloned().unwrap_or(Value::Null)),
-                ("fuel_gal", t.get("fuel_gal").cloned().unwrap_or(Value::Null)),
+                ("ete_min", member(&t, "ete_min")),
+                ("fuel_gal", member(&t, "fuel_gal")),
                 ("tailwind_kt", opt_number(tailwind_kt(&legs)?)),
                 ("everywhere", Value::Bool(self.nearest(target).iter().all(|a| *a == target))),
             ]));
         }
         Ok(by_altitude)
     }
+}
+
+/// Member `key` of the totals, null where they have none.
+fn member(totals: &Value, key: &str) -> Value {
+    totals.get(key).cloned().unwrap_or(Value::Null)
+}
+
+/// One plan as the planner sends it: its steps, whether it needs oxygen,
+/// `flown` (its ete_min, fuel_gal, climb_penalty_min and tailwind_kt: an
+/// airplane's figures, all null with none), and its legs and totals.
+fn plan_object(altitudes: &[f64], legs: Vec<Obj>, t: Value, flown: [Value; 4]) -> R<Value> {
+    let [ete_min, fuel_gal, climb_penalty_min, tailwind_kt] = flown;
+    Ok(object(vec![
+        ("steps", Value::Array(steps(altitudes, &legs)?)),
+        // Only where a leg had no legal altitude under the cap, or
+        // the profile says oxygen or a pressurised cabin.
+        ("needs_oxygen", Value::Bool(altitudes.iter().any(|a| *a > OXYGEN_CAP_FT))),
+        ("ete_min", ete_min),
+        ("fuel_gal", fuel_gal),
+        ("climb_penalty_min", climb_penalty_min),
+        ("tailwind_kt", tailwind_kt),
+        ("unflyable_legs", member(&t, "unflyable_legs")),
+        ("legs_without_wind", member(&t, "legs_without_wind")),
+        ("legs", Value::Array(legs.into_iter().map(Obj::value).collect())),
+        ("totals", t),
+    ]))
 }
