@@ -1,13 +1,14 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { cn } from "cn";
 import { useInkLook } from "../../lib/brand";
-import { WAYPOINT_MAGENTA, checkpointColour } from "../../lib/map/marks/chartColors";
+import { checkpointColour } from "../../lib/map/marks/chartColors";
 import { colourOf } from "../../lib/map/marks/flightCategory";
 import { AIRPORT_MARK, airportMarkSvg } from "../../lib/map/marks/airportMark";
 import type { AirspaceClass } from "../../lib/preferences";
 import { inkOn, scoreColor } from "../../lib/scoreScale";
 import { TEXT } from "../../lib/text";
 import type { NavLogRow } from "../plan";
+import { CHART } from "../../lib/tokens";
 
 /**
  * A nav log row's mark, before its name, as the map draws the point, at
@@ -70,7 +71,7 @@ export function PointMark({
   if (row.kind === "stop" && row.airport.kind === "fix") {
     return (
       <span aria-hidden="true" data-mark="waypoint" className="grid size-6 shrink-0 place-items-center">
-        <svg viewBox="0 0 12 12" className="size-3.5" fill={WAYPOINT_MAGENTA}>
+        <svg viewBox="0 0 12 12" className="size-3.5" fill={CHART.waypoint}>
           <path d="M6 0.5 11.5 6 6 11.5 0.5 6z" />
         </svg>
       </span>

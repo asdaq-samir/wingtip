@@ -1,5 +1,5 @@
 import { CHART } from "../../tokens";
-import type { DrawnImage } from "./glLayer";
+import type { DrawnImage } from "./drawSvg";
 
 /** A run of words on a tag's line, in its own ink and weight. */
 interface TagRun {

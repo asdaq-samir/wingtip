@@ -1,6 +1,7 @@
 import type { GeoJSONSource, MapGeoJSONFeature, Map as MlMap, SymbolLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useRef } from "react";
-import { EMPTY, drawSvg, useGlFadeIn, useGlLayer, useGlMap, type DrawnImage, type Slot, type Stretch } from "./glLayer";
+import { EMPTY, drawnWithData, useGlFadeIn, useGlLayer, useGlMap, type Slot } from "./glLayer";
+import { drawSvg, type DrawnImage, type Stretch } from "./drawSvg";
 import { TAP } from "./layers/common";
 import { useGlProbe } from "./useGlProbe";
 
@@ -104,7 +105,9 @@ export function useGlSymbols(source: string, layers: SymbolLayerSpecification[],
     let live = true;
     const pictures = new Map(symbols.flatMap((s) => [...(s.picture ? [s.picture] : []), ...(s.also ?? [])]).map((p) => [p.id, p] as const));
     void Promise.all([...pictures.values()].map((p) => addPicture(map, p))).then(() => {
-      if (live && map.style) map.getSource<GeoJSONSource>(source)?.setData(data);
+      if (!live || !map.style) return;
+      map.getSource<GeoJSONSource>(source)?.setData(data);
+      drawnWithData(map, source, data);
     });
     return () => {
       live = false;

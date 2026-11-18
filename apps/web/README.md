@@ -285,11 +285,11 @@ are `React.lazy`, so a pilot loading `/app/plan` never pays for either
 — importing `DevButton` used to pull the console in by accident, since
 it lived in the same module `DevPanel` did. The nav log's calendar
 popover (`react-day-picker`, one component behind one button) is lazy
-the same way. The div-icon marks (`lib/map/marks/icons.ts`: traffic, own
-ship, the replay's airplane, put on the map as MapLibre markers by
-`lib/map/gl/htmlMarker.ts`) are built from template strings rather than JSX rendered with
-`renderToStaticMarkup`, which otherwise pulled the whole of
-`react-dom/server` into every page's chunk for four spans. Together
+the same way. Own ship's arrow, the map's one HTML marker
+(`lib/map/marks/icons.ts`, put on the map by
+`lib/map/gl/layers/ownShipMarker.ts`), is built from a template string
+rather than JSX rendered with `renderToStaticMarkup`, which otherwise
+pulled the whole of `react-dom/server` into every page's chunk. Together
 these took the planner's cold-load JavaScript from 1.67 MB to 1.00 MB.
 
 **Cold load.** `main.tsx` asks the planner for the course named in the
@@ -370,7 +370,9 @@ Everything drawn on it is a React component in `lib/map/gl/layers` (`ChartGl`,
 that says through `glLayer.ts`'s hooks what it adds -- its sources and
 style layers, in one of the map's slots (base, chart, imagery, areas,
 lines, route, marks, top), the data it gives them, and what a tap on it
-does. The slots keep the order bottom to top however the layers come
+does. A GeoJSON source with nothing in it is left out of the frame
+(`drawnWithData`: its layers get no zoom to draw at until data comes), as
+MapLibre keeps and draws tiles of every source a drawn layer uses. The slots keep the order bottom to top however the layers come
 and go. `glStyle.ts` is the style as plain data (the chart's raster
 sources, the airspace's lines, the zooms), which the tests read without
 a map. MapLibre's zoom is a level lower than the app's levels (its

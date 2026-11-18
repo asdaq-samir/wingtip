@@ -270,8 +270,45 @@ export function useGlData(source: string, data: GeoJSON.GeoJSON | null) {
   const { map } = useGlMap();
   useEffect(() => {
     map.getSource<GeoJSONSource>(source)?.setData(data ?? EMPTY);
+    drawnWithData(map, source, data);
   }, [map, source, data]);
 }
+
+/** The highest zoom MapLibre has: a layer whose range starts there is
+ *  drawn at no level. */
+const NO_LEVEL = 24;
+
+/** A source with nothing in it left out of the frame, its layers given no
+ *  level to draw at, and their own levels back as data comes. MapLibre
+ *  keeps tiles only of a source a drawn layer uses: at rest on a route,
+ *  29 of the map's 43 sources were empty (the glide ring, a lesson, the
+ *  emergency's, the patterns ...), each tiled and drawn again at every
+ *  frame of a pan. Leaving them out took a pan's median frame from 100 to
+ *  67 ms and its JavaScript from 1.50 to 1.24 s at CPU 4x (2026-11-18). By zoom range, not
+ *  visibility, which the settings set on some of these layers
+ *  (AirportWeatherGl). */
+export function drawnWithData(map: MlMap, source: string, data: GeoJSON.GeoJSON | null) {
+  if (!map.style) return;
+  const empty = !data || (data.type === "FeatureCollection" && data.features.length === 0);
+  let kept = ranges.get(map);
+  if (!kept) ranges.set(map, (kept = new Map()));
+  for (const id of map.getLayersOrder()) {
+    const layer = map.getLayer(id);
+    if (!layer || !("source" in layer) || layer.source !== source) continue;
+    const was = kept.get(id);
+    if (empty && layer.minzoom !== NO_LEVEL) {
+      // A spec with no range reads back as undefined, which
+      // setLayerZoomRange would leave as it is: MapLibre's own 0 to 24.
+      kept.set(id, [layer.minzoom ?? 0, layer.maxzoom ?? NO_LEVEL]);
+      map.setLayerZoomRange(id, NO_LEVEL, NO_LEVEL);
+    } else if (!empty && was) {
+      kept.delete(id);
+      map.setLayerZoomRange(id, was[0], was[1]);
+    }
+  }
+}
+/** Each hidden layer's own zoom range, to give back. */
+const ranges = new WeakMap<MlMap, Map<string, [number, number]>>();
 
 /** Paint properties set on layers as they change: a theme, the night.
  *  Set again whenever the style changes and a layer has not got them: a
@@ -322,62 +359,3 @@ export function useGlMiss(onMiss: (event: MapMouseEvent) => void) {
 }
 
 export const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
-
-/** A picture that stretches to fit its text (icon-text-fit), its corners
- *  `inset` px each way kept as drawn; or, for a picture with more than
- *  corners to keep (a chip's diamond at its left, a callout's tail under
- *  it), the band each way that stretches and the box the text fills, px
- *  of the picture as drawn. */
-export interface Stretch {
-  inset: number;
-  x?: [number, number];
-  y?: [number, number];
-  content?: [number, number, number, number];
-}
-
-/** A picture ready for addImage: drawn, and its density and stretch. */
-export interface DrawnImage {
-  /** An SVG drawn (drawSvg), or a canvas's pixels (drawTag). */
-  image: HTMLImageElement | ImageData;
-  options: { pixelRatio: number; stretchX?: [number, number][]; stretchY?: [number, number][]; content?: [number, number, number, number] };
-}
-
-/** A stretch in the picture's pixels, at its density. */
-function stretchOf(
-  stretch: Stretch,
-  w: number,
-  h: number,
-  ratio: number,
-): Pick<DrawnImage["options"], "stretchX" | "stretchY" | "content"> {
-  const { inset } = stretch;
-  const s = (v: number) => v * ratio;
-  const [x0, x1] = stretch.x ?? [inset, w - inset];
-  const [y0, y1] = stretch.y ?? [inset, h - inset];
-  const box = stretch.content ?? [inset, inset, w - inset, h - inset];
-  return { stretchX: [[s(x0), s(x1)]], stretchY: [[s(y0), s(y1)]], content: box.map(s) as [number, number, number, number] };
-}
-
-/** A picture's SVG markup drawn at the screen's density (up to three
- *  pixels a point), with its stretch for icon-text-fit; null where it
- *  cannot be drawn. */
-export function drawSvg(svg: string, stretch?: Stretch): Promise<DrawnImage | null> {
-  const ratio = Math.max(1, Math.min(3, Math.ceil(window.devicePixelRatio || 1)));
-  return new Promise((resolve) => {
-    const w = Number(/width="([\d.]+)"/.exec(svg)?.[1] ?? 24),
-      h = Number(/height="([\d.]+)"/.exec(svg)?.[1] ?? 24);
-    const sized = svg
-      .replace(`width="${w}"`, `width="${w * ratio}"`)
-      .replace(`height="${h}"`, `height="${h * ratio}"`)
-      .replace(/^<svg (?!xmlns)/, `<svg xmlns="http://www.w3.org/2000/svg" `);
-    const image = new Image(w * ratio, h * ratio);
-    image.onload = () => {
-      // A label's box (icon-text-fit) stretches between its corners.
-      const fit = stretch && stretchOf(stretch, w, h, ratio);
-      resolve({ image, options: { pixelRatio: ratio, ...fit } });
-    };
-    // A picture that cannot be drawn leaves its symbol bare, not the
-    // layer waiting.
-    image.onerror = () => resolve(null);
-    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(sized)}`;
-  });
-}

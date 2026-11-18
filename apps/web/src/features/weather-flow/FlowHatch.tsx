@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FillLayerSpecification } from "maplibre-gl";
-import { drawSvg, useGlLayer, useGlMap } from "../../lib/map/gl/glLayer";
+import { useGlLayer, useGlMap } from "../../lib/map/gl/glLayer";
+import { drawSvg } from "../../lib/map/gl/drawSvg";
 import { WEATHER } from "../../lib/tokens";
 
 const IMAGE = "flow-hatch";

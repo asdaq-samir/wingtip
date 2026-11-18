@@ -1,5 +1,4 @@
 import type { ExpressionSpecification, LayerSpecification, LineLayerSpecification } from "maplibre-gl";
-import { COURSE_MAGENTA, ROUTE_GREEN, ROUTE_GREEN_NIGHT } from "../marks/chartColors";
 import { CHART } from "../../tokens";
 
 /** The route and its checkpoints as GL data and layers (the chart's style is glStyle). */
@@ -153,11 +152,11 @@ export function selectedLegFilter(leg: string | null): ExpressionSpecification {
 }
 const WHOLE_ROUTE = ["==", ["get", "part"], "route"] as ExpressionSpecification;
 
-/** The green casing in each look (ROUTE_GREEN, as ForeFlight cases its
+/** The green casing in each look (CHART.routeGreen, as ForeFlight cases its
  *  course): full by day and in sunlight, a shade deeper at night so it
  *  does not glare off the dimmed chart. */
 export function routeCasingPaint(night: boolean): Record<string, unknown> {
-  return { "line-color": night ? ROUTE_GREEN_NIGHT : ROUTE_GREEN, "line-opacity": night ? 0.9 : 1, "line-width": CASING_WIDTH };
+  return { "line-color": night ? CHART.routeGreenNight : CHART.routeGreen, "line-opacity": night ? 0.9 : 1, "line-width": CASING_WIDTH };
 }
 
 /** The dark edge round the green of a selected leg so it keeps its
@@ -180,7 +179,7 @@ export function routeEdgePaint(night: boolean, sunlight: boolean): Record<string
 
 /** The course line: the magenta core with a thin edge, and under them the
  *  selected leg's outer edge and green casing (selectedLegFilter). */
-export function routeLayers(courseColour = COURSE_MAGENTA): LayerSpecification[] {
+export function routeLayers(courseColour = CHART.course): LayerSpecification[] {
   const round = { "line-join": "round", "line-cap": "round" } as const;
   const outer: LineLayerSpecification = {
     id: "route-outer",

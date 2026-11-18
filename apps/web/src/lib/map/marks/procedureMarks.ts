@@ -2,7 +2,6 @@ import type { ProcedureFix } from "../../api/types";
 import { altitudeLines, speedWords } from "../../procedures";
 import { altFt } from "../../format";
 import { BADGE } from "../../rowBadges";
-import { MAP_BLUE } from "./chartColors";
 import { drawTag, type TagLine } from "../gl/drawTag";
 import { svgPicture, type GlPicture } from "../gl/useGlSymbols";
 import { CHART, MAP } from "../../tokens";
@@ -43,7 +42,7 @@ export function fixMarks(fix: ProcedureFix, words: boolean, stale: boolean, own:
   const diamond = svgPicture(
     `proc-fix|${ink}|${fix.missed ? 1 : 0}|${direct ? 1 : 0}`,
     () =>
-      `<svg width="24" height="24" viewBox="-12 -12 24 24">${direct ? `<circle r="10" fill="none" stroke="${MAP_BLUE}" stroke-width="2.5"/>` : ""}` +
+      `<svg width="24" height="24" viewBox="-12 -12 24 24">${direct ? `<circle r="10" fill="none" stroke="${CHART.mapBlue}" stroke-width="2.5"/>` : ""}` +
       `<path d="M0 -5.5 L5.5 0 L0 5.5 L-5.5 0 Z" fill="${fix.missed ? CHART.casing : ink}" stroke="${fix.missed ? ink : CHART.casing}" stroke-width="1.8"/></svg>`,
   );
   if (!words || /^RW\d/.test(fix.ident)) return { diamond, tag: null };
@@ -64,8 +63,8 @@ export function fixMarks(fix: ProcedureFix, words: boolean, stale: boolean, own:
       ];
   const speed = plated ? null : speedWords(fix);
   if (speed) lines.push(run(speed, CHART.fixInk));
-  if (own != null) lines.push(run(`Cross ${altFt(own)}`, MAP_BLUE));
-  if (direct) lines.push(run("Direct to", MAP_BLUE));
+  if (own != null) lines.push(run(`Cross ${altFt(own)}`, CHART.mapBlue));
+  if (direct) lines.push(run("Direct to", CHART.mapBlue));
   if (stale) lines.push(run("OUT OF DATE", CHART.fixInk));
   if (!lines.length) return { diamond, tag: null };
   const tag: GlPicture = {

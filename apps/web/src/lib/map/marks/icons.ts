@@ -1,6 +1,5 @@
 import { ownShipSvg } from "../position/ownShipLook";
 import type { OwnShipLook } from "../../preferences";
-import { MAP_BLUE } from "./chartColors";
 import { CATEGORY_UNKNOWN, CHART } from "../../tokens";
 
 /**
@@ -22,7 +21,7 @@ import { CATEGORY_UNKNOWN, CHART } from "../../tokens";
 export function ownShipHtml(headingDeg: number | null, off: boolean, look: OwnShipLook, moving: boolean): { size: number; html: string } {
   // Grey where own ship is off: the last position, no longer watched, as
   // Maps greys its dot when it stops knowing where you are. iOS's blue.
-  const fill = off ? CATEGORY_UNKNOWN : MAP_BLUE;
+  const fill = off ? CATEGORY_UNKNOWN : CHART.mapBlue;
   const plane = look !== "arrow";
   const beam = plane && moving;
   // The beam's box twice the plane's, the plane at its middle (ownShipSvg).

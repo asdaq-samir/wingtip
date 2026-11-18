@@ -1,5 +1,5 @@
 import type { ExpressionSpecification, LineLayerSpecification, Map as MlMap, SymbolLayerSpecification } from "maplibre-gl";
-import { drawSvg } from "../../../lib/map/gl/glLayer";
+import { drawSvg } from "../../../lib/map/gl/drawSvg";
 import { GL_FONT_BOLD, LABEL_SIZE } from "../../../lib/map/gl/layers/common";
 import { TRAFFIC_COLOURS } from "../../../lib/map/marks/icons";
 import { CHART } from "../../../lib/tokens";

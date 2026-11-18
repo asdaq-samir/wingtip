@@ -1,6 +1,5 @@
 import type { ExpressionSpecification, SymbolLayerSpecification } from "maplibre-gl";
 import { useMemo } from "react";
-import { COURSE_MAGENTA } from "../../marks/chartColors";
 import { WAY_CHIP_PLACE, WAY_SHARES, WAY_TEXT_SIZE, wayAt, wayChip, wayInk, type RouteWay } from "../../route/routeWays";
 import { chipLayer, type Layout } from "../markLayers";
 import { useGlLines, type GlRun } from "../useGlLines";
@@ -57,7 +56,7 @@ const WAY_LAYERS: SymbolLayerSpecification[] = [
  *  beside the one picked; each with its chip a tap picks. */
 export function WaysGl({ ways, shown: shown_, onPick }: { ways: RouteWay[]; shown: string | null; onPick: (key: string) => void }) {
   const runs = useMemo<GlRun[]>(
-    () => ways.filter((w) => w.key === shown_).map((w) => ({ points: w.path, colour: COURSE_MAGENTA, width: 7 })),
+    () => ways.filter((w) => w.key === shown_).map((w) => ({ points: w.path, colour: CHART.course, width: 7 })),
     [ways, shown_],
   );
   const others = useMemo<GlRun[]>(

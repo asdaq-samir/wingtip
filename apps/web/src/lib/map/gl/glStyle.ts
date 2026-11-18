@@ -201,9 +201,8 @@ const BAND_OFFSET = byZoom(BAND_STOPS.map(([z, w]) => [z, w / 2 + 1.5]));
  *  MapLibre's own collision. From the overlay tiles: the rings their
  *  `airspace` layer's polygons; the labels one a shelf, on its ring and
  *  turned along it, from `airspace_labels` (the charts job's
- *  airspace_label_features), none where an older archive has not got that
- *  layer. Class E is in the tiles but not drawn. */
-export function airspaceLayers(font: string[], labelPoints = true): LayerSpecification[] {
+ *  airspace_label_features). Class E is in the tiles but not drawn. */
+export function airspaceLayers(font: string[]): LayerSpecification[] {
   const from = { source: OVERLAY_SOURCE, "source-layer": "airspace" };
   const lines: LineLayerSpecification[] = (["D", "C", "B"] as const).flatMap((c) => {
     const ink = AIRSPACE_INK[c];
@@ -228,7 +227,6 @@ export function airspaceLayers(font: string[], labelPoints = true): LayerSpecifi
       },
     ];
   });
-  if (!labelPoints) return lines;
   const labels: SymbolLayerSpecification = {
     id: "airspace-labels",
     type: "symbol",
