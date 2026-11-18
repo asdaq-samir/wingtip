@@ -38,7 +38,7 @@ export default function Segmented({
    *  it sets the rules for), the segments 24 in it; the 44-point area the
    *  same pseudo-element round it. Its size held at any text size, as
    *  iOS's bar controls keep theirs and the fields beside it are held
-   *  (InlineField): its words no larger than 14 px, each segment 44 px
+   *  (navlog/pillLook): its words no larger than 14 px, each segment 44 px
    *  across, where at 19.65 px it took 116 of the row's 300. */
   compact?: boolean;
 }) {
