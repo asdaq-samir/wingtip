@@ -94,8 +94,10 @@ def _airport_rows(path: str, _mtime: float) -> dict:
     df = _read_table(path, _mtime)
     rows: dict = {}
     # A missing local code is no code: as "NAN" it would answer a lookup of "NAN".
-    idents = df["ident"].astype(str).fillna("").str.strip().str.upper()  # cast, then fill: pandas 4 won't put "" in a float column
-    locals_ = df["local_code"].astype(str).fillna("").str.strip().str.upper()
+    # As lists: pandas' .iat a row at a time was 1.1 of the 1.4 s this took
+    # (some 290,000 reads, 2026-11-18), the first route a planner asked.
+    idents = df["ident"].astype(str).fillna("").str.strip().str.upper().tolist()  # cast, then fill: pandas 4 won't put "" in a float column
+    locals_ = df["local_code"].astype(str).fillna("").str.strip().str.upper().tolist()
     # The US rows first: a code a US field and a field abroad both go by
     # is the US field's, the one the FAA's charts and NASR know. A local
     # code is only its country's (OurAirports' local_code), and Papua New
@@ -103,10 +105,10 @@ def _airport_rows(path: str, _mtime: float) -> dict:
     # to it, 2026-11-17).
     home = countries_of(df).eq("US").tolist()
     for i in [*(i for i, us in enumerate(home) if us), *(i for i, us in enumerate(home) if not us)]:
-        if idents.iat[i]:
-            rows.setdefault(idents.iat[i], i)
-        if locals_.iat[i]:
-            rows.setdefault(locals_.iat[i], i)
+        if idents[i]:
+            rows.setdefault(idents[i], i)
+        if locals_[i]:
+            rows.setdefault(locals_[i], i)
     return rows
 
 
