@@ -31,6 +31,13 @@ fn the_limits_and_the_altitudes_allowed() {
     for case in f["said"].as_array().unwrap() {
         assert_eq!(ask("altitude_said", json!({ "ft": case["ft"] })), case["said"]);
     }
+    // An altitude typed (typed.rs): its feet, or none, and a reason where
+    // it is refused or warned.
+    for case in f["typed"].as_array().unwrap() {
+        let got = ask("altitude_typed", json!({ "text": case["text"], "ifr": case["ifr"] }));
+        assert_eq!(got["ft"].as_f64(), case["ft"].as_f64(), "{case}");
+        assert_eq!(got["reason"].is_string(), case["warned"].as_bool().unwrap(), "{case}");
+    }
     for case in f["filed"].as_array().unwrap() {
         assert_eq!(ask("filed_level", json!({ "ft": case["ft"] })), case["filed"]);
     }

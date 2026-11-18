@@ -14,6 +14,8 @@
 //!   hard rule: a closed field is never shown or offered as open);
 //! - limits: the altitudes a flight may be planned at (71.33, 91.119(c),
 //!   91.121, 91.159, 91.179);
+//! - typed: a cruise altitude as a pilot types it, read to feet (1.1's
+//!   three figures of a flight level, feet), with why where it is not;
 //! - filing: FAA Form 7233-4's items as AIM Appendix 4 writes them;
 //! - route_read: a route typed as item 15's words, read back (DCT, the
 //!   speed and level groups);
@@ -32,4 +34,5 @@ pub mod limits;
 pub mod performance;
 pub mod route_read;
 pub mod sun;
+pub mod typed;
 pub mod vfr;

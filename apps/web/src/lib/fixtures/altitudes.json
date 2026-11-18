@@ -1,5 +1,5 @@
 {
-  "about": "The altitudes a flight may be planned at and the cloud minimums at one, from the regulations' own words: 14 CFR 71.33(a) (Class A from 18,000 ft MSL), 91.135 (IFR only there), 91.119(c) (500 ft), 91.121(a)(2) (flight levels from 18,000 ft), 91.159(a) (thousands plus 500, so 17,500 ft the highest VFR), 91.179(b)(4) (FL410 the highest it names), 91.155(a) (the minimums' table), AIM 4-2-9 (an altitude as ATC says it), AIM Appendix 4 (item 15's level). The engine's altitude_limits, altitude_allowed, vfr_altitudes, altitude_said, filed_level and vfr_minimums answer them (engine/facade/tests/limits.rs); the web, iOS and Android ask those names.",
+  "about": "The altitudes a flight may be planned at and the cloud minimums at one, from the regulations' own words: 14 CFR 71.33(a) (Class A from 18,000 ft MSL), 91.135 (IFR only there), 91.119(c) (500 ft), 91.121(a)(2) (flight levels from 18,000 ft), 91.159(a) (thousands plus 500, so 17,500 ft the highest VFR), 91.179(b)(4) (FL410 the highest it names), 91.155(a) (the minimums' table), AIM 4-2-9 (an altitude as ATC says it), AIM Appendix 4 (item 15's level), 14 CFR 1.1 (a flight level's three figures, an altitude typed). The engine's altitude_limits, altitude_allowed, altitude_typed, vfr_altitudes, altitude_said, filed_level and vfr_minimums answer them (engine/facade/tests/limits.rs); the web, iOS and Android ask those names.",
   "limits": [
     { "ifr": false, "answer": { "lowest_ft": 500, "highest_ft": 17500, "class_a_floor_ft": 18000, "flight_levels_from_ft": 18000, "step_ft": 500 } },
     { "ifr": true, "answer": { "lowest_ft": 500, "highest_ft": 41000, "class_a_floor_ft": 18000, "flight_levels_from_ft": 18000, "step_ft": 500 } }
@@ -26,6 +26,21 @@
     { "ft": 17500, "filed": "A175" },
     { "ft": 18000, "filed": "F180" },
     { "ft": 35000, "filed": "F350" }
+  ],
+  "typed": [
+    { "text": "075", "ifr": false, "ft": 7500, "warned": false },
+    { "text": "FL-045", "ifr": false, "ft": 4500, "warned": false },
+    { "text": "7,500", "ifr": false, "ft": 7500, "warned": false },
+    { "text": "12345", "ifr": true, "ft": 12300, "warned": false },
+    { "text": "18000", "ifr": false, "ft": 18000, "warned": true },
+    { "text": "180", "ifr": true, "ft": 18000, "warned": false },
+    { "text": "450", "ifr": true, "ft": 45000, "warned": true },
+    { "text": "0450", "ifr": false, "ft": null, "warned": true },
+    { "text": "0045", "ifr": false, "ft": null, "warned": true },
+    { "text": "123456", "ifr": false, "ft": null, "warned": true },
+    { "text": "0", "ifr": false, "ft": null, "warned": true },
+    { "text": "610", "ifr": true, "ft": null, "warned": true },
+    { "text": "", "ifr": false, "ft": null, "warned": false }
   ],
   "wheel": { "from_ft": 1000, "first": 1000, "last": 17500, "count": 34 },
   "minimums": [

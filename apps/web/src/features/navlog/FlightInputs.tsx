@@ -63,8 +63,13 @@ export default function FlightInputs({
   // (profileOfRegistered) -- never another airplane's figures meanwhile
   // (the owner's "Why is it showing C172?"; 2026-11-09, "Nothing assumes
   // a Cessna 172").
+  // The tail last asked for: a registry's answer for any other is late,
+  // the pilot having picked again meanwhile, and is dropped -- it put back
+  // the airplane picked before (the pill audit, 2026-11-18).
+  const latest = useRef<string | null>(null);
   const take = (tail: string) => {
     if (!engineReady || !N_NUMBER.test(tail) || tail === tailNow) return;
+    latest.current = tail;
     const mine = aircraftOptions.find((o) => shortName(o.label) === tail);
     if (mine) {
       onAircraftChange(mine.value);
@@ -74,28 +79,28 @@ export default function FlightInputs({
     void registered(tail)
       .then((record) => {
         const profile = record ? profileOfRegistered(record) : null;
-        if (profile) onTailPick?.(tail, profile);
+        if (profile && latest.current === tail) onTailPick?.(tail, profile);
       })
       .catch(() => {
         /* its N-number alone stands, on no profile */
       });
   };
-  // Set as a suggestion is taken, so the blur after it puts in nothing more.
-  const picked = useRef(false);
+  // What is typed, taken: on Enter (the keyboard's Done) only. Leaving
+  // the field lets go of it instead -- taken there, "N4" half typed over
+  // N12345 became the airplane (the pill audit, 2026-11-18) -- and a
+  // suggestion picked is its own pick.
   const commit = () => {
     const tail = (typed ?? "").trim().toUpperCase();
     setTyped(null);
-    if (picked.current) {
-      picked.current = false;
-      return;
-    }
     take(tail);
   };
   // The suggestions as it is typed (the owner's S1, 2026-11-14), from the one search's own source.
   const suggest = useAirplaneSuggestions({ typed, engineReady, aircraftOptions, onAircraftChange, onTailPick, take });
   const field = useRef<HTMLInputElement | null>(null);
   const pick = (row: SuggestionRow) => {
-    picked.current = true;
+    // A pick of the pilot's own or of a type is no tail asked of the
+    // registry; a tail picked asks again (`take`).
+    latest.current = null;
     row.pick();
     setTyped(null);
     field.current?.blur();
@@ -103,16 +108,30 @@ export default function FlightInputs({
   // A suggestion lit by the arrows (the list's own highlight).
   const lit = useRef(false);
   // "Pick an airplane" asked from a screen that needs one (lib/pickAirplane):
-  // this field takes the focus once drawn, the frame after FPL is picked.
-  const pickAsked = useAirplanePick((s) => s.pending);
+  // this field takes the focus within the tap that asked, where it is drawn
+  // then -- the store calls its listeners inside the ask -- since iOS gives
+  // a field focused outside a tap no keyboard (it was a frame later). Not
+  // drawn then, it takes the focus as it is drawn; drawn but not yet in
+  // sight (FPL still coming up), a frame on, as it did before.
   useEffect(() => {
-    if (!pickAsked) return;
-    const frame = requestAnimationFrame(() => {
-      field.current?.focus();
-      airplanePickAnswered();
+    const focus = () => {
+      const input = field.current;
+      if (!input?.isConnected) return;
+      input.focus();
+      if (document.activeElement === input) {
+        airplanePickAnswered();
+        return;
+      }
+      requestAnimationFrame(() => {
+        field.current?.focus();
+        airplanePickAnswered();
+      });
+    };
+    if (useAirplanePick.getState().pending) focus();
+    return useAirplanePick.subscribe((now) => {
+      if (now.pending) focus();
     });
-    return () => cancelAnimationFrame(frame);
-  }, [pickAsked]);
+  }, []);
   // The N fixed before what is typed, in the field's own text, at the
   // owner's ask (2026-10-27: "add a - after N"): a US registration always
   // starts with it. In the text, not a label beside it: iOS keeps a few
@@ -140,7 +159,6 @@ export default function FlightInputs({
           // Only what the pilot types: the stock part's own resets (to the
           // label of a value, here none) would empty what is half typed.
           if (details.reason !== "input-change") return;
-          picked.current = false;
           // An N typed first ("N12", as a pilot writes it) is that N, not
           // a second one: it read "N-N12", which no list matched (the UI
           // audit's B4, 2026-11-17).
@@ -176,7 +194,8 @@ export default function FlightInputs({
           aria-invalid={wrong || undefined}
           onKeyDown={(e) => {
             // Enter on a suggestion lit by the arrows is the list's (it
-            // picks it); else what is typed, committed as before.
+            // picks it); else what is typed, taken, and the field left,
+            // whose blur takes nothing more.
             if (e.key === "Enter" && !(suggest.open && lit.current)) {
               e.preventDefault();
               commit();
@@ -186,7 +205,7 @@ export default function FlightInputs({
             // open, the stock part closes it.
             if (e.key === "Escape" && !suggest.open) setTyped(null);
           }}
-          onBlur={commit}
+          onBlur={() => setTyped(null)}
           data-testid="aircraft-input"
         />
         <ComboboxContent data-testid="aircraft-suggestions">
