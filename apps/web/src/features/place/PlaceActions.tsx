@@ -11,6 +11,7 @@ import { useShown } from "../../lib/shown";
 import { keyHint } from "../../lib/shortcutKeys";
 import { useCardKeys } from "./useCardKeys";
 import { duration, spokenDuration } from "../../lib/format";
+import { mapsLink } from "./mapsLink";
 
 /**
  * An airport card's actions, under its title (PlaceCard): four and no
@@ -31,6 +32,13 @@ import { duration, spokenDuration } from "../../lib/format";
  * taller, 56 points, Fly Here saying the time to get there where it can
  * be worked out ("≈ 38m", flyHereTime) as Maps' Directions tile says
  * "9 min", and "Fly Here" where it cannot.
+ *
+ * Opened while the pilot adds a stop (`asStop`: FPL's Add a Stop asked the
+ * one search, and a field was opened from its page or the map), Add Stop
+ * is first and filled where Fly Here was, adding the field where the
+ * pilot asked, and the row's fourth tile is Address, the field in Maps,
+ * after Favorite (the owner, 2026-11-18: "replace fly here with add stop.
+ * And at the add fourth button for address"); Fly Here is not offered.
  */
 export default function PlaceActions({
   place,
@@ -40,6 +48,7 @@ export default function PlaceActions({
   addStopOff,
   ident,
   time,
+  asStop,
 }: {
   place: AirportPlace | null;
   /** The field's ident before its answer is in: its star already right. */
@@ -53,6 +62,8 @@ export default function PlaceActions({
   addStopOff?: string;
   /** The minutes there at the airplane's cruise, no wind (useFlyHereMinutes); none where not known. */
   time?: { minutes: number; tasKt: number } | null;
+  /** Opened while a stop is asked for: Add Stop first, no Fly Here, Address last. */
+  asStop?: boolean;
 }) {
   const desktop = useIsDesktop();
   const shown = useShown();
@@ -61,7 +72,7 @@ export default function PlaceActions({
   const closed = place?.closed ?? null;
   const keyed = desktop && shown && !!place;
   useCardKeys(keyed, {
-    F: closed ? undefined : () => place && onFlyHere(place),
+    F: closed || asStop ? undefined : () => place && onFlyHere(place),
     S: onAddStop && !addStopOff && !closed ? () => place && onAddStop(place) : undefined,
   });
   // The card keeps itself fresh as the window or the card comes back into
@@ -69,38 +80,46 @@ export default function PlaceActions({
   useLiveRefresh("airport");
   // The time where it is known, never for a field closed to landing.
   const timed = time && !closed ? time : null;
+  const addStop = onAddStop && (
+    <Action
+      icon={<ACTION.addStop.icon />}
+      label={ACTION.addStop.label}
+      filled={asStop}
+      disabled={!place || !!addStopOff || !!closed}
+      spoken={addStopOff || closed ? `${ACTION.addStop.label}: ${addStopOff ?? closed}` : undefined}
+      onClick={() => place && onAddStop(place)}
+      testId="place-add-stop"
+      keys={keyed ? keyHint("S") : undefined}
+    />
+  );
   return (
     // Every tile 56 tall (min-h-14) as Maps' are: the shared tile keeps its
     // own size elsewhere, where the half card has no room for it.
     <div className={cn("grid gap-2 pt-3 *:min-h-14", onAddStop ? "grid-cols-4" : "grid-cols-3")} data-testid="place-actions">
-      <Action
-        icon={<ACTION.flyHere.icon />}
-        // "≈": the book's speed in still air, not the nav log's legs (as the figure strip marks its estimate).
-        label={timed ? `≈ ${duration(timed.minutes)}` : ACTION.flyHere.label}
-        filled
-        busy={flying}
-        disabled={!place || !!closed}
-        spoken={
-          closed
-            ? `${ACTION.flyHere.label}: ${closed}`
-            : timed
-              ? `${ACTION.flyHere.label}, about ${spokenDuration(timed.minutes)} at ${Math.round(timed.tasKt)} knots, no wind`
-              : undefined
-        }
-        testId="fly-here"
-        keys={keyed ? keyHint("F") : undefined}
-        onClick={() => place && onFlyHere(place)}
-      />
-      {onAddStop && (
-        <Action
-          icon={<ACTION.addStop.icon />}
-          label={ACTION.addStop.label}
-          disabled={!place || !!addStopOff || !!closed}
-          spoken={addStopOff || closed ? `${ACTION.addStop.label}: ${addStopOff ?? closed}` : undefined}
-          onClick={() => place && onAddStop(place)}
-          testId="place-add-stop"
-          keys={keyed ? keyHint("S") : undefined}
-        />
+      {asStop ? (
+        addStop
+      ) : (
+        <>
+          <Action
+            icon={<ACTION.flyHere.icon />}
+            // "≈": the book's speed in still air, not the nav log's legs (as the figure strip marks its estimate).
+            label={timed ? `≈ ${duration(timed.minutes)}` : ACTION.flyHere.label}
+            filled
+            busy={flying}
+            disabled={!place || !!closed}
+            spoken={
+              closed
+                ? `${ACTION.flyHere.label}: ${closed}`
+                : timed
+                  ? `${ACTION.flyHere.label}, about ${spokenDuration(timed.minutes)} at ${Math.round(timed.tasKt)} knots, no wind`
+                  : undefined
+            }
+            testId="fly-here"
+            keys={keyed ? keyHint("F") : undefined}
+            onClick={() => place && onFlyHere(place)}
+          />
+          {addStop}
+        </>
       )}
       <Action
         icon={<ACTION.call.icon />}
@@ -111,6 +130,16 @@ export default function PlaceActions({
         testId="place-call"
       />
       <PlaceFavorite ident={place?.ident ?? ident} place={place} />
+      {asStop && (
+        <Action
+          icon={<ACTION.address.icon />}
+          label={ACTION.address.label}
+          disabled={!place}
+          href={place ? mapsLink(place) : undefined}
+          spoken={place?.address ? `${ACTION.address.label} in Maps: ${place.address}` : "Open in Maps"}
+          testId="place-address-action"
+        />
+      )}
     </div>
   );
 }

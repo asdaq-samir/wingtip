@@ -33,6 +33,11 @@ export interface SearchPick {
   /** Where the airplane is offered first (My Location), as Maps' From
    *  offers it: a point of the route changed, that is not it already. */
   position?: boolean;
+  /** A stop asked for (FPL's Add a Stop, the route box's arrow): an
+   *  airport's card opened while it is asked offers Add Stop first, in
+   *  Fly Here's place, and adds the field where the pilot asked
+   *  (the owner, 2026-11-18). */
+  stop?: boolean;
 }
 export const useSearchPick = create<{ pick: SearchPick | null; fields: number }>(() => ({ pick: null, fields: 0 }));
 

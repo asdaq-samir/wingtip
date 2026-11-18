@@ -387,7 +387,9 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   and Favorite at the top (its address the town link and the Info tab's
   row), Share in its head and Refresh in its Weather tab (the owner,
   2026-11-11; the web first, the phones still
-  with Depart From); an airplane its profile with Fly This Airplane; an
+  with Depart From); opened while a stop is asked for (Add a Stop), Add
+  Stop, filled, in Fly Here's place, then Call, Favorite and Address (the
+  owner, 2026-11-18; the web first); an airplane its profile with Fly This Airplane; an
   action runs.
 - **The airplane card** (its profile), however it is reached (the search,
   the plan's Airplane, a link, the pickers), the pilot's own airplanes
