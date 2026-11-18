@@ -9,7 +9,7 @@ import { TEXT } from "../../lib/text";
 /** The line that joins the route's points down FPL's list, in the course's
  *  magenta as the map draws the route, at the owner's ask ("draw the
  *  connection with magenta line"); it was the border's grey. The token
- *  (index.css --course, chartColors' COURSE_MAGENTA) rather than the
+ *  (index.css --course, lib/tokens' CHART.course) rather than the
  *  value, so the Chart ink look's own magenta reaches it. */
 export const ROUTE_LINE = { backgroundColor: "var(--course)" } as const;
 

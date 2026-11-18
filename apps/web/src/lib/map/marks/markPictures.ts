@@ -3,7 +3,6 @@ import { CHART } from "../../tokens";
 import { svgPicture, type GlPicture } from "../gl/useGlSymbols";
 import type { Stretch } from "../gl/drawSvg";
 import { AIRPORT_MARK, airportMarkSvg, text } from "./airportMark";
-import { WAYPOINT_MAGENTA } from "./chartColors";
 
 /**
  * The pictures the app's own marks wear on the map (useGlSymbols), as SVG
@@ -68,8 +67,8 @@ export function dotPicture(fill: string): GlPicture {
 export const FIX_PILL: GlPicture = framed(
   "fix-pill",
   () =>
-    `<rect x="1" y="1" width="30" height="17" rx="8.5" fill="${CHART.casing}" stroke="${WAYPOINT_MAGENTA}" stroke-width="2"/>` +
-    `<path d="M10 4.4L14.6 9.5L10 14.6L5.4 9.5Z" fill="${WAYPOINT_MAGENTA}"/>`,
+    `<rect x="1" y="1" width="30" height="17" rx="8.5" fill="${CHART.casing}" stroke="${CHART.waypoint}" stroke-width="2"/>` +
+    `<path d="M10 4.4L14.6 9.5L10 14.6L5.4 9.5Z" fill="${CHART.waypoint}"/>`,
   32,
   19,
   { inset: 9, x: [20, 22], y: [9, 10], content: [18, 4, 24, 15] },
@@ -97,7 +96,7 @@ export function turnDotPicture(ring: string): GlPicture {
 export const ROUTE_POINT_PILL: GlPicture = framed(
   "route-point-pill",
   () =>
-    `<rect x="0.75" y="0.75" width="18.5" height="18.5" rx="9.25" fill="${CHART.casing}" stroke="${WAYPOINT_MAGENTA}" stroke-width="1.5"/>`,
+    `<rect x="0.75" y="0.75" width="18.5" height="18.5" rx="9.25" fill="${CHART.casing}" stroke="${CHART.waypoint}" stroke-width="1.5"/>`,
   20,
   20,
   { inset: 9.5, content: [8, 4, 12, 16] },

@@ -8,13 +8,13 @@ import type { AirspaceClass } from "../../lib/preferences";
 import { useAirspace } from "../../lib/useAirspace";
 import { airportMarkSvg } from "../../lib/map/marks/airportMark";
 import { colourOf } from "../../lib/map/marks/flightCategory";
-import { WAYPOINT_MAGENTA } from "../../lib/map/marks/chartColors";
 import { feet, flightLevel } from "../../lib/format";
 import { TEXT } from "../../lib/text";
 import { PointMenuItems } from "./PointControls";
 import { CONTEXT_MENU, useAfterMenu } from "./pointMenu";
 import type { PointAltitude } from "./PointAltitudeDialog";
 import { holdGuard } from "./holdGuard";
+import { CHART } from "../../lib/tokens";
 
 /** One point of the route: its ident in its airspace's look, a tap to
  *  change it (the picker), and a drag to move it. Taken out from its own
@@ -98,7 +98,7 @@ export default function RoutePill({
   // its METAR's colour in the middle where the setting asks for the
   // weather -- or a waypoint's magenta diamond. A present position, none.
   const mark = isPosition(ident) ? null : waypoint ? (
-    <span aria-hidden="true" className="ml-0.5 size-2 shrink-0 rotate-45 rounded-[1px]" style={{ backgroundColor: WAYPOINT_MAGENTA }} />
+    <span aria-hidden="true" className="ml-0.5 size-2 shrink-0 rotate-45 rounded-[1px]" style={{ backgroundColor: CHART.waypoint }} />
   ) : (
     <span
       aria-hidden="true"

@@ -5,7 +5,6 @@ import { useGeo, type LatLon } from "../../../geo";
 import { useAirplaneChosen } from "../../../preferences";
 import type { TrafficPattern } from "../../../trafficPattern";
 import { altFt } from "../../../format";
-import { COURSE_MAGENTA } from "../../marks/chartColors";
 import { FIX_PILL, FIX_PILL_SHIFT } from "../../marks/markPictures";
 import { PATTERN_ARROW, PATTERN_LABEL, PATTERN_WORDS_FROM_ZOOM, TEAL } from "../../marks/patternMarks";
 import { PROCEDURE_INK, PROCEDURE_WORDS_FROM_ZOOM, STALE_INK, fixMarks } from "../../marks/procedureMarks";
@@ -231,7 +230,7 @@ export function ProceduresGl({
  *  dashed in the course's magenta. */
 export function HoldTracksGl({ legs }: { legs: Leg[] }) {
   const runs = useMemo<GlRun[]>(
-    () => legs.flatMap((l) => (l.hold ? [{ points: l.hold.path as [number, number][], colour: COURSE_MAGENTA, width: 2.5 }] : [])),
+    () => legs.flatMap((l) => (l.hold ? [{ points: l.hold.path as [number, number][], colour: CHART.course, width: 2.5 }] : [])),
     [legs],
   );
   useGlLines("hold-tracks", "route", runs, null, [6 / 2.5, 5 / 2.5]);
