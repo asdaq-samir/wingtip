@@ -28,6 +28,7 @@ import { FplRoute } from "./workspace/FplActions";
 import RouteControls from "./workspace/RouteControls";
 import FplBar from "./workspace/FplBar";
 import { RoutesToggle } from "./workspace/RoutesToggle";
+import { routesOffered } from "./workspace/routeEditing";
 import OneSearchField from "./search/OneSearchField";
 import { useOneSearch } from "./search/useOneSearch";
 
@@ -275,7 +276,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           bar: (
             <FplBar
               strip={<RouteControls vm={vm} flightInputs={flightInputs} share={routed ? null : shareMenu("end")} />}
-              routes={vm.routeList.routeLine && !flying ? <RoutesToggle /> : null}
+              routes={routesOffered(vm) ? <RoutesToggle shown={vm.routeList.routesShown} onShown={vm.routeList.setRoutesShown} /> : null}
             />
           ),
           second: <PlanPage vm={vm} navLog={navLog} more={shareMenu("end", undefined, undefined, "tile")} />,

@@ -4,6 +4,7 @@ import { RouteMap } from "../../plan-map";
 import { FirstFlight } from "../../first-flight";
 import { FlyingHead } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
+import { routesOut } from "./routeEditing";
 import { DRY_RUN, usePastFlight } from "../../plan";
 
 /** An approach the pilot's instructor set them, opened from their
@@ -20,6 +21,8 @@ const ReadyToFlyPrompt = lazy(() => loadReadyToFlyPrompt().then((m) => ({ defaul
  *  their first tap on. */
 const FixCard = lazy(() => loadFixCard());
 const RouteLegCard = lazy(() => loadRouteLegCard());
+/** No suggested routes' ways on the map: one array, so the map is not handed a new one each render. */
+const NO_WAYS: PlanSlices<"routeList">["routeList"]["wayLines"] = [];
 
 /** The map beside the briefing (PlanWorkspace's `map`), with what floats
  *  over it: the next checkpoint in flight, a fix's card, an assigned
@@ -97,7 +100,9 @@ export default function PlanMap({
           fuelStops={fuelStopPins}
           stopFields={stopFieldPins}
           onPickStopField={pickStopField}
-          ways={wayLines}
+          // The suggested routes' ways only while their pills are out
+          // (RoutesToggle, routesOut): one switch for both.
+          ways={routesOut(vm) ? wayLines : NO_WAYS}
           wayShown={lineKey === "none" ? "own" : lineKey}
           onPickWay={pickWay}
           routeLegs={mapLegs}

@@ -47,8 +47,11 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
     // sheet's whole width, out over the foot's 16-point sides (SheetParts'
     // px-4): narrower, the airport cards' fill (drawn out past the column,
     // FIELD_CARD) showed its edges either side of a lighter box round the
-    // bar, a box in a box.
+    // bar, a box in a box. Its top, the fade's, is where the route's
+    // figures held at the foot stop while the bar is out (data-pin-edge,
+    // sheet/pinAtFoot), over it rather than under it.
     <div
+      data-pin-edge=""
       className="pointer-events-none -mx-4 -mt-6 flex justify-center bg-linear-to-b from-transparent to-(--sheet) to-50% px-4 pt-8"
       data-testid="fpl-actions"
     >
