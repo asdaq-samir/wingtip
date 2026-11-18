@@ -171,9 +171,6 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
           {/* The map's settings first, as Maps' map button is. */}
           <MapSettingsButton />
           <MyPositionButton />
-          {/* While the map is turned off north up, as Apple Maps' compass
-            is (the owner, 2026-11-17). */}
-          <CompassButton map={map} />
           {/* While a saved flight's flown track is on the chart. */}
           <FlownTrackButton />
           {/* Draws itself only where full screen actually works: a desktop
@@ -218,6 +215,10 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
             {mic}
             {/* The 3D button, its own circle under the mic's (ThreeDButton);
                 on the ground only, as the settings are. */}
+            {/* The compass over the 3D button, as Apple Maps stacks its
+                two (the owner, 2026-11-18, sending Maps' screenshot); only
+                while the map is turned off north up. */}
+            {!onPhone && !flying && <CompassButton map={map} />}
             {!onPhone && !flying && (
               // Its key to the 3D ground's colours at its left, clear of the route's side panel.
               <div className="flex flex-row-reverse items-center gap-2">
@@ -252,6 +253,9 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
                   : "absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))]",
               )}
             >
+              {/* The compass over the 3D button, as Apple Maps stacks its
+                  two (the owner, 2026-11-18). */}
+              {!flying && <CompassButton map={map} />}
               {!flying && (
                 // Its key to the 3D ground's colours at its right, over the
                 // chart's edge rather than the route's middle.

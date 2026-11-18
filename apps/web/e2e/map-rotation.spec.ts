@@ -4,15 +4,15 @@ import { mapStill, settle } from "./helpers";
 /**
  * The chart turns as Apple Maps' map turns (the owner, 2026-11-17): two
  * fingers twisted, a right drag, or Shift and the arrows from the
- * keyboard, MapLibre's own (makeMap). The compass among the map's buttons
- * shows only while the map is off north up, its needle where north is,
+ * keyboard, MapLibre's own (makeMap). The compass over the 3D button shows
+ * only while the map is off north up, Apple Maps' dial, its red mark at north,
  * and a tap turns it north up again (CompassButton, the camera's northUp).
  */
 test("the map turns from the keyboard, and the compass turns it north up again", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  const controls = page.locator("[data-map-controls]");
-  const compass = controls.getByTestId("map-compass");
+  // Over the 3D button, at the left on a phone and the right from md up.
+  const compass = page.getByTestId("map-compass");
   // North up: no compass.
   await expect(compass).toHaveCount(0);
   // The chart's own keys: Shift and the right arrow turn it 15° a press.

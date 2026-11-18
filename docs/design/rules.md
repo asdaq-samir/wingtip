@@ -845,9 +845,12 @@ Class B has no setting (the owner, 2026-11-17: "We don't need the Class B whethe
    two-finger tilt on the flat chart, and a right drag turns without
    tilting; MapLibre's keyboard ties tilt to turn, so Shift and up or down
    tilt it a little, which the compass also undoes on the flat chart.
-   The compass is among the map's buttons, after My Position, shown only
-   while the map is not north up, its red needle pointing to north on the
-   screen, and a tap eases it north up again as Apple Maps' does
+   The compass is Apple Maps' dial (the owner, 2026-11-18, from Maps'
+   screenshot): a round glass disc over the 3D button (in flight in the
+   right stack, after My Position), shown only while the map is not north
+   up, its ticks and a small red mark at north turning with the chart and
+   the point of the compass the screen's top faces in its middle ("W"),
+   and a tap eases it north up again as Apple Maps' does
    (`components/CompassButton`, the camera's `northUp`; it ends no
    follow). What is drawn keeps its sense as the map turns: the chart and
    everything fixed to it (airspace tabs and their rings' labels, runway
