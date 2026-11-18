@@ -17,7 +17,7 @@ import type { Course } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
 import { chartQuery, overlayTilesQuery } from "../../lib/queryClient";
 import { CardCloseContext } from "../../lib/map/cards/cardClose";
-import { GlMapContext, adoptLayers, parkLayers, sweepLayers, tapHit, type GlMapApi, type GlTap } from "../../lib/map/gl/glLayer";
+import { GlMapContext, adoptLayers, parkLayers, sweepLayers, pickTap, type GlMapApi, type GlTap } from "../../lib/map/gl/glLayer";
 import { OVERLAY_SOURCE, addOverlays } from "../../lib/map/gl/glOverlays";
 import { watchOverlayFilters } from "../../lib/map/gl/overlayFilters";
 import { glZoom } from "../../lib/map/gl/glStyle";
@@ -233,13 +233,11 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       // The cards a tap opens ask the engine as they draw: a tap waits for
       // it, as the layers that draw with it do (GlRouteMap's EngineLayers).
       if (!engineLoaded()) return;
-      for (const t of [...registry.taps].sort((a, b) => a.rank - b.rank)) {
-        const hit = tapHit(map, t, e.point);
-        if (hit) {
-          noteTap(e.lngLat.toArray());
-          t.onTap(hit, e);
-          return;
-        }
+      const picked = pickTap(map, registry.taps, e.point);
+      if (picked) {
+        noteTap(e.lngLat.toArray());
+        picked.tap.onTap(picked.hit, e);
+        return;
       }
       // The chart itself tapped: every card and ring open put away
       // (lib/map/mapPick), the map's own with them.

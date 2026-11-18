@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, drawn, findAirplane, grabberTo, inSheet, settle, sideDrawer, slow, trafficOnMap } from "./helpers";
+import { closeCard, drawn, findAirplane, grabberTo, inSheet, mapStill, settle, sideDrawer, slow, trafficOnMap } from "./helpers";
 import { FAA } from "./faaRecord";
 import { DETAIL, UAL, sky } from "./trackingSky";
 
@@ -74,6 +74,9 @@ test("an airplane is found by its callsign typed with a space, and a tap on one 
   // One tapped on the map where its probe says it is: the Cessna, the second heard.
   await closeCard(page, "flight-close");
   await expect.poll(async () => (await drawn(page, "traffic-marks")).length).toBe(2);
+  // Where it is drawn once the map is at rest: it was read as the map
+  // still moved under the closing card, and the tap met the chart there.
+  await mapStill(page);
   const cessna = (await drawn(page, "traffic-marks")).find((m) => m.hex === "a128b9") as { x: number; y: number };
   const box = (await page.locator(".maplibregl-map").first().boundingBox())!;
   await page.mouse.click(box.x + cessna.x, box.y + cessna.y);
@@ -182,7 +185,7 @@ test("in the air, own ship's path flown is drawn behind it", async ({ page }) =>
   await expect.poll(async () => (await drawn(page, "own-trail")).length, { timeout: slow(15_000) }).toBeGreaterThan(0);
 });
 
-test("an airplane's photo is in its card's pictures, the photographer named on it and the photo linked to its page, its sketch a swipe across", async ({
+test("an airplane's photo is in its card's pictures, the photographer named on it and the photo linked to its page, a swipe across from its sketch", async ({
   page,
 }) => {
   // The owner's ask: "I also like the idea of having the actual airframe
@@ -223,16 +226,20 @@ test("an airplane's photo is in its card's pictures, the photographer named on i
   await expect(link).toHaveAttribute("href", "https://www.planespotters.net/photo/1773250/n14511");
   await expect(link).toHaveAttribute("target", "_blank");
   await expect(link).not.toHaveAttribute("rel", /nofollow/);
-  // Under its facts, as the airport card's pictures (C1); the photo the strip's first.
+  // Under its facts, as the airport card's pictures (C1); the sketch the
+  // strip's first, drawn with the card, and the photo, which comes after
+  // it, after it: a picture that arrives later never goes in front of the
+  // one in view (CardPictures, FL-23).
   // At half a card's body does not scroll (index.css, the one scrolling
   // rule): pulled up to it, as a finger would (inSheet).
-  await inSheet(page, link);
-  await expect(photo).toBeInViewport({ ratio: 0.9 });
+  const sketch = card.getByTestId("flight-trail");
+  await inSheet(page, sketch);
+  await expect(sketch).toBeInViewport({ ratio: 0.9 });
   // The stock carousel's own next page (PictureSlides), as a swipe is.
   await card
     .locator('[data-slot="carousel"]')
     .evaluate((el) => el.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
-  await expect(card.getByTestId("flight-trail")).toBeInViewport({ ratio: 0.9 });
+  await expect(photo).toBeInViewport({ ratio: 0.9 });
 });
 
 test("an alert set on an airplane goes off on the map when it lands, once, and Show opens its card", async ({ page }) => {
