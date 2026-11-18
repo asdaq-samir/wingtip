@@ -66,7 +66,7 @@ test("a field of half a route offers its procedures whole, with no runways' outl
   await expect(field.locator('[data-slot="skeleton"]')).toHaveCount(0);
   for (const add of await adds.all()) {
     // Its words whole: no ellipsis, nothing past the button's edge.
-    await expect(add).toHaveText(/^\+ (Arrival|Approach)$/);
+    await expect(add).toHaveText(/^\+ (ARR|APCH)$/);
     const cut = await add.evaluate((el) => [...el.querySelectorAll("span")].some((s) => s.scrollWidth > s.clientWidth + 1));
     expect(cut).toBe(false);
   }

@@ -170,7 +170,9 @@ export function AltitudeProfile({
       {shownAt !== null && (
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <span className={cn("font-bold tabular-nums", TEXT.heading)}>{flightLevel(shownAt)}</span>
+            <span className={cn("font-bold tabular-nums", TEXT.heading)} data-testid="altitude-picked">
+              {flightLevel(shownAt)}
+            </span>
             {shownAt !== flown && (
               <span className={cn("ml-2 text-muted-foreground", TEXT.detail)}>
                 Preview{flown !== null ? `, flying ${flightLevel(flown)}` : ""}
@@ -225,15 +227,7 @@ export function AltitudeProfile({
       )}
       {problem}
       <AltitudeAdvisor rows={rows} airplane={airplane} previewed={shownAt} onPick={(ft) => vm.fly(ft)} />
-      <ProfileNotes
-        nav={nav}
-        legs={legs}
-        winds={winds}
-        profile={profile}
-        shownAt={shownAt}
-        tight={tight}
-        onGoRound={onGoRound}
-      />
+      <ProfileNotes nav={nav} legs={legs} winds={winds} profile={profile} shownAt={shownAt} tight={tight} onGoRound={onGoRound} />
     </div>
   );
 }

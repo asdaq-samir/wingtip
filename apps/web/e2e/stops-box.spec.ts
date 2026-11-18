@@ -51,7 +51,6 @@ test("the route's box is round, one line tall for a short route and the panel's 
   await openRoute(page);
   const box = sideDrawer(page).getByTestId("route-box");
   await expect(box).toBeVisible();
-  expect(await sideDrawer(page).getByTestId("add-stop").count()).toBe(0);
   // Round as the search bar's field is, one line tall for a route that
   // fits one (a second as one needs it, below), the panel's width to
   // itself, at the pilot's ask; the ••• in FPL's bar over it and the actions' bar below,
@@ -67,7 +66,8 @@ test("the route's box is round, one line tall for a short route and the panel's 
   expect(panelAt.x + panelAt.width - (boxAt.x + boxAt.width)).toBeLessThanOrEqual(16);
   const brief = (await sideDrawer(page).getByTestId("route-brief").boundingBox())!;
   const share = (await sideDrawer(page).getByTestId("share-route").boundingBox())!;
-  expect(share.y + share.height).toBeLessThanOrEqual(boxAt.y);
+  // Share sits below the box, as the Brief does.
+  expect(share.y).toBeGreaterThanOrEqual(boxAt.y + boxAt.height);
   expect(brief.y).toBeGreaterThanOrEqual(boxAt.y + boxAt.height);
   // No "Add stop" after the destination, at the pilot's ask: a reader is
   // told what typing there does.

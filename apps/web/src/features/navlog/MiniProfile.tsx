@@ -290,6 +290,7 @@ export default memo(function MiniProfile({
             )}
             style={{ top: ruler ? `${(y(preview ?? cruise) / H) * 100}%` : `calc(${(y(preview ?? cruise) / H) * 100}% + 3px)` }}
             aria-hidden="true"
+            data-testid="mini-profile-cruise"
           >
             {/* The owner's FL-055, as the altitude field and the wheel write it
               (lib/format flightLevel; the FPL audit's A7); a reader hears the
@@ -304,9 +305,7 @@ export default memo(function MiniProfile({
       <span className="flex justify-between" aria-hidden="true">
         <span>0</span>
         <span>{miles(profile.length_nm / 2)}</span>
-        <span>
-          {wholeNm(profile.length_nm + procedureNm)}
-        </span>
+        <span>{wholeNm(profile.length_nm + procedureNm)}</span>
       </span>
     </>
   );

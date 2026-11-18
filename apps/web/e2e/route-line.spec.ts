@@ -127,11 +127,11 @@ test("FPL's Routes are one row of chips, As typed at first, and a chip tapped is
   await expect(chips.first()).toHaveAttribute("data-pressed", "");
   await expect(chips.first()).toHaveAccessibleName(/^As typed, the route as typed, .*\d+ nm.*crosses storms/);
   await expect(chips.nth(1)).toHaveAccessibleName(/^Avoid Weather, .*\d+ nm, \d+\.\d gal/);
-  // Under the route's one folded line, with no airport cards among them:
+  // Above the route's one folded line, with no airport cards among them:
   // the cards are the route's editor, which hides the chips while open.
   const lineBox = (await line.boundingBox())!,
     summary = (await sideDrawer(page).getByTestId("route-summary").boundingBox())!;
-  expect(lineBox.y).toBeGreaterThanOrEqual(summary.y + summary.height - 1);
+  expect(lineBox.y + lineBox.height).toBeLessThanOrEqual(summary.y + 1);
   await expect(sideDrawer(page).getByTestId("route-field")).toHaveCount(0);
   await expect.poll(() => planned.length, { timeout: slow(15_000) }).toBeGreaterThan(0);
   // Every way drawn on the chart beside the course, as the chips' probe says (WaysGl).

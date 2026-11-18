@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, emptyPlan, foldRoute, grabberTo, openPanel, openRoute, settle, sideDrawer, slow } from "./helpers";
+import { clearTheRoute, controlsInSight, emptyPlan, foldRoute, grabberTo, openPanel, openRoute, settle, sideDrawer, slow } from "./helpers";
 import { fromRest } from "./startState";
 
 /**
@@ -13,6 +13,18 @@ import { fromRest } from "./startState";
  * Directions list with them.
  */
 test.describe("/app/plan", () => {
+  // auth.setup starts every test with the fields open (wingtip.fieldsOpen),
+  // which also leaves the stops unfolded; here they start as a pilot's do.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        localStorage.removeItem("wingtip.fieldsOpen");
+      } catch {
+        /* no storage */
+      }
+    });
+  });
+
   test("the route is its timeline at half, no list to open: ident, time and grip a line, the figures and the Routes under it", async ({
     page,
   }) => {
@@ -141,5 +153,44 @@ test.describe("/app/plan", () => {
     await drawer.getByTestId("share-route").locator("visible=true").first().click();
     await expect(page.getByText("On the Map")).toBeVisible();
     await expect(page.getByText("Show Route As")).toHaveCount(0);
+  });
+
+  test("My Location cannot be moved into the middle: its point menu offers no Move Down", async ({ page }) => {
+    // A Direct To's start is where the airplane is; a stop made ahead of it
+    // would have the route leave a point that is not a place to leave from.
+    await page.goto("/app/plan?dep=@42.2333,-87.9883&stops=KMSN&dest=KDLH");
+    await settle(page);
+    await openPanel(page);
+    const drawer = sideDrawer(page);
+    const here = drawer.getByTestId("timeline-line").first();
+    await expect(here.getByTestId("timeline-ident")).toHaveText("My Location", { timeout: slow(30_000) });
+    await here.getByTestId("point-menu").click();
+    await expect(page.getByTestId("point-menu-change")).toBeVisible();
+    await expect(page.getByTestId("point-menu-move-down")).toHaveCount(0);
+    await expect(page.getByTestId("point-menu-move-up")).toHaveCount(0);
+  });
+
+  test("the routes button resets with the route: pills out, the route cleared, a new route's pills hidden", async ({ page }) => {
+    await page.route(
+      (url) => url.pathname.endsWith("/route-options"),
+      (route) =>
+        route.fulfill({
+          json: { chips: [{ key: "none", label: "As typed", stops: [], fuel: [], crosses: [] }], hazards: [], unchecked: [] },
+        }),
+    );
+    await page.goto("/app/plan?dep=KORD&dest=KDEN");
+    await settle(page);
+    await openPanel(page);
+    const drawer = sideDrawer(page);
+    await drawer.getByTestId("routes-toggle").click({ timeout: slow(30_000) });
+    await expect(drawer.getByTestId("route-group")).toBeVisible();
+    await clearTheRoute(page);
+    await expect(page).not.toHaveURL(/[?&]dest=/);
+    // A new route: its suggested routes behind the button again, hidden.
+    await page.goto("/app/plan?dep=KORD&dest=KMSP");
+    await settle(page);
+    await openPanel(page);
+    await expect(drawer.getByTestId("routes-toggle")).toBeVisible({ timeout: slow(30_000) });
+    await expect(drawer.getByTestId("route-group")).toHaveCount(0);
   });
 });

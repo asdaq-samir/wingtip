@@ -90,11 +90,17 @@ test("the toggle ends the first row on both pages, the bar before it one size, a
     expect(m.account.left).toBeLessThanOrEqual(20);
     expect(m.account.top).toBeGreaterThan(m.threeD.bottom);
   }
-  // One bar, one place: nothing moved or resized on the turn.
-  for (const k of ["top", "left", "w", "h"] as const) {
-    expect(search.bar[k], `the bar's ${k}`).toBeCloseTo(fpl.bar[k], 0);
-    expect(search.toggle[k], `the toggle's ${k}`).toBeCloseTo(fpl.toggle[k], 0);
-  }
+  // One row, one place: the toggle did not move or resize on the turn, and
+  // the bars are level and the same height. Their left and width are the
+  // page's own: the search's field fills to the toggle, FPL's strip is
+  // centred in the row (the owner, 2026-11-17).
+  for (const k of ["top", "h"] as const) expect(search.bar[k], `the bar's ${k}`).toBeCloseTo(fpl.bar[k], 0);
+  for (const k of ["top", "left", "w", "h"] as const) expect(search.toggle[k], `the toggle's ${k}`).toBeCloseTo(fpl.toggle[k], 0);
+  // FPL's strip is centred between the row's ends (the routes button's slot
+  // at the left, which may be empty, and the page toggle at the right).
+  const sheetMid = (fpl.sheet.left + fpl.sheet.right) / 2;
+  expect((fpl.bar.left + fpl.bar.right) / 2, "the strip is centred in the row").toBeCloseTo(sheetMid, -1);
+  expect(fpl.bar.right).toBeLessThanOrEqual(fpl.toggle.left);
   expect(search.bar.h).toBeCloseTo(46, 0);
   // No bar under the sheet: the pill is the search's own 4.25 rem off the
   // screen's foot (no home indicator here), its 44 points back.

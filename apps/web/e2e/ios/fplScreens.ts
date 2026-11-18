@@ -42,7 +42,7 @@ export const FPL_SCREENS: Screen[] = [
   },
   // The route folded to read (the one layout, decision 0046): its line,
   // the figures (the suggested routes behind the first row's button); the first row's
-  // fields captioned Airplane and Cruise.
+  // fields bare, no captions (their names are VoiceOver's).
   {
     name: "FPL, the route folded",
     ready: async (page) => {

@@ -74,8 +74,13 @@ test("a stop opens to its landing and its takeoff, and a fuel stop wears the pum
   await settle(page);
   await openPanel(page);
   const stop = timelineLine(page, "KMSN");
+  // The stop is in the stops' folded line until it is unfolded.
+  await expect(sideDrawer(page).getByTestId("timeline-more")).toBeVisible({ timeout: slow(30_000) });
+  await sideDrawer(page).getByTestId("timeline-more").click();
   await expect(stop).toBeVisible({ timeout: slow(30_000) });
-  await expect(stop.getByRole("img", { name: "fuel stop" })).toBeVisible();
+  // The pump is a zero-size sr-only img: its mark is drawn, not its box.
+  await expect(stop.getByTestId("timeline-fuel")).toBeVisible();
+  await expect(stop.getByRole("img", { name: "fuel stop" })).toHaveCount(1);
   await expect(sideDrawer(page).getByTestId("route-summary")).not.toContainText("Fuel stop");
   await openLine(page, "KMSN");
   await expect(stop.getByRole("img", { name: "landing" })).toBeVisible({ timeout: slow(30_000) });
@@ -83,6 +88,8 @@ test("a stop opens to its landing and its takeoff, and a fuel stop wears the pum
   // A stop of the pilot's own: no pump.
   await page.goto("/app/plan?dep=C81&stops=KMSN&dest=KDLH");
   await openPanel(page);
+  await expect(sideDrawer(page).getByTestId("timeline-more")).toBeVisible({ timeout: slow(30_000) });
+  await sideDrawer(page).getByTestId("timeline-more").click();
   await expect(timelineLine(page, "KMSN")).toBeVisible({ timeout: slow(30_000) });
   await expect(sideDrawer(page).getByRole("img", { name: "fuel stop" })).toHaveCount(0);
 });
