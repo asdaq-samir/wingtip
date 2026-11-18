@@ -395,7 +395,9 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   [shadcn Toast][shadcn-toast]). Wingtip's toasts are Base UI's
   (`components/ui/toast.tsx`, `lib/toast.ts`): progress, Undo, and the
   anchored confirmations, on Base UI's own 5 seconds, held under a
-  touch or the pointer and swiped away (2026-11-11).
+  touch or the pointer and swiped away (2026-11-11); a progress toast
+  ("Drawing Route…") lets the pointer through to what is under it, the
+  map's problem line and its Try again on a phone (2026-11-18).
 - **React Aria Components 1.22** adds a swipeable Sheet and positions
   overlays round the virtual keyboard ([React Aria 1.22][ra-122]). Its drag
   and drop works by keyboard (Enter to start, Tab between targets, arrows,

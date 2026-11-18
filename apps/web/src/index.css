@@ -151,6 +151,11 @@ button,
 body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-food]) {
   opacity: 0;
   pointer-events: none;
+  /* Gone at once, back with the fade: riding a card that rises all the way
+     (Settings from the Map card's gear opens there), they went past the
+     screen's top while still fading, 200 px over a card moving faster than
+     the fade (sheet-cards.spec's drawn-once check). */
+  transition: none;
 }
 /* And the map's credits with them: riding on a sheet all the way up they
    sat under the status bar, a line of small print over the clock (the
@@ -394,6 +399,13 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
 }
 [data-slot="toast"] {
   pointer-events: auto;
+}
+/* Save a progress toast ("Drawing Route…"): it has nothing to hold or read
+   on, and goes when the work is done, and on a phone it comes in at the
+   screen's top over the map's problem line, where it took the tap meant
+   for the line's Try again (problems.spec). The pointer goes through it. */
+[data-slot="toast"][data-type="loading"] {
+  pointer-events: none;
 }
 
 /* Touch targets. Apple asks for 44 points on both sides of anything a
