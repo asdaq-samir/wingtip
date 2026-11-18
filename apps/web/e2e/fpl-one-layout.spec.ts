@@ -1,5 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { clearTheRoute, controlsInSight, emptyPlan, foldRoute, grabberTo, openPanel, openRoute, settle, sideDrawer, slow } from "./helpers";
+import {
+  clearTheRoute,
+  controlsInSight,
+  emptyPlan,
+  foldRoute,
+  grabberTo,
+  openPanel,
+  openRoute,
+  settle,
+  sideDrawer,
+  slow,
+  suggestedRoutes,
+} from "./helpers";
 import { fromRest } from "./startState";
 
 /**
@@ -182,15 +194,22 @@ test.describe("/app/plan", () => {
     await settle(page);
     await openPanel(page);
     const drawer = sideDrawer(page);
-    await drawer.getByTestId("routes-toggle").click({ timeout: slow(30_000) });
+    await suggestedRoutes(page);
     await expect(drawer.getByTestId("route-group")).toBeVisible();
     await clearTheRoute(page);
     await expect(page).not.toHaveURL(/[?&]dest=/);
-    // A new route: its suggested routes behind the button again, hidden.
-    await page.goto("/app/plan?dep=KORD&dest=KMSP");
-    await settle(page);
-    await openPanel(page);
-    await expect(drawer.getByTestId("routes-toggle")).toBeVisible({ timeout: slow(30_000) });
+    // A new route typed in the same page, no reload: its suggested routes
+    // behind the button again, the button not pressed, no pills.
+    await emptyPlan(page);
+    await drawer.getByTestId("route-type").click();
+    await page.keyboard.insertText("KORD KMSP");
+    await page.keyboard.press("Enter");
+    await expect(drawer.getByTestId("route-done")).toBeVisible({ timeout: slow(30_000) });
+    await foldRoute(page);
+    await expect(page).toHaveURL(/[?&]dest=KMSP(&|$)/);
+    const toggle = drawer.getByTestId("routes-toggle");
+    await expect(toggle).toBeVisible({ timeout: slow(30_000) });
+    await expect(toggle).not.toHaveAttribute("aria-pressed", "true");
     await expect(drawer.getByTestId("route-group")).toHaveCount(0);
   });
 });

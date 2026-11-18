@@ -4,6 +4,13 @@ import { sameField } from "../../lib/procedures";
 import { useFlyingTo, navLogRows, routeLegs, type PlanAnswer, type PlanCourse } from "../plan";
 import type { RouteLegView } from "./RouteLegCard";
 
+/** A stop row's place among the route's points (the departure 0, the first
+ *  stop 1), for removeStop to take out the visit tapped, not the first of
+ *  a field the route is at twice. */
+export function stopPlace(rows: readonly { kind: string }[], row: { kind: string }): number {
+  return 1 + rows.filter((r) => r.kind === "stop").indexOf(row);
+}
+
 /**
  * The point and the leg picked (usePlanWorkspace): whichever waypoint is
  * focused, by the map's marker or the nav log's row alike, and the leg of
@@ -31,7 +38,7 @@ export function useLegSheet({
   /** The point a Direct to goes to (`direct`). */
   directParam: string | null;
   directToPoint: (ident: string | null) => void;
-  removeStop: (ident: string) => void;
+  removeStop: (ident: string, at?: number) => void;
 }) {
   // Whichever waypoint is focused -- by its own coordinates, not a row
   // index, since the map's markers and the nav log's rows are two
@@ -88,12 +95,12 @@ export function useLegSheet({
       remove:
         row.kind === "stop"
           ? () => {
-              removeStop(row.airport.ident);
+              removeStop(row.airport.ident, stopPlace(routeRows, row));
               setLegAt(null);
             }
           : null,
     };
-  }, [mapLegs, legAt, directParam, flyingTo, directToPoint, removeStop]);
+  }, [mapLegs, routeRows, legAt, directParam, flyingTo, directToPoint, removeStop]);
   const closeLeg = useCallback(() => setLegAt(null), []);
   return { selectedPoint, selectCandidate, selectPointAt, deselectPoint, routeRows, mapLegs, setLegAt, openLeg, closeLeg };
 }

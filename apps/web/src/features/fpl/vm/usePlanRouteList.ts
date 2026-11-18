@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { positionIdent, stopsOf } from "../../../lib/identSchema";
+import { sameField } from "../../../lib/procedures";
 import { useGeo, type LatLon } from "../../../lib/geo";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { ADDRESS_CLEARED } from "../../../lib/address";
@@ -72,9 +73,14 @@ export function usePlanRouteList(
       // to half from the pill, else where the pilot left the sheet.
       setViewPick("plan");
       riseToSee(setPanel);
-      if (then === "hold") setHoldAsk(`${ident}@${Date.now()}`);
+      if (then === "hold") {
+        // `ident@visit@stamp`: which visit of the point is the new stop, for
+        // its own leg's course (useRouteSheets).
+        const seen = planned.stops.slice(0, index).filter((s) => sameField(s, ident)).length;
+        setHoldAsk(`${ident}@${seen}@${Date.now()}`);
+      }
     },
-    [geo, course, setAddress, setPanel, setViewPick],
+    [geo, course, planned.stops, setAddress, setPanel, setViewPick],
   );
   // Clear route, at the pilot's ask: the address keeps nothing of the
   // route, and its box, the controls and the tabs stay out, empty, for

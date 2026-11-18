@@ -2,6 +2,7 @@ import { useState } from "react";
 import { sameField, type PickedProcedure } from "../../lib/procedures";
 import type { EditedPoint } from "../route";
 import type { HoldAt } from "./HoldSheet";
+import { visitRow } from "./visits";
 import { type Hold, legOf, type NavLogRow } from "../plan";
 
 /** The one sheet FPL's route list has open over it (ProceduresRoute): a
@@ -14,6 +15,15 @@ type RouteSheet =
   | { kind: "hold"; at: HoldAt }
   | { kind: "lesson"; procedure: PickedProcedure };
 type Kind = RouteSheet["kind"];
+
+/** A hold's ask (`ident@visit@stamp`, usePlanRouteList's) as the fix and
+ *  which of its visits among the stops is the new one. */
+export function holdAsked(ask: string): { fix: string; seen: number } {
+  const parts = ask.split("@");
+  parts.pop();
+  const seen = Number(parts.pop());
+  return { fix: parts.join("@"), seen: Number.isFinite(seen) ? seen : 0 };
+}
 
 /**
  * The sheets FPL's route list opens (the audit's WEB-19, out of its view
@@ -38,8 +48,10 @@ export function useRouteSheets({ holds, rows, askHold }: { holds: Hold[]; rows: 
   const holdOn = (ident: string) => holds.find((h) => sameField(h.fix, ident)) ?? null;
   const [answered, setAnswered] = useState<string | null>(null);
   if (askHold && askHold !== answered) {
-    const fix = askHold.slice(0, askHold.lastIndexOf("@"));
-    const to = rows.find((r) => "airport" in r && sameField(r.airport.ident, fix));
+    const { fix, seen } = holdAsked(askHold);
+    // The visit's own row, so a fix the route is at twice gives its own
+    // leg's course in; a destination or a field is the one row it has.
+    const to = visitRow(rows, "Stop", fix, seen) ?? rows.find((r) => "airport" in r && sameField(r.airport.ident, fix));
     const leg = to ? legOf(to) : undefined;
     if (leg) {
       setAnswered(askHold);
