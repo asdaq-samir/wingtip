@@ -34,7 +34,16 @@ test.describe("cards over the pages", () => {
     await openAirport(page, "KOSH");
     await page.keyboard.press("Escape");
     await expect(page).not.toHaveURL(/[?&]place=/);
-    await expectShown(page, 0);
+    // Back to the search as typed (29eabc410), Search in sight and live,
+    // its Cancel in the page toggle's place while the field is in use
+    // (OneSearchField).
+    const pages = sideDrawer(page).getByTestId("sheet-pages");
+    await expect(pages).toHaveAttribute("data-page", "0");
+    await expect(pages.locator('[data-sheet-page="0"]')).not.toHaveAttribute("data-hidden");
+    await expect(pages.locator('[data-sheet-page="1"]')).toHaveAttribute("data-hidden");
+    await expect(pages.locator('[data-sheet-page="0"] [data-panel-body]')).not.toHaveAttribute("inert");
+    await expect(page.getByTestId("search-airports")).toHaveValue("KOSH");
+    await expect(page.getByTestId("one-search-cancel")).toBeVisible();
   });
 
   test("Find Nearby's Stops open over Search and their close goes back to it", async ({ page }) => {

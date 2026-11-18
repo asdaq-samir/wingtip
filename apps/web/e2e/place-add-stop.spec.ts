@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openPanel, settle, sideDrawer, slow } from "./helpers";
+import { inSheet, openPanel, settle, sideDrawer, slow } from "./helpers";
 
 /**
  * An airport already on the route keeps Add Stop on its card, greyed, and
@@ -31,7 +31,11 @@ test("an airport opened while a stop is asked for has Add Stop in Fly Here's pla
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await sideDrawer(page).getByTestId("timeline-add-stop").click();
+  // The timeline's last row, under FPL's floating bar at half with the
+  // fields open: the sheet raised to it, as a finger does.
+  const addStop = sideDrawer(page).getByTestId("timeline-add-stop");
+  await inSheet(page, addStop);
+  await addStop.click();
   await expect(page.getByTestId("search-airports")).toBeFocused({ timeout: slow(10_000) });
   // A field off the route opened from the search's page (Nearest), not picked from a row.
   const field = sideDrawer(page)

@@ -17,8 +17,8 @@ import { expectPage, expectShown, openAirport, toggle } from "./sheetPages";
  * the screen's foot. No sideways swipe turns a page; the grabber is the
  * one plain bar. With no route FPL is its empty box, a route made goes to
  * FPL, and a drag up or down still sizes the sheet on either page. A card
- * open covers the row, the toggle with it; its close brings it back. The
- * cards over the pages: sheet-pages-cards.spec.
+ * open covers the row, the toggle with it; its close and the search's
+ * Cancel bring it back. The cards over the pages: sheet-pages-cards.spec.
  */
 
 test("Search to FPL and back by the toggle, the sheet's size kept", { tag: "@smoke" }, async ({ page }) => {

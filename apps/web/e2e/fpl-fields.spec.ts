@@ -74,6 +74,16 @@ test("the fuel's breakdown opened and closed leaves FPL as it was: the strip its
   // becomes bigger hiding the departure." The card over the sheet puts
   // its foot away; the strip's hold at the foot (usePinAtFoot) measured
   // against the foot gone and was held as the pill once the card closed.
+  // The fields folded, as a pilot's start (auth.setup opens them for the
+  // rest of the suite): open, the lines run the figures on under FPL's
+  // floating bar at half, where the owner tapped the fuel.
+  await page.addInitScript(() => {
+    try {
+      localStorage.removeItem("wingtip.fieldsOpen");
+    } catch {
+      /* no storage */
+    }
+  });
   await pickAirplane(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);

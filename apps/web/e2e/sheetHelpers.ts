@@ -117,9 +117,15 @@ export async function inSheet(page: Page, locator: Locator) {
     if (!sheet || sheet.getAttribute("data-panel") === "full") return false;
     const box = sheet.getBoundingClientRect();
     // A bottom sheet's edge is the screen's foot; a top sheet's, its own;
-    // either way above the route's figures pinned at its foot.
+    // either way above the route's figures pinned at its foot, and above
+    // FPL's floating bar, whose capsule the route runs on under (FplTabBar).
     const foot = sheet.querySelector("[data-testid=panel-foot]")?.getBoundingClientRect();
-    const edge = Math.min(box.top < 0 ? box.bottom : window.innerHeight, foot && foot.height > 0 ? foot.top : Infinity);
+    const bar = sheet.querySelector("[data-testid=fpl-actions] [role=toolbar]")?.getBoundingClientRect();
+    const edge = Math.min(
+      box.top < 0 ? box.bottom : window.innerHeight,
+      foot && foot.height > 0 ? foot.top : Infinity,
+      bar && bar.height > 0 ? bar.top : Infinity,
+    );
     return el.getBoundingClientRect().bottom > edge + 1;
   });
   if (under) await grabberTo(page, "full");

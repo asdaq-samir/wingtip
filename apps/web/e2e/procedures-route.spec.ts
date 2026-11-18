@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { cardClose, grabberTo, openTab, settle, settled, sideDrawer, slow, openRoute } from "./helpers";
+import { cardClose, grabberTo, inSheet, openTab, settle, settled, sideDrawer, slow, openRoute } from "./helpers";
 import { tapMarkApart } from "./marks";
 import { pickAirplane } from "./startState";
 import { LIST, DRAWN } from "./procedureStubs";
@@ -94,8 +94,13 @@ test("a procedure picked lengthens the plan by its path: the fuel and the time t
   await expect.poll(async () => (await figures()).fuel, { timeout: slow(120_000) }).toBeGreaterThan(straight.fuel);
   const flown = await figures();
   expect(minutes(flown.ete)).toBeGreaterThan(minutes(straight.ete));
-  // The breakdown says where the gallons more come from.
-  await page.getByTestId("fuel-breakdown-open").click();
+  // The breakdown says where the gallons more come from, the sheet raised
+  // to the figures first: at the pill they are the pill's, the panel's
+  // foot over them taking a tap to raise it (SheetParts), and at half,
+  // with the fields open, they run on under FPL's floating bar.
+  const fuel = page.getByTestId("fuel-breakdown-open");
+  await inSheet(page, fuel);
+  await fuel.click();
   await expect(page.getByTestId("fuel-breakdown")).toContainText(/\d+\.\d nm more by the procedures picked/);
 });
 
