@@ -50,7 +50,11 @@ echo "branch-specs: $(wc -w <<<"$specs" | tr -d ' ') specs: $specs"
 # the suite, which the Mac never runs whole (decision 0042): past
 # BRANCH_SPECS_MAX, the @smoke ones among them, and the pull request runs all.
 if [ "$(wc -w <<<"$specs")" -gt "${BRANCH_SPECS_MAX:-30}" ]; then
-  specs=$(for s in $specs; do grep -qE "[\"']@smoke[\"']" "$here/apps/web/$s" && echo "$s"; done | xargs)
+  # The specs the branch itself changed stay, whatever their tier.
+  own=$(git -C "$here" diff --name-only "$base" HEAD -- 'apps/web/e2e/*.spec.ts' | sed 's|^apps/web/||')
+  specs=$(for s in $specs; do
+    if grep -qE "[\"']@smoke[\"']" "$here/apps/web/$s" || grep -qx "$s" <<<"$own"; then echo "$s"; fi
+  done | xargs)
   echo "branch-specs: over ${BRANCH_SPECS_MAX:-30}, so the $(wc -w <<<"$specs" | tr -d ' ') @smoke ones; the pull request runs the rest"
 fi
 [ "${1:-}" = --list ] && exit 0
