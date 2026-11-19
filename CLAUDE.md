@@ -106,9 +106,11 @@ integration branch"):
   owner, 2026-11-14): a spec is written with the code. **When a piece's
   web code is done, the browser specs it reaches pass before its push**
   (hard rule, decision 0048): `scripts/dev/branch-specs.sh` (the local
-  stack up) runs them on the branch's own page and records the pass; the
-  pre-push hook refuses a web push without one. A red spec is fixed, never
-  skipped, loosened or moved to the night.
+  stack up) runs those reached since its last pass (the first, since the
+  base) on the branch's own page and records the pass; the pre-push hook
+  refuses a web push without one. A spec red only on CI is run on
+  `scripts/dev/ci-stack.sh up|run <spec>|down`, a copy of CI's stack. A
+  red spec is fixed, never skipped, loosened or moved to the night.
 - Work that builds on an unmerged branch merges that branch in; nothing
   waits for a merge.
 - **The order, a hard rule** (the owner, 2026-11-14: "make all the code

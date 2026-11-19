@@ -15,5 +15,7 @@ tsconfig.tsbuildinfo
 # ../../services/gateway/openapi.json.
 src/lib/api/schema.d.ts
 src/lib/api/gateway-schema.d.ts
-# scripts/dev/branch-specs.sh's build of this checkout's page.
+# scripts/dev/branch-specs.sh's and scripts/dev/ci-stack.sh's builds of this
+# checkout's page.
 dist-branch/
+dist-ci/

@@ -6,23 +6,39 @@
 # 25 app bugs; each piece now answers for the specs it reaches when its
 # code is done.
 #
-#   scripts/dev/branch-specs.sh [--list]
+#   scripts/dev/branch-specs.sh [--list] [--from-base]
 #
-# Against the branch it builds on (main, or claude/integration when that is
-# nearer, as the pre-push hook judges a push), apps/web/scripts/reached-specs.mjs
-# names the specs; with --list it stops there. Otherwise it builds this
+# What changed since this branch's last pass (the newest commit recorded in
+# the git dir's branch-specs-passed that HEAD descends from), or, with no
+# pass yet or --from-base, since the branch it builds on (main, or
+# claude/integration when that is nearer, as the pre-push hook judges a
+# push): apps/web/scripts/reached-specs.mjs names the specs it reaches, and
+# with --list it stops there. Each pass answers for its own commits, so a
+# fix after a pass runs the specs the fix reaches, not the branch's whole
+# set again (the owner, 2026-11-19: that cost 15 minutes a push); the
+# whole set is the pull request's, as before. Otherwise it builds this
 # checkout's page into apps/web/dist-branch, serves it on BRANCH_SPECS_PORT
 # (4174) with the API passed to the local stack's gateway on :8080, which
 # must be up (scripts/dev/go-live.sh --up), and runs the specs on the phone
 # project with CI's waits, each heavy step in its turn of one-at-a-time.sh.
-# A clean pass writes this commit's tree to the git dir's branch-specs-passed,
-# which the pre-push hook asks for before a push that changes the web app.
+# A clean pass adds "<commit> <tree>" to branch-specs-passed; the pre-push
+# hook asks for the pushed tree there before a push that changes the web
+# app. Every line is a pass from the base or from an earlier line, so the
+# chain back to the base covers everything the branch changed.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")/../.." && pwd)
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin
 turn="$here/scripts/dev/one-at-a-time.sh"
 port=${BRANCH_SPECS_PORT:-4174}
+list="" from_base=""
+for a in "$@"; do
+  case $a in
+    --list) list=1 ;;
+    --from-base) from_base=1 ;;
+    *) sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'; exit 64 ;;
+  esac
+done
 stamp="$(git -C "$here" rev-parse --git-dir)/branch-specs-passed"
 case "$stamp" in /*) ;; *) stamp="$here/$stamp" ;; esac
 
@@ -30,6 +46,20 @@ main=$(git -C "$here" merge-base origin/main HEAD)
 wave=$(git -C "$here" merge-base origin/claude/integration HEAD 2>/dev/null || true)
 base=$main
 if [ -n "$wave" ] && git -C "$here" merge-base --is-ancestor "$main" "$wave"; then base=$wave; fi
+# The newest pass this commit descends from: the diff starts there.
+from=$base since="the base, ${base:0:12}"
+if [ -z "$from_base" ] && [ -f "$stamp" ]; then
+  while read -r commit _; do
+    if git -C "$here" merge-base --is-ancestor "$commit" HEAD 2>/dev/null; then
+      from=$commit since="the last pass, ${commit:0:12}"
+      break
+    fi
+  done < <(tail -r "$stamp")
+fi
+record() {
+  { tail -n 49 "$stamp" 2>/dev/null || true; echo "$(git -C "$here" rev-parse HEAD) $tree"; } > "$stamp.new"
+  mv "$stamp.new" "$stamp"
+}
 
 # The web's check image (node and its packages), as scripts/dev/check.sh builds it.
 NODE=$("$here/scripts/build/toolchain.sh" get nodejs)
@@ -38,11 +68,12 @@ NODE=$("$here/scripts/build/toolchain.sh" get nodejs)
 web_image=$(web_image)
 in_web() { docker run --rm -i -v "$here:/repo" -w /repo/apps/web "$web_image" "$@"; }
 
-specs=$(git -C "$here" diff --name-only "$base" HEAD | in_web node scripts/reached-specs.mjs)
+echo "branch-specs: what changed since $since"
+specs=$(git -C "$here" diff --name-only "$from" HEAD | in_web node scripts/reached-specs.mjs)
 tree=$(git -C "$here" rev-parse 'HEAD^{tree}')
 if [ -z "$specs" ]; then
   echo "branch-specs: the change reaches no browser spec"
-  echo "$tree" > "$stamp"
+  record
   exit 0
 fi
 echo "branch-specs: $(wc -w <<<"$specs" | tr -d ' ') specs: $specs"
@@ -50,14 +81,14 @@ echo "branch-specs: $(wc -w <<<"$specs" | tr -d ' ') specs: $specs"
 # the suite, which the Mac never runs whole (decision 0042): past
 # BRANCH_SPECS_MAX, the @smoke ones among them, and the pull request runs all.
 if [ "$(wc -w <<<"$specs")" -gt "${BRANCH_SPECS_MAX:-30}" ]; then
-  # The specs the branch itself changed stay, whatever their tier.
-  own=$(git -C "$here" diff --name-only "$base" HEAD -- 'apps/web/e2e/*.spec.ts' | sed 's|^apps/web/||')
+  # The specs the branch itself changed (since that start) stay, whatever their tier.
+  own=$(git -C "$here" diff --name-only "$from" HEAD -- 'apps/web/e2e/*.spec.ts' | sed 's|^apps/web/||')
   specs=$(for s in $specs; do
     if grep -qE "[\"']@smoke[\"']" "$here/apps/web/$s" || grep -qx "$s" <<<"$own"; then echo "$s"; fi
   done | xargs)
   echo "branch-specs: over ${BRANCH_SPECS_MAX:-30}, so the $(wc -w <<<"$specs" | tr -d ' ') @smoke ones; the pull request runs the rest"
 fi
-[ "${1:-}" = --list ] && exit 0
+[ -n "$list" ] && exit 0
 if [ -n "$(git -C "$here" status --porcelain --untracked-files=no)" ]; then
   echo "branch-specs: commit first; the pass is recorded against the commit's tree" >&2
   exit 2
@@ -79,5 +110,5 @@ auth=$(sed -n 's/^MAILPIT_UI_AUTH=//p' "$HOME/Developer/wingtip/.env" 2>/dev/nul
     [ -f node_modules/.package-lock.json ] || npm ci --no-audit --no-fund --loglevel=error
     node scripts/serve-dist.mjs dist-branch > /tmp/serve.log 2>&1 &
     npx playwright test --project=mobile --reporter=list "$@"' sh $specs
-echo "$tree" > "$stamp"
-echo "branch-specs: passed; recorded for tree ${tree:0:12}"
+record
+echo "branch-specs: passed; recorded for commit $(git -C "$here" rev-parse --short=12 HEAD), tree ${tree:0:12}"

@@ -16,17 +16,14 @@
 #             (check.sh's CHECK_NO_CACHE), for an image whose key missed a
 #             change -- the engine wheel inside the Python ones
 #
-# The browser step never touches the owner's stack: its own compose project
-# (wingtip-wave), images built from this checkout by the images step
-# (wingtip-wave-<service>), the gateway on localhost:18080, the inbox on
-# :18025 and the planner on :18084, no database port, and torn down with
-# its volumes when the suite ends. It runs as CI's e2e job does
-# (infra/docker-compose.ci.yml: no chart refresh, no cycle pack, the suite's
-# overlay tiles), with this checkout's data/raw seeded once by APFS clones
-# (no copy on disk) of WAVE_SEED_DATA's FAA files and charts (the main
-# checkout's by default), so the planner warms in minutes rather than
-# downloading a gigabyte. It runs --alone: a second stack beside a suite
-# or a build is what timed the browser tests out before (the checks skill).
+# The browser step never touches the owner's stack: it runs on
+# scripts/dev/ci-stack.sh's copy of CI's e2e stack, under its own compose
+# project (wingtip-wave) with the images the images step built from this
+# checkout (wingtip-wave-<service>), on ci-stack.sh's shifted ports, and
+# takes it down when the suite ends; data/raw is seeded from
+# WAVE_SEED_DATA (the main checkout's by default). It runs --alone: a
+# second stack beside a suite or a build is what timed the browser tests
+# out before (the checks skill).
 #
 # Logs and exit codes go to WAVE_OUT (a fresh directory in $TMPDIR by
 # default), named in the summary, the browser stack's own as stack.log;
@@ -44,11 +41,10 @@ turn="$here/scripts/dev/one-at-a-time.sh"
 CHECK_AREAS="web py planner ingest weather jobs engine java ios android"
 ALL="$CHECK_AREAS images e2e ipad"
 PROJECT=wingtip-wave
-GATEWAY_PORT=18080 MAILPIT_PORT=18025 PLANNER_PORT=18084
 SEED=${WAVE_SEED_DATA:-$HOME/Developer/wingtip/data/raw}
 
 if [ "${1:-}" = --rebuild ]; then export CHECK_NO_CACHE=1; shift; fi
-case "${1:-}" in -h|--help) sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+case "${1:-}" in -h|--help) sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
 # The browser step's own run, in its turn (step_e2e): the steps are not
 # this call's.
 inner=""
@@ -89,103 +85,13 @@ step_ipad() {
       CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= test
 }
 
-# The planner's data, as CI's e2e job lays it out ("The planner's data,
-# ready"), seeded from SEED by clones the first time.
-seed_data() {
-  local raw=$here/data/raw entry
-  mkdir -p "$raw"
-  if [ ! -e "$raw/.wave-seeded" ] && [ -d "$SEED" ]; then
-    echo "validate-wave: seeding data/raw from $SEED (APFS clones)"
-    for entry in "$SEED"/*; do
-      case "$(basename "$entry")" in
-        # The rendered tiles (33 GB of small files), the live feeds and the
-        # cycle packs: the suite's planner renders its own, reads none and
-        # builds none (CYCLE_PACK=0).
-        chart_tiles.nosync|live|packs|*.lock) continue ;;
-      esac
-      [ -e "$raw/$(basename "$entry")" ] || cp -cR "$entry" "$raw/" 2>/dev/null || cp -R "$entry" "$raw/"
-    done
-    : > "$raw/.wave-seeded"
-  fi
-  [ -e "$raw/elevation_cache.csv" ] || cp "$here/apps/web/e2e/fixtures/elevation_cache.csv" "$raw/elevation_cache.csv"
-  mkdir -p "$raw/packs/tiles"
-  rm -f "$raw/packs/tiles/"*.pmtiles
-  cp "$here/apps/web/e2e/fixtures/overlay-tiles/"* "$raw/packs/tiles/"
-  chmod -R a+rwX "$here/data" 2>/dev/null || true
-}
-
-# The suite's packages, as installed in the Playwright image, kept in a
-# volume per lock file.
-e2e_modules() {
-  local image=$1 vol
-  vol=wingtip-wave-e2e-modules-$({ cat "$here/apps/web/package-lock.json"; echo "$image"; } | shasum -a 256 | cut -c1-12)
-  docker run --rm -v "$here/apps/web:/w" -v "$vol:/w/node_modules" -w /w "$image" \
-    sh -c '[ -f node_modules/.package-lock.json ] || npm ci --no-audit --no-fund --loglevel=error' >&2
-  echo "$vol"
-}
-
+# The browser step, on scripts/dev/ci-stack.sh's copy of CI's stack under
+# this wave's project, with the images step's images.
 e2e_suite() {
-  local override=$out/compose.wave.yml image vol status=0 i
-  image=$(sed -nE 's/^ *PLAYWRIGHT_IMAGE: *([^ ]+).*/\1/p' "$here/.github/workflows/ci.yml" | head -1)
-  cat > "$override" <<EOF
-# validate-wave.sh's stack: the wave's images, on ports of its own.
-services:
-  db:
-    ports: !reset []
-  mailpit:
-    ports: !override
-      - "127.0.0.1:$MAILPIT_PORT:8025"
-  gateway:
-    image: $PROJECT-gateway
-    ports: !override
-      - "127.0.0.1:$GATEWAY_PORT:8080"
-    # The page baked into the image, built from this checkout, not a dist.
-    volumes: !override
-      - gateway-cds:/cds
-  planner:
-    image: $PROJECT-planner
-    ports: !override
-      - "127.0.0.1:$PLANNER_PORT:8000"
-  weather:
-    image: $PROJECT-weather
-EOF
-  local -a files=(-f "$here/docker-compose.yml" -f "$here/infra/docker-compose.ci.yml" -f "$override")
-  wave() {
-    env -u PUBLISH_ADDRESS -u PHONE_BASE_URL -u DEV_PUBLISH_ADDRESS -u MAILPIT_UI_AUTH \
-      APP_PUBLIC_BASE_URL="http://localhost:$GATEWAY_PORT" \
-      docker compose -p "$PROJECT" "${files[@]}" "$@"
-  }
-  for i in gateway planner weather; do
-    docker image inspect "$PROJECT-$i" >/dev/null 2>&1 || { echo "validate-wave: no image $PROJECT-$i (run the images step)"; return 1; }
-  done
-  seed_data
-  wave down -v --remove-orphans >/dev/null 2>&1 || true
-  if ! wave up -d --no-build --wait db mailpit gateway planner weather; then
-    wave logs --no-color --tail 60 gateway planner weather
-    wave down -v --remove-orphans >/dev/null 2>&1
-    return 1
-  fi
-  for i in $(seq 1 240); do curl -sf -o /dev/null "http://localhost:$GATEWAY_PORT/app/plan" && break; sleep 1; done
-  for i in $(seq 1 1200); do curl -sf "http://localhost:$PLANNER_PORT/" | grep -q '"warm":true' && break; sleep 1; done
-  if ! curl -sf "http://localhost:$PLANNER_PORT/" | grep -q '"warm":true'; then
-    echo "validate-wave: the planner never said it was warm"
-    wave logs --no-color --tail 60 planner
-    wave down -v --remove-orphans >/dev/null 2>&1
-    return 1
-  fi
-  # The route the suite plans most, read once before it, as CI's e2e job
-  # does (first-reads.sh): its first nav log fetches the corridor's
-  # elevations and obstacles, minutes under a cold cache, and the first
-  # tests that asked for it timed out behind it.
-  curl -sf -o /dev/null --max-time 600 "http://localhost:$PLANNER_PORT/api/navlog?dep=C81&dest=KDLH" \
-    || echo "validate-wave: the first nav log did not come back (curl $?)"
-  echo "validate-wave: stack up and warm"
-  vol=$(e2e_modules "$image")
-  rm -rf "$here/apps/web/e2e/.auth"
-  docker run --rm --network host -e CI=1 \
-    -e BASE_URL="http://localhost:$GATEWAY_PORT" -e MAILPIT_URL="http://localhost:$MAILPIT_PORT" \
-    -v "$here/apps/web:/w" -v "$vol:/w/node_modules" -w /w "$image" \
-    npx playwright test --project=mobile --grep @smoke --reporter=list || status=$?
+  local stack=(env CI_STACK_PROJECT="$PROJECT" CI_STACK_SEED_DATA="$SEED" "$here/scripts/dev/ci-stack.sh")
+  local status=0 batch touched
+  "${stack[@]}" up --no-build || { "${stack[@]}" down; return 1; }
+  "${stack[@]}" run --grep @smoke || status=$?
   # Then every spec the wave changed, in whole (the owner's efficiency rules,
   # 2026-11-12): @smoke and what the wave touched here, the whole suite in
   # CI's nightly run (decision 0034).
@@ -197,25 +103,21 @@ EOF
     # call for a wave's 65 specs ran into CI's 30-minute globalTimeout
     # (playwright.config.ts) with 205 tests never started (2026-11-12),
     # and that limit is CI's, not to be raised here.
-    local batch
     while read -r batch; do
       [ -n "$batch" ] || continue
       echo "validate-wave: batch $batch"
       # shellcheck disable=SC2086 # one argument per spec file
-      docker run --rm --network host -e CI=1 \
-        -e BASE_URL="http://localhost:$GATEWAY_PORT" -e MAILPIT_URL="http://localhost:$MAILPIT_PORT" \
-        -v "$here/apps/web:/w" -v "$vol:/w/node_modules" -w /w "$image" \
-        npx playwright test --project=mobile --reporter=list $batch || status=$?
+      "${stack[@]}" run $batch || status=$?
     done < <(echo "$touched" | xargs -n "${WAVE_SPEC_BATCH:-15}")
   fi
   # The stack's whole logs beside the suite's, for a failure to be read.
-  wave logs --no-color --timestamps planner gateway weather > "$out/stack.log" 2>&1
+  "${stack[@]}" logs > "$out/stack.log" 2>&1
   [ "$status" -eq 0 ] || echo "validate-wave: the stack's logs are in $out/stack.log"
   # WAVE_KEEP_STACK=1 leaves it up, to run a failing spec again against it.
   if [ -n "${WAVE_KEEP_STACK:-}" ]; then
-    echo "validate-wave: the stack is left up (docker compose -p $PROJECT ... down -v to remove it)"
+    echo "validate-wave: the stack is left up (CI_STACK_PROJECT=$PROJECT scripts/dev/ci-stack.sh down removes it)"
   else
-    wave down -v --remove-orphans >/dev/null 2>&1
+    "${stack[@]}" down
   fi
   return "$status"
 }
