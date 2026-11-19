@@ -99,19 +99,24 @@ export function useGlProbe(name: string, layers: string[], fields: (f: MapGeoJSO
 }
 
 /** The map's layers bottom to top on `el` (data-layers), for the browser
- *  tests alone: the whole style copied at every idle (getStyle) is a cost
- *  a pilot's phone need not pay (GlMapShell). And the map itself on
- *  window.__wingtipMaps, for e2e/drawnOnce to count the camera's moves. */
+ *  tests alone, a cost a pilot's phone need not pay (GlMapShell). Written
+ *  as the style changes, not only at the map's rest: a layer is in the
+ *  style before its tiles are in, and a tilted 3D view whose ground tiles
+ *  the planner fetches one by one from AWS the first time (CI's stack)
+ *  came to no rest for a minute, so a layer added was never said
+ *  (airspace-3d, terrain). And the map itself on window.__wingtipMaps,
+ *  for e2e/drawnOnce to count the camera's moves. */
 export function probeLayers(map: GlMap, el: HTMLElement) {
   if (!testDriven()) return;
   ((window as unknown as { __wingtipMaps?: GlMap[] }).__wingtipMaps ??= []).push(map);
-  map.on("idle", () => {
+  const write = () => {
     el.dataset.layers = map
-      .getStyle()
-      .layers.map((l) => l.id)
+      .getLayersOrder()
       .filter((id) => !id.startsWith("slot-"))
       .join(" ");
-  });
+  };
+  map.on("styledata", write);
+  map.on("idle", write);
 }
 
 /** The middle of a ring's box, [lon, lat]. */

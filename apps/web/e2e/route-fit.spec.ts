@@ -152,9 +152,9 @@ test("opened on the whole country, land and water lie under the charts where the
   await settle(page);
   await expect.poll(() => asked.filter((u) => u.includes("/USGSHydroCached/")).length, { timeout: slow(10_000) }).toBeGreaterThan(0);
   // Under every chart layer, the sectional's included. The map's layers bottom to top (GlMapShell's data-layers).
-  await expect.poll(async () => (await page.getByTestId("gl-map").getAttribute("data-layers")) ?? "").toContain("land-water");
-  const order = ((await page.getByTestId("gl-map").getAttribute("data-layers")) ?? "").split(" ");
-  expect(order.indexOf("land-water")).toBeLessThan(order.indexOf("chart"));
+  // Both read in one look, as the probe writes the layers as each is added.
+  const order = async () => ((await page.getByTestId("gl-map").getAttribute("data-layers")) ?? "").split(" ");
+  await expect.poll(async () => (await order()).filter((id) => id === "land-water" || id === "chart")).toEqual(["land-water", "chart"]);
 });
 
 test("opened fresh where the position was given before, it is asked for again as the page opens", async ({ page }) => {
