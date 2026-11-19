@@ -177,7 +177,11 @@ function FlightSummary({
           <span className="text-muted-foreground">Not heard now</span>
         )}
       </div>
-      {from && (
+      {/* Its ends' row always there, so nothing under it moves as its ends
+          come in or come back empty (the flicker audit's FL-10; traffic.spec's
+          card opening at its size): held while they are asked for, "—" for
+          an end not known. */}
+      {from ? (
         <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3">
           <End
             ident={from.ident}
@@ -203,12 +207,11 @@ function FlightSummary({
             openTestId={to && to.ident === airport && to.ident !== from.ident ? "flight-airport" : undefined}
           />
         </div>
-      )}
-      {!from && pending && (
-        <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3" aria-hidden="true">
-          <EndPending />
+      ) : (
+        <div className="grid grid-cols-[minmax(0,auto)_minmax(2rem,1fr)_minmax(0,auto)] items-center gap-3" aria-hidden={pending}>
+          {pending ? <EndPending /> : <End ident="—" />}
           <div className="h-1 rounded-full bg-foreground/15" />
-          <EndPending right />
+          {pending ? <EndPending right /> : <End right ident="—" />}
         </div>
       )}
       {plane ? (

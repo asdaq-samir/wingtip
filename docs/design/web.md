@@ -736,7 +736,11 @@ Done sits at the pill's start, over the airplane's pill in the same bar.
 2026-11-14): the head (callsign, what it is and who flies it, Share, ✕);
 Follow, Alert, Debrief and Favorite; the flight in its summary
 (`FlightSummary`: its ends, the bar of the way flown, height, speed and
-track, or where its last flight landed), the card's head; then Info,
+track, or where its last flight landed), the card's head; the ends' row
+always there, held while they are asked for and "—" for an end not
+known, each end its ident's line and its town's (kept empty), so nothing
+under it moves as they come in or come back empty (the owner,
+2026-11-19); then Info,
 starting with the facts strip (`AirplaneFacts`, from the FAA record, the
 traffic's type and year where it has none) and the pictures (its
 Planespotters photo, then the sketch of where it has flown), then
