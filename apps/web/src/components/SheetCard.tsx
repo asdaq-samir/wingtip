@@ -7,6 +7,7 @@ import { CardHeadRow } from "./CardHead";
 import { HeadGrid } from "./HeadGrid";
 import { PinnedHead } from "./PinnedHead";
 import { useCardFrame } from "./sheet/useCardFrame";
+import { CARD_FOOT_ROOM } from "./sheet/insets";
 import { holdOpenCard, type OpenCard } from "../lib/openCards";
 import { CardId, SheetCardHead, type CardFrame } from "../lib/sheetCards";
 
@@ -232,7 +233,8 @@ export function SheetCard({
     // it (the owner: "Is the airport and aircraft card same style?").
     <div
       ref={head ? undefined : fromMarker}
-      className="relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
+      className="relative shrink-0 px-4 pt-(--pinned-room) [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
+      style={{ paddingBottom: CARD_FOOT_ROOM }}
       data-testid={head ? undefined : testId}
     >
       {!head ? (

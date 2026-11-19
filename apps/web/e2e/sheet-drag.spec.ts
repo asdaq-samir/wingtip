@@ -73,10 +73,13 @@ test("the panel follows a finger from its grabber out to the top, and down from 
   const middle = () => middleOf(tab);
 
   // Scrolled down, a drag down scrolls it back rather than taking the
-  // sheet down.
-  await expect.poll(() => tab.evaluate((el) => el.scrollHeight > el.clientHeight + 300)).toBe(true);
+  // sheet down: scrolled further than the drag's 120, by 200, which the
+  // Brief's decluttered Preflight (its rows folded, 2026-11-16) has room
+  // for -- about 230 past the screen at 390 x 844 -- where 300 it no
+  // longer has.
+  await expect.poll(() => tab.evaluate((el) => el.scrollHeight > el.clientHeight + 200)).toBe(true);
   await tab.evaluate((el) => {
-    el.scrollTop = 300;
+    el.scrollTop = 200;
   });
   await fingerDrag(page, await middle(), 120);
   await expect(brief).toHaveAttribute("data-panel", "full");
