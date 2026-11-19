@@ -1,4 +1,4 @@
-import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient, onlineManager } from "@tanstack/react-query";
 import { describeError, isDropped } from "./api/client";
 import { retryable, retryDelay, retryOnServerFailure } from "./queryRetry";
 import { clearProblem, raiseProblem, showError } from "./problems";
@@ -66,6 +66,33 @@ export const queryClient = new QueryClient({
       showError(describeError(error));
     },
   }),
+});
+
+/**
+ * Back online, a query whose last ask found no connection is asked again
+ * at once. TanStack's retryer goes on by itself only from a pause, taken
+ * as a retry comes round while the phone is offline; a retry that failed
+ * before the phone knew it was offline waits out its half minute
+ * (lib/queryRetry's retryDelay) however soon the connection is back. On
+ * CI's runner the logbook's second ask came before the page went offline,
+ * and its list said "No connection" for 29 s after it was back
+ * (airplane-mode.spec, run 44582598916; traced here, the third ask at
+ * 31.6 s, online at 2.7 s).
+ */
+onlineManager.subscribe((online) => {
+  if (!online) return;
+  const cache = queryClient.getQueryCache();
+  const waiting = cache.findAll({
+    type: "active",
+    predicate: (query) => query.state.fetchFailureCount > 0 && isDropped(query.state.fetchFailureReason),
+  });
+  if (!waiting.length) return;
+  // Cancelled first: a refetch alone only nudges a retryer that is
+  // paused, and leaves one in its wait (TanStack cancels a running fetch
+  // for a refetch only once the query has data).
+  void Promise.all(waiting.map((query) => query.cancel())).then(() =>
+    queryClient.refetchQueries({ type: "active", predicate: (query) => waiting.includes(query) }),
+  );
 });
 
 /**
