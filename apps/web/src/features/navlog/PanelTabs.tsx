@@ -18,6 +18,7 @@ import { GoToTab, LEGS, useTabAsk, type PanelTab } from "../plan";
 import { useCardSize } from "../../lib/sheetCards";
 import { holdOpenCard } from "../../lib/openCards";
 import { sheetScroller } from "../../lib/scrollPlace";
+import { useFocusKept } from "./useFocusKept";
 
 /** The panel's tabs in the order the flight is flown, at the owner's pick
  *  of the redesign ("I like C concept"): Preflight -- the go / no-go and
@@ -115,8 +116,11 @@ export default function PanelTabs({
   // once its tab is drawn.
   const wanted = useRef<string | null>(null);
   const [asked, setAsked] = useState(0);
+  // Whether the focus was in the Brief as a page was chosen (useFocusKept).
+  const hadFocus = useRef(false);
   const choose = useCallback(
     (next: string | null) => {
+      hadFocus.current = [localHead.current, pages.current].some((el) => el?.contains(document.activeElement));
       const box = sheetScroller(pages.current);
       if (box) scrolls.current[tab ?? "overview"] = box.scrollTop;
       // Slid in as a page of a stack, forward to a later page or from the
@@ -162,13 +166,9 @@ export default function PanelTabs({
     const frame = requestAnimationFrame(to);
     return () => cancelAnimationFrame(frame);
   }, [tab, asked]);
+  useFocusKept(tab, hadFocus, localHead, pages);
   // A page opened from the overview's card, the panel all the way up.
-  const openPage = useCallback(
-    (next: PanelTab) => {
-      goTo(next);
-    },
-    [goTo],
-  );
+  const openPage = useCallback((next: PanelTab) => goTo(next), [goTo]);
   // A tab and section asked for from outside the tabs (useTabAsk): heard
   // as it is asked, and once drawn, one asked before the tabs were there;
   // the card they are in all the way up where it asks (its own drawer).

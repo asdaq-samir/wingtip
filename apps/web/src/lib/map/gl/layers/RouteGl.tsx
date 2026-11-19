@@ -23,7 +23,7 @@ import {
 import { useGlProbe } from "../useGlProbe";
 import { GL_FONT, LABEL_HALO, LABEL_SIZE, TAP } from "./common";
 import { useGlSymbols } from "../useGlSymbols";
-import { WAY_SHOWN_LAYER } from "./WaysGl";
+import { WAY_CHIPS_LOWEST } from "./WaysGl";
 import { LEG_RANK, LEG_REACH, nearestLeg, type GlLeg } from "../legTap";
 import { CHART } from "../../../tokens";
 
@@ -171,6 +171,7 @@ export function RouteGl({
   // The checkpoints' names the chart shows, those MapLibre placed clear of
   // each other (a name it could not fit is not drawn), for the tests.
   useGlProbe("checkpoint-names", [NAMES.id], (f) => ({ name: f.properties.name }));
+  useNamesInView();
   const dots = useMemo<GeoJSON.FeatureCollection>(
     () => ({
       type: "FeatureCollection",
@@ -220,10 +221,11 @@ export function RouteGl({
       ),
     [endpoints, checkpoints, openCard, course, ring],
   );
-  // Under the shown way's chip wherever the two come in (WaysGl), so the
-  // route's names give way to the chip rather than cut through its words
-  // (the UI audit's B6); with no ways, at the top of the marks as before.
-  useGlSymbols(ROUTE_MARKS, ROUTE_MARK_LAYERS, marks, { rank: TAP.rank.field, under: WAY_SHOWN_LAYER });
+  // Under the ways' chips wherever the two come in (WaysGl), so the
+  // route's names give way to the chips rather than cut through their
+  // words (the UI audit's B6), and every way's chip is placed before them;
+  // with no ways, at the top of the marks as before.
+  useGlSymbols(ROUTE_MARKS, ROUTE_MARK_LAYERS, marks, { rank: TAP.rank.field, under: WAY_CHIPS_LOWEST });
   // Each turn's dot drawn, and the side its name is put, for the tests.
   useGlProbe("route-turns", ["route-fix-dots"], (f) => ({ name: f.properties.text, out: f.properties.out }));
   // A route point's name stays outside its turn as the map turns: its
@@ -272,4 +274,40 @@ export function RouteGl({
     else if (c?.card) openCard(c.card);
   });
   return null;
+}
+
+/** Only the checkpoints whose dots are in the view named, set as the map
+ *  comes to rest. MapLibre places a symbol up to a margin past the view's
+ *  edge, so a dot just off the screen had its name drawn on it with no dot
+ *  beside it ("Milny Lake" for a dot 17 points past the left edge,
+ *  checkpoints.spec, 2026-11-18): a name is kept with its dot. */
+function useNamesInView() {
+  const { map } = useGlMap();
+  useEffect(() => {
+    const inView = () => {
+      if (!map.getLayer(NAMES.id)) return;
+      const b = map.getBounds();
+      const [w, s, e, n] = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+      map.setFilter(NAMES.id, [
+        "within",
+        {
+          type: "Polygon",
+          coordinates: [
+            [
+              [w, s],
+              [e, s],
+              [e, n],
+              [w, n],
+              [w, s],
+            ],
+          ],
+        },
+      ]);
+    };
+    inView();
+    map.on("moveend", inView);
+    return () => {
+      map.off("moveend", inView);
+    };
+  }, [map]);
 }
