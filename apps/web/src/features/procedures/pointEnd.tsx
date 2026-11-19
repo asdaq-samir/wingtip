@@ -31,6 +31,8 @@ function askChange(vm: ProceduresRouteModel, ident: string, index: number, stop:
   if (!edit) return;
   askSearchPick({
     label: `In place of ${pointName(ident)}`,
+    title: "Change Stop",
+    query: isPosition(ident) ? undefined : ident,
     fixes,
     position: !isPosition(ident) && !stop,
     onPick: (picked) => {

@@ -105,7 +105,9 @@ test.describe("/app/plan", () => {
     // editable with suggestions"), and the pick takes its place.
     await timeline.getByTestId("timeline-ident").nth(1).click();
     const field = page.getByTestId("search-airports");
-    await expect(field).toHaveAttribute("placeholder", "Search airports and waypoints");
+    // As Apple Maps' Change Stop: its title, the stop's name in the field.
+    await expect(page.getByTestId("search-pick-title")).toHaveText("Change Stop");
+    await expect(field).toHaveValue("KOMA");
     await field.fill("KDSM");
     await page.keyboard.press("Enter");
     await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDSM", "KDEN"], { timeout: slow(30_000) });

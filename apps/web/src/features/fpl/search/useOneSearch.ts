@@ -314,7 +314,11 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
       // the focus: put away it is inert (SheetPage), and an inert field
       // takes no focus, so the route box's stop asked for none came.
       if (ask.mode === "pick" || input.current?.closest("[inert]")) flushSync(() => pickView("search"));
+      // A point changed: its name in the field to start, selected (SearchPick's query).
+      const start = ask.mode === "pick" ? useSearchPick.getState().pick?.query : undefined;
+      if (start !== undefined) flushSync(() => setQuery(start));
       input.current?.focus();
+      if (start !== undefined) input.current?.select();
       // Asked as a card goes (the Profile's Add a Stop): the sheet under it
       // is still hidden, and the field takes the focus as it shows.
       stop();
@@ -327,7 +331,7 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
       unsubscribe();
       stop();
     };
-  }, [input, pickView]);
+  }, [input, pickView, setQuery]);
 
   return {
     typed,

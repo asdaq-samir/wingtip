@@ -44,6 +44,12 @@ export interface SearchPick {
    *  before it is touched (the owner, 2026-11-19: "I see cancel on fresh
    *  load"). */
   waiting?: boolean;
+  /** Its title over the suggestions, and what is in the field to start,
+   *  selected so a key typed replaces it: a point changed, as Apple Maps'
+   *  Change Stop opens with the stop's name in its field (the owner's
+   *  screenshot, 2026-11-19). */
+  title?: string;
+  query?: string;
 }
 export const useSearchPick = create<{ pick: SearchPick | null; fields: number }>(() => ({ pick: null, fields: 0 }));
 
