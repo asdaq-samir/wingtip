@@ -167,10 +167,13 @@ services:
       - /srv/wingtip/data:/workspace/data
     environment:
       TZ: America/Chicago
-    # Its working set is Python, the engine and a GLMP issue's two grids
-    # at their largest while it reads them: a modest share of the 4 GB
-    # server, held to it so a bad day at NOAA cannot take the planner's.
-    mem_limit: 384m
+    # Its working set is Python, the engine, a GLMP issue's two grids at
+    # their largest while it reads them and the model weather's timeline
+    # fetched afresh, up to 565 MB on x86 (docker-compose.yml says how it
+    # was measured; at 384 MB the kernel killed it before the timeline was
+    # in): a modest share of the 4 GB server, held to it so a bad day at
+    # NOAA cannot take the planner's.
+    mem_limit: 768m
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
       interval: 30s
