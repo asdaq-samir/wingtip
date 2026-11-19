@@ -55,3 +55,23 @@ def test_a_product_missing_leaves_the_rest_read(monkeypatch):
     played = forecast_run.play(_track(), given["fields"], "VFR", None)
     assert "spc-outlook" in played["unavailable"]
     assert [a["kind"] for a in played["alerts"]] == ["vfr_minimums", "sigmet", "vfr_minimums", "vfr_minimums"]
+
+
+def test_the_stored_winds_are_read_for_the_hours_their_period_is_used(monkeypatch):
+    # A period's hours come as the weather service writes them, ISO 8601
+    # (gfs.py's period_of); the run's first point, at 600 s, is in this one.
+    def winds(hr):
+        if hr != "06":
+            raise weather.WeatherServiceError("Winds aloft (GFS model) unavailable from NOAA just now")
+        stations = winds_stations.FdStations({"DLH": {3000: {"wind_dir_true_deg": 270, "wind_speed_kt": 10}}})
+        stations.period = {"use_from": "1970-01-01T00:00:00Z", "use_to": "1970-01-01T02:00:00Z"}
+        return stations
+
+    _store_products()
+    monkeypatch.setattr(winds_stations, "fd_stations", winds)
+    monkeypatch.setattr(winds_stations, "nearest_station", lambda lat, lon, ids, table: "DLH")
+    monkeypatch.setattr(forecast_run.airports, "load_airports", lambda: None)
+    given = FIXTURE["input"]
+    played = forecast_run.play(_track(), given["fields"], "VFR", given["minimums"])
+    assert played["samples"][0]["wind_speed_kt"] == 10
+    assert "winds" in played["unavailable"]  # the 12- and 24-hour periods

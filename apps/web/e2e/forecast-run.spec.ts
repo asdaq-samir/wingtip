@@ -13,7 +13,7 @@ test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setu
 test("forecast mode plays the dry run against the forecast: the legs' hours and categories, and the alert cited", async ({ page }) => {
   let asked: { track: { t: number; row: number }[]; fields: { role: string }[]; rules: string } | null = null;
   await page.route(
-    (url) => url.pathname.endsWith("/api/forecast/run"),
+    (url) => url.pathname.endsWith("/api/planner/forecast/run"),
     async (route) => {
       asked = route.request().postDataJSON();
       const t0 = asked!.track[0]!.t;
