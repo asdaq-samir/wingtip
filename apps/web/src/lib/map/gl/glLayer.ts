@@ -49,7 +49,7 @@ export interface GlTap {
 
 /** What a tap finds under the finger, within its reach: the nearest
  *  feature of its layers (nearestHit), or what its own finder picks. */
-export function tapHit(map: MlMap, tap: GlTap, point: { x: number; y: number }): MapGeoJSONFeature | null {
+function tapHit(map: MlMap, tap: GlTap, point: { x: number; y: number }): MapGeoJSONFeature | null {
   if (tap.find) return tap.find(point);
   const layers = tap.layers.filter((l) => map.getLayer(l));
   if (!layers.length) return null;
