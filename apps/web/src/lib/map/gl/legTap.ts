@@ -22,7 +22,7 @@ export const LEG_REACH = TAP.mark;
 export const LEG_RANK = TAP.rank.line - 0.5;
 
 /** The distance from `p` to the segment a-b, px. */
-export function toSegment(p: Px, a: Px, b: Px): number {
+function toSegment(p: Px, a: Px, b: Px): number {
   const dx = b.x - a.x,
     dy = b.y - a.y;
   const length2 = dx * dx + dy * dy;
