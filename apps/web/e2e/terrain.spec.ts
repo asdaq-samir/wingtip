@@ -54,7 +54,8 @@ test("the relief is shaded over the chart, and stood up in 3D with the route at 
   await expect(map(page)).not.toHaveAttribute("data-terrain", "3d");
 });
 
-test("the dry run seen from the pilot's seat, its key a view and not clearance", async ({ page }) => {
+/** The plan's dry run started, its profile open: the pilot's view's toggle. */
+async function startTheRun(page: Page) {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -62,8 +63,11 @@ test("the dry run seen from the pilot's seat, its key a view and not clearance",
   const start = sideDrawer(page).getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
   await pressDryRunStart(page, start);
+  return sideDrawer(page).getByTestId("dry-run-pilot-view");
+}
 
-  const pilot = sideDrawer(page).getByTestId("dry-run-pilot-view");
+test("the dry run seen from the pilot's seat, its key a view and not clearance", async ({ page }) => {
+  const pilot = await startTheRun(page);
   await expect(pilot).toHaveAttribute("aria-pressed", "false");
   await pilot.click();
   await expect(pilot).toHaveAttribute("aria-pressed", "true");
@@ -79,11 +83,19 @@ test("the dry run seen from the pilot's seat, its key a view and not clearance",
   // The pilot's view's colours alone, not the plan's corridor beside them.
   await expect(map(page)).not.toHaveAttribute("data-terrain-clearance");
 
-  // Back to the chart from above, and put away with the run.
+  // Back to the chart from above.
   await pilot.click();
   await expect(map(page)).not.toHaveAttribute("data-pilot-view");
   await expect(map(page)).not.toHaveAttribute("data-terrain", "3d");
-  await pilot.click();
+});
+
+// Put away with the run: a test of its own rather than the pilot's view
+// put on a second time at the end of the one above. With no GPU (CI's
+// runner) each frame of the moving 3D view is slow and each click waits on
+// frames, so two trips into it took that test past its two minutes.
+test("the dry run put away from the pilot's seat takes the pilot's view with it", async ({ page }) => {
+  await (await startTheRun(page)).click();
+  await expect(map(page)).toHaveAttribute("data-pilot-view", "", { timeout: slow(20_000) });
   await sideDrawer(page).getByTestId("dry-run-close").click();
   await expect(map(page)).not.toHaveAttribute("data-pilot-view");
   await closeProfile(page);
