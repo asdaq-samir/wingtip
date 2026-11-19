@@ -188,13 +188,14 @@ test("a procedure picked is its short name's chip on its field's line, and its f
   await expect(card).toHaveCount(0);
 });
 
-test('the destination\'s chips end with "+ HOLD", which opens the hold sheet asking for the leg, and then says the hold set', async ({
+test("the destination's hold is added from its menu, no \"+ HOLD\" chip, and its chip then says the hold set, last after the procedures'", async ({
   page,
 }) => {
   // The owner, 2026-11-18: a hold chip on the destination's line, after
-  // its procedures' ("+ ARR", "+ APCH"), the same chip; the sheet the
-  // point's menu's Hold opens; a leg by distance has no default (AIM
-  // 5-3-8: the controller or the chart gives it), so Add Hold waits for it.
+  // its procedures' ("+ ARR", "+ APCH"); 2026-11-19: "No need for +HOLD",
+  // so the chip shows once a hold is set, added from the point's menu's
+  // Hold. A leg by distance has no default (AIM 5-3-8: the controller or
+  // the chart gives it), so Add Hold waits for it.
   await page.route(
     (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
     (route) =>
@@ -207,16 +208,10 @@ test('the destination\'s chips end with "+ HOLD", which opens the hold sheet ask
   await openTab(page, "Nav Log");
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
   const hold = kdlh.getByTestId("hold-chip");
-  await expect(hold).toHaveText("+ HOLD", { timeout: slow(20000) });
-  await expect(hold).toHaveAttribute("data-look", "add");
-  // Last, after the procedures' chips.
-  const order = await kdlh
-    .getByTestId("timeline-chips")
-    .locator("[data-testid=procedure-kind], [data-testid=hold-chip]")
-    .evaluateAll((chips) => chips.map((c) => c.getAttribute("data-testid")));
-  expect(order.at(-1)).toBe("hold-chip");
-  expect(order.length).toBeGreaterThan(1);
-  await hold.click();
+  await expect(kdlh.getByTestId("procedure-kind").first()).toBeVisible({ timeout: slow(20000) });
+  await expect(hold).toHaveCount(0);
+  await kdlh.getByTestId("point-menu").click();
+  await page.getByTestId("point-menu-hold").click();
   const sheet = page.getByTestId("hold-sheet");
   await expect(sheet).toContainText("Hold at KDLH");
   await sheet.getByTestId("hold-course").fill("270");
@@ -228,4 +223,11 @@ test('the destination\'s chips end with "+ HOLD", which opens the hold sheet ask
   await expect(page).toHaveURL(/[?&]holds=KDLH(%3A|:)270(%3A|:)R(%3A|:)5N(%3A|:)2T(&|$)/);
   await expect(hold).toHaveText("Hold 270° R");
   await expect(hold).toHaveAttribute("data-look", "chip");
+  // Last, after the procedures' chips.
+  const order = await kdlh
+    .getByTestId("timeline-chips")
+    .locator("[data-testid=procedure-kind], [data-testid=hold-chip]")
+    .evaluateAll((chips) => chips.map((c) => c.getAttribute("data-testid")));
+  expect(order.at(-1)).toBe("hold-chip");
+  expect(order.length).toBeGreaterThan(1);
 });

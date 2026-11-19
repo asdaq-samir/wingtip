@@ -13,6 +13,7 @@ import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger }
 import { cn } from "cn";
 import { CHIP_TEXT } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
+import { useMinuteClock } from "../../lib/useMinuteClock";
 
 interface Props {
   /** The departure as an ISO instant, or "" for about now. */
@@ -98,8 +99,16 @@ export default function DepartPicker({
           >
             {/* The tint alone says it opens, as every other tappable
                 figure's does: no chevron after it (the owner's list,
-                2026-11-17, "Now ⌄"). */}
-            {date ? leaveWhen(date) : "Now"}
+                2026-11-17, "Now ⌄"). "Now" says the clock's time under it
+                (the owner, 2026-11-19: "Can depart time show under now?"). */}
+            {date ? (
+              leaveWhen(date)
+            ) : (
+              <span className="flex flex-col items-end leading-tight">
+                Now
+                <NowTime />
+              </span>
+            )}
           </Button>
         ) : (
           <Button
@@ -193,4 +202,10 @@ export default function DepartPicker({
       </ResponsivePopoverContent>
     </ResponsivePopover>
   );
+}
+
+/** The time now, under "Now", kept to the minute. */
+function NowTime() {
+  const now = useMinuteClock();
+  return <span className={cn("font-normal text-muted-foreground", TEXT.caption)}>{clockTime(new Date(now))}</span>;
 }

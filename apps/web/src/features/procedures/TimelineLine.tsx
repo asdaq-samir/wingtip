@@ -131,7 +131,7 @@ export function TimelineLine({
   // Each part's tray, a stop's takeoff a region of its own as the list
   // read in flight names it ("KMSN · Depart"); a procedure picked as its
   // short name's chip ("ILS 26 ⌄"), a kind not picked as "+ APCH"; the
-  // destination's hold last ("+ HOLD").
+  // destination's hold last, once it has one.
   const chips = parts.map((part, i) => {
     const tray = (
       <PartTray
@@ -141,8 +141,10 @@ export function TimelineLine({
         part={part}
         trailing={[
           ...part.kinds.map((k) => kindMenu(vm, field!, k, kindPicked(vm, field!, k) ? "chip" : "add")),
-          // The destination's hold after its procedures (HoldChip).
-          ...(point.role === "Destination" && part.role === "Arrive"
+          // The destination's hold after its procedures (HoldChip), once
+          // there is one: no "+ HOLD" to add one (the owner, 2026-11-19: "No
+          // need for +HOLD"); its menu's Hold adds it.
+          ...(point.role === "Destination" && part.role === "Arrive" && vm.holdOn(point.ident)
             ? [<HoldChip key="hold" ident={point.ident} hold={vm.holdOn(point.ident)} onOpen={() => askHold(vm, point.ident, row)} />]
             : []),
         ]}
