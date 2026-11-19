@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { library, openConsole, showTabs } from "./helpers";
+import { inSheet, library, openConsole, showTabs } from "./helpers";
+import { fillDate } from "./ariaFields";
 import { NO_OWN_FIGURES } from "./airplaneMocks";
 
 /**
@@ -69,16 +70,21 @@ test("the Logbook says how far instrument currency runs, logs approaches with a 
   await expect(console.getByTestId("currency-instrument")).toHaveText("To 31 Jul 2099");
   await expect(console).toContainText("4 of 6 approaches, holding in the window");
 
-  // The proficiency check's date, sent with the other two.
-  await console.getByTestId("ipc-date").fill("2026-09-18");
+  // The proficiency check's date, sent with the other two: React Aria's
+  // date field now (components/ui/date-field), typed a segment at a time.
+  await fillDate(console.getByTestId("ipc-date"), "2026-09-18");
   await expect.poll(() => datesSent.at(-1)?.ipcOn).toBe("2026-09-18");
 
   // A flight with its approaches, holding and tracking.
   await console.getByTestId("logbook-add").click();
   await page.getByTestId("logbook-totalHours").fill("1.5");
   await page.getByTestId("logbook-approaches").fill("3");
+  // Add Entry is a card opened half way on a phone (docs/design/rules.md,
+  // the cards and detents), its foot under the edge: pulled up to it.
+  await inSheet(page, page.getByTestId("logbook-holding"));
   await page.getByTestId("logbook-holding").click();
   await page.getByTestId("logbook-tracking").click();
+  await inSheet(page, page.getByTestId("logbook-save"));
   await page.getByTestId("logbook-save").click();
   await expect.poll(() => logged.at(-1)).toMatchObject({ approaches: 3, holding: true, tracking: true });
 });
@@ -126,6 +132,9 @@ test("an airplane's VOR check is recorded with its kind and error, and says how 
   await console.getByRole("button", { name: "Edit N12345" }).click();
   await expect(page.getByTestId("vor-check-standing")).toHaveText("To 2099-10-31");
   await page.getByTestId("vor-check-error").fill("-3");
+  // The airplane's form is a card opened half way on a phone, its VOR
+  // check at the foot, under the edge: pulled up to it.
+  await inSheet(page, page.getByTestId("vor-check-record"));
   await page.getByTestId("vor-check-record").click();
   await expect.poll(() => recorded.at(-1)).toMatchObject({ kind: "VOT", errorDeg: -3 });
 });

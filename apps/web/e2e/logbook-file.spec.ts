@@ -30,6 +30,12 @@ const LOGGED = [
     approaches: 0,
     holding: false,
     tracking: false,
+    // The gateway's LogbookEntryDto since the automatic logbook (V34): the
+    // engine writes AirTime and TouchAndGoes from these (2a1b0671b).
+    airHours: 3.2,
+    touchAndGoes: 0,
+    fromTrack: false,
+    flightId: null,
   },
 ];
 
@@ -91,7 +97,7 @@ test("a ForeFlight logbook is imported, and the logbook exported as CSV", async 
   const file = await download;
   expect(file.suggestedFilename()).toMatch(/^logbook-\d{4}-\d{2}-\d{2}\.csv$/);
   const text = await (await file.createReadStream()).toArray().then((chunks) => Buffer.concat(chunks).toString());
-  expect(text.split("\r\n")[1]).toBe("2026-09-20,N12345,C172,C81 KDLH,3.4,0,3.4,3.4,0,0,1,0,1,230,230,0,0,,");
+  expect(text.split("\r\n")[1]).toBe("2026-09-20,N12345,C172,C81 KDLH,3.4,3.2,0,3.4,3.4,0,0,1,0,0,1,230,230,0,0,,");
 });
 
 /** A MyFlightbook export: its columns not ForeFlight's, guessed from their

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, slow } from "./helpers";
+import { frontSheet, settle, settled, slow } from "./helpers";
 
 /**
  * The input the radio is heard through, chosen in the Radio card's Hear
@@ -100,13 +100,20 @@ test("the Radio card finds the inputs, listens through the one picked with its l
   const placed = (await mic.boundingBox())!;
 
   // With a recognizer the mic listens once; stopped, its pill opens the
-  // card. The page's first tap can land before its handlers are in.
+  // card. The page's first tap can land before its handlers are in, so it
+  // is tapped again while the button is not pressed -- not while the pill
+  // is not drawn: the pill is a chunk of its own, and on a loaded runner a
+  // tap that had started listening was tapped again before it came, which
+  // stopped it, and the mic, put away beside a pill done, could not be
+  // tapped to stop it (a local run of four, 2026-11-19).
   const pill = page.getByTestId("radio-pill");
+  const radio = page.getByTestId("radio-button");
   await expect(async () => {
-    if (!(await pill.count())) await page.getByTestId("radio-button").click();
-    await expect(pill).toBeVisible({ timeout: 2000 });
+    if ((await radio.getAttribute("aria-pressed")) !== "true") await radio.click();
+    await expect(radio).toHaveAttribute("aria-pressed", "true", { timeout: 2000 });
   }).toPass({ timeout: slow(20_000) });
-  await page.getByTestId("radio-button").click();
+  await expect(pill).toBeVisible({ timeout: slow(10_000) });
+  await radio.click();
   await expect(pill).toContainText("Nothing was heard", { timeout: slow(10_000) });
   await page.getByTestId("radio-pill-text").click();
   const card = page.getByTestId("clearance-card");
@@ -116,6 +123,10 @@ test("the Radio card finds the inputs, listens through the one picked with its l
   // meeting the Hear row's foot, not lying over it (index.css's rule).
   const find = card.getByTestId("listen-find");
   await expect(find).toBeVisible();
+  // Measured once the card's drawer has come to rest at half: it rises for
+  // about 400 ms after it shows, and the row's box and the point tested a
+  // moment apart were taken at two places on the way (nights of 2026-11).
+  await settled(frontSheet(page));
   const row = (await card.getByTestId("clearance-row-hear").boundingBox())!;
   const findBox = (await find.boundingBox())!;
   const atRowFoot = await page.evaluate(
