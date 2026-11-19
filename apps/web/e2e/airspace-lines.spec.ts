@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { airportMark, drawn, openMapSettings, slow } from "./helpers";
+import { mapStill } from "./mapHelpers";
 import { wheelIn } from "./mapZoom";
 
 /**
@@ -113,17 +114,39 @@ test("a tap on a Class D ring opens its card, with its ceiling and hours", async
         { x: x0!, y: (y0! + y1!) / 2 },
         { x: x1!, y: (y0! + y1!) / 2 },
       ]);
+      // Of those, one where the Class D is the only airspace line in a
+      // finger's square (TAP.line, 10 px either way), as the map finds
+      // them (the map a test drives, on window.__wingtipMaps): a box's side
+      // is not always on its ring, and round O'Hare a Class B shelf's line
+      // runs a few pixels from most of them, the tap rightly its (CI's
+      // run, the B's card opened from the ring's tiles in another order).
+      type Found = { layer: { id: string } }[];
+      const map = (window as unknown as { __wingtipMaps?: { queryRenderedFeatures(b: unknown, o: unknown): Found }[] }).__wingtipMaps?.[0];
+      const dAlone = (x: number, y: number) => {
+        const found = map?.queryRenderedFeatures(
+          [
+            [x - 10, y - 10],
+            [x + 10, y + 10],
+          ],
+          { layers: ["airspace-D", "airspace-C", "airspace-B"] },
+        );
+        return !!found?.length && found.every((f) => f.layer.id === "airspace-D");
+      };
       // A Class D ring is 35 px across its radius at the card's zoom on a
       // phone, so the clearance is the mark's own reach (22 px) and a little;
       // and clear of the map's buttons down the right edge (BUTTONS_CLEAR).
       for (const ring of onRings) {
         if (ring.y < 80 || ring.y > box.height * 0.48 || ring.x < 20 || ring.x > box.width - 64) continue;
         if (fields.some((f) => f.chip && Math.hypot(f.x - ring.x, f.y - ring.y) < 26)) continue;
+        if (!dAlone(ring.x, ring.y)) continue;
         return { x: box.left + ring.x, y: box.top + ring.y };
       }
       return null;
     });
   await expect.poll(ringPoint, { timeout: slow(30000) }).not.toBeNull();
+  // Taken with the map still, so the tap lands where the ring is drawn.
+  await mapStill(page);
+  await expect.poll(ringPoint, { timeout: slow(10000) }).not.toBeNull();
   const at = (await ringPoint())!;
   await page.mouse.click(at.x, at.y);
   const card = page.getByTestId("airspace-card");

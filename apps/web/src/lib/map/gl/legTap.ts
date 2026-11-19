@@ -22,7 +22,7 @@ export const LEG_REACH = TAP.mark;
 export const LEG_RANK = TAP.rank.line - 0.5;
 
 /** The distance from `p` to the segment a-b, px. */
-function toSegment(p: Px, a: Px, b: Px): number {
+export function toSegment(p: Px, a: Px, b: Px): number {
   const dx = b.x - a.x,
     dy = b.y - a.y;
   const length2 = dx * dx + dy * dy;
@@ -43,4 +43,24 @@ export function nearestLeg(legs: GlLeg[], tap: Px, project: (p: { lat: number; l
     }
   }
   return best;
+}
+
+/** How far a tap is from a line as drawn, px: from its nearest piece,
+ *  `project` taking [lon, lat] to the screen (an area's outline for a line
+ *  drawn round it, as the airspace's rings are). Infinity for a point. */
+export function toDrawnLine(geometry: GeoJSON.Geometry, tap: Px, project: (at: [number, number]) => Px): number {
+  const runs =
+    geometry.type === "LineString"
+      ? [geometry.coordinates]
+      : geometry.type === "MultiLineString" || geometry.type === "Polygon"
+        ? geometry.coordinates
+        : geometry.type === "MultiPolygon"
+          ? geometry.coordinates.flat()
+          : [];
+  let near = Infinity;
+  for (const run of runs) {
+    const px = run.map((at) => project(at as [number, number]));
+    for (let i = 1; i < px.length; i++) near = Math.min(near, toSegment(tap, px[i - 1]!, px[i]!));
+  }
+  return near;
 }

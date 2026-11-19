@@ -38,6 +38,28 @@ describe("nearestHit", () => {
     expect(nearestHit([line("top"), line("under")], finger, TAP.line, project)?.properties.key).toBe("top");
   });
 
+  test("of the lines in the square, the one drawn nearest the finger, not the topmost", () => {
+    // A Class B line 8 points off over a Class D ring under the finger,
+    // MapLibre listing the Class B first (airspace-lines.spec, on CI).
+    const drawn = (key: string, lat: number) =>
+      ({
+        properties: { key },
+        layer: { type: "line" },
+        geometry: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [-1, lat],
+              [1, lat],
+              [1, lat + 1],
+              [-1, lat],
+            ],
+          ],
+        },
+      }) as unknown as MapGeoJSONFeature;
+    expect(nearestHit([drawn("B", 0.08), drawn("D", 0)], finger, TAP.line, project)?.properties.key).toBe("D");
+  });
+
   test("nothing found, nothing hit", () => {
     expect(nearestHit([], finger, TAP.mark, project)).toBeNull();
   });
