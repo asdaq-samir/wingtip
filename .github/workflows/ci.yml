@@ -314,8 +314,7 @@ jobs:
       sim: ${{ steps.plan.outputs.sim }}
       deps: ${{ steps.plan.outputs.deps }}
       docs-only: ${{ steps.docsonly.outputs.code == 'false' }}
-      specs: ${{ steps.plan.outputs.specs }}
-      spec-shards: ${{ steps.plan.outputs.spec-shards }}
+      e2e: ${{ steps.plan.outputs.e2e }}
     steps:
       # The filter block below is generated from scripts/areas.yml (the
       # guards job checks it is).
@@ -368,8 +367,6 @@ jobs:
                 - scripts/areas.py
                 - scripts/ci/changes_since.sh
                 - scripts/dev/format.sh
-              specs:
-                - apps/web/e2e/**/*.spec.ts
               deps:
                 - apps/web/package-lock.json
                 - engine/Cargo.lock
@@ -622,10 +619,42 @@ jobs:
           CHANGED: ${{ steps.filter.outputs.changes }}
           ALL: ${{ steps.base.outputs.all }}
           EVENT: ${{ github.event_name }}
-          SPEC_FILES: ${{ steps.filter.outputs.specs_files }}
           FORK: ${{ github.event.pull_request.head.repo.fork }}
           CODE: ${{ steps.docsonly.outputs.code }}
         run: python3 scripts/ci/plan.py
+
+  # Which browser specs e2e runs (scripts/ci/browser_specs.py; decision
+  # 0048): on a pull request, every spec its change reaches, which "CI
+  # passed" waits for; on main's push the smoke set, at night everything.
+  specs:
+    name: Browser specs reached
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes]
+    if: needs.changes.outputs.e2e == 'true'
+    outputs:
+      run: ${{ steps.plan.outputs.run }}
+      args: ${{ steps.plan.outputs.args }}
+      shards: ${{ steps.plan.outputs.shards }}
+    steps:
+      # Two deep: a pull request's checkout is its merge with main, whose
+      # first parent is the main it lands on.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - if: github.event_name == 'pull_request'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - if: github.event_name == 'pull_request'
+        working-directory: apps/web
+        run: npm ci --no-audit --no-fund
+      - id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+        run: python3 scripts/ci/browser_specs.py
 
   # The browser suite (apps/web/e2e, Playwright) against the stack a pilot
   # uses: the gateway, planner and weather images e2e-images built for this
@@ -635,18 +664,17 @@ jobs:
   # After merge (docs/CI.md, "The tiers"; the owner, 2026-11-10): main's
   # push runs the @smoke and @flight-critical tests on the phone project,
   # over two shards; the night runs everything over ten. A pull request
-  # runs only the specs it adds or changes, and "CI passed" does not wait
-  # for them (decision 0044: 4 min 07 s for one spec, #582), so a red one
-  # is seen and holds nothing; a failure on main is one issue
-  # (nightly-issue.yml). Each
+  # runs every spec its change reaches, and "CI passed" waits for them
+  # (decision 0048, after #585 merged with three red); a failure on main is
+  # one issue (nightly-issue.yml). Each
   # shard pulls its images and restores its caches in the background and
   # starts each service the moment it can: setup is about a minute and a
   # half. Not after e2e-images, which it would wait on; it pulls the image
   # the moment it is pushed.
   e2e:
     name: e2e (${{ matrix.shard }}/${{ strategy.job-total }})
-    needs: [changes]
-    if: github.event_name != 'pull_request' || needs.changes.outputs.specs != ''
+    needs: [changes, specs]
+    if: needs.specs.outputs.run == 'true'
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
     # images go to AWS's x86 machines, and e2e tests the same images.
     runs-on: ubuntu-26.04
@@ -663,8 +691,8 @@ jobs:
       matrix:
         # The smoke set over two shards on main's push (5-9 min of tests on
         # one, 2026-11-10); everything over ten at night or by hand; on a
-        # pull request, the specs it adds or changes, three a shard (plan.py).
-        shard: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]' || github.event_name == 'pull_request' && needs.changes.outputs.spec-shards || '[1, 2]') }}
+        # pull request, the specs it reaches, three a shard (browser_specs.py).
+        shard: ${{ fromJSON(needs.specs.outputs.shards) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -876,9 +904,8 @@ jobs:
           IOS_AUDIT: ${{ (github.event_name == 'schedule' || inputs.standards) && '1' || '' }}
           SCREENSHOTS: /out/screens
           # Every project at night or by hand, the smoke set on main's push, and on a pull request the
-          # specs it adds or changes on the phone project. (`cond && '' || x` is x whatever cond is:
-          # '' is false, so it is written the other way round.)
-          PROJECTS: ${{ github.event_name == 'pull_request' && format('--project=mobile --pass-with-no-tests {0}', needs.changes.outputs.specs) || !(github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '--project=mobile --project=webkit-phone --grep "@smoke|@flight-critical"' || '' }}
+          # specs it reaches on the phone project (scripts/ci/browser_specs.py).
+          PROJECTS: ${{ needs.specs.outputs.args }}
           SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
           # The JSON report, for the flaky tests below (those that passed
           # on their retry): listed in the nightly issue, not failing the run.
@@ -1026,9 +1053,10 @@ jobs:
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
     # images go to AWS's x86 machines, and e2e tests the same images.
     runs-on: ubuntu-26.04
-    # After merge, with e2e (above), and for a pull request's own specs.
+    # With e2e (above): after merge, at night, and for a pull request that
+    # changes the web app or an API document.
     needs: [changes]
-    if: github.event_name != 'pull_request' || needs.changes.outputs.specs != ''
+    if: needs.changes.outputs.e2e == 'true'
     permissions:
       contents: read
       packages: write
@@ -1624,7 +1652,7 @@ jobs:
   # (ci_budget.py): last, never failing, and on a run `halt` cancelled too.
   budget:
     name: CI budget
-    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, e2e, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, backup-restore, halt, passed]
+    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, specs, e2e, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, backup-restore, halt, passed]
     if: always()
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3
@@ -1651,7 +1679,7 @@ jobs:
   halt:
     name: Stop on red
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review]
+    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, specs, e2e-images, e2e]
     if: ${{ failure() && github.event_name == 'pull_request' }}
     timeout-minutes: 2
     # actions: write, to cancel this run and nothing else.
@@ -1666,16 +1694,17 @@ jobs:
         run: gh run cancel "$RUN_ID"
 
   # The one check main requires (its ruleset); auto-merge-agents.yml merges
-  # on it. Tier 1, about three minutes (the owner, 2026-11-10: "3-minute
-  # gate: browser smoke, images and iPhone UI smoke run after merge"):
-  # every job a pull request runs, each passed or skipped as not needed.
-  # The browser suite and the image builds run after merge on main's push,
-  # and a failure there is one issue (nightly-issue.yml), fixed forward.
-  # scripts/ci/test_tiers.py holds this list to the tiers.
+  # on it. Tier 1, about three minutes (the owner, 2026-11-10), and the
+  # browser specs a web change reaches (decision 0048, the owner,
+  # 2026-11-19: "make it a hard rule"): every job a pull request runs, each
+  # passed or skipped as not needed. The smoke set on main's push and the
+  # stack's image builds run after merge, a failure there one issue
+  # (nightly-issue.yml), fixed forward. scripts/ci/test_tiers.py holds this
+  # list to the tiers.
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, android, ios]
+    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, specs, e2e-images, e2e, android, ios]
     if: always()
     steps:
       - name: Every job passed or was not needed

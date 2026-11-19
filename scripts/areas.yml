@@ -281,11 +281,6 @@ ci_only:
     - scripts/ci/changes_since.sh
     # Every language's formatter, its version and how each is run.
     - scripts/dev/format.sh
-  # The browser specs, for a pull request's own browser run (decision 0044):
-  # the ones it adds or changes run in e2e before it merges; plan.py makes
-  # the list from the files this filter names.
-  specs:
-    - apps/web/e2e/**/*.spec.ts
   # The dependencies' manifests and locks, for dependency-review.
   deps:
     - apps/web/package-lock.json

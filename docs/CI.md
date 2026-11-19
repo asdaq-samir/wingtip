@@ -169,14 +169,24 @@ script can check, and the rest are for whoever writes a test or a job.
     icons are `test-web`'s own `generated` leg; `python_suite.sh` checks
     the connector's calls before pytest. *Guard:* `test_tiers.py` (the
     iPhone job's order).
-18. **A pull request's own browser specs run beside its gate** (decision
-    0044): the specs it adds or changes, on the phone project, in `e2e`,
-    three a shard. "CI passed" does not wait for them: one changed spec
-    took 4 min 07 s (#582: 146 s for the stack while the page was built,
-    30 s of tests), over the three minutes, so a red one is seen on the
-    pull request and in the run's summary and holds no merge. The smoke
-    set and the whole suite stay after merge and at night. *Guard:*
-    `test_tiers.py` (the gate waits for no job that is not tier 1).
+18. **A pull request runs the browser specs its change reaches, and the
+    gate waits for them** (decision
+    [0048](decisions/0048-browser-specs-gate.md), the owner, 2026-11-19:
+    "make it a hard rule so we don't waste time"). The `specs` job
+    (`scripts/ci/browser_specs.py`) follows each changed file to the specs
+    whose screens it draws or feeds (`apps/web/scripts/reached-specs.mjs`:
+    the source files that hold a spec's test ids and what they import,
+    within the features those are in, by dependency-cruiser's graph); a
+    change to the page's HTML, the styles, the build's config, the
+    packages, the tokens or an API document runs the `@smoke` set. `e2e`
+    runs them on the phone project, three a shard and ten shards at most.
+    It replaced 0044's rule that a pull request ran only the specs it
+    added or changed, beside the gate: a three-day redesign changed few
+    spec files, so almost none ran, and #585 merged with three red. A
+    web change now takes the pull request past the three minutes, to the
+    browser run's 6 to 15. *Guard:* `test_tiers.py` (`specs`, `e2e-images`
+    and `e2e` are tier 1 and in the gate, and `e2e` runs what `specs`
+    chose).
 19. **No job waits for what it does not use** (decision 0044). The
     guards' three legs waited about a minute each for the engine's wheel
     (run 43783303925), which only the planner's flight-critical test
@@ -233,11 +243,13 @@ they are what the budgets allow, to be lowered once runs show them:
 | `api-compat`, `dependency-review`, `infra` | An API document's breaking changes; a manifest's or lock's new advisories; the production files | under 1 min |
 | `android` | `native-android.yml`: the engine (cached), compiled, `testDebugUnitTest lintDebug` with Gradle's caches | 4-5 min |
 | `ios` | `native-ios.yml` with `unit_only`: XcodeGen, the build, the string catalog held to what the Swift says, then the unit tests (`WingtipTests`) on the newest iPhone simulator (`scripts/ci/ios_test.sh`), DerivedData restored from main | 4-6 min |
+| `specs`, `e2e-images`, `e2e` | On a change to the web app or an API document: the browser specs it reaches (rule 18), against the stack built from the commit, on the phone project, three a shard | 6-15 min |
 
-A pull request is about 3 minutes in all: `changes`, then the wheel from
+A pull request that leaves the web app alone is about 3 minutes in all: `changes`, then the wheel from
 its cache, then `guards` beside the tests. One that changes the engine
 takes about 4 (the wheel and the crates compile what changed); one that
-touches a phone app waits for that app's build. A pull request of docs,
+touches a phone app waits for that app's build, and one that touches the
+web app for the browser specs it reaches. A pull request of docs,
 Markdown, skills or notebooks runs `changes` and the seconds-long guards:
 under a minute.
 
@@ -245,7 +257,7 @@ under a minute.
 
 | What | Expected |
 |---|---|
-| `e2e-images`: the browser suite's images and page, each built once per key | 1-3 min |
+| `e2e-images`: the browser suite's images and page, each built once per key (on a pull request too, for its specs) | 1-3 min |
 | `e2e` (2 shards): the `@smoke` and `@flight-critical` browser tests on the phone project, and `sheet-webkit.spec.ts` on `webkit-phone`, against the whole stack, in a slim copy of the Playwright image (`.github/ci-images.hcl`: no full Chrome or Firefox; WebKit kept, keyed on the recipe too by `scripts/ci/playwright_slim_key.sh`) | 5-8 min |
 | `build-images`: every service image whose inputs changed, pushed as `:sha-<commit>` for Promote | 1-4 min |
 | Native iOS's own run: the unit tests and the `CardSmokeTests` UI smoke on the iPhone, then TestFlight | 6-8 min |
@@ -271,9 +283,10 @@ Android at 09:47), or by hand (Run workflow), unchanged:
 main's ruleset requires one check, **CI passed** (the `passed` job in
 `ci.yml`), and `auto-merge-agents.yml` merges a pull request on it. It
 fails if any job it waits on failed or was cancelled; a skipped one
-counts as passing. It waits on every tier-1 job above and nothing after
-merge: the browser suite and the image builds report on main's push, and
-a failure there is fixed forward (the owner, 2026-11-07, then 2026-11-10).
+counts as passing. It waits on every tier-1 job above, the browser specs
+a web change reaches among them (decision 0048), and nothing after merge:
+the smoke set and the image builds report on main's push, and a failure
+there is fixed forward (the owner, 2026-11-07, then 2026-11-10).
 
 The phone builds are among the jobs it waits on. They used to be
 workflows beside CI, which the ruleset could not require (a
@@ -447,7 +460,8 @@ change needs; a job it skips counts as passing.
 | `test-python` | One matrix leg per Python suite a change touches (`test-planner`, `test-wingtip`, `test-jobs`, `test-ingest`, `test-weather`, `test-xplane`, the X-Plane driver's): pytest over the suite on its own requirements (`scripts/ci/python_suite.sh`, whose table of legs the Mac's `scripts/dev/check.sh` runs too, with `--local`, and the guards' ruff reads, with `--lint`); the planner's, ingest's, jobs' and weather's legs also run `lint-imports`, and the planner's checks its MCP connector's generated calls (`scripts/build/planner_calls.py --check`). `changes` lists the legs (its `python` output, from each suite's filter in `scripts/areas.yml`, and `flight`, the planner's flight-critical test alone, on every change but words where the planner's own leg is not among them); none skips the job, which counts as passing. Tier 1 |
 | `engine-wheel` | wingtip's Rust extension (`engine/bindings/py`), built once a run by `.github/actions/engine-wheel` (`mode: build`) and uploaded as the `engine-wheel` artifact, which `guards`, `test-python`, `docs` and the flake hunt install (`mode: install`). The wheel's cache is keyed on everything under `engine/` and the toolchains, so a run that leaves the engine alone restores it in seconds; an engine change builds from main's last Cargo build. Main and the night save both. It was built in six jobs before (2026-11-10). Tier 1 |
 | `android`, `ios` | The phone builds (`native-android.yml`, `native-ios.yml` with `unit_only`), when a pull request touches them (above). Tier 1 |
-| `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): the `@smoke` and `@flight-critical` sets over two shards on main's push, everything over ten at night. Tier 2; and on a pull request, the specs it adds or changes alone, beside the gate: "CI passed" does not wait for them (rule 18) |
+| `specs` | "Browser specs reached": what `e2e` runs and on how many shards (`scripts/ci/browser_specs.py`): on a pull request, the specs its change reaches (rule 18); the smoke set on main's push; everything at night |
+| `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): on a pull request the specs `specs` chose, which "CI passed" waits for (rule 18); the `@smoke` and `@flight-critical` sets over two shards on main's push; everything over ten at night |
 | `build-images` | Every service image whose inputs changed; each Python image imports its own code as its last step, so a missing dependency fails the build. Tier 2 |
 | `api-compat` | No breaking change to an OpenAPI document (below). Tier 1 |
 | `infra` | cfn-lint, `docker compose config` and `caddy validate` over the production files (their shell scripts are `guards`' shellcheck). Tier 1 |

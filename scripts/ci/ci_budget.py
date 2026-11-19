@@ -63,9 +63,14 @@ BUDGETS = [
     ("Native iOS / test", 6, 70),
     ("CI passed", 1, 1),
     ("Stop on red", 1, 1),
+    # The browser specs a pull request reaches (decision 0048), and on
+    # main's push the smoke set: a shard holds at most three specs on a
+    # pull request, on main the smoke set's half.
+    ("Browser specs reached", 2, 1),
+    ("build (e2e)", 4, 6),
+    ("e2e (*/*)", 12, 15),
     # Tier 2: after merge, on main's push.
     ("build (*)", 4, 6),
-    ("e2e (*)", 8, 15),
     # Tier 3: the night.
     ("Native Android / device", 15, 15),
     ("docs", 10, 10),
@@ -79,7 +84,7 @@ BUDGETS = [
 # the phones' builds, which a pull request waits for only when it touches
 # what the app builds from.
 TIER1 = 3
-TIER1_LONG = {"Native Android / build", "Native iOS / test"}
+TIER1_LONG = {"Native Android / build", "Native iOS / test", "build (e2e)", "e2e (*/*)"}
 # The whole run, first job's start to last job's end, by event: a pull
 # request is tier 1; main's push adds tier 2; the night is everything.
 # A run is given at least its longest job's budget (a phone's build), as
