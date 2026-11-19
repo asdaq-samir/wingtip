@@ -23,7 +23,7 @@ import {
 import { useGlProbe } from "../useGlProbe";
 import { GL_FONT, LABEL_HALO, LABEL_SIZE, TAP } from "./common";
 import { useGlSymbols } from "../useGlSymbols";
-import { WAY_SHOWN_LAYER } from "./WaysGl";
+import { WAY_CHIPS_LOWEST } from "./WaysGl";
 import { LEG_RANK, LEG_REACH, nearestLeg, type GlLeg } from "../legTap";
 import { CHART } from "../../../tokens";
 
@@ -220,10 +220,11 @@ export function RouteGl({
       ),
     [endpoints, checkpoints, openCard, course, ring],
   );
-  // Under the shown way's chip wherever the two come in (WaysGl), so the
-  // route's names give way to the chip rather than cut through its words
-  // (the UI audit's B6); with no ways, at the top of the marks as before.
-  useGlSymbols(ROUTE_MARKS, ROUTE_MARK_LAYERS, marks, { rank: TAP.rank.field, under: WAY_SHOWN_LAYER });
+  // Under the ways' chips wherever the two come in (WaysGl), so the
+  // route's names give way to the chips rather than cut through their
+  // words (the UI audit's B6), and every way's chip is placed before them;
+  // with no ways, at the top of the marks as before.
+  useGlSymbols(ROUTE_MARKS, ROUTE_MARK_LAYERS, marks, { rank: TAP.rank.field, under: WAY_CHIPS_LOWEST });
   // Each turn's dot drawn, and the side its name is put, for the tests.
   useGlProbe("route-turns", ["route-fix-dots"], (f) => ({ name: f.properties.text, out: f.properties.out }));
   // A route point's name stays outside its turn as the map turns: its
@@ -273,3 +274,4 @@ export function RouteGl({
   });
   return null;
 }
+

@@ -36,9 +36,15 @@ const wayChipLayer = (id: string, how: Parameters<typeof chipLayer>[2], shown: b
   filter: ["==", ["get", "shown"], shown],
 });
 
-/** The shown way's chip's layer, which the route's own marks are drawn
- *  under (RouteGl) so they give way to it. */
-export const WAY_SHOWN_LAYER = "route-way-chips";
+/** The shown way's chip's layer, the top of the ways' chips. */
+const WAY_SHOWN_LAYER = "route-way-chips";
+
+/** The lowest of the ways' chips' layers, the others', which the route's
+ *  own marks are drawn under (RouteGl) so they give way to every chip:
+ *  under the shown one's alone, the route's checkpoints were placed before
+ *  the others' chips, which gave way to them and at the route's zoom left
+ *  both ways beside it unnamed (route-line.spec, 2026-11-18). */
+export const WAY_CHIPS_LOWEST = "route-way-chips-others";
 
 /** The one shown always drawn, and in the way of the others; the others
  *  left out where they would fall on it or on each other, so no two chips
@@ -47,7 +53,7 @@ export const WAY_SHOWN_LAYER = "route-way-chips";
  *  to it, where they were drawn over it and cut its words ("Avc FAINS
  *  ther", the UI audit's B6, 2026-11-17). */
 const WAY_LAYERS: SymbolLayerSpecification[] = [
-  wayChipLayer("route-way-chips-others", { collide: true, sort: 0 }, false, {}),
+  wayChipLayer(WAY_CHIPS_LOWEST, { collide: true, sort: 0 }, false, {}),
   wayChipLayer(WAY_SHOWN_LAYER, {}, true, { "icon-ignore-placement": false, "text-ignore-placement": false }),
 ];
 
