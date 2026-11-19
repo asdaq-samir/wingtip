@@ -29,7 +29,7 @@ import { useFocusKept } from "./useFocusKept";
 const TABS: { value: PanelTab; label: string }[] = [
   { value: "preflight", label: "Preflight" },
   { value: "depart", label: "Depart" },
-  { value: "enroute", label: "En route" },
+  { value: "enroute", label: "En Route" },
   { value: "arrive", label: "Arrive" },
 ];
 /** The pages' order, the overview first, for a step's direction. */

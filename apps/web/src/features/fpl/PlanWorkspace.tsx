@@ -140,7 +140,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       preflight: tabContent("preflight"),
       depart: tabContent("depart"),
       enroute: (
-        <section aria-label="En route" className={TEXT.prose}>
+        <section aria-label="En Route" className={TEXT.prose}>
           {!s.local && tabContent("profile")}
           {tabContent("enroute")}
         </section>

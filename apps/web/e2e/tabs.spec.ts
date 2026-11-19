@@ -35,7 +35,7 @@ async function planned(page: Page) {
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
 }
 
-test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on En route, and its row opens En route's adverse conditions", async ({
+test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on En Route, and its row opens En Route's adverse conditions", async ({
   page,
 }) => {
   await briefingAs(page, (json) => {
@@ -66,7 +66,7 @@ test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on
   ]);
 
   await weather.click();
-  await expect(panelTabs(page).getByRole("tab", { name: "En route", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(panelTabs(page).getByRole("tab", { name: "En Route", exact: true })).toHaveAttribute("aria-selected", "true");
   // Scrolled to its section, flagged.
   await expect(drawer.locator('[data-tab="enroute"] [data-title="Adverse Conditions"]')).toBeInViewport();
   await expect(drawer.getByTestId("vnr-flag")).toBeVisible();
@@ -91,7 +91,7 @@ test("Preflight's checks are the Go / No-Go's and 14 CFR 91.103's, a row each, c
   await expect(drawer.getByTestId("check-delays")).toHaveAttribute("href", "https://www.fly.faa.gov");
   // A row opened is a check looked at: the weather's opens En route.
   await drawer.getByTestId("verdict-weather").click();
-  await expect(panelTabs(page).getByRole("tab", { name: "En route", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(panelTabs(page).getByRole("tab", { name: "En Route", exact: true })).toHaveAttribute("aria-selected", "true");
   await openTab(page, "Preflight");
   await expect(drawer.getByTestId("verdict-weather")).toHaveAttribute("data-looked", "true");
   // The loading's opens its own section here, folded until then.
@@ -150,7 +150,7 @@ test("the weather goes place by place, each TAF read for when the flight is ther
   await planned(page);
   // The Brief's En route, its sections one under another: the legs are
   // FPL's own, and the side view the one pinned at its foot.
-  await openTab(page, "En route");
+  await openTab(page, "En Route");
   await expect
     .poll(() =>
       sideDrawer(page)
@@ -161,7 +161,7 @@ test("the weather goes place by place, each TAF read for when the flight is ther
   await openSection(page, "Along the Route");
   const enRoute = sideDrawer(page).locator('[data-tab="enroute"]').getByTestId("weather-places");
   await expect(enRoute).toBeVisible();
-  await expect(enRoute.locator("h3")).toHaveText(["En route"]);
+  await expect(enRoute.locator("h3")).toHaveText(["En Route"]);
   // The pilot report 120 nm along before the TAF 210 nm along.
   await expect(enRoute.locator("[data-testid='pirep'], [data-testid='enroute-taf']")).toHaveText([/PIREP · 5,500 ft/, /KHYR/]);
   // Each field's own on its phase's tab: the destination's on Arrive.
@@ -301,7 +301,7 @@ test("the Brief opens on whether to go and one grouped list, a row for each part
   // pulled up to, as a finger would (inSheet).
   await inSheet(page, glance.getByTestId("brief-glance-enroute"));
   await glance.getByTestId("brief-glance-enroute").click();
-  await expect(panelTabs(page).getByRole("tab", { name: "En route", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(panelTabs(page).getByRole("tab", { name: "En Route", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(glance).toHaveCount(0);
   // Back to the list, the Brief still open, the verdict still under its name.
   await closeCard(page, "brief-close");

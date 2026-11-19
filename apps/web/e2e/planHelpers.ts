@@ -40,8 +40,8 @@ export async function openBriefing(page: Page) {
  *  go / no-go is Preflight's, the weather on the way En route's, the
  *  takeoff Depart's -- the Brief's pages now, a card over FPL. The nav log
  *  is FPL's own (Nav Log, Local): all the way up, the Brief put away. */
-const PHASE_OF = { Brief: "Preflight", Weather: "En route", Performance: "Depart" } as const;
-type PhaseTab = "Preflight" | "Depart" | "En route" | "Arrive";
+const PHASE_OF = { Brief: "Preflight", Weather: "En Route", Performance: "Depart" } as const;
+type PhaseTab = "Preflight" | "Depart" | "En Route" | "Arrive";
 
 /** One of the planning panel's tabs: Nav Log (Local, for one airport to
  *  itself), or one of the Brief's pages. */
@@ -100,7 +100,7 @@ export async function closeNavLog(page: Page) {
 /** The planning panel's own tabs. */
 export const panelTabs = (page: Page) => sideDrawer(page).getByTestId("panel-tabs");
 
-const PAGE_OF: Record<PhaseTab, string> = { Preflight: "preflight", Depart: "depart", "En route": "enroute", Arrive: "arrive" };
+const PAGE_OF: Record<PhaseTab, string> = { Preflight: "preflight", Depart: "depart", "En Route": "enroute", Arrive: "arrive" };
 
 /** The Brief open on its cards (BriefGlance, the owner's D′), one of its
  *  pages opened by its card; the tabs are over a page once one is open. */
@@ -111,7 +111,7 @@ export async function briefPage(page: Page, phase: PhaseTab) {
   await expect(panelTabs(page)).toBeVisible();
 }
 
-const PHASES: PhaseTab[] = ["Preflight", "Depart", "En route", "Arrive"];
+const PHASES: PhaseTab[] = ["Preflight", "Depart", "En Route", "Arrive"];
 
 /** A section by its title, brought into sight: on the tab up, or on
  *  whichever of the phases' tabs holds it (an airport's on Depart or

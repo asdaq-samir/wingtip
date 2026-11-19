@@ -77,7 +77,7 @@ export const SCREENS: Screen[] = [
     [
       ["Preflight", "verdict"],
       ["Depart", "takeoff-landing"],
-      ["En route", "weather-places"],
+      ["En Route", "weather-places"],
       ["Arrive", "weather-places"],
     ] as const
   ).map(([tab, shown]): Screen => ({
@@ -86,7 +86,7 @@ export const SCREENS: Screen[] = [
       await page.goto(`/app/plan?${ROUTE}&view=full`);
       await page.getByTestId("navlog-fuel").waitFor({ timeout: slow(120000) });
       await openTab(page, tab);
-      if (tab === "En route") await openSection(page, "Along the Route");
+      if (tab === "En Route") await openSection(page, "Along the Route");
       await expect(sideDrawer(page).locator('[role="tabpanel"]:not([hidden]):not([inert])').getByTestId(shown).first()).toBeVisible({
         timeout: slow(30000),
       });

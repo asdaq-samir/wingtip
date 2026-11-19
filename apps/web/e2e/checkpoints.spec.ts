@@ -90,9 +90,9 @@ test("plan page: a click or Enter selects a nav log checkpoint, with the briefin
   // Its page cards past the half card's foot: all the way up, as a finger
   // takes it (as briefing.spec does).
   await grabberTo(page, "full");
-  await briefPage(page, "En route");
+  await briefPage(page, "En Route");
   const tabs = panelTabs(page).getByRole("tab");
-  const enRoute = panelTabs(page).getByRole("tab", { name: "En route" });
+  const enRoute = panelTabs(page).getByRole("tab", { name: "En Route" });
   // Pressed once the tabs know it is the one with the focus: the stock
   // roving tabindex, 0 on that tab. Focused in the moment the tab list
   // mounts, before it has its tabs, the focus went unnoticed and an arrow
