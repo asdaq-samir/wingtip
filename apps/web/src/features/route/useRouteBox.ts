@@ -3,7 +3,8 @@ import type { Detour } from "../../lib/api/types";
 import { frdOf, identOf, isPosition, MAX_STOPS, stopOf } from "../../lib/identSchema";
 import { usePreferences, type RecentAirport } from "../../lib/preferences";
 import { useCruiseKeys } from "../../lib/address";
-import type { TypedProcedure } from "../../lib/procedures";
+import { sameField, type TypedProcedure } from "../../lib/procedures";
+import { engineLoaded } from "../../lib/engine/engine";
 import { useAirportSearch } from "../../lib/useAirportSearch";
 import { pointsOf, readTyped, roleAt, routeOf, withoutPoint, withTyped, type RouteParts } from "./routeEdit";
 import { releaseTyped } from "./routeEdit";
@@ -48,11 +49,25 @@ export function useRouteBox({
   const [shownRoute, setShownRoute] = useState<RouteParts>({ dep, stops, dest });
   const given = `${dep}|${stops.join(",")}|${dest}`;
   const [shownGiven, setShownGiven] = useState(given);
+  // The destination as typed, while the plan names it by its field's ICAO
+  // ident (useRouteTidy: "OSH" typed is KOSH as an end): typed on past, it
+  // is the point typed again (withTyped's typedDest), not a stop at KOSH.
+  const [typedDest, setTypedDest] = useState<{ ident: string; typed: string } | null>(null);
   if (shownGiven !== given) {
     // The route changed elsewhere -- FPL's list, the map, a pill's menu, a
     // plan opened -- or the box's own change came back: its tokens again
     // where they differ, what is typed kept before the same point.
     setShownGiven(given);
+    // Named anew is the same field (the engine's same_field, which the
+    // renaming itself asks, so with no engine yet nothing was renamed).
+    const renamed = !!shownRoute.dest && !!dest && dest !== shownRoute.dest && engineLoaded() && sameField(dest, shownRoute.dest);
+    setTypedDest(
+      renamed
+        ? { ident: dest, typed: typedDest?.ident === shownRoute.dest ? typedDest.typed : shownRoute.dest }
+        : typedDest?.ident === dest
+          ? typedDest
+          : null,
+    );
     setShownRoute({ dep, stops, dest });
     const planned = pointsOf({ dep, stops, dest });
     if (!samePoints(tokensOf(value), planned)) {
@@ -68,7 +83,7 @@ export function useRouteBox({
     hasDest = !!shownRoute.dest;
   const points = pointsOf(shownRoute);
   const isEnd = (ident: string) => (!!identOf(ident) && !waypoints.has(ident)) || isPosition(ident);
-  const shape = { points, hasDep, hasDest, isEnd };
+  const shape = { points, hasDep, hasDest, isEnd, typedDest: typedDest?.ident === shownRoute.dest ? typedDest.typed : null };
   const roleOf = (i: number) => roleAt(shape, i);
   const full = shownRoute.stops.length >= MAX_STOPS;
   // The field (TokenInput's editable element), and the box's row that
@@ -99,12 +114,12 @@ export function useRouteBox({
   const held = useRef<TypedProcedure[]>([]);
   const [, setCruise] = useCruiseKeys();
   const put = (words: string[], at: number | null, rest: RouteValue, done: boolean) => {
-    const { fresh, procedures, words: read, cruiseFt } = readTyped(words, !!onTypedProcedures);
+    const { fresh, procedures, words: read, cruiseFt, goesOn } = readTyped(words, !!onTypedProcedures);
     // A filed route's speed and level group sets the cruise, as the
     // altitude's own field does (useRouteEdits' flyAltitude).
     if (cruiseFt !== null) void setCruise({ altitude_ft: cruiseFt, altitude_nearest: false, altitude_choice: null });
     const ready = releaseTyped(held, read, procedures, done);
-    const placed = fresh.length ? withTyped(shape, fresh, at) : null;
+    const placed = fresh.length ? withTyped(shape, fresh, at, goesOn) : null;
     const route = placed?.route ?? null;
     if (route) send(route);
     const typed = typedOf(rest);

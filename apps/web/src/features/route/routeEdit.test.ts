@@ -90,6 +90,37 @@ describe("words typed, put in where they were typed", () => {
   it("after half a route, the destination", () => {
     expect(withTyped(shape(["KDLH"], true, false), ["KMDW"], null).route).toEqual({ dep: "KDLH", stops: [], dest: "KMDW" });
   });
+
+  it("before a STAR typed last, no destination: the point is its transition, the field still to come", () => {
+    // "C81 BAEE1 BAE OSH OSHH2 KATW", KATW not yet in: OSH is the Oshkosh
+    // VORTAC the STAR is flown from, not Wittman Regional (KOSH).
+    const typed = readTyped(["C81", "BAEE1", "BAE", "OSH", "OSHH2"], true);
+    expect(typed.goesOn).toBe(true);
+    expect(withTyped(shape([], false, false), typed.fresh, null, typed.goesOn).route).toEqual({
+      dep: "C81",
+      stops: ["BAE", "OSH"],
+      dest: "",
+    });
+    expect(withTyped(shape(["C81", "BAE", "OSH"], true, false), ["KATW"], null).route).toEqual({
+      dep: "C81",
+      stops: ["BAE", "OSH"],
+      dest: "KATW",
+    });
+    // After a whole route, its destination a stop and the route open past it.
+    expect(withTyped(shape(["KDLH", "KMDW"]), ["OSH"], null, true).route).toEqual({ dep: "KDLH", stops: ["KMDW", "OSH"], dest: "" });
+    expect(readTyped(["C81", "BAE", "OSH"], true).goesOn).toBe(false);
+  });
+
+  it("a destination typed on past is the point as typed, not the field the plan named it by", () => {
+    // OSH typed, the destination for now and named KOSH by its card; KATW
+    // typed after it: the route flies through OSH, it does not land at KOSH.
+    const named = { ...shape(["C81", "BAE", "KOSH"]), typedDest: "OSH" };
+    expect(withTyped(named, ["KATW"], null).route).toEqual({ dep: "C81", stops: ["BAE", "OSH"], dest: "KATW" });
+    // One typed as the field itself stays the field, landed at.
+    expect(withTyped(shape(["C81", "BAE", "KOSH"]), ["KATW"], null).route).toEqual({ dep: "C81", stops: ["BAE", "KOSH"], dest: "KATW" });
+    // The destination kept as it is named while it stays the destination.
+    expect(withTyped(named, ["VPBNG"], null).route).toEqual({ dep: "C81", stops: ["BAE", "VPBNG"], dest: "KOSH" });
+  });
 });
 
 describe("words typed, read", () => {
