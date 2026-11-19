@@ -23,8 +23,12 @@ test("the search's mic types what is said into the field, with nothing of the ra
       start() {
         const say = (transcript: string, isFinal: boolean, at: number) =>
           setTimeout(() => this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript }], { isFinal })] }), at);
+        // The whole a few seconds after the first word, so a loaded
+        // runner's own steps (the tap tried again, the placeholder read)
+        // still find the first word alone in the field (CI run
+        // 44582598916, shard 10: the field already held the whole).
         say("Duluth", false, 600);
-        say("Duluth weather", true, 1400);
+        say("Duluth weather", true, 4600);
       }
       stop() {
         setTimeout(() => this.onend?.(), 50);
