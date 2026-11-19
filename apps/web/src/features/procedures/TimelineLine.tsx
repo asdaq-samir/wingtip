@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Ellipsis, Fuel, Navigation, Plane, Triangle, X } from "lucide-react";
+import { ChevronDown, Ellipsis, Fuel, Navigation, Plane, Triangle, X } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
@@ -85,9 +85,10 @@ export function TimelineMark({ point, position, more = false }: { point: Timelin
 
 /**
  * One line of FPL's timeline (TimelineRoute): its mark (its menu), the
- * route's magenta in Apple's short rounded dashes down to the next, and
+ * route's magenta, one solid line, down to the next, and
  * after a hairline from the text on -- iOS's inset grouped list -- its ident
- * (a link to its card), the fuel in the tanks there, its time and its grip.
+ * (a tap changes it where the list edits the route, else opens its card),
+ * the fuel in the tanks there, its time and its details' chevron.
  * A field's line is a stock Collapsible: a tap on it off the ident opens
  * two rows under it, its wind at the left and its elevation at the right,
  * then its runway and procedure chips (the owner, 2026-11-17: "exactly
@@ -172,7 +173,7 @@ export function TimelineLine({
         />
       }
     >
-      {/* The mark, and the route's magenta in short rounded dashes from
+      {/* The mark, and the route's magenta, one solid line, from
           under it into the next line, centred under the marks. */}
       <span className="relative flex w-8 shrink-0 justify-center">
         <span className="relative z-10 flex h-11 items-center">{mark}</span>
@@ -194,20 +195,28 @@ export function TimelineLine({
               }
             />
           )}
-          {point.field && !point.problem ? (
-            <h3 className="relative z-10 flex shrink-0">
+          {end.change || (point.field && !point.problem) ? (
+            <h3 className="relative z-10 flex min-w-0 shrink">
+              {/* A tap on the name changes the point where the list edits
+                  the route (pointEnd's `change`, the one search with its
+                  suggestions); elsewhere it opens the airport's card. */}
               <Button
                 variant="plain"
                 size="inline"
-                onClick={() => onInfo(point.ident)}
-                aria-label={`${point.ident}${point.category ? `, ${point.category}` : ""}: open the airport`}
+                onClick={end.change ?? (() => onInfo(point.ident))}
+                aria-label={
+                  end.change
+                    ? `${pointName(point.ident)}${point.category ? `, ${point.category}` : ""}: change it`
+                    : `${point.ident}${point.category ? `, ${point.category}` : ""}: open the airport`
+                }
                 data-testid="timeline-ident"
                 className={cn(
-                  "relative shrink-0 font-semibold after:absolute after:-inset-y-3 after:-inset-x-1 after:content-['']",
+                  "relative min-w-0 truncate font-semibold after:absolute after:-inset-y-3 after:-inset-x-1 after:content-['']",
+                  point.problem && "text-destructive",
                   TEXT.row,
                 )}
               >
-                {point.ident}
+                {pointName(point.ident)}
               </Button>
             </h3>
           ) : (
@@ -225,7 +234,17 @@ export function TimelineLine({
           <span className={cn("relative z-10 shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
             {point.time}
           </span>
-          {end.grip && <span className="relative z-10">{end.grip}</span>}
+          {/* Its details' chevron, turned while they are open (the
+              owner, 2026-11-19: "replace three lines with the arrow for
+              expanding list"); the line itself is the tap. */}
+          {opens && (
+            <ChevronDown
+              className={cn("pointer-events-none size-5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
+              aria-hidden
+              data-testid="timeline-chevron"
+            />
+          )}
+          {end.grip}
         </div>
         {/* A field it cannot land at, or a point the planner does not
             know: why, in red, always in sight (decision 0043). */}
@@ -242,10 +261,10 @@ export function TimelineLine({
         </p>
         {opens && (
           <CollapsibleContent className="space-y-2 pb-2" data-testid="timeline-details">
-            {/* The elevation under the time, clear of the grip's column
+            {/* The elevation under the time, clear of the chevron's column
                 (its 32 points and the gap; the owner, 2026-11-17: "the
                 elevation should be under the time"). */}
-            <div className={cn("flex min-h-6 items-center justify-between gap-2", end.grip && "pr-10")}>
+            <div className={cn("flex min-h-6 items-center justify-between gap-2", opens && "pr-7")}>
               <WindLine direct={end.direct} wind={windWords(reported)} reported={reported} />
               {end.elevation}
             </div>

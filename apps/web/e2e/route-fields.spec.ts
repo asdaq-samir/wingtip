@@ -48,7 +48,8 @@ test("each line is its ident and time, no city; a tap opens its wind and elevati
     const line = timelineLine(page, ident);
     await expect(line.getByTestId("timeline-ident")).toHaveText(ident, { timeout: slow(30_000) });
     await expect(line.getByTestId("timeline-time")).toBeVisible();
-    await expect(line.getByTestId("route-grip")).toBeVisible();
+    // Its chevron, the three lines' place (the owner, 2026-11-19).
+    await expect(line.getByTestId("timeline-chevron")).toBeVisible();
     // Folded: nothing under the line.
     await expect(line.getByTestId("timeline-details")).toHaveCount(0);
   }

@@ -61,6 +61,9 @@ test.describe("/app/plan", () => {
     // No city on a line (the owner: "We don't need to say the city name").
     await expect(timeline).not.toContainText("Chicago");
     await expect(timeline.getByTestId("timeline-line")).toHaveCount(3);
+    // Each field's chevron at its end, where its grip's three lines were
+    // (the owner, 2026-11-19); the drag buttons kept for the keyboard.
+    await expect(timeline.getByTestId("timeline-chevron")).toHaveCount(3);
     await expect(timeline.getByTestId("route-grip")).toHaveCount(3);
     // Each line one 44-point row while folded.
     for (const line of await timeline.getByTestId("timeline-line").all()) expect((await line.boundingBox())!.height).toBeLessThan(46);
@@ -97,9 +100,15 @@ test.describe("/app/plan", () => {
       await grabberTo(page, "half");
     }
 
-    // An ident is its airport's card.
+    // A stop's name tapped is the one search, asked what goes in its place
+    // (the owner, 2026-11-19: "when the stop is tapped it should be
+    // editable with suggestions"), and the pick takes its place.
     await timeline.getByTestId("timeline-ident").nth(1).click();
-    await expect(page.getByTestId("place-card")).toBeVisible();
+    const field = page.getByTestId("search-airports");
+    await expect(field).toHaveAttribute("placeholder", "Search airports and waypoints");
+    await field.fill("KDSM");
+    await page.keyboard.press("Enter");
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDSM", "KDEN"], { timeout: slow(30_000) });
   });
 
   test("below full the stops are one row between the ends, a tap taking the sheet up where each is its own row", async ({ page }) => {

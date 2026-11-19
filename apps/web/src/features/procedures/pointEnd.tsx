@@ -142,6 +142,12 @@ export function pointEnd(
         onRemove={stopRemoval(vm, ident, at.stop, at.index)}
       />
     ),
+    // A tap on its name, where the list changes the route: the one search
+    // asked for what goes in its place, its suggestions under the field and
+    // My Location first at an end (the owner, 2026-11-19: "when the stop is
+    // tapped it should be editable with suggestions. The first one can also
+    // suggest my location"); its card is its menu's More Info.
+    change: edit && at.index !== undefined ? () => askChange(vm, ident, at.index!, at.stop, at.stop || at.waypoint) : undefined,
     // Its grip, where the list changes the route: by its place among the
     // typed points.
     grip: edit && at.index !== undefined ? <PointGrip ident={ident} /> : null,
