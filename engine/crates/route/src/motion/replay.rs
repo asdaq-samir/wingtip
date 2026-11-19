@@ -163,7 +163,7 @@ fn vertical_speed(reports: &[Report], run: &[usize], i: usize) -> Option<f64> {
     // than the span: there the reports either side of it are read, which
     // the run holds within GAP_S, rather than no climb at all.
     if near.len() < 2 {
-        let before = heights().filter(|p| p.0 < -VS_SPAN_S).next_back();
+        let before = heights().rfind(|p| p.0 < -VS_SPAN_S);
         let after = heights().find(|p| p.0 > VS_SPAN_S);
         near.extend(before.into_iter().chain(after));
     }
