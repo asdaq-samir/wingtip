@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { SmallMark, SmallTile } from "./Favorites";
@@ -22,10 +22,13 @@ export default function AddFavoriteTile({
   // Whether the menu closed on a choice, which has put the focus where it
   // wants it; closed without one, the focus comes back to the tile.
   const chose = useRef(false);
+  const [open, setOpen] = useState(false);
   return (
     <DropdownMenu
-      onOpenChange={(open) => {
-        if (open) chose.current = false;
+      open={open}
+      onOpenChange={(next) => {
+        if (next) chose.current = false;
+        setOpen(next);
       }}
     >
       <DropdownMenuTrigger
@@ -44,8 +47,17 @@ export default function AddFavoriteTile({
           <DropdownMenuItem
             key={c.value}
             data-testid={c.testId}
-            onClick={() => {
+            onClick={(event) => {
+              // The menu's own click handler, after this one, gives the
+              // focus back to the item (Safari's, in Base UI's list
+              // navigation), from the one search the choice focuses within
+              // the tap so the keyboard comes up: the field had it for a
+              // millisecond and the page for good once the menu went
+              // (a focus trace, favorites-add.spec's Airplane, the night of
+              // 2026-11-19). So the choice closes the menu itself.
+              event.preventBaseUIHandler();
               chose.current = true;
+              setOpen(false);
               c.onPick();
             }}
           >
