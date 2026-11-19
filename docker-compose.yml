@@ -622,6 +622,13 @@ services:
       # would meet the deployed limits of 5 and 20 an hour.
       APP_MAGIC_LINK_PER_ADDRESS_PER_HOUR: "60"
       APP_MAGIC_LINK_PER_CLIENT_PER_HOUR: "200"
+      # And the dialog's ask whose account a link is for, made on every
+      # link opened (MagicLinkAccountController). Every browser here is
+      # one caller to the gateway, and the stack outlives the run: at the
+      # deployed 30 an hour, a few branches' runs of the specs in an hour
+      # used them up, the dialog was answered 429, named no account and
+      # never said a spent link was spent (signin.spec's emailed link).
+      APP_MAGIC_LINK_ACCOUNT_PER_CLIENT_PER_HOUR: "600"
       # The HTTPS port for a phone on the same Wi-Fi (HttpsConnectorConfig):
       # the certificate infra/local-https/make-certs.sh writes, read
       # only once that file exists. HSTS off: this machine's plain port
