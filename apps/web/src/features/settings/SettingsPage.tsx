@@ -100,8 +100,16 @@ function MapGroup() {
         <AirportWeatherRow />
         {/* The glide ring about own ship, off unless turned on (GlideRingGl; the owner, 2026-11-09). */}
         <GlideRingRow />
-        {/* Own ship's path flown (OwnTrailGl), put away here: it starts again with the next flight. */}
-        <ListRow title="Clear Your Path" disabled={!trailed} onClick={clearOwnTrail} data-testid="own-trail-clear" />
+        {/* Own ship's path flown (OwnTrailGl), put away here: it starts again with the next flight.
+            Greyed with why while there is none, as Glide Ring says what it waits for: alone it read
+            as a link that did not work (UI audit C16, 2026-11-17). */}
+        <ListRow
+          title="Clear Your Path"
+          description={trailed ? undefined : "None yet: it is drawn as you fly"}
+          disabled={!trailed}
+          onClick={clearOwnTrail}
+          data-testid="own-trail-clear"
+        />
       </ListGroup>
     </div>
   );

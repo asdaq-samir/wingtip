@@ -20,7 +20,7 @@
 areas:
   web:
     ci: test-web
-    check: npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip && npx vitest run
+    check: npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npm run format:check && npx knip && npm run layers && npx vitest run
     paths:
       - apps/web/**
       # Prettier's settings (npm run format:check)
@@ -362,7 +362,10 @@ ci_only:
     - engine/**
   ingest:
     - services/ingest/**
+    - services/Dockerfile.base
     - services/planner/wingtip/**
+    - services/planner/requirements-wingtip.txt
+    - engine/**
   weather:
     - services/weather/**
     - services/Dockerfile.base

@@ -32,6 +32,10 @@ const buttonVariants = cva(
         ghost: "text-tint hover:bg-muted aria-expanded:bg-muted dark:hover:bg-muted/50 native:text-foreground",
         destructive:
           "bg-destructive/10 text-destructive-ink hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive dark:bg-destructive/10 dark:hover:bg-destructive/20 dark:focus-visible:ring-destructive",
+        // The app's own: a ghost button that is a row or a label, no tint
+        // and no hover fill of its own (the caller sets its text and look),
+        // left-aligned. Ghost's expanded, dark-hover and native states stay.
+        plain: "justify-start text-inherit hover:bg-transparent aria-expanded:bg-muted dark:hover:bg-muted/50 native:text-foreground",
         link: "text-tint underline-offset-4 hover:underline",
         // The app's own: a pane of the grey glass over the map and on the
         // sheet, as Maps' round buttons are on iOS 26 (GLASS_BUTTON, the

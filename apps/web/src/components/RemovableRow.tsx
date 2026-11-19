@@ -16,14 +16,17 @@ import { describeError } from "../lib/api/client";
  * or has the focus -- and the same menu from a long press or a right
  * click, Base UI's ContextMenu's own (the owner, 2026-11-10, where a
  * swipe uncovered a Delete in a scroller of our own). In Edit, the row's
- * minus (RemoveMinus) removes it too. What it removes comes back by the
- * toast's Undo where the list has one (lib/toast).
+ * minus (RemoveMinus) removes it too, and a finger's swipe to the left
+ * (RowMenu's `swipe`, SwipeRow), but in Edit (`editing`), as iOS's lists
+ * swipe nothing there. What it removes comes back by the toast's Undo
+ * where the list has one (lib/toast).
  */
 export function RemovableRow({
   name,
   label,
   onDelete,
   share,
+  editing = false,
   children,
 }: {
   /** The row's name, for its •••: "More for KDLH". */
@@ -33,6 +36,8 @@ export function RemovableRow({
   onDelete: () => void;
   /** What the row is, as a link to send: its menu's Share. */
   share?: { title: string; url: string };
+  /** The list is in Edit: its minus takes the row away, not a swipe. */
+  editing?: boolean;
   children: ReactNode;
 }) {
   const shareIt = () => {
@@ -49,8 +54,9 @@ export function RemovableRow({
       <RowMenu
         label={`More for ${name}`}
         testId="row-more"
+        swipe={!editing}
         actions={[
-          ...(share ? [{ label: "Share", icon: <Share />, onSelect: shareIt, testId: "row-share" }] : []),
+          ...(share ? [{ label: "Share", icon: <Share />, onSelect: shareIt }] : []),
           { label: "Remove", icon: <Trash2 />, destructive: true, spoken: label, onSelect: onDelete, testId: "row-remove" },
         ]}
       >

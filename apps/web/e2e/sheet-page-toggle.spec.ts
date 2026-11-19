@@ -1,6 +1,6 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { consoleSheet, grabberTo, settle, settled, sideDrawer, frontSheet } from "./helpers";
-import { expectPage, expectShown, openAirport, toggle } from "./sheetPages";
+import { expectPage, expectSearchInUse, expectShown, openAirport, toggle } from "./sheetPages";
 
 /**
  * The sheet's two pages, Search and FPL, turned by one round button at
@@ -17,8 +17,8 @@ import { expectPage, expectShown, openAirport, toggle } from "./sheetPages";
  * the screen's foot. No sideways swipe turns a page; the grabber is the
  * one plain bar. With no route FPL is its empty box, a route made goes to
  * FPL, and a drag up or down still sizes the sheet on either page. A card
- * open covers the row, the toggle with it; its close brings it back. The
- * cards over the pages: sheet-pages-cards.spec.
+ * open covers the row, the toggle with it; its close and the search's
+ * Cancel bring it back. The cards over the pages: sheet-pages-cards.spec.
  */
 
 test("Search to FPL and back by the toggle, the sheet's size kept", { tag: "@smoke" }, async ({ page }) => {
@@ -32,8 +32,8 @@ test("Search to FPL and back by the toggle, the sheet's size kept", { tag: "@smo
   await toggle(page).click();
   await expectPage(page, 1);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
-  // FPL with no route: its empty route box, no "Plan a flight" (96463ab51).
-  await expect(sideDrawer(page).getByTestId("route-box")).toBeVisible();
+  // FPL with no route: its empty route's card, no "Plan a flight" (96463ab51).
+  await expect(sideDrawer(page).getByTestId("route-empty")).toBeVisible();
   await expect(sideDrawer(page).getByText("Plan a flight")).toHaveCount(0);
 
   await toggle(page).click();
@@ -81,20 +81,29 @@ test("the toggle ends the first row on both pages, the bar before it one size, a
   const search = await measure();
   for (const m of [fpl, search]) {
     // The toggle at the row's end, sixteen in from the sheet's edge, level
-    // with the bar, eight after it.
+    // with the bar; eight after the search's field, which fills to it (FPL's
+    // strip is centred in the row, below).
     expect(m.viewport - m.toggle.right).toBeCloseTo(16, 0);
-    expect(m.toggle.left - m.bar.right).toBeCloseTo(8, 0);
+    if (m === search) expect(m.toggle.left - m.bar.right).toBeCloseTo(8, 0);
     expect(m.toggle.top + m.toggle.h / 2).toBeCloseTo(m.bar.top + m.bar.h / 2, 0);
     // The account button over the sheet's top at the left, under the 3D.
     expect(m.account.bottom).toBeLessThanOrEqual(m.sheet.top);
     expect(m.account.left).toBeLessThanOrEqual(20);
     expect(m.account.top).toBeGreaterThan(m.threeD.bottom);
   }
-  // One bar, one place: nothing moved or resized on the turn.
-  for (const k of ["top", "left", "w", "h"] as const) {
-    expect(search.bar[k], `the bar's ${k}`).toBeCloseTo(fpl.bar[k], 0);
-    expect(search.toggle[k], `the toggle's ${k}`).toBeCloseTo(fpl.toggle[k], 0);
-  }
+  // One row, one place: the toggle did not move or resize on the turn, and
+  // the bars are level and the same height. Their left and width are the
+  // page's own: the search's field fills to the toggle, FPL's strip is
+  // centred in the row (the owner, 2026-11-17).
+  for (const k of ["top", "h"] as const) expect(search.bar[k], `the bar's ${k}`).toBeCloseTo(fpl.bar[k], 0);
+  // The search's field runs on to eight before the toggle.
+  expect(search.toggle.left - search.bar.right).toBeCloseTo(8, 0);
+  for (const k of ["top", "left", "w", "h"] as const) expect(search.toggle[k], `the toggle's ${k}`).toBeCloseTo(fpl.toggle[k], 0);
+  // FPL's strip is centred between the row's ends (the routes button's slot
+  // at the left, which may be empty, and the page toggle at the right).
+  const sheetMid = (fpl.sheet.left + fpl.sheet.right) / 2;
+  expect((fpl.bar.left + fpl.bar.right) / 2, "the strip is centred in the row").toBeCloseTo(sheetMid, -1);
+  expect(fpl.bar.right).toBeLessThanOrEqual(fpl.toggle.left);
   expect(search.bar.h).toBeCloseTo(46, 0);
   // No bar under the sheet: the pill is the search's own 4.25 rem off the
   // screen's foot (no home indicator here), its 44 points back.
@@ -183,18 +192,34 @@ test("a route made goes to FPL; Search puts FPL's figures away with its page", a
   await grabberTo(page, "peek");
   await expect(page.getByTestId("panel-foot")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
-  await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeHidden();
+  await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeHidden();
   // Half way up, FPL's bar is back with the route's row under it.
   await grabberTo(page, "half");
   await expect(sideDrawer(page).getByTestId("route-strip")).toBeVisible();
-  await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeVisible();
   await toggle(page).click();
   await expectPage(page, 0);
   await expect(page.getByTestId("panel-foot")).toBeHidden();
 });
 
-test("a drag up or down still sizes the sheet on either page", async ({ page }) => {
+/** A finger put down at (x, y) and moved `dy` down, a frame apart, then
+ *  let go (Chromium's CDP, as swipe-rows.spec's swipe). */
+async function fingerDown(page: Page, x: number, y: number, dy: number) {
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type: string, p?: { x: number; y: number }) =>
+    cdp.send("Input.dispatchTouchEvent", { type, touchPoints: p ? [{ ...p, id: 1 }] : [] });
+  await touch("touchStart", { x, y });
+  for (let i = 1; i <= 12; i++) {
+    await touch("touchMove", { x, y: y + (dy * i) / 12 });
+    await page.waitForTimeout(16);
+  }
+  await touch("touchEnd");
+  await cdp.detach();
+}
+
+test("a drag up or down still sizes the sheet on either page", async ({ page, browserName }) => {
   test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
+  test.skip(browserName !== "chromium", "a finger, by Chromium's CDP");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "half");
@@ -203,15 +228,17 @@ test("a drag up or down still sizes the sheet on either page", async ({ page }) 
     await expectPage(page, at);
     await grabberTo(page, "full");
     await grabberTo(page, "half");
-    // A drag down from the grabber's row lowers it a size, as before.
+    // A finger's drag down from the grabber lowers it a size, as before: a
+    // phone's sheet, so a touch (Chromium's CDP), not a mouse pressed on the
+    // grabber's button.
     const grabber = (await page.getByTestId("sidebar-trigger-button").boundingBox())!;
-    const x = grabber.x + grabber.width / 2;
-    await page.mouse.move(x, grabber.y + 6);
-    await page.mouse.down();
-    await page.mouse.move(x, grabber.y + 200, { steps: 12 });
-    await page.mouse.up();
+    await fingerDown(page, grabber.x + grabber.width / 2, grabber.y + 6, 200);
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
     await settled(sideDrawer(page));
+    // And the drag's risen face put away, held a moment past the lift
+    // (SheetDrawer's data-risen): read in that moment the page's row was in
+    // sight, then hidden at the pill, and its name gone with it.
+    await expect(sideDrawer(page)).not.toHaveAttribute("data-risen");
     await expectPage(page, at);
     await grabberTo(page, "half");
   }
@@ -238,7 +265,7 @@ test("a sideways drag on the Nearest row is the row's, and no page turns", async
   await expectPage(page, 0);
 });
 
-test("a card open covers the row and its toggle, the account button riding its top, and its close brings the toggle back", async ({
+test("a card open covers the row and its toggle, the account button riding its top, and its close and the search's Cancel bring the toggle back", async ({
   page,
 }) => {
   // The toggle is the sheet's own row's since the owner swapped it with
@@ -262,6 +289,11 @@ test("a card open covers the row and its toggle, the account button riding its t
   }
   await page.getByTestId("place-close").last().click();
   await expect(openCards).toHaveCount(0);
+  // Back to the search with its query kept (docs/design/rules.md, the
+  // card's row), its Cancel where the toggle rides; Cancel lets the search
+  // go and the toggle is back.
+  await expectSearchInUse(page, "KOSH");
+  await page.getByTestId("one-search-cancel").click();
   await expect(toggle(page)).toBeVisible();
   await toggle(page).click();
   await expectShown(page, 1);

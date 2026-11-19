@@ -5,21 +5,7 @@
 
 use crate::geo::py_mod;
 
-/// JavaScript's Math.round: halves up, toward +infinity (words.js_round).
-/// Not floor(n + 0.5), whose sum rounds 0.49999999999999994 up to 1.
-pub fn js_round(n: f64) -> i64 {
-    js_round_f(n) as i64
-}
-
-/// Math.round as a double, for figures past an i64's reach.
-pub fn js_round_f(n: f64) -> f64 {
-    let floor = n.floor();
-    if n - floor >= 0.5 {
-        floor + 1.0
-    } else {
-        floor
-    }
-}
+pub use wingtip_core::text::{js_round, js_round_f};
 
 /// To a tenth, as lib/verdict's `one`: Math.round(n * 10) / 10.
 pub fn one(n: f64) -> f64 {
@@ -132,10 +118,7 @@ pub fn pounds(lb: f64) -> String {
 pub fn flight_level(ft: Option<f64>) -> String {
     match ft {
         None => "FL-___".to_owned(),
-        Some(ft) => {
-            let hundreds = js_num(js_round_f(ft / 100.0));
-            format!("FL-{}{hundreds}", "0".repeat(3usize.saturating_sub(hundreds.chars().count())))
-        }
+        Some(ft) => crate::text::flight_level(&js_num(js_round_f(ft / 100.0))),
     }
 }
 

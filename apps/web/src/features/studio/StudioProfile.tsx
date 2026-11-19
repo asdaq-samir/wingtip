@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { usePastFlight } from "../../lib/replay/clock";
-import { loadProfileChart } from "../plan";
+import { loadProfileChart } from "../navlog";
 import { alongAt, type ReplayTrack } from "../replay";
 import type { Studio } from "./useStudio";
 

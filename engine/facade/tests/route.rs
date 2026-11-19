@@ -237,12 +237,12 @@ fn the_pilots_own_point_off_a_fix() {
 #[test]
 fn one_field_by_its_faa_or_icao_ident() {
     // lib/procedures.test.ts: sameField; the planner's _bare_field.
-    assert!(points::same_field("KBUR", "BUR"));
-    assert!(points::same_field("C81", "C81"));
-    assert!(!points::same_field("KBUR", "KVNY"));
-    assert_eq!(points::bare_field("kdlh"), "DLH");
-    assert_eq!(points::bare_field("KABCD"), "KABCD");
-    assert_eq!(points::bare_field("K12"), "K12");
+    assert!(wingtip_engine::field::same_field("KBUR", "BUR"));
+    assert!(wingtip_engine::field::same_field("C81", "C81"));
+    assert!(!wingtip_engine::field::same_field("KBUR", "KVNY"));
+    assert_eq!(wingtip_engine::field::bare_field("kdlh"), "DLH");
+    assert_eq!(wingtip_engine::field::bare_field("KABCD"), "KABCD");
+    assert_eq!(wingtip_engine::field::bare_field("K12"), "K12");
 }
 
 #[test]

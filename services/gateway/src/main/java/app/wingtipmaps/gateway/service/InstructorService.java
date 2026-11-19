@@ -1,6 +1,5 @@
 package app.wingtipmaps.gateway.service;
 
-import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.CrossCountryReview;
 import app.wingtipmaps.gateway.domain.Endorsement;
 import app.wingtipmaps.gateway.domain.Flight;
@@ -9,12 +8,9 @@ import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.domain.SignedEndorsement;
 import app.wingtipmaps.gateway.dto.AskReviewRequest;
 import app.wingtipmaps.gateway.dto.CrossCountryReviewDto;
-import app.wingtipmaps.gateway.dto.EndorsementKindDto;
 import app.wingtipmaps.gateway.dto.InstructorDto;
 import app.wingtipmaps.gateway.dto.InstructorRequest;
-import app.wingtipmaps.gateway.dto.SignRequest;
 import app.wingtipmaps.gateway.dto.StudentDto;
-import app.wingtipmaps.gateway.planner.model.PlannerEndorsementFilled;
 import app.wingtipmaps.gateway.repository.ApproachLessonRepository;
 import app.wingtipmaps.gateway.repository.CrossCountryReviewRepository;
 import app.wingtipmaps.gateway.repository.EndorsementRepository;
@@ -23,24 +19,18 @@ import app.wingtipmaps.gateway.repository.InstructorLinkRepository;
 import app.wingtipmaps.gateway.repository.LogbookRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.repository.SignedEndorsementRepository;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hibernate.Hibernate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,29 +40,11 @@ import org.springframework.transaction.annotation.Transactional;
  * sees the student's way to the checkride, the solo cross-countries put to
  * them, and signs endorsements in the app from AC 61-65K's samples.
  *
- * <p>A signature, as AC 120-78B (December 2024) describes one, which 14
- * CFR part 61 asks no approval of (its 1.9.5) but recommends following:
- * the instructor signed in -- their account under their sole control, the
- * address theirs (2.1.2.2, 2.1.2.3); the words read before signing, and
- * signed only if they are what the fields make (2.2.4); the signature
- * line AC 61-65K asks of every endorsement -- signature, date, certificate
- * number and recent experience or expiration date; nothing changed once
- * signed, a correction voiding it for a new one (2.2.7, 2.2.8); and both
- * told by email that it was signed (2.2.3). An instructor whose recent
- * experience has run out (61.197(a)) or whose pre-December 2024
- * certificate has expired (61.19(d)(2), 61.197(e)) may not exercise its
- * privileges, but the app warns and never refuses (the owner's rule,
- * 2026-10-26): the screens say so before signing, and the signature line
- * carries the date, so the record shows it was past.
+ * <p>The signature itself is EndorsementSigning's.
  */
 @Service
 public class InstructorService {
 
-    private static final Logger log = LoggerFactory.getLogger(InstructorService.class);
-
-    /** How long an instructor keeps the record of what they signed:
-     *  "at least 3 years" (14 CFR 61.189(c)). */
-    static final int RECORD_YEARS = 3;
     /** Instructors a student may ask in a day: each ask is an email to an
      *  address of the student's choosing. */
     static final int ASKS_A_DAY = 5;
@@ -85,9 +57,8 @@ public class InstructorService {
     private final FlightRepository flights;
     private final LogbookRepository logbook;
     private final ApproachLessonRepository lessons;
-    private final Mailer mail;
+    private final InstructorMail mail;
     private final PlannerClient planner;
-    private final String publicBaseUrl;
 
     public InstructorService(
             PilotRepository pilots,
@@ -98,9 +69,8 @@ public class InstructorService {
             FlightRepository flights,
             LogbookRepository logbook,
             ApproachLessonRepository lessons,
-            Mailer mail,
-            PlannerClient planner,
-            AppProperties app) {
+            InstructorMail mail,
+            PlannerClient planner) {
         this.pilots = pilots;
         this.links = links;
         this.signed = signed;
@@ -111,7 +81,6 @@ public class InstructorService {
         this.lessons = lessons;
         this.mail = mail;
         this.planner = planner;
-        this.publicBaseUrl = app.publicBaseUrl().replaceAll("/+$", "");
     }
 
     // ---- The student's side
@@ -140,7 +109,7 @@ public class InstructorService {
         }
         links.save(new InstructorLink(student, address, now));
         String name = EndorsementRecords.nameOf(student);
-        send(
+        mail.send(
                 address,
                 name + " asks you to be their flight instructor",
                 name + " (" + student.getEmail()
@@ -148,7 +117,7 @@ public class InstructorService {
                         + " way to the checkride, review the planning of their solo cross-countries and sign their endorsements"
                         + " there.\n\nTo answer, sign in to Wingtip Maps with this address (" + address
                         + ") and open Logbook, then"
-                        + " Students." + openLine());
+                        + " Students." + mail.openLine());
     }
 
     /** @return false where the student has no such instructor */
@@ -185,7 +154,7 @@ public class InstructorService {
         reviews.save(new CrossCountryReview(
                 student, instructor, flight, request.makeModel().strip(), request.flightOn(), note, now));
         String name = EndorsementRecords.nameOf(student);
-        send(
+        mail.send(
                 instructor.getEmail(),
                 name + " asks you to review a solo cross-country",
                 name + " asks you to review the planning of their solo cross-country, "
@@ -193,7 +162,7 @@ public class InstructorService {
                         + request.makeModel().strip() + " on "
                         + EndorsementRecords.DAY.format(request.flightOn()) + " (14 CFR 61.93(c)(3)).\n"
                         + (note == null ? "" : "\n\"" + note + "\"\n")
-                        + "\nOpen Logbook, then Students, in Wingtip Maps to review it." + openLine());
+                        + "\nOpen Logbook, then Students, in Wingtip Maps to review it." + mail.openLine());
     }
 
     /** @return false where there is no such review of the student's still
@@ -268,115 +237,6 @@ public class InstructorService {
                 .map(l -> (Pilot) Hibernate.unproxy(l.getStudent()));
     }
 
-    /** The code of AC 61-65K A.10's endorsement, a solo cross-country's
-     *  planning reviewed (14 CFR 61.93(c)(3)): the one that answers a
-     *  review a student put to the instructor. A record's key, the
-     *  engine's catalogue (endorsement_kinds) gives its words. */
-    static final String SOLO_XC_FLIGHT = "solo-xc-flight";
-
-    /** The endorsement signed, and the student and the instructor emailed it. */
-    @Transactional
-    public SignedEndorsement sign(Pilot instructor, Pilot student, SignRequest request, Instant now) {
-        if (!instructor.isInstructor() || instructor.getFullName() == null) {
-            throw new InstructorRefusedException(
-                    HttpStatus.CONFLICT, "Give your flight instructor certificate before signing.");
-        }
-        LocalDate today = LocalDate.ofInstant(now, ZoneOffset.UTC);
-        // The instructor's own day, which west of Greenwich is a day behind
-        // UTC's in the evening.
-        if (request.signedOn().isBefore(today.minusDays(1))
-                || request.signedOn().isAfter(today.plusDays(1))) {
-            throw new InstructorRefusedException(HttpStatus.BAD_REQUEST, "An endorsement is signed with today's date.");
-        }
-        if (student.getFullName() == null || student.getFullName().isBlank()) {
-            throw new InstructorRefusedException(
-                    HttpStatus.CONFLICT, "The student has not given their name as on their certificate yet.");
-        }
-        // AC 61-65K's words and the fields they take are the engine's
-        // (endorsement_kinds, endorsement_fill), asked through the planner.
-        EndorsementKindDto kind = planner.endorsementKind(request.code())
-                .orElseThrow(() -> new InstructorRefusedException(
-                        HttpStatus.BAD_REQUEST, "No such endorsement: " + request.code() + "."));
-        PlannerEndorsementFilled filled = planner.fill(kind.code(), student.getFullName(), request.fields());
-        Map<String, String> fields = filled.getFields();
-        List<String> missing = filled.getMissing();
-        if (!missing.isEmpty()) {
-            throw new InstructorRefusedException(
-                    HttpStatus.BAD_REQUEST,
-                    "Fill in " + String.join(", ", missing).toLowerCase(Locale.ROOT) + ".");
-        }
-        String text = filled.getText();
-        if (!text.equals(request.text().replaceAll("\\s+", " ").strip())) {
-            throw new InstructorRefusedException(
-                    HttpStatus.CONFLICT, "The words have changed since you read them: read them again before signing.");
-        }
-        CrossCountryReview review = null;
-        if (request.reviewId() != null) {
-            review = reviews.findById(request.reviewId())
-                    .filter(r -> r.getStudent().getId().equals(student.getId())
-                            && r.getInstructor().getId().equals(instructor.getId()))
-                    .orElseThrow(() -> new InstructorRefusedException(HttpStatus.NOT_FOUND, "No such review."));
-            if (review.isAnswered() || !SOLO_XC_FLIGHT.equals(kind.code())) {
-                throw new InstructorRefusedException(HttpStatus.CONFLICT, "That review has been answered.");
-            }
-        }
-        String signature = signatureLine(instructor, request.signedOn());
-        SignedEndorsement endorsement = signed.save(new SignedEndorsement(
-                student,
-                instructor,
-                kind.code(),
-                student.getFullName(),
-                fields,
-                text,
-                signature,
-                request.signedOn(),
-                now,
-                digest(text, signature, now)));
-        if (review != null) {
-            review.endorsed(endorsement, now);
-        }
-        String said = kind.label() + " (AC 61-65K " + kind.paragraph() + ", 14 CFR " + kind.rule() + ")\n\n" + text
-                + "\n\n" + signature;
-        send(
-                student.getEmail(),
-                "Endorsed: " + kind.label(),
-                EndorsementRecords.nameOf(instructor) + " has signed this endorsement for you in Wingtip Maps:\n\n"
-                        + said + "\n\nIt is on your Checkride page, under Logbook." + openLine());
-        send(
-                instructor.getEmail(),
-                "You signed: " + kind.label() + " for " + student.getFullName(),
-                "You signed this endorsement in Wingtip Maps, kept with your students' records (14 CFR 61.189):\n\n"
-                        + said);
-        return endorsement;
-    }
-
-    /** A signed endorsement voided by the instructor who signed it, for a
-     *  correction (AC 120-78B 2.2.8): it stays, marked void.
-     *  @return false where there is no such endorsement of theirs in force */
-    @Transactional
-    public boolean voidEndorsement(Pilot instructor, Long id, Instant now) {
-        return signed.findById(id)
-                .filter(e -> e.getInstructor() != null
-                        && e.getInstructor().getId().equals(instructor.getId())
-                        && !e.isVoided())
-                .map(e -> {
-                    e.voidAt(now);
-                    if (e.getStudent() != null) {
-                        send(
-                                e.getStudent().getEmail(),
-                                "Voided: "
-                                        + planner.endorsementKind(e.getCode())
-                                                .map(EndorsementKindDto::label)
-                                                .orElse(e.getCode()),
-                                EndorsementRecords.nameOf(instructor) + " has voided this endorsement of "
-                                        + e.getSignedOn().format(EndorsementRecords.DAY) + ":\n\n" + e.getText()
-                                        + "\n\n" + e.getSignature());
-                    }
-                    return true;
-                })
-                .orElse(false);
-    }
-
     /** @return false where there is no such review waiting on them */
     @Transactional
     public boolean decline(Pilot instructor, Long reviewId, String note, Instant now) {
@@ -384,13 +244,13 @@ public class InstructorService {
                 .filter(r -> r.getInstructor().getId().equals(instructor.getId()) && !r.isAnswered())
                 .map(r -> {
                     r.declined(note.strip(), now);
-                    send(
+                    mail.send(
                             r.getStudent().getEmail(),
                             "Not endorsed: " + String.join(" ", route(r.getFlight())),
                             EndorsementRecords.nameOf(instructor) + " has not endorsed your solo cross-country, "
                                     + String.join(" ", route(r.getFlight())) + " on "
                                     + EndorsementRecords.DAY.format(r.getFlightOn())
-                                    + ":\n\n\"" + note.strip() + "\"" + openLine());
+                                    + ":\n\n\"" + note.strip() + "\"" + mail.openLine());
                     return true;
                 })
                 .orElse(false);
@@ -400,18 +260,22 @@ public class InstructorService {
      *  waiting and their record of the last 3 years. */
     @Transactional(readOnly = true)
     public InstructorDto instructor(Pilot pilot, Instant now) {
+        List<CrossCountryReview> unanswered =
+                reviews.findByInstructorIdAndAnsweredAtIsNullOrderByAskedAt(pilot.getId());
+        // Each student's reviews waiting on this instructor, counted from
+        // the list above rather than asked again a student.
+        Map<Long, Long> waitingBy = unanswered.stream()
+                .collect(Collectors.groupingBy(r -> r.getStudent().getId(), Collectors.counting()));
         List<StudentDto> students = links.findByInstructorIdOrderByAcceptedAt(pilot.getId()).stream()
-                .map(this::studentOf)
+                .map(l -> studentOf(l, waitingBy.getOrDefault(l.getStudent().getId(), 0L)))
                 .toList();
         List<StudentDto> asking = links.findOpenFor(pilot.getEmail()).stream()
-                .map(this::studentOf)
+                .map(l -> studentOf(l, 0L))
                 .toList();
         List<CrossCountryReviewDto> waiting =
-                reviews.findByInstructorIdAndAnsweredAtIsNullOrderByAskedAt(pilot.getId()).stream()
-                        .map(this::reviewOf)
-                        .toList();
-        Instant since = LocalDate.ofInstant(now, ZoneOffset.UTC)
-                .minusYears(RECORD_YEARS)
+                unanswered.stream().map(this::reviewOf).toList();
+        // As far back as 14 CFR 61.189(c) has them keep it: the engine's.
+        Instant since = planner.instructorRecordsSince(LocalDate.ofInstant(now, ZoneOffset.UTC))
                 .atStartOfDay(ZoneOffset.UTC)
                 .toInstant();
         return new InstructorDto(
@@ -441,21 +305,14 @@ public class InstructorService {
                         signed.findByStudentIdOrderBySignedAtDesc(studentId)));
     }
 
-    private StudentDto studentOf(InstructorLink l) {
+    /** A student or an ask, with how many of their reviews wait on the
+     *  instructor (none for an ask). */
+    private StudentDto studentOf(InstructorLink l, long waiting) {
         Pilot student = l.getStudent();
         var experience = planner.experience(
                 logbook.findByPilotIdOrderByFlownOnDescIdDesc(student.getId()), LocalDate.now(ZoneOffset.UTC));
         List<Endorsement> paper = recorded.findByKeyPilotIdOrderByKeyCode(student.getId());
         List<SignedEndorsement> theirs = signed.findByStudentIdOrderBySignedAtDesc(student.getId());
-        int waiting =
-                l.isAccepted()
-                        ? (int) reviews
-                                .findByStudentIdAndInstructorIdOrderByAskedAtDesc(
-                                        student.getId(), l.getInstructor().getId())
-                                .stream()
-                                .filter(r -> !r.isAnswered())
-                                .count()
-                        : 0;
         return new StudentDto(
                 l.getId(),
                 student.getId(),
@@ -467,7 +324,7 @@ public class InstructorService {
                 experience.size(),
                 planner.endorsements(EndorsementRecords.held(paper, theirs), null)
                         .getSoloUntil(),
-                waiting);
+                (int) waiting);
     }
 
     /** A link ended, by either: the reviews still waiting between the two
@@ -487,48 +344,11 @@ public class InstructorService {
         links.delete(l);
     }
 
-    /** AC 61-65K's: "/s/ [date] J. J. Jones 987654321CFI RE 12-31-2026". */
-    static String signatureLine(Pilot instructor, LocalDate signedOn) {
-        return "/s/ " + EndorsementRecords.DAY.format(signedOn) + " " + instructor.getFullName() + " "
-                + instructor.getInstructorCertificate() + " " + instructor.getInstructorUntilKind().words + " "
-                + EndorsementRecords.DAY.format(instructor.getInstructorUntil());
-    }
-
-    /** SHA-256 of what was signed: the words, the signature line and the
-     *  moment, each on its own line. */
-    static String digest(String text, String signature, Instant at) {
-        try {
-            byte[] sum = MessageDigest.getInstance("SHA-256")
-                    .digest((text + "\n" + signature + "\n" + at).getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(sum);
-        } catch (NoSuchAlgorithmException impossible) {
-            throw new IllegalStateException(impossible);
-        }
-    }
-
     /** The flight's airports in order: departure, stops, destination. */
     static List<String> route(Flight f) {
         return Stream.concat(
                         Stream.concat(Stream.of(f.getDepartureIdent()), f.getStops().stream()),
                         Stream.of(f.getDestinationIdent()))
                 .toList();
-    }
-
-    String openLine() {
-        return publicBaseUrl.isBlank() ? "" : "\n\n" + publicBaseUrl + "/";
-    }
-
-    /** An email of these; one that cannot be sent is logged and the rest
-     *  goes on, the app holding everything it says. */
-    void send(String to, String subject, String body) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject("Wingtip Maps: " + subject);
-        message.setText(body);
-        try {
-            mail.send(message);
-        } catch (RuntimeException failed) {
-            log.warn("Instructor email not sent: {}", failed.getClass().getSimpleName());
-        }
     }
 }

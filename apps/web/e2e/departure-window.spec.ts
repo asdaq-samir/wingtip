@@ -63,7 +63,7 @@ async function signedInWithAnswer(page: Page) {
 
 test("the Brief says when to go: an hour strip under the verdict, the best window over it, a tap saying why", async ({ page }) => {
   await signedInWithAnswer(page);
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);
@@ -102,7 +102,7 @@ test("the Brief says when to go: an hour strip under the verdict, the best windo
   await expect(detail).toBeHidden();
 });
 
-test("signed out, the strip asks the pilot to sign in and the planner is not asked", async ({ page }) => {
+test("signed out, the Brief has no When to go and the planner is not asked", async ({ page }) => {
   let asked = false;
   await page.route("**/api/me", (route) => route.fulfill({ status: 401, body: "" }));
   await page.route(
@@ -112,10 +112,11 @@ test("signed out, the strip asks the pilot to sign in and the planner is not ask
       return route.fulfill({ status: 401, body: "" });
     },
   );
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);
-  await expect(sideDrawer(page).getByTestId("departure-window-sign-in")).toBeVisible({ timeout: slow(30_000) });
+  await expect(sideDrawer(page).getByTestId("brief-glance")).toBeVisible({ timeout: slow(30_000) });
+  await expect(sideDrawer(page).getByTestId("departure-window")).toHaveCount(0);
   expect(asked).toBe(false);
 });

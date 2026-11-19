@@ -1,0 +1,24 @@
+{
+  "x-call": "wingtip_weather::forecast::ahead::call",
+  "description": "The hours ahead a search's \"VFR at…\" menu offers, in order: each within the 24 hours a TAF covers (FAA-H-8083-28B 27.4.1), the steps the app's choice.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "VfrAtHoursInput",
+      "type": "object",
+      "properties": {}
+    },
+    "answer": {
+      "title": "VfrAtHoursAnswer",
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

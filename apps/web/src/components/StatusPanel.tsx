@@ -42,12 +42,11 @@ export default function StatusPanel() {
   // owner, 2026-11-11: the row went, "Yes status works").
   const onMap = Object.values(useCredits((s) => s.credits));
   return (
-    <div className="space-y-5 pb-1" data-testid="status-panel">
+    <div className="space-y-5 pb-1">
       <ListGroup title="Connection">
         <ListRow
           title="This phone"
           value={online ? "Online" : "Offline"}
-          data-testid="status-connection"
           description={saved ? <span className={TEXT.detail}>{saved}</span> : undefined}
         />
       </ListGroup>
@@ -70,7 +69,7 @@ export default function StatusPanel() {
             />
           ))
         ) : (
-          <ListRow muted title={isError ? "The planner could not be reached" : "Checking…"} data-testid="status-sources-none" />
+          <ListRow muted title={isError ? "The planner could not be reached" : "Checking…"} />
         )}
       </ListGroup>
 
@@ -88,7 +87,6 @@ export default function StatusPanel() {
                 title={c.name}
                 value={dayWords(c.edition)}
                 data-testid="status-data-cycle"
-                data-cycle={c.state}
                 description={warning ? <span className={cn("text-destructive-ink", TEXT.detail)}>{warning}</span> : undefined}
               />
             );
@@ -99,13 +97,13 @@ export default function StatusPanel() {
       {onMap.length > 0 && (
         <ListGroup title="On the Map">
           {onMap.map((words) => (
-            <ListRow key={words} title={words} data-testid="status-on-map" />
+            <ListRow key={words} title={words} />
           ))}
         </ListGroup>
       )}
 
       <ListGroup title="Traffic">
-        <ListRow title="Airplanes nearby" value={traffic ?? "None heard"} data-testid="status-traffic" />
+        <ListRow title="Airplanes nearby" value={traffic ?? "None heard"} />
       </ListGroup>
     </div>
   );

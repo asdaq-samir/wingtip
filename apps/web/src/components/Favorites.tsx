@@ -82,6 +82,7 @@ export function SmallTile({
   onClick,
   testId,
   wide = false,
+  tone = "strip",
   ...rest
 }: Omit<ComponentProps<"button">, "title" | "children" | "className" | "type"> & {
   mark: ReactNode;
@@ -90,8 +91,12 @@ export function SmallTile({
   label?: string; // said after its words (WCAG 2.5.3, Label in Name)
   onClick: () => void;
   testId?: string;
-  /** Room for a route's two idents (SavedStrip), not one's. */
+  /** Room for a route's two idents (FplStrip's Saved), not one's. */
   wide?: boolean;
+  /** "strip": a pill's tile (hover fill, line at 4.5:1 on its glass). "muted" and
+   *  "tint": the search's round tiles (FavoriteTiles) on the sheet, no hover fill, the
+   *  line grey, or the tint for an action ("Add"). */
+  tone?: "strip" | "muted" | "tint";
 }) {
   return (
     <BaseButton
@@ -100,13 +105,24 @@ export function SmallTile({
       data-testid={testId}
       className={cn(
         wide ? "w-24" : "w-[4.5rem]",
-        "flex shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ring",
+        "flex shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        tone === "strip" && "hover:bg-foreground/5",
       )}
     >
       {mark}
       <span className={cn("w-full truncate text-center font-medium text-foreground", TEXT.detail)}>{title}</span>
       {/* 4.5:1 on the pill's glass, as the tab bar's words are. */}
-      {detail && <span className={cn("-mt-1.5 w-full truncate text-center text-foreground/65 tabular-nums", TEXT.note)}>{detail}</span>}
+      {detail && (
+        <span
+          className={cn(
+            "-mt-1.5 w-full truncate text-center",
+            TEXT.note,
+            tone === "strip" ? "text-foreground/65 tabular-nums" : tone === "tint" ? "text-tint" : "text-muted-foreground",
+          )}
+        >
+          {detail}
+        </span>
+      )}
       {label && <span className="sr-only">, {label}</span>}
     </BaseButton>
   );
@@ -128,7 +144,6 @@ export function StripSection<V extends string>({
   onShow,
   menuTestId,
   menuClassName,
-  menuTop,
   beside,
   right,
   children,
@@ -139,10 +154,6 @@ export function StripSection<V extends string>({
   onShow: (value: V) => void;
   menuTestId?: string;
   menuClassName?: string;
-  /** At the menu's top, a line under it: Aircraft's Show on map, at the
-   *  owner's ask ("Can the aircraft map toggle be part of the filter,
-   *  maybe on top?", 2026-10-23). */
-  menuTop?: ReactNode;
   beside?: ReactNode;
   /** After the menu, at the row's right. */
   right?: ReactNode;
@@ -163,7 +174,6 @@ export function StripSection<V extends string>({
             onChange={onShow}
             testId={menuTestId}
             className={menuClassName}
-            top={menuTop}
             options={lists.map((l) => ({ value: l.value, label: l.item ?? l.label, testId: l.testId, apart: l.apart }))}
           />
           {right}
@@ -202,7 +212,6 @@ function PillMenu<V extends string>({
   onChange,
   testId,
   className,
-  top,
 }: {
   /** Its name, to a screen reader and a long press: what it shows now. */
   label: string;
@@ -211,8 +220,6 @@ function PillMenu<V extends string>({
   onChange: (value: V) => void;
   testId?: string;
   className?: string;
-  /** Before the choices, a line under it (StripSection's menuTop). */
-  top?: ReactNode;
 }) {
   return (
     <PullDown
@@ -220,7 +227,6 @@ function PillMenu<V extends string>({
       value={value}
       onChange={onChange}
       options={options}
-      top={top}
       contentClassName={cn("min-w-44", className)}
       trigger={
         // The app's one icon-only button, 36 with a 20 glyph (the iOS
@@ -244,7 +250,7 @@ export function StripNote({ children, status = false }: { children: ReactNode; s
   );
 }
 
-const STRIP = "-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1 [scrollbar-width:none]";
+const STRIP = "-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1";
 /** A pill's row of small tiles, sliding sideways where more than fit (`className`: strips laid into it). */
 export function PillStrip({ children, testId, className }: { children: ReactNode; testId?: string; className?: string }) {
   return (
@@ -255,12 +261,8 @@ export function PillStrip({ children, testId, className }: { children: ReactNode
 }
 
 /** A strip's tile's round mark, the Favorites tile's size (PlaceTile). */
-export function SmallMark({ icon, className, style }: { icon: ReactNode; className?: string; style?: CSSProperties }) {
-  return (
-    <span className={cn("grid size-14 place-items-center rounded-full [&_svg]:size-6", className)} style={style} aria-hidden="true">
-      {icon}
-    </span>
-  );
+export function SmallMark({ className, ...mark }: { icon: ReactNode; className?: string; style?: CSSProperties }) {
+  return <Mark {...mark} className={cn("size-14 [&_svg]:size-6", className)} />;
 }
 
 /** An airport's own chart symbol, small, as the map draws it

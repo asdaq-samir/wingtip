@@ -52,7 +52,7 @@ test("a SIGMET says its legs and times, and a tap shows the legs on the map", as
   });
 
   // The panel open on the briefing, on a phone as on a desktop.
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   // All the way up on a phone, where the section's rows are in reach.
   await grabberTo(page, "full");

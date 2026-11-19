@@ -21,7 +21,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 import numpy as np
-from wingtip import weather_store
+from wingtip import utc, weather_store
 
 from .glmp import ISSUES_TRIED, NOT_UP_RETRY, GlmpUnavailable, _download_url, _issues, read_grid
 
@@ -58,7 +58,7 @@ def hours_of(body: bytes, issued: datetime) -> dict[str, tuple[dict, np.ndarray]
     out = {}
     for offset in messages(body):
         grid, values = read_grid(body[offset:])
-        valid = datetime.fromisoformat(grid["valid"].replace("Z", "+00:00"))
+        valid = utc.parse(grid["valid"])
         if issued < valid <= last:
             out[grid["valid"]] = (grid, values.astype(np.float16))
     return out
@@ -102,7 +102,7 @@ def fetch_latest(now: datetime | None = None) -> bool:
         if not hours:
             raise GlmpUnavailable(f"GLMP's {issued:%H%M}Z forecast has no hours")
         # Served to the end of its last hour: a forecast past that is not read.
-        until = datetime.fromisoformat(hours[-1]["valid"].replace("Z", "+00:00")).timestamp() + 1800
+        until = utc.epoch(hours[-1]["valid"]) + 1800
         weather_store.write("glmp-forecast", {"hours": hours}, fetched_at=time.time(), until=until, meta={"issued": stamp})
         # The issue before stays a while for a planner that has it mapped; older go.
         previous = f"{issued - timedelta(hours=1):%Y%m%d%H}"

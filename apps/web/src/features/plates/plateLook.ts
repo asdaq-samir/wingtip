@@ -1,4 +1,6 @@
+import { useCallback } from "react";
 import { create } from "zustand";
+import type { ProcedureDrawing } from "../../lib/api/types";
 import { persist } from "zustand/middleware";
 import { usePreferences } from "../../lib/preferences";
 
@@ -78,3 +80,18 @@ export const useHiddenPlates = create<HiddenPlates>()((set) => ({
 usePreferences.subscribe((s, before) => {
   if (s.plates && !before.plates) useHiddenPlates.setState({ keys: [] });
 });
+
+/** Whether an approach's fixes wear its plate's tags (PlateTagsGl): its
+ *  plate on the map (Approach Plates on, the plate not hidden) with Show
+ *  Annotations. Its procedure's own tags then say only the pilot's own
+ *  lines (ProceduresGl), so a fix is tagged once (the owner's pick,
+ *  2026-11-18: the plate's tag wins where a plate is drawn). */
+export function usePlateTagged(): (drawing: Pick<ProcedureDrawing, "airport" | "id" | "kind">) => boolean {
+  const shown = usePreferences((s) => s.plates);
+  const hidden = useHiddenPlates((s) => s.keys);
+  const annotations = usePlateLook((s) => s.annotations);
+  return useCallback(
+    (d) => d.kind === "approach" && shown && annotations && !hidden.includes(plateKey(d.airport, d.id)),
+    [shown, annotations, hidden],
+  );
+}

@@ -10,19 +10,8 @@ use super::legs::{alternate_leg, assemble_leg, fuel_plan, legs, totals};
 use super::plans::{candidates, join_figures, join_options, Flights, Plan};
 use super::{read_air, read_leg_air, Obj, Profile, R};
 use crate::json::{self, Value};
+use wingtip_core::ask::{num_in as num, opt_num_in as opt_num};
 use wingtip_flight::performance::Climber;
-
-fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
-
-fn num(name: &str, v: &Value, key: &str) -> R<f64> {
-    opt_num(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
-}
 
 fn list<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a [Value]> {
     match v.get(key) {
@@ -90,30 +79,6 @@ pub fn call(name: &str, v: &Value) -> R<String> {
 
 fn answer(name: &str, v: &Value) -> R<String> {
     Ok(match name {
-        "performance_cruise" => {
-            let p = profile(name, v)?;
-            p.need(name, &["cruise_tas_kt", "fuel_burn_gph"])?;
-            let c = p.airplane.cruise(num(name, v, "altitude_ft")?, opt_num(name, v, "oat_c")?);
-            format!(
-                "{{\"tas_kt\":{},\"fuel_burn_gph\":{},\"power_pct\":{},\"density_altitude_ft\":{}}}",
-                write(&Value::Number(c.tas_kt)),
-                write(&Value::Number(c.fuel_burn_gph)),
-                c.power_pct.map_or_else(|| "null".to_owned(), |p| write(&Value::Number(p))),
-                write(&Value::Number(c.density_altitude_ft))
-            )
-        }
-        "performance_climb" => {
-            let p = profile(name, v)?;
-            p.need(name, &["fuel_burn_gph", "service_ceiling_ft"])?;
-            let c = Climber::new(&p.airplane).climb(
-                num(name, v, "from_ft")?,
-                num(name, v, "to_ft")?,
-                opt_num(name, v, "isa_dev_c")?.unwrap_or(0.0),
-            );
-            // The gallons null where the profile gives no climb fuel flow.
-            let gallons = p.airplane.climb_burn_gph().map_or_else(|| "null".to_owned(), |_| write(&Value::Number(c.gallons)));
-            format!("{{\"minutes\":{},\"gallons\":{gallons}}}", write(&Value::Number(c.minutes)))
-        }
         "navlog_leg" => {
             let p = match v.get("profile") {
                 None | Some(Value::Null) => None,

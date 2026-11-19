@@ -71,13 +71,7 @@ export default function QueryState({
       </>
     );
     return row ? (
-      <ListRow
-        title={
-          <span role="alert" className={cn(FINDING_TONE.stop, TEXT.detail)}>
-            {words}
-          </span>
-        }
-      />
+      <ListRow title={<FieldError className={cn(FINDING_TONE.stop, TEXT.detail)}>{words}</FieldError>} />
     ) : (
       <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.note)}>{words}</FieldError>
     );
@@ -115,7 +109,6 @@ export function SkeletonRows({ rows, lines = 1, fetching }: { rows: number; line
       {Array.from({ length: rows }, (_, i) => (
         <ListRow
           key={i}
-          data-testid="skeleton-row"
           title={
             <span role={i === 0 ? "status" : undefined}>
               {i === 0 && <span className="sr-only">{fetching}</span>}

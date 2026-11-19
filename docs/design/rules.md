@@ -84,7 +84,7 @@ Compose. Nothing here is built by hand where a stock part does it.
    registry once the N-number is whole (its type and year, or "Not
    registered"; "Type the rest to look it up" while it is not), and Types
    flown by the book -- built from the one search's own airplane rows
-   (the web's `hooks/useAirplaneHits`), so the two never differ. Enter or
+   (the web's `features/plan/useAirplaneHits`), so the two never differ. Enter or
    leaving the field still takes a whole N-number as typed; arrows and
    Enter pick a row, Escape closes the list.
 6. **Back and Escape close the top card first**, then go back a level.
@@ -108,9 +108,11 @@ Compose. Nothing here is built by hand where a stock part does it.
    2026-11-11: "all the cards have at most two head buttons"), and what
    else acts on a card in its ••• menu or its content: the Brief's Refresh
    in its menu as the route's is, the Stops' distance a filter at its
-   list's top, the Profile's VFR/IFR a segmented control at the top of
-   its content (`CardHead` takes nothing more; cards.spec checks every
-   card) -- as Apple
+   list's top (`CardHead` takes nothing more; cards.spec checks every
+   card); VFR/IFR is the Profile card's, a segmented control at the top
+   of its content (back from FPL's first row, the owner, 2026-11-17: "No
+   need for vfr/ifr, that can stay somewhere else, maybe in the
+   profile?") -- as Apple
    Maps' place card at its smallest size (the owner, 2026-11-11: "let's move the title in the
    middle"; `HeadGrid`, the inset each side the wider side's),
    `CardHeadRow` (`CardHead`, `CardTitle`, `SheetCard`,
@@ -120,7 +122,11 @@ Compose. Nothing here is built by hand where a stock part does it.
    and the search Filters' groups too, no small grey capitals over a
    section: the owner, 2026-11-11); a close `CloseButton` (`CardClose` on a card a
    device's Back holds); a list's row `ListRow`; nothing to show
-   `EmptyState`; two or three choices `Segmented`.
+   `EmptyState`; two or three choices `Segmented`. A discrete setting is
+   a menu or a segmented control, never a slider (decision 0017); a
+   continuous one, such as the Map card's Dimmer and Contrast, is the
+   stock `Slider`, its thumb's 44-point reach a pseudo-element's
+   (`THUMB_HIT`) and its name its row's.
    `scripts/ci/shared_parts_guard.py` fails a heading or a ✕ drawn by
    hand, past its allow-list of what is rightly its own (a form sheet's
    Cancel, title and Done; a page's content heading).
@@ -145,8 +151,10 @@ Compose. Nothing here is built by hand where a stock part does it.
     2026-11-14: "Settings cards should only close from a swipe down when
     in medium detents"). A form with an edit still asks first (6). A
     card with a short line under its name keeps it there too: the Nav Log
-    its totals ("65.3 nm · 35m · 9.0 gal"), the Profile its cruise and the
-    clearance's verdict ("Cruise FL-055 · clear of terrain"), the Stops how
+    its totals ("65 nm · 35m · 9.0 gal"), the Profile by how much the
+    cruise clears the ground ("Clears terrain by 2,552 ft", the engine's
+    least room; the cruise is the side view's tag and FPL's altitude, not
+    said again: the owner's list, 2026-11-17), the Stops how
     many ("2 stops", "None on the route"). With no card open the pill is
     the page's own: the search on Search, the route's figures on FPL (with
     no route, FPL's bar); on the web the one round toggle that turns the
@@ -169,8 +177,8 @@ Compose. Nothing here is built by hand where a stock part does it.
     Saved, Favorites, a link), and a card put away leaves it where it is. Cards keep their own
     opening sizes (2, and the Detents row below): each card's drawer is
     its own, the sheet under it untouched.
-12. **A flight's figures and its way out sit at the foot of the card in sight**, never on a sheet under it: the dry run's figures and Done flying are the Profile card's foot while it is up, the native pattern of Apple Maps' navigation card with its arrival figures and End (the owner, 2026-11-12: "Just do it the native way").
-13. **Every thing's card is laid out alike**, the native pattern of Apple Maps' place card: its name, the short line under it (an airport's town, an airplane's type), then its row of action tiles (`CardAction`), then its content (the owner, 2026-11-12: "Just do it the native way").
+12. **A flight's figures and its way out sit at the foot of the card in sight**, never on a sheet under it: the dry run's figures and Done flying are the Profile card's foot while it is up, the native pattern of Apple Maps' navigation card with its arrival figures and End (the owner, 2026-11-12: "Just do it the native way"). On the ground, planning, the Profile has no foot strip: FPL's strip under it says the same (the UI audit's L2, 2026-11-17).
+13. **Every thing's card is laid out alike**, the native pattern of Apple Maps' place card: its name, the short line under it (an airport's town, an airplane's type), then its row of action tiles (`CardAction`), then its content (the owner, 2026-11-12: "Just do it the native way"). **The name is the thing's ident or name; the line is its kind and details** (the owner, 2026-11-18, the selection audit): "KMSN" / "Dane County Regional · Towered", "OBK" / "VORTAC · 113.0 · Northbrook", "BXCMB" / "Fix · JOT 045° 12 nm", "VPBNG" / "VFR Waypoint", "6/4116" / "TFR · Security" with its badge, a PIREP by where it is ("JOT 045° 12 nm" / "PIREP · 1255Z · C172"), a wind barb by its station ("MSN" / "Wind 270° true at 25 kt · at 9,000 ft"), an airspace by its name ("Chicago Class B" / "Class B"), a checkpoint by its name ("Checkpoint 3 · 12 nm along"), a route point by its name ("WETEV" / "Route point", "TOC" / "Top of climb"), own ship "My Location". No mark or badge before the name: the head has no place for one (the owner's iPhone, 2026-11-14). The name and the line are one line each, cut short, the line a note's 13 points on every card (`CardHeadRow`, and `MapCard` with its sizes), and the line is in the head, so it shows at the pill (10): a point held's place and ground, a past flight's day and times. An airport's full name alone is fitted to its line (`FitLine`), as the owner asked on 2026-11-11. A card with a link has its Share at the head's start: an airport, a VOR, a fix and a VFR waypoint (`mark`), an airspace (`mark`), a TFR, a point held (`at`), an airplane.
 
 | | Web | iPhone (Apple Maps' way) | Android (Google Maps' way) |
 |---|---|---|---|
@@ -254,10 +262,23 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    picked tab in the tint on a soft lighter pill, Weather with the field's category dot
    and Charts with its count. Each tab is an icon (Info, CloudSun,
    PlaneLanding, FileText; the owner, 2026-11-14: "make the tabs icons
-   instead so it takes less space"), every tab showing its word under its icon (the owner, 2026-11-14, from an iOS 26 tab bar: "similar size and see through"), in a compact 64-point capsule, as narrow as its tabs need and centred, with equal columns, the glass much more see-through (`material.bar-fill` 0.6, the blur kept), so nothing moves on a switch, each named by its aria-label
+   instead so it takes less space"), every tab showing its word under its icon (the owner, 2026-11-14, from an iOS 26 tab bar: "similar size and see through"), in the one floating bar FPL's actions are drawn in too (`components/FloatingBar`; the owner, 2026-11-18: "Yes make it common. Also I meant shorter not narrower, but apply the same height and width for both"): items 48 points tall in a 56-point capsule, the glyph 24 over the word on the `tab-bar` type (12/16 regular, iOS 26's tab bar), 300 points wide (18.75 rem, growing with the text size as the words do, capped at the room there is, never narrower than its words, 4 points over the screen's foot or the home indicator's inset, so FPL's figures at half clear it), centred, with equal columns, the glass much more see-through (`material.bar-fill` 0.6, the blur kept), so nothing moves on a switch, each named by its aria-label
    ("Weather, VFR"), the dot and count over the icon's corner. The bar is glass because it floats over the
    card (the owner's decision of 2026-11-10 keeps glass for what floats).
    This replaces T4's tabs under the actions and its one-line report.
+   A closed runway is crossed out on the pictures' runway sketch where
+   the airport marks it on the ground, the engine's
+   `runway_closure_marks` (2026-11-17; AC 150/5340-1M 5.6 and 5.7, AIM
+   2-3-6): an X at each end of one a NOTAM closes, 50 ft in over its
+   designation; for one closed for good (NASR's CLSD INDEFLY or PERMLY)
+   every 1,000 ft too and one each side of an open runway it crosses;
+   never on an open runway, an X that would be moved along the centre
+   line clear of it; each X square to its runway and just wider than its
+   strip. A part a NOTAM closes ("RWY 09/27 E 500FT CLSD", "RWY 27 FIRST
+   1000FT CLSD") is faded and crossed at its own ends; a closure between a
+   taxiway and an end is the whole runway's, as the Runways tab's badge
+   says. The Xs are the Closed badge's red where the FAA paints them
+   yellow (Figure A-27): the owner's to change.
    The airplane cards are laid out the same way, with the same parts (the
    owner, 2026-11-14: "make sure the airplane card looks similar to
    airport card"): an N-number's card and a tracked flight's have their
@@ -283,11 +304,11 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
 
 | | Web | iPhone | Android |
 |---|---|---|---|
-| Pinned head | One scroller per sheet (SheetParts' `data-sheet-scroll`), its scroll indicator the browser's own, shown while it scrolls (iOS's transient bar; 2026-11-11), its head band (the search, the route's row) `position: sticky; top: 0` in it and frosted, the grabber's room inside it; tab pages laid out whole in it, nothing measured and no scroller pulled up under the head (2026-11-11); a card has its own nested drawer's scroller (CardStack). `PinnedHead`: one row sticky at the sheet's top from the start (under the search's row, a fixed height, `--sheet-head`, on a tab's list), frosted (index.css `frost-head`: the sheet's ground at the glass fill over the sheet blur, solid without backdrop-filter and under Reduce Transparency); on `CardTitle`, `CardHead`, `SheetCard`, `ListPageHead`, Settings' title row and a console page's head. The airport card's tabs float at its foot instead (C1, the owner, 2026-11-14): a glass bar sticky at its scroller's foot, held at the foot of the part in sight by the Drawer's offset (`CardTabBar`, the airport's `place/PlaceTabBar`), its pages starting under the head (`PINNED_BELOW`, `CardTabPages`); the airplane cards' the same (2026-11-14) | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport and airplane cards' tabs are the stock `.tabs` picker in the system's bottom toolbar, floating Liquid Glass at the card's foot and put away at the pill (`Design/CardParts`' `CardTabBar`, C1, 2026-11-14) | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs a `stickyHeader` |
+| Pinned head | One scroller per sheet (SheetParts' `data-sheet-scroll`), its scroll indicator the browser's own, shown while it scrolls (iOS's transient bar; 2026-11-11), its head band (the search, the route's row) `position: sticky; top: 0` in it and frosted, the grabber's room inside it; on a phone frosted only all the way up, the sheet's solid ground at the pill and half, where its body does not scroll and the frost redrawn as the sheet slid striped the route's card in iPhone Safari (`SOLID_BAND`, 2026-11-17), and solid too while the sheet moves from all the way up, a finger on it or settling (`FULL_BAND`, 2026-11-18); tab pages laid out whole in it, nothing measured and no scroller pulled up under the head (2026-11-11); a card has its own nested drawer's scroller (CardStack). `PinnedHead`: one row sticky at the sheet's top from the start (under the search's row, a fixed height, `--sheet-head`, on a tab's list), frosted (index.css `frost-head`: the sheet's ground at the head fill, 0.94 (tokens.json `head-fill`), over the sheet blur, solid without backdrop-filter and under Reduce Transparency); on `CardTitle`, `CardHead`, `SheetCard`, `ListPageHead`, Settings' title row and a console page's head. The airport card's tabs float at its foot instead (C1, the owner, 2026-11-14): a glass bar sticky at its scroller's foot, held at the foot of the part in sight by the Drawer's offset (`CardTabBar`, the airport's `place/PlaceTabBar`), its pages starting under the head (`PINNED_BELOW`, `CardTabPages`); the airplane cards' the same (2026-11-14) | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport and airplane cards' tabs are the stock `.tabs` picker in the system's bottom toolbar, floating Liquid Glass at the card's foot and put away at the pill (`Design/CardParts`' `CardTabBar`, C1, 2026-11-14) | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs a `stickyHeader` |
 | Grow, then scroll | Base UI's Drawer gives a drag to any scroller that can scroll, so below full the sheet's scroller and any in its body are `overflow-y: hidden` (index.css), which its arbitration skips; a script, the keyboard and a focused row still scroll them, the sheet left at its size | The system sheet's own behaviour, with nothing overriding it; no zoom push inside a resizable sheet, whose pull-down would pop the page | The sheet's nested scroll; every card shown from the search or the map opens at half (`halfWindow`) and grows to full; one pushed inside a card keeps the height |
 | Detents | A card's nested drawer has its own snap point among the sheet's three sizes, the same fixed values in the Drawer's own units (`"4.25rem"`, `"23rem"`, `1`; `components/sheet/insets`), never px worked out from the window: it opens at half, every card but Emergency (`lib/sheetCards`' `cardOpening`), and the sheet under it stays where it was; what is drawn follows the snap point the moment it is set; a swipe moves one size however fast, by the Drawer's own `snapToSequentialPoints` (the owner, 2026-11-11, "enforce the detents, regardless of how fast you swipe") | Every card opens at `.medium` (Emergency at `.large`) and the pilot's drag sizes it, a card opened inside a card keeping the height; the map stays live under it up to `.medium` (`presentationBackgroundInteraction`); questions and forms stay modal | A card from the search or the map opens at half and grows to full; one opened inside a card keeps the height |
-| Sideways rows | The Embla carousels (`CardPictures`, `RecentCards`) and the route's pills carry `data-base-ui-swipe-ignore="x"`; every native sideways row `overscroll-x-contain` and, in the sheet, `overflow-y: hidden` (index.css: `overflow-x: auto` alone made it a few points' vertical scroller, which took a drag up at half); the upright altitude Slider and the sortable rows' grips keep `""`, their drag being up and down | No control takes the sheet's drag: the Profile's upright altitude slider is a stock `Slider` the sheet does not take; the flown track's chart moves the replay on a tap | A sideways row takes only a sideways drag; the sheet's nested scroll takes the rest |
-| Place kept | A card under a card keeps its place in its own drawer's scroller, and a card opened anew is a new drawer, at its top (CardStack); a kept tab keeps its place in the sheet's one scroller (`TabKept`'s `useKeptScroll`), and a tab's page opened anew starts at its top (`useStartAtTop`); the airport card's tabs each keep their place (`useTabScroll`); a tab not yet seen, picked with the bar pinned, opens at its own top under the bar, and a short one leaves the bar pinned (Apple Maps' place card; the owner's recording, 2026-11-11), Settings' list its place after a page (`lib/scrollPlace`); the suggestions, a sent search's results and its Filters page each have their own scroll box | The stack's own behaviour | Each card is its own back stack entry with its own scroll and title state |
+| Sideways rows | The Embla carousels (`CardPictures`, `RecentCards`, a field's hours `HourlyForecast` and the Brief's departure hours `DepartureWindowStrip`, shadcn's Carousel since 2026-11-17 where they were scroll-snap rows) and the route's pills carry `data-base-ui-swipe-ignore="x"`; every native sideways row `overscroll-x-contain` and, in the sheet, `overflow-y: hidden` (index.css: `overflow-x: auto` alone made it a few points' vertical scroller, which took a drag up at half); the upright altitude Slider and the sortable rows' grips keep `""`, their drag being up and down | No control takes the sheet's drag: the Profile's upright altitude slider is a stock `Slider` the sheet does not take; the flown track's chart moves the replay on a tap | A sideways row takes only a sideways drag; the sheet's nested scroll takes the rest |
+| Place kept | A card under a card keeps its place in its own drawer's scroller, and a card opened anew is a new drawer, at its top (CardStack); a kept tab keeps its place in the sheet's one scroller (`TabKept`'s `useKeptScroll`), and a tab's page opened anew starts at its top (`useStartAtTop`); the airport card's tabs each open at their own top under the actions, Info's too when picked again, and a short one leaves the pages where they were (`useTabScroll`; the owner, 2026-11-14: "Switching tabs should not show those"), Settings' list its place after a page (`lib/scrollPlace`); the suggestions, a sent search's results and its Filters page each have their own scroll box | The stack's own behaviour | Each card is its own back stack entry with its own scroll and title state |
 | Footers | The card's own content | Every footer is the system's bar, `safeAreaBar` (`glassFoot`); a card's toolbar the stock bottom bar | The card's own content |
 | Forms | `useDiscardGuard` (`components/discardGuard`): a swipe, Cancel, Escape or a tap beside asks first | `interactiveDismissDisabled` while there is an edit, Cancel at the leading edge asking in a `confirmationDialog` (`Navigation/FormCancel`) | `DiscardDialog` on a swipe or Back (Add Flight, Your Airplanes' form) |
 
@@ -302,6 +323,11 @@ places it. The sheet, each card and each question sit on the keyboard by
 Base UI's own `Drawer.VirtualKeyboardProvider` (`--drawer-keyboard-inset`
 on the viewport), which also scrolls the field typed into into sight
 over it.
+
+No page draws a scroll bar, on the web at any size (the owner,
+2026-11-18: "No visible bar needed on any page"): everything scrolls by
+touch, wheel and keys with its bar out of sight, as an iPhone's lists do.
+One rule for every scroller (`styles/feel.css`), none per component.
 
 ## 3. The tests that hold the card and scrolling rules
 
@@ -348,9 +374,10 @@ toggle beside it (on the phones still the account button, until the owner's word
 on the web over the map under the 3D, opens You, who the pilot is and what is
 theirs, with Settings one of its rows (§8), where Setup was. The approved canvas: <https://claude.ai/artifact/XmbNqJTLRwwzebouLbXzCV>.
 
-- **Nothing typed:** the current flight as a card at the top (route,
-  distance, ETE, fuel, altitude, airplane; a tap goes to the plan), then
-  Favorites (airports and airplanes), Recents and Nearest.
+- **Nothing typed:** Nearest and Find Nearby, then Favorites (airports
+  and airplanes) and Recents. The current flight is the FPL page's, one
+  toggle away, not a card here (the owner, 2026-11-11: "We can remove plan
+  button and saved from search"; kept so 2026-11-17, less cluttered).
 - **Typing:** one list in groups: Airports; Waypoints and Navaids;
   Airplanes (your own, an N-number from the FAA registry, a type; an
   N-number's registry row shows its type at once and, under it, whether
@@ -364,7 +391,9 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
   and Favorite at the top (its address the town link and the Info tab's
   row), Share in its head and Refresh in its Weather tab (the owner,
   2026-11-11; the web first, the phones still
-  with Depart From); an airplane its profile with Fly This Airplane; an
+  with Depart From); opened while a stop is asked for (Add a Stop), Add
+  Stop, filled, in Fly Here's place, then Call, Favorite and Address (the
+  owner, 2026-11-18; the web first); an airplane its profile with Fly This Airplane; an
   action runs.
 - **The airplane card** (its profile), however it is reached (the search,
   the plan's Airplane, a link, the pickers), the pilot's own airplanes
@@ -418,7 +447,7 @@ theirs, with Settings one of its rows (§8), where Setup was. The approved canva
 
 | Web | iPhone | Android |
 |---|---|---|
-| Base UI Autocomplete with groups (`OneSearchField`, `OneSearchResults`, `hooks/useOneSearch`), Base UI Menu, list rows | `.searchable` with `.searchSuggestions` in the sheet's `NavigationStack` (`Search/OneSearch`, `OneSearchModel`), `Menu`, `List` | Material 3 `SearchBar` with its expanded results (`search/OneSearch`), `DropdownMenu`, `ListItem` |
+| Base UI Autocomplete with groups (`OneSearchField`, `OneSearchResults`, `features/fpl/search/useOneSearch`), Base UI Menu, list rows | `.searchable` with `.searchSuggestions` in the sheet's `NavigationStack` (`Search/OneSearch`, `OneSearchModel`), `Menu`, `List` | Material 3 `SearchBar` with its expanded results (`search/OneSearch`), `DropdownMenu`, `ListItem` |
 
 Tests: [`e2e/one-search.spec.ts`](../../apps/web/e2e/one-search.spec.ts)
 (`@smoke`: an airport picked from the search), `WingtipTests/OneSearchTests`,
@@ -448,16 +477,136 @@ off by default (the owner, 2026-11-13).
 2. **FPL** (the second page): its first row the search's row's twin
    (the owner, 2026-11-14: "for all three fpl layouts, keep the n-number
    strip with buttons in the same size as search bar"): the airplane's
-   strip -- its N-number, the altitude, the Profile, the Brief and the
-   route's ••• -- in a bar exactly the search field's size, the page
-   toggle at its end, so a turn of the page changes only what is in the
-   bar; under it the route as one row, in whichever of the three ways
-   Show Route As picks (the box of pills, the line, or the cards' ends
-   and the Routes row), never in the bar; then the route in order, and
-   the route's figures pinned at the foot, which are FPL's alone; the
-   Brief, the Nav Log, the Profile and the Stops are cards over it. With
-   no route, the route's row stands empty and the bar keeps the airplane
-   and the menu, with a Close that goes back to the card or Search it came from
+   strip -- its N-number and the altitude, no captions (the owner,
+   2026-11-17: "No need for airplane and cruise labels"; VFR/IFR the
+   Profile card's, the same day), and before there is a route its •••
+   (Undo, the map's choices, a half route's Clear), a plain glyph in the
+   tint as the search bar's microphone is -- in a bar exactly the search
+   field's size, the page toggle at its end, so a turn of the page changes
+   only what is in the bar; under it the route in its one layout (the
+   owner, 2026-11-17, "Ok let's try it"; decision
+   [0047](../decisions/0047-one-fpl-layout.md)), never in the bar: its timeline, read and edited at
+   once at any height of the sheet (the owner's two-row timeline,
+   2026-11-17) -- one rounded group in Apple Maps' Directions' look, a
+   44-point line a point: its mark a filled circle with a white glyph (My
+   Location the tint and the location arrow, an airport its flight
+   category's colour and an airplane, a fuel stop the pump, a waypoint a
+   grey triangle), the mark its menu (Change by the one search, Direct To,
+   Set Altitude, Hold, Add a Stop After, Move, Remove); the route's magenta
+   in short rounded dashes between the marks; after a hairline inset to the
+   text its ident (a link to its card), the fuel in the tanks there right
+   after it, at the right its time (the departure's a picker) and its grip; no city; below full, two stops
+   or more one row between the ends, "2 Stops" and their idents, a tap taking the sheet all the way up, where each is its own row (one stop always its own); Add a Stop the last row, by the one
+   search; a hold or the grip moves a point, a swipe to the left takes a
+   stop out, the plan's toast Undo putting either back. A tap on a field's
+   line opens it, one at a time: its wind at the left and elevation at the
+   right, then one row of runway and procedure chips (a picked one its
+   short name, "ILS 26 ⌄"), wrapping where they do not fit; the map centres
+   it above the sheet and shows the route's points alone (the chart and
+   the TFRs kept; lib/map/routeOnly). My Location and a waypoint open
+   nothing; a closed field or an unknown point says why in red under its
+   line, no chips. The route's field to type or paste a whole route opens
+   under the timeline ("Route" over it, Done after) with no route, half a
+   route, an unknown point, or from the route's ••• (Type the Route), the
+   figures under it and the Routes' chips put away; a present position is "My Location" (Apple Maps' words)
+   wherever the route shows it, never an ident (decision 0047); under the
+   timeline the route's figures (To,
+   Distance, Time, Fuel: short words in sentence case, the distance whole
+   miles, "1,334 nm", the owner's list, 2026-11-17) at their own size, always
+   exact and one column each, never wrapped; where the widest does not fit
+   its column all of them are set smaller together, as iOS fits a label
+   (minimumScaleFactor 0.7), and past 0.7 cut with "…", never a rounded
+   form in their place (the owner's pick of the stock fit, 2026-11-17); in
+   flight and in a dry run no To, which the flying head names, so Distance,
+   Time, Fuel and the GPS altitude are its four columns; and at the sheet's foot from
+   half up a floating glass bar, the one floating bar the airport card's
+   tabs are drawn in, the same height and width (`FloatingBar`, 2026-11-18),
+   round Base UI's stock Toolbar (one tab stop, the arrows between them),
+   of four buttons: Brief, Nav Log and Profile, each opening its card
+   over FPL, and the route's •••, "More", its one menu -- undo and redo,
+   its link, Open in ForeFlight, the checkpoints, the kneeboard, Save,
+   File, Plan again, Show Fuel Stops, the map's choices and Clear (the owner,
+   2026-11-16, "make those action buttons as tab bar again and move the
+   calculations strip to where the action buttons are now", buttons not
+   tabs at the owner's pick; 2026-11-17, "move everything to the tab bar
+   with a ... instead of share"); in flight the drawer's tiles are the
+   same four. At the
+   pill the figures alone, large: swiped down, they grow. Taken up from
+   the pill, FPL rises as the airport card does, one shared way for every
+   sheet (the owner, 2026-11-16: "can we make it a shared code for all
+   cards?"): what the sheet shows risen is laid out at the pill too, out
+   of sight, and comes into sight by CSS the moment a finger takes the
+   sheet, nothing built or swapped while it moves; where the pill's face
+   is not the sheet's top (FPL's figures at the foot), it fades out as
+   the risen face (the actions' bar) fades in, in the sheet's settle
+   time. A light tick as it settles where the browser has one. In flight the
+   four are a row of tiles at the top of the flying drawer and the foot
+   the figures, large, with Done flying. The Routes' chips are behind a
+   button at the start of the first row, out above the stops while it is
+   on (RoutesToggle; the owner, 2026-11-17), their ways drawn on the map
+   only then; put away as the route's ends change or its ways go, and
+   the button not offered while the route's field is open. The first
+   row is three columns, the airplane's bar centred between the routes'
+   button's slot (kept empty without it) and the page toggle, giving way
+   in a narrow row, its airplane's pill first. What the Brief found
+   to act on is the Brief's, which opens with it, not a list on FPL
+   (the owner, 2026-11-16: "isn't there a better place for them? Like
+   brief"): the Brief's button carries their count on its glyph's
+   corner, red where one is a stop, amber where all are cautions, and
+   the Profile's a 1 for the altitude's own caution; no bare dots, which
+   said nothing of how many. A badge means a finding wherever it is
+   drawn, red a stop and amber a caution, its figure in the ground's
+   colour so it reads in either theme; a plain count (an airport's
+   charts, an airplane's flights) is said in its tab's name, not drawn
+   as a badge (the owner's list, 2026-11-17). A fuel stop is no
+   caution: its pump on the field's symbol is in the tint and its tanks'
+   gauge in the text's colour, never the amber (the owner, 2026-11-17:
+   "Yes to all recs"). The gauge is React Aria's stock Meter
+   (`procedures/FuelGauge`), heard as "Fuel in the tanks" with its
+   gallons as its value. Winds stay as they are, by the owner's choice the
+   same day: no "T" after the direction in FPL's rows (his "No need to put
+   T next to wind"), "°T" in the Brief and the Nav Log, where a true wind
+   unmarked reads as the magnetic one a tower gives (the UI audit's A7).
+   The Brief's line under its name has no airport names: its title has
+   the idents, and the names ran it off the line ("FL-145 · leaving now ·
+   Chicago Exec to Harry R…"). The Routes are one row of chips, each a way's name and time --
+   As typed, With Fuel Stops (the route as typed with the fuel stops it
+   needs, each landing with 14 CFR 91.151's reserve, offered only where
+   one is put in; the owner, 2026-11-17: "Suggested routes should also
+   have 'add fuel stops'"), Avoid Weather, Fastest, Over Land, Avoid
+   Class B, Most Filed -- the
+   one flown filled, a swipe for more, every unpicked one the same
+   neutral look: a way that meets something says so by its amber
+   warning mark alone, its name in the text's colour (the owner's list,
+   2026-11-17); their miles and fuel are the
+   figures' and in each chip's spoken name. In the route's list an
+   airport's ident is a link in the tint to its card (the nav log's
+   `navlog-field-open`, the owner, 2026-11-17: "Can we make the
+   airports/stops tappable as the navlog does?"), the rest of its lines
+   folding its runways and procedures open, one disclosure with no
+   chevron beside the symbol (the UI audit's C14), the symbol its menu;
+   a waypoint's or a fix's stays plain. Every airport of the route is
+   always a card, its role over its ident (Departure, Stop, Destination;
+   labels C) -- the Nav Log's picked row's fill and
+   corner, no border or shadow -- and a tap on its lines makes it bigger,
+   its runways and procedures opening inside it, as the Nav Log's note
+   opens inside its row (the owner, 2026-11-17: "show it all the time,
+   tapping just makes it bigger"); the waypoints between stay plain rows.
+   One card look for the list (`routeListStyle`'s FIELD_CARD). Change in
+   an airport's menu asks the one search for the airport to put in its
+   place. On the
+   map the way flown is solid magenta and the others thin dotted lines
+   in the chart's ink, each chip named -- every chip white and small,
+   12 points, quieter than the line: the way flown's words in the map's
+   tint, the others' in the chart's ink (the owner's list, 2026-11-17) --
+   the others' chips left out where
+   they would overlap (the owner's pick of the routes canvas, board 5,
+   2026-11-16); then the route in order, and
+   the actions' bar pinned at the foot, the figures at the pill, both
+   FPL's alone; the Brief, the Nav Log, the Profile and the Stops are cards over it. With
+   no route, the route is open to edit, "Route" over the departure's and
+   the destination's cards to fill and the route's field, and the bar keeps
+   the airplane and the menu, with a Close that goes back to the card or Search it came from
    (the owner, 2026-11-11: "We don't need plan a flight either with two
    buttons"). The first time, a welcome sheet says what the app is
    (Search like Maps, FPL like an EFB, the FAA charts), offers Theme and
@@ -504,7 +653,7 @@ off by default (the owner, 2026-11-13).
   they were opened over.
 - **At the pill** the sheet shows the page's own one row, the grabber
   over it, and nothing else: on Search the search's row, on FPL the
-  route's figures -- To, Dist, ETE, Fuel -- (the owner, 2026-11-11, the
+  route's figures -- To, Distance, Time, Fuel -- (the owner, 2026-11-11, the
   canvas's b, as ForeFlight and Garmin Pilot keep them), FPL's bar and
   the route's row from half up; with no route, FPL's bar. The
   pill is one fixed height for both (the web's `"4.25rem"` snap point,
@@ -513,7 +662,7 @@ off by default (the owner, 2026-11-13).
 
 | Web | iPhone | Android |
 |---|---|---|
-| shadcn's Toggle on Base UI's (`components/PageToggle`), never pressed, at the end of each page's first row (`OneSearchField`, `features/plan/components/workspace/FplBar`), drawn on the page that is up, told the pages by `MapPanel` (`sheet/pageToggle`); the bar before it one size on both (`panelField`'s `SHEET_BAR`), each page's first row laid out by the same `barRowOf` (`SheetParts`); the account button in the left-hand column under the 3D (`MapControls`' `AccountCircle`, riding the sheet's top through `OnSheetTop`), beside the side panel under the map's buttons; the two pages the sheet's scrollers (`SheetParts`, `sheet/SheetPages`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/plan/components/workspace/PlanPage`, the route's row under the bar `RouteHead` | One round glass button in the map's left column under 3D (`Views/MapButtonsDock`), in sight over any card; a tap closes the cards and turns the sheet's page | One round button in the left column's floating toolbar under 3D (`SheetSideButtons`), in sight over any card; a tap closes the cards and turns the page (`SheetNav.togglePage`) |
+| shadcn's Toggle on Base UI's (`components/PageToggle`), never pressed, at the end of each page's first row (`OneSearchField`, `features/fpl/workspace/FplBar`), drawn on the page that is up, told the pages by `MapPanel` (`sheet/pageToggle`); the bar before it one size on both (`panelField`'s `SHEET_BAR`), each page's first row laid out by the same `barRowOf` (`SheetParts`); the account button in the left-hand column under the 3D (`MapControls`' `AccountCircle`, riding the sheet's top through `OnSheetTop`), beside the side panel under the map's buttons; the two pages the sheet's scrollers (`SheetParts`, `sheet/SheetPages`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/fpl/workspace/PlanPage` (the open route's field and figures `RouteEditor`), the route's row under the bar `RouteHead` (folded, `route/RouteSummary`; whether it is open, `routeEditing`) | One round glass button in the map's left column under 3D (`Views/MapButtonsDock`), in sight over any card; a tap closes the cards and turns the sheet's page | One round button in the left column's floating toolbar under 3D (`SheetSideButtons`), in sight over any card; a tap closes the cards and turns the page (`SheetNav.togglePage`) |
 
 The iPhone's and Android's columns are still the tab bar's design; the
 toggle reaches them at the owner's word (web first), and so does the
@@ -532,7 +681,10 @@ Tests: [`e2e/sheet-page-toggle.spec.ts`](../../apps/web/e2e/sheet-page-toggle.sp
 keyboard too; where it rides and the sheet on the screen's foot; a
 44-point toggle and the one grabber bar) and, for the cards
 over the pages, [`e2e/sheet-pages-cards.spec.ts`](../../apps/web/e2e/sheet-pages-cards.spec.ts)
-(`@smoke`: Fly Here from an airport's card lands on FPL, live).
+(`@smoke`: Fly Here from an airport's card lands on FPL, live); FPL's one
+layout, folded and opened, its labels and a new plan's card, in
+[`e2e/fpl-one-layout.spec.ts`](../../apps/web/e2e/fpl-one-layout.spec.ts)
+(nightly).
 
 ## 5. Airport weather marks (the owner, 2026-11-10)
 
@@ -593,7 +745,7 @@ At each airport the chart already shows, from the map's own
 
 | | Web | iPhone | Android |
 |---|---|---|---|
-| Drawing | MapLibre style layers (`features/plan/map/layers/AirportWeatherGl`, `lib/map/marks/airportWeather`) | MapKit annotations on the chart's marks (`Views/FieldWeatherMarks`, `FieldWeatherDrawing`) | MapLibre symbol layers (`map/AirportWeatherMarks`, `StationLayer`) |
+| Drawing | MapLibre style layers (`features/plan-map/layers/AirportWeatherGl`, `lib/map/marks/airportWeather`) | MapKit annotations on the chart's marks (`Views/FieldWeatherMarks`, `FieldWeatherDrawing`) | MapLibre symbol layers (`map/AirportWeatherMarks`, `StationLayer`) |
 | The setting | `components/AirportWeatherSettings`: `Segmented` (shadcn ToggleGroup) and `SwitchRow`s | `Views/AirportWeatherSettings`: `Picker(.segmented)` and `Toggle`s | `ui/AirportWeatherRows`: `ChoiceGroup` (Material 3 Expressive's connected `ToggleButton` group) and `Switch`es, kept in DataStore (`AirportWeatherStore`) |
 | Tests | `lib/map/marks/airportWeather.test.ts` | `WingtipTests/FieldWeatherMarksTests` | `AirportWeatherEngineTest`, `map/AirportWeatherStoreTest` |
 
@@ -613,13 +765,19 @@ The cruise and each waypoint's altitude are set on the route's profile,
 as ForeFlight's profile view sets them; the wheel and the plan's menu are
 gone on every platform.
 
-1. **The slider previews; Set flies.** An upright slider beside the side
-   view steps through the engine's altitudes (`altitude_advisor`'s rows,
-   the altitude wheel's). As it moves, the ground and the DOF's obstacles
-   within a mile of the line turn red within 100 ft of the altitude or
-   above it and yellow within 1,000 ft (`profile_clearance`; ForeFlight's
-   display defaults, not a rule: the legal margins are 14 CFR 91.119 and
-   91.177, which the legal altitudes keep). Nothing is planned until
+1. **The slider previews; Set flies.** An upright slider down the side
+   view's left steps through the engine's altitudes (`altitude_advisor`'s
+   rows, the altitude wheel's), laid on the chart's own scale in feet, so
+   its knob is level with the altitude's tag and the ruler; the chart's top
+   is 1,000 ft over the cruise (`sideViewTop`), and the ruler's figures sit
+   beside the slider's track. It starts at the cruise flown, and with no
+   airplane, where no climb is worked out, the cruise is drawn level and
+   dashed (the UI audit's A1, 2026-11-17). As it moves, the ground and the DOF's obstacles
+   within a mile of the line turn red within 500 ft of the altitude or
+   above it (14 CFR 91.119(c)) and yellow within 1,000 ft (91.119(b)'s
+   height over a congested area), as the engine's `profile_clearance`
+   says; the legal floors are 91.119 (VFR) and 91.177 (IFR), which the
+   legal altitudes keep. Nothing is planned until
    **Set**. In flight, **Auto** holds the preview at the GPS altitude.
 2. **A waypoint's altitude, Start At or Cross At.** A tap on a waypoint
    sets its altitude: Cross At (done by the waypoint, the planner's
@@ -642,10 +800,12 @@ gone on every platform.
 
 | | Web | iPhone | Android |
 |---|---|---|---|
-| Slider | Base UI Slider, upright (`features/plan/components/navlog/altitude/AltitudeProfile`, its view model `useAltitudePreview`) | See [ios.md](ios.md) | See [android.md](android.md) |
+| Slider | Base UI Slider, upright (`features/navlog/altitude/AltitudeProfile`, its view model `useAltitudePreview`) | See [ios.md](ios.md) | See [android.md](android.md) |
 | Waypoint | Base UI Popover from a tablet's width up, `SheetDialog` on a phone (`altitude/LegAltitude`) | | |
 | Advisor | shadcn Item rows (`altitude/AltitudeAdvisor`) | | |
-| Tests | `altitude/altitude.test.ts`; `e2e/plans.spec.ts` | | |
+| Tests | `altitude/altitude.test.ts`, `navlog/profile.test.ts`; `e2e/plans.spec.ts`, `e2e/plans-altitude.spec.ts`, `e2e/plan-cards-heads.spec.ts` | | |
+
+Class B has no setting (the owner, 2026-11-17: "We don't need the Class B whether setting, keep it true by default in the app"): a route is always planned through it with the clearance it takes (14 CFR 91.131), the Profile saying "Through <name>: clearance needed" with no button, and the address has no `class_b` or `class_b_via` (an old link carrying them ignores them). The planner has no switch for it either (no `class_b_clearance`; Class B is no ceiling in the engine's band), and a saved flight's picks take no `class_b`. The way round it is one of the Routes, Avoid Class B (the owner: "You can still avoid class B in the suggested routes"): offered once the route is planned and only where it enters Class B at its highest cruise altitude, the best fix round each leg that does put in (the engine's `class_b_entered` and `class_b_detours`, a mile clear of the edge, a VFR waypoint first, no more than 40 nm further), its time, miles and fuel on its chip like the others.
 
 ## 7. What rides the sheet, and the map's small print (the owner, 2026-11-11)
 
@@ -684,13 +844,38 @@ gone on every platform.
 3. **Google's credit alone stays on the map**, while its tiles are drawn,
    as MapLibre's stock compact attribution (the (i)), because Google's
    Map Tiles API policies ask for its attribution on the map itself.
+4. **The map turns, and the compass turns it back** (the owner,
+   2026-11-17, "Yes to all recs"; it was read north up only): two fingers
+   twisted, a right drag (or Ctrl and a drag) with a mouse, Shift and the
+   left or right arrow from the keyboard, MapLibre's own gestures and
+   keys (`components/map/makeMap`). Tilting stays the 3D button's: no
+   two-finger tilt on the flat chart, and a right drag turns without
+   tilting; MapLibre's keyboard ties tilt to turn, so Shift and up or down
+   tilt it a little, which the compass also undoes on the flat chart.
+   The compass is Apple Maps' dial (the owner, 2026-11-18, from Maps'
+   screenshot): a round glass disc over the 3D button (in flight in the
+   right stack, after My Position), shown only while the map is not north
+   up, its ticks and a small red mark at north turning with the chart and
+   the point of the compass the screen's top faces in its middle ("W"),
+   and a tap eases it north up again as Apple Maps' does
+   (`components/CompassButton`, the camera's `northUp`; it ends no
+   follow). What is drawn keeps its sense as the map turns: the chart and
+   everything fixed to it (airspace tabs and their rings' labels, runway
+   numbers, wind barbs, the pattern's arrows, traffic and own ship on
+   their tracks) turn with it, as on a turned paper chart; names and the
+   weather's marks stay upright to the screen; a route point's name stays
+   outside the turn (`routeTurns`' `turnSide`, again at each turn); a fit
+   to the route keeps the bearing the pilot set; leaving 3D lays the map
+   flat at its bearing; and a two-finger hold that turns the map is a
+   turn, not the ruler.
 
 | | Web | iOS |
 |---|---|---|
 | Riding the sheet | `components/sheet/sheetTop` (`OnSheetTop`): a slot in the Drawer's popup just over its top edge (`bottom: 100%`), the popup's corners clipped on an inner box | `MapButtonsDock`: the system sheet's own height, the plan's and a card's over it (`onGeometryChange`, `SheetEdge`), sets the glass group (Map, My Position, Ask) 24 over the higher top at the right, fading out past 60% of the screen; at the top right beside the iPad's sidebar. SwiftUI has no stock placement that follows a sheet over a UIKit map |
 | Settings' foot | `features/pilot/PilotPanel`'s "More" row, `settings-foot`; 44-point hit areas that meet (`PAGE_LINK`), a second line at a large text size | |
 | Status | `components/StatusPanel`: FAA Data, On the Map (`lib/map/gl/creditStore`) | |
-| Tests | `e2e/sheet-webkit.spec.ts` (WebKit at an iPhone's size: heads pinned, nothing over or through them, the page toggle and the map's buttons 24 over the sheet and clear of each other, the radio's among the map's, Settings at the pill, its seven links, no credits row, Status's cycles), `e2e/legal.spec.ts` | `WingtipUITests/MapButtonsTests` (over the search at half and the pill, at the right edge, 44 points, out of reach at full) |
+| Turning and the compass | `components/map/makeMap` (MapLibre's own rotation), `components/CompassButton` in `MapControls`, `lib/map/gl/camera`'s `northUp` | |
+| Tests | `e2e/map-rotation.spec.ts` (the keyboard's turn, the compass shown and its tap), `lib/map/gl/camera.test.ts` (a fit keeps the bearing; north up holds the camera); `e2e/sheet-webkit.spec.ts` (WebKit at an iPhone's size: heads pinned, nothing over or through them, the page toggle and the map's buttons 24 over the sheet and clear of each other, the radio's among the map's, Settings at the pill, its seven links, no credits row, Status's cycles), `e2e/legal.spec.ts` | `WingtipUITests/MapButtonsTests` (over the search at half and the pill, at the right edge, 44 points, out of reach at full) |
 
 On Android the map's buttons (My Position, with Ask over it) ride the
 `BottomSheetScaffold`'s top at the right the same way, placed from the
@@ -745,7 +930,8 @@ way: three homes, and every control in one of them.
    Aloft, Radar and Model Weather as submenus, each off by default),
    Traffic, and Private & Military (drawn whatever it says while the
    Emergency Assistant is open), two by two, every tile one size and
-   every name on one line; then Look's tiles: Theme, Appearance and
+   every name on one line; then Look's tiles: Theme, Appearance (System,
+   Light or Dark) and
    Sunlight, each its value under its name and a tap its menu, Sunlight
    in the tint while On, and Own Ship, how own ship is drawn on the
    chart -- the Airplane (the default), a Twin, a Jet or the Arrow, a dot
@@ -753,7 +939,21 @@ way: three homes, and every control in one of them.
    owner, 2026-11-14: "Maybe replace the position with the choice of own
    ship?"; You on the Map's pick, back) (Sunlight was Settings' Display until the owner's
    "Sunlight should also move to map settings", 2026-11-14; Settings has
-   no Display now). Every section is four tiles two by two in the layers'
+   no Display now); under Look's tiles, at their edges, the chart's
+   Dimmer and Contrast as two grouped-list rows with a slider each (the
+   owner, 2026-11-18: "can we have a dimmer and contrast sliders under
+   sunlight and remove it from the appearance?"; `ChartLookRows`). The
+   Dimmer is how far the chart's tiles are dimmed, kept for light and for
+   dark apart (none and half by default, the night's look before it), to
+   at most 70%; greyed while Sunlight is on by day, which draws the chart
+   at full brightness, keeping its value. At night (the dark theme) the
+   Dimmer holds in sunlight too, its row enabled and with no note, so a
+   light sensor misreading in a dark cockpit cannot blind the pilot (the
+   owner, 2026-11-18); sunlight still adds its contrast. Contrast is an offset on the look's own
+   contrast by day, at night or in sunlight, -30% to +40%, 0 the look as it
+   is. Both set the chart's layers as they move. Appearance's Dark +
+   Bright went with them: the night's look of the route, the sky and the
+   rest follows the dark theme alone. Every section is four tiles two by two in the layers'
    size and form, the sections lined up (the owner, 2026-11-14: "every
    section should have 4 tiles like Layers one"): the Chart and Base map tiles their picture as the
    face and their name on one line in the name's place, the one picked
@@ -761,11 +961,13 @@ way: three homes, and every control in one of them.
    under a faint grid); Strength and Heights rows of an inset grouped
    list at the tiles' edges, in the list's row type; one section gap
    (space.xl) between the parts. The public
-   fields, the route and the plan's points, own ship and the TFRs have no
-   switch: always drawn. The route's VFR checkpoints and the Class B
-   fields' weather chips are switches of the route's ••• menu, On the Map
-   (Checkpoints, Class B Weather), each off by default (the owner's "Let's
-   not enable waypoints for a pilot").
+   fields, the route and the plan's points, own ship, the TFRs and the
+   Class B fields' weather marks have no switch: always drawn, the Class B
+   ones at every zoom (the owner, 2026-11-17: "Just keep it by default in
+   the app so all the class B airports show even when zoomed out"). The
+   route's VFR checkpoints are a switch of the route's ••• menu, On the Map
+   (Checkpoints), off by default (the owner's "Let's not enable waypoints
+   for a pilot").
 
 Taken out the same day, with no home: the sheet's Position (a phone's
 sheet is always at the bottom), Terrain's Flat (the 2D chart is always
@@ -787,7 +989,9 @@ the web's words are Private & Military since 2026-11-14)
 as the stock toggle's button style, and Look, Theme and Appearance as
 menus (2026-11-14), with no overlay row (Google's tiles are not drawn on the iPhone, and the USGS
 imagery already comes in by itself close in). Show Route As (Route Box or
-Strip) is in the route's ••• menu, the empty route's too.
+Strip) is in the route's ••• menu, the empty route's too; the web has one
+layout since 2026-11-17 (decision 0047), the iPhone's to follow at the
+owner's word.
 
 On Android (Google Maps' way, 2026-11-13): every card, You and the Map
 card among them, rides the sheet's stack as Google Maps' place cards and
@@ -817,8 +1021,13 @@ stay text beside it, never in the badge.
    force later), `cold` (a special-use area not in use; "Not scheduled"
    where only its published hours say so, as a NOTAM can still activate
    it), `closed` (a field or runway NASR or a NOTAM closes; decision
-   0043), `out-of-service` (a navaid), `private`, `military` and `joint`
-   (who may use a field), `inAir`, `ground` and `emergency` (a tracked
+   0043), `out-of-service` (a navaid), `restricted` (a navaid in service
+   with restrictions, NASR's NAV_STATUS: usable, so not out of service),
+   `private`, `military` and `joint`
+   (who may use a field), `site` (what kind of field it is where it is not
+   an airport: Heliport, Seaplane base, Gliderport, Balloonport,
+   Ultralight; the engine's `field_site_type` words for NASR APT_BASE's
+   SITE_TYPE_CODE), `inAir`, `ground` and `emergency` (a tracked
    airplane); and a flight category (`category`, AIM 7-1-7) in its chip
    colour. No card draws its own pill, coloured word or grey line for a
    status.
@@ -835,8 +1044,11 @@ stay text beside it, never in the badge.
    special-use areas and TFRs at the time the flight passes; a tracked
    airplane's card, its search row and its flights (In the air, On the
    ground, an emergency's code); the flight categories in the Brief and
-   Nearest. The TFR and navaid cards and the airport card take it as they
-   are rebuilt. The phones: SwiftUI's and Material 3's own badge or label
+   Nearest; the airport card's line under its name (Closed, Private,
+   Military, Joint use, with the engine's or NASR's words; 2026-11-18),
+   and beside it the field's site badge where it is not an airport
+   ("Heliport", "Seaplane base"; the owner, 2026-11-18).
+   The VOR card's line under its head (Restricted, 2026-11-18). The phones: SwiftUI's and Material 3's own badge or label
    with the same tokens (`WingtipColor.Badge.statusActive` and its
    siblings in Tokens.swift, `Badge.StatusActive` in Tokens.kt), on the
    owner's word (web first). The iPhone's is `Design/StatusBadge`
@@ -874,6 +1086,211 @@ tested by `routeTurns.test.ts` and `e2e/stops-waypoints.spec.ts` (the
 on MapKit's `MKMapPoint`, `RoutePointMarkView` turned with the map's
 heading, `RouteMarksLayer`), tested by `RouteTurnsTests` (2026-11-14).
 Android follows on the owner's word.
+
+## 11. FPL for every pilot (the owner, 2026-11-17)
+
+The owner: make FPL and its nested drawers easier for every pilot, new and
+experienced, "no redundancies and less clutter", "Do it all but keep it
+less cluttered". Decision [0045](../decisions/0045-fpl-for-every-pilot.md).
+
+1. **One drawer head.** Every card, and every form a card opens, has the
+   one head of the card rule's 8: the title centred at a card's size, one
+   line under it, ✕ at its end, or a form's Cancel and Done; the same
+   detents, a swipe down going back one level. What a card is goes in that
+   line (a route leg's ends and "Active leg"), never a row or a pill under
+   the head. Web: `CardHeadRow`, and `PhoneSheetHeader` laid out by the
+   same `HeadGrid`.
+2. **One route field.** The route takes its points step by step or a
+   route typed whole ("KPWK V100 KLAS", "N0110A065 KPWK DCT OBK V100
+   KLAS"), the engine reading the words (`route_read`, AIM Appendix 4);
+   the empty field says what it takes ("From, to, or a whole route").
+   On the web, before the route is whole, the field is folded into the
+   route's card's last row, "Type or Paste a Route", the ends still to
+   pick rows of the same card (the owner, 2026-11-18).
+3. **Explain on tap.** An abbreviation (MH, MC, ETE, TOC, TOD, FL, the VFR
+   and IFR levels ...) is a tap on the word itself, in the tint, which
+   opens one plain sentence with its source in the stock Popover; nothing
+   is added beside it. Web: `components/Explain` over `lib/explain`.
+4. **Ages where read.** A live figure (a METAR, the winds aloft, the
+   NOTAMs, traffic) says its age in a few characters ("12m") where it is
+   read, greyed once the engine says it is stale, "offline" in its row.
+   Web: `components/LiveAge` (`lib/kept/liveAge`): the Brief's METAR,
+   the nav log's winds, an airplane heard (`traffic_fresh`, in seconds).
+5. **A dash only means "needs an airplane".** A figure still coming is a
+   placeholder shape (`components/FigureWait`).
+6. **One Undo.** Every FPL edit is undone and redone from the first items
+   of the route's ••• menu, named by what they put back, kept across a
+   reload (`lib/planUndo`, `hooks/planHistory`). A removal also offers Undo
+   in its toast, where the pilot acted, and Cmd-Z undoes on a keyboard;
+   every other edit is undone from ••• alone (the owner, 2026-11-17).
+7. **One surface.** No box in a box, fewer borders and pills; spacing
+   groups, colour only for meaning.
+8. **A point the planner will not plan to is said, not planned.** An
+   ident no US field, waypoint or navaid goes by (KZZZ, KIGN) is the
+   unknown place: its pill and the strip's To in red with their mark, a
+   line under the route's field with Remove (the route open by itself to
+   show it), no distance, no Routes, and
+   Brief, Nav Log and Profile off (the UI audit's B8). A real field
+   abroad (AYID, Indagen) is the same, its line saying it "is outside the
+   US charts": the planner plans on the FAA's charts, NASR and
+   aviationweather.gov alone, and answers both with a 404 in its own
+   words before any planning (`wingtip.airport_lookup`, OutsideCharts). A
+   K before an FAA identifier reaches only a US field (FAA Order JO
+   7350.9): KIGN was planned 7,191 nm to Indagen, Papua New Guinea, whose
+   local code is IGN (2026-11-17). Web: `unknownPlaceIn`, usePlan's
+   `unknownPlace`.
+
+## 12. A list's rows: swipe to remove, hold to move (the owner, 2026-11-17)
+
+The owner: "Can we add swipe gesture to remove and hold/drag to move etc
+like iPhone?" Decision [0046](../decisions/0046-row-gestures.md).
+
+1. **A swipe to the left removes.** On every row whose menu has Remove
+   (the Recents and Favorites, airports' and airplanes', Home, your
+   Airplane, the routes' Recents, saved Flights, the logbook's flights)
+   and on a stop the pilot typed in FPL's route list (not the departure
+   or the destination, whose menus have no Remove): a short swipe
+   uncovers the red button with the menu's word, a full swipe (past 60%
+   of the row) removes it when let go, felt as it crosses the line where
+   the device can. Both call the menu's own Remove, so its Undo (the
+   toast's, the route's •••) is the same. A tap anywhere closes an open
+   row. Off in a list's Edit, where the minus removes.
+2. **A touch and hold moves.** A movable row of FPL's route list (a
+   typed point, where the list edits the route) is lifted by a hold
+   anywhere on it and put down where the drop line shows; its words are
+   not selected by the hold. The grip stays for a mouse, a keyboard and
+   VoiceOver, shown only where the list can be reordered.
+3. **The menu stays.** A swipe and a hold are additions: the row's •••
+   and its long press (where the row does not move) keep every action
+   for a mouse, a keyboard and VoiceOver (WCAG 2.5.7, a single pointer).
+4. **Sideways is the row's.** A sideways drag on a swipeable row never
+   moves the sheet; an upright one is the sheet's or the list's scroll.
+
+| | Web | iPhone | Android |
+|---|---|---|---|
+| Swipe | React Aria's iOS List View recipe on Motion (`components/SwipeRow`, `components/swipe`), on RowMenu's `swipe` (not FPL's route: a stop is taken out by its menu's Remove, the owner 2026-11-17); `data-base-ui-swipe-ignore="x"`; a finger or a pen only; its chunk lazy, asked for on a touch screen | Not yet: SwiftUI's `swipeActions`, on the owner's word (decision 0038) | Not yet: Material 3's `SwipeToDismissBox`, on the owner's word |
+| Hold to move | React Aria's `useDragAndDrop` (`RouteGrid`): the row is the browser's own `draggable`, Safari and Chrome lifting it on a long press; the grip is React Aria's drag button | Not yet: `onMove` / `draggable` on the owner's word | Not yet |
+| Tests | `e2e/swipe-rows.spec.ts` (a Recents row, the sheet still); `components/SwipeRow.test.tsx`, `components/swipe/swipeEnd.test.ts`; the hold's drop by `stops-reorder.spec.ts` | -- | -- |
+
+## 13. The map's words (the owner, 2026-11-18)
+
+The owner took the map labels audit's recommendations on 2026-11-18. Every
+word and figure drawn on the map, on all three apps, follows these rules:
+
+1. **Airspace is written as the sectional writes it.** A Class B or C
+   shelf is its ceiling over its floor in hundreds of feet MSL ("100"
+   over "30", "100" over "SFC"). A Class C ceiling that stops under the
+   Class B is "T". A Class D is its ceiling alone, with a minus where it
+   is "from the surface to, but not including" ("-30"). The source is the
+   FAA Aeronautical Chart User's Guide, 9 July 2026, VFR Terms and
+   Symbols, Airspace, p. 16, and its legend, p. 52. The 2D chart and the
+   3D view say the same words. The words are the engine's
+   (`airspace_shelf_label`), and no app formats them. The charts job
+   writes them into the overlay tiles (`airspace_labels.tab`,
+   `wingtip.airspace_tabs`), and the 3D view asks the engine for them. A
+   special use area's tab is the engine's `special_use_tab` ("M-BRADY
+   NOR*:" over "3600-17999") in 2D and in 3D. The 3D view's volumes carry
+   it as `tab`.
+2. **A fix is tagged once.** Where an approach's plate is on the map with
+   Show Annotations on, the plate's tag names the fix and gives its
+   figures. The procedure's own tag then keeps only the pilot's own lines
+   (Cross, Direct to, OUT OF DATE), or is left off. With plates off, the
+   procedure's tag says it all.
+3. **Codes in capitals, words in sentence case.** The FAA's codes and
+   idents keep their capitals: TOC, TOD, IAF, FAF, OUT OF DATE, KMSN.
+   Words on the map are in sentence case: "Right downwind 27", "Direct
+   to", "Avoid weather". This is the map's exception to decision
+   [0021](../decisions/0021-title-case-labels.md). The sheet's own labels
+   stay in Title Case, so a route's chip reads "Avoid Weather" in the
+   sheet and "Avoid weather" on its line.
+4. **A figure on a map tag has no unit and no tick.** Write "3,000", not
+   "3,000 ft" or "3,000'". This covers the pattern's altitude, a
+   procedure's and a plate's altitudes (GS, TCH and TDZE among them), and
+   traffic's height when own ship's is unknown. On a chart MSL is implied.
+   Weather and TCAS codes keep their source's form: a PIREP's "065", a
+   METAR's "CIG 008", the traffic's "+05".
+5. **One type scale, one font.** Map labels use the sizes in
+   `design/tokens.json` `map.label-*`: 11 (`label-small`, the floor no
+   label goes under), 12, 13, the 14 of a cluster's count and the 16 of a
+   runway's number close in. They are set in Inter in every look. A
+   letter inside a mark's picture (R, M, H, a PIREP's glyph) is the
+   system's sans serif (`MARK_FONT`), never the browser's default serif.
+6. **Halos dim after dark.** The white halo (`map.label-halo`, 2 px) is
+   white at `map.label-halo-night` (0.6) in the page's dark theme, read
+   from `useDarkTheme`.
+7. **A field's ident looks the same whoever draws it.** Its colour is
+   blue where it is towered and magenta where it is not, as the chart
+   sets it. Its size follows the zoom. This holds on the tiles, a Class B
+   field's mark and a stop's mark.
+8. **Hazards are named on their outlines.** Each SIGMET, AIRMET and
+   G-AIRMET carries its hazard and its top along its outline ("Ice to
+   FL160", "Convective SIGMET to FL450"). A TFR carries its NOTAM number
+   ("6/4116"). Words in a hazard's colour must reach 4.5:1 on white, so
+   turbulence's amber is deepened for words (`weather.turbulence-text`).
+9. **No new range or leg labels.** Nothing is added to the range rings
+   or the legs.
+10. **Only own ship is an HTML marker.** The replay's airplane is drawn
+    with the traffic's own layers (`trafficMarks`), and its height is
+    lifted with it in 3D.
+
+| | Web | iPhone | Android |
+|---|---|---|---|
+| Where | `lib/map/gl/layers/common` (`LABEL_SIZE`, `LABEL_HALO`, `labelByZoom`), `glStyle`'s `airspaceLayers`, `glSuaLabels`, `airportIcons`' `AIRPORT_IDENT_INK`/`_SIZE`, `procedureMarks`' `fixMarks(plated)`, `plates/plateLook`'s `usePlateTagged`, `plan-map/weatherMap`'s `areaLabel`, `TfrGl`, `TracksGl`'s `ReplayGl` | Not yet, on the owner's word (decision 0038): the tokens are generated for it | Not yet: the same |
+| Tests | `glStyle.test`, `glOverlays.test`, `procedureMarks.test`, `plateTags.test`, `weatherMap.test`; `airspace-lines.spec`, `plates-map.spec`, `weather-map.spec`, `route-line.spec`; the tiles' `tab` in `services/jobs/charts/tests/test_overlays.py`, `services/planner/tests_wingtip/test_airspace_tabs.py` | -- | -- |
+
+## 14. What is picked on the map (the owner, 2026-11-18)
+
+The selection audit found three selection colours, rings that stayed
+after their cards had gone, cards of different kinds stacked, and half
+the things a pilot can tap with no ring at all. The owner took every
+recommendation.
+
+1. **One thing picked at a time.** A tap on anything on the map --
+   an airport, a VOR, a fix, a VFR waypoint, an airspace's line, a TFR,
+   a weather area, a PIREP, a wind barb, a checkpoint, a point the route
+   turns at, a top of climb or descent, a procedure's fix, a route leg,
+   traffic, own ship, a Stops field -- puts away every other card and
+   ring first, so its card is the only one up and its ring the only
+   ring. A tap on the chart itself puts all of them away; a card's ✕, a
+   swipe or Back puts its ring away with it.
+2. **One selection colour: Taxiway Yellow** (`color.chart.selected`)
+   for everything, cased white and edged in the chart's shade so it
+   holds over the sectional: a point is ringed (radius 20, the same ring
+   for every kind, traffic's drawn in its picture), and an area -- a
+   TFR, a Class B, C or D volume, an AIRMET, SIGMET or G-AIRMET -- lights
+   its edge in the yellow, as the Brief's TFR hover does, while its card
+   is up. A point held is the same ring, with no dot in it. **Blue is
+   own ship's alone.** **The one exception is the route leg**, cased in
+   green while its Route Leg card is up (the owner's ForeFlight choice,
+   2026-11-09): a line, not a point.
+3. **Every point ringed while its card is up**: an airport (from the
+   chart, a list, a route's chip, a Class B chip, a fuel stop, a search
+   result), a VOR, a fix, a VFR waypoint, a PIREP, a wind barb, a
+   checkpoint chosen or not, a route point, a top of climb or descent, a
+   procedure's fix, a point held, a Stops field (whose tap picks its row
+   in the Stops card and rings it, no card of its own).
+4. **A field's ident is said once.** The field whose card is open is
+   written large over its ring, unless it wears a chip of its own -- the
+   route's, a Class B field's, a Stops or fuel stop's -- whose ident is
+   then the one; the tile layer leaves every chipped field out.
+5. **One way the map comes to a pick**: a thing tapped keeps the pilot's
+   zoom and, where it opens a card, is centred above the card's half
+   detent; one picked anywhere else (a list, the Nav Log's row, a
+   timeline line, a link) is brought in to level 9 at least, centred
+   above the half detent, and flown to where it is off the screen.
+6. **Own ship opens a card**, as Apple Maps' My Location does: "My
+   Location", where it is and the GPS's altitude and speed, Nearest (the
+   fields nearest it) and Direct To (the one search asked for the field).
+7. **Every card reached by a link**: a fix's, a VFR waypoint's and an
+   airspace volume's cards are in the address (`mark=fix:BXCMB@lat,lon`,
+   `vfr:`, `airspace:<number>@lat,lon`), as a VOR's (`navaid`), a TFR's
+   (`tfr`) and a point held's (`at`) are.
+
+| | Web | iPhone | Android |
+|---|---|---|---|
+| One pick | `lib/map/mapPick`: each kind's card says how it is put away while it is up (`useMapPickOwner`), a pick puts the others away (`pickOnMap`), a tap on the chart all (GlMapShell); the map's own card's ring goes with it (`openCard`'s companions) | Not yet: on the owner's word (decision 0038) | Not yet |
+| Ring and lit edge | `selectionRing` (lib/map/gl/layers/common), drawn by AirportsGl and PickedGl in the `top` slot; a card rings its point while it is drawn (`useRingWhileUp`) and lights its area (`useAreaWhileUp`: TfrGl's feature state, AirspaceGl's `airspace-picked`, WeatherGl's `wx-area-picked`); traffic's in `trafficMarks`' picture | -- | -- |
+| Tests | `e2e/map-selection.spec.ts` (a ring clears on ✕ and on the chart, a route point opens its card, a new pick replaces the old card, own ship's card); `e2e/weather-map.spec.ts` and `e2e/airspace-lines.spec.ts` (an area lit while its card is up); `lib/address.test.ts` (the `mark` and `at` links) | -- | -- |
 
 ## Changing a rule
 

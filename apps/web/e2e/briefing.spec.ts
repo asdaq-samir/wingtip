@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
+  openRoute,
   slow,
   settle,
   tapTheChart,
@@ -51,7 +52,7 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "full");
-  await expect(page).toHaveURL(/[?&]view=briefing/);
+  await expect(page).toHaveURL(/[?&]view=full/);
   const box = await openedDrawerBox(page);
   expect(box).not.toBeNull();
   expect(Math.abs(box!.width - devBox!.width)).toBeLessThan(2);
@@ -65,6 +66,7 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   // else of the log's.
   await controlsInSight(page);
   await expect(drawer.getByTestId("aircraft-select")).toBeVisible();
+  await openRoute(page);
   await expect(drawer.getByTestId("procedures").getByTestId("depart-date")).toBeVisible();
   expect(await drawer.locator('[role="tabpanel"] [data-testid="aircraft-select"]').count()).toBe(0);
   // The panel's tabs, in the pilot's order, the nav log's up: it holds
@@ -89,6 +91,7 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   await expect(panelTabs(page).getByRole("tab", { name: "Preflight" })).toHaveAttribute("aria-selected", "true");
   // FPL all the way up, the route in order; the nav log in its own sheet.
   await openTab(page, "Nav Log");
+  await openRoute(page);
   await expect(drawer.getByTestId("procedures")).toBeVisible();
   await openNavLog(page);
   await expect(navLogSheet(page).getByRole("table", { name: /Navigation log from/i })).toBeVisible();
@@ -98,7 +101,8 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   await controlsInSight(page);
   await expect(drawer.getByTestId("altitude-why")).toHaveAccessibleName(/\d,\d{3} feet|FL\d{3}/, { timeout: slow(60000) });
   await grabberTo(page, "full");
-  await expect(drawer.locator('[data-slot="section-summary"]').first()).toContainText(/\d nm/, { timeout: slow(60000) });
+  // The figure and its unit held together by a no-break space (FigureStrip).
+  await expect(drawer.locator('[data-slot="section-summary"]').first()).toContainText(/\d\snm/, { timeout: slow(60000) });
   // Leaving's weather on Depart, laid open, the nav log out of the page.
   await openTab(page, "Depart");
   await expect(drawer.locator('[data-tab="depart"]').getByRole("heading", { name: "Weather" })).toBeVisible();
@@ -109,28 +113,23 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   // account button beside the search, not a gear in the head.
   await openTab(page, "Nav Log");
   await expect(drawer.getByTestId("flight-line")).toBeVisible();
-  expect(
-    await page
-      .locator("header")
-      .getByLabel(/^(\S+, )?Departure$/)
-      .count(),
-  ).toBe(1);
+  await expect(drawer.getByTestId("route-summary").or(drawer.getByTestId("route-head")).first()).toBeVisible();
   expect(await page.locator("header").getByTestId("account-button").count()).toBe(0);
 
-  // The route's buttons, the Brief (where the Nav log was) and Share, at
-  // the end of the airplane's, the altitude's and the time's line, at the
-  // pilot's ask; Save, filing the flight plan and the route's close in
-  // Share -- printing in the Brief's and the nav log's own (below).
-  const [approachesBox, shareBox] = await Promise.all(
-    ["route-brief", "share-route"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
+  // The Brief, the Nav Log, the Profile and the route's ••• one floating
+  // bar at the sheet's foot (FplTabBar; the owner, 2026-11-17: "move
+  // everything to the tab bar with a ... instead of share"), none of them
+  // in the airplane's and the altitude's line over the route.
+  const tiles = await Promise.all(
+    ["route-brief", "route-navlog", "route-profile", "share-route"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
   );
-  expect(approachesBox.x).toBeLessThan(shareBox.x);
-  expect(Math.abs(approachesBox.y - shareBox.y)).toBeLessThan(2);
+  for (const tile of tiles) expect(Math.abs(tile.y - tiles[0]!.y)).toBeLessThan(2);
+  await expect(drawer.getByTestId("route-strip").getByTestId("share-route")).toHaveCount(0);
+  const airplane = (await drawer.getByTestId("aircraft-select").boundingBox())!;
+  expect(tiles[0]!.y).toBeGreaterThan(airplane.y + airplane.height);
   // The departure's time on its step in the route's list, not in this
   // line, at the owner's ask: the airplane's chip leads the line instead.
-  const airplane = (await drawer.getByTestId("aircraft-select").boundingBox())!;
-  expect(approachesBox.x).toBeGreaterThan(airplane.x);
-  expect(Math.abs(shareBox.y + shareBox.height / 2 - (airplane.y + airplane.height / 2))).toBeLessThan(12);
+  await openRoute(page);
   await expect(drawer.getByTestId("procedures").getByTestId("depart-date")).toBeVisible();
   await drawer.getByTestId("share-route").click();
   // And, signed in, Save this flight among them.
@@ -189,6 +188,7 @@ test("plan page: the nav log and the summary on screen, the 'planning aid only' 
   // carries the totals, its chip beside the airplane the altitude.
   const drawer = sideDrawer(page);
   await openTab(page, "Nav Log");
+  await openRoute(page);
   const route = drawer.getByTestId("procedures");
   await expect(route).toBeVisible();
   await expect(drawer.getByText("Flight Plan Summary")).toHaveCount(0);
@@ -202,6 +202,7 @@ test("plan page: the nav log and the summary on screen, the 'planning aid only' 
   // Kept, hidden, for the way back (Activity).
   await expect(route).toBeHidden();
   await openTab(page, "Nav Log");
+  await openRoute(page);
   await expect(route).toBeVisible();
 });
 
@@ -232,11 +233,11 @@ test("plan page: the drawer closes the way the stock components close, and nothi
   await expect(page.locator("[data-sheet-card][data-open]")).toHaveCount(0);
   await closeSidebarWithTheStockKey(page);
   await expectDrawerClosed(page);
-  await expect(page).not.toHaveURL(/[?&]view=briefing/);
+  await expect(page).not.toHaveURL(/[?&]view=full/);
 });
 
 test("plan page: a pasted briefing link opens the panel, and its grabber closes and reopens it", { tag: "@smoke" }, async ({ page }) => {
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   const drawer = sideDrawer(page);
   await expect(drawer).toBeVisible();
@@ -250,23 +251,28 @@ test("plan page: a pasted briefing link opens the panel, and its grabber closes 
   // this drawer and now does nothing.
   await page.keyboard.press("n");
   await page.waitForTimeout(300);
-  await expect(page).toHaveURL(/[?&]view=briefing/);
+  await expect(page).toHaveURL(/[?&]view=full/);
 
   const grabber = page.getByTestId("sidebar-trigger-button");
   // Down a size at a tap: half, the address dropping the parameter, the
-  // route's box and its chips' Share in sight; then the pill, its one
-  // line; back all the way up.
-  await grabber.click();
-  await expect(drawer).toHaveAttribute("data-panel", "half");
-  await expect(page).not.toHaveURL(/[?&]view=briefing/);
-  await expect(drawer.getByTestId("route-box")).toBeVisible();
-  await expect(drawer.getByTestId("share-route")).toBeVisible();
+  // route's line and its chips' Share in sight; then the pill, its one
+  // line; back all the way up. The side panel is in or out, half and all
+  // the way up one box there: a tap puts it away (sheet/grabberSizes).
+  const side = page.viewportSize()!.width >= 768;
+  if (!side) {
+    await grabber.click();
+    await expect(drawer).toHaveAttribute("data-panel", "half");
+    await expect(page).not.toHaveURL(/[?&]view=full/);
+    await expect(drawer.getByTestId("route-summary")).toBeVisible();
+    await expect(drawer.getByTestId("share-route")).toBeVisible();
+  }
   await grabber.click();
   await expectDrawerClosed(page);
+  await expect(page).not.toHaveURL(/[?&]view=full/);
   await expect(drawer.getByTestId("flight-line")).toBeVisible();
 
   await grabberTo(page, "full");
-  await expect(page).toHaveURL(/[?&]view=briefing/);
+  await expect(page).toHaveURL(/[?&]view=full/);
   await expect(drawer.getByTestId("flight-line")).toBeVisible();
 });
 
@@ -282,13 +288,24 @@ test("plan page: the panel's grabber cycles it up and back down, a tap on the ma
   const grabber = page.getByTestId("sidebar-trigger-button");
   const panel = sideDrawer(page);
   const size = () => panel.getAttribute("data-panel");
-  for (const height of ["half", "full", "half", "peek"]) {
-    await grabber.click();
-    await expect.poll(size).toBe(height);
-  }
+  // The side panel in and out at each tap, never all the way up, the same
+  // box as half there, where a tap moved nothing (the owner's Mac,
+  // 2026-11-18; sheet/grabberSizes).
+  const side = viewport.width >= 768;
+  if (side)
+    for (let tap = 0; tap < 3; tap++) {
+      const was = await size();
+      await grabber.click();
+      await expect.poll(size).toBe(was === "peek" ? "half" : "peek");
+    }
+  else
+    for (const height of ["half", "full", "half", "peek"]) {
+      await grabber.click();
+      await expect.poll(size).toBe(height);
+    }
   await grabberTo(page, "full");
   await grabber.click();
-  await expect.poll(size).toBe("half");
+  await expect.poll(size).toBe(side ? "peek" : "half");
   await grabberTo(page, "full");
   await expectDrawerOpen(page);
   // Not modal: the map beside the card stays live, and a click there is

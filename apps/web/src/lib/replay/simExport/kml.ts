@@ -1,4 +1,4 @@
-import { altitudeWords, ESTIMATED_WORDS, isoTime, type SimMeta, type SimSegment } from "./flight";
+import { isoTime, metresFileWords, type SimMeta, type SimSegment } from "./flight";
 import { M_PER_FT } from "../../geo";
 import { xmlDocument, xmlText } from "./xml";
 
@@ -36,15 +36,7 @@ function track(doc: XMLDocument, segment: SimSegment): Element {
 }
 
 function words(segments: SimSegment[], meta: SimMeta): string {
-  return [
-    `${meta.title}, exported from Wingtip Maps' Studio.`,
-    meta.model && `Airplane: ${meta.model}${meta.icaoType ? ` (${meta.icaoType})` : ""}.`,
-    meta.credit && `Reports: ${meta.credit}.`,
-    segments[0] && altitudeWords(segments[0]).replace("feet", "metres"),
-    ESTIMATED_WORDS,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  return [`${meta.title}, exported from Wingtip Maps' Studio.`, ...metresFileWords(segments, meta)].join(" ");
 }
 
 /** The flight as KML: every segment for Google Earth, or the one segment

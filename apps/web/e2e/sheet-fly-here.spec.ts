@@ -28,12 +28,12 @@ async function flyHere(page: Page, ident: string) {
   await expect(page).toHaveURL(new RegExp(`[?&]dest=${ident}`), { timeout: slow(15_000) });
 }
 
-/** FPL in sight and live, and its route box taking a finger's tap: the
+/** FPL in sight and live, and its route row (the summary line folded, the box with no whole route) taking a finger's tap: the
  *  middle of the route's row is the row's, not something over it. */
 async function expectPlanLive(page: Page) {
   await expectShown(page, 1);
   const fpl = sideDrawer(page).locator('[data-sheet-page="1"]');
-  const row = fpl.getByTestId("route-box").or(fpl.getByTestId("route-line")).first();
+  const row = fpl.getByTestId("route-summary").or(fpl.getByTestId("route-box")).first();
   await expect(row).toBeVisible({ timeout: slow(15_000) });
   // Till "Route Replaced · Undo" has gone by (lib/toast's UNDO_MS): all the
   // way up it sits over the box's top a few seconds.
@@ -42,11 +42,15 @@ async function expectPlanLive(page: Page) {
     const hit = await page.evaluate(
       ({ x, y }) => {
         const at = document.elementFromPoint(x, y);
-        return !!at && !at.closest("[inert]") && !!at.closest('[data-testid="route-box"], [data-testid="route-line"]');
+        return (
+          !!at &&
+          !at.closest("[inert]") &&
+          !!at.closest('[data-testid="route-summary"], [data-testid="route-box"], [data-testid="route-line"]')
+        );
       },
       { x: box.x + box.width / 2, y: box.y + Math.min(box.height / 2, 20) },
     );
-    expect(hit, "a tap on the route box is the route box's").toBe(true);
+    expect(hit, "a tap on the route's row is the row's").toBe(true);
   }).toPass({ timeout: slow(12_000) });
 }
 
@@ -65,9 +69,11 @@ test("Fly Here from the map over a route, from Search at the pill", async ({ pag
   await grabberTo(page, "half");
   await toggle(page).tap();
   await grabberTo(page, "peek");
-  // Dubuque, towered: drawn with the whole route in sight, clear of its line.
-  await tapAirportOnMap(page, "KDBQ");
-  await flyHere(page, "KDBQ");
+  // Cedar Rapids, towered: drawn with the whole route in sight, clear of
+  // its line. Dubuque, nearer the line, is no longer drawn at the pill's
+  // zoom (6.2) beside the bigger fields round it.
+  await tapAirportOnMap(page, "KCID");
+  await flyHere(page, "KCID");
   await grabberTo(page, "half");
   await expectPlanLive(page);
 });

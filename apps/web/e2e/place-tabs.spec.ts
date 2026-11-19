@@ -77,6 +77,16 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   await expect(card(page).getByTestId("place-fact-distance")).toHaveText(/^From C81\d+ nm$/);
   // All five across the card, no sideways scroll (the owner, 2026-11-14: "compact enough so pilot doesn't have to scroll").
   expect(await facts.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  // At the larger text the owner's iPhone uses, the last ones wrap to a second row, none cut off at
+  // the card's edge (UI audit B9: "From KPW…" ran out of the card).
+  await page.evaluate(() => (document.documentElement.style.fontSize = "19.65px"));
+  expect(await facts.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  const inside = await facts.evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    return [...el.children].every((f) => f.getBoundingClientRect().right <= box.right + 0.5);
+  });
+  expect(inside).toBe(true);
+  await page.evaluate(() => (document.documentElement.style.fontSize = ""));
   // T4's one-line report is gone into them.
   await expect(card(page).getByTestId("place-weather-line")).toHaveCount(0);
   // Under the actions, the pictures under them.
@@ -100,20 +110,31 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
   await expect(card(page).getByTestId("place-tab-diagrams")).toHaveAccessibleName("Charts, 3");
   await expect(card(page).getByTestId("place-tab-runways")).toHaveAccessibleName("Runways");
   await expect(card(page).getByTestId("place-tab-category")).toBeVisible();
-  await expect(card(page).getByTestId("place-tab-charts")).toHaveText("3");
+  // A plain count is said in the name, not drawn as a badge (one meaning
+  // per badge colour: findings only).
+  await expect(card(page).getByTestId("place-tab-charts")).toHaveCount(0);
   await expect(card(page).getByTestId("place-tab-radio")).toHaveText("Info");
   await expect(card(page).getByTestId("place-tab-runways")).toHaveText("Runways");
 
-  // The picked tab filled as Fly Here is, the look's tint; the others not.
-  const fill = (testId: string) =>
+  // The picked tab's icon and word in the look's tint (Fly Here's fill),
+  // on the soft lighter pill of iOS 26's tab bar; the others neither
+  // (floatingBarLook, the owner, 2026-11-18: one floating bar). Read with
+  // the pointer off the bar, as a finger lifts: a mouse over a tab is its
+  // hover's.
+  await page.mouse.move(0, 0);
+  const look = (testId: string) =>
     card(page)
       .getByTestId(testId)
-      .evaluate((el) => getComputedStyle(el).backgroundColor);
-  expect(await fill("place-tab-radio")).toBe(await fill("fly-here"));
-  expect(await fill("place-tab-weather")).not.toBe(await fill("fly-here"));
+      .evaluate((el) => ({ ink: getComputedStyle(el).color, fill: getComputedStyle(el).backgroundColor }));
+  const tint = (await look("fly-here")).fill;
+  // Once its colour's transition has run (the stock trigger's transition-all).
+  await expect.poll(async () => (await look("place-tab-radio")).ink).toBe(tint);
+  const [picked, other] = [await look("place-tab-radio"), await look("place-tab-weather")];
+  expect(other.ink).not.toBe(tint);
+  expect(picked.fill).not.toBe(other.fill);
 
-  // 40 tall, never grown, each reaching 44 by its pseudo-element: the
-  // trigger is what a tap finds 1 point over and under it (CLAUDE.md).
+  // 48 tall, the bar's item, its own hit area over 44 points (CLAUDE.md):
+  // what a tap finds at its top and foot is the trigger.
   for (const id of ["place-tab-radio", "place-tab-weather", "place-tab-runways", "place-tab-diagrams"]) {
     const trigger = card(page).getByTestId(id);
     const hits = await trigger.evaluate((el) => {
@@ -123,11 +144,11 @@ test("the facts under the actions, the pictures after, and the tabs floating at 
         const hit = document.elementFromPoint(x, y);
         return !!hit && (hit === el || el.contains(hit));
       };
-      return { height: r.height, over: at(r.top - 1), under: at(r.bottom + 1) };
+      return { height: r.height, top: at(r.top + 1), foot: at(r.bottom - 1) };
     });
-    expect(hits.height, id).toBeLessThanOrEqual(40);
-    expect(hits.over, `${id} over`).toBe(true);
-    expect(hits.under, `${id} under`).toBe(true);
+    expect(hits.height, id).toBeGreaterThanOrEqual(44);
+    expect(hits.top, `${id} top`).toBe(true);
+    expect(hits.foot, `${id} foot`).toBe(true);
   }
 
   // All the way up, still at the foot; a tab picked keeps the sheet where it is.
@@ -289,7 +310,7 @@ test("a part-time Class D says its next change, and a tap on it opens its week a
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
   const tile = card(page).getByTestId("place-fact-airspace");
-  await expect(tile.getByTestId("place-fact-airspace-note")).toHaveText(/^(E after|D from) \d\d:00$/, { timeout: slow(15000) });
+  await expect(tile.getByTestId("place-fact-airspace-note")).toHaveText(/^(E after|D from) \d\d:00 local$/, { timeout: slow(15000) });
   await tile.getByTestId("place-fact-airspace-open").click();
   await expect(card(page).getByTestId("place-airspace-day")).toHaveText(["Mon – Fri06:00–22:00", "Sat – Sun07:00–22:00"]);
   // Frequencies, then the hours, then the Details.

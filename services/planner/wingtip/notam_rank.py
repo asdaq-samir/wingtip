@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 
 from shapely.geometry import LineString
 
-from . import airspace, geo, notams, tfr
+from . import airspace, geo, notams, tfr, utc
 from .engine import ask as engine
 from .terrain import DEFAULT_FAA_CACHE_DIR
 
@@ -27,10 +27,6 @@ MARGIN = timedelta(hours=1)
 DEFAULT_ETE_MIN = 120.0
 
 
-def _iso(t: datetime) -> str:
-    return t.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
 def windows(fields: list[tuple[str, str]], depart: datetime, ete_min: float | None) -> tuple[list[dict], dict]:
     """Each field's time, [(ident, role)] in the route's order: the
     departure round its leaving, the destination round its landing, a stop
@@ -38,10 +34,10 @@ def windows(fields: list[tuple[str, str]], depart: datetime, ete_min: float | No
     land = depart + timedelta(minutes=ete_min or DEFAULT_ETE_MIN)
     span = {"dep": (depart, depart), "dest": (land, land), "stop": (depart, land)}
     out = [
-        {"ident": ident, "role": role, "from": _iso(span[role][0] - MARGIN), "until": _iso(span[role][1] + MARGIN)}
+        {"ident": ident, "role": role, "from": utc.iso(span[role][0] - MARGIN), "until": utc.iso(span[role][1] + MARGIN)}
         for ident, role in fields
     ]
-    return out, {"from": _iso(depart - MARGIN), "until": _iso(land + MARGIN)}
+    return out, {"from": utc.iso(depart - MARGIN), "until": utc.iso(land + MARGIN)}
 
 
 def airspaces_on(path: list[tuple[float, float]]) -> list[str]:
@@ -119,7 +115,7 @@ def ranked(
     timed, flight = windows(fields, depart, ete_min)
     for f in timed:
         f["runways"] = runways.get(f["ident"].upper(), [])
-    until = datetime.fromisoformat(flight["until"].replace("Z", "+00:00"))
+    until = utc.parse(flight["until"])
     return _rank(
         fields, timed, flight, depart, lambda: tfr.along_route(path, depart - MARGIN, until), cruise_ft, lambda: airspaces_on(path), None
     )
@@ -135,7 +131,7 @@ def at_field(ident: str, lat: float, lon: float, now: datetime) -> dict:
     timed, flight = windows(fields, now, DEFAULT_ETE_MIN)
     for f in timed:
         f["runways"] = []
-    until = datetime.fromisoformat(flight["until"].replace("Z", "+00:00"))
+    until = utc.parse(flight["until"])
     field = {"lat": lat, "lon": lon}
     return _rank(fields, timed, flight, now, lambda: tfr.near_point(lat, lon, now - MARGIN, until), None, lambda: [], field)
 

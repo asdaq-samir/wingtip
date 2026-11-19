@@ -16,32 +16,19 @@ that, which can say "during" when it is not, never the other way."""
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from itertools import pairwise
 
 import shapely
 from shapely.geometry import LineString, Point, Polygon, shape
 from shapely.ops import nearest_points
-from wingtip import geo
+from wingtip import geo, utc
 
 from .gonogo import ask
-from .gonogo.pass_times import instant
 
 
 def iso(t: float | None) -> str | None:
     """UNIX seconds as ISO 8601 UTC with its Z, to the second."""
-    if t is None:
-        return None
-    return datetime.fromtimestamp(round(t), timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def _unix(text: str | None) -> float | None:
-    if not text:
-        return None
-    try:
-        return instant(text.replace("Z", "+00:00")).timestamp()
-    except ValueError:
-        return None
+    return None if t is None else utc.iso(round(t))
 
 
 @dataclass(frozen=True)
@@ -254,7 +241,7 @@ def gairmets(legs: Legs, snapshots: list[dict], order: list[str]) -> list[dict]:
     its `on_route`."""
     best: dict = {}
     for snap in snapshots:
-        valid = snap.get("valid") or _unix(snap.get("valid_at"))
+        valid = snap.get("valid") or utc.epoch_or_none(snap.get("valid_at"))
         window = ask("gairmet_window", valid=valid) if valid else {"valid_from": None, "valid_to": None}
         place = over_area(
             legs,
@@ -267,7 +254,7 @@ def gairmets(legs: Legs, snapshots: list[dict], order: list[str]) -> list[dict]:
         if place is None or valid is None:
             at = legs.starts[0] if legs.starts else 0.0
         else:
-            at = (_unix(place["enter"]) + _unix(place["leave"])) / 2
+            at = (utc.epoch_or_none(place["enter"]) + utc.epoch_or_none(place["leave"])) / 2
         miss = abs((valid or at) - at)
         held = best.get(snap["hazard"])
         if held is None or miss < held[0]:
@@ -291,8 +278,8 @@ def tfrs(legs: Legs, found: list[dict]) -> list[dict]:
                 geojson(t.get("geometry")),
                 t.get("along_track_nm"),
                 source="TFR",
-                valid_from=_unix(t.get("effective")),
-                valid_to=_unix(t.get("expires")),
+                valid_from=utc.epoch_or_none(t.get("effective")),
+                valid_to=utc.epoch_or_none(t.get("expires")),
             ),
         }
         for t in found

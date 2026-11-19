@@ -1,6 +1,6 @@
 import { Settings } from "lucide-react";
 import { openSettings, type SettingsGroup } from "../lib/openSettings";
-import RoundButton from "./RoundButton";
+import IconButton from "./IconButton";
 
 /**
  * The gear at a card's head start, where a card with one has its Share
@@ -13,8 +13,8 @@ import RoundButton from "./RoundButton";
  */
 export default function SettingsButton({ group, testId = "card-settings" }: { group?: SettingsGroup; testId?: string }) {
   return (
-    <RoundButton label="Settings" onClick={() => openSettings(group)} data-testid={testId}>
+    <IconButton round label="Settings" onClick={() => openSettings(group)} data-testid={testId}>
       <Settings className="size-5" strokeWidth={2} />
-    </RoundButton>
+    </IconButton>
   );
 }

@@ -3,6 +3,7 @@
 //! missing figure stays None; a figure of the wrong kind is an error.
 
 use wingtip_brief::gonogo::minimums::Minimums;
+pub use wingtip_core::ask::opt_str_in as text;
 use wingtip_core::json::Value;
 use wingtip_weather::metar::{self, Metar};
 
@@ -75,14 +76,6 @@ pub fn flag(name: &str, v: &Value, key: &str) -> R<Option<bool>> {
     }
 }
 
-pub fn text<'a>(name: &str, v: &'a Value, key: &str) -> R<Option<&'a str>> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::String(s)) => Ok(Some(s)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a string")),
-    }
-}
-
 pub fn list<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a [Value]> {
     match v.get(key) {
         None | Some(Value::Null) => Ok(&[]),
@@ -142,17 +135,4 @@ pub fn minimums(name: &str, v: &Value) -> R<Minimums> {
 /// Whether the flight is IFR: `"rules": "IFR"`; anything else is VFR.
 pub fn ifr(name: &str, v: &Value) -> R<bool> {
     Ok(text(name, v, "rules")?.is_some_and(|r| r.eq_ignore_ascii_case("IFR")))
-}
-
-/// The same airport by its ICAO or FAA ident: "KOSH" is "OSH".
-pub fn same_field(a: &str, b: &str) -> bool {
-    let bare = |s: &str| {
-        let s = s.trim().to_ascii_uppercase();
-        if s.len() == 4 && s.starts_with('K') {
-            s[1..].to_owned()
-        } else {
-            s
-        }
-    };
-    bare(a) == bare(b)
 }

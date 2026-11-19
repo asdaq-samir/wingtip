@@ -18,7 +18,7 @@ played against the rest, never failed for it.
 
 from __future__ import annotations
 
-from . import airports, glmp, weather, weather_store, winds_stations
+from . import airports, glmp, utc, weather, weather_store, winds_stations
 from .engine import ask as _ask
 from .geo import corridor_bbox
 
@@ -60,7 +60,7 @@ def _winds(track: list[dict], unavailable: list[str]) -> list[list[dict]]:
                 unavailable.append("winds")
             continue
         period = stations.period or {}
-        use_from, use_to = weather._unix(period.get("use_from")), weather._unix(period.get("use_to"))
+        use_from, use_to = utc.epoch_or_none(period.get("use_from")), utc.epoch_or_none(period.get("use_to"))
         if use_from is None or use_to is None:
             continue
         ids, table = set(stations.keys()), airports.load_airports()

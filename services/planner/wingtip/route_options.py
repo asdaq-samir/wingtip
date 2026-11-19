@@ -221,6 +221,7 @@ def options(
     filed: tuple[list[tuple], list[str]] | None = None,
     food=None,
     night: bool | None = None,
+    class_b: dict | None = None,
 ) -> dict:
     """The ways to fly from `dep` to `dest` ({"ident", "lat", "lon"}) in an
     airplane of `profile` (wingtip.aircraft's; None for no airplane picked,
@@ -228,7 +229,9 @@ def options(
     answer (its contract: engine/contract/engine.schema.json). `current`
     is the pilot's own route [(lat, lon)] end to end, its points' idents
     and which of them are landed at; `filed` the most filed route's points
-    and idents between the ends; `fields` the table of fields with fuel
+    and idents between the ends; `class_b` the route round the Class B it
+    enters (wingtip.class_b_route), offered as Avoid Class B; `fields` the
+    table of fields with fuel
     (wingtip.fuelstops' by default); `food(ident)` whether there is
     somewhere to eat there, None where not read yet -- those the ways
     weighed are in the answer's `food_unread`. `night`, 91.151's night
@@ -250,6 +253,7 @@ def options(
         "current_idents": list(current_idents or []),
         "current_landed": [bool(b) for b in current_landed or []],
         "filed": {"points": [[lat, lon] for lat, lon in filed[0]], "idents": list(filed[1])} if filed else None,
+        "class_b": class_b,
     }
     frame = engine("route_options_frame", **asked)
     lats, lons = _samples(frame)

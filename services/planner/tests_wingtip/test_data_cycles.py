@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from wingtip import charts, cycle_pack, data_cycles, procedures, publications, terrain
+from wingtip import chart_cycle, data_cycles, phone_pack, procedures, publications, terrain
 
 FIXTURE = json.loads((Path(__file__).parents[3] / "apps/web/src/lib/fixtures/dataCycles.json").read_text())
 
@@ -38,7 +38,7 @@ def test_the_publications_and_procedures_ask_the_engine_for_the_cycle_in_force()
     # Chart Supplement's and the charts' edition is 29 Oct 2026's.
     assert publications.dtpp_cycle(date(2026, 11, 6)) == "2611"
     assert publications.dcs_edition(date(2026, 11, 6)) == "29Oct2026"
-    assert charts.cycle_from_anchor(date(2026, 11, 6)) == "10-29-2026"
+    assert chart_cycle.cycle_from_anchor(date(2026, 11, 6)) == "10-29-2026"
     assert procedures.cifp_start(date(2026, 11, 26)) == date(2026, 11, 26)
     assert procedures.cifp_stale(Path("/x/261001/FAACIFP18"), date(2026, 11, 6))
     assert not procedures.cifp_stale(Path("/x/261029/FAACIFP18"), date(2026, 11, 6))
@@ -61,8 +61,8 @@ def on_disk(monkeypatch, tmp_path):
     monkeypatch.setattr(terrain, "DEFAULT_FAA_CACHE_DIR", faa)
     monkeypatch.setattr(procedures, "CIFP_DIR", tmp_path / "cifp")
     # The charts row reads the newest complete sectional pyramid on disk.
-    monkeypatch.setattr(data_cycles, "_charts_edition", lambda _charts: "10-29-2026")
-    monkeypatch.setattr(cycle_pack, "phone_index", lambda: {"cycle": "2026-10-01"})
+    monkeypatch.setattr(data_cycles, "_charts_edition", lambda: "10-29-2026")
+    monkeypatch.setattr(phone_pack, "phone_index", lambda: {"cycle": "2026-10-01"})
     return tmp_path
 
 

@@ -5,7 +5,7 @@
  * or its Back does, before the panel is lowered. A card over a list (an
  * airport's over Nearest's) is closed first, then the list.
  */
-import { createContext, useEffect, useRef, useEffectEvent, type ReactNode } from "react";
+import { createContext, useEffect, useEffectEvent, type ReactNode } from "react";
 import { create } from "zustand";
 import { useShown } from "./shown";
 
@@ -17,28 +17,10 @@ export type RouteCard = "brief" | "navlog" | "profile";
  *  is the route's things that card has (the Brief's Print the briefing). */
 export type CardShare = (() => void) | RouteCard;
 
-/** What a card with a picture head gives the pill to show of it, at the
- *  owner's pick (P5, 2026-10-29): a line under its name ("VFR · 270°T 12G18
- *  · Duluth International"), and its head's first picture, blurred behind
- *  the pill -- or, with none to load, `tint` for the tint the head draws
- *  in its place (an airplane with no photo), else the head's dark slate. */
-export type PillHead = {
-  line?: string;
-  picture?: string;
-  tint?: boolean;
-  /** The pill's name, where the bar has none of the card's own: a map
-   *  card draws its name in its head (MapCard), not on the bar. */
-  name?: string;
-  /** The ground in place of a picture, the thing's own colour on the
-   *  chart: an airspace's ring, a VOR's blue. */
-  colour?: string;
-};
-
 /** `picture`: the card draws its own head over a picture, its share and
  *  its close on it (an airport's, an airplane's), so out of the pill the
- *  panel leaves the minimized bar out over it (MapPanel); `pill`, what
- *  the pill shows of it there. */
-export type OpenCard = { close: () => void; inBar?: boolean; share?: CardShare; picture?: boolean; pill?: PillHead };
+ *  panel leaves the minimized bar out over it (MapPanel). */
+export type OpenCard = { close: () => void; inBar?: boolean; share?: CardShare; picture?: boolean };
 
 const open: OpenCard[] = [];
 
@@ -48,21 +30,18 @@ const open: OpenCard[] = [];
  *  and the nav log's): the bar's Share in place of its Back, at the
  *  owner's ask. And whether the top card draws its own head over a
  *  picture (`picture`). */
-export const useOpenCards = create<{ count: number; total: number; share: CardShare | null; picture: boolean; pill: PillHead | null }>(
-  () => ({ count: 0, total: 0, share: null, picture: false, pill: null }),
-);
+export const useOpenCards = create<{ count: number; total: number; share: CardShare | null; picture: boolean }>(() => ({
+  count: 0,
+  total: 0,
+  share: null,
+  picture: false,
+}));
 
 /** And `total`: every one open, lists and Setup's pages too, for the bar's
  *  close to say it goes back. */
 function counted() {
   const inBar = open.filter((entry) => entry.inBar !== false);
-  return {
-    count: inBar.length,
-    total: open.length,
-    share: inBar.at(-1)?.share ?? null,
-    picture: !!open.at(-1)?.picture,
-    pill: open.at(-1)?.pill ?? null,
-  };
+  return { count: inBar.length, total: open.length, share: inBar.at(-1)?.share ?? null, picture: !!open.at(-1)?.picture };
 }
 
 /** A card's close -- or a list's Back, `inBar` false, its way back drawn
@@ -76,13 +55,6 @@ export function holdOpenCard(entry: OpenCard): () => void {
     if (at >= 0) open.splice(at, 1);
     useOpenCards.setState(counted());
   };
-}
-
-/** What the pill shows of a card held with holdOpenCard, changed in place
- *  (a map card's, from its content through SheetCardHead). */
-export function setCardPill(entry: OpenCard, pill: PillHead | undefined) {
-  entry.pill = pill;
-  useOpenCards.setState(counted());
 }
 
 /** Every card closed, the top one first: the sheet's page toggle tapped
@@ -108,14 +80,13 @@ export function closeTopCard(): boolean {
  * (`picture`), and the panel leaves the minimized bar out over it out of
  * the pill (CardTitle), and what the pill shows of it (`pill`).
  */
-export function useHeldCard(onClose: () => void, onShare?: CardShare, picture = false, pill?: PillHead) {
+export function useHeldCard(onClose: () => void, onShare?: CardShare, picture = false) {
   // The caller's latest, read as the card is closed or shared.
   const close = useEffectEvent(onClose);
   const share = useEffectEvent(() => {
     if (typeof onShare === "function") onShare();
   });
   const shares = typeof onShare === "string" ? onShare : !!onShare;
-  const held = useRef<OpenCard | null>(null);
   // Held only while in sight (lib/shown): a card kept closed between its
   // openings (CardLayer's `open`), or under a card over it, is not the one
   // a Back closes.
@@ -127,26 +98,8 @@ export function useHeldCard(onClose: () => void, onShare?: CardShare, picture = 
       share: typeof shares === "string" ? shares : shares ? () => share() : undefined,
       picture,
     };
-    held.current = entry;
-    const drop = holdOpenCard(entry);
-    return () => {
-      held.current = null;
-      drop();
-    };
+    return holdOpenCard(entry);
   }, [shares, picture, shown]);
-  // The pill's line and picture changed in place, by their strings, not
-  // the card held again: held again it would go to the top, over a card
-  // opened over it, and a new object each render would set the store at
-  // every one.
-  const given = !!pill,
-    line = pill?.line,
-    url = pill?.picture,
-    tint = !!pill?.tint;
-  useEffect(() => {
-    const entry = held.current;
-    if (!entry) return;
-    setCardPill(entry, given ? { line, picture: url, tint } : undefined);
-  }, [given, line, url, tint, shares, picture, shown]);
 }
 
 /** The route's Share menu for one of its cards -- the Brief, the nav

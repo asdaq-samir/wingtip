@@ -187,7 +187,7 @@ public class PilotService {
      *
      * <p>Found, never made: every sign-in made or adopted the pilot already
      * (PilotOidcUserService and AppleNativeSignInController through
-     * {@link #fromOidcUser}, MagicLinkController and DeviceSignInController
+     * {@link #fromOidcUser}, MagicLinkController
      * through {@link #fromVerifiedEmail}), so a request only looks them up
      * -- by the provider's subject, or the link's address. It ran the whole
      * find-or-create on every request, which could write a provider's new

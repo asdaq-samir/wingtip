@@ -1,7 +1,8 @@
 import type { SymbolLayerSpecification } from "maplibre-gl";
 import { CHART } from "../../tokens";
-import type { Stretch } from "./glLayer";
+import type { Stretch } from "./drawSvg";
 import { AIRSPACE_LABELS_FROM, OVERLAY_SOURCE, SUA_INK, glZoom } from "./glStyle";
+import { LABEL_SIZE, labelByZoom } from "./layers/common";
 
 /**
  * The special-use areas' tabs, as ForeFlight writes them on a MOA's or a
@@ -34,55 +35,28 @@ export const SUA_TAB_PICTURES: [id: string, svg: () => string, stretch?: Stretch
   { inset: 4 },
 ]);
 
-/** "M-BRNWD 2 W*:" over "7000-17999": the engine's words for the tab
- *  (special_use_tab's `text`), which the charts job writes into the
- *  tiles, so the map only draws them; the name alone in an archive
- *  written before the tiles carried them (vector_tiles.VERSION 5). */
-const TAB_TEXT = ["coalesce", ["get", "tab"], ["get", "label"]];
-
 /** How far off its point a tab sits, ems towards the area's side: about
  *  half its two lines' height, so its edge meets the line. */
 const INSIDE_EM = 1.35;
 
-/** The tabs' one layer. From the tiles' `special_use_labels` (the charts
- *  job's points, one an area on its longest side, `tab` its words, `angle`
- *  its turn and `side` where the area lies); or where an older archive has none of
- *  them, the area's name alone along its `special_use` boundary: that
- *  layer's floor is 0 for a floor the FAA gives above the ground (Brady
- *  Low's 500 ft) and keeps no "to but not including", so its figures are
- *  not written. */
-export function specialUseLabelLayer(font: string[], labelPoints = true): SymbolLayerSpecification {
-  const tab = suaTabLayout(font);
-  const common = {
-    id: "sua-labels",
-    type: "symbol" as const,
-    source: OVERLAY_SOURCE,
-    minzoom: glZoom(AIRSPACE_LABELS_FROM),
-    paint: { "text-color": CHART.casing },
-  };
-  if (!labelPoints)
-    return {
-      ...common,
-      "source-layer": "special_use",
-      layout: {
-        ...tab,
-        "text-field": ["get", "name"],
-        "symbol-placement": "line",
-        "symbol-spacing": 480,
-        "text-rotation-alignment": "viewport",
-        "icon-rotation-alignment": "viewport",
-        "text-keep-upright": true,
-        "text-max-angle": 30,
-      },
-    };
+/** The tabs' one layer, from the tiles' `special_use_labels` (the charts
+ *  job's points, one an area on its longest side): `tab` the engine's
+ *  words for it (special_use_tab's `text`, "M-BRNWD 2 W*:" over
+ *  "7000-17999"), so the map only draws them, `angle` its turn and
+ *  `side` where the area lies. */
+export function specialUseLabelLayer(font: string[]): SymbolLayerSpecification {
   return {
-    ...common,
+    id: "sua-labels",
+    type: "symbol",
+    source: OVERLAY_SOURCE,
     "source-layer": "special_use_labels",
+    minzoom: glZoom(AIRSPACE_LABELS_FROM),
     layout: {
-      ...tab,
-      "text-field": TAB_TEXT as never,
-      // Along the side where it sits, upright already; the map never
-      // turns (GlMapShell), so the chart's north is the screen's.
+      ...suaTabLayout(font),
+      "text-field": ["get", "tab"],
+      // Along the side where it sits, upright on a north-up chart, and
+      // turned with the chart when the pilot turns the map, as the
+      // sectional's own printed tabs are (the Class tabs' look).
       "text-rotate": ["get", "angle"],
       "icon-rotate": ["get", "angle"],
       "text-rotation-alignment": "map",
@@ -91,15 +65,19 @@ export function specialUseLabelLayer(font: string[], labelPoints = true): Symbol
       // 1, above where it is -1.
       "text-offset": ["case", ["==", ["get", "side"], 1], ["literal", [0, INSIDE_EM]], ["literal", [0, -INSIDE_EM]]] as never,
     },
+    paint: { "text-color": CHART.casing },
   };
 }
 
 /** A tab's look, its text and picture: the chart's tabs and the 3D
- *  view's (features/plan/map/terrain/AirspaceVolumesGl). */
+ *  view's (features/plan-map/terrain/AirspaceVolumesGl). */
 export function suaTabLayout(font: string[]) {
   return {
     "text-font": font,
-    "text-size": ["interpolate", ["linear"], ["zoom"], glZoom(8), 11, glZoom(12), 13] as never,
+    "text-size": labelByZoom([
+      [glZoom(8), LABEL_SIZE.small],
+      [glZoom(12), LABEL_SIZE.large],
+    ]),
     "text-line-height": 1.15,
     "icon-image": ["case", restricted, suaTab("restricted"), suaTab("moa")] as never,
     "icon-text-fit": "both" as const,

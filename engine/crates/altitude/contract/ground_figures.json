@@ -1,0 +1,43 @@
+{
+  "x-call": "wingtip_altitude::altitude::ground::call",
+  "description": "The figures the planner's readers of the ground and its obstacles take: the lowest ground in North America, Badwater Basin's 282 ft below sea level (USGS; NPS), below which a terrain tile's height is the sea floor and the surface 14 CFR 91.159 and 91.119 measure from is the sea's, 0 ft; the obstacles the map stands up, 14 CFR 77.9(a)'s more than 200 ft AGL; how far either side of each hop the side view draws obstacles, 1 nm, a display width (the legal margins are 91.119(b)'s and 91.177(a)(2)'s, which the floors keep); and how far round a public-use airport the finer terrain is kept, 5 nm, where a 3° path (AIM 1-1-9) is 1,500 ft up.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GroundFiguresInput",
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "answer": {
+      "title": "GroundFiguresAnswer",
+      "type": "object",
+      "properties": {
+        "lowest_ground_ft": {
+          "type": "number"
+        },
+        "obstacle_shown_agl_ft": {
+          "type": "number"
+        },
+        "profile_obstacle_nm": {
+          "type": "number"
+        },
+        "fine_terrain_radius_nm": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "lowest_ground_ft",
+        "obstacle_shown_agl_ft",
+        "profile_obstacle_nm",
+        "fine_terrain_radius_nm"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

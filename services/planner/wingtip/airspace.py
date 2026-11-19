@@ -12,33 +12,32 @@ altitude at all. They are reported instead as airspace to establish
 contact with, which is nav-log information a pilot wants.
 
 Class B is different: it takes an explicit clearance ("cleared into the
-Bravo"), which may not be granted, and a light aircraft is usually better
-off staying beneath the shelf and out of the way of airliners. So Class B
-alone imposes a ceiling.
+Bravo", 14 CFR 91.131(a)(1)). Since 2026-11-17 it imposes no ceiling
+either (the owner: "keep it true by default in the app"): a route is
+planned through it with the clearance it takes, its transits say so, and
+the Routes offer the way round it (class_b_entered, detour_waypoints,
+wingtip.class_b_route).
 
-Before this, all of B/C/D imposed one, which forced routes beneath
-shelves a pilot would simply have talked their way through -- and for a
-Class-C-to-Class-C route left no legal altitude at all.
+Before 2026-09-10, all of B/C/D imposed a ceiling, which forced routes
+beneath shelves a pilot would simply have talked their way through -- and
+for a Class-C-to-Class-C route left no legal altitude at all.
 
 Class E is excluded entirely: VFR overflight needs neither clearance nor
 a radio call, just cloud clearance and visibility minimums.
 """
 
-import pickle
-import struct
 import threading
 from pathlib import Path
 
 import shapefile
 from cachetools import LRUCache, TTLCache
-from shapely import STRtree, from_wkb, points as shapely_points, to_wkb
+from shapely import STRtree, points as shapely_points
 from shapely.geometry import LineString, Point, shape as shapely_shape
 
-from .atomic import atomic_path
+from .airspace_file import CONTROLLED_CLASSES as CONTROLLED_CLASSES, _ALL_AIRSPACE_LOCK, _text as _text
+from .airspace_file import _load_all_controlled_airspace as _load_all_controlled_airspace
+from .airspace_file import ensure_class_airspace_shapefile as ensure_class_airspace_shapefile
 from .engine import ask as engine
-from .faa_data import _is_icloud_evicted, nasr_zip_url, download_and_extract
-
-CONTROLLED_CLASSES = ("B", "C", "D")
 
 # Class E surface areas (E2) and their extensions (E3, E4): controlled
 # from the ground, the dashed magenta line the chart draws round a field.
@@ -46,251 +45,9 @@ CONTROLLED_CLASSES = ("B", "C", "D")
 # needs them, as nothing about E asks a VFR pilot for a clearance.
 SURFACE_E_TYPES = ("CLASS_E2", "CLASS_E3", "CLASS_E4")
 
-# Class B takes an explicit clearance, which can be refused and which a
-# light aircraft is usually better off not asking for. This is the only
-# class that pushes a route beneath a shelf.
+# Class B takes an explicit clearance, which can be refused: the only class
+# the Routes offer a way round (detour_waypoints).
 CLEARANCE_CLASSES = ("B",)
-
-
-# A shapefile is three files, not one, and all three are needed: .shp
-# holds the geometry, .shx indexes it, .dbf holds the attributes (CLASS,
-# NAME, the altitude fields). Missing any one of them fails at read time.
-SHAPEFILE_SUFFIXES = (".shp", ".shx", ".dbf")
-
-
-def _shapefile_is_complete(shp_path: Path) -> bool:
-    """Whether a cached shapefile is whole, not just present.
-
-    Two failure modes, both hit for real on 2026-09-10.
-
-    Truncation: a shapefile header stores the file's own total length (in
-    16-bit words, big-endian, at byte 24), so a short download is
-    detectable without parsing a single shape. Worth checking because the
-    symptom is otherwise baffling -- a partial file opens, reads its first
-    177 shapes, then raises KeyError on a garbage shape type from the
-    middle of the file. The cached copy was 388,769,780 bytes against a
-    true 394,056,164, and since the old code asked only whether the path
-    existed, no amount of re-running would ever have replaced it.
-
-    Missing companions: iCloud evicted Class_Airspace.dbf minutes after a
-    clean download, which fails much later with pyshp's "DbfReader
-    requires a .dbf file" rather than anything about the cache.
-    """
-    try:
-        for suffix in SHAPEFILE_SUFFIXES:
-            if not shp_path.with_suffix(suffix).exists():
-                return False
-        with shp_path.open("rb") as f:
-            header = f.read(100)
-        if len(header) < 100 or struct.unpack(">i", header[0:4])[0] != 9994:
-            return False
-        declared = struct.unpack(">i", header[24:28])[0] * 2
-        return declared == shp_path.stat().st_size
-    except OSError:
-        return False
-
-
-def ensure_class_airspace_shapefile(cache_dir) -> Path:
-    """Download+extract the current-cycle Class Airspace shapefile into
-    cache_dir if not already cached (same 28-day-cycle, cache-once
-    convention as wingtip.faa_data.ensure_nasr_data).
-
-    A cached file that is present but incomplete is re-downloaded rather
-    than trusted -- see _shapefile_is_complete.
-    """
-    cache_dir = Path(cache_dir)
-    shp_path = cache_dir / "Shape_Files" / "Class_Airspace.shp"
-    if not shp_path.exists() or not _shapefile_is_complete(shp_path):
-        download_and_extract(nasr_zip_url("Class_Airspace"), cache_dir)
-        if not _shapefile_is_complete(shp_path):
-            evicted = [shp_path.with_suffix(x).name for x in SHAPEFILE_SUFFIXES if _is_icloud_evicted(shp_path.with_suffix(x))]
-            if evicted:
-                raise RuntimeError(
-                    f"iCloud evicted {', '.join(evicted)} from {shp_path.parent} right after "
-                    "downloading it. Re-downloading will not help while this directory syncs "
-                    "to iCloud -- exclude data/raw from syncing (renaming a parent directory "
-                    "to end in '.nosync', or keeping the project outside Desktop/Documents)."
-                )
-            raise RuntimeError(
-                f"Class Airspace shapefile at {shp_path} is still incomplete after "
-                "re-downloading -- the download is being truncated rather than cached wrong."
-            )
-    return shp_path
-
-
-def _ceiling_ft_msl(record: dict) -> float | None:
-    """UPPER_VAL -> the top in feet MSL, which every Class B, C and D's
-    is; None where it is not a number."""
-    try:
-        return float(record.get("UPPER_VAL")) if record.get("UPPER_CODE") in ("MSL", None) else None
-    except (TypeError, ValueError):
-        return None
-
-
-def _floor_ft_msl(record: dict) -> float:
-    """LOWER_VAL/LOWER_CODE -> floor altitude in feet MSL. SFC (surface)
-    floors are 0 MSL; anything not plain feet MSL (rare for B/C/D, mostly
-    an E-airspace concern) is treated as 0 -- conservative, since a
-    lower/unknown floor only makes a shelf a *more* restrictive ceiling
-    for us, never a less restrictive one.
-    """
-    code = record["LOWER_CODE"]
-    if code == "SFC":
-        return 0.0
-    if code == "MSL":
-        try:
-            return float(record["LOWER_VAL"])
-        except (TypeError, ValueError):
-            return 0.0
-    return 0.0
-
-
-# The Class B/C/D polygons, parsed once per process and held in memory:
-# every altitude selection needs them, and walking Class_Airspace.shp --
-# 5,612 PolygonZ records, 394 MB, twelve million vertices -- takes about
-# thirty seconds. Held bbox-independent, so every route shares one parse,
-# and one edition at a time: a new cycle's replaces the last in memory
-# rather than sitting beside it.
-_ALL_AIRSPACE_CACHE: LRUCache = LRUCache(maxsize=1)
-_ALL_AIRSPACE_LOCK = threading.Lock()
-
-# The same polygons written beside the shapefile as WKB, so a fresh
-# process (every planner restart, every agent run) reads them back in
-# about a second instead of re-walking the shapefile. Keyed by the
-# shapefile's size and mtime, so a new 28-day cycle rebuilds it.
-# v2: the cached records gained an "ident" field, and a cache written
-# before that has no way to say so -- a new suffix rebuilds rather
-# than reading records that are missing a key every caller now reads.
-# v4: and an "upper_desc", for the map's labels (the phone pack, the overlay tiles).
-# v5: and the "hours_code" and "hours_remark", for the map's cards.
-_CONTROLLED_CACHE_SUFFIX = ".controlled.v5.pkl"
-
-
-def _load_all_controlled_airspace(shp_path) -> list:
-    """Every Class B/C/D polygon in the national shapefile, with its
-    Shapely geometry built: from memory, else from the WKB cache beside
-    the file, else parsed from the shapefile and cached both ways.
-
-    One loader at a time -- a request arriving while the startup
-    warm-up is parsing waits for its result rather than parsing again.
-    """
-    shp_path = Path(shp_path)
-    stat = shp_path.stat()
-    key = (str(shp_path), stat.st_size, stat.st_mtime)
-    with _ALL_AIRSPACE_LOCK:
-        if key not in _ALL_AIRSPACE_CACHE:
-            polygons = _read_controlled_cache(shp_path, key)
-            if polygons is None:
-                polygons = _parse_controlled_airspace(shp_path)
-                _write_controlled_cache(shp_path, key, polygons)
-            _ALL_AIRSPACE_CACHE[key] = polygons
-        return _ALL_AIRSPACE_CACHE[key]
-
-
-def _text(value) -> str | None:
-    """A text field of the shapefile, or None where it is empty or the
-    file's "<Null>"."""
-    value = (value or "").strip()
-    return None if value in ("", "<Null>") else value
-
-
-def _parse_controlled_airspace(shp_path: Path) -> list:
-    sf = shapefile.Reader(str(shp_path))
-    polygons = []
-    for sr in sf.iterShapeRecords():
-        record = sr.record.as_dict()
-        if record["CLASS"] not in CONTROLLED_CLASSES:
-            continue
-        polygons.append(
-            {
-                # The primary airport's own identifier (MSY, ORD): what
-                # a Class B is named for, and what its weather is
-                # looked up by. See wingtip.classb.
-                "ident": (record.get("IDENT") or "").strip().upper(),
-                "name": record["NAME"],
-                "class": record["CLASS"],
-                "floor_ft_msl": _floor_ft_msl(record),
-                "ceiling_ft_msl": _ceiling_ft_msl(record),
-                # "TI" where the top is in the volume, "TNI" where it is
-                # up to but not including it -- a Class D under a Class B
-                # shelf, which the sectional prints as "-30" (FAA
-                # Aeronautical Chart User's Guide, VFR Terms and Symbols,
-                # Class D: "a minus ceiling value indicates surface up to
-                # but not including that value").
-                "upper_desc": (record.get("UPPER_DESC") or "").strip().upper() or None,
-                # When the volume is in effect, as the FAA's NASR Class
-                # Airspace shapefile has it: WKHR_CODE "H24" (continuous),
-                # "NOTAM" (part-time, its hours set by NOTAM and kept in
-                # the Chart Supplement) or "RMK" (said in WKHR_RMK, the
-                # remark). The file writes an empty remark as "<Null>".
-                "hours_code": _text(record.get("WKHR_CODE")),
-                "hours_remark": _text(record.get("WKHR_RMK")),
-                "geometry": shapely_shape(sr.shape.__geo_interface__),
-                "bbox": tuple(sr.shape.bbox),  # (min_lon, min_lat, max_lon, max_lat)
-            }
-        )
-    return polygons
-
-
-def _controlled_cache_path(shp_path: Path) -> Path:
-    return shp_path.with_suffix(_CONTROLLED_CACHE_SUFFIX)
-
-
-def _read_controlled_cache(shp_path: Path, key: tuple) -> list | None:
-    path = _controlled_cache_path(shp_path)
-    if not path.exists():
-        return None
-    try:
-        with path.open("rb") as f:
-            cached = pickle.load(f)
-    except Exception:  # noqa: BLE001 -- a damaged cache is rebuilt, never fatal
-        return None
-    if cached.get("key") != key:
-        return None
-    return [
-        {
-            "ident": p.get("ident", ""),
-            "name": p["name"],
-            "class": p["class"],
-            "floor_ft_msl": p["floor_ft_msl"],
-            "ceiling_ft_msl": p.get("ceiling_ft_msl"),
-            "upper_desc": p.get("upper_desc"),
-            "hours_code": p.get("hours_code"),
-            "hours_remark": p.get("hours_remark"),
-            "bbox": tuple(p["bbox"]),
-            "geometry": from_wkb(p["wkb"]),
-        }
-        for p in cached["polygons"]
-    ]
-
-
-def _write_controlled_cache(shp_path: Path, key: tuple, polygons: list) -> None:
-    path = _controlled_cache_path(shp_path)
-    payload = {
-        "key": key,
-        "polygons": [
-            {
-                "ident": p.get("ident", ""),
-                "name": p["name"],
-                "class": p["class"],
-                "floor_ft_msl": p["floor_ft_msl"],
-                "ceiling_ft_msl": p.get("ceiling_ft_msl"),
-                "upper_desc": p.get("upper_desc"),
-                "hours_code": p.get("hours_code"),
-                "hours_remark": p.get("hours_remark"),
-                "bbox": p["bbox"],
-                "wkb": to_wkb(p["geometry"]),
-            }
-            for p in polygons
-        ],
-    }
-    try:
-        with atomic_path(path) as part, part.open("wb") as f:
-            pickle.dump(payload, f, protocol=pickle.HIGHEST_PROTOCOL)
-    except OSError:
-        # A read-only data directory only loses the speed-up, never the
-        # answer: the parse just runs again next process.
-        pass
 
 
 def preload(faa_cache_dir) -> None:
@@ -381,13 +138,12 @@ def surface_classes(points: list[tuple[float, float]], shp_path) -> list[str]:
 
 def is_own_surface_area(polygon: dict, start_point, end_point) -> bool:
     """Whether this airspace polygon is the departure or destination
-    airport's own surface area, rather than something the route has to
-    route around.
+    airport's own surface area, rather than something the route could go
+    round.
 
     Two conditions, and the floor is the load-bearing one: the airspace
     must reach the surface, and must enclose one end of the route. An
-    overlying shelf fails the first test however low it sits, which is
-    what keeps it a real constraint.
+    overlying shelf fails the first test however low it sits.
     """
     if polygon["floor_ft_msl"] > 0:
         return False
@@ -397,82 +153,10 @@ def is_own_surface_area(polygon: dict, start_point, end_point) -> bool:
 def own_class_b(polygons: list, start_point, end_point) -> set[str]:
     """The Class B a route takes off from or lands in, by name: those whose
     surface area holds one of its ends. Landing at O'Hare takes a Class B
-    clearance anyway, so none of Chicago's shelves is a ceiling on the way
-    in -- Midway to O'Hare had no legal altitude under the 1,900 ft shelf
-    between them, only the surface area round O'Hare itself being left
-    out. A field under a shelf, not in a surface area (Midway under
-    Chicago's 3,000), is flown out of under it as before."""
+    clearance anyway, so no way round Chicago's shelves is offered on the
+    way in. A field under a shelf, not in a surface area (Midway under
+    Chicago's 3,000), is not in its own Class B."""
     return {p["name"] for p in polygons if p["class"] in CLEARANCE_CLASSES and is_own_surface_area(p, start_point, end_point)}
-
-
-def airspace_ceiling_profile(route_start: tuple, route_end: tuple, fixes: list, shp_path) -> list:
-    """The airspace ceiling of each leg of the nav log -- the lowest
-    Class B shelf floor the leg between consecutive `fixes` ((lat, lon)
-    pairs, the route's ends included) passes laterally under, or None
-    where it passes under none. Where the whole route's ceiling is the
-    lowest shelf anywhere along it, this is the shelf over each leg, so
-    a route can cruise low under the Bravo by the departure and climb
-    once past it. The route's own surface areas are excluded on the
-    whole route's ends: a leg that
-    starts at the departure begins inside that airport's airspace just
-    as the route does -- and with them the whole Class B they are part
-    of (own_class_b): a route into or out of it is cleared through it.
-
-    A leg's ceiling is the highest it can cruise staying beneath every
-    Class B shelf it laterally passes through -- transiting *under* the
-    Bravo rather than asking for a clearance through it, the usual choice
-    for a light aircraft.
-
-    Class C and D impose nothing here. Entering either needs only two-way
-    radio communication established, which is routine, so they are
-    reported by airspace_transits() rather than treated as a lid. See the
-    module docstring for what this used to do and why it was wrong.
-
-    A *surface area* containing the departure or destination point is
-    deliberately excluded: landing at or departing from your own airport
-    inherently means transiting its local airspace to reach the runway
-    (with whatever clearance or coordination that requires), which isn't
-    a *routing* conflict the way an unrelated shelf along the way would
-    be. Without the exclusion, a route ending at any towered airport
-    trivially produces a ~0 ft "ceiling" from that airport's own
-    airspace, and no legal cruising altitude at all.
-
-    What identifies "its own airspace" is the floor being at the surface,
-    not the airspace class. This was Class-D-only until 2026-09-10, on
-    the reasoning that a compact D ring reliably means "that airport's
-    shelf" while B and C are larger and often sit over an unrelated
-    field. The second half of that is true but the rule drawn from it was
-    wrong: KDSM->KOMA is Class C at both ends, so the route began and
-    ended inside surface areas with SFC floors and select_cruise_altitude
-    returned None for an ordinary 100 nm cross-country.
-
-    Testing the floor instead keeps every case the class test got right.
-    An overlying shelf is still a hard constraint, because its floor is
-    not the surface -- C81/Grayslake sits laterally under Chicago's Class
-    B, whose floor there is a few thousand feet, so it still imposes a
-    ceiling exactly as before.
-    """
-    from .geo import corridor_bbox
-
-    bbox = corridor_bbox(route_start, route_end, buffer_nm=2.0)
-    start_point = Point(route_start[1], route_start[0])
-    end_point = Point(route_end[1], route_end[0])
-    polygons = load_controlled_airspace(shp_path, bbox)
-    own = own_class_b(polygons, start_point, end_point)
-    shelves = [p for p in polygons if p["class"] in CLEARANCE_CLASSES and p["name"] not in own]
-
-    # Every leg against the shelves at once, through their index (STRtree):
-    # each leg tried against each shelf by hand was 12.5 s of a cold Seattle
-    # to Miami plan, the corridor's box holding a country's worth of them.
-    ceilings: list = [None] * max(0, len(fixes) - 1)
-    if not shelves or not ceilings:
-        return ceilings
-    legs = [LineString([(lon1, lat1), (lon2, lat2)]) for (lat1, lon1), (lat2, lon2) in zip(fixes, fixes[1:])]
-    leg_at, shelf_at = STRtree([p["geometry"] for p in shelves]).query(legs, predicate="intersects")
-    for i, j in zip(leg_at.tolist(), shelf_at.tolist()):
-        floor = shelves[j]["floor_ft_msl"]
-        ceilings[i] = floor if ceilings[i] is None else min(ceilings[i], floor)
-    return ceilings
 
 
 #: detour_waypoints by leg, altitude and the Class B in its way, bounded.
@@ -506,7 +190,7 @@ def detour_waypoints(route_start: tuple, route_end: tuple, shp_path, below_ft: f
     adding the least distance first, a VFR waypoint (VPBNG, on the
     sectional) before a GPS fix (wingtip.fixes): the engine's choice
     (class_b_detours, #482 phase 5), the fixes round the Class B read
-    here. The route's own surface areas aside, as for the ceiling. Each as
+    here. The route's own surface areas aside (own_class_b). Each as
     {"ident", "kind", "added_nm"}."""
     from . import fixes
     from .geo import corridor_bbox

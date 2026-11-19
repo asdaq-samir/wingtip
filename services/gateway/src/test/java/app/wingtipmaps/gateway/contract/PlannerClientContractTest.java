@@ -99,6 +99,7 @@ class PlannerClientContractTest {
                                     DAY.plusDays(3))),
             new Call("endorsements (no flight)", c -> c.planner().endorsements(List.of(), null)),
             new Call("endorsementKinds", c -> c.planner().endorsementKinds()),
+            new Call("instructorRecordsSince", c -> c.planner().instructorRecordsSince(DAY)),
             new Call("fill", c -> c.planner().fill("solo", "A. Pilot", Map.of("makeModel", "C172"))),
             new Call("inspections", c -> c.planner().inspections(DAY, DAY, DAY, DAY, 1234.5, DAY, "VOT", 2.0)),
             new Call(

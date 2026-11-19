@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # The charts job (services/jobs/charts): the FAA chart cycle's raster tiles
-# (wingtip.charts' refresh) and the map's overlay tiles (charts.overlays,
+# (wingtip.chart_upkeep's refresh) and the map's overlay tiles (charts.overlays,
 # tippecanoe), built once a cycle in a container of their own, so the
 # planner only serves them. `python -m charts <command>` is the entry
 # point; services/jobs/README.md says how each is run.
@@ -40,10 +40,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean \
     && apt-get update && apt-get install -y --no-install-recommends libexpat1 libsqlite3-0 zlib1g libstdc++6
 COPY --from=tippecanoe /usr/local/bin/tippecanoe /usr/local/bin/tippecanoe-decode /usr/local/bin/
-# The data folder is the user's (the base made appuser): the stacks mount
-# theirs over it, but the chart refresh task on Fargate mounts nothing and
-# writes the cycle's sheets and tiles there.
-RUN mkdir -p /workspace/data && chown appuser:appuser /workspace/data
 
 # Copied at the paths they have in the repo, so the job's list finds
 # wingtip's through its -r, and wingtip finds the data folder

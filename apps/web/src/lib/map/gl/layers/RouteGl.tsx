@@ -5,14 +5,13 @@ import type { AirspaceClass } from "../../../preferences";
 import { courseColour } from "../../marks/chartColors";
 import { ROUTE_FIX_NAMES, ROUTE_MARKS, ROUTE_MARK_LAYERS, routeMarks } from "../../marks/routeMarks";
 import { turnSide } from "../../marks/routeTurns";
-import { usePreferences } from "../../../preferences";
 import { useSunlight } from "../../../sunlight";
 import { useGlData, useGlLayer, useGlMap, useGlPaint, useGlTap } from "../glLayer";
 import { useDarkTheme } from "../useDarkTheme";
+import { glZoom } from "../glStyle";
 import {
   CHECKPOINT_SOURCE,
   ROUTE_SOURCE,
-  glZoom,
   pointFeatures,
   routeCasingPaint,
   routeEdgePaint,
@@ -20,10 +19,11 @@ import {
   routeLayers,
   routeOuterPaint,
   selectedLegFilter,
-} from "../glStyle";
+} from "../glRoute";
 import { useGlProbe } from "../useGlProbe";
-import { GL_FONT, TAP } from "./common";
+import { GL_FONT, LABEL_HALO, LABEL_SIZE, TAP } from "./common";
 import { useGlSymbols } from "../useGlSymbols";
+import { WAY_CHIPS_LOWEST } from "./WaysGl";
 import { LEG_RANK, LEG_REACH, nearestLeg, type GlLeg } from "../legTap";
 import { CHART } from "../../../tokens";
 
@@ -59,6 +59,9 @@ export interface GlEndpoint {
   space: AirspaceClass | null;
   fix: boolean;
   select: () => void;
+  /** A point flown through's card (RoutePointCard), opened with its ring
+   *  as a tap selects it; a field's card is the page's (select). */
+  card?: ReactNode;
 }
 
 /** Every checkpoint in sight named from 10, in the app's levels. */
@@ -94,7 +97,7 @@ const NAMES: SymbolLayerSpecification = {
   layout: {
     "text-field": ["get", "name"],
     "text-font": GL_FONT,
-    "text-size": 12,
+    "text-size": LABEL_SIZE.normal,
     "text-variable-anchor": ["left", "right"],
     // Clear of its own dot's picture, which MapLibre's collision sees whole:
     // 16 points from its middle (markPictures' dotPicture, 26 across and 3
@@ -104,7 +107,7 @@ const NAMES: SymbolLayerSpecification = {
     "text-justify": "auto",
     "symbol-sort-key": ["get", "number"],
   },
-  paint: { "text-color": CHART.fixInk, "text-halo-color": CHART.casing, "text-halo-width": 2 },
+  paint: { "text-color": CHART.fixInk, ...LABEL_HALO },
 };
 
 /**
@@ -146,9 +149,8 @@ export function RouteGl({
   useGlLayer("top", MARK_SOURCES, [CANDIDATE_DOTS, NAMES]);
   // The casing follows the look, as the chart's paint does (ChartGl).
   const sunlight = useSunlight();
-  const dark = useDarkTheme();
-  const chartNight = usePreferences((s) => s.chartNight);
-  const night = dark && chartNight === "dimmed";
+  // The night's colours in the dark theme, as the page's.
+  const night = useDarkTheme();
   useGlPaint(["route-edge"], routeEdgePaint(night, sunlight));
   useGlPaint(["route-outer"], routeOuterPaint(night, sunlight));
   useGlPaint(["route-casing"], routeCasingPaint(night));
@@ -169,6 +171,7 @@ export function RouteGl({
   // The checkpoints' names the chart shows, those MapLibre placed clear of
   // each other (a name it could not fit is not drawn), for the tests.
   useGlProbe("checkpoint-names", [NAMES.id], (f) => ({ name: f.properties.name }));
+  useNamesInView();
   const dots = useMemo<GeoJSON.FeatureCollection>(
     () => ({
       type: "FeatureCollection",
@@ -193,12 +196,24 @@ export function RouteGl({
   const marks = useMemo(
     () =>
       routeMarks(
-        endpoints,
+        // A point's card first, every other pick put away with it (lib/map/
+        // mapPick), then the point selected, its ring kept with the card.
+        endpoints.map((e) =>
+          e.card
+            ? {
+                ...e,
+                select: () => {
+                  openCard(e.card, ["point"]);
+                  e.select();
+                },
+              }
+            : e,
+        ),
         checkpoints.map((c) => ({
           ...c,
           onTap: () => {
+            openCard(c.card, ["point"]);
             c.select();
-            openCard(c.card);
           },
         })),
         (course?.course_line ?? []) as [number, number][],
@@ -206,7 +221,11 @@ export function RouteGl({
       ),
     [endpoints, checkpoints, openCard, course, ring],
   );
-  useGlSymbols(ROUTE_MARKS, ROUTE_MARK_LAYERS, marks, { rank: TAP.rank.field });
+  // Under the ways' chips wherever the two come in (WaysGl), so the
+  // route's names give way to the chips rather than cut through their
+  // words (the UI audit's B6), and every way's chip is placed before them;
+  // with no ways, at the top of the marks as before.
+  useGlSymbols(ROUTE_MARKS, ROUTE_MARK_LAYERS, marks, { rank: TAP.rank.field, under: WAY_CHIPS_LOWEST });
   // Each turn's dot drawn, and the side its name is put, for the tests.
   useGlProbe("route-turns", ["route-fix-dots"], (f) => ({ name: f.properties.text, out: f.properties.out }));
   // A route point's name stays outside its turn as the map turns: its
@@ -255,4 +274,40 @@ export function RouteGl({
     else if (c?.card) openCard(c.card);
   });
   return null;
+}
+
+/** Only the checkpoints whose dots are in the view named, set as the map
+ *  comes to rest. MapLibre places a symbol up to a margin past the view's
+ *  edge, so a dot just off the screen had its name drawn on it with no dot
+ *  beside it ("Milny Lake" for a dot 17 points past the left edge,
+ *  checkpoints.spec, 2026-11-18): a name is kept with its dot. */
+function useNamesInView() {
+  const { map } = useGlMap();
+  useEffect(() => {
+    const inView = () => {
+      if (!map.getLayer(NAMES.id)) return;
+      const b = map.getBounds();
+      const [w, s, e, n] = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+      map.setFilter(NAMES.id, [
+        "within",
+        {
+          type: "Polygon",
+          coordinates: [
+            [
+              [w, s],
+              [e, s],
+              [e, n],
+              [w, n],
+              [w, s],
+            ],
+          ],
+        },
+      ]);
+    };
+    inView();
+    map.on("moveend", inView);
+    return () => {
+      map.off("moveend", inView);
+    };
+  }, [map]);
 }

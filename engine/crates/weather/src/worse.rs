@@ -29,6 +29,7 @@
 use crate::forecast::rank;
 use crate::json::{self, Value};
 use crate::metar::flight_category_of;
+use wingtip_core::ask::opt_num_in as opt_num;
 
 type R<T> = Result<T, String>;
 
@@ -69,14 +70,6 @@ fn list<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a [Value]> {
         None | Some(Value::Null) => Ok(&[]),
         Some(Value::Array(items)) => Ok(items),
         Some(_) => Err(format!("{name}: \"{key}\" is not a list")),
-    }
-}
-
-fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
     }
 }
 

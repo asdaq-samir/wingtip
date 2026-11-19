@@ -8,7 +8,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse
-from wingtip import cycle_pack, data_cycles, offline_charts, offline_regions, vector_tiles
+from wingtip import data_cycles, offline_charts, offline_regions, phone_pack, vector_tiles
 
 from ..gateway import SHARED, gateway
 from ..router_basics import DIAGRAM_CACHE, SHARED_CACHE
@@ -77,7 +77,7 @@ def offline_region(cycle: str, region: str) -> JSONResponse:
     the half degree (offline_regions.box_id)."""
     found = _found(cycle, region)
     base = f"/api/offline-charts/{cycle}/{found.id}"
-    index = cycle_pack.phone_index()
+    index = phone_pack.phone_index()
     body = OfflineRegionFiles(
         cycle=cycle,
         expires=_day(offline_charts.expires(cycle)),

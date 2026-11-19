@@ -25,7 +25,7 @@ import { fromRest } from "./startState";
  *  - a corner-pinned button not actually flush against the edge it's
  *    meant to sit on, because a wider sibling was silently deciding
  *    the shared container's own shrink-to-fit width
- *  - the sidebar (a `MapDrawer` over the map area) not actually
+ *  - the sidebar (the map panel's `SheetDrawer` over the map area) not actually
  *    starting closed, not opening from its trigger, or covering the
  *    header it is meant to sit under
  *  - wide content (the nav log table) pushing the whole page into
@@ -59,9 +59,9 @@ test.describe("/app/plan", () => {
     await fromRest(page);
     await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
     await expect(firstRow(page)).toBeVisible();
-    // The route's field is on FPL's page of the sheet's pager, beside
+    // The empty route is on FPL's page of the sheet's pager, beside
     // Search's off the screen's edge: out of sight, not out of the page.
-    await expect(sideDrawer(page).getByTestId("route-type")).not.toBeInViewport();
+    await expect(sideDrawer(page).getByTestId("timeline-type-route")).not.toBeInViewport();
     await expect(sideDrawer(page).getByTestId("flight-line")).toHaveCount(0);
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
@@ -75,7 +75,7 @@ test.describe("/app/plan", () => {
     const figures = sideDrawer(page).getByTestId("flight-line");
     await expect(figures).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
     if ((page.viewportSize()?.width ?? 0) < 768) {
-      await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeHidden();
+      await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeHidden();
       // The pill no taller for them: the search's own 4.25 rem, on the
       // screen's foot (no home indicator here; the pages' toggle rides its
       // top, PageToggle, with no bar under it).
@@ -86,9 +86,9 @@ test.describe("/app/plan", () => {
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
     // The plan, the sheet's main content with a route.
-    await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeVisible();
+    await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeVisible();
     await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
-    await expect(page.getByLabel(/^(\S+, )?Departure$/)).toBeVisible();
+    await expect(sideDrawer(page).getByTestId("route-summary")).toContainText("C81");
     expect(await page.getByTestId("toolbar-trigger").count()).toBe(0);
   });
 
@@ -120,7 +120,7 @@ test.describe("/app/plan", () => {
     // Share among the route's chips half way.
     await openPanel(page);
     await sideDrawer(page).getByTestId("share-route").click();
-    // The route's own link: the GPX file this read went with the SD-card
+    // The route's own link, in FPL's Share tile (the owner's pick A, 2026-11-15): the GPX file this read went with the SD-card
     // and USB files (the owner, 2026-11-02, "No need for sd card or usb").
     await expect(page.getByTestId("share-link")).toBeVisible();
     await page.keyboard.press("Escape");
@@ -256,8 +256,10 @@ test.describe("/app/plan", () => {
       expect(bar.y).toBeLessThan(100);
       expect(headerBox.y).toBeLessThan(bar.y + bar.height + 8);
     }
-    const departureBox = (await header.getByLabel(/^(\S+, )?Departure$/).boundingBox())!;
-    expect(departureBox.x - headerBox.x).toBeLessThan(40);
+    // The route folded to its one line leads the panel, its departure at its
+    // left edge.
+    const summaryBox = (await sideDrawer(page).getByTestId("route-summary").boundingBox())!;
+    expect(summaryBox.x - (await sideDrawer(page).boundingBox())!.x).toBeLessThan(40);
 
     // The grabber on the panel's far edge: the top of a phone's sheet,
     // the bottom of a card at the top of the screen -- once the sheet has
@@ -269,8 +271,10 @@ test.describe("/app/plan", () => {
       if (phone) expect(Math.abs(grabber.y - panelBox.y)).toBeLessThan(2);
       else expect(Math.abs(grabber.y + grabber.height - (panelBox.y + panelBox.height))).toBeLessThan(2);
     }).toPass({ timeout: 10_000 });
-    // Taps cycle it: on up from half, then back down to the pill.
-    for (const height of ["full", "half", "peek"]) {
+    // Taps cycle it: on up from half, then back down to the pill. The side
+    // panel is in or out, half and all the way up one box there, so a click
+    // puts it away at once (sheet/grabberSizes; the owner's Mac, 2026-11-18).
+    for (const height of phone ? ["full", "half", "peek"] : ["peek"]) {
       await page.getByTestId("sidebar-trigger-button").click();
       await expect(frontSheet(page)).toHaveAttribute("data-panel", height);
     }
@@ -331,7 +335,11 @@ for (const path of PAGES) {
       // in the page toggle on either page.
       await showTabs(page);
       await expect(page.getByTestId("account-button")).toBeVisible();
-      expect(await sideDrawer(page).getByTestId("account-button").count()).toBe(0);
+      // A circle of its own over the map (MapControls' AccountCircle), riding
+      // the front sheet's top as the map's buttons do (OnSheetTop, so in its
+      // popup), never in the sheet's own rows.
+      await expect(page.locator("[data-map-food]").getByTestId("account-button")).toBeVisible();
+      expect(await sideDrawer(page).getByTestId("sheet-pages").getByTestId("account-button").count()).toBe(0);
       await expect(sideDrawer(page).getByTestId("sheet-page-toggle")).toBeVisible();
       await page.goto(path);
       await settle(page);

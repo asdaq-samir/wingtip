@@ -590,20 +590,6 @@ interface PlannerApi {
     suspend fun coachPlan(@Body appWingtipmapsAndroidApiGeneratedCoachAsk: app.wingtipmaps.android.api.generated.CoachAsk): Response<app.wingtipmaps.android.api.generated.ProficiencyPlan>
 
     /**
-     * POST words/coach/sources
-     * Coach Sources
-     * A proficiency plan&#39;s lines, each a source a sentence can cite.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedProficiencyPlan
-     * @return [app.wingtipmaps.android.api.generated.WordsSources]
-     */
-    @POST("words/coach/sources")
-    suspend fun coachSources(@Body appWingtipmapsAndroidApiGeneratedProficiencyPlan: app.wingtipmaps.android.api.generated.ProficiencyPlan): Response<app.wingtipmaps.android.api.generated.WordsSources>
-
-    /**
      * GET copilot/around
      * Copilot Around
      * The fields near the airplane and the destination with their weather, runway and fuel, the TFRs, active special-use areas and convective SIGMETs on the rest of the route, and ITWS&#39;s alerts at the destination and alternate: the inputs of the engine&#39;s copilot_watch, which the app asks with its own GPS. Nothing is judged here.
@@ -624,7 +610,7 @@ interface PlannerApi {
     /**
      * GET course
      * Course
-     * Just the course line and its endpoints, through any stops.  Separate from detection so the chart can draw a line the instant two idents are entered. Reading tiles takes seconds even on the fast path, and there is no reason a pilot should watch an empty map for them.  And the route&#39;s slow parts are started here, the first thing the web app asks for a route: the chart&#39;s read and the ground under it, on threads of their own (app.prefetch), so the nav log asked for beside this finds them under way or done.
+     * Just the course line and its endpoints, through any stops.  Separate from detection so the chart can draw a line the instant two idents are entered. Reading tiles takes seconds even on the fast path, and there is no reason a pilot should watch an empty map for them.  And the ground under the route is started here, the first thing the web app asks for a route, on a thread of its own (app.prefetch), so the nav log asked for beside this finds it under way or done. Not the chart&#39;s read for checkpoints: nothing finds them until the pilot asks (/api/checkpoints, or a nav log with checkpoints), the owner&#39;s rule (2026-11-18). checkpoints_ready only looks at what is kept.
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
@@ -692,20 +678,6 @@ interface PlannerApi {
      */
     @POST("debrief")
     suspend fun debrief(@Body appWingtipmapsAndroidApiGeneratedDebriefAsk: app.wingtipmaps.android.api.generated.DebriefAsk): Response<app.wingtipmaps.android.api.generated.DebriefAnswer>
-
-    /**
-     * POST words/debrief/sources
-     * Debrief Sources
-     * A flown flight&#39;s debrief as sources (POST /api/debrief: the time in the air, each leg&#39;s altitude and course held, each checkpoint&#39;s time, each pattern entry, its notes, and the ACS tolerances they are marked against). A 422 where there is no debrief: the track never flew.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedDebriefWordsAsk
-     * @return [app.wingtipmaps.android.api.generated.WordsSources]
-     */
-    @POST("words/debrief/sources")
-    suspend fun debriefSources(@Body appWingtipmapsAndroidApiGeneratedDebriefWordsAsk: app.wingtipmaps.android.api.generated.DebriefWordsAsk): Response<app.wingtipmaps.android.api.generated.WordsSources>
 
     /**
      * GET live/departures
@@ -780,7 +752,7 @@ interface PlannerApi {
     /**
      * GET diversion
      * Diversion
-     * The diversion drill (apps/web/src/lib/diversion, ACS PA.VI.C): from a point to a field, in the planner&#39;s air on the way there at &#x60;altitude_ft&#x60; -- the winds and temperature aloft for the hour (wingtip.weather, the FD period for &#x60;depart&#x60;, now by default), the airplane&#39;s true airspeed and burn in that air (wingtip.performance) and the variation (wingtip.magnetic, the WMM) -- the true course and distance, the wind triangle, the magnetic heading, ground speed, time and fuel, each step in words; and the student&#39;s estimates (&#x60;mh&#x60;, &#x60;gs&#x60;, &#x60;ete&#x60;, &#x60;fuel&#x60;) checked against it, each within the drill&#39;s allowance or not. With no &#x60;aircraft&#x60; a 422: the heading, ground speed, time and fuel are all worked at an airplane&#39;s speed and burn, and no stock airplane&#39;s is assumed (the owner, 2026-11-09).
+     * The diversion drill (apps/web/src/lib/diversion, ACS PA.VI.C): from a point to a field, in the planner&#39;s air on the way there at &#x60;altitude_ft&#x60; -- the winds and temperature aloft for the hour (wingtip.weather, the FD period for &#x60;depart&#x60;, now by default), the airplane&#39;s true airspeed and burn in that air (the engine&#39;s wingtip_flight::performance) and the variation (wingtip.magnetic, the WMM) -- the true course and distance, the wind triangle, the magnetic heading, ground speed, time and fuel, each step in words; and the student&#39;s estimates (&#x60;mh&#x60;, &#x60;gs&#x60;, &#x60;ete&#x60;, &#x60;fuel&#x60;) checked against it, each within the drill&#39;s allowance or not. With no &#x60;aircraft&#x60; a 422: the heading, ground speed, time and fuel are all worked at an airplane&#39;s speed and burn, and no stock airplane&#39;s is assumed (the owner, 2026-11-09).
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
@@ -1100,6 +1072,20 @@ interface PlannerApi {
     suspend fun inspections(@Body appWingtipmapsAndroidApiGeneratedInspectionsAsk: app.wingtipmaps.android.api.generated.InspectionsAsk): Response<app.wingtipmaps.android.api.generated.Inspections>
 
     /**
+     * GET pilot/instructor-records-since
+     * Instructor Records Since
+     * The first day an instructor&#39;s page lists what they signed: 3 years before &#x60;today&#x60;, as 14 CFR 61.189(c) has them keep the records (the engine&#39;s instructor_records_since).
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param today
+     * @return [Unit]
+     */
+    @GET("pilot/instructor-records-since")
+    suspend fun instructorRecordsSince(@Query("today") today: kotlin.String): Response<Unit>
+
+    /**
      * GET live/itws
      * Itws Alerts
      * The ITWS alerts in force at these airports (a route&#39;s departure, destination and alternates): microbursts, wind shear, gust fronts, tornadoes and storm cells near the field, as the tower&#39;s ITWS gives them its controllers (AIM 4-3-7).
@@ -1142,7 +1128,6 @@ interface PlannerApi {
      * @param taxiFuelGal  (optional)
      * @param glideRatio  (optional)
      * @param depart  (optional)
-     * @param classBClearance  (optional, default to false)
      * @param rules  (optional, default to "vfr")
      * @param alternate  (optional, default to "")
      * @param altitudes  (optional, default to "")
@@ -1154,11 +1139,11 @@ interface PlannerApi {
      * @param crossings  (optional, default to "")
      * @param holds  (optional, default to "")
      * @param ground  (optional, default to "")
-     * @param checkpoints  (optional, default to true)
+     * @param checkpoints  (optional, default to false)
      * @return [app.wingtipmaps.android.api.generated.Totals]
      */
     @GET("local-flight")
-    suspend fun localFlight(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("duration_min") durationMin: kotlin.Double? = 60.0, @Query("stops") stops: kotlin.String? = "", @Query("altitude_ft") altitudeFt: kotlin.Double? = null, @Query("altitude_nearest") altitudeNearest: kotlin.Boolean? = false, @Query("altitude_choice") altitudeChoice: kotlin.String? = "fastest", @Query("aircraft") aircraft: kotlin.String? = null, @Query("cruise_tas_kt") cruiseTasKt: kotlin.Double? = null, @Query("fuel_burn_gph") fuelBurnGph: kotlin.Double? = null, @Query("usable_fuel_gal") usableFuelGal: kotlin.Double? = null, @Query("climb_tas_kt") climbTasKt: kotlin.Double? = null, @Query("climb_fuel_burn_gph") climbFuelBurnGph: kotlin.Double? = null, @Query("descent_ias_kt") descentIasKt: kotlin.Double? = null, @Query("descent_fuel_burn_gph") descentFuelBurnGph: kotlin.Double? = null, @Query("cruise_power_pct") cruisePowerPct: kotlin.Double? = null, @Query("service_ceiling_ft") serviceCeilingFt: kotlin.Double? = null, @Query("climb_rate_fpm") climbRateFpm: kotlin.Double? = null, @Query("taxi_fuel_gal") taxiFuelGal: kotlin.Double? = null, @Query("glide_ratio") glideRatio: kotlin.Double? = null, @Query("depart") depart: kotlin.String? = null, @Query("class_b_clearance") classBClearance: kotlin.Boolean? = false, @Query("rules") rules: kotlin.String? = "vfr", @Query("alternate") alternate: kotlin.String? = "", @Query("altitudes") altitudes: kotlin.String? = "", @Query("altitude_starts") altitudeStarts: kotlin.String? = "", @Query("procedures") procedures: kotlin.String? = "", @Query("runways") runways: kotlin.String? = "", @Query("patterns") patterns: kotlin.String? = "", @Query("wind_runways") windRunways: kotlin.Boolean? = false, @Query("crossings") crossings: kotlin.String? = "", @Query("holds") holds: kotlin.String? = "", @Query("ground") ground: kotlin.String? = "", @Query("checkpoints") checkpoints: kotlin.Boolean? = true): Response<app.wingtipmaps.android.api.generated.Totals>
+    suspend fun localFlight(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("duration_min") durationMin: kotlin.Double? = 60.0, @Query("stops") stops: kotlin.String? = "", @Query("altitude_ft") altitudeFt: kotlin.Double? = null, @Query("altitude_nearest") altitudeNearest: kotlin.Boolean? = false, @Query("altitude_choice") altitudeChoice: kotlin.String? = "fastest", @Query("aircraft") aircraft: kotlin.String? = null, @Query("cruise_tas_kt") cruiseTasKt: kotlin.Double? = null, @Query("fuel_burn_gph") fuelBurnGph: kotlin.Double? = null, @Query("usable_fuel_gal") usableFuelGal: kotlin.Double? = null, @Query("climb_tas_kt") climbTasKt: kotlin.Double? = null, @Query("climb_fuel_burn_gph") climbFuelBurnGph: kotlin.Double? = null, @Query("descent_ias_kt") descentIasKt: kotlin.Double? = null, @Query("descent_fuel_burn_gph") descentFuelBurnGph: kotlin.Double? = null, @Query("cruise_power_pct") cruisePowerPct: kotlin.Double? = null, @Query("service_ceiling_ft") serviceCeilingFt: kotlin.Double? = null, @Query("climb_rate_fpm") climbRateFpm: kotlin.Double? = null, @Query("taxi_fuel_gal") taxiFuelGal: kotlin.Double? = null, @Query("glide_ratio") glideRatio: kotlin.Double? = null, @Query("depart") depart: kotlin.String? = null, @Query("rules") rules: kotlin.String? = "vfr", @Query("alternate") alternate: kotlin.String? = "", @Query("altitudes") altitudes: kotlin.String? = "", @Query("altitude_starts") altitudeStarts: kotlin.String? = "", @Query("procedures") procedures: kotlin.String? = "", @Query("runways") runways: kotlin.String? = "", @Query("patterns") patterns: kotlin.String? = "", @Query("wind_runways") windRunways: kotlin.Boolean? = false, @Query("crossings") crossings: kotlin.String? = "", @Query("holds") holds: kotlin.String? = "", @Query("ground") ground: kotlin.String? = "", @Query("checkpoints") checkpoints: kotlin.Boolean? = false): Response<app.wingtipmaps.android.api.generated.Totals>
 
     /**
      * POST lost-comms
@@ -1227,7 +1212,6 @@ interface PlannerApi {
      * @param taxiFuelGal  (optional)
      * @param glideRatio  (optional)
      * @param depart  (optional)
-     * @param classBClearance  (optional, default to false)
      * @param rules  (optional, default to "vfr")
      * @param alternate  (optional, default to "")
      * @param altitudes  (optional, default to "")
@@ -1239,11 +1223,11 @@ interface PlannerApi {
      * @param crossings  (optional, default to "")
      * @param holds  (optional, default to "")
      * @param ground  (optional, default to "")
-     * @param checkpoints  (optional, default to true)
+     * @param checkpoints  (optional, default to false)
      * @return [Unit]
      */
     @GET("navlog")
-    suspend fun navlogStream(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("ahead") ahead: kotlin.Boolean? = false, @Query("stops") stops: kotlin.String? = "", @Query("altitude_ft") altitudeFt: kotlin.Double? = null, @Query("altitude_nearest") altitudeNearest: kotlin.Boolean? = false, @Query("altitude_choice") altitudeChoice: kotlin.String? = "fastest", @Query("aircraft") aircraft: kotlin.String? = null, @Query("cruise_tas_kt") cruiseTasKt: kotlin.Double? = null, @Query("fuel_burn_gph") fuelBurnGph: kotlin.Double? = null, @Query("usable_fuel_gal") usableFuelGal: kotlin.Double? = null, @Query("climb_tas_kt") climbTasKt: kotlin.Double? = null, @Query("climb_fuel_burn_gph") climbFuelBurnGph: kotlin.Double? = null, @Query("descent_ias_kt") descentIasKt: kotlin.Double? = null, @Query("descent_fuel_burn_gph") descentFuelBurnGph: kotlin.Double? = null, @Query("cruise_power_pct") cruisePowerPct: kotlin.Double? = null, @Query("service_ceiling_ft") serviceCeilingFt: kotlin.Double? = null, @Query("climb_rate_fpm") climbRateFpm: kotlin.Double? = null, @Query("taxi_fuel_gal") taxiFuelGal: kotlin.Double? = null, @Query("glide_ratio") glideRatio: kotlin.Double? = null, @Query("depart") depart: kotlin.String? = null, @Query("class_b_clearance") classBClearance: kotlin.Boolean? = false, @Query("rules") rules: kotlin.String? = "vfr", @Query("alternate") alternate: kotlin.String? = "", @Query("altitudes") altitudes: kotlin.String? = "", @Query("altitude_starts") altitudeStarts: kotlin.String? = "", @Query("procedures") procedures: kotlin.String? = "", @Query("runways") runways: kotlin.String? = "", @Query("patterns") patterns: kotlin.String? = "", @Query("wind_runways") windRunways: kotlin.Boolean? = false, @Query("crossings") crossings: kotlin.String? = "", @Query("holds") holds: kotlin.String? = "", @Query("ground") ground: kotlin.String? = "", @Query("checkpoints") checkpoints: kotlin.Boolean? = true): Response<Unit>
+    suspend fun navlogStream(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("ahead") ahead: kotlin.Boolean? = false, @Query("stops") stops: kotlin.String? = "", @Query("altitude_ft") altitudeFt: kotlin.Double? = null, @Query("altitude_nearest") altitudeNearest: kotlin.Boolean? = false, @Query("altitude_choice") altitudeChoice: kotlin.String? = "fastest", @Query("aircraft") aircraft: kotlin.String? = null, @Query("cruise_tas_kt") cruiseTasKt: kotlin.Double? = null, @Query("fuel_burn_gph") fuelBurnGph: kotlin.Double? = null, @Query("usable_fuel_gal") usableFuelGal: kotlin.Double? = null, @Query("climb_tas_kt") climbTasKt: kotlin.Double? = null, @Query("climb_fuel_burn_gph") climbFuelBurnGph: kotlin.Double? = null, @Query("descent_ias_kt") descentIasKt: kotlin.Double? = null, @Query("descent_fuel_burn_gph") descentFuelBurnGph: kotlin.Double? = null, @Query("cruise_power_pct") cruisePowerPct: kotlin.Double? = null, @Query("service_ceiling_ft") serviceCeilingFt: kotlin.Double? = null, @Query("climb_rate_fpm") climbRateFpm: kotlin.Double? = null, @Query("taxi_fuel_gal") taxiFuelGal: kotlin.Double? = null, @Query("glide_ratio") glideRatio: kotlin.Double? = null, @Query("depart") depart: kotlin.String? = null, @Query("rules") rules: kotlin.String? = "vfr", @Query("alternate") alternate: kotlin.String? = "", @Query("altitudes") altitudes: kotlin.String? = "", @Query("altitude_starts") altitudeStarts: kotlin.String? = "", @Query("procedures") procedures: kotlin.String? = "", @Query("runways") runways: kotlin.String? = "", @Query("patterns") patterns: kotlin.String? = "", @Query("wind_runways") windRunways: kotlin.Boolean? = false, @Query("crossings") crossings: kotlin.String? = "", @Query("holds") holds: kotlin.String? = "", @Query("ground") ground: kotlin.String? = "", @Query("checkpoints") checkpoints: kotlin.Boolean? = false): Response<Unit>
 
     /**
      * GET airports/nearest
@@ -1261,20 +1245,6 @@ interface PlannerApi {
      */
     @GET("airports/nearest")
     suspend fun nearestAirports(@Query("lat") lat: kotlin.Double, @Query("lon") lon: kotlin.Double, @Query("limit") limit: kotlin.Int? = 10, @Query("at") at: kotlin.Double? = null): Response<app.wingtipmaps.android.api.generated.NearestAirports>
-
-    /**
-     * POST words/notams/sources
-     * Notam Sources
-     * The NOTAMs and TFRs of a flight as sources, with the flight itself first: the NOTAMs in force or to come at every field the route lands at, as the FAA&#39;s NOTAM feed gave them (wingtip.notams, SWIM&#39;s FNS), and the TFRs near the route over the briefing&#39;s hours (wingtip.tfr.along_route, as GET /api/briefing asks them: two hours of flight and an hour past, the route&#39;s own time not being known here). None at all where there is no NOTAM and no TFR: nothing to say. &#x60;coverage_since&#x60;, the day the NOTAM feed was first heard (UTC); &#x60;unchecked&#x60;, \&quot;tfrs\&quot; where tfr.faa.gov did not answer.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedRouteAsk
-     * @return [app.wingtipmaps.android.api.generated.WordsSources]
-     */
-    @POST("words/notams/sources")
-    suspend fun notamSources(@Body appWingtipmapsAndroidApiGeneratedRouteAsk: app.wingtipmaps.android.api.generated.RouteAsk): Response<app.wingtipmaps.android.api.generated.WordsSources>
 
     /**
      * POST notams/ranked
@@ -1427,7 +1397,7 @@ interface PlannerApi {
     /**
      * GET plan
      * Plan
-     * The whole plan: course line, every scored candidate, the selected checkpoints, and a nav log leg between each consecutive pair.  altitude_ft is optional. Omitted, wingtip.altitude works out each leg&#39;s own legal altitudes -- clear of terrain and obstacles, under the Class B shelf over that leg alone and the aircraft&#39;s service ceiling, on the hemispheric rule for that leg&#39;s own course -- and wingtip.navlog makes four plans of them: the lowest, the highest, the fastest for the winds aloft, and the one that burns the least fuel, climb and cruise. altitude_choice picks which one the legs fly -- the fastest unless asked otherwise, the plan a pilot with the winds in hand picks (it was the lowest, as the predictable one) -- and the reasoning comes back with it, since \&quot;why am I at 6,500\&quot; is a question a pilot will actually ask.  aircraft names a stock profile; cruise_tas_kt, fuel_burn_gph, usable_fuel_gal, climb_tas_kt, climb_fuel_burn_gph, descent_ias_kt (indicated), descent_fuel_burn_gph and cruise_power_pct (the power the cruise figures are at), when given, are a pilot&#39;s own aeroplane&#39;s numbers laid over it. Each leg flies them in its own air: the cruise figures are the aeroplane&#39;s at a reference altitude on a standard day, and the forecast temperature at the leg&#39;s altitude gives the density altitude they are flown at (wingtip.performance). depart, an ISO time (UTC when naive), picks the winds-aloft forecast period the legs are flown on -- the 6-, 12- or 24-hour product, whichever is valid closest to the departure; without it, the 6-hour product, i.e. about now -- and whether the fuel reserve is the day or the night one.
+     * The whole plan: course line, every scored candidate, the selected checkpoints, and a nav log leg between each consecutive pair.  altitude_ft is optional. Omitted, wingtip.altitude works out each leg&#39;s own legal altitudes -- clear of terrain and obstacles, under the Class B shelf over that leg alone and the aircraft&#39;s service ceiling, on the hemispheric rule for that leg&#39;s own course -- and wingtip.navlog makes four plans of them: the lowest, the highest, the fastest for the winds aloft, and the one that burns the least fuel, climb and cruise. altitude_choice picks which one the legs fly -- the fastest unless asked otherwise, the plan a pilot with the winds in hand picks (it was the lowest, as the predictable one) -- and the reasoning comes back with it, since \&quot;why am I at 6,500\&quot; is a question a pilot will actually ask.  aircraft names a stock profile; cruise_tas_kt, fuel_burn_gph, usable_fuel_gal, climb_tas_kt, climb_fuel_burn_gph, descent_ias_kt (indicated), descent_fuel_burn_gph and cruise_power_pct (the power the cruise figures are at), when given, are a pilot&#39;s own aeroplane&#39;s numbers laid over it. Each leg flies them in its own air: the cruise figures are the aeroplane&#39;s at a reference altitude on a standard day, and the forecast temperature at the leg&#39;s altitude gives the density altitude they are flown at (the engine&#39;s wingtip_flight::performance). depart, an ISO time (UTC when naive), picks the winds-aloft forecast period the legs are flown on -- the 6-, 12- or 24-hour product, whichever is valid closest to the departure; without it, the 6-hour product, i.e. about now -- and whether the fuel reserve is the day or the night one.
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
@@ -1452,7 +1422,6 @@ interface PlannerApi {
      * @param taxiFuelGal  (optional)
      * @param glideRatio  (optional)
      * @param depart  (optional)
-     * @param classBClearance  (optional, default to false)
      * @param rules  (optional, default to "vfr")
      * @param alternate  (optional, default to "")
      * @param altitudes  (optional, default to "")
@@ -1464,11 +1433,11 @@ interface PlannerApi {
      * @param crossings  (optional, default to "")
      * @param holds  (optional, default to "")
      * @param ground  (optional, default to "")
-     * @param checkpoints  (optional, default to true)
+     * @param checkpoints  (optional, default to false)
      * @return [app.wingtipmaps.android.api.generated.Plan]
      */
     @GET("plan")
-    suspend fun plan(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("stops") stops: kotlin.String? = "", @Query("altitude_ft") altitudeFt: kotlin.Double? = null, @Query("altitude_nearest") altitudeNearest: kotlin.Boolean? = false, @Query("altitude_choice") altitudeChoice: kotlin.String? = "fastest", @Query("aircraft") aircraft: kotlin.String? = null, @Query("cruise_tas_kt") cruiseTasKt: kotlin.Double? = null, @Query("fuel_burn_gph") fuelBurnGph: kotlin.Double? = null, @Query("usable_fuel_gal") usableFuelGal: kotlin.Double? = null, @Query("climb_tas_kt") climbTasKt: kotlin.Double? = null, @Query("climb_fuel_burn_gph") climbFuelBurnGph: kotlin.Double? = null, @Query("descent_ias_kt") descentIasKt: kotlin.Double? = null, @Query("descent_fuel_burn_gph") descentFuelBurnGph: kotlin.Double? = null, @Query("cruise_power_pct") cruisePowerPct: kotlin.Double? = null, @Query("service_ceiling_ft") serviceCeilingFt: kotlin.Double? = null, @Query("climb_rate_fpm") climbRateFpm: kotlin.Double? = null, @Query("taxi_fuel_gal") taxiFuelGal: kotlin.Double? = null, @Query("glide_ratio") glideRatio: kotlin.Double? = null, @Query("depart") depart: kotlin.String? = null, @Query("class_b_clearance") classBClearance: kotlin.Boolean? = false, @Query("rules") rules: kotlin.String? = "vfr", @Query("alternate") alternate: kotlin.String? = "", @Query("altitudes") altitudes: kotlin.String? = "", @Query("altitude_starts") altitudeStarts: kotlin.String? = "", @Query("procedures") procedures: kotlin.String? = "", @Query("runways") runways: kotlin.String? = "", @Query("patterns") patterns: kotlin.String? = "", @Query("wind_runways") windRunways: kotlin.Boolean? = false, @Query("crossings") crossings: kotlin.String? = "", @Query("holds") holds: kotlin.String? = "", @Query("ground") ground: kotlin.String? = "", @Query("checkpoints") checkpoints: kotlin.Boolean? = true): Response<app.wingtipmaps.android.api.generated.Plan>
+    suspend fun plan(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("stops") stops: kotlin.String? = "", @Query("altitude_ft") altitudeFt: kotlin.Double? = null, @Query("altitude_nearest") altitudeNearest: kotlin.Boolean? = false, @Query("altitude_choice") altitudeChoice: kotlin.String? = "fastest", @Query("aircraft") aircraft: kotlin.String? = null, @Query("cruise_tas_kt") cruiseTasKt: kotlin.Double? = null, @Query("fuel_burn_gph") fuelBurnGph: kotlin.Double? = null, @Query("usable_fuel_gal") usableFuelGal: kotlin.Double? = null, @Query("climb_tas_kt") climbTasKt: kotlin.Double? = null, @Query("climb_fuel_burn_gph") climbFuelBurnGph: kotlin.Double? = null, @Query("descent_ias_kt") descentIasKt: kotlin.Double? = null, @Query("descent_fuel_burn_gph") descentFuelBurnGph: kotlin.Double? = null, @Query("cruise_power_pct") cruisePowerPct: kotlin.Double? = null, @Query("service_ceiling_ft") serviceCeilingFt: kotlin.Double? = null, @Query("climb_rate_fpm") climbRateFpm: kotlin.Double? = null, @Query("taxi_fuel_gal") taxiFuelGal: kotlin.Double? = null, @Query("glide_ratio") glideRatio: kotlin.Double? = null, @Query("depart") depart: kotlin.String? = null, @Query("rules") rules: kotlin.String? = "vfr", @Query("alternate") alternate: kotlin.String? = "", @Query("altitudes") altitudes: kotlin.String? = "", @Query("altitude_starts") altitudeStarts: kotlin.String? = "", @Query("procedures") procedures: kotlin.String? = "", @Query("runways") runways: kotlin.String? = "", @Query("patterns") patterns: kotlin.String? = "", @Query("wind_runways") windRunways: kotlin.Boolean? = false, @Query("crossings") crossings: kotlin.String? = "", @Query("holds") holds: kotlin.String? = "", @Query("ground") ground: kotlin.String? = "", @Query("checkpoints") checkpoints: kotlin.Boolean? = false): Response<app.wingtipmaps.android.api.generated.Plan>
 
     /**
      * POST charts/refresh
@@ -1512,36 +1481,6 @@ interface PlannerApi {
     suspend fun retrain(): Response<app.wingtipmaps.android.api.generated.RetrainStarted>
 
     /**
-     * POST words/risk/sources
-     * Risk Sources
-     * The Go / No-Go as sources (POST /api/go-no-go&#39;s line, each finding&#39;s line, the risk assessment&#39;s level and every factor it counted) and the pilot&#39;s own record as the client sends it.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedRiskAsk
-     * @return [app.wingtipmaps.android.api.generated.WordsSources]
-     */
-    @POST("words/risk/sources")
-    suspend fun riskSources(@Body appWingtipmapsAndroidApiGeneratedRiskAsk: app.wingtipmaps.android.api.generated.RiskAsk): Response<app.wingtipmaps.android.api.generated.WordsSources>
-
-    /**
-     * GET route-check
-     * Route Check
-     * Whether a route would plan, checked as a typed one is (load_route): a 404 naming an ident that is not one, a 422 for a stop at the point before it or too many stops. With an end missing, each ident given is checked alone. Nothing is read or planned. The gateway forwards no app here.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param dep  (optional, default to "")
-     * @param dest  (optional, default to "")
-     * @param stops  (optional, default to "")
-     * @return [app.wingtipmaps.android.api.generated.RouteChecked]
-     */
-    @GET("route-check")
-    suspend fun routeCheck(@Query("dep") dep: kotlin.String? = "", @Query("dest") dest: kotlin.String? = "", @Query("stops") stops: kotlin.String? = ""): Response<app.wingtipmaps.android.api.generated.RouteChecked>
-
-    /**
      * POST checkpoint-notes/route
      * Route Notes
      * A route&#39;s selected checkpoints in along-track order, each with the note kept for it (the pilot&#39;s own edit, else the shared one) or None, and the hop its note is kept under.
@@ -1577,10 +1516,11 @@ interface PlannerApi {
      * @param depart  (optional)
      * @param minCeilingFt  (optional)
      * @param minVisibilitySm  (optional)
+     * @param altitudeFt  (optional)
      * @return [app.wingtipmaps.android.api.generated.RouteOptions]
      */
     @GET("route-options")
-    suspend fun routeOptions(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("stops") stops: kotlin.String? = "", @Query("aircraft") aircraft: kotlin.String? = null, @Query("cruise_tas_kt") cruiseTasKt: kotlin.Double? = null, @Query("fuel_burn_gph") fuelBurnGph: kotlin.Double? = null, @Query("usable_fuel_gal") usableFuelGal: kotlin.Double? = null, @Query("service_ceiling_ft") serviceCeilingFt: kotlin.Double? = null, @Query("taxi_fuel_gal") taxiFuelGal: kotlin.Double? = null, @Query("glide_ratio") glideRatio: kotlin.Double? = null, @Query("depart") depart: kotlin.String? = null, @Query("min_ceiling_ft") minCeilingFt: kotlin.Double? = null, @Query("min_visibility_sm") minVisibilitySm: kotlin.Double? = null): Response<app.wingtipmaps.android.api.generated.RouteOptions>
+    suspend fun routeOptions(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("stops") stops: kotlin.String? = "", @Query("aircraft") aircraft: kotlin.String? = null, @Query("cruise_tas_kt") cruiseTasKt: kotlin.Double? = null, @Query("fuel_burn_gph") fuelBurnGph: kotlin.Double? = null, @Query("usable_fuel_gal") usableFuelGal: kotlin.Double? = null, @Query("service_ceiling_ft") serviceCeilingFt: kotlin.Double? = null, @Query("taxi_fuel_gal") taxiFuelGal: kotlin.Double? = null, @Query("glide_ratio") glideRatio: kotlin.Double? = null, @Query("depart") depart: kotlin.String? = null, @Query("min_ceiling_ft") minCeilingFt: kotlin.Double? = null, @Query("min_visibility_sm") minVisibilitySm: kotlin.Double? = null, @Query("altitude_ft") altitudeFt: kotlin.Double? = null): Response<app.wingtipmaps.android.api.generated.RouteOptions>
 
     /**
      * GET route-profile
@@ -2108,19 +2048,5 @@ interface PlannerApi {
      */
     @GET("weather/map")
     suspend fun weatherOnTheMap(@Query("south") south: kotlin.Double, @Query("west") west: kotlin.Double, @Query("north") north: kotlin.Double, @Query("east") east: kotlin.Double, @Query("at") at: kotlin.Double? = null, @Query("altitude_ft") altitudeFt: kotlin.Double? = null): Response<app.wingtipmaps.android.api.generated.WeatherMap>
-
-    /**
-     * POST words/weather/sources
-     * Weather Sources
-     * The briefing of a flight as sources (GET /api/briefing, asked here with the same parameters: its METARs, its TAF stations at the flight&#39;s time there, its hazards, G-AIRMETs, pilot reports and TFRs, the fields below VFR and its own \&quot;VFR flight not recommended\&quot;), the flight first. A briefing that cannot be had fails as it does there (a 502).
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedWeatherAsk
-     * @return [app.wingtipmaps.android.api.generated.WordsSources]
-     */
-    @POST("words/weather/sources")
-    suspend fun weatherSources(@Body appWingtipmapsAndroidApiGeneratedWeatherAsk: app.wingtipmaps.android.api.generated.WeatherAsk): Response<app.wingtipmaps.android.api.generated.WordsSources>
 
 }

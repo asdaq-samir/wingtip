@@ -6,7 +6,7 @@ import { ConsolePages, PageLink, PageRow } from "../../components/ConsolePages";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { PAGE_LINK } from "../../components/pageLink";
 import { useCredits } from "../../lib/map/gl/creditStore";
-import { trafficCredit } from "../plan";
+import { trafficCredit } from "../../components/dataSources";
 import Segmented from "../../components/Segmented";
 import SwitchRow from "../../components/SwitchRow";
 import { ALERT_MODES, useAlertMode, type AlertMode } from "../../components/alertMode";
@@ -75,7 +75,6 @@ export function AtcPage() {
               label="ATC alerts"
               value={atcListen}
               onChange={(v) => (v === "flying" ? primeMic(() => setAtcListen("flying")) : setAtcListen(v as AtcListen))}
-              testId="atc-listen-mode"
               options={ATC_LISTEN_MODES}
             />
           </ListRow>
@@ -113,7 +112,7 @@ export function HelpPage({ pages }: { pages: HelpPages }) {
               connection, for every pilot (the owner, 2026-11-04). */}
           <PageRow page="status" title="Status" testId="status-link" />
           {/* When the map's layers showed at this device's loads (lib/loadLog). */}
-          <PageRow page="log" title="Log" testId="log-link" />
+          <PageRow page="log" title="Log" />
           <PageRow page="about" title="About" testId="about-link" />
           {/* Where the map's data comes from and how old it is. */}
           <PageRow page="sources" title="Sources" testId="sources-row" />
@@ -185,7 +184,6 @@ function SourcesPage() {
       <ListRow
         title="Traffic"
         value={<span className="text-foreground">{traffic && ages.traffic ? `${trafficSource} · ${ages.traffic}` : trafficSource}</span>}
-        data-testid="traffic-age"
       />
     </ListGroup>
   );

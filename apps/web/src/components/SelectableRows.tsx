@@ -58,7 +58,6 @@ export function SelectableRow({
       onPointerLeave={onHover && ((e) => e.pointerType === "mouse" && onHover(false))}
       tabIndex={0}
       data-selected={selected || undefined}
-      data-flying={flying || undefined}
       data-kind={kind}
       aria-current={selected || undefined}
       data-expanded={expands ? selected : undefined}

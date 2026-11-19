@@ -5,7 +5,7 @@ test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setu
 
 /**
  * When the flight gets to each TFR and special-use area on the route,
- * against the times it is in force (features/plan/lib/passTimes): the briefing's and
+ * against the times it is in force (features/plan/passTimes): the briefing's and
  * the nav log's own answers, with a TFR and an area put in them.
  */
 test("a TFR in force when the flight gets there is flagged, one that starts later is not, and each area says when it is passed", async ({
@@ -74,12 +74,12 @@ test("a TFR in force when the flight gets there is flagged, one that starts late
     await route.fulfill({ response, body });
   });
 
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
-  // The Brief and its Preflight marked for it, and the flag on its
-  // section inside.
-  await expect(sideDrawer(page).getByTestId("route-brief-mark")).toBeVisible();
+  // Counted on FPL's Brief button (FplTabBar), the Preflight marked for
+  // it, and the flag on its section inside.
+  await expect(sideDrawer(page).getByTestId("route-brief-count")).toBeVisible();
   await openTab(page, "Preflight");
   await expect(page.getByTestId("panel-tab-mark-preflight")).toBeVisible();
   await openSection(page, "TFRs & Special Use");

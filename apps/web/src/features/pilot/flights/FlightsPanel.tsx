@@ -11,7 +11,7 @@ import { RemovableRow } from "../../../components/RemovableRow";
 import type { FlightSummary } from "../../../lib/api/types";
 import { planHrefOf } from "../../../lib/flightLink";
 import { sharedPlanLink } from "../../../lib/sharedFlight";
-import { dayMonthYear, feet, nm } from "../../../lib/format";
+import { dayMonthYear, feet, wholeNm } from "../../../lib/format";
 import { LEVEL_TONE, riskLine, type RiskLevel } from "../../../lib/frat";
 import { routeName } from "../../../lib/identSchema";
 import FlightPage from "../FlightPage";
@@ -55,13 +55,9 @@ function rowOf(f: FlightSummary) {
       <span className="tabular-nums">
         {f.name && <span className="block font-mono">{route}</span>}
         {feet(f.cruiseAltitudeFt)}
-        {f.totalDistanceNm != null && ` · ${nm(f.totalDistanceNm)}`} · saved {dayMonthYear(new Date(f.createdAt))}
+        {f.totalDistanceNm != null && ` · ${wholeNm(f.totalDistanceNm)}`} · saved {dayMonthYear(new Date(f.createdAt))}
         {/* The risk assessment it was saved with (lib/frat). */}
-        {f.risk && (
-          <span className={cn("block", LEVEL_TONE[f.risk.level as RiskLevel])} data-testid="flight-risk">
-            Risk {riskLine(f.risk).toLowerCase()}
-          </span>
-        )}
+        {f.risk && <span className={cn("block", LEVEL_TONE[f.risk.level as RiskLevel])}>Risk {riskLine(f.risk).toLowerCase()}</span>}
         {f.notes && (
           <span className="line-clamp-2 block whitespace-pre-line" data-testid="saved-flight-notes-shown">
             {f.notes}
@@ -94,7 +90,7 @@ function SavedFlightRow({ f, vm }: { f: FlightSummary; vm: SavedFlightsModel }) 
   // Taken off as every kept list's rows are -- its menu or Edit's minus --
   // with a toast's Undo (RemovableRow, useSavedFlights).
   return vm.editing ? (
-    <RemovableRow name={title} label={`Delete ${title}`} onDelete={remove} share={shareOf(f)}>
+    <RemovableRow name={title} label={`Delete ${title}`} onDelete={remove} share={shareOf(f)} editing>
       <ListRow
         {...row}
         // In Edit, the name is what changes it, as iOS's lists rename a
@@ -117,6 +113,7 @@ function SavedFlightRow({ f, vm }: { f: FlightSummary; vm: SavedFlightsModel }) 
     <RowMenu
       label={`More for ${title}`}
       testId="saved-flight-more"
+      swipe
       actions={[
         // Its fields take the focus, as a question does: opened once
         // the menu has closed and let go of it (RowMenu's `asks`).
@@ -124,9 +121,7 @@ function SavedFlightRow({ f, vm }: { f: FlightSummary; vm: SavedFlightsModel }) 
         // A link that opens it read-only, until Stop Sharing, with the
         // airplane's N-number where it has one (the owner, 2026-11-11).
         { label: "Share", icon: <Share />, testId: "saved-flight-share", onSelect: () => void vm.shareFlight(f) },
-        ...(f.share
-          ? [{ label: "Stop Sharing", icon: <Link2Off />, testId: "saved-flight-stop-sharing", onSelect: () => void vm.stopSharing(f) }]
-          : []),
+        ...(f.share ? [{ label: "Stop Sharing", icon: <Link2Off />, onSelect: () => void vm.stopSharing(f) }] : []),
         { label: "Remove", icon: <Trash2 />, destructive: true, onSelect: remove, testId: "saved-flight-delete" },
       ]}
     >
@@ -145,7 +140,7 @@ function SavedFlightRow({ f, vm }: { f: FlightSummary; vm: SavedFlightsModel }) 
 export function FlightsPanel({
   onBack,
 }: {
-  /** Shown as FPL's Saved in full (SavedStrip's title): headed as its
+  /** Shown as FPL's Saved in full (FplStrip's title): headed as its
    *  Recents' page is, Back at its left and Edit at its right, at the
    *  owner's notice ("When clicking on See All for Saved it's not giving
    *  option to go back like recents or favorites"). */

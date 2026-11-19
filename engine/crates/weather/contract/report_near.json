@@ -1,0 +1,42 @@
+{
+  "x-call": "wingtip_weather::near_report::call",
+  "description": "Whether a station's report is near enough to a field with none of its own to say the field's weather by it, approximately: within 10 statute miles, the top of a METAR's vicinity (FAA-H-8083-28B 24.4.3.8.2, 'between 5–10 SM ... coded as in the vicinity (VC)'). A design choice: no FAA source says a station's flight category holds at another field.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ReportNearInput",
+      "type": "object",
+      "properties": {
+        "distance_nm": {
+          "type": "number",
+          "description": "The station's distance from the field, nm."
+        }
+      },
+      "required": [
+        "distance_nm"
+      ]
+    },
+    "answer": {
+      "title": "ReportNearAnswer",
+      "type": "object",
+      "properties": {
+        "near": {
+          "type": "boolean"
+        },
+        "within_sm": {
+          "type": "number",
+          "description": "How near is near, statute miles."
+        }
+      },
+      "required": [
+        "near",
+        "within_sm"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

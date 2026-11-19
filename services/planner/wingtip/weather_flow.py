@@ -10,12 +10,11 @@ Read only from the weather store; nothing here asks AWC or NOMADS.
 
 from __future__ import annotations
 
-import calendar
 import re
 import time
 from pathlib import Path
 
-from . import weather_loop, weather_store
+from . import utc, weather_loop, weather_store
 
 #: A frame's hour as its files are named: YYYYMMDDHH.
 FRAME_ID = re.compile(r"^\d{10}$")
@@ -69,7 +68,7 @@ def field_sources(frame: dict, now: float) -> dict[str, dict]:
         out[field] = {
             "label": label,
             "issued": issued,
-            "stale": issued is None or now - _epoch(issued) > STALE_AFTER_S[part_name],
+            "stale": issued is None or now - utc.epoch(issued) > STALE_AFTER_S[part_name],
             "fallback": fallback,
         }
     return out
@@ -79,10 +78,6 @@ def _version(blob: str) -> str:
     """The run tag a picture's blob name ends with (the weather service's
     app.flow_store): its address changes only when its picture does."""
     return blob.rsplit("-", 1)[-1]
-
-
-def _epoch(iso: str) -> float:
-    return float(calendar.timegm(time.strptime(iso[:19], "%Y-%m-%dT%H:%M:%S")))
 
 
 def _frame_id(iso: str) -> str:
@@ -105,7 +100,7 @@ def layer(now: float | None = None) -> dict | None:
     radar_newest = weather_loop.newest_radar()
     frames = []
     for f in data.get("frames", []):
-        valid = _epoch(f["valid"])
+        valid = utc.epoch(f["valid"])
         past = valid <= now
         radar = None
         if past and radar_newest is not None and radar_newest >= valid - weather_loop.RADAR_OLD_AFTER_S:

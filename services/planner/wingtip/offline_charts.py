@@ -12,7 +12,7 @@ tiles at 2x, so a phone's map draws exactly what the planner serves.
 
 Cut on the first ask and kept on disk beside the cycle it came from
 (<tiles>/<cycle>/offline/<region>/<archive>.pmtiles), so it goes with
-that cycle when the cycle is pruned (wingtip.charts.prune_cycles); the
+that cycle when the cycle is pruned (wingtip.chart_upkeep.prune_cycles); the
 sizes are worked out from the archives' directories alone and kept too.
 The archives must be on this disk: read over HTTP from a published copy
 (CHART_TILES_URL) a tile at a time, a state's cut would take hours, so a
@@ -30,7 +30,7 @@ from pathlib import Path
 
 from pmtiles.tile import zxy_to_tileid
 
-from . import charts, data_cycles, tile_archive
+from . import chart_archives, chart_cycle, chart_grid, chart_kinds, chart_serving, config, data_cycles, tile_archive
 from .atomic import atomic_path
 from .geo import tile_xy
 from .offline_regions import Region
@@ -48,24 +48,24 @@ _locks: dict[str, threading.Lock] = {}
 _locks_lock = threading.Lock()
 
 
-def parse_archive(name: str) -> tuple[charts.ChartKind, int] | None:
+def parse_archive(name: str) -> tuple[chart_kinds.ChartKind, int] | None:
     """An archive's name ("sec", "sec@2x") as its kind and density."""
     match = _ARCHIVE.fullmatch(name)
-    return (charts.KINDS[match[1]], int(match[2] or 1)) if match else None
+    return (chart_kinds.KINDS[match[1]], int(match[2] or 1)) if match else None
 
 
-def _source(cycle: str, kind: charts.ChartKind, scale: int):
+def _source(cycle: str, kind: chart_kinds.ChartKind, scale: int):
     if not _CYCLE.fullmatch(cycle):
         return None
-    return tile_archive.on_disk(charts._archive_path(kind.key, cycle, scale))  # noqa: SLF001 -- the archive's one home
+    return tile_archive.on_disk(chart_archives.archive_path(kind.key, cycle, scale))  # noqa: SLF001 -- the archive's one home
 
 
 def archives_of(cycle: str) -> list[str]:
     """The archives a cycle has on this disk, by name, kind by kind."""
     return [
         tile_archive.archive_name(kind.key, scale).removesuffix(".pmtiles")
-        for kind in charts.KINDS.values()
-        for scale in charts.TILE_SCALES
+        for kind in chart_kinds.KINDS.values()
+        for scale in chart_grid.TILE_SCALES
         if _source(cycle, kind, scale) is not None
     ]
 
@@ -77,14 +77,14 @@ def cycles() -> tuple[str | None, str | None]:
     date. Either is None where no sectional archive of it is on disk."""
 
     def sectional(c):
-        return any(_source(c, charts.SECTIONAL, scale) for scale in charts.TILE_SCALES)
+        return any(_source(c, chart_kinds.SECTIONAL, scale) for scale in chart_grid.TILE_SCALES)
 
-    now = charts.serving_cycle()
+    now = chart_serving.serving_cycle()
     current = now if sectional(now) else None
     ahead = [
         c
-        for c in charts._cycles_on_disk(charts.CHART_TILE_CACHE_DIR)  # noqa: SLF001
-        if not charts.in_force(c) and sectional(c)
+        for c in chart_cycle.cycles_on_disk(config.CHART_TILE_CACHE_DIR)  # noqa: SLF001
+        if not chart_cycle.in_force(c) and sectional(c)
     ]
     return current, (ahead[-1] if ahead else None)
 
@@ -99,7 +99,7 @@ def expires(cycle: str) -> date | None:
     return date.fromisoformat(ends) if ends else None
 
 
-def tiles(region: Region, kind: charts.ChartKind):
+def tiles(region: Region, kind: chart_kinds.ChartKind):
     """(z, x, y) of every tile of `kind`'s zooms whose square touches one
     of the region's boxes, in tile-id order."""
     found = set()
@@ -114,7 +114,7 @@ def tiles(region: Region, kind: charts.ChartKind):
     return sorted(found, key=lambda t: zxy_to_tileid(*t))
 
 
-def _held(source, region: Region, kind: charts.ChartKind) -> list[tuple[int, int, int, int, int]]:
+def _held(source, region: Region, kind: chart_kinds.ChartKind) -> list[tuple[int, int, int, int, int]]:
     """The region's tiles the source archive holds: (z, x, y, offset, length)."""
     out = []
     data = source.header["tile_data_offset"]
@@ -126,7 +126,7 @@ def _held(source, region: Region, kind: charts.ChartKind) -> list[tuple[int, int
 
 
 def _folder(cycle: str, region: Region) -> Path:
-    return charts.CHART_TILE_CACHE_DIR / cycle / "offline" / region.id
+    return config.CHART_TILE_CACHE_DIR / cycle / "offline" / region.id
 
 
 def _lock(key: str) -> threading.Lock:
@@ -208,7 +208,7 @@ def packs_for(region: Region, index: dict | None) -> list[dict]:
 
 
 def _estimates_file(cycle: str) -> Path:
-    return charts.CHART_TILE_CACHE_DIR / cycle / "offline" / _ESTIMATES
+    return config.CHART_TILE_CACHE_DIR / cycle / "offline" / _ESTIMATES
 
 
 def _estimates(cycle: str, key: str | None = None):
@@ -246,7 +246,7 @@ def cut(cycle: str, region: Region, archive: str) -> Path | None:
         kind, scale = parsed
         held = _held(source, region, kind)
         metadata = {
-            **charts._archive_metadata(kind, cycle, scale),  # noqa: SLF001 -- the archives' own words
+            **chart_archives.archive_metadata(kind, cycle, scale),  # noqa: SLF001 -- the archives' own words
             "region": region.id,
             "region_name": region.name,
             "bounds": [list(b) for b in region.boxes],

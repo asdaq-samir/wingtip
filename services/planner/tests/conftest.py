@@ -6,7 +6,7 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 from wingtip import airports, airspace, airspace_at, diagram_crops, faa_data, field_marks, fixes, pattern, planning, publications, remarks
-from wingtip import field_details, tfr, weather
+from wingtip import class_b_route, field_details, tfr, weather
 from wingtip.config import get_settings
 
 from app import chart_model, chart_scorer, detection, prefetch, checkpoint_scoring
@@ -52,7 +52,7 @@ def _fresh_caches():
     for cache in (
         planning._ALTITUDE_CACHE,
         planning._PLANS_CACHE,
-        planning._CLASS_B_WAYS,
+        class_b_route._CLASS_B_WAYS,
         checkpoint_scoring._SCORE_CACHE,
         detection._DETECT_JOBS,
     ):
@@ -192,7 +192,6 @@ def altitude() -> dict:
         "course_magnetic_deg": 335.0,
         "eastbound": False,
         "floor_ft": 2200.0,
-        "airspace_ceiling_ft": None,
         "airspace_transits": [],
         "freezing_level_ft": None,
         "band_ceiling_ft": None,
@@ -211,30 +210,11 @@ def select_cruise_altitude_stub(altitude: dict):
     as its only legal one -- or none at all when there is no
     recommendation, which is what makes a route unflyable."""
 
-    def select(
-        start,
-        end,
-        profile,
-        faa_cache_dir=None,
-        fixes=None,
-        fcst_hr="06",
-        pending=None,
-        window=None,
-        class_b_cleared=False,
-        rules="vfr",
-        paths=(),
-    ):
+    def select(start, end, profile, faa_cache_dir=None, fixes=None, fcst_hr="06", pending=None, window=None, rules="vfr", paths=()):
         candidates = [] if altitude["recommended_ft"] is None else [altitude["recommended_ft"]]
         segments = (
             [
-                {
-                    "from_nm": 0.0,
-                    "to_nm": 10.0,
-                    "floor_ft": altitude["floor_ft"],
-                    "airspace_ceiling_ft": None,
-                    "band_ceiling_ft": None,
-                    "candidates_ft": candidates,
-                }
+                {"from_nm": 0.0, "to_nm": 10.0, "floor_ft": altitude["floor_ft"], "band_ceiling_ft": None, "candidates_ft": candidates}
                 for _ in range(len(fixes) - 1)
             ]
             if fixes

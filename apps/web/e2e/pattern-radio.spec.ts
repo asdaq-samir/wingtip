@@ -4,7 +4,7 @@ import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
- * The briefing's Pattern & Radio (PatternRadio, features/plan/lib/pattern, features/plan/lib/radio):
+ * The briefing's Pattern & Radio (PatternRadio, features/plan/pattern, features/plan/radio):
  * each field's pattern drawn for the runway the wind favours, and the
  * calls in the order they are made. The destination's runways are put
  * in the briefing's answer, a right-traffic 27 into the wind, so the
@@ -50,7 +50,7 @@ test("each field's pattern for the runway into the wind, and its calls in order"
         },
       }),
   );
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   // Each field's on its phase's tab: both drawn, the departure's then the

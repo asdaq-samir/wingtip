@@ -32,9 +32,8 @@ from __future__ import annotations
 import re
 import time
 import xml.etree.ElementTree as ET
-from datetime import datetime
 
-from . import live_reports
+from . import live_reports, utc
 
 KIND = "flow"
 #: The programs a title names, the most specific first.
@@ -52,15 +51,6 @@ _MINUTES = re.compile(r"(\d+)")
 
 def _local(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
-
-
-def _when(text: str | None) -> float | None:
-    if not text:
-        return None
-    try:
-        return datetime.fromisoformat(text.strip().replace("Z", "+00:00")).timestamp()
-    except ValueError:
-        return None
 
 
 def _find(root, name: str):
@@ -90,8 +80,8 @@ def advisory(root) -> dict | None:
     text = _text(root, "advisoryText")
     fields = {k.strip(): v for k, v in _FIELD.findall(text)}
     period = _find(root, "effectivePeriod")
-    starts = _when(_text(period, "startTime")) if period is not None else None
-    ends = _when(_text(period, "endTime")) if period is not None else None
+    starts = utc.epoch_or_none(_text(period, "startTime")) if period is not None else None
+    ends = utc.epoch_or_none(_text(period, "endTime")) if period is not None else None
     return {
         "program": program,
         "airport": (fields.get("CTL ELEMENT") or head[2]).split()[0],
@@ -124,8 +114,8 @@ def restriction(root) -> list[dict]:
                 "element": _text(root, "restrictedNasElements") or None,
                 "reason": _text(root, "reasonText") or None,
                 "facility": _text(root, "facility") or None,
-                "starts": _when(_text(root, "startTime")),
-                "ends": _when(_text(root, "stopTime")),
+                "starts": utc.epoch_or_none(_text(root, "startTime")),
+                "ends": utc.epoch_or_none(_text(root, "stopTime")),
                 "id": _text(root, "restrictionId") or None,
             }
         )

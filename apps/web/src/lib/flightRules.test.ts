@@ -1,15 +1,12 @@
 import { describe, expect, test } from "vitest";
 import fixture from "./fixtures/flightRules.json";
-import { windTriangle } from "./diversion";
 import { callEngine } from "./engine/engine";
 
-// The web's copy of the wind triangle held to the fixture the engine
-// (engine/facade), the planner and the iOS app are held to: the web keeps
-// its TypeScript (no WASM, the owner's call), so this is what keeps the
-// copies one rule.
+// The engine's wind triangle, as the web asks it, held to the fixture the
+// engine (engine/facade), the planner and the iOS app are held to.
 describe("the shared flight rules", () => {
   test.each(fixture.windTriangle)("the wind triangle at $tc° with $windKt kt from $windFrom°", (c) => {
-    const got = windTriangle(c.tc, c.tas, c.windFrom, c.windKt);
+    const got = callEngine("wind_triangle", { tc: c.tc, tas: c.tas, wind_from_deg: c.windFrom, wind_kt: c.windKt });
     if (c.expected === null) {
       expect(got).toBeNull();
       return;

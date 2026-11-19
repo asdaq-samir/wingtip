@@ -1,7 +1,6 @@
 package app.wingtipmaps.gateway.service;
 
 import app.wingtipmaps.gateway.domain.Pilot;
-import app.wingtipmaps.gateway.dto.CurrencyDto;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -65,14 +64,9 @@ public class ReminderService {
         this.mail = mail;
     }
 
-    /** What is coming up within 30 days of `today` of the pilot's own
-     *  currency, each by the nearer of its two reminders: 7 days before
-     *  from the seventh day on, else 30. */
-    public static List<Reminder> due(CurrencyDto c, LocalDate today) {
-        return due(PaperworkService.ofPilot(c), today);
-    }
-
-    /** The same of any list PaperworkService makes: those by day that are
+    /** What is coming up within 30 days of `today` of a list
+     *  PaperworkService makes, each by the nearer of its two reminders: 7
+     *  days before from the seventh day on, else 30. Those by day that are
      *  emailed, in its order. */
     public static List<Reminder> due(List<PaperworkService.Due> items, LocalDate today) {
         List<Reminder> out = new ArrayList<>();

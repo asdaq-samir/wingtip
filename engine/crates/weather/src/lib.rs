@@ -22,6 +22,15 @@
 //! - notam_rank: which of a flight's NOTAMs matter to it, best first
 //!   (14 CFR 91.103);
 //! - rvr: runway visual range against a visibility minimum (91.175(h));
+//!   rvr_read: an RVR system's readings as its feed sends them, 6,000 ft
+//!   its most (AIM 7-1-13);
+//! - runway_closure: where a closed runway's crosses go on a sketch of
+//!   the field (AC 150/5340-1M 5.6 and 5.7, AIM 2-3-6), and the part of a
+//!   runway a NOTAM closes where its words say which;
+//! - datis_kept: how long a digital ATIS is still the airport's, two of
+//!   its hourly updates (AIM 4-1-13);
+//! - near_report: whether a station's report is near enough to say a
+//!   field's weather by it, a METAR's vicinity (FAA-H-8083-28B);
 //! - cycles: when an FAA data set's edition stops counting (AIRAC,
 //!   the 56-day charts, the obstacle file);
 //! - ready: ready to fly -- whether the device holds the charts, the
@@ -42,6 +51,8 @@
 //!   class and its GFA cloud text;
 //! - freezing: freezing rain and drizzle (FZRA, FZDZ) in a field's METAR
 //!   or TAF, which ices an airplane out of cloud (AIM 7-1-20);
+//! - live_feeds: how often the apps ask again for the SWIM feeds' live
+//!   reports (RVR's minute, AIM 7-1-13);
 //! - worse: what counts as a route's weather getting worse between two
 //!   readings of its briefing (AIM 7-1-6, 7-1-7).
 
@@ -50,21 +61,26 @@ pub mod aviation_grids;
 pub mod calls;
 pub mod contractions;
 pub mod cycles;
+pub mod datis_kept;
 pub mod flow_sample;
 pub mod forecast;
 pub mod freezing;
 pub mod gairmet_window;
 pub mod lighting_read;
+pub mod live_feeds;
 pub mod metar;
 pub mod model_levels;
 pub mod model_weather;
+pub mod near_report;
 pub mod notam;
 pub mod notam_rank;
 pub mod notam_read;
 pub mod notam_subject;
 pub mod ready;
 pub mod remarks_read;
+pub mod runway_closure;
 pub mod rvr;
+pub mod rvr_read;
 pub mod sky;
 pub mod taf;
 pub mod tfr;

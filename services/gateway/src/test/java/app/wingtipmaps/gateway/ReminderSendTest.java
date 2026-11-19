@@ -10,11 +10,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import app.wingtipmaps.gateway.domain.Pilot;
-import app.wingtipmaps.gateway.dto.CurrencyDto;
+import app.wingtipmaps.gateway.planner.model.PlannerPaperworkDue;
 import app.wingtipmaps.gateway.repository.PilotRepository;
-import app.wingtipmaps.gateway.service.PlannerClient;
+import app.wingtipmaps.gateway.service.PaperworkClient;
 import app.wingtipmaps.gateway.service.ReminderService;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,36 +60,29 @@ class ReminderSendTest {
     private JavaMailSender mail;
 
     @MockitoBean
-    private PlannerClient planner;
+    private PaperworkClient planner;
 
     @Value("${MAIL_FROM:no-reply@wingtipmaps.app}")
     private String from;
 
     private static final LocalDate TODAY = LocalDate.of(2026, 10, 11);
 
-    /** The planner works the currency out (the engine's rule, tested
-     *  there); here it answers with the medical's day as the pilot gave it. */
+    /** The planner names and dates what falls due (the engine's rule,
+     *  tested there); here it answers with the medical's day as the pilot
+     *  gave it, as pilot_currency lists it. */
     @BeforeEach
     void plannerGivesTheMedical() {
-        given(planner.currency(any(), any(), any(), any(), any()))
-                .willAnswer(ask -> new CurrencyDto(
-                        null,
-                        null,
-                        null,
-                        null,
-                        ask.getArgument(2),
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        null,
-                        null,
-                        null,
-                        null,
-                        0,
-                        false,
-                        false));
+        given(planner.pilot(any(), any(), any(), any(), any()))
+                .willAnswer(ask -> Optional.ofNullable((LocalDate) ask.getArgument(2))
+                        .map(on -> List.of(new PlannerPaperworkDue(
+                                null,
+                                null,
+                                "Medical certificate",
+                                "Your medical certificate runs out",
+                                "14 CFR 61.23",
+                                on,
+                                "medical")))
+                        .orElse(List.of()));
     }
 
     private Pilot pilotWithMedicalEnding(LocalDate on, boolean asked) {

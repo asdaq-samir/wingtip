@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import geodesic from "./fixtures/geodesic.json";
-import { angleBetween, deg, normalizeDeg, rad, signedTurn, geoLoaded } from "./geo";
+import { deg, flatBearingDeg, flatDeg, flatDeg2, flatNm, lonScale, M_PER_DEG, normalizeDeg, rad, geoLoaded } from "./geo";
 
 // The engine's geodesic rules, loaded by the setup file (vitestSetup).
 const { bearingDeg, bestStopIndex, destination, distanceNm, legsNm } = await geoLoaded;
@@ -64,22 +64,6 @@ describe("geo", () => {
   });
 });
 
-describe("two directions apart, and the turn between them", () => {
-  it("measures the angle round the compass the short way, 0 to 180", () => {
-    expect(angleBetween(358, 2)).toBe(4);
-    expect(angleBetween(2, 358)).toBe(4);
-    expect(angleBetween(90, 270)).toBe(180);
-    expect(angleBetween(10, 10)).toBe(0);
-    expect(angleBetween(-600, 120)).toBe(0);
-  });
-
-  it("turns right positive, left negative", () => {
-    expect(signedTurn(90, 120)).toBe(30);
-    expect(signedTurn(350, 10)).toBe(20);
-    expect(signedTurn(10, 350)).toBe(-20);
-  });
-});
-
 describe("a direction brought into 0 up to 360", () => {
   it("wraps either way round the compass and leaves a good one alone", () => {
     expect(normalizeDeg(-10)).toBe(350);
@@ -87,5 +71,34 @@ describe("a direction brought into 0 up to 360", () => {
     expect(normalizeDeg(360)).toBe(0);
     expect(normalizeDeg(-720)).toBeCloseTo(0);
     expect(normalizeDeg(275)).toBe(275);
+  });
+});
+
+describe("the flat sums", () => {
+  it("shrinks a degree of longitude by the parallel's cosine", () => {
+    expect(lonScale(0)).toBe(1);
+    expect(lonScale(60)).toBeCloseTo(0.5, 12);
+    expect(M_PER_DEG).toBe(111_320);
+  });
+
+  it("measures a degree north as 60 nm, and one east at 60 degrees north as half that", () => {
+    expect(flatNm(1, 0, 42)).toBe(60);
+    expect(flatNm(0, 1, 60)).toBeCloseTo(30, 9);
+    expect(flatDeg(3, 4, 0)).toBe(5);
+    expect(flatDeg2(3, 4, 0)).toBe(25);
+  });
+
+  it("is near the engine's geodesic over a few miles, as an order needs", () => {
+    const a = { lat: 42.3246, lon: -88.0741 },
+      b = { lat: 42.4, lon: -88.0 };
+    const nm = flatNm(b.lat - a.lat, b.lon - a.lon, a.lat);
+    expect(Math.abs(nm - distanceNm(a, b)) / distanceNm(a, b)).toBeLessThan(0.01);
+  });
+
+  it("bears a flat offset round the compass", () => {
+    expect(flatBearingDeg(1, 0)).toBe(0);
+    expect(flatBearingDeg(0, 1)).toBe(90);
+    expect(flatBearingDeg(-1, 0)).toBe(180);
+    expect(flatBearingDeg(0, -1)).toBe(270);
   });
 });

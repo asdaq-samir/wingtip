@@ -16,18 +16,8 @@ export type FrequencyKind = EngineAnswer<"frequency_line">["kind"];
  */
 
 /** The fields the engine reads of a frequency. */
-const sent = (frequencies: readonly Frequency[]) =>
+export const sentFrequencies = (frequencies: readonly Frequency[]) =>
   frequencies.map((f) => ({ type: f.type ?? null, description: f.description ?? null, frequency_mhz: f.frequency_mhz ?? null }));
-
-/** The CTAF: the one so called, else a UNICOM that is also the CTAF,
- *  else MULTICOM's 122.9 (AC 90-66C 9.6), as the engine answers it: an
- *  index into `frequencies`, or MULTICOM's own. The radio calls and the
- *  kneeboard both name it from here: with no frequency listed, the one
- *  said to use 122.9 and the other "No published radio". */
-export function ctafOf(frequencies: Frequency[]): Frequency {
-  const ctaf = callEngine("ctaf_of", { frequencies: sent(frequencies) });
-  return typeof ctaf === "number" ? frequencies[ctaf]! : ctaf;
-}
 
 /** A field's frequencies in the order a pilot dials them, the engine's
  *  (frequencies_in_order): its ATIS or AWOS first, then clearance, ground,
@@ -35,13 +25,13 @@ export function ctafOf(frequencies: Frequency[]): Frequency {
  *  KDLH's UNICOM first and its ATIS out of sight (the web audit's WEB-10).
  *  Indices into `frequencies`, so a NOTAM's mark by index still finds its row. */
 export function inUseOrder(frequencies: readonly Frequency[]): number[] {
-  return callEngine("frequencies_in_order", { frequencies: sent(frequencies) });
+  return callEngine("frequencies_in_order", { frequencies: sentFrequencies(frequencies) });
 }
 
 /** A field's radio as the kneeboard lists it (Kneeboard): each by its
  *  short name, with its frequency, the tower's before the CTAF's. */
 export function kneeboardRadio(frequencies: Frequency[]): [string, number][] {
-  return callEngine("kneeboard_radio", { frequencies: sent(frequencies) });
+  return callEngine("kneeboard_radio", { frequencies: sentFrequencies(frequencies) });
 }
 
 /**
@@ -49,8 +39,20 @@ export function kneeboardRadio(frequencies: Frequency[]): [string, number][] {
  * "Tower"), its kind for the row's glyph, and what OurAirports says of it
  * in sentence case (lib/advisories faaWords) where that adds to the name
  * -- "Minneapolis APP/DEP", not a second "TWR" under "Tower". A type with
- * no name of its own is named by its description.
+ * no name of its own is named by its description. With its figure and
+ * the field's frequencies (`field`), a CTAF that is the tower's is "Tower
+ * / CTAF" (AIM 4-1-9).
  */
-export function frequencyLine(type: string | null | undefined, description: string | null | undefined): EngineAnswer<"frequency_line"> {
-  return callEngine("frequency_line", { type: type ?? null, description: description ?? null });
+export function frequencyLine(
+  type: string | null | undefined,
+  description: string | null | undefined,
+  mhz: number | null | undefined = null,
+  field: readonly Frequency[] = [],
+): EngineAnswer<"frequency_line"> {
+  return callEngine("frequency_line", {
+    type: type ?? null,
+    description: description ?? null,
+    frequency_mhz: mhz ?? null,
+    frequencies: sentFrequencies(field),
+  });
 }

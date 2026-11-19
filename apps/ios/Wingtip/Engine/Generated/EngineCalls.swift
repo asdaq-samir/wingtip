@@ -100,7 +100,7 @@ extension Engine {
         try Self.rule("alerts_ahead", EngineContract.AlertsAheadInput(lat: lat, lon: lon, trackDeg: trackDeg, gsKt: gsKt, altFt: altFt, vsFpm: vsFpm, now: now, groundFt: groundFt, airspace: airspace, specialUse: specialUse, tfrs: tfrs, nearField: nearField, swathGroundFt: swathGroundFt, obstacles: obstacles))
     }
 
-    /// The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a warning (the owner's warn, never limit).
+    /// The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a short warning of where it sits, under, over or between them, and the note that says what that means, once over the rows (the owner's warn, never limit).
     static func altitudeAdvisor(figures: [EngineContract.AltitudeAdvisorInputFiguresItem], flownFt: Double? = nil, plans: [EngineContract.AltitudeAdvisorInputPlansItem]? = nil) throws -> [EngineContract.AltitudeAdvisorAnswerItem] {
         try Self.rule("altitude_advisor", EngineContract.AltitudeAdvisorInput(figures: figures, flownFt: flownFt, plans: plans))
     }
@@ -135,9 +135,9 @@ extension Engine {
         try Self.rule("altitude_said", EngineContract.AltitudeSaidInput(ft: ft))
     }
 
-    /// The altitude wheel's rows, highest first: the legal altitudes given, the one flown, and every 500 ft from 1,000 ft to 17,500 ft under Class A (14 CFR 71.33, 91.135) besides (the owner's pick, 2026-10-20).
-    static func altitudeWheel(legalFt: [Double]? = nil, flownFt: Double? = nil) throws -> [Double] {
-        try Self.rule("altitude_wheel", EngineContract.AltitudeWheelInput(legalFt: legalFt, flownFt: flownFt))
+    /// A cruise altitude as a pilot types it, read to feet: a flight level's three figures in hundreds of feet ("075", "FL075", "FL-075"; 14 CFR 1.1), or feet in four or five figures ("7500", "7,500"), rounded to the hundred. Nothing is guessed: four or five figures starting with 0, six or more, under 500 ft MSL (the planning floor, limits.rs) or above FL600 (Class A's top, 71.33(a)) give no ft and the reason. Warn, never limit: VFR in Class A (18,000 ft MSL up, 71.33(a), 91.135(a)) and IFR above FL410 (91.179(b)) give the ft with the reason as a warning. Nothing typed gives neither.
+    static func altitudeTyped(text: String, ifr: Bool? = nil) throws -> EngineContract.AltitudeTypedAnswer {
+        try Self.rule("altitude_typed", EngineContract.AltitudeTypedInput(text: text, ifr: ifr))
     }
 
     /// How far along a path a place is, nm.
@@ -168,11 +168,6 @@ extension Engine {
     /// One attempt at an approach debriefed, or null.
     static func approachDebrief(drawing: EngineContract.ProcedureDrawing, points: [EngineContract.TrackPoint]? = nil, attempt: EngineContract.ApproachAttempt? = nil, minimumsFt: Double? = nil) throws -> EngineContract.ApproachDebrief? {
         try Self.rule("approach_debrief", EngineContract.ApproachDebriefInput(drawing: drawing, points: points, attempt: attempt, minimumsFt: minimumsFt))
-    }
-
-    /// The descent rate on the path, ft/min (the TPP's rate of descent table).
-    static func approachDescentFpm(gsKt: Double, angleDeg: Double) throws -> Double {
-        try Self.rule("approach_descent_fpm", EngineContract.ApproachDescentFpmInput(gsKt: gsKt, angleDeg: angleDeg))
     }
 
     /// The approaches a track flew, each debriefed.
@@ -233,6 +228,11 @@ extension Engine {
     /// A transmission heard by the ATC copilot: who said it, by our call sign's place (AIM 4-2-3 c, 4-2-4), and its items in the order said (AIM 4-4-7 b.2).
     static func atcCall(text: String, tail: String? = nil, prior: EngineContract.AtcCallInputPrior? = nil) throws -> EngineContract.AtcCallAnswer {
         try Self.rule("atc_call", EngineContract.AtcCallInput(text: text, tail: tail, prior: prior))
+    }
+
+    /// The average ground speed over a stretch, knots: its miles over its hours (FAA-H-8083-25C, PHAK ch. 16); null where no time passed. The copilot's planned speed (the nav log's distance over its time en route) and a past flight's (the miles flown over its time aloft).
+    static func averageGroundspeedKt(distanceNm: Double, minutes: Double) throws -> Double? {
+        try Self.rule("average_groundspeed_kt", EngineContract.AverageGroundspeedKtInput(distanceNm: distanceNm, minutes: minutes))
     }
 
     /// The Aviation Weather Center's words for its icing and turbulence grids (aviationweather.gov GFA help, read 2026-11-12): icing severity by category, 0 none, 1 trace, 2 light, 3 moderate, 4 heavy; turbulence by EDR, (m^2/s^3)^1/3, from each word's threshold in the weight class's row: light (< 15,500 lb) 0.13, 0.16, 0.36, 0.64; medium 0.15, 0.20, 0.44, 0.79; heavy 0.17, 0.24, 0.54, 0.96.
@@ -385,6 +385,16 @@ extension Engine {
         try Self.rule("congested_points", EngineContract.CongestedPointsInput(areas: areas, points: points, candidates: candidates))
     }
 
+    /// How far round a point the host looks for towns before congested_points measures it against them: 2,500 ft, a quarter past 14 CFR 91.119(b)'s 'horizontal radius of 2,000 feet', so a town at the radius's edge is always a candidate; in degrees of latitude (sixty nautical miles each), divided by the cosine of the farthest latitude asked (held to 0.2 and over, the latitude to 89 degrees) so it is short in no direction.
+    static func congestedReach(lat: Double) throws -> EngineContract.CongestedReachAnswer {
+        try Self.rule("congested_reach", EngineContract.CongestedReachInput(lat: lat))
+    }
+
+    /// The planned flight the in-flight copilot starts from: the fuel at takeoff (the fuel aboard at the start less the taxi allowance, never below none), the plan's ground speed (its distance over its time en route, PHAK ch. 16) and whether anyone but the pilot is aboard for 14 CFR 61.57(a) and (b)'s passenger currency (a station of the load other than the pilot's, the baggage's or the cargo's with weight in it). Each figure null where the plan has none.
+    static func copilotFlight(fuelGal: Double? = nil, taxiGal: Double? = nil, distanceNm: Double? = nil, eteMin: Double? = nil, stations: [EngineContract.CopilotFlightInputStationsItem]? = nil) throws -> EngineContract.CopilotFlightAnswer {
+        try Self.rule("copilot_flight", EngineContract.CopilotFlightInput(fuelGal: fuelGal, taxiGal: taxiGal, distanceNm: distanceNm, eteMin: eteMin, stations: stations))
+    }
+
     /// The in-flight copilot: from own ship and the live data, the messages that change what the pilot should do, most pressing first (warning, caution, advisory; then the kinds' order), each with the words to show and speak and its sources. Warns, never limits.
     static func copilotWatch(nowS: Double, own: EngineContract.CopilotWatchInputOwn, fields: [EngineContract.CopilotField], rules: String? = nil, minimums: EngineContract.CopilotWatchInputMinimums? = nil, fuelGal: Double? = nil, burnGph: Double? = nil, tasKt: Double? = nil, dest: String, alternate: String? = nil, remainingNm: Double? = nil, plannedGsKt: Double? = nil, passengers: Bool? = nil, nightCurrent: Bool? = nil, areas: [EngineContract.CopilotWatchInputAreasItem]? = nil, itws: [EngineContract.CopilotWatchInputItwsItem]? = nil, ahead: [EngineContract.CopilotWatchInputAheadItem]? = nil) throws -> EngineContract.CopilotWatchAnswer {
         try Self.rule("copilot_watch", EngineContract.CopilotWatchInput(nowS: nowS, own: own, fields: fields, rules: rules, minimums: minimums, fuelGal: fuelGal, burnGph: burnGph, tasKt: tasKt, dest: dest, alternate: alternate, remainingNm: remainingNm, plannedGsKt: plannedGsKt, passengers: passengers, nightCurrent: nightCurrent, areas: areas, itws: itws, ahead: ahead))
@@ -405,6 +415,11 @@ extension Engine {
         try Self.rule("data_cycle", EngineContract.DataCycleInput(kind: kind, effective: effective, on: on))
     }
 
+    /// When a digital ATIS broadcast heard at a time stops being the airport's: two hours after it was heard, two of the updates AIM 4-1-13 asks ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.
+    static func datisEnds(heard: Double) throws -> EngineContract.DatisEndsAnswer {
+        try Self.rule("datis_ends", EngineContract.DatisEndsInput(heard: heard))
+    }
+
     /// A digital ATIS's remarks as the airport card shows them (STDDS TDES DATISData): the sentences after its weather (AIM 4-1-13), an item each, in the FAA's words in sentence case with RWY, TWY and the codes kept, the contractions of FAA Order JO 7340.2 written out, a figure said for the voice ('9 THSD 7 HND 25 FT') written as one (9,725 ft), and the sentences that say the same of several runways folded into one item listing them all. The heading, the closing 'ADVS YOU HAVE INFO' and a sentence whose approach or runways read_datis already shows are left out.
     static func datisRemarks(text: String) throws -> [String] {
         try Self.rule("datis_remarks", EngineContract.DatisRemarksInput(text: text))
@@ -418,11 +433,6 @@ extension Engine {
     /// The track's flights as [first, last] point indices.
     static func debriefAirborne(points: [EngineContract.TrackPoint]) throws -> [[OpenAPIValueContainer]] {
         try Self.rule("debrief_airborne", EngineContract.DebriefAirborneInput(points: points))
-    }
-
-    /// The web's debrief (its figures, snake_case, no marks) marked against ACS PA.VI.A's tolerances as `debrief` marks its own, with the tolerances.
-    static func debriefMarked(debrief: [String: OpenAPIValueContainer]) throws -> EngineContract.DebriefMarkedAnswer {
-        try Self.rule("debrief_marked", EngineContract.DebriefMarkedInput(debrief: debrief))
     }
 
     /// The altitude at which a standard day's air has density sigma.
@@ -585,9 +595,9 @@ extension Engine {
         try Self.rule("field_military", EngineContract.FieldMilitaryInput(ownership: ownership, use: use))
     }
 
-    /// Whether an airplane is around a field, inbound to it or departing it.
-    static func fieldRelation(plane: EngineContract.FieldRelationInputPlane, field: EngineContract.FieldRelationInputField) throws -> EngineContract.FieldRelationAnswer {
-        try Self.rule("field_relation", EngineContract.FieldRelationInput(plane: plane, field: field))
+    /// The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport.
+    static func fieldSiteType(siteType: String? = nil) throws -> EngineContract.FieldSiteTypeAnswer {
+        try Self.rule("field_site_type", EngineContract.FieldSiteTypeInput(siteType: siteType))
     }
 
     /// Whether a field is open, from the FAA's NASR APT_BASE.csv ARPT_STATUS: O operational is open; CI closed indefinitely, CP closed permanently and any other code are closed, and a closed field is never shown or offered as an open one (the owner's hard rule, decision 0043): hidden from the map and every list, and where it appears at all (a search for its ident, its card) labelled with `closed`. `status` null where NASR has no record of the field: not judged, open, unlabelled.
@@ -630,7 +640,7 @@ extension Engine {
         try Self.rule("filed_rnav", EngineContract.FiledRnavInput(airways: airways))
     }
 
-    /// Item 15's route between the departure and the destination (AIM Appendix 4: "DALL3 EIC V18 MEI LGC4", "FLACK DCT IRW"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct. `airways` names which of the stops are airways.
+    /// Item 15's route between the departure and the destination (AIM Appendix 4: "DALL3 EIC V18 MEI LGC4", "FLACK DCT IRW"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct; a pilot's own point off a fix ("VPBNG/095/14.2") as a fix, radial and distance, "VPBNG095014" (AIM Appendix 4's "IRW12503"), never with the strokes item 15 reads as a speed and altitude. `airways` names which of the stops are airways.
     static func filedRoute(stops: [String], airways: [String]? = nil, departure: EngineContract.FiledRouteInputDeparture? = nil, arrival: EngineContract.FiledRouteInputArrival? = nil) throws -> String {
         try Self.rule("filed_route", EngineContract.FiledRouteInput(stops: stops, airways: airways, departure: departure, arrival: arrival))
     }
@@ -638,6 +648,11 @@ extension Engine {
     /// Item 15's cruising speed on FAA Form 7233-4: the true airspeed in knots, "N" and four figures (AIM Appendix 4: "N0450").
     static func filedSpeed(tasKt: Double) throws -> String {
         try Self.rule("filed_speed", EngineContract.FiledSpeedInput(tasKt: tasKt))
+    }
+
+    /// FAA Form 7233-4's item 16 total EET and item 19 endurance (AIM Appendix 4: HHMM; E/ the fuel endurance time). The EET is the nav log's minutes rounded up; the endurance the fuel aboard at the cruise burn rounded down: the highest burn of the legs flown at cruise (no phase), never a climb's or a descent's, else the airplane's own cruise burn. Each null where the plan cannot say.
+    static func filedTimes(eteMin: Double? = nil, fuelGal: Double? = nil, legs: [EngineContract.FiledTimesInputLegsItem], cruiseBurnGph: Double? = nil) throws -> EngineContract.FiledTimesAnswer {
+        try Self.rule("filed_times", EngineContract.FiledTimesInput(eteMin: eteMin, fuelGal: fuelGal, legs: legs, cruiseBurnGph: cruiseBurnGph))
     }
 
     /// Item 9's wake turbulence category: "L" for a maximum certificated takeoff weight of 15,500 lb or less (AIM Appendix 4, from FAA Order JO 7360.1), null where the weight is not known or is more.
@@ -663,11 +678,6 @@ extension Engine {
     /// The floor of a leg flown along a path other than its own line -- a departure (SID), an arrival (STAR) or an approach flown in its place: of the leg's own floor and the floors under each piece of the path (vfr_floors' or ifr_floors' answers, the leg's own first), the highest, the leg's own on a tie, with the lowest ground under any of them. The airplane is over all of the path at its cruising altitude until it comes down, so 14 CFR 91.119's clearances (VFR) or 91.177(a)(2)'s (IFR) hold over all of it; a procedure's published altitudes (91.177(a)(1), Part 97) may be lower, so this errs high (the aviation audit's AV-2).
     static func floorAlongPath(floors: [EngineContract.FloorAlongPathInputFloorsItem]) throws -> EngineContract.FloorAlongPathAnswer {
         try Self.rule("floor_along_path", EngineContract.FloorAlongPathInput(floors: floors))
-    }
-
-    /// What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.
-    static func floorCaution(segment: [String: OpenAPIValueContainer], altitudeFt: Double) throws -> String? {
-        try Self.rule("floor_caution", EngineContract.FloorCautionInput(segment: segment, altitudeFt: altitudeFt))
     }
 
     /// How far either side of the course the VFR floor counts the ground's obstacles: 5 nm, wider than 14 CFR 91.119(b)'s 2,000 ft and 91.177(a)(2)'s 4 nm, so the floor tolerates the airplane off its line. The 3D map colours the ground against the plan within it.
@@ -730,9 +740,9 @@ extension Engine {
         try Self.rule("frequencies_in_order", EngineContract.FrequenciesInOrderInput(frequencies: frequencies))
     }
 
-    /// A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name.
-    static func frequencyLine(type: String? = nil, description: String? = nil) throws -> EngineContract.FrequencyLineAnswer {
-        try Self.rule("frequency_line", EngineContract.FrequencyLineInput(type: type, description: description))
+    /// A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name; a CTAF that is the field's tower frequency "Tower / CTAF" (AIM 4-1-9).
+    static func frequencyLine(type: String? = nil, description: String? = nil, frequencyMhz: Double? = nil, frequencies: [EngineContract.FieldFrequency]? = nil) throws -> EngineContract.FrequencyLineAnswer {
+        try Self.rule("frequency_line", EngineContract.FrequencyLineInput(type: type, description: description, frequencyMhz: frequencyMhz, frequencies: frequencies))
     }
 
     /// The index of the first frequency (with a MHz) of the first of types the field lists, or null.
@@ -800,14 +810,14 @@ extension Engine {
         try Self.rule("glide_ring", EngineContract.GlideRingInput(lat: lat, lon: lon, altitudeFt: altitudeFt, speedKt: speedKt, terrainFt: terrainFt, fieldFt: fieldFt, glideRatio: glideRatio))
     }
 
-    /// What the IFR alternate comes to for the Go / No-Go (14 CFR 91.169(a)(2), (b)): a stop where the one filed will not do, a caution where one is needed and none is filed or it is the pilot's to check; null where none is needed.
-    static func gonogoAlternateFinding(data: EngineContract.GonogoAlternateData? = nil) throws -> EngineContract.GonogoAlternateFindingAnswer? {
-        try Self.rule("gonogo_alternate_finding", EngineContract.GonogoAlternateFindingInput(data: data))
-    }
-
     /// Weight and balance at takeoff and landing, against the profile's limits and envelope, with the problems found.
     static func gonogoBalance(loading: EngineContract.GonogoLoading, load: EngineContract.GonogoLoad, tripFuelGal: Double? = nil) throws -> EngineContract.GonogoBalanceAnswer {
         try Self.rule("gonogo_balance", EngineContract.GonogoBalanceInput(loading: loading, load: load, tripFuelGal: tripFuelGal))
+    }
+
+    /// The Brief's Go / No-Go put together, one call for every host that shows it: the seven findings (verdict.rs), an oxygen finding after the altitude's where the nav log flies over 12,500 ft MSL in an airplane not known to carry oxygen or a pressurised cabin (14 CFR 91.211(a); a caution, its words then left out of the altitude's), the IFR alternate's finding in the weather's where the weather says nothing worse (14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (permission.rs: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left. The decision stays the pilot in command's (14 CFR 91.3).
+    static func gonogoBrief(verdict: EngineContract.VerdictInput, alternate: EngineContract.GonogoAlternateData? = nil, fields: [EngineContract.GonogoFieldUse]? = nil, airplane: Bool) throws -> EngineContract.GonogoBriefAnswer {
+        try Self.rule("gonogo_brief", EngineContract.GonogoBriefInput(verdict: verdict, alternate: alternate, fields: fields, airplane: airplane))
     }
 
     /// The load a profile starts with: its sample empty weight and arm, stations empty, the fuel given.
@@ -825,9 +835,9 @@ extension Engine {
         try Self.rule("gonogo_end_distance", EngineContract.GonogoEndDistanceInput(table: table, runway: runway, pressureAltFt: pressureAltFt, tempC: tempC, weightLb: weightLb, headwindKt: headwindKt))
     }
 
-    /// The Go / No-Go's "fields" row for a departure, destination or stop that NASR lists as closed (APT_BASE ARPT_STATUS not O: "00MO is closed indefinitely (NASR): it cannot be planned as a landing field", decision 0043), private (FACILITY_USE_CODE PR: "IL11 is private: land only with the owner's permission (call 847-323-8911)") or military-only ("prior permission required (PPR)"), the phone NASR APT_CON's; 14 CFR 91.103 (all available information). A caution, opening the Depart tab for the departure and Arrive otherwise; null where every field is open and public or joint use. The hosts add it to gonogo_verdict_items' list before gonogo_verdict_line.
-    static func gonogoFieldPermission(fields: [EngineContract.GonogoFieldPermissionInputFieldsItem]) throws -> EngineContract.GonogoItem? {
-        try Self.rule("gonogo_field_permission", EngineContract.GonogoFieldPermissionInput(fields: fields))
+    /// The Brief as it opens (the owner, 2026-11-03: look and go): the findings that stop the flight, then those that want a look, at most three, each one sentence of at most 140 characters with what to do about it, why it matters and the rule it rests on (14 CFR 91.155 and AIM 7-1-5 for the weather; 91.133, 91.137, 91.141 the airspace; 91.119, 91.155, 91.159 the altitude; 91.151, 91.167 the fuel; 91.103(b) and the POH the runways; 91.9, 91.103 the loading; FAA-H-8083-2 and 91.3 the risk; 91.103 and NASR APT_BASE the fields), and the reports it was read from as sent; then every other finding folded into one row.
+    static func gonogoGlanceLines(items: [EngineContract.GonogoItem], fields: [EngineContract.GonogoGlanceLinesInputFieldsItem]? = nil, raw: EngineContract.GonogoGlanceLinesInputRaw? = nil) throws -> EngineContract.GonogoGlanceLinesAnswer {
+        try Self.rule("gonogo_glance_lines", EngineContract.GonogoGlanceLinesInput(items: items, fields: fields, raw: raw))
     }
 
     /// Whether a flight in a hazard from `enter` to `leave` is there while it is valid: "before" it starts, "after" it ends, else "during", its window widened by `margin_min` either way (30, PASS_MARGIN_MIN, where missing: an ETA is an estimate); null where it gives no window.
@@ -870,7 +880,7 @@ extension Engine {
         try Self.rule("gonogo_risk_line", EngineContract.GonogoRiskLineInput(level: level, score: score))
     }
 
-    /// The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_verdict_items' fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those).
+    /// The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those).
     static func gonogoRouteFigures(totals: EngineContract.GonogoRouteFiguresInputTotals? = nil, tfrCount: Double? = nil, crossed: [String]) throws -> EngineContract.GonogoRouteFiguresAnswer {
         try Self.rule("gonogo_route_figures", EngineContract.GonogoRouteFiguresInput(totals: totals, tfrCount: tfrCount, crossed: crossed))
     }
@@ -920,24 +930,14 @@ extension Engine {
         try Self.rule("gonogo_under_minimums", EngineContract.GonogoUnderMinimumsInput(minimums: minimums, landings: landings, dest: dest, metars: metars, airports: airports, forecast: forecast))
     }
 
-    /// Each tab's finding, in the order a pilot goes through them (AIM 7-1-5(b)), each with where it is shown in full.
-    static func gonogoVerdictItems(weather: EngineContract.VerdictInputWeather, airspace: EngineContract.VerdictInputAirspace, altitude: EngineContract.VerdictInputAltitude, fuel: EngineContract.VerdictInputFuel, runways: EngineContract.VerdictInputRunways, balance: EngineContract.VerdictInputBalance, risk: EngineContract.VerdictInputRisk? = nil) throws -> [EngineContract.GonogoItem] {
-        try Self.rule("gonogo_verdict_items", EngineContract.VerdictInput(weather: weather, airspace: airspace, altitude: altitude, fuel: fuel, runways: runways, balance: balance, risk: risk))
-    }
-
-    /// What the findings come to, in a line over them: the worst finding and the tabs that have it.
-    static func gonogoVerdictLine(items: [EngineContract.GonogoVerdictLineInputItemsItem]? = nil) throws -> EngineContract.GonogoLine {
-        try Self.rule("gonogo_verdict_line", EngineContract.GonogoVerdictLineInput(items: items))
-    }
-
-    /// The items with the alternate's finding put in the weather's, where the weather says nothing worse.
-    static func gonogoWithAlternate(items: [EngineContract.GonogoWithAlternateInputItemsItem]? = nil, found: EngineContract.GonogoWithAlternateInputFound? = nil) throws -> [EngineContract.GonogoItem] {
-        try Self.rule("gonogo_with_alternate", EngineContract.GonogoWithAlternateInput(items: items, found: found))
-    }
-
     /// distance_nm and bearing_deg over many legs at once, columns in and columns out: row i is the geodesic from (lat1[i], lon1[i]) to (lat2[i], lon2[i]) on the WGS-84 ellipsoid (wingtip.geo), its distance in nm and its initial course in degrees true 0 to 360, 0 for two points that coincide. The lists are all as long as each other, so a corridor of points, a route's legs or a map's stops cross into the engine once.
     static func greatCircles(lat1: [Double], lon1: [Double], lat2: [Double], lon2: [Double]) throws -> EngineContract.GreatCirclesAnswer {
         try Self.rule("great_circles", EngineContract.GreatCirclesInput(lat1: lat1, lon1: lon1, lat2: lat2, lon2: lon2))
+    }
+
+    /// The figures the planner's readers of the ground and its obstacles take: the lowest ground in North America, Badwater Basin's 282 ft below sea level (USGS; NPS), below which a terrain tile's height is the sea floor and the surface 14 CFR 91.159 and 91.119 measure from is the sea's, 0 ft; the obstacles the map stands up, 14 CFR 77.9(a)'s more than 200 ft AGL; how far either side of each hop the side view draws obstacles, 1 nm, a display width (the legal margins are 91.119(b)'s and 91.177(a)(2)'s, which the floors keep); and how far round a public-use airport the finer terrain is kept, 5 nm, where a 3° path (AIM 1-1-9) is 1,500 ft up.
+    static func groundFigures() throws -> EngineContract.GroundFiguresAnswer {
+        try Self.rule("ground_figures", EngineContract.GroundFiguresInput())
     }
 
     /// The nav log's ground speed once the heading holds the course: the airspeed's share along it less the wind's.
@@ -955,16 +955,6 @@ extension Engine {
         try Self.rule("handbook_read_check", EngineContract.HandbookReadCheckInput(speedUnit: speedUnit, cruiseSpeedKind: cruiseSpeedKind, distanceUnit: distanceUnit, weightUnit: weightUnit, armUnit: armUnit, fuelUnit: fuelUnit, burnUnit: burnUnit, cruise: cruise, climb: climb, glide: glide, takeoff: takeoff, landing: landing, empty: empty, maxTakeoffWeight: maxTakeoffWeight, envelope: envelope, fuel: fuel))
     }
 
-    /// Whether an airplane's figure, typed in or read off its handbook's page, is within the bounds a light airplane's is believed within; outside them it is a misreading.
-    static func handbookWithin(key: String, value: Double) throws -> Bool {
-        try Self.rule("handbook_within", EngineContract.HandbookWithinInput(key: key, value: value))
-    }
-
-    /// The highest altitude that keeps 14 CFR 91.155(a)'s distance below a cloud base (MSL): 500 ft under it, 1,000 ft at or above 10,000 ft MSL.
-    static func highestUnderCloudsFt(cloudBaseFt: Double) throws -> Double {
-        try Self.rule("highest_under_clouds_ft", EngineContract.HighestUnderCloudsFtInput(cloudBaseFt: cloudBaseFt))
-    }
-
     /// The entry into a route's hold for an airplane arriving on a course (AIM 5-3-8 j.3's sectors, read by the course flown).
     static func holdEntry(arrivalDeg: Double, inboundDeg: Double, turns: String? = nil) throws -> String {
         try Self.rule("hold_entry", EngineContract.HoldEntryInput(arrivalDeg: arrivalDeg, inboundDeg: inboundDeg, turns: turns))
@@ -973,6 +963,11 @@ extension Engine {
     /// A hold's lap and time held, in minutes, and its standard-rate turn radius (AIM 5-3-8); held_min is one lap where neither turns nor minutes is given.
     static func holdFigures(hold: EngineContract.RouteHoldIn, tasKt: Double) throws -> EngineContract.HoldFiguresAnswer {
         try Self.rule("hold_figures", EngineContract.HoldFiguresInput(hold: hold, tasKt: tasKt))
+    }
+
+    /// A hold's inbound course, 0 to 360, from the course the pilot gives: as given where it is the inbound one, its reciprocal where it is the outbound one (AIM 5-3-8: the outbound leg is flown on the inbound course's reciprocal).
+    static func holdInboundDeg(courseDeg: Double, outbound: Bool? = nil) throws -> Double {
+        try Self.rule("hold_inbound_deg", EngineContract.HoldInboundDegInput(courseDeg: courseDeg, outbound: outbound))
     }
 
     /// A hold's length from its code ("2T", "10M"), or null.
@@ -1030,6 +1025,11 @@ extension Engine {
         try Self.rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident: ident, approaches: approaches, forecast: forecast, private: `private`, military: military))
     }
 
+    /// Why a destination needs no IFR alternate, in 14 CFR 91.169(b)'s own figures: an instrument approach, and a forecast of at least 2,000 ft and 3 sm for an hour before and after the ETA ((b)(2)(i), the "1-2-3").
+    static func ifrAlternateNotRequired() throws -> String {
+        try Self.rule("ifr_alternate_not_required", EngineContract.IfrAlternateNotRequiredInput())
+    }
+
     /// The window, unix seconds, a field's TAF is read over for 14 CFR 91.169: the destination's from an hour before to an hour after the ETA (91.169(b)(2)(i), aircraft other than helicopters); an alternate's the ETA there alone, at the estimated time of arrival at the alternate airport (91.169(c)).
     static func ifrAlternateWindow(eta: Double, `for`: String) throws -> EngineContract.IfrAlternateWindowAnswer {
         try Self.rule("ifr_alternate_window", EngineContract.IfrAlternateWindowInput(eta: eta, for: `for`))
@@ -1050,19 +1050,19 @@ extension Engine {
         try Self.rule("ifr_obstacle_radius_nm", EngineContract.IfrObstacleRadiusNmInput())
     }
 
-    /// Whether an airplane is in an emergency: 7500, 7600 or 7700 set, or an emergency sent (AIM 6-2-2, 6-3-4, 6-4-2).
-    static func inEmergency(squawk: String? = nil, emergency: OpenAPIValueContainer? = nil) throws -> Bool {
-        try Self.rule("in_emergency", EngineContract.InEmergencyInput(squawk: squawk, emergency: emergency))
-    }
-
     /// A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves there (fuel_left): from fuel_start_gal less the start and taxi allowance (taxi_fuel_gal), and from each fuel stop passed (refuel_at) with the tanks filled again (fuel_full_gal, else fuel_start_gal) less another allowance, never from the first tank past a fuel stop; fuel_now_gal is what it leaves here. hop is the hop flown (0 the first, one more past each fuel stop, an index into the planner's totals' hops), hop_burnt_gal the legs' burn from that hop's start to here, and leg the nav log's leg flown, so the strip's fuel past a stop is strip_fuel's of that hop less its own burn, not the first tank's. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).
     static func inFlight(fix: EngineContract.InFlightInputFix, line: [[Double]]? = nil, points: [EngineContract.InFlightInputPointsItem]? = nil, legs: [EngineContract.InFlightInputLegsItem]? = nil, fuelStartGal: Double? = nil, fuelFullGal: Double? = nil, taxiFuelGal: Double? = nil, refuelAt: [Int]? = nil, nowS: Double? = nil) throws -> EngineContract.InFlightAnswer? {
         try Self.rule("in_flight", EngineContract.InFlightInput(fix: fix, line: line, points: points, legs: legs, fuelStartGal: fuelStartGal, fuelFullGal: fuelFullGal, taxiFuelGal: taxiFuelGal, refuelAt: refuelAt, nowS: nowS))
     }
 
-    /// The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given.
-    static func inspectionsDue(annualOn: String? = nil, eltOn: String? = nil, staticCheckOn: String? = nil, transponderCheckOn: String? = nil, hundredHourAtHours: Double? = nil, vorCheck: EngineContract.InspectionsDueInputVorCheck? = nil) throws -> EngineContract.InspectionsDueAnswer {
-        try Self.rule("inspections_due", EngineContract.InspectionsDueInput(annualOn: annualOn, eltOn: eltOn, staticCheckOn: staticCheckOn, transponderCheckOn: transponderCheckOn, hundredHourAtHours: hundredHourAtHours, vorCheck: vorCheck))
+    /// The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given. With them `due`, the list the gateway shows and reminds of: each named and with its rule (an AD its own number and 14 CFR 39.7).
+    static func inspectionsDue(annualOn: String? = nil, eltOn: String? = nil, staticCheckOn: String? = nil, transponderCheckOn: String? = nil, hundredHourAtHours: Double? = nil, vorCheck: EngineContract.InspectionsDueInputVorCheck? = nil, tailNumber: String? = nil, forHire: Bool? = nil, eltBatteryDueOn: String? = nil, kept: [EngineContract.InspectionsDueInputKeptItem]? = nil) throws -> EngineContract.InspectionsDueAnswer {
+        try Self.rule("inspections_due", EngineContract.InspectionsDueInput(annualOn: annualOn, eltOn: eltOn, staticCheckOn: staticCheckOn, transponderCheckOn: transponderCheckOn, hundredHourAtHours: hundredHourAtHours, vorCheck: vorCheck, tailNumber: tailNumber, forHire: forHire, eltBatteryDueOn: eltBatteryDueOn, kept: kept))
+    }
+
+    /// The first day an instructor's page lists what they signed: the same day 3 years before today, as 14 CFR 61.189(c) has an instructor keep their records "for at least 3 years" (a 29 February the 28th in a year without one).
+    static func instructorRecordsSince(today: String) throws -> String {
+        try Self.rule("instructor_records_since", EngineContract.InstructorRecordsSinceInput(today: today))
     }
 
     /// Whether a magnetic course is eastbound, 0 to 179 degrees (14 CFR 91.159(a)).
@@ -1100,6 +1100,11 @@ extension Engine {
         try Self.rule("lighting_read", EngineContract.LightingReadInput(lighting: lighting, beacon: beacon))
     }
 
+    /// How long an answer from one of the FAA's SWIM feeds (the planner's /api/live/*) is fresh and how often a screen showing it asks again: a runway's RVR each minute, as it is updated (AIM 7-1-13), the ITWS alerts and special activity airspace's SFDPS status as often (the app's choice), the Command Center's programs every five minutes, and the D-ATIS and a flight's tower departures fresh for five minutes and not polled (the app's choice).
+    static func liveFeedRefresh(feed: String) throws -> EngineContract.LiveFeedRefreshAnswer {
+        try Self.rule("live_feed_refresh", EngineContract.LiveFeedRefreshInput(feed: feed))
+    }
+
     /// A logbook CSV (ForeFlight's export or this logbook's own) read into the gateway's LogbookEntryRequest entries, camelCase, and the lines skipped with why; landings as 14 CFR 61.57(a) and (b) count them. Air time (not a 61.51(b) column) is this logbook's AirTime, else ForeFlight's TimeOff to TimeOn, else 0 (not known); an entry read from a file is never from a track.
     static func logbookCsvRead(text: String) throws -> EngineContract.LogbookCsvReadAnswer {
         try Self.rule("logbook_csv_read", EngineContract.LogbookCsvReadInput(text: text))
@@ -1128,11 +1133,6 @@ extension Engine {
     /// The planner's /api/lost-comms answer (14 CFR 91.185): VFR's words, the routes in the rule's order (c)(1), each segment's altitude (c)(2) and when to leave the clearance limit (c)(3).
     static func lostComms(segments: [EngineContract.LostCommsInputSegmentsItem], assignedFt: Double? = nil, expectedFt: Double? = nil, expectedFrom: Int? = nil, approachFix: Bool? = nil, efc: String? = nil, eta: String? = nil) throws -> EngineContract.LostCommsAnswer {
         try Self.rule("lost_comms", EngineContract.LostCommsInput(segments: segments, assignedFt: assignedFt, expectedFt: expectedFt, expectedFrom: expectedFrom, approachFix: approachFix, efc: efc, eta: eta))
-    }
-
-    /// The lowest VFR cruising altitude at or above a floor for a magnetic course: odd thousands plus 500 eastbound, even westbound (14 CFR 91.159(a)).
-    static func lowestVfrCruisingAltitude(floorFt: Double, magneticCourseDeg: Double) throws -> Double {
-        try Self.rule("lowest_vfr_cruising_altitude", EngineContract.LowestVfrCruisingAltitudeInput(floorFt: floorFt, magneticCourseDeg: magneticCourseDeg))
     }
 
     /// Magnetic variation, degrees east (west negative), the World Magnetic Model's (WMM) at a place and day, as wingtip.magnetic works it out.
@@ -1260,9 +1260,14 @@ extension Engine {
         try Self.rule("night_on_the_way", EngineContract.NightOnTheWayInput(start: start, end: end, departS: departS, minutes: minutes))
     }
 
-    /// Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, whether Class B is what stops it, and all of it as one message.
-    static func noAltitude(selection: [String: OpenAPIValueContainer], between: [String]? = nil, via: EngineContract.NoAltitudeInputVia? = nil, `where`: String? = nil) throws -> EngineContract.NoAltitudeAnswer {
-        try Self.rule("no_altitude", EngineContract.NoAltitudeInput(selection: selection, between: between, via: via, where: `where`))
+    /// How far along the route each leg ends, nm: the running sum of the legs' miles, a null (a departure's row, no leg) adding nothing.
+    static func nmAlong(legsNm: [Double?]) throws -> [Double] {
+        try Self.rule("nm_along", EngineContract.NmAlongInput(legsNm: legsNm))
+    }
+
+    /// Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, and all of it as one message.
+    static func noAltitude(selection: [String: OpenAPIValueContainer], between: [String]? = nil, `where`: String? = nil) throws -> EngineContract.NoAltitudeAnswer {
+        try Self.rule("no_altitude", EngineContract.NoAltitudeInput(selection: selection, between: between, where: `where`))
     }
 
     /// A NOTAM read for a pilot, beside its text as sent: its keyword (FAA Order JO 7930.2 1-2-1) as a plain heading, or the ICAO Q) code's subject (Appendix B); its words with the FAA's contractions written out (JO 7340.2; JO 7930.2 3-3-1 and TBL 3-3-1) in sentence case, its codes (ILS, PAPI, VOR, RNAV, LPV) and idents kept, runways and taxiways as designated (3-3-5, 3-3-6), heights MSL unless AGL is stated (4-2-1), distances and compass points from a place, coordinates and fix-radial-distances written out; and its start of activity and end of validity in UTC (YYMMDDHHMM, 3-3-2), with EST (an estimate) and PERM (permanent) (4-2-1). Its what and where in our words where its subject's words say them (the airport card's lines). The keyword AD, JO 7930.2's aerodrome, is headed "Airport", the FAA's word for pilots (the AIM). A word it does not know is kept as written, never guessed.
@@ -1295,7 +1300,7 @@ extension Engine {
         try Self.rule("our_call", EngineContract.OurCallInput(text: text, tail: tail))
     }
 
-    /// What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, into Class B (91.131), over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.
+    /// What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.
     static func ownAltitudeCaution(selection: [String: OpenAPIValueContainer], legs: [EngineContract.OwnAltitudeCautionInputLegsItem], between: [String], profile: [String: OpenAPIValueContainer]? = nil) throws -> EngineContract.OwnAltitudeCautionAnswer? {
         try Self.rule("own_altitude_caution", EngineContract.OwnAltitudeCautionInput(selection: selection, legs: legs, between: between, profile: profile))
     }
@@ -1310,17 +1315,12 @@ extension Engine {
         try Self.rule("passenger_briefing", EngineContract.PassengerBriefingInput())
     }
 
-    /// Whether an instant is in 14 CFR 61.57(b)'s night-passenger period at a point: from 1 hour after sunset to 1 hour before sunrise (the sun's centre 0.833 degrees down, NOAA's solar calculation), its own window rather than 14 CFR 1.1's night, so a high-latitude summer night with no 1.1 night still has it.
-    static func passengerNight(lat: Double, lon: Double, atS: Double) throws -> Bool {
-        try Self.rule("passenger_night", EngineContract.PassengerNightInput(lat: lat, lon: lon, atS: atS))
-    }
-
     /// Whether any of a flight from `start` to `end` of `minutes`, leaving at `depart_s`, falls in 14 CFR 61.57(b)'s night-passenger period, judged every half hour along the straight line as night_on_the_way judges the night.
     static func passengerNightOnTheWay(start: [Double], end: [Double], departS: Double, minutes: Double) throws -> Bool {
         try Self.rule("passenger_night_on_the_way", EngineContract.PassengerNightOnTheWayInput(start: start, end: end, departS: departS, minutes: minutes))
     }
 
-    /// A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C).
+    /// A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C) to the nearest hundred feet.
     static func patternAltitude(elevationFt: Double? = nil, publishedAglFt: Double? = nil) throws -> EngineContract.PatternAltitudeAnswer {
         try Self.rule("pattern_altitude", EngineContract.PatternAltitudeInput(elevationFt: elevationFt, publishedAglFt: publishedAglFt))
     }
@@ -1338,16 +1338,6 @@ extension Engine {
     /// The bearing, degrees true, from the runway to its pattern's side: right traffic to the right, else left (14 CFR 91.126(b)(1)).
     static func patternSide(headingTrueDeg: Double? = nil, traffic: String? = nil) throws -> Double {
         try Self.rule("pattern_side", EngineContract.PatternSideInput(headingTrueDeg: headingTrueDeg, traffic: traffic))
-    }
-
-    /// A best-rate climb's minutes and gallons, its rate falling with density altitude to 100 fpm at the service ceiling (PHAK ch. 11), in air isa_dev_c warmer than a standard day; nothing for a descent.
-    static func performanceClimb(profile: EngineContract.NavLogProfile, fromFt: Double, toFt: Double, isaDevC: Double? = nil) throws -> EngineContract.PerformanceClimbAnswer {
-        try Self.rule("performance_climb", EngineContract.PerformanceClimbInput(profile: profile, fromFt: fromFt, toFt: toFt, isaDevC: isaDevC))
-    }
-
-    /// An airplane's cruise at an altitude in air at oat_c (a standard day's where null): its power at the cruise setting or full throttle (Gagg and Ferrar), TAS as the cube root of power over density, burn with power, and the density altitude.
-    static func performanceCruise(profile: EngineContract.NavLogProfile, altitudeFt: Double, oatC: Double? = nil) throws -> EngineContract.PerformanceCruiseAnswer {
-        try Self.rule("performance_cruise", EngineContract.PerformanceCruiseInput(profile: profile, altitudeFt: altitudeFt, oatC: oatC))
     }
 
     /// Where the pilot stands on a day, from the logbook and the dates they give: passengers by day (14 CFR 61.57(a)) and at night (61.57(b)), the flight review (61.56(c)), the medical, the logbook's totals and instrument currency (61.57(c)(1), (d)). The gateway's CurrencyDto.
@@ -1425,11 +1415,6 @@ extension Engine {
         try Self.rule("procedure_arc", EngineContract.ProcedureArcInput(center: center, start: start, end: end, turn: turn))
     }
 
-    /// How far a leg flown to an altitude (CA, VA, FA) is drawn, nm: from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; 2 nm where either is not known or it is no climb.
-    static func procedureClimbNm(altitudeFt: Double? = nil, knownFt: Double? = nil) throws -> Double {
-        try Self.rule("procedure_climb_nm", EngineContract.ProcedureClimbNmInput(altitudeFt: altitudeFt, knownFt: knownFt))
-    }
-
     /// A CIFP hold's racetrack (HA, HF, HM) at its fix, inbound on the true course to the fix, turning right or left, with standard-rate turns at a light airplane's 120 kt (AIM 5-3-8): the fix, the turn out, the outbound leg, the turn in, and back to the fix.
     static func procedureHold(fix: [Double], inboundDeg: Double, turn: String, legNm: Double) throws -> [[Double]] {
         try Self.rule("procedure_hold", EngineContract.ProcedureHoldInput(fix: fix, inboundDeg: inboundDeg, turn: turn, legNm: legNm))
@@ -1438,6 +1423,21 @@ extension Engine {
     /// A hold's leg, nm: a timed leg flown at 120 kt (AIM 5-3-8 j.4), else the distance the CIFP codes; null with neither.
     static func procedureHoldLegNm(minutes: Double? = nil, distanceNm: Double? = nil) throws -> Double? {
         try Self.rule("procedure_hold_leg_nm", EngineContract.ProcedureHoldLegNmInput(minutes: minutes, distanceNm: distanceNm))
+    }
+
+    /// How far a procedure's leg with no fix of its own to end at is drawn, nm (ARINC 424-18 5.21): an FC leg its coded distance from its fix; a leg flown to an altitude (FA, CA, VA) from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; any other (to a DME distance, a radial, an intercept, a manual termination) 2 nm.
+    static func procedureLegNm(path: String, distanceNm: Double? = nil, altitudeFt: Double? = nil, knownFt: Double? = nil) throws -> Double {
+        try Self.rule("procedure_leg_nm", EngineContract.ProcedureLegNmInput(path: path, distanceNm: distanceNm, altitudeFt: altitudeFt, knownFt: knownFt))
+    }
+
+    /// The figures a flown procedure path is drawn with: a hold entry's standard-rate turn radius at the 120 kt holds are drawn at (AIM 5-3-8), nm; and the join from vectors to final, 3 nm outside the final's first fix (2 miles outside the approach gate, which is 1 mile outside the FAF: FAA Order JO 7110.65 5-9-1a1, the Pilot/Controller Glossary) at 30 degrees (JO 7110.65 TBL 5-9-1).
+    static func procedurePathFigures() throws -> EngineContract.ProcedurePathFiguresAnswer {
+        try Self.rule("procedure_path_figures", EngineContract.ProcedurePathFiguresInput())
+    }
+
+    /// The course reversal flown where a procedure's path turns `turn_deg` at a fix (AIM 5-4-9): "coded" -- the chart's hold in lieu of a procedure turn or its procedure turn there, entered -- where one is coded at the fix and the path turns more than 90° there, come to from its far side (from the near side a pilot is lined up already and makes none, as on a NoPT route, 14 CFR 91.175(j)); else "teardrop" where the path doubles back more than 120° at a fix past the procedure's first; else null.
+    static func procedureReversal(turnDeg: Double, coded: Bool? = nil, firstFix: Bool? = nil) throws -> String? {
+        try Self.rule("procedure_reversal", EngineContract.ProcedureReversalInput(turnDeg: turnDeg, coded: coded, firstFix: firstFix))
     }
 
     /// A 45°/180° procedure turn at its fix (AIM 5-4-9): 4 nm out on the final's reciprocal, 2 nm on the barb's true course, a standard-rate 180° turn at 120 kt toward the final's side, back to meet the final within 10 nm, and in to the fix.
@@ -1570,24 +1570,34 @@ extension Engine {
         try Self.rule("replay_track", EngineContract.ReplayTrackInput(points: points, gapS: gapS))
     }
 
+    /// Whether a station's report is near enough to a field with none of its own to say the field's weather by it, approximately: within 10 statute miles, the top of a METAR's vicinity (FAA-H-8083-28B 24.4.3.8.2, 'between 5–10 SM ... coded as in the vicinity (VC)'). A design choice: no FAA source says a station's flight category holds at another field.
+    static func reportNear(distanceNm: Double) throws -> EngineContract.ReportNearAnswer {
+        try Self.rule("report_near", EngineContract.ReportNearInput(distanceNm: distanceNm))
+    }
+
     /// The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).
     static func reserveMin(ifr: Bool? = nil, night: Bool? = nil) throws -> Double {
         try Self.rule("reserve_min", EngineContract.ReserveMinInput(ifr: ifr, night: night))
     }
 
-    /// The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route and the most filed one with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.
-    static func routeOptions(dep: EngineContract.RouteOptionsEnd, dest: EngineContract.RouteOptionsEnd, profile: EngineContract.RouteOptionsProfile? = nil, departS: Double, nowS: Double? = nil, minCeilingFt: Double? = nil, minVisibilitySm: Double? = nil, current: [[Double]]? = nil, currentIdents: [String]? = nil, currentLanded: [Bool]? = nil, filed: EngineContract.RouteOptionsInputFiled? = nil, night: Bool? = nil, terrainFt: [Double]? = nil, waterFar: String? = nil, tafs: [EngineContract.RouteOptionsReport]? = nil, metars: [EngineContract.RouteOptionsReport]? = nil, sigmets: [EngineContract.RouteOptionsAdvisory]? = nil, gairmets: [EngineContract.RouteOptionsAdvisory]? = nil, sua: [EngineContract.RouteOptionsArea]? = nil, tfrs: [EngineContract.RouteOptionsArea]? = nil, winds: [EngineContract.RouteOptionsStation]? = nil, fields: [EngineContract.RouteOptionsField]? = nil, food: Bool? = nil, fixes: [EngineContract.RouteOptionsFix]? = nil) throws -> EngineContract.RouteOptionsAnswer {
-        try Self.rule("route_options", EngineContract.RouteOptionsInput(dep: dep, dest: dest, profile: profile, departS: departS, nowS: nowS, minCeilingFt: minCeilingFt, minVisibilitySm: minVisibilitySm, current: current, currentIdents: currentIdents, currentLanded: currentLanded, filed: filed, night: night, terrainFt: terrainFt, waterFar: waterFar, tafs: tafs, metars: metars, sigmets: sigmets, gairmets: gairmets, sua: sua, tfrs: tfrs, winds: winds, fields: fields, food: food, fixes: fixes))
+    /// The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.
+    static func routeOptions(dep: EngineContract.RouteOptionsEnd, dest: EngineContract.RouteOptionsEnd, profile: EngineContract.RouteOptionsProfile? = nil, departS: Double, nowS: Double? = nil, minCeilingFt: Double? = nil, minVisibilitySm: Double? = nil, current: [[Double]]? = nil, currentIdents: [String]? = nil, currentLanded: [Bool]? = nil, filed: EngineContract.RouteOptionsInputFiled? = nil, classB: EngineContract.RouteOptionsInputClassB? = nil, night: Bool? = nil, terrainFt: [Double]? = nil, waterFar: String? = nil, tafs: [EngineContract.RouteOptionsReport]? = nil, metars: [EngineContract.RouteOptionsReport]? = nil, sigmets: [EngineContract.RouteOptionsAdvisory]? = nil, gairmets: [EngineContract.RouteOptionsAdvisory]? = nil, sua: [EngineContract.RouteOptionsArea]? = nil, tfrs: [EngineContract.RouteOptionsArea]? = nil, winds: [EngineContract.RouteOptionsStation]? = nil, fields: [EngineContract.RouteOptionsField]? = nil, food: Bool? = nil, fixes: [EngineContract.RouteOptionsFix]? = nil) throws -> EngineContract.RouteOptionsAnswer {
+        try Self.rule("route_options", EngineContract.RouteOptionsInput(dep: dep, dest: dest, profile: profile, departS: departS, nowS: nowS, minCeilingFt: minCeilingFt, minVisibilitySm: minVisibilitySm, current: current, currentIdents: currentIdents, currentLanded: currentLanded, filed: filed, classB: classB, night: night, terrainFt: terrainFt, waterFar: waterFar, tafs: tafs, metars: metars, sigmets: sigmets, gairmets: gairmets, sua: sua, tfrs: tfrs, winds: winds, fields: fields, food: food, fixes: fixes))
     }
 
     /// Route options' frame, before the planner reads for it: the grid's corner, cells (0.25 degrees) and samples a cell's side, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159 under its ceiling and Class A's 18,000 ft, 71.33), the flight's time, the cruising altitudes the winds are wanted at, the lowest cruise the water's glide is judged from, whether METARs are read (a flight leaving within two hours), the grid's box and the box the fixes and fields are wanted in.
-    static func routeOptionsFrame(dep: EngineContract.RouteOptionsEnd, dest: EngineContract.RouteOptionsEnd, profile: EngineContract.RouteOptionsProfile? = nil, departS: Double, nowS: Double? = nil, minCeilingFt: Double? = nil, minVisibilitySm: Double? = nil, current: [[Double]]? = nil, currentIdents: [String]? = nil, currentLanded: [Bool]? = nil, filed: EngineContract.RouteOptionsInputFiled? = nil, night: Bool? = nil, terrainFt: [Double]? = nil, waterFar: String? = nil, tafs: [EngineContract.RouteOptionsReport]? = nil, metars: [EngineContract.RouteOptionsReport]? = nil, sigmets: [EngineContract.RouteOptionsAdvisory]? = nil, gairmets: [EngineContract.RouteOptionsAdvisory]? = nil, sua: [EngineContract.RouteOptionsArea]? = nil, tfrs: [EngineContract.RouteOptionsArea]? = nil, winds: [EngineContract.RouteOptionsStation]? = nil, fields: [EngineContract.RouteOptionsField]? = nil, food: Bool? = nil, fixes: [EngineContract.RouteOptionsFix]? = nil) throws -> EngineContract.RouteOptionsFrameAnswer {
-        try Self.rule("route_options_frame", EngineContract.RouteOptionsInput(dep: dep, dest: dest, profile: profile, departS: departS, nowS: nowS, minCeilingFt: minCeilingFt, minVisibilitySm: minVisibilitySm, current: current, currentIdents: currentIdents, currentLanded: currentLanded, filed: filed, night: night, terrainFt: terrainFt, waterFar: waterFar, tafs: tafs, metars: metars, sigmets: sigmets, gairmets: gairmets, sua: sua, tfrs: tfrs, winds: winds, fields: fields, food: food, fixes: fixes))
+    static func routeOptionsFrame(dep: EngineContract.RouteOptionsEnd, dest: EngineContract.RouteOptionsEnd, profile: EngineContract.RouteOptionsProfile? = nil, departS: Double, nowS: Double? = nil, minCeilingFt: Double? = nil, minVisibilitySm: Double? = nil, current: [[Double]]? = nil, currentIdents: [String]? = nil, currentLanded: [Bool]? = nil, filed: EngineContract.RouteOptionsInputFiled? = nil, classB: EngineContract.RouteOptionsInputClassB? = nil, night: Bool? = nil, terrainFt: [Double]? = nil, waterFar: String? = nil, tafs: [EngineContract.RouteOptionsReport]? = nil, metars: [EngineContract.RouteOptionsReport]? = nil, sigmets: [EngineContract.RouteOptionsAdvisory]? = nil, gairmets: [EngineContract.RouteOptionsAdvisory]? = nil, sua: [EngineContract.RouteOptionsArea]? = nil, tfrs: [EngineContract.RouteOptionsArea]? = nil, winds: [EngineContract.RouteOptionsStation]? = nil, fields: [EngineContract.RouteOptionsField]? = nil, food: Bool? = nil, fixes: [EngineContract.RouteOptionsFix]? = nil) throws -> EngineContract.RouteOptionsFrameAnswer {
+        try Self.rule("route_options_frame", EngineContract.RouteOptionsInput(dep: dep, dest: dest, profile: profile, departS: departS, nowS: nowS, minCeilingFt: minCeilingFt, minVisibilitySm: minVisibilitySm, current: current, currentIdents: currentIdents, currentLanded: currentLanded, filed: filed, classB: classB, night: night, terrainFt: terrainFt, waterFar: waterFar, tafs: tafs, metars: metars, sigmets: sigmets, gairmets: gairmets, sua: sua, tfrs: tfrs, winds: winds, fields: fields, food: food, fixes: fixes))
     }
 
     /// Where an airplane is along the planned route: the nearest point of `line` (or of the route's own `points`, those not placed left out), the miles along it, to go and off it, whether it is on the route (within 3 nm, the debrief's tolerance for the distance from the planned route, ACS PA.VI.A.S5), the leg it is on and how far along it (by the legs' miles where `legs` is given, else by the points, an index into `points` as given), and the fuel the plan's legs have burnt by there (planning figures, not a gauge); null with no line to be on.
     static func routePosition(at: EngineContract.RoutePositionInputAt, line: [[Double]]? = nil, points: [[Double]?]? = nil, legs: [EngineContract.RoutePositionInputLegsItem]? = nil) throws -> EngineContract.RoutePositionAnswer? {
         try Self.rule("route_position", EngineContract.RoutePositionInput(at: at, line: line, points: points, legs: legs))
+    }
+
+    /// A route typed as a pilot writes one, read back as item 15 of FAA Form 7233-4 has it (AIM Appendix 4), for the route's one field: split on spaces and commas, DCT (direct) taken out; a cruising speed and level group or a level alone before the first point the cruise's ("N0110A065": 110 kt true, 6,500 ft; "A" and hundreds of feet in three figures, "F" a flight level, 14 CFR 1.1 and 91.121(a)(2); "VFR" a VFR level, no figure; metric speeds and levels give no figure); a point with a group after its stroke ("LEXOR/N0467F380") the point, its level a change from there. The rest are the route's points, airways and procedures in order, upper case, as typed: which is which is the caller's.
+    static func routeRead(text: String) throws -> EngineContract.RouteReadAnswer {
+        try Self.rule("route_read", EngineContract.RouteReadInput(text: text))
     }
 
     /// A way's one warning, the worst of the hazard kinds it crosses, in the words every app says it in (route_options' way `warning`; the route as typed, whose crossings come with its chips): a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- "Crosses a restricted area", "Crosses a MOA" ...; null where nothing is crossed.
@@ -1598,6 +1608,11 @@ extension Engine {
     /// Whether a runway's wind is a calm one: no head-, cross- or gust's crosswind.
     static func runwayCalm(wind: EngineContract.RunwayCalmInputWind) throws -> Bool {
         try Self.rule("runway_calm", EngineContract.RunwayCalmInput(wind: wind))
+    }
+
+    /// Where a closed runway's crosses go on a sketch of the field, as the airport marks it on the ground (AC 150/5340-1M, Standards for Airport Markings, Change 1, 12/23/2020; AIM 2-3-6). Permanently closed (NASR's runway remark, CLSD INDEFLY or PERMLY): an X at each end and at 1,000-ft intervals, and one each side of an open runway it crosses (AC 5.6; AIM 2-3-6d). Closed by NOTAM: an X only at each end (AC 5.7.1; AIM 2-3-6e), over the designation marking, 50 ft in (Figure A-3's 60-ft numerals 20 ft from the threshold), at least the X's own size in. A part closed by NOTAM, read from JO 7930.2's forms (RWY 09/27 E 500FT CLSD, RWY 27 FIRST 1000FT CLSD), is marked at the part's own ends; a part it cannot place is not drawn, and a closure between a taxiway and an end (CLSD BTN TWY A AND RWY END 20) closes the whole runway, as notam_subject's badge says. An X never lies on an open runway: one that would moves along the centre line clear of it. The FAA's Xs are yellow (Figure A-27); the colour is the app's.
+    static func runwayClosureMarks(runways: [EngineContract.RunwayClosureMarksInputRunwaysItem], markFt: Double) throws -> EngineContract.RunwayClosureMarksAnswer {
+        try Self.rule("runway_closure_marks", EngineContract.RunwayClosureMarksInput(runways: runways, markFt: markFt))
     }
 
     /// A runway's wind's crosswind, steady or gust, whichever is more.
@@ -1645,14 +1660,19 @@ extension Engine {
         try Self.rule("rvr_check", EngineContract.RvrCheckInput(runways: runways, minimumRvrFt: minimumRvrFt, minimumSm: minimumSm))
     }
 
+    /// An RVR system's readings as STDDS's APDS feed sends them, two figures in hundreds of feet ("35" is 3,500 ft; "00", "FF" or blank none), each with whether it is the system's most: AIM 7-1-13's readouts run 'to a maximum value of 6,000 feet', so a reading of 6,000 is '6,000 or more'.
+    static func rvrReadings(readings: [String?]) throws -> EngineContract.RvrReadingsAnswer {
+        try Self.rule("rvr_readings", EngineContract.RvrReadingsInput(readings: readings))
+    }
+
     /// Whether a and b name one field (KSTL and STL).
     static func sameField(a: String, b: String) throws -> Bool {
         try Self.rule("same_field", EngineContract.SameFieldInput(a: a, b: b))
     }
 
-    /// The planner's altitude selection from the data it read: each leg's band (the floor up to the lowest of the Class B shelf, 91.155's distance under the forecast clouds and the service ceiling, none in prohibited airspace; under IFR the service ceiling and an airway's MAA alone), its legal altitudes by its own magnetic course, the route's, the lowest recommended, and icing where a legal altitude reaches the freezing level with moisture.
-    static func selectCruiseAltitude(start: [Double], end: [Double], fixes: [[Double]]? = nil, breaksNm: [Double]? = nil, rules: String? = nil, classBCleared: Bool? = nil, floors: [[String: OpenAPIValueContainer]]? = nil, airway: EngineContract.SelectCruiseAltitudeInputAirway? = nil, airspaceCeilingsFt: [Double?]? = nil, serviceCeilingsFt: [Double?], variationDeg: Double? = nil, legVariationsDeg: [Double]? = nil, stations: [EngineContract.SelectCruiseAltitudeInputStationsItem]? = nil, minCeilingFt: Double? = nil, specialUse: [[String: OpenAPIValueContainer]]? = nil, freezing: EngineContract.SelectCruiseAltitudeInputFreezing? = nil, hazards: [[String: OpenAPIValueContainer]]? = nil, weatherUnavailable: [String]? = nil) throws -> EngineContract.SelectCruiseAltitudeAnswer {
-        try Self.rule("select_cruise_altitude", EngineContract.SelectCruiseAltitudeInput(start: start, end: end, fixes: fixes, breaksNm: breaksNm, rules: rules, classBCleared: classBCleared, floors: floors, airway: airway, airspaceCeilingsFt: airspaceCeilingsFt, serviceCeilingsFt: serviceCeilingsFt, variationDeg: variationDeg, legVariationsDeg: legVariationsDeg, stations: stations, minCeilingFt: minCeilingFt, specialUse: specialUse, freezing: freezing, hazards: hazards, weatherUnavailable: weatherUnavailable))
+    /// The planner's altitude selection from the data it read: each leg's band (the floor up to the lower of 91.155's distance under the forecast clouds and the service ceiling, none in prohibited airspace, Class B no ceiling as the route is planned through it with its clearance (14 CFR 91.131(a)(1)); under IFR the service ceiling and an airway's MAA alone), its legal altitudes by its own magnetic course, the route's, the lowest recommended, and icing where a legal altitude reaches the freezing level with moisture.
+    static func selectCruiseAltitude(start: [Double], end: [Double], fixes: [[Double]]? = nil, breaksNm: [Double]? = nil, rules: String? = nil, floors: [[String: OpenAPIValueContainer]]? = nil, airway: EngineContract.SelectCruiseAltitudeInputAirway? = nil, serviceCeilingsFt: [Double?], variationDeg: Double? = nil, legVariationsDeg: [Double]? = nil, stations: [EngineContract.SelectCruiseAltitudeInputStationsItem]? = nil, minCeilingFt: Double? = nil, specialUse: [[String: OpenAPIValueContainer]]? = nil, freezing: EngineContract.SelectCruiseAltitudeInputFreezing? = nil, hazards: [[String: OpenAPIValueContainer]]? = nil, weatherUnavailable: [String]? = nil) throws -> EngineContract.SelectCruiseAltitudeAnswer {
+        try Self.rule("select_cruise_altitude", EngineContract.SelectCruiseAltitudeInput(start: start, end: end, fixes: fixes, breaksNm: breaksNm, rules: rules, floors: floors, airway: airway, serviceCeilingsFt: serviceCeilingsFt, variationDeg: variationDeg, legVariationsDeg: legVariationsDeg, stations: stations, minCeilingFt: minCeilingFt, specialUse: specialUse, freezing: freezing, hazards: hazards, weatherUnavailable: weatherUnavailable))
     }
 
     /// The service ceiling on the day: the book's service ceiling, a density altitude (where the best climb has fallen to 100 fpm, FAA-H-8083-25C ch. 11), found as an altitude in the forecast's temperatures (wingtip_flight::performance::altitude_at_density_altitude) to the nearest 100 ft; the book figure where the profile is empty.
@@ -1785,14 +1805,14 @@ extension Engine {
         try Self.rule("tokens", EngineContract.TokensInput(text: text))
     }
 
+    /// Whether a recorded ADS-B track whose first point is distance_nm from the nearest field and above_ft over its elevation starts at its takeoff from that field: within 2 nm and 500 ft. From AC 90-66C: no turn to crosswind until 'within 300 feet below traffic pattern altitude' (11.7), the pattern 'usually ... 1,000 feet above the elevation of the airport surface' (Appendix A), and the departure leg 'at least 1/2 mile beyond the departure end of the runway'; the figures are this check's judgment, not a rule.
+    static func trackLeftFrom(distanceNm: Double, aboveFt: Double) throws -> EngineContract.TrackLeftFromAnswer {
+        try Self.rule("track_left_from", EngineContract.TrackLeftFromInput(distanceNm: distanceNm, aboveFt: aboveFt))
+    }
+
     /// Whether each airplane heard is drawn: its position, seen_s old when the answer was made and the answer age_s old now, within 30 s (wingtip.traffic's STALE_S); older, it is somewhere else by now.
     static func trafficFresh(ageS: Double? = nil, planes: [EngineContract.TrafficFreshInputPlanesItem]) throws -> [Bool] {
         try Self.rule("traffic_fresh", EngineContract.TrafficFreshInput(ageS: ageS, planes: planes))
-    }
-
-    /// An airplane's kind from its ADS-B emitter category (GDL 90 Table 11).
-    static func trafficKind(category: String? = nil) throws -> String {
-        try Self.rule("traffic_kind", EngineContract.TrafficKindInput(category: category))
     }
 
     /// Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159), 2,000 ft for an airplane whose height is an uncorrected pressure altitude (pressure_altitude: the two are not on one reference); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
@@ -1800,19 +1820,9 @@ extension Engine {
         try Self.rule("traffic_marks", EngineContract.TrafficMarksInput(ownFt: ownFt, planes: planes, own: own))
     }
 
-    /// Whether an airplane heard passes the traffic list's filter.
-    static func trafficMatches(plane: EngineContract.TrafficMatchesInputPlane, filter: EngineContract.TrafficMatchesInputFilter) throws -> Bool {
-        try Self.rule("traffic_matches", EngineContract.TrafficMatchesInput(plane: plane, filter: filter))
-    }
-
     /// The pattern to land on an end (lib/trafficPattern TrafficPattern), or null.
     static func trafficPattern(ident: String? = nil, runway: EngineContract.CircuitRunwayIn, endIdent: String, altitudeFt: Double? = nil) throws -> EngineContract.TrafficPatternOut {
         try Self.rule("traffic_pattern", EngineContract.TrafficPatternInput(ident: ident, runway: runway, endIdent: endIdent, altitudeFt: altitudeFt))
-    }
-
-    /// How far round an airport its traffic is asked for, nm: around_nm, about the field (its pattern and one joining it, past 91.117(b)'s 4 nm), and relation_nm, the reach of an airplane inbound or departing, the figures field_relation judges by.
-    static func trafficReach() throws -> EngineContract.TrafficReachAnswer {
-        try Self.rule("traffic_reach", EngineContract.TrafficReachInput())
     }
 
     /// An EDR, (m^2/s^3)^1/3, as AWC's turbulence word for an aircraft weight class (light < 15,500 lb, medium, heavy; aviationweather.gov GFA help's thresholds): the highest it reaches of Light, Moderate, Severe, Extreme; null under light's.
@@ -1843,6 +1853,11 @@ extension Engine {
     /// Every 500 ft from from_ft (1,000 ft where not given), rounded up to a step, to 17,500 ft, the highest VFR cruising altitude under Class A (91.159(a), 71.33(a)): the altitudes a wheel offers.
     static func vfrAltitudes(fromFt: Double? = nil) throws -> [Double] {
         try Self.rule("vfr_altitudes", EngineContract.VfrAltitudesInput(fromFt: fromFt))
+    }
+
+    /// The hours ahead a search's "VFR at…" menu offers, in order: each within the 24 hours a TAF covers (FAA-H-8083-28B 27.4.1), the steps the app's choice.
+    static func vfrAtHours() throws -> [Double] {
+        try Self.rule("vfr_at_hours", EngineContract.VfrAtHoursInput())
     }
 
     /// The surface-area minimums (14 CFR 91.155(c), (d)), which the planner holds every route to: no VFR under a 1,000 ft ceiling or in under 3 statute miles within a surface area of controlled airspace. Not the least VFR ever asks (Class G at or below 1,200 ft above the surface by day: 1 sm and clear of clouds, 91.155(a)).
@@ -1958,11 +1973,6 @@ extension Engine {
     /// A number as JavaScript writes it into a string, "null" for none.
     static func wordsNum(n: Double? = nil) throws -> String {
         try Self.rule("words_num", EngineContract.WordsNumInput(n: n))
-    }
-
-    /// A number to a tenth, JavaScript's Math.round(n * 10) / 10.
-    static func wordsOne(n: Double) throws -> Double {
-        try Self.rule("words_one", EngineContract.WordsOneInput(n: n))
     }
 
     /// JavaScript's toFixed: the nearest, a tie to the larger magnitude, on the float's exact value.

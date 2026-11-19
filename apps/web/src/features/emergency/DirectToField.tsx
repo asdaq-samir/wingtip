@@ -31,7 +31,7 @@ export default function DirectToField({ vm }: { vm: EmergencyModel }) {
   if (!picked && vm.fix && !vm.ranked) {
     return (
       <div className="grid gap-1">
-        <Button size="lg" disabled aria-busy className="w-full justify-center gap-2" data-testid="emergency-direct-to-pending">
+        <Button size="lg" disabled aria-busy className="w-full justify-center gap-2">
           <Icon className="size-5" aria-hidden />
           {ACTION.directTo.label}
         </Button>
@@ -60,11 +60,7 @@ export default function DirectToField({ vm }: { vm: EmergencyModel }) {
         <Icon className="size-5" aria-hidden />
         {ACTION.directTo.label} {picked.ident}
       </Button>
-      {why && (
-        <FieldError className={cn("text-destructive-ink", TEXT.note)} data-testid="emergency-direct-to-why">
-          {why}
-        </FieldError>
-      )}
+      {why && <FieldError className={cn("text-destructive-ink", TEXT.note)}>{why}</FieldError>}
     </div>
   );
 }

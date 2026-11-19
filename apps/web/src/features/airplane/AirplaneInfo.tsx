@@ -38,7 +38,7 @@ export default function AirplaneInfo({
     return (
       <div className="space-y-5" data-testid="airplane-info">
         <ListGroup>
-          <ListRow muted title="The FAA's registry has no record of this N-number." data-testid="airplane-info-none" />
+          <ListRow muted title="The FAA's registry has no record of this N-number." />
         </ListGroup>
         {history}
       </div>
@@ -56,7 +56,7 @@ export default function AirplaneInfo({
         <Fact title="Owner type" value={full.owner_type} />
         <Fact title="Town" value={place} />
         <Fact title="Co-owners" value={full.co_owner_names?.length ? full.co_owner_names.join(", ") : full.co_owners || null} />
-        <Fact title="Status" value={full.status} testId="airplane-info-status" />
+        <Fact title="Status" value={full.status} />
         <Fact title="Issued" value={day(full.certificate_issued)} />
         <Fact title="Expires" value={day(full.expires)} />
         <Fact title="Last action" value={day(full.last_action)} />

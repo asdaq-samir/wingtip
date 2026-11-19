@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { FlowProgram, ItwsProduct, SaaStatus } from "./api/types";
-import { itwsLines, liveWhen, programLine, saaWords, zulu } from "./liveReports";
-import { verdictItems, type VerdictInput } from "./verdict";
+import shared from "./fixtures/shellFigures.json";
+import { datisQuery, itwsLines, liveWhen, programLine, rvrQuery, saaWords, zulu } from "./liveReports";
+import { briefVerdict, type VerdictInput } from "./verdict";
 
 const quiet: VerdictInput = {
   weather: { pending: false, failed: null, vfrNotRecommended: [], underMinimums: [], hazards: [], unchecked: [], worst: "3,500 ft · 6 sm" },
@@ -12,7 +13,7 @@ const quiet: VerdictInput = {
   balance: { pending: false, worked: true, problems: [], takeoff: "2,407 lb at 41.2 in" },
   risk: { level: "low", line: "Low · 2 points" },
 };
-const finding = (input: VerdictInput, key: string) => verdictItems(input).find((i) => i.key === key)!;
+const finding = (input: VerdictInput, key: string) => briefVerdict({ input, airplane: true }).items.find((i) => i.key === key)!;
 
 // 2026-11-09 21:30Z.
 const AT_2130 = Date.UTC(2026, 10, 9, 21, 30) / 1000;
@@ -72,5 +73,20 @@ describe("what SWIM says now", () => {
     expect(
       finding({ ...quiet, airspace: { ...quiet.airspace, specialUse: [{ name: "R-4401A", when: "active-now" }] } }, "airspace").detail,
     ).toBe("R-4401A active now (FAA SFDPS)");
+  });
+});
+
+describe("how often the live feeds are asked again", () => {
+  // The engine's (live_feed_refresh), held to the shared fixture: RVR
+  // fresh and polled each minute as it is updated (AIM 7-1-13); the
+  // D-ATIS fresh five minutes and not polled.
+  it("is the fixture's, in react-query's milliseconds", () => {
+    const rvr = rvrQuery("KMSN");
+    const want = (feed: string) => shared.live_feed_refresh.find((c) => c.input.feed === feed)!.answer;
+    expect(rvr.staleTime()).toBe(want("rvr").fresh_s * 1000);
+    expect(rvr.refetchInterval()).toBe(want("rvr").poll_s! * 1000);
+    const atis = datisQuery("KMSN");
+    expect(atis.staleTime()).toBe(want("atis").fresh_s * 1000);
+    expect(atis.refetchInterval()).toBe(false);
   });
 });

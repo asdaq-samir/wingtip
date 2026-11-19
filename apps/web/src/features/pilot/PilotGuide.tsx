@@ -165,7 +165,6 @@ function TipsGroup() {
           reset();
           setAsked(true);
         }}
-        data-testid="tips-reset"
       />
     </ListGroup>
   );

@@ -53,7 +53,7 @@ class Row(NamedTuple):
 
 
 # How scripts/dev/check.sh runs an area on the Mac, which has no node, pytest or Maven: in its Docker images. The web's is
-# tagged by the Node version and the lock, hashed (its web_image); a Python one is found by name, its newest tag the one kept.
+# tagged by the Node version and the lock, hashed (check-images.sh's web_image); a Python one is found by name, its newest tag kept.
 def web(inner: str, types: str = "npm run -s types && ") -> str:
     """inner in apps/web, in check.sh's node image with the web's packages."""
     return (
@@ -64,7 +64,7 @@ def web(inner: str, types: str = "npm run -s types && ") -> str:
 
 
 def py(where: str, image: str, inner: str) -> str:
-    """inner in that folder, in check.sh's Python image for a requirements file (its py_image)."""
+    """inner in that folder, in check.sh's Python image for a requirements file (check-images.sh's py_image)."""
     return (
         f'docker run --rm -v "$PWD:/repo" -v wingtip-check-raw:/repo/data/raw -w /repo/{where} '
         f'"$(docker image ls -q wingtip-check-py-{image} | head -1)" {inner}'

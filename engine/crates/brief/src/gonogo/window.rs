@@ -13,17 +13,12 @@
 //! The decision stays the pilot in command's (14 CFR 91.3): an hour's
 //! "go" is "nothing found against it", as the Brief's own line says it.
 
+use super::brief;
 use super::frat;
 use super::verdict::{self, Item};
 use wingtip_core::sort::StableSort;
 use wingtip_flight::sun;
 use wingtip_flight::vfr;
-
-/// The findings that need an airplane's figures, left out of an hour's
-/// verdict when none is picked: the fuel, the runways' distances and
-/// crosswind and the weight and balance (the web's AIRPLANE_ITEMS,
-/// useFlightBriefing; the owner, 2026-11-08: "don't assume").
-pub const AIRPLANE_ITEMS: [&str; 3] = ["fuel", "runways", "balance"];
 
 /// How much better than the minimums an hour's weather is counted, at
 /// most, when windows are ranked: past three times the ceiling and
@@ -165,10 +160,9 @@ pub fn judge(input: &Input, hour: &Hour) -> Judged {
         (a.level.to_owned(), frat::risk_line(a.level, a.score))
     });
     let found = verdict::alternate_finding(hour.alternate.as_ref());
-    let items: Vec<Item> = verdict::with_alternate(verdict::verdict_items(&v), found.as_ref().map(|(f, d)| (*f, d.as_str())))
-        .into_iter()
-        .filter(|i| input.airplane || !AIRPLANE_ITEMS.contains(&i.key.as_str()))
-        .collect();
+    // Put together as the Brief's are (brief::assemble), with no fields
+    // row: the fields are the same every hour.
+    let items: Vec<Item> = brief::assemble(verdict::verdict_items(&v), found.as_ref().map(|(f, d)| (*f, d.as_str())), None, input.airplane);
     let has = |f: &str| items.iter().any(|i| i.finding == f);
     let hourly_unknown = items.iter().any(|i| HOURLY_ITEMS.contains(&i.key.as_str()) && (i.finding == "unknown" || i.finding == "pending"));
     let (say, deciding): (&'static str, Vec<Item>) = if !hour.reaches {

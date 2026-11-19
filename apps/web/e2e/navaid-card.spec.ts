@@ -12,9 +12,10 @@ const OBK = "OBK@42.2214,-87.9517";
 test("a VOR's link opens its card, with its full row and every band of its service volume", async ({ page }) => {
   await page.goto(`/app/plan?navaid=${encodeURIComponent(OBK)}`);
   const head = page.locator("[data-sheet-head]").filter({ visible: true }).last();
-  await expect(head.getByRole("heading")).toHaveText("OBKVOR/DME", { timeout: slow(20000) });
-  // Its line, its frequency as the dial shows it; Share at the start.
-  await expect(head).toContainText("Northbrook · 113.0");
+  // Its ident the name; what it is, its frequency as the dial shows it and
+  // its name the line under it (the owner, 2026-11-18); Share at the start.
+  await expect(head.getByRole("heading")).toHaveText("OBK", { timeout: slow(20000) });
+  await expect(head.getByTestId("card-sub")).toHaveText("VOR/DME · 113.0 · Northbrook");
   await expect(head.locator("[data-slot=head-start]").getByTestId("card-share")).toBeVisible();
   // Direct To, Add to Route and the frequency, each there with no route,
   // the first two greyed until there is one.

@@ -1,9 +1,10 @@
-"""app.gonogo.verdict, with apps/web/src/lib/verdict.test.ts's cases: the two
-must give the same answers."""
+"""app.gonogo.verdict (the engine's gonogo_brief), with
+apps/web/src/lib/verdict.test.ts's cases: the two must give the same
+answers."""
 
 import copy
 
-from app.gonogo.verdict import alternate_finding, verdict_items, verdict_line, with_alternate
+from app.gonogo.verdict import brief
 
 QUIET = {
     "weather": {
@@ -34,6 +35,15 @@ def quiet(**over) -> dict:
     return v
 
 
+def verdict_items(v: dict, alternate: dict | None = None) -> list[dict]:
+    """The findings for an airplane picked, on a route with no fields to say of."""
+    return brief(v, alternate, (), True)["items"]
+
+
+def verdict_line(v: dict) -> dict:
+    return brief(v, None, (), True)["line"]
+
+
 def finding(v: dict, key: str) -> dict:
     return next(i for i in verdict_items(v) if i["key"] == key)
 
@@ -42,7 +52,7 @@ def test_finds_nothing_against_a_quiet_day_every_row_saying_what_it_checked():
     items = verdict_items(quiet())
     assert [i["finding"] for i in items] == ["ok"] * 7
     assert finding(quiet(), "fuel")["detail"] == "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare"
-    assert verdict_line(items) == {"finding": "ok", "words": "Nothing found against this flight"}
+    assert verdict_line(quiet()) == {"finding": "ok", "words": "Nothing found against this flight"}
 
 
 def test_is_no_go_on_vfr_not_recommended_a_tfr_in_force_too_little_fuel_or_no_altitude_naming_each():
@@ -52,10 +62,9 @@ def test_is_no_go_on_vfr_not_recommended_a_tfr_in_force_too_little_fuel_or_no_al
         fuel={"margin_gal": -2.25},
         altitude={"problem": "Ceiling 11,700 ft: terrain 40 nm past KDLH needs 12,500"},
     )
-    items = verdict_items(v)
     assert finding(v, "weather")["detail"] == "VFR not recommended: KDLH currently reporting IFR"
     assert finding(v, "fuel")["detail"] == "2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)"
-    assert verdict_line(items) == {"finding": "stop", "words": "No-go as planned: Weather, TFRs & special use, Altitude, Fuel"}
+    assert verdict_line(v) == {"finding": "stop", "words": "No-go as planned: Weather, TFRs & special use, Altitude, Fuel"}
 
 
 def test_under_ifr_cites_the_ifr_reserves_rule():
@@ -79,7 +88,7 @@ def test_asks_for_another_look_at_hazards_an_area_in_use_a_pilots_own_altitude_a
         runways={"crosswind": ["C81"]},
     )
     assert finding(v, "airspace")["detail"] == "VOLK EAST MOA scheduled in use when you pass"
-    assert verdict_line(verdict_items(v))["words"] == "Look again at Weather, TFRs & special use, Altitude, Runways"
+    assert verdict_line(v)["words"] == "Look again at Weather, TFRs & special use, Altitude, Runways"
 
 
 def test_distances_past_the_pohs_tables_are_a_caution_and_a_runway_not_checked_unknown_never_within():
@@ -92,9 +101,9 @@ def test_distances_past_the_pohs_tables_are_a_caution_and_a_runway_not_checked_u
 
 
 def test_says_what_was_not_worked_out_and_what_is_still_coming():
-    unknown = verdict_items(quiet(runways={"worked": False}, balance={"pending": False, "worked": False, "problems": [], "takeoff": None}))
-    assert verdict_line(unknown)["words"] == "Nothing found against it; not worked out: Runways, Weight & balance"
-    coming = verdict_items(quiet(weather={"pending": True}, risk=None))
+    unknown = quiet(runways={"worked": False}, balance={"pending": False, "worked": False, "problems": [], "takeoff": None})
+    assert verdict_line(unknown)["words"] == "No problems found; not checked: Runways, Weight & balance"
+    coming = quiet(weather={"pending": True}, risk=None)
     assert verdict_line(coming) == {"finding": "pending", "words": "Still checking: Weather, Risk"}
 
 
@@ -104,15 +113,33 @@ def test_names_a_near_tfr_and_an_area_not_scheduled_as_nothing_against_it():
 
 
 def test_the_alternate_speaks_for_the_weather_where_the_weather_says_nothing_worse():
-    # FlightBriefingView's merge and useAlternate's alternateFinding.
-    needed = {"destination": {"required": True}, "alternate": None}
-    assert alternate_finding(needed) == {"finding": "caution", "detail": "An alternate is required (14 CFR 91.169): file one in Weather"}
-    assert alternate_finding({"destination": {"required": False}}) is None
-    under = alternate_finding({"destination": {"required": True}, "alternate": {"ident": "KMSN", "good": False, "reasons": []}})
-    assert under == {"finding": "stop", "detail": "KMSN is under its alternate minimums at the ETA there"}
-    items = with_alternate(verdict_items(quiet()), under)
-    weather = next(i for i in items if i["key"] == "weather")
-    assert (weather["finding"], weather["tab"], weather["section"]) == ("stop", "arrive", "Alternate")
+    # FlightBriefingView's merge and useAlternate's alternateFinding, under IFR alone (14 CFR 91.169(a)).
+    ifr = quiet(weather={"ifr": True})
+
+    def weather(v: dict, alternate: dict | None) -> dict:
+        return next(i for i in verdict_items(v, alternate) if i["key"] == "weather")
+
+    needed = weather(ifr, {"destination": {"required": True}, "alternate": None})
+    assert (needed["finding"], needed["detail"]) == ("caution", "An alternate is required (14 CFR 91.169): file one in Weather")
+    assert weather(ifr, {"destination": {"required": False}})["finding"] == "ok"
+    under = {"destination": {"required": True}, "alternate": {"ident": "KMSN", "good": False, "reasons": []}}
+    said = weather(ifr, under)
+    assert (said["finding"], said["detail"]) == ("stop", "KMSN is under its alternate minimums at the ETA there")
+    assert (said["tab"], said["section"]) == ("arrive", "Alternate")
     # A stop of the weather's own stands.
-    stopped = with_alternate(verdict_items(quiet(weather={"vfr_not_recommended": ["x"]})), under)
-    assert next(i for i in stopped if i["key"] == "weather")["section"] == "Adverse Conditions"
+    stopped = weather(quiet(weather={"ifr": True, "vfr_not_recommended": ["x"]}), under)
+    assert stopped["section"] == "Adverse Conditions"
+    # Under VFR the alternate's answer says nothing.
+    assert weather(quiet(), under)["finding"] == "ok"
+
+
+def test_with_no_airplane_its_findings_are_left_out_and_oxygen_is_said_over_12500_ft():
+    # The fuel, runways and loading are an airplane's (the owner, 2026-11-08: none assumed).
+    keys = [i["key"] for i in brief(quiet(), None, (), False)["items"]]
+    assert keys == ["weather", "airspace", "altitude", "risk"]
+    # 14 CFR 91.211(a): over 12,500 ft MSL with no oxygen aboard, a caution after the altitude's.
+    high = quiet(altitude={"highest_ft": 13500.0, "oxygen": False})
+    items = verdict_items(high)
+    assert [i["key"] for i in items][2:4] == ["altitude", "oxygen"]
+    assert next(i for i in items if i["key"] == "oxygen")["finding"] == "caution"
+    assert "oxygen" not in [i["key"] for i in verdict_items(quiet(altitude={"highest_ft": 13500.0, "oxygen": True}))]

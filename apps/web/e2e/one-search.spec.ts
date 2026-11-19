@@ -51,7 +51,7 @@ test(
     await expect(row.getByTestId("account-button")).toHaveCount(0);
     await expect(sideDrawer(page).getByTestId("sheet-title")).toHaveCount(0);
     await expect(sideDrawer(page).getByRole("tablist", { name: "Tabs" })).toHaveCount(0);
-    await expect(sideDrawer(page).getByLabel(/^(\S+, )?Departure$/)).toContainText("C81");
+    await expect(sideDrawer(page).getByTestId("route-summary")).toContainText("C81");
 
     // Focused: the search's own page, its home list (Favorites, Recents),
     // with no flight on it since the saved flights went to FPL (3eb6e1417),
@@ -128,9 +128,16 @@ test("the account button opens the account page itself, no menu first, and its c
   await grabberTo(page, "full");
   await consolePage(account, "About");
   await expect(page.getByTestId("about-build")).toBeVisible();
-  // One ✕ in sight on a page: its own, back to Settings; then Settings' own.
+  // One ✕ in sight on a page, its own, back one page at a time (About is
+  // Help & About's, under Settings: the pages under it keep theirs, hidden);
+  // then You's own.
   await expect(account.getByTestId("console-close")).toBeHidden();
-  await account.getByTestId("console-page-close").click();
+  const pageClose = account.getByTestId("console-page-close").locator("visible=true");
+  for (const back of ["Back to Help & About", "Back to Settings", "Back to You"]) {
+    await expect(pageClose).toHaveCount(1);
+    await expect(pageClose).toHaveAccessibleName(back);
+    await pageClose.click();
+  }
   await account.getByTestId("console-close").click();
   await expect(account).toHaveCount(0);
   // Its button over the map, which comes back as the sheet comes down.

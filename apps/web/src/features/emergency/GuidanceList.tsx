@@ -14,7 +14,7 @@ export default function GuidanceList({ vm }: { vm: EmergencyModel }) {
   return (
     <ListGroup title="What to do">
       {vm.guidance.map((g) => (
-        <ListRow key={g.title} title={g.title} description={`${g.detail} (${g.source})`} data-testid="emergency-guidance" />
+        <ListRow key={g.title} title={g.title} description={`${g.detail} (${g.source})`} />
       ))}
       <ListRow
         title="Pick an airplane"
@@ -23,7 +23,6 @@ export default function GuidanceList({ vm }: { vm: EmergencyModel }) {
           vm.close();
           requestAirplanePick();
         }}
-        data-testid="emergency-pick-airplane"
       />
     </ListGroup>
   );

@@ -94,6 +94,27 @@ pub fn frequency_line(kind: Option<&str>, description: Option<&str>) -> (String,
     (name, kind_of(&code), adds.then_some(words))
 }
 
+/// A frequency's line (frequency_line) at its field: a CTAF that is the
+/// field's tower frequency (`field`, its frequencies; `mhz`, this one's)
+/// is named "Tower / CTAF" with the tower's glyph. AIM 4-1-9: "The CTAF may
+/// be a UNICOM, MULTICOM, FSS, or tower frequency", and where a tower is
+/// "temporarily closed, or operated on a part-time basis ... use the CTAF
+/// to self-announce" -- so at a towered field it is the tower's, flown to
+/// the tower while it is open; KOSH's 118.5 said "CTAF" alone (the UI
+/// audit's C13). Any other line as frequency_line has it.
+pub fn frequency_line_at(
+    kind: Option<&str>, description: Option<&str>, mhz: Option<f64>, field: &[Frequency],
+) -> (String, &'static str, Option<String>) {
+    let (name, glyph, detail) = frequency_line(kind, description);
+    // NASR gives each to the kHz: the same figure within half of one.
+    let tower = mhz.is_some_and(|m| field.iter().any(|f| f.code() == "TWR" && f.mhz.is_some_and(|t| (t - m).abs() < 0.0005)));
+    if tower && js_trim(kind.unwrap_or("")).eq_ignore_ascii_case("CTAF") {
+        ("Tower / CTAF".to_owned(), "tower", detail)
+    } else {
+        (name, glyph, detail)
+    }
+}
+
 /// The first frequency the field lists of the first of `types` it has
 /// one for, by its index.
 pub fn frequency_of(frequencies: &[Frequency], types: &[&str]) -> Option<usize> {

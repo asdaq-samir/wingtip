@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { ctafOf, frequencyLine, kneeboardRadio, mhzText } from "./frequencies";
+import { frequencyLine, kneeboardRadio, mhzText } from "./frequencies";
 
 describe("a field's frequencies as its card lists them", () => {
   test("are written as pilots write them", () => {
@@ -25,18 +25,18 @@ describe("a field's frequencies as its card lists them", () => {
     expect(frequencyLine("POST", "ANG COMD POST")).toMatchObject({ kind: "other", detail: null });
     expect(frequencyLine("POST", "ANG COMD POST").name).toBe("ANG comd post");
     expect(frequencyLine(null, null)).toEqual({ name: "Frequency", kind: "other", detail: null });
+    // AIM 4-1-9: a towered field's CTAF is its tower's frequency (KOSH's 118.5).
+    const kosh = [
+      { type: "TWR", description: "TWR", frequency_mhz: 118.5 },
+      { type: "CTAF", description: "CTAF", frequency_mhz: 118.5 },
+    ];
+    expect(frequencyLine("CTAF", "CTAF", 118.5, kosh)).toEqual({ name: "Tower / CTAF", kind: "tower", detail: null });
+    expect(frequencyLine("CTAF", "CTAF", 122.8, kosh)).toMatchObject({ name: "CTAF", kind: "traffic" });
   });
 });
 
 describe("which of a field's frequencies is the CTAF, and the kneeboard's list", () => {
   const f = (type: string, frequency_mhz: number, description = type) => ({ type, description, frequency_mhz });
-
-  test("the CTAF so called, else a UNICOM that is the CTAF too, else a UNICOM, else MULTICOM's 122.9", () => {
-    expect(ctafOf([f("UNIC", 122.8), f("CTAF", 122.7)]).frequency_mhz).toBe(122.7);
-    expect(ctafOf([f("UNIC", 123.0, "CTAF/UNICOM")]).frequency_mhz).toBe(123);
-    expect(ctafOf([f("UNIC", 122.95)]).frequency_mhz).toBe(122.95);
-    expect(ctafOf([f("AWOS", 118.375)])).toMatchObject({ type: "MULTICOM", frequency_mhz: 122.9 });
-  });
 
   test("the kneeboard names MULTICOM's 122.9 where the radio calls do, never for a towered field", () => {
     expect(kneeboardRadio([f("AWOS", 118.375)])).toEqual([

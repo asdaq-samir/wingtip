@@ -5,8 +5,8 @@ import { markWith } from "./marks";
 /**
  * The chart layers the map asks for: the terminal area chart over the
  * sectional always, at its own levels, and the IFR low enroute chart as the
- * base. Switched with a route on screen, on the training page: the
- * planner's map is the same (MapShell), and its settings are on the
+ * base, the IFR area chart over it. Switched with a route on screen, on the training page: the
+ * planner's map is the same (GlMapShell), and its settings are on the
  * search bar, which a route takes the place of (classb.spec.ts sets
  * them there before one is loaded).
  *
@@ -75,16 +75,19 @@ for (const path of ["/app/dev"] as const) {
     page.on("response", (r) => {
       if (/\/ifr_low\/\d+\//.test(r.url()) && r.ok()) ifrDrawn += 1;
     });
-    await expect.poll(kinds, { timeout: slow(15000) }).toBe("sec");
+    // Each base with its terminal sheet over it, always (the owner,
+    // 2026-11-14: no switch): the TAC over the sectional, the IFR area
+    // chart over the IFR low.
+    await expect.poll(kinds, { timeout: slow(15000) }).toBe("sec tac");
 
     await openMapSettings(page);
     await grabberTo(page, "full");
     await page.getByTestId("base-chart-select").getByRole("button", { name: "IFR low" }).click();
-    await expect.poll(kinds, { timeout: slow(10000) }).toBe("ifr_low");
+    await expect.poll(kinds, { timeout: slow(10000) }).toBe("ifr_low ifr_area");
     await expect.poll(() => ifrDrawn, { timeout: slow(45000) }).toBeGreaterThan(0);
 
     await page.getByTestId("base-chart-select").getByRole("button", { name: "Sectional" }).click();
-    await expect.poll(kinds, { timeout: slow(10000) }).toBe("sec");
+    await expect.poll(kinds, { timeout: slow(10000) }).toBe("sec tac");
   });
 
   test(`${path}: the chart can be None: no chart tile, the plain ground, the route still drawn`, async ({ page }) => {
@@ -96,7 +99,7 @@ for (const path of ["/app/dev"] as const) {
     await page.goto(`${path}?dep=C81&dest=KDLH`);
     await settle(page);
     const map = page.getByTestId("gl-map");
-    await expect.poll(() => map.getAttribute("data-chart-kinds"), { timeout: slow(15000) }).toBe("sec");
+    await expect.poll(() => map.getAttribute("data-chart-kinds"), { timeout: slow(15000) }).toBe("sec tac");
 
     await openMapSettings(page);
     await grabberTo(page, "full");

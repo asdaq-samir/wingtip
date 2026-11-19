@@ -57,7 +57,7 @@ export default function RatingCard({
           {onStart ? "The next point not yet rated" : "Every point here is rated"}
         </p>
         {onStart && (
-          <Button type="button" size="sm" onClick={onStart} data-testid="rating-start">
+          <Button type="button" size="sm" onClick={onStart}>
             Start
           </Button>
         )}
@@ -109,7 +109,7 @@ export default function RatingCard({
           the page left on it to rate again (lib/problems: errors where they
           happen). */}
       {failed && (
-        <Alert variant="destructive" className={cn("border-0 bg-transparent px-0 py-0", TEXT.note)} data-testid="rating-failed">
+        <Alert variant="destructive" className={cn("border-0 bg-transparent px-0 py-0", TEXT.note)}>
           That rating could not be saved. Rate it again.
         </Alert>
       )}

@@ -42,8 +42,6 @@ STORE = ROOT / "docs/store"
 
 # Android's densities, as a factor of mdpi's one pixel per dp.
 DENSITIES = {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi": 4}
-# The mark's colours by day and their night ones (color.brand).
-NIGHT = {"#A3266F": "#E37BB5", "#14284B": "#FFFFFF"}
 # The installed web app's launch images on iOS, one per iPhone screen in
 # portrait (Apple's apple-touch-startup-image wants the exact size):
 # points wide, high, and the scale.
@@ -57,6 +55,14 @@ CORNER = 0.2237
 def tokens() -> dict:
     tree = json.loads((ROOT / "design/tokens.json").read_text())
     return {k: v["$value"] for k, v in tree["color"]["brand"].items() if isinstance(v, dict)}
+
+
+# The mark's colours by day as its SVGs write them (color.brand's mark-ring
+# and mark-plane, upper case), and their night ones: the ring lit, the
+# chevron white.
+RING = tokens()["mark-ring"].upper()
+PLANE = tokens()["mark-plane"].upper()
+NIGHT = {RING: tokens()["mark-ring-night"].upper(), PLANE: "#FFFFFF"}
 
 
 def svg_text(name: str) -> str:
@@ -124,8 +130,8 @@ def favicon_svg() -> str:
     """mark-small.svg with its night colours for a dark browser."""
     style = (
         "  <style>\n    @media (prefers-color-scheme: dark) {\n"
-        f"      .ring {{ stroke: {NIGHT['#A3266F']}; }}\n"
-        f"      .ship {{ fill: {NIGHT['#14284B']}; stroke: {NIGHT['#14284B']}; }}\n"
+        f"      .ring {{ stroke: {NIGHT[RING]}; }}\n"
+        f"      .ship {{ fill: {NIGHT[PLANE]}; stroke: {NIGHT[PLANE]}; }}\n"
         "    }\n  </style>\n"
     )
     svg = svg_text("mark-small.svg")

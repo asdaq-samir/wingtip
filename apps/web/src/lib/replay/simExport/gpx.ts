@@ -1,4 +1,4 @@
-import { altitudeWords, ESTIMATED_WORDS, isoTime, type SimMeta, type SimSegment } from "./flight";
+import { isoTime, metresFileWords, type SimMeta, type SimSegment } from "./flight";
 import { M_PER_FT } from "../../geo";
 import { xmlDocument, xmlText } from "./xml";
 
@@ -22,14 +22,7 @@ export function writeGpx(segments: SimSegment[], meta: SimMeta): string {
   const gpx = doc.documentElement;
   gpx.setAttribute("version", "1.1");
   gpx.setAttribute("creator", "Wingtip Maps");
-  const desc = [
-    meta.model && `Airplane: ${meta.model}${meta.icaoType ? ` (${meta.icaoType})` : ""}.`,
-    meta.credit && `Reports: ${meta.credit}.`,
-    segments[0] && altitudeWords(segments[0]).replace("feet", "metres"),
-    ESTIMATED_WORDS,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const desc = metresFileWords(segments, meta).join(" ");
   const metadata = gpx.appendChild(doc.createElementNS(GPX, "metadata"));
   metadata.appendChild(xmlText(doc, GPX, "name", meta.title));
   metadata.appendChild(xmlText(doc, GPX, "desc", desc));

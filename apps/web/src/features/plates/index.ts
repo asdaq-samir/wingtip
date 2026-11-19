@@ -3,3 +3,4 @@
  *  segment marked, and the card a tap on it opens. */
 export { PlatesGl } from "./PlatesGl";
 export { plateTitle } from "./usePlateCard";
+export { usePlateTagged } from "./plateLook";

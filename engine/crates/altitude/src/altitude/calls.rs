@@ -5,23 +5,12 @@
 
 use super::floor::{self, Ground, Obstacle, CORRIDOR_HALF_WIDTH_NM, IFR_OBSTACLE_RADIUS_NM};
 use super::select;
-use super::words::{self, Via};
+use super::words;
 use super::{cautions, clouds, congested, cruising, profile_calls};
 use crate::json::{self, Value};
+pub(super) use wingtip_core::ask::{num_in as num, opt_num_in as opt_num};
 
 pub(super) type R<T> = Result<T, String>;
-
-pub(super) fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
-
-pub(super) fn num(name: &str, v: &Value, key: &str) -> R<f64> {
-    opt_num(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
-}
 
 pub(super) fn list<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a [Value]> {
     match v.get(key) {
@@ -116,10 +105,8 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                 cruising::legal_vfr(floor, ceiling, course, opt_num(name, v, "rule_from_ft")?)
             }))
         }
-        "highest_under_clouds_ft" => Ok(number(Some(clouds::highest_under_ft(num(name, v, "cloud_base_ft")?)))),
         "cloud_clearance_at_ft" => Ok(number(Some(clouds::clearance_at_ft(num(name, v, "altitude_ft")?)))),
         "congested_points" => congested_points(name, v),
-        "altitude_wheel" => Ok(numbers(&cruising::wheel(&nums(name, v, "legal_ft")?, opt_num(name, v, "flown_ft")?))),
         "profile_clearance" => profile_calls::profile_clearance(name, v),
         "altitude_advisor" => profile_calls::altitude_advisor(name, v),
         "ifr_obstacle_radius_nm" => Ok(number(Some(IFR_OBSTACLE_RADIUS_NM))),
@@ -196,22 +183,14 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                 Some([a, b]) => Some((a.as_str().unwrap_or(""), b.as_str().unwrap_or(""))),
                 _ => None,
             };
-            let via = match v.get("via") {
-                Some(w @ Value::Object(_)) => Some(Via {
-                    ident: w.get("ident").and_then(Value::as_str).unwrap_or("").to_owned(),
-                    added_nm: opt_num(name, w, "added_nm")?.unwrap_or(0.0),
-                }),
-                _ => None,
-            };
             let place = v.get("where").and_then(Value::as_str);
-            let why = words::no_altitude(selection, between, via.as_ref(), place);
+            let why = words::no_altitude(selection, between, place);
             let detail = why.detail();
             Ok(written(&obj(vec![
                 ("title", Value::String(why.title)),
                 ("brief", Value::String(why.brief)),
                 ("reasons", Value::Array(why.reasons.into_iter().map(Value::String).collect())),
                 ("advice", Value::String(why.advice)),
-                ("class_b", Value::Bool(why.class_b)),
                 ("detail", Value::String(detail)),
             ])))
         }
@@ -232,10 +211,6 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                 ])),
             })
         }
-        "floor_caution" => {
-            let segment = v.get("segment").ok_or_else(|| format!("{name}: \"segment\" is missing"))?;
-            Ok(written(&cautions::floor(segment, num(name, v, "altitude_ft")?).map_or(Value::Null, Value::String)))
-        }
         "prohibited_caution" => {
             let selection = v.get("selection").ok_or_else(|| format!("{name}: \"selection\" is missing"))?;
             Ok(written(&Value::Array(cautions::prohibited(selection).into_iter().map(Value::String).collect())))
@@ -252,32 +227,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
 /// the towns near it alone and sends each outline once.
 fn congested_points(name: &str, v: &Value) -> R<String> {
     let bad = || format!("{name}: an area is not [[[[lon, lat], ...], ...], ...]");
-    let areas: Vec<congested::Area> = list(name, v, "areas")?
-        .iter()
-        .map(|a| {
-            a.as_array()
-                .ok_or_else(bad)?
-                .iter()
-                .map(|rings| {
-                    rings
-                        .as_array()
-                        .ok_or_else(bad)?
-                        .iter()
-                        .map(|ring| {
-                            ring.as_array()
-                                .ok_or_else(bad)?
-                                .iter()
-                                .map(|p| match p.as_array() {
-                                    Some([x, y]) => Ok((x.as_f64().ok_or_else(bad)?, y.as_f64().ok_or_else(bad)?)),
-                                    _ => Err(bad()),
-                                })
-                                .collect()
-                        })
-                        .collect()
-                })
-                .collect()
-        })
-        .collect::<R<_>>()?;
+    let areas: Vec<congested::Area> = list(name, v, "areas")?.iter().map(|a| wingtip_core::ask::polygons(a, &bad)).collect::<R<_>>()?;
     let candidates = match v.get("candidates") {
         None | Some(Value::Null) => None,
         Some(Value::Array(c)) => Some(c),

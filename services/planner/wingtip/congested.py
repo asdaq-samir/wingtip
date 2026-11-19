@@ -1,20 +1,12 @@
 """The towns a route may be over, for the terrain floor's clearances
 (wingtip.terrain), which 14 CFR 91.119 sets by them -- read here, and
 held to the rule by the engine (`congested_points`, engine/crates/altitude/
-src/altitude/congested.rs: inside a town or within (b)'s 2,000 ft of one):
+src/altitude/congested.rs: inside a town or within (b)'s 2,000 ft of one).
+91.119(b) asks 1,000 ft over a congested area and (c) 500 ft elsewhere;
+wingtip.terrain quotes both as eCFR has them.
 
-  (b) Over congested areas. Over any congested area of a city, town, or
-  settlement, or over any open air assembly of persons, an altitude of
-  1,000 feet above the highest obstacle within a horizontal radius of
-  2,000 feet of the aircraft.
-
-  (c) Over other than congested areas. An altitude of 500 feet above the
-  surface, except over open water or sparsely populated areas. In those
-  cases, the aircraft may not be operated closer than 500 feet to any
-  person, vessel, vehicle, or structure.
-
-(eCFR, Title 14, current to 2026-10-22.) 14 CFR 1.1 does not define a
-congested area; the FAA judges it case by case. So the towns are read
+14 CFR 1.1 does not define a congested area; the FAA judges it case by
+case. So the towns are read
 from two Census Bureau data sets, both the US government's and public
 domain, and anything either of them names counts:
 
@@ -62,10 +54,6 @@ DIR = Path(__file__).resolve().parents[3] / "data" / "raw" / "census"
 URBAN_AREAS_URL = "https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_us_ua20_corrected_500k.zip"
 URBAN_AREAS_PATH = DIR / "cb_2020_us_ua20_corrected_500k.zip"
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; wingtip-maps/0.1; terrain floor)"}
-#: How far round a point the towns are looked for, ft: wider than 14 CFR
-#: 91.119(b)'s "horizontal radius of 2,000 feet" the engine holds each
-#: point to, so a town near that edge is always among those it measures.
-SEARCH_FT = 2500.0
 #: The largest circle a gazetteer place is drawn as, m: a nautical mile,
 #: the planner's own figure -- about the built-up core of a small town.
 PLACE_RADIUS_M = M_PER_NM
@@ -187,7 +175,7 @@ def congested(lats, lons) -> np.ndarray | None:
     cannot be told (the data could not be had), for the caller to take
     every point as congested.
 
-    One ask a route: the towns within SEARCH_FT of each point by their
+    One ask a route: the towns within the engine's reach of each point by their
     boxes (the tree), each outline sent once and each point with the
     indices of its own, so a route over Chicago measures its thousands of
     obstacles against the towns near them alone."""
@@ -199,10 +187,11 @@ def congested(lats, lons) -> np.ndarray | None:
     if tree is None:
         return None
     found = np.zeros(lats.size, dtype=bool)
-    # Degrees never short of SEARCH_FT any way: a degree of longitude is
-    # shorter than one of latitude by the latitude's cosine.
-    widest = max(0.2, math.cos(math.radians(min(89.0, float(np.abs(lats).max())))))
-    reach = SEARCH_FT / FT_PER_DEG_LAT / widest
+    # How far round each point the towns are looked for, in degrees never
+    # short any way: wider than 14 CFR 91.119(b)'s "horizontal radius of
+    # 2,000 feet" the engine holds each point to, so a town near that edge
+    # is always among those it measures (the engine's congested_reach).
+    reach = engine("congested_reach", lat=float(np.abs(lats).max()))["reach_deg"]
     near_point, near_area = tree.query(shapely.points(lons, lats), predicate="dwithin", distance=reach)
     if not near_point.size:
         return found

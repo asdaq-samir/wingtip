@@ -9,6 +9,6 @@ describe("the app's pages", () => {
   });
 
   it("carries the route between them and nothing of a page's own", () => {
-    expect(routeSearch("?dep=KOSH&dest=C81&view=briefing&q=N14511")).toBe("?dep=KOSH&dest=C81");
+    expect(routeSearch("?dep=KOSH&dest=C81&view=full&q=N14511")).toBe("?dep=KOSH&dest=C81");
   });
 });

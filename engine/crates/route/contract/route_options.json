@@ -1,7 +1,7 @@
 {
   "x-call": "wingtip_route::route::options::call",
   "x-feature": "route-options",
-  "description": "The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route and the most filed one with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.",
+  "description": "The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.",
   "type": "object",
   "properties": {
     "input": {
@@ -21,6 +21,17 @@
           "$ref": "#/definitions/RouteOption"
         },
         "filed": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RouteOption"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "class_b": {
+          "description": "Avoid Class B: the route as planned round the Class B it enters, with its fuel stops (route/options/class_b_way.rs); null where none was asked.",
           "anyOf": [
             {
               "$ref": "#/definitions/RouteOption"
@@ -108,6 +119,7 @@
         "options",
         "own",
         "filed",
+        "class_b",
         "current_path",
         "direct",
         "ends",

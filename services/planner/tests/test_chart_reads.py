@@ -296,7 +296,7 @@ def test_ahead_in_the_address_makes_the_requests_reads_ahead_in_its_stream_too(m
 
     monkeypatch.setattr(checkpoint_scoring, "score", score)
     client = TestClient(app)
-    params = {"dep": "C81", "dest": "KDLH"}
+    params = {"dep": "C81", "dest": "KDLH", "checkpoints": True}
     for path in ("/api/checkpoints", "/api/navlog"):
         client.get(path, params={**params, "ahead": "true"})
         client.get(path, params=params)

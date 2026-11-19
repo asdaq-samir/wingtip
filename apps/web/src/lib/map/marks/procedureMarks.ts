@@ -2,10 +2,9 @@ import type { ProcedureFix } from "../../api/types";
 import { altitudeLines, speedWords } from "../../procedures";
 import { altFt } from "../../format";
 import { BADGE } from "../../rowBadges";
-import { MAP_BLUE } from "./chartColors";
 import { drawTag, type TagLine } from "../gl/drawTag";
 import { svgPicture, type GlPicture } from "../gl/useGlSymbols";
-import { CHART } from "../../tokens";
+import { CHART, MAP } from "../../tokens";
 
 /**
  * The instrument procedures the pilot picked (the route's Procedures), on
@@ -38,34 +37,39 @@ export const PROCEDURE_WORDS_FROM_ZOOM = 9;
  *  approach point of most approaches) is under the field's own mark and
  *  its ident: its diamond alone, where "RW08 MAP" covered the field's
  *  name (2026-10-10). */
-export function fixMarks(fix: ProcedureFix, words: boolean, stale: boolean, own: number | null, direct: boolean) {
+export function fixMarks(fix: ProcedureFix, words: boolean, stale: boolean, own: number | null, direct: boolean, plated = false) {
   const ink = stale ? STALE_INK : PROCEDURE_INK;
   const diamond = svgPicture(
     `proc-fix|${ink}|${fix.missed ? 1 : 0}|${direct ? 1 : 0}`,
     () =>
-      `<svg width="24" height="24" viewBox="-12 -12 24 24">${direct ? `<circle r="10" fill="none" stroke="${MAP_BLUE}" stroke-width="2.5"/>` : ""}` +
+      `<svg width="24" height="24" viewBox="-12 -12 24 24">${direct ? `<circle r="10" fill="none" stroke="${CHART.mapBlue}" stroke-width="2.5"/>` : ""}` +
       `<path d="M0 -5.5 L5.5 0 L0 5.5 L-5.5 0 Z" fill="${fix.missed ? CHART.casing : ink}" stroke="${fix.missed ? ink : CHART.casing}" stroke-width="1.8"/></svg>`,
   );
   if (!words || /^RW\d/.test(fix.ident)) return { diamond, tag: null };
   const roles = fix.roles.filter((r) => r !== "hold");
   const run = (text: string, colour: string) => ({ runs: [{ text, colour }] });
-  const lines: TagLine[] = [
-    {
-      runs: [
-        { text: fix.ident, colour: ink },
-        ...(roles.length ? [{ text: ` ${roles.join(" ")}`, colour: ink, weight: 600, opacity: 0.8 }] : []),
-      ],
-    },
-    ...altitudeLines(fix).lines.map((l) => ({ ...run(l.text, CHART.fixInk), under: l.under, over: l.over })),
-  ];
-  const speed = speedWords(fix);
+  // Where the approach's plate tags its fixes (plated), its name and
+  // figures are the plate's tag's: this one keeps the pilot's own lines.
+  const lines: TagLine[] = plated
+    ? []
+    : [
+        {
+          runs: [
+            { text: fix.ident, colour: ink },
+            ...(roles.length ? [{ text: ` ${roles.join(" ")}`, colour: ink, weight: 600, opacity: 0.8 }] : []),
+          ],
+        },
+        ...altitudeLines(fix).lines.map((l) => ({ ...run(l.text, CHART.fixInk), under: l.under, over: l.over })),
+      ];
+  const speed = plated ? null : speedWords(fix);
   if (speed) lines.push(run(speed, CHART.fixInk));
-  if (own != null) lines.push(run(`Cross ${altFt(own)}`, MAP_BLUE));
-  if (direct) lines.push(run("Direct to", MAP_BLUE));
+  if (own != null) lines.push(run(`Cross ${altFt(own)}`, CHART.mapBlue));
+  if (direct) lines.push(run("Direct to", CHART.mapBlue));
   if (stale) lines.push(run("OUT OF DATE", CHART.fixInk));
+  if (!lines.length) return { diamond, tag: null };
   const tag: GlPicture = {
     id: `proc-tag|${JSON.stringify(lines)}`,
-    draw: () => drawTag({ lines, background: `${CHART.casing}f2`, size: 13, lineHeight: 16, padX: 6, padY: 2, radius: 6 }),
+    draw: () => drawTag({ lines, background: `${CHART.casing}f2`, size: MAP.labelLarge, lineHeight: 16, padX: 6, padY: 2, radius: 6 }),
   };
   return { diamond, tag };
 }

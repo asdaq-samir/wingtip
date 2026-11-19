@@ -21,6 +21,7 @@
 //!   FIX_LIMIT.
 
 use crate::json;
+use crate::pack::f64_at;
 use crate::pack::Pack;
 use crate::view::{
     in_box, meets, oriented, reaches, representative, rings_of, round5, simplified, text_at, tolerance_for, Bbox, Polygon, Pt,
@@ -37,10 +38,6 @@ pub const FIX_LIMIT: usize = 1000;
 /// wingtip.fixes' VFR_CHARTS and ENROUTE_LOW_CHART, NASR's CHARTS names.
 const VFR_CHARTS: &[&str] = &["SECTIONAL", "VFR TERMINAL AREA"];
 const ENROUTE_LOW_CHART: &str = "ENROUTE LOW";
-
-fn f64_at(b: &[u8], o: usize) -> Option<f64> {
-    b.get(o..o + 8).map(|s| f64::from_le_bytes(s.try_into().unwrap()))
-}
 
 fn point(out: &mut String, p: Pt) {
     // [lat, lon], as the airspace in view writes its lines.

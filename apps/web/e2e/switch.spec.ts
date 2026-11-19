@@ -1,5 +1,16 @@
 import { test, expect, type Page } from "@playwright/test";
-import { consoleSheet, settle, roleMenu, openPanel, closeSidebarWithTheStockKey, expectDrawerClosed, noTips, sideDrawer } from "./helpers";
+import {
+  consolePage,
+  consoleSheet,
+  settle,
+  roleMenu,
+  openPanel,
+  openRoute,
+  closeSidebarWithTheStockKey,
+  expectDrawerClosed,
+  noTips,
+  sideDrawer,
+} from "./helpers";
 
 /**
  * The two pages and the switch between them: the Dev-mode switch, the
@@ -21,8 +32,15 @@ test("the console's role menu flips to the dev page, the console staying out, an
   // out -- the developer's now.
   await roles.developer.click();
   await page.waitForURL(/\/app\/dev/);
-  // Its Setup the pilot's with the developer's Status row (DevPanel).
-  await expect(consoleSheet(page).getByRole("button", { name: /^Status/ })).toBeVisible({ timeout: 15000 });
+  // The dev page drawn, its console out again: drawn afresh there, the
+  // page open in it (Pilot Details, the role's menu) went with the old one.
+  await settle(page);
+  await expect(consoleSheet(page)).toBeVisible();
+  // Its You the pilot's, with the developer's own Status under Settings'
+  // Help & About (DevPanel; the owner, 2026-11-13): the stack's Services
+  // with the pilot's status.
+  await consolePage(consoleSheet(page), "Status");
+  await expect(consoleSheet(page).getByRole("button", { name: /^Services/ })).toBeVisible({ timeout: 15000 });
   roles = await roleMenu(page);
   await expect(roles.developer).toHaveAttribute("aria-checked", "true");
 
@@ -30,7 +48,7 @@ test("the console's role menu flips to the dev page, the console staying out, an
   // useDevMode's own).
   await roles.pilot.click();
   // The planner as it was, all the way up being its address's (`view`).
-  await page.waitForURL(/\/app\/plan(\?view=briefing)?$/);
+  await page.waitForURL(/\/app\/plan(\?view=full)?$/);
 });
 
 test("the panel's head looks the same on both pages: the console's role says which one this is", async ({ page }) => {
@@ -65,6 +83,7 @@ test("the route box leads the pill's head the same, signed in or out", async ({ 
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   leads.push(await lead(page));
   const signedOut = await browser.newContext({
     baseURL: new URL(page.url()).origin,
@@ -76,6 +95,7 @@ test("the route box leads the pill's head the same, signed in or out", async ({ 
   await planner.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(planner);
   await openPanel(planner);
+  await openRoute(planner);
   leads.push(await lead(planner));
   await signedOut.close();
   expect(Math.max(...leads) - Math.min(...leads)).toBeLessThanOrEqual(1);

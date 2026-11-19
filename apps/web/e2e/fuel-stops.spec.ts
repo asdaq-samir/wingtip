@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { inSheet, mapStill, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { inSheet, mapStill, openPanel, settle, sideDrawer, slow, openRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { drawnMarks } from "./marks";
 import { noCheckpoints } from "./startState";
@@ -74,6 +74,7 @@ test("a fuel stop the planner suggests is dashed in the route's box and pinned o
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   await expect(sideDrawer(page).getByTestId("route-fuel-stop")).toHaveText("KRPD", { timeout: slow(60_000) });
   await expect.poll(() => pinned(page)).toBe(1);
   // No cards of it in FPL's list: the route line does their job.
@@ -88,6 +89,7 @@ test("a stop suggested on a flight from a present position is dashed in the rout
   await page.goto("/app/plan?dep=@42.2333,-87.9883&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   await expect(sideDrawer(page).getByTestId("route-fuel-stop")).toHaveText("KRPD", { timeout: slow(60_000) });
   await expect.poll(() => pinned(page)).toBe(1);
 });
@@ -99,6 +101,7 @@ test("a suggested fuel stop can be taken out of the route box and put back, or a
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   const chip = sideDrawer(page).getByTestId("route-fuel-stop");
   await expect(chip).toHaveText("KRPD", { timeout: slow(60_000) });
   // Its menu's Remove takes it out of the box.
@@ -207,6 +210,7 @@ test("a long flight the tanks hold is offered a break about half way, kept as th
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   const chip = sideDrawer(page).getByTestId("route-fuel-stop");
   await expect(chip).toHaveAccessibleName("Suggested stop KRPD", { timeout: slow(60_000) });
   await chip.click();

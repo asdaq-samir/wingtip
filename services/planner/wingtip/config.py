@@ -63,8 +63,8 @@ MIN_LABELED_ROWS = 30
 
 # The VFR charts themselves: the FAA publishes every sectional and
 # terminal area chart as a georeferenced TIFF, free, on the 56-day
-# chart cycle. wingtip.charts downloads the ones a route needs and renders
-# the map's tiles from them -- the chart exactly as printed, served by
+# chart cycle. wingtip.chart_prepare downloads the ones a route needs, and
+# wingtip.chart_render draws the map's tiles from them -- the chart exactly as printed, served by
 # this app, with no hosted map service in between. (Two came and went
 # before this: the FAA's own ArcGIS tile cache, which went behind a
 # login around 2026-09-03, then Texas A&M's public mirror of the same
@@ -107,7 +107,7 @@ class Settings(BaseSettings):
     chart_tiles_bucket: str | None = None
     #: The key prefix inside that bucket.
     chart_tiles_prefix: str = "tiles"
-    #: How many chart sheets may be downloaded and prepared at once (wingtip.charts).
+    #: How many chart sheets may be downloaded and prepared at once (wingtip.chart_prepare).
     charts_prepare_at_once: int = 2
     #: Whether a tile may download a sheet it needs (CHARTS_FETCH_FOR_TILES=0 in CI).
     charts_fetch_for_tiles: bool = True
@@ -289,12 +289,15 @@ CHART_TILE_CACHE_DIR = DATA_DIR / "raw" / "chart_tiles.nosync"
 # country fits a phone screen (59 degrees of longitude is 335 px
 # there) and the chart is its own colours at a five-hundredth of its
 # resolution: terrain tint, water, and the cities as yellow dots. A
-# terminal area chart is 1:250,000, one zoom further in, and only
-# worth drawing close up.
+# terminal area chart is 1:250,000, one zoom further in, and drawn over
+# the sectional at every zoom the sectional is, as part of the map, so
+# zooming out never swaps the chart under a city (the owner,
+# 2026-11-16: "just keep the TAC all the time, don't change to
+# sectional when zooming out").
 VFR_SECTIONAL_MAX_ZOOM = 12
 VFR_SECTIONAL_MIN_ZOOM = 3
 VFR_TAC_MAX_ZOOM = 13
-VFR_TAC_MIN_ZOOM = 10
+VFR_TAC_MIN_ZOOM = VFR_SECTIONAL_MIN_ZOOM
 # The IFR enroute charts, as alternative base layers: the low-altitude
 # sheets are 1:1,000,000 or so (65 m per pixel in the FAA's rasters,
 # zoom 11), the high-altitude ones coarser still.

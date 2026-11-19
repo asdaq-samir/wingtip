@@ -880,7 +880,7 @@ view model (`ProfileModel`), every figure the engine's (`ProfileRules`:
 - **The slider.** The system `Slider`, turned a quarter beside the
   chart: the iOS 27.2 SDK's `SwiftUI` swiftinterface has no vertical
   orientation, so no control is drawn by hand. It steps through the
-  engine's altitudes (`altitude_wheel`'s rows) and only previews: a
+  engine's altitudes (the planner's `altitude_figures`, cruising::wheel's rows) and only previews: a
   dashed rule at the altitude, and the ground coloured live, Chart
   Warning red within 100 ft (or above it) and Chart Caution amber within
   1,000 ft. These are ForeFlight's display defaults, not 14 CFR; the

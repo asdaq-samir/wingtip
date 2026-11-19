@@ -35,7 +35,7 @@
         "ready": false,
         "finding": "caution",
         "actions": ["airplane", "altitude", "charts"],
-        "line": "11 things to fix while you have a signal",
+        "line": "11 things left to do before you go",
         "charts": "Download charts for the route, 120 MB",
         "briefing": "Refresh weather, 2 h old",
         "fixes": { "airplane": "pick_airplane", "charts": "download_charts", "packs": "update_packs", "notams": "fetch_notams", "battery": null },

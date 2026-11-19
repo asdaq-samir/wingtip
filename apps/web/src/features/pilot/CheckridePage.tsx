@@ -18,6 +18,7 @@ import { TEXT } from "../../lib/text";
 import { FINDING_TONE } from "../../lib/findings";
 import { inForce, reviewRoute, reviewState, said } from "../../lib/endorsements";
 import { GoodTo, SignedRow } from "./Endorsements";
+import { NameFieldRow } from "./NameFieldRow";
 import ConsoleClose from "../../components/ConsoleClose";
 import { dueWords, lessonStatus } from "../../lib/assignedLessons";
 import { lessonHref } from "../../lib/lessonLink";
@@ -95,7 +96,7 @@ function KnowledgeTest({ codes, onSave, saving }: { codes: string[]; onSave: (co
           </span>
           <span className="flex gap-2">
             {codes.length > 0 && (
-              <Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => onSave([])} data-testid="acs-codes-clear">
+              <Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => onSave([])}>
                 Clear
               </Button>
             )}
@@ -169,23 +170,18 @@ function Instructors({ training }: { training: Training }) {
           knowledge test codes here, reviews the solo cross-countries (14 CFR
           61.93(c)(3)) and signs the endorsements; either can end it. */}
       <ListGroup title="Your instructor">
-        <ListRow id={nameId} title="Your name" description="As on your student pilot certificate">
-          <FieldHit htmlFor={nameId}>
-            <Input
-              id={nameId}
-              value={name}
-              placeholder="Avery B. Student"
-              maxLength={120}
-              className="h-8 w-44 sm:w-56"
-              autoComplete="name"
-              onChange={(e) => setName(e.target.value)}
-              data-testid="student-name"
-              onBlur={() => {
-                if (name.trim() && name.trim() !== training.fullName) saveName.mutate(name.trim());
-              }}
-            />
-          </FieldHit>
-        </ListRow>
+        <NameFieldRow
+          id={nameId}
+          title="Your name"
+          description="As on your student pilot certificate"
+          placeholder="Avery B. Student"
+          value={name}
+          saved={training.fullName}
+          onChange={setName}
+          onSave={saveName.mutate}
+          testId="student-name"
+          className="h-8 w-44 sm:w-56"
+        />
         {training.instructors.map((l) => (
           <ListRow
             key={l.id}
@@ -200,7 +196,6 @@ function Instructors({ training }: { training: Training }) {
               className="text-destructive"
               disabled={drop.isPending}
               onClick={() => drop.mutate(l.id)}
-              data-testid="instructor-remove"
             >
               Remove
             </Button>
@@ -235,7 +230,6 @@ function Instructors({ training }: { training: Training }) {
               key={r.id}
               title={<span className="font-mono">{reviewRoute(r)}</span>}
               description={`${said(r.flightOn)} · ${r.makeModel} · ${reviewState(r)}`}
-              data-testid="review-row"
             >
               {!r.answeredAt && (
                 <Button type="button" variant="ghost" size="sm" disabled={withdraw.isPending} onClick={() => withdraw.mutate(r.id)}>
@@ -246,11 +240,7 @@ function Instructors({ training }: { training: Training }) {
           ))}
         </ListGroup>
       )}
-      {problem && (
-        <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="instructor-problem">
-          {problem}
-        </FieldError>
-      )}
+      {problem && <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{problem}</FieldError>}
     </>
   );
 }

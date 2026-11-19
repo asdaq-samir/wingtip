@@ -1,4 +1,4 @@
-import { altFt, grouped } from "../../lib/format";
+import { altFt, grouped, knots } from "../../lib/format";
 import { replayTimes } from "./replayTime";
 import { gapAt, sampleAt, type AltitudeKind, type ReplayTrack } from "./track";
 
@@ -14,7 +14,7 @@ function figures(track: ReplayTrack, t: number) {
   const vs = here.vs_fpm;
   return {
     alt: here.ground ? "Ground" : `${altFt(here.alt_ft == null ? null : Math.round(here.alt_ft / 10) * 10)} ft`,
-    gs: here.gs_kt == null ? "—" : `${Math.round(here.gs_kt)} kt`,
+    gs: here.gs_kt == null ? "—" : knots(here.gs_kt),
     // To the 50 ft/min a VSI's needle is read to; level within it.
     vs: vs == null ? "—" : Math.abs(vs) < 50 ? "Level" : `${vs > 0 ? "+" : "−"}${grouped(Math.round(Math.abs(vs) / 50) * 50)} fpm`,
     trk: here.track_deg == null ? "—" : `${String(Math.round(here.track_deg) % 360 || 360).padStart(3, "0")}°`,

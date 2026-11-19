@@ -66,7 +66,7 @@ export const TEXT = {
    *  capitals spaced a tenth of an em, as the ink canvas sets a figure's
    *  label (2026-11-04). */
   label: TYPE_CLASS.label,
-  /** A figure in the Chart ink look (FigureStrip): 26 on 31, bold, in
+  /** A figure in the Chart ink look's canvas: 26 on 31, bold, in
    *  tabular figures -- the Flying screen's size (FLYING_FIGURE), a
    *  weight up, in the text face. */
   figure: TYPE_CLASS.figure,
@@ -93,19 +93,23 @@ export const GROUP_HEADING = `font-semibold uppercase tracking-wide text-muted-f
  *  a touch screen sets them. */
 export const TEXT_POINTS = { caption: TYPE_POINTS.caption, row: TYPE_POINTS.row } as const;
 
-/** A figure pinned at the map panel's foot (FlightLine, FigureStrip), its
+/** A figure pinned at the map panel's foot (FigureStrip), its
  *  value, unit and name small at half and their own size at the pill and
  *  all the way up (MapPanel's --sheet-progress, 0 at half, 1 at the other
  *  two; the owner, 2026-11-05), each with its iOS leading at either end (the audit's P3: 15
  *  on 20 to 20 on 25, 11 on 13 to 13 on 18), eased between as the size
- *  is. */
+ *  is. The value's size is `--fig`, which FigureStrip sets smaller to fit
+ *  its column (`FIT`); the unit is a share of it, so the two shrink
+ *  together, 11 of 15 at half to 13 of 20 at the pill. */
 const GROW_SMALL =
   "text-[length:calc(0.6875rem+0.0625rem*var(--sheet-progress,1))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(0.6875rem+0.125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))]";
 export const GROW_FIGURE = {
   value:
-    "text-[length:calc(0.75rem+0.375rem*var(--sheet-progress,1))] leading-[calc(1rem+0.75rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(0.9375rem+0.3125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(1.25rem+0.3125rem*var(--sheet-progress,1))]",
-  unit: GROW_SMALL,
+    "[--fig:calc(0.75rem+0.375rem*var(--sheet-progress,1))] leading-[calc(1rem+0.75rem*var(--sheet-progress,1))] pointer-coarse:[--fig:calc(0.9375rem+0.3125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(1.25rem+0.3125rem*var(--sheet-progress,1))]",
+  unit: "text-[length:calc(1em*(0.6875+0.0625*var(--sheet-progress,1))/(0.75+0.375*var(--sheet-progress,1)))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(1em*(0.6875+0.125*var(--sheet-progress,1))/(0.9375+0.3125*var(--sheet-progress,1)))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))]",
   name: GROW_SMALL,
+  /** The unit's share of the value at the pill, for the room it takes. */
+  unitScale: 0.65,
 };
 
 /** The same figures in flight (useFlyingMode): one size whatever the
@@ -113,7 +117,24 @@ export const GROW_FIGURE = {
  *  31, its unit 14 and its name 12 on 16, as the canvas draws the Flying
  *  screen (2026-11-03). */
 export const FLYING_FIGURE = {
-  value: "text-(length:--type-figure) leading-[1.9375rem]",
-  unit: "text-sm leading-[1.125rem]",
+  value: "[--fig:var(--type-figure)] leading-[1.9375rem]",
+  unit: "text-[length:0.54em] leading-[1.125rem]",
   name: "text-xs leading-4",
+  unitScale: 0.54,
 };
+
+/** A heading's 20 under its rows (FPL's route row), its unit a note's 13. */
+export const FIXED_FIGURE = {
+  value: "[--fig:var(--type-heading)] leading-(--lead-heading)",
+  unit: "text-[length:0.65em] leading-(--lead-note)",
+  unitScale: 0.65,
+};
+
+/** The strip's one size, as iOS shrinks a label to fit its width
+ *  (UILabel's adjustsFontSizeToFitWidth, minimumScaleFactor 0.7, the owner's pick, 2026-11-17): the
+ *  value's own size (`--fig`) while the strip's widest figure fits its
+ *  column, else the column's width (100cqi, each column a container)
+ *  over the room that figure takes (`--fit-room` digits, figureRoom, of
+ *  the face's `--figure-digit` ems, index.css), never under 0.7 of its
+ *  size; past that cut short. */
+export const FIT = "text-[length:clamp(calc(var(--fig)*0.7),calc(100cqi/(var(--fit-room,7)*var(--figure-digit,0.6))),var(--fig))]";

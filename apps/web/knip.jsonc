@@ -20,8 +20,8 @@
     // BootMap, the same: routeMapChunk loads RouteMap.tsx with import()
     // and reads it off the module (m.BootMap), which knip 6 no longer
     // follows to GlRouteMap's GlBootMap.
-    "src/features/plan/components/RouteMap.tsx": ["exports"],
-    "src/features/plan/map/GlRouteMap.tsx": ["exports"],
+    "src/features/plan-map/RouteMap.tsx": ["exports"],
+    "src/features/plan-map/GlRouteMap.tsx": ["exports"],
     // levelOf, heldTrack and choose: its tests import it afresh with
     // import() for each case and reach them on the module.
     "src/lib/audioInput.ts": ["exports"],

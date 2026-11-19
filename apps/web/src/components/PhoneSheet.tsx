@@ -1,7 +1,8 @@
 import type { ComponentProps, ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
-import { DIM, GLASS_SHEET, SHEET_CORNERS } from "../lib/mapChrome";
+import { HeadGrid } from "./HeadGrid";
+import { DIM, GLASS_SHEET, GRABBER_BAR, SHEET_CORNERS } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 import { keepOpenOn, TOAST } from "./ui/dismiss";
 
@@ -91,7 +92,7 @@ export function PhoneSheetContent({ className, style, children, onPointerDown, .
               data-swipe-handle=""
               className="absolute inset-x-0 top-0 z-10 flex h-4 items-start justify-center pt-1.25"
             >
-              <span className="h-[5px] w-9 rounded-full bg-muted-foreground/40" />
+              <span className={GRABBER_BAR} />
             </div>
             {children}
           </Drawer.Popup>
@@ -102,10 +103,15 @@ export function PhoneSheetContent({ className, style, children, onPointerDown, .
 }
 
 /**
- * A phone's sheet's title row, as an iOS sheet's navigation bar is: its
- * title, the app's close (CloseButton) at the row's end -- or a form's
- * Cancel at its start and its Add or Set at its end, the title between --
- * and what the sheet is about under it.
+ * A phone's sheet's title row, the one head every drawer has (the card
+ * rule's 8; the FPL redesign's one drawer contract, the owner 2026-11-17:
+ * "no redundancies and less clutter"): laid out by the cards' own HeadGrid,
+ * its title centred at a card's size and weight (CardHeadRow's), the app's
+ * close (CloseButton) alone at the row's end -- or a form's Cancel at its
+ * start and its Add or Set at its end, as an iOS form sheet has them --
+ * and what the sheet is about under the row, as prose. It was its own row,
+ * its title at the start in a smaller type, so an altitude's sheet opened
+ * from the Profile card read as another app's.
  */
 export function PhoneSheetHeader({
   title,
@@ -119,18 +125,21 @@ export function PhoneSheetHeader({
   end?: ReactNode;
 }) {
   return (
-    <div data-slot="sheet-header" className="flex flex-row flex-wrap items-center justify-between gap-1.5 p-4 pt-5 pb-2 text-left">
-      {leading}
-      {/* A sheet's title at the app's size for one (TEXT). */}
-      <Drawer.Title
-        data-slot="sheet-title"
-        className={cn("min-w-0 flex-1 font-semibold text-foreground", TEXT.title, leading && "text-center")}
-      >
-        {title}
-      </Drawer.Title>
-      {end}
+    <div data-slot="sheet-header" className="flex flex-col gap-1.5 p-4 pt-5 pb-2">
+      <HeadGrid
+        start={leading}
+        end={end}
+        middle={
+          <Drawer.Title
+            data-slot="sheet-title"
+            className={cn("max-w-full font-bold tracking-tight break-words text-foreground", TEXT.card)}
+          >
+            {title}
+          </Drawer.Title>
+        }
+      />
       {description ? (
-        <Drawer.Description data-slot="sheet-description" className={cn("basis-full text-muted-foreground", TEXT.prose)}>
+        <Drawer.Description data-slot="sheet-description" className={cn("text-muted-foreground", TEXT.prose)}>
           {description}
         </Drawer.Description>
       ) : null}

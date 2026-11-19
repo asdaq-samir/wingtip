@@ -74,8 +74,9 @@ export interface CardRow {
   /** The short line under its name in its title row, in sight at the pill
    *  too (the owner, 2026-11-11: the pages that became cards). */
   pillLine?: RegExp;
-  /** Something opened inside it, and the way back to it. */
-  inside?: { open: (page: Page) => Promise<void>; back: (page: Page) => Promise<void> };
+  /** Something opened inside it, and the way back to it; `atItsTop` where
+   *  going back opens it at its own top, not where it was, and why. */
+  inside?: { open: (page: Page) => Promise<void>; back: (page: Page) => Promise<void>; atItsTop?: string };
   not?: Partial<Record<Check, string>>;
 }
 
@@ -133,6 +134,10 @@ export const CARDS: CardRow[] = [
       back: async (p) => {
         await sideDrawer(p).getByTestId("place-tab-radio").click();
       },
+      // A tab picked opens at its own top under the actions, Info's too when
+      // it is picked again (the owner, 2026-11-14: "Switching tabs should
+      // not show those"; lib/tabScroll), where it once kept its place.
+      atItsTop: "a tab picked opens at its own top (useTabScroll)",
     },
   },
   {
@@ -215,8 +220,8 @@ export const CARDS: CardRow[] = [
     name: "Profile",
     card: "profile-card",
     close: "profile-close",
-    // "Cruise FL-055 · clear of terrain".
-    pillLine: /^Cruise FL-\d{3}/,
+    // "Clears terrain by 2,552 ft", the cruise itself the side view's tag.
+    pillLine: /^(Clears terrain by [\d,]+ ft|[\d,]+ ft below terrain)$/,
     entries: [
       { name: "the plan", open: async (p) => (await go(p, ROUTE), void (await openProfile(p))), back: "plan" },
       { name: "link (open=profile)", open: (p) => go(p, `${ROUTE}&open=profile`), back: "plan" },
@@ -363,5 +368,5 @@ export const CARDS: CardRow[] = [
 ];
 
 // Ask is not a card on the web: its answers are a section of the search's
-// own page (SearchHome's AskSection), and design/screens.json lists `ask`
+// own page (the search's Ask section), and design/screens.json lists `ask`
 // for iOS and Android only, so it has no row here.

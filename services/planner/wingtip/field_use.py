@@ -16,7 +16,10 @@ airport_use, gonogo::permission).
   airport_notams_none tell "none" from "not known" by it); `name`, NASR's
   ARPT_NAME as the phones' packs write it (the engine's airport_names:
   title case with the FAA's codes kept, "Sierra Vista Muni-Libby AAF"); `status`, NASR's ARPT_STATUS, which the engine's
-  field_status rules on (wingtip.field_status, decision 0043).
+  field_status rules on (wingtip.field_status, decision 0043); `site_type`,
+  the engine's field_site_type words for SITE_TYPE_CODE ("Heliport",
+  "Seaplane base"; None for an airport, A), for the card to say what kind
+  of field it is.
 
 Each is None or empty where the file cannot be had, never a failure: a
 card or a Brief without the line, not one that failed.
@@ -58,11 +61,23 @@ def _records_of(path: str, _mtime: float) -> dict:
     df = faa_data._read_apt_base_cached(path, _mtime)
     by_ident: dict = {}
     # Each column NASR files; one a file lacks (a test's few columns) is blank.
-    columns = ["ARPT_ID", "ICAO_ID", "NOTAM_ID", "ARPT_NAME", "INSPECT_METHOD_CODE", "LAST_INFO_RESPONSE", "LAST_INSPECTION", "ARPT_STATUS"]
+    columns = [
+        "ARPT_ID",
+        "ICAO_ID",
+        "NOTAM_ID",
+        "ARPT_NAME",
+        "INSPECT_METHOD_CODE",
+        "LAST_INFO_RESPONSE",
+        "LAST_INSPECTION",
+        "ARPT_STATUS",
+        "SITE_TYPE_CODE",
+    ]
     table = df.reindex(columns=columns).astype(object).fillna("")
     # NASR's capitals as every app writes them, the FAA's codes kept (the
     # engine's airport_names: "Sierra Vista Muni-Libby AAF"), in one call.
     names = engine("airport_names", names=[n.strip() for n in table["ARPT_NAME"]])
+    # The engine's words for each kind of site, asked once per code (NASR has six).
+    sites = {code: engine("field_site_type", site_type=code)["words"] for code in set(table["SITE_TYPE_CODE"].str.strip().str.upper())}
     for row, nasr_name in zip(table.itertuples(index=False), names):
         method = row.INSPECT_METHOD_CODE.strip().upper()
         record = {
@@ -72,6 +87,7 @@ def _records_of(path: str, _mtime: float) -> dict:
             "notam_id": row.NOTAM_ID.strip().upper(),
             "name": nasr_name or None,
             "status": row.ARPT_STATUS.strip().upper() or None,
+            "site_type": sites[row.SITE_TYPE_CODE.strip().upper()],
         }
         for ident in (row.ARPT_ID, row.ICAO_ID):
             if ident.strip():

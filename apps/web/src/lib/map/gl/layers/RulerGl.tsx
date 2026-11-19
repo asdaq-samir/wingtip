@@ -8,12 +8,16 @@ import { useGlMap } from "../glLayer";
 import { useGeo } from "../../../geo";
 
 type XY = { x: number; y: number };
+
+/** A turn of the map past this while two fingers are held, in degrees, is
+ *  a twist, not a ruler held still. */
+const TWISTED_DEG = 1;
 type Ends = readonly [XY, XY];
 
 /**
  * Two fingers held still on the chart measure it, as ForeFlight's ruler
- * (MapRuler) -- the WebGL map's: held for HOLD_MS without the map zooming,
- * the pinch handed over to the ruler, which follows the fingers until
+ * (MapRuler) -- the WebGL map's: held for HOLD_MS without the map zooming
+ * or turning, the pinch handed over to the ruler, which follows the fingers until
  * they lift, its distance, course and time en route along it. Its
  * figures are the engine's (lib/geo): none until its .wasm is there,
  * while the chart under it draws at once (MapPage).
@@ -25,7 +29,7 @@ export function RulerGl() {
   const tasKt = useCruiseTas();
   useEffect(() => {
     const el = map.getContainer();
-    let hold: { ids: [number, number]; from: XY[]; zoom: number; timer: number } | null = null;
+    let hold: { ids: [number, number]; from: XY[]; zoom: number; bearing: number; timer: number } | null = null;
     let held: XY[] = [];
     let ruling: { ids: [number, number]; at: XY[]; box: DOMRect; pitch: boolean } | null = null;
     const pointOf = (t: Touch, box?: DOMRect): XY => ({ x: t.clientX - (box?.left ?? 0), y: t.clientY - (box?.top ?? 0) });
@@ -38,6 +42,8 @@ export function RulerGl() {
     const begin = () => {
       if (!hold) return;
       if (Math.abs(map.getZoom() - hold.zoom) > PINCHED_LEVELS) return cancelHold();
+      // Two fingers twisted turn the map (makeMap): a turn, not a ruler.
+      if (Math.abs(map.getBearing() - hold.bearing) > TWISTED_DEG) return cancelHold();
       const { ids } = hold;
       hold = null;
       const box = el.getBoundingClientRect();
@@ -54,8 +60,8 @@ export function RulerGl() {
     };
     const end = () => {
       if (!ruling) return;
-      // enable() keeps the rotation as it was: off on the flat chart, on in
-      // 3D (TerrainGl). Turning it off here left 3D unable to twist.
+      // enable() keeps the rotation as it was, on (makeMap): turning it off
+      // here once left 3D unable to twist.
       map.touchZoomRotate.enable();
       if (ruling.pitch) map.touchPitch.enable();
       map.dragPan.enable();
@@ -75,6 +81,7 @@ export function RulerGl() {
         ids: [a.identifier, b.identifier],
         from: [pointOf(a), pointOf(b)],
         zoom: map.getZoom(),
+        bearing: map.getBearing(),
         timer: window.setTimeout(begin, HOLD_MS),
       };
       held = hold.from;

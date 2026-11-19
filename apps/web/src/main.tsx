@@ -1,6 +1,3 @@
-// First: the browser's kept "vfr." keys renamed "wingtip." before any
-// store below reads its own (features/shell/storageRename).
-import "./features/shell/storageRename";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
@@ -26,9 +23,9 @@ import { startSpeedReports } from "./lib/speed";
 import { startLongTaskReports } from "./lib/longTasks";
 import { startLoadLog } from "./lib/loadLog";
 import MapPage from "./features/shell/MapPage";
-import { prefetchRouteMap } from "./features/plan/routeMapChunk";
-import { prefetchRouteBox } from "./features/plan/routeBoxChunk";
-import { prefetchShareMenu } from "./features/plan/shareMenuChunk";
+import { prefetchRouteMap } from "./features/plan-map/routeMapChunk";
+import { prefetchRouteBox } from "./features/route/routeBoxChunk";
+import { prefetchShareMenu } from "./features/share/shareMenuChunk";
 import { loadPopups } from "./components/popupsChunk";
 import "./index.css";
 // Barlow, the face of both looks (lib/brand), in the first stylesheet
@@ -41,10 +38,10 @@ import "@fontsource/barlow/latin-400.css";
 import "@fontsource/barlow/latin-500.css";
 import "@fontsource/barlow/latin-600.css";
 import "@fontsource/barlow/latin-700.css";
-import { tvPlatform } from "./lib/tv";
 import { loadEngine } from "./lib/engine/engine";
 import { preconnectTiles, preloadFirstLoad } from "./lib/preloads";
 import { usePreferences } from "./lib/preferences";
+import { THEME_KEY } from "./lib/prefs/migrate";
 import { takeSharedLinkFrom } from "./features/shared-flight";
 
 // The shared Rust engine (lib/engine), asked for first: the rules it
@@ -59,13 +56,6 @@ const engineLoaded = loadEngine();
 // The reader's text size from the iPhone's Settings, before the first
 // render, so the page is never drawn at the wrong size first.
 followDynamicType();
-
-// On a Samsung or LG TV (the TV shells, in git history; lib/tv), the page made for its remote and
-// its distance, before the first render.
-// Its code on a chunk of its own (lib/tvStart), which the first render
-// waits for on a TV alone.
-const tv = tvPlatform();
-const tvStarted = tv ? import("./lib/tvStart").then((m) => m.startTv(tv)) : null;
 
 // The map's chunk (routeMapChunk) and the search's (routeBoxChunk),
 // fetched while the page draws.
@@ -278,7 +268,7 @@ const render = () =>
         sets it, next-themes keeps it and puts the `dark` class on
         <html>, which is what every colour token in index.css keys off
         (and what the Toaster below already reads). */}
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="wingtip.theme" disableTransitionOnChange>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey={THEME_KEY} disableTransitionOnChange>
         <QueryClientProvider client={queryClient}>
           {/* No tooltip provider: each tooltip opens at once (its trigger's
           delay 0, popups/IconTip), as the provider's did, and the
@@ -312,7 +302,7 @@ void engineLoaded.catch((error) => {
   sendReport(reportOf("error", error));
   console.error(error);
 });
-void Promise.all([faceLoaded, tvStarted]).then(render, render);
+void faceLoaded.then(render, render);
 
 // The deletes whose Undo was still up when the tab was last closed, sent
 // now (lib/pendingDeletes); the lists fetched again once any is.

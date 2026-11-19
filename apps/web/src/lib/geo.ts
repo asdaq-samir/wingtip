@@ -24,20 +24,6 @@ export type LatLon = { lat: number; lon: number };
  *  as: -10 is 350, 370 is 10. Eleven files wrote this sum out. */
 export const normalizeDeg = (d: number) => ((d % 360) + 360) % 360;
 
-/** How far apart two directions are, 0 to 180: a track off a course, a
- *  wind off a runway, an estimate off its answer round the compass (358
- *  is 4 from 002). It was written eight times, two ways. */
-export function angleBetween(a: number, b: number): number {
-  const d = (((a - b) % 360) + 360) % 360;
-  return d > 180 ? 360 - d : d;
-}
-
-/** The turn from one direction to another, -180 to 180, right of it
- *  positive. */
-export function signedTurn(from: number, to: number): number {
-  return ((((to - from) % 360) + 540) % 360) - 180;
-}
-
 /** Metres in a nautical mile, the international one (NIST SP 811 B.9). */
 export const M_PER_NM = 1852;
 
@@ -65,6 +51,47 @@ export const FT_PER_SM = 5280;
 /** Metres in a statute mile, from the two exact definitions above
  *  (1,609.344, NIST SP 811 B.9). */
 export const M_PER_SM = FT_PER_SM * M_PER_FT;
+
+/** Statute miles in a nautical mile (1,852 / 1,609.344, about 1.1508),
+ *  from the two exact definitions above: the strip's distance in statute
+ *  miles at the pilot's tap. */
+export const SM_PER_NM = M_PER_NM / M_PER_SM;
+
+/** Nautical miles in a degree of latitude, as the nautical mile was first
+ *  defined (a minute of arc, 60 to the degree; today's 1,852 m is within
+ *  a percent of it everywhere): the scale of the flat sums below. */
+export const NM_PER_DEG = 60;
+
+/** Kilometres, and metres, in a degree of the WGS-84 equator (6,378,137 m
+ *  times pi over 180 is 111,319.5 m), rounded: the metric flat sums' scale.
+ *  A degree of latitude is 110.6 to 111.7 km (the meridian's), near enough
+ *  for a label's spacing or a camera's few hundred metres. */
+export const KM_PER_DEG = 111.32;
+export const M_PER_DEG = KM_PER_DEG * 1000;
+
+/** How much a degree of longitude shrinks at a latitude against one of
+ *  latitude: the parallel's cosine, on a sphere. */
+export const lonScale = (latDeg: number) => Math.cos(rad(latDeg));
+
+/**
+ * The flat sums: a small patch of the earth taken as a plane, the
+ * longitude shrunk by `atLat`'s cosine (lonScale). For an order -- which
+ * field is nearest, which point of a line a target's -- a sampling step,
+ * a label's spacing or a camera's offset, never a figure a pilot reads:
+ * a distance or a course shown is the engine's geodesic (Geo, below).
+ * Each was once written out by hand in its own file (the audit of
+ * 2026-11-16).
+ */
+/** Squared flat degrees between two points `dLat` and `dLon` apart: an
+ *  order alone, with no square root to take. */
+export const flatDeg2 = (dLat: number, dLon: number, atLat: number) => dLat ** 2 + (dLon * lonScale(atLat)) ** 2;
+/** Flat degrees between two points `dLat` and `dLon` apart. */
+export const flatDeg = (dLat: number, dLon: number, atLat: number) => Math.hypot(dLat, dLon * lonScale(atLat));
+/** Flat nautical miles between two points `dLat` and `dLon` apart. */
+export const flatNm = (dLat: number, dLon: number, atLat: number) => flatDeg(dLat, dLon, atLat) * NM_PER_DEG;
+/** The direction of a flat offset `north` and `east` (any one unit), true
+ *  degrees 0 to 360. */
+export const flatBearingDeg = (north: number, east: number) => normalizeDeg(deg(Math.atan2(east, north)));
 
 const ends = (a: LatLon, b: LatLon) => ({ lat1: a.lat, lon1: a.lon, lat2: b.lat, lon2: b.lon });
 

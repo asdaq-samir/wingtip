@@ -1,6 +1,8 @@
 import { lazy, Suspense } from "react";
+import type { Map as GlMap } from "maplibre-gl";
 import { cn } from "cn";
 import { Button } from "./ui/button";
+import CompassButton from "./CompassButton";
 import FlownTrackButton from "./FlownTrackButton";
 import FullscreenButton from "./FullscreenButton";
 import MyPositionButton from "./MyPositionButton";
@@ -21,7 +23,8 @@ import { TEXT } from "../lib/text";
 /**
  * The map's buttons, in one group floating over the chart, as Maps
  * stacks its own: the map's settings, the pilot's own position (the
- * location arrow), and full screen where it works. A zoom toggle, between the whole route and the
+ * location arrow), the compass while the map is turned (CompassButton),
+ * and full screen where it works. A zoom toggle, between the whole route and the
  * selected point, went: picking a waypoint brings the map to it. On a
  * phone's bottom sheet at the right just over its top edge, the search's
  * row, riding it as the 3D and the page toggle do at the left (the owner,
@@ -54,15 +57,15 @@ const RadioPill = lazy(() => import("./RadioLayer").then((m) => ({ default: m.Ra
 
 /** Drawn once the shared engine is there (lib/engine/engineGate), which
  *  it asks as it draws: the chart under it draws at once (MapPage). */
-export default function MapControls() {
+export default function MapControls({ map }: { map: GlMap | null }) {
   return (
     <EngineGate>
-      <MapControlsDrawn />
+      <MapControlsDrawn map={map} />
     </EngineGate>
   );
 }
 
-function MapControlsDrawn() {
+function MapControlsDrawn({ map }: { map: GlMap | null }) {
   const flying = useFlying((s) => s.flying);
   const nearest = useFlying((s) => s.nearest);
   const direct = useFlying((s) => s.direct);
@@ -96,7 +99,6 @@ function MapControlsDrawn() {
         GLASS,
       )}
       data-testid="mic-circle"
-      data-listening={pill || undefined}
     >
       {/* In flight the mic alone grows to 60 points (FLYING_BUTTON), not
           the pill's chips. */}
@@ -162,6 +164,7 @@ function MapControlsDrawn() {
             (the owner's yes to the run's own controls back,
             2026-11-04). */}
           <MyPositionButton />
+          <CompassButton map={map} />
         </>
       ) : (
         <>
@@ -198,7 +201,6 @@ function MapControlsDrawn() {
         {(riding) => (
           <div
             data-map-controls=""
-            data-flying={flying || undefined}
             className={cn(
               // Only the buttons take a tap, not the room the pill's width
               // makes beside the group.
@@ -213,6 +215,10 @@ function MapControlsDrawn() {
             {mic}
             {/* The 3D button, its own circle under the mic's (ThreeDButton);
                 on the ground only, as the settings are. */}
+            {/* The compass over the 3D button, as Apple Maps stacks its
+                two (the owner, 2026-11-18, sending Maps' screenshot); only
+                while the map is turned off north up. */}
+            {!onPhone && !flying && <CompassButton map={map} />}
             {!onPhone && !flying && (
               // Its key to the 3D ground's colours at its left, clear of the route's side panel.
               <div className="flex flex-row-reverse items-center gap-2">
@@ -247,6 +253,9 @@ function MapControlsDrawn() {
                   : "absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))]",
               )}
             >
+              {/* The compass over the 3D button, as Apple Maps stacks its
+                  two (the owner, 2026-11-18). */}
+              {!flying && <CompassButton map={map} />}
               {!flying && (
                 // Its key to the 3D ground's colours at its right, over the
                 // chart's edge rather than the route's middle.

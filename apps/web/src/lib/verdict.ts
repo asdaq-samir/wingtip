@@ -9,7 +9,7 @@
  * The findings are the planner's; the decision is the pilot in command's
  * (14 CFR 91.3), and the line says so.
  *
- * Worked out by the shared engine (engine/crates/brief/src/gonogo/verdict.rs,
+ * Worked out and put together by the shared engine (gonogo_brief, engine/crates/brief/src/gonogo/brief.rs,
  * through lib/engine), the very code behind the planner's POST
  * /api/go-no-go and the phones' `call`: the rules, their words and
  * their sources live there. Only the shapes are made here.
@@ -26,7 +26,7 @@ export interface Where {
 }
 
 export interface VerdictItem extends Where {
-  key: "weather" | "airspace" | "altitude" | "fuel" | "runways" | "balance" | "risk" | "fields";
+  key: "weather" | "airspace" | "altitude" | "oxygen" | "fuel" | "runways" | "balance" | "risk" | "fields";
   label: string;
   finding: Finding;
   /** What was found, in a line. */
@@ -42,7 +42,7 @@ export interface VerdictInput {
     vfrNotRecommended: string[];
     /** Under the pilot's own minimums (lib/minimums). */
     underMinimums: string[];
-    /** Under IFR, icing possible at an altitude flown (features/plan/lib/icing), in a
+    /** Under IFR, icing possible at an altitude flown (features/brief/icing), in a
      *  line. */
     icing?: string | null;
     /** The SIGMETs and G-AIRMETs along the route, by name. */
@@ -68,7 +68,7 @@ export interface VerdictInput {
     /** TFRs near the route that are not. */
     near: number;
     /** Special-use areas the legs cross, as their times of use read for
-     *  the pass (features/plan/lib/passTimes), or as SFDPS says they are now
+     *  the pass (features/plan/passTimes), or as SFDPS says they are now
      *  (active-now, cold-now: lib/liveReports). */
     specialUse: { name: string; when: "active" | "not-scheduled" | "by-notam" | "unknown" | "active-now" | "cold-now" }[];
   };
@@ -80,6 +80,11 @@ export interface VerdictInput {
     cautions: string[];
     /** The altitude flown, as the FL chip says it. */
     flown: string | null;
+    /** The highest the nav log flies, feet MSL, for the engine's oxygen
+     *  finding (14 CFR 91.211(a)); null before it. */
+    highestFt?: number | null;
+    /** The airplane carries oxygen or a pressurised cabin. */
+    oxygen?: boolean;
   };
   fuel: {
     pending: boolean;
@@ -131,7 +136,14 @@ function engineInput({ weather, airspace, altitude, fuel, runways, balance, risk
       near: airspace.near,
       special_use: airspace.specialUse,
     },
-    altitude,
+    altitude: {
+      pending: altitude.pending,
+      problem: altitude.problem,
+      cautions: altitude.cautions,
+      flown: altitude.flown,
+      highest_ft: altitude.highestFt ?? null,
+      oxygen: altitude.oxygen ?? false,
+    },
     fuel: {
       pending: fuel.pending,
       margin_gal: fuel.marginGal,
@@ -145,31 +157,45 @@ function engineInput({ weather, airspace, altitude, fuel, runways, balance, risk
   };
 }
 
-/** Each tab's finding, in the order a pilot goes through them. */
-export function verdictItems(input: VerdictInput): VerdictItem[] {
+/** What the Go / No-Go comes to: the findings and the line over them. */
+export interface Verdict {
+  items: VerdictItem[];
+  line: { finding: Finding; words: string };
+}
+
+/**
+ * The Brief's Go / No-Go put together by the engine (gonogo_brief): each
+ * tab's finding in the order a pilot goes through them, the IFR
+ * alternate's in the weather's (`alternate`, /api/alternate's answer,
+ * undefined while it is awaited), the fields row for a closed, private or
+ * military-only field (`fields`, useRouteFields), the airplane's findings
+ * left out where none is picked, and the line over them.
+ */
+export function briefVerdict({
+  input,
+  alternate,
+  fields,
+  airplane,
+}: {
+  input: VerdictInput;
+  alternate?: EngineInput<"gonogo_brief">["alternate"];
+  fields?: EngineInput<"gonogo_brief">["fields"];
+  airplane: boolean;
+}): Verdict {
   // The engine's items are plain strings; its keys, tabs and findings are
   // the ones VerdictItem names (gonogo/verdict.rs verdict_items).
-  return callEngine("gonogo_verdict_items", engineInput(input)) as VerdictItem[];
-}
-
-/** The row for a departure, destination or stop that NASR lists as
- *  closed, or that is private or the armed services' own (the engine's
- *  gonogo_field_permission: decision 0043; the owner's permission or the
- *  service's PPR, with NASR APT_CON's phone; 14 CFR 91.103), to go after
- *  the tabs' findings and before the line; null where every field is open
- *  and public or joint use. */
-export function fieldPermission(fields: EngineInput<"gonogo_field_permission">["fields"]): VerdictItem | null {
-  return callEngine("gonogo_field_permission", { fields }) as VerdictItem | null;
-}
-
-/** What the findings come to, in a line over them. */
-export function verdictLine(items: VerdictItem[]): { finding: Finding; words: string } {
-  return callEngine("gonogo_verdict_line", { items: items.map((i) => ({ ...i, section: i.section ?? null })) });
+  return callEngine("gonogo_brief", {
+    verdict: engineInput(input),
+    alternate: alternate ?? null,
+    fields: fields ?? null,
+    airplane,
+  }) as Verdict;
 }
 
 /** The findings for the flight on screen, published once (as the risk
  *  is, lib/frat) for the tabs' marks. */
-export const useVerdict = create<{ items: VerdictItem[]; setItems: (items: VerdictItem[]) => void }>((set) => ({
+export const useVerdict = create<{ items: VerdictItem[]; line: Verdict["line"] | null; set: (verdict: Verdict | null) => void }>((set) => ({
   items: [],
-  setItems: (items) => set({ items }),
+  line: null,
+  set: (verdict) => set({ items: verdict?.items ?? [], line: verdict?.line ?? null }),
 }));

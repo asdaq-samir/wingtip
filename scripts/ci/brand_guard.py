@@ -28,9 +28,7 @@ straight into a screen drifts from it, so this finds the shapes one takes:
 
 Zero is not a style value and is never a hit, nor is a corner under 4
 points, a small glyph's geometry. Left out: generated files,
-tests, previews, comments, and the ramps that are data rather than look
-(DATA below: the radar's and the chart's own symbology, already tokens
-where the apps share them).
+tests, previews and comments.
 
 What is needed as it is -- an SVG's geometry, another company's mark, a
 printed page's fixed sizes -- is listed in scripts/ci/brand_guard_allow.txt
@@ -63,11 +61,6 @@ SKIP = re.compile(
     r"apps/web/src/styles/tokens\.css$|apps/web/src/lib/tokens\.ts$|apps/web/src/lib/api/types\.ts$|"
     r"apps/web/src/lib/engine/contract\.ts$)"
 )
-# Ramps that are data, not the app's look: the radar's reflectivity scale
-# (NWS's dBZ colours) and the FAA chart's own symbology drawn as the chart
-# draws it.
-DATA = re.compile(r"(apps/web/src/lib/map/gl/radar[^/]*\.ts$|apps/web/src/features/plan/map/radar[^/]*\.ts$)")
-
 # A corner under the least radius token's half (4 points) is a small
 # glyph's geometry -- a diamond's tip, a gauge's cell -- not a look.
 LEAST_CORNER = 4
@@ -224,7 +217,7 @@ def scan() -> dict:
     for platform, (area, suffixes) in AREAS.items():
         for path in sorted((ROOT / area).rglob("*")):
             rel = path.relative_to(ROOT).as_posix()
-            if path.suffix in suffixes and path.is_file() and not SKIP.search(rel) and not DATA.search(rel):
+            if path.suffix in suffixes and path.is_file() and not SKIP.search(rel):
                 found = scan_file(path, platform)
                 if found:
                     out[rel] = found

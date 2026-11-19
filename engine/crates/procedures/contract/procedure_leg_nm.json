@@ -1,0 +1,46 @@
+{
+  "x-call": "wingtip_procedures::legs::call",
+  "description": "How far a procedure's leg with no fix of its own to end at is drawn, nm (ARINC 424-18 5.21): an FC leg its coded distance from its fix; a leg flown to an altitude (FA, CA, VA) from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; any other (to a DME distance, a radial, an intercept, a manual termination) 2 nm.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProcedureLegNmInput",
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "distance_nm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "known_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "answer": {
+      "title": "ProcedureLegNmAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

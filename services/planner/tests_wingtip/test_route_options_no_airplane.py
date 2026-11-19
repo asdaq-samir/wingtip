@@ -6,7 +6,7 @@ things you can without airplane profile, don't assume")."""
 
 from wingtip import route_options
 
-from .test_route_options import DEP, DEST, NO_FIELDS, PROFILE, fields, nearest_nm, sky, taf  # noqa: F401 -- sky, the fixture
+from .route_options_world import DEP, DEST, NO_FIELDS, PROFILE, fields, nearest_nm, sky, taf  # noqa: F401 -- sky, the fixture
 
 
 def test_the_ways_with_no_airplane_have_their_miles_and_no_minutes_fuel_or_stops(sky):  # noqa: F811

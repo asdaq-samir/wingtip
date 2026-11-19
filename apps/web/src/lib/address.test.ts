@@ -2,7 +2,17 @@
 import { act, renderHook } from "@testing-library/react";
 import { withNuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing";
 import { describe, expect, it } from "vitest";
-import { ADDRESS_CLEARED, addressParams, loadAddress, navaidLink, tfrLink, useAddress, useAddressKey } from "./address";
+import {
+  ADDRESS_CLEARED,
+  addressParams,
+  loadAddress,
+  markLink,
+  navaidLink,
+  pointLink,
+  tfrLink,
+  useAddress,
+  useAddressKey,
+} from "./address";
 
 /** The workspace's whole address and one key read on its own, as the page
  *  has them, over an address of their own; each write to it kept. */
@@ -28,10 +38,10 @@ describe("the address", () => {
     // setter keeps).
     const { hook } = setUp("dep=C81&dest=KDLH");
     await act(async () => {
-      void hook.result.current.setAddress((prev) => ({ view: prev.view ? null : "briefing" }));
+      void hook.result.current.setAddress((prev) => ({ view: prev.view ? null : "full" }));
       void hook.result.current.setAddress((prev) => ({ stops: "KMSN", view: prev.view }));
     });
-    expect(hook.result.current.address.view).toBe("briefing");
+    expect(hook.result.current.address.view).toBe("full");
     expect(hook.result.current.address.stops).toBe("KMSN");
   });
 
@@ -46,11 +56,11 @@ describe("the address", () => {
   });
 
   it("writes the keys a change names and leaves the rest, null taking one out", async () => {
-    const { hook, written } = setUp("dep=C81&dest=KDLH&place=KMSN&view=briefing");
+    const { hook, written } = setUp("dep=C81&dest=KDLH&place=KMSN&view=full");
     await act(async () => {
       await hook.result.current.setAddress({ place: null, dest: "KOSH", stops: undefined, near: true });
     });
-    expect(Object.fromEntries(new URLSearchParams(written.at(-1)))).toEqual({ dep: "C81", dest: "KOSH", view: "briefing", near: "1" });
+    expect(Object.fromEntries(new URLSearchParams(written.at(-1)))).toEqual({ dep: "C81", dest: "KOSH", view: "full", near: "1" });
   });
 
   it("is a change alone over every key cleared", async () => {
@@ -63,13 +73,11 @@ describe("the address", () => {
 });
 
 describe("the address's keys, typed", () => {
-  it("reads flags, the Class B choice, the altitude's plan and a local flight's time as the page did", () => {
-    const address = loadAddress("altitude_nearest=1&brief=1&near=0&class_b=0&altitude_choice=sideways&local_min=45");
+  it("reads flags, the altitude's plan and a local flight's time as the page did", () => {
+    const address = loadAddress("altitude_nearest=1&brief=1&near=0&altitude_choice=sideways&local_min=45");
     expect(address.altitude_nearest).toBe(true);
     expect(address.brief).toBe(true);
     expect(address.near).toBe(false);
-    expect(address.class_b).toBe(false);
-    expect(loadAddress("class_b=1").class_b).toBe(true);
     expect(address.altitude_choice).toBe("fastest");
     expect(address.local_min).toBe(45);
     expect(loadAddress("local_min=50").local_min).toBe(60);
@@ -85,7 +93,7 @@ describe("the address's keys, typed", () => {
   });
 
   it("leaves out what is at its default as text", () => {
-    const address = loadAddress("dep=C81&class_b=1&altitude_choice=fastest&local_min=60&near=0");
+    const address = loadAddress("dep=C81&altitude_choice=fastest&local_min=60&near=0");
     expect(addressParams(address).toString()).toBe("dep=C81");
   });
 
@@ -110,5 +118,20 @@ describe("the address's keys, typed", () => {
     // No place, or no ident: no card.
     expect(loadAddress("navaid=OBK").navaid).toBeNull();
     expect(loadAddress("navaid=@42.2,-87.9").navaid).toBeNull();
+  });
+
+  it("opens a fix's, a VFR waypoint's and an airspace's card by its kind, ident and place, from the link its Share sends", () => {
+    const link = markLink({ kind: "fix", ident: "BXCMB", lat: 42.12341, lon: -88.23456 }, "https://wingtipmaps.app");
+    expect(link).toBe("https://wingtipmaps.app/app/plan?mark=fix%3ABXCMB%4042.1234%2C-88.2346");
+    expect(loadAddress(new URL(link).search).mark).toEqual({ kind: "fix", ident: "BXCMB", lat: 42.1234, lon: -88.2346 });
+    expect(loadAddress("mark=airspace:1234@41.98,-87.9").mark).toEqual({ kind: "airspace", ident: "1234", lat: 41.98, lon: -87.9 });
+    // Another kind, or no place: no card.
+    expect(loadAddress("mark=vor:OBK@42.2,-87.9").mark).toBeNull();
+    expect(loadAddress("mark=vfr:VPXYZ").mark).toBeNull();
+  });
+
+  it("opens a point held's card from the link its Share sends", () => {
+    const link = pointLink({ lat: 42.31723, lon: -88.09051 }, "https://wingtipmaps.app");
+    expect(loadAddress(new URL(link).search).at).toEqual({ lat: 42.3172, lon: -88.0905 });
   });
 });

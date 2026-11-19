@@ -162,8 +162,9 @@ export async function expectBack(page: Page, back: Back) {
   if (back === "plan")
     await expect(
       panel
-        .getByTestId("route-box")
-        .or(panel.getByTestId("route-line"))
+        .getByTestId("route-summary")
+        .or(panel.getByTestId("route-box"))
+        .or(panel.getByTestId("route-empty"))
         .or(page.getByTestId("panel-foot"))
         .filter({ visible: true })
         .first(),

@@ -12,10 +12,9 @@ import {
   setAirportWeather,
   setOverlayExclusion,
   setSelectedAirport,
-  volumeOfTile,
-  vorOfTile,
 } from "./glOverlays";
-import { airspaceText, glZoom } from "./glStyle";
+import { volumeOfTile, vorOfTile } from "./glTileFeatures";
+import { glZoom } from "./glStyle";
 
 const TILES: OverlayTiles = {
   cycle: "2026-10-29",
@@ -76,15 +75,10 @@ describe("the overlay tiles' layers", () => {
     expect(from).toMatchObject({ "airspace-B": glZoom(6), "airspace-C": glZoom(7), "airspace-D": glZoom(8) });
   });
 
-  it("leave out a layer an older archive has not got", () => {
-    const { layers } = overlayStyle({ ...TILES, layers: TILES.layers.filter((l) => l.name !== "runways") }, ORIGIN);
-    expect(layers.lines!.map((l) => l.id)).not.toContain("runway-surface");
-  });
-
-  it("write one tab a shelf from the label points, or along the rings where an older archive has none", () => {
+  it("write one tab a shelf from the label points", () => {
     const label = (tiles: OverlayTiles) =>
-      overlayStyle(tiles, ORIGIN).layers.lines!.find((l) => l.id === "airspace-labels") as SymbolLayerSpecification;
-    const points = label(TILES);
+      overlayStyle(tiles, ORIGIN).layers.lines!.find((l) => l.id === "airspace-labels") as SymbolLayerSpecification | undefined;
+    const points = label(TILES)!;
     expect(points["source-layer"]).toBe("airspace_labels");
     expect(points.layout).toMatchObject({
       "text-rotate": ["get", "angle"],
@@ -92,9 +86,6 @@ describe("the overlay tiles' layers", () => {
       "text-rotation-alignment": "map",
     });
     expect(points.layout!["symbol-placement"]).toBeUndefined();
-    const older = label({ ...TILES, layers: TILES.layers.filter((l) => l.name !== "airspace_labels") });
-    expect(older["source-layer"]).toBe("airspace");
-    expect(older.layout!["symbol-placement"]).toBe("line");
   });
 
   it("turn the airspace, its bands and labels, and the special-use areas off with the Airspace setting", () => {
@@ -181,11 +172,8 @@ describe("the overlay tiles' layers", () => {
 });
 
 describe("a tapped tile feature", () => {
-  it("is the volume the airspace card reads, its tab's words ForeFlight's", () => {
-    const shelf = volumeOfTile(
-      { properties: { class: "B", name: "CHICAGO CLASS B", floor_ft: 3000, ceiling_ft: 10000, number: 7 } },
-      { lat: 42, lon: -88 },
-    );
+  it("is the volume the airspace card reads", () => {
+    const shelf = volumeOfTile({ properties: { class: "B", name: "CHICAGO CLASS B", floor_ft: 3000, ceiling_ft: 10000, number: 7 } });
     expect(shelf).toMatchObject({
       id: "tile-7",
       airspace_class: "B",
@@ -194,16 +182,12 @@ describe("a tapped tile feature", () => {
       ceiling_ft: 10000,
       ceiling_excluded: false,
     });
-    expect(airspaceText(shelf)).toBe("B: 3000–10000");
     // The surface: 0 ft, which the tiles keep.
-    const surface = volumeOfTile({ properties: { class: "C", floor_ft: 0, ceiling_ft: 4800 } }, { lat: 0, lon: 0 });
-    expect(airspaceText(surface)).toBe("C: SFC–4800");
+    const surface = volumeOfTile({ properties: { class: "C", floor_ft: 0, ceiling_ft: 4800 } });
+    expect(surface.floor_sfc).toBe(true);
     // A Class D under a Class B shelf: up to but not including (TNI).
-    const d = volumeOfTile(
-      { properties: { class: "D", floor_ft: 0, ceiling_ft: 2500, ceiling_excluded: true, hours_code: "NOTAM" } },
-      { lat: 0, lon: 0 },
-    );
-    expect(airspaceText(d)).toBe("D: SFC–<2500");
+    const d = volumeOfTile({ properties: { class: "D", floor_ft: 0, ceiling_ft: 2500, ceiling_excluded: true, hours_code: "NOTAM" } });
+    expect(d.ceiling_excluded).toBe(true);
     expect(d.hours_code).toBe("NOTAM");
   });
 

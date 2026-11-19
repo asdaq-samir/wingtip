@@ -25,7 +25,7 @@ test("a winds outage never reads as an altitude the pilot typed", async ({ page 
     await route.fulfill({ status: 200, contentType: "application/x-ndjson", body: cut.map((m) => JSON.stringify(m)).join("\n") + "\n" });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openTab(page, "Nav Log");
   await controlsInSight(page);
 
@@ -39,7 +39,7 @@ test("a winds outage never reads as an altitude the pilot typed", async ({ page 
   await expect(popover).not.toContainText("no legal altitude");
   // And no altitude typed beside the airplane for it.
   await closeCard(page, "profile-close");
-  await expect(page.getByTestId("altitude-input")).toHaveValue("FL-");
+  await expect(page.getByTestId("altitude-input")).toHaveValue("");
 });
 
 test("a plan whose winds are past their forecast's period marks the route box's refresh, which plans again", async ({ page }) => {

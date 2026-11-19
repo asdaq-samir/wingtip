@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openBrief, openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
+import { inSheet, openBrief, openPanel, openProfile, settle, sideDrawer, slow } from "./helpers";
 import { pickAirplane } from "./startState";
 
 /**
@@ -12,7 +12,7 @@ import { pickAirplane } from "./startState";
  */
 
 test("the Brief ends on Ready to fly, its actions fixing in place", async ({ page }) => {
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   // The plan in, with no airplane: its distance, never a fuel figure.
   await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/DIST/i, { timeout: slow(120_000) });
@@ -25,16 +25,21 @@ test("the Brief ends on Ready to fly, its actions fixing in place", async ({ pag
   await expect(glance.locator("> *").first()).not.toHaveAttribute("data-testid", "ready-to-fly");
   const top = async (id: string) => (await glance.getByTestId(id).first().boundingBox())!.y;
   expect(await top("brief-glance-preflight")).toBeLessThan(await top("ready-to-fly"));
-  await expect(ready.getByTestId("ready-line")).toHaveText(/things? to fix while you have a signal|Ready to fly/);
+  await expect(ready.getByTestId("ready-line")).toHaveText(/things? left to do before you go|Ready to fly/);
+  // One row, folded: its actions and every check under its tap (the owner, 2026-11-16).
+  await expect(ready.locator("[data-testid^='ready-action-']")).toHaveCount(0);
+  // Under the Brief's edge as it opens half way: pulled up to, as a finger would (inSheet).
+  await inSheet(page, ready.getByTestId("ready-all"));
+  await ready.getByTestId("ready-all").click();
   const actions = ready.locator("[data-testid^='ready-action-']");
   expect(await actions.count()).toBeLessThanOrEqual(3);
   // No airplane picked: asked for, never a 172.
   const pick = ready.getByTestId("ready-action-airplane");
   await expect(pick).toHaveText("Pick the airplane");
-  // Every check folded, with the next FAA cycle.
-  await ready.getByTestId("ready-all").getByRole("button").click();
+  // Every check with them, and the next FAA cycle.
   await expect(ready.getByTestId("ready-next-cycle")).toContainText(/Next FAA data cycle \d{4}/);
   // The fix in place: FPL's own airplane field, focused.
+  await inSheet(page, pick);
   await pick.click();
   await expect(page.locator('[data-testid="aircraft-select"] input')).toBeFocused({ timeout: slow(10_000) });
 });

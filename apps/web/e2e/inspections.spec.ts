@@ -1,5 +1,5 @@
-import { test, expect } from "@playwright/test";
-import { library, openConsole, showTabs } from "./helpers";
+import { test, expect, type Locator, type Page } from "@playwright/test";
+import { inSheet, library, openConsole, showTabs } from "./helpers";
 import { fillDate } from "./ariaFields";
 import { NO_OWN_FIGURES } from "./airplaneMocks";
 
@@ -11,6 +11,18 @@ import { NO_OWN_FIGURES } from "./airplaneMocks";
  * AircraftControllerTest's, and what the risk assessment makes of them
  * airworthiness.test's.
  */
+
+/** The airplane's form: on a phone a card of its own over You
+ *  (ResponsivePopover's SheetCard), opened half way as every card is. */
+const editCard = (page: Page) =>
+  page.locator("[data-sheet-card]").filter({ has: page.getByRole("heading", { name: "Edit airplane", exact: true }) });
+
+/** Tapped where a finger reaches it: the card pulled up to a row under its
+ *  edge (inSheet). */
+async function tap(page: Page, target: Locator) {
+  await inSheet(page, target);
+  await target.click();
+}
 test("an airplane's inspections say how long each is good for, and are saved together", async ({ page }) => {
   const plane = {
     id: 5,
@@ -69,7 +81,7 @@ test("an airplane's inspections say how long each is good for, and are saved tog
   await fillDate(page.getByTestId("inspection-annual-on-date"), "2026-09-20");
   await fillDate(page.getByTestId("inspection-transponder-check-on-date"), "2025-03-02");
   await page.getByTestId("inspection-hours-now").fill("1262.3");
-  await page.getByTestId("inspections-save").click();
+  await tap(page, page.getByTestId("inspections-save"));
   await expect
     .poll(() => saved.at(-1))
     .toMatchObject({
@@ -84,9 +96,9 @@ test("an airplane's inspections say how long each is good for, and are saved tog
     });
   // Not flown for hire, the 100-hour is not owed (91.409(b)): its standing
   // goes, and the toggle's word is saved with the rest.
-  await page.getByTestId("inspection-for-hire").click();
+  await tap(page, page.getByTestId("inspection-for-hire"));
   await expect(page.getByTestId("inspection-hundred-hour")).toHaveCount(0);
-  await page.getByTestId("inspections-save").click();
+  await tap(page, page.getByTestId("inspections-save"));
   await expect.poll(() => saved.at(-1)).toMatchObject({ forHire: false });
 });
 
@@ -151,12 +163,14 @@ test("an AD is kept on the airplane with its next due day, and comes up in the L
   const console = page.getByTestId("console-sheet");
   await library(console, "Airplanes");
   await console.getByRole("button", { name: "Edit N12345" }).click();
-  await console.getByTestId("due-item-add").click();
-  await console.getByTestId("due-item-title").fill("Oil filter adapter");
-  await console.getByTestId("due-item-reference").fill("AD 2011-10-09");
-  await console.getByTestId("due-item-method").fill("Inspect each 100 h");
-  await fillDate(console.getByTestId("due-item-dueOn"), "2099-12-01");
-  await console.getByTestId("due-item-save").click();
+  // The form is its own card over You, not a part of it.
+  const form = editCard(page);
+  await tap(page, form.getByTestId("due-item-add"));
+  await form.getByTestId("due-item-title").fill("Oil filter adapter");
+  await form.getByTestId("due-item-reference").fill("AD 2011-10-09");
+  await form.getByTestId("due-item-method").fill("Inspect each 100 h");
+  await fillDate(form.getByTestId("due-item-dueOn"), "2099-12-01");
+  await tap(page, form.getByTestId("due-item-save"));
   await expect
     .poll(() => written[0])
     .toMatchObject({
@@ -216,24 +230,26 @@ test("an airplane's checklists are written from its handbook, kept on this devic
   const console = page.getByTestId("console-sheet");
   await library(console, "Airplanes");
   await console.getByRole("button", { name: "Edit N12345" }).click();
-  await page.getByRole("button", { name: /^Checklists/ }).click();
+  // The form's own Checklists, this airplane's: You's Airplanes page under
+  // the form has one too, the picked airplane's (YouRows).
+  await tap(page, editCard(page).getByRole("button", { name: /^Checklists/ }));
   await expect(console).toContainText("No checklist yet");
-  await console.getByTestId("checklist-edit").click();
+  await tap(page, console.getByTestId("checklist-edit"));
   // An empty editor offers the phases' headings alone, nothing under them.
-  await console.getByTestId("checklist-phases").click();
+  await tap(page, console.getByTestId("checklist-phases"));
   await expect(console.getByTestId("checklist-text")).toHaveValue(/^# Preflight inspection\n/);
   await console.getByTestId("checklist-text").fill("# Before takeoff\nFuel selector -- Both\nMixture ..... Rich");
-  await console.getByTestId("checklist-save").click();
+  await tap(page, console.getByTestId("checklist-save"));
   // Kept in this browser under the airplane's key, not sent anywhere.
   await expect
     .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("wingtip.checklists") ?? "{}") as unknown))
     .toEqual({ "mine:5": { normal: "# Before takeoff\nFuel selector -- Both\nMixture ..... Rich" } });
   const items = console.getByTestId("checklist-item");
   await expect(items).toHaveCount(2);
-  await items.first().click();
+  await tap(page, items.first());
   await expect(items.first()).toHaveAttribute("aria-checked", "true");
   await expect(console).toContainText("1 of 2");
-  await console.getByTestId("checklist-reset").click();
+  await tap(page, console.getByTestId("checklist-reset"));
   await expect(items.first()).toHaveAttribute("aria-checked", "false");
   // The emergency list is the airplane's other, empty until written.
   await console.getByTestId("checklist-kind").getByText("Emergency").click();
@@ -283,23 +299,23 @@ test("a squawk is written with its 91.213(d) deferral, and fixed", async ({ page
   const console = page.getByTestId("console-sheet");
   await library(console, "Airplanes");
   await console.getByRole("button", { name: "Edit N12345" }).click();
-  await page.getByRole("button", { name: /^Squawks/ }).click();
+  await tap(page, editCard(page).getByRole("button", { name: /^Squawks/ }));
   await expect(console).toContainText("None open");
 
   await console.getByTestId("squawk-text").fill("Landing light out");
-  await console.getByTestId("squawk-inoperative").click();
-  await console.getByTestId("squawk-deferred").click();
-  await page.getByRole("menuitemradio", { name: "Deferred for VFR by day" }).click();
-  await console.getByTestId("squawk-add").click();
+  await tap(page, console.getByTestId("squawk-inoperative"));
+  await tap(page, console.getByTestId("squawk-deferred"));
+  await page.getByRole("option", { name: "Deferred for VFR by day" }).click();
+  await tap(page, console.getByTestId("squawk-add"));
   await expect
     .poll(() => written[0])
     .toMatchObject({ text: "Landing light out", inoperative: true, deferredFor: "VFR_DAY", fixedOn: null });
   const open = console.getByTestId("squawk-open");
   await expect(open).toContainText("Deferred for VFR by day");
 
-  await open.click();
+  await tap(page, open);
   await console.getByTestId("squawk-fix-note").fill("Bulb replaced");
-  await console.getByTestId("squawk-fix").click();
+  await tap(page, console.getByTestId("squawk-fix"));
   await expect.poll(() => written[1]).toMatchObject({ text: "Landing light out", fixNote: "Bulb replaced" });
   await expect(console).toContainText("None open");
   await expect(console).toContainText("Bulb replaced");

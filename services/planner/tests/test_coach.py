@@ -1,4 +1,4 @@
-"""POST /api/pilot/coach and its words' sources held to the shared fixture
+"""POST /api/pilot/coach held to the shared fixture
 pilots the engine's own tests read (apps/web/src/lib/fixtures/coach.json):
 the fields near home are the fixture's, put in for the FAA files
 wingtip.coach would read."""
@@ -56,24 +56,7 @@ def test_the_plan_is_the_fixtures(places, pilot):
     assert [[s["key"], (s["place"] or {}).get("ident")] for s in plan["sessions"]] == want["sessions"]
 
 
-def test_the_sources_say_the_plan_with_ids_its_sessions_cite(places):
-    avery = PILOTS[0]
-    places["places"] = avery["ask"]["places"]
-    plan = client.post("/api/pilot/coach", json=_api_ask(avery["ask"])).json()
-    sources = client.post("/api/words/coach/sources", json=plan)
-    assert sources.status_code == 200, sources.text
-    lines = {s["id"]: s["text"] for s in sources.json()["sources"]}
-    # Only what is not current is said of the currencies.
-    assert "due:night_passengers" in lines and "due:day_passengers" not in lines
-    assert lines["due:night_passengers"].startswith("Passengers at night: lapses soon, until 2026-11-18 (14 CFR 61.57(b)).")
-    assert lines["ev:1"].startswith("2026-10-25 at KMSN: ")
-    assert "At KMSN (Dane County Rgnl/Truax Fld, 7.6 nm from home), the ILS OR LOC RWY 36." in lines["session:3"]
-    assert "May count toward a WINGS flight activity" in lines["session:3"]
-    for s in plan["sessions"]:
-        assert all(why in lines for why in s["why"]), s
-
-
-def test_an_approachs_evidence_and_its_line_name_the_procedure(places):
+def test_an_approachs_evidence_names_the_procedure(places):
     places["places"] = []
     approach = {
         "kind": "approach",
@@ -85,8 +68,6 @@ def test_an_approachs_evidence_and_its_line_name_the_procedure(places):
     }
     plan = client.post("/api/pilot/coach", json={"today": "2026-11-09", "entries": [], "debriefs": [approach]}).json()
     assert [(e["place"], e["procedure"]) for e in plan["evidence"]] == [("KMSN", "ILS Y RWY 08")]
-    lines = {s["id"]: s["text"] for s in client.post("/api/words/coach/sources", json=plan).json()["sources"]}
-    assert lines["ev:1"].startswith("2026-11-01 at KMSN, ILS Y RWY 08: ")
 
 
 def test_a_bad_debrief_is_a_422(places):

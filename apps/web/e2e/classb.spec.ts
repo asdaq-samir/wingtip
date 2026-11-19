@@ -1,6 +1,6 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { chartZoom, grabberTo, openMapSettings, sideDrawer, slow, tapNear } from "./helpers";
-import { routeMenuSwitch } from "./mapCard";
+import { grabberTo, mapStill, openMapSettings, sideDrawer, slow, tapNear } from "./helpers";
+import { mapZoom } from "./mapZoom";
 import { markWith, tapMark } from "./marks";
 
 /**
@@ -87,24 +87,7 @@ async function mockClassB(page: Page) {
   );
 }
 
-/** On, from the route's ••• menu's Class B Weather (since the Map card's
- *  layers became four, 2026-11-14), before the route is loaded; kept per
- *  browser, so the training map has them too. */
-async function showClassBFirst(page: Page) {
-  await routeMenuSwitch(page, "class-b-toggle", true);
-}
-
-test("off until asked for: a route does not come covered in them", async ({ page }) => {
-  // Thirty extra markers are useful on a cross-country that passes one
-  // and clutter on a route that does not.
-  await page.goto(PLAN);
-  await routeDrawn(page);
-  await page.waitForTimeout(500); // a moment for any chips that were coming
-  expect(await chips(page)).toHaveLength(0);
-});
-
-test("switched on, every Class B is on the map by name", { tag: "@smoke" }, async ({ page }) => {
-  await showClassBFirst(page);
+test("every Class B is on the map by name, always: no switch, the owner's 2026-11-17 word", { tag: "@smoke" }, async ({ page }) => {
   await page.goto(PLAN);
   await routeDrawn(page);
   // The real planner: thirty is what the FAA's own shapefile yields.
@@ -114,7 +97,6 @@ test("switched on, every Class B is on the map by name", { tag: "@smoke" }, asyn
 
 test("the marker's weather dot is the field's own flight category", async ({ page }) => {
   await mockClassB(page);
-  await showClassBFirst(page);
   await page.goto(PLAN);
   await routeDrawn(page);
 
@@ -129,7 +111,6 @@ test("tapping one opens its card in the panel, with Fly Here, as any airport on 
   // pin for its terminal chart; the field's card in the panel has the
   // weather, the radio and the runways, and the settings' TAC the chart.
   await mockClassB(page);
-  await showClassBFirst(page);
   await page.goto(PLAN);
   await routeDrawn(page);
 
@@ -153,7 +134,6 @@ test("a tap a little off one's mark opens its card, as off any airport on the ch
   // where near any other field it opened that field's. (The chart's own
   // O'Hare, from the overlay tiles, is under the chip, and opens the same.)
   await mockClassB(page);
-  await showClassBFirst(page);
   // Chicago Executive's card, O'Hare's chip some 65 points south of it.
   await page.goto("/app/plan?place=KPWK");
   await expect(sideDrawer(page).getByTestId("place-card")).toBeVisible({ timeout: slow(15000) });
@@ -161,21 +141,32 @@ test("a tap a little off one's mark opens its card, as off any airport on the ch
   await tapNear(page, ord(page), /[?&]place=KORD(&|$)/);
 });
 
-test("on the training map, which has no card, a tap goes to the field at its terminal chart's zoom", async ({ page }) => {
-  // Pinning from a route view would draw nothing -- the FAA publishes
-  // terminal charts from zoom 10 and a whole route fits at about 6 --
-  // so the tap goes to where the sheet is.
+test("on the training map, which has no card, a tap brings the field to the map's middle at the pilot's zoom", async ({ page }) => {
+  // The terminal chart is drawn over the sectional at every zoom (the
+  // owner, 2026-11-16: "just keep the TAC all the time"), so the tap no
+  // longer goes in to where it starts, and a thing tapped keeps the
+  // pilot's zoom (docs/design/rules.md §14, 5): O'Hare comes to the
+  // middle, the TAC drawn there, the zoom the pilot's.
   await mockClassB(page);
-  await showClassBFirst(page);
   await page.goto("/app/dev?dep=C81&dest=KDLH");
   await expect.poll(ord(page), { timeout: 20000 }).not.toBeNull();
+  await expect(page.getByTestId("gl-map")).toHaveAttribute("data-chart-kinds", "sec tac");
 
-  // The chart's tile level drawn (ChartGl's data-chart-zoom).
-  const tileZoom = () => chartZoom(page);
-  const before = await tileZoom();
+  await mapStill(page);
+  const before = await mapZoom(page);
   await tapMark(page, "class-b-fields", "KORD");
-  await expect.poll(tileZoom, { timeout: 20000 }).toBeGreaterThanOrEqual(10);
-  expect(before).toBeLessThan(10);
+  // GlMapShell's data-center, the map's middle once at rest.
+  const middle = async () => (await page.getByTestId("gl-map").getAttribute("data-center"))!.split(",").map(Number);
+  await expect
+    .poll(
+      async () => {
+        const [lat, lon] = await middle();
+        return Math.hypot(lat - 41.978, lon + 87.908);
+      },
+      { timeout: 20000 },
+    )
+    .toBeLessThan(0.05);
+  expect(await mapZoom(page)).toBeCloseTo(before, 2);
   await expect(page.locator(".maplibregl-popup")).toHaveCount(0);
 });
 
@@ -187,7 +178,6 @@ test("on an IFR base, the IFR area chart is drawn at a Class B field", async ({ 
     if (r.url().includes("/ifr_area/")) areaTiles.push(r.url());
   });
   await mockClassB(page);
-  await showClassBFirst(page);
   await page.goto("/app/dev?dep=C81&dest=KDLH");
   await openMapSettings(page);
   await grabberTo(page, "full");

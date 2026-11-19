@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { openPanel, sideDrawer, slow } from "./helpers";
+import { openPanel, sideDrawer, slow, openRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 
 /**
@@ -15,8 +15,10 @@ import { stopsAre } from "./stopsParam";
 const airport = (ident: string, name: string) => ({ ident, name, municipality: null, region: "US-MN" });
 
 /** The route's destination changed: from its pill's menu, a tap on it
- *  opening the airport's card (RouteBox). */
+ *  opening the airport's card (RouteBox), in the route's field opened from
+ *  the route's ••• (Type the Route; decision 0047). */
 async function changeDestination(page: Page) {
+  await openRoute(page);
   await page.getByLabel(/^(\S+, )?Destination$/).click({ button: "right" });
   await page.getByTestId("pill-menu-change").click();
 }
@@ -77,7 +79,9 @@ test("once the rows answer the box, Enter takes the highlighted row", async ({ p
  *  lines' sizes and the town's grey. */
 const rowLook = (row: Locator) =>
   row.evaluate((el) => {
-    const lines = [...el.querySelectorAll<HTMLElement>("span.block")];
+    // Its lines of words, each a truncated block: the field's chart mark
+    // at its left (ChartMark) is a block too, but a picture, not a line.
+    const lines = [...el.querySelectorAll<HTMLElement>("span.block.truncate")];
     const ident = el.querySelector<HTMLElement>(".font-mono")!;
     return {
       height: Math.round(el.getBoundingClientRect().height),
@@ -97,6 +101,7 @@ test("a stop at the route box's arrow and the route's ends are picked in the one
   test.skip(info.project.name !== "mobile", "judged as a phone");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await openPanel(page);
+  await openRoute(page);
   await sideDrawer(page).getByRole("button", { name: "Add a stop between C81 and KDLH" }).click();
   const field = page.getByTestId("search-airports");
   await expect(field).toHaveAttribute("placeholder", "Search airports and waypoints");

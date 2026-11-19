@@ -845,5 +845,62 @@
         "SIGMETs"
       ]
     }
+  },
+  "classB": {
+    "_why": "Avoid Class B (route/options/class_b_way.rs): the route as planned with the fix the planner found round the Class B it enters (class_b_detours), built as the pilot's own route is.",
+    "input": {
+      "dep": {
+        "ident": "AAA",
+        "lat": 0.0,
+        "lon": 0.0
+      },
+      "dest": {
+        "ident": "BBB",
+        "lat": 0.0,
+        "lon": 4.0
+      },
+      "profile": {
+        "cruise_tas_kt": 120.0,
+        "fuel_burn_gph": 10.0,
+        "usable_fuel_gal": 50.0,
+        "taxi_fuel_gal": 1.0,
+        "service_ceiling_ft": 13000.0
+      },
+      "depart_s": 1793000000,
+      "now_s": 1793000000,
+      "night": false,
+      "tafs": [],
+      "metars": [],
+      "sigmets": [],
+      "gairmets": [],
+      "sua": [],
+      "tfrs": [],
+      "winds": [],
+      "fields": [],
+      "fixes": [],
+      "class_b": {
+        "points": [
+          [
+            0.5,
+            2.0
+          ]
+        ],
+        "idents": [
+          "VPXYZ"
+        ],
+        "landed": [
+          false
+        ]
+      }
+    },
+    "expect": {
+      "kind": "class_b",
+      "title": "Avoid Class B",
+      "stops": [
+        "VPXYZ"
+      ],
+      "landings": 0,
+      "distance_nm": 248
+    }
   }
 }

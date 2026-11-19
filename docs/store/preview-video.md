@@ -41,7 +41,7 @@ Left out, and why:
 
 - **Pilot's view / 3D terrain.** Not on iOS (the map's pitch is off,
   `Views/ChartMap.swift` `isPitchEnabled = false`; the 3D view is the
-  web's, `apps/web/src/features/plan/map/terrain`). It cannot be in an
+  web's, `apps/web/src/features/plan-map/terrain`). It cannot be in an
   App Preview, which must show the iOS app.
 - **Logbook auto-draft** ("Flight Logged", `Views/FlightLoggedSheet.swift`).
   It appears only when the flight recorder sees the airplane land and

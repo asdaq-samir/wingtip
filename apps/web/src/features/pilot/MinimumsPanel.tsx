@@ -44,7 +44,6 @@ export default function MinimumsPanel() {
         <PullDown<RouteWeather>
           label="Routes keep to"
           value={routeWeather}
-          testId="route-weather"
           onChange={setRouteWeather}
           options={[
             { value: "personal", label: "These minimums" },

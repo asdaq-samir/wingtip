@@ -32,6 +32,7 @@ pub fn hold(name: &str, v: &Value) -> Result<String, String> {
                 ask.opt_num("altitude_ft")?,
             ));
         }
+        "hold_inbound_deg" => json::number(&mut out, holding::inbound_of(ask.num("course_deg")?, ask.opt_bool("outbound")?)),
         "holding_leg_minutes" => json::number(&mut out, holding::leg_minutes(ask.opt_num("altitude_ft")?)),
         "hold_entry" => {
             json::string(&mut out, holding::entry(ask.num("arrival_deg")?, ask.num("inbound_deg")?, ask.opt_str("turns")? != "left").key())
@@ -238,10 +239,6 @@ pub fn written(name: &str, v: &Value) -> Result<String, String> {
     let mut out = String::new();
     let text = match name {
         "words_num" => words::js_opt(ask.opt_num("n")?),
-        "words_one" => {
-            json::number(&mut out, words::one(ask.num("n")?));
-            return Ok(out);
-        }
         "words_to_fixed" => {
             let digits = ask.opt_num("digits")?.unwrap_or(1.0);
             if !(0.0..=20.0).contains(&digits) || digits.fract() != 0.0 {

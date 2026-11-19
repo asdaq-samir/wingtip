@@ -19,7 +19,9 @@ visibility (14 CFR 91.175(h)(1)).
 
 Kept in wingtip.live_reports (kind "rvr"), a report a runway end, until
 RVR_FRESH_S after it was heard: a reading ten minutes old is not RVR now.
-What a reading means against a minimum is the engine's (rvr_check).
+How a reading is read and whether it is the system's most is the
+engine's (rvr_readings), and what a reading means against a minimum is
+the engine's too (rvr_check).
 """
 
 from __future__ import annotations
@@ -28,12 +30,13 @@ import time
 import xml.etree.ElementTree as ET
 
 from . import live_reports
+from .engine import ask as engine
 
 KIND = "rvr"
 #: How long a runway's reading is given after it was heard, s.
 RVR_FRESH_S = 600
-#: The most an RVR system reports, ft (AIM 7-1-13).
-MOST_FT = 6000
+#: The parts of a runway each reading is of, as the message names them.
+PARTS = ("touchdown", "midpoint", "rollout")
 
 
 def _local(tag: str) -> str:
@@ -47,13 +50,11 @@ def _child(element, name: str) -> str:
     return ""
 
 
-def reading_ft(text: str) -> int | None:
-    """A reading in feet ("35" is 3,500); None for no reading ("00",
-    "FF", blanks)."""
-    text = (text or "").strip()
-    if len(text) != 2 or not text.isdigit() or text == "00":
-        return None
-    return int(text) * 100
+def readings(texts: list[str]) -> list[dict]:
+    """Readings as sent, each {"ft", "more"} (the engine's rvr_readings):
+    "35" is 3,500 ft, "00", "FF" and blanks None, and `more` where it is
+    the system's most (6,000 ft or more, AIM 7-1-13)."""
+    return engine("rvr_readings", readings=texts)["readings"] if texts else []
 
 
 def runways(xml: str) -> tuple[str, list[dict]]:
@@ -66,16 +67,20 @@ def runways(xml: str) -> tuple[str, list[dict]]:
     except ET.ParseError:
         return "", []
     airport = _child(root, "airport").strip().upper()
-    found = []
+    ends = []
     for data in (e for e in root.iter() if _local(e.tag) == "runwayData"):
         runway = _child(data, "numericRunwayID").strip() + _child(data, "runwaySubID").strip()
-        if not runway:
-            continue
+        if runway:
+            ends.append((runway, data))
+    # Every end's readings read at once, three an end.
+    read = iter(readings([_child(data, f"{part}VisualRange") for _, data in ends for part in PARTS]))
+    found = []
+    for runway, data in ends:
         end = {"runway": runway}
-        for part in ("touchdown", "midpoint", "rollout"):
-            feet = reading_ft(_child(data, f"{part}VisualRange"))
-            end[f"{part}_ft"] = feet
-            end[f"{part}_more"] = feet == MOST_FT
+        for part in PARTS:
+            reading = next(read)
+            end[f"{part}_ft"] = reading["ft"]
+            end[f"{part}_more"] = reading["more"]
             end[f"{part}_trend"] = _child(data, f"{part}Trend").strip() or None
         end["edge_lights"] = _child(data, "runwayEdgeLightSetting").strip() or None
         found.append(end)

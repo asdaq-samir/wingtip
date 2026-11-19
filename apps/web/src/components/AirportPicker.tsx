@@ -1,10 +1,10 @@
-import { Suspense, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useEffectEvent, useRef, useState } from "react";
 import { ChevronsUpDown } from "lucide-react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
 import { fromChunk } from "../lib/fromChunk";
 import { Button } from "./ui/button";
-import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "./ResponsivePopover";
+import { ResponsivePopover, ResponsivePopoverAnchor, ResponsivePopoverContent, ResponsivePopoverTrigger } from "./ResponsivePopover";
 import { useIsMobile } from "../hooks/use-mobile";
 import { askSearchPick, useSearchPick } from "../lib/oneSearch";
 
@@ -39,10 +39,6 @@ interface Props {
   onOpenChange?: (open: boolean) => void;
   /** What a tap on the button does in place of opening the search. */
   onTap?: () => void;
-  /** What the button shows in place of the ident and its chevron: FPL's
-   *  split route line, its mark and the airport's name with it
-   *  (RouteSplit). */
-  children?: ReactNode;
 }
 
 /**
@@ -72,7 +68,6 @@ export default function AirportPicker({
   open: shown,
   onOpenChange,
   onTap,
-  children,
 }: Props) {
   const [ownOpen, setOwnOpen] = useState(false);
   const open = shown ?? ownOpen;
@@ -105,6 +100,37 @@ export default function AirportPicker({
     if (shown && oneSearch) handOn();
   }, [shown, oneSearch]);
 
+  const button = (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      // A combobox where a tap opens the search; a button where it
+      // opens the airport's card (`onTap`), the search its menu's.
+      role={onTap ? undefined : "combobox"}
+      aria-expanded={onTap ? undefined : open}
+      // Its ident first, as seen, then which field (WCAG 2.5.3, Label
+      // in Name): "C81, Departure"; empty, the placeholder it shows.
+      aria-label={value ? `${value}, ${ariaLabel}` : ariaLabel}
+      aria-invalid={invalid}
+      data-testid={testId}
+      onPointerDown={prefetchSearch}
+      onClick={onTap}
+      // A field, as a search box is: its ident in the text's colour
+      // (not a button's tint) at a row's size (TEXT). A route's pill
+      // in the system face, semibold, at a line under a row's (15):
+      // in the monospaced face at 17 two took a phone's line, the pilot
+      // asked for three.
+      className={
+        look === "pill"
+          ? cn("font-semibold uppercase text-foreground", TEXT.detail, className)
+          : cn("font-mono uppercase text-foreground", TEXT.row, !value && "text-muted-foreground", className)
+      }
+    >
+      {value || placeholder}
+      {look === "field" && <ChevronsUpDown className="text-muted-foreground" />}
+    </Button>
+  );
   return (
     // On a phone a card at the sheet's size, the keyboard placed by the
     // Drawer (VirtualKeyboardProvider), never raised for the field.
@@ -116,52 +142,15 @@ export default function AirportPicker({
         if (!next) setQuery("");
       }}
     >
-      <ResponsivePopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          // A combobox where a tap opens the search; a button where it
-          // opens the airport's card (`onTap`), the search its menu's.
-          role={onTap ? undefined : "combobox"}
-          aria-expanded={onTap ? undefined : open}
-          // Its ident first, as seen, then which field (WCAG 2.5.3, Label
-          // in Name): "C81, Departure"; empty, the placeholder it shows.
-          aria-label={value && !children ? `${value}, ${ariaLabel}` : ariaLabel}
-          aria-invalid={invalid}
-          data-testid={testId}
-          onPointerDown={prefetchSearch}
-          // A tap the caller's (`onTap`), not the trigger's opening: the
-          // trigger's own toggle is kept from running (preventDefault on a
-          // phone's card, Base UI's handler from md up).
-          onClick={
-            onTap
-              ? (e) => {
-                  e.preventDefault();
-                  (e as { preventBaseUIHandler?: () => void }).preventBaseUIHandler?.();
-                  onTap();
-                }
-              : undefined
-          }
-          // A field, as a search box is: its ident in the text's colour
-          // (not a button's tint) at a row's size (TEXT). A route's pill
-          // in the system face, semibold, at a line under a row's (15):
-          // in the monospaced face at 17 two took a phone's line, the pilot
-          // asked for three.
-          className={
-            look === "pill"
-              ? cn("font-semibold uppercase text-foreground", TEXT.detail, className)
-              : cn("font-mono uppercase text-foreground", TEXT.row, !value && "text-muted-foreground", className)
-          }
-        >
-          {children ?? (
-            <>
-              {value || placeholder}
-              {look === "field" && <ChevronsUpDown className="text-muted-foreground" />}
-            </>
-          )}
-        </Button>
-      </ResponsivePopoverTrigger>
+      {/* A tap the caller's (`onTap`) where it has one, the search then
+          opened from elsewhere (its menu, `open`): the popover placed
+          against the button (its Anchor, Base UI's Positioner `anchor`),
+          not opened by it, so nothing of the trigger's is overridden. */}
+      {onTap ? (
+        <ResponsivePopoverAnchor asChild>{button}</ResponsivePopoverAnchor>
+      ) : (
+        <ResponsivePopoverTrigger asChild>{button}</ResponsivePopoverTrigger>
+      )}
       {/* The panel's own search, as the search bar is with no route: on a
           phone a sheet from the top, the field a capsule at its top,
           Favorites and Recents under it until something is typed. */}

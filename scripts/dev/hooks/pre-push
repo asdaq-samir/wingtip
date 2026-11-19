@@ -134,8 +134,9 @@ if command -v npx >/dev/null && [ -d "$here/apps/web/node_modules" ]; then web_h
 # for the pushed tree's lock, looked for once a push. Where no check has
 # built that one, the newest there is: a lock a commit or two older lints
 # and formats the same nearly always, and an image kept for every lock
-# filled the disk (check.sh's prune_tags). With none at all it is built
-# here, once, the way check.sh builds it, and both share it from then on.
+# filled the disk (check-images.sh's prune_tags). With none at all it is
+# built here, once, the way check-images.sh builds it, and both share it
+# from then on.
 # $web_tag is left empty, with a note, where there is no image to run in.
 web_image() {
   [ -z "${web_tag+set}" ] || return 0

@@ -111,7 +111,7 @@ export default function PastFlights({
         {!!unread && (
           <ListRow
             title={
-              <span className={cn("text-muted-foreground", TEXT.detail)} data-testid="past-flights-unread">
+              <span className={cn("text-muted-foreground", TEXT.detail)}>
                 {/* A week or more unread is adsb.lol's history closed to the
                   app (behind a browser check since 19 Oct 2026), not a
                   moment's refusal: said so, and that the flights listed

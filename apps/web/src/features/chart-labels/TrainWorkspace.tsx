@@ -4,7 +4,7 @@ import { ADDRESS_CLEARED, useAddress } from "../../lib/address";
 import { identOf, routeOf } from "../../lib/identSchema";
 import { statusQuery } from "../../lib/queryClient";
 import { useProgressToast } from "../../lib/useProgressToast";
-import type { WorkspaceProps } from "../shell";
+import type { WorkspaceProps } from "../../lib/workspace";
 import { loadPilotPanel } from "../pilot";
 import DevBar from "./DevBar";
 import { useDevTab } from "./devTab";
@@ -157,7 +157,7 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
           },
         ]
       : [
-          { name: "Rated", value: String(picks.length), testId: "rated-count" },
+          { name: "Rated", value: String(picks.length) },
           { name: "Left", value: String(Math.max(0, total - picks.length)) },
           { name: "Model", value: score == null ? "—" : score.toFixed(1) },
           { name: "MAE", value: error },

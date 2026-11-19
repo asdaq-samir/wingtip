@@ -92,14 +92,13 @@ export function RadioTrack() {
         {/* React Aria's FileTrigger: the hidden file input, opened by the button. */}
         <FileTrigger
           acceptedFileTypes={["audio/*", ".mp3", ".m4a", ".wav", ".ogg"]}
-          data-testid="studio-radio-file"
           onSelect={(files) => {
             const picked = files?.[0];
             if (picked) void pickAudio(picked);
           }}
         >
           <Pressable>
-            <Button variant="outline" className="flex-1" data-testid="studio-radio-pick">
+            <Button variant="outline" className="flex-1">
               <AudioLines aria-hidden />
               {file ? "Another recording" : "Add a recording"}
             </Button>
@@ -116,7 +115,7 @@ export function RadioTrack() {
         device.
       </p>
       {problem && <FieldError>{problem}</FieldError>}
-      <div ref={box} className={cn(!url && "hidden")} data-testid="studio-radio-wave" />
+      <div ref={box} className={cn(!url && "hidden")} />
       {url && (
         <form
           className="flex flex-col gap-2"
@@ -148,12 +147,7 @@ export function RadioTrack() {
             </FieldDescription>
             {zuluProblem && <FieldError>{zuluProblem}</FieldError>}
           </Field>
-          <Button
-            variant="outline"
-            disabled={at === null}
-            onClick={() => at !== null && setAudioSync({ audioS: currentTime, clockT: at })}
-            data-testid="studio-radio-sync-now"
-          >
+          <Button variant="outline" disabled={at === null} onClick={() => at !== null && setAudioSync({ audioS: currentTime, clockT: at })}>
             Sync to the replay's moment
           </Button>
         </form>

@@ -1,3 +1,4 @@
+import { twoFigures } from "../../format";
 import { altitudeWords, ESTIMATED_WORDS, type SimMeta, type SimSegment } from "./flight";
 
 /*
@@ -51,8 +52,7 @@ function aircraftPath(meta: SimMeta): string {
 /** MM/DD/YYYY, UTC: the only date X-Plane's reader takes (Laminar's kb). */
 function mdy(t: number): string {
   const d = new Date(t * 1000);
-  const two = (n: number) => String(n).padStart(2, "0");
-  return `${two(d.getUTCMonth() + 1)}/${two(d.getUTCDate())}/${d.getUTCFullYear()}`;
+  return `${twoFigures(d.getUTCMonth() + 1)}/${twoFigures(d.getUTCDate())}/${d.getUTCFullYear()}`;
 }
 
 /** HH:MM:SS.ss, UTC. */
@@ -61,7 +61,7 @@ function clock(t: number): string {
   const h = Math.floor(day / 3600),
     m = Math.floor((day % 3600) / 60),
     s = day % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${s.toFixed(2).padStart(5, "0")}`;
+  return `${twoFigures(h)}:${twoFigures(m)}:${s.toFixed(2).padStart(5, "0")}`;
 }
 
 const comments = (lines: string[]) => lines.map((l) => `COMM, ${l.replace(/[\r\n]+/g, " ")}`);

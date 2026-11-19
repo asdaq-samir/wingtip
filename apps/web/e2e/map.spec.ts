@@ -16,6 +16,7 @@ import {
 } from "./helpers";
 import { routeMenuSwitch } from "./mapCard";
 import { drawnMarks, markWith, tapMark } from "./marks";
+import { mapZoom } from "./mapZoom";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -33,7 +34,7 @@ test("plan page: a route from an airport to itself is a local flight: the field'
   await grabberTo(page, "full");
   await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText("1h", { timeout: slow(30000) });
   // Its name as shown, "Aloft", and in full words to a screen reader
-  // (FlightLine's dt: the shorthand hidden from it, the said words beside).
+  // (TripFigures' dt: the shorthand hidden from it, the said words beside).
   const aloft = sideDrawer(page).locator('[data-slot="section-summary"] dt').nth(1);
   await expect(aloft.locator("[aria-hidden]")).toHaveText("Aloft");
   await expect(aloft.locator(".sr-only")).toHaveText("Time aloft, one hour");
@@ -43,20 +44,19 @@ test("plan page: a route from an airport to itself is a local flight: the field'
   // Longer aloft: its chip in the pill, in the address, and more fuel.
   await controlsInSight(page);
   await page.getByTestId("local-duration").click();
-  await page.getByRole("menuitemradio", { name: "2h", exact: true }).click();
+  await page.getByRole("option", { name: "2h", exact: true }).click();
   await expect(page).toHaveURL(/[?&]local_min=120/);
   await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText("2h", { timeout: slow(30000) });
 });
 
 test("plan page: every popup the map opens dismisses the same way", async ({ page }) => {
-  // They did not. The airport and checkpoint popups took Leaflet's
-  // defaults; the Class B card set autoClose and closeOnClick off, so
-  // on the same map the same gesture -- a tap on the chart -- dismissed
-  // one and left the other sitting there, over the markers underneath
-  // it, swallowing their clicks. `MapPopup` gives all of them one
-  // dismissal, and this is the test that says so.
-  // Class B on from the start, from the route's ••• menu.
-  await routeMenuSwitch(page, "class-b-toggle", true);
+  // They did not: the airport and checkpoint popups took the map's
+  // defaults while the Class B card turned auto-close and close-on-click
+  // off, so on the same map the same gesture -- a tap on the chart --
+  // dismissed one and left the other sitting there, over the markers
+  // underneath it, swallowing their clicks. The map's openCard gives all
+  // of them one dismissal, and this is the test that says so.
+  // The Class B fields always drawn (the owner, 2026-11-17).
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await expect(page.locator("[data-chart-zoom]")).toBeAttached();
@@ -93,23 +93,28 @@ test("plan page: every popup the map opens dismisses the same way", async ({ pag
 });
 
 test(
-  "plan page: a checkpoint picked on the map brings the map in to it, so there is no zoom button",
+  "plan page: a checkpoint tapped on the map opens its card at the pilot's zoom, so there is no zoom button",
   { tag: "@smoke" },
   async ({ page }) => {
     // The map's buttons had a zoom toggle between the whole route and the
-    // selected point; picking a point already does the one, and the wheel
-    // or a pinch the other.
+    // selected point; the wheel or a pinch does both. A thing tapped on
+    // the chart keeps the pilot's zoom and comes up above its card
+    // (docs/design/rules.md §14, 5), where a checkpoint's tap brought the
+    // map in to it.
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
     await expect(page.locator("[data-map-controls]")).toBeVisible();
     await expect(page.locator("[data-map-controls]").getByRole("button", { name: /zoom|fit route|show selected/i })).toHaveCount(0);
-    const zoomOfTiles = () => chartZoom(page);
-    const before = await zoomOfTiles();
+    await mapStill(page);
+    const before = await mapZoom(page);
     // A checkpoint drawn at this zoom: those without room for their dots
-    // wait for the map to come in (RouteMap's useSpaced), and those a
-    // higher mark covers are left out until then (MapLibre's collision).
+    // wait for the map to come in, and those a higher mark covers are
+    // left out until then (MapLibre's collision).
     await tapMark(page, "route-marks", /^\d+$/);
-    await expect.poll(zoomOfTiles, { timeout: slow(10000) }).toBeGreaterThan(before);
+    const card = page.locator("[data-sheet-card]").filter({ visible: true }).last();
+    await expect(card).toContainText("nm along", { timeout: slow(10000) });
+    await mapStill(page);
+    expect(await mapZoom(page)).toBeCloseTo(before, 2);
     await expect.poll(async () => (await drawn(page, "route-line")).length).toBeGreaterThan(0);
   },
 );
@@ -157,7 +162,7 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   }
   await expect.poll(zoomOfTiles, { timeout: slow(10000) }).toBeLessThanOrEqual(5);
   // So far out the route is a few points across: its numbered dots give
-  // way to its two airports' marks (RouteMap's useSpaced, 2026-10-26),
+  // way to its two airports' marks (2026-10-26),
   // the landmarks still drawn.
   // The landmarks' dim dots, in their slate outline.
   await expect.poll(async () => (await drawn(page, "candidate-marks")).length).toBeGreaterThan(0);
@@ -202,7 +207,7 @@ test("my position is the location arrow among the map's buttons, on both pages, 
     await expect(alert).toHaveCount(0);
     await expect(arrow).toHaveAttribute("aria-pressed", "false");
   }
-  // The training page's as well: its map is the same (MapShell).
+  // The training page's as well: its map is the same (GlMapShell).
   await page.goto("/app/dev?dep=C81&dest=KDLH");
   await settle(page);
   await expect(page.locator("[data-map-controls]").getByTestId("my-position-button")).toBeVisible();

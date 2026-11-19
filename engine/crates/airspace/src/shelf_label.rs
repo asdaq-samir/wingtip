@@ -1,6 +1,6 @@
 //! A Class B, C or D shelf's altitudes as the sectional writes them, for
 //! the label the web's 3D view stands at each shelf's top
-//! (features/plan/map/terrain/airspaceShelves, `airspace_shelf_label`),
+//! (features/plan-map/terrain/airspaceShelves, `airspace_shelf_label`),
 //! where every shelf of a Class B otherwise reads as the same flat disc
 //! (the owner, 2026-11-14).
 //!

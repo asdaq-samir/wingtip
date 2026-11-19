@@ -80,4 +80,18 @@ def raised(base: str | None, path: str, now: dict) -> list[str]:
         return out
 
     old, new = flat(before), flat(now)
-    return [f"{k}: {old.get(k, 0)} at {base}, {v} now" for k, v in sorted(new.items()) if v > old.get(k, 0)]
+    # A file moved since `base` (git mv, as a feature split into folders)
+    # keeps the count it had under its old path: its entry is compared there.
+    moved = renamed(base)
+
+    def was(key: str) -> str:
+        head, _, last = key.rpartition(" ")
+        return f"{head} {moved[last]}".strip() if last in moved else key
+
+    return [f"{k}: {old.get(was(k), 0)} at {base}, {v} now" for k, v in sorted(new.items()) if v > old.get(was(k), 0)]
+
+
+def renamed(base: str) -> dict[str, str]:
+    """Each file moved since `base`, by its path now: {new path: path at base}."""
+    rows = git("diff", "--name-status", "--diff-filter=R", "--find-renames", "-l5000", base).splitlines()
+    return {parts[2]: parts[1] for parts in (row.split("\t") for row in rows) if len(parts) == 3}

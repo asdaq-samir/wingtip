@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, settle, sideDrawer, frontSheet, slow } from "./helpers";
-import { expectPage, expectShown, openAirport, showPage } from "./sheetPages";
+import { clearTheRoute, grabberTo, settle, sideDrawer, frontSheet, slow } from "./helpers";
+import { expectPage, expectSearchInUse, expectShown, openAirport, showPage } from "./sheetPages";
 
 /**
  * Cards over the sheet's two pages, Search and FPL (the owner, 2026-11-11;
@@ -34,7 +34,9 @@ test.describe("cards over the pages", () => {
     await openAirport(page, "KOSH");
     await page.keyboard.press("Escape");
     await expect(page).not.toHaveURL(/[?&]place=/);
-    await expectShown(page, 0);
+    // Search in sight and live, its query kept for the way back
+    // (docs/design/rules.md, the card's row).
+    await expectSearchInUse(page, "KOSH");
   });
 
   test("Find Nearby's Stops open over Search and their close goes back to it", async ({ page }) => {
@@ -58,36 +60,31 @@ test.describe("cards over the pages", () => {
     await openAirport(page, "KOSH");
     await sideDrawer(page).getByTestId("place-card").getByTestId("fly-here").click();
     await expect(page).toHaveURL(/[?&]dest=KOSH/, { timeout: slow(15_000) });
-    await page.getByTestId("share-route").first().click();
-    await page.getByTestId("route-clear").click();
+    // Flown to from where the airplane is, a whole route: cleared from its
+    // ••• (half a route has the route box's own ✕, the owner, 2026-11-18).
+    await expect(sideDrawer(page).getByTestId("timeline-ident")).toHaveText(["My Location", "KOSH"], { timeout: slow(15_000) });
+    await clearTheRoute(page);
     await expect(page).not.toHaveURL(/[?&]dest=/);
     await expectShown(page, 1);
-    // The route's actions went with it, the menu left with its Show Route
-    // As alone (the owner, 2026-11-13); no ✕ of its own beside it, the
-    // page toggle at the bar's end going back to the search (the owner,
-    // 2026-11-14: the two did the same).
-    await page.getByTestId("share-route").first().click();
-    await expect(page.getByTestId("route-clear")).toHaveCount(0);
-    await page.keyboard.press("Escape");
+    // The route's actions went with it, no ••• in the first row and no ✕
+    // of its own, the page toggle at the bar's end going back to the
+    // search (the owner, 2026-11-14: the two did the same); the empty box's
+    // Undo instead.
+    await expect(sideDrawer(page).getByTestId("route-strip").getByTestId("share-route")).toHaveCount(0);
+    await expect(sideDrawer(page).getByTestId("route-undo")).toBeVisible();
     await expect(sideDrawer(page).getByTestId("route-close")).toHaveCount(0);
   });
 });
 
-test("the last waypoint taken out all the way up leaves the sheet all the way up", async ({ page }) => {
+test("the route cleared all the way up leaves the sheet all the way up", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "full");
-  const line = page.getByTestId("route-line");
-  if (await line.isVisible()) await line.click();
-  // Focused, its caret at the end: the route box holds its pills inside
-  // the field, so a click in its middle can land on a pill.
-  await page.getByTestId("route-type").focus();
-  await page.keyboard.press("End");
-  await page.keyboard.press("Backspace");
+  // The route cleared from its ••• menu: nothing of it left.
+  await clearTheRoute(page);
   await expect(page).not.toHaveURL(/[?&]dest=/);
-  await page.keyboard.press("Backspace");
   await expect(page).not.toHaveURL(/[?&]dep=/);
-  await expect(page).toHaveURL(/[?&]view=briefing/);
+  await expect(page).toHaveURL(/[?&]view=full/);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
 });

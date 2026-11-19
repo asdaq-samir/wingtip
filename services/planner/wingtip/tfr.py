@@ -17,7 +17,7 @@ from shapely import STRtree
 from shapely.geometry import LineString, Point, box, shape
 from shapely.ops import nearest_points
 
-from . import weather_store
+from . import utc, weather_store
 from .engine import ask as engine
 from .geo import along_track_distance_nm, box_around, corridor_bbox, path_points, shape_distance_nm
 
@@ -44,10 +44,7 @@ def _when(tfr: dict, start: datetime, end: datetime) -> str | None:
     until further notice, and a time that cannot be read is no time."""
 
     def at(key: str) -> float | None:
-        try:
-            return datetime.fromisoformat(tfr[key].replace("Z", "+00:00")).timestamp() if tfr.get(key) else None
-        except ValueError:
-            return None
+        return utc.epoch_or_none(tfr.get(key))
 
     return engine(
         "gonogo_hazard_window",

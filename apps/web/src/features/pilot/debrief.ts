@@ -20,7 +20,7 @@
  */
 import type { Flight } from "../../lib/api/types";
 import { callEngine } from "../../lib/engine/engine";
-import type { TrackPoint } from "../../lib/track";
+import { enginePoints, type TrackPoint } from "../../lib/track";
 
 /** PA.VI.A's tolerances, as the engine grades by them: S7's altitude,
  *  and its heading applied to the ground track; S5's distance from the
@@ -32,11 +32,8 @@ interface Tolerances {
   courseDeg: number;
   offRouteNm: number;
   etaMin: number;
-  patternNm: number;
   patternFt: number;
 }
-
-const enginePoints = (points: TrackPoint[]) => points.map((p) => ({ t: p.t, lat: p.lat, lon: p.lon, alt_ft: p.altFt }));
 
 /** The track's flights: each run of points over 40 kt over the ground (a
  *  minute's dip under it, a slow flight or a go-around, kept in; a run of
@@ -144,7 +141,6 @@ export function debrief(flight: Flight, points: TrackPoint[], patterns: Record<s
       courseDeg: t.course_deg,
       offRouteNm: t.off_route_nm,
       etaMin: t.eta_min,
-      patternNm: t.pattern_nm,
       patternFt: t.pattern_ft,
     },
     takeoff: d.takeoff,

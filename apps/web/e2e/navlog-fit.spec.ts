@@ -59,7 +59,7 @@ test("the nav log fits a phone's panel with long names, five-figure altitudes an
     },
   );
   const depart = new Date(Date.now() + 26 * 3600_000).toISOString().slice(0, 16);
-  await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${encodeURIComponent(depart)}&view=briefing`);
+  await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${encodeURIComponent(depart)}&view=full`);
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   await openNavLog(page);
@@ -88,7 +88,7 @@ test("the nav log fits a phone's panel with long names, five-figure altitudes an
   await controlsInSight(page);
 });
 
-test("a long trip's figures are set smaller to fit the strip, not cut short", async ({ page }) => {
+test("a long trip's figures are set smaller together to fit the strip, exact, never under 0.7 of their size", async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
   // The pilot's iPhone, 393 points wide.
   await page.setViewportSize({ width: 393, height: 852 });
@@ -121,35 +121,34 @@ test("a long trip's figures are set smaller to fit the strip, not cut short", as
   await expect(sideDrawer(page).getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
   await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
   const figures = sideDrawer(page).getByTestId("flight-line").locator("dd");
-  // Its unit after a no-break space, the Dist a button to the nav log (FlightLine).
-  await expect(figures.filter({ hasText: /\snm$/ }).first()).toHaveText(/^1\d{3}(\.\d)?\snm$/);
+  // Its unit after a no-break space, the Dist a button to the nav log
+  // (TripFigures): whole miles with their thousands' comma, as every
+  // summary writes them (the owner's list, 2026-11-17).
+  await expect(figures.filter({ hasText: /\snm$/ }).first()).toHaveText(/^1,\d{3}\snm$/);
   // At the default text size and the two above it, as an iPhone sets the
   // root from Settings' text size (features/shell/dynamicType, which a test browser
   // does not run): a 19-point Body, 17.88 px; a 21-point one, held to the
-  // 393-point screen's 19.65. Every figure whole in its column, none
-  // overflowing into an ellipsis.
+  // 393-point screen's 19.65. As iOS fits a label to its width
+  // (adjustsFontSizeToFitWidth, minimumScaleFactor 0.7): every figure the
+  // same size, none set under 0.7 of the default's, the figures exact
+  // (no rounded "16.0h"), and nothing past the screen's side; past 0.7 a
+  // figure may be cut with "…" (the trial of 2026-11-17, FigureStrip).
   for (const root of ["", "17.88px", "19.65px"]) {
     await page.evaluate((size) => {
       document.documentElement.style.fontSize = size;
     }, root);
-    await expect
-      .poll(
-        // A figure that is a button (Dist, ETE, Fuel) is cut in its own
-        // truncated words, its dd left to overflow for the button's 44-point
-        // area (FlightLine), which a measure of the dd took for a cut figure.
-        () =>
-          figures.evaluateAll((dds) =>
-            dds
-              .filter((dd) =>
-                dd.querySelector("button")
-                  ? [...dd.querySelectorAll<HTMLElement>("button .truncate")].some((el) => el.scrollWidth > el.clientWidth)
-                  : dd.scrollWidth > dd.clientWidth,
-              )
-              .map((dd) => dd.textContent),
-          ),
-        { message: `at a root of ${root || "16px"}` },
-      )
-      .toEqual([]);
+    // To a tenth of a pixel: the grid's columns come out a 64th of a pixel
+    // apart (its sub-pixel layout), and each column's size with them, which
+    // no eye tells apart ("18.2684px" and "18.2719px" at 17.88).
+    const sizes = () =>
+      figures.evaluateAll((dds) =>
+        dds.map((dd) => Math.round(parseFloat(getComputedStyle(dd.querySelector(".figure-roll") ?? dd).fontSize) * 10) / 10),
+      );
+    await expect.poll(async () => new Set(await sizes()).size, { message: `one size at a root of ${root || "16px"}` }).toBe(1);
+    const [size] = await sizes();
+    expect(size, `at a root of ${root || "16px"}`).toBeGreaterThanOrEqual(0.7 * 20 * (parseFloat(root || "16px") / 16) - 0.1);
+    await expect(sideDrawer(page).getByTestId("navlog-ete")).not.toHaveText(/\d\.\dh$/);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
 });
 
@@ -186,7 +185,9 @@ test("each row's miles over its groundspeed come to its minutes, a pattern's mil
   await closeNavLog(page);
 });
 
-test("the route's Profile, AI brief and ••• stay on the airplane and altitude's line at the owner's 19.65 px text", async ({ page }) => {
+test("the airplane and the altitude stay on the first row's line, the page toggle at its end, at the owner's 19.65 px text", async ({
+  page,
+}) => {
   // The FPL audit's A3 (2026-11-08): at 19.65 px the three round buttons
   // wrapped onto a line of their own under N-_____ and FL-0xx.
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
@@ -201,7 +202,10 @@ test("the route's Profile, AI brief and ••• stay on the airplane and altit
       document.documentElement.style.fontSize = size;
     }, root);
     const chip = sideDrawer(page).getByTestId("aircraft-select");
-    const actions = sideDrawer(page).getByTestId("route-actions");
+    // The route's ••• is the floating bar's once there is a route
+    // (FplTabBar), and VFR/IFR the Profile card's (2026-11-17): the line is
+    // the airplane and the altitude, the page toggle at its end.
+    const actions = sideDrawer(page).getByTestId("altitude-group");
     await expect(actions).toBeVisible({ timeout: slow(30000) });
     await expect
       .poll(

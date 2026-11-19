@@ -1,0 +1,37 @@
+{
+  "x-call": "wingtip_flight::calls::call",
+  "description": "How far along the route each leg ends, nm: the running sum of the legs' miles, a null (a departure's row, no leg) adding nothing.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NmAlongInput",
+      "type": "object",
+      "properties": {
+        "legs_nm": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      },
+      "required": [
+        "legs_nm"
+      ]
+    },
+    "answer": {
+      "title": "NmAlongAnswer",
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

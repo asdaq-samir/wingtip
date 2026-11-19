@@ -154,3 +154,26 @@ def test_the_airports_own_website_is_its_listing_on_the_field(monkeypatch):
     assert nearby._read(42.1142, -87.9015, "r")["website"] == "https://www.chiexec.com"
     rows.pop(0)
     assert nearby._read(42.1142, -87.9015, "r")["website"] is None
+
+
+def test_the_places_stand_when_the_outline_read_beside_them_fails(monkeypatch):
+    rows = [
+        {
+            "names": {"primary": "Kitty Hawk Cafe"},
+            "taxonomy": {"primary": "cafe", "hierarchy": ["food_and_drink", "casual_eatery", "cafe"]},
+            "confidence": 0.9,
+            "bbox": {"xmin": -87.89, "xmax": -87.89, "ymin": 42.115, "ymax": 42.115},
+        }
+    ]
+
+    class Table:
+        def to_table(self, columns, filter):
+            return type("T", (), {"to_pylist": lambda self: rows})()
+
+    def unreadable(lat, lon, release):
+        raise OSError("S3 said no")
+
+    monkeypatch.setattr(nearby, "_dataset", lambda release: Table())
+    monkeypatch.setattr(nearby, "_outline", unreadable)
+    (cafe,) = nearby._read(42.1142, -87.9015, "r")["food"]
+    assert cafe["name"] == "Kitty Hawk Cafe" and cafe["on_field"] is False

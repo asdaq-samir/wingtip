@@ -1753,7 +1753,7 @@
       "additionalProperties": false
     },
     "altitude_advisor": {
-      "description": "The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a warning (the owner's warn, never limit).",
+      "description": "The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a short warning of where it sits, under, over or between them, and the note that says what that means, once over the rows (the owner's warn, never limit).",
       "type": "object",
       "properties": {
         "input": {
@@ -1865,6 +1865,13 @@
               },
               "economical": {
                 "type": "boolean"
+              },
+              "note": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "On a row outside the legal altitudes, what such a row means, the same on each: said once over the rows. Null on a legal one."
               },
               "warning": {
                 "type": [
@@ -2258,34 +2265,52 @@
       ],
       "additionalProperties": false
     },
-    "altitude_wheel": {
-      "description": "The altitude wheel's rows, highest first: the legal altitudes given, the one flown, and every 500 ft from 1,000 ft to 17,500 ft under Class A (14 CFR 71.33, 91.135) besides (the owner's pick, 2026-10-20).",
+    "altitude_typed": {
+      "description": "A cruise altitude as a pilot types it, read to feet: a flight level's three figures in hundreds of feet (\"075\", \"FL075\", \"FL-075\"; 14 CFR 1.1), or feet in four or five figures (\"7500\", \"7,500\"), rounded to the hundred. Nothing is guessed: four or five figures starting with 0, six or more, under 500 ft MSL (the planning floor, limits.rs) or above FL600 (Class A's top, 71.33(a)) give no ft and the reason. Warn, never limit: VFR in Class A (18,000 ft MSL up, 71.33(a), 91.135(a)) and IFR above FL410 (91.179(b)) give the ft with the reason as a warning. Nothing typed gives neither.",
       "type": "object",
       "properties": {
         "input": {
-          "title": "AltitudeWheelInput",
+          "title": "AltitudeTypedInput",
           "type": "object",
           "properties": {
-            "legal_ft": {
-              "type": "array",
-              "items": {
-                "type": "number"
-              }
+            "text": {
+              "type": "string"
             },
-            "flown_ft": {
+            "ifr": {
               "type": [
-                "number",
+                "boolean",
                 "null"
               ]
             }
-          }
+          },
+          "required": [
+            "text"
+          ]
         },
         "answer": {
-          "title": "AltitudeWheelAnswer",
-          "type": "array",
-          "items": {
-            "type": "number"
-          }
+          "title": "AltitudeTypedAnswer",
+          "type": "object",
+          "properties": {
+            "ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The altitude to plan, ft MSL; null where none can be."
+            },
+            "reason": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Why there is no ft, or the warning a planned one carries; null where there is none."
+            }
+          },
+          "required": [
+            "ft",
+            "reason"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -2649,37 +2674,6 @@
               "type": "null"
             }
           ]
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
-    "approach_descent_fpm": {
-      "description": "The descent rate on the path, ft/min (the TPP's rate of descent table).",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "ApproachDescentFpmInput",
-          "type": "object",
-          "properties": {
-            "gs_kt": {
-              "type": "number"
-            },
-            "angle_deg": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "gs_kt",
-            "angle_deg"
-          ]
-        },
-        "answer": {
-          "title": "ApproachDescentFpmAnswer",
-          "type": "number"
         }
       },
       "required": [
@@ -3699,6 +3693,40 @@
           "required": [
             "who",
             "items"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "average_groundspeed_kt": {
+      "description": "The average ground speed over a stretch, knots: its miles over its hours (FAA-H-8083-25C, PHAK ch. 16); null where no time passed. The copilot's planned speed (the nav log's distance over its time en route) and a past flight's (the miles flown over its time aloft).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AverageGroundspeedKtInput",
+          "type": "object",
+          "properties": {
+            "distance_nm": {
+              "type": "number"
+            },
+            "minutes": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "distance_nm",
+            "minutes"
+          ]
+        },
+        "answer": {
+          "title": "AverageGroundspeedKtAnswer",
+          "type": [
+            "number",
+            "null"
           ]
         }
       },
@@ -5829,6 +5857,139 @@
       ],
       "additionalProperties": false
     },
+    "congested_reach": {
+      "description": "How far round a point the host looks for towns before congested_points measures it against them: 2,500 ft, a quarter past 14 CFR 91.119(b)'s 'horizontal radius of 2,000 feet', so a town at the radius's edge is always a candidate; in degrees of latitude (sixty nautical miles each), divided by the cosine of the farthest latitude asked (held to 0.2 and over, the latitude to 89 degrees) so it is short in no direction.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CongestedReachInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number",
+              "description": "The farthest latitude of the points asked, degrees (either sign)."
+            }
+          },
+          "required": [
+            "lat"
+          ]
+        },
+        "answer": {
+          "title": "CongestedReachAnswer",
+          "type": "object",
+          "properties": {
+            "search_ft": {
+              "type": "number",
+              "description": "The search's reach, ft."
+            },
+            "reach_deg": {
+              "type": "number",
+              "description": "The reach in degrees, never short of search_ft in any direction."
+            }
+          },
+          "required": [
+            "search_ft",
+            "reach_deg"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "copilot_flight": {
+      "description": "The planned flight the in-flight copilot starts from: the fuel at takeoff (the fuel aboard at the start less the taxi allowance, never below none), the plan's ground speed (its distance over its time en route, PHAK ch. 16) and whether anyone but the pilot is aboard for 14 CFR 61.57(a) and (b)'s passenger currency (a station of the load other than the pilot's, the baggage's or the cargo's with weight in it). Each figure null where the plan has none.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CopilotFlightInput",
+          "type": "object",
+          "properties": {
+            "fuel_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "taxi_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "distance_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ete_min": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "stations": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "lb": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          },
+          "required": []
+        },
+        "answer": {
+          "title": "CopilotFlightAnswer",
+          "type": "object",
+          "properties": {
+            "fuel_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "planned_gs_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "passengers": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "fuel_gal",
+            "planned_gs_kt",
+            "passengers"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "copilot_watch": {
       "description": "The in-flight copilot: from own ship and the live data, the messages that change what the pilot should do, most pressing first (warning, caution, advisory; then the kinds' order), each with the words to show and speak and its sources. Warns, never limits.",
       "type": "object",
@@ -6340,6 +6501,43 @@
       ],
       "additionalProperties": false
     },
+    "datis_ends": {
+      "description": "When a digital ATIS broadcast heard at a time stops being the airport's: two hours after it was heard, two of the updates AIM 4-1-13 asks ('ATIS broadcast must be updated upon the receipt of any official hourly and special weather'); a new letter writes over it before then.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DatisEndsInput",
+          "type": "object",
+          "properties": {
+            "heard": {
+              "type": "number",
+              "description": "When it was heard, Unix seconds."
+            }
+          },
+          "required": [
+            "heard"
+          ]
+        },
+        "answer": {
+          "title": "DatisEndsAnswer",
+          "type": "object",
+          "properties": {
+            "ends": {
+              "type": "number",
+              "description": "When it is no longer the airport's, Unix seconds."
+            }
+          },
+          "required": [
+            "ends"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "datis_remarks": {
       "description": "A digital ATIS's remarks as the airport card shows them (STDDS TDES DATISData): the sentences after its weather (AIM 4-1-13), an item each, in the FAA's words in sentence case with RWY, TWY and the codes kept, the contractions of FAA Order JO 7340.2 written out, a figure said for the voice ('9 THSD 7 HND 25 FT') written as one (9,725 ft), and the sentences that say the same of several runways folded into one item listing them all. The heading, the closing 'ADVS YOU HAVE INFO' and a sentence whose approach or runways read_datis already shows are left out.",
       "type": "object",
@@ -6808,75 +7006,6 @@
             ],
             "additionalItems": false
           }
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
-    "debrief_marked": {
-      "description": "The web's debrief (its figures, snake_case, no marks) marked against ACS PA.VI.A's tolerances as `debrief` marks its own, with the tolerances.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "DebriefMarkedInput",
-          "type": "object",
-          "properties": {
-            "debrief": {
-              "type": "object",
-              "description": "The debrief's figures as `debrief` gives them, unmarked: legs, passes, patterns and the rest."
-            }
-          },
-          "required": [
-            "debrief"
-          ]
-        },
-        "answer": {
-          "title": "DebriefMarkedAnswer",
-          "type": "object",
-          "properties": {
-            "debrief": {
-              "type": "object"
-            },
-            "tolerances": {
-              "type": "object",
-              "properties": {
-                "altitude_ft": {
-                  "type": "number"
-                },
-                "course_deg": {
-                  "type": "number"
-                },
-                "off_route_nm": {
-                  "type": "number"
-                },
-                "eta_min": {
-                  "type": "number"
-                },
-                "pattern_nm": {
-                  "type": "number"
-                },
-                "pattern_ft": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "altitude_ft",
-                "course_deg",
-                "off_route_nm",
-                "eta_min",
-                "pattern_nm",
-                "pattern_ft"
-              ]
-            }
-          },
-          "required": [
-            "debrief",
-            "tolerances"
-          ],
-          "additionalProperties": false
         }
       },
       "required": [
@@ -9153,91 +9282,43 @@
       ],
       "additionalProperties": false
     },
-    "field_relation": {
-      "description": "Whether an airplane is around a field, inbound to it or departing it.",
+    "field_site_type": {
+      "description": "The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport.",
       "type": "object",
       "properties": {
         "input": {
-          "title": "FieldRelationInput",
+          "title": "FieldSiteTypeInput",
           "type": "object",
           "properties": {
-            "plane": {
-              "type": "object",
-              "properties": {
-                "lat": {
-                  "type": "number"
-                },
-                "lon": {
-                  "type": "number"
-                },
-                "altitude_ft": {
-                  "type": [
-                    "number",
-                    "null"
-                  ]
-                },
-                "track_deg": {
-                  "type": [
-                    "number",
-                    "null"
-                  ]
-                },
-                "vertical_fpm": {
-                  "type": [
-                    "number",
-                    "null"
-                  ]
-                }
-              },
-              "required": [
-                "lat",
-                "lon"
-              ]
-            },
-            "field": {
-              "type": "object",
-              "properties": {
-                "lat": {
-                  "type": "number"
-                },
-                "lon": {
-                  "type": "number"
-                },
-                "elevation_ft": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "lat",
-                "lon",
-                "elevation_ft"
-              ]
+            "site_type": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "NASR APT_BASE's SITE_TYPE_CODE (A, B, C, G, H, U); null where NASR has no record."
             }
-          },
-          "required": [
-            "plane",
-            "field"
-          ]
+          }
         },
         "answer": {
-          "title": "FieldRelationAnswer",
+          "title": "FieldSiteTypeAnswer",
           "type": "object",
           "properties": {
-            "around": {
-              "type": "boolean"
-            },
-            "inbound": {
-              "type": "boolean"
-            },
-            "departing": {
-              "type": "boolean"
+            "words": {
+              "enum": [
+                "Balloonport",
+                "Seaplane base",
+                "Gliderport",
+                "Heliport",
+                "Ultralight",
+                null
+              ],
+              "description": "The site's kind in words, or null for an airport."
             }
           },
           "required": [
-            "around",
-            "inbound",
-            "departing"
-          ]
+            "words"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -9680,7 +9761,7 @@
       "additionalProperties": false
     },
     "filed_route": {
-      "description": "Item 15's route between the departure and the destination (AIM Appendix 4: \"DALL3 EIC V18 MEI LGC4\", \"FLACK DCT IRW\"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct. `airways` names which of the stops are airways.",
+      "description": "Item 15's route between the departure and the destination (AIM Appendix 4: \"DALL3 EIC V18 MEI LGC4\", \"FLACK DCT IRW\"): airways between the fixes they are joined and left at, DCT between two fixes flown direct, a departure procedure first with its transition's fix, an arrival last after its transition's fix; DCT alone for a flight direct; a pilot's own point off a fix (\"VPBNG/095/14.2\") as a fix, radial and distance, \"VPBNG095014\" (AIM Appendix 4's \"IRW12503\"), never with the strokes item 15 reads as a speed and altitude. `airways` names which of the stops are airways.",
       "type": "object",
       "properties": {
         "input": {
@@ -9782,6 +9863,107 @@
         "answer": {
           "title": "FiledSpeedAnswer",
           "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "filed_times": {
+      "description": "FAA Form 7233-4's item 16 total EET and item 19 endurance (AIM Appendix 4: HHMM; E/ the fuel endurance time). The EET is the nav log's minutes rounded up; the endurance the fuel aboard at the cruise burn rounded down: the highest burn of the legs flown at cruise (no phase), never a climb's or a descent's, else the airplane's own cruise burn. Each null where the plan cannot say.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FiledTimesInput",
+          "type": "object",
+          "properties": {
+            "ete_min": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "fuel_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "legs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "phase": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "fuel_burn_gph": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            },
+            "cruise_burn_gph": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "legs"
+          ]
+        },
+        "answer": {
+          "title": "FiledTimesAnswer",
+          "type": "object",
+          "properties": {
+            "burn_gph": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "eet_minutes": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "eet": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "endurance_minutes": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "endurance": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "burn_gph",
+            "eet_minutes",
+            "eet",
+            "endurance_minutes",
+            "endurance"
+          ]
         }
       },
       "required": [
@@ -9994,41 +10176,6 @@
           },
           "required": [
             "floor_ft"
-          ]
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
-    "floor_caution": {
-      "description": "What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "FloorCautionInput",
-          "type": "object",
-          "properties": {
-            "segment": {
-              "type": "object",
-              "description": "A selection's segment: floor_ft, highest_ft, highest_is_obstacle, obstacle_type, obstacle_clearance_ft, congested."
-            },
-            "altitude_ft": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "segment",
-            "altitude_ft"
-          ]
-        },
-        "answer": {
-          "title": "FloorCautionAnswer",
-          "type": [
-            "string",
-            "null"
           ]
         }
       },
@@ -11247,7 +11394,7 @@
       "additionalProperties": false
     },
     "frequency_line": {
-      "description": "A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name.",
+      "description": "A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name; a CTAF that is the field's tower frequency \"Tower / CTAF\" (AIM 4-1-9).",
       "type": "object",
       "properties": {
         "input": {
@@ -11265,6 +11412,23 @@
                 "string",
                 "null"
               ]
+            },
+            "frequency_mhz": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "This frequency's figure, MHz."
+            },
+            "frequencies": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "$ref": "#/definitions/FieldFrequency"
+              },
+              "description": "The field's frequencies: a CTAF that is its tower's is named Tower / CTAF (AIM 4-1-9)."
             }
           }
         },
@@ -12060,61 +12224,6 @@
       ],
       "additionalProperties": false
     },
-    "gonogo_alternate_finding": {
-      "description": "What the IFR alternate comes to for the Go / No-Go (14 CFR 91.169(a)(2), (b)): a stop where the one filed will not do, a caution where one is needed and none is filed or it is the pilot's to check; null where none is needed.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "GonogoAlternateFindingInput",
-          "type": "object",
-          "properties": {
-            "data": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/GonogoAlternateData"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "/api/alternate's answer."
-            }
-          }
-        },
-        "answer": {
-          "title": "GonogoAlternateFindingAnswer",
-          "anyOf": [
-            {
-              "type": "object",
-              "properties": {
-                "finding": {
-                  "type": "string",
-                  "enum": [
-                    "stop",
-                    "caution"
-                  ]
-                },
-                "detail": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "finding",
-                "detail"
-              ]
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "gonogo_balance": {
       "description": "Weight and balance at takeoff and landing, against the profile's limits and envelope, with the problems found.",
       "type": "object",
@@ -12199,6 +12308,75 @@
             "landing",
             "problems",
             "takeoff_words"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "gonogo_brief": {
+      "description": "The Brief's Go / No-Go put together, one call for every host that shows it: the seven findings (verdict.rs), an oxygen finding after the altitude's where the nav log flies over 12,500 ft MSL in an airplane not known to carry oxygen or a pressurised cabin (14 CFR 91.211(a); a caution, its words then left out of the altitude's), the IFR alternate's finding in the weather's where the weather says nothing worse (14 CFR 91.169(a), read only when verdict.weather.ifr), then the fields row for a closed, private or military-only field (permission.rs: decision 0043, 14 CFR 91.103), the fuel, runways and weight and balance left out where no airplane is picked (the owner, 2026-11-08: none is assumed), and the line over what is left. The decision stays the pilot in command's (14 CFR 91.3).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GonogoBriefInput",
+          "type": "object",
+          "properties": {
+            "verdict": {
+              "$ref": "#/definitions/VerdictInput"
+            },
+            "alternate": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/GonogoAlternateData"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "/api/alternate's answer; null while it is awaited or where none was asked."
+            },
+            "fields": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "$ref": "#/definitions/GonogoFieldUse"
+              },
+              "description": "The departure, the stops and the destination; null or empty where the route has no two ends yet."
+            },
+            "airplane": {
+              "type": "boolean",
+              "description": "An airplane is picked."
+            }
+          },
+          "required": [
+            "verdict",
+            "airplane"
+          ]
+        },
+        "answer": {
+          "title": "GonogoBriefAnswer",
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/GonogoItem"
+              },
+              "description": "The findings in the order the Brief shows them."
+            },
+            "line": {
+              "$ref": "#/definitions/GonogoLine"
+            }
+          },
+          "required": [
+            "items",
+            "line"
           ]
         }
       },
@@ -12374,88 +12552,194 @@
       ],
       "additionalProperties": false
     },
-    "gonogo_field_permission": {
-      "description": "The Go / No-Go's \"fields\" row for a departure, destination or stop that NASR lists as closed (APT_BASE ARPT_STATUS not O: \"00MO is closed indefinitely (NASR): it cannot be planned as a landing field\", decision 0043), private (FACILITY_USE_CODE PR: \"IL11 is private: land only with the owner's permission (call 847-323-8911)\") or military-only (\"prior permission required (PPR)\"), the phone NASR APT_CON's; 14 CFR 91.103 (all available information). A caution, opening the Depart tab for the departure and Arrive otherwise; null where every field is open and public or joint use. The hosts add it to gonogo_verdict_items' list before gonogo_verdict_line.",
+    "gonogo_glance_lines": {
+      "description": "The Brief as it opens (the owner, 2026-11-03: look and go): the findings that stop the flight, then those that want a look, at most three, each one sentence of at most 140 characters with what to do about it, why it matters and the rule it rests on (14 CFR 91.155 and AIM 7-1-5 for the weather; 91.133, 91.137, 91.141 the airspace; 91.119, 91.155, 91.159 the altitude; 91.151, 91.167 the fuel; 91.103(b) and the POH the runways; 91.9, 91.103 the loading; FAA-H-8083-2 and 91.3 the risk; 91.103 and NASR APT_BASE the fields), and the reports it was read from as sent; then every other finding folded into one row.",
       "type": "object",
       "properties": {
         "input": {
-          "title": "GonogoFieldPermissionInput",
+          "title": "GonogoGlanceLinesInput",
           "type": "object",
           "properties": {
-            "fields": {
+            "items": {
               "type": "array",
+              "items": {
+                "$ref": "#/definitions/GonogoItem"
+              },
+              "description": "gonogo_brief's items."
+            },
+            "fields": {
+              "type": [
+                "array",
+                "null"
+              ],
               "items": {
                 "type": "object",
                 "properties": {
                   "ident": {
                     "type": "string"
                   },
-                  "role": {
+                  "runway": {
                     "type": [
                       "string",
                       "null"
                     ],
-                    "enum": [
-                      "departure",
-                      "destination",
-                      "stop",
-                      null
-                    ],
-                    "description": "Null is taken as destination."
+                    "description": "The runway flown there, \"24\"."
                   },
-                  "private": {
+                  "crosswind_kt": {
                     "type": [
-                      "boolean",
+                      "number",
                       "null"
                     ],
-                    "description": "NASR FACILITY_USE_CODE PR, not owned by the armed services."
+                    "description": "The crosswind on it, whole knots."
                   },
-                  "military": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "enum": [
-                      "military",
-                      "joint",
-                      null
-                    ],
-                    "description": "\"military\" or \"joint\" for a field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG)."
+                  "crosswind_over": {
+                    "type": "boolean",
+                    "description": "Past the airplane's demonstrated crosswind."
                   },
-                  "phone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "NASR APT_CON's phone, the manager's or else the owner's."
-                  },
-                  "status": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where the host has no NASR record."
+                  "finding": {
+                    "type": "string"
                   }
                 },
                 "required": [
-                  "ident"
+                  "ident",
+                  "finding"
                 ]
-              }
+              },
+              "description": "The departure's and the destination's figures, for the crosswind's line."
+            },
+            "raw": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "metars": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "tafs": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "tfrs": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "metars",
+                    "tafs",
+                    "tfrs"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The reports the briefing holds as sent: the fields' METARs and TAFs, and the TFRs by their NOTAM."
             }
           },
           "required": [
-            "fields"
+            "items"
           ]
         },
         "answer": {
-          "title": "GonogoFieldPermissionAnswer",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/GonogoItem"
+          "title": "GonogoGlanceLinesAnswer",
+          "type": "object",
+          "properties": {
+            "act": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "finding": {
+                    "type": "string"
+                  },
+                  "tab": {
+                    "type": "string"
+                  },
+                  "section": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "line": {
+                    "type": "string",
+                    "description": "The finding and its action, one sentence."
+                  },
+                  "lead": {
+                    "type": "string",
+                    "description": "The finding alone."
+                  },
+                  "action": {
+                    "type": "string",
+                    "description": "What to do about it."
+                  },
+                  "why": {
+                    "type": "string",
+                    "description": "Why it matters, in plain words."
+                  },
+                  "cite": {
+                    "type": "string",
+                    "description": "The rule it rests on."
+                  },
+                  "raw": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "The reports it was read from, as sent."
+                  }
+                },
+                "required": [
+                  "key",
+                  "finding",
+                  "tab",
+                  "section",
+                  "line",
+                  "lead",
+                  "action",
+                  "why",
+                  "cite",
+                  "raw"
+                ]
+              }
             },
-            {
-              "type": "null"
+            "rest": {
+              "type": "object",
+              "properties": {
+                "line": {
+                  "type": "string"
+                },
+                "finding": {
+                  "type": "string"
+                },
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/GonogoItem"
+                  }
+                }
+              },
+              "required": [
+                "line",
+                "finding",
+                "items"
+              ]
             }
+          },
+          "required": [
+            "act",
+            "rest"
           ]
         }
       },
@@ -12937,7 +13221,7 @@
       "additionalProperties": false
     },
     "gonogo_route_figures": {
-      "description": "The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_verdict_items' fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those).",
+      "description": "The route's own figures the Go / No-Go's fuel and airspace findings are put together from (gonogo_brief's fuel and airspace), one copy for the web and the planner: from the nav log's totals as the planner answers them, the least fuel margin over the route and each flight between fuel stops (14 CFR 91.151(a), 91.167: the tightest flight is what the reserve is held to), the fuel required (the route's, else the most any one flight needs) and the reserve in minutes (the route's, else its first flight's); and the TFRs the route crosses while in force (14 CFR 91.137-91.145; the caller's `crossed`, by NOTAM id) with how many more the briefing lists near it (`tfr_count` less those).",
       "type": "object",
       "properties": {
         "input": {
@@ -13804,172 +14088,6 @@
       ],
       "additionalProperties": false
     },
-    "gonogo_verdict_items": {
-      "description": "Each tab's finding, in the order a pilot goes through them (AIM 7-1-5(b)), each with where it is shown in full.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "$ref": "#/definitions/VerdictInput"
-        },
-        "answer": {
-          "title": "GonogoVerdictItemsAnswer",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/GonogoItem"
-          }
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
-    "gonogo_verdict_line": {
-      "description": "What the findings come to, in a line over them: the worst finding and the tabs that have it.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "GonogoVerdictLineInput",
-          "type": "object",
-          "properties": {
-            "items": {
-              "type": [
-                "array",
-                "null"
-              ],
-              "items": {
-                "type": "object",
-                "properties": {
-                  "key": {
-                    "type": "string"
-                  },
-                  "label": {
-                    "type": "string"
-                  },
-                  "tab": {
-                    "type": "string"
-                  },
-                  "section": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "finding": {
-                    "type": "string"
-                  },
-                  "detail": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "key",
-                  "label",
-                  "tab",
-                  "finding",
-                  "detail"
-                ]
-              }
-            }
-          }
-        },
-        "answer": {
-          "$ref": "#/definitions/GonogoLine"
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
-    "gonogo_with_alternate": {
-      "description": "The items with the alternate's finding put in the weather's, where the weather says nothing worse.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "GonogoWithAlternateInput",
-          "type": "object",
-          "properties": {
-            "items": {
-              "type": [
-                "array",
-                "null"
-              ],
-              "items": {
-                "type": "object",
-                "properties": {
-                  "key": {
-                    "type": "string"
-                  },
-                  "label": {
-                    "type": "string"
-                  },
-                  "tab": {
-                    "type": "string"
-                  },
-                  "section": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "finding": {
-                    "type": "string"
-                  },
-                  "detail": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "key",
-                  "label",
-                  "tab",
-                  "finding",
-                  "detail"
-                ]
-              }
-            },
-            "found": {
-              "anyOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "finding": {
-                      "type": "string"
-                    },
-                    "detail": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "finding",
-                    "detail"
-                  ]
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "gonogo_alternate_finding's answer."
-            }
-          }
-        },
-        "answer": {
-          "title": "GonogoWithAlternateAnswer",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/GonogoItem"
-          }
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "great_circles": {
       "description": "distance_nm and bearing_deg over many legs at once, columns in and columns out: row i is the geodesic from (lat1[i], lon1[i]) to (lat2[i], lon2[i]) on the WGS-84 ellipsoid (wingtip.geo), its distance in nm and its initial course in degrees true 0 to 360, 0 for two points that coincide. The lists are all as long as each other, so a corridor of points, a route's legs or a map's stops cross into the engine once.",
       "type": "object",
@@ -14031,6 +14149,48 @@
             "distance_nm",
             "bearing_deg"
           ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "ground_figures": {
+      "description": "The figures the planner's readers of the ground and its obstacles take: the lowest ground in North America, Badwater Basin's 282 ft below sea level (USGS; NPS), below which a terrain tile's height is the sea floor and the surface 14 CFR 91.159 and 91.119 measure from is the sea's, 0 ft; the obstacles the map stands up, 14 CFR 77.9(a)'s more than 200 ft AGL; how far either side of each hop the side view draws obstacles, 1 nm, a display width (the legal margins are 91.119(b)'s and 91.177(a)(2)'s, which the floors keep); and how far round a public-use airport the finer terrain is kept, 5 nm, where a 3\u00b0 path (AIM 1-1-9) is 1,500 ft up.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GroundFiguresInput",
+          "type": "object",
+          "properties": {},
+          "required": []
+        },
+        "answer": {
+          "title": "GroundFiguresAnswer",
+          "type": "object",
+          "properties": {
+            "lowest_ground_ft": {
+              "type": "number"
+            },
+            "obstacle_shown_agl_ft": {
+              "type": "number"
+            },
+            "profile_obstacle_nm": {
+              "type": "number"
+            },
+            "fine_terrain_radius_nm": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lowest_ground_ft",
+            "obstacle_shown_agl_ft",
+            "profile_obstacle_nm",
+            "fine_terrain_radius_nm"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -14742,72 +14902,6 @@
       ],
       "additionalProperties": false
     },
-    "handbook_within": {
-      "description": "Whether an airplane's figure, typed in or read off its handbook's page, is within the bounds a light airplane's is believed within; outside them it is a misreading.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "HandbookWithinInput",
-          "type": "object",
-          "properties": {
-            "key": {
-              "enum": [
-                "cruiseTasKt",
-                "cruisePowerPct",
-                "fuelBurnGph",
-                "usableFuelGal",
-                "climbTasKt",
-                "climbFuelBurnGph",
-                "serviceCeilingFt"
-              ]
-            },
-            "value": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "key",
-            "value"
-          ]
-        },
-        "answer": {
-          "title": "HandbookWithinAnswer",
-          "type": "boolean"
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
-    "highest_under_clouds_ft": {
-      "description": "The highest altitude that keeps 14 CFR 91.155(a)'s distance below a cloud base (MSL): 500 ft under it, 1,000 ft at or above 10,000 ft MSL.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "HighestUnderCloudsFtInput",
-          "type": "object",
-          "properties": {
-            "cloud_base_ft": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "cloud_base_ft"
-          ]
-        },
-        "answer": {
-          "title": "HighestUnderCloudsFtAnswer",
-          "type": "number"
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "hold_entry": {
       "description": "The entry into a route's hold for an airplane arriving on a course (AIM 5-3-8 j.3's sectors, read by the course flown).",
       "type": "object",
@@ -14892,6 +14986,39 @@
             "held_min",
             "turn_radius_nm"
           ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "hold_inbound_deg": {
+      "description": "A hold's inbound course, 0 to 360, from the course the pilot gives: as given where it is the inbound one, its reciprocal where it is the outbound one (AIM 5-3-8: the outbound leg is flown on the inbound course's reciprocal).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "HoldInboundDegInput",
+          "type": "object",
+          "properties": {
+            "course_deg": {
+              "type": "number"
+            },
+            "outbound": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "course_deg"
+          ]
+        },
+        "answer": {
+          "title": "HoldInboundDegAnswer",
+          "type": "number"
         }
       },
       "required": [
@@ -15654,6 +15781,27 @@
       ],
       "additionalProperties": false
     },
+    "ifr_alternate_not_required": {
+      "description": "Why a destination needs no IFR alternate, in 14 CFR 91.169(b)'s own figures: an instrument approach, and a forecast of at least 2,000 ft and 3 sm for an hour before and after the ETA ((b)(2)(i), the \"1-2-3\").",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "IfrAlternateNotRequiredInput",
+          "type": "object",
+          "properties": {},
+          "required": []
+        },
+        "answer": {
+          "title": "IfrAlternateNotRequiredAnswer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "ifr_alternate_window": {
       "description": "The window, unix seconds, a field's TAF is read over for 14 CFR 91.169: the destination's from an hour before to an hour after the ETA (91.169(b)(2)(i), aircraft other than helicopters); an alternate's the ETA there alone, at the estimated time of arrival at the alternate airport (91.169(c)).",
       "type": "object",
@@ -15852,40 +16000,6 @@
         "answer": {
           "title": "IfrObstacleRadiusNmAnswer",
           "type": "number"
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
-    "in_emergency": {
-      "description": "Whether an airplane is in an emergency: 7500, 7600 or 7700 set, or an emergency sent (AIM 6-2-2, 6-3-4, 6-4-2).",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "InEmergencyInput",
-          "type": "object",
-          "properties": {
-            "squawk": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "emergency": {
-              "type": [
-                "string",
-                "boolean",
-                "null"
-              ]
-            }
-          }
-        },
-        "answer": {
-          "title": "InEmergencyAnswer",
-          "type": "boolean"
         }
       },
       "required": [
@@ -16269,7 +16383,7 @@
       "additionalProperties": false
     },
     "inspections_due": {
-      "description": "The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given.",
+      "description": "The airplane's inspections' last good days, in calendar months (to the last day of the Nth month after the one it was done in): the annual (14 CFR 91.409(a)) and the ELT's (91.207(d)), 12; the static system and altimeter (91.411(a)) and the transponder (91.413(a)), 24; the 100-hour 100 hours of time in service on (91.409(b)); a VOR check for IFR good 30 days (91.171(a)(2)) within 4 degrees (a test signal, a surface checkpoint, one system against the other) or 6 (an airborne checkpoint, an airway radial; 91.171(b), (c)). Null where it was not given. With them `due`, the list the gateway shows and reminds of: each named and with its rule (an AD its own number and 14 CFR 39.7).",
       "type": "object",
       "properties": {
         "input": {
@@ -16342,6 +16456,75 @@
                   "type": "null"
                 }
               ]
+            },
+            "tail_number": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The airplane's registration, for the reminders' words."
+            },
+            "for_hire": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Flown for hire, so the 100-hour inspection applies (91.409(b))."
+            },
+            "elt_battery_due_on": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "YYYY-MM-DD, the date marked on the transmitter (91.207(c))."
+            },
+            "kept": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "description": "The owner's own items: an AD (14 CFR part 39) or anything else.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "kind": {
+                    "enum": [
+                      "AD",
+                      "OTHER"
+                    ]
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "reference": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "due_on": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "YYYY-MM-DD"
+                  },
+                  "due_at_hours": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "kind",
+                  "title"
+                ]
+              }
             }
           }
         },
@@ -16409,6 +16592,13 @@
                   "type": "null"
                 }
               ]
+            },
+            "due": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PaperworkDue"
+              },
+              "description": "Each recorded one, named and cited, in order: the annual, the 100-hour (for hire), the ELT and its battery, the static system, the transponder, the VOR check (where within its limit), then the owner's dated items."
             }
           },
           "required": [
@@ -16417,9 +16607,39 @@
             "static_check_until",
             "transponder_check_until",
             "hundred_hour_due_at_hours",
-            "vor_check"
+            "vor_check",
+            "due"
           ],
           "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "instructor_records_since": {
+      "description": "The first day an instructor's page lists what they signed: the same day 3 years before today, as 14 CFR 61.189(c) has an instructor keep their records \"for at least 3 years\" (a 29 February the 28th in a year without one).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "InstructorRecordsSinceInput",
+          "type": "object",
+          "properties": {
+            "today": {
+              "type": "string",
+              "description": "YYYY-MM-DD, UTC: the engine has no clock."
+            }
+          },
+          "required": [
+            "today"
+          ]
+        },
+        "answer": {
+          "title": "InstructorRecordsSinceAnswer",
+          "type": "string",
+          "description": "YYYY-MM-DD."
         }
       },
       "required": [
@@ -16896,6 +17116,62 @@
             "systems",
             "notes",
             "standard_keying"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "live_feed_refresh": {
+      "description": "How long an answer from one of the FAA's SWIM feeds (the planner's /api/live/*) is fresh and how often a screen showing it asks again: a runway's RVR each minute, as it is updated (AIM 7-1-13), the ITWS alerts and special activity airspace's SFDPS status as often (the app's choice), the Command Center's programs every five minutes, and the D-ATIS and a flight's tower departures fresh for five minutes and not polled (the app's choice).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "LiveFeedRefreshInput",
+          "type": "object",
+          "properties": {
+            "feed": {
+              "type": "string",
+              "enum": [
+                "rvr",
+                "itws",
+                "saa",
+                "flow",
+                "atis",
+                "departures"
+              ]
+            }
+          },
+          "required": [
+            "feed"
+          ]
+        },
+        "answer": {
+          "title": "LiveFeedRefreshAnswer",
+          "type": "object",
+          "properties": {
+            "fresh_s": {
+              "type": "number",
+              "description": "How long an answer is fresh, seconds."
+            },
+            "poll_s": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "How often a screen showing it asks again, seconds; null where it is not polled."
+            },
+            "source": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "fresh_s",
+            "poll_s",
+            "source"
           ]
         }
       },
@@ -18085,37 +18361,6 @@
       ],
       "additionalProperties": false
     },
-    "lowest_vfr_cruising_altitude": {
-      "description": "The lowest VFR cruising altitude at or above a floor for a magnetic course: odd thousands plus 500 eastbound, even westbound (14 CFR 91.159(a)).",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "LowestVfrCruisingAltitudeInput",
-          "type": "object",
-          "properties": {
-            "floor_ft": {
-              "type": "number"
-            },
-            "magnetic_course_deg": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "floor_ft",
-            "magnetic_course_deg"
-          ]
-        },
-        "answer": {
-          "title": "LowestVfrCruisingAltitudeAnswer",
-          "type": "number"
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "magnetic_variation": {
       "description": "Magnetic variation, degrees east (west negative), the World Magnetic Model's (WMM) at a place and day, as wingtip.magnetic works it out.",
       "type": "object",
@@ -18216,7 +18461,8 @@
               "type": [
                 "number",
                 "null"
-              ]
+              ],
+              "description": "Feet MSL as the GPS gives it; said to the hundred feet (AIM 4-2-9: the thousands plus the hundreds)."
             },
             "fuel_min": {
               "type": [
@@ -20035,8 +20281,44 @@
       ],
       "additionalProperties": false
     },
+    "nm_along": {
+      "description": "How far along the route each leg ends, nm: the running sum of the legs' miles, a null (a departure's row, no leg) adding nothing.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "NmAlongInput",
+          "type": "object",
+          "properties": {
+            "legs_nm": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          },
+          "required": [
+            "legs_nm"
+          ]
+        },
+        "answer": {
+          "title": "NmAlongAnswer",
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "no_altitude": {
-      "description": "Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, whether Class B is what stops it, and all of it as one message.",
+      "description": "Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, and all of it as one message.",
       "type": "object",
       "properties": {
         "input": {
@@ -20053,20 +20335,6 @@
               ],
               "items": {
                 "type": "string"
-              }
-            },
-            "via": {
-              "type": [
-                "object",
-                "null"
-              ],
-              "properties": {
-                "ident": {
-                  "type": "string"
-                },
-                "added_nm": {
-                  "type": "number"
-                }
               }
             },
             "where": {
@@ -20099,9 +20367,6 @@
             "advice": {
               "type": "string"
             },
-            "class_b": {
-              "type": "boolean"
-            },
             "detail": {
               "type": "string"
             }
@@ -20111,7 +20376,6 @@
             "brief",
             "reasons",
             "advice",
-            "class_b",
             "detail"
           ]
         }
@@ -21088,7 +21352,7 @@
       "additionalProperties": false
     },
     "own_altitude_caution": {
-      "description": "What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, into Class B (91.131), over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.",
+      "description": "What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.",
       "type": "object",
       "properties": {
         "input": {
@@ -21257,43 +21521,6 @@
       ],
       "additionalProperties": false
     },
-    "passenger_night": {
-      "description": "Whether an instant is in 14 CFR 61.57(b)'s night-passenger period at a point: from 1 hour after sunset to 1 hour before sunrise (the sun's centre 0.833 degrees down, NOAA's solar calculation), its own window rather than 14 CFR 1.1's night, so a high-latitude summer night with no 1.1 night still has it.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "PassengerNightInput",
-          "type": "object",
-          "properties": {
-            "lat": {
-              "type": "number"
-            },
-            "lon": {
-              "type": "number",
-              "description": "East positive."
-            },
-            "at_s": {
-              "type": "number",
-              "description": "UNIX seconds."
-            }
-          },
-          "required": [
-            "lat",
-            "lon",
-            "at_s"
-          ]
-        },
-        "answer": {
-          "title": "PassengerNightAnswer",
-          "type": "boolean"
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "passenger_night_on_the_way": {
       "description": "Whether any of a flight from `start` to `end` of `minutes`, leaving at `depart_s`, falls in 14 CFR 61.57(b)'s night-passenger period, judged every half hour along the straight line as night_on_the_way judges the night.",
       "type": "object",
@@ -21346,7 +21573,7 @@
       "additionalProperties": false
     },
     "pattern_altitude": {
-      "description": "A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C).",
+      "description": "A field's traffic pattern altitude: the published height, else 1,000 ft above the field (AC 90-66C) to the nearest hundred feet.",
       "type": "object",
       "properties": {
         "input": {
@@ -21379,7 +21606,7 @@
                 "integer",
                 "null"
               ],
-              "description": "Feet MSL, whole; null with no elevation."
+              "description": "Feet MSL: the published height over the field's elevation, whole, halves up; with none published, to the nearest hundred (as flown_ft); null with no elevation."
             },
             "flown_ft": {
               "type": [
@@ -21548,124 +21775,6 @@
       ],
       "additionalProperties": false
     },
-    "performance_climb": {
-      "description": "A best-rate climb's minutes and gallons, its rate falling with density altitude to 100 fpm at the service ceiling (PHAK ch. 11), in air isa_dev_c warmer than a standard day; nothing for a descent.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "PerformanceClimbInput",
-          "type": "object",
-          "properties": {
-            "profile": {
-              "$ref": "#/definitions/NavLogProfile"
-            },
-            "from_ft": {
-              "type": "number"
-            },
-            "to_ft": {
-              "type": "number"
-            },
-            "isa_dev_c": {
-              "type": [
-                "number",
-                "null"
-              ]
-            }
-          },
-          "required": [
-            "profile",
-            "from_ft",
-            "to_ft"
-          ]
-        },
-        "answer": {
-          "title": "PerformanceClimbAnswer",
-          "type": "object",
-          "properties": {
-            "minutes": {
-              "type": "number"
-            },
-            "gallons": {
-              "type": [
-                "number",
-                "null"
-              ],
-              "description": "Null where the profile gives no climb fuel flow: not known, never a multiple of the cruise burn."
-            }
-          },
-          "required": [
-            "minutes",
-            "gallons"
-          ]
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
-    "performance_cruise": {
-      "description": "An airplane's cruise at an altitude in air at oat_c (a standard day's where null): its power at the cruise setting or full throttle (Gagg and Ferrar), TAS as the cube root of power over density, burn with power, and the density altitude.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "PerformanceCruiseInput",
-          "type": "object",
-          "properties": {
-            "profile": {
-              "$ref": "#/definitions/NavLogProfile"
-            },
-            "altitude_ft": {
-              "type": "number"
-            },
-            "oat_c": {
-              "type": [
-                "number",
-                "null"
-              ]
-            }
-          },
-          "required": [
-            "profile",
-            "altitude_ft"
-          ]
-        },
-        "answer": {
-          "title": "PerformanceCruiseAnswer",
-          "type": "object",
-          "properties": {
-            "tas_kt": {
-              "type": "number"
-            },
-            "fuel_burn_gph": {
-              "type": "number"
-            },
-            "power_pct": {
-              "type": [
-                "number",
-                "null"
-              ],
-              "description": "Null where the profile names no cruise power: the TAS and burn as given, no power model."
-            },
-            "density_altitude_ft": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "tas_kt",
-            "fuel_burn_gph",
-            "power_pct",
-            "density_altitude_ft"
-          ]
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "pilot_currency": {
       "description": "Where the pilot stands on a day, from the logbook and the dates they give: passengers by day (14 CFR 61.57(a)) and at night (61.57(b)), the flight review (61.56(c)), the medical, the logbook's totals and instrument currency (61.57(c)(1), (d)). The gateway's CurrencyDto.",
       "type": "object",
@@ -21807,6 +21916,13 @@
             "trackingInWindow": {
               "type": "boolean",
               "description": "Intercepting and tracking courses logged in them (61.57(c)(1)(iii))."
+            },
+            "due": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PaperworkDue"
+              },
+              "description": "What falls due, each named and cited: the flight review (61.56(c)), the medical (61.23), passengers by day and at night (61.57(a), (b)), instrument currency (61.57(c)), each where it can be had."
             }
           },
           "required": [
@@ -21826,7 +21942,8 @@
             "ipcNeededAfter",
             "approachesInWindow",
             "holdingInWindow",
-            "trackingInWindow"
+            "trackingInWindow",
+            "due"
           ],
           "additionalProperties": false
         }
@@ -22601,40 +22718,6 @@
       ],
       "additionalProperties": false
     },
-    "procedure_climb_nm": {
-      "description": "How far a leg flown to an altitude (CA, VA, FA) is drawn, nm: from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; 2 nm where either is not known or it is no climb.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "ProcedureClimbNmInput",
-          "type": "object",
-          "properties": {
-            "altitude_ft": {
-              "type": [
-                "number",
-                "null"
-              ]
-            },
-            "known_ft": {
-              "type": [
-                "number",
-                "null"
-              ]
-            }
-          },
-          "required": []
-        },
-        "answer": {
-          "title": "ProcedureClimbNmAnswer",
-          "type": "number"
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "procedure_hold": {
       "description": "A CIFP hold's racetrack (HA, HF, HM) at its fix, inbound on the true course to the fix, turning right or left, with standard-rate turns at a light airplane's 120 kt (AIM 5-3-8): the fix, the turn out, the outbound leg, the turn in, and back to the fix.",
       "type": "object",
@@ -22721,6 +22804,135 @@
           "type": [
             "number",
             "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "procedure_leg_nm": {
+      "description": "How far a procedure's leg with no fix of its own to end at is drawn, nm (ARINC 424-18 5.21): an FC leg its coded distance from its fix; a leg flown to an altitude (FA, CA, VA) from the altitude known at its start at 200 ft a nm (FAA Order 8260.3), within 1 to 15; any other (to a DME distance, a radial, an intercept, a manual termination) 2 nm.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureLegNmInput",
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "distance_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "known_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "path"
+          ]
+        },
+        "answer": {
+          "title": "ProcedureLegNmAnswer",
+          "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "procedure_path_figures": {
+      "description": "The figures a flown procedure path is drawn with: a hold entry's standard-rate turn radius at the 120 kt holds are drawn at (AIM 5-3-8), nm; and the join from vectors to final, 3 nm outside the final's first fix (2 miles outside the approach gate, which is 1 mile outside the FAF: FAA Order JO 7110.65 5-9-1a1, the Pilot/Controller Glossary) at 30 degrees (JO 7110.65 TBL 5-9-1).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedurePathFiguresInput",
+          "type": "object",
+          "properties": {},
+          "required": []
+        },
+        "answer": {
+          "title": "ProcedurePathFiguresAnswer",
+          "type": "object",
+          "properties": {
+            "hold_turn_nm": {
+              "type": "number"
+            },
+            "vectors_join_nm": {
+              "type": "number"
+            },
+            "vectors_intercept_deg": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "hold_turn_nm",
+            "vectors_join_nm",
+            "vectors_intercept_deg"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "procedure_reversal": {
+      "description": "The course reversal flown where a procedure's path turns `turn_deg` at a fix (AIM 5-4-9): \"coded\" -- the chart's hold in lieu of a procedure turn or its procedure turn there, entered -- where one is coded at the fix and the path turns more than 90\u00b0 there, come to from its far side (from the near side a pilot is lined up already and makes none, as on a NoPT route, 14 CFR 91.175(j)); else \"teardrop\" where the path doubles back more than 120\u00b0 at a fix past the procedure's first; else null.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProcedureReversalInput",
+          "type": "object",
+          "properties": {
+            "turn_deg": {
+              "type": "number"
+            },
+            "coded": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "first_fix": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "turn_deg"
+          ]
+        },
+        "answer": {
+          "title": "ProcedureReversalAnswer",
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "coded",
+            "teardrop",
+            null
           ]
         }
       },
@@ -25153,6 +25365,47 @@
       ],
       "additionalProperties": false
     },
+    "report_near": {
+      "description": "Whether a station's report is near enough to a field with none of its own to say the field's weather by it, approximately: within 10 statute miles, the top of a METAR's vicinity (FAA-H-8083-28B 24.4.3.8.2, 'between 5\u201310 SM ... coded as in the vicinity (VC)'). A design choice: no FAA source says a station's flight category holds at another field.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ReportNearInput",
+          "type": "object",
+          "properties": {
+            "distance_nm": {
+              "type": "number",
+              "description": "The station's distance from the field, nm."
+            }
+          },
+          "required": [
+            "distance_nm"
+          ]
+        },
+        "answer": {
+          "title": "ReportNearAnswer",
+          "type": "object",
+          "properties": {
+            "near": {
+              "type": "boolean"
+            },
+            "within_sm": {
+              "type": "number",
+              "description": "How near is near, statute miles."
+            }
+          },
+          "required": [
+            "near",
+            "within_sm"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "reserve_min": {
       "description": "The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).",
       "type": "object",
@@ -25187,7 +25440,7 @@
       "additionalProperties": false
     },
     "route_options": {
-      "description": "The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route and the most filed one with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.",
+      "description": "The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.",
       "type": "object",
       "properties": {
         "input": {
@@ -25207,6 +25460,17 @@
               "$ref": "#/definitions/RouteOption"
             },
             "filed": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/RouteOption"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "class_b": {
+              "description": "Avoid Class B: the route as planned round the Class B it enters, with its fuel stops (route/options/class_b_way.rs); null where none was asked.",
               "anyOf": [
                 {
                   "$ref": "#/definitions/RouteOption"
@@ -25294,6 +25558,7 @@
             "options",
             "own",
             "filed",
+            "class_b",
             "current_path",
             "direct",
             "ends",
@@ -25550,6 +25815,80 @@
       ],
       "additionalProperties": false
     },
+    "route_read": {
+      "description": "A route typed as a pilot writes one, read back as item 15 of FAA Form 7233-4 has it (AIM Appendix 4), for the route's one field: split on spaces and commas, DCT (direct) taken out; a cruising speed and level group or a level alone before the first point the cruise's (\"N0110A065\": 110 kt true, 6,500 ft; \"A\" and hundreds of feet in three figures, \"F\" a flight level, 14 CFR 1.1 and 91.121(a)(2); \"VFR\" a VFR level, no figure; metric speeds and levels give no figure); a point with a group after its stroke (\"LEXOR/N0467F380\") the point, its level a change from there. The rest are the route's points, airways and procedures in order, upper case, as typed: which is which is the caller's.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RouteReadInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The route as typed or pasted: \"KPWK DCT OBK V100 KLAS\"."
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "answer": {
+          "title": "RouteReadAnswer",
+          "type": "object",
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "cruise_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The cruise's altitude, feet MSL; null where none was given or it is VFR's."
+            },
+            "tas_kt": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The cruise's true airspeed, knots, where given in knots."
+            },
+            "changes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "at": {
+                    "type": "string"
+                  },
+                  "ft": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "at",
+                  "ft"
+                ]
+              }
+            }
+          },
+          "required": [
+            "points",
+            "cruise_ft",
+            "tas_kt",
+            "changes"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "route_way_warning": {
       "description": "A way's one warning, the worst of the hazard kinds it crosses, in the words every app says it in (route_options' way `warning`; the route as typed, whose crossings come with its chips): a prohibited area or a TFR (14 CFR 91.133(a), 91.137 to 91.145), a restricted area (91.133(a), AIM 3-4-3), storms, high ground, a SIGMET, no fuel stop in reach, other weather, then a warning area, a MOA and an alert area (AIM 3-4-4 to 3-4-6) -- \"Crosses a restricted area\", \"Crosses a MOA\" ...; null where nothing is crossed.",
       "type": "object",
@@ -25629,6 +25968,130 @@
         "answer": {
           "title": "RunwayCalmAnswer",
           "type": "boolean"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "runway_closure_marks": {
+      "description": "Where a closed runway's crosses go on a sketch of the field, as the airport marks it on the ground (AC 150/5340-1M, Standards for Airport Markings, Change 1, 12/23/2020; AIM 2-3-6). Permanently closed (NASR's runway remark, CLSD INDEFLY or PERMLY): an X at each end and at 1,000-ft intervals, and one each side of an open runway it crosses (AC 5.6; AIM 2-3-6d). Closed by NOTAM: an X only at each end (AC 5.7.1; AIM 2-3-6e), over the designation marking, 50 ft in (Figure A-3's 60-ft numerals 20 ft from the threshold), at least the X's own size in. A part closed by NOTAM, read from JO 7930.2's forms (RWY 09/27 E 500FT CLSD, RWY 27 FIRST 1000FT CLSD), is marked at the part's own ends; a part it cannot place is not drawn, and a closure between a taxiway and an end (CLSD BTN TWY A AND RWY END 20) closes the whole runway, as notam_subject's badge says. An X never lies on an open runway: one that would moves along the centre line clear of it. The FAA's Xs are yellow (Figure A-27); the colour is the app's.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RunwayClosureMarksInput",
+          "type": "object",
+          "properties": {
+            "runways": {
+              "type": "array",
+              "description": "Every runway drawn, in the sketch's order.",
+              "items": {
+                "title": "RunwayClosureStrip",
+                "type": "object",
+                "properties": {
+                  "ends": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "description": "Its ends' designations as the card writes them, the first end first (\"02\", \"20\")."
+                  },
+                  "a": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "description": "Its first end, feet east and north of a point of the field."
+                  },
+                  "b": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "description": "Its second end, the same."
+                  },
+                  "width_ft": {
+                    "type": "number",
+                    "description": "Its width as drawn, in the same feet: the room an X keeps off it."
+                  },
+                  "permanent": {
+                    "type": "boolean",
+                    "description": "Closed for good: NASR's runway remark."
+                  },
+                  "notams": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "The NOTAMs in force that close it or a part of it, as sent."
+                  }
+                },
+                "required": [
+                  "ends",
+                  "a",
+                  "b"
+                ]
+              }
+            },
+            "mark_ft": {
+              "type": "number",
+              "description": "An X's half size as drawn, in the runways' feet."
+            }
+          },
+          "required": [
+            "runways",
+            "mark_ft"
+          ]
+        },
+        "answer": {
+          "title": "RunwayClosureMarksAnswer",
+          "type": "object",
+          "properties": {
+            "runways": {
+              "type": "array",
+              "description": "One for each runway asked, in its order.",
+              "items": {
+                "title": "RunwayClosureMarked",
+                "type": "object",
+                "properties": {
+                  "closed": {
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "description": "The parts closed, each from and to as fractions of the way from its first end; [[0, 1]] closed end to end; none open."
+                  },
+                  "marks": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "description": "Each X's centre on the centre line, as a fraction of the way from its first end."
+                  }
+                },
+                "required": [
+                  "closed",
+                  "marks"
+                ]
+              }
+            }
+          },
+          "required": [
+            "runways"
+          ]
         }
       },
       "required": [
@@ -26315,6 +26778,69 @@
       ],
       "additionalProperties": false
     },
+    "rvr_readings": {
+      "description": "An RVR system's readings as STDDS's APDS feed sends them, two figures in hundreds of feet (\"35\" is 3,500 ft; \"00\", \"FF\" or blank none), each with whether it is the system's most: AIM 7-1-13's readouts run 'to a maximum value of 6,000 feet', so a reading of 6,000 is '6,000 or more'.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RvrReadingsInput",
+          "type": "object",
+          "properties": {
+            "readings": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "description": "Each part's reading as sent (touchdown, midpoint, rollout ...), in any order."
+            }
+          },
+          "required": [
+            "readings"
+          ]
+        },
+        "answer": {
+          "title": "RvrReadingsAnswer",
+          "type": "object",
+          "properties": {
+            "readings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ft": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "The reading, ft; null where the part reports none."
+                  },
+                  "more": {
+                    "type": "boolean",
+                    "description": "The system's most, 6,000 ft or more (AIM 7-1-13)."
+                  }
+                },
+                "required": [
+                  "ft",
+                  "more"
+                ]
+              },
+              "description": "Each reading, in the order given."
+            }
+          },
+          "required": [
+            "readings"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "same_field": {
       "description": "Whether a and b name one field (KSTL and STL).",
       "type": "object",
@@ -26347,7 +26873,7 @@
       "additionalProperties": false
     },
     "select_cruise_altitude": {
-      "description": "The planner's altitude selection from the data it read: each leg's band (the floor up to the lowest of the Class B shelf, 91.155's distance under the forecast clouds and the service ceiling, none in prohibited airspace; under IFR the service ceiling and an airway's MAA alone), its legal altitudes by its own magnetic course, the route's, the lowest recommended, and icing where a legal altitude reaches the freezing level with moisture.",
+      "description": "The planner's altitude selection from the data it read: each leg's band (the floor up to the lower of 91.155's distance under the forecast clouds and the service ceiling, none in prohibited airspace, Class B no ceiling as the route is planned through it with its clearance (14 CFR 91.131(a)(1)); under IFR the service ceiling and an airway's MAA alone), its legal altitudes by its own magnetic course, the route's, the lowest recommended, and icing where a legal altitude reaches the freezing level with moisture.",
       "type": "object",
       "properties": {
         "input": {
@@ -26400,12 +26926,6 @@
                 null
               ]
             },
-            "class_b_cleared": {
-              "type": [
-                "boolean",
-                "null"
-              ]
-            },
             "floors": {
               "type": "array",
               "items": {
@@ -26437,15 +26957,6 @@
                     "null"
                   ]
                 }
-              }
-            },
-            "airspace_ceilings_ft": {
-              "type": "array",
-              "items": {
-                "type": [
-                  "number",
-                  "null"
-                ]
               }
             },
             "service_ceilings_ft": {
@@ -26586,15 +27097,6 @@
             },
             "floor_ft": {
               "type": "number"
-            },
-            "airspace_ceiling_ft": {
-              "type": [
-                "number",
-                "null"
-              ]
-            },
-            "class_b_cleared": {
-              "type": "boolean"
             },
             "service_ceiling_ft": {
               "type": [
@@ -28756,6 +29258,48 @@
       ],
       "additionalProperties": false
     },
+    "track_left_from": {
+      "description": "Whether a recorded ADS-B track whose first point is distance_nm from the nearest field and above_ft over its elevation starts at its takeoff from that field: within 2 nm and 500 ft. From AC 90-66C: no turn to crosswind until 'within 300 feet below traffic pattern altitude' (11.7), the pattern 'usually ... 1,000 feet above the elevation of the airport surface' (Appendix A), and the departure leg 'at least 1/2 mile beyond the departure end of the runway'; the figures are this check's judgment, not a rule.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TrackLeftFromInput",
+          "type": "object",
+          "properties": {
+            "distance_nm": {
+              "type": "number",
+              "description": "The first point's distance from the nearest field, nm."
+            },
+            "above_ft": {
+              "type": "number",
+              "description": "Its altitude over the field's elevation, ft."
+            }
+          },
+          "required": [
+            "distance_nm",
+            "above_ft"
+          ]
+        },
+        "answer": {
+          "title": "TrackLeftFromAnswer",
+          "type": "object",
+          "properties": {
+            "left": {
+              "type": "boolean",
+              "description": "The track starts at its takeoff from the field."
+            }
+          },
+          "required": [
+            "left"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "traffic_fresh": {
       "description": "Whether each airplane heard is drawn: its position, seen_s old when the answer was made and the answer age_s old now, within 30 s (wingtip.traffic's STALE_S); older, it is somewhere else by now.",
       "type": "object",
@@ -28795,40 +29339,6 @@
           "items": {
             "type": "boolean"
           }
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
-    "traffic_kind": {
-      "description": "An airplane's kind from its ADS-B emitter category (GDL 90 Table 11).",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "TrafficKindInput",
-          "type": "object",
-          "properties": {
-            "category": {
-              "type": [
-                "string",
-                "null"
-              ]
-            }
-          }
-        },
-        "answer": {
-          "title": "TrafficKindAnswer",
-          "type": "string",
-          "enum": [
-            "light",
-            "small",
-            "large",
-            "helicopter",
-            "other"
-          ]
         }
       },
       "required": [
@@ -28958,98 +29468,6 @@
       ],
       "additionalProperties": false
     },
-    "traffic_matches": {
-      "description": "Whether an airplane heard passes the traffic list's filter.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "TrafficMatchesInput",
-          "type": "object",
-          "properties": {
-            "plane": {
-              "type": "object",
-              "properties": {
-                "category": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "altitude_ft": {
-                  "type": [
-                    "number",
-                    "null"
-                  ]
-                },
-                "callsign": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "squawk": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "emergency": {
-                  "type": [
-                    "string",
-                    "boolean",
-                    "null"
-                  ]
-                }
-              }
-            },
-            "filter": {
-              "type": "object",
-              "properties": {
-                "kind": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
-                  "description": "\"any\" where none."
-                },
-                "band": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
-                  "description": "\"any\" where none."
-                },
-                "operator": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "emergency": {
-                  "type": [
-                    "boolean",
-                    "null"
-                  ]
-                }
-              }
-            }
-          },
-          "required": [
-            "plane",
-            "filter"
-          ]
-        },
-        "answer": {
-          "title": "TrafficMatchesAnswer",
-          "type": "boolean"
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "traffic_pattern": {
       "description": "The pattern to land on an end (lib/trafficPattern TrafficPattern), or null.",
       "type": "object",
@@ -29084,39 +29502,6 @@
         },
         "answer": {
           "$ref": "#/definitions/TrafficPatternOut"
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
-    "traffic_reach": {
-      "description": "How far round an airport its traffic is asked for, nm: around_nm, about the field (its pattern and one joining it, past 91.117(b)'s 4 nm), and relation_nm, the reach of an airplane inbound or departing, the figures field_relation judges by.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "TrafficReachInput",
-          "type": "object",
-          "properties": {}
-        },
-        "answer": {
-          "title": "TrafficReachAnswer",
-          "type": "object",
-          "properties": {
-            "around_nm": {
-              "type": "number"
-            },
-            "relation_nm": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "around_nm",
-            "relation_nm"
-          ],
-          "additionalProperties": false
         }
       },
       "required": [
@@ -29415,6 +29800,29 @@
         },
         "answer": {
           "title": "VfrAltitudesAnswer",
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "vfr_at_hours": {
+      "description": "The hours ahead a search's \"VFR at\u2026\" menu offers, in order: each within the 24 hours a TAF covers (FAA-H-8083-28B 27.4.1), the steps the app's choice.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "VfrAtHoursInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "VfrAtHoursAnswer",
           "type": "array",
           "items": {
             "type": "number"
@@ -30719,33 +31127,6 @@
       ],
       "additionalProperties": false
     },
-    "words_one": {
-      "description": "A number to a tenth, JavaScript's Math.round(n * 10) / 10.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "WordsOneInput",
-          "type": "object",
-          "properties": {
-            "n": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "n"
-          ]
-        },
-        "answer": {
-          "title": "WordsOneAnswer",
-          "type": "number"
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "words_to_fixed": {
       "description": "JavaScript's toFixed: the nearest, a tie to the larger magnitude, on the float's exact value.",
       "type": "object",
@@ -30849,14 +31230,13 @@
     "altitude_limits",
     "altitude_lines",
     "altitude_said",
-    "altitude_wheel",
+    "altitude_typed",
     "approach_along_nm",
     "approach_attempts",
     "approach_brief",
     "approach_category",
     "approach_coaching",
     "approach_debrief",
-    "approach_descent_fpm",
     "approach_find",
     "approach_fix_tags",
     "approach_guidance",
@@ -30869,6 +31249,7 @@
     "approach_transition",
     "arrival_circuit",
     "atc_call",
+    "average_groundspeed_kt",
     "aviation_grid_bands",
     "awc_airsigmets_read",
     "awc_gairmets_read",
@@ -30899,14 +31280,16 @@
     "compass_point",
     "compass_word",
     "congested_points",
+    "congested_reach",
+    "copilot_flight",
     "copilot_watch",
     "csv_rows",
     "ctaf_of",
     "data_cycle",
+    "datis_ends",
     "datis_remarks",
     "debrief",
     "debrief_airborne",
-    "debrief_marked",
     "density_altitude_ft",
     "density_ratio",
     "departure_circuit",
@@ -30939,7 +31322,7 @@
     "field_hours",
     "field_mark_rank",
     "field_military",
-    "field_relation",
+    "field_site_type",
     "field_status",
     "field_taf",
     "fields_along",
@@ -30950,12 +31333,12 @@
     "filed_rnav",
     "filed_route",
     "filed_speed",
+    "filed_times",
     "filed_wake",
     "filed_zzzz",
     "fix_radial_distance",
     "flight_category",
     "floor_along_path",
-    "floor_caution",
     "floor_corridor_nm",
     "flow_cell",
     "flow_levels",
@@ -30982,12 +31365,12 @@
     "glide_range",
     "glide_reaches",
     "glide_ring",
-    "gonogo_alternate_finding",
     "gonogo_balance",
+    "gonogo_brief",
     "gonogo_default_load",
     "gonogo_density_altitude",
     "gonogo_end_distance",
-    "gonogo_field_permission",
+    "gonogo_glance_lines",
     "gonogo_hazard_window",
     "gonogo_icing",
     "gonogo_icing_line",
@@ -31006,17 +31389,14 @@
     "gonogo_sua_when",
     "gonogo_tfr_when",
     "gonogo_under_minimums",
-    "gonogo_verdict_items",
-    "gonogo_verdict_line",
-    "gonogo_with_alternate",
     "great_circles",
+    "ground_figures",
     "groundspeed_kt",
     "handbook_figures",
     "handbook_read_check",
-    "handbook_within",
-    "highest_under_clouds_ft",
     "hold_entry",
     "hold_figures",
+    "hold_inbound_deg",
     "hold_length_read",
     "hold_length_write",
     "hold_read",
@@ -31028,13 +31408,14 @@
     "icing_severity",
     "ifr_alternate_check",
     "ifr_alternate_destination",
+    "ifr_alternate_not_required",
     "ifr_alternate_window",
     "ifr_alternates_ranked",
     "ifr_floors",
     "ifr_obstacle_radius_nm",
-    "in_emergency",
     "in_flight",
     "inspections_due",
+    "instructor_records_since",
     "is_eastbound",
     "isa_temp_c",
     "kept_age",
@@ -31042,13 +31423,13 @@
     "least_crosswind",
     "legal_cruising_altitudes",
     "lighting_read",
+    "live_feed_refresh",
     "logbook_csv_read",
     "logbook_csv_write",
     "logbook_from_track",
     "logbook_read_check",
     "logbook_track_places",
     "lost_comms",
-    "lowest_vfr_cruising_altitude",
     "magnetic_variation",
     "mayday_call",
     "mode_c_veil",
@@ -31074,6 +31455,7 @@
     "navlog_with_descents",
     "night_at_either_end",
     "night_on_the_way",
+    "nm_along",
     "no_altitude",
     "notam_read",
     "notam_subject",
@@ -31084,14 +31466,11 @@
     "own_altitude_caution",
     "own_ship_hex",
     "passenger_briefing",
-    "passenger_night",
     "passenger_night_on_the_way",
     "pattern_altitude",
     "pattern_entry",
     "pattern_exit",
     "pattern_side",
-    "performance_climb",
-    "performance_cruise",
     "pilot_currency",
     "pilot_experience",
     "pirep_conditions",
@@ -31107,9 +31486,11 @@
     "precip_intensity",
     "pressure_altitude_ft",
     "procedure_arc",
-    "procedure_climb_nm",
     "procedure_hold",
     "procedure_hold_leg_nm",
+    "procedure_leg_nm",
+    "procedure_path_figures",
+    "procedure_reversal",
     "procedure_turn",
     "procedures_read",
     "procedures_write",
@@ -31136,12 +31517,15 @@
     "registered_profile",
     "remarks_read",
     "replay_track",
+    "report_near",
     "reserve_min",
     "route_options",
     "route_options_frame",
     "route_position",
+    "route_read",
     "route_way_warning",
     "runway_calm",
+    "runway_closure_marks",
     "runway_crosswind",
     "runway_end_fit",
     "runway_end_heading",
@@ -31151,6 +31535,7 @@
     "runway_with_winds",
     "runways_read",
     "rvr_check",
+    "rvr_readings",
     "same_field",
     "select_cruise_altitude",
     "service_ceiling_on_the_day",
@@ -31179,18 +31564,17 @@
     "thin_track",
     "title_case",
     "tokens",
+    "track_left_from",
     "traffic_fresh",
-    "traffic_kind",
     "traffic_marks",
-    "traffic_matches",
     "traffic_pattern",
-    "traffic_reach",
     "turbulence_category",
     "underway",
     "usual_base",
     "velocity_track",
     "vertical_speed",
     "vfr_altitudes",
+    "vfr_at_hours",
     "vfr_basic_minimums",
     "vfr_floors",
     "vfr_minimums",
@@ -31214,7 +31598,6 @@
     "words_flight_level",
     "words_grouped",
     "words_num",
-    "words_one",
     "words_to_fixed",
     "workings_right"
   ],
@@ -31417,12 +31800,6 @@
         },
         "floor_ft": {
           "type": "number"
-        },
-        "airspace_ceiling_ft": {
-          "type": [
-            "number",
-            "null"
-          ]
         },
         "service_ceiling_ft": {
           "type": [
@@ -34232,6 +34609,65 @@
       ],
       "description": "One risk factor."
     },
+    "GonogoFieldUse": {
+      "title": "GonogoFieldUse",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "role": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "departure",
+            "destination",
+            "stop",
+            null
+          ],
+          "description": "Null is taken as destination."
+        },
+        "private": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "NASR FACILITY_USE_CODE PR, not owned by the armed services."
+        },
+        "military": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "military",
+            "joint",
+            null
+          ],
+          "description": "\"military\" or \"joint\" for a field the armed services own (OWNERSHIP_TYPE_CODE MA, MN, MR, CG)."
+        },
+        "phone": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NASR APT_CON's phone, the manager's or else the owner's."
+        },
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "NASR APT_BASE's ARPT_STATUS (O, CI, CP); null where the host has no NASR record."
+        }
+      },
+      "required": [
+        "ident"
+      ],
+      "description": "A field the route uses, as the host has it from NASR APT_BASE and APT_CON."
+    },
     "GonogoFlown": {
       "title": "GonogoFlown",
       "anyOf": [
@@ -36335,6 +36771,61 @@
       ],
       "description": "Own ship as the GPS has it."
     },
+    "PaperworkDue": {
+      "title": "PaperworkDue",
+      "description": "One thing that falls due, named and with the rule that asks for it, for the gateway's Coming up list and reminders (PaperworkService), which adds only the days and hours left.",
+      "type": "object",
+      "properties": {
+        "what": {
+          "type": "string",
+          "description": "flight-review, medical, day-passengers, night-passengers, instrument; annual, hundred-hour, elt, elt-battery, static, transponder, vor-check; item (an owner's own)."
+        },
+        "itemId": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "The owner's item it is, where it is one."
+        },
+        "label": {
+          "type": "string"
+        },
+        "rule": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The rule that asks for it: \"14 CFR 61.56(c)\"; an AD's own number with 14 CFR 39.7; an owner's other item its own reference, or none."
+        },
+        "until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "YYYY-MM-DD, its last good day; null where it falls due by hours."
+        },
+        "dueAtHours": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "lead": {
+          "type": "string",
+          "description": "The reminder sentence's start, to which the day is added."
+        }
+      },
+      "required": [
+        "what",
+        "itemId",
+        "label",
+        "rule",
+        "until",
+        "dueAtHours",
+        "lead"
+      ],
+      "additionalProperties": false
+    },
     "PatternLegPoint": {
       "title": "PatternLegPoint",
       "type": "object",
@@ -38053,6 +38544,42 @@
             "idents"
           ]
         },
+        "class_b": {
+          "description": "The route as planned with the fixes that keep it out of the Class B it enters at its altitude (class_b_entered, class_b_detours; 14 CFR 91.131(a)(1)), its points between the ends, their idents and which are fields landed at: built as Avoid Class B. Null where it enters none or a leg that does has no way round.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
+            "idents": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "landed": {
+              "type": "array",
+              "items": {
+                "type": "boolean"
+              }
+            }
+          },
+          "required": [
+            "points",
+            "idents"
+          ]
+        },
         "night": {
           "type": [
             "boolean",
@@ -39008,6 +39535,20 @@
                 "null"
               ],
               "description": "The altitude flown as the FL chip says it."
+            },
+            "highest_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The highest altitude the nav log flies, feet MSL, for 14 CFR 91.211(a)'s oxygen (gonogo_brief's oxygen finding); null before the nav log."
+            },
+            "oxygen": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Whether the airplane picked carries supplemental oxygen or a pressurised cabin (its profile's supplemental_oxygen or pressurized). Read as JavaScript reads it; false, the safer side, with no airplane picked."
             }
           }
         },

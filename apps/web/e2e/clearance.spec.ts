@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openPanel, settle, sideDrawer, slow } from "./helpers";
+import { grabberTo, inSheet, openPanel, openRoute, settle, sideDrawer, slow } from "./helpers";
 
 /**
  * A clearance into the route, from the map's microphone: the
@@ -23,7 +23,11 @@ test("a clearance read is shown in its items and entered as the route", async ({
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   const box = sideDrawer(page).getByTestId("route-box");
+  // The route's field opened all the way up, over the map's buttons: half
+  // way, the comms button in sight over the sheet.
+  await grabberTo(page, "half");
   await page.getByTestId("radio-button").click();
   await expect(page.getByTestId("clearance-text")).toBeVisible();
   await expect(page.getByTestId("clearance-toggle")).toHaveCount(0);
@@ -45,12 +49,16 @@ test("a clearance read is shown in its items and entered as the route", async ({
   // each on its row's one line; the differences under a tap.
   await expect(body.getByTestId("clearance-state-enter")).toHaveText("KDLH via GEP, fly 7,000 ft");
   await expect(body.getByTestId("clearance-state-compare")).toHaveText("1 difference");
+  // The card opens half way, as every card does: its rows under the edge
+  // reached by pulling it up.
+  await inSheet(page, body.getByTestId("clearance-row-compare"));
   await body.getByTestId("clearance-row-compare").click();
   await expect(body.getByTestId("clearance-detail-compare")).toContainText("Differs from what you filed: adds GEP.");
   // Nothing in the plan until it is entered.
   expect(new URL(page.url()).searchParams.get("stops")).toBeNull();
   const enter = page.getByTestId("clearance-enter");
   await expect(enter).toBeEnabled();
+  await inSheet(page, enter);
   await enter.click();
   await expect(page).toHaveURL(/stops=GEP/, { timeout: slow(10_000) });
   await expect(page).toHaveURL(/altitude_ft=7000/);
@@ -84,6 +92,8 @@ test("Enter in the typed clearance reads it, and Use This Route enters it", asyn
   await expect(use).toHaveText("Use This Route");
   await expect(use).toBeEnabled({ timeout: slow(20_000) });
   await expect(body.getByRole("button", { name: "Use This Route" })).toHaveCount(1);
+  // Under the half card's edge: pulled up to reach.
+  await inSheet(page, use);
   await use.click();
   await expect(page).toHaveURL(/stops=GEP/, { timeout: slow(10_000) });
 });

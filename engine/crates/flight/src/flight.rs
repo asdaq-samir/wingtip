@@ -1,8 +1,8 @@
 //! The flight's own figures, one copy for the planner and the phones:
 //! the wind triangle, VFR cruising altitudes, the fuel reserve and the
-//! atmosphere. Each is the planner's (wingtip.navlog, wingtip.altitude,
-//! wingtip.performance) written again here, and services/planner/tests_wingtip/test_flight_rules.py
-//! holds the two to the same answer; the web's TypeScript copy of the
+//! atmosphere. Each was once the planner's own and is asked from here
+//! now; services/planner/tests_wingtip/test_flight_rules.py holds the
+//! planner's calls to the shared fixture; the web's TypeScript copy of the
 //! wind triangle (lib/diversion) is held to the same fixture
 //! (apps/web/src/lib/fixtures/flightRules.json).
 
@@ -39,6 +39,35 @@ pub fn wind_triangle(true_course_deg: f64, tas_kt: f64, wind_from_deg: f64, wind
     let wca = ratio.asin().to_degrees() + 0.0;
     let gs = tas_kt * wca.to_radians().cos() - wind_kt * relative.cos();
     (gs > 0.0).then(|| (wca, (true_course_deg + wca).rem_euclid(360.0), gs))
+}
+
+/// The average ground speed over a stretch, knots: its miles over its
+/// hours (FAA-H-8083-25C, PHAK ch. 16, "Flight Planning": ground speed
+/// is the distance flown over the time it took). Not a number (null to
+/// the host) where no time passed: a speed of a flight that has not
+/// begun is not one. The copilot's planned speed (the nav log's miles
+/// over its minutes) and a past flight's (the miles flown over its time
+/// aloft) are both this one.
+pub fn average_groundspeed_kt(distance_nm: f64, minutes: f64) -> f64 {
+    if minutes > 0.0 && distance_nm.is_finite() {
+        distance_nm / (minutes / 60.0)
+    } else {
+        f64::NAN
+    }
+}
+
+/// How far along the route each of its legs ends, nm: the running sum of
+/// the legs' miles, a leg with none (a departure's row) adding nothing,
+/// so a row's line under its name says "Stop · 241 nm" from the start.
+pub fn nm_along(legs_nm: &[Option<f64>]) -> Vec<f64> {
+    let mut at = 0.0;
+    legs_nm
+        .iter()
+        .map(|nm| {
+            at += nm.filter(|n| n.is_finite()).unwrap_or(0.0);
+            at
+        })
+        .collect()
 }
 
 /// Which half of 14 CFR 91.159's rule a magnetic course is in: 000-179
@@ -101,7 +130,7 @@ pub fn reserve_min(ifr: bool, night: bool) -> f64 {
 // The International Standard Atmosphere below the tropopause (ICAO Doc
 // 7488): sea level 15 C (288.15 K), a lapse of 6.5 K a kilometre
 // (0.0019812 C a foot), and the exponent pressure falls off by, g/(R L);
-// density's is one less. wingtip.performance's constants, the same digits.
+// density's is one less. The performance module works from these.
 pub const ISA_SEA_LEVEL_C: f64 = 15.0;
 pub const ISA_LAPSE_C_PER_FT: f64 = 0.0019812;
 const SEA_LEVEL_K: f64 = ISA_SEA_LEVEL_C + KELVIN_AT_0_C;
@@ -162,6 +191,20 @@ pub fn isa_pressure_hpa(altitude_ft: f64) -> f64 {
 }
 
 #[cfg(test)]
+mod speed_tests {
+    use super::*;
+
+    #[test]
+    fn the_average_ground_speed_is_the_miles_over_the_hours() {
+        // PHAK ch. 16: 120 nm in 1 h 30 min is 80 kt.
+        assert_eq!(average_groundspeed_kt(120.0, 90.0), 80.0);
+        assert!(average_groundspeed_kt(120.0, 0.0).is_nan());
+        assert!(average_groundspeed_kt(120.0, -5.0).is_nan());
+        assert_eq!(nm_along(&[None, Some(12.5), Some(30.0), None, Some(7.5)]), vec![0.0, 12.5, 42.5, 42.5, 50.0]);
+    }
+}
+
+#[cfg(test)]
 mod isa_tests {
     use super::*;
 
@@ -176,5 +219,30 @@ mod isa_tests {
         assert!((inhg(20_000.0) - 13.75).abs() < 0.02);
         // 500 hPa is about 18,300 ft (FL180 is just below it, 506 hPa).
         assert!(isa_pressure_hpa(18_000.0) > 500.0 && isa_pressure_hpa(19_000.0) < 500.0);
+    }
+}
+
+#[cfg(test)]
+mod cruising_tests {
+    use super::*;
+
+    #[test]
+    fn the_lowest_vfr_cruising_altitude_is_91_159s_first_above_the_floor() {
+        // 14 CFR 91.159(a): eastbound (000-179) odd thousands plus 500,
+        // westbound (180-359) even thousands plus 500; the planner's cases
+        // from before the move (tests_wingtip/test_airspace.py).
+        let (east, west) = (90.0, 270.0);
+        // KDSM to KOMA, the case that once gave 12,500.
+        assert_eq!(lowest_vfr_cruising_altitude(3000.0, west), 4500.0);
+        assert_eq!(lowest_vfr_cruising_altitude(2200.0, west), 2500.0);
+        assert_eq!(lowest_vfr_cruising_altitude(2200.0, 328.0), 2500.0);
+        assert_eq!(lowest_vfr_cruising_altitude(3000.0, east), 3500.0);
+        // 2,500 is a westbound altitude, so eastbound climbs to 3,500.
+        assert_eq!(lowest_vfr_cruising_altitude(2200.0, east), 3500.0);
+        // Already legal and on its side: unchanged; just above it, the next.
+        assert_eq!(lowest_vfr_cruising_altitude(4500.0, west), 4500.0);
+        assert_eq!(lowest_vfr_cruising_altitude(4600.0, west), 6500.0);
+        // A course past 360 wraps.
+        assert_eq!(lowest_vfr_cruising_altitude(3000.0, 630.0), lowest_vfr_cruising_altitude(3000.0, west));
     }
 }

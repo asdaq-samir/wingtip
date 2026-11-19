@@ -1,5 +1,5 @@
 {
-  "about": "When a part-time surface area is in effect (the engine's surface_hours), from NASR's CLS_ARSP AIRSPACE_HRS, for the airport card's Airspace fact and its Airspace hours, held by the engine (engine/facade/tests/surface_hours.rs) and the web (features/plan/components/place/surfaceHoursWords.test.ts). Local minutes from midnight; AIM 3-2-5a1, the Chart Supplement legend's Time Conversion.",
+  "about": "When a part-time surface area is in effect (the engine's surface_hours), from NASR's CLS_ARSP AIRSPACE_HRS, for the airport card's Airspace fact and its Airspace hours, held by the engine (engine/facade/tests/surface_hours.rs) and the web (features/place/surfaceHoursWords.test.ts). Local minutes from midnight; AIM 3-2-5a1, the Chart Supplement legend's Time Conversion.",
   "cases": [
     {
       "about": "KPWK on a Saturday at noon, CST: Class D until 22:00, then E (the Chart Supplement's AIRSPACE line)",

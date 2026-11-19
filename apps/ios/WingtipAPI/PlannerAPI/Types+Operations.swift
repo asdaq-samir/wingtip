@@ -8624,10 +8624,12 @@ public enum Operations {
     /// path, and there is no reason a pilot should watch an empty map for
     /// them.
     ///
-    /// And the route's slow parts are started here, the first thing the web
-    /// app asks for a route: the chart's read and the ground under it, on
-    /// threads of their own (app.prefetch), so the nav log asked for beside
-    /// this finds them under way or done.
+    /// And the ground under the route is started here, the first thing the
+    /// web app asks for a route, on a thread of its own (app.prefetch), so
+    /// the nav log asked for beside this finds it under way or done. Not the
+    /// chart's read for checkpoints: nothing finds them until the pilot asks
+    /// (/api/checkpoints, or a nav log with checkpoints), the owner's rule
+    /// (2026-11-18). checkpoints_ready only looks at what is kept.
     ///
     /// - Remark: HTTP `GET /api/course`.
     /// - Remark: Generated from `#/paths//api/course/get(course)`.
@@ -10022,7 +10024,7 @@ public enum Operations {
     /// to a field, in the planner's air on the way there at `altitude_ft` --
     /// the winds and temperature aloft for the hour (wingtip.weather, the FD
     /// period for `depart`, now by default), the airplane's true airspeed and
-    /// burn in that air (wingtip.performance) and the variation (wingtip.magnetic,
+    /// burn in that air (the engine's wingtip_flight::performance) and the variation (wingtip.magnetic,
     /// the WMM) -- the true course and distance, the wind triangle, the
     /// magnetic heading, ground speed, time and fuel, each step in words;
     /// and the student's estimates (`mh`, `gs`, `ete`, `fuel`) checked
@@ -13109,8 +13111,6 @@ public enum Operations {
                 public var glideRatio: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/local-flight/GET/query/depart`.
                 public var depart: Swift.String?
-                /// - Remark: Generated from `#/paths/api/local-flight/GET/query/class_b_clearance`.
-                public var classBClearance: Swift.Bool?
                 /// - Remark: Generated from `#/paths/api/local-flight/GET/query/rules`.
                 public var rules: Swift.String?
                 /// - Remark: Generated from `#/paths/api/local-flight/GET/query/alternate`.
@@ -13159,7 +13159,6 @@ public enum Operations {
                 ///   - taxiFuelGal:
                 ///   - glideRatio:
                 ///   - depart:
-                ///   - classBClearance:
                 ///   - rules:
                 ///   - alternate:
                 ///   - altitudes:
@@ -13194,7 +13193,6 @@ public enum Operations {
                     taxiFuelGal: Swift.Double? = nil,
                     glideRatio: Swift.Double? = nil,
                     depart: Swift.String? = nil,
-                    classBClearance: Swift.Bool? = nil,
                     rules: Swift.String? = nil,
                     alternate: Swift.String? = nil,
                     altitudes: Swift.String? = nil,
@@ -13229,7 +13227,6 @@ public enum Operations {
                     self.taxiFuelGal = taxiFuelGal
                     self.glideRatio = glideRatio
                     self.depart = depart
-                    self.classBClearance = classBClearance
                     self.rules = rules
                     self.alternate = alternate
                     self.altitudes = altitudes
@@ -14170,8 +14167,6 @@ public enum Operations {
                 public var glideRatio: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/navlog/GET/query/depart`.
                 public var depart: Swift.String?
-                /// - Remark: Generated from `#/paths/api/navlog/GET/query/class_b_clearance`.
-                public var classBClearance: Swift.Bool?
                 /// - Remark: Generated from `#/paths/api/navlog/GET/query/rules`.
                 public var rules: Swift.String?
                 /// - Remark: Generated from `#/paths/api/navlog/GET/query/alternate`.
@@ -14220,7 +14215,6 @@ public enum Operations {
                 ///   - taxiFuelGal:
                 ///   - glideRatio:
                 ///   - depart:
-                ///   - classBClearance:
                 ///   - rules:
                 ///   - alternate:
                 ///   - altitudes:
@@ -14255,7 +14249,6 @@ public enum Operations {
                     taxiFuelGal: Swift.Double? = nil,
                     glideRatio: Swift.Double? = nil,
                     depart: Swift.String? = nil,
-                    classBClearance: Swift.Bool? = nil,
                     rules: Swift.String? = nil,
                     alternate: Swift.String? = nil,
                     altitudes: Swift.String? = nil,
@@ -14290,7 +14283,6 @@ public enum Operations {
                     self.taxiFuelGal = taxiFuelGal
                     self.glideRatio = glideRatio
                     self.depart = depart
-                    self.classBClearance = classBClearance
                     self.rules = rules
                     self.alternate = alternate
                     self.altitudes = altitudes
@@ -17110,6 +17102,189 @@ public enum Operations {
             }
         }
     }
+    /// Instructor Records Since
+    ///
+    /// The first day an instructor's page lists what they signed: 3 years
+    /// before `today`, as 14 CFR 61.189(c) has them keep the records (the
+    /// engine's instructor_records_since).
+    ///
+    /// - Remark: HTTP `GET /api/pilot/instructor-records-since`.
+    /// - Remark: Generated from `#/paths//api/pilot/instructor-records-since/get(instructor_records_since)`.
+    public enum InstructorRecordsSince {
+        public static let id: Swift.String = "instructor_records_since"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/api/pilot/instructor-records-since/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/pilot/instructor-records-since/GET/query/today`.
+                public var today: Swift.String
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - today:
+                public init(today: Swift.String) {
+                    self.today = today
+                }
+            }
+            public var query: Operations.InstructorRecordsSince.Input.Query
+            /// - Remark: Generated from `#/paths/api/pilot/instructor-records-since/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.InstructorRecordsSince.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.InstructorRecordsSince.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.InstructorRecordsSince.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.InstructorRecordsSince.Input.Query,
+                headers: Operations.InstructorRecordsSince.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/pilot/instructor-records-since/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/pilot/instructor-records-since/GET/responses/200/content/application\/json`.
+                    case json(Swift.String)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Swift.String {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.InstructorRecordsSince.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.InstructorRecordsSince.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Successful Response
+            ///
+            /// - Remark: Generated from `#/paths//api/pilot/instructor-records-since/get(instructor_records_since)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.InstructorRecordsSince.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.InstructorRecordsSince.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct UnprocessableContent: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/pilot/instructor-records-since/GET/responses/422/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/pilot/instructor-records-since/GET/responses/422/content/application\/json`.
+                    case json(Components.Schemas.HTTPValidationError)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.HTTPValidationError {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.InstructorRecordsSince.Output.UnprocessableContent.Body
+                /// Creates a new `UnprocessableContent`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.InstructorRecordsSince.Output.UnprocessableContent.Body) {
+                    self.body = body
+                }
+            }
+            /// Validation Error
+            ///
+            /// - Remark: Generated from `#/paths//api/pilot/instructor-records-since/get(instructor_records_since)/responses/422`.
+            ///
+            /// HTTP response code: `422 unprocessableContent`.
+            case unprocessableContent(Operations.InstructorRecordsSince.Output.UnprocessableContent)
+            /// The associated value of the enum case if `self` is `.unprocessableContent`.
+            ///
+            /// - Throws: An error if `self` is not `.unprocessableContent`.
+            /// - SeeAlso: `.unprocessableContent`.
+            public var unprocessableContent: Operations.InstructorRecordsSince.Output.UnprocessableContent {
+                get throws {
+                    switch self {
+                    case let .unprocessableContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "unprocessableContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// Places Search
     ///
     /// Where a place typed is, for Nearest to find the fields near it
@@ -17319,7 +17494,7 @@ public enum Operations {
     /// them in its own air: the cruise figures are the aeroplane's at a
     /// reference altitude on a standard day, and the forecast temperature
     /// at the leg's altitude gives the density altitude they are flown at
-    /// (wingtip.performance). depart, an ISO time (UTC when naive), picks the
+    /// (the engine's wingtip_flight::performance). depart, an ISO time (UTC when naive), picks the
     /// winds-aloft forecast period the legs are flown on -- the 6-, 12- or
     /// 24-hour product, whichever is valid closest to the departure;
     /// without it, the 6-hour product, i.e. about now -- and whether the
@@ -17372,8 +17547,6 @@ public enum Operations {
                 public var glideRatio: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/plan/GET/query/depart`.
                 public var depart: Swift.String?
-                /// - Remark: Generated from `#/paths/api/plan/GET/query/class_b_clearance`.
-                public var classBClearance: Swift.Bool?
                 /// - Remark: Generated from `#/paths/api/plan/GET/query/rules`.
                 public var rules: Swift.String?
                 /// - Remark: Generated from `#/paths/api/plan/GET/query/alternate`.
@@ -17421,7 +17594,6 @@ public enum Operations {
                 ///   - taxiFuelGal:
                 ///   - glideRatio:
                 ///   - depart:
-                ///   - classBClearance:
                 ///   - rules:
                 ///   - alternate:
                 ///   - altitudes:
@@ -17455,7 +17627,6 @@ public enum Operations {
                     taxiFuelGal: Swift.Double? = nil,
                     glideRatio: Swift.Double? = nil,
                     depart: Swift.String? = nil,
-                    classBClearance: Swift.Bool? = nil,
                     rules: Swift.String? = nil,
                     alternate: Swift.String? = nil,
                     altitudes: Swift.String? = nil,
@@ -17489,7 +17660,6 @@ public enum Operations {
                     self.taxiFuelGal = taxiFuelGal
                     self.glideRatio = glideRatio
                     self.depart = depart
-                    self.classBClearance = classBClearance
                     self.rules = rules
                     self.alternate = alternate
                     self.altitudes = altitudes
@@ -17790,203 +17960,6 @@ public enum Operations {
             }
         }
     }
-    /// Route Check
-    ///
-    /// Whether a route would plan, checked as a typed one is (load_route):
-    /// a 404 naming an ident that is not one, a 422 for a stop at the point
-    /// before it or too many stops. With an end missing, each ident given is
-    /// checked alone. Nothing is read or planned. The gateway forwards
-    /// no app here.
-    ///
-    /// - Remark: HTTP `GET /api/route-check`.
-    /// - Remark: Generated from `#/paths//api/route-check/get(route_check)`.
-    public enum RouteCheck {
-        public static let id: Swift.String = "route_check"
-        public struct Input: Sendable, Hashable {
-            /// - Remark: Generated from `#/paths/api/route-check/GET/query`.
-            public struct Query: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/route-check/GET/query/dep`.
-                public var dep: Swift.String?
-                /// - Remark: Generated from `#/paths/api/route-check/GET/query/dest`.
-                public var dest: Swift.String?
-                /// - Remark: Generated from `#/paths/api/route-check/GET/query/stops`.
-                public var stops: Swift.String?
-                /// Creates a new `Query`.
-                ///
-                /// - Parameters:
-                ///   - dep:
-                ///   - dest:
-                ///   - stops:
-                public init(
-                    dep: Swift.String? = nil,
-                    dest: Swift.String? = nil,
-                    stops: Swift.String? = nil
-                ) {
-                    self.dep = dep
-                    self.dest = dest
-                    self.stops = stops
-                }
-            }
-            public var query: Operations.RouteCheck.Input.Query
-            /// - Remark: Generated from `#/paths/api/route-check/GET/header`.
-            public struct Headers: Sendable, Hashable {
-                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RouteCheck.AcceptableContentType>]
-                /// Creates a new `Headers`.
-                ///
-                /// - Parameters:
-                ///   - accept:
-                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RouteCheck.AcceptableContentType>] = .defaultValues()) {
-                    self.accept = accept
-                }
-            }
-            public var headers: Operations.RouteCheck.Input.Headers
-            /// Creates a new `Input`.
-            ///
-            /// - Parameters:
-            ///   - query:
-            ///   - headers:
-            public init(
-                query: Operations.RouteCheck.Input.Query = .init(),
-                headers: Operations.RouteCheck.Input.Headers = .init()
-            ) {
-                self.query = query
-                self.headers = headers
-            }
-        }
-        @frozen public enum Output: Sendable, Hashable {
-            public struct Ok: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/route-check/GET/responses/200/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/route-check/GET/responses/200/content/application\/json`.
-                    case json(Components.Schemas.RouteChecked)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.RouteChecked {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.RouteCheck.Output.Ok.Body
-                /// Creates a new `Ok`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.RouteCheck.Output.Ok.Body) {
-                    self.body = body
-                }
-            }
-            /// Successful Response
-            ///
-            /// - Remark: Generated from `#/paths//api/route-check/get(route_check)/responses/200`.
-            ///
-            /// HTTP response code: `200 ok`.
-            case ok(Operations.RouteCheck.Output.Ok)
-            /// The associated value of the enum case if `self` is `.ok`.
-            ///
-            /// - Throws: An error if `self` is not `.ok`.
-            /// - SeeAlso: `.ok`.
-            public var ok: Operations.RouteCheck.Output.Ok {
-                get throws {
-                    switch self {
-                    case let .ok(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "ok",
-                            response: self
-                        )
-                    }
-                }
-            }
-            public struct UnprocessableContent: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/route-check/GET/responses/422/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/route-check/GET/responses/422/content/application\/json`.
-                    case json(Components.Schemas.HTTPValidationError)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.HTTPValidationError {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.RouteCheck.Output.UnprocessableContent.Body
-                /// Creates a new `UnprocessableContent`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.RouteCheck.Output.UnprocessableContent.Body) {
-                    self.body = body
-                }
-            }
-            /// Validation Error
-            ///
-            /// - Remark: Generated from `#/paths//api/route-check/get(route_check)/responses/422`.
-            ///
-            /// HTTP response code: `422 unprocessableContent`.
-            case unprocessableContent(Operations.RouteCheck.Output.UnprocessableContent)
-            /// The associated value of the enum case if `self` is `.unprocessableContent`.
-            ///
-            /// - Throws: An error if `self` is not `.unprocessableContent`.
-            /// - SeeAlso: `.unprocessableContent`.
-            public var unprocessableContent: Operations.RouteCheck.Output.UnprocessableContent {
-                get throws {
-                    switch self {
-                    case let .unprocessableContent(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "unprocessableContent",
-                            response: self
-                        )
-                    }
-                }
-            }
-            /// Undocumented response.
-            ///
-            /// A response with a code that is not documented in the OpenAPI document.
-            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
-        }
-        @frozen public enum AcceptableContentType: AcceptableProtocol {
-            case json
-            case other(Swift.String)
-            public init?(rawValue: Swift.String) {
-                switch rawValue.lowercased() {
-                case "application/json":
-                    self = .json
-                default:
-                    self = .other(rawValue)
-                }
-            }
-            public var rawValue: Swift.String {
-                switch self {
-                case let .other(string):
-                    return string
-                case .json:
-                    return "application/json"
-                }
-            }
-            public static var allCases: [Self] {
-                [
-                    .json
-                ]
-            }
-        }
-    }
     /// Route Options
     ///
     /// The ways to fly from `dep` to `dest` in the airplane, at the owner's
@@ -18029,6 +18002,8 @@ public enum Operations {
                 public var minCeilingFt: Swift.Double?
                 /// - Remark: Generated from `#/paths/api/route-options/GET/query/min_visibility_sm`.
                 public var minVisibilitySm: Swift.Double?
+                /// - Remark: Generated from `#/paths/api/route-options/GET/query/altitude_ft`.
+                public var altitudeFt: Swift.Double?
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
@@ -18045,6 +18020,7 @@ public enum Operations {
                 ///   - depart:
                 ///   - minCeilingFt:
                 ///   - minVisibilitySm:
+                ///   - altitudeFt:
                 public init(
                     dep: Swift.String,
                     dest: Swift.String,
@@ -18058,7 +18034,8 @@ public enum Operations {
                     glideRatio: Swift.Double? = nil,
                     depart: Swift.String? = nil,
                     minCeilingFt: Swift.Double? = nil,
-                    minVisibilitySm: Swift.Double? = nil
+                    minVisibilitySm: Swift.Double? = nil,
+                    altitudeFt: Swift.Double? = nil
                 ) {
                     self.dep = dep
                     self.dest = dest
@@ -18073,6 +18050,7 @@ public enum Operations {
                     self.depart = depart
                     self.minCeilingFt = minCeilingFt
                     self.minVisibilitySm = minVisibilitySm
+                    self.altitudeFt = altitudeFt
                 }
             }
             public var query: Operations.RouteOptions.Input.Query
@@ -24805,893 +24783,6 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.unprocessableContent`.
             /// - SeeAlso: `.unprocessableContent`.
             public var unprocessableContent: Operations.ChangesSources.Output.UnprocessableContent {
-                get throws {
-                    switch self {
-                    case let .unprocessableContent(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "unprocessableContent",
-                            response: self
-                        )
-                    }
-                }
-            }
-            /// Undocumented response.
-            ///
-            /// A response with a code that is not documented in the OpenAPI document.
-            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
-        }
-        @frozen public enum AcceptableContentType: AcceptableProtocol {
-            case json
-            case other(Swift.String)
-            public init?(rawValue: Swift.String) {
-                switch rawValue.lowercased() {
-                case "application/json":
-                    self = .json
-                default:
-                    self = .other(rawValue)
-                }
-            }
-            public var rawValue: Swift.String {
-                switch self {
-                case let .other(string):
-                    return string
-                case .json:
-                    return "application/json"
-                }
-            }
-            public static var allCases: [Self] {
-                [
-                    .json
-                ]
-            }
-        }
-    }
-    /// Coach Sources
-    ///
-    /// A proficiency plan's lines, each a source a sentence can cite.
-    ///
-    /// - Remark: HTTP `POST /api/words/coach/sources`.
-    /// - Remark: Generated from `#/paths//api/words/coach/sources/post(coach_sources)`.
-    public enum CoachSources {
-        public static let id: Swift.String = "coach_sources"
-        public struct Input: Sendable, Hashable {
-            /// - Remark: Generated from `#/paths/api/words/coach/sources/POST/header`.
-            public struct Headers: Sendable, Hashable {
-                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CoachSources.AcceptableContentType>]
-                /// Creates a new `Headers`.
-                ///
-                /// - Parameters:
-                ///   - accept:
-                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CoachSources.AcceptableContentType>] = .defaultValues()) {
-                    self.accept = accept
-                }
-            }
-            public var headers: Operations.CoachSources.Input.Headers
-            /// - Remark: Generated from `#/paths/api/words/coach/sources/POST/requestBody`.
-            @frozen public enum Body: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/coach/sources/POST/requestBody/content/application\/json`.
-                case json(Components.Schemas.ProficiencyPlan)
-            }
-            public var body: Operations.CoachSources.Input.Body
-            /// Creates a new `Input`.
-            ///
-            /// - Parameters:
-            ///   - headers:
-            ///   - body:
-            public init(
-                headers: Operations.CoachSources.Input.Headers = .init(),
-                body: Operations.CoachSources.Input.Body
-            ) {
-                self.headers = headers
-                self.body = body
-            }
-        }
-        @frozen public enum Output: Sendable, Hashable {
-            public struct Ok: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/coach/sources/POST/responses/200/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/words/coach/sources/POST/responses/200/content/application\/json`.
-                    case json(Components.Schemas.WordsSources)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.WordsSources {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.CoachSources.Output.Ok.Body
-                /// Creates a new `Ok`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.CoachSources.Output.Ok.Body) {
-                    self.body = body
-                }
-            }
-            /// Successful Response
-            ///
-            /// - Remark: Generated from `#/paths//api/words/coach/sources/post(coach_sources)/responses/200`.
-            ///
-            /// HTTP response code: `200 ok`.
-            case ok(Operations.CoachSources.Output.Ok)
-            /// The associated value of the enum case if `self` is `.ok`.
-            ///
-            /// - Throws: An error if `self` is not `.ok`.
-            /// - SeeAlso: `.ok`.
-            public var ok: Operations.CoachSources.Output.Ok {
-                get throws {
-                    switch self {
-                    case let .ok(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "ok",
-                            response: self
-                        )
-                    }
-                }
-            }
-            public struct UnprocessableContent: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/coach/sources/POST/responses/422/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/words/coach/sources/POST/responses/422/content/application\/json`.
-                    case json(Components.Schemas.HTTPValidationError)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.HTTPValidationError {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.CoachSources.Output.UnprocessableContent.Body
-                /// Creates a new `UnprocessableContent`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.CoachSources.Output.UnprocessableContent.Body) {
-                    self.body = body
-                }
-            }
-            /// Validation Error
-            ///
-            /// - Remark: Generated from `#/paths//api/words/coach/sources/post(coach_sources)/responses/422`.
-            ///
-            /// HTTP response code: `422 unprocessableContent`.
-            case unprocessableContent(Operations.CoachSources.Output.UnprocessableContent)
-            /// The associated value of the enum case if `self` is `.unprocessableContent`.
-            ///
-            /// - Throws: An error if `self` is not `.unprocessableContent`.
-            /// - SeeAlso: `.unprocessableContent`.
-            public var unprocessableContent: Operations.CoachSources.Output.UnprocessableContent {
-                get throws {
-                    switch self {
-                    case let .unprocessableContent(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "unprocessableContent",
-                            response: self
-                        )
-                    }
-                }
-            }
-            /// Undocumented response.
-            ///
-            /// A response with a code that is not documented in the OpenAPI document.
-            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
-        }
-        @frozen public enum AcceptableContentType: AcceptableProtocol {
-            case json
-            case other(Swift.String)
-            public init?(rawValue: Swift.String) {
-                switch rawValue.lowercased() {
-                case "application/json":
-                    self = .json
-                default:
-                    self = .other(rawValue)
-                }
-            }
-            public var rawValue: Swift.String {
-                switch self {
-                case let .other(string):
-                    return string
-                case .json:
-                    return "application/json"
-                }
-            }
-            public static var allCases: [Self] {
-                [
-                    .json
-                ]
-            }
-        }
-    }
-    /// Debrief Sources
-    ///
-    /// A flown flight's debrief as sources (POST /api/debrief: the time in
-    /// the air, each leg's altitude and course held, each checkpoint's time,
-    /// each pattern entry, its notes, and the ACS tolerances they are marked
-    /// against). A 422 where there is no debrief: the track never flew.
-    ///
-    /// - Remark: HTTP `POST /api/words/debrief/sources`.
-    /// - Remark: Generated from `#/paths//api/words/debrief/sources/post(debrief_sources)`.
-    public enum DebriefSources {
-        public static let id: Swift.String = "debrief_sources"
-        public struct Input: Sendable, Hashable {
-            /// - Remark: Generated from `#/paths/api/words/debrief/sources/POST/header`.
-            public struct Headers: Sendable, Hashable {
-                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DebriefSources.AcceptableContentType>]
-                /// Creates a new `Headers`.
-                ///
-                /// - Parameters:
-                ///   - accept:
-                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DebriefSources.AcceptableContentType>] = .defaultValues()) {
-                    self.accept = accept
-                }
-            }
-            public var headers: Operations.DebriefSources.Input.Headers
-            /// - Remark: Generated from `#/paths/api/words/debrief/sources/POST/requestBody`.
-            @frozen public enum Body: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/debrief/sources/POST/requestBody/content/application\/json`.
-                case json(Components.Schemas.DebriefWordsAsk)
-            }
-            public var body: Operations.DebriefSources.Input.Body
-            /// Creates a new `Input`.
-            ///
-            /// - Parameters:
-            ///   - headers:
-            ///   - body:
-            public init(
-                headers: Operations.DebriefSources.Input.Headers = .init(),
-                body: Operations.DebriefSources.Input.Body
-            ) {
-                self.headers = headers
-                self.body = body
-            }
-        }
-        @frozen public enum Output: Sendable, Hashable {
-            public struct Ok: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/debrief/sources/POST/responses/200/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/words/debrief/sources/POST/responses/200/content/application\/json`.
-                    case json(Components.Schemas.WordsSources)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.WordsSources {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.DebriefSources.Output.Ok.Body
-                /// Creates a new `Ok`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.DebriefSources.Output.Ok.Body) {
-                    self.body = body
-                }
-            }
-            /// Successful Response
-            ///
-            /// - Remark: Generated from `#/paths//api/words/debrief/sources/post(debrief_sources)/responses/200`.
-            ///
-            /// HTTP response code: `200 ok`.
-            case ok(Operations.DebriefSources.Output.Ok)
-            /// The associated value of the enum case if `self` is `.ok`.
-            ///
-            /// - Throws: An error if `self` is not `.ok`.
-            /// - SeeAlso: `.ok`.
-            public var ok: Operations.DebriefSources.Output.Ok {
-                get throws {
-                    switch self {
-                    case let .ok(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "ok",
-                            response: self
-                        )
-                    }
-                }
-            }
-            public struct UnprocessableContent: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/debrief/sources/POST/responses/422/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/words/debrief/sources/POST/responses/422/content/application\/json`.
-                    case json(Components.Schemas.HTTPValidationError)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.HTTPValidationError {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.DebriefSources.Output.UnprocessableContent.Body
-                /// Creates a new `UnprocessableContent`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.DebriefSources.Output.UnprocessableContent.Body) {
-                    self.body = body
-                }
-            }
-            /// Validation Error
-            ///
-            /// - Remark: Generated from `#/paths//api/words/debrief/sources/post(debrief_sources)/responses/422`.
-            ///
-            /// HTTP response code: `422 unprocessableContent`.
-            case unprocessableContent(Operations.DebriefSources.Output.UnprocessableContent)
-            /// The associated value of the enum case if `self` is `.unprocessableContent`.
-            ///
-            /// - Throws: An error if `self` is not `.unprocessableContent`.
-            /// - SeeAlso: `.unprocessableContent`.
-            public var unprocessableContent: Operations.DebriefSources.Output.UnprocessableContent {
-                get throws {
-                    switch self {
-                    case let .unprocessableContent(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "unprocessableContent",
-                            response: self
-                        )
-                    }
-                }
-            }
-            /// Undocumented response.
-            ///
-            /// A response with a code that is not documented in the OpenAPI document.
-            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
-        }
-        @frozen public enum AcceptableContentType: AcceptableProtocol {
-            case json
-            case other(Swift.String)
-            public init?(rawValue: Swift.String) {
-                switch rawValue.lowercased() {
-                case "application/json":
-                    self = .json
-                default:
-                    self = .other(rawValue)
-                }
-            }
-            public var rawValue: Swift.String {
-                switch self {
-                case let .other(string):
-                    return string
-                case .json:
-                    return "application/json"
-                }
-            }
-            public static var allCases: [Self] {
-                [
-                    .json
-                ]
-            }
-        }
-    }
-    /// Notam Sources
-    ///
-    /// The NOTAMs and TFRs of a flight as sources, with the flight itself
-    /// first: the NOTAMs in force or to come at every field the route lands
-    /// at, as the FAA's NOTAM feed gave them (wingtip.notams, SWIM's FNS),
-    /// and the TFRs near the route over the briefing's hours
-    /// (wingtip.tfr.along_route, as GET /api/briefing asks them: two hours of
-    /// flight and an hour past, the route's own time not being known here).
-    /// None at all where there is no NOTAM and no TFR: nothing to say.
-    /// `coverage_since`, the day the NOTAM feed was first heard (UTC); `unchecked`, "tfrs"
-    /// where tfr.faa.gov did not answer.
-    ///
-    /// - Remark: HTTP `POST /api/words/notams/sources`.
-    /// - Remark: Generated from `#/paths//api/words/notams/sources/post(notam_sources)`.
-    public enum NotamSources {
-        public static let id: Swift.String = "notam_sources"
-        public struct Input: Sendable, Hashable {
-            /// - Remark: Generated from `#/paths/api/words/notams/sources/POST/header`.
-            public struct Headers: Sendable, Hashable {
-                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.NotamSources.AcceptableContentType>]
-                /// Creates a new `Headers`.
-                ///
-                /// - Parameters:
-                ///   - accept:
-                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.NotamSources.AcceptableContentType>] = .defaultValues()) {
-                    self.accept = accept
-                }
-            }
-            public var headers: Operations.NotamSources.Input.Headers
-            /// - Remark: Generated from `#/paths/api/words/notams/sources/POST/requestBody`.
-            @frozen public enum Body: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/notams/sources/POST/requestBody/content/application\/json`.
-                case json(Components.Schemas.RouteAsk)
-            }
-            public var body: Operations.NotamSources.Input.Body
-            /// Creates a new `Input`.
-            ///
-            /// - Parameters:
-            ///   - headers:
-            ///   - body:
-            public init(
-                headers: Operations.NotamSources.Input.Headers = .init(),
-                body: Operations.NotamSources.Input.Body
-            ) {
-                self.headers = headers
-                self.body = body
-            }
-        }
-        @frozen public enum Output: Sendable, Hashable {
-            public struct Ok: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/notams/sources/POST/responses/200/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/words/notams/sources/POST/responses/200/content/application\/json`.
-                    case json(Components.Schemas.WordsSources)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.WordsSources {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.NotamSources.Output.Ok.Body
-                /// Creates a new `Ok`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.NotamSources.Output.Ok.Body) {
-                    self.body = body
-                }
-            }
-            /// Successful Response
-            ///
-            /// - Remark: Generated from `#/paths//api/words/notams/sources/post(notam_sources)/responses/200`.
-            ///
-            /// HTTP response code: `200 ok`.
-            case ok(Operations.NotamSources.Output.Ok)
-            /// The associated value of the enum case if `self` is `.ok`.
-            ///
-            /// - Throws: An error if `self` is not `.ok`.
-            /// - SeeAlso: `.ok`.
-            public var ok: Operations.NotamSources.Output.Ok {
-                get throws {
-                    switch self {
-                    case let .ok(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "ok",
-                            response: self
-                        )
-                    }
-                }
-            }
-            public struct UnprocessableContent: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/notams/sources/POST/responses/422/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/words/notams/sources/POST/responses/422/content/application\/json`.
-                    case json(Components.Schemas.HTTPValidationError)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.HTTPValidationError {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.NotamSources.Output.UnprocessableContent.Body
-                /// Creates a new `UnprocessableContent`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.NotamSources.Output.UnprocessableContent.Body) {
-                    self.body = body
-                }
-            }
-            /// Validation Error
-            ///
-            /// - Remark: Generated from `#/paths//api/words/notams/sources/post(notam_sources)/responses/422`.
-            ///
-            /// HTTP response code: `422 unprocessableContent`.
-            case unprocessableContent(Operations.NotamSources.Output.UnprocessableContent)
-            /// The associated value of the enum case if `self` is `.unprocessableContent`.
-            ///
-            /// - Throws: An error if `self` is not `.unprocessableContent`.
-            /// - SeeAlso: `.unprocessableContent`.
-            public var unprocessableContent: Operations.NotamSources.Output.UnprocessableContent {
-                get throws {
-                    switch self {
-                    case let .unprocessableContent(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "unprocessableContent",
-                            response: self
-                        )
-                    }
-                }
-            }
-            /// Undocumented response.
-            ///
-            /// A response with a code that is not documented in the OpenAPI document.
-            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
-        }
-        @frozen public enum AcceptableContentType: AcceptableProtocol {
-            case json
-            case other(Swift.String)
-            public init?(rawValue: Swift.String) {
-                switch rawValue.lowercased() {
-                case "application/json":
-                    self = .json
-                default:
-                    self = .other(rawValue)
-                }
-            }
-            public var rawValue: Swift.String {
-                switch self {
-                case let .other(string):
-                    return string
-                case .json:
-                    return "application/json"
-                }
-            }
-            public static var allCases: [Self] {
-                [
-                    .json
-                ]
-            }
-        }
-    }
-    /// Risk Sources
-    ///
-    /// The Go / No-Go as sources (POST /api/go-no-go's line, each
-    /// finding's line, the risk assessment's level and every factor it
-    /// counted) and the pilot's own record as the client sends it.
-    ///
-    /// - Remark: HTTP `POST /api/words/risk/sources`.
-    /// - Remark: Generated from `#/paths//api/words/risk/sources/post(risk_sources)`.
-    public enum RiskSources {
-        public static let id: Swift.String = "risk_sources"
-        public struct Input: Sendable, Hashable {
-            /// - Remark: Generated from `#/paths/api/words/risk/sources/POST/header`.
-            public struct Headers: Sendable, Hashable {
-                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RiskSources.AcceptableContentType>]
-                /// Creates a new `Headers`.
-                ///
-                /// - Parameters:
-                ///   - accept:
-                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RiskSources.AcceptableContentType>] = .defaultValues()) {
-                    self.accept = accept
-                }
-            }
-            public var headers: Operations.RiskSources.Input.Headers
-            /// - Remark: Generated from `#/paths/api/words/risk/sources/POST/requestBody`.
-            @frozen public enum Body: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/risk/sources/POST/requestBody/content/application\/json`.
-                case json(Components.Schemas.RiskAsk)
-            }
-            public var body: Operations.RiskSources.Input.Body
-            /// Creates a new `Input`.
-            ///
-            /// - Parameters:
-            ///   - headers:
-            ///   - body:
-            public init(
-                headers: Operations.RiskSources.Input.Headers = .init(),
-                body: Operations.RiskSources.Input.Body
-            ) {
-                self.headers = headers
-                self.body = body
-            }
-        }
-        @frozen public enum Output: Sendable, Hashable {
-            public struct Ok: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/risk/sources/POST/responses/200/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/words/risk/sources/POST/responses/200/content/application\/json`.
-                    case json(Components.Schemas.WordsSources)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.WordsSources {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.RiskSources.Output.Ok.Body
-                /// Creates a new `Ok`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.RiskSources.Output.Ok.Body) {
-                    self.body = body
-                }
-            }
-            /// Successful Response
-            ///
-            /// - Remark: Generated from `#/paths//api/words/risk/sources/post(risk_sources)/responses/200`.
-            ///
-            /// HTTP response code: `200 ok`.
-            case ok(Operations.RiskSources.Output.Ok)
-            /// The associated value of the enum case if `self` is `.ok`.
-            ///
-            /// - Throws: An error if `self` is not `.ok`.
-            /// - SeeAlso: `.ok`.
-            public var ok: Operations.RiskSources.Output.Ok {
-                get throws {
-                    switch self {
-                    case let .ok(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "ok",
-                            response: self
-                        )
-                    }
-                }
-            }
-            public struct UnprocessableContent: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/risk/sources/POST/responses/422/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/words/risk/sources/POST/responses/422/content/application\/json`.
-                    case json(Components.Schemas.HTTPValidationError)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.HTTPValidationError {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.RiskSources.Output.UnprocessableContent.Body
-                /// Creates a new `UnprocessableContent`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.RiskSources.Output.UnprocessableContent.Body) {
-                    self.body = body
-                }
-            }
-            /// Validation Error
-            ///
-            /// - Remark: Generated from `#/paths//api/words/risk/sources/post(risk_sources)/responses/422`.
-            ///
-            /// HTTP response code: `422 unprocessableContent`.
-            case unprocessableContent(Operations.RiskSources.Output.UnprocessableContent)
-            /// The associated value of the enum case if `self` is `.unprocessableContent`.
-            ///
-            /// - Throws: An error if `self` is not `.unprocessableContent`.
-            /// - SeeAlso: `.unprocessableContent`.
-            public var unprocessableContent: Operations.RiskSources.Output.UnprocessableContent {
-                get throws {
-                    switch self {
-                    case let .unprocessableContent(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "unprocessableContent",
-                            response: self
-                        )
-                    }
-                }
-            }
-            /// Undocumented response.
-            ///
-            /// A response with a code that is not documented in the OpenAPI document.
-            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
-        }
-        @frozen public enum AcceptableContentType: AcceptableProtocol {
-            case json
-            case other(Swift.String)
-            public init?(rawValue: Swift.String) {
-                switch rawValue.lowercased() {
-                case "application/json":
-                    self = .json
-                default:
-                    self = .other(rawValue)
-                }
-            }
-            public var rawValue: Swift.String {
-                switch self {
-                case let .other(string):
-                    return string
-                case .json:
-                    return "application/json"
-                }
-            }
-            public static var allCases: [Self] {
-                [
-                    .json
-                ]
-            }
-        }
-    }
-    /// Weather Sources
-    ///
-    /// The briefing of a flight as sources (GET /api/briefing, asked here
-    /// with the same parameters: its METARs, its TAF stations at the flight's
-    /// time there, its hazards, G-AIRMETs, pilot reports and TFRs, the fields
-    /// below VFR and its own "VFR flight not recommended"), the flight first.
-    /// A briefing that cannot be had fails as it does there (a 502).
-    ///
-    /// - Remark: HTTP `POST /api/words/weather/sources`.
-    /// - Remark: Generated from `#/paths//api/words/weather/sources/post(weather_sources)`.
-    public enum WeatherSources {
-        public static let id: Swift.String = "weather_sources"
-        public struct Input: Sendable, Hashable {
-            /// - Remark: Generated from `#/paths/api/words/weather/sources/POST/header`.
-            public struct Headers: Sendable, Hashable {
-                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.WeatherSources.AcceptableContentType>]
-                /// Creates a new `Headers`.
-                ///
-                /// - Parameters:
-                ///   - accept:
-                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.WeatherSources.AcceptableContentType>] = .defaultValues()) {
-                    self.accept = accept
-                }
-            }
-            public var headers: Operations.WeatherSources.Input.Headers
-            /// - Remark: Generated from `#/paths/api/words/weather/sources/POST/requestBody`.
-            @frozen public enum Body: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/weather/sources/POST/requestBody/content/application\/json`.
-                case json(Components.Schemas.WeatherAsk)
-            }
-            public var body: Operations.WeatherSources.Input.Body
-            /// Creates a new `Input`.
-            ///
-            /// - Parameters:
-            ///   - headers:
-            ///   - body:
-            public init(
-                headers: Operations.WeatherSources.Input.Headers = .init(),
-                body: Operations.WeatherSources.Input.Body
-            ) {
-                self.headers = headers
-                self.body = body
-            }
-        }
-        @frozen public enum Output: Sendable, Hashable {
-            public struct Ok: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/weather/sources/POST/responses/200/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/words/weather/sources/POST/responses/200/content/application\/json`.
-                    case json(Components.Schemas.WordsSources)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.WordsSources {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.WeatherSources.Output.Ok.Body
-                /// Creates a new `Ok`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.WeatherSources.Output.Ok.Body) {
-                    self.body = body
-                }
-            }
-            /// Successful Response
-            ///
-            /// - Remark: Generated from `#/paths//api/words/weather/sources/post(weather_sources)/responses/200`.
-            ///
-            /// HTTP response code: `200 ok`.
-            case ok(Operations.WeatherSources.Output.Ok)
-            /// The associated value of the enum case if `self` is `.ok`.
-            ///
-            /// - Throws: An error if `self` is not `.ok`.
-            /// - SeeAlso: `.ok`.
-            public var ok: Operations.WeatherSources.Output.Ok {
-                get throws {
-                    switch self {
-                    case let .ok(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "ok",
-                            response: self
-                        )
-                    }
-                }
-            }
-            public struct UnprocessableContent: Sendable, Hashable {
-                /// - Remark: Generated from `#/paths/api/words/weather/sources/POST/responses/422/content`.
-                @frozen public enum Body: Sendable, Hashable {
-                    /// - Remark: Generated from `#/paths/api/words/weather/sources/POST/responses/422/content/application\/json`.
-                    case json(Components.Schemas.HTTPValidationError)
-                    /// The associated value of the enum case if `self` is `.json`.
-                    ///
-                    /// - Throws: An error if `self` is not `.json`.
-                    /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.HTTPValidationError {
-                        get throws {
-                            switch self {
-                            case let .json(body):
-                                return body
-                            }
-                        }
-                    }
-                }
-                /// Received HTTP response body
-                public var body: Operations.WeatherSources.Output.UnprocessableContent.Body
-                /// Creates a new `UnprocessableContent`.
-                ///
-                /// - Parameters:
-                ///   - body: Received HTTP response body
-                public init(body: Operations.WeatherSources.Output.UnprocessableContent.Body) {
-                    self.body = body
-                }
-            }
-            /// Validation Error
-            ///
-            /// - Remark: Generated from `#/paths//api/words/weather/sources/post(weather_sources)/responses/422`.
-            ///
-            /// HTTP response code: `422 unprocessableContent`.
-            case unprocessableContent(Operations.WeatherSources.Output.UnprocessableContent)
-            /// The associated value of the enum case if `self` is `.unprocessableContent`.
-            ///
-            /// - Throws: An error if `self` is not `.unprocessableContent`.
-            /// - SeeAlso: `.unprocessableContent`.
-            public var unprocessableContent: Operations.WeatherSources.Output.UnprocessableContent {
                 get throws {
                     switch self {
                     case let .unprocessableContent(response):

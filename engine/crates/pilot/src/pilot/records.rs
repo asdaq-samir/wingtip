@@ -11,6 +11,7 @@
 //! them.
 
 use super::currency::{day, end_of_month_after, iso_of_days};
+use super::paperwork;
 use crate::json::{self, Value};
 use crate::time::days_from_civil;
 
@@ -214,9 +215,11 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         // "vor_check": {"limit_deg", "within", "until"}}`, null where it was
         // not given.
         "inspections_due" => {
+            let hundred = v.get("hundred_hour_at_hours").and_then(Value::as_f64).map(|h| h + HUNDRED_HOUR_H);
             let mut out = String::from("{\"hundred_hour_due_at_hours\":");
-            json::opt_number(&mut out, v.get("hundred_hour_at_hours").and_then(Value::as_f64).map(|h| h + HUNDRED_HOUR_H));
+            json::opt_number(&mut out, hundred);
             out.push_str(",\"vor_check\":");
+            let mut vor_until = None;
             match v.get("vor_check") {
                 None | Some(Value::Null) => out.push_str("null"),
                 Some(c) => {
@@ -229,24 +232,47 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
                         .and_then(Value::as_f64)
                         .ok_or_else(|| format!("{name}: a VOR check's \"error_deg\" is not a number"))?;
                     let on = c.get("on").and_then(Value::as_str).ok_or_else(|| format!("{name}: a VOR check has no \"on\""))?;
+                    let within = error.abs() <= limit;
+                    let until = iso_of_days(days(name, on)? + VOR_CHECK_DAYS);
                     out.push_str("{\"limit_deg\":");
                     json::number(&mut out, limit);
-                    out.push_str(",\"within\":");
-                    out.push_str(if error.abs() <= limit { "true" } else { "false" });
-                    out.push_str(",\"until\":");
-                    json::string(&mut out, &iso_of_days(days(name, on)? + VOR_CHECK_DAYS));
+                    out.push_str(&format!(",\"within\":{within},\"until\":"));
+                    json::string(&mut out, &until);
                     out.push('}');
+                    vor_until = within.then_some(until);
                 }
             }
+            let mut until = Vec::new();
             for (key, months) in INSPECTIONS.iter() {
+                let last = v.get(&format!("{key}_on")).and_then(Value::as_str).map(|on| day(name, on)).transpose()?;
+                let good = last.map(|on| end_of_month_after(on, *months));
                 out.push(',');
                 json::string(&mut out, &format!("{key}_until"));
                 out.push(':');
-                match v.get(&format!("{key}_on")).and_then(Value::as_str) {
-                    Some(on) => json::string(&mut out, &end_of_month_after(day(name, on)?, *months)),
-                    None => out.push_str("null"),
-                }
+                json::opt_string(&mut out, good.as_deref());
+                until.push(good);
             }
+            let [annual, elt, static_check, transponder] = <[Option<String>; 4]>::try_from(until).unwrap_or_default();
+            let battery = v.get("elt_battery_due_on").and_then(Value::as_str).map(str::to_owned);
+            if let Some(d) = &battery {
+                day(name, d)?;
+            }
+            let due = paperwork::aircraft_due(
+                paperwork::AircraftDays {
+                    tail: v.get("tail_number").and_then(Value::as_str).unwrap_or("The airplane").to_owned(),
+                    for_hire: matches!(v.get("for_hire"), Some(Value::Bool(true))),
+                    annual_until: annual,
+                    hundred_hour_due_at: hundred,
+                    elt_until: elt,
+                    elt_battery_due_on: battery,
+                    static_until: static_check,
+                    transponder_until: transponder,
+                    vor_until,
+                },
+                paperwork::kept_of(name, v)?,
+            );
+            out.push_str(",\"due\":");
+            paperwork::write(&mut out, &due);
             out.push('}');
             Ok(out)
         }

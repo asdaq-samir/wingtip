@@ -6,6 +6,7 @@ import {
   ListOrdered,
   LocateFixed,
   Map as MapLayers,
+  MapPin,
   MapPinPlus,
   MoveUpRight,
   Navigation,
@@ -66,6 +67,8 @@ export const ICON = {
   holdHere: Repeat2,
   /** A field's phone. */
   call: Phone,
+  /** A place's address in Maps. */
+  address: MapPin,
   /** In the Favorites or out: an airport's, an airplane's. */
   favorite: Star,
   /** A field's weather: the airport card's Weather tile, its tab opened. */

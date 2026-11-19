@@ -1,17 +1,19 @@
 """The cruising altitude for a route: the data it is chosen from, read here
 and handed to the engine (wingtip_engine::altitude, #482 phase 3), which
 holds every rule -- the floor's clearances (14 CFR 91.119, 91.177), the
-band under Class B, the clouds (91.155) and the service ceiling, the
-cruising altitudes by course (91.159, 91.179(b)), the recommendation and
-the icing. This module reads the floors (wingtip.terrain, wingtip.ifr), the
-Class B shelves and transits (wingtip.airspace), special-use airspace
-(wingtip.sua), the variation and the weather, all at once, and asks.
+band under the clouds (91.155) and the service ceiling, the cruising
+altitudes by course (91.159, 91.179(b)), the recommendation and the icing.
+Class B is no ceiling: the route is planned through it with the clearance
+it takes (91.131(a)(1)). This module reads the floors (wingtip.terrain,
+wingtip.ifr), the airspace transits (wingtip.airspace), special-use
+airspace (wingtip.sua), the variation and the weather, all at once, and
+asks.
 
 Given the nav log's fixes, the band is worked out leg by leg
-(`segments`), so a route can step down under a Class B shelf and climb
-again past it rather than fly the whole way at the lowest altitude the
-lowest shelf allows -- wingtip.navlog.altitude_profiles turns those per-leg
-bands into the lowest, highest, fastest and economical plans.
+(`segments`), so a route can step over high ground or under low cloud
+leg by leg rather than fly the whole way at one altitude --
+wingtip.navlog.altitude_profiles turns those per-leg bands into the
+lowest, highest, fastest and economical plans.
 """
 
 import logging
@@ -75,9 +77,9 @@ def _service_ceiling_ft(aircraft_profile: dict | None, a: tuple, b: tuple, fcst_
     figure, a standard day's, where there are none: `temperatures` False
     (the forecast could not be read), or no station near. None with no
     airplane (`aircraft_profile` None): no ceiling of its own, the band
-    then the rules' and the airspace's (the engine's select_cruise_altitude)."""
+    then the rules' and the clouds' (the engine's select_cruise_altitude)."""
     # A pilot's own airplane whose record gives no ceiling has none: the
-    # band is then the rules' and the airspace's, as with no airplane.
+    # band is then the rules' and the clouds', as with no airplane.
     if aircraft_profile is None or aircraft_profile.get("service_ceiling_ft") is None:
         return None
     book_ft = float(aircraft_profile["service_ceiling_ft"])
@@ -101,7 +103,6 @@ def select_cruise_altitude(
     fcst_hr: str = "06",
     pending: set | None = None,
     window: tuple | None = None,
-    class_b_cleared: bool = False,
     rules: str = "vfr",
     airway: dict | None = None,
     paths: tuple = (),
@@ -133,9 +134,10 @@ def select_cruise_altitude(
     still running while this works (see _timed). `window`, (start, end)
     in unix seconds, is the flight from departure to past arrival that
     the go/no-go forecast is read over; now when not given.
-    `class_b_cleared`: the pilot will have a Class B clearance, so its
-    shelves are no ceiling -- the route is planned through it, and its
-    transits still say it takes a clearance.
+    Class B is no ceiling: a route is always planned through it with the
+    clearance it takes (14 CFR 91.131(a)(1); the owner, 2026-11-17), its
+    transits saying so, and the Routes offer the way round it
+    (wingtip.class_b_route).
 
     The freezing level no longer caps the band. Icing needs visible
     moisture as well as cold, so a hard ceiling at the freezing level
@@ -149,9 +151,9 @@ def select_cruise_altitude(
 
     The clouds do cap it: each leg keeps 14 CFR 91.155's distance below
     the lowest ceiling the TAFs near it forecast for the flight
-    (highest_under_clouds_ft), where the forecast ceiling was only
+    (the engine's clouds::highest_under_ft), where the forecast ceiling was only
     reported before. The whole route's band keeps under the lowest of
-    them, as it does under the lowest shelf. Where the clouds leave a
+    them. Where the clouds leave a
     leg no altitude at all, the leg keeps its band without them and
     says so (`cloud_clearance_kept` False): a forecast is a reason to
     warn, and a nav log refused for it could not be looked at for a
@@ -171,10 +173,10 @@ def select_cruise_altitude(
         inner = [along_track_distance_nm(lat, lon, route_start, route_end) for lat, lon in fixes[1:-1]]
         breaks_nm = [0.0] + [min(max(b, 0.0), total_nm) for b in inner] + [total_nm]
 
-    # ensure_class_airspace_shapefile runs first, on its own -- both
-    # airspace calls below need its result, so there's nothing to gain
-    # running it alongside them. Everything after it (terrain, the two
-    # airspace queries, and three separate aviationweather.gov calls)
+    # ensure_class_airspace_shapefile runs first, on its own -- the
+    # transits below need its result, so there's nothing to gain running
+    # it alongside them. Everything after it (terrain, the transits, the
+    # special-use airspace and three separate aviationweather.gov calls)
     # is independent of the others, and summing three external round
     # trips instead of overlapping them was the real reason this step
     # felt slow -- the same issue, and the same fix, as /api/briefing.
@@ -204,21 +206,6 @@ def select_cruise_altitude(
                 breaks_nm,
                 faa_cache_dir=faa_cache_dir,
                 fixes=fixes,
-            )
-        )
-        # The legs flown, or the direct line as the one leg: one path
-        # for the Class B rule, where two functions of different shapes
-        # used to be chosen between and the answer coerced back. Under
-        # IFR no shelf is a ceiling: the clearance takes the flight in.
-        airspace_future = (
-            None
-            if class_b_cleared or under_ifr
-            else pool.submit(
-                timed("airspace.airspace_ceiling_profile", airspace.airspace_ceiling_profile),
-                route_start,
-                route_end,
-                fixes or [route_start, route_end],
-                shp_path,
             )
         )
         # Class C/D along the way are not a ceiling -- two-way comms is
@@ -261,7 +248,6 @@ def select_cruise_altitude(
                 pts[0], pts[-1], [0.0, distance_nm(*pts[0], *pts[-1])], faa_cache_dir=faa_cache_dir, fixes=pts
             ),
         )
-        airspace_ceilings_ft = airspace_future.result() if airspace_future else [None] * (len(fixes) - 1 if fixes else 1)
         transits = transits_future.result()
         # The hemispheric rule is written for magnetic course, and the
         # variation is the World Magnetic Model's (wingtip.magnetic), worked
@@ -312,10 +298,8 @@ def select_cruise_altitude(
         fixes=[list(f) for f in fixes] if fixes else None,
         breaks_nm=breaks_nm,
         rules="ifr" if under_ifr else "vfr",
-        class_b_cleared=class_b_cleared,
         floors=floors,
         airway=airway if on_airway else None,
-        airspace_ceilings_ft=airspace_ceilings_ft,
         service_ceilings_ft=service_ceilings_ft,
         variation_deg=variation_deg,
         leg_variations_deg=leg_variations_deg,

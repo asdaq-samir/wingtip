@@ -30,11 +30,10 @@ weather close in; the credits say "Not for navigation".
 
 from __future__ import annotations
 
-import calendar
 import time
 from typing import Literal
 
-from . import weather_store
+from . import utc, weather_store
 
 Kind = Literal["radar", "ir", "visible", "both"]
 
@@ -73,28 +72,20 @@ CREDIT = (
 )
 
 
-def _epoch(iso: str) -> float:
-    return float(calendar.timegm(time.strptime(iso[:19], "%Y-%m-%dT%H:%M:%S")))
-
-
-def _iso(t: float) -> str:
-    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t))
-
-
 def newest_radar() -> float | None:
     """When the newest radar mosaic was made, on its five-minute step."""
     record = weather_store.read("radar")
     valid = (record.data or {}).get("valid") if record else None
     if not valid:
         return None
-    return _epoch(valid) // RADAR_STEP_S * RADAR_STEP_S
+    return utc.epoch(valid) // RADAR_STEP_S * RADAR_STEP_S
 
 
 def _satellite_times(picture: str) -> list[float]:
     """The picture's times nowCOAST holds, oldest first."""
     record = weather_store.read("satellite")
     times = (record.data or {}).get(picture, []) if record else []
-    return sorted(_epoch(t) for t in times)
+    return sorted(utc.epoch(t) for t in times)
 
 
 def _spaced(times: list[float], step_s: float) -> list[float]:
@@ -114,7 +105,7 @@ def radar_tiles(at: float) -> str:
 
 
 def satellite_tiles(picture: str, at: float) -> str:
-    return SATELLITE_TILES.replace("{layer}", SATELLITE_LAYERS[picture]).replace("{time}", _iso(at))
+    return SATELLITE_TILES.replace("{layer}", SATELLITE_LAYERS[picture]).replace("{time}", utc.iso(at))
 
 
 def frames(kind: Kind) -> dict:
@@ -150,7 +141,7 @@ def frames(kind: Kind) -> dict:
     for valid, radar, sat in stamps:
         out.append(
             {
-                "valid": _iso(valid),
+                "valid": utc.iso(valid),
                 "radar_tiles": None if radar is None else radar_tiles(radar),
                 "satellite_tiles": None if sat is None else satellite_tiles("visible" if kind == "visible" else "ir", sat),
             }

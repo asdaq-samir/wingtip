@@ -13,7 +13,7 @@
  */
 import type { components } from "./schema";
 import type { components as GatewayComponents } from "./gateway-schema";
-import type { OwnFigureValues } from "../airplane/figures";
+import type { OwnFigureValues } from "../airplane/figureFields";
 
 type Schemas = components["schemas"];
 type Gateway = GatewayComponents["schemas"];
@@ -287,10 +287,6 @@ export type SignInCapabilities = Gateway["Capabilities"];
  *  COMPED, until when, and whether the free month is still theirs to start.
  *  For showing: the server checks it again on every paid call. */
 export type Subscription = Gateway["SubscriptionDto"];
-/** The iOS app's Apple sign-in, done: where to go next. */
-export type AppleSignedIn = Gateway["SignedIn"];
-/** A TV's code to be signed in with from a phone (DeviceSignInController). */
-export type DeviceCode = Gateway["DeviceCode"];
 
 /** A pilot's own airplane, from `/api/aircraft`. `usableFuelGal` is
  *  null when the owner has not said, and then the nav log makes no
@@ -332,6 +328,14 @@ export type FlightShare = Gateway["FlightShareDto"];
 export type SharedFlight = Gateway["SharedFlightDto"];
 /** A flight's flown track as saved to the account (lib/track). */
 export type SavedTrack = Gateway["TrackDto"];
+/** The watch on a saved flight (`/api/flights/{id}/watch`, FlightWatch):
+ *  the gateway checks its weather and NOTAMs again until it leaves and
+ *  says what changed, each line with the reports it rests on. `checkedAt`
+ *  is null until its first check. */
+export type FlightWatch = Gateway["FlightWatchDto"];
+/** A report a line rests on, as it was sent: shown raw, never
+ *  reformatted (SourceChips). */
+export type BriefingSource = Gateway["BriefingSourceDto"];
 /** POST /api/flights body -- files (replacing any previous one) a nav
  *  log for a route this pilot planned. */
 export type SaveFlightRequest = Gateway["SaveFlightRequest"];

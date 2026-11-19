@@ -1,0 +1,2745 @@
+{
+  "_note": "gonogo_brief and gonogo_glance_lines (engine/crates/brief/src/gonogo/brief.rs, glance.rs): each case's input and its answer. The answers were the web's own code's (lib/verdict's assembly in useFlightBriefing, features/brief/glance) when the rules moved into the engine on 2026-11-17, but for the fuel's and the weight and balance's why, corrected to 14 CFR 91.151(a)'s and 91.103's words; engine/facade/tests/gonogo_brief.rs and the web's glance.test.ts read them.",
+  "brief": [
+    {
+      "name": "A quiet VFR day with an airplane: seven rows, nothing found",
+      "input": {
+        "verdict": {
+          "weather": {
+            "pending": false,
+            "failed": null,
+            "vfr_not_recommended": [],
+            "under_minimums": [],
+            "icing": null,
+            "hazards": [],
+            "unchecked": [],
+            "worst": "3,500 ft · 6 sm",
+            "terminal_alerts": [],
+            "flow_programs": [],
+            "ifr": false
+          },
+          "airspace": {
+            "pending": false,
+            "unchecked": false,
+            "in_force": [],
+            "near": 0,
+            "special_use": []
+          },
+          "altitude": {
+            "pending": false,
+            "problem": null,
+            "cautions": [],
+            "flown": "FL055 · Lowest"
+          },
+          "fuel": {
+            "pending": false,
+            "margin_gal": 12.4,
+            "required_gal": 27.6,
+            "reserve_min": 30,
+            "ifr": false
+          },
+          "runways": {
+            "pending": false,
+            "worked": true,
+            "short": [],
+            "crosswind": [],
+            "beyond": [],
+            "unchecked": []
+          },
+          "balance": {
+            "pending": false,
+            "worked": true,
+            "problems": [],
+            "takeoff": "2,407 lb at 41.2 in"
+          },
+          "risk": {
+            "level": "low",
+            "line": "Low · 2 points"
+          }
+        },
+        "alternate": null,
+        "fields": [
+          {
+            "ident": "C81",
+            "role": "departure",
+            "private": false,
+            "military": null,
+            "phone": null,
+            "status": "O"
+          },
+          {
+            "ident": "KDLH",
+            "role": "destination",
+            "private": false,
+            "military": null,
+            "phone": null,
+            "status": "O"
+          }
+        ],
+        "airplane": true
+      },
+      "answer": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "tab": "enroute",
+            "section": "Adverse Conditions",
+            "finding": "ok",
+            "detail": "No hazards; at worst 3,500 ft · 6 sm"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "tab": "preflight",
+            "section": "TFRs & Special Use",
+            "finding": "ok",
+            "detail": "None on the route"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "tab": "enroute",
+            "section": "Cruise Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "tab": "preflight",
+            "section": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "tab": "depart",
+            "section": "Takeoff",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "tab": "preflight",
+            "section": "Weight & Balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "tab": "preflight",
+            "section": "Risk Assessment",
+            "finding": "ok",
+            "detail": "Low · 2 points"
+          }
+        ],
+        "line": {
+          "finding": "ok",
+          "words": "Nothing found against this flight"
+        }
+      }
+    },
+    {
+      "name": "No airplane picked: the fuel, runways and weight and balance are left out",
+      "input": {
+        "verdict": {
+          "weather": {
+            "pending": false,
+            "failed": null,
+            "vfr_not_recommended": [],
+            "under_minimums": [],
+            "icing": null,
+            "hazards": [],
+            "unchecked": [],
+            "worst": "3,500 ft · 6 sm",
+            "terminal_alerts": [],
+            "flow_programs": [],
+            "ifr": false
+          },
+          "airspace": {
+            "pending": false,
+            "unchecked": false,
+            "in_force": [],
+            "near": 0,
+            "special_use": []
+          },
+          "altitude": {
+            "pending": false,
+            "problem": null,
+            "cautions": [],
+            "flown": "FL055 · Lowest"
+          },
+          "fuel": {
+            "pending": false,
+            "margin_gal": null,
+            "required_gal": null,
+            "reserve_min": null,
+            "ifr": false
+          },
+          "runways": {
+            "pending": false,
+            "worked": true,
+            "short": [],
+            "crosswind": [],
+            "beyond": [],
+            "unchecked": []
+          },
+          "balance": {
+            "pending": false,
+            "worked": true,
+            "problems": [],
+            "takeoff": "2,407 lb at 41.2 in"
+          },
+          "risk": {
+            "level": "low",
+            "line": "Low · 2 points"
+          }
+        },
+        "alternate": null,
+        "fields": null,
+        "airplane": false
+      },
+      "answer": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "tab": "enroute",
+            "section": "Adverse Conditions",
+            "finding": "ok",
+            "detail": "No hazards; at worst 3,500 ft · 6 sm"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "tab": "preflight",
+            "section": "TFRs & Special Use",
+            "finding": "ok",
+            "detail": "None on the route"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "tab": "enroute",
+            "section": "Cruise Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "tab": "preflight",
+            "section": "Risk Assessment",
+            "finding": "ok",
+            "detail": "Low · 2 points"
+          }
+        ],
+        "line": {
+          "finding": "ok",
+          "words": "Nothing found against this flight"
+        }
+      }
+    },
+    {
+      "name": "IFR, the alternate filed under its minimums: a stop in the weather's place, opening Arrive",
+      "input": {
+        "verdict": {
+          "weather": {
+            "pending": false,
+            "failed": null,
+            "vfr_not_recommended": [],
+            "under_minimums": [],
+            "icing": null,
+            "hazards": [
+              "AIRMET Sierra"
+            ],
+            "unchecked": [],
+            "worst": "3,500 ft · 6 sm",
+            "terminal_alerts": [],
+            "flow_programs": [],
+            "ifr": true
+          },
+          "airspace": {
+            "pending": false,
+            "unchecked": false,
+            "in_force": [],
+            "near": 0,
+            "special_use": []
+          },
+          "altitude": {
+            "pending": false,
+            "problem": null,
+            "cautions": [],
+            "flown": "FL055 · Lowest"
+          },
+          "fuel": {
+            "pending": false,
+            "margin_gal": 12.4,
+            "required_gal": 27.6,
+            "reserve_min": 45,
+            "ifr": true
+          },
+          "runways": {
+            "pending": false,
+            "worked": true,
+            "short": [],
+            "crosswind": [],
+            "beyond": [],
+            "unchecked": []
+          },
+          "balance": {
+            "pending": false,
+            "worked": true,
+            "problems": [],
+            "takeoff": "2,407 lb at 41.2 in"
+          },
+          "risk": {
+            "level": "low",
+            "line": "Low · 2 points"
+          }
+        },
+        "alternate": {
+          "destination": {
+            "required": true
+          },
+          "alternate": {
+            "ident": "KMSP",
+            "good": false,
+            "reasons": []
+          }
+        },
+        "fields": null,
+        "airplane": true
+      },
+      "answer": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "tab": "arrive",
+            "section": "Alternate",
+            "finding": "stop",
+            "detail": "KMSP is under its alternate minimums at the ETA there"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "tab": "preflight",
+            "section": "TFRs & Special Use",
+            "finding": "ok",
+            "detail": "None on the route"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "tab": "enroute",
+            "section": "Cruise Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "tab": "preflight",
+            "section": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 45 min reserve; 12.4 gal spare"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "tab": "depart",
+            "section": "Takeoff",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "tab": "preflight",
+            "section": "Weight & Balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "tab": "preflight",
+            "section": "Risk Assessment",
+            "finding": "ok",
+            "detail": "Low · 2 points"
+          }
+        ],
+        "line": {
+          "finding": "stop",
+          "words": "No-go as planned: Weather"
+        }
+      }
+    },
+    {
+      "name": "IFR, an alternate required and none filed: a caution where the weather says nothing worse",
+      "input": {
+        "verdict": {
+          "weather": {
+            "pending": false,
+            "failed": null,
+            "vfr_not_recommended": [],
+            "under_minimums": [],
+            "icing": null,
+            "hazards": [],
+            "unchecked": [],
+            "worst": "3,500 ft · 6 sm",
+            "terminal_alerts": [],
+            "flow_programs": [],
+            "ifr": true
+          },
+          "airspace": {
+            "pending": false,
+            "unchecked": false,
+            "in_force": [],
+            "near": 0,
+            "special_use": []
+          },
+          "altitude": {
+            "pending": false,
+            "problem": null,
+            "cautions": [],
+            "flown": "FL055 · Lowest"
+          },
+          "fuel": {
+            "pending": false,
+            "margin_gal": 12.4,
+            "required_gal": 27.6,
+            "reserve_min": 45,
+            "ifr": true
+          },
+          "runways": {
+            "pending": false,
+            "worked": true,
+            "short": [],
+            "crosswind": [],
+            "beyond": [],
+            "unchecked": []
+          },
+          "balance": {
+            "pending": false,
+            "worked": true,
+            "problems": [],
+            "takeoff": "2,407 lb at 41.2 in"
+          },
+          "risk": {
+            "level": "low",
+            "line": "Low · 2 points"
+          }
+        },
+        "alternate": {
+          "destination": {
+            "required": true
+          },
+          "alternate": null
+        },
+        "fields": null,
+        "airplane": true
+      },
+      "answer": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "tab": "arrive",
+            "section": "Alternate",
+            "finding": "caution",
+            "detail": "An alternate is required (14 CFR 91.169): file one in Weather"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "tab": "preflight",
+            "section": "TFRs & Special Use",
+            "finding": "ok",
+            "detail": "None on the route"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "tab": "enroute",
+            "section": "Cruise Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "tab": "preflight",
+            "section": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 45 min reserve; 12.4 gal spare"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "tab": "depart",
+            "section": "Takeoff",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "tab": "preflight",
+            "section": "Weight & Balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "tab": "preflight",
+            "section": "Risk Assessment",
+            "finding": "ok",
+            "detail": "Low · 2 points"
+          }
+        ],
+        "line": {
+          "finding": "caution",
+          "words": "Look again at Weather"
+        }
+      }
+    },
+    {
+      "name": "IFR, the alternate's TAF not reaching the ETA: the pilot's to check",
+      "input": {
+        "verdict": {
+          "weather": {
+            "pending": false,
+            "failed": null,
+            "vfr_not_recommended": [],
+            "under_minimums": [],
+            "icing": null,
+            "hazards": [],
+            "unchecked": [],
+            "worst": "3,500 ft · 6 sm",
+            "terminal_alerts": [],
+            "flow_programs": [],
+            "ifr": true
+          },
+          "airspace": {
+            "pending": false,
+            "unchecked": false,
+            "in_force": [],
+            "near": 0,
+            "special_use": []
+          },
+          "altitude": {
+            "pending": false,
+            "problem": null,
+            "cautions": [],
+            "flown": "FL055 · Lowest"
+          },
+          "fuel": {
+            "pending": false,
+            "margin_gal": 12.4,
+            "required_gal": 27.6,
+            "reserve_min": 45,
+            "ifr": true
+          },
+          "runways": {
+            "pending": false,
+            "worked": true,
+            "short": [],
+            "crosswind": [],
+            "beyond": [],
+            "unchecked": []
+          },
+          "balance": {
+            "pending": false,
+            "worked": true,
+            "problems": [],
+            "takeoff": "2,407 lb at 41.2 in"
+          },
+          "risk": {
+            "level": "low",
+            "line": "Low · 2 points"
+          }
+        },
+        "alternate": {
+          "destination": {
+            "required": true
+          },
+          "alternate": {
+            "ident": "KMSP",
+            "good": null,
+            "reasons": [
+              "Its TAF does not reach the ETA"
+            ]
+          }
+        },
+        "fields": null,
+        "airplane": true
+      },
+      "answer": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "tab": "arrive",
+            "section": "Alternate",
+            "finding": "caution",
+            "detail": "KMSP: Its TAF does not reach the ETA"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "tab": "preflight",
+            "section": "TFRs & Special Use",
+            "finding": "ok",
+            "detail": "None on the route"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "tab": "enroute",
+            "section": "Cruise Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "tab": "preflight",
+            "section": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 45 min reserve; 12.4 gal spare"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "tab": "depart",
+            "section": "Takeoff",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "tab": "preflight",
+            "section": "Weight & Balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "tab": "preflight",
+            "section": "Risk Assessment",
+            "finding": "ok",
+            "detail": "Low · 2 points"
+          }
+        ],
+        "line": {
+          "finding": "caution",
+          "words": "Look again at Weather"
+        }
+      }
+    },
+    {
+      "name": "VFR: an alternate's answer sent anyway says nothing (14 CFR 91.169 is IFR's)",
+      "input": {
+        "verdict": {
+          "weather": {
+            "pending": false,
+            "failed": null,
+            "vfr_not_recommended": [],
+            "under_minimums": [],
+            "icing": null,
+            "hazards": [],
+            "unchecked": [],
+            "worst": "3,500 ft · 6 sm",
+            "terminal_alerts": [],
+            "flow_programs": [],
+            "ifr": false
+          },
+          "airspace": {
+            "pending": false,
+            "unchecked": false,
+            "in_force": [],
+            "near": 0,
+            "special_use": []
+          },
+          "altitude": {
+            "pending": false,
+            "problem": null,
+            "cautions": [],
+            "flown": "FL055 · Lowest"
+          },
+          "fuel": {
+            "pending": false,
+            "margin_gal": 12.4,
+            "required_gal": 27.6,
+            "reserve_min": 30,
+            "ifr": false
+          },
+          "runways": {
+            "pending": false,
+            "worked": true,
+            "short": [],
+            "crosswind": [],
+            "beyond": [],
+            "unchecked": []
+          },
+          "balance": {
+            "pending": false,
+            "worked": true,
+            "problems": [],
+            "takeoff": "2,407 lb at 41.2 in"
+          },
+          "risk": {
+            "level": "low",
+            "line": "Low · 2 points"
+          }
+        },
+        "alternate": {
+          "destination": {
+            "required": true
+          },
+          "alternate": {
+            "ident": "KMSP",
+            "good": false,
+            "reasons": []
+          }
+        },
+        "fields": null,
+        "airplane": true
+      },
+      "answer": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "tab": "enroute",
+            "section": "Adverse Conditions",
+            "finding": "ok",
+            "detail": "No hazards; at worst 3,500 ft · 6 sm"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "tab": "preflight",
+            "section": "TFRs & Special Use",
+            "finding": "ok",
+            "detail": "None on the route"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "tab": "enroute",
+            "section": "Cruise Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "tab": "preflight",
+            "section": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "tab": "depart",
+            "section": "Takeoff",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "tab": "preflight",
+            "section": "Weight & Balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "tab": "preflight",
+            "section": "Risk Assessment",
+            "finding": "ok",
+            "detail": "Low · 2 points"
+          }
+        ],
+        "line": {
+          "finding": "ok",
+          "words": "Nothing found against this flight"
+        }
+      }
+    },
+    {
+      "name": "A private destination and a closed stop: the fields row after the seven, a caution",
+      "input": {
+        "verdict": {
+          "weather": {
+            "pending": false,
+            "failed": null,
+            "vfr_not_recommended": [],
+            "under_minimums": [],
+            "icing": null,
+            "hazards": [],
+            "unchecked": [],
+            "worst": "3,500 ft · 6 sm",
+            "terminal_alerts": [],
+            "flow_programs": [],
+            "ifr": false
+          },
+          "airspace": {
+            "pending": false,
+            "unchecked": false,
+            "in_force": [],
+            "near": 0,
+            "special_use": []
+          },
+          "altitude": {
+            "pending": false,
+            "problem": null,
+            "cautions": [],
+            "flown": "FL055 · Lowest"
+          },
+          "fuel": {
+            "pending": false,
+            "margin_gal": 12.4,
+            "required_gal": 27.6,
+            "reserve_min": 30,
+            "ifr": false
+          },
+          "runways": {
+            "pending": false,
+            "worked": true,
+            "short": [],
+            "crosswind": [],
+            "beyond": [],
+            "unchecked": []
+          },
+          "balance": {
+            "pending": false,
+            "worked": true,
+            "problems": [],
+            "takeoff": "2,407 lb at 41.2 in"
+          },
+          "risk": {
+            "level": "low",
+            "line": "Low · 2 points"
+          }
+        },
+        "alternate": null,
+        "fields": [
+          {
+            "ident": "C81",
+            "role": "departure",
+            "private": false,
+            "military": null,
+            "phone": null,
+            "status": "O"
+          },
+          {
+            "ident": "00MO",
+            "role": "stop",
+            "private": true,
+            "military": null,
+            "phone": null,
+            "status": "CI"
+          },
+          {
+            "ident": "IL11",
+            "role": "destination",
+            "private": true,
+            "military": null,
+            "phone": "847-323-8911",
+            "status": "O"
+          }
+        ],
+        "airplane": true
+      },
+      "answer": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "tab": "enroute",
+            "section": "Adverse Conditions",
+            "finding": "ok",
+            "detail": "No hazards; at worst 3,500 ft · 6 sm"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "tab": "preflight",
+            "section": "TFRs & Special Use",
+            "finding": "ok",
+            "detail": "None on the route"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "tab": "enroute",
+            "section": "Cruise Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "tab": "preflight",
+            "section": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "tab": "depart",
+            "section": "Takeoff",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "tab": "preflight",
+            "section": "Weight & Balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "tab": "preflight",
+            "section": "Risk Assessment",
+            "finding": "ok",
+            "detail": "Low · 2 points"
+          },
+          {
+            "key": "fields",
+            "label": "Fields",
+            "tab": "arrive",
+            "section": null,
+            "finding": "caution",
+            "detail": "00MO is closed indefinitely (NASR): it cannot be planned as a landing field; IL11 is private: land only with the owner's permission (call 847-323-8911)"
+          }
+        ],
+        "line": {
+          "finding": "caution",
+          "words": "Look again at Fields"
+        }
+      }
+    },
+    {
+      "name": "The briefing still coming: pending, and the risk not yet worked out",
+      "input": {
+        "verdict": {
+          "weather": {
+            "pending": true,
+            "failed": null,
+            "vfr_not_recommended": [],
+            "under_minimums": [],
+            "icing": null,
+            "hazards": [],
+            "unchecked": [],
+            "worst": "3,500 ft · 6 sm",
+            "terminal_alerts": [],
+            "flow_programs": [],
+            "ifr": false
+          },
+          "airspace": {
+            "pending": true,
+            "unchecked": false,
+            "in_force": [],
+            "near": 0,
+            "special_use": []
+          },
+          "altitude": {
+            "pending": false,
+            "problem": null,
+            "cautions": [],
+            "flown": "FL055 · Lowest"
+          },
+          "fuel": {
+            "pending": false,
+            "margin_gal": 12.4,
+            "required_gal": 27.6,
+            "reserve_min": 30,
+            "ifr": false
+          },
+          "runways": {
+            "pending": false,
+            "worked": true,
+            "short": [],
+            "crosswind": [],
+            "beyond": [],
+            "unchecked": []
+          },
+          "balance": {
+            "pending": false,
+            "worked": true,
+            "problems": [],
+            "takeoff": "2,407 lb at 41.2 in"
+          },
+          "risk": null
+        },
+        "alternate": null,
+        "fields": null,
+        "airplane": true
+      },
+      "answer": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "tab": "enroute",
+            "section": "Adverse Conditions",
+            "finding": "pending",
+            "detail": "Fetching METARs, TAFs and hazards…"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "tab": "preflight",
+            "section": "TFRs & Special Use",
+            "finding": "pending",
+            "detail": "Checking TFRs along the route…"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "tab": "enroute",
+            "section": "Cruise Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "tab": "preflight",
+            "section": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "tab": "depart",
+            "section": "Takeoff",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "tab": "preflight",
+            "section": "Weight & Balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "tab": "preflight",
+            "section": "Risk Assessment",
+            "finding": "pending",
+            "detail": "Waiting on the briefing…"
+          }
+        ],
+        "line": {
+          "finding": "pending",
+          "words": "Still checking: Weather, TFRs & special use, Risk"
+        }
+      }
+    },
+    {
+      "name": "No-go: a TFR in force and the fuel short, over the fields row's caution",
+      "input": {
+        "verdict": {
+          "weather": {
+            "pending": false,
+            "failed": null,
+            "vfr_not_recommended": [],
+            "under_minimums": [],
+            "icing": null,
+            "hazards": [],
+            "unchecked": [],
+            "worst": "3,500 ft · 6 sm",
+            "terminal_alerts": [],
+            "flow_programs": [],
+            "ifr": false
+          },
+          "airspace": {
+            "pending": false,
+            "unchecked": false,
+            "in_force": [
+              "6/1111"
+            ],
+            "near": 0,
+            "special_use": []
+          },
+          "altitude": {
+            "pending": false,
+            "problem": null,
+            "cautions": [],
+            "flown": "FL055 · Lowest"
+          },
+          "fuel": {
+            "pending": false,
+            "margin_gal": -2.25,
+            "required_gal": 27.6,
+            "reserve_min": 30,
+            "ifr": false
+          },
+          "runways": {
+            "pending": false,
+            "worked": true,
+            "short": [],
+            "crosswind": [],
+            "beyond": [],
+            "unchecked": []
+          },
+          "balance": {
+            "pending": false,
+            "worked": true,
+            "problems": [],
+            "takeoff": "2,407 lb at 41.2 in"
+          },
+          "risk": {
+            "level": "low",
+            "line": "Low · 2 points"
+          }
+        },
+        "alternate": null,
+        "fields": [
+          {
+            "ident": "KMXF",
+            "role": "destination",
+            "private": false,
+            "military": "military",
+            "phone": null,
+            "status": "O"
+          }
+        ],
+        "airplane": true
+      },
+      "answer": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "tab": "enroute",
+            "section": "Adverse Conditions",
+            "finding": "ok",
+            "detail": "No hazards; at worst 3,500 ft · 6 sm"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "tab": "preflight",
+            "section": "TFRs & Special Use",
+            "finding": "stop",
+            "detail": "TFR 6/1111 in force when you get there"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "tab": "enroute",
+            "section": "Cruise Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "tab": "preflight",
+            "section": "Fuel",
+            "finding": "stop",
+            "detail": "2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "tab": "depart",
+            "section": "Takeoff",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "tab": "preflight",
+            "section": "Weight & Balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "tab": "preflight",
+            "section": "Risk Assessment",
+            "finding": "ok",
+            "detail": "Low · 2 points"
+          },
+          {
+            "key": "fields",
+            "label": "Fields",
+            "tab": "arrive",
+            "section": null,
+            "finding": "caution",
+            "detail": "KMXF is military: prior permission required (PPR)"
+          }
+        ],
+        "line": {
+          "finding": "stop",
+          "words": "No-go as planned: TFRs & special use, Fuel"
+        }
+      }
+    }
+  ],
+  "glance": [
+    {
+      "name": "A quiet day folds into one row saying everything is fine",
+      "input": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "finding": "ok",
+            "detail": "No hazards along the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "finding": "ok",
+            "detail": "None on the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "finding": "ok",
+            "detail": "Low · 2 points",
+            "tab": "preflight",
+            "section": "x"
+          }
+        ],
+        "fields": [
+          {
+            "ident": "C81",
+            "runway": "27",
+            "crosswind_kt": 18,
+            "crosswind_over": true,
+            "finding": "caution"
+          },
+          {
+            "ident": "KDLH",
+            "runway": "9",
+            "crosswind_kt": 4,
+            "crosswind_over": false,
+            "finding": "ok"
+          }
+        ],
+        "raw": {
+          "metars": [
+            "METAR C81 ..."
+          ],
+          "tafs": [
+            "TAF KDLH ..."
+          ],
+          "tfrs": [
+            "6/1111 · Sporting event"
+          ]
+        }
+      },
+      "answer": {
+        "act": [],
+        "rest": {
+          "line": "Weather, TFRs & special use, altitude, fuel, runways, weight & balance, risk: nothing to fix",
+          "finding": "ok",
+          "items": [
+            {
+              "key": "weather",
+              "label": "Weather",
+              "finding": "ok",
+              "detail": "No hazards along the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "airspace",
+              "label": "TFRs & special use",
+              "finding": "ok",
+              "detail": "None on the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "altitude",
+              "label": "Altitude",
+              "finding": "ok",
+              "detail": "FL055 · Lowest",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "fuel",
+              "label": "Fuel",
+              "finding": "ok",
+              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "runways",
+              "label": "Runways",
+              "finding": "ok",
+              "detail": "Takeoff and landing within each runway",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "balance",
+              "label": "Weight & balance",
+              "finding": "ok",
+              "detail": "2,407 lb at 41.2 in, within limits",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "risk",
+              "label": "Risk",
+              "finding": "ok",
+              "detail": "Low · 2 points",
+              "tab": "preflight",
+              "section": "x"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "The crosswind in the glance's own figures, with its METAR",
+      "input": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "finding": "ok",
+            "detail": "No hazards along the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "finding": "ok",
+            "detail": "None on the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "finding": "caution",
+            "detail": "Crosswind past the POH's demonstrated at C81",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "finding": "ok",
+            "detail": "Low · 2 points",
+            "tab": "preflight",
+            "section": "x"
+          }
+        ],
+        "fields": [
+          {
+            "ident": "C81",
+            "runway": "27",
+            "crosswind_kt": 18,
+            "crosswind_over": true,
+            "finding": "caution"
+          },
+          {
+            "ident": "KDLH",
+            "runway": "9",
+            "crosswind_kt": 4,
+            "crosswind_over": false,
+            "finding": "ok"
+          }
+        ],
+        "raw": {
+          "metars": [
+            "METAR C81 ..."
+          ],
+          "tafs": [
+            "TAF KDLH ..."
+          ],
+          "tfrs": [
+            "6/1111 · Sporting event"
+          ]
+        }
+      },
+      "answer": {
+        "act": [
+          {
+            "key": "runways",
+            "finding": "caution",
+            "tab": "preflight",
+            "section": "x",
+            "line": "Runway 27 at C81 has 18 kt across, past the POH's demonstrated: ask for another runway, or wait for the wind",
+            "lead": "Runway 27 at C81 has 18 kt across, past the POH's demonstrated",
+            "action": "Ask for another runway, or wait for the wind",
+            "why": "The POH's demonstrated crosswind is what the test pilot showed, not a limit, but past it nothing was shown for your airplane; the takeoff and landing distances are its tables', which 14 CFR 91.103(b) asks you to work out before you go.",
+            "cite": "14 CFR 91.103(b); the POH",
+            "raw": [
+              "METAR C81 ..."
+            ]
+          }
+        ],
+        "rest": {
+          "line": "Weather, TFRs & special use, altitude, fuel, weight & balance, risk: nothing to fix",
+          "finding": "ok",
+          "items": [
+            {
+              "key": "weather",
+              "label": "Weather",
+              "finding": "ok",
+              "detail": "No hazards along the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "airspace",
+              "label": "TFRs & special use",
+              "finding": "ok",
+              "detail": "None on the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "altitude",
+              "label": "Altitude",
+              "finding": "ok",
+              "detail": "FL055 · Lowest",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "fuel",
+              "label": "Fuel",
+              "finding": "ok",
+              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "balance",
+              "label": "Weight & balance",
+              "finding": "ok",
+              "detail": "2,407 lb at 41.2 in, within limits",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "risk",
+              "label": "Risk",
+              "finding": "ok",
+              "detail": "Low · 2 points",
+              "tab": "preflight",
+              "section": "x"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Only a field whose crosswind is past the demonstrated is named",
+      "input": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "finding": "ok",
+            "detail": "No hazards along the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "finding": "ok",
+            "detail": "None on the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "finding": "caution",
+            "detail": "Crosswind past the POH's demonstrated at C81",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "finding": "ok",
+            "detail": "Low · 2 points",
+            "tab": "preflight",
+            "section": "x"
+          }
+        ],
+        "fields": [
+          {
+            "ident": "C81",
+            "runway": "27",
+            "crosswind_kt": 18,
+            "crosswind_over": true,
+            "finding": "caution"
+          },
+          {
+            "ident": "KDLH",
+            "runway": "3",
+            "crosswind_kt": 0,
+            "crosswind_over": false,
+            "finding": "caution"
+          }
+        ],
+        "raw": {
+          "metars": [
+            "METAR C81 ..."
+          ],
+          "tafs": [
+            "TAF KDLH ..."
+          ],
+          "tfrs": [
+            "6/1111 · Sporting event"
+          ]
+        }
+      },
+      "answer": {
+        "act": [
+          {
+            "key": "runways",
+            "finding": "caution",
+            "tab": "preflight",
+            "section": "x",
+            "line": "Runway 27 at C81 has 18 kt across, past the POH's demonstrated: ask for another runway, or wait for the wind",
+            "lead": "Runway 27 at C81 has 18 kt across, past the POH's demonstrated",
+            "action": "Ask for another runway, or wait for the wind",
+            "why": "The POH's demonstrated crosswind is what the test pilot showed, not a limit, but past it nothing was shown for your airplane; the takeoff and landing distances are its tables', which 14 CFR 91.103(b) asks you to work out before you go.",
+            "cite": "14 CFR 91.103(b); the POH",
+            "raw": [
+              "METAR C81 ..."
+            ]
+          }
+        ],
+        "rest": {
+          "line": "Weather, TFRs & special use, altitude, fuel, weight & balance, risk: nothing to fix",
+          "finding": "ok",
+          "items": [
+            {
+              "key": "weather",
+              "label": "Weather",
+              "finding": "ok",
+              "detail": "No hazards along the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "airspace",
+              "label": "TFRs & special use",
+              "finding": "ok",
+              "detail": "None on the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "altitude",
+              "label": "Altitude",
+              "finding": "ok",
+              "detail": "FL055 · Lowest",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "fuel",
+              "label": "Fuel",
+              "finding": "ok",
+              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "balance",
+              "label": "Weight & balance",
+              "finding": "ok",
+              "detail": "2,407 lb at 41.2 in, within limits",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "risk",
+              "label": "Risk",
+              "finding": "ok",
+              "detail": "Low · 2 points",
+              "tab": "preflight",
+              "section": "x"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "The stops before the cautions, at most three, the rest counted",
+      "input": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "finding": "caution",
+            "detail": "AIRMET Sierra along the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "finding": "stop",
+            "detail": "TFR 6/1111 in force when you get there",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "finding": "stop",
+            "detail": "2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "finding": "caution",
+            "detail": "Crosswind past the POH's demonstrated at C81",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "finding": "caution",
+            "detail": "Caution · 14 points",
+            "tab": "preflight",
+            "section": "x"
+          }
+        ],
+        "fields": [
+          {
+            "ident": "C81",
+            "runway": "27",
+            "crosswind_kt": 18,
+            "crosswind_over": true,
+            "finding": "caution"
+          },
+          {
+            "ident": "KDLH",
+            "runway": "9",
+            "crosswind_kt": 4,
+            "crosswind_over": false,
+            "finding": "ok"
+          }
+        ],
+        "raw": {
+          "metars": [
+            "METAR C81 ..."
+          ],
+          "tafs": [
+            "TAF KDLH ..."
+          ],
+          "tfrs": [
+            "6/1111 · Sporting event"
+          ]
+        }
+      },
+      "answer": {
+        "act": [
+          {
+            "key": "airspace",
+            "finding": "stop",
+            "tab": "preflight",
+            "section": "x",
+            "line": "TFR 6/1111 in force when you get there: route around it, or go later",
+            "lead": "TFR 6/1111 in force when you get there",
+            "action": "Route around it, or go later",
+            "why": "A TFR is airspace closed by NOTAM, and flying through one in force breaks 14 CFR 91.137 (or 91.141 round the President); a restricted area in use is closed under 91.133, and a MOA can be busy with no NOTAM at all.",
+            "cite": "14 CFR 91.133, 91.137, 91.141",
+            "raw": [
+              "6/1111 · Sporting event"
+            ]
+          },
+          {
+            "key": "fuel",
+            "finding": "stop",
+            "tab": "preflight",
+            "section": "x",
+            "line": "2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151): add fuel, or plan a stop",
+            "lead": "2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)",
+            "action": "Add fuel, or plan a stop",
+            "why": "A VFR flight may only set out with fuel to its first landing and 30 minutes more by day, 45 at night (14 CFR 91.151); under IFR it is fuel to the alternate and 45 minutes more (91.167). Planning to fly into the reserve is a no-go, not a margin.",
+            "cite": "14 CFR 91.151, 91.167",
+            "raw": []
+          },
+          {
+            "key": "weather",
+            "finding": "caution",
+            "tab": "preflight",
+            "section": "x",
+            "line": "AIRMET Sierra along the route: read it on En route and plan around it",
+            "lead": "AIRMET Sierra along the route",
+            "action": "Read it on En route and plan around it",
+            "why": "VFR needs 14 CFR 91.155's visibility and distance from clouds all the way; a briefer's \"VFR not recommended\" (AIM 7-1-5) means the forecast is under them somewhere on the route, and your own minimums are stricter still.",
+            "cite": "14 CFR 91.155; AIM 7-1-5",
+            "raw": [
+              "METAR C81 ...",
+              "TAF KDLH ..."
+            ]
+          }
+        ],
+        "rest": {
+          "line": "2 more to look at",
+          "finding": "caution",
+          "items": [
+            {
+              "key": "altitude",
+              "label": "Altitude",
+              "finding": "ok",
+              "detail": "FL055 · Lowest",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "runways",
+              "label": "Runways",
+              "finding": "caution",
+              "detail": "Crosswind past the POH's demonstrated at C81",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "balance",
+              "label": "Weight & balance",
+              "finding": "ok",
+              "detail": "2,407 lb at 41.2 in, within limits",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "risk",
+              "label": "Risk",
+              "finding": "caution",
+              "detail": "Caution · 14 points",
+              "tab": "preflight",
+              "section": "x"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "A long detail cut to one sentence of 140 characters",
+      "input": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "finding": "stop",
+            "detail": "VFR not recommended: KDLH currently reporting IFR with ceilings of 400 ft and visibility of a half mile in fog, KDLH currently reporting IFR with ceilings of 400 ft and visibility of a half mile in fog, KDLH currently reporting IFR with ceilings of 400 ft and visibility of a half mile in fog, ",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "finding": "ok",
+            "detail": "None on the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "finding": "stop",
+            "detail": "Ceiling 11,700 ft: terrain 40 nm past KDLH needs 12,500",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "finding": "stop",
+            "detail": "120 lb over the maximum takeoff weight",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "finding": "ok",
+            "detail": "Low · 2 points",
+            "tab": "preflight",
+            "section": "x"
+          }
+        ],
+        "fields": [
+          {
+            "ident": "C81",
+            "runway": "27",
+            "crosswind_kt": 18,
+            "crosswind_over": true,
+            "finding": "caution"
+          },
+          {
+            "ident": "KDLH",
+            "runway": "9",
+            "crosswind_kt": 4,
+            "crosswind_over": false,
+            "finding": "ok"
+          }
+        ],
+        "raw": {
+          "metars": [
+            "METAR C81 ..."
+          ],
+          "tafs": [
+            "TAF KDLH ..."
+          ],
+          "tfrs": [
+            "6/1111 · Sporting event"
+          ]
+        }
+      },
+      "answer": {
+        "act": [
+          {
+            "key": "weather",
+            "finding": "stop",
+            "tab": "preflight",
+            "section": "x",
+            "line": "VFR not recommended: KDLH currently reporting IFR with ceilings of 400 ft and visibility of a hal…: wait for it to lift, or plan another day",
+            "lead": "VFR not recommended: KDLH currently reporting IFR with ceilings of 400 ft and visibility of a half mile in fog, KDLH currently reporting IFR with ceilings of 400 ft and visibility of a half mile in fog, KDLH currently reporting IFR with ceilings of 400 ft and visibility of a half mile in fog",
+            "action": "Wait for it to lift, or plan another day",
+            "why": "VFR needs 14 CFR 91.155's visibility and distance from clouds all the way; a briefer's \"VFR not recommended\" (AIM 7-1-5) means the forecast is under them somewhere on the route, and your own minimums are stricter still.",
+            "cite": "14 CFR 91.155; AIM 7-1-5",
+            "raw": [
+              "METAR C81 ...",
+              "TAF KDLH ..."
+            ]
+          },
+          {
+            "key": "altitude",
+            "finding": "stop",
+            "tab": "preflight",
+            "section": "x",
+            "line": "Ceiling 11,700 ft: terrain 40 nm past KDLH needs 12,500: pick another altitude or route",
+            "lead": "Ceiling 11,700 ft: terrain 40 nm past KDLH needs 12,500",
+            "action": "Pick another altitude or route",
+            "why": "Above 3,000 ft AGL a VFR cruise follows the hemispheric rule (14 CFR 91.159), 91.119 sets the least height over terrain and people, and the altitude must keep 91.155's distance from the clouds.",
+            "cite": "14 CFR 91.119, 91.155, 91.159",
+            "raw": []
+          },
+          {
+            "key": "balance",
+            "finding": "stop",
+            "tab": "preflight",
+            "section": "x",
+            "line": "120 lb over the maximum takeoff weight: move or leave some weight",
+            "lead": "120 lb over the maximum takeoff weight",
+            "action": "Move or leave some weight",
+            "why": "Outside the envelope the airplane may not climb, or may not answer the controls; 14 CFR 91.9 forbids flying outside the flight manual's limits, and 91.103 asks you to know all about the flight before you go.",
+            "cite": "14 CFR 91.9, 91.103",
+            "raw": []
+          }
+        ],
+        "rest": {
+          "line": "TFRs & special use, fuel, runways, risk: nothing to fix",
+          "finding": "ok",
+          "items": [
+            {
+              "key": "airspace",
+              "label": "TFRs & special use",
+              "finding": "ok",
+              "detail": "None on the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "fuel",
+              "label": "Fuel",
+              "finding": "ok",
+              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "runways",
+              "label": "Runways",
+              "finding": "ok",
+              "detail": "Takeoff and landing within each runway",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "risk",
+              "label": "Risk",
+              "finding": "ok",
+              "detail": "Low · 2 points",
+              "tab": "preflight",
+              "section": "x"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Still checking the fuel",
+      "input": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "finding": "ok",
+            "detail": "No hazards along the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "finding": "ok",
+            "detail": "None on the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "finding": "pending",
+            "detail": "Working out the fuel…",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "finding": "ok",
+            "detail": "Low · 2 points",
+            "tab": "preflight",
+            "section": "x"
+          }
+        ],
+        "fields": [],
+        "raw": null
+      },
+      "answer": {
+        "act": [],
+        "rest": {
+          "line": "Still checking fuel",
+          "finding": "pending",
+          "items": [
+            {
+              "key": "weather",
+              "label": "Weather",
+              "finding": "ok",
+              "detail": "No hazards along the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "airspace",
+              "label": "TFRs & special use",
+              "finding": "ok",
+              "detail": "None on the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "altitude",
+              "label": "Altitude",
+              "finding": "ok",
+              "detail": "FL055 · Lowest",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "fuel",
+              "label": "Fuel",
+              "finding": "pending",
+              "detail": "Working out the fuel…",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "runways",
+              "label": "Runways",
+              "finding": "ok",
+              "detail": "Takeoff and landing within each runway",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "balance",
+              "label": "Weight & balance",
+              "finding": "ok",
+              "detail": "2,407 lb at 41.2 in, within limits",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "risk",
+              "label": "Risk",
+              "finding": "ok",
+              "detail": "Low · 2 points",
+              "tab": "preflight",
+              "section": "x"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "The weight and balance not worked out: one more to look at",
+      "input": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "finding": "ok",
+            "detail": "No hazards along the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "finding": "ok",
+            "detail": "None on the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "finding": "unknown",
+            "detail": "Not worked out for this airplane",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "finding": "ok",
+            "detail": "Low · 2 points",
+            "tab": "preflight",
+            "section": "x"
+          }
+        ],
+        "fields": [],
+        "raw": null
+      },
+      "answer": {
+        "act": [],
+        "rest": {
+          "line": "1 more to look at",
+          "finding": "unknown",
+          "items": [
+            {
+              "key": "weather",
+              "label": "Weather",
+              "finding": "ok",
+              "detail": "No hazards along the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "airspace",
+              "label": "TFRs & special use",
+              "finding": "ok",
+              "detail": "None on the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "altitude",
+              "label": "Altitude",
+              "finding": "ok",
+              "detail": "FL055 · Lowest",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "fuel",
+              "label": "Fuel",
+              "finding": "ok",
+              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "runways",
+              "label": "Runways",
+              "finding": "ok",
+              "detail": "Takeoff and landing within each runway",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "balance",
+              "label": "Weight & balance",
+              "finding": "unknown",
+              "detail": "Not worked out for this airplane",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "risk",
+              "label": "Risk",
+              "finding": "ok",
+              "detail": "Low · 2 points",
+              "tab": "preflight",
+              "section": "x"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "The lead without its stop, the action apart",
+      "input": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "finding": "ok",
+            "detail": "No hazards along the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "finding": "ok",
+            "detail": "None on the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "finding": "stop",
+            "detail": "2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151).",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "finding": "ok",
+            "detail": "Low · 2 points",
+            "tab": "preflight",
+            "section": "x"
+          }
+        ],
+        "fields": [],
+        "raw": null
+      },
+      "answer": {
+        "act": [
+          {
+            "key": "fuel",
+            "finding": "stop",
+            "tab": "preflight",
+            "section": "x",
+            "line": "2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151): add fuel, or plan a stop",
+            "lead": "2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)",
+            "action": "Add fuel, or plan a stop",
+            "why": "A VFR flight may only set out with fuel to its first landing and 30 minutes more by day, 45 at night (14 CFR 91.151); under IFR it is fuel to the alternate and 45 minutes more (91.167). Planning to fly into the reserve is a no-go, not a margin.",
+            "cite": "14 CFR 91.151, 91.167",
+            "raw": []
+          }
+        ],
+        "rest": {
+          "line": "Weather, TFRs & special use, altitude, runways, weight & balance, risk: nothing to fix",
+          "finding": "ok",
+          "items": [
+            {
+              "key": "weather",
+              "label": "Weather",
+              "finding": "ok",
+              "detail": "No hazards along the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "airspace",
+              "label": "TFRs & special use",
+              "finding": "ok",
+              "detail": "None on the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "altitude",
+              "label": "Altitude",
+              "finding": "ok",
+              "detail": "FL055 · Lowest",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "runways",
+              "label": "Runways",
+              "finding": "ok",
+              "detail": "Takeoff and landing within each runway",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "balance",
+              "label": "Weight & balance",
+              "finding": "ok",
+              "detail": "2,407 lb at 41.2 in, within limits",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "risk",
+              "label": "Risk",
+              "finding": "ok",
+              "detail": "Low · 2 points",
+              "tab": "preflight",
+              "section": "x"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "The risk named on its row",
+      "input": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "finding": "ok",
+            "detail": "No hazards along the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "finding": "ok",
+            "detail": "None on the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "finding": "stop",
+            "detail": "High · 16 points",
+            "tab": "preflight",
+            "section": "x"
+          }
+        ],
+        "fields": [],
+        "raw": null
+      },
+      "answer": {
+        "act": [
+          {
+            "key": "risk",
+            "finding": "stop",
+            "tab": "preflight",
+            "section": "x",
+            "line": "High risk, 16 points on the PAVE and IMSAFE checklist: talk it over with your instructor before you go",
+            "lead": "High risk, 16 points on the PAVE and IMSAFE checklist",
+            "action": "Talk it over with your instructor before you go",
+            "why": "The risk assessment follows the FAA's PAVE and IMSAFE checklists (Risk Management Handbook, FAA-H-8083-2): the points are the planner's guide, and the decision is yours as pilot in command under 14 CFR 91.3.",
+            "cite": "FAA-H-8083-2; 14 CFR 91.3",
+            "raw": []
+          }
+        ],
+        "rest": {
+          "line": "Weather, TFRs & special use, altitude, fuel, runways, weight & balance: nothing to fix",
+          "finding": "ok",
+          "items": [
+            {
+              "key": "weather",
+              "label": "Weather",
+              "finding": "ok",
+              "detail": "No hazards along the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "airspace",
+              "label": "TFRs & special use",
+              "finding": "ok",
+              "detail": "None on the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "altitude",
+              "label": "Altitude",
+              "finding": "ok",
+              "detail": "FL055 · Lowest",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "fuel",
+              "label": "Fuel",
+              "finding": "ok",
+              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "runways",
+              "label": "Runways",
+              "finding": "ok",
+              "detail": "Takeoff and landing within each runway",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "balance",
+              "label": "Weight & balance",
+              "finding": "ok",
+              "detail": "2,407 lb at 41.2 in, within limits",
+              "tab": "preflight",
+              "section": "x"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "A private field and a special-use area: the fields row, and Flight Service for the airspace",
+      "input": {
+        "items": [
+          {
+            "key": "weather",
+            "label": "Weather",
+            "finding": "ok",
+            "detail": "No hazards along the route",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "airspace",
+            "label": "TFRs & special use",
+            "finding": "caution",
+            "detail": "R-4401 scheduled in use when you pass",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "altitude",
+            "label": "Altitude",
+            "finding": "ok",
+            "detail": "FL055 · Lowest",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "fuel",
+            "label": "Fuel",
+            "finding": "ok",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "runways",
+            "label": "Runways",
+            "finding": "ok",
+            "detail": "Takeoff and landing within each runway",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "balance",
+            "label": "Weight & balance",
+            "finding": "ok",
+            "detail": "2,407 lb at 41.2 in, within limits",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "risk",
+            "label": "Risk",
+            "finding": "ok",
+            "detail": "Low · 2 points",
+            "tab": "preflight",
+            "section": "x"
+          },
+          {
+            "key": "fields",
+            "label": "Fields",
+            "tab": "arrive",
+            "finding": "caution",
+            "detail": "IL11 is private: land only with the owner's permission (call 847-323-8911)",
+            "section": null
+          }
+        ],
+        "fields": [
+          {
+            "ident": "C81",
+            "runway": "27",
+            "crosswind_kt": 18,
+            "crosswind_over": true,
+            "finding": "caution"
+          },
+          {
+            "ident": "KDLH",
+            "runway": "9",
+            "crosswind_kt": 4,
+            "crosswind_over": false,
+            "finding": "ok"
+          }
+        ],
+        "raw": {
+          "metars": [
+            "METAR C81 ..."
+          ],
+          "tafs": [
+            "TAF KDLH ..."
+          ],
+          "tfrs": [
+            "6/1111 · Sporting event"
+          ]
+        }
+      },
+      "answer": {
+        "act": [
+          {
+            "key": "airspace",
+            "finding": "caution",
+            "tab": "preflight",
+            "section": "x",
+            "line": "R-4401 scheduled in use when you pass: ask Flight Service (1‑800‑WX‑BRIEF) before you go",
+            "lead": "R-4401 scheduled in use when you pass",
+            "action": "Ask Flight Service (1‑800‑WX‑BRIEF) before you go",
+            "why": "A TFR is airspace closed by NOTAM, and flying through one in force breaks 14 CFR 91.137 (or 91.141 round the President); a restricted area in use is closed under 91.133, and a MOA can be busy with no NOTAM at all.",
+            "cite": "14 CFR 91.133, 91.137, 91.141",
+            "raw": [
+              "6/1111 · Sporting event"
+            ]
+          },
+          {
+            "key": "fields",
+            "finding": "caution",
+            "tab": "arrive",
+            "section": null,
+            "line": "IL11 is private: land only with the owner's permission (call 847-323-8911): settle it before you go, or plan another field",
+            "lead": "IL11 is private: land only with the owner's permission (call 847-323-8911)",
+            "action": "Settle it before you go, or plan another field",
+            "why": "A private field is its owner's, landed at with their permission, and a military one with the service's prior permission (PPR); a field the FAA lists as closed is no landing field. 14 CFR 91.103 asks you to know all of it before you go.",
+            "cite": "14 CFR 91.103; NASR APT_BASE",
+            "raw": []
+          }
+        ],
+        "rest": {
+          "line": "Weather, altitude, fuel, runways, weight & balance, risk: nothing to fix",
+          "finding": "ok",
+          "items": [
+            {
+              "key": "weather",
+              "label": "Weather",
+              "finding": "ok",
+              "detail": "No hazards along the route",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "altitude",
+              "label": "Altitude",
+              "finding": "ok",
+              "detail": "FL055 · Lowest",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "fuel",
+              "label": "Fuel",
+              "finding": "ok",
+              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "runways",
+              "label": "Runways",
+              "finding": "ok",
+              "detail": "Takeoff and landing within each runway",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "balance",
+              "label": "Weight & balance",
+              "finding": "ok",
+              "detail": "2,407 lb at 41.2 in, within limits",
+              "tab": "preflight",
+              "section": "x"
+            },
+            {
+              "key": "risk",
+              "label": "Risk",
+              "finding": "ok",
+              "detail": "Low · 2 points",
+              "tab": "preflight",
+              "section": "x"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

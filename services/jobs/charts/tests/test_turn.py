@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from charts import cli, next_cycle, turn
-from wingtip import chart_next, charts
+from wingtip import chart_next, chart_upkeep, config
 
 SCRIPT = Path(__file__).resolve().parents[4] / "scripts" / "dev" / "one-at-a-time.sh"
 
@@ -94,11 +94,11 @@ def test_the_script_keeps_a_touched_container_turn_and_takes_back_a_stale_one(tm
 
 
 def test_next_runs_the_staging_under_the_refresh_lock(tmp_path, monkeypatch):
-    monkeypatch.setattr(charts, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
+    monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
     seen = []
 
     def run(workers, lead_days, turn):
-        seen.append((workers, lead_days, charts.refresh_running()))
+        seen.append((workers, lead_days, chart_upkeep.refresh_running()))
         return chart_next.STAGED
 
     monkeypatch.setattr(next_cycle, "run", run)

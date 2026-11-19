@@ -7,7 +7,7 @@ import { prefersReducedMotion } from "../motion";
  * airplane's past flight, the planned flight's dry run, the Studio's
  * tracks (features/replay) -- and the map's airplane (ReplayGl), the
  * pilot's view and the replay's cameras read. Ground every feature stands
- * on, so here in lib/; features/plan/map/pastFlight names it as it always
+ * on, so here in lib/; features/plan/pastFlight names it as it always
  * did.
  *
  * A past flight of a tracked airplane, picked from its card's Past

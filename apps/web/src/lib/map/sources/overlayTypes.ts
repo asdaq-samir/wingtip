@@ -1,6 +1,6 @@
 /**
  * What a card reads of a tapped feature of the cycle's overlay tiles
- * (lib/map/sources/overlayTiles; glOverlays' volumeOfTile and vorOfTile build
+ * (lib/map/sources/overlayTiles; glTileFeatures' volumeOfTile and vorOfTile build
  * them from the fields wingtip.vector_tiles writes). The planner once
  * answered these for the view (/api/airspace/in-view, /api/navaids/in-view);
  * the tiles carry the same fields from the same FAA files.
@@ -29,9 +29,6 @@ export interface AirspaceVolume {
    *  (WKHR_RMK). */
   hours_code: string | null;
   hours_remark: string | null;
-  /** Where its line was tapped. */
-  label_lat: number;
-  label_lon: number;
 }
 
 /** A VOR, VOR/DME or VORTAC (NASR's NAV_BASE). */

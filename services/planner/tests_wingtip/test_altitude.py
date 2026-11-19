@@ -7,12 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from wingtip import airspace, altitude, performance, sua, terrain, weather
+from wingtip import airspace, altitude, sua, terrain, weather
 from wingtip.engine import ask as engine
-
-
-def under_clouds(base_ft):
-    return engine("highest_under_clouds_ft", cloud_base_ft=base_ft)
 
 
 PROFILE = {"service_ceiling_ft": 14000, "cruise_tas_kt": 110}
@@ -34,7 +30,6 @@ def sources(monkeypatch):
             state.update(floor_fixes=fixes) or [{"floor_ft": 2000.0, "lowest_ground_ft": 1500.0}] * (len(breaks) - 1)
         ),
     )
-    monkeypatch.setattr(airspace, "airspace_ceiling_profile", lambda start, end, fixes, shp: [None] * (len(fixes) - 1))
     monkeypatch.setattr(airspace, "airspace_transits", lambda start, end, shp, fixes=None: [])
     monkeypatch.setattr(altitude, "magnetic_variation_deg", lambda lat, lon: 0.0)
     monkeypatch.setattr(weather, "freezing_level", lambda lat, lon, fcst_hr="06": state["freezing"])
@@ -192,24 +187,14 @@ def test_the_vfr_floor_is_read_under_the_legs_flown(sources):
     assert sources["floor_fixes"] == [DEP, DOGLEG, DEST]
 
 
-def test_no_fixes_is_the_direct_line_as_one_leg(sources, monkeypatch):
-    """One path for the Class B rule: without fixes the route is asked of
-    the leg-by-leg function as a single leg, and the answer is the same
-    as with the ends given as the fixes."""
-    asked = []
-
-    def ceilings(start, end, fixes, shp):
-        asked.append(fixes)
-        return [4500.0] * (len(fixes) - 1)
-
-    monkeypatch.setattr(airspace, "airspace_ceiling_profile", ceilings)
+def test_no_fixes_is_the_direct_line_as_one_leg(sources):
+    """Without fixes the route is one leg, and the answer is the same as
+    with the ends given as the fixes."""
     bare = altitude.select_cruise_altitude(DEP, DEST, PROFILE)
     ends = altitude.select_cruise_altitude(DEP, DEST, PROFILE, fixes=[DEP, DEST])
 
-    assert asked == [[DEP, DEST], [DEP, DEST]]
-    fields = ("airspace_ceiling_ft", "band_ceiling_ft", "recommended_ft", "candidates_ft")
+    fields = ("band_ceiling_ft", "recommended_ft", "candidates_ft")
     assert {k: bare[k] for k in fields} == {k: ends[k] for k in fields}
-    assert bare["airspace_ceiling_ft"] == 4500.0
 
 
 def _station(ident, lat, lon, ceiling_ft, elevation_ft=1000):
@@ -233,14 +218,6 @@ def test_a_leg_keeps_500_ft_under_the_clouds_forecast_near_it(sources):
     assert max(second["candidates_ft"]) == 4500 and second["cloud_clearance_kept"] is True
     # The whole route keeps under the lowest cloud anywhere on it.
     assert result["cloud_base_ft"] == 5500 and result["band_ceiling_ft"] == 5000
-
-
-def test_at_10000_ft_and_above_the_clouds_are_kept_1000_ft_above(sources):
-    assert under_clouds(6000.0) == 5500.0
-    assert under_clouds(12000.0) == 11000.0
-    # 500 ft under a 10,800 ft base is 10,300 -- but at 10,000 and above
-    # the rule is 1,000 ft, so the highest is just under 10,000.
-    assert 9500.0 < under_clouds(10800.0) < 10000.0
 
 
 def test_clouds_too_low_over_the_floor_are_said_and_the_leg_keeps_its_band(sources):
@@ -271,7 +248,7 @@ def test_a_station_far_from_the_leg_does_not_cap_it(sources):
 def test_the_service_ceiling_is_where_it_is_in_the_forecast_air(sources):
     # 15 degC warmer than a standard day all the way up: the 14,000 ft
     # service ceiling, a density altitude, is 12,000 ft or so of altitude.
-    sources["temperatures"] = [(h, performance.isa_temp_c(h) + 15) for h in (6000.0, 9000.0, 12000.0, 18000.0)]
+    sources["temperatures"] = [(h, engine("isa_temp_c", altitude_ft=h) + 15) for h in (6000.0, 9000.0, 12000.0, 18000.0)]
 
     result = altitude.select_cruise_altitude(DEP, DEST, PROFILE, fixes=[DEP, DOGLEG, DEST])
 
@@ -292,20 +269,13 @@ def test_the_book_service_ceiling_where_the_temperatures_are_unknown(sources, mo
     assert result["service_ceiling_ft"] == result["band_ceiling_ft"] == 14000
 
 
-# --- A tight altitude, where no 500 ft step fits -------------------------
-#
-# KDPA to KMDW: the obstacles need 1,800 ft and Chicago's Class B starts
-# at 1,900. Below 3,000 ft above the ground any altitude is legal, so
-# 1,800 is -- under the shelf, not at it -- though tight.
-
-
 # --- Under IFR (wingtip.ifr) -------------------------------------------------
 
 
 @pytest.fixture
 def ifr_floors(sources, monkeypatch):
     """IFR floors of 3,100 ft over every leg, the first over a mountainous
-    area; and an airspace ceiling that would cap a VFR flight at 3,000."""
+    area."""
     from wingtip import ifr
 
     def floors(fixes, faa_cache_dir=None):
@@ -314,7 +284,6 @@ def ifr_floors(sources, monkeypatch):
         ]
 
     monkeypatch.setattr(ifr, "floor_profile", floors)
-    monkeypatch.setattr(airspace, "airspace_ceiling_profile", lambda start, end, fixes, shp: [3000.0] * (len(fixes) - 1))
     return sources
 
 
@@ -331,14 +300,13 @@ def test_under_ifr_each_leg_flies_thousands_by_its_own_course_from_its_minimum_i
     assert result["mountainous"] is True
 
 
-def test_under_ifr_no_shelf_cloud_or_class_a_caps_the_altitudes_only_the_service_ceiling(ifr_floors):
+def test_under_ifr_no_cloud_or_class_a_caps_the_altitudes_only_the_service_ceiling(ifr_floors):
     ifr_floors["cv"] = {"min_ceiling_ft": 2200, "min_visibility_sm": 2.0, "stations": [_station("KXYZ", 45.5, -90.0, 2200)]}
     profile = {**PROFILE, "service_ceiling_ft": 25000}
 
     result = altitude.select_cruise_altitude(DEP, DEST, profile, fixes=[DEP, DEST], rules="ifr")
 
     (leg,) = result["segments"]
-    assert leg["airspace_ceiling_ft"] is None
     assert leg["candidates_ft"][0] == 5000.0 and leg["candidates_ft"][-1] == 25000.0
     assert 19000.0 in leg["candidates_ft"]
     assert result["recommended_ft"] == 5000.0
@@ -350,7 +318,9 @@ def test_under_vfr_the_same_route_keeps_its_own_rules(ifr_floors):
     assert result["rules"] == "vfr" and result["mountainous"] is False
     (leg,) = result["segments"]
     assert "mountainous" not in leg
-    assert max(leg["candidates_ft"]) <= 3000.0
+    # VFR's every 500 ft within 3,000 ft of the ground (14 CFR 91.159),
+    # not IFR's thousands.
+    assert leg["candidates_ft"][:3] == [2000.0, 2500.0, 3000.0]
 
 
 def test_under_ifr_along_an_airway_the_mea_is_the_floor_and_the_maa_a_ceiling(ifr_floors):

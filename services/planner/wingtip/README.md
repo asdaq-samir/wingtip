@@ -39,7 +39,7 @@ The pipeline images deliberately carry no test tooling — only what the
 training run needs — so tests
 run in a plain `python:3.15-slim` against `requirements-dev-wingtip.txt`, plus
 the one system library (`libexpat1`) rasterio's wheel expects and the
-slim image leaves out -- without it `services/planner/tests_wingtip/test_charts.py` fails to import.
+slim image leaves out -- without it `services/planner/tests_wingtip/chart_tests/test_charts.py` fails to import.
 
 There is no `pip install -e .`. Containers put `services/planner/` on
 `PYTHONPATH` directly (`ENV PYTHONPATH=/workspace/services/planner`), so `import wingtip` resolves
@@ -50,7 +50,7 @@ an index would need a real `pyproject.toml`.
 What packaging would have given for free is one list of the package's
 own dependencies, so that list lives here instead:
 `services/planner/requirements-wingtip.txt`, pinned once, and `services/planner/requirements-wingtip-charts.txt`
-on top of it for `wingtip.charts`/`wingtip.chartvision`'s raster stack. Every
+on top of it for the chart modules' and `wingtip.chartvision`'s raster stack. Every
 image that runs wingtip -- planner, the two pipeline stages, `ml`
 -- and `requirements-dev-wingtip.txt` include one of them with a `-r` line and
 list only what they need beyond it. **A new third-party import in
@@ -148,8 +148,19 @@ Grouped by what they are for, not alphabetically.
 | Module | Source |
 |---|---|
 | `chartvision.py` | FAA VFR sectional raster tiles, read by colour. The largest module here. |
-| `charts.py` | The same FAA GeoTIFFs rendered as an XYZ tile pyramid -- sectionals, TACs, IFR enroute and IFR area charts -- clipped to each sheet's face (found by `chart_faces.py`) so adjacent sheets butt together and no street map shows through the gaps, one drawing order for the pyramid and for tiles rendered on demand (they used to disagree inside sheet overlaps), and the sectional's masked lines -- the paper band round each TAC and inset -- taken back out when a sheet is prepared. `planner`'s `/api/chart-tile/*` and the batch `prepare`/`pyramid`/`refresh`/`unmask` commands (see that service's own README) are this module's CLI. |
-| `chart_faces.py` | Finding a chart's face on its raster -- the neatline, or where the chart runs out -- and cleaning the raster: the lines the FAA's own masking left, found and given their tint back. Split out of `charts.py` because it changes on its own. |
+| `charts.py` | The map of the chart modules below, in its docstring, and the served cycle and tile revision for `app/detection.py`, which may not be edited. The FAA GeoTIFFs rendered as an XYZ tile pyramid -- sectionals, TACs, IFR enroute and IFR area charts -- clipped to each sheet's face so adjacent sheets butt together, one drawing order for the pyramid and for tiles rendered on demand, and the sectional's masked lines taken back out when a sheet is prepared. One module of 2,336 lines until 2026-11-18, split by what changes together. `planner`'s `/api/chart-tile/*` and the charts job's `prepare`/`pyramid`/`refresh`/`unmask` commands are their CLI. |
+| `chart_kinds.py`, `chart_coverage.py` | The catalogue: the chart kinds and the FAA's zips; every sheet's envelope (`COVERAGE`) and the box tests on it. |
+| `chart_cycle.py` | The FAA's 56-day chart cycle (APRA, else the anchor), the cycles on disk, and whether one is in force yet. |
+| `chart_grid.py`, `chart_warp.py`, `chart_render.py` | The renderer every way of drawing a tile shares: the tile grid; a sheet warped to web mercator, sharp at every zoom; a tile composited from its sheets, its PNG, cache path, draw order and `RENDERER_VERSION`. |
+| `chart_sheets.py`, `chart_prepare.py` | A prepared sheet on disk (`ready.json`, its locks, overviews); fetching and preparing one, a route's or the country's, and the seam check (`face_gaps`). |
+| `chart_serving.py` | Each cycle's pyramid record, the cycle the map is drawn from (per kind, or the published pointer), and the tile revision. |
+| `chart_tiles.py`, `chart_archives.py` | A tile as the map asks for it (archive, cache or drawn now); a finished pyramid packed into one PMTiles archive per kind and density. |
+| `chart_workers.py`, `chart_pyramid.py`, `chart_rerender.py` | The whole country drawn ahead of time, with as many workers as the memory holds; tiles drawn again after a sheet changed (`unmask_prepared`). |
+| `chart_publish.py`, `chart_upkeep.py` | A complete cycle's archives to S3 and `serving.json`; keeping up with the cycle (`refresh`, `build_cycle`, `prune_cycles`), its lock, and the Dev console's `status`. |
+| `chart_faces.py` | Finding a chart's face on its raster -- the neatline, or where the chart runs out -- and cleaning the raster: the lines the FAA's own masking left, found and given their tint back. Split out of `charts.py` first, because it changed on its own. |
+| `chart_raster.py` | A chart raster's palette and RGB read, and the paper rim of a scan; shared by the face finding and the masked-line cleaning. |
+| `chart_bands.py` | Searching a sectional's raster for the masked-line bands (paper strips along another chart's boundary), measured before anything is touched. |
+| `chart_masked_lines.py` | Carrying a found band on, giving it the tint of the chart around it, and writing the sheet back (`remove_masked_lines`); reached through `chart_faces`. |
 | `osm.py` | Overpass API, for candidate landmarks. |
 | `faa_data.py` | NASR airports/navaids and the Digital Obstacle File. |
 | `weather.py` | Winds aloft (one small request), and METARs/TAFs/SIGMETs from aviationweather.gov's cache files -- the whole national dataset every five minutes, not a query per route. |
@@ -165,9 +176,10 @@ engine (#482).
 
 | Module | What it decides |
 |---|---|
-| `altitude.py` | The VFR cruising altitude to file, and the reasoning behind it -- terrain floor, airspace ceiling, the hemispheric rule leg by leg, the freezing level as an icing warning, the forecast ceiling/visibility over the flight, hazards, timed per stage (see services/planner/README.md). |
+| `altitude.py` | The VFR cruising altitude to file, and the reasoning behind it -- terrain floor, the clouds and the service ceiling (Class B none: the route is planned through it with its clearance), the hemispheric rule leg by leg, the freezing level as an icing warning, the forecast ceiling/visibility over the flight, hazards, timed per stage (see services/planner/README.md). |
 | `checkpoint_notes.py`, `routecsv.py` | A pilot's own "how to spot it" note per checkpoint, and the shared "one judgment at one place on one route" CSV mechanics (read-and-coerce, rewrite-whole-file, "same place" by proximity) it and `chartlabels.py` both need -- one module, so the two files' own same-distance threshold is one constant instead of two copies that could drift apart. |
 | `remarks.py` | An airport's Chart Supplement remarks in plain English: lights turned on from the cockpit, weather read out on mic clicks. |
+| `class_b_route.py` | Avoid Class B for the Routes: the route as planned with the best fix round each leg that enters Class B at its altitude (the engine's `class_b_entered` and `class_b_detours`, 14 CFR 91.131(a)(1)), none where no leg does or one has no way round. |
 | `classb.py` | Every Class B airport, matched from the FAA Class Airspace shapefile's ~370 polygons down to the ~30 airports they actually belong to -- envelope containment plus ident-prefix matching, not a bare ident lookup (a bare "HNL" once matched a Mexican airspace record). |
 
 **The ML pipeline**
@@ -182,6 +194,7 @@ engine (#482).
 | `chartlabels_join.py` | Ratings carried onto detections by position. |
 | `features.py` | Feature engineering for the tabular model. |
 | `config.py` | Paths and thresholds, free of heavy imports. |
+| `utc.py` | UTC times as the stores and feeds write them (ISO 8601 with its Z) and seconds since 1970: the one copy for the planner, ingest and weather. |
 
 ## Things that are not obvious
 

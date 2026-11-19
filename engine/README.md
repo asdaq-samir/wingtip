@@ -52,18 +52,18 @@ table, and its why below, in the same commit.
 
 | Crate | Modules | Uses |
 |---|---|---|
-| `core` | geo, flat (nm east and north of a point, the small flat frame), wmm, grid, sums, time, json, xml, sort, text (a whole number with its thousands grouped, "12,500"), units (the SI's foot, nautical mile and kelvin, one copy), ask (a rule's input read by its name, for every crate's `call`), faa_case (the FAA's capitals in sentence case with its codes kept, the one copy: wording's `faa_words` and a TFR's purpose) | nothing |
-| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy), field (whether a field is open: NASR's ARPT_STATUS, O alone; decision 0043; and whether it is military or joint; mark_rank: which field's map mark is kept first) | core |
-| `weather` | metar, sky (a report's ceiling and its cover, for the station model), taf, winds, forecast (with run: the dry run against the forecast), validity, notam, notam_read (a NOTAM as a pilot reads it: its keyword as a heading, its words written out, its window) over contractions (the FAA's contractions, the one table, which the radio's D-ATIS reads by too), notam_rank (the NOTAMs that matter to a flight, best first), tfr, cycles, rvr (RVR against a minimum, 91.175(h)'s table), ready (ready to fly: what the device holds against the cycles and the weather's age; kept: a kept answer's age), worse (a route's weather worse since the briefing) | core, flight |
-| `procedures` | figures (debrief, diversion, endurance (91.151(a) and 91.167(a)(3)'s reserve kept back), holding, lost comms, words), paths (a procedure's legs as drawn: arcs, CIFP holds, procedure turns), occurrence (an accident report, the registry and an ADS-B track as one airplane: the Studio's crash drafts) | core, flight |
+| `core` | geo, flat (nm east and north of a point, the small flat frame), wmm, grid, sums, time, json, xml, sort, text (a whole number with its thousands grouped, "12,500", and JavaScript's Math.round, `js_round`, the one copy), units (the SI's foot, nautical mile and kelvin, one copy), ask (a rule's input read by its name, for every crate's `call`: `Ask`, and `num_in`, `opt_num_in` and `opt_str_in` for a member of a nested object, and `polygons`, GeoJSON's MultiPolygon coordinates read for airspace's TFRs and altitude's congested areas, the one copy of each), faa_case (the FAA's capitals in sentence case with its codes kept, the one copy: wording's `faa_words` and a TFR's purpose) | nothing |
+| `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference, an average ground speed and the miles along a route), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items: item 16's EET and item 19's endurance at the cruise burn among them), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy), field (whether a field is open: NASR's ARPT_STATUS, O alone; decision 0043; and whether it is military or joint; field_site_type: the words for NASR's SITE_TYPE_CODE, "Heliport", "Seaplane base"; mark_rank: which field's map mark is kept first; bare_field and same_field: a field by its FAA or ICAO ident, "KOSH" is OSH, the one copy) | core |
+| `weather` | metar, sky (a report's ceiling and its cover, for the station model), taf, winds, forecast (with run: the dry run against the forecast), validity, notam, notam_read (a NOTAM as a pilot reads it: its keyword as a heading, its words written out, its window) over contractions (the FAA's contractions, the one table, which the radio's D-ATIS reads by too), notam_rank (the NOTAMs that matter to a flight, best first), runway_closure (where a closed runway's Xs go on the card's sketch, AC 150/5340-1M 5.6 and 5.7, AIM 2-3-6, and the part a NOTAM closes), tfr, cycles, rvr (RVR against a minimum, 91.175(h)'s table; rvr_read: an RVR system's readings as its feed sends them, 6,000 ft its most, AIM 7-1-13), datis_kept (how long a D-ATIS is the airport's: two of AIM 4-1-13's hourly updates), near_report (whether a station's report is near enough to say a field's weather by it: a METAR's vicinity, FAA-H-8083-28B), ready (ready to fly: what the device holds against the cycles and the weather's age; kept: a kept answer's age), worse (a route's weather worse since the briefing) | core, flight |
+| `procedures` | figures (debrief, diversion, endurance (91.151(a) and 91.167(a)(3)'s reserve kept back), holding, lost comms, words), paths (a procedure's legs as drawn: arcs, CIFP holds, procedure turns; the planner's path figures, a hold entry's turn and JO 7110.65's join from vectors to final), legs (how far a leg with no fix to end at is drawn, and the course reversal flown where the path turns back, AIM 5-4-9), occurrence (an accident report, the registry and an ADS-B track as one airplane: the Studio's crash drafts), track_start (whether a recorded ADS-B track starts at its takeoff from the nearest field, from AC 90-66C's departure) | core, flight |
 | `radio` | clearance, callsign (our call sign and where it was said, AIM 4-2-3 c, 4-2-4), instruction (an instruction heard in flight read into its items), readback (AIM 4-4-7 b), atc (the ATC copilot's `atc_call` and `readback_check`), atis, datis (a digital ATIS as the tower's data link writes it), datis_remarks (its remarks as the card lists them, an item a sentence in the FAA's words, like runways folded), mayday (the distress call, AIM 6-3-2), guidance (an emergency's general good practice with no airplane picked) | core, flight, weather, procedures |
-| `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171), autolog (a logbook entry drawn from a flown track: 1.1, 61.1(b), 61.57), aircraft (with figures: an airplane's figures and where each comes from, and what a figure lacks), documents (a photographed page's figures checked before the pilot sees them), coach (a pilot's proficiency plan: what is due under 61.56 and 61.57, the weak areas their debriefs show, the sessions) | core, flight, procedures, route (without its options) |
+| `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171; paperwork: what falls due, each named and cited, for the gateway's list and reminders, an AD by 14 CFR 39.7), autolog (a logbook entry drawn from a flown track: 1.1, 61.1(b), 61.57), aircraft (with figures: an airplane's figures and where each comes from, and what a figure lacks), documents (a photographed page's figures checked before the pilot sees them), coach (a pilot's proficiency plan: what is due under 61.56 and 61.57, the weak areas their debriefs show, the sessions) | core, flight, procedures, route (without its options) |
 | `brief` | gonogo, runway (with marks: a field's wind on the map), alternates (91.169's IFR alternate), fields (the best fields to land at: a glide or a diversion), icing_forecast (the AWC's forecast icing on an IFR route), passengers (the passengers' SAFETY briefing, 91.107(a)) | core, flight, procedures |
-| `route` | route (and its options: route options' grid and ways, fuel stops, the way round high ground, Class B detours), motion (with along: where the airplane is on the route; fuel_left: the fuel the plan leaves in flight, from the last fuel stop, less each start and taxi, and the hop flown and its burn, which the strip's fuel takes off that hop's), approach, navlog | core, flight, weather, procedures |
+| `route` | route (and its options: route options' grid and ways, fuel stops, the way round high ground, Class B detours and Avoid Class B), motion (with along: where the airplane is on the route; fuel_left: the fuel the plan leaves in flight, from the last fuel stop, less each start and taxi, and the hop flown and its burn, which the strip's fuel takes off that hop's), approach, navlog | core, flight, weather, procedures |
 | `airspace` | airspace, pack, rules, pack_query, view, spoken (with spoken_ask: the places a clearance names and its SID and STAR, `clearance_places`), ahead, drills (91.125's light signals and 91.155's minimums as cards and by name), surface_class and surface_hours (the class at a field's surface and a part-time one's hours, `surface_airspace`, `surface_hours`) | core, flight, procedures, radio |
 | `wording` | wording (with script: the radio calls' words) | core, procedures, airspace, brief, route (without its options) |
-| `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words, the cautions on a pilot's own altitude, 91.119(b)'s congested areas) | core, flight, weather, procedures |
-| `inflight` | watch, checks, message (`copilot_watch`: the in-flight copilot's ranked messages), fields (its alternative: brief's best_fields in diversion mode, held to its weather and fuel checks) | core, flight, weather, procedures, brief |
+| `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words, the cautions on a pilot's own altitude, 91.119(b)'s congested areas; ground: the figures the planner's readers of the ground take, where a tile is the sea's, the obstacles drawn (77.9(a)), the side view's width, the finer terrain's reach), congested_reach (how far round a point the planner looks for 91.119(b)'s congested areas) | core, flight, weather, procedures |
+| `inflight` | watch, checks, message (`copilot_watch`: the in-flight copilot's ranked messages), flight (`copilot_flight`: the planned flight it starts from, the fuel at takeoff, the planned ground speed and whether a passenger is aboard), fields (its alternative: brief's best_fields in diversion mode, held to its weather and fuel checks) | core, flight, weather, procedures, brief |
 | `receiver` | frame, message, report, uplink, dlac, fisb, nexrad, picture (a portable ADS-B receiver's GDL 90: own ship, its traffic, FIS-B's text and NEXRAD; AIM 4-5-7, 4-5-9), views | core |
 | `facade/` | call | all of them |
 
@@ -248,10 +248,16 @@ Then the callers switch to the name and the old copy is deleted.
   the modules it is fed from), and the route's fuel and TFR figures the
   findings are put together from (`gonogo_route_figures`: the least fuel
   margin, the fuel required, the reserve, the TFRs in force and near), so
-  neither shell works them out. Each is a name in `call.rs`
-  (`gonogo_verdict_items`, `gonogo_risk`, `gonogo_runway_checks` ...), asked by
-  the web app (callEngine), the planner's app.gonogo (wingtip_native.call)
-  and the phones (the generated `call`). Which Class B band of a route's
+  neither shell works them out. They are put together as the Brief shows
+  them -- the alternate's in the weather's, the fields row, no airplane's
+  findings where none is picked, the line over them -- by `gonogo_brief`,
+  and worded for the Brief as it opens (at most three lines a pilot acts
+  on, each with what to do, why and its rule, the rest in one row) by
+  `gonogo_glance_lines`. Each is a name in `call.rs`
+  (`gonogo_brief`, `gonogo_risk`, `gonogo_runway_checks` ...), asked by
+  the web app (callEngine), the planner's app.gonogo (wingtip_native.call;
+  its POST /api/go-no-go asks `gonogo_brief` once) and the phones (the
+  generated `call`). Which Class B band of a route's
   profile holds an altitude is `class_b_at_altitude` (crates/airspace,
   14 CFR 91.131), the Profile card's "clearance needed".
 - The 3D map's airspace is the engine's too (`crates/airspace`): how high
@@ -267,6 +273,16 @@ Then the callers switch to the name and the old copy is deleted.
   said only with at least 3 of their takeoffs and landings, 0.4 of them
   and no tie (the owner's figures), for the planner's airplane card and the
   Aircraft tab's "based at"; held to the web's fixture `usualBase.json`.
+- The few figures the shells kept for themselves are the engine's too,
+  held to the web's fixture `shellFigures.json`: how often the live SWIM
+  feeds are asked again (`live_feed_refresh`, `crates/weather`: RVR each
+  minute as it is updated, AIM 7-1-13; the rest the app's choice), the
+  hours a search's "VFR at…" offers (`vfr_at_hours`, within a TAF's 24,
+  FAA-H-8083-28B 27.4.1), and the first day an instructor's page lists
+  (`instructor_records_since`, `crates/pilot`: 3 years back, 14 CFR
+  61.189(c)), which the gateway asks through the planner (GET
+  /api/pilot/instructor-records-since). The web's cruise altitude,
+  "FL-045", is `words_flight_level`'s.
 - Runways, the wind on them and the traffic pattern are the engine's too
   (`crates/brief`): a wind along and across a runway and the end it favours,
   the runway flown (the pilot's pick, else into the wind, AC 90-66C
@@ -344,11 +360,12 @@ Then the callers switch to the name and the old copy is deleted.
   in `mountainous.rs`), or an airway's MEA; a leg flown by a departure, an
   arrival or an approach keeps the highest of its own floor and the floors
   under the procedure's path (`floor_along_path`, the aviation audit's
-  AV-2) -- the band under the Class B
-  shelf (only Class B bounds it: Class B takes a clearance, 91.131(a)(1),
-  while Class C and D take two-way radio communication, 91.130(c)(1) and
-  91.129(c)(1), so they are calls to make, not airspace to fly under), 91.155's distance under the forecast clouds and the service
-  ceiling, none in prohibited airspace (73.83), the cruising altitudes by
+  AV-2) -- the band under 91.155's distance from the forecast clouds and
+  the service ceiling, none in prohibited airspace (73.83); no airspace
+  class bounds it (Class B is planned through with the clearance it takes,
+  91.131(a)(1), the owner's 2026-11-17 word, and the Routes offer the way
+  round it, `route_options`' `class_b`; Class C and D take two-way radio
+  communication, 91.130(c)(1) and 91.129(c)(1)); the cruising altitudes by
   course (91.159, 91.179(b)), the recommendation and the icing
   (`select_cruise_altitude`), the altitude wheel's rows, and the altitude
   flown anyway where none is legal with why (`altitude_anyway`,

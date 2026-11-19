@@ -9,6 +9,10 @@ import { MOTION, SIZE } from "../../lib/tokens";
  *  the sheet on. */
 export const DRAWER_MS = MOTION.drawer * 1000;
 
+/** The Drawer's settle after a lift, and a frame to spare: how long what
+ *  follows the sheet keeps following once the finger is off. */
+export const SETTLE_MS = DRAWER_MS + 50;
+
 /**
  * The sheet's three snap points in the stock Drawer's own units, the same
  * for the sheet and every card over it (the owner, 2026-11-11: the
@@ -55,10 +59,55 @@ const SIZES: PanelState[] = ["peek", "half", "full"];
  * iPhone, 2026-11-12, KORD's card; in WebKit at 390x844 none of its 23
  * parts in sight painted at any step of the drag). `visibility` keeps it
  * laid out and its pictures loaded, so there is nothing to build mid-drag.
+ * Nothing in it is eased while the sheet is at the pill: a stock Button
+ * eases all its properties (transition-all), visibility too, so hidden at
+ * the settle it stayed in sight for its transition's time, FPL's ••• over
+ * the pill's figures (the owner's screen recording, 2026-11-16: "Better
+ * but just a bit left at the end"). Up from the pill the class is gone and
+ * its controls ease as they do. Not a row parked at the foot (data-pin-foot,
+ * sheet/pinAtFoot's PIN_AT_FOOT): its ease is what holds it still as the
+ * sheet slides, and stopped at the pill it rode the sheet's last stretch
+ * down and came back up (the owner's screen recording, 2026-11-16).
  */
-export const PILL_BODY = "invisible group-data-swiping/sheet:visible";
+export const PILL_BODY = "invisible group-data-swiping/sheet:visible [&_*:not([data-pin-foot])]:transition-none";
 /** And a body that is the pill's one surface: its title row kept in sight. */
 export const AT_PILL = `${PILL_BODY} [&_[data-sheet-head]]:visible`;
+
+const HANDED = "transition-opacity duration-(--motion-drawer) ease-(--motion-drawer-ease) motion-reduce:transition-none";
+/** What a sheet shows risen where its pill is not simply its top (FPL's
+ *  bar and route over its figures, the pill): laid out at the pill but out
+ *  of sight (PILL_BODY), in sight as the finger takes it and held till the
+ *  sheet has settled (the popup's data-risen, SheetDrawer), all in CSS,
+ *  nothing built or swapped mid-drag -- the airport card's way. Not faded:
+ *  the pill's own row inside it (FplRoute's figures) is in sight at rest
+ *  by its own visibility, which an opacity round it would hide. */
+export const RISEN_FACE = `${PILL_BODY} group-data-risen/sheet:visible`;
+/** And a risen face over the pill (FPL's actions' bar, under the figures
+ *  held there, FlightFoot): in sight only while a finger has the
+ *  sheet, not held while it settles, so settled at the pill it does not
+ *  show over the figures for the settle's frames (the owner's screen
+ *  recording, 2026-11-16: "Still see the flicker at the end"). */
+export const RISEN_OVER = `${PILL_BODY} ${HANDED} opacity-0 group-data-swiping/sheet:opacity-100`;
+
+/** Eight points at a bottom sheet's foot where there is no home indicator
+ *  (its viewport ends over the indicator, SheetDrawer), none while the
+ *  keyboard is up: the Drawer's --drawer-keyboard-inset is 0 or a
+ *  keyboard's height, so the room less a thousand times it is the room or
+ *  nothing. SheetParts' spacer at the foot; a floating bar in the foot
+ *  takes some of it back (FplTabBar). */
+export const EDGE_ROOM = "max(0px, calc(8px - env(safe-area-inset-bottom) - var(--drawer-keyboard-inset, 0px) * 1000))";
+
+/** Held at a sheet's free edge however far the sheet is slid: moved back by
+ *  the Drawer's snap offset and the finger's movement, on its curve, held
+ *  still under a finger -- the foot's figures and bar (SheetParts), a
+ *  card's tabs (CardTabBar), sticky at its scroller's foot. Read through
+ *  the popup's own copies (--sheet-offset and --sheet-swipe, SheetDrawer
+ *  and CardStack): Base UI registers its variables with `inherits: false`,
+ *  so under the popup they were 0 and nothing followed -- a top sheet's
+ *  search rode off the screen at the pill (consoles.spec, 2026-11-10). 0
+ *  beside the side panel. */
+export const HOLD_AT_EDGE =
+  "[transform:translateY(calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
 
 /** A sheet's snap points and each size's, one constant per edge. */
 export function snapsOf(fromBottom: boolean) {

@@ -77,6 +77,7 @@ pub fn altitude_advisor(name: &str, v: &Value) -> R<String> {
                     ("fastest", Value::Bool(r.fastest)),
                     ("economical", Value::Bool(r.economical)),
                     ("warning", opt_text(r.warning)),
+                    ("note", opt_text(r.note.map(str::to_owned))),
                 ])
             })
             .collect(),

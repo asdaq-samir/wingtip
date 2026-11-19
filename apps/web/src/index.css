@@ -151,6 +151,11 @@ button,
 body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-food]) {
   opacity: 0;
   pointer-events: none;
+  /* Gone at once, back with the fade: riding a card that rises all the way
+     (Settings from the Map card's gear opens there), they went past the
+     screen's top while still fading, 200 px over a card moving faster than
+     the fade (sheet-cards.spec's drawn-once check). */
+  transition: none;
 }
 /* And the map's credits with them: riding on a sheet all the way up they
    sat under the status bar, a line of small print over the clock (the
@@ -285,11 +290,11 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* The chart at night (Setup's Appearance, Dark, lib/preferences
-   chartNight): its tiles alone are dimmed, by the map's own raster paint
-   (lib/map/gl/glStyle chartPaint, the brightness and contrast these tiles
-   had here as a CSS filter). Where a tile is not in yet, the night's
-   ground. */
+/* The map in the dark theme: where a tile is not in yet, the night's
+   ground. The chart's tiles alone are dimmed, by the map's own raster
+   paint (lib/map/gl/glStyle chartPaint, the Map card's Dimmer and
+   Contrast), where they had a CSS filter here once; no stylesheet reads
+   the dimming. */
 .dark .maplibregl-map {
   background: var(--background);
 }
@@ -347,6 +352,16 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
     cursor: pointer;
   }
 
+  /* No grey flash over what a finger taps, as no iOS control has one:
+     Safari's tap highlight drew a dark box over a button's whole hit
+     area, its pseudo-element too, on top of the stock pressed state.
+     The press is each part's own -- the Button's dimming
+     (pointer-coarse:active:opacity-60), a menu's or a list's highlighted
+     row, a Toggle's pressed fill -- so this takes nothing away. */
+  :is(a, button, input, select, textarea, label, summary, [role="button"], [role="option"], [role="menuitem"], [role="tab"], [tabindex]) {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   * {
     @apply border-border outline-ring;
   }
@@ -385,6 +400,13 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
 [data-slot="toast"] {
   pointer-events: auto;
 }
+/* Save a progress toast ("Drawing Route…"): it has nothing to hold or read
+   on, and goes when the work is done, and on a phone it comes in at the
+   screen's top over the map's problem line, where it took the tap meant
+   for the line's Try again (problems.spec). The pointer goes through it. */
+[data-slot="toast"][data-type="loading"] {
+  pointer-events: none;
+}
 
 /* Touch targets. Apple asks for 44 points on both sides of anything a
    finger taps; the stock controls are smaller than that -- an icon
@@ -417,19 +439,6 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
       position: relative;
     }
   }
-}
-
-/* On a TV (lib/tv), where the remote is: a ring in the tint round
-   whatever has the focus, thick enough to be seen across a room, the map
-   ringed inside its edge -- on any focus, not only a keyboard's, as the
-   app puts the remote on its first control itself. A remote has nothing
-   else to show it by. */
-html[data-tv] :focus {
-  outline: 4px solid var(--tint) !important;
-  outline-offset: 3px;
-}
-html[data-tv] .maplibregl-canvas:focus {
-  outline-offset: -6px;
 }
 
 /* A panel tab not up (PanelTabs: its Base UI Tabs.Panel's data-hidden;
@@ -663,12 +672,13 @@ html:not([data-brand="native"])::view-transition-new(.page-back) {
 /* Every card's head in the sheet, one row pinned at its top from the
    start, the content scrolling on under it blurred through its frost (the
    owner, 2026-11-10: "just keep the title on top and content moves under
-   with a frosty style"; PinnedHead): the sheet's own ground at the glass's
-   fill over the sheet's blur (design/tokens.json glass-fill, sheet-blur),
+   with a frosty style"; PinnedHead): the sheet's own ground at the head's
+   dense fill over the sheet's blur (design/tokens.json head-fill,
+   sheet-blur; the glass's 0.8 let words under the name ghost through it),
    solid where the browser frosts nothing and under Reduce Transparency
    or Increase Contrast (the solid variant), as iOS's materials go. */
 @utility frost-head {
-  background-color: color-mix(in oklab, var(--sheet, var(--background)) var(--glass-fill-light), transparent);
+  background-color: color-mix(in oklab, var(--sheet, var(--background)) var(--head-fill), transparent);
   -webkit-backdrop-filter: blur(var(--sheet-blur));
   backdrop-filter: blur(var(--sheet-blur));
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -740,4 +750,14 @@ body[data-map-sheet]:is([data-map-panel="peek"], [data-map-panel="half"])
       background-color: var(--popover) !important;
     }
   }
+}
+
+/* A digit's width in the figures' face, in ems, at their semibold
+   (FigureStrip's FIT, components/figureRoom): Barlow's in the looks that
+   set it, Inter's in the Native look (measured 2026-11-17). */
+:root {
+  --figure-digit: 0.54;
+}
+:root[data-brand="native"] {
+  --figure-digit: 0.65;
 }

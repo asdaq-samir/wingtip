@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { clearTheRoute, openPanel, settle, sideDrawer } from "./helpers";
+import { clearTheRoute, openPanel, settle, sideDrawer, openRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 
 /**
@@ -54,10 +54,42 @@ test("a cleared route comes back from the toast's Undo, and again from the keybo
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
 });
 
+test("a cleared route comes back from the empty route's Undo, which goes once a new route is started", async ({ page }) => {
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  await pastSettling(page);
+
+  // No ••• in the first row before there is a route (the owner, 2026-11-18).
+  await clearTheRoute(page);
+  await expect(page).not.toHaveURL(/[?&]dep=/);
+  await expect(sideDrawer(page).getByTestId("route-strip").getByTestId("share-route")).toHaveCount(0);
+  const undo = sideDrawer(page).getByTestId("route-undo");
+  await undo.click();
+  await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
+  await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
+
+  // Cleared again and a new route started in the field Type or Paste a
+  // Route opens, focused: no Undo then. Past the route's settling once it
+  // is put back (its runway and pattern picked again), which the history
+  // takes in as part of the Undo (SETTLE_MS): a clear inside it was taken
+  // in too, and left nothing to undo.
+  await pastSettling(page);
+  await clearTheRoute(page);
+  await expect(undo).toBeVisible();
+  await sideDrawer(page).getByTestId("timeline-type-route").click();
+  await expect(sideDrawer(page).getByTestId("route-type")).toBeFocused();
+  await page.keyboard.insertText("KMSN");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/[?&](dep|dest)=KMSN(&|$)/);
+  await expect(undo).toHaveCount(0);
+});
+
 test("a stop taken out comes back from the Undo toast that names it", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   await pastSettling(page);
 
   const lines = sideDrawer(page).getByTestId("route-slide");

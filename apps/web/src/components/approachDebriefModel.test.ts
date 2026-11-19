@@ -1,10 +1,17 @@
 import { describe, expect, test } from "vitest";
 import type { ProcedureDrawing } from "../lib/api/types";
-import { attemptsAt, debriefApproach, findApproaches, withMinimums, withTransition } from "./approachDebriefModel";
+import { findApproaches, withMinimums, withTransition, type ApproachDebrief } from "./approachDebriefModel";
 import { FT_PER_NM, rad, geoLoaded } from "../lib/geo";
 import { callEngine } from "../lib/engine/engine";
 import type { TrackPoint } from "../lib/track";
 import KBUR from "../lib/fixtures/approachKbur.json";
+
+/** One approach debriefed as the page finds it (findApproaches, the
+ *  engine's approach_find): the drawing alone offered, null where the
+ *  track did not fly it. */
+function debriefApproach(d: ProcedureDrawing, points: TrackPoint[], options: { minimumsFt?: number } = {}): ApproachDebrief | null {
+  return findApproaches([d], points, null, options.minimumsFt ?? null)[0] ?? null;
+}
 
 // The engine's geodesic rules, loaded by the setup file (vitestSetup).
 const { bearingDeg, destination, distanceNm } = await geoLoaded;
@@ -176,7 +183,6 @@ describe("what it flags", () => {
 
   test("a track that never came near the final approach fix is no approach of it", () => {
     const wide = fly(finalOf(ILS), { off: () => 2, alt: onIls });
-    expect(attemptsAt(ILS, wide)).toEqual([]);
     expect(debriefApproach(ILS, wide)).toBeNull();
     expect(findApproaches([ILS, RNAV], wide)).toEqual([]);
   });

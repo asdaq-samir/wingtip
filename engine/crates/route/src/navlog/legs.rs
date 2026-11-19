@@ -3,7 +3,7 @@
 //! and wingtip.planning.alternate_leg.
 
 use super::{number, object, opt_number, py_round, py_sum, Air, LegAir, Obj, Profile, R};
-use crate::geo::{bearing_deg, distance_nm, py_mod};
+use crate::geo::{distance_and_bearing, distance_nm, py_mod};
 use crate::json::Value;
 use wingtip_flight::flight;
 
@@ -35,8 +35,7 @@ use wingtip_flight::flight;
 pub fn assemble_leg(
     start: (f64, f64), end: (f64, f64), altitude_ft: f64, profile: Option<&Profile>, air: &Air, variation_deg: f64,
 ) -> R<Obj> {
-    let true_course_deg = bearing_deg(start.0, start.1, end.0, end.1);
-    let leg_distance_nm = distance_nm(start.0, start.1, end.0, end.1);
+    let (leg_distance_nm, true_course_deg) = distance_and_bearing(start.0, start.1, end.0, end.1);
     let Some(profile) = profile else {
         let mut leg = Obj::default();
         leg.set_num("true_course_deg", true_course_deg);

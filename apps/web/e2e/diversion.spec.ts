@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { settle, slow, openNavLog, navLogSheet } from "./helpers";
+import { settle, slow, openNavLog, navLogSheet, openPanel, inSheet } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -64,12 +64,16 @@ test("a diversion over a checkpoint: the clock, a field picked, and the estimate
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openNavLog(page);
   const rows = navLogSheet(page).locator("[data-kind=checkpoint]");
   await expect(rows.first()).toBeVisible({ timeout: slow(120000) });
   await rows.first().click();
-  await navLogSheet(page).getByTestId("diversion-drill").first().click();
+  // The row picked brings the map to its point over the card at half
+  // (rules.md §14.5), its line under the card's edge: pulled up to reach.
+  const link = navLogSheet(page).getByTestId("diversion-drill").first();
+  await inSheet(page, link);
+  await link.click();
 
   const sheet = page.getByTestId("diversion-content");
   await sheet.getByTestId("diversion-start").click();
@@ -88,6 +92,9 @@ test("a diversion over a checkpoint: the clock, a field picked, and the estimate
   await fields.filter({ hasText: "KBBB" }).click();
   await sheet.getByTestId("diversion-mh-input").fill("90");
   await sheet.getByTestId("diversion-ete-input").fill("10");
+  // The card opens half way, as every card does: its button under the
+  // edge is reached by pulling the card up.
+  await inSheet(page, sheet.getByTestId("diversion-check"));
   await sheet.getByTestId("diversion-check").click();
 
   await expect(sheet.getByTestId("diversion-clock")).toContainText("You took");

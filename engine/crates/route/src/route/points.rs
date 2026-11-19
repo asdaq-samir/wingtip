@@ -97,20 +97,3 @@ pub fn frd_ident(base: &str, course: f64, distance_nm: f64) -> String {
     let nm = js_round(distance_nm * 10.0) as f64 / 10.0;
     format!("{}/{:03}/{}", super::upper(base), js_round(course).rem_euclid(360), js_string(nm))
 }
-
-/// A field's FAA ident, trimmed and uppercased: the CIFP names it by its
-/// ICAO ident (KDLH) where the route may have the FAA's (DLH), so a K and
-/// three letters or figures is the three.
-pub fn bare_field(ident: &str) -> String {
-    let s = normal(ident);
-    if s.len() == 4 && s.starts_with('K') && s.bytes().all(upper_alnum) {
-        s[1..].to_owned()
-    } else {
-        s
-    }
-}
-
-/// Whether two idents name one field (bare_field).
-pub fn same_field(a: &str, b: &str) -> bool {
-    bare_field(a) == bare_field(b)
-}

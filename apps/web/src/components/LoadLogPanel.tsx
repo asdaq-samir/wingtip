@@ -29,8 +29,8 @@ export default function LoadLogPanel() {
           />
         </ListGroup>
       )}
-      {fresh.length > 0 && <Middle title={`Fresh loads, middle of ${fresh.length}`} loads={fresh} testId="load-log-fresh" />}
-      {cached.length > 0 && <Middle title={`From the cache, middle of ${cached.length}`} loads={cached} testId="load-log-cached" />}
+      {fresh.length > 0 && <Middle title={`Fresh loads, middle of ${fresh.length}`} loads={fresh} />}
+      {cached.length > 0 && <Middle title={`From the cache, middle of ${cached.length}`} loads={cached} />}
       {loads.length > 0 && (
         <ListGroup title="Each load">
           {loads.map((l) => (
@@ -42,14 +42,14 @@ export default function LoadLogPanel() {
   );
 }
 
-function Middle({ title, loads, testId }: { title: string; loads: LoadEntry[]; testId: string }) {
+function Middle({ title, loads, testId }: { title: string; loads: LoadEntry[]; testId?: string }) {
   const rows = MILESTONES.map((m) => ({ ...m, value: median(loads.map((l) => l.ms[m.key])) })).sort(
     (a, b) => (a.value ?? Infinity) - (b.value ?? Infinity),
   );
   return (
     <ListGroup title={title}>
       {rows.map((r) => (
-        <ListRow key={r.key} title={r.label} value={seconds(r.value)} data-testid={`${testId}-${r.key}`} />
+        <ListRow key={r.key} title={r.label} value={seconds(r.value)} data-testid={testId && `${testId}-${r.key}`} />
       ))}
     </ListGroup>
   );
@@ -65,7 +65,6 @@ function LoadRow({ load }: { load: LoadEntry }) {
     <ListRow
       title={when}
       value={`Airports ${seconds(load.ms.airports)}`}
-      data-testid="load-log-entry"
       description={
         <span className={TEXT.detail}>
           {load.fresh ? "Fresh" : "From the cache"} · {steps}

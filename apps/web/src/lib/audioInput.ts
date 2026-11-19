@@ -21,44 +21,21 @@
  * held for nothing. Nothing heard is sent anywhere or saved: the level is
  * a number for the bars, gone as it is drawn.
  *
- * Imported by lib/atcListening, features/plan/lib/atis and the card's ListenThrough, all chunks of their own.
+ * Imported by lib/atcListening, features/place/atis and the card's ListenThrough, all chunks of their own.
  * Every browser call is feature-tested and caught; where nothing can be
  * picked -- Chrome for Android, whose recognizer opens the microphone itself and whose
  * inputs are only "Bluetooth headset" and "Default" -- all of it does
  * nothing, and listening is as it always was.
  */
-import { create } from "zustand";
-import { inputLevel, useAtcRadio, type HeardInput } from "./atcRadio";
-import { noMicrophone } from "./listen";
+import { inputLevel, useAtcRadio } from "./atcRadio";
 import { takesTrack } from "./speechLocal";
 import { usePreferences } from "./preferences";
+import { constraintsFor, failWords, isOutside, matchInput, settingsId, useInputs, type Held, type InputChoice } from "./audioInputPure";
+import { publishInput } from "./audioInputPublish";
+import { meterOn, setSession, startContext, stopMeter } from "./audioInputMeter";
 
-/** One input, as enumerateDevices lists it once the page may see names. */
-interface Input {
-  id: string;
-  label: string;
-  outside: boolean;
-}
-
-/** An input chosen, as preferences keep it: by id, then by name. */
-interface InputChoice {
-  id: string;
-  label: string;
-}
-
-/**
- * What the picker shows: whether this page load may list the inputs by
- * name yet (`found`; Safari lists them only after a capture has been
- * granted in the same page load, WebKit's ExposeCaptureDevicesAfterCapture,
- * not after the site's stored permission), the inputs, the one the held
- * track is on, and why a choice could not be had.
- */
-export const useInputs = create<{ found: boolean; inputs: Input[]; chosen: string | null; problem: string | null }>(() => ({
-  found: false,
-  inputs: [],
-  chosen: null,
-  problem: null,
-}));
+// What a caller outside this module asks of the pure parts, said here once.
+export { isOutside, levelOf, matchInput, useInputs } from "./audioInputPure";
 
 /** Whether an input can be picked here at all. */
 export function canPickInput(): boolean {
@@ -68,69 +45,12 @@ export function canPickInput(): boolean {
   return typeof devices?.getUserMedia === "function" && typeof devices.enumerateDevices === "function";
 }
 
-/** The device's own microphone by its name in Safari ("iPhone Microphone",
- *  "MacBook Pro Microphone"), Chrome ("… (Built-in)", "Default") and
- *  Firefox; a Windows laptop's "Microphone Array". */
-const BUILT_IN = [
-  /^$/,
-  /^default$/i,
-  /\b(iPhone|iPad|iPod)\b.*\bMicrophone\b/i,
-  /\(Built-in\)/i,
-  /^(MacBook( Air| Pro)?|iMac|Mac( mini| Studio| Pro)?|Studio Display|Built-in|Internal) Microphone\b/i,
-  /^Microphone Array\b/i,
-];
-
-/** Whether an input is not the phone's or the computer's own microphone:
- *  a Bluetooth panel or headset, a cable's. */
-export function isOutside(label: string): boolean {
-  const name = label.replace(/^Default\s*-\s*/i, "").trim();
-  return !BUILT_IN.some((re) => re.test(name));
-}
-
-/** The level of a block of samples, 0 to 1: its RMS from -60 to 0 dBFS,
- *  so a full-scale sine reads 0.95 and silence 0. */
-export function levelOf(samples: ArrayLike<number>): number {
-  let sum = 0;
-  for (let i = 0; i < samples.length; i++) sum += samples[i]! * samples[i]!;
-  const rms = Math.sqrt(sum / Math.max(1, samples.length));
-  if (!(rms > 0)) return 0;
-  return Math.min(1, Math.max(0, (20 * Math.log10(rms) + 60) / 60));
-}
-
-/** The input in a list that a choice names: by its id, else its name
- *  (Chrome's "Default - " taken off), as a private window gives a device
- *  another id. */
-export function matchInput(inputs: Input[], want: InputChoice | null): Input | null {
-  if (!want) return null;
-  const bare = (label: string) => label.replace(/^Default\s*-\s*/i, "").trim();
-  return (
-    inputs.find((i) => i.id === want.id) ??
-    inputs.find((i) => i.label === want.label) ??
-    inputs.find((i) => bare(i.label) === bare(want.label)) ??
-    null
-  );
-}
-
-interface Held {
-  stream: MediaStream;
-  track: MediaStreamTrack;
-  /** The input chosen, as asked for: its name stays what was picked once
-   *  the track's own changes. */
-  id: string;
-  label: string;
-  outside: boolean;
-  detach: () => void;
-}
-
 let holds = 0;
 let held: Held | null = null;
 let opening = false;
 /** Counts each opening and each letting go, so an answer that comes after
  *  either is not taken. */
 let generation = 0;
-let context: AudioContext | null = null;
-let source: MediaStreamAudioSourceNode | null = null;
-let meter: ReturnType<typeof setInterval> | null = null;
 let sessionSet = false;
 let watching = false;
 /** An outside input asked for that could not be opened -- the one
@@ -273,17 +193,6 @@ export function choose(want: InputChoice | null): Promise<void> {
   );
 }
 
-/** The device's own microphone asks for the voice processing listening
- *  always had: on iOS a new capture takes the shared unit's state as it
- *  stands (WebKit's CoreAudioCaptureUnit; the research's claim 28), which
- *  an outside input opened before has turned off. */
-function constraintsFor(target: InputChoice | null, outside: boolean): MediaTrackConstraints {
-  if (!target) return { echoCancellation: true };
-  return outside
-    ? { deviceId: { exact: target.id }, echoCancellation: false, noiseSuppression: false, autoGainControl: false }
-    : { deviceId: { exact: target.id }, echoCancellation: true };
-}
-
 function adopt(stream: MediaStream, gen: number, target: InputChoice | null, before: Held | null) {
   if (gen === generation) opening = false;
   const track = stream.getAudioTracks()[0];
@@ -358,34 +267,6 @@ function failed(
   useInputs.setState({ problem: failWords(err, target?.label ?? null) });
 }
 
-/** Why a capture was refused, in a pilot's words. Only ever in a browser
- *  (canPickInput), where a website has no entry of its own in iOS's
- *  Settings: the browser's own settings for the site allow it. */
-function failWords(err: unknown, label: string | null): string {
-  const { name, message } = (err ?? {}) as { name?: unknown; message?: unknown };
-  if (typeof message === "string" && /AVAudioSessionCaptureDevice/.test(message)) return noMicrophone();
-  if (name === "NotAllowedError" || name === "SecurityError") {
-    const ua = navigator.userAgent ?? "";
-    const safari = /Safari\//.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|EdgiOS|Edg\//.test(ua);
-    return `Microphone access was refused; allow it in ${safari ? "Safari's" : "the browser's"} settings for this website.`;
-  }
-  if (name === "NotFoundError" || name === "OverconstrainedError") {
-    return `${label ?? "The microphone"} could not be found; check it is connected.`;
-  }
-  if (name === "NotReadableError" || name === "AbortError") {
-    return `${label ?? "The microphone"} could not be used; another app may have it.`;
-  }
-  return noMicrophone();
-}
-
-function settingsId(track: MediaStreamTrack): string {
-  try {
-    return track.getSettings?.().deviceId ?? "";
-  } catch {
-    return "";
-  }
-}
-
 /** The track's events, each a fresh reading of what is live; returns the
  *  unsubscribe. Safari renames a running capture as the route changes and
  *  says so with configurationchange (16.4+); the others only devicechange. */
@@ -421,86 +302,8 @@ function watch() {
   }
 }
 
-/**
- * What is live, put in the radio's store: the track's own name now, or,
- * where the outside input chosen is not heard, that it is lost, why as far
- * as the page knows -- no longer listed, its track ended, the route moved
- * to the device's own microphone, or not to be had at all -- and what is
- * heard instead; and whether the capture is paused (muted), when no sound
- * reaches the page whatever the input sends. Read at every input event
- * and a second after listening starts (lib/atcListening), as starting
- * Safari's recognizer may move the route itself.
- */
-function publish() {
-  const h = held;
-  if (!h) {
-    // An outside input wanted and not had, nothing in its place: the
-    // recognizer hears the default.
-    if (missing)
-      useAtcRadio.setState({ input: { label: missing.label, outside: true, lost: true, why: "missing", instead: null, paused: false } });
-    return;
-  }
-  const { track } = h;
-  const live = track.readyState === "live";
-  const now = track.label || h.label;
-  const { found, inputs } = useInputs.getState();
-  const gone = found && !matchInput(inputs, { id: h.id, label: h.label });
-  const fellBack = live && !!track.label && !isOutside(track.label);
-  const why: HeardInput["why"] = !h.outside ? null : gone ? "disconnected" : !live ? "ended" : fellBack ? "moved" : null;
-  const input: HeardInput = why
-    ? { label: h.label, outside: true, lost: true, why, instead: fellBack ? track.label : null, paused: false }
-    : missing && !isOutside(now)
-      ? { label: missing.label, outside: true, lost: true, why: "missing", instead: live ? now : null, paused: false }
-      : { label: now, outside: isOutside(now), lost: false, why: null, instead: null, paused: live && !!track.muted };
-  useAtcRadio.setState({ input });
-  useInputs.setState({
-    chosen: input.lost ? null : (matchInput(inputs, { id: live ? settingsId(track) || h.id : h.id, label: now })?.id ?? null),
-  });
-}
-
-function startContext() {
-  const Context =
-    (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext ??
-    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Context) return;
-  try {
-    if (!context || context.state === "closed") context = new Context();
-    void context.resume?.().catch(() => {});
-  } catch {
-    context = null;
-  }
-}
-
-/** Ten readings a second of the held stream, through an AnalyserNode that
- *  goes nowhere: nothing is played back or kept. */
-function meterOn(stream: MediaStream) {
-  if (!context) return;
-  try {
-    source?.disconnect();
-    source = context.createMediaStreamSource(stream);
-    const analyser = context.createAnalyser();
-    analyser.fftSize = 2048;
-    source.connect(analyser);
-    const samples = new Float32Array(analyser.fftSize);
-    if (meter) clearInterval(meter);
-    meter = setInterval(() => {
-      analyser.getFloatTimeDomainData(samples);
-      inputLevel.emit(levelOf(samples));
-    }, 100);
-  } catch {
-    // No meter: the bars keep their own rise and fall.
-  }
-}
-
-function setSession(type: "play-and-record" | "playback" | "auto") {
-  const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
-  if (!session) return;
-  try {
-    session.type = type;
-  } catch {
-    // Safari 16.4+ only; elsewhere the session is the browser's.
-  }
-}
+/** What is live, put in the radio's store (audioInputPublish). */
+const publish = () => publishInput(held, missing);
 
 /** The last hold gone: the track stopped, the meter and its context shut,
  *  Safari's session given back, nothing named. */
@@ -513,16 +316,7 @@ function letGo() {
     h.detach();
     h.stream.getTracks().forEach((t) => t.stop());
   }
-  if (meter) clearInterval(meter);
-  meter = null;
-  try {
-    source?.disconnect();
-  } catch {
-    // already gone
-  }
-  source = null;
-  if (context) void context.close?.().catch(() => {});
-  context = null;
+  stopMeter();
   if (sessionSet) {
     setSession("playback");
     setSession("auto");

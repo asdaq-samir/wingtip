@@ -5,8 +5,9 @@ import pytest
 import shapefile
 from shapely.geometry import Point, Polygon
 
-from wingtip import airspace
-from wingtip.airspace import _shapefile_is_complete, is_own_surface_area
+from wingtip import airspace, airspace_file
+from wingtip.airspace import is_own_surface_area
+from wingtip.airspace_file import _shapefile_is_complete
 
 DEPARTURE = Point(-93.65, 41.53)
 DESTINATION = Point(-95.89, 41.30)
@@ -92,36 +93,9 @@ def test_absent_file_is_rejected(tmp_path):
     assert _shapefile_is_complete(tmp_path / "nope.shp") is False
 
 
-# --- the hemispheric cruising-altitude rule ---
+# --- the classes that take a clearance ---
 
 from wingtip.airspace import CLEARANCE_CLASSES  # noqa: E402
-from wingtip.engine import ask as engine  # noqa: E402
-
-
-def lowest_vfr_cruising_altitude(floor_ft, course):
-    return engine("lowest_vfr_cruising_altitude", floor_ft=floor_ft, magnetic_course_deg=course)
-
-
-EAST, WEST = 90.0, 270.0
-
-
-@pytest.mark.parametrize(
-    "floor_ft, bearing, expected",
-    [
-        (3000, WEST, 4500),  # KDSM->KOMA: the case that used to give 12,500
-        (2200, WEST, 2500),
-        (3000, EAST, 3500),
-        (2200, EAST, 3500),  # 2,500 is a westbound altitude, so climb to 3,500
-        (4500, WEST, 4500),  # already legal and eastbound-correct: unchanged
-        (4600, WEST, 6500),  # just above one, so the next in the same band
-    ],
-)
-def test_lowest_legal_altitude_above_the_floor(floor_ft, bearing, expected):
-    assert lowest_vfr_cruising_altitude(floor_ft, bearing) == expected
-
-
-def test_bearing_wraps():
-    assert lowest_vfr_cruising_altitude(3000, 630.0) == lowest_vfr_cruising_altitude(3000, 270.0)
 
 
 def test_only_class_b_takes_a_clearance():
@@ -154,17 +128,17 @@ def _write_shapefile(path, extra_polygon: bool = False) -> None:
 def test_controlled_polygons_round_trip_through_the_wkb_cache(tmp_path, monkeypatch):
     shp = tmp_path / "Class_Airspace.shp"
     _write_shapefile(shp)
-    monkeypatch.setattr(airspace, "_ALL_AIRSPACE_CACHE", {})
+    monkeypatch.setattr(airspace_file, "_ALL_AIRSPACE_CACHE", {})
 
     parsed = airspace._load_all_controlled_airspace(shp)
 
     assert [p["name"] for p in parsed] == ["DES MOINES"]  # Class E excluded
-    assert airspace._controlled_cache_path(shp).exists()
+    assert airspace_file._controlled_cache_path(shp).exists()
 
     # A fresh process: nothing in memory, the cache beside the file
     # answers, and the shapefile is not walked again.
-    monkeypatch.setattr(airspace, "_ALL_AIRSPACE_CACHE", {})
-    monkeypatch.setattr(airspace, "_parse_controlled_airspace", lambda path: pytest.fail("parsed instead of reading the cache"))
+    monkeypatch.setattr(airspace_file, "_ALL_AIRSPACE_CACHE", {})
+    monkeypatch.setattr(airspace_file, "_parse_controlled_airspace", lambda path: pytest.fail("parsed instead of reading the cache"))
     from_cache = airspace._load_all_controlled_airspace(shp)
 
     assert from_cache[0]["name"] == "DES MOINES" and from_cache[0]["class"] == "C"
@@ -176,7 +150,7 @@ def test_controlled_polygons_round_trip_through_the_wkb_cache(tmp_path, monkeypa
 def test_a_new_shapefile_cycle_rebuilds_the_cache(tmp_path, monkeypatch):
     shp = tmp_path / "Class_Airspace.shp"
     _write_shapefile(shp)
-    monkeypatch.setattr(airspace, "_ALL_AIRSPACE_CACHE", {})
+    monkeypatch.setattr(airspace_file, "_ALL_AIRSPACE_CACHE", {})
     airspace._load_all_controlled_airspace(shp)
 
     # The next 28-day cycle: a re-downloaded file with different content.
@@ -184,9 +158,9 @@ def test_a_new_shapefile_cycle_rebuilds_the_cache(tmp_path, monkeypatch):
     later = os.stat(shp).st_mtime + 100
     os.utime(shp, (later, later))
     parses = []
-    real_parse = airspace._parse_controlled_airspace
-    monkeypatch.setattr(airspace, "_parse_controlled_airspace", lambda path: parses.append(path) or real_parse(path))
-    monkeypatch.setattr(airspace, "_ALL_AIRSPACE_CACHE", {})
+    real_parse = airspace_file._parse_controlled_airspace
+    monkeypatch.setattr(airspace_file, "_parse_controlled_airspace", lambda path: parses.append(path) or real_parse(path))
+    monkeypatch.setattr(airspace_file, "_ALL_AIRSPACE_CACHE", {})
 
     rebuilt = airspace._load_all_controlled_airspace(shp)
 
@@ -199,7 +173,7 @@ def test_transits_follow_the_legs_flown_not_the_straight_line(tmp_path, monkeypa
     inside it bends the route through, and that is the call to make."""
     shp = tmp_path / "Class_Airspace.shp"
     _write_shapefile(shp)
-    monkeypatch.setattr(airspace, "_ALL_AIRSPACE_CACHE", {})
+    monkeypatch.setattr(airspace_file, "_ALL_AIRSPACE_CACHE", {})
     start, end = (41.0, -94.2), (41.0, -93.0)
 
     assert airspace.airspace_transits(start, end, shp) == []

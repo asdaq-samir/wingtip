@@ -1,0 +1,261 @@
+import { Map as GlMap, type Marker, type LngLatBoundsLike, type StyleSpecification } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+// The worker MapLibre parses its sources in (lib/map/gl/worker).
+import "../lib/map/gl/worker";
+import { useEffect, useMemo, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "./ui/button";
+import { api } from "../lib/api/client";
+import { chartPagePicture, type PageMark } from "../lib/diagram";
+import { ownShipHtml } from "../lib/map/marks/icons";
+import { usePreferences } from "../lib/preferences";
+import { drawOwnShip, ownShipMarker } from "../lib/map/gl/layers/ownShipMarker";
+import { TEXT } from "../lib/text";
+import { cn } from "cn";
+import FullScreenViewer from "./FullScreenViewer";
+import { CHART } from "../lib/tokens";
+
+/** Between one page and the next, in the pages' own pixels. */
+const GAP = 60;
+/** Degrees a page's pixel is laid on: the pages sit on a sliver of the
+ *  equator, a few hundredths of a degree across, where the map's Mercator
+ *  is flat to a part in a million: MapLibre has no plane of plain
+ *  pixels. */
+const K = 1e-5;
+/** No further in than two screen points a picture's pixel: past that the
+ *  picture, drawn at 360 dots an inch (wingtip.publications), only grows
+ *  coarser. MapLibre's world is 512 points across
+ *  360 degrees at zoom 0. */
+const MAX_ZOOM = Math.log2((2 * 360) / (512 * K));
+
+export interface Page {
+  src: string;
+  width: number;
+  height: number;
+}
+
+type Box = [west: number, south: number, east: number, north: number];
+
+/** The pages one under another, each centred, in degrees (down the pages
+ *  is south). */
+function laidOut(pages: Page[]) {
+  const wide = Math.max(...pages.map((p) => p.width));
+  let top = 0;
+  const placed = pages.map((p) => {
+    const left = (wide - p.width) / 2;
+    const box: Box = [left * K, -(top + p.height) * K, (left + p.width) * K, -top * K];
+    top += p.height + GAP;
+    return { ...p, box };
+  });
+  const all: Box = [0, -(top - GAP) * K, wide * K, 0];
+  return { placed, all };
+}
+
+const corners = ([w, s, e, n]: Box): [[number, number], [number, number], [number, number], [number, number]] => [
+  [w, n],
+  [e, n],
+  [e, s],
+  [w, s],
+];
+const bounds = ([w, s, e, n]: Box): LngLatBoundsLike => [
+  [w, s],
+  [e, n],
+];
+
+/** The pages on a MapLibre map of their own: a pinch, a drag and a double
+ *  tap do what they do on the chart; the first page whole as the furthest
+ *  out, however the screen is turned, the rest a drag down. Own ship
+ *  (`mark`) on the first page as a marker, the map's own airplane, which
+ *  the map keeps on its point of the page through a pinch and a drag. */
+function Pages({ placed, all, mark }: ReturnType<typeof laidOut> & { mark: PageMark | null }) {
+  const box = useRef<HTMLDivElement>(null);
+  const shown = useRef<GlMap | null>(null);
+  const marker = useRef<Marker | null>(null);
+  // The mark's markup as last written, so a fix a second moves the
+  // element rather than building it again (OwnShipGl's way).
+  const drawn = useRef("");
+  // Drawn as on the chart, the Map card's Own Ship.
+  const look = usePreferences((s) => s.ownShipLook);
+  useEffect(() => {
+    if (!box.current) return;
+    const style: StyleSpecification = {
+      version: 8,
+      sources: Object.fromEntries(
+        placed.map((p, i) => [
+          `page-${i}`,
+          { type: "image" as const, url: new URL(p.src, window.location.href).href, coordinates: corners(p.box) },
+        ]),
+      ),
+      layers: [
+        // The chart's paper round the pages.
+        { id: "paper", type: "background", paint: { "background-color": CHART.casing } },
+        ...placed.map((_, i) => ({ id: `page-${i}`, type: "raster" as const, source: `page-${i}`, paint: { "raster-fade-duration": 0 } })),
+      ],
+    };
+    const map = new GlMap({
+      container: box.current,
+      style,
+      bounds: bounds(placed[0]!.box),
+      maxZoom: MAX_ZOOM,
+      attributionControl: false,
+      dragRotate: false,
+      pitchWithRotate: false,
+      touchPitch: false,
+      renderWorldCopies: false,
+    });
+    map.touchZoomRotate.disableRotation();
+    const fit = () => {
+      const first = placed[0]!.box;
+      const whole = map.cameraForBounds(bounds(first))?.zoom;
+      if (whole === undefined) return;
+      // The pages dragged no further than the first page whole leaves
+      // round it: MapLibre zooms in until the view is inside its
+      // maxBounds, and the pages' own box, its shape not a phone's tall
+      // screen's, cut the page's sides at the furthest out (plates-map
+      // spec). Half the screen across and down, in the pages' degrees at
+      // that zoom (MapLibre's world 512 points round), a point to spare.
+      const box = map.getContainer();
+      const half = (points: number) => ((points + 2) * 360) / (512 * 2 ** whole) / 2;
+      const [x, y] = [(first[0] + first[2]) / 2, (first[1] + first[3]) / 2];
+      map.setMaxBounds(
+        bounds([
+          Math.min(all[0], x - half(box.clientWidth)),
+          Math.min(all[1], y - half(box.clientHeight)),
+          Math.max(all[2], x + half(box.clientWidth)),
+          Math.max(all[3], y + half(box.clientHeight)),
+        ]),
+      );
+      map.setMinZoom(Math.min(whole, MAX_ZOOM));
+      if (map.getZoom() < whole) map.fitBounds(bounds(first), { duration: 0 });
+    };
+    map.on("load", fit);
+    map.on("resize", fit);
+    shown.current = map;
+    return () => {
+      marker.current?.remove();
+      marker.current = null;
+      drawn.current = "";
+      shown.current = null;
+      map.remove();
+    };
+  }, [placed, all]);
+  useEffect(() => {
+    const map = shown.current;
+    const page = placed[0];
+    if (!map || !page || !mark) {
+      marker.current?.remove();
+      return;
+    }
+    marker.current ??= ownShipMarker("chart-own-ship");
+    // Nose up in its markup, turned by the marker to the track on the page.
+    drawOwnShip(marker.current, drawn, ownShipHtml(mark.rotationDeg == null ? null : 0, false, look, mark.moving));
+    // The page's fractions in its box's degrees: across from its west
+    // edge, down from its north one.
+    const [west, , , north] = page.box;
+    marker.current
+      .setLngLat([west + mark.x * page.width * K, north - mark.y * page.height * K])
+      .setRotation(mark.rotationDeg ?? 0)
+      .addTo(map);
+  }, [placed, mark, look]);
+  // Black at night where it is drawn white on black: the canvas inverted.
+  return <div ref={box} data-pages={placed.length} className="min-h-0 flex-1 bg-white dark:bg-black dark:[&_canvas]:invert" />;
+}
+
+/**
+ * One of the FAA's charts full screen, to pinch in on as the chart is: its
+ * pages on a MapLibre map of their own (Pages), one under
+ * another, so a pinch, a drag and a double tap do what they do on the
+ * chart and the pages stay on the screen. In the app, at the pilot's ask,
+ * where a chart was a link out to the FAA's site and its PDF. A modal
+ * dialog, the map behind it waiting; the close in the corner every panel
+ * has it in.
+ */
+export default function ChartViewer({
+  title,
+  pages,
+  loading = false,
+  failed = false,
+  onRetry,
+  mark = null,
+  onClose,
+}: {
+  title: string;
+  pages: Page[];
+  /** Its pages still being asked for (FaaChartViewer). */
+  loading?: boolean;
+  failed?: boolean;
+  /** Asks again after a failure, beside the failure. */
+  onRetry?: () => void;
+  /** Own ship on the first page (an approach plate's plan view). */
+  mark?: PageMark | null;
+  onClose: () => void;
+}) {
+  const layout = useMemo(() => (pages.length ? laidOut(pages) : null), [pages]);
+  return (
+    <FullScreenViewer title={title} testId="airport-diagram-viewer" closeTestId="airport-diagram-close" onClose={onClose}>
+      {layout ? (
+        <Pages {...layout} mark={mark} />
+      ) : (
+        <div className="flex flex-col items-start gap-2 px-4 pt-4" data-testid="chart-viewer-status">
+          <p className={cn("text-muted-foreground", TEXT.prose)}>
+            {failed
+              ? "The FAA's chart could not be had. Try again in a moment."
+              : loading
+                ? "Drawing the chart…"
+                : // A booklet lists a field only where it has an entry (takeoff
+                  // minimums, alternates, hot spots).
+                  "The FAA lists nothing for this field in this chart."}
+          </p>
+          {failed && onRetry && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="relative -ml-2 rounded-full text-tint after:absolute after:-inset-1"
+              onClick={onRetry}
+            >
+              Try again
+            </Button>
+          )}
+        </div>
+      )}
+    </FullScreenViewer>
+  );
+}
+
+/** One of the FAA's charts by its address (a card's approaches, the
+ *  Chart Supplement): its pages asked of the planner (/api/faa-chart),
+ *  which draws them and, of a region's booklet, picks the field's. */
+export function FaaChartViewer({
+  title,
+  url,
+  airport,
+  mark = null,
+  onClose,
+}: {
+  title: string;
+  url: string;
+  airport: string;
+  mark?: PageMark | null;
+  onClose: () => void;
+}) {
+  const { data, isFetching, isError, refetch } = useQuery({
+    queryKey: ["faaChart", url, airport],
+    queryFn: () => api.faaChart(url, airport),
+    staleTime: Infinity,
+    meta: { silent: true },
+  });
+  const pages = useMemo(() => (data?.pages ?? []).map((p) => ({ src: chartPagePicture(p), width: p.width, height: p.height })), [data]);
+  return (
+    <ChartViewer
+      title={title}
+      pages={pages}
+      loading={isFetching && !data}
+      failed={isError && !isFetching}
+      onRetry={() => {
+        void refetch();
+      }}
+      mark={mark}
+      onClose={onClose}
+    />
+  );
+}

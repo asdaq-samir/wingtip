@@ -15,7 +15,7 @@ from wingtip import airports, notams, tfr, weather
 from app.mcp import calls, records
 
 from .mcp_harness import call
-from .test_airports import stub_place
+from .airport_world import stub_place
 
 FIXTURES = Path(__file__).resolve().parents[3] / "apps/web/src/lib/fixtures"
 METAR = {"raw": "KDLH 011853Z 28012KT 10SM CLR 05/M02 A3002", "flight_category": "VFR", "visibility_sm": 10.0}

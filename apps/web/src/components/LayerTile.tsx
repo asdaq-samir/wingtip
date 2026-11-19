@@ -59,7 +59,7 @@ export function LayerToggle({
   glyph: Glyph;
   on: boolean;
   onChange: (on: boolean) => void;
-  testId: string;
+  testId?: string;
 }) {
   return (
     <Toggle pressed={on} onPressedChange={onChange} data-testid={testId} className={TILE}>

@@ -68,8 +68,7 @@ public class AircraftController {
 
     @GetMapping
     public ResponseEntity<List<AircraftDto>> list(Pilot pilot) {
-        return ResponseEntity.ok(
-                aircraftService.list(pilot).stream().map(this::toDto).toList());
+        return ResponseEntity.ok(dtos.of(aircraftService.list(pilot)));
     }
 
     @PostMapping

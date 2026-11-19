@@ -17,9 +17,9 @@ class OutagesTest {
         assertThat(outages.see("planner", false, "refused", T0)).isEmpty();
         assertThat(outages.see("planner", false, "refused", T0.plusSeconds(240)))
                 .isEmpty();
+        // Back up with no alert begun: no "ended" to say either.
         assertThat(outages.see("planner", true, "answering", T0.plusSeconds(300)))
                 .isEmpty();
-        assertThat(outages.alerting("planner")).isFalse();
     }
 
     @Test

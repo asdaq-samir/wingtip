@@ -4,7 +4,8 @@
 cycle -- airports, frequencies, navaids, Class B/C/D -- or obstacle file."""
 
 import pytest
-from app import chart_refresh, main
+from app import chart_refresh, warm_up as main
+from wingtip import faa_editions
 from wingtip.config import Settings
 
 
@@ -12,7 +13,7 @@ from wingtip.config import Settings
 def editions(monkeypatch):
     """The folders refresh_editions was asked about; nothing new found."""
     asked: list = []
-    monkeypatch.setattr(main.faa_data, "refresh_editions", lambda folder: asked.append(folder) or [])
+    monkeypatch.setattr(faa_editions, "refresh_editions", lambda folder: asked.append(folder) or [])
     return asked
 
 

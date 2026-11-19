@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 import requests
 
-from wingtip import weather_store
+from wingtip import utc, weather_store
 from wingtip.history import iem, weather_then
 
 FIXTURES = Path(__file__).parent / "fixtures" / "history"
@@ -18,10 +18,6 @@ ASOS = (FIXTURES / "iem_asos_2026-11-10.csv").read_text()
 TAF = (FIXTURES / "iem_taf_2026-11-10.txt").read_text()
 DAY = dt.date(2026, 11, 10)
 TODAY = dt.date(2026, 11, 12)
-
-
-def _epoch(iso: str) -> float:
-    return dt.datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp()
 
 
 class _Answer:
@@ -107,7 +103,7 @@ def test_the_tafs_in_force_are_the_one_issued_before_the_span_and_those_during_i
         return iem.read_tafs(TAF, stations, day) if day == DAY else {s: [] for s in stations}
 
     monkeypatch.setattr(iem, "day_reports", reports)
-    start, end = _epoch("2026-11-10T04:00:00Z"), _epoch("2026-11-10T06:00:00Z")
+    start, end = utc.epoch("2026-11-10T04:00:00Z"), utc.epoch("2026-11-10T06:00:00Z")
     issued = [(t["station"], t["issued"]) for t in weather_then.tafs(["KORD"], start, end)]
     # 02:56 was in force at 04:00, 05:20 replaced it; 08:42 came after.
     assert issued == [("KORD", "2026-11-10T02:56:00Z"), ("KORD", "2026-11-10T05:20:00Z")]
@@ -115,14 +111,14 @@ def test_the_tafs_in_force_are_the_one_issued_before_the_span_and_those_during_i
 
 def test_the_metars_run_from_an_hour_before_to_an_hour_after(monkeypatch):
     monkeypatch.setattr(iem, "day_reports", lambda kind, stations, day: iem.read_metars(ASOS, stations))
-    start, end = _epoch("2026-11-10T02:00:00Z"), _epoch("2026-11-10T02:30:00Z")
+    start, end = utc.epoch("2026-11-10T02:00:00Z"), utc.epoch("2026-11-10T02:30:00Z")
     times = [m["time"] for m in weather_then.metars(["KORD"], start, end)]
     # 00:51 is more than an hour before, 03:51 more than an hour after.
     assert times == ["2026-11-10T01:51:00Z", "2026-11-10T02:51:00Z"]
 
 
 def test_radar_frames_every_five_minutes_from_the_start_floored():
-    start = _epoch("2026-11-10T14:03:20Z")
+    start = utc.epoch("2026-11-10T14:03:20Z")
     frames = weather_then.radar_frames(start, start + 1800)
     assert frames[0]["valid"] == "2026-11-10T14:00:00Z"
     assert frames[1]["valid"] == "2026-11-10T14:05:00Z"
@@ -131,7 +127,7 @@ def test_radar_frames_every_five_minutes_from_the_start_floored():
 
 
 def test_a_long_span_is_thinned_evenly_to_the_most_frames():
-    start = _epoch("2026-11-10T00:00:00Z")
+    start = utc.epoch("2026-11-10T00:00:00Z")
     frames = weather_then.radar_frames(start, start + 2 * 86400)
     assert len(frames) == weather_then.MOST_FRAMES
     assert frames[0]["valid"] == "2026-11-10T00:00:00Z" and frames[-1]["valid"] == "2026-11-12T00:00:00Z"

@@ -28,7 +28,7 @@ pub const FT_PER_DEG_LAT: f64 = 60.0 * FT_PER_NM;
 
 /// An area's outline: polygons, each its outer ring and its holes, each
 /// ring (lon, lat) points.
-pub type Area = Vec<Vec<Vec<(f64, f64)>>>;
+pub type Area = wingtip_core::ask::Polygons;
 
 /// Whether an area holds a point: inside a polygon's outline and none of
 /// its holes.

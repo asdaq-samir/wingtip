@@ -1,10 +1,6 @@
-import { M_PER_FT } from "../../../lib/geo";
+import { flatBearingDeg, lonScale, M_PER_DEG, M_PER_FT } from "../../../lib/geo";
 import { MAP } from "../../../lib/tokens";
 import type { CameraKind } from "../../../lib/replay/camera/cameraStore";
-
-/** Metres in a degree of latitude, near enough for a camera's few hundred
- *  metres (the WGS-84 meridian degree is 110.6 to 111.7 km). */
-const M_PER_DEG = 111_320;
 
 /** The look down from the pilot's seat, degrees from straight down: the
  *  pilot's view's own (PilotCamera's PILOT_PITCH). */
@@ -45,10 +41,11 @@ export type Pose =
   | { kind: "eye"; lat: number; lon: number; altM: number; bearing: number; pitch: number }
   | { kind: "over"; lat: number; lon: number; bearing: number };
 
-/** `m` metres from a point on `bearing`, on a local flat earth. */
+/** `m` metres from a point on `bearing`, on a local flat earth (lib/geo's
+ *  M_PER_DEG, near enough for a camera's few hundred metres). */
 export function offset(lat: number, lon: number, bearing: number, m: number): { lat: number; lon: number } {
   const b = (bearing * Math.PI) / 180;
-  return { lat: lat + (m * Math.cos(b)) / M_PER_DEG, lon: lon + (m * Math.sin(b)) / (M_PER_DEG * Math.cos((lat * Math.PI) / 180)) };
+  return { lat: lat + (m * Math.cos(b)) / M_PER_DEG, lon: lon + (m * Math.sin(b)) / (M_PER_DEG * lonScale(lat)) };
 }
 
 /** The bearing and the pitch (from straight down) to look from one point
@@ -58,9 +55,9 @@ export function lookAt(
   to: { lat: number; lon: number; altM: number },
 ): { bearing: number; pitch: number } {
   const north = (to.lat - from.lat) * M_PER_DEG;
-  const east = (to.lon - from.lon) * M_PER_DEG * Math.cos((from.lat * Math.PI) / 180);
+  const east = (to.lon - from.lon) * M_PER_DEG * lonScale(from.lat);
   const across = Math.hypot(north, east);
-  const bearing = ((Math.atan2(east, north) * 180) / Math.PI + 360) % 360;
+  const bearing = flatBearingDeg(north, east);
   const pitch = (Math.atan2(across, from.altM - to.altM) * 180) / Math.PI;
   return { bearing, pitch: Math.min(MOST_PITCH, Math.max(0, pitch)) };
 }

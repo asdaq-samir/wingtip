@@ -2029,6 +2029,24 @@
             "title": "Runways",
             "type": "array"
           },
+          "site_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Balloonport",
+                  "Seaplane base",
+                  "Gliderport",
+                  "Heliport",
+                  "Ultralight"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Type"
+          },
           "standard_keying": {
             "default": false,
             "title": "Standard Keying",
@@ -2938,6 +2956,7 @@
                 "type": "null"
               }
             ],
+            "default": null,
             "title": "Airspace Ceiling Ft"
           },
           "airspace_transits": {
@@ -2965,11 +2984,6 @@
             },
             "title": "Candidates Ft",
             "type": "array"
-          },
-          "class_b_cleared": {
-            "default": false,
-            "title": "Class B Cleared",
-            "type": "boolean"
           },
           "cloud_base_ft": {
             "anyOf": [
@@ -3177,7 +3191,6 @@
           "course_magnetic_deg",
           "eastbound",
           "floor_ft",
-          "airspace_ceiling_ft",
           "airspace_transits",
           "freezing_level_ft",
           "band_ceiling_ft",
@@ -3368,19 +3381,8 @@
         "type": "object"
       },
       "AltitudeSegment": {
-        "description": "One leg's own band: its floor, the shelf and the clouds over it\nalone, and the legal cruising altitudes between -- what lets a plan\nstep down under a Class B shelf and climb again past it.",
+        "description": "One leg's own band: its floor, the clouds and the service ceiling\nover it alone, and the legal cruising altitudes between -- what lets a\nplan step over high ground or under low cloud leg by leg.",
         "properties": {
-          "airspace_ceiling_ft": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Airspace Ceiling Ft"
-          },
           "airway": {
             "anyOf": [
               {
@@ -3593,7 +3595,6 @@
           "from_nm",
           "to_nm",
           "floor_ft",
-          "airspace_ceiling_ft",
           "band_ceiling_ft",
           "candidates_ft"
         ],
@@ -6122,6 +6123,14 @@
             "description": "90 days after the third most recent landing (14 CFR 61.57(a)).",
             "title": "Daypassengersuntil"
           },
+          "due": {
+            "description": "What falls due, each named and cited (61.56(c), 61.23, 61.57(a)-(c)).",
+            "items": {
+              "$ref": "#/components/schemas/PaperworkDue"
+            },
+            "title": "Due",
+            "type": "array"
+          },
           "flightReviewOn": {
             "anyOf": [
               {
@@ -6265,7 +6274,8 @@
           "ipcNeededAfter",
           "approachesInWindow",
           "holdingInWindow",
-          "trackingInWindow"
+          "trackingInWindow",
+          "due"
         ],
         "title": "Currency",
         "type": "object"
@@ -6844,21 +6854,6 @@
         "title": "DebriefTolerances",
         "type": "object"
       },
-      "DebriefWordsAsk": {
-        "description": "The debrief as POST /api/debrief answered it (the debrief and the\ntolerances), or as the web app's own twin keeps it (lib/debrief: the\nfigures alone, their keys camel-cased, without the flown line and the\nprofile, thousands of points a sentence cannot use): `debrief_of`\nreads either.",
-        "properties": {
-          "debrief": {
-            "additionalProperties": true,
-            "title": "Debrief",
-            "type": "object"
-          }
-        },
-        "required": [
-          "debrief"
-        ],
-        "title": "DebriefWordsAsk",
-        "type": "object"
-      },
       "DemonstratedCrosswind": {
         "description": "The strongest crosswind the POH says the aeroplane was shown to\ntake off and land in: not a limitation, but past it the pilot is\nbeyond what was tested.",
         "properties": {
@@ -7102,13 +7097,8 @@
             "type": "string"
           },
           "checkpoints": {
-            "default": true,
-            "title": "Checkpoints",
-            "type": "boolean"
-          },
-          "class_b_clearance": {
             "default": false,
-            "title": "Class B Clearance",
+            "title": "Checkpoints",
             "type": "boolean"
           },
           "climb_fuel_burn_gph": {
@@ -7712,7 +7702,7 @@
         "type": "object"
       },
       "Detour": {
-        "description": "A named fix that keeps a route out of the Class B airspace it is\nstopped by (wingtip.airspace.detour_waypoint), and where it goes in the\nstops: before the stop at `stop_index`, so on the hop it is for.",
+        "description": "A way round the high ground that leaves a route no altitude\n(wingtip.terrain_detour), and where it goes in the stops: before the\nstop at `stop_index`, so on the hop it is for.",
         "properties": {
           "added_nm": {
             "title": "Added Nm",
@@ -11138,13 +11128,8 @@
             "type": "string"
           },
           "checkpoints": {
-            "default": true,
-            "title": "Checkpoints",
-            "type": "boolean"
-          },
-          "class_b_clearance": {
             "default": false,
-            "title": "Class B Clearance",
+            "title": "Checkpoints",
             "type": "boolean"
           },
           "climb_fuel_burn_gph": {
@@ -12031,6 +12016,14 @@
             "description": "The end of the 12th calendar month after (14 CFR 91.409(a)).",
             "title": "Annualuntil"
           },
+          "due": {
+            "description": "Each recorded one named and cited, then the owner's dated items (an AD by 14 CFR 39.7).",
+            "items": {
+              "$ref": "#/components/schemas/PaperworkDue"
+            },
+            "title": "Due",
+            "type": "array"
+          },
           "eltUntil": {
             "anyOf": [
               {
@@ -12099,13 +12092,14 @@
           "staticCheckUntil",
           "transponderCheckUntil",
           "hundredHourDueAtHours",
-          "vorCheck"
+          "vorCheck",
+          "due"
         ],
         "title": "Inspections",
         "type": "object"
       },
       "InspectionsAsk": {
-        "description": "The days the airplane's inspections and checks were done, and the\nhours of its last 100-hour; each left out where not recorded.",
+        "description": "The days the airplane's inspections and checks were done, and the\nhours of its last 100-hour; each left out where not recorded. With the\nairplane's registration, whether it is flown for hire, its ELT\nbattery's marked date and the owner's items, for the list of what\nfalls due (`due`).",
         "properties": {
           "annualOn": {
             "anyOf": [
@@ -12119,6 +12113,18 @@
             ],
             "title": "Annualon"
           },
+          "eltBatteryDueOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eltbatterydueon"
+          },
           "eltOn": {
             "anyOf": [
               {
@@ -12131,6 +12137,11 @@
             ],
             "title": "Elton"
           },
+          "forHire": {
+            "default": false,
+            "title": "Forhire",
+            "type": "boolean"
+          },
           "hundredHourAtHours": {
             "anyOf": [
               {
@@ -12141,6 +12152,14 @@
               }
             ],
             "title": "Hundredhourathours"
+          },
+          "kept": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/KeptItem"
+            },
+            "title": "Kept",
+            "type": "array"
           },
           "staticCheckOn": {
             "anyOf": [
@@ -12153,6 +12172,17 @@
               }
             ],
             "title": "Staticcheckon"
+          },
+          "tailNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tailnumber"
           },
           "transponderCheckOn": {
             "anyOf": [
@@ -12341,8 +12371,70 @@
         "title": "ItwsProduct",
         "type": "object"
       },
+      "KeptItem": {
+        "description": "An owner's own item: an AD (14 CFR part 39) or anything else, with\nits next day or hours.",
+        "properties": {
+          "dueAtHours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dueathours"
+          },
+          "dueOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dueon"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "AD",
+              "OTHER"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title"
+        ],
+        "title": "KeptItem",
+        "type": "object"
+      },
       "Leg": {
-        "description": "One dead-reckoning leg. `wind` is None when no winds-aloft station\nis near enough, which is not the same as calm: groundspeed then falls\nback to true airspeed. groundspeed/ETE/fuel are None when the wind\nexceeds true airspeed, i.e. the leg cannot be flown.\n\nThe true airspeed and fuel flow are the aeroplane's in the leg's own\nair (wingtip.performance): its cruise figures are at a reference\naltitude on a standard day, and the forecast temperature at this\naltitude gives the density altitude they are flown at, at the power\nit allows -- the cruise power, or less where full throttle cannot\nmake it; `power_pct` None where the profile names no cruise power, its\nTAS and burn then as given. `oat_c` is None where no forecast\ntemperature was near: a standard day is assumed there.",
+        "description": "One dead-reckoning leg. `wind` is None when no winds-aloft station\nis near enough, which is not the same as calm: groundspeed then falls\nback to true airspeed. groundspeed/ETE/fuel are None when the wind\nexceeds true airspeed, i.e. the leg cannot be flown.\n\nThe true airspeed and fuel flow are the aeroplane's in the leg's own\nair (the engine's wingtip_flight::performance): its cruise figures are at a reference\naltitude on a standard day, and the forecast temperature at this\naltitude gives the density altitude they are flown at, at the power\nit allows -- the cruise power, or less where full throttle cannot\nmake it; `power_pct` None where the profile names no cruise power, its\nTAS and burn then as given. `oat_c` is None where no forecast\ntemperature was near: a standard day is assumed there.",
         "properties": {
           "airway": {
             "anyOf": [
@@ -14361,12 +14453,12 @@
             "title": "Cautions",
             "type": "array"
           },
-          "class_b_detours": {
+          "detours": {
             "default": [],
             "items": {
               "$ref": "#/components/schemas/Detour"
             },
-            "title": "Class B Detours",
+            "title": "Detours",
             "type": "array"
           },
           "flown": {
@@ -16295,6 +16387,81 @@
         "title": "OwnAirplane",
         "type": "object"
       },
+      "PaperworkDue": {
+        "description": "One thing that falls due, named and with the rule that asks for it\n(the engine's PaperworkDue), for the gateway's Coming up list and its\nreminders, which add only the days and hours left.",
+        "properties": {
+          "dueAtHours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dueathours"
+          },
+          "itemId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Itemid"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "lead": {
+            "description": "The reminder sentence's start, to which the day is added.",
+            "title": "Lead",
+            "type": "string"
+          },
+          "rule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "14 CFR 61.56(c); an AD its own number and 14 CFR 39.7; an owner's item its reference.",
+            "title": "Rule"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          },
+          "what": {
+            "title": "What",
+            "type": "string"
+          }
+        },
+        "required": [
+          "what",
+          "itemId",
+          "label",
+          "rule",
+          "until",
+          "dueAtHours",
+          "lead"
+        ],
+        "title": "PaperworkDue",
+        "type": "object"
+      },
       "PastFlight": {
         "description": "One past flight's reports, for its track log and its replay.",
         "properties": {
@@ -17829,14 +17996,6 @@
             ],
             "title": "Chart Tiles Base"
           },
-          "class_b_detours": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/Detour"
-            },
-            "title": "Class B Detours",
-            "type": "array"
-          },
           "course_line": {
             "items": {
               "maxItems": 2,
@@ -17859,6 +18018,14 @@
           },
           "destination": {
             "$ref": "#/components/schemas/AirportEnd"
+          },
+          "detours": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Detour"
+            },
+            "title": "Detours",
+            "type": "array"
           },
           "distance_nm": {
             "title": "Distance Nm",
@@ -19436,32 +19603,6 @@
         "title": "ReviewCheck",
         "type": "object"
       },
-      "RiskAsk": {
-        "description": "The Go / No-Go as the client has it (RiskVerdict), and the pilot's\nown record as the client keeps it -- personal minimums, currency,\nrecency, whatever it has, by its own keys -- given to the model as one\nsource the words can cite.",
-        "properties": {
-          "pilot": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "maxProperties": 50,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pilot"
-          },
-          "verdict": {
-            "$ref": "#/components/schemas/RiskVerdict"
-          }
-        },
-        "required": [
-          "verdict"
-        ],
-        "title": "RiskAsk",
-        "type": "object"
-      },
       "RiskAssessment": {
         "description": "The risk assessment: its points, its level and its line (\"Raised \u00b7\n8 points\"), what to do at that level, and every factor counted.",
         "properties": {
@@ -19630,63 +19771,6 @@
         "title": "RiskFactor",
         "type": "object"
       },
-      "RiskVerdict": {
-        "description": "The Go / No-Go as POST /api/go-no-go answers it (its line, its\nitems, its risk assessment), or as the web app's own twin keeps it\n(lib/verdict: the line's finding and words on the object itself, its\nitems, no risk assessment): either reads here, the extras dropped.",
-        "properties": {
-          "finding": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Finding"
-          },
-          "items": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/VerdictItemLoose"
-            },
-            "title": "Items",
-            "type": "array"
-          },
-          "line": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/VerdictLineLoose"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "risk": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RiskAssessment"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "words": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Words"
-          }
-        },
-        "title": "RiskVerdict",
-        "type": "object"
-      },
       "RouteAirport": {
         "properties": {
           "ident": {
@@ -19754,45 +19838,6 @@
         "title": "RouteAlong",
         "type": "object"
       },
-      "RouteAsk": {
-        "description": "A route as the words are asked for it: its ends, the stops landed\nat between them in order (app.router_basics.load_route) and when it leaves\n(UTC when naive; now when not given).",
-        "properties": {
-          "dep": {
-            "title": "Dep",
-            "type": "string"
-          },
-          "depart": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Depart"
-          },
-          "dest": {
-            "title": "Dest",
-            "type": "string"
-          },
-          "stops": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Stops",
-            "type": "array"
-          }
-        },
-        "required": [
-          "dep",
-          "dest"
-        ],
-        "title": "RouteAsk",
-        "type": "object"
-      },
       "RouteBand": {
         "description": "A run of the weather a way meets (the engine's route_options): VFR,\nmarginal (MVFR), IFR or a thunderstorm, and how many minutes of the\nflight it lasts, in the order flown.",
         "properties": {
@@ -19816,23 +19861,6 @@
           "min"
         ],
         "title": "RouteBand",
-        "type": "object"
-      },
-      "RouteChecked": {
-        "description": "A route that would plan (GET /api/route-check): its stops as the\nplanner reads them.",
-        "properties": {
-          "stops": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Stops",
-            "type": "array"
-          }
-        },
-        "required": [
-          "stops"
-        ],
-        "title": "RouteChecked",
         "type": "object"
       },
       "RouteChip": {
@@ -20080,7 +20108,8 @@
               "weather",
               "stops",
               "land",
-              "own"
+              "own",
+              "class_b"
             ],
             "title": "Kind",
             "type": "string"
@@ -20092,7 +20121,8 @@
                 "weather",
                 "stops",
                 "land",
-                "own"
+                "own",
+                "class_b"
               ],
               "type": "string"
             },
@@ -20181,6 +20211,16 @@
             },
             "title": "Chips",
             "type": "array"
+          },
+          "class_b": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RouteOption"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "current": {
             "default": [],
@@ -24854,6 +24894,7 @@
               "weather",
               "airspace",
               "altitude",
+              "oxygen",
               "fuel",
               "runways",
               "balance",
@@ -24899,34 +24940,6 @@
         "title": "VerdictItem",
         "type": "object"
       },
-      "VerdictItemLoose": {
-        "properties": {
-          "detail": {
-            "default": "",
-            "title": "Detail",
-            "type": "string"
-          },
-          "finding": {
-            "title": "Finding",
-            "type": "string"
-          },
-          "key": {
-            "title": "Key",
-            "type": "string"
-          },
-          "label": {
-            "title": "Label",
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "label",
-          "finding"
-        ],
-        "title": "VerdictItemLoose",
-        "type": "object"
-      },
       "VerdictLine": {
         "properties": {
           "finding": {
@@ -24950,24 +24963,6 @@
           "words"
         ],
         "title": "VerdictLine",
-        "type": "object"
-      },
-      "VerdictLineLoose": {
-        "properties": {
-          "finding": {
-            "title": "Finding",
-            "type": "string"
-          },
-          "words": {
-            "default": "",
-            "title": "Words",
-            "type": "string"
-          }
-        },
-        "required": [
-          "finding"
-        ],
-        "title": "VerdictLineLoose",
         "type": "object"
       },
       "VfrMinimums": {
@@ -25268,66 +25263,6 @@
           "coords"
         ],
         "title": "WeatherArea",
-        "type": "object"
-      },
-      "WeatherAsk": {
-        "description": "The briefing's own parameters besides the route (GET /api/briefing):\nthe flight's minutes, and the nav log's fixes (\"lat,lon;lat,lon\") and\neach leg's minutes where the page has them, for each hazard to be\nplaced where the flight meets it.",
-        "properties": {
-          "dep": {
-            "title": "Dep",
-            "type": "string"
-          },
-          "depart": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Depart"
-          },
-          "dest": {
-            "title": "Dest",
-            "type": "string"
-          },
-          "ete_min": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ete Min"
-          },
-          "fixes": {
-            "default": "",
-            "title": "Fixes",
-            "type": "string"
-          },
-          "leg_min": {
-            "default": "",
-            "title": "Leg Min",
-            "type": "string"
-          },
-          "stops": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Stops",
-            "type": "array"
-          }
-        },
-        "required": [
-          "dep",
-          "dest"
-        ],
-        "title": "WeatherAsk",
         "type": "object"
       },
       "WeatherDataset": {
@@ -28351,7 +28286,7 @@
     },
     "/api/course": {
       "get": {
-        "description": "Just the course line and its endpoints, through any stops.\n\nSeparate from detection so the chart can draw a line the instant two\nidents are entered. Reading tiles takes seconds even on the fast\npath, and there is no reason a pilot should watch an empty map for\nthem.\n\nAnd the route's slow parts are started here, the first thing the web\napp asks for a route: the chart's read and the ground under it, on\nthreads of their own (app.prefetch), so the nav log asked for beside\nthis finds them under way or done.",
+        "description": "Just the course line and its endpoints, through any stops.\n\nSeparate from detection so the chart can draw a line the instant two\nidents are entered. Reading tiles takes seconds even on the fast\npath, and there is no reason a pilot should watch an empty map for\nthem.\n\nAnd the ground under the route is started here, the first thing the\nweb app asks for a route, on a thread of its own (app.prefetch), so\nthe nav log asked for beside this finds it under way or done. Not the\nchart's read for checkpoints: nothing finds them until the pilot asks\n(/api/checkpoints, or a nav log with checkpoints), the owner's rule\n(2026-11-18). checkpoints_ready only looks at what is kept.",
         "operationId": "course_api_course_get",
         "parameters": [
           {
@@ -28718,7 +28653,7 @@
     },
     "/api/diversion": {
       "get": {
-        "description": "The diversion drill (apps/web/src/lib/diversion, ACS PA.VI.C): from a point\nto a field, in the planner's air on the way there at `altitude_ft` --\nthe winds and temperature aloft for the hour (wingtip.weather, the FD\nperiod for `depart`, now by default), the airplane's true airspeed and\nburn in that air (wingtip.performance) and the variation (wingtip.magnetic,\nthe WMM) -- the true course and distance, the wind triangle, the\nmagnetic heading, ground speed, time and fuel, each step in words;\nand the student's estimates (`mh`, `gs`, `ete`, `fuel`) checked\nagainst it, each within the drill's allowance or not. With no\n`aircraft` a 422: the heading, ground speed, time and fuel are all\nworked at an airplane's speed and burn, and no stock airplane's is\nassumed (the owner, 2026-11-09).",
+        "description": "The diversion drill (apps/web/src/lib/diversion, ACS PA.VI.C): from a point\nto a field, in the planner's air on the way there at `altitude_ft` --\nthe winds and temperature aloft for the hour (wingtip.weather, the FD\nperiod for `depart`, now by default), the airplane's true airspeed and\nburn in that air (the engine's wingtip_flight::performance) and the variation (wingtip.magnetic,\nthe WMM) -- the true course and distance, the wind triangle, the\nmagnetic heading, ground speed, time and fuel, each step in words;\nand the student's estimates (`mh`, `gs`, `ete`, `fuel`) checked\nagainst it, each within the drill's allowance or not. With no\n`aircraft` a 422: the heading, ground speed, time and fuel are all\nworked at an airplane's speed and burn, and no stock airplane's is\nassumed (the owner, 2026-11-09).",
         "operationId": "diversion_api_diversion_get",
         "parameters": [
           {
@@ -30187,16 +30122,6 @@
           },
           {
             "in": "query",
-            "name": "class_b_clearance",
-            "required": false,
-            "schema": {
-              "default": false,
-              "title": "Class B Clearance",
-              "type": "boolean"
-            }
-          },
-          {
-            "in": "query",
             "name": "rules",
             "required": false,
             "schema": {
@@ -30314,7 +30239,7 @@
             "name": "checkpoints",
             "required": false,
             "schema": {
-              "default": true,
+              "default": false,
               "title": "Checkpoints",
               "type": "boolean"
             }
@@ -30831,16 +30756,6 @@
           },
           {
             "in": "query",
-            "name": "class_b_clearance",
-            "required": false,
-            "schema": {
-              "default": false,
-              "title": "Class B Clearance",
-              "type": "boolean"
-            }
-          },
-          {
-            "in": "query",
             "name": "rules",
             "required": false,
             "schema": {
@@ -30958,7 +30873,7 @@
             "name": "checkpoints",
             "required": false,
             "schema": {
-              "default": true,
+              "default": false,
               "title": "Checkpoints",
               "type": "boolean"
             }
@@ -31669,6 +31584,49 @@
         "summary": "Experience"
       }
     },
+    "/api/pilot/instructor-records-since": {
+      "get": {
+        "description": "The first day an instructor's page lists what they signed: 3 years\nbefore `today`, as 14 CFR 61.189(c) has them keep the records (the\nengine's instructor_records_since).",
+        "operationId": "instructor_records_since_api_pilot_instructor_records_since_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "today",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Today",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "format": "date",
+                  "title": "Response Instructor Records Since Api Pilot Instructor Records Since Get",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Instructor Records Since"
+      }
+    },
     "/api/places/search": {
       "get": {
         "description": "Where a place typed is, for Nearest to find the fields near it\nrather than near own ship: the airports whose ident or name starts\nwith it, the towns that do (the Census gazetteer), and a street\naddress where it starts with a house number (the Census geocoder) --\neach with where it is (wingtip.geocode).",
@@ -31715,7 +31673,7 @@
     },
     "/api/plan": {
       "get": {
-        "description": "The whole plan: course line, every scored candidate, the selected\ncheckpoints, and a nav log leg between each consecutive pair.\n\naltitude_ft is optional. Omitted, wingtip.altitude works out each leg's\nown legal altitudes -- clear of terrain and obstacles, under the\nClass B shelf over that leg alone and the aircraft's service\nceiling, on the hemispheric rule for that leg's own course\n-- and wingtip.navlog makes four plans of them: the lowest, the\nhighest, the fastest for the winds aloft, and the one that burns the\nleast fuel, climb and cruise. altitude_choice picks\nwhich one the legs fly -- the fastest unless asked otherwise, the\nplan a pilot with the winds in hand picks (it was the lowest, as the\npredictable one) -- and the reasoning comes back with it, since\n\"why am I at 6,500\" is a question a pilot will actually ask.\n\naircraft names a stock profile; cruise_tas_kt, fuel_burn_gph, usable_fuel_gal,\nclimb_tas_kt, climb_fuel_burn_gph, descent_ias_kt (indicated), descent_fuel_burn_gph and\ncruise_power_pct (the power the cruise figures are at), when given,\nare a pilot's own aeroplane's numbers laid over it. Each leg flies\nthem in its own air: the cruise figures are the aeroplane's at a\nreference altitude on a standard day, and the forecast temperature\nat the leg's altitude gives the density altitude they are flown at\n(wingtip.performance). depart, an ISO time (UTC when naive), picks the\nwinds-aloft forecast period the legs are flown on -- the 6-, 12- or\n24-hour product, whichever is valid closest to the departure;\nwithout it, the 6-hour product, i.e. about now -- and whether the\nfuel reserve is the day or the night one.",
+        "description": "The whole plan: course line, every scored candidate, the selected\ncheckpoints, and a nav log leg between each consecutive pair.\n\naltitude_ft is optional. Omitted, wingtip.altitude works out each leg's\nown legal altitudes -- clear of terrain and obstacles, under the\nClass B shelf over that leg alone and the aircraft's service\nceiling, on the hemispheric rule for that leg's own course\n-- and wingtip.navlog makes four plans of them: the lowest, the\nhighest, the fastest for the winds aloft, and the one that burns the\nleast fuel, climb and cruise. altitude_choice picks\nwhich one the legs fly -- the fastest unless asked otherwise, the\nplan a pilot with the winds in hand picks (it was the lowest, as the\npredictable one) -- and the reasoning comes back with it, since\n\"why am I at 6,500\" is a question a pilot will actually ask.\n\naircraft names a stock profile; cruise_tas_kt, fuel_burn_gph, usable_fuel_gal,\nclimb_tas_kt, climb_fuel_burn_gph, descent_ias_kt (indicated), descent_fuel_burn_gph and\ncruise_power_pct (the power the cruise figures are at), when given,\nare a pilot's own aeroplane's numbers laid over it. Each leg flies\nthem in its own air: the cruise figures are the aeroplane's at a\nreference altitude on a standard day, and the forecast temperature\nat the leg's altitude gives the density altitude they are flown at\n(the engine's wingtip_flight::performance). depart, an ISO time (UTC when naive), picks the\nwinds-aloft forecast period the legs are flown on -- the 6-, 12- or\n24-hour product, whichever is valid closest to the departure;\nwithout it, the 6-hour product, i.e. about now -- and whether the\nfuel reserve is the day or the night one.",
         "operationId": "plan_api_plan_get",
         "parameters": [
           {
@@ -32039,16 +31997,6 @@
           },
           {
             "in": "query",
-            "name": "class_b_clearance",
-            "required": false,
-            "schema": {
-              "default": false,
-              "title": "Class B Clearance",
-              "type": "boolean"
-            }
-          },
-          {
-            "in": "query",
             "name": "rules",
             "required": false,
             "schema": {
@@ -32166,7 +32114,7 @@
             "name": "checkpoints",
             "required": false,
             "schema": {
-              "default": true,
+              "default": false,
               "title": "Checkpoints",
               "type": "boolean"
             }
@@ -32217,67 +32165,6 @@
         "x-gateway": {
           "access": "developer"
         }
-      }
-    },
-    "/api/route-check": {
-      "get": {
-        "description": "Whether a route would plan, checked as a typed one is (load_route):\na 404 naming an ident that is not one, a 422 for a stop at the point\nbefore it or too many stops. With an end missing, each ident given is\nchecked alone. Nothing is read or planned. The gateway forwards\nno app here.",
-        "operationId": "route_check_api_route_check_get",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "dep",
-            "required": false,
-            "schema": {
-              "default": "",
-              "title": "Dep",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "dest",
-            "required": false,
-            "schema": {
-              "default": "",
-              "title": "Dest",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "stops",
-            "required": false,
-            "schema": {
-              "default": "",
-              "title": "Stops",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RouteChecked"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Route Check"
       }
     },
     "/api/route-options": {
@@ -32488,6 +32375,24 @@
                 }
               ],
               "title": "Min Visibility Sm"
+            }
+          },
+          {
+            "in": "query",
+            "name": "altitude_ft",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 60000,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Altitude Ft"
             }
           }
         ],
@@ -34488,201 +34393,6 @@
           }
         },
         "summary": "Changes Sources"
-      }
-    },
-    "/api/words/coach/sources": {
-      "post": {
-        "description": "A proficiency plan's lines, each a source a sentence can cite.",
-        "operationId": "coach_sources_api_words_coach_sources_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProficiencyPlan"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WordsSources"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Coach Sources"
-      }
-    },
-    "/api/words/debrief/sources": {
-      "post": {
-        "description": "A flown flight's debrief as sources (POST /api/debrief: the time in\nthe air, each leg's altitude and course held, each checkpoint's time,\neach pattern entry, its notes, and the ACS tolerances they are marked\nagainst). A 422 where there is no debrief: the track never flew.",
-        "operationId": "debrief_sources_api_words_debrief_sources_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DebriefWordsAsk"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WordsSources"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Debrief Sources"
-      }
-    },
-    "/api/words/notams/sources": {
-      "post": {
-        "description": "The NOTAMs and TFRs of a flight as sources, with the flight itself\nfirst: the NOTAMs in force or to come at every field the route lands\nat, as the FAA's NOTAM feed gave them (wingtip.notams, SWIM's FNS),\nand the TFRs near the route over the briefing's hours\n(wingtip.tfr.along_route, as GET /api/briefing asks them: two hours of\nflight and an hour past, the route's own time not being known here).\nNone at all where there is no NOTAM and no TFR: nothing to say.\n`coverage_since`, the day the NOTAM feed was first heard (UTC); `unchecked`, \"tfrs\"\nwhere tfr.faa.gov did not answer.",
-        "operationId": "notam_sources_api_words_notams_sources_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RouteAsk"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WordsSources"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Notam Sources"
-      }
-    },
-    "/api/words/risk/sources": {
-      "post": {
-        "description": "The Go / No-Go as sources (POST /api/go-no-go's line, each\nfinding's line, the risk assessment's level and every factor it\ncounted) and the pilot's own record as the client sends it.",
-        "operationId": "risk_sources_api_words_risk_sources_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RiskAsk"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WordsSources"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Risk Sources"
-      }
-    },
-    "/api/words/weather/sources": {
-      "post": {
-        "description": "The briefing of a flight as sources (GET /api/briefing, asked here\nwith the same parameters: its METARs, its TAF stations at the flight's\ntime there, its hazards, G-AIRMETs, pilot reports and TFRs, the fields\nbelow VFR and its own \"VFR flight not recommended\"), the flight first.\nA briefing that cannot be had fails as it does there (a 502).",
-        "operationId": "weather_sources_api_words_weather_sources_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/WeatherAsk"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WordsSources"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Weather Sources"
       }
     }
   }

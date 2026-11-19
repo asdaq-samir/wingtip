@@ -3,12 +3,13 @@ import { useEffect, useMemo } from "react";
 import type { Course } from "../../../api/types";
 import { chartQuery } from "../../../queryClient";
 import { usePreferences } from "../../../preferences";
-import { useSunlight } from "../../../sunlight";
 import { useGlLayer, useGlMap, useGlPaint } from "../glLayer";
-import { useDarkTheme } from "../useDarkTheme";
+import { useChartLook } from "../useChartLook";
 import { chartPaint, chartStyle, type ChartStyle } from "../glStyle";
+import { chartBrightness } from "../../chartLook";
 import { CLOSE_MAX_ZOOM, chartFade } from "../closeZoom";
 import { CloseImageryGl } from "./CloseImageryGl";
+import { LABEL_NIGHT } from "./common";
 import { useCloseImagery } from "../useCloseImagery";
 
 /**
@@ -18,8 +19,10 @@ import { useCloseImagery } from "../useCloseImagery";
  * always, at every zoom it exists at (the owner, 2026-11-14: "TAC switch
  * is not needed, just have it on by default"; a kept "off" from the
  * switch's time is no longer read), made again as the base or the cycle
- * changes; dimmed at
- * night and brightened in sunlight (glStyle's chartPaint). Close in,
+ * changes; dimmed by the Map card's Dimmer (the dark theme's half unless
+ * moved), its contrast moved by its Contrast, and brightened in sunlight
+ * (glStyle's chartPaint, useChartLook), set on the layers as a slider
+ * moves, with no style made again. Close in,
  * past the base chart's own last zoom, the chart fades into the aerial
  * imagery under it (closeZoom, useCloseImagery: the USGS's, or Google's
  * at the pilot's pick, never for export, `publicOnly`), and the map goes
@@ -30,13 +33,7 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
   const chart = course ?? chartOnly ?? null;
   const base = usePreferences((s) => s.base);
-  const chartNight = usePreferences((s) => s.chartNight);
-  const sunlight = useSunlight();
-  const dark = useDarkTheme();
-  // On <html>, for index.css's night colours.
-  useEffect(() => {
-    document.documentElement.dataset.chartNight = chartNight;
-  }, [chartNight]);
+  const { night, sunlight, dim, contrast } = useChartLook();
   // None picked: no chart, its terminal sheet or the imagery it fades
   // into; the overlay and the plain ground (BaseGl) are the map's base.
   const none = base === "none";
@@ -56,7 +53,6 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
         : [],
     [spec],
   );
-  const night = dark && chartNight === "dimmed";
   const tileMax = spec?.sources.chart?.maxzoom ?? null;
   const imagery = useCloseImagery(tileMax, publicOnly);
   // Which charts are drawn and how, on the map's element, for the browser
@@ -67,26 +63,56 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
   useEffect(() => {
     if (none) map.setMaxZoom(CLOSE_MAX_ZOOM);
   }, [map, none]);
+  // The labels' halos dimmed after dark with the page's theme (common's
+  // HALO_COLOUR reads it), not glaring white over the night's chart.
+  useEffect(() => {
+    if (map.style) map.setGlobalStateProperty(LABEL_NIGHT, night);
+  }, [map, night]);
   const kinds = parts
     .map((p) => /\/(?:chart-tile\/)?([a-z_]+)\/\{z\}/.exec(Object.values(p.spec.sources).at(-1)?.tiles?.[0] ?? "")?.[1] ?? "")
     .join(" ");
-  const look = night ? "dimmed" : sunlight ? "bright" : "normal";
+  const brightness = chartBrightness(dim, sunlight, night);
+  const look = sunlight ? "bright" : brightness < 1 ? "dimmed" : "normal";
   useEffect(() => {
     const el = map.getContainer();
     el.dataset.chartKinds = kinds;
     el.dataset.chartLook = look;
   }, [map, kinds, look]);
+  // And the brightness and contrast each chart layer is drawn at, read
+  // from the map at rest, not from what was asked: the look said "dimmed"
+  // while the chart close in was drawn undimmed (UI audit B10).
+  useEffect(() => {
+    const drawn = (ids: string[], name: "raster-brightness-max" | "raster-contrast", none: number) =>
+      ids
+        .filter((id) => map.getLayer(id))
+        .map((id) => `${id} ${map.getPaintProperty(id, name) ?? none}`)
+        .join(",");
+    const write = () => {
+      const el = map.getContainer();
+      el.dataset.chartBrightness = drawn(
+        ["chart-under", "chart", "chart-terminal", "close-imagery", "land-water"],
+        "raster-brightness-max",
+        1,
+      );
+      el.dataset.chartContrast = drawn(["chart-under", "chart", "chart-terminal"], "raster-contrast", 0);
+    };
+    map.on("idle", write);
+    return () => {
+      map.off("idle", write);
+    };
+  }, [map]);
+  const paint = chartPaint(night, sunlight, dim, contrast);
   return (
     <>
       {parts.map(({ part, spec }) => (
-        <ChartSources key={`${part}:${JSON.stringify(spec.sources)}`} spec={spec} night={night} sunlight={sunlight} fade={!!imagery} />
+        <ChartSources key={`${part}:${JSON.stringify(spec.sources)}`} spec={spec} paint={paint} fade={!!imagery} />
       ))}
       {imagery && tileMax != null && spec && (
         <CloseImageryGl
           key={`${imagery.url}:${tileMax}`}
           tiles={imagery}
           tileMaxZoom={tileMax}
-          night={night}
+          brightness={brightness}
           under={spec.sources["chart-under"] ? "chart-under" : "chart"}
         />
       )}
@@ -95,9 +121,9 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
 }
 
 /** One chart's sources and layers, made again (`key`) as its tiles change;
- *  its paint set as the night and the sunlight change, and, with the
- *  imagery under it (`fade`), faded out past its own last zoom. */
-function ChartSources({ spec, night, sunlight, fade }: { spec: ChartStyle; night: boolean; sunlight: boolean; fade: boolean }) {
+ *  its paint (chartPaint) set on its layers as the look changes, and, with
+ *  the imagery under it (`fade`), faded out past its own last zoom. */
+function ChartSources({ spec, paint, fade }: { spec: ChartStyle; paint: ReturnType<typeof chartPaint>; fade: boolean }) {
   const { map } = useGlMap();
   useGlLayer("chart", spec.sources, spec.layers);
   // The base and the region's level under it fade by the base's last
@@ -106,7 +132,7 @@ function ChartSources({ spec, night, sunlight, fade }: { spec: ChartStyle; night
   const opacity = fade && own != null ? chartFade(own) : 1;
   useGlPaint(
     spec.layers.map((l) => l.id),
-    { ...chartPaint(night, sunlight), "raster-opacity": opacity } as Record<string, unknown>,
+    { ...paint, "raster-opacity": opacity } as Record<string, unknown>,
   );
   useEffect(() => {
     map.setMaxZoom(fade ? CLOSE_MAX_ZOOM : spec.maxZoom);

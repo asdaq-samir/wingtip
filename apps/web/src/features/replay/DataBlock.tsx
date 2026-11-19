@@ -31,9 +31,7 @@ export function DataBlock({ track, className }: { track: ReplayTrack; className?
         {time}
       </span>
       {gap ? (
-        <span className={cn("text-muted-foreground", TEXT.note)} data-testid="replay-data-gap">
-          {gap}
-        </span>
+        <span className={cn("text-muted-foreground", TEXT.note)}>{gap}</span>
       ) : (
         rows.map(([name, value, id]) => (
           <span key={id} className={cn("flex justify-between gap-3", TEXT.note)}>

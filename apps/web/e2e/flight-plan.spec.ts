@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { slow, settle, openTab, openSection, openConsole } from "./helpers";
+import { slow, settle, openTab, openSection, openConsole, openPanel } from "./helpers";
 import { NO_OWN_FIGURES } from "./airplaneMocks";
+import { pickAirplane } from "./startState";
 
 /**
  * The Brief tab's Flight Plan: the FAA's form (FAA Form 7233-4) filled in
@@ -13,6 +14,9 @@ import { NO_OWN_FIGURES } from "./airplaneMocks";
 test("under VFR the flight plan flies direct, with no alternate, and says where to file it", async ({ page, context }) => {
   test.slow();
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  // Item 16's EET is the airplane's time en route: none is assumed (the
+  // setup picks none), so one is picked.
+  await pickAirplane(page);
   await page.addInitScript(() => {
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
     localStorage.setItem(
@@ -22,7 +26,7 @@ test("under VFR the flight plan flies direct, with no alternate, and says where 
   });
   await page.goto("/app/plan?dep=KMSN&dest=KOSH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openTab(page, "Brief");
   await openSection(page, "Flight Plan");
   const form = page.getByTestId("flight-plan");
@@ -102,7 +106,7 @@ test("items 10 and 19 come from the airplane's page, the pilot's and the persons
   });
   await page.goto("/app/plan?dep=KMSN&dest=KOSH");
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openTab(page, "Brief");
   await openSection(page, "Flight Plan");
   const form = page.getByTestId("flight-plan");
@@ -167,7 +171,7 @@ test("where Flight Service is connected, the form is filed from here in the pilo
   const depart = new Date(Math.ceil(Date.now() / 3600_000 + 3) * 3600_000).toISOString();
   await page.goto(`/app/plan?dep=KMSN&dest=KOSH&depart=${encodeURIComponent(depart)}`);
   await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
+  await openPanel(page);
   await openTab(page, "Brief");
   await openSection(page, "Flight Plan");
   const form = page.getByTestId("flight-plan");

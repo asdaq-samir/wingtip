@@ -1,16 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import type { AirspaceVolume } from "../../../lib/map/sources/overlayTypes";
-import { cn } from "cn";
 import { TEXT } from "../../../lib/text";
+import { TermTable } from "../../CardFacts";
 import { airspaceFacts } from "../../../lib/map/marks/airspaceLabel";
-import { AIRSPACE_LINE } from "../../../lib/map/marks/airspaceMarks";
+import { CardShareButton } from "../../CardHead";
+import { markLink } from "../../../lib/address";
+import { shareOrCopy } from "../../../lib/share";
+import { useAreaWhileUp } from "../../../lib/map/mapPick";
 import { MapCard } from "../../../lib/map/cards/MapCard";
-import { Button } from "../../ui/button";
 import { ListGroup, ListRow } from "../../GroupedList";
 import { callTypes, entryRules } from "../../../lib/airspaceRules";
 import FrequencyButton from "../../FrequencyButton";
 import { airportQuery } from "../../../lib/queryClient";
-import { usePointActions } from "../../../lib/map/cards/pointActions";
 
 /**
  * The card a tap on a Class B, C or D line opens (the map draws them from
@@ -22,31 +23,22 @@ import { usePointActions } from "../../../lib/map/cards/pointActions";
  * info").
  */
 
-/** A short length of the volume's line as the map draws it, before its
- *  title: solid blue, solid magenta or dashed blue. */
-function Swatch({ volume }: { volume: AirspaceVolume }) {
-  const line = AIRSPACE_LINE[volume.airspace_class];
-  return (
-    <svg aria-hidden="true" width="28" height="8" viewBox="0 0 28 8" className="mx-1 shrink-0">
-      <line
-        x1="0"
-        y1="4"
-        x2="28"
-        y2="4"
-        stroke={line.color}
-        strokeWidth={line.weight}
-        strokeDasharray={typeof line.dashArray === "string" ? line.dashArray : undefined}
-      />
-    </svg>
-  );
-}
-
-/** A volume's card on whichever map opened it: `close` puts it away
- *  before the route is planned round the Class B (Leaflet's popup here,
- *  the WebGL map's sheet card in GlMap). */
-export function AirspaceCardBody({ volume, close }: { volume: AirspaceVolume; close: () => void }) {
-  const avoid = usePointActions((s) => s.avoidClassB);
+/** A volume's card on whichever map opened it: its name the card's, its
+ *  class the line under it ("Chicago Class B" / "Class B", the owner,
+ *  2026-11-18: the title is the thing's name, the line its kind), its edge
+ *  lit while it is up (AirspaceGl), and its link (`mark`, by its number in
+ *  the tiles and where it was tapped, `at`) for its Share. */
+export function AirspaceCardBody({ volume, at }: { volume: AirspaceVolume; at?: { lat: number; lon: number } }) {
   const facts = airspaceFacts(volume);
+  useAreaWhileUp({ kind: "airspace", id: volume.id });
+  const number = volume.id.startsWith("tile-") ? volume.id.slice(5) : null;
+  const share =
+    at && number && /^[A-Z0-9-]{1,12}$/.test(number)
+      ? () =>
+          void shareOrCopy({ title: facts.name, url: markLink({ kind: "airspace", ident: number, ...at }, location.origin) }).catch(() => {
+            /* put away, or not allowed: nothing to say */
+          })
+      : undefined;
   const rows: [string, string][] = [
     ["Floor", facts.floor],
     ["Ceiling", facts.ceiling],
@@ -54,46 +46,22 @@ export function AirspaceCardBody({ volume, close }: { volume: AirspaceVolume; cl
   if (facts.hours) rows.push(["Hours", facts.hours]);
   return (
     <MapCard
-      media={<Swatch volume={volume} />}
-      title={`Class ${volume.airspace_class}`}
-      subtitle={facts.name}
-      // In the pill its name and place on the ring's own colour, as an
-      // airport's is its picture (MapCard's `pill`).
-      pill={{ name: `Class ${volume.airspace_class}`, line: facts.name, colour: AIRSPACE_LINE[volume.airspace_class].color }}
+      start={share && <CardShareButton onShare={share} />}
+      title={facts.name || `Class ${volume.airspace_class}`}
+      subtitle={`Class ${volume.airspace_class}`}
     >
-      <dl className={cn("grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-left", TEXT.row)} data-testid="airspace-card">
-        {rows.map(([term, value]) => (
-          <div key={term} className="contents">
-            <dt className="text-muted-foreground">{term}</dt>
-            <dd className="tabular-nums">{value}</dd>
-          </div>
-        ))}
-      </dl>
+      <TermTable rows={rows} testId="airspace-card" className={TEXT.row} ddClassName="tabular-nums" />
       <AirspaceCall volume={volume} />
       {/* What it takes to go in, each rule with its section (lib/airspaceRules),
           at the owner's ask for cards that say what a pilot does there
           (2026-10-30). */}
-      <div data-testid="airspace-rules">
+      <div>
         <ListGroup title="To enter">
           {entryRules(volume.airspace_class).map((r) => (
             <ListRow key={r.rule} title={<span className={TEXT.detail}>{r.rule}</span>} description={r.cite} />
           ))}
         </ListGroup>
       </div>
-      {volume.airspace_class === "B" && avoid && (
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full text-tint"
-          onClick={() => {
-            close();
-            avoid();
-          }}
-          data-testid="airspace-avoid"
-        >
-          Route Around Class B
-        </Button>
-      )}
     </MapCard>
   );
 }
@@ -110,7 +78,7 @@ function AirspaceCall({ volume }: { volume: AirspaceVolume }) {
   const shown = calls.filter((f) => f.type?.toUpperCase() === first).slice(0, 3);
   if (!shown.length) return null;
   return (
-    <div data-testid="airspace-call">
+    <div>
       <ListGroup title={first === "APP" ? "Call approach" : "Call the tower"}>
         {shown.map((f, i) => (
           <ListRow

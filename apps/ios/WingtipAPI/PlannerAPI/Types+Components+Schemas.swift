@@ -1508,6 +1508,8 @@ extension Components {
             public var region: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/runways`.
             public var runways: [Components.Schemas.Runway]
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/site_type`.
+            public var siteType: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/standard_keying`.
             public var standardKeying: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/status`.
@@ -1560,6 +1562,7 @@ extension Components {
             ///   - radioNotes:
             ///   - region:
             ///   - runways:
+            ///   - siteType:
             ///   - standardKeying:
             ///   - status:
             ///   - surfaceAirspace:
@@ -1603,6 +1606,7 @@ extension Components {
                 radioNotes: [Swift.String]? = nil,
                 region: Swift.String? = nil,
                 runways: [Components.Schemas.Runway],
+                siteType: Swift.String? = nil,
                 standardKeying: Swift.Bool? = nil,
                 status: Swift.String? = nil,
                 surfaceAirspace: Components.Schemas.SurfaceAirspace? = nil,
@@ -1646,6 +1650,7 @@ extension Components {
                 self.radioNotes = radioNotes
                 self.region = region
                 self.runways = runways
+                self.siteType = siteType
                 self.standardKeying = standardKeying
                 self.status = status
                 self.surfaceAirspace = surfaceAirspace
@@ -1690,6 +1695,7 @@ extension Components {
                 case radioNotes = "radio_notes"
                 case region
                 case runways
+                case siteType = "site_type"
                 case standardKeying = "standard_keying"
                 case status
                 case surfaceAirspace = "surface_airspace"
@@ -2461,8 +2467,6 @@ extension Components {
             public var bandCeilingFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AltitudeBreakdown/candidates_ft`.
             public var candidatesFt: [Swift.Double]?
-            /// - Remark: Generated from `#/components/schemas/AltitudeBreakdown/class_b_cleared`.
-            public var classBCleared: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/AltitudeBreakdown/cloud_base_ft`.
             public var cloudBaseFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AltitudeBreakdown/cloud_ceiling_ft`.
@@ -2514,7 +2518,6 @@ extension Components {
             ///   - airspaceTransits:
             ///   - bandCeilingFt:
             ///   - candidatesFt:
-            ///   - classBCleared:
             ///   - cloudBaseFt:
             ///   - cloudCeilingFt:
             ///   - cloudClearanceKept:
@@ -2542,7 +2545,6 @@ extension Components {
                 airspaceTransits: [Components.Schemas.AirspaceTransit],
                 bandCeilingFt: Swift.Double? = nil,
                 candidatesFt: [Swift.Double]? = nil,
-                classBCleared: Swift.Bool? = nil,
                 cloudBaseFt: Swift.Double? = nil,
                 cloudCeilingFt: Swift.Double? = nil,
                 cloudClearanceKept: Swift.Bool? = nil,
@@ -2570,7 +2572,6 @@ extension Components {
                 self.airspaceTransits = airspaceTransits
                 self.bandCeilingFt = bandCeilingFt
                 self.candidatesFt = candidatesFt
-                self.classBCleared = classBCleared
                 self.cloudBaseFt = cloudBaseFt
                 self.cloudCeilingFt = cloudCeilingFt
                 self.cloudClearanceKept = cloudClearanceKept
@@ -2599,7 +2600,6 @@ extension Components {
                 case airspaceTransits = "airspace_transits"
                 case bandCeilingFt = "band_ceiling_ft"
                 case candidatesFt = "candidates_ft"
-                case classBCleared = "class_b_cleared"
                 case cloudBaseFt = "cloud_base_ft"
                 case cloudCeilingFt = "cloud_ceiling_ft"
                 case cloudClearanceKept = "cloud_clearance_kept"
@@ -2784,14 +2784,12 @@ extension Components {
                 case unflyableLegs = "unflyable_legs"
             }
         }
-        /// One leg's own band: its floor, the shelf and the clouds over it
-        /// alone, and the legal cruising altitudes between -- what lets a plan
-        /// step down under a Class B shelf and climb again past it.
+        /// One leg's own band: its floor, the clouds and the service ceiling
+        /// over it alone, and the legal cruising altitudes between -- what lets a
+        /// plan step over high ground or under low cloud leg by leg.
         ///
         /// - Remark: Generated from `#/components/schemas/AltitudeSegment`.
         public struct AltitudeSegment: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/AltitudeSegment/airspace_ceiling_ft`.
-            public var airspaceCeilingFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AltitudeSegment/airway`.
             public var airway: Components.Schemas.AirwayAltitudes?
             /// - Remark: Generated from `#/components/schemas/AltitudeSegment/band_ceiling_ft`.
@@ -2837,7 +2835,6 @@ extension Components {
             /// Creates a new `AltitudeSegment`.
             ///
             /// - Parameters:
-            ///   - airspaceCeilingFt:
             ///   - airway:
             ///   - bandCeilingFt:
             ///   - candidatesFt:
@@ -2860,7 +2857,6 @@ extension Components {
             ///   - tight:
             ///   - toNm:
             public init(
-                airspaceCeilingFt: Swift.Double? = nil,
                 airway: Components.Schemas.AirwayAltitudes? = nil,
                 bandCeilingFt: Swift.Double? = nil,
                 candidatesFt: [Swift.Double],
@@ -2883,7 +2879,6 @@ extension Components {
                 tight: Swift.Bool? = nil,
                 toNm: Swift.Double
             ) {
-                self.airspaceCeilingFt = airspaceCeilingFt
                 self.airway = airway
                 self.bandCeilingFt = bandCeilingFt
                 self.candidatesFt = candidatesFt
@@ -2907,7 +2902,6 @@ extension Components {
                 self.toNm = toNm
             }
             public enum CodingKeys: String, CodingKey {
-                case airspaceCeilingFt = "airspace_ceiling_ft"
                 case airway
                 case bandCeilingFt = "band_ceiling_ft"
                 case candidatesFt = "candidates_ft"
@@ -5414,6 +5408,10 @@ extension Components {
             ///
             /// - Remark: Generated from `#/components/schemas/Currency/dayPassengersUntil`.
             public var dayPassengersUntil: Swift.String?
+            /// What falls due, each named and cited (61.56(c), 61.23, 61.57(a)-(c)).
+            ///
+            /// - Remark: Generated from `#/components/schemas/Currency/due`.
+            public var due: [Components.Schemas.PaperworkDue]
             /// - Remark: Generated from `#/components/schemas/Currency/flightReviewOn`.
             public var flightReviewOn: Swift.String?
             /// The end of the 24th calendar month after the flight review's (61.56(c)).
@@ -5458,6 +5456,7 @@ extension Components {
             ///   - approachesInWindow: Approaches logged in the 6 calendar months before this one (61.57(c)(1)(i)).
             ///   - crossCountryHours:
             ///   - dayPassengersUntil: 90 days after the third most recent landing (14 CFR 61.57(a)).
+            ///   - due: What falls due, each named and cited (61.56(c), 61.23, 61.57(a)-(c)).
             ///   - flightReviewOn:
             ///   - flightReviewUntil: The end of the 24th calendar month after the flight review's (61.56(c)).
             ///   - flights:
@@ -5476,6 +5475,7 @@ extension Components {
                 approachesInWindow: Swift.Int,
                 crossCountryHours: Swift.Double,
                 dayPassengersUntil: Swift.String? = nil,
+                due: [Components.Schemas.PaperworkDue],
                 flightReviewOn: Swift.String? = nil,
                 flightReviewUntil: Swift.String? = nil,
                 flights: Swift.Int,
@@ -5494,6 +5494,7 @@ extension Components {
                 self.approachesInWindow = approachesInWindow
                 self.crossCountryHours = crossCountryHours
                 self.dayPassengersUntil = dayPassengersUntil
+                self.due = due
                 self.flightReviewOn = flightReviewOn
                 self.flightReviewUntil = flightReviewUntil
                 self.flights = flights
@@ -5513,6 +5514,7 @@ extension Components {
                 case approachesInWindow
                 case crossCountryHours
                 case dayPassengersUntil
+                case due
                 case flightReviewOn
                 case flightReviewUntil
                 case flights
@@ -6094,45 +6096,6 @@ extension Components {
                 case patternNm = "pattern_nm"
             }
         }
-        /// The debrief as POST /api/debrief answered it (the debrief and the
-        /// tolerances), or as the web app's own twin keeps it (lib/debrief: the
-        /// figures alone, their keys camel-cased, without the flown line and the
-        /// profile, thousands of points a sentence cannot use): `debrief_of`
-        /// reads either.
-        ///
-        /// - Remark: Generated from `#/components/schemas/DebriefWordsAsk`.
-        public struct DebriefWordsAsk: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/DebriefWordsAsk/debrief`.
-            public struct DebriefPayload: Codable, Hashable, Sendable {
-                /// A container of undocumented properties.
-                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
-                /// Creates a new `DebriefPayload`.
-                ///
-                /// - Parameters:
-                ///   - additionalProperties: A container of undocumented properties.
-                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
-                    self.additionalProperties = additionalProperties
-                }
-                public init(from decoder: any Swift.Decoder) throws {
-                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
-                }
-                public func encode(to encoder: any Swift.Encoder) throws {
-                    try encoder.encodeAdditionalProperties(additionalProperties)
-                }
-            }
-            /// - Remark: Generated from `#/components/schemas/DebriefWordsAsk/debrief`.
-            public var debrief: Components.Schemas.DebriefWordsAsk.DebriefPayload
-            /// Creates a new `DebriefWordsAsk`.
-            ///
-            /// - Parameters:
-            ///   - debrief:
-            public init(debrief: Components.Schemas.DebriefWordsAsk.DebriefPayload) {
-                self.debrief = debrief
-            }
-            public enum CodingKeys: String, CodingKey {
-                case debrief
-            }
-        }
         /// The strongest crosswind the POH says the aeroplane was shown to
         /// take off and land in: not a limitation, but past it the pilot is
         /// beyond what was tested.
@@ -6326,8 +6289,6 @@ extension Components {
             public var altitudeStarts: Swift.String?
             /// - Remark: Generated from `#/components/schemas/DepartureWindowAsk/checkpoints`.
             public var checkpoints: Swift.Bool?
-            /// - Remark: Generated from `#/components/schemas/DepartureWindowAsk/class_b_clearance`.
-            public var classBClearance: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/DepartureWindowAsk/climb_fuel_burn_gph`.
             public var climbFuelBurnGph: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/DepartureWindowAsk/climb_rate_fpm`.
@@ -6402,7 +6363,6 @@ extension Components {
             ///   - altitudes:
             ///   - altitudeStarts:
             ///   - checkpoints:
-            ///   - classBClearance:
             ///   - climbFuelBurnGph:
             ///   - climbRateFpm:
             ///   - climbTasKt:
@@ -6444,7 +6404,6 @@ extension Components {
                 altitudes: Swift.String? = nil,
                 altitudeStarts: Swift.String? = nil,
                 checkpoints: Swift.Bool? = nil,
-                classBClearance: Swift.Bool? = nil,
                 climbFuelBurnGph: Swift.Double? = nil,
                 climbRateFpm: Swift.Double? = nil,
                 climbTasKt: Swift.Double? = nil,
@@ -6486,7 +6445,6 @@ extension Components {
                 self.altitudes = altitudes
                 self.altitudeStarts = altitudeStarts
                 self.checkpoints = checkpoints
-                self.classBClearance = classBClearance
                 self.climbFuelBurnGph = climbFuelBurnGph
                 self.climbRateFpm = climbRateFpm
                 self.climbTasKt = climbTasKt
@@ -6529,7 +6487,6 @@ extension Components {
                 case altitudes
                 case altitudeStarts = "altitude_starts"
                 case checkpoints
-                case classBClearance = "class_b_clearance"
                 case climbFuelBurnGph = "climb_fuel_burn_gph"
                 case climbRateFpm = "climb_rate_fpm"
                 case climbTasKt = "climb_tas_kt"
@@ -6885,9 +6842,9 @@ extension Components {
                 case score
             }
         }
-        /// A named fix that keeps a route out of the Class B airspace it is
-        /// stopped by (wingtip.airspace.detour_waypoint), and where it goes in the
-        /// stops: before the stop at `stop_index`, so on the hop it is for.
+        /// A way round the high ground that leaves a route no altitude
+        /// (wingtip.terrain_detour), and where it goes in the stops: before the
+        /// stop at `stop_index`, so on the hop it is for.
         ///
         /// - Remark: Generated from `#/components/schemas/Detour`.
         public struct Detour: Codable, Hashable, Sendable {
@@ -10139,8 +10096,6 @@ extension Components {
             public var altitudeStarts: Swift.String?
             /// - Remark: Generated from `#/components/schemas/GoNoGoAsk/checkpoints`.
             public var checkpoints: Swift.Bool?
-            /// - Remark: Generated from `#/components/schemas/GoNoGoAsk/class_b_clearance`.
-            public var classBClearance: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/GoNoGoAsk/climb_fuel_burn_gph`.
             public var climbFuelBurnGph: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/GoNoGoAsk/climb_rate_fpm`.
@@ -10210,7 +10165,6 @@ extension Components {
             ///   - altitudes:
             ///   - altitudeStarts:
             ///   - checkpoints:
-            ///   - classBClearance:
             ///   - climbFuelBurnGph:
             ///   - climbRateFpm:
             ///   - climbTasKt:
@@ -10249,7 +10203,6 @@ extension Components {
                 altitudes: Swift.String? = nil,
                 altitudeStarts: Swift.String? = nil,
                 checkpoints: Swift.Bool? = nil,
-                classBClearance: Swift.Bool? = nil,
                 climbFuelBurnGph: Swift.Double? = nil,
                 climbRateFpm: Swift.Double? = nil,
                 climbTasKt: Swift.Double? = nil,
@@ -10288,7 +10241,6 @@ extension Components {
                 self.altitudes = altitudes
                 self.altitudeStarts = altitudeStarts
                 self.checkpoints = checkpoints
-                self.classBClearance = classBClearance
                 self.climbFuelBurnGph = climbFuelBurnGph
                 self.climbRateFpm = climbRateFpm
                 self.climbTasKt = climbTasKt
@@ -10328,7 +10280,6 @@ extension Components {
                 case altitudes
                 case altitudeStarts = "altitude_starts"
                 case checkpoints
-                case classBClearance = "class_b_clearance"
                 case climbFuelBurnGph = "climb_fuel_burn_gph"
                 case climbRateFpm = "climb_rate_fpm"
                 case climbTasKt = "climb_tas_kt"
@@ -10927,6 +10878,10 @@ extension Components {
             ///
             /// - Remark: Generated from `#/components/schemas/Inspections/annualUntil`.
             public var annualUntil: Swift.String?
+            /// Each recorded one named and cited, then the owner's dated items (an AD by 14 CFR 39.7).
+            ///
+            /// - Remark: Generated from `#/components/schemas/Inspections/due`.
+            public var due: [Components.Schemas.PaperworkDue]
             /// The end of the 12th calendar month after (91.207(d)).
             ///
             /// - Remark: Generated from `#/components/schemas/Inspections/eltUntil`.
@@ -10949,6 +10904,7 @@ extension Components {
             ///
             /// - Parameters:
             ///   - annualUntil: The end of the 12th calendar month after (14 CFR 91.409(a)).
+            ///   - due: Each recorded one named and cited, then the owner's dated items (an AD by 14 CFR 39.7).
             ///   - eltUntil: The end of the 12th calendar month after (91.207(d)).
             ///   - hundredHourDueAtHours: 100 hours of time in service after the last (91.409(b)).
             ///   - staticCheckUntil: The end of the 24th calendar month after (91.411(a)).
@@ -10956,6 +10912,7 @@ extension Components {
             ///   - vorCheck:
             public init(
                 annualUntil: Swift.String? = nil,
+                due: [Components.Schemas.PaperworkDue],
                 eltUntil: Swift.String? = nil,
                 hundredHourDueAtHours: Swift.Double? = nil,
                 staticCheckUntil: Swift.String? = nil,
@@ -10963,6 +10920,7 @@ extension Components {
                 vorCheck: Components.Schemas.VorCheckOutput? = nil
             ) {
                 self.annualUntil = annualUntil
+                self.due = due
                 self.eltUntil = eltUntil
                 self.hundredHourDueAtHours = hundredHourDueAtHours
                 self.staticCheckUntil = staticCheckUntil
@@ -10971,6 +10929,7 @@ extension Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case annualUntil
+                case due
                 case eltUntil
                 case hundredHourDueAtHours
                 case staticCheckUntil
@@ -10979,18 +10938,29 @@ extension Components {
             }
         }
         /// The days the airplane's inspections and checks were done, and the
-        /// hours of its last 100-hour; each left out where not recorded.
+        /// hours of its last 100-hour; each left out where not recorded. With the
+        /// airplane's registration, whether it is flown for hire, its ELT
+        /// battery's marked date and the owner's items, for the list of what
+        /// falls due (`due`).
         ///
         /// - Remark: Generated from `#/components/schemas/InspectionsAsk`.
         public struct InspectionsAsk: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/InspectionsAsk/annualOn`.
             public var annualOn: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/InspectionsAsk/eltBatteryDueOn`.
+            public var eltBatteryDueOn: Swift.String?
             /// - Remark: Generated from `#/components/schemas/InspectionsAsk/eltOn`.
             public var eltOn: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/InspectionsAsk/forHire`.
+            public var forHire: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/InspectionsAsk/hundredHourAtHours`.
             public var hundredHourAtHours: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/InspectionsAsk/kept`.
+            public var kept: [Components.Schemas.KeptItem]?
             /// - Remark: Generated from `#/components/schemas/InspectionsAsk/staticCheckOn`.
             public var staticCheckOn: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/InspectionsAsk/tailNumber`.
+            public var tailNumber: Swift.String?
             /// - Remark: Generated from `#/components/schemas/InspectionsAsk/transponderCheckOn`.
             public var transponderCheckOn: Swift.String?
             /// - Remark: Generated from `#/components/schemas/InspectionsAsk/vorCheck`.
@@ -10999,31 +10969,47 @@ extension Components {
             ///
             /// - Parameters:
             ///   - annualOn:
+            ///   - eltBatteryDueOn:
             ///   - eltOn:
+            ///   - forHire:
             ///   - hundredHourAtHours:
+            ///   - kept:
             ///   - staticCheckOn:
+            ///   - tailNumber:
             ///   - transponderCheckOn:
             ///   - vorCheck:
             public init(
                 annualOn: Swift.String? = nil,
+                eltBatteryDueOn: Swift.String? = nil,
                 eltOn: Swift.String? = nil,
+                forHire: Swift.Bool? = nil,
                 hundredHourAtHours: Swift.Double? = nil,
+                kept: [Components.Schemas.KeptItem]? = nil,
                 staticCheckOn: Swift.String? = nil,
+                tailNumber: Swift.String? = nil,
                 transponderCheckOn: Swift.String? = nil,
                 vorCheck: Components.Schemas.VorCheckAsk? = nil
             ) {
                 self.annualOn = annualOn
+                self.eltBatteryDueOn = eltBatteryDueOn
                 self.eltOn = eltOn
+                self.forHire = forHire
                 self.hundredHourAtHours = hundredHourAtHours
+                self.kept = kept
                 self.staticCheckOn = staticCheckOn
+                self.tailNumber = tailNumber
                 self.transponderCheckOn = transponderCheckOn
                 self.vorCheck = vorCheck
             }
             public enum CodingKeys: String, CodingKey {
                 case annualOn
+                case eltBatteryDueOn
                 case eltOn
+                case forHire
                 case hundredHourAtHours
+                case kept
                 case staticCheckOn
+                case tailNumber
                 case transponderCheckOn
                 case vorCheck
             }
@@ -11167,13 +11153,63 @@ extension Components {
                 case product
             }
         }
+        /// An owner's own item: an AD (14 CFR part 39) or anything else, with
+        /// its next day or hours.
+        ///
+        /// - Remark: Generated from `#/components/schemas/KeptItem`.
+        public struct KeptItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/KeptItem/dueAtHours`.
+            public var dueAtHours: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/KeptItem/dueOn`.
+            public var dueOn: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/KeptItem/id`.
+            public var id: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/KeptItem/kind`.
+            public var kind: Swift.String
+            /// - Remark: Generated from `#/components/schemas/KeptItem/reference`.
+            public var reference: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/KeptItem/title`.
+            public var title: Swift.String
+            /// Creates a new `KeptItem`.
+            ///
+            /// - Parameters:
+            ///   - dueAtHours:
+            ///   - dueOn:
+            ///   - id:
+            ///   - kind:
+            ///   - reference:
+            ///   - title:
+            public init(
+                dueAtHours: Swift.Double? = nil,
+                dueOn: Swift.String? = nil,
+                id: Swift.Int,
+                kind: Swift.String,
+                reference: Swift.String? = nil,
+                title: Swift.String
+            ) {
+                self.dueAtHours = dueAtHours
+                self.dueOn = dueOn
+                self.id = id
+                self.kind = kind
+                self.reference = reference
+                self.title = title
+            }
+            public enum CodingKeys: String, CodingKey {
+                case dueAtHours
+                case dueOn
+                case id
+                case kind
+                case reference
+                case title
+            }
+        }
         /// One dead-reckoning leg. `wind` is None when no winds-aloft station
         /// is near enough, which is not the same as calm: groundspeed then falls
         /// back to true airspeed. groundspeed/ETE/fuel are None when the wind
         /// exceeds true airspeed, i.e. the leg cannot be flown.
         ///
         /// The true airspeed and fuel flow are the aeroplane's in the leg's own
-        /// air (wingtip.performance): its cruise figures are at a reference
+        /// air (the engine's wingtip_flight::performance): its cruise figures are at a reference
         /// altitude on a standard day, and the forecast temperature at this
         /// altitude gives the density altitude they are flown at, at the power
         /// it allows -- the cruise power, or less where full throttle cannot
@@ -12913,8 +12949,8 @@ extension Components {
             public var altitudeSelection: Components.Schemas.AltitudeBreakdown
             /// - Remark: Generated from `#/components/schemas/NavLogAltitude/cautions`.
             public var cautions: [Components.Schemas.AltitudeCaution]?
-            /// - Remark: Generated from `#/components/schemas/NavLogAltitude/class_b_detours`.
-            public var classBDetours: [Components.Schemas.Detour]?
+            /// - Remark: Generated from `#/components/schemas/NavLogAltitude/detours`.
+            public var detours: [Components.Schemas.Detour]?
             /// - Remark: Generated from `#/components/schemas/NavLogAltitude/flown`.
             public var flown: Swift.String?
             /// - Remark: Generated from `#/components/schemas/NavLogAltitude/options`.
@@ -12929,7 +12965,7 @@ extension Components {
             ///   - altitudeFt:
             ///   - altitudeSelection:
             ///   - cautions:
-            ///   - classBDetours:
+            ///   - detours:
             ///   - flown:
             ///   - options:
             ///   - type:
@@ -12939,7 +12975,7 @@ extension Components {
                 altitudeFt: Swift.Double? = nil,
                 altitudeSelection: Components.Schemas.AltitudeBreakdown,
                 cautions: [Components.Schemas.AltitudeCaution]? = nil,
-                classBDetours: [Components.Schemas.Detour]? = nil,
+                detours: [Components.Schemas.Detour]? = nil,
                 flown: Swift.String? = nil,
                 options: [Components.Schemas.AltitudeOption]? = nil,
                 type: Swift.String? = nil
@@ -12949,7 +12985,7 @@ extension Components {
                 self.altitudeFt = altitudeFt
                 self.altitudeSelection = altitudeSelection
                 self.cautions = cautions
-                self.classBDetours = classBDetours
+                self.detours = detours
                 self.flown = flown
                 self.options = options
                 self.type = type
@@ -12960,7 +12996,7 @@ extension Components {
                 case altitudeFt = "altitude_ft"
                 case altitudeSelection = "altitude_selection"
                 case cautions
-                case classBDetours = "class_b_detours"
+                case detours
                 case flown
                 case options
                 case type
@@ -14648,6 +14684,67 @@ extension Components {
                 case vorCheck = "vor_check"
             }
         }
+        /// One thing that falls due, named and with the rule that asks for it
+        /// (the engine's PaperworkDue), for the gateway's Coming up list and its
+        /// reminders, which add only the days and hours left.
+        ///
+        /// - Remark: Generated from `#/components/schemas/PaperworkDue`.
+        public struct PaperworkDue: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PaperworkDue/dueAtHours`.
+            public var dueAtHours: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/PaperworkDue/itemId`.
+            public var itemId: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/PaperworkDue/label`.
+            public var label: Swift.String
+            /// The reminder sentence's start, to which the day is added.
+            ///
+            /// - Remark: Generated from `#/components/schemas/PaperworkDue/lead`.
+            public var lead: Swift.String
+            /// 14 CFR 61.56(c); an AD its own number and 14 CFR 39.7; an owner's item its reference.
+            ///
+            /// - Remark: Generated from `#/components/schemas/PaperworkDue/rule`.
+            public var rule: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PaperworkDue/until`.
+            public var until: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PaperworkDue/what`.
+            public var what: Swift.String
+            /// Creates a new `PaperworkDue`.
+            ///
+            /// - Parameters:
+            ///   - dueAtHours:
+            ///   - itemId:
+            ///   - label:
+            ///   - lead: The reminder sentence's start, to which the day is added.
+            ///   - rule: 14 CFR 61.56(c); an AD its own number and 14 CFR 39.7; an owner's item its reference.
+            ///   - until:
+            ///   - what:
+            public init(
+                dueAtHours: Swift.Double? = nil,
+                itemId: Swift.Int? = nil,
+                label: Swift.String,
+                lead: Swift.String,
+                rule: Swift.String? = nil,
+                until: Swift.String? = nil,
+                what: Swift.String
+            ) {
+                self.dueAtHours = dueAtHours
+                self.itemId = itemId
+                self.label = label
+                self.lead = lead
+                self.rule = rule
+                self.until = until
+                self.what = what
+            }
+            public enum CodingKeys: String, CodingKey {
+                case dueAtHours
+                case itemId
+                case label
+                case lead
+                case rule
+                case until
+                case what
+            }
+        }
         /// One past flight's reports, for its track log and its replay.
         ///
         /// - Remark: Generated from `#/components/schemas/PastFlight`.
@@ -15901,14 +15998,14 @@ extension Components {
             public var chartRevision: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/Plan/chart_tiles_base`.
             public var chartTilesBase: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/Plan/class_b_detours`.
-            public var classBDetours: [Components.Schemas.Detour]?
             /// - Remark: Generated from `#/components/schemas/Plan/course_line`.
             public var courseLine: [[Swift.Double]]
             /// - Remark: Generated from `#/components/schemas/Plan/departure`.
             public var departure: Components.Schemas.AirportEnd
             /// - Remark: Generated from `#/components/schemas/Plan/destination`.
             public var destination: Components.Schemas.AirportEnd
+            /// - Remark: Generated from `#/components/schemas/Plan/detours`.
+            public var detours: [Components.Schemas.Detour]?
             /// - Remark: Generated from `#/components/schemas/Plan/distance_nm`.
             public var distanceNm: Swift.Double
             /// - Remark: Generated from `#/components/schemas/Plan/legs`.
@@ -15938,10 +16035,10 @@ extension Components {
             ///   - chartLayers:
             ///   - chartRevision:
             ///   - chartTilesBase:
-            ///   - classBDetours:
             ///   - courseLine:
             ///   - departure:
             ///   - destination:
+            ///   - detours:
             ///   - distanceNm:
             ///   - legs:
             ///   - maxZoom:
@@ -15962,10 +16059,10 @@ extension Components {
                 chartLayers: [Components.Schemas.ChartLayer],
                 chartRevision: Swift.Int? = nil,
                 chartTilesBase: Swift.String? = nil,
-                classBDetours: [Components.Schemas.Detour]? = nil,
                 courseLine: [[Swift.Double]],
                 departure: Components.Schemas.AirportEnd,
                 destination: Components.Schemas.AirportEnd,
+                detours: [Components.Schemas.Detour]? = nil,
                 distanceNm: Swift.Double,
                 legs: [Components.Schemas.Leg],
                 maxZoom: Swift.Int,
@@ -15986,10 +16083,10 @@ extension Components {
                 self.chartLayers = chartLayers
                 self.chartRevision = chartRevision
                 self.chartTilesBase = chartTilesBase
-                self.classBDetours = classBDetours
                 self.courseLine = courseLine
                 self.departure = departure
                 self.destination = destination
+                self.detours = detours
                 self.distanceNm = distanceNm
                 self.legs = legs
                 self.maxZoom = maxZoom
@@ -16011,10 +16108,10 @@ extension Components {
                 case chartLayers = "chart_layers"
                 case chartRevision = "chart_revision"
                 case chartTilesBase = "chart_tiles_base"
-                case classBDetours = "class_b_detours"
                 case courseLine = "course_line"
                 case departure
                 case destination
+                case detours
                 case distanceNm = "distance_nm"
                 case legs
                 case maxZoom = "max_zoom"
@@ -17477,52 +17574,6 @@ extension Components {
                 case rule
             }
         }
-        /// The Go / No-Go as the client has it (RiskVerdict), and the pilot's
-        /// own record as the client keeps it -- personal minimums, currency,
-        /// recency, whatever it has, by its own keys -- given to the model as one
-        /// source the words can cite.
-        ///
-        /// - Remark: Generated from `#/components/schemas/RiskAsk`.
-        public struct RiskAsk: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/RiskAsk/pilot`.
-            public struct PilotPayload: Codable, Hashable, Sendable {
-                /// A container of undocumented properties.
-                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
-                /// Creates a new `PilotPayload`.
-                ///
-                /// - Parameters:
-                ///   - additionalProperties: A container of undocumented properties.
-                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
-                    self.additionalProperties = additionalProperties
-                }
-                public init(from decoder: any Swift.Decoder) throws {
-                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
-                }
-                public func encode(to encoder: any Swift.Encoder) throws {
-                    try encoder.encodeAdditionalProperties(additionalProperties)
-                }
-            }
-            /// - Remark: Generated from `#/components/schemas/RiskAsk/pilot`.
-            public var pilot: Components.Schemas.RiskAsk.PilotPayload?
-            /// - Remark: Generated from `#/components/schemas/RiskAsk/verdict`.
-            public var verdict: Components.Schemas.RiskVerdict
-            /// Creates a new `RiskAsk`.
-            ///
-            /// - Parameters:
-            ///   - pilot:
-            ///   - verdict:
-            public init(
-                pilot: Components.Schemas.RiskAsk.PilotPayload? = nil,
-                verdict: Components.Schemas.RiskVerdict
-            ) {
-                self.pilot = pilot
-                self.verdict = verdict
-            }
-            public enum CodingKeys: String, CodingKey {
-                case pilot
-                case verdict
-            }
-        }
         /// The risk assessment: its points, its level and its line ("Raised ·
         /// 8 points"), what to do at that level, and every factor counted.
         ///
@@ -17678,52 +17729,6 @@ extension Components {
                 case why
             }
         }
-        /// The Go / No-Go as POST /api/go-no-go answers it (its line, its
-        /// items, its risk assessment), or as the web app's own twin keeps it
-        /// (lib/verdict: the line's finding and words on the object itself, its
-        /// items, no risk assessment): either reads here, the extras dropped.
-        ///
-        /// - Remark: Generated from `#/components/schemas/RiskVerdict`.
-        public struct RiskVerdict: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/RiskVerdict/finding`.
-            public var finding: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/RiskVerdict/items`.
-            public var items: [Components.Schemas.VerdictItemLoose]?
-            /// - Remark: Generated from `#/components/schemas/RiskVerdict/line`.
-            public var line: Components.Schemas.VerdictLineLoose?
-            /// - Remark: Generated from `#/components/schemas/RiskVerdict/risk`.
-            public var risk: Components.Schemas.RiskAssessment?
-            /// - Remark: Generated from `#/components/schemas/RiskVerdict/words`.
-            public var words: Swift.String?
-            /// Creates a new `RiskVerdict`.
-            ///
-            /// - Parameters:
-            ///   - finding:
-            ///   - items:
-            ///   - line:
-            ///   - risk:
-            ///   - words:
-            public init(
-                finding: Swift.String? = nil,
-                items: [Components.Schemas.VerdictItemLoose]? = nil,
-                line: Components.Schemas.VerdictLineLoose? = nil,
-                risk: Components.Schemas.RiskAssessment? = nil,
-                words: Swift.String? = nil
-            ) {
-                self.finding = finding
-                self.items = items
-                self.line = line
-                self.risk = risk
-                self.words = words
-            }
-            public enum CodingKeys: String, CodingKey {
-                case finding
-                case items
-                case line
-                case risk
-                case words
-            }
-        }
         /// - Remark: Generated from `#/components/schemas/RouteAirport`.
         public struct RouteAirport: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/RouteAirport/ident`.
@@ -17792,45 +17797,6 @@ extension Components {
                 case waterNm = "water_nm"
             }
         }
-        /// A route as the words are asked for it: its ends, the stops landed
-        /// at between them in order (app.router_basics.load_route) and when it leaves
-        /// (UTC when naive; now when not given).
-        ///
-        /// - Remark: Generated from `#/components/schemas/RouteAsk`.
-        public struct RouteAsk: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/RouteAsk/dep`.
-            public var dep: Swift.String
-            /// - Remark: Generated from `#/components/schemas/RouteAsk/depart`.
-            public var depart: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/RouteAsk/dest`.
-            public var dest: Swift.String
-            /// - Remark: Generated from `#/components/schemas/RouteAsk/stops`.
-            public var stops: [Swift.String]?
-            /// Creates a new `RouteAsk`.
-            ///
-            /// - Parameters:
-            ///   - dep:
-            ///   - depart:
-            ///   - dest:
-            ///   - stops:
-            public init(
-                dep: Swift.String,
-                depart: Swift.String? = nil,
-                dest: Swift.String,
-                stops: [Swift.String]? = nil
-            ) {
-                self.dep = dep
-                self.depart = depart
-                self.dest = dest
-                self.stops = stops
-            }
-            public enum CodingKeys: String, CodingKey {
-                case dep
-                case depart
-                case dest
-                case stops
-            }
-        }
         /// A run of the weather a way meets (the engine's route_options): VFR,
         /// marginal (MVFR), IFR or a thunderstorm, and how many minutes of the
         /// flight it lasts, in the order flown.
@@ -17856,24 +17822,6 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case kind
                 case min
-            }
-        }
-        /// A route that would plan (GET /api/route-check): its stops as the
-        /// planner reads them.
-        ///
-        /// - Remark: Generated from `#/components/schemas/RouteChecked`.
-        public struct RouteChecked: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/RouteChecked/stops`.
-            public var stops: [Swift.String]
-            /// Creates a new `RouteChecked`.
-            ///
-            /// - Parameters:
-            ///   - stops:
-            public init(stops: [Swift.String]) {
-                self.stops = stops
-            }
-            public enum CodingKeys: String, CodingKey {
-                case stops
             }
         }
         /// One choice on FPL's route line (the owner's redesign, 2026-10-26:
@@ -18213,6 +18161,8 @@ extension Components {
         public struct RouteOptions: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/RouteOptions/chips`.
             public var chips: [Components.Schemas.RouteChip]?
+            /// - Remark: Generated from `#/components/schemas/RouteOptions/class_b`.
+            public var classB: Components.Schemas.RouteOption?
             /// - Remark: Generated from `#/components/schemas/RouteOptions/current`.
             public var current: [Swift.Int]?
             /// - Remark: Generated from `#/components/schemas/RouteOptions/current_along`.
@@ -18237,6 +18187,7 @@ extension Components {
             ///
             /// - Parameters:
             ///   - chips:
+            ///   - classB:
             ///   - current:
             ///   - currentAlong:
             ///   - currentMarginal:
@@ -18249,6 +18200,7 @@ extension Components {
             ///   - unchecked:
             public init(
                 chips: [Components.Schemas.RouteChip]? = nil,
+                classB: Components.Schemas.RouteOption? = nil,
                 current: [Swift.Int]? = nil,
                 currentAlong: Components.Schemas.RouteAlong? = nil,
                 currentMarginal: [Swift.Int]? = nil,
@@ -18261,6 +18213,7 @@ extension Components {
                 unchecked: [Swift.String]
             ) {
                 self.chips = chips
+                self.classB = classB
                 self.current = current
                 self.currentAlong = currentAlong
                 self.currentMarginal = currentMarginal
@@ -18274,6 +18227,7 @@ extension Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case chips
+                case classB = "class_b"
                 case current
                 case currentAlong = "current_along"
                 case currentMarginal = "current_marginal"
@@ -22270,41 +22224,6 @@ extension Components {
                 case tab
             }
         }
-        /// - Remark: Generated from `#/components/schemas/VerdictItemLoose`.
-        public struct VerdictItemLoose: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/VerdictItemLoose/detail`.
-            public var detail: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/VerdictItemLoose/finding`.
-            public var finding: Swift.String
-            /// - Remark: Generated from `#/components/schemas/VerdictItemLoose/key`.
-            public var key: Swift.String
-            /// - Remark: Generated from `#/components/schemas/VerdictItemLoose/label`.
-            public var label: Swift.String
-            /// Creates a new `VerdictItemLoose`.
-            ///
-            /// - Parameters:
-            ///   - detail:
-            ///   - finding:
-            ///   - key:
-            ///   - label:
-            public init(
-                detail: Swift.String? = nil,
-                finding: Swift.String,
-                key: Swift.String,
-                label: Swift.String
-            ) {
-                self.detail = detail
-                self.finding = finding
-                self.key = key
-                self.label = label
-            }
-            public enum CodingKeys: String, CodingKey {
-                case detail
-                case finding
-                case key
-                case label
-            }
-        }
         /// - Remark: Generated from `#/components/schemas/VerdictLine`.
         public struct VerdictLine: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/VerdictLine/finding`.
@@ -22319,29 +22238,6 @@ extension Components {
             public init(
                 finding: Swift.String,
                 words: Swift.String
-            ) {
-                self.finding = finding
-                self.words = words
-            }
-            public enum CodingKeys: String, CodingKey {
-                case finding
-                case words
-            }
-        }
-        /// - Remark: Generated from `#/components/schemas/VerdictLineLoose`.
-        public struct VerdictLineLoose: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/VerdictLineLoose/finding`.
-            public var finding: Swift.String
-            /// - Remark: Generated from `#/components/schemas/VerdictLineLoose/words`.
-            public var words: Swift.String?
-            /// Creates a new `VerdictLineLoose`.
-            ///
-            /// - Parameters:
-            ///   - finding:
-            ///   - words:
-            public init(
-                finding: Swift.String,
-                words: Swift.String? = nil
             ) {
                 self.finding = finding
                 self.words = words
@@ -22623,64 +22519,6 @@ extension Components {
                 case severity
                 case validFrom = "valid_from"
                 case validTo = "valid_to"
-            }
-        }
-        /// The briefing's own parameters besides the route (GET /api/briefing):
-        /// the flight's minutes, and the nav log's fixes ("lat,lon;lat,lon") and
-        /// each leg's minutes where the page has them, for each hazard to be
-        /// placed where the flight meets it.
-        ///
-        /// - Remark: Generated from `#/components/schemas/WeatherAsk`.
-        public struct WeatherAsk: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/WeatherAsk/dep`.
-            public var dep: Swift.String
-            /// - Remark: Generated from `#/components/schemas/WeatherAsk/depart`.
-            public var depart: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/WeatherAsk/dest`.
-            public var dest: Swift.String
-            /// - Remark: Generated from `#/components/schemas/WeatherAsk/ete_min`.
-            public var eteMin: Swift.Double?
-            /// - Remark: Generated from `#/components/schemas/WeatherAsk/fixes`.
-            public var fixes: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/WeatherAsk/leg_min`.
-            public var legMin: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/WeatherAsk/stops`.
-            public var stops: [Swift.String]?
-            /// Creates a new `WeatherAsk`.
-            ///
-            /// - Parameters:
-            ///   - dep:
-            ///   - depart:
-            ///   - dest:
-            ///   - eteMin:
-            ///   - fixes:
-            ///   - legMin:
-            ///   - stops:
-            public init(
-                dep: Swift.String,
-                depart: Swift.String? = nil,
-                dest: Swift.String,
-                eteMin: Swift.Double? = nil,
-                fixes: Swift.String? = nil,
-                legMin: Swift.String? = nil,
-                stops: [Swift.String]? = nil
-            ) {
-                self.dep = dep
-                self.depart = depart
-                self.dest = dest
-                self.eteMin = eteMin
-                self.fixes = fixes
-                self.legMin = legMin
-                self.stops = stops
-            }
-            public enum CodingKeys: String, CodingKey {
-                case dep
-                case depart
-                case dest
-                case eteMin = "ete_min"
-                case fixes
-                case legMin = "leg_min"
-                case stops
             }
         }
         /// - Remark: Generated from `#/components/schemas/WeatherDataset`.

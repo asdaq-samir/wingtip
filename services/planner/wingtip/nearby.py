@@ -243,9 +243,14 @@ def _read(lat: float, lon: float, release: str) -> dict:
         & (ds.field("bbox", "ymin") >= south)
         & (ds.field("bbox", "ymin") <= north)
     )
-    rows = _dataset(release).to_table(columns=_COLUMNS, filter=box).to_pylist()
+    # The field's outline read beside its places, not after them: each is a
+    # second or so of S3 (KBMI 1.5 s and 0.9 s, 2026-11-18), and a stop's
+    # card waited on both one after the other.
+    with ThreadPoolExecutor(max_workers=1) as beside:
+        outline_read = beside.submit(_outline, lat, lon, release)
+        rows = _dataset(release).to_table(columns=_COLUMNS, filter=box).to_pylist()
     try:
-        outline = _outline(lat, lon, release)
+        outline = outline_read.result()
     except Exception:  # noqa: BLE001 -- pyarrow's own errors; the places stand without it
         log.warning("Overture's airport outline could not be read at %.3f,%.3f", lat, lon, exc_info=True)
         outline = None
@@ -331,9 +336,10 @@ def around(ident: str, lat: float, lon: float, cache_dir: Path = CACHE_DIR) -> d
 
 
 def warm() -> None:
-    """Every release file's footer read once, at the planner's start: the
-    first field's places were 2.5 s, the next 0.3 s. A box of open ocean
-    (0, 0), so nothing is kept."""
+    """Every release file's footer read once, at the planner's start, the
+    places' and the airport outlines' (_read asks both): the first field's
+    places were 2.5 s, the next 0.3 s. A box of open ocean (0, 0), so
+    nothing is kept."""
     _read(0.0, 0.0, latest_release())
 
 

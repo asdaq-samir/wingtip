@@ -193,10 +193,10 @@ pub fn alternative(a: &Ask, fields: &[Field], candidates: &[Candidate], need_fue
     let airplane = Airplane { cruise_tas_kt: speed_kt(o, a.tas_kt), ..Airplane::default() };
     let answer = best_fields(Mode::Diversion, &from, Some(&airplane), candidates.to_vec(), candidates.len());
     answer.fields.into_iter().find_map(|ranked| {
-        if exclude.iter().any(|e| input::same_field(e, &ranked.field.ident)) {
+        if exclude.iter().any(|e| wingtip_flight::field::same_field(e, &ranked.field.ident)) {
             return None;
         }
-        let field = fields.iter().find(|f| input::same_field(&f.ident, &ranked.field.ident))?.clone();
+        let field = fields.iter().find(|f| wingtip_flight::field::same_field(&f.ident, &ranked.field.ident))?.clone();
         if (need_fuel && !field.fuel) || weather_of(&field, a.ifr, &a.minimums) != Weather::Good {
             return None;
         }

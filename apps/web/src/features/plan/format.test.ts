@@ -5,7 +5,6 @@ import {
   bearing,
   clockTime,
   cruiseByAltitude,
-  decimalHours,
   legsWithoutWind,
   one,
   plannedWords,
@@ -13,6 +12,7 @@ import {
   runwayWind,
   windAloft,
   windLine,
+  windText,
   ceilingAndVisibility,
   windsOutOfDate,
 } from "./format";
@@ -59,15 +59,6 @@ describe("one", () => {
     expect(one(undefined)).toBe("—");
   });
   it("keeps a zero as a number", () => expect(one(0)).toBe("0.0"));
-});
-
-describe("decimalHours", () => {
-  it("rounds up to the next tenth, never short", () => {
-    expect(decimalHours(1190)).toBe("19.9h");
-    expect(decimalHours(61)).toBe("1.1h");
-  });
-  it("keeps a whole tenth as it is", () => expect(decimalHours(90)).toBe("1.5h"));
-  it("rounds to whole minutes first", () => expect(decimalHours(179.6)).toBe("3.0h"));
 });
 
 describe("legsWithoutWind", () => {
@@ -144,8 +135,11 @@ describe("a reported wind", () => {
   it("is calm only at 00000KT, and not said at all with no speed", () => {
     expect(windLine({ wind_speed_kt: 0, wind_dir_true_deg: 0 })).toBe("Calm");
     expect(windLine({ wind_speed_kt: null })).toBe("Not reported");
-    expect(windLine({ wind_speed_kt: 15, wind_dir_true_deg: 240, wind_gust_kt: 25 })).toBe("240°T at 15 kt, gusts 25");
-    expect(windLine({ wind_speed_kt: 4, wind_dir_true_deg: null })).toBe("Variable at 4 kt");
+    expect(windLine({ wind_speed_kt: 15, wind_dir_true_deg: 240, wind_gust_kt: 25 })).toBe("240°T 15G25 kt");
+    expect(windLine({ wind_speed_kt: 4, wind_dir_true_deg: null })).toBe("VRB 4 kt");
+    // One form for every wind, its north marked (AIM 7-1-29 true, 7-1-10 magnetic on the radio).
+    expect(windText(198, 26, null, "T")).toBe("198°T 26 kt");
+    expect(windText(210, 3, null, "M")).toBe("210°M 3 kt");
   });
 
   it("writes a report's more-than visibility as such, P6SM as 6+ sm (CODE-12)", () => {

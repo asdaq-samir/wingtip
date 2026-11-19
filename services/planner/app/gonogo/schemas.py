@@ -13,8 +13,9 @@ from ..schemas.common import AltitudeChoice, FlightRules, Loading
 
 Finding = Literal["ok", "caution", "stop", "unknown", "pending"]
 #: "fields": a closed, private or military-only field on the route, a row
-#: after the seven only where there is one (gonogo_field_permission).
-VerdictKey = Literal["weather", "airspace", "altitude", "fuel", "runways", "balance", "risk", "fields"]
+#: after the seven only where there is one (the engine's gonogo_brief);
+#: "oxygen", after the altitude's where it flies over 12,500 ft (14 CFR 91.211(a)).
+VerdictKey = Literal["weather", "airspace", "altitude", "oxygen", "fuel", "runways", "balance", "risk", "fields"]
 VerdictTab = Literal["preflight", "depart", "enroute", "arrive"]
 RiskLevel = Literal["low", "caution", "high"]
 
@@ -134,7 +135,6 @@ class GoNoGoAsk(BaseModel):
     glide_ratio: float | None = Field(default=None, gt=1, le=80)
     #: When the flight leaves (UTC when naive); now when not given.
     depart: datetime | None = None
-    class_b_clearance: bool = False
     rules: FlightRules = "vfr"
     alternate: str = ""
     altitudes: str = ""
@@ -144,7 +144,8 @@ class GoNoGoAsk(BaseModel):
     crossings: str = ""
     holds: str = ""
     ground: str = ""
-    checkpoints: bool = True
+    #: As PlanQuery's: none found unless asked for.
+    checkpoints: bool = False
     #: The day of the flight where the pilot is, "yyyy-mm-dd", that the
     #: logbook's and the airplane's dates are read on; the departure's UTC
     #: day when not given.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NO_AIRPLANE, forgetPilot, keptPreferences, migratePreferences, usePreferences } from "./preferences";
+import { NO_AIRPLANE, forgetPilot, keptPreferences, usePreferences } from "./preferences";
 import { NO_MINIMUMS } from "./minimums";
 
 describe("forgetPilot", () => {
@@ -40,67 +40,19 @@ describe("forgetPilot", () => {
   });
 });
 
-describe("the look", () => {
-  it("is the Wingtip look for a new pilot and for one who had the old default, keeping Chart ink", () => {
-    expect(usePreferences.getInitialState().brand).toBe("wingtip");
-    expect(migratePreferences({ brand: "cockpit" }, 6)).toMatchObject({ brand: "wingtip" });
-    expect(migratePreferences({ brand: "ink" }, 6)).toMatchObject({ brand: "ink" });
-    expect(migratePreferences({ brand: "windsock" }, 3)).toMatchObject({ brand: "wingtip" });
-    expect(migratePreferences({ brand: "cockpit" }, 7)).toMatchObject({ brand: "cockpit" });
-  });
-});
-
-describe("3D", () => {
-  it("is a switch of its own over the shaded 2D chart: a kept 3D is 3D on, flat and shaded the shaded chart", () => {
-    expect(usePreferences.getInitialState()).toMatchObject({ threeD: false });
-    expect(migratePreferences({ terrain: "3d" }, 7)).toMatchObject({ threeD: true });
-    expect(migratePreferences({ terrain: "shaded" }, 7)).not.toHaveProperty("threeD");
-    expect(migratePreferences({ terrain: "flat" }, 7)).not.toHaveProperty("threeD");
-  });
-});
-
-describe("the settings taken out (2026-11-13)", () => {
-  it("lets go of a kept sheet edge, ground and own ship's look, so each falls back to the one way it is drawn", () => {
-    const kept = migratePreferences({ navBar: "top", terrain: "flat", ownShipLook: "arrow", base: "ifr_low" }, 8);
-    expect(kept).not.toHaveProperty("navBar");
-    expect(kept).not.toHaveProperty("terrain");
-    expect(kept).toMatchObject({ ownShipLook: "single" });
-    expect(kept).toMatchObject({ base: "ifr_low" });
-  });
-});
-
-describe("own ship's look, the Map card's Own Ship (2026-11-14)", () => {
-  it("is the airplane for every browser coming to it, and kept from then on", () => {
-    expect(usePreferences.getInitialState()).toMatchObject({ ownShipLook: "single" });
-    // Let go at 9, and an old pick not brought back.
-    expect(migratePreferences({ ownShipLook: "arrow" }, 8)).toMatchObject({ ownShipLook: "single" });
-    expect(migratePreferences({}, 10)).toMatchObject({ ownShipLook: "single" });
-    expect(keptPreferences({ ...usePreferences.getInitialState(), ownShipLook: "jet" })).toMatchObject({ ownShipLook: "jet" });
-  });
-});
-
-describe("the Map card's four layers (2026-11-14)", () => {
-  it("fold the old switches into their groups, each on where any of its old ones was on", () => {
+describe("a new pilot's preferences", () => {
+  it("start at the Wingtip look, the 2D chart, the airplane as own ship and the Map card's four layers", () => {
     expect(usePreferences.getInitialState()).toMatchObject({
+      brand: "wingtip",
+      threeD: false,
+      ownShipLook: "single",
       aeronautical: true,
       weather: true,
       traffic: false,
       privateMilitary: false,
       waypoints: false,
-      classB: false,
     });
-    expect(migratePreferences({ airspace: false, navaids: true }, 9)).toMatchObject({ aeronautical: true });
-    expect(migratePreferences({ airspace: false, navaids: false }, 9)).toMatchObject({ aeronautical: false });
-    // The checkpoints and the Class B chips keep their own switches, now the route's ••• menu's.
-    expect(migratePreferences({ waypoints: true, classB: true }, 9)).toMatchObject({ waypoints: true, classB: true });
-    // Never kept: the defaults then, the airspace and the VORs on.
-    expect(migratePreferences({}, 9)).toMatchObject({ aeronautical: true, privateMilitary: false });
-    expect(migratePreferences({ military: false, privateFields: true }, 9)).toMatchObject({ privateMilitary: true });
-    // The fields' weather marks were drawn (Settings' Airport Weather not Off).
-    expect(migratePreferences({}, 9)).toMatchObject({ weather: true });
-    expect(migratePreferences({ traffic: true }, 9)).toMatchObject({ traffic: true });
-    const kept = migratePreferences({ airspace: true, tfrs: false, classB: true, military: true }, 9);
-    for (const old of ["airspace", "navaids", "tfrs", "military", "privateFields"]) expect(kept).not.toHaveProperty(old);
+    expect(keptPreferences({ ...usePreferences.getInitialState(), ownShipLook: "jet" })).toMatchObject({ ownShipLook: "jet" });
   });
 });
 

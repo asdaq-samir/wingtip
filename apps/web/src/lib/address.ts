@@ -61,6 +61,27 @@ const navaidAt = createParser<NavaidAt>({
  *  `origin` (the site's, for a link to share). */
 export const navaidLink = (n: NavaidAt, origin = "") => `${origin}${SCREEN_LINK.path}?navaid=${encodeURIComponent(navaidAt.serialize(n))}`;
 
+/** A chart mark's card in the address (`mark`), every card reached by a
+ *  link (the owner's rule on easy navigation; the selection audit,
+ *  2026-11-18): a low enroute chart's fix, a VFR waypoint, or a Class B, C
+ *  or D volume by its number in the cycle's overlay tiles, each with where
+ *  it is (a volume's, where it was tapped), as one ident names fixes in
+ *  more than one place. "fix:BXCMB@42.1234,-88.2345". */
+export type MarkAt = LatLon & { kind: "fix" | "vfr" | "airspace"; ident: string };
+
+const markAt = createParser<MarkAt>({
+  parse: (v) => {
+    const m = /^(fix|vfr|airspace):([A-Z0-9-]{1,12})@(.+)$/.exec(v);
+    const p = m ? pointOf(m[3]!) : null;
+    return m && p ? { kind: m[1] as MarkAt["kind"], ident: m[2]!, ...p } : null;
+  },
+  serialize: (m) => `${m.kind}:${m.ident}@${m.lat.toFixed(4)},${m.lon.toFixed(4)}`,
+  eq: (a, b) => a.kind === b.kind && a.ident === b.ident && a.lat === b.lat && a.lon === b.lon,
+});
+
+/** A chart mark's own link, its card opened from the address (`mark`). */
+export const markLink = (m: MarkAt, origin = "") => `${origin}${SCREEN_LINK.path}?mark=${encodeURIComponent(markAt.serialize(m))}`;
+
 const flag = createParser<boolean>({ parse: (v) => (v === "1" ? true : null), serialize: () => "1" }).withDefault(false);
 
 /** A point on Earth, `42.3172,-88.0905`, to four places (11 m). */
@@ -69,6 +90,9 @@ const point = createParser<LatLon>({
   serialize: (p) => `${p.lat.toFixed(4)},${p.lon.toFixed(4)}`,
   eq: (a, b) => a.lat === b.lat && a.lon === b.lon,
 });
+
+/** A point held's own link, its card opened from the address (`at`). */
+export const pointLink = (p: LatLon, origin = "") => `${origin}${SCREEN_LINK.path}?at=${encodeURIComponent(point.serialize(p))}`;
 
 /** A point as the address keeps it, to four places: written so, the page
  *  reads the same point a link or a reload would. */
@@ -103,12 +127,8 @@ export const addressParsers = {
   altitude_choice: parseAsStringLiteral(ALTITUDE_CHOICES).withDefault("fastest"),
   // Points whose own altitude begins there rather than is reached by them.
   altitude_starts: parseAsString,
-  // Class B planned through with its clearance (14 CFR 91.131) unless the
-  // pilot avoids it ("0"), and the waypoint round it then.
-  class_b: createParser({ parse: (v) => v !== "0", serialize: (through: boolean) => (through ? "1" : "0") }).withDefault(true),
-  class_b_via: parseAsString,
   // The picks at the route's fields, each in the text its reader parses
-  // (features/plan/lib/fieldLists): runways landed on and left from, the
+  // (features/plan/fieldLists): runways landed on and left from, the
   // runways picked into the wind, procedures, points' altitudes, crossing
   // altitudes, times on the ground and holds.
   pattern: parseAsString,
@@ -124,7 +144,7 @@ export const addressParsers = {
   depart: parseAsString,
   local_min: parseAsNumberLiteral(LOCAL_MINUTES).withDefault(60),
   // The sheet all the way up, where the pilot left it.
-  view: parseAsStringLiteral(["briefing"] as const),
+  view: parseAsStringLiteral(["full"] as const),
   // What is open over the sheet: an airport's card, the airspace over a
   // point held, an airplane tracked by its ICAO address and one of its past
   // flights by its takeoff's time, Nearest and the place it is from,
@@ -150,6 +170,8 @@ export const addressParsers = {
   tfr: createParser({ parse: (v) => (TFR_ID.test(v) ? v : null), serialize: (v: string) => v }),
   // A VOR's card by its ident and place (navaidAt); anything else none.
   navaid: navaidAt,
+  // A fix's, a VFR waypoint's or an airspace volume's card (markAt).
+  mark: markAt,
   // Read once and taken off: a screen a link opens (`open`,
   // lib/navigation's SCREEN_LINK), favorites a link brings, a sign-in the
   // gateway refused.
@@ -171,9 +193,22 @@ export const useAddress = () => useQueryStates(addressParsers);
 /** One key of the address, drawn again only when it changes. */
 export const useAddressKey = <K extends keyof AddressParsers>(key: K) => useQueryState(key, addressParsers[key]);
 
+/** The cruise's keys alone, for a route typed whole whose speed and level
+ *  group sets it (features/route's useRouteBox): read and written together
+ *  without the rest of the address. */
+export const useCruiseKeys = () =>
+  useQueryStates({
+    altitude_ft: addressParsers.altitude_ft,
+    altitude_nearest: addressParsers.altitude_nearest,
+    altitude_choice: addressParsers.altitude_choice,
+  });
+
 /** The open VOR card's key (`navaid`), its parser's own type kept, which
  *  useAddressKey's string overload loses for an object. */
 export const useNavaidKey = () => useQueryState("navaid", navaidAt);
+
+/** The open chart mark's card's key (`mark`), as useNavaidKey. */
+export const useMarkKey = () => useQueryState("mark", markAt);
 
 /** Every key of the address taken out: with a change spread over it, an
  *  address that is that change alone (a route cleared, Fly Here's). */
@@ -212,8 +247,6 @@ export const PICK_KEYS = [
   "cross",
   "ground",
   "holds",
-  "class_b",
-  "class_b_via",
   "alternate",
 ] as const satisfies readonly (keyof AddressParsers)[];
 

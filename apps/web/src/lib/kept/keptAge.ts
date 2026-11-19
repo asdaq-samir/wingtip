@@ -14,9 +14,6 @@ import { useOnline } from "./useOnline";
 export type KeptKind = EngineInput<"kept_age">["kind"];
 export type KeptAge = EngineAnswer<"kept_age">;
 
-/** Every kind, in the order Ready to fly lists them. */
-export const KEPT_KINDS: readonly KeptKind[] = ["briefing", "weather", "notams", "airports", "plates", "plan", "go_no_go", "weather_loop"];
-
 /** The engine's age of an answer the network gave at `atMs`; null where
  *  the time is not known. */
 export function keptAge(kind: KeptKind, atMs: number | null | undefined, nowMs: number): KeptAge | null {

@@ -3,11 +3,12 @@ import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
 import { closeTopCard } from "../../lib/openCards";
-import { cardOpening, coverCard, dropCard, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
+import { cardOpening, dropCard, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
 import { AT_PILL, letGo, snapsOf } from "./insets";
 import { UNDER_INDICATOR } from "./SheetDrawer";
 import { cardSettled, frontOffset, sheetTopRef, useRidingCard } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
+import { PointerTapDiv } from "./PointerTapDiv";
 
 export interface StackProps {
   /** A phone's sheet: the cards are drawers with its sizes and its swipe.
@@ -107,19 +108,10 @@ export function CardStack(p: StackProps & { host: HTMLElement | null }) {
   if (!p.host) return null;
   const host = p.host;
   const top = [...stack].reverse().find((entry) => entry.state === "open")?.id;
-  const cover = coverCard(stack)?.id;
   return (
     <Cards open={top !== undefined}>
       {stack.map((entry) => (
-        <CardDrawer
-          key={entry.id}
-          entry={entry}
-          top={entry.id === top}
-          cover={entry.id === cover}
-          riding={entry.id === riding}
-          {...p}
-          host={host}
-        />
+        <CardDrawer key={entry.id} entry={entry} top={entry.id === top} riding={entry.id === riding} {...p} host={host} />
       ))}
     </Cards>
   );
@@ -173,11 +165,10 @@ function Cards({ open, children }: { open: boolean; children: ReactNode }) {
 function CardDrawer({
   entry,
   top,
-  cover,
   riding,
   host,
   ...p
-}: StackProps & { entry: CardEntry; top: boolean; cover: boolean; riding: boolean; host: HTMLElement }) {
+}: StackProps & { entry: CardEntry; top: boolean; riding: boolean; host: HTMLElement }) {
   const { id, frame } = entry;
   // The card's own content box taken into this drawer's scroller (useCardFrame).
   const content = entry.host;
@@ -286,9 +277,6 @@ function CardDrawer({
               data-testid={frame.testId}
               data-sheet-card=""
               data-panel={at}
-              // The card that covers the map most, not always the top one,
-              // for what it covers of the map (useSheetCover, coverCard).
-              data-cover={cover || undefined}
               // The side panel's card does not swipe: no sizes to swipe
               // between. Nor does a card under the top one: the top card's
               // nested drawers took that from it once (CardStack).
@@ -304,7 +292,7 @@ function CardDrawer({
                 p.look,
                 // Its own snap offset and drag, from the sheet's offset it is
                 // drawn in (--sheet-base, SheetDrawer). Copied for what is
-                // inside (SheetParts' FOLLOW): Base UI's own do not inherit.
+                // inside (sheet/insets' HOLD_AT_EDGE): Base UI's own do not inherit.
                 onPhone &&
                   "[transform:translateY(calc(var(--drawer-snap-point-offset)-var(--sheet-base,0px)+var(--drawer-swipe-movement-y)))] [--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-swipe:var(--drawer-swipe-movement-y)]",
                 onPhone && p.ready && EASE,
@@ -349,8 +337,7 @@ function CardScroller({
   below,
 }: StackProps & { slot: (node: HTMLElement | null) => void; pill: boolean; raise: () => void }) {
   return (
-    // eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to raise the sheet, and the card's own buttons stay focusable
-    <div
+    <PointerTapDiv
       onClick={
         pill
           ? (event) => {
@@ -367,6 +354,6 @@ function CardScroller({
         data-panel-body=""
         className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible", below, pill && AT_PILL)}
       />
-    </div>
+    </PointerTapDiv>
   );
 }

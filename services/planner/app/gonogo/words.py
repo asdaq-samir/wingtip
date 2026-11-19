@@ -22,11 +22,6 @@ def to_fixed(n: float, digits: int = 1) -> str:
     return ask("words_to_fixed", n=n, digits=digits)
 
 
-def one(n: float) -> float:
-    """To a tenth, as lib/verdict's `one`."""
-    return ask("words_one", n=n)
-
-
 def grouped(n: float) -> str:
     """A whole number with a comma between each three figures, "12,500",
     as the FAA writes altitudes and weights (lib/format grouped)."""
@@ -36,13 +31,6 @@ def grouped(n: float) -> str:
 def alt_ft(ft: float | None) -> str:
     """ "12,500"; an em dash for none (lib/format altFt)."""
     return ask("words_alt_ft", ft=ft)
-
-
-def flight_level(ft: float | None) -> str:
-    """A cruising altitude as the owner asked it written, hundreds of feet
-    in three figures: "FL-045" for 4,500 ft, "FL-___" with none yet
-    (lib/format flightLevel)."""
-    return ask("words_flight_level", ft=ft)
 
 
 def ceiling_and_visibility(ceiling_ft: float | None, visibility_sm: float | None) -> str:

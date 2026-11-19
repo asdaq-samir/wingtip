@@ -6,7 +6,7 @@ const NOW = 1_000_000;
 
 describe("a fresh load starts clean", () => {
   test("a reload forgets the route, and keeps a sign-in's fragment", () => {
-    expect(startingAddress(at("?dep=C81&dest=KDLH&view=briefing"), "reload", null, NOW)).toBe("/app/plan");
+    expect(startingAddress(at("?dep=C81&dest=KDLH&view=full"), "reload", null, NOW)).toBe("/app/plan");
     expect(startingAddress(at("?dep=C81&dest=KDLH", "#signin=abc"), "reload", null, NOW)).toBe("/app/plan#signin=abc");
   });
 

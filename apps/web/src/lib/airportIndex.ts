@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./api/client";
-import type { AirportSearchRow } from "./useAirportSearch";
+import { flatDeg2 } from "./geo";
+
+/** One answer: an airport, or with `fixes` a waypoint (`kind` "fix"). */
+export type AirportSearchRow = Awaited<ReturnType<typeof api.airportSearch>>[number];
 
 /** One airport of the planner's index (wingtip.airports.search_index): the
  *  ident pilots use, its name, town and state, its size rank (0 large to
@@ -68,7 +71,7 @@ function nearness(index: AirportIndex, row: number, near: readonly { lat: number
   if (!near.length || Number.isNaN(lat)) return 0;
   let least = Infinity;
   for (const p of near) {
-    const d = (lat - p.lat) ** 2 + ((lon - p.lon) * Math.cos((p.lat * Math.PI) / 180)) ** 2;
+    const d = flatDeg2(lat - p.lat, lon - p.lon, p.lat);
     if (d < least) least = d;
   }
   return least;

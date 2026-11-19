@@ -1,5 +1,18 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { ApiError, describeError, detailOf, GatewayRequest, ndjson, STREAM_QUIET_MS, unknownPlaceOf } from "./client";
+import { ApiError, describeError, detailOf, unknownPlaceIn, unknownPlaceOf, unknownWhy } from "./errors";
+import { GatewayRequest, ndjson, STREAM_QUIET_MS } from "./http";
+
+describe("unknownPlaceIn", () => {
+  test("a field abroad is outside the US charts, an ident nobody uses unknown, and either said so", () => {
+    const abroad = unknownPlaceIn(new ApiError("'AYID' is outside the US charts: Indagen Airport, PG.", 404));
+    expect(abroad).toEqual({ ident: "AYID", outside: true });
+    expect(unknownWhy(abroad!)).toBe("is outside the US charts");
+    const unknown = unknownPlaceIn(new ApiError("No airport goes by 'KIGN'.", 404));
+    expect(unknown).toEqual({ ident: "KIGN", outside: false });
+    expect(unknownWhy(unknown!)).toBe("isn't an airport or waypoint we know");
+    expect(unknownPlaceIn(new ApiError("planner service unreachable", 502))).toBeNull();
+  });
+});
 
 describe("unknownPlaceOf", () => {
   test("names the ident a 404 quotes, and nothing for any other failure", () => {

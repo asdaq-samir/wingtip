@@ -15,6 +15,7 @@
 import { callEngine, type EngineAnswer } from "./engine/engine";
 import type { Clearance } from "./clearance";
 import { andList } from "./listWords";
+import { capitalised } from "./capitals";
 
 /** A part missed or said differently: what the readback had for it
  *  (`said`), null where it was not read back (the engine's contract). */
@@ -59,8 +60,6 @@ interface ReadbackLine {
   words: string;
 }
 
-const capital = (words: string) => words.charAt(0).toUpperCase() + words.slice(1);
-
 /** The lines for a read back of `clearance` checked as `check`: the parts
  *  read back in one tick ("Limit, route and squawk read back"), then one
  *  line for each part missed ("Squawk 4512 not read back") or said
@@ -73,10 +72,10 @@ export function readbackLines(clearance: Clearance, check: { items: ReadbackItem
   const lines: ReadbackLine[] = [];
   if (read.length) {
     const list = andList(read);
-    lines.push({ ok: true, words: `${capital(list)} read back` });
+    lines.push({ ok: true, words: `${capitalised(list)} read back` });
   }
   for (const item of check.items) {
-    const name = capital(READBACK_PARTS.find((p) => p.item === item.item)?.name ?? item.item);
+    const name = capitalised(READBACK_PARTS.find((p) => p.item === item.item)?.name ?? item.item);
     lines.push({
       ok: false,
       words: item.said !== null ? `${name}: ${item.said} said, ${item.cleared} cleared` : `${name} ${item.cleared} not read back`,

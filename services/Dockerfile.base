@@ -57,9 +57,13 @@ RUN --mount=type=bind,from=native,source=/wheels,target=/tmp/wheels \
 # The user every image runs as. Each image switches to it once its own
 # files are in.
 RUN useradd -m appuser
-# The live store's folder, owned by the services' user, so an empty
-# Docker volume mounted on it starts with that owner (docker-compose.yml).
-RUN mkdir -p /live && chown appuser:appuser /live
+# The live store's folder and the data folder (wingtip.config's, under
+# /workspace), owned by the services' user, so an empty Docker volume
+# mounted on either starts with that owner (docker-compose.yml), and the
+# chart refresh task on Fargate, which mounts nothing, can write its
+# cycle there. One layer here, where ingest, weather and charts each made
+# the data folder in a layer of their own.
+RUN mkdir -p /live /workspace/data && chown appuser:appuser /live /workspace/data
 # The build fails here if wingtip's own dependencies or its extension do
 # not import, rather than each image that builds on this.
 RUN python -B -c "import wingtip_native, numpy, pandas, requests, cachetools, tenacity, pyarrow.parquet, shapely.ops, shapefile, pyproj, pydantic_settings, scipy.spatial, pygeomag, tzfpy"

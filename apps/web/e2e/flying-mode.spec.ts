@@ -39,6 +39,7 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   await expect(frontSheet(page)).not.toHaveAttribute("data-panel", "peek");
   await expect(sideDrawer(page).getByTestId("dry-run-close")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("route-box")).toBeHidden();
+  await expect(sideDrawer(page).getByTestId("route-summary")).toBeHidden();
   await expect(sideDrawer(page).getByTestId("search-airports")).toBeHidden();
   await expect(page.getByTestId("done-flying")).toBeVisible();
   // The map's buttons: NRST, D→ and the location arrow at the right, the
@@ -74,7 +75,7 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   expect(Math.round(mic.width)).toBeLessThan(FLYING_PX);
   await closeProfile(page);
   await grabberTo(page, "half");
-  await expect(sideDrawer(page).getByTestId("route-box")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeVisible();
   await expect(page.getByTestId("sheet-page-toggle")).toBeVisible();
 });
 
@@ -85,4 +86,90 @@ test("Done flying leaves flying mode with one tap while the airplane flies on", 
   await expect(page.getByTestId("flying-head")).toHaveCount(0);
   await expect(page.getByTestId("flying-nearest")).toHaveCount(0);
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
+});
+
+/** A GPS in the air at Campbell Airport (C81), going 120 kt on 090: every
+ *  second the same fix, answered later as a real GPS answers. */
+async function gpsFlying(page: Page) {
+  await page.context().grantPermissions(["geolocation"]);
+  await page.addInitScript(() => {
+    const position = () =>
+      ({
+        coords: {
+          latitude: 42.3246,
+          longitude: -88.0741,
+          accuracy: 10,
+          heading: 90,
+          speed: 120 / 1.943844, // 120 kt in m/s
+          altitude: 914,
+          altitudeAccuracy: 10,
+          toJSON() {
+            return this;
+          },
+        },
+        timestamp: Date.now(),
+        toJSON() {
+          return this;
+        },
+      }) as unknown as GeolocationPosition;
+    Geolocation.prototype.watchPosition = function (success: PositionCallback) {
+      window.setTimeout(() => success(position()), 0);
+      return window.setInterval(() => success(position()), 1000);
+    };
+    Geolocation.prototype.clearWatch = function (id: number) {
+      window.clearInterval(id);
+    };
+    Geolocation.prototype.getCurrentPosition = function (success: PositionCallback) {
+      window.setTimeout(() => success(position()), 0);
+    };
+    localStorage.setItem(
+      "wingtip.ownship",
+      JSON.stringify({ state: { enabled: true, follow: false, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 }),
+    );
+  });
+}
+
+test("from the GPS, the head gives the next checkpoint on the route and only Emergency off it", async ({ page }) => {
+  // On the route: C81 is the departure, the airplane on its line.
+  await gpsFlying(page);
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  const head = page.getByTestId("flying-head");
+  await expect(head.getByTestId("flying-next-name")).not.toBeEmpty({ timeout: slow(60_000) });
+  await expect(head).not.toHaveAttribute("data-off-route");
+
+  // Off it: Rockford to Madison passes some 40 nm west of Campbell, past
+  // the engine's on_route (in_flight), as the phones' instruments drop
+  // their Next row. The way to Emergency stays.
+  await page.goto("/app/plan?dep=KRFD&dest=KMSN");
+  await settle(page);
+  await expect(head).toHaveAttribute("data-off-route", "true", { timeout: slow(60_000) });
+  await expect(head.getByTestId("flying-next-name")).toHaveCount(0);
+  await expect(head.getByTestId("flying-next-figures")).toHaveCount(0);
+  await expect(head.getByTestId("flying-emergency")).toBeVisible();
+});
+
+test("in flight the strip gives the phone's GPS altitude, to the nearest 10 ft", async ({ page }) => {
+  // The fake fix is 914 m up: 2,998.7 ft, written 3,000 (the owner,
+  // 2026-11-17: "true altitude of the phone from gps").
+  await gpsFlying(page);
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  const gps = page.getByTestId("strip-gps-alt").first();
+  await expect(gps).toContainText("3,000", { timeout: slow(60_000) });
+  // No To in flight (the head over the map names the next point): the
+  // distance, time, fuel and GPS altitude, four columns on one row, where
+  // the altitude, a fifth in four, went onto a row of its own (the owner,
+  // 2026-11-17).
+  // The strip in sight: FPL's own copy, laid out at no width while the
+  // sheet shows Search's page in flight, is not the pilot's.
+  const strip = page
+    .locator("dl")
+    .filter({ has: page.getByTestId("strip-gps-alt") })
+    .locator("visible=true")
+    .first();
+  await expect(strip.getByTestId("navlog-to")).toHaveCount(0);
+  const tops = await strip.locator("dd").evaluateAll((dds) => dds.map((dd) => Math.round(dd.getBoundingClientRect().top)));
+  expect(tops).toHaveLength(4);
+  expect(new Set(tops).size).toBe(1);
 });

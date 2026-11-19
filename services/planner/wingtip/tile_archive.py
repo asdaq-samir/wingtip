@@ -1,5 +1,5 @@
 """A kind's chart tiles at one density as one PMTiles archive: written by
-the charts job once its pyramid is complete (wingtip.charts.pack_pyramid),
+the charts job once its pyramid is complete (wingtip.chart_archives.pack_pyramid),
 read a tile at a time by the planner, from the disk or, on AWS, by HTTP
 range requests to the published copy.
 
@@ -173,6 +173,20 @@ class Archive:
         yield from walk(self.header["root_offset"], self.header["root_length"])
 
 
+def kept(path: Path, tiles: list, struck: list, zooms: range) -> list:
+    """The tiles of the archive at path, within `zooms`, that a new pass
+    left alone -- neither drew (`tiles`) nor marked as none (`struck`),
+    each starting (z, x, y) -- to be written again beside its own; none
+    where the pass drew nothing. Packed after a pass over the TAC's zooms
+    3 to 9 alone, the archive held only those and its zooms 10 to 13 were
+    gone from the map (2026-11-16)."""
+    archive = on_disk(path) if tiles else None
+    if archive is None:
+        return []
+    said = {tuple(t[:3]) for t in [*tiles, *struck]}
+    return [t for t in archive.tiles() if (t[0], t[1], t[2]) not in said and t[0] in zooms]
+
+
 class _File:
     """An archive on disk, mapped, and mapped again when a rewrite has
     renamed a new one over it (its inode changes)."""
@@ -216,7 +230,7 @@ def over_http(url: str, session, timeout: float = 10) -> Archive | None:
     """The published archive at url, read by HTTP range requests through
     `session` (requests'), its directories kept; None where it cannot be
     read. A published archive's name changes with its contents
-    (wingtip.charts.publish), so what is kept never goes stale."""
+    (wingtip.chart_publish.publish), so what is kept never goes stale."""
     held = _remote.get(url)
     if held is not None:
         return held

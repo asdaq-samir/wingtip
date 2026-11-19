@@ -33,8 +33,8 @@ const FONTS: Record<Brand, () => Promise<unknown>> = {
 };
 
 /** Whether the Chart ink look is on, for what sets its own type or its
- *  own ink by it as it renders: the figures' sizes and labels
- *  (FigureStrip), the checkpoints' marks (RouteMap, PointMark). A
+ *  own ink by it as it renders: the checkpoints' marks (RouteMap,
+ *  PointMark). A
  *  canvas, which no render reaches, reads it off <html> instead
  *  (chartColors' isInkLook). */
 export function useInkLook(): boolean {

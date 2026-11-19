@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openNavLog, navLogSheet, settle, sideDrawer, slow } from "./helpers";
+import { grabberTo, openNavLog, navLogSheet, settle, sideDrawer, slow } from "./helpers";
 
 /**
  * With no airplane picked, the plan shows what the route is -- its
@@ -28,6 +28,24 @@ test("no airplane picked: the strip is To and Dist, the nav log its courses and 
   await expect(strip).toContainText(/DIST/i, { timeout: slow(60000) });
   await expect(strip.getByTestId("navlog-ete")).toHaveCount(0);
   await expect(strip.getByTestId("navlog-fuel")).toHaveCount(0);
+  // The four columns kept, the time and the fuel a dash that asks for an
+  // airplane, where the two went unsaid (the UI audit's C2, 2026-11-17).
+  const asks = strip.getByTestId("strip-pick-airplane");
+  await expect(asks).toHaveCount(2);
+  await expect(asks.first()).toHaveText("—");
+  await expect(asks.first()).toHaveAccessibleName("Time en route: pick an airplane for it");
+  await expect(asks.last()).toHaveAccessibleName("Fuel required: pick an airplane for it");
+  // At the pill a tap on the figures opens the sheet half way (SheetParts'
+  // foot), and at half a short route's figures pass under the actions'
+  // floating bar (docs/design/web.md, FplTabBar): all the way up, each dash
+  // is its own button.
+  await grabberTo(page, "full");
+  await asks.first().click();
+  await expect(page.getByTestId("aircraft-input")).toBeFocused();
+  await page.getByTestId("aircraft-input").blur();
+  // The arrival's time a dash like the rest: the airplane is asked for in
+  // the N-number field alone (the UI audit's C3, the owner, 2026-11-17).
+  await expect(sideDrawer(page).getByTestId("point-pick-airplane")).toHaveCount(0);
   await openNavLog(page);
   // A desktop's table (docs/design/web.md §4): only the columns no
   // airplane changes -- no heading, groundspeed, time or fuel.

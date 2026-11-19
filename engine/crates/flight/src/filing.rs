@@ -5,15 +5,11 @@
 //! written is here.
 
 use crate::limits::is_flight_level;
+use wingtip_core::text::js_round;
 
 /// Item 9's wake turbulence category L: a maximum certificated takeoff
 /// weight of 15,500 lb or less (AIM Appendix 4, from FAA Order JO 7360.1).
 pub const LIGHT_WAKE_MAX_LB: f64 = 15_500.0;
-
-/// JavaScript's Math.round, half up, as the web wrote the figures.
-fn js_round(v: f64) -> i64 {
-    (v + 0.5).floor() as i64
-}
 
 /// Item 15's cruising speed: the true airspeed in knots, "N" and four
 /// figures (AIM Appendix 4: "N0450").
@@ -50,12 +46,34 @@ pub struct Procedure<'a> {
     pub transition: Option<&'a str>,
 }
 
+/// A pilot's own point off a fix, as the route writes it ("VPBNG/095/14.2",
+/// the route crate's frd_ident), in the form item 15 takes a fix, radial
+/// and distance: the fix, three figures of course and three of whole
+/// miles, "VPBNG095014" -- AIM Appendix 4's "IRW12503" among a route's
+/// "fixes in the following formats", and the packed form the planner reads
+/// back (route::points). Filed with its strokes, the point read as
+/// something else: in item 15 an oblique stroke brings in "the next speed
+/// and altitude" or a delay ("/DHH+MM"). The point the weather-avoiding
+/// ways turn at is one (the UI audit's A8). Anything else is as it was.
+fn filed_point(point: &str) -> String {
+    let parts: Vec<&str> = point.split('/').collect();
+    let [base, course, nm] = parts[..] else { return point.to_owned() };
+    let fix = (2..=5).contains(&base.len()) && base.bytes().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit());
+    match (fix, course.parse::<i64>(), nm.parse::<f64>()) {
+        (true, Ok(c), Ok(d)) if course.len() == 3 && (0..=360).contains(&c) && d > 0.0 && d <= 999.0 => {
+            format!("{base}{:03}{:03}", c % 360, js_round(d))
+        }
+        _ => point.to_owned(),
+    }
+}
+
 /// Item 15's route between the departure and the destination: airways
 /// between the fixes they are joined and left at, and DCT between two
 /// fixes flown direct; a departure procedure first, with the fix its
 /// transition leaves it at, and an arrival last, after the fix its
 /// transition joins it at (AIM Appendix 4: "DALL3 EIC V18 MEI LGC4",
 /// "FLACK DCT IRW"); DCT alone for a flight direct from one to the other.
+/// A pilot's own point is filed as a fix, radial and distance (filed_point).
 pub fn route(stops: &[&str], is_airway: impl Fn(&str) -> bool, departure: Option<&Procedure>, arrival: Option<&Procedure>) -> String {
     let mut points: Vec<&str> = Vec::new();
     if let Some(d) = departure {
@@ -73,12 +91,12 @@ pub fn route(stops: &[&str], is_airway: impl Fn(&str) -> bool, departure: Option
     }
     // A procedure, as an airway, is joined and left at its fixes.
     let joined = |w: &str| is_airway(w) || departure.is_some_and(|d| d.id == w) || arrival.is_some_and(|a| a.id == w);
-    let mut words: Vec<&str> = Vec::new();
+    let mut words: Vec<String> = Vec::new();
     for (i, point) in points.iter().enumerate() {
         if i > 0 && !joined(point) && !joined(points[i - 1]) {
-            words.push("DCT");
+            words.push("DCT".to_owned());
         }
-        words.push(point);
+        words.push(filed_point(point));
     }
     if words.is_empty() {
         "DCT".to_owned()
@@ -108,6 +126,40 @@ pub fn needs_zzzz(ident: &str, icao_id: Option<&str>) -> bool {
 /// where the burn is not a positive figure.
 pub fn endurance_minutes(fuel_gal: f64, burn_gph: f64) -> Option<i64> {
     (burn_gph > 0.0 && fuel_gal >= 0.0 && fuel_gal.is_finite()).then(|| (fuel_gal / burn_gph * 60.0).floor() as i64)
+}
+
+/// Item 16's total estimated elapsed time in whole minutes, "from
+/// departure to destination in hours (H) and minutes (M), format HHMM"
+/// (AIM Appendix 4, 8): the nav log's minutes to the minute above, the
+/// safe side of a time that starts search and rescue's clock (`duration`).
+/// None where the time is not a figure.
+pub fn eet_minutes(ete_min: f64) -> Option<i64> {
+    (ete_min.is_finite() && ete_min >= 0.0).then(|| ete_min.ceil() as i64)
+}
+
+/// A leg as item 19's endurance reads it: the phase the nav log flew it
+/// in ("climb", "descent"; none for the cruise) and its fuel flow.
+pub struct BurnLeg<'a> {
+    pub phase: Option<&'a str>,
+    pub burn_gph: Option<f64>,
+}
+
+/// The fuel flow item 19's endurance is worked at: "fuel endurance time in
+/// hours and minutes" (AIM Appendix 4, item 19 E/; FAA Form 7233-1 block
+/// 12, the usable fuel on board in hours and minutes) is how long the fuel
+/// lasts flown as the flight is flown, at cruise. So the cruise legs'
+/// burn, never a climb's (which read short) or a descent's (which read
+/// long, the unsafe way); where the plan steps between altitudes, the
+/// highest of their burns, the shorter endurance. With no leg flown at
+/// cruise (a hop climbed and descended whole), the airplane's own cruise
+/// burn, `cruise_burn_gph`; None where neither is a positive figure.
+pub fn endurance_burn_gph(legs: &[BurnLeg], cruise_burn_gph: Option<f64>) -> Option<f64> {
+    let positive = |b: &f64| b.is_finite() && *b > 0.0;
+    legs.iter()
+        .filter(|l| l.phase.is_none_or(|p| p.is_empty() || p == "cruise"))
+        .filter_map(|l| l.burn_gph.filter(positive))
+        .reduce(f64::max)
+        .or(cruise_burn_gph.filter(positive))
 }
 
 /// Item 18's date of flight, "DOF/YYMMDD", where the flight is not on the
@@ -147,8 +199,30 @@ mod tests {
         assert_eq!(route(&["EIC", "V18", "MEI"], |w| w == "V18", Some(&dall3), Some(&lgc4)), "DALL3 EIC V18 MEI LGC4");
         // ... and flown direct from MEI to LGC first, as FLACK DCT IRW is.
         assert_eq!(route(&["EIC", "V18", "MEI", "LGC"], |w| w == "V18", Some(&dall3), Some(&lgc4)), "DALL3 EIC V18 MEI DCT LGC LGC4");
+        // A pilot's own point as a fix, radial and distance, as AIM
+        // Appendix 4's IRW12503, never with the strokes item 15 reads as a
+        // speed and altitude: three figures of whole miles.
+        assert_eq!(route(&["FLACK", "VPBNG/095/14.2", "IRW"], |_| false, None, None), "FLACK DCT VPBNG095014 DCT IRW");
+        assert_eq!(route(&["DLH/000/30"], |_| false, None, None), "DLH000030");
+        assert_eq!(route(&["DLH/360/2.5"], |_| false, None, None), "DLH000003");
+        assert_eq!(route(&["LEXOR/N0467F380"], |_| false, None, None), "LEXOR/N0467F380");
         assert_eq!(wake(Some(15_500.0)), Some("L"));
         assert_eq!(wake(Some(15_501.0)), None);
+    }
+
+    #[test]
+    fn eet_rounds_up_and_endurance_is_at_the_cruise_burn() {
+        assert_eq!(eet_minutes(119.2), Some(120));
+        assert_eq!(eet_minutes(120.0), Some(120));
+        assert_eq!(eet_minutes(f64::NAN), None);
+        let leg = |phase: Option<&'static str>, burn: f64| BurnLeg { phase, burn_gph: Some(burn) };
+        // A first leg climbed whole at 13 gph, then the cruise at 9.5 and
+        // 10, and the descent at 6: the cruise's highest, 10.
+        let legs = [leg(Some("climb"), 13.0), leg(None, 9.5), leg(None, 10.0), leg(Some("descent"), 6.0)];
+        assert_eq!(endurance_burn_gph(&legs, Some(8.4)), Some(10.0));
+        // No leg at cruise: the airplane's own cruise burn.
+        assert_eq!(endurance_burn_gph(&legs[..1], Some(8.4)), Some(8.4));
+        assert_eq!(endurance_burn_gph(&[], None), None);
     }
 
     #[test]

@@ -5,19 +5,19 @@ import type { CloseTiles } from "../useCloseImagery";
 
 /** The imagery's layer (useCloseImagery's tiles), under the chart
  *  (`under`, its lowest layer) and over the land and water, fading in as
- *  the chart fades out; dimmed at night as the chart is (glStyle's
- *  chartPaint). A stock MapLibre raster source and layer, enlarged by
+ *  the chart fades out; dimmed as the chart is (`brightness`, the
+ *  chart's raster-brightness-max, the Dimmer's: useChartLook). A stock MapLibre raster source and layer, enlarged by
  *  MapLibre past its tiles' last level; in 3D it lies on the ground as
  *  every raster layer of the chart's slot does (TerrainGl). */
 export function CloseImageryGl({
   tiles,
   tileMaxZoom,
-  night,
+  brightness,
   under,
 }: {
   tiles: CloseTiles;
   tileMaxZoom: number;
-  night: boolean;
+  brightness: number;
   under: string;
 }) {
   const { map } = useGlMap();
@@ -35,7 +35,7 @@ export function CloseImageryGl({
     ],
     under,
   );
-  useGlPaint(["close-imagery"], { "raster-brightness-max": night ? 0.5 : 1 });
+  useGlPaint(["close-imagery"], { "raster-brightness-max": brightness });
   // For the browser tests: the imagery is there to fade into.
   useEffect(() => {
     const el = map.getContainer();

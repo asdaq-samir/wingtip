@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { frontSheet, grabberTo, mapStill, openPanel, settle, settled, sideDrawer, slow, waypointMarks } from "./helpers";
+import { frontSheet, grabberTo, mapStill, openPanel, settle, settled, sideDrawer, slow, waypointMarks, openRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { drawnMarks, markWith } from "./marks";
 import { pickAirplane } from "./startState";
@@ -25,6 +25,7 @@ test("a stop may be a VFR waypoint, offered after the airports as it is typed an
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
 
   await sideDrawer(page).getByRole("button", { name: "Add a stop between C81 and KDLH" }).click();
   await page.getByTestId("search-airports").fill("VPBNG");
@@ -119,10 +120,13 @@ test("a VFR waypoint on the chart is a magenta triangle with its ident, and its 
     }
     await expect(add).toBeVisible({ timeout: 3000 });
   }).toPass({ timeout: slow(15000) });
-  // What it is beside its ident, where it is on a line of its own: in its popup over the chart, or
-  // on a phone its card in the map's sheet (MapPopup), its name and line in its head beside its close.
+  // Its ident the name, what it is the line under it (the owner,
+  // 2026-11-18), in its card's head; opened by its address, as its link
+  // opens it.
   const popup = page.locator(".maplibregl-popup, [data-sheet-card]");
-  await expect(popup.getByText("VFR waypoint", { exact: true })).toBeVisible();
+  await expect(popup.getByRole("heading", { name: "VPBNG" })).toBeVisible();
+  await expect(popup.getByTestId("card-sub").filter({ hasText: "VFR Waypoint" })).toBeVisible();
+  expect(new URL(page.url()).searchParams.get("mark")).toMatch(/^vfr:VPBNG@/);
   // Where: off the nearest VOR, as a controller places it (WaypointCard's
   // fixRadialDistance); the overlay tiles' waypoints carry no description,
   // and the stubbed "3 nm SW of Campbell" went with the in-view layer.

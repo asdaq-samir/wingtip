@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { clearTheRoute, settled as settledLocator, grabberTo } from "./helpers";
+import { clearTheRoute, settled as settledLocator, grabberTo, inSheet, openPanel, openRoute } from "./helpers";
 
 /**
  * What a pilot meets when things go wrong, and the toasts that are left.
@@ -81,6 +81,18 @@ test("it offers a way out, the way out works, and the line goes with the problem
 
   const retry = banner(page).getByRole("button", { name: "Try again" });
   await expect(retry).toBeVisible({ timeout: 20000 });
+  // The map's one banner (MapBanner): on the map buttons' glass at the
+  // banner's corner, a row 44 tall at the least, its glyph, line and
+  // action, as every line over the map is.
+  const look = await banner(page).evaluate((el) => ({
+    glass: el.classList.contains("liquid-glass"),
+    radius: getComputedStyle(el).borderTopLeftRadius,
+    banner: getComputedStyle(el).getPropertyValue("--radius-banner").trim(),
+    height: el.getBoundingClientRect().height,
+  }));
+  expect(look.glass).toBe(true);
+  expect(look.radius).toBe(look.banner);
+  expect(look.height).toBeGreaterThanOrEqual(44);
 
   // The planner comes back.
   await page.unroute("**/api/planner/**");
@@ -133,13 +145,77 @@ test("an ident the planner does not know is said on its pill, not the map's line
   // only word was the map's line, cut off, naming the data set. The pilot
   // typed it; it is said where they typed it, with Remove.
   await page.goto("/app/plan?dep=KUGN&dest=KZZZ");
+  // Its timeline's line in red with why under it (the one layout), and the
+  // route's field open under the timeline, saying it with Remove.
+  await openPanel(page);
+  const line = page.getByTestId("route-summary").getByTestId("timeline-line").last();
+  await expect(line).toContainText("KZZZ", { timeout: 20000 });
+  await expect(line.getByTestId("timeline-problem")).toHaveText("isn't an airport or waypoint we know");
+  await expect(line.getByTestId("timeline-problem")).toHaveClass(/text-destructive/);
+  await openRoute(page);
   const said = page.getByTestId("route-unknown");
   await expect(said).toContainText("KZZZ isn't an airport or waypoint we know", { timeout: 20000 });
   await expect(page.getByTestId("route-dest").locator("[aria-invalid=true]")).toHaveCount(1);
   await expect(banner(page)).toHaveCount(0);
+  // The figures' To says it too, in red with its mark, the pill's face at
+  // rest; nothing to brief, as nothing to log (the UI audit's B8, 2026-11-17).
+  const to = page.getByTestId("flight-line").getByTestId("navlog-to");
+  await expect(to).toHaveAttribute("data-alert", "true");
+  await expect(to.getByTestId("figure-alert-mark")).toHaveCount(1);
+  await expect(page.getByTestId("route-brief")).toBeDisabled();
+  // Its Remove reached as a finger would, the sheet pulled up to it (inSheet).
+  await inSheet(page, said.getByTestId("route-unknown-remove"));
   await said.getByTestId("route-unknown-remove").click();
   await expect(page).not.toHaveURL(/KZZZ/);
   await expect(said).toHaveCount(0);
+});
+
+test("an ident only a field abroad goes by is no destination: no distance, no ways, nothing planned", async ({ page }) => {
+  // KORD-KIGN was planned 7,191 nm to Indagen, Papua New Guinea, whose
+  // local code is IGN: the planner's K-form fallback reached a field
+  // abroad, the strip gave its distance and the Routes row its ways
+  // (2026-11-17). KIGN is no US field's: the unknown place, as KZZZ is.
+  await page.goto("/app/plan?dep=KUGN&dest=KIGN");
+  await openPanel(page);
+  await expect(page.getByTestId("route-summary").getByTestId("timeline-problem").last()).toHaveText(
+    "isn't an airport or waypoint we know",
+    { timeout: 20000 },
+  );
+  // No ways to suggest, so no button for them: the chips' count below is
+  // then no vacuous zero (they render only while the button is on).
+  await expect(page.getByTestId("routes-toggle")).toHaveCount(0);
+  await openRoute(page);
+  const said = page.getByTestId("route-unknown");
+  await expect(said).toContainText("KIGN isn't an airport or waypoint we know", { timeout: 20000 });
+  await expect(page.getByTestId("flight-line").getByTestId("navlog-to")).toHaveAttribute("data-alert", "true");
+  await expect(page.getByTestId("flight-line")).not.toContainText(/\d\s*(nm|nautical)/);
+  await expect(page.getByTestId("route-line-chip")).toHaveCount(0);
+  await expect(page.getByTestId("route-brief")).toBeDisabled();
+});
+
+test("a real field abroad is said to be outside the US charts, not planned", async ({ page }) => {
+  // The planner's own words for one (wingtip.airport_lookup OutsideCharts),
+  // as it answers for Indagen by its own ident; said on the route box's
+  // line and the To, as an unknown place is.
+  await page.route(
+    (url) => url.pathname.startsWith("/api/planner/") && url.searchParams.get("dest") === "AYID",
+    (route: Route) =>
+      route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "'AYID' is outside the US charts: Indagen Airport, PG." }),
+      }),
+  );
+  await page.goto("/app/plan?dep=KUGN&dest=AYID");
+  await openPanel(page);
+  await expect(page.getByTestId("route-summary").getByTestId("timeline-problem").last()).toHaveText("is outside the US charts", {
+    timeout: 20000,
+  });
+  await openRoute(page);
+  await expect(page.getByTestId("route-unknown")).toContainText("AYID is outside the US charts", { timeout: 20000 });
+  await expect(page.getByTestId("flight-line").getByTestId("navlog-to")).toHaveAttribute("data-alert", "true");
+  await expect(banner(page)).toHaveCount(0);
+  await expect(page.getByTestId("route-brief")).toBeDisabled();
 });
 
 test("the line sits beside the map's buttons, level with them, one line tall, and the location arrow takes its tap", async ({ page }) => {
@@ -250,6 +326,9 @@ test("the chart underneath stays draggable while a toast is showing", async ({ p
   // Sonner gives its container and cards pointer-events, so the band
   // they occupy was swallowing wheel and drag events meant for the
   // map. A pilot moving the chart should not have to wait out a toast.
+  // The progress toast here lets the pointer through (index.css): a toast
+  // with words to read is held under a touch (15e8f6b28), but one saying
+  // what is under way has nothing to hold.
   await holdCourse(page);
   await page.goto(PLAN);
 
@@ -274,7 +353,7 @@ test("the chart underneath stays draggable while a toast is showing", async ({ p
 // takes no tap but its own controls', so the route's box under it does.
 test("with the panel out, the progress is a toast and the flight's line keeps its figures", async ({ page }) => {
   await holdCourse(page);
-  await page.goto(`${PLAN}&view=briefing`);
+  await page.goto(`${PLAN}&view=full`);
   await expect(toasts(page).filter({ hasText: "Drawing Route" })).toHaveCount(1, { timeout: 20000 });
   await expect(page.getByTestId("flight-line")).not.toContainText("Plotting");
 });

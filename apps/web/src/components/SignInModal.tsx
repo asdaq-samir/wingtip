@@ -13,8 +13,6 @@ import { ApiError, api } from "../lib/api/client";
 import { LEGAL_PAGES } from "../lib/legal";
 import { capabilitiesQuery } from "../lib/queryClient";
 import { TEXT } from "../lib/text";
-import { tvPlatform } from "../lib/tv";
-import TvCode from "./TvCode";
 import { Separator } from "./ui/separator";
 import { FieldError } from "./ui/field";
 
@@ -44,7 +42,6 @@ export default function SignInModal({
 } = {}) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const onTv = tvPlatform() !== null;
   const providers = useQuery(capabilitiesQuery).data?.providers ?? [];
   const trimmedEmail = email.trim();
   // The address a link went to is the one it was asked for with -- the
@@ -88,10 +85,7 @@ export default function SignInModal({
       description="Save your airplanes and filed flights to your own account."
       trigger={
         inline ? (
-          <BaseButton
-            data-testid="sign-in-inline"
-            className="relative font-semibold text-tint outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring"
-          >
+          <BaseButton className="relative font-semibold text-tint outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring">
             Sign in
           </BaseButton>
         ) : hero ? (
@@ -112,86 +106,79 @@ export default function SignInModal({
         )
       }
     >
-      {/* On a TV, a code to type in on a phone (TvCode): the emailed
-          link opens where the mail is read, and Google's and Apple's
-          pages want a keyboard. */}
-      {onTv ? (
-        <TvCode />
-      ) : (
-        <>
-          {providers.length > 0 && (
-            <>
-              {/* Links in a button's look: they go to the provider's page, and
+      <>
+        {providers.length > 0 && (
+          <>
+            {/* Links in a button's look: they go to the provider's page, and
                   Base UI's Button rendered as one named them buttons. */}
-              <div className="flex flex-col gap-2">
-                {providers.includes("google") && (
-                  <a href="/oauth2/authorization/google" className={cn(buttonVariants({ variant: "outline" }), "justify-start gap-3")}>
-                    <GoogleLogo className="size-4" />
-                    Continue with Google
-                  </a>
-                )}
-                {providers.includes("apple") && (
-                  <a href="/oauth2/authorization/apple" className={cn(buttonVariants({ variant: "outline" }), "justify-start gap-3")}>
-                    <AppleLogo className="size-4" />
-                    Continue with Apple
-                  </a>
-                )}
-              </div>
-              <div className={`flex items-center gap-3 text-muted-foreground ${TEXT.note}`}>
-                <Separator className="flex-1" />
-                or
-                <Separator className="flex-1" />
-              </div>
-            </>
-          )}
-          {sent ? (
-            <p className={`text-muted-foreground ${TEXT.prose}`} role="status">
-              Check <span className="font-semibold text-foreground">{sent}</span> for a sign-in link. It expires in 15 minutes.
-            </p>
-          ) : (
-            <form
-              className="flex flex-col gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                magicLink.mutate(trimmedEmail);
-              }}
-            >
-              <div className="flex gap-2">
-                <Input
-                  type="email"
-                  required
-                  placeholder="you@example.com"
-                  aria-label="Email address"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                {/* Its word on it, where a grey envelope alone read as nothing
+            <div className="flex flex-col gap-2">
+              {providers.includes("google") && (
+                <a href="/oauth2/authorization/google" className={cn(buttonVariants({ variant: "outline" }), "justify-start gap-3")}>
+                  <GoogleLogo className="size-4" />
+                  Continue with Google
+                </a>
+              )}
+              {providers.includes("apple") && (
+                <a href="/oauth2/authorization/apple" className={cn(buttonVariants({ variant: "outline" }), "justify-start gap-3")}>
+                  <AppleLogo className="size-4" />
+                  Continue with Apple
+                </a>
+              )}
+            </div>
+            <div className={`flex items-center gap-3 text-muted-foreground ${TEXT.note}`}>
+              <Separator className="flex-1" />
+              or
+              <Separator className="flex-1" />
+            </div>
+          </>
+        )}
+        {sent ? (
+          <p className={`text-muted-foreground ${TEXT.prose}`} role="status">
+            Check <span className="font-semibold text-foreground">{sent}</span> for a sign-in link. It expires in 15 minutes.
+          </p>
+        ) : (
+          <form
+            className="flex flex-col gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              magicLink.mutate(trimmedEmail);
+            }}
+          >
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                required
+                placeholder="you@example.com"
+                aria-label="Email address"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              {/* Its word on it, where a grey envelope alone read as nothing
                 to tap (the UI audit, 2026-11-09); a spinner in place of
                 the envelope while the link is on its way. */}
-                <Button
-                  type="submit"
-                  disabled={magicLink.isPending || !trimmedEmail}
-                  aria-busy={magicLink.isPending}
-                  className="h-auto shrink-0"
-                >
-                  {magicLink.isPending ? (
-                    <Spinner className="size-4" role="presentation" aria-label={undefined} aria-hidden />
-                  ) : (
-                    <Mail className="size-4" aria-hidden="true" />
-                  )}
-                  Send Link
-                </Button>
-              </div>
-              {linkFailure && (
-                <FieldError className={`text-destructive ${TEXT.prose}`} data-testid="sign-in-error">
-                  {linkFailure}
-                </FieldError>
-              )}
-            </form>
-          )}
-        </>
-      )}
+              <Button
+                type="submit"
+                disabled={magicLink.isPending || !trimmedEmail}
+                aria-busy={magicLink.isPending}
+                className="h-auto shrink-0"
+              >
+                {magicLink.isPending ? (
+                  <Spinner className="size-4" role="presentation" aria-label={undefined} aria-hidden />
+                ) : (
+                  <Mail className="size-4" aria-hidden="true" />
+                )}
+                Send Link
+              </Button>
+            </div>
+            {linkFailure && (
+              <FieldError className={`text-destructive ${TEXT.prose}`} data-testid="sign-in-error">
+                {linkFailure}
+              </FieldError>
+            )}
+          </form>
+        )}
+      </>
       {/* One row of links, not links in a sentence: each gets its 44-point
           area from a pseudo-element, and a wrapped sentence would put
           those areas on top of each other. */}

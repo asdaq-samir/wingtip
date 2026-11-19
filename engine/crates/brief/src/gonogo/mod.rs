@@ -5,10 +5,16 @@
 //! app.gonogo's Python, itself the web app's TypeScript ported line for
 //! line with the same words and sources; where the two had drifted apart
 //! the web's rule was taken (the coordinator's decision, 3 Nov 2026). The
-//! web app keeps its own copy, and the two change together.
+//! web app asks them by name too, with no copy of its own (2026-11-17).
 //!
 //! - `verdict`: the findings and the line over them (lib/verdict), and
 //!   the IFR alternate's say in them (useAlternate, FlightBriefingView);
+//! - `brief`: the findings put together as the Brief shows them, with the
+//!   alternate, the fields row and no airplane's where none is picked,
+//!   and the line over them (`gonogo_brief`);
+//! - `glance`: the Brief as it opens -- the findings a pilot acts on, at
+//!   most three, each a sentence with what to do, why and the rule it
+//!   rests on, and the rest in one row (`gonogo_glance_lines`);
 //! - `minimums`: where the weather is under the pilot's own (lib/minimums,
 //!   lib/wind);
 //! - `icing`: under IFR, a flight planned into icing (lib/icing);
@@ -32,8 +38,11 @@
 //! are fed from stay the planner's lookups (app.routers.gonogo), and the
 //! time zones the phone's or the planner's own (pass_times).
 
+pub mod brief;
 pub mod calls;
 pub mod frat;
+pub mod glance;
+pub mod glance_calls;
 pub mod icing;
 pub mod minimums;
 pub mod pass_times;

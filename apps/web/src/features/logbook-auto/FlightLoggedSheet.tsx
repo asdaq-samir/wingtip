@@ -41,7 +41,7 @@ function FigureRow({
   value: string | number;
   onChange: (value: string) => void;
   type?: "number" | "text" | "date";
-  testId: string;
+  testId?: string;
 }) {
   const id = useId();
   // A figure on React Aria's number field and a day on its date field,
@@ -88,38 +88,12 @@ function DraftRows({ log, draft }: { log: AutoLogbook; draft: LogbookDraft }) {
   return (
     <>
       <ListGroup title="Flight">
-        <FigureRow
-          title="Date"
-          type="date"
-          value={at("flownOn", e.flownOn)}
-          onChange={text("flownOn")}
-          description={why(r, "flownOn")}
-          testId="autolog-date"
-        />
-        <FigureRow
-          title="Airplane"
-          type="text"
-          value={at("aircraft", e.aircraft ?? "")}
-          onChange={text("aircraft")}
-          testId="autolog-aircraft"
-        />
-        <FigureRow
-          title="Route"
-          type="text"
-          value={at("route", e.route)}
-          onChange={text("route")}
-          description={why(r, "distanceNm")}
-          testId="autolog-route"
-        />
+        <FigureRow title="Date" type="date" value={at("flownOn", e.flownOn)} onChange={text("flownOn")} description={why(r, "flownOn")} />
+        <FigureRow title="Airplane" type="text" value={at("aircraft", e.aircraft ?? "")} onChange={text("aircraft")} />
+        <FigureRow title="Route" type="text" value={at("route", e.route)} onChange={text("route")} description={why(r, "distanceNm")} />
       </ListGroup>
       <ListGroup title="Time">
-        <FigureRow
-          title="Total"
-          value={at("totalHours", e.totalHours)}
-          onChange={num("totalHours")}
-          description={why(r, "totalHours")}
-          testId="autolog-total"
-        />
+        <FigureRow title="Total" value={at("totalHours", e.totalHours)} onChange={num("totalHours")} description={why(r, "totalHours")} />
         <ListRow title="In the Air" value={`${e.airHours.toFixed(1)} h`} description={why(r, "airHours")} />
         <FigureRow
           title="Night"
@@ -133,23 +107,11 @@ function DraftRows({ log, draft }: { log: AutoLogbook; draft: LogbookDraft }) {
           value={at("crossCountryHours", e.crossCountryHours)}
           onChange={num("crossCountryHours")}
           description={why(r, "crossCountryHours")}
-          testId="autolog-xc"
         />
       </ListGroup>
       <ListGroup title="Landings">
-        <FigureRow
-          title="Day"
-          value={at("dayLandings", e.dayLandings)}
-          onChange={num("dayLandings")}
-          description={why(r, "landing")}
-          testId="autolog-day-landings"
-        />
-        <FigureRow
-          title="Night, Full Stop"
-          value={at("nightLandings", e.nightLandings)}
-          onChange={num("nightLandings")}
-          testId="autolog-night-landings"
-        />
+        <FigureRow title="Day" value={at("dayLandings", e.dayLandings)} onChange={num("dayLandings")} description={why(r, "landing")} />
+        <FigureRow title="Night, Full Stop" value={at("nightLandings", e.nightLandings)} onChange={num("nightLandings")} />
       </ListGroup>
       {(draft.approaches.length > 0 || draft.holds.length > 0) && (
         <ListGroup title="Instrument">
@@ -157,7 +119,6 @@ function DraftRows({ log, draft }: { log: AutoLogbook; draft: LogbookDraft }) {
             title="Flown by Instruments"
             description={`${draft.instrument.approaches} approaches${draft.instrument.holding ? ", a hold" : ""}. ${instrumentSaid}`}
             checkbox={{ checked: log.byInstruments, onChange: log.setByInstruments }}
-            data-testid="autolog-instruments"
           />
         </ListGroup>
       )}
@@ -199,14 +160,13 @@ export default function FlightLoggedSheet({ log }: { log: AutoLogbook }) {
         open
         onOpenChange={onOpenChange}
         title="Flight Logged"
-        testId="autolog-logged"
         description={`${logged.entry.route ?? ""} · ${logged.entry.totalHours.toFixed(1)} h, in your logbook; your currency is worked out again from it.`}
       >
         {logged.entry.flightId !== null && (
           <p className={TEXT.prose}>The track is with the saved flight too: its debrief is there in Saved.</p>
         )}
         {logged.fields.length > 0 && !debrief && (
-          <Button variant="outline" onClick={() => setDebrief(true)} data-testid="autolog-debrief">
+          <Button variant="outline" onClick={() => setDebrief(true)}>
             Debrief the Approaches
           </Button>
         )}
@@ -228,11 +188,10 @@ export default function FlightLoggedSheet({ log }: { log: AutoLogbook }) {
       onOpenChange={onOpenChange}
       cancel
       title="Flight Logged"
-      testId="autolog-draft"
       description="Drawn from this flight's track. Change anything, then Log it."
-      action={{ label: "Log", onClick: log.log, disabled: !draft || log.logging, testId: "autolog-log" }}
+      action={{ label: "Log", onClick: log.log, disabled: !draft || log.logging }}
       more={
-        <Button variant="ghost" onClick={log.discard} data-testid="autolog-discard">
+        <Button variant="ghost" onClick={log.discard}>
           Not a Flight to Log
         </Button>
       }

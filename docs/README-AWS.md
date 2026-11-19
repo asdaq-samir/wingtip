@@ -453,7 +453,7 @@ a final snapshot: delete them by hand when they are no longer wanted.
   makes `/workspace/data` its user's for that, and the task's 60 GB of
   storage holds the sheets and the pyramid.
 - **The refresh task's empty disk would read as a cycle never drawn;**
-  it asks the bucket's `serving.json` first (`wingtip.charts.refresh`).
+  it asks the bucket's `serving.json` first (`wingtip.chart_upkeep.refresh`).
 - **A new server waits for the data disk.** Its first boot attaches the
   disk only once the last server has let it go, so a replacement that
   starts before the old server has stopped waits, then carries on.

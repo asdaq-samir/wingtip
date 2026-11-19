@@ -1,12 +1,14 @@
+import type { ReactElement } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { CAPSULE_HIT } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 
 /** The menu's radio items, one per choice: the pick as the value it was
  *  made of, each item's test id the trigger's and its value. MenuPick and
  *  the playback bar's SpeedMenu share it. */
-export function PickItems<T extends string | number>({
+function PickItems<T extends string | number>({
   value,
   choices,
   onPick,
@@ -15,7 +17,7 @@ export function PickItems<T extends string | number>({
   value: T;
   choices: { value: T; label: string }[];
   onPick: (value: T) => void;
-  testId: string;
+  testId?: string;
 }) {
   return (
     <DropdownMenuContent align="end">
@@ -27,7 +29,7 @@ export function PickItems<T extends string | number>({
         }}
       >
         {choices.map((c) => (
-          <DropdownMenuRadioItem key={c.value} value={String(c.value)} data-testid={`${testId}-${c.value}`}>
+          <DropdownMenuRadioItem key={c.value} value={String(c.value)} data-testid={testId && `${testId}-${c.value}`}>
             {c.label}
           </DropdownMenuRadioItem>
         ))}
@@ -40,7 +42,10 @@ export function PickItems<T extends string | number>({
  * A setting of a few choices as a menu at a row's end (the owner's rule:
  * discrete settings are menus, not sliders): its value in the tint, the
  * stock DropdownMenu's radio items under it. Each item's test id is the
- * trigger's and its value.
+ * trigger's and its value. `trigger` swaps the button's look (the
+ * playback bar's speed is a glass capsule in a toolbar): it gets the
+ * label, aria-label and test id and returns the element the menu opens
+ * from; the label is its children.
  */
 export default function MenuPick<T extends string | number>({
   name,
@@ -48,27 +53,34 @@ export default function MenuPick<T extends string | number>({
   choices,
   onPick,
   testId,
+  trigger,
 }: {
   name: string;
   value: T;
   choices: { value: T; label: string }[];
   onPick: (value: T) => void;
-  testId: string;
+  testId?: string;
+  trigger?: (props: { "aria-label": string; "data-testid"?: string }) => ReactElement;
 }) {
-  const label = choices.find((c) => c.value === value)?.label ?? choices[0]?.label;
+  const label = choices.find((c) => c.value === value)?.label ?? choices[0]?.label ?? String(value);
+  const own = { "aria-label": `${name}: ${label}`, "data-testid": testId };
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label={`${name}: ${label}`}
-        data-testid={testId}
-        className={cn(
-          "relative flex h-8 items-center gap-0.5 rounded-full bg-foreground/8 px-2.5 font-semibold text-tint outline-none after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-          TEXT.detail,
-        )}
-      >
-        {label}
-        <ChevronDown className="size-4" aria-hidden="true" />
-      </DropdownMenuTrigger>
+      {trigger ? (
+        <DropdownMenuTrigger render={trigger(own)}>{label}</DropdownMenuTrigger>
+      ) : (
+        <DropdownMenuTrigger
+          {...own}
+          className={cn(
+            CAPSULE_HIT,
+            "flex h-8 items-center gap-0.5 bg-foreground/8 px-2.5 font-semibold text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            TEXT.detail,
+          )}
+        >
+          {label}
+          <ChevronDown className="size-4" aria-hidden="true" />
+        </DropdownMenuTrigger>
+      )}
       <PickItems value={value} choices={choices} onPick={onPick} testId={testId} />
     </DropdownMenu>
   );

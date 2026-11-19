@@ -62,6 +62,21 @@ export function setMapInsets(next: MapInsets) {
   if (!same) useMapInsets.setState(next, true);
 }
 
+/** A phone's bottom sheet, which the map slides with frame by frame as it
+ *  moves (GlMapShell's useSheetSlide): its popup, and the least and the most
+ *  of the map it covers, the pill's and half's (all the way up, the map is
+ *  fitted to what half leaves). Null for a side panel, a top sheet, or with
+ *  a card up, whose room the map takes as it settles. And `half`, what a
+ *  phone's bottom sheet or a card covers at half, the detent a card opens
+ *  at (cardOpening), for a place picked to be centred above its card as it
+ *  opens (GlMapShell); 0 where there is none. */
+export interface SlidingSheet {
+  node: HTMLElement;
+  least: number;
+  most: number;
+}
+export const useSlidingSheet = create<{ sheet: SlidingSheet | null; half: number }>(() => ({ sheet: null, half: 0 }));
+
 /** The insets as the map's element's CSS variables, for the chart credit
  *  (index.css): a ref, written now and at each change, never by a render. */
 export function insetVars(el: HTMLElement | null) {
@@ -77,7 +92,7 @@ export function insetVars(el: HTMLElement | null) {
 
 /** The console's close where it is a layer of the map's panel rather
  *  than a sheet of its own -- on a phone (MapPage) -- for its header to
- *  put it away with (ConsoleHeader): with no sheet round it, it has no
+ *  put it away with (ConsoleClose): with no sheet round it, it has no
  *  sheet's own close, title or description to use. */
 export const ConsoleInPanelContext = createContext<{ close: () => void } | null>(null);
 
@@ -92,7 +107,7 @@ export const PanelSize = createContext<{
 
 /** Whether the console is out, the app's rather than a page's: the two
  *  pages are drawn anew as a developer's Pilot and Developer in its
- *  title (ConsoleHeader) change one for the other, and the console stays
+ *  account menu (AccountMenu) change one for the other, and the console stays
  *  out across the change, the other page's in its place. Not kept past
  *  a reload. */
 export const useConsoleOpen = create<{ open: boolean; setOpen: (open: boolean) => void }>((set) => ({
@@ -173,13 +188,22 @@ export const GLASS_PICKED =
  *  role, its cap there. */
 export const CHIP_TEXT = TYPE_CLASS.chip;
 
+/** iOS's grabber bar, 36 by 5, on a sheet's top edge: the pill's button
+ *  (SheetGrabber) and a phone sheet's own (PhoneSheet) draw the same. */
+export const GRABBER_BAR = "h-[5px] w-9 rounded-full bg-muted-foreground/40";
+
+/** A capsule whose 44-point hit area is a pseudo-element six points out
+ *  round it (the app's rule: a control never grows to get there). The
+ *  caller adds its height (h-8 for the 32-point ones) and fill. */
+export const CAPSULE_HIT = "relative rounded-full after:absolute after:-inset-1.5 after:content-['']";
+
 /** A tinted capsule that adds a field to the route -- the Stops' Add
  *  Stop and Direct To (StopsCard) -- one height, padding and hit area (the
  *  consistency audit, 2026-10-23): 32 points with a 44-point area round
  *  it as a pseudo-element, so the capsule is not grown to make it. */
 export const ADD_CAPSULE =
-  "relative h-8 shrink-0 rounded-full bg-tint/12 px-3.5 font-semibold text-tint outline-none " +
-  `after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring ${TEXT.detail}`;
+  `${CAPSULE_HIT} h-8 shrink-0 bg-tint/12 px-3.5 font-semibold text-tint outline-none ` +
+  `focus-visible:ring-2 focus-visible:ring-ring ${TEXT.detail}`;
 
 /** A star filled in iOS's yellow, as a starred thing is everywhere on
  *  iOS: the airport card's star, a round button by its close. */

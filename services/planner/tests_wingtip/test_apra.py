@@ -11,7 +11,7 @@ import requests
 
 from cachetools import TTLCache
 
-from wingtip import apra, charts
+from wingtip import apra, chart_cycle
 
 RECORDED = Path(__file__).parent / "fixtures" / "apra"
 
@@ -105,11 +105,11 @@ def test_the_current_cycle_is_apras_and_the_arithmetic_without_it(monkeypatch):
     """APRA's sectional edition where it has begun (wingtip.apra), held
     six hours; the anchor's where APRA cannot say."""
     asked = []
-    monkeypatch.setattr(charts, "_cycle_cache", TTLCache(maxsize=1, ttl=60))
-    monkeypatch.setattr(charts.apra, "sectional_cycle", lambda today: asked.append(today) or date(2026, 10, 29))
-    assert charts.current_cycle(date(2026, 11, 12)) == "10-29-2026"
-    assert charts.current_cycle(date(2026, 11, 12)) == "10-29-2026" and len(asked) == 1
+    monkeypatch.setattr(chart_cycle, "_cycle_cache", TTLCache(maxsize=1, ttl=60))
+    monkeypatch.setattr(chart_cycle.apra, "sectional_cycle", lambda today: asked.append(today) or date(2026, 10, 29))
+    assert chart_cycle.current_cycle(date(2026, 11, 12)) == "10-29-2026"
+    assert chart_cycle.current_cycle(date(2026, 11, 12)) == "10-29-2026" and len(asked) == 1
 
-    monkeypatch.setattr(charts, "_cycle_cache", TTLCache(maxsize=1, ttl=60))
-    monkeypatch.setattr(charts.apra, "sectional_cycle", lambda today: None)
-    assert charts.current_cycle(date(2026, 9, 20)) == "09-03-2026"
+    monkeypatch.setattr(chart_cycle, "_cycle_cache", TTLCache(maxsize=1, ttl=60))
+    monkeypatch.setattr(chart_cycle.apra, "sectional_cycle", lambda today: None)
+    assert chart_cycle.current_cycle(date(2026, 9, 20)) == "09-03-2026"

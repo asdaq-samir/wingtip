@@ -7,7 +7,7 @@ pack with no overlay tiles asks the job for them whenever."""
 import time
 
 import pytest
-from wingtip import charts, cycle_pack, vector_tiles
+from wingtip import chart_cycle, chart_serving, chart_upkeep, cycle_pack, vector_tiles
 
 from app import chart_refresh
 from app import dev_services
@@ -25,7 +25,7 @@ def started(monkeypatch):
     monkeypatch.setattr(dev_services, "start", lambda name: names.append(name) or True)
     monkeypatch.setattr(chart_refresh, "AUTO_REFRESH", True)
     monkeypatch.setattr(chart_refresh, "overlays_due", lambda: False)
-    monkeypatch.setattr(charts, "refresh_running", lambda: False)
+    monkeypatch.setattr(chart_upkeep, "refresh_running", lambda: False)
     return names
 
 
@@ -40,10 +40,10 @@ def test_refresh_window_arithmetic():
 
 
 def test_refresh_waits_for_the_window_while_an_older_cycle_serves(monkeypatch, started):
-    monkeypatch.setattr(charts, "refresh_due", lambda: True)
-    monkeypatch.setattr(charts, "serving_cycle", lambda: "09-03-2026")
-    monkeypatch.setattr(charts, "current_cycle", lambda *a, **k: "10-29-2026")
-    monkeypatch.setattr(charts, "pyramid_complete", lambda cycle, kinds=None: cycle == "09-03-2026")
+    monkeypatch.setattr(chart_upkeep, "refresh_due", lambda: True)
+    monkeypatch.setattr(chart_serving, "serving_cycle", lambda: "09-03-2026")
+    monkeypatch.setattr(chart_cycle, "current_cycle", lambda *a, **k: "10-29-2026")
+    monkeypatch.setattr(chart_serving, "pyramid_complete", lambda cycle, kinds=None: cycle == "09-03-2026")
 
     monkeypatch.setattr(chart_refresh, "in_window", lambda *a, **k: False)
     chart_refresh.maybe_refresh()
@@ -55,20 +55,20 @@ def test_refresh_waits_for_the_window_while_an_older_cycle_serves(monkeypatch, s
 
 
 def test_refresh_starts_at_once_when_nothing_complete_is_on_disk(monkeypatch, started):
-    monkeypatch.setattr(charts, "refresh_due", lambda: True)
-    monkeypatch.setattr(charts, "serving_cycle", lambda: "10-29-2026")
-    monkeypatch.setattr(charts, "current_cycle", lambda *a, **k: "10-29-2026")
-    monkeypatch.setattr(charts, "pyramid_complete", lambda cycle, kinds=None: False)
+    monkeypatch.setattr(chart_upkeep, "refresh_due", lambda: True)
+    monkeypatch.setattr(chart_serving, "serving_cycle", lambda: "10-29-2026")
+    monkeypatch.setattr(chart_cycle, "current_cycle", lambda *a, **k: "10-29-2026")
+    monkeypatch.setattr(chart_serving, "pyramid_complete", lambda cycle, kinds=None: False)
     monkeypatch.setattr(chart_refresh, "in_window", lambda *a, **k: False)
     chart_refresh.maybe_refresh()
     assert started == [chart_refresh.CHARTS_SERVICE]
 
 
 def test_nothing_starts_when_the_cycle_is_complete_or_rendering(monkeypatch, started):
-    monkeypatch.setattr(charts, "refresh_due", lambda: False)
+    monkeypatch.setattr(chart_upkeep, "refresh_due", lambda: False)
     chart_refresh.maybe_refresh()
-    monkeypatch.setattr(charts, "refresh_due", lambda: True)
-    monkeypatch.setattr(charts, "refresh_running", lambda: True)
+    monkeypatch.setattr(chart_upkeep, "refresh_due", lambda: True)
+    monkeypatch.setattr(chart_upkeep, "refresh_running", lambda: True)
     chart_refresh.maybe_refresh()
     assert started == []
 
@@ -83,10 +83,10 @@ def test_a_served_cycle_whose_sectional_is_whole_waits_for_the_window(monkeypatc
     """What serving_cycle serves is decided by the sectional; the check
     that let a refresh wait asked every kind, so one TAC short started a
     render in the middle of the day."""
-    monkeypatch.setattr(charts, "refresh_due", lambda: True)
-    monkeypatch.setattr(charts, "serving_cycle", lambda: "09-03-2026")
-    monkeypatch.setattr(charts, "current_cycle", lambda *a, **k: "10-29-2026")
-    monkeypatch.setattr(charts, "pyramid_complete", lambda cycle, kinds=None: kinds == ("sec",))
+    monkeypatch.setattr(chart_upkeep, "refresh_due", lambda: True)
+    monkeypatch.setattr(chart_serving, "serving_cycle", lambda: "09-03-2026")
+    monkeypatch.setattr(chart_cycle, "current_cycle", lambda *a, **k: "10-29-2026")
+    monkeypatch.setattr(chart_serving, "pyramid_complete", lambda cycle, kinds=None: kinds == ("sec",))
     monkeypatch.setattr(chart_refresh, "in_window", lambda *a, **k: False)
 
     chart_refresh.maybe_refresh()
@@ -96,7 +96,7 @@ def test_a_served_cycle_whose_sectional_is_whole_waits_for_the_window(monkeypatc
 
 def test_a_new_cycle_pack_asks_for_its_overlay_tiles_at_any_hour(monkeypatch, started):
     monkeypatch.setattr(chart_refresh, "overlays_due", lambda: True)
-    monkeypatch.setattr(charts, "refresh_due", lambda: False)
+    monkeypatch.setattr(chart_upkeep, "refresh_due", lambda: False)
     chart_refresh.maybe_refresh()
     assert started == [chart_refresh.OVERLAYS_SERVICE]
     monkeypatch.setattr(chart_refresh, "AUTO_REFRESH", False)  # a test stack, or AWS's own schedule

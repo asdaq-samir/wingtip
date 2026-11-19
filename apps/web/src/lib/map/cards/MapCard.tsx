@@ -1,7 +1,6 @@
-import { useContext, useEffect, type ReactNode } from "react";
+import { useContext, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "cn";
-import type { PillHead } from "../../openCards";
 import { SheetCardHead } from "../../sheetCards";
 import { TEXT } from "../../text";
 
@@ -25,65 +24,50 @@ import { TEXT } from "../../text";
 export function MapCard({
   title,
   subtitle,
-  media,
-  pill,
   start,
   children,
 }: {
+  /** The thing's ident or name ("KMSN", "OBK", "4/1234"), and under it
+   *  what it is and its details ("VORTAC · 113.0"): one rule for every
+   *  card (the owner, 2026-11-18), as Apple Maps writes a place's name and
+   *  a short line. No mark before the name: the head has no place for one
+   *  (the owner's iPhone, 2026-11-14). */
   title: ReactNode;
   subtitle?: ReactNode;
-  /** The thing's own mark before its title -- a checkpoint's numbered
-   *  dot, a waypoint's diamond, a TFR's badge -- the head then set to its
-   *  left, as a list's rows are: the cards on the map read as the
-   *  panel's do, at the pilot's ask for every card to read as Nearest's. */
-  media?: ReactNode;
-  /** What the pill shows of it on a phone, as an airport's card's head
-   *  drawn small (PillPicture): its name, one line, and its colour on the
-   *  chart behind them, at the owner's ask (2026-10-29). */
-  pill?: PillHead;
   /** At the head row's start, where every card has it: its Share
    *  (CardHead's CardShareButton), the name then centred between it and
    *  the close (the card rule's 8). */
   start?: ReactNode;
   children?: ReactNode;
 }) {
-  // Its mark and its name in the sheet card's head (SheetCardHead), at a
-  // card's size where its close is, and the rest the card's body, the
-  // panel's width.
+  // Its name in the sheet card's head (SheetCardHead), at a card's size
+  // where its close is, and the rest the card's body, the panel's width.
   const inSheet = useContext(SheetCardHead);
-  // Given by its strings, not the object, made new at each draw.
-  const setPill = inSheet?.setPill;
-  const name = pill?.name,
-    line = pill?.line,
-    colour = pill?.colour;
-  useEffect(() => {
-    if (!setPill || !name) return;
-    setPill({ name, line, colour });
-    return () => setPill(undefined);
-  }, [setPill, name, line, colour]);
   return (
     <>
       {inSheet?.slot &&
         createPortal(
-          <>
-            {media}
-            <div className="min-w-0 flex-1">
-              <h2
-                id={inSheet.headingId}
-                tabIndex={-1}
-                // Centred, as the line under it is and as every card's
-                // name is (CardHeadRow): left-set, it sat off the line's
-                // centre (the owner's iPhone, 2026-11-14, a TFR's card).
-                className={cn(
-                  "flex items-center justify-center gap-x-2 font-bold tracking-tight text-foreground outline-none",
-                  cn("flex-wrap", TEXT.card),
-                )}
-              >
-                {title}
-              </h2>
-              {subtitle !== undefined && <p className={cn("text-muted-foreground", TEXT.detail)}>{subtitle}</p>}
-            </div>
-          </>,
+          <div className="min-w-0 flex-1">
+            <h2
+              id={inSheet.headingId}
+              tabIndex={-1}
+              // Centred, as the line under it is and as every card's name is
+              // (CardHeadRow): left-set, it sat off the line's centre (the
+              // owner's iPhone, 2026-11-14, a TFR's card). One line each,
+              // cut short, at CardHeadRow's sizes (the card's name, a note's
+              // 13 under it), so every card's head is the same height at the
+              // pill (the selection audit, 2026-11-18: these were 15 and
+              // wrapped).
+              className={cn("truncate text-center font-bold tracking-tight text-foreground outline-none", TEXT.card)}
+            >
+              {title}
+            </h2>
+            {subtitle !== undefined && subtitle !== "" && (
+              <p className={cn("truncate text-center text-muted-foreground tabular-nums", TEXT.note)} data-testid="card-sub">
+                {subtitle}
+              </p>
+            )}
+          </div>,
           inSheet.slot,
         )}
       {inSheet?.startSlot && start && createPortal(start, inSheet.startSlot)}

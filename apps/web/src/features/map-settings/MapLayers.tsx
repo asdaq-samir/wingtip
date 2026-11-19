@@ -30,7 +30,7 @@ const WINDS: { value: WindsAt; label: string }[] = [
  * settings?"), where there were eleven; two by two since 2026-11-14. The public fields, the route and
  * the plan's points, own ship and the TFRs have no switch: always drawn;
  * the route's checkpoints and the Class B chips are the route's ••• menu's
- * (ShowRouteAs). Which weather the Weather layer draws is its tile's own
+ * (RouteMapChoices). Which weather the Weather layer draws is its tile's own
  * menu, the ••• in its corner.
  */
 export default function MapLayers() {
@@ -59,7 +59,6 @@ export default function MapLayers() {
           glyph={CloudSun}
           on={prefs.weather}
           onChange={prefs.setWeather}
-          testId="weather-toggle"
           menuLabel="Weather to show"
           menuTestId="weather-more"
         >
@@ -68,7 +67,7 @@ export default function MapLayers() {
         {/* The airplanes ADS-B receivers hear about the map (TrafficGl),
             from adsb.lol: off unless turned on, as it asks a third party
             every five seconds. */}
-        <LayerToggle name="Traffic" glyph={Plane} on={prefs.traffic} onChange={prefs.setTraffic} testId="traffic-toggle" />
+        <LayerToggle name="Traffic" glyph={Plane} on={prefs.traffic} onChange={prefs.setTraffic} />
         {/* The privately owned fields and the armed services' own: off by
             default, as each is landed at only by leave; drawn whatever
             this says while the emergency assistant is open. */}

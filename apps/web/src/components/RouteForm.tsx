@@ -34,8 +34,8 @@ const NARROW_PICKER =
  *  bordered shadcn `InputGroup`: the page's own primary input, which
  *  earns the visual weight a bordered group carries. Each field is an
  *  `AirportPicker`, the stock combobox: a button that opens a searchable
- *  list of idents and names. (Its group was a component of its own with
- *  this one caller, RouteInputGroup: the code audit's CODE-44.) */
+ *  list of idents and names. (Its group was once a component of its own
+ *  with this one caller: the code audit's CODE-44.) */
 export default function RouteForm({ dep, dest, onDepChange, onDestChange, onSubmit, disabled = false }: Props) {
   const popups = usePopups();
   const load = (

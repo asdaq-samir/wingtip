@@ -20,10 +20,12 @@ enum WingtipColor {
         static let routeGreenNight = rgb(0x3F9A1C)
         /// The thin edge round the course's magenta by day (white at 35% over the dimmed chart).
         static let routeEdge = rgb(0x0B0F0A)
-        /// A VFR waypoint's magenta, the sectional's.
+        /// A VFR waypoint's magenta, the sectional's: the one it draws a field with no tower in.
         static let waypoint = rgb(0xC0309F)
-        /// iOS's systemBlue, the blue Maps draws its own marks in: the position dot, a point held on the chart, a procedure's Direct to. Not the tint, which is a step deeper for words on white.
+        /// iOS's systemBlue, the blue Maps draws its own marks in: the position dot, a search's results, a flown track, a procedure's Direct to. A point held on the chart is ringed in color.chart.selected's yellow. Not the tint, which is a step deeper for words on white.
         static let mapBlue = rgb(0x007AFF)
+        /// Map blue a step deeper, for words on the chart's white chips (the route's way label): 5.4:1 on white, where map blue's #007aff is 4.0:1, under WCAG 1.4.3's 4.5 for 12-point text. The chips stay white in the dark, as the chart does, so one value (the owner, 2026-11-17: "Yes to all recs").
+        static let mapBlueInk = rgb(0x0066D6)
         /// The sectional's blue: "Airports having control towers are shown in blue, all others in magenta" (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports). Also VORs.
         static let towered = rgb(0x2465B8)
         /// The sectional's magenta for a field with no tower (Chart User's Guide, Airports).
@@ -183,6 +185,8 @@ enum WingtipColor {
         static let statusCold = rgb(0x6B7280)
         /// A field or runway NASR or a NOTAM closes (decision 0043): red-800 (8.3:1), a step past Active's so the two are told apart.
         static let statusClosed = rgb(0x991B1B)
+        /// A navaid in service with restrictions (NASR NAV_RMK): usable, so not out of service's orange; caution's family, yellow-800 (6.8:1).
+        static let statusRestricted = rgb(0x854D0E)
         /// A navaid or a service out of service: orange-800 (7.3:1).
         static let statusOutOfService = rgb(0x9A3412)
         /// A private-use field (NASR's use PR): slate-600 (7.6:1).
@@ -191,6 +195,8 @@ enum WingtipColor {
         static let statusMilitary = rgb(0x4D7C0F)
         /// A joint civil-military field: lime-800 (7.1:1).
         static let statusJoint = rgb(0x3F6212)
+        /// What kind of field it is where it is not an airport (NASR's SITE_TYPE_CODE: Heliport, Seaplane base, Gliderport, Balloonport, Ultralight): cyan-800 (7.3:1), told apart from the use badges' greys and greens beside it.
+        static let statusSite = rgb(0x155E75)
         /// An emergency's squawk on a tracked airplane (AIM 6-2-2): the light gun's red, red-600 (4.8:1).
         static let statusEmergency = rgb(0xDC2626)
         /// A tracked airplane on the ground: iOS's dark grey, zinc-600 (7.7:1).
@@ -200,6 +206,8 @@ enum WingtipColor {
         static let convective = rgb(0xC2410C)
         static let icing = rgb(0x2563EB)
         static let turbulence = rgb(0xD97706)
+        /// Turbulence's words on the map's white (a PIREP's level, an area's label): the amber deepened to 5:1, where the area's own is 3.2:1, under WCAG's 4.5:1 for small text.
+        static let turbulenceText = rgb(0xB45309)
         static let ifr = rgb(0x7C3AED)
         /// Mountains obscured.
         static let mountains = rgb(0x78716C)
@@ -944,14 +952,10 @@ enum WingtipRadius {
 /// Motion: durations in seconds, curves as cubic-bezier points.
 enum WingtipMotion {
     static let sheet: TimeInterval = 0.3
-    static let sheetLeast: TimeInterval = 0.22
-    static let sheetMost: TimeInterval = 0.35
     static let sheetEase = Animation.timingCurve(0, 0, 0.58, 1, duration: 0.3)
-    static let sheetBackEase = Animation.timingCurve(0.2, 0.9, 0.3, 1, duration: 0.3)
     static let drawer: TimeInterval = 0.45
     static let drawerEase = Animation.timingCurve(0.32, 0.72, 0, 1, duration: 0.3)
     static let fade: TimeInterval = 0.2
-    static let quick: TimeInterval = 0.15
     static let page: TimeInterval = 0.25
     static let skeletonPulse: TimeInterval = 1.5
 }
@@ -986,6 +990,13 @@ enum WingtipMap {
     static let airspaceFaded: Double = 0.35
     static let airspaceHeld: Double = 1.8
     static let airspaceLabelFaded: Double = 0.6
+    static let labelSmall: Double = 11
+    static let label: Double = 12
+    static let labelLarge: Double = 13
+    static let labelCount: Double = 14
+    static let labelRunway: Double = 16
+    static let labelHalo: Double = 2
+    static let labelHaloNight: Double = 0.6
 }
 
 /// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.
@@ -1020,6 +1031,5 @@ enum WingtipSize {
     static let panel: CGFloat = 384
     static let panelWide: CGFloat = 448
     static let desktop: CGFloat = 1024
-    static let refreshPull: CGFloat = 64
     static let glassBlur: CGFloat = 15
 }

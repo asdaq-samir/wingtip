@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { showError } from "../../lib/problems";
 import { TEXT } from "../../lib/text";
@@ -7,21 +7,25 @@ import { Shown } from "../../lib/shown";
 import DevGuard from "../../components/DevGuard";
 import MapPanel from "../../components/MapPanel";
 import { ConsoleInPanelContext, useConsoleOpen, insetVars, setMapInsets, type PanelState } from "../../lib/mapChrome";
-import RouteForm from "../../components/RouteForm";
 import { EngineGate } from "../../lib/engine/engineGate";
 import { useWarmAirportIndex } from "../../lib/airportIndex";
 import { useHomeAirportSync } from "../../lib/homeAirport";
-import { LinkSignIn, TvLinkHost } from "../pilot";
+import { LinkSignIn } from "../pilot";
 import { EmergencyHost } from "../emergency";
 import { AirplaneProfileHost } from "../airplane";
 import { AutoLogbookHost } from "../logbook-auto";
 import { SharedFlightHost } from "../shared-flight";
-import { BootMap } from "../plan";
+import { BootMap } from "../plan-map";
 import { MODES, type Mode } from "./modes";
 import { isDesktopNow, useIsDesktop } from "../../hooks/use-desktop";
 import { useShortcuts } from "../../hooks/use-shortcuts";
 import ConsoleLayer from "./ConsoleLayer";
-import type { WorkspacePieces } from "./workspace";
+import type { WorkspacePieces } from "../../lib/workspace";
+
+/** The plain route form, for a workspace with no route box of its own (the
+ *  developer's and the Studio's; the planner's is its own, FplRoute): on a
+ *  chunk of its own, with its airport pickers, off the pilot's first load. */
+const RouteForm = lazy(() => import("../../components/RouteForm"));
 
 /**
  * The one page, in three modes: the pilot's planner, the developer's
@@ -35,8 +39,8 @@ import type { WorkspacePieces } from "./workspace";
  * route, how far the panel is out, the console) lives here once.
  *
  * How far the panel is out is the address on the pilot's page while it
- * is all the way out (`?view=briefing`), so a pasted link lands on the
- * briefing and the back button leaves it; the rest of the time, and on
+ * is all the way out (`?view=full`), so a pasted link lands with it
+ * all the way out and the back button lowers it; the rest of the time, and on
  * the developer's page, it is plain state.
  */
 export default function MapPage({ mode }: { mode: Mode }) {
@@ -100,8 +104,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
   // is out of sight (lib/airportIndex).
   useWarmAirportIndex(mode === "pilot");
   useHomeAirportSync(); // the account's home base and this device's home airport, one field
-  const briefingInAddress = address.view === "briefing";
-  const panel: PanelState = mode === "pilot" ? (briefingInAddress ? "full" : localPanel === "full" ? "peek" : localPanel) : localPanel;
+  const fullInAddress = address.view === "full";
+  const panel: PanelState = mode === "pilot" ? (fullInAddress ? "full" : localPanel === "full" ? "peek" : localPanel) : localPanel;
   // The panel moves the moment the address says so: nuqs changes the
   // address's state at once, where React Router landed a navigation in a
   // transition, which a busy page (the plan streaming in) held back, and
@@ -110,10 +114,10 @@ export default function MapPage({ mode }: { mode: Mode }) {
   const setPanel = useCallback(
     (next: PanelState) => {
       setLocalPanel(next);
-      if (mode !== "pilot" || (next === "full") === briefingInAddress) return;
-      void setAddress({ view: next === "full" ? "briefing" : null });
+      if (mode !== "pilot" || (next === "full") === fullInAddress) return;
+      void setAddress({ view: next === "full" ? "full" : null });
     },
-    [mode, briefingInAddress, setAddress],
+    [mode, fullInAddress, setAddress],
   );
 
   // The console, the account page: opened from the account button over
@@ -177,14 +181,16 @@ export default function MapPage({ mode }: { mode: Mode }) {
     <>
       <div className="min-w-0 flex-1">
         {pieces.route ?? (
-          <RouteForm
-            dep={dep}
-            dest={dest}
-            onDepChange={setDep}
-            onDestChange={setDest}
-            onSubmit={() => pieces.submit?.()}
-            disabled={pieces.loading}
-          />
+          <Suspense fallback={null}>
+            <RouteForm
+              dep={dep}
+              dest={dest}
+              onDepChange={setDep}
+              onDestChange={setDest}
+              onSubmit={() => pieces.submit?.()}
+              disabled={pieces.loading}
+            />
+          </Suspense>
         )}
       </div>
       {pieces.actions && <div className="flex shrink-0 items-center">{pieces.actions}</div>}
@@ -226,7 +232,6 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 <title>{title}</title>
                 {/* An emailed sign-in link lands here (#signin=…), finished in the app's own dialog. */}
                 <LinkSignIn />
-                <TvLinkHost />
                 {/* The emergency assistant (features/emergency); an airplane's profile, from any N-number (features/airplane). */}
                 <EmergencyHost />
                 <AirplaneProfileHost />
@@ -272,7 +277,6 @@ export default function MapPage({ mode }: { mode: Mode }) {
                     pages={pieces.pages}
                     layer={pieces.alone ? "card" : "tab"}
                     foot={pieces.foot}
-                    cardOver={!!pieces.cardOver}
                     flying={!!pieces.flying}
                     // Kept too where the row holds the workspace's actions: one can own a card in the
                     // panel (Train's Filter, a ResponsivePopover), and the card's own coming up hides the

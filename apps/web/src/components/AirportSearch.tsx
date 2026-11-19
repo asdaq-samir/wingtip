@@ -82,7 +82,14 @@ export default function AirportSearch({
           to type. */}
       <div className="flex shrink-0 items-center gap-2">
         <div
-          className={cn("flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full bg-foreground/8 px-4 text-muted-foreground", TEXT.row)}
+          className={cn(
+            "flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full bg-foreground/8 px-4 text-muted-foreground",
+            // Focused, a fine ring in the tint round it, as Apple's field
+            // has and the one search's does (OneSearchField): the field's
+            // own outline is put away, and it showed none at all.
+            "focus-within:ring-1 focus-within:ring-tint",
+            TEXT.row,
+          )}
         >
           <Search className="size-5 shrink-0" aria-hidden="true" />
           <CommandField
@@ -98,7 +105,9 @@ export default function AirportSearch({
             onKeyDown={(e) => {
               // What was typed goes through when the rows are not the
               // answer to it yet, and when the lookup has nothing for it
-              // (a private strip, say).
+              // (a private strip, say). Base UI's Enter would take the lit
+              // row of an older answer and has no prop for rows that are not
+              // the answer yet, so its handler is kept from running.
               if (e.key === "Enter" && typed && !(answered && rows.length > 0)) {
                 e.preventDefault();
                 e.preventBaseUIHandler();
@@ -107,7 +116,7 @@ export default function AirportSearch({
             }}
           />
         </div>
-        <CloseButton onClick={onClose} data-testid="picker-close" />
+        <CloseButton onClick={onClose} />
       </div>
       {/* Its own height, not shrunk: with the keyboard up the sheet is
           short, and the tiles were squeezed to a sliver of their tops. */}

@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import app.wingtipmaps.gateway.domain.Pilot;
+import app.wingtipmaps.gateway.service.EndorsementSigning;
 import app.wingtipmaps.gateway.service.InstructorRefusedException;
 import app.wingtipmaps.gateway.service.InstructorService;
 import app.wingtipmaps.gateway.service.LessonService;
@@ -43,6 +44,9 @@ class InstructorControllerTest {
 
     @MockitoBean
     private InstructorService instructors;
+
+    @MockitoBean
+    private EndorsementSigning signing;
 
     @MockitoBean
     private LessonService lessons;
@@ -80,14 +84,14 @@ class InstructorControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(SIGN))
                 .andExpect(status().isNotFound());
-        verify(instructors, never()).sign(any(), any(), any(), any());
+        verify(signing, never()).sign(any(), any(), any(), any());
     }
 
     @Test
     void aRefusalIsAnsweredWithItsOwnStatusAndWords() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(CFI));
         given(instructors.student(CFI, 8L)).willReturn(Optional.of(STUDENT));
-        given(instructors.sign(eq(CFI), eq(STUDENT), any(), any()))
+        given(signing.sign(eq(CFI), eq(STUDENT), any(), any()))
                 .willThrow(new InstructorRefusedException(
                         HttpStatus.CONFLICT, "The words have changed since you read them."));
         mockMvc.perform(post("/api/instructor/students/8/endorsements")

@@ -73,27 +73,6 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/auth/capabilities`.
     /// - Remark: Generated from `#/paths//api/auth/capabilities/get(capabilities)`.
     func capabilities(_ input: Operations.Capabilities.Input) async throws -> Operations.Capabilities.Output
-    /// A code for a TV to sign in with
-    ///
-    /// The TV shows `userCode` and the address `verificationPath` on this site, and asks /api/auth/device/token with `deviceCode` every `interval` seconds until a pilot signed in on a phone types the code in. 429 past twenty an hour from one place.
-    ///
-    /// - Remark: HTTP `POST /api/auth/device`.
-    /// - Remark: Generated from `#/paths//api/auth/device/post(start)`.
-    func start(_ input: Operations.Start.Input) async throws -> Operations.Start.Output
-    /// Sign in the TV showing this code as the pilot signed in here
-    ///
-    /// From the phone, signed in. 404 for a code no TV is showing now (mistyped, used or ten minutes old); 429 past ten tries in ten minutes.
-    ///
-    /// - Remark: HTTP `POST /api/auth/device/approve`.
-    /// - Remark: Generated from `#/paths//api/auth/device/approve/post(approve)`.
-    func approve(_ input: Operations.Approve.Input) async throws -> Operations.Approve.Output
-    /// The TV asking whether its code has been typed in
-    ///
-    /// 202 while not yet; 200 once it has, the TV then signed in on this session, the code spent; 410 for a code ten minutes old or unknown, for which the TV asks for a new one.
-    ///
-    /// - Remark: HTTP `POST /api/auth/device/token`.
-    /// - Remark: Generated from `#/paths//api/auth/device/token/post(token)`.
-    func token(_ input: Operations.Token.Input) async throws -> Operations.Token.Output
     /// Start a magic-link sign-in
     ///
     /// Always 202 -- the response never reveals whether the address has signed in before.
@@ -565,45 +544,6 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//api/auth/capabilities/get(capabilities)`.
     public func capabilities(headers: Operations.Capabilities.Input.Headers = .init()) async throws -> Operations.Capabilities.Output {
         try await capabilities(Operations.Capabilities.Input(headers: headers))
-    }
-    /// A code for a TV to sign in with
-    ///
-    /// The TV shows `userCode` and the address `verificationPath` on this site, and asks /api/auth/device/token with `deviceCode` every `interval` seconds until a pilot signed in on a phone types the code in. 429 past twenty an hour from one place.
-    ///
-    /// - Remark: HTTP `POST /api/auth/device`.
-    /// - Remark: Generated from `#/paths//api/auth/device/post(start)`.
-    public func start(headers: Operations.Start.Input.Headers = .init()) async throws -> Operations.Start.Output {
-        try await start(Operations.Start.Input(headers: headers))
-    }
-    /// Sign in the TV showing this code as the pilot signed in here
-    ///
-    /// From the phone, signed in. 404 for a code no TV is showing now (mistyped, used or ten minutes old); 429 past ten tries in ten minutes.
-    ///
-    /// - Remark: HTTP `POST /api/auth/device/approve`.
-    /// - Remark: Generated from `#/paths//api/auth/device/approve/post(approve)`.
-    public func approve(
-        headers: Operations.Approve.Input.Headers = .init(),
-        body: Operations.Approve.Input.Body
-    ) async throws -> Operations.Approve.Output {
-        try await approve(Operations.Approve.Input(
-            headers: headers,
-            body: body
-        ))
-    }
-    /// The TV asking whether its code has been typed in
-    ///
-    /// 202 while not yet; 200 once it has, the TV then signed in on this session, the code spent; 410 for a code ten minutes old or unknown, for which the TV asks for a new one.
-    ///
-    /// - Remark: HTTP `POST /api/auth/device/token`.
-    /// - Remark: Generated from `#/paths//api/auth/device/token/post(token)`.
-    public func token(
-        headers: Operations.Token.Input.Headers = .init(),
-        body: Operations.Token.Input.Body
-    ) async throws -> Operations.Token.Output {
-        try await token(Operations.Token.Input(
-            headers: headers,
-            body: body
-        ))
     }
     /// Start a magic-link sign-in
     ///

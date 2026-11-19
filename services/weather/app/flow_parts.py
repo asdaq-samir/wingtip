@@ -19,7 +19,7 @@ import time
 from datetime import datetime, timedelta
 
 import numpy as np
-from wingtip import weather_store
+from wingtip import utc, weather_store
 from wingtip.units import M_PER_FT
 
 from . import flow_aloft, flow_awc, flow_dafs, flow_grid, flow_nomads, flow_store
@@ -68,7 +68,7 @@ def guarded(source: str, make, held: dict | None) -> dict | None:
 def cycle_of(key: dict | None) -> datetime | None:
     if not key or not key.get("cycle"):
         return None
-    return datetime.fromisoformat(key["cycle"].replace("Z", "+00:00"))
+    return utc.parse(key["cycle"])
 
 
 def _keeps(held: dict | None, newest: datetime, numbers: bool = False) -> bool:
@@ -153,7 +153,7 @@ def aloft(valid: datetime, now: datetime, levels: dict, held: dict | None, fallb
     GFS run posted; the part held kept while its run is."""
     for run, hourly in flow_nomads.tries(valid, now)["gfs"]:
         step = flow_aloft.nearest_step(hourly)
-        key = {"run": flow_nomads.iso(run), "forecast_hour": step, "fallback": fallback}
+        key = {"run": utc.iso(run), "forecast_hour": step, "fallback": fallback}
         if held and held.get("key") == key and flow_store.stored(held) and held.get("numbers"):
             return held
         if time.time() - flow_nomads.NOT_UP.get(("aloft", run, step), 0) < flow_nomads.NOT_UP_RETRY_S:

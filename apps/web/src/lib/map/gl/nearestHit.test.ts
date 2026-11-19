@@ -1,6 +1,6 @@
-import type { MapGeoJSONFeature } from "maplibre-gl";
+import type { Map as MlMap, MapGeoJSONFeature } from "maplibre-gl";
 import { describe, expect, test } from "vitest";
-import { nearestHit } from "./glLayer";
+import { nearestHit, pickTap, type GlTap } from "./glLayer";
 import { TAP } from "./layers/common";
 
 // A flat projection for the test: a degree a hundred pixels, north up.
@@ -40,5 +40,28 @@ describe("nearestHit", () => {
 
   test("nothing found, nothing hit", () => {
     expect(nearestHit([], finger, TAP.mark, project)).toBeNull();
+  });
+});
+
+describe("pickTap", () => {
+  const finger = { x: 0, y: 0 };
+  // Each tap's own finder hands back its mark: the style's layers are not asked.
+  const map = { project } as unknown as MlMap;
+  const tap = (key: string, rank: number, lon: number): GlTap => ({
+    layers: [],
+    reach: TAP.mark,
+    rank,
+    onTap: () => {},
+    find: () => point(key, lon, 0),
+  });
+
+  test("of one rank, the mark nearest the finger, whichever was registered first", () => {
+    const taps = [tap("field", TAP.rank.mark, 0.2), tap("airplane", TAP.rank.mark, 0)];
+    expect(pickTap(map, taps, finger)?.hit.properties.key).toBe("airplane");
+  });
+
+  test("a lower rank before a nearer mark of a higher one", () => {
+    const taps = [tap("airplane", TAP.rank.mark, 0), tap("route field", TAP.rank.field, 0.2)];
+    expect(pickTap(map, taps, finger)?.hit.properties.key).toBe("route field");
   });
 });

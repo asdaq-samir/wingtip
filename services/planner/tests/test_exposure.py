@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 import pytest
 from shapely.geometry import box
-from wingtip import data_cycles
+from wingtip import data_cycles, utc
 
 from app import exposure
 
@@ -137,7 +137,7 @@ def test_a_tfr_beside_the_route_is_placed_where_the_route_comes_nearest():
 def test_a_tfr_with_no_shape_is_placed_by_its_distance_along():
     on = exposure.tfrs(legs(), [{"notam_id": "6/1", "geometry": {"type": "MultiPolygon"}, "along_track_nm": 90.0}])[0]["on_route"]
     assert on["legs"] == [1] and on["enter"].startswith("2026-10-04T14:4") and on["when"] is None
-    assert abs(exposure._unix(on["enter"]) - at(45)) < 10
+    assert abs(utc.epoch_or_none(on["enter"]) - at(45)) < 10
 
 
 def test_a_pilot_report_is_abeam_where_it_was_made_with_when_it_was_made():

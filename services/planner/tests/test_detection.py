@@ -4,7 +4,7 @@ again, and a new cycle of tiles is read afresh."""
 
 import numpy as np
 import pytest
-from wingtip import charts, chartvision
+from wingtip import chart_serving, chartvision
 
 from app import detection
 
@@ -16,8 +16,8 @@ KEY = ("C81-KDLH", 4.0)
 def tiles(tmp_path, monkeypatch):
     """The tile cache in a directory of the test's own, serving one cycle."""
     monkeypatch.setattr(detection, "CHART_TILE_CACHE_DIR", tmp_path)
-    monkeypatch.setattr(charts, "serving_cycle", lambda: "2026-09-03")
-    monkeypatch.setattr(charts, "tiles_revision", lambda cycle: 0)
+    monkeypatch.setattr(chart_serving, "serving_cycle", lambda: "2026-09-03")
+    monkeypatch.setattr(chart_serving, "tiles_revision", lambda cycle: 0)
     return tmp_path
 
 
@@ -73,7 +73,7 @@ def test_a_finished_read_is_kept_and_a_planner_that_never_read_it_replays_it(til
 def test_a_new_cycle_of_tiles_is_read_afresh(tiles, reads, monkeypatch):
     _finished(detection.detect_job(KEY, C81, KDLH, 4.0))
     detection._DETECT_JOBS.clear()
-    monkeypatch.setattr(charts, "serving_cycle", lambda: "2026-10-29")
+    monkeypatch.setattr(chart_serving, "serving_cycle", lambda: "2026-10-29")
 
     _finished(detection.detect_job(KEY, C81, KDLH, 4.0))
 

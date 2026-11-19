@@ -1,5 +1,4 @@
 import type {
-  ExpressionSpecification,
   LayerSpecification,
   LineLayerSpecification,
   RasterLayerSpecification,
@@ -9,8 +8,9 @@ import type {
 import type { ChartInfo } from "../../api/types";
 import type { AirspaceVolume } from "../sources/overlayTypes";
 import { chartPair, tileTemplate } from "../sources/tiles";
-import { COURSE_MAGENTA, ROUTE_GREEN, ROUTE_GREEN_NIGHT } from "../marks/chartColors";
 import { CHART } from "../../tokens";
+import { chartBrightness, chartContrast, NIGHT_DIM } from "../chartLook";
+import { LABEL_SIZE } from "./layers/common";
 
 /**
  * The map's style (the owner, 2026-11-06: "Like ForeFlight, I want
@@ -60,11 +60,18 @@ export interface ChartStyle {
 }
 
 /** The chart's ink by day, dimmed at night (half the brightness, a
- *  little more contrast) and brightened in sunlight (a fifth more
- *  contrast and colour). By day a touch more
- *  contrast and colour than the scan (0.1 each), as ForeFlight's chart
- *  reads beside ours (the owner's screenshots, 2026-11-07). */
-export function chartPaint(night: boolean, sunlight: boolean): RasterLayerSpecification["paint"] {
+ *  little more contrast) and brightened in sunlight (a fifth more contrast
+ *  and colour, and never dimmed). By day a touch more contrast and colour
+ *  than the scan (0.1 each), as ForeFlight's chart reads beside ours (the
+ *  owner's screenshots, 2026-11-07). `dim` is the Map card's Dimmer, how
+ *  far the tiles are dimmed (the night's half unless given), and
+ *  `contrast` its Contrast, an offset on the look's own (lib/map/chartLook). */
+export function chartPaint(
+  night: boolean,
+  sunlight: boolean,
+  dim = night ? NIGHT_DIM : 0,
+  contrast = 0,
+): RasterLayerSpecification["paint"] {
   return {
     // Each tile drawn in the frame it comes: a fade on every pan is
     // movement nobody asked for.
@@ -74,8 +81,8 @@ export function chartPaint(night: boolean, sunlight: boolean): RasterLayerSpecif
     // 2026-10-28), and between whole levels linear sampling keeps the
     // chart's type from shimmering as a pinch passes through them.
     "raster-resampling": "linear",
-    "raster-brightness-max": night ? 0.5 : 1,
-    "raster-contrast": sunlight ? 0.2 : night ? 0.13 : DAY_CONTRAST,
+    "raster-brightness-max": chartBrightness(dim, sunlight, night),
+    "raster-contrast": chartContrast(sunlight ? 0.2 : night ? 0.13 : DAY_CONTRAST, contrast),
     "raster-saturation": sunlight ? 0.2 : night ? 0 : DAY_SATURATION,
   };
 }
@@ -147,27 +154,6 @@ export const AIRSPACE_INK: Record<AirspaceClass, { colour: string; dash?: number
 const AIRSPACE_FROM: Record<AirspaceClass, number> = { B: 6, C: 7, D: 8, E: 8 };
 export const AIRSPACE_LABELS_FROM = 8;
 
-/** A height in the tab's words: the surface "SFC", else its feet MSL
- *  whole, "2300", as ForeFlight writes them. */
-const feet = (ft: number) => String(Math.round(ft));
-
-/** A volume's altitudes on one line, in its tab on the ring as ForeFlight
- *  writes them (the owner's screenshot over Madison, 2026-11-08): the
- *  class, then the floor and the ceiling in feet MSL with an en dash,
- *  "C: 2300–4900", "B: SFC–10000", "D: SFC–2500"; the surface "SFC". A
- *  ceiling the airspace stops under (UPPER_DESC TNI, "up to but not
- *  including", which the sectional prints as a minus before the figure:
- *  Chart User's Guide, Airspace) is "<3000": a Class D under a Class B
- *  shelf. The figures are the FAA's, as the tiles and the planner carry
- *  them; only the wording is the map's. */
-export function airspaceText(
-  volume: Pick<AirspaceVolume, "airspace_class" | "floor_ft" | "floor_sfc" | "ceiling_ft" | "ceiling_excluded">,
-): string | null {
-  if (volume.ceiling_ft == null) return null;
-  const floor = volume.floor_sfc ? "SFC" : feet(volume.floor_ft);
-  return `${volume.airspace_class}: ${floor}–${volume.ceiling_excluded ? "<" : ""}${feet(volume.ceiling_ft)}`;
-}
-
 export const AIRSPACE_LINE_LAYERS = (["D", "C", "B"] as const).map((c) => `airspace-${c}`);
 
 /** The dark tab an airspace's altitudes sit in (icon-text-fit stretches
@@ -179,16 +165,13 @@ export const airspaceTab = (cls: string) => `airspace|tab|${cls}`;
  *  in the map's first style. */
 export const OVERLAY_SOURCE = "faa-overlays";
 
-/** A figure of a tile's feature as airspaceText writes it: whole feet. */
-const feetOf = (field: string) => ["to-string", ["round", ["get", field]]];
-/** airspaceText as an expression on the overlay tiles' `airspace` and
- *  `airspace_labels` fields (wingtip.vector_tiles): "C: 2300–4900",
- *  "B: SFC–10000", "D: SFC–<3000" -- the floor SFC where it is the
- *  surface (0 ft, as the planner's floor_sfc), the ceiling with "<"
- *  where it is "up to but not including" it (UPPER_DESC TNI). */
-const FLOOR = ["case", ["==", ["coalesce", ["get", "floor_ft"], 0], 0], "SFC", feetOf("floor_ft")];
-const TOP = ["concat", ["case", ["==", ["get", "ceiling_excluded"], true], "<", ""], feetOf("ceiling_ft")];
-const AIRSPACE_TILE_LABEL = ["concat", ["get", "class"], ": ", FLOOR, "–", TOP];
+/** A shelf's altitudes as the sectional writes them, the ceiling over the
+ *  floor in hundreds of feet MSL ("100" over "30", "T" over "SFC", "-30"
+ *  for a Class D): the engine's words (airspace_shelf_label, the Chart
+ *  User's Guide's), which the charts job writes into the tiles'
+ *  `airspace_labels` (`tab`, wingtip.airspace_tabs), the 3D view's shelves
+ *  the same, so the map formats no figure of its own. */
+const AIRSPACE_TAB = ["get", "tab"];
 
 /** A width by zoom, MapLibre's levels from the app's. */
 const byZoom = (stops: [appZoom: number, px: number][]) =>
@@ -218,10 +201,8 @@ const BAND_OFFSET = byZoom(BAND_STOPS.map(([z, w]) => [z, w / 2 + 1.5]));
  *  MapLibre's own collision. From the overlay tiles: the rings their
  *  `airspace` layer's polygons; the labels one a shelf, on its ring and
  *  turned along it, from `airspace_labels` (the charts job's
- *  airspace_label_features), or where an older archive has not got that
- *  layer, along every ring at the spacing as before. Class E is in the
- *  tiles but not drawn. */
-export function airspaceLayers(font: string[], labelPoints = true): LayerSpecification[] {
+ *  airspace_label_features). Class E is in the tiles but not drawn. */
+export function airspaceLayers(font: string[]): LayerSpecification[] {
   const from = { source: OVERLAY_SOURCE, "source-layer": "airspace" };
   const lines: LineLayerSpecification[] = (["D", "C", "B"] as const).flatMap((c) => {
     const ink = AIRSPACE_INK[c];
@@ -246,61 +227,42 @@ export function airspaceLayers(font: string[], labelPoints = true): LayerSpecifi
       },
     ];
   });
-  const tab = {
-    "text-field": AIRSPACE_TILE_LABEL as never,
-    "text-font": font,
-    "text-size": byZoom([
-      [8, 11],
-      [12, 13],
-    ]),
-    "icon-image": ["concat", "airspace|tab|", ["get", "class"]] as never,
-    "icon-text-fit": "both" as const,
-    "icon-text-fit-padding": [2, 6, 2, 6] as [number, number, number, number],
-    "text-padding": 4,
-    // Never on another tab or an airport's mark (the marks' layers are
-    // above and place first); where tabs compete the nearer class wins
-    // (B, C, D).
-    "text-allow-overlap": false,
-    "icon-allow-overlap": false,
-    "symbol-sort-key": ["match", ["get", "class"], "B", 0, "C", 1, 2] as never,
+  const labels: SymbolLayerSpecification = {
+    id: "airspace-labels",
+    type: "symbol",
+    source: OVERLAY_SOURCE,
+    "source-layer": "airspace_labels",
+    minzoom: glZoom(AIRSPACE_LABELS_FROM),
+    filter: ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "tab"]],
+    layout: {
+      "text-field": AIRSPACE_TAB as never,
+      "text-font": font,
+      "text-size": byZoom([
+        [8, LABEL_SIZE.small],
+        [12, LABEL_SIZE.large],
+      ]),
+      // The ceiling over the floor, close as the chart sets them.
+      "text-line-height": 1.1,
+      "icon-image": ["concat", "airspace|tab|", ["get", "class"]] as never,
+      "icon-text-fit": "both" as const,
+      "icon-text-fit-padding": [2, 6, 2, 6] as [number, number, number, number],
+      "text-padding": 4,
+      // Never on another tab or an airport's mark (the marks' layers are
+      // above and place first); where tabs compete the nearer class wins
+      // (B, C, D).
+      "text-allow-overlap": false,
+      "icon-allow-overlap": false,
+      "symbol-sort-key": ["match", ["get", "class"], "B", 0, "C", 1, 2] as never,
+      // Along the ring where it sits: the tiles' turn, upright on a
+      // north-up chart, and turned with the chart when the pilot turns the
+      // map, as the sectional's own printed tabs are.
+      "text-rotate": ["get", "angle"],
+      "icon-rotate": ["get", "angle"],
+      "text-rotation-alignment": "map",
+      "icon-rotation-alignment": "map",
+    },
+    paint: { "text-color": CHART.casing },
   };
-  const labels: SymbolLayerSpecification = labelPoints
-    ? {
-        id: "airspace-labels",
-        type: "symbol",
-        source: OVERLAY_SOURCE,
-        "source-layer": "airspace_labels",
-        minzoom: glZoom(AIRSPACE_LABELS_FROM),
-        filter: ["in", ["get", "class"], ["literal", ["B", "C", "D"]]],
-        layout: {
-          ...tab,
-          // Along the ring where it sits: the tiles' turn, upright already;
-          // the map never turns (GlMapShell), so the chart's north is the
-          // screen's.
-          "text-rotate": ["get", "angle"],
-          "icon-rotate": ["get", "angle"],
-          "text-rotation-alignment": "map",
-          "icon-rotation-alignment": "map",
-        },
-        paint: { "text-color": CHART.casing },
-      }
-    : {
-        id: "airspace-labels",
-        type: "symbol",
-        ...from,
-        minzoom: glZoom(AIRSPACE_LABELS_FROM),
-        filter: ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "ceiling_ft"]],
-        layout: {
-          ...tab,
-          "symbol-placement": "line",
-          "symbol-spacing": 320,
-          "text-rotation-alignment": "viewport",
-          "icon-rotation-alignment": "viewport",
-          "text-keep-upright": true,
-          "text-max-angle": 30,
-        },
-        paint: { "text-color": CHART.casing },
-      };
   return [...lines, labels];
 }
 
@@ -361,217 +323,4 @@ export function specialUseLayers(): LineLayerSpecification[] {
       },
     },
   ];
-}
-
-interface RoutePoint {
-  /** A checkpoint's key ("lat,lon"), or an airport's ident. */
-  key: string;
-  lat: number;
-  lon: number;
-  /** A checkpoint's number in the nav log, or an airport's ident. */
-  label: string;
-  colour: string;
-}
-
-export const ROUTE_SOURCE = "route";
-export const CHECKPOINT_SOURCE = "checkpoints";
-
-/** The course as a line (its edge and core: routeLayers), and with it each
- *  leg's own piece of it (`part: "leg"`, its nav-log key), which the green
- *  casing is drawn along when that leg is the one selected. */
-export function routeFeature(
-  line: [number, number][],
-  legs: { key: string; from: { lat: number; lon: number }; to: { lat: number; lon: number } }[] = [],
-): GeoJSON.FeatureCollection<GeoJSON.LineString> {
-  const lonLat = (pts: [number, number][]) => pts.map(([lat, lon]) => [lon, lat]);
-  const features: GeoJSON.Feature<GeoJSON.LineString>[] = [
-    { type: "Feature", properties: { part: "route" }, geometry: { type: "LineString", coordinates: lonLat(line) } },
-  ];
-  let from = 0;
-  for (const leg of legs) {
-    const piece = legPiece(line, leg.from, leg.to, from);
-    if (!piece) continue;
-    from = piece.end;
-    features.push({
-      type: "Feature",
-      properties: { part: "leg", leg: leg.key },
-      geometry: { type: "LineString", coordinates: lonLat(piece.points) },
-    });
-  }
-  return { type: "FeatureCollection", features };
-}
-
-/** Where along a polyline a point lies: the segment index plus the fraction
- *  of it, nearest from `after` on (a flat lat/lon fit is enough for
- *  matching a leg's end to the vertices the course was drawn through). */
-function along(line: [number, number][], p: { lat: number; lon: number }, after: number): number {
-  let best = after,
-    bestD = Infinity;
-  const kx = Math.cos((p.lat * Math.PI) / 180);
-  for (let i = Math.floor(after); i < line.length - 1; i++) {
-    const [la, lo] = line[i]!,
-      [lb, ob] = line[i + 1]!;
-    const dy = lb - la,
-      dx = (ob - lo) * kx;
-    const len2 = dx * dx + dy * dy;
-    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.lon - lo) * kx * dx + (p.lat - la) * dy) / len2));
-    const d = Math.hypot((p.lon - lo) * kx - t * dx, p.lat - la - t * dy);
-    if (d < bestD - 1e-12 && i + t >= after) {
-      bestD = d;
-      best = i + t;
-    }
-  }
-  return best;
-}
-
-/** The course between a leg's two ends, and where it ended along the line. */
-export function legPiece(
-  line: [number, number][],
-  from: { lat: number; lon: number },
-  to: { lat: number; lon: number },
-  after = 0,
-): { points: [number, number][]; end: number } | null {
-  if (line.length < 2) return null;
-  const a = along(line, from, after),
-    b = along(line, to, a);
-  const at = (pos: number): [number, number] => {
-    const i = Math.min(Math.floor(pos), line.length - 2),
-      t = pos - i;
-    const [la, lo] = line[i]!,
-      [lb, ob] = line[i + 1]!;
-    return [la + (lb - la) * t, lo + (ob - lo) * t];
-  };
-  const points: [number, number][] = [at(a)];
-  for (let i = Math.floor(a) + 1; i < line.length && i < b; i++) points.push(line[i]!);
-  points.push(at(b));
-  return b > a ? { points, end: b } : null;
-}
-
-export function pointFeatures(points: RoutePoint[]): GeoJSON.FeatureCollection<GeoJSON.Point, Omit<RoutePoint, "lat" | "lon">> {
-  return {
-    type: "FeatureCollection",
-    features: points.map(({ lat, lon, ...props }) => ({
-      type: "Feature",
-      properties: props,
-      geometry: { type: "Point", coordinates: [lon, lat] },
-    })),
-  };
-}
-
-/** The course's width by zoom, in GL levels: thin over the whole-country
- *  view, full where a pilot reads a leg. The green casing is wider by the
- *  same steps so a band of it shows either side of the magenta, and the
- *  dark edge wider again, a hairline round the green. */
-const widthByZoom = (stops: [number, number][]) => ["interpolate", ["linear"], ["zoom"], ...stops.flat()];
-// The green a band of 2.5 to 3.5 either side, as wide as ForeFlight's
-// reads at a phone's width; the edge a point round it.
-const CORE_WIDTH = widthByZoom([
-  [3, 2],
-  [6, 3],
-  [10, 4.5],
-  [14, 5.5],
-]);
-const CASING_WIDTH = widthByZoom([
-  [3, 5],
-  [6, 8],
-  [10, 10.5],
-  [14, 12.5],
-]);
-const EDGE_WIDTH = widthByZoom([
-  [3, 6.5],
-  [6, 10],
-  [10, 12.5],
-  [14, 14.5],
-]);
-const EDGE_WIDTH_SUN = widthByZoom([
-  [3, 7.5],
-  [6, 11.5],
-  [10, 14],
-  [14, 16],
-]);
-// With no green, the edge a point round the magenta (a little more in sunlight).
-const THIN_EDGE_WIDTH = widthByZoom([
-  [3, 3.5],
-  [6, 5],
-  [10, 6.5],
-  [14, 7.5],
-]);
-const THIN_EDGE_WIDTH_SUN = widthByZoom([
-  [3, 4],
-  [6, 5.5],
-  [10, 7],
-  [14, 8],
-]);
-
-/** The filter that draws the green casing and the outer edge framing it
- *  only along the leg whose Route Leg sheet is open (ForeFlight shows the
- *  green outline of the course only when it is selected, the owner,
- *  2026-11-09), none while no leg is. */
-export function selectedLegFilter(leg: string | null): ExpressionSpecification {
-  return ["all", ["==", ["get", "part"], "leg"], ["==", ["get", "leg"], leg ?? ""]] as ExpressionSpecification;
-}
-const WHOLE_ROUTE = ["==", ["get", "part"], "route"] as ExpressionSpecification;
-
-/** The green casing in each look (ROUTE_GREEN, as ForeFlight cases its
- *  course): full by day and in sunlight, a shade deeper at night so it
- *  does not glare off the dimmed chart. */
-export function routeCasingPaint(night: boolean): Record<string, unknown> {
-  return { "line-color": night ? ROUTE_GREEN_NIGHT : ROUTE_GREEN, "line-opacity": night ? 0.9 : 1, "line-width": CASING_WIDTH };
-}
-
-/** The dark edge round the green of a selected leg so it keeps its
- *  contrast against the sectional in each look: a soft rim by day, a
- *  stronger and wider one in sunlight, and at night a faint light one. */
-export function routeOuterPaint(night: boolean, sunlight: boolean): Record<string, unknown> {
-  if (night) return { "line-color": CHART.casing, "line-opacity": 0.35, "line-width": EDGE_WIDTH };
-  if (sunlight) return { "line-color": CHART.routeEdge, "line-opacity": 0.95, "line-width": EDGE_WIDTH_SUN };
-  return { "line-color": CHART.routeEdge, "line-opacity": 0.6, "line-width": EDGE_WIDTH };
-}
-
-/** The thin edge round the magenta alone, the whole course, selected or
- *  not: dark by day and in sunlight (the lifted chart's pastels wash a
- *  bare magenta out), a faint light one at night. No green. */
-export function routeEdgePaint(night: boolean, sunlight: boolean): Record<string, unknown> {
-  if (night) return { "line-color": CHART.casing, "line-opacity": 0.35, "line-width": THIN_EDGE_WIDTH };
-  if (sunlight) return { "line-color": CHART.routeEdge, "line-opacity": 0.9, "line-width": THIN_EDGE_WIDTH_SUN };
-  return { "line-color": CHART.routeEdge, "line-opacity": 0.55, "line-width": THIN_EDGE_WIDTH };
-}
-
-/** The course line: the magenta core with a thin edge, and under them the
- *  selected leg's outer edge and green casing (selectedLegFilter). */
-export function routeLayers(courseColour = COURSE_MAGENTA): LayerSpecification[] {
-  const round = { "line-join": "round", "line-cap": "round" } as const;
-  const outer: LineLayerSpecification = {
-    id: "route-outer",
-    type: "line",
-    source: ROUTE_SOURCE,
-    layout: round,
-    filter: selectedLegFilter(null),
-    paint: routeOuterPaint(false, false) as LineLayerSpecification["paint"],
-  };
-  const edge: LineLayerSpecification = {
-    id: "route-edge",
-    type: "line",
-    source: ROUTE_SOURCE,
-    layout: round,
-    filter: WHOLE_ROUTE,
-    paint: routeEdgePaint(false, false) as LineLayerSpecification["paint"],
-  };
-  const casing: LineLayerSpecification = {
-    id: "route-casing",
-    type: "line",
-    source: ROUTE_SOURCE,
-    layout: round,
-    filter: selectedLegFilter(null),
-    paint: routeCasingPaint(false) as LineLayerSpecification["paint"],
-  };
-  const core: LineLayerSpecification = {
-    id: "route-core",
-    type: "line",
-    source: ROUTE_SOURCE,
-    layout: round,
-    filter: WHOLE_ROUTE,
-    paint: { "line-color": courseColour, "line-width": CORE_WIDTH as never },
-  };
-  return [outer, edge, casing, core];
 }

@@ -9,6 +9,7 @@ import { useShownOverlay } from "../../sources/useShownOverlay";
 import { CHART } from "../../../tokens";
 import { useGlLayer, useGlMap, useGlPaint, type Slot } from "../glLayer";
 import { useDarkTheme } from "../useDarkTheme";
+import { useChartBrightness } from "../useChartLook";
 import { glZoom } from "../glStyle";
 import { MapCredits } from "../MapCredits";
 import { useGoogleAttribution } from "../googleCredit";
@@ -78,6 +79,10 @@ function PlainGround() {
 
 function LandWater() {
   useTiles("land-water", "base", "https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/{z}/{y}/{x}", 9);
+  // Dimmed as the chart beside it is (the Dimmer, useChartBrightness): its white
+  // land round the charts' edges was the brightest thing on a dark map
+  // (UI audit B10, 2026-11-17).
+  useGlPaint(["land-water"], { "raster-brightness-max": useChartBrightness() });
   return null;
 }
 

@@ -9,8 +9,8 @@
 import { altitudeWords } from "../../lib/readback";
 import type { AtcItem } from "./atcEngine";
 import { threeFigures } from "../../lib/format";
+import { capitalised } from "../../lib/capitals";
 
-const capital = (words: string) => words.charAt(0).toUpperCase() + words.slice(1);
 /** A place as said: spelled idents as they are, words in capitals as a
  *  chart names a fix. */
 const place = (said: string) => said.toUpperCase();
@@ -31,18 +31,18 @@ const POINTS: Record<string, string> = {
 export function itemWords(item: AtcItem): string {
   switch (item.kind) {
     case "altitude":
-      return `${capital(item.verb)}${item.limit ? ` ${item.limit}` : ""} ${altitudeWords(item.ft)}`;
+      return `${capitalised(item.verb)}${item.limit ? ` ${item.limit}` : ""} ${altitudeWords(item.ft)}`;
     case "expect":
       return `Expect ${altitudeWords(item.ft)}${item.min != null ? ` ${item.min} min after departure` : ""}`;
     case "heading":
       if (item.by_deg != null) return `Turn ${item.turn ?? ""} ${item.by_deg}°`.replace("  ", " ");
       if (item.deg == null) return "Runway heading";
-      return `${item.turn ? `${capital(item.turn)} heading` : "Heading"} ${threeFigures(item.deg)}`;
+      return `${item.turn ? `${capitalised(item.turn)} heading` : "Heading"} ${threeFigures(item.deg)}`;
     case "direct":
       return `Direct ${place(item.said)}`;
     case "route": {
       const via = item.places.map(place).join(", ");
-      const limit = item.limit ? `Cleared to ${capital(item.limit)}` : "Cleared";
+      const limit = item.limit ? `Cleared to ${capitalised(item.limit)}` : "Cleared";
       return `${limit}${via ? ` via ${via}` : ""}${item.as_filed ? ", then as filed" : ""}`;
     }
     case "class_b":
@@ -56,7 +56,7 @@ export function itemWords(item: AtcItem): string {
       return parts.join(", ");
     }
     case "frequency":
-      return `${item.facility ? `${capital(item.facility)} ` : "Contact "}${item.mhz}`;
+      return `${item.facility ? `${capitalised(item.facility)} ` : "Contact "}${item.mhz}`;
     case "squawk":
       return `Squawk ${item.code}`;
     case "altimeter":

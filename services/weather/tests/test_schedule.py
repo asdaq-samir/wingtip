@@ -6,7 +6,7 @@ how fresh each product is."""
 import time
 
 import pytest
-from wingtip import weather, weather_store
+from wingtip import weather, weather_status, weather_store
 
 from app import main, radar
 from app.settings import get_settings
@@ -88,6 +88,9 @@ def test_the_health_check_says_how_fresh_each_product_is(monkeypatch):
 
 def test_every_product_the_planner_reads_is_on_the_schedule():
     names = {p.name for p in main.PRODUCTS}
-    assert set(weather._CACHE_SOURCES) <= names
+    # wingtip.weather_status holds the planner's list of the reports it
+    # reads from the store (its status and preload walk it), since the
+    # weather module's split.
+    assert set(weather_status._CACHE_SOURCES) <= names
     assert {f"winds-{hr}" for hr in weather_store.WIND_PERIODS} <= names
     assert {"glmp", "tfrs", "radar"} <= names

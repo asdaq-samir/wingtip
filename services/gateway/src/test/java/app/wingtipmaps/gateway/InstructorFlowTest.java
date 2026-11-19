@@ -22,6 +22,7 @@ import app.wingtipmaps.gateway.planner.model.PlannerEndorsements;
 import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
 import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
 import app.wingtipmaps.gateway.repository.PilotRepository;
+import app.wingtipmaps.gateway.service.EndorsementSigning;
 import app.wingtipmaps.gateway.service.FlightService;
 import app.wingtipmaps.gateway.service.InstructorRefusedException;
 import app.wingtipmaps.gateway.service.InstructorService;
@@ -72,6 +73,9 @@ class InstructorFlowTest {
     private InstructorService instructors;
 
     @Autowired
+    private EndorsementSigning signing;
+
+    @Autowired
     private TrainingService training;
 
     @Autowired
@@ -100,6 +104,10 @@ class InstructorFlowTest {
 
     @org.junit.jupiter.api.BeforeEach
     void theEnginesAnswer() {
+        // The instructor's page lists 3 years back (14 CFR 61.189(c),
+        // instructor_records_since, held in the engine to shellFigures.json).
+        org.mockito.BDDMockito.given(planner.instructorRecordsSince(any()))
+                .willAnswer(ask -> ((LocalDate) ask.getArgument(0)).minusYears(3));
         org.mockito.BDDMockito.given(planner.endorsements(any(), any())).willAnswer(ask -> {
             List<PlannerHeldEndorsement> held = ask.getArgument(0);
             LocalDate flightOn = ask.getArgument(1);
@@ -219,7 +227,7 @@ class InstructorFlowTest {
     @Test
     void anEndorsementIsSignedAsReadWithTheAcsSignatureLine() {
         Pilot[] p = pair();
-        SignedEndorsement signed = instructors.sign(p[1], p[0], soloXc(p[0], null), NOW);
+        SignedEndorsement signed = signing.sign(p[1], p[0], soloXc(p[0], null), NOW);
         assertThat(signed.getSignature()).isEqualTo("/s/ 10-13-2026 J. J. Jones 987654321CFI RE 12-31-2027");
         assertThat(signed.getDigest()).hasSize(64);
         assertThat(training.training(p[0], List.of(), TODAY).signed())
@@ -233,7 +241,7 @@ class InstructorFlowTest {
         // Words other than the fields make are not signed.
         SignRequest changed = new SignRequest(
                 "solo-xc-flight", soloXc(p[0], null).fields(), "I certify something else.", TODAY, null);
-        assertThatThrownBy(() -> instructors.sign(p[1], p[0], changed, NOW))
+        assertThatThrownBy(() -> signing.sign(p[1], p[0], changed, NOW))
                 .isInstanceOfSatisfying(
                         InstructorRefusedException.class,
                         r -> assertThat(r.getStatusCode()).isEqualTo(HttpStatus.CONFLICT));
@@ -249,12 +257,12 @@ class InstructorFlowTest {
         LocalDate yesterday = TODAY.minusDays(1);
         instructors.setInstructor(
                 p[1], new InstructorRequest("J. J. Jones", "987654321CFI", yesterday, InstructorUntil.RE));
-        assertThat(instructors.sign(p[1], p[0], soloXc(p[0], null), NOW).getSignature())
+        assertThat(signing.sign(p[1], p[0], soloXc(p[0], null), NOW).getSignature())
                 .endsWith("987654321CFI RE " + yesterday.format(DateTimeFormatter.ofPattern("MM-dd-yyyy")));
         instructors.setInstructor(
                 p[1],
                 new InstructorRequest("J. J. Jones", "987654321CFI", LocalDate.of(2025, 11, 30), InstructorUntil.EXP));
-        assertThat(instructors.sign(p[1], p[0], soloXc(p[0], null), NOW).getSignature())
+        assertThat(signing.sign(p[1], p[0], soloXc(p[0], null), NOW).getSignature())
                 .endsWith("987654321CFI Exp. 11-30-2025");
     }
 
@@ -281,7 +289,7 @@ class InstructorFlowTest {
         Long link =
                 training.training(p[0], List.of(), TODAY).instructors().get(0).id();
         // A solo endorsement 91 days before the flight is not current for it.
-        instructors.sign(p[1], p[0], soloEndorsement(p[0], "solo-first"), NOW);
+        signing.sign(p[1], p[0], soloEndorsement(p[0], "solo-first"), NOW);
         LocalDate flightOn = TODAY.plusDays(91);
         instructors.askReview(p[0], new AskReviewRequest(flightId, link, "Cessna 172", flightOn, "Back by four"), NOW);
         assertThatThrownBy(() -> instructors.askReview(
@@ -293,7 +301,7 @@ class InstructorFlowTest {
         assertThat(waiting.flight().stops()).containsExactly("KRFD");
         assertThat(waiting.checks()).isEqualTo(CHECKS);
 
-        instructors.sign(p[1], p[0], soloXc(p[0], waiting.id()), NOW);
+        signing.sign(p[1], p[0], soloXc(p[0], waiting.id()), NOW);
         assertThat(instructors.instructor(p[1], NOW).reviews()).isEmpty();
         assertThat(training.training(p[0], List.of(), TODAY).reviews())
                 .singleElement()
@@ -311,7 +319,7 @@ class InstructorFlowTest {
     @Test
     void theInstructorKeepsTheirRecordWhenTheStudentsAccountGoes() {
         Pilot[] p = pair();
-        instructors.sign(p[1], p[0], soloEndorsement(p[0], "solo-first"), NOW);
+        signing.sign(p[1], p[0], soloEndorsement(p[0], "solo-first"), NOW);
         jdbc.update("DELETE FROM pilots WHERE id = ?", p[0].getId());
         assertThat(jdbc.queryForObject(
                         "SELECT count(*) FROM instructor_students WHERE student_id = ?", Integer.class, p[0].getId()))
@@ -324,11 +332,11 @@ class InstructorFlowTest {
     @Test
     void aVoidedEndorsementStaysOnRecordButHoldsNothing() {
         Pilot[] p = pair();
-        SignedEndorsement solo = instructors.sign(p[1], p[0], soloEndorsement(p[0], "solo-first"), NOW);
+        SignedEndorsement solo = signing.sign(p[1], p[0], soloEndorsement(p[0], "solo-first"), NOW);
         assertThat(instructors.instructor(p[1], NOW).students().get(0).soloUntil())
                 .isEqualTo(SOLO_UNTIL);
-        assertThat(instructors.voidEndorsement(p[1], solo.getId(), NOW)).isTrue();
-        assertThat(instructors.voidEndorsement(p[1], solo.getId(), NOW)).isFalse();
+        assertThat(signing.voidEndorsement(p[1], solo.getId(), NOW)).isTrue();
+        assertThat(signing.voidEndorsement(p[1], solo.getId(), NOW)).isFalse();
         assertThat(instructors.instructor(p[1], NOW).students().get(0).soloUntil())
                 .isNull();
         assertThat(training.training(p[0], List.of(), TODAY).signed())

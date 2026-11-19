@@ -50,7 +50,7 @@ interface AtcRadio {
    *  was chosen), for the pill, the captions and the card to name; null
    *  while none is held, as in every browser that cannot pick one. */
   input: HeardInput | null;
-  /** Stops the ATIS being heard (features/plan/lib/atis's hearAtis), while it is: the
+  /** Stops the ATIS being heard (features/place/atis's hearAtis), while it is: the
    *  radio or the microphone started meanwhile stops it first, so one
    *  recognizer listens at a time. */
   atisStop: (() => void) | null;

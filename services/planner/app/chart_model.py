@@ -16,7 +16,7 @@ from contextvars import ContextVar
 
 import pandas as pd
 from wingtip import chartfeatures, chartlabels, chartmodel
-from wingtip.pipeline import _publish
+from wingtip.pipeline_shared import _publish
 
 from . import chart_reader, chart_scorer, detection
 from .router_basics import load_hop

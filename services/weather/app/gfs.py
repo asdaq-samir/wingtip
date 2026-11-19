@@ -38,24 +38,19 @@ import math
 import time
 from datetime import datetime, timedelta, timezone
 
-import gribberish
 import numpy as np
-import requests
 import wingtip_native
-from wingtip import outside, weather_store
-from wingtip.config import REQUEST_HEADERS as HEADERS
+from wingtip import utc, weather_store
+
+from . import nomads
 
 log = logging.getLogger(__name__)
 
-FILTER_URL = "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl"
 #: hPa levels asked for: the FB's 3,000 to 39,000 ft in the standard
 #: atmosphere (925 hPa is about 2,500 ft, 200 hPa about 38,700 ft).
 LEVELS_HPA = (925, 850, 700, 600, 500, 400, 300, 250, 200)
 #: The lower 48, with the stations' edges inside it.
 BOX = {"toplat": 55, "bottomlat": 20, "leftlon": -130, "rightlon": -60}
-#: A run is on NOMADS about three and a half hours after its hour; looked
-#: for from four.
-POSTED_AFTER = timedelta(hours=4)
 RUNS_TRIED = 3
 #: The last forecast hour NOMADS posts hourly; three-hourly after it.
 HOURLY_TO = 120
@@ -260,7 +255,7 @@ def fetch_period(fcst_hr: str) -> None:
     now = time.time()
     fields, run, step = _fetch(fcst_hr, datetime.fromtimestamp(now, timezone.utc))
     period = period_of(run, step, fcst_hr)
-    until = json.loads(wingtip_native.call("weather_expires_at", json.dumps({"product": "winds", "valid_to": _iso_s(period["use_to"])})))
+    until = json.loads(wingtip_native.call("weather_expires_at", json.dumps({"product": "winds", "valid_to": utc.epoch(period["use_to"])})))
     weather_store.write(
         f"winds-{fcst_hr}",
         {"stations": _at_stations(fields), "period": period},
@@ -278,10 +273,10 @@ def period_of(run: datetime, step: int, fcst_hr: str) -> dict:
     valid = run + timedelta(hours=step)
     _, before, after = _PERIODS.get(fcst_hr, _PERIODS["06"])
     return {
-        "valid_at": _iso(valid),
-        "use_from": _iso(valid - timedelta(hours=before)),
-        "use_to": _iso(valid + timedelta(hours=after)),
-        "run": _iso(run),
+        "valid_at": utc.iso(valid),
+        "use_from": utc.iso(valid - timedelta(hours=before)),
+        "use_to": utc.iso(valid + timedelta(hours=after)),
+        "run": utc.iso(run),
         "forecast_hour": step,
     }
 
@@ -291,8 +286,7 @@ def _fetch(fcst_hr: str, now: datetime) -> tuple[dict, datetime, int]:
     forecast hour valid at the period's hour, that run and that hour."""
     hour = now.replace(minute=0, second=0, microsecond=0)
     target = hour + timedelta(hours=_PERIODS.get(fcst_hr, _PERIODS["06"])[0])
-    latest = (now - POSTED_AFTER).replace(minute=0, second=0, microsecond=0)
-    latest -= timedelta(hours=latest.hour % 6)
+    latest = nomads.gfs_run(now)
     for n in range(RUNS_TRIED):
         run = latest - timedelta(hours=6 * n)
         step = forecast_step(run, target)
@@ -321,35 +315,23 @@ def forecast_step(run: datetime, target: datetime) -> int:
 
 def _download(run: datetime, step: int) -> bytes | None:
     params = {
-        "dir": f"/gfs.{run:%Y%m%d}/{run:%H}/atmos",
+        "dir": nomads.gfs_dir(run),
         "file": f"gfs.t{run:%H}z.pgrb2.0p25.f{step:03d}",
         **{f"var_{v}": "on" for v in ("HGT", "TMP", "UGRD", "VGRD")},
         **{f"lev_{p}_mb": "on" for p in LEVELS_HPA},
         "subregion": "",
         **BOX,
     }
-    try:
-        resp = outside.get(FILTER_URL, params=params, headers=HEADERS, timeout=30)
-    except requests.RequestException as err:
-        raise ModelWindsUnavailable(f"NOMADS did not answer: {err}") from err
-    # A run not posted yet is a 404, or an HTML page saying so.
-    if resp.status_code == 404 or not resp.content.startswith(b"GRIB"):
-        return None
-    if not resp.ok:
-        raise ModelWindsUnavailable(f"NOMADS answered {resp.status_code}")
-    return resp.content
+    return nomads.get(nomads.GFS_FILTER_URL, params, error=ModelWindsUnavailable)
 
 
 def _read_grib(body: bytes) -> dict:
     fields = {}
-    offset = 0
-    while offset < len(body):
-        message = gribberish.parse_grib_message(body, offset)
+    for message in nomads.messages(body):
         meta = message.metadata
         lats, lons = (np.asarray(a, dtype=np.float64) for a in meta.latlng())
         values = np.asarray(message.data(), dtype=np.float32).reshape(len(lats), len(lons))
         fields[(meta.var_abbrev, round(meta.level_value / 100))] = (lats, lons, values)
-        offset += meta.message_size
     missing = [(v, p) for v in ("HGT", "TMP", "UGRD", "VGRD") for p in LEVELS_HPA if (v, p) not in fields]
     if missing:
         raise ValueError(f"missing {missing[:3]}")
@@ -392,11 +374,3 @@ def _at(field: tuple, lat: float, lon: float) -> float | None:
         return None
     value = float(values[i, j])
     return None if math.isnan(value) else value
-
-
-def _iso(at: datetime) -> str:
-    return at.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _iso_s(text: str) -> float:
-    return datetime.fromisoformat(text.replace("Z", "+00:00")).timestamp()

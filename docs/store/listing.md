@@ -396,7 +396,7 @@ signing certificate (launch-checklist.md).
 | Delete account without the app | `/delete-account` | `/delete-account` | `/delete-account` |
 | Lock Screen / widgets | Live Activity, widgets | none | n/a |
 | Watch | yes | no | n/a |
-| Pilot's view / 3D terrain | no (`isPitchEnabled = false`) | no | yes (`features/plan/map/terrain`) |
+| Pilot's view / 3D terrain | no (`isPitchEnabled = false`) | no | yes (`features/plan-map/terrain`) |
 | Records across devices | iCloud (SwiftData) | the account only | the account only |
 
 So the listings never mention a 3D or pilot's view; the web's is the

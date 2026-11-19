@@ -7,12 +7,14 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
-from wingtip import chartlabels, charts, chartvision, geo
+from wingtip import chart_kinds, chart_tiles, chartlabels, chartvision, geo
 
 from .. import chart_model
 from ..chart_model import TRAINING_HALF_WIDTH_NM
-from ..router_basics import line, load_route, ndjson, route_key
+from ..chart_summary import chart_summary
+from ..router_basics import CHART_CACHE, line, load_route, ndjson, route_key
 from ..detection import detect_job, faa_airports
+from ..schemas.plan import ChartInfo
 from ..schemas.chart import Classification, DetectBlock, DetectDone, DetectError, Detection, DetectStart, PickDeleted, PickSaved
 from ..gateway import DEVELOPER, SHARED
 
@@ -26,10 +28,20 @@ router = APIRouter()
 _CHART_TILE_MAX_AGE_S = 28 * 24 * 3600
 
 
-def _chart_tile(kind: charts.ChartKind, z: int, x: int, y: int, scale: int = 1) -> Response:
+@router.get("/api/chart", openapi_extra=SHARED)
+def chart_info(response: Response) -> ChartInfo:
+    """The chart the map draws, for a map with no route on it yet: the
+    planner's page opens on a search bar over the chart, as Maps does.
+    The map asks for no tile before this answers, so it may be kept
+    (CHART_CACHE) and served from the CDN's edge."""
+    response.headers["Cache-Control"] = CHART_CACHE
+    return ChartInfo(**chart_summary())
+
+
+def _chart_tile(kind: chart_kinds.ChartKind, z: int, x: int, y: int, scale: int = 1) -> Response:
     if not (kind.min_zoom <= z <= kind.max_zoom):
         raise HTTPException(404, f"{kind.key} tiles exist for zoom {kind.min_zoom}-{kind.max_zoom}")
-    png = charts.tile_png(x, y, z, kind.key, scale)
+    png = chart_tiles.tile_png(x, y, z, kind.key, scale)
     if png is None:
         # No sheet covers it -- the sea, Canada, Mexico round the country
         # as it opens: nothing to draw, which is no failure, so 204, kept
@@ -52,9 +64,9 @@ def chart_tile_2x(kind: str, z: int, x: int, y: int) -> Response:
     screen: drawn from the FAA's sheet at that size, where the browser
     stretching the 256-pixel tile blurred every line and letter.
     `chart_layers` says which kinds have them (`scales`)."""
-    if kind not in charts.KINDS:
+    if kind not in chart_kinds.KINDS:
         raise HTTPException(404, f"no such chart kind: {kind}")
-    return _chart_tile(charts.KINDS[kind], z, x, y, scale=2)
+    return _chart_tile(chart_kinds.KINDS[kind], z, x, y, scale=2)
 
 
 @router.get(
@@ -75,9 +87,9 @@ def chart_tile(kind: str, z: int, x: int, y: int) -> Response:
     a prefetch ring. 204 where no sheet covers the tile, which the layer
     leaves blank. The sectional and the TAC had routes of their own
     under older names, which nothing called any more."""
-    if kind not in charts.KINDS:
+    if kind not in chart_kinds.KINDS:
         raise HTTPException(404, f"no such chart kind: {kind}")
-    return _chart_tile(charts.KINDS[kind], z, x, y)
+    return _chart_tile(chart_kinds.KINDS[kind], z, x, y)
 
 
 @router.get("/api/classify", openapi_extra=DEVELOPER)

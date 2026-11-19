@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { fieldPermission, verdictItems, verdictLine, type VerdictInput } from "./verdict";
+import type { Alternates } from "./api/types";
+import { briefVerdict, type VerdictInput, type VerdictItem } from "./verdict";
 
 const quiet: VerdictInput = {
   weather: { pending: false, failed: null, vfrNotRecommended: [], underMinimums: [], hazards: [], unchecked: [], worst: "3,500 ft · 6 sm" },
@@ -10,18 +11,21 @@ const quiet: VerdictInput = {
   balance: { pending: false, worked: true, problems: [], takeoff: "2,407 lb at 41.2 in" },
   risk: { level: "low", line: "Low · 2 points" },
 };
-const finding = (input: VerdictInput, key: string) => verdictItems(input).find((i) => i.key === key)!;
+// The Brief's Go / No-Go as the engine puts it together (gonogo_brief), with an airplane picked.
+const verdict = (input: VerdictInput, more: Partial<Parameters<typeof briefVerdict>[0]> = {}) =>
+  briefVerdict({ input, airplane: true, ...more });
+const finding = (input: VerdictInput, key: string) => verdict(input).items.find((i) => i.key === key)!;
 
 describe("the Go / No-Go", () => {
   it("finds nothing against a quiet day, every row saying what it checked", () => {
-    const items = verdictItems(quiet);
+    const { items, line } = verdict(quiet);
     expect(items.map((i) => i.finding)).toEqual(["ok", "ok", "ok", "ok", "ok", "ok", "ok"]);
     expect(items.find((i) => i.key === "fuel")!.detail).toBe("Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare");
-    expect(verdictLine(items)).toEqual({ finding: "ok", words: "Nothing found against this flight" });
+    expect(line).toEqual({ finding: "ok", words: "Nothing found against this flight" });
   });
 
   it("is no-go as planned on VFR not recommended, a TFR in force, too little fuel or no altitude, naming each", () => {
-    const items = verdictItems({
+    const { items, line } = verdict({
       ...quiet,
       weather: { ...quiet.weather, vfrNotRecommended: ["KDLH currently reporting IFR"] },
       airspace: { ...quiet.airspace, inForce: ["6/1111"] },
@@ -30,11 +34,11 @@ describe("the Go / No-Go", () => {
     });
     expect(items.find((i) => i.key === "weather")!.detail).toBe("VFR not recommended: KDLH currently reporting IFR");
     expect(items.find((i) => i.key === "fuel")!.detail).toBe("2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)");
-    expect(verdictLine(items)).toEqual({ finding: "stop", words: "No-go as planned: Weather, TFRs & special use, Altitude, Fuel" });
+    expect(line).toEqual({ finding: "stop", words: "No-go as planned: Weather, TFRs & special use, Altitude, Fuel" });
   });
 
   it("under IFR cites the IFR reserve's rule", () => {
-    const items = verdictItems({ ...quiet, fuel: { ...quiet.fuel, marginGal: -2.25, reserveMin: 45, ifr: true } });
+    const { items } = verdict({ ...quiet, fuel: { ...quiet.fuel, marginGal: -2.25, reserveMin: 45, ifr: true } });
     expect(items.find((i) => i.key === "fuel")!.detail).toBe("2.3 gal short of the fuel and its 45 min reserve (14 CFR 91.167)");
   });
 
@@ -55,7 +59,7 @@ describe("the Go / No-Go", () => {
       runways: { ...quiet.runways, crosswind: ["C81"] },
     };
     expect(finding(input, "airspace").detail).toBe("VOLK EAST MOA scheduled in use when you pass");
-    expect(verdictLine(verdictItems(input)).words).toBe("Look again at Weather, TFRs & special use, Altitude, Runways");
+    expect(verdict(input).line.words).toBe("Look again at Weather, TFRs & special use, Altitude, Runways");
   });
 
   it("takes distances past the POH's tables as a caution and a runway not checked as unknown, never within", () => {
@@ -70,14 +74,14 @@ describe("the Go / No-Go", () => {
   });
 
   it("says what was not worked out, and what is still coming", () => {
-    const unknown = verdictItems({
+    const unknown = verdict({
       ...quiet,
       runways: { ...quiet.runways, worked: false },
       balance: { pending: false, worked: false, problems: [], takeoff: null },
     });
-    expect(verdictLine(unknown).words).toBe("Nothing found against it; not worked out: Runways, Weight & balance");
-    const coming = verdictItems({ ...quiet, weather: { ...quiet.weather, pending: true }, risk: null });
-    expect(verdictLine(coming)).toEqual({ finding: "pending", words: "Still checking: Weather, Risk" });
+    expect(unknown.line.words).toBe("No problems found; not checked: Runways, Weight & balance");
+    const coming = verdict({ ...quiet, weather: { ...quiet.weather, pending: true }, risk: null });
+    expect(coming.line).toEqual({ finding: "pending", words: "Still checking: Weather, Risk" });
   });
 
   it("names a near TFR and an area not scheduled as nothing against it", () => {
@@ -88,24 +92,83 @@ describe("the Go / No-Go", () => {
     });
   });
 
-  it("adds the fields row for a private destination and a closed stop, and none where every field is public (gonogo_field_permission)", () => {
+  it("adds the fields row after the tabs' for a private destination and a closed stop, none where every field is public", () => {
     const open = { private: false, military: null, phone: null, status: "O" };
-    expect(
-      fieldPermission([
-        { ident: "C81", role: "departure", ...open },
-        { ident: "KDLH", role: "destination", ...open },
-      ]),
-    ).toBeNull();
-    const row = fieldPermission([
-      { ident: "C81", role: "departure", ...open },
-      { ident: "00MO", role: "stop", ...open, status: "CI" },
-      { ident: "IL11", role: "destination", ...open, private: true, phone: "847-323-8911" },
-    ])!;
+    const ends = [
+      { ident: "C81", role: "departure" as const, ...open },
+      { ident: "KDLH", role: "destination" as const, ...open },
+    ];
+    expect(verdict(quiet, { fields: ends }).items.map((i) => i.key)).not.toContain("fields");
+    const { items, line } = verdict(quiet, {
+      fields: [
+        ends[0]!,
+        { ident: "00MO", role: "stop", ...open, status: "CI" },
+        { ident: "IL11", role: "destination", ...open, private: true, phone: "847-323-8911" },
+      ],
+    });
+    const row = items.at(-1)!;
     expect(row).toMatchObject({ key: "fields", finding: "caution" });
-    expect(row.detail).toContain("00MO is closed indefinitely");
+    expect(row.detail).toContain("00MO is closed indefinitely (NASR)");
     expect(row.detail).toContain("IL11 is private");
     expect(row.detail).toContain("847-323-8911");
-    // After the tabs' findings, the line weighs it as any other.
-    expect(verdictLine([...verdictItems(quiet), row]).finding).toBe("caution");
+    // The line weighs it as any other.
+    expect(line.finding).toBe("caution");
+  });
+
+  it("leaves out the fuel, the runways and the weight and balance with no airplane picked", () => {
+    expect(briefVerdict({ input: quiet, airplane: false }).items.map((i) => i.key)).toEqual(["weather", "airspace", "altitude", "risk"]);
+  });
+});
+
+describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
+  const check = (good: boolean | null) => ({
+    ident: "KMSN",
+    approach: true,
+    precision: true,
+    minimums: { ceiling_ft: 600, visibility_sm: 2 },
+    alternate_minimums_url: null,
+    ceiling_ft: 1200,
+    visibility_sm: 4,
+    taf: null,
+    good,
+    meets_standard: true,
+    reasons: good === null ? ["KMSN publishes its own alternate minimums."] : [],
+    distance_nm: 220,
+  });
+  const answer = (required: boolean, alternate: ReturnType<typeof check> | null): Alternates => ({
+    destination: { ident: "KDLH", approach: true, ceiling_ft: 1500, visibility_sm: 4, taf: null, required, reasons: [] },
+    alternate,
+    suggestions: [],
+  });
+  const ifr = (weather: Partial<VerdictInput["weather"]> = {}): VerdictInput => ({
+    ...quiet,
+    weather: { ...quiet.weather, ifr: true, ...weather },
+  });
+  const weather = (input: VerdictInput, alternate?: Alternates): VerdictItem => verdict(input, { alternate }).items[0]!;
+
+  it("says nothing where none is needed, the one filed will do, or the flight is VFR", () => {
+    expect(weather(ifr()).finding).toBe("ok");
+    expect(weather(ifr(), answer(false, null)).finding).toBe("ok");
+    expect(weather(ifr(), answer(true, check(true))).finding).toBe("ok");
+    expect(weather(quiet, answer(true, check(false))).finding).toBe("ok");
+  });
+
+  it("asks for one where one is needed, and stops on one under its minimums, opening its section", () => {
+    expect(weather(ifr(), answer(true, null))).toMatchObject({
+      finding: "caution",
+      detail: "An alternate is required (14 CFR 91.169): file one in Weather",
+      tab: "arrive",
+      section: "Alternate",
+    });
+    expect(weather(ifr(), answer(true, check(false))).finding).toBe("stop");
+    expect(weather(ifr(), answer(true, check(null))).detail).toBe("KMSN: KMSN publishes its own alternate minimums.");
+  });
+
+  it("puts its finding in the weather's only where the weather says nothing worse", () => {
+    const hazard = ifr({ hazards: ["IFR G-AIRMET"] });
+    expect(weather(hazard, answer(true, check(false))).finding).toBe("stop");
+    expect(weather(hazard, answer(true, null)).detail).toBe("IFR G-AIRMET along the route");
+    const vnr = ifr({ vfrNotRecommended: ["KDLH 400 ft"] });
+    expect(weather(vnr, answer(true, check(false))).detail).toBe("VFR not recommended: KDLH 400 ft");
   });
 });

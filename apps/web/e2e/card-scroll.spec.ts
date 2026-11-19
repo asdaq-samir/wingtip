@@ -71,7 +71,14 @@ for (const row of CARDS) {
         const over = await page.evaluate(
           ([x, y, card]) => {
             const at = document.elementFromPoint(x, y);
-            return !!at && !!at.closest(`[data-testid="${card}"]`) && !at.closest('[data-testid="card-head-pinned"]');
+            // The card's own grabber is no part of its body: a card that is its
+            // drawer (its test id on the drawer itself) has it over its top.
+            return (
+              !!at &&
+              !!at.closest(`[data-testid="${card}"]`) &&
+              !at.closest('[data-testid="card-head-pinned"]') &&
+              !at.closest('[data-testid="sidebar-trigger-button"]')
+            );
           },
           [head.x + head.width / 2, head.y - 3, row.card] as const,
         );
@@ -146,8 +153,21 @@ for (const row of CARDS) {
       test.skip(max < 40, "too short to scroll at this size");
       const at = (await scrollOf(page, row.card, Math.round(max / 2))).top;
       await row.inside!.open(page);
-      await row.inside!.back(page);
-      await expect.poll(async () => (await scrollOf(page, row.card)).top, { timeout: slow(5_000) }).toBeGreaterThanOrEqual(at - 2);
+      if (row.inside!.atItsTop) {
+        // Each page at its own top, where the pages start under the actions,
+        // the one opened inside and the card's own again: not where it was.
+        await expect
+          .poll(async () => (await scrollOf(page, row.card)).top, { message: row.inside!.atItsTop, timeout: slow(5_000) })
+          .toBeLessThan(at - 2);
+        const pagesTop = (await scrollOf(page, row.card)).top;
+        await row.inside!.back(page);
+        await expect
+          .poll(async () => Math.abs((await scrollOf(page, row.card)).top - pagesTop), { timeout: slow(5_000) })
+          .toBeLessThanOrEqual(2);
+      } else {
+        await row.inside!.back(page);
+        await expect.poll(async () => (await scrollOf(page, row.card)).top, { timeout: slow(5_000) }).toBeGreaterThanOrEqual(at - 2);
+      }
       if (row.card === "place-card") {
         // Another field's card: from its top.
         await go(page, "/app/plan?place=KMSP");
@@ -225,10 +245,8 @@ test("the airport card's tabs, the bar pinned, open each at its top and keep the
     const panel = (await card.getByRole("tabpanel").boundingBox())!;
     const b = (await bar.boundingBox())!;
     expect(Math.abs(b.y - pinnedY), `the bar stays pinned on ${testId}`).toBeLessThanOrEqual(2);
-    // Under the bar, or under the field's report in its line where it has one (the owner's T4, 2026-11-14).
-    const report = card.getByTestId("place-weather-line");
-    const line = (await report.count()) ? (await report.boundingBox())! : b;
-    expect(Math.abs(panel.y - (line.y + line.height)), `${testId} opens at its top, under the bar`).toBeLessThanOrEqual(16);
+    // Under the bar (the field's report line it once had is gone).
+    expect(Math.abs(panel.y - (b.y + b.height)), `${testId} opens at its top, under the bar`).toBeLessThanOrEqual(16);
   };
   await card.getByTestId("place-tab-radio").click();
   await expect(async () => underBar("Info")).toPass({ timeout: slow(5_000) });

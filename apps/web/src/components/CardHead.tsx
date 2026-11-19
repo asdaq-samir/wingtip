@@ -4,7 +4,7 @@ import { cn } from "cn";
 import CloseButton from "./CloseButton";
 import { HeadGrid } from "./HeadGrid";
 import { PinnedHead } from "./PinnedHead";
-import RoundButton from "./RoundButton";
+import IconButton from "./IconButton";
 import { closeTopCard, useHeldCard, RouteShareMenu, type CardShare } from "../lib/openCards";
 import { TEXT } from "../lib/text";
 
@@ -35,7 +35,6 @@ export function CardHeadRow({
   level = "h2",
   nameRef,
   slot,
-  flush = false,
   children,
 }: {
   name: ReactNode;
@@ -57,9 +56,8 @@ export function CardHeadRow({
   level?: "h2" | "h3";
   /** The name, for the focus as a page is pushed (ConsolePages). */
   nameRef?: Ref<HTMLHeadingElement>;
-  /** PinnedHead's: its slot, and a scroller with no sides of its own. */
+  /** PinnedHead's slot. */
   slot?: string;
-  flush?: boolean;
   children?: ReactNode;
 }) {
   const Name = level;
@@ -100,7 +98,7 @@ export function CardHeadRow({
       </div>
     );
   return (
-    <PinnedHead testId={testId} slot={slot} flush={flush} className="shrink-0">
+    <PinnedHead testId={testId} slot={slot} className="shrink-0">
       <HeadGrid start={start} middle={middle} end={end} />
     </PinnedHead>
   );
@@ -205,8 +203,8 @@ export function CardShareButton({ onShare }: { onShare?: CardShare }) {
   if (typeof onShare === "string") return routeShare?.(onShare) ?? null;
   if (!onShare) return null;
   return (
-    <RoundButton label="Share" onClick={onShare} data-testid="card-share">
+    <IconButton round label="Share" onClick={onShare} data-testid="card-share">
       <Share className="size-5" strokeWidth={2} />
-    </RoundButton>
+    </IconButton>
   );
 }

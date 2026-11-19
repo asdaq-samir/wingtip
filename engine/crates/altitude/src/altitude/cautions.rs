@@ -7,7 +7,7 @@
 
 use crate::figures::words::grouped;
 use crate::json::Value;
-use wingtip_flight::limits::{CLASS_A_FLOOR_FT, OXYGEN_CREW_FT, OXYGEN_CREW_PAST_30_MIN_FT, OXYGEN_EVERYONE_FT};
+use wingtip_flight::limits::{oxygen_words, CLASS_A_FLOOR_FT};
 
 fn as_bool(v: &Value) -> Option<bool> {
     match v {
@@ -93,26 +93,13 @@ pub fn floor(segment: &Value, altitude: f64) -> Option<String> {
     Some(format!("{short} ft under the {} ft 14 CFR 91.119(c) asks: {} ft over {what}", grouped(need), grouped(clearance)))
 }
 
-/// What 14 CFR 91.211(a) asks of a flight up to `highest_ft` in an
-/// airplane with no pressurised cabin, its cabin at the altitude flown:
-/// over 12,500 ft MSL the crew's oxygen for any of it past 30 minutes
-/// ((a)(1)), over 14,000 ft for all of it ((a)(2)), over 15,000 ft every
-/// occupant's ((a)(3)). None where the profile carries oxygen or a
-/// pressurised cabin, as the nav log's plans hold (navlog::plans::
-/// OXYGEN_CAP_FT, the same 12,500 ft).
+/// What 14 CFR 91.211(a) asks of a flight up to `highest_ft`
+/// (wingtip_flight::limits::oxygen_words). None where the profile carries
+/// oxygen or a pressurised cabin, as the nav log's plans hold
+/// (navlog::plans::OXYGEN_CAP_FT, the same 12,500 ft).
 pub fn oxygen(highest_ft: Option<f64>, profile: Option<&Value>) -> Vec<String> {
     let carried = profile.is_some_and(|p| truthy(p, "supplemental_oxygen") || truthy(p, "pressurized"));
-    let Some(highest) = highest_ft.filter(|h| *h > OXYGEN_CREW_PAST_30_MIN_FT && !carried) else {
-        return Vec::new();
-    };
-    vec![if highest > OXYGEN_EVERYONE_FT {
-        "Over 15,000 ft MSL: oxygen for the crew the whole time there and for every occupant (14 CFR 91.211(a)(2), (3))"
-    } else if highest > OXYGEN_CREW_FT {
-        "Over 14,000 ft MSL: oxygen for the crew the whole time there (14 CFR 91.211(a)(2))"
-    } else {
-        "Over 12,500 ft MSL: oxygen for the crew for any of it past 30 minutes (14 CFR 91.211(a)(1))"
-    }
-    .to_owned()]
+    highest_ft.filter(|_| !carried).and_then(oxygen_words).map(str::to_owned).into_iter().collect()
 }
 
 /// Prohibited airspace on the way, as a warning: nobody flies in it
@@ -146,8 +133,7 @@ pub struct Caution {
 /// route's Custom one, or a waypoint's own -- against the band the
 /// planner worked out for each of its legs: under the terrain and
 /// obstacles' floor (14 CFR 91.119, `floor`), off the hemispheric rule
-/// more than 3,000 ft above the ground (91.159(a)), into Class B without
-/// the clearance planned for (91.131), over the airplane's service
+/// more than 3,000 ft above the ground (91.159(a)), over the airplane's service
 /// ceiling, inside the cloud clearance under a forecast base (91.155), in
 /// Class A (71.33(a), 91.135) or past 91.211(a)'s oxygen heights. Under
 /// IFR (the selection's `rules`): under the minimum IFR altitude
@@ -240,9 +226,6 @@ pub fn own_altitude(selection: &Value, legs: &[Value], profile: Option<&Value>) 
                     ));
                 }
             }
-            if let Some(shelf) = num(segment, "airspace_ceiling_ft").filter(|s| alt >= *s) {
-                found.push(format!("Into Class B from {} ft: it needs a clearance (14 CFR 91.131)", grouped(shelf.max(0.0))));
-            }
             if let Some(c) = ceiling.filter(|c| alt > *c) {
                 found.push(format!("Over the aircraft's {} ft service ceiling", grouped(c)));
             }
@@ -278,6 +261,19 @@ mod tests {
         assert!(oxygen(Some(15000.0), None)[0].ends_with("(14 CFR 91.211(a)(2))"));
         assert!(oxygen(Some(15500.0), None)[0].contains("(3)"));
         assert!(oxygen(Some(15500.0), Some(&v(r#"{"pressurized": true}"#))).is_empty());
+    }
+
+    /// The shared fixture's 91.119 floors (apps/web/src/lib/fixtures/
+    /// cautions.json, from the planner's test_floor_caution.py).
+    #[test]
+    fn the_91_119_floor_by_the_rules_own_figure() {
+        let fixture = v(include_str!("../../../../../apps/web/src/lib/fixtures/cautions.json"));
+        let cases = fixture.get("floor").and_then(Value::as_array).unwrap();
+        assert!(!cases.is_empty());
+        for case in cases {
+            let got = floor(case.get("segment").unwrap(), case.get("altitude_ft").and_then(Value::as_f64).unwrap());
+            assert_eq!(got.as_deref(), case.get("answer").and_then(Value::as_str), "{case:?}");
+        }
     }
 
     #[test]

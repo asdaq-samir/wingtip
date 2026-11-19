@@ -106,9 +106,6 @@ class PlanQuery:
     taxi_fuel_gal: TaxiFuel = None
     glide_ratio: GlideRatio = None
     depart: datetime | None = None
-    #: The pilot will have a Class B clearance: its shelves are no
-    #: ceiling, and the route is planned through it (wingtip.altitude).
-    class_b_clearance: bool = False
     #: The flight rules: "ifr" plans it under IFR -- 14 CFR 91.177's
     #: minimum altitudes, 91.179's by direction of flight, 91.167's
     #: reserve (wingtip.ifr) -- where "vfr", the default, plans it as before.
@@ -166,10 +163,11 @@ class PlanQuery:
     #: night and their times.
     ground: str = ""
     #: Checkpoints between the route's own points, as the planner picks
-    #: them off the chart. False, the legs run from point to point alone
-    #: -- the departure, the stops, the destination -- as a pilot whose
-    #: map shows no waypoints flies it; and nothing is scored for them.
-    checkpoints: bool = True
+    #: them off the chart. False, the default, the legs run from point to
+    #: point alone -- the departure, the stops, the destination -- and
+    #: nothing is read or scored for them: finding checkpoints is the
+    #: pilot's to ask for, by the map's Checkpoints (the owner, 2026-11-18).
+    checkpoints: bool = False
 
     def profile(self) -> dict | None:
         """The airplane: a stock profile with the pilot's own figures over
@@ -332,7 +330,6 @@ class PlanQuery:
             altitude_ft=self.altitude_ft,
             altitude_nearest=self.altitude_nearest,
             altitude_choice=self.altitude_choice,
-            class_b_clearance=self.class_b_clearance,
             rules=self.rules,
             depart=self.depart,
             own_altitudes=self.own_altitudes(),

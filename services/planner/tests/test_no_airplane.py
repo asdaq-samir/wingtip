@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-from .test_plan import _stubbed_world  # noqa: F401 -- the stubbed chart, altitude and air, autouse
+from .plan_world import _stubbed_world  # noqa: F401 -- the stubbed chart, altitude and air, autouse
 
 client = TestClient(app)
 

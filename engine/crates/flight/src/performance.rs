@@ -1,7 +1,7 @@
 //! A light piston airplane in the day's air: the power its engine makes at
 //! an altitude, what that power flies at and burns, and how fast it climbs,
-//! from the density altitude the forecast temperature aloft gives. The
-//! planner's wingtip.performance, moved here whole (#482 phase 4), so the
+//! from the density altitude the forecast temperature aloft gives. Moved
+//! here whole from the planner (#482 phase 4), so the
 //! nav log (wingtip_route::navlog), the altitude selection and the phones
 //! fly one airplane.
 //!

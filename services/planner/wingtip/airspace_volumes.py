@@ -1,5 +1,5 @@
 """The airspace's volumes in a box, each whole, for the map's 3D view
-(apps/web features/plan/map/terrain/AirspaceVolumesGl, which stands them
+(apps/web features/plan-map/terrain/AirspaceVolumesGl, which stands them
 up with deck.gl between their floors and ceilings).
 
 The 2D chart draws its airspace from the cycle's vector tiles, and a tile
@@ -26,7 +26,9 @@ the same card:
 
 Each with `label`, one point inside its largest polygon where the map
 writes its name, so an area drawn as several polygons, or crossing many
-tiles, is named once.
+tiles, is named once; a special use area with `tab`, the engine's words
+for it, "M-BRADY NOR*:" over "3600-17999", as the 2D chart's tab writes
+it (wingtip.airspace_tabs), None for a piece the FAA marks EXCLUSION.
 """
 
 from __future__ import annotations
@@ -38,7 +40,7 @@ import numpy as np
 import shapely
 from shapely.geometry.polygon import orient
 
-from . import airspace, cycle_pack, sua
+from . import airspace, airspace_tabs, cycle_pack, phone_pack_shapes, sua
 
 #: The classes drawn as volumes, by the shapefile's CLASS.
 CLASSES = ("B", "C", "D", "E")
@@ -67,7 +69,7 @@ def _attrs(pack: cycle_pack.Pack, layer: str) -> list:
 
 @lru_cache(maxsize=2)
 def _numbers(pack: cycle_pack.Pack) -> list:
-    return cycle_pack._controlled_numbers(pack)
+    return phone_pack_shapes._controlled_numbers(pack)
 
 
 def _drawn_class(volume: dict, classes: tuple[str, ...]) -> bool:
@@ -125,7 +127,7 @@ def volumes_in(box: tuple[float, float, float, float], classes: tuple[str, ...] 
     features = []
     records, numbers = _attrs(pack, "airspace"), _numbers(pack)
     for k in _in_box(pack, "airspace", box):
-        volume = cycle_pack._volume_drawn(records[k], numbers[k])
+        volume = phone_pack_shapes._volume_drawn(records[k], numbers[k])
         if not _drawn_class(volume, classes):
             continue
         geometry = _shape(pack, "airspace", int(k))
@@ -139,5 +141,6 @@ def volumes_in(box: tuple[float, float, float, float], classes: tuple[str, ...] 
                 continue
             geometry = _shape(pack, "sua", int(k))
             if geometry is not None:
-                features.append(_feature({**area, "layer": "special_use"}, geometry))
+                tab = airspace_tabs.special_use_tab(area)
+                features.append(_feature({**area, "layer": "special_use", "tab": tab["text"] if tab else None}, geometry))
     return {"type": "FeatureCollection", "features": features, "cycle": pack.cycle}

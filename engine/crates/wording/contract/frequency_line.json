@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_wording::wording::answer",
-  "description": "A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name.",
+  "description": "A field's frequency as its card lists it: its name in words, its kind for the row's glyph, and the description in sentence case where that adds to the name; a CTAF that is the field's tower frequency \"Tower / CTAF\" (AIM 4-1-9).",
   "type": "object",
   "properties": {
     "input": {
@@ -18,6 +18,23 @@
             "string",
             "null"
           ]
+        },
+        "frequency_mhz": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "This frequency's figure, MHz."
+        },
+        "frequencies": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/FieldFrequency"
+          },
+          "description": "The field's frequencies: a CTAF that is its tower's is named Tower / CTAF (AIM 4-1-9)."
         }
       }
     },

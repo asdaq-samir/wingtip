@@ -1,4 +1,5 @@
 import type { AircraftChoice, AircraftProfileSummary, HandbookFigures } from "../api/types";
+import { FIGURE_FIELDS, type FigureKey } from "./figureFields";
 import { callEngine, type EngineAnswer, type EngineInput } from "../engine/engine";
 
 /**
@@ -16,29 +17,7 @@ import { callEngine, type EngineAnswer, type EngineInput } from "../engine/engin
  *  wingtip.planning). */
 export const OWN_AIRPLANE = "own";
 
-/** Each figure's name in the engine and the planner's query (snake case)
- *  and in the app's airplane choice and the gateway's record (camel case). */
-export const FIGURE_FIELDS = {
-  cruise_tas_kt: "cruiseTasKt",
-  fuel_burn_gph: "fuelBurnGph",
-  cruise_power_pct: "cruisePowerPct",
-  usable_fuel_gal: "usableFuelGal",
-  climb_tas_kt: "climbTasKt",
-  climb_fuel_burn_gph: "climbFuelBurnGph",
-  climb_rate_fpm: "climbRateFpm",
-  descent_ias_kt: "descentIasKt",
-  descent_fuel_burn_gph: "descentFuelBurnGph",
-  service_ceiling_ft: "serviceCeilingFt",
-  taxi_fuel_gal: "taxiFuelGal",
-  glide_ratio: "glideRatio",
-  empty_weight_lb: "emptyWeightLb",
-  empty_moment_lb_in: "emptyMomentLbIn",
-} as const;
-
-export type FigureKey = keyof typeof FIGURE_FIELDS;
-type FigureField = (typeof FIGURE_FIELDS)[FigureKey];
-/** An airplane's own figures, by the choice's names: any of them. */
-export type OwnFigureValues = Partial<Record<FigureField, number>>;
+export { FIGURE_FIELDS, type FigureKey, type OwnFigureValues } from "./figureFields";
 export type AirplaneFigures = EngineAnswer<"airplane_figures">;
 export type AirplaneFigure = AirplaneFigures["figures"][number];
 /** What a screen shows of an airplane: the engine's airplane_needs' names. */

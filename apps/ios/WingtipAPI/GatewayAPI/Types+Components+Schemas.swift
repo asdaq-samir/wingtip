@@ -561,21 +561,6 @@ extension Components {
                 case updatedAt
             }
         }
-        /// - Remark: Generated from `#/components/schemas/Approval`.
-        public struct Approval: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/Approval/userCode`.
-            public var userCode: Swift.String
-            /// Creates a new `Approval`.
-            ///
-            /// - Parameters:
-            ///   - userCode:
-            public init(userCode: Swift.String) {
-                self.userCode = userCode
-            }
-            public enum CodingKeys: String, CodingKey {
-                case userCode
-            }
-        }
         /// - Remark: Generated from `#/components/schemas/AskInstructorRequest`.
         public struct AskInstructorRequest: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/AskInstructorRequest/email`.
@@ -1151,47 +1136,6 @@ extension Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case note
-            }
-        }
-        /// - Remark: Generated from `#/components/schemas/DeviceCode`.
-        public struct DeviceCode: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/DeviceCode/deviceCode`.
-            public var deviceCode: Swift.String
-            /// - Remark: Generated from `#/components/schemas/DeviceCode/expiresIn`.
-            public var expiresIn: Swift.Int
-            /// - Remark: Generated from `#/components/schemas/DeviceCode/interval`.
-            public var interval: Swift.Int
-            /// - Remark: Generated from `#/components/schemas/DeviceCode/userCode`.
-            public var userCode: Swift.String
-            /// - Remark: Generated from `#/components/schemas/DeviceCode/verificationPath`.
-            public var verificationPath: Swift.String
-            /// Creates a new `DeviceCode`.
-            ///
-            /// - Parameters:
-            ///   - deviceCode:
-            ///   - expiresIn:
-            ///   - interval:
-            ///   - userCode:
-            ///   - verificationPath:
-            public init(
-                deviceCode: Swift.String,
-                expiresIn: Swift.Int,
-                interval: Swift.Int,
-                userCode: Swift.String,
-                verificationPath: Swift.String
-            ) {
-                self.deviceCode = deviceCode
-                self.expiresIn = expiresIn
-                self.interval = interval
-                self.userCode = userCode
-                self.verificationPath = verificationPath
-            }
-            public enum CodingKeys: String, CodingKey {
-                case deviceCode
-                case expiresIn
-                case interval
-                case userCode
-                case verificationPath
             }
         }
         /// - Remark: Generated from `#/components/schemas/DiagnosticDto`.
@@ -4554,21 +4498,6 @@ extension Components {
                 case updatedAt
             }
         }
-        /// - Remark: Generated from `#/components/schemas/TokenRequest`.
-        public struct TokenRequest: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/TokenRequest/deviceCode`.
-            public var deviceCode: Swift.String
-            /// Creates a new `TokenRequest`.
-            ///
-            /// - Parameters:
-            ///   - deviceCode:
-            public init(deviceCode: Swift.String) {
-                self.deviceCode = deviceCode
-            }
-            public enum CodingKeys: String, CodingKey {
-                case deviceCode
-            }
-        }
         /// - Remark: Generated from `#/components/schemas/TrackDto`.
         public struct TrackDto: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/TrackDto/points`.
@@ -4809,29 +4738,6 @@ extension Components {
                 case errorDeg
                 case kind
                 case place
-            }
-        }
-        /// - Remark: Generated from `#/components/schemas/Waiting`.
-        public struct Waiting: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/Waiting/interval`.
-            public var interval: Swift.Int
-            /// - Remark: Generated from `#/components/schemas/Waiting/status`.
-            public var status: Swift.String
-            /// Creates a new `Waiting`.
-            ///
-            /// - Parameters:
-            ///   - interval:
-            ///   - status:
-            public init(
-                interval: Swift.Int,
-                status: Swift.String
-            ) {
-                self.interval = interval
-                self.status = status
-            }
-            public enum CodingKeys: String, CodingKey {
-                case interval
-                case status
             }
         }
         /// - Remark: Generated from `#/components/schemas/WatchFlightRequest`.

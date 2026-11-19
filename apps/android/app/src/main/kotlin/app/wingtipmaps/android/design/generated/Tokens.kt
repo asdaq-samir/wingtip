@@ -32,12 +32,15 @@ object WingtipColors {
         /** The thin edge round the course's magenta by day (white at 35% over the dimmed chart). */
         val RouteEdge = Color(0xFF0B0F0A)
         const val ROUTE_EDGE_HEX = "#0b0f0a"
-        /** A VFR waypoint's magenta, the sectional's. */
+        /** A VFR waypoint's magenta, the sectional's: the one it draws a field with no tower in. */
         val Waypoint = Color(0xFFC0309F)
         const val WAYPOINT_HEX = "#c0309f"
-        /** iOS's systemBlue, the blue Maps draws its own marks in: the position dot, a point held on the chart, a procedure's Direct to. Not the tint, which is a step deeper for words on white. */
+        /** iOS's systemBlue, the blue Maps draws its own marks in: the position dot, a search's results, a flown track, a procedure's Direct to. A point held on the chart is ringed in color.chart.selected's yellow. Not the tint, which is a step deeper for words on white. */
         val MapBlue = Color(0xFF007AFF)
         const val MAP_BLUE_HEX = "#007aff"
+        /** Map blue a step deeper, for words on the chart's white chips (the route's way label): 5.4:1 on white, where map blue's #007aff is 4.0:1, under WCAG 1.4.3's 4.5 for 12-point text. The chips stay white in the dark, as the chart does, so one value (the owner, 2026-11-17: "Yes to all recs"). */
+        val MapBlueInk = Color(0xFF0066D6)
+        const val MAP_BLUE_INK_HEX = "#0066d6"
         /** The sectional's blue: "Airports having control towers are shown in blue, all others in magenta" (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports). Also VORs. */
         val Towered = Color(0xFF2465B8)
         const val TOWERED_HEX = "#2465b8"
@@ -283,6 +286,9 @@ object WingtipColors {
         /** A field or runway NASR or a NOTAM closes (decision 0043): red-800 (8.3:1), a step past Active's so the two are told apart. */
         val StatusClosed = Color(0xFF991B1B)
         const val STATUS_CLOSED_HEX = "#991b1b"
+        /** A navaid in service with restrictions (NASR NAV_RMK): usable, so not out of service's orange; caution's family, yellow-800 (6.8:1). */
+        val StatusRestricted = Color(0xFF854D0E)
+        const val STATUS_RESTRICTED_HEX = "#854d0e"
         /** A navaid or a service out of service: orange-800 (7.3:1). */
         val StatusOutOfService = Color(0xFF9A3412)
         const val STATUS_OUT_OF_SERVICE_HEX = "#9a3412"
@@ -295,6 +301,9 @@ object WingtipColors {
         /** A joint civil-military field: lime-800 (7.1:1). */
         val StatusJoint = Color(0xFF3F6212)
         const val STATUS_JOINT_HEX = "#3f6212"
+        /** What kind of field it is where it is not an airport (NASR's SITE_TYPE_CODE: Heliport, Seaplane base, Gliderport, Balloonport, Ultralight): cyan-800 (7.3:1), told apart from the use badges' greys and greens beside it. */
+        val StatusSite = Color(0xFF155E75)
+        const val STATUS_SITE_HEX = "#155e75"
         /** An emergency's squawk on a tracked airplane (AIM 6-2-2): the light gun's red, red-600 (4.8:1). */
         val StatusEmergency = Color(0xFFDC2626)
         const val STATUS_EMERGENCY_HEX = "#dc2626"
@@ -309,6 +318,9 @@ object WingtipColors {
         const val ICING_HEX = "#2563eb"
         val Turbulence = Color(0xFFD97706)
         const val TURBULENCE_HEX = "#d97706"
+        /** Turbulence's words on the map's white (a PIREP's level, an area's label): the amber deepened to 5:1, where the area's own is 3.2:1, under WCAG's 4.5:1 for small text. */
+        val TurbulenceText = Color(0xFFB45309)
+        const val TURBULENCE_TEXT_HEX = "#b45309"
         val Ifr = Color(0xFF7C3AED)
         const val IFR_HEX = "#7c3aed"
         /** Mountains obscured. */
@@ -1166,14 +1178,10 @@ object WingtipRadius {
 /** Motion: durations in milliseconds, curves as easings. */
 object WingtipMotion {
     const val SHEET_MS = 300
-    const val SHEET_LEAST_MS = 220
-    const val SHEET_MOST_MS = 350
     val SheetEase = CubicBezierEasing(0f, 0f, 0.58f, 1f)
-    val SheetBackEase = CubicBezierEasing(0.2f, 0.9f, 0.3f, 1f)
     const val DRAWER_MS = 450
     val DrawerEase = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
     const val FADE_MS = 200
-    const val QUICK_MS = 150
     const val PAGE_MS = 250
     const val SKELETON_PULSE_MS = 1500
 }
@@ -1207,6 +1215,13 @@ object WingtipMap {
     const val AIRSPACE_FADED = 0.35
     const val AIRSPACE_HELD = 1.8
     const val AIRSPACE_LABEL_FADED = 0.6
+    const val LABEL_SMALL = 11
+    const val LABEL = 12
+    const val LABEL_LARGE = 13
+    const val LABEL_COUNT = 14
+    const val LABEL_RUNWAY = 16
+    const val LABEL_HALO = 2
+    const val LABEL_HALO_NIGHT = 0.6
 }
 
 /** Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers. */
@@ -1241,5 +1256,4 @@ object WingtipSize {
     val Panel = 384.dp
     val PanelWide = 448.dp
     val Desktop = 1024.dp
-    val RefreshPull = 64.dp
 }

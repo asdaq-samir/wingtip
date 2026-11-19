@@ -19,12 +19,19 @@ const STATUS = {
   cold: { fill: "bg-(--badge-status-cold)", word: "Cold" },
   /** Closed by NASR or a NOTAM (decision 0043): never shown as open. */
   closed: { fill: "bg-(--badge-status-closed)", word: "Closed" },
+  /** A navaid in service with restrictions (NASR NAV_STATUS "OPERATIONAL
+   *  RESTRICTED"): usable, its remarks saying where not, so not out of
+   *  service. */
+  restricted: { fill: "bg-(--badge-status-restricted)", word: "Restricted" },
   /** A navaid or a service not working. */
   "out-of-service": { fill: "bg-(--badge-status-out-of-service)", word: "Out of service" },
   /** A field's use where it is not public (NASR's use and ownership). */
   private: { fill: "bg-(--badge-status-private)", word: "Private" },
   military: { fill: "bg-(--badge-status-military)", word: "Military" },
   joint: { fill: "bg-(--badge-status-joint)", word: "Joint use" },
+  /** What kind of field it is where it is not an airport, its words the
+   *  engine's for NASR's SITE_TYPE_CODE ("Heliport", "Seaplane base"). */
+  site: { fill: "bg-(--badge-status-site)", word: "Heliport" },
   /** A tracked airplane: flying, on the ground, squawking an emergency. */
   inAir: { fill: "bg-(--badge-air)", word: "In the air" },
   ground: { fill: "bg-(--badge-status-ground)", word: "On the ground" },

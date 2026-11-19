@@ -158,13 +158,7 @@ export default function DueItemsGroup({ aircraft }: { aircraft: Aircraft }) {
       {open && draft && (
         <>
           <ListRow title="Kind">
-            <PullDown
-              label="What the item is"
-              value={draft.kind}
-              options={KINDS}
-              onChange={(kind) => set({ kind })}
-              testId="due-item-kind"
-            />
+            <PullDown label="What the item is" value={draft.kind} options={KINDS} onChange={(kind) => set({ kind })} />
           </ListRow>
           {field("title", "Title", draft.kind === "AD" ? "Oil filter adapter" : "Fire extinguisher", 120)}
           {field("reference", draft.kind === "AD" ? "AD number" : "Reference", draft.kind === "AD" ? "AD 2011-10-09" : "", 60)}
@@ -189,7 +183,6 @@ export default function DueItemsGroup({ aircraft }: { aircraft: Aircraft }) {
                 onChange={(v) => set({ dueAtHours: v == null ? "" : String(v) })}
                 aria-label="Next due at hours of time in service"
                 isInvalid={problem === "Hours cannot be negative"}
-                data-testid="due-item-dueAtHours"
               />
             </FieldHit>
           </ListRow>

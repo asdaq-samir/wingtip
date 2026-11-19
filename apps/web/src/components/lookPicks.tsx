@@ -1,26 +1,27 @@
-import type { ReactNode } from "react";
-import { Monitor, Moon, Palette, Sun, SunDim, SunMedium, SunMoon } from "lucide-react";
+import { Monitor, Moon, Palette, Sun, SunDim, SunMedium } from "lucide-react";
 import { useTheme } from "next-themes";
 import { BRANDS } from "../lib/brand";
-import { usePreferences, type Brand, type ChartLight, type ChartNight, type OwnShipLook } from "../lib/preferences";
+import { usePreferences, type Brand, type ChartLight, type OwnShipLook } from "../lib/preferences";
 import { OWN_SHIP_LOOKS, ownShipSvg } from "../lib/map/position/ownShipLook";
-import MenuTile from "./MenuTile";
 import type { PullDownOption } from "./PullDown";
 import { LayerMenuTile } from "./LayerTile";
 
 /**
  * The app's look, two picks: Theme (Wingtip, Glass Cockpit, Chart ink,
- * Native; lib/brand) and Appearance (System, Light, Dark, Dark + Bright).
+ * Native; lib/brand) and Appearance (System, Light, Dark).
  * One source for both of their homes, the Map card's Look and
  * the first flight's welcome (WelcomeSheet, the owner, 2026-11-13: "give
  * theme and appearance selection on the welcome screen"): each a
- * PullDown's value, options and setter, drawn as tiles (ThemeTile,
- * AppearanceTile) on the welcome, and as the Map card's Look tiles
- * (ThemeLayerTile, AppearanceLayerTile; LayerMenuTile, the layers' tile
- * with its value under its name and a tap its menu), with Sunlight's
- * after them (SunlightLayerTile; the owner, 2026-11-14: "Sunlight should
+ * PullDown's value, options and setter, drawn as the same two tiles in
+ * both (ThemeTile, AppearanceTile; LayerMenuTile, the layers' tile with
+ * its value under its name and a tap its menu: the welcome had tiles of
+ * its own, a glyph in a disc beside the words, until 2026-11-17), with
+ * Sunlight's after them on the Map card (SunlightTile; the owner,
+ * 2026-11-14: "Sunlight should
  * also move to map settings", "every section should have 4 tiles like
- * Layers one").
+ * Layers one"), and the chart's Dimmer and Contrast sliders under the
+ * tiles there (features/map-settings' ChartLookRows; the owner,
+ * 2026-11-18).
  */
 interface LookPick<V extends string> {
   value: V;
@@ -35,69 +36,40 @@ function useThemePick(): LookPick<Brand> {
   return { value, onChange, options: BRANDS.map((b) => ({ value: b.value, label: b.label, testId: `brand-${b.value}` })) };
 }
 
-type Appearance = "system" | "light" | "dark" | "dark-bright";
-
-/** What each Appearance sets: the page's theme (next-themes) and the chart
- *  at night (lib/preferences chartNight, read only while the page is
- *  dark). Dark dims the chart's tiles with the page, the night's default,
- *  and System and Light leave them so for the dark; Dark + Bright is the
- *  chart as printed under the dark page (the owner, 2026-11-13). */
-const APPEARANCES: Record<Appearance, [theme: "system" | "light" | "dark", night: ChartNight]> = {
-  system: ["system", "dimmed"],
-  light: ["light", "dimmed"],
-  dark: ["dark", "dimmed"],
-  "dark-bright": ["dark", "normal"],
-};
+type Appearance = "system" | "light" | "dark";
 
 const APPEARANCE_OPTIONS: PullDownOption<Appearance>[] = [
-  { value: "system", label: "System", testId: "theme-system" },
+  { value: "system", label: "System" },
   { value: "light", label: "Light", testId: "theme-light" },
   { value: "dark", label: "Dark", testId: "theme-dark" },
-  { value: "dark-bright", label: "Dark + Bright", testId: "theme-dark-bright" },
 ];
 
-/** Appearance, read from the two settings it sets (no third): the page's
- *  theme, and in the dark the chart dimmed or as printed; with its mark. */
-function useAppearancePick(): LookPick<Appearance> & { icon: ReactNode } {
+/** Appearance: the page's theme (next-themes), System the device's. How
+ *  far the chart is dimmed is the Map card's Dimmer, one for each
+ *  appearance (lib/map/chartLook), where Dark + Bright was the chart
+ *  undimmed under the dark page until 2026-11-18 (the owner: "can we have
+ *  a dimmer and contrast sliders under sunlight and remove it from the
+ *  appearance?"). */
+function useAppearancePick(): LookPick<Appearance> {
   const { theme, setTheme } = useTheme();
-  const chartNight = usePreferences((s) => s.chartNight);
-  const setChartNight = usePreferences((s) => s.setChartNight);
-  const value: Appearance = theme === "light" ? "light" : theme === "dark" ? (chartNight === "normal" ? "dark-bright" : "dark") : "system";
-  const onChange = (appearance: Appearance) => {
-    const [mode, night] = APPEARANCES[appearance];
-    setTheme(mode);
-    setChartNight(night);
-  };
-  const icon = value === "dark-bright" ? <SunMoon /> : value === "dark" ? <Moon /> : value === "light" ? <Sun /> : <Monitor />;
-  return { value, onChange, options: APPEARANCE_OPTIONS, icon };
+  const value: Appearance = theme === "light" || theme === "dark" ? theme : "system";
+  return { value, onChange: setTheme, options: APPEARANCE_OPTIONS };
 }
 
-/** Theme's tile (MenuTile). */
+/** Theme's tile (LayerMenuTile): its value under its name, a tap its menu. */
 export function ThemeTile() {
-  return <MenuTile label="Theme" {...useThemePick()} on={false} testId="brand-select" icon={<Palette />} />;
-}
-
-/** Appearance's tile (MenuTile), its mark the one picked. */
-export function AppearanceTile() {
-  const { icon, ...pick } = useAppearancePick();
-  return <MenuTile label="Appearance" {...pick} on={false} testId="theme-select" icon={icon} />;
-}
-
-/** Theme's tile on the Map card (LayerMenuTile): its value under its
- *  name, a tap its menu. */
-export function ThemeLayerTile() {
   return <LayerMenuTile name="Theme" glyph={Palette} {...useThemePick()} testId="brand-select" />;
 }
 
-/** Appearance's tile on the Map card, its glyph the one picked. */
-export function AppearanceLayerTile() {
-  const { value, onChange, options } = useAppearancePick();
-  const glyph = value === "dark-bright" ? SunMoon : value === "dark" ? Moon : value === "light" ? Sun : Monitor;
-  return <LayerMenuTile name="Appearance" glyph={glyph} value={value} onChange={onChange} options={options} testId="theme-select" />;
+/** Appearance's tile, its glyph the one picked. */
+export function AppearanceTile() {
+  const pick = useAppearancePick();
+  const glyph = pick.value === "dark" ? Moon : pick.value === "light" ? Sun : Monitor;
+  return <LayerMenuTile name="Appearance" glyph={glyph} {...pick} testId="theme-select" />;
 }
 
 const SUNLIGHT_OPTIONS: PullDownOption<ChartLight>[] = [
-  { value: "auto", label: "Auto", testId: "sunlight-auto" },
+  { value: "auto", label: "Auto" },
   { value: "on", label: "On", testId: "sunlight-on" },
   { value: "off", label: "Off", testId: "sunlight-off" },
 ];
@@ -106,8 +78,10 @@ const SUNLIGHT_OPTIONS: PullDownOption<ChartLight>[] = [
  *  (lib/sunlight), from the phone's light sensor where the browser has one
  *  (Auto), or by hand, in the cockpit, where a pilot needs it at a tap; in
  *  the tint while On, as a layer that is on. It was Settings' Display tile
- *  and moved here with the rest of the look (the owner, 2026-11-14). */
-export function SunlightLayerTile() {
+ *  and moved here with the rest of the look (the owner, 2026-11-14). While
+ *  it is on the chart is at full brightness, the Dimmer under the tiles
+ *  greyed but keeping its value (map-settings' ChartLookRows). */
+export function SunlightTile() {
   const value = usePreferences((s) => s.chartLight);
   const onChange = usePreferences((s) => s.setChartLight);
   const glyph = value === "on" ? Sun : value === "off" ? SunDim : SunMedium;
@@ -146,7 +120,7 @@ const OWN_SHIP_GLYPHS: Record<OwnShipLook, ReturnType<typeof drawnGlyph>> = {
  *  glyph the one picked, drawn as the chart draws it. The look's fourth
  *  tile at the owner's ask (2026-11-14: "Maybe replace the position with
  *  the choice of own ship?"), back after You on the Map went on 2026-11-13. */
-export function OwnShipLayerTile() {
+export function OwnShipTile() {
   const value = usePreferences((s) => s.ownShipLook);
   const onChange = usePreferences((s) => s.setOwnShipLook);
   return (

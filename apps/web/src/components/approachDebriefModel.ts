@@ -31,7 +31,7 @@
 import type { ProcedureDrawing } from "../lib/api/types";
 import type { ApproachDebrief as Debriefed, ApproachFinding } from "../lib/engine/contract";
 import { callEngine, type EngineAnswer } from "../lib/engine/engine";
-import type { TrackPoint } from "../lib/track";
+import { enginePoints, type TrackPoint } from "../lib/track";
 
 /** How the course is flown, by the approach's coded identifier (ARINC
  *  424-18 5.10): a localizer's, a GPS's, or another (VOR, NDB, LDA, back
@@ -61,10 +61,8 @@ export interface ApproachDebrief {
   guidance: Guidance;
   /** When the track crossed the final approach fix inbound, ms. */
   fafAt: number;
-  /** How far off the final it flew on average, nm: how well it fits; and
-   *  off the glidepath, ft, where there is one and altitudes to say. */
+  /** How far off the final it flew on average, nm: how well it fits. */
   fitNm: number;
-  glidepathFitFt: number | null;
   /** The fixes passed, in order, the missed approach's left out. */
   crossings: FixCrossing[];
   findings: ApproachFinding[];
@@ -111,7 +109,6 @@ function shaped(d: Debriefed): ApproachDebrief {
     guidance: d.guidance,
     fafAt: d.faf_at,
     fitNm: d.fit_nm,
-    glidepathFitFt: d.glidepath_fit_ft,
     crossings: d.crossings.map((c) => ({
       ident: c.ident,
       roles: c.roles,
@@ -134,39 +131,6 @@ function shaped(d: Debriefed): ApproachDebrief {
     alsoFits: d.also_fits,
     wayIn: d.way_in,
   };
-}
-
-const enginePoints = (points: TrackPoint[]) => points.map((p) => ({ t: p.t, lat: p.lat, lon: p.lon, alt_ft: p.altFt }));
-
-/** Each time the track flew inbound over the approach's final approach
- *  fix: the attempts at it, as point indices -- from the last one's end,
- *  to the next one's start. */
-export function attemptsAt(d: ProcedureDrawing, points: TrackPoint[]): { faf: number; from: number; to: number }[] {
-  return callEngine("approach_attempts", { drawing: d, points: enginePoints(points) });
-}
-
-interface DebriefOptions {
-  /** The attempt to debrief (attemptsAt); the first where none is given. */
-  attempt?: { faf: number; from: number; to: number };
-  /** The pilot's DA or MDA from the plate, ft MSL: the CIFP has no
-   *  minimums, so none is assumed. */
-  minimumsFt?: number | null;
-}
-
-/**
- * One attempt at an approach debriefed; null where the track did not fly
- * it: never inbound over its final approach fix within PASS_NM, or then
- * not down its final within MATCH_NM on average, or far over the fix's
- * altitude.
- */
-export function debriefApproach(d: ProcedureDrawing, points: TrackPoint[], options: DebriefOptions = {}): ApproachDebrief | null {
-  const flown = callEngine("approach_debrief", {
-    drawing: d,
-    points: enginePoints(points),
-    attempt: options.attempt ?? null,
-    minimums_ft: options.minimumsFt ?? null,
-  });
-  return flown && shaped(flown);
 }
 
 /**

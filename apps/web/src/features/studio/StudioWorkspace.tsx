@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { fromChunk } from "../../lib/fromChunk";
-import type { WorkspaceProps } from "../shell";
+import type { WorkspaceProps } from "../../lib/workspace";
 import { loadPilotPanel } from "../pilot";
 import { StudioBar } from "./StudioBar";
 import { StudioMap } from "./StudioMap";

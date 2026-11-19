@@ -1,6 +1,4 @@
-import { useSyncExternalStore } from "react";
-
-type Popups = typeof import("./popups");
+import { lazyModule } from "../lib/lazyModule";
 
 /**
  * The anchored popups -- Base UI's menus, popovers and tooltips, and the
@@ -13,31 +11,9 @@ type Popups = typeof import("./popups");
  * then; until it is, a control that opens one draws as itself, and a tap
  * on it opens it once the chunk is in.
  */
-let popups: Popups | null = null;
-let loading: Promise<Popups> | null = null;
-const listeners = new Set<() => void>();
+const popups = lazyModule(() => import("./popups"));
 
-export function loadPopups(): Promise<Popups> {
-  loading ??= import("./popups").then((module) => {
-    popups = module;
-    for (const heard of listeners) heard();
-    return module;
-  });
-  return loading;
-}
-
-const subscribe = (heard: () => void) => {
-  listeners.add(heard);
-  return () => void listeners.delete(heard);
-};
+export const loadPopups = popups.load;
 
 /** The popups' module once it is in, else null (and it is asked for). */
-export function usePopups(): Popups | null {
-  const module = useSyncExternalStore(
-    subscribe,
-    () => popups,
-    () => null,
-  );
-  if (!module) void loadPopups().catch(() => {});
-  return module;
-}
+export const usePopups = () => popups.use();

@@ -1,9 +1,11 @@
 import { test, expect } from "@playwright/test";
 import {
+  openRoute,
   cardClose,
   closeCard,
   firstRow,
   grabberTo,
+  inSheet,
   openMapSettings,
   openTab,
   panelTabs,
@@ -19,7 +21,7 @@ import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 
 /**
  * On a phone, what a control opens (ResponsivePopover) and what a tap on
- * the chart opens (MapPopup) is a card in the map's one sheet, as Maps
+ * the chart opens (openCard) is a card in the map's one sheet, as Maps
  * opens everything in its sheet, at the owner's ask ("Yes to all, let's
  * have consistency and common code", 2026-10-27): not a sheet floating
  * over it, nor a popup over the chart (SheetCard). The card is its own
@@ -62,11 +64,11 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
   await expectDrawnOnce(page, () => closeCard(page, "sheet-card-close").then(() => expect(card).toHaveCount(0)), { maxMoves: 0 });
   await expect(panel).toHaveAttribute("data-panel", "peek");
 
-  // From half, over the route's box: the box out of sight under it, and
+  // From half, over the route's line: the line out of sight under it, and
   // there again as Escape puts it away, the panel still half way and the
   // focus back on the map's button.
   await grabberTo(page, "half");
-  const dest = panel.getByTestId("route-dest");
+  const dest = panel.getByTestId("route-summary");
   await expect(dest).toBeVisible();
   await openMapSettings(page);
   await expect(card).toBeVisible();
@@ -124,6 +126,9 @@ test("the Map card's gear opens Settings over it at Map, and Settings' close goe
   await expect(settings.getByRole("heading", { name: "Settings", level: 3 })).toBeVisible();
   // Raised all the way, its Map group in sight.
   await expect(settings.getByTestId("airport-weather-look")).toBeInViewport();
+  // Clear Your Path greyed with why while nothing has been flown (UI audit C16).
+  await expect(settings.getByTestId("own-trail-clear")).toBeDisabled();
+  await expect(settings.getByTestId("own-trail-clear")).toContainText("None yet: it is drawn as you fly");
   // Settings' close: it closes where it is, the Map card under it the same drawer.
   await expectDrawnOnce(
     page,
@@ -149,6 +154,7 @@ test("the approaches' pull-down is a card in the sheet, and the list it opens ta
   const panel = sideDrawer(page);
   await openTab(page, "Nav Log");
   await expect(panel).toHaveAttribute("data-panel", "full");
+  await openRoute(page);
   const arrive = panel.getByRole("region", { name: "KDLH · Arrive" });
   await arrive.locator("[data-testid=procedure-kind][data-kind=approach]").click({ timeout: slow(30000) });
   const menu = panel.getByTestId("procedure-menu");
@@ -191,7 +197,7 @@ test("a checkpoint tapped on the chart opens its card in the sheet; one opened o
   // Not a popup over the chart.
   await expect(page.locator(".maplibregl-popup:visible")).toHaveCount(0);
   // Its ring on the map is drawn by MapLibre now (PickedGl's picked-ring
-  // layers), not an SVG path a locator can count as Leaflet's was, so it
+  // layers), not an SVG path a locator can count, so it
   // is left to the map's own tests.
 
   // The Map settings over it: its card on top, the checkpoint's kept
@@ -277,7 +283,10 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
   const radio = page.getByTestId("mic-circle");
 
   // All the way up, a NOTAM's card over it at half: the buttons give way.
-  await place.getByTestId("place-notam").first().click();
+  // Its row reached as a finger would, clear of the card's floating tabs.
+  const row = place.getByTestId("place-notam").first();
+  await inSheet(page, row);
+  await row.click();
   const notam = sideDrawer(page).getByTestId("place-notam-card");
   await expect(notam).toHaveAttribute("data-panel", "half");
   await settled(notam);
@@ -290,8 +299,11 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
   // the buttons over the airport card's top, in sight.
   await notam.getByTestId("sheet-card-close").click();
   await expect(notam).toHaveCount(0);
+  // At half the row is under the card's edge, where no finger reaches it
+  // (the NOTAMs come after the pictures and the details): opened from the
+  // keyboard, as it is focusable there.
   await grabberTo(page, "half");
-  await place.getByTestId("place-notam").first().click();
+  await row.press("Enter");
   await expect(notam).toHaveAttribute("data-panel", "half");
   await settled(notam);
   await expect(notam.locator("[data-map-controls]")).toHaveCount(1);

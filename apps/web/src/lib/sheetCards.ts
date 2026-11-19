@@ -1,4 +1,3 @@
-import type { PillHead } from "./openCards";
 import type { PanelState } from "./mapChrome";
 import type { Drawer } from "@base-ui/react/drawer";
 import { createContext, useCallback, useContext, useMemo } from "react";
@@ -124,14 +123,13 @@ export function dropCard(id: string) {
 
 /** The head's place for a card whose content draws its own name there --
  *  a map card's (MapCard), its mark beside its name -- the id that name
- *  takes, which names the card, and what the pill shows of it there. */
+ *  takes, which names the card. */
 export const SheetCardHead = createContext<{
   slot: HTMLElement | null;
   /** The head row's start, where a map card puts its Share (MapCard's
    *  `start`), as every other card's head has it. */
   startSlot: HTMLElement | null;
   headingId: string;
-  setPill: (pill: PillHead | undefined) => void;
 } | null>(null);
 
 /** The card a component is drawn in (SheetCard, CardLayer): its id among

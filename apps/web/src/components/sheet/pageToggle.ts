@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { SheetPages } from "./SheetPages";
+import type { SheetPages } from "../../lib/sheetPages";
 
 /**
  * The sheet's pages as the toggle that turns them sees them (PageToggle,

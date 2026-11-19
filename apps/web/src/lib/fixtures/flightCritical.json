@@ -342,7 +342,6 @@
               "floor_ft": 3000,
               "eastbound": true,
               "service_ceiling_ft": 25000,
-              "airspace_ceiling_ft": null,
               "cloud_ceiling_ft": null,
               "hemispheric_rule_from_ft": 4000
             }
@@ -377,7 +376,6 @@
               "floor_ft": 3000,
               "eastbound": true,
               "service_ceiling_ft": 25000,
-              "airspace_ceiling_ft": null,
               "cloud_ceiling_ft": null,
               "hemispheric_rule_from_ft": 4000
             }
@@ -413,7 +411,6 @@
               "floor_ft": 3000,
               "eastbound": true,
               "service_ceiling_ft": 25000,
-              "airspace_ceiling_ft": null,
               "cloud_ceiling_ft": null,
               "hemispheric_rule_from_ft": 4000
             }
@@ -449,7 +446,6 @@
               "floor_ft": 3000,
               "eastbound": true,
               "service_ceiling_ft": 25000,
-              "airspace_ceiling_ft": null,
               "cloud_ceiling_ft": null,
               "hemispheric_rule_from_ft": 4000
             }
@@ -485,7 +481,6 @@
               "floor_ft": 3000,
               "eastbound": true,
               "service_ceiling_ft": 25000,
-              "airspace_ceiling_ft": null,
               "cloud_ceiling_ft": null,
               "hemispheric_rule_from_ft": 4000
             }
@@ -520,7 +515,6 @@
               "floor_ft": 3000,
               "eastbound": true,
               "service_ceiling_ft": 25000,
-              "airspace_ceiling_ft": null,
               "cloud_ceiling_ft": null,
               "hemispheric_rule_from_ft": 4000
             }

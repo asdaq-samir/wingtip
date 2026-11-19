@@ -18,7 +18,8 @@
  * engine's. Its stopwatch's figures are lib/format's (stopwatch).
  */
 import type { EmergencyFields, Leg } from "./api/types";
-import { callEngine, type EngineAnswer } from "./engine/engine";
+import { engineFields } from "./engineFields";
+import { callEngine } from "./engine/engine";
 
 /** The figures a student estimates, and how far off is still reasonable. */
 export const ALLOWANCES = [
@@ -40,14 +41,6 @@ export interface Diversion {
   gs: number;
   ete: number;
   fuel: number;
-}
-
-/** The wind triangle for a true course: the correction (+ right), the
- *  true heading and the ground speed; null where the crosswind is more
- *  than the airplane's speed and no heading holds the course. The nav
- *  log's own correction and ground speed, in the engine. */
-export function windTriangle(tc: number, tas: number, windFromDeg: number, windKt: number): EngineAnswer<"wind_triangle"> {
-  return callEngine("wind_triangle", { tc, tas, wind_from_deg: windFromDeg, wind_kt: windKt });
 }
 
 /** The diversion from a point on `leg` to a field `distanceNm` away on a
@@ -91,18 +84,6 @@ export function diversionFields(data: EmergencyFields, at: { lat: number; lon: n
     wind: leg.wind ? { from_deg: leg.wind.wind_dir_true_deg, kt: leg.wind.wind_speed_kt } : null,
     variation_deg: null,
     airplane: leg.tas_kt != null ? { cruise_tas_kt: leg.tas_kt } : null,
-    fields: data.fields.map((f) => ({
-      ident: f.ident,
-      name: f.name,
-      lat: f.lat,
-      lon: f.lon,
-      elevation_ft: f.elevation_ft ?? null,
-      runways: f.runways,
-      metar: f.metar ?? null,
-      towered: f.towered,
-      private: f.private,
-      military: f.military ?? null,
-      status: f.status ?? null,
-    })),
+    fields: engineFields(data),
   }).fields;
 }

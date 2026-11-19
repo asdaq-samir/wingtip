@@ -15,7 +15,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from wingtip import airports, copilot, emergency, faa_data, field_status, fuelstops
+from wingtip import airport_us, airports, copilot, emergency, faa_data, field_status, fuelstops
 from wingtip.engine import ask as engine
 
 ROW = {"municipality": "", "iso_region": "US-IL", "iso_country": "US", "elevation_ft": 800, "icao_code": None, "gps_code": None}
@@ -190,7 +190,7 @@ RAW = Path(__file__).resolve().parents[3] / "data/raw"
     reason="needs OurAirports' and NASR's tables on disk",
 )
 def test_no_real_closed_field_is_shown_as_open():
-    us = airports._us_airports(airports.DEFAULT_CACHE_PATH)
+    us = airport_us._us_airports(airports.DEFAULT_CACHE_PATH)
     closed = us[us["_closed"].notna()]
     assert len(closed) > 0, "NASR lists closed fields every cycle (229 in 2026-10-29's)"
     shown = {p["ident"] for p in airports.places_in(17, -180, 72, -60, limit=100_000)}

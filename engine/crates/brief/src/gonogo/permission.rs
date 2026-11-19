@@ -11,14 +11,14 @@
 //! phone is NASR APT_CON's, the manager's or else the owner's, as the
 //! planner gives it.
 //!
-//! A row of its own after the seven (`gonogo_field_permission`), which
-//! the hosts add to `gonogo_verdict_items`' list before its line; none
+//! A row of its own after the seven, which `gonogo_brief` puts in before
+//! the line over them; none
 //! where every field is public use. A caution, never a stop: the pilot
 //! may well have the permission already (the owner's "warn, never
 //! limit").
 
 use super::calls::In;
-use super::verdict::{item_json, Item};
+use super::verdict::Item;
 use crate::airport_use::{self, Use};
 use crate::json::Value;
 use wingtip_flight::field;
@@ -65,30 +65,20 @@ pub fn permission_item(fields: &[Used]) -> Option<Item> {
     })
 }
 
-/// `gonogo_field_permission` by name.
-pub fn call(name: &str, v: &Value) -> R<String> {
-    let i = In { name };
-    let fields = i
-        .list(v, "fields")?
+/// The fields as the hosts send them (GonogoFieldUse), under `key`.
+pub(crate) fn read_fields(i: In, v: &Value, key: &str) -> R<Vec<Used>> {
+    i.list(v, key)?
         .iter()
         .map(|f| {
             Ok(Used {
                 ident: i.str(f, "ident")?,
                 role: i.opt_str(f, "role")?.unwrap_or_else(|| "destination".into()),
-                usage: airport_use::read(name, f)?,
+                usage: airport_use::read(i.name, f)?,
                 phone: i.opt_str(f, "phone")?,
                 status: i.opt_str(f, "status")?,
             })
         })
-        .collect::<R<Vec<_>>>()?;
-    Ok(match permission_item(&fields) {
-        Some(item) => {
-            let mut out = String::new();
-            item_json(&mut out, &item);
-            out
-        }
-        None => "null".into(),
-    })
+        .collect()
 }
 
 #[cfg(test)]

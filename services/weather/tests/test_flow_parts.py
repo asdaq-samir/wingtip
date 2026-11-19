@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from wingtip import weather_store
+from wingtip import utc, weather_store
 
 from app import flow, flow_awc, flow_dafs, flow_grid, flow_nomads, flow_parts, flow_store
 
@@ -37,19 +37,25 @@ def _cell(lat: float, lon: float) -> tuple[int, int]:
     return int(round((flow_grid.NORTH - lat) / 0.25)), int(round((lon - flow_grid.WEST) / 0.25))
 
 
+def _half_cell(lat: float, lon: float) -> tuple[int, int]:
+    """A point's cell on the half grid AWC's points are put on (wind_half)."""
+    step = flow_grid.HALF_STEP_DEG
+    return int(round((flow_grid.NORTH - lat) / step)), int(round((lon - flow_grid.WEST) / step))
+
+
 def test_awcs_wind_from_280_is_mostly_from_the_west():
     answer = json.loads((HERE / "gfa_wind_sfc.json").read_text())
-    grids = flow_awc.wind_grids(answer)
+    grids = flow_awc.wind_half(answer)
     # The recorded point at 36 N, 103 W: from 280 at 8 kt, so toward 100:
     # east 8 sin(80) = 7.88 kt, north -8 cos(80) = -1.39 kt.
-    row, col = _cell(36.0, -103.0)
+    row, col = _half_cell(36.0, -103.0)
     assert grids["u"][row, col] == pytest.approx(7.88, abs=0.01)
     assert grids["v"][row, col] == pytest.approx(-1.39, abs=0.01)
 
 
 def test_a_level_under_the_ground_is_nothing_not_calm():
     answer = {"features": [{"geometry": {"coordinates": [-105.0, 39.5]}, "properties": {"wdir": 999, "wspd": 0}}]}
-    grids = flow_awc.wind_grids(answer)
+    grids = flow_awc.wind_half(answer)
     assert np.isnan(grids["u"]).all()
 
 
@@ -87,7 +93,7 @@ def _held_awc(cycle: datetime) -> dict:
     weather_store.write_blob(name, b"png", ".png")
     weather_store.write_array("flowwinds-held", np.zeros((2, 1, 2, 2), dtype=np.float16))
     numbers = {"array": "flowwinds-held", "fields": ["u", "v"], "levels": [{"id": "060", "ft": 6000.0}]}
-    return {"key": {"cycle": flow_nomads.iso(cycle), "forecast_hour": 2}, "files": {"wind": name}, "numbers": numbers}
+    return {"key": {"cycle": utc.iso(cycle), "forecast_hour": 2}, "files": {"wind": name}, "numbers": numbers}
 
 
 def test_an_awc_part_from_a_cycle_within_three_hours_is_not_fetched_again(monkeypatch):

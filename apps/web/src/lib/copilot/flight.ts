@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 /** The flight as planned, as the copilot reads it: published by the
- *  planner's screen (features/plan's useCopilotPublish) and read by the
+ *  planner's screen (features/flying's useCopilotPublish) and read by the
  *  copilot (features/copilot), so neither reaches into the other. Null
  *  with no route. */
 export interface CopilotFlight {

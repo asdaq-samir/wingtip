@@ -44,9 +44,4 @@ final class Outages {
         }
         return Optional.empty();
     }
-
-    /** Whether {@code name} is alerting now. */
-    synchronized boolean alerting(String name) {
-        return alerting.contains(name);
-    }
 }

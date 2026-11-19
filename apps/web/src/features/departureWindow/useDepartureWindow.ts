@@ -47,15 +47,16 @@ export function useDepartureWindow() {
     rules,
     airplane,
     // The route as planned, the planner's defaults for the rest: the
-    // altitude plan it picks, checkpoints, no own altitudes, procedures,
-    // holds or ground time; each hour a departure of its own.
+    // altitude plan it picks, no own altitudes, procedures, holds or
+    // ground time; each hour a departure of its own. Point to point, no
+    // checkpoints: the hours' figures need none, and none are found
+    // before the pilot asks for them (the owner, 2026-11-18).
     alternate: "",
     altitude_choice: "fastest",
     altitude_nearest: false,
     altitudes: "",
     altitude_starts: "",
-    checkpoints: true,
-    class_b_clearance: false,
+    checkpoints: false,
     crossings: "",
     ground: "",
     holds: "",
@@ -102,7 +103,6 @@ export function useDepartureWindow() {
     hours,
     best,
     airplane,
-    forecastUntil: query.data?.forecast_until ?? null,
     selected,
     /** The hour picked, or none (the strip's ToggleGroup lets it go). */
     pick: (depart: string | null) => setPicked(depart),

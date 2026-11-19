@@ -1,7 +1,8 @@
 """The ways to fly a route, for FPL's Routes (wingtip.route_options): the
 fastest, the best weather's and the fewest stops', each clear of
 thunderstorms, weather under the pilot's minimums, prohibited areas, TFRs
-and high ground."""
+and high ground; and the route kept out of the Class B it enters at its
+altitude (wingtip.class_b_route)."""
 
 import threading
 from datetime import datetime
@@ -10,6 +11,7 @@ from typing import Annotated
 from cachetools import TTLCache
 from fastapi import APIRouter, HTTPException, Query
 from wingtip import filed_routes, nearby
+from wingtip.class_b_route import class_b_route
 from wingtip import route_options as wingtip_route_options
 
 from .. import prefetch
@@ -32,14 +34,22 @@ _KEPT_SHORT: TTLCache = TTLCache(maxsize=128, ttl=60)
 _LOCK = threading.Lock()
 
 
+#: The route as typed with the fuel stops it needs put in where it is short
+#: of fuel, each landing with 14 CFR 91.151's reserve (the engine's
+#: route_options `own`, route/options/stops.rs): the owner, 2026-11-17,
+#: "Suggested routes should also have 'add fuel stops'".
+FUEL_WORDS = "With Fuel Stops"
 #: The words on the route line's chip for each kind of way, and the order
-#: they come in after "None" and "Your Route" (the owner's canvas,
+#: they come in after "As typed" and "With Fuel Stops" (the owner's canvas,
 #: 2026-10-26). The fewest stops' way is not offered (lib/routeWays).
 CHIP_WORDS = {"weather": "Avoid Weather", "fastest": "Fastest", "land": "Over Land"}
 #: The last chip's: the route pilots file most between the two fields
 #: (wingtip.filed_routes; the owner, 2026-10-27: "Most filed is how you get
 #: most flown").
 FILED_WORDS = "Most Filed"
+#: The route kept out of the Class B it enters (the owner, 2026-11-17:
+#: "You can still avoid class B in the suggested routes"), after the ways.
+CLASS_B_WORDS = "Avoid Class B"
 
 
 def _same(ident: str) -> str:
@@ -49,8 +59,9 @@ def _same(ident: str) -> str:
 
 
 def _chips(found: dict, typed: list[str]) -> list[dict]:
-    """FPL's route line: "None", the route as typed; "Your Route" with the
-    fuel stops it needs; then the ways, each named by what it is alone --
+    """FPL's route line: "As typed", the route as typed; "With Fuel Stops",
+    it with the fuel stops it needs, where it is short of fuel; then the
+    ways, each named by what it is alone --
     "Fastest", "Avoid Weather" -- not the stops it adds, at the owner's ask
     (2026-10-28: "for routes, don't include stops in its label"), its
     stops drawn on the map and put in the route's box as it is picked.
@@ -76,12 +87,17 @@ def _chips(found: dict, typed: list[str]) -> list[dict]:
         chips.append({"key": key, "label": words, "stops": way["stops"], "fuel": way["fuel"], "crosses": way.get("crosses", [])})
 
     own = found.get("own")
-    if own and own.get("landings"):
-        add("fuel", "Your Route", own)
+    # Only where a fuel stop is put in: the route as typed with none is
+    # "As typed" already.
+    if own and own.get("fuel"):
+        add("fuel", FUEL_WORDS, own)
     for kind in CHIP_WORDS:
         way = next((o for o in found.get("options", []) if kind in o["kinds"]), None)
         if way:
             add(kind, " & ".join(CHIP_WORDS[k] for k in CHIP_WORDS if k in way["kinds"]), way)
+    class_b = found.get("class_b")
+    if class_b:
+        add("class_b", CLASS_B_WORDS, class_b)
     filed = found.get("filed")
     if filed:
         add("filed", FILED_WORDS, filed)
@@ -128,6 +144,10 @@ def route_options(
     #: none given, the rules' alone.
     min_ceiling_ft: Annotated[float | None, Query(ge=0, le=20000)] = None,
     min_visibility_sm: Annotated[float | None, Query(ge=0, le=50)] = None,
+    #: The altitude the route as planned cruises at, its highest leg's
+    #: (the nav log's): where it enters Class B there, Avoid Class B is
+    #: offered. None before the plan: not offered.
+    altitude_ft: Annotated[float | None, Query(ge=0, le=60000)] = None,
 ) -> RouteOptions:
     """The ways to fly from `dep` to `dest` in the airplane, at the owner's
     ask ("smart to reroute for fastest time along safe weather, over
@@ -149,6 +169,7 @@ def route_options(
         depart.isoformat() if depart else None,
         min_ceiling_ft,
         min_visibility_sm,
+        altitude_ft,
     )
     with _LOCK:
         kept = _KEPT.get(key) or _KEPT_SHORT.get(key)
@@ -181,6 +202,10 @@ def route_options(
     # Which of its points are fields landed at, not fixes flown over.
     current_landed = [not a.get("fix") for a in route.airports[1:-1]] if route else []
     filed, filed_as = _most_filed(dep, dest)
+    # The route as planned, or the straight line, round the Class B it
+    # enters at its altitude (14 CFR 91.131(a)(1)), for Avoid Class B.
+    points = [(a["lat"], a["lon"]) for a in route.airports] if route else [(start["lat"], start["lon"]), (end["lat"], end["lon"])]
+    class_b = class_b_route(points, current_idents, current_landed, altitude_ft) if altitude_ft is not None else None
     # Where there is somewhere to eat at each fuel field the ways weigh
     # (wingtip.nearby, the places kept for it), so a stop with a meal is
     # landed at among chains of as many stops; a field not read yet is
@@ -199,6 +224,7 @@ def route_options(
         current_landed=current_landed,
         filed=filed,
         food=nearby.food_at,
+        class_b=class_b,
     )
     unread = found.pop("food_unread", None) or []
     for field in unread:
@@ -212,10 +238,10 @@ def route_options(
             if chip["key"] == "filed":
                 chip["stops"] = filed_as
     found.pop("filed", None)
-    # Each chip's route read ahead, its chart and its ground, as a typed
-    # route is (app.prefetch): a tap on one waited on every new hop's
-    # chart read, 18 s for KPWK to KCOS by three fixes (2026-10-27). The
-    # first chip last, as the reads ahead go newest first.
+    # Each chip's route read ahead, the ground under it, as a typed route
+    # is (app.prefetch); its chart's read for checkpoints waits for the
+    # pilot to ask for them (the owner, 2026-11-18). The first chip last,
+    # as the reads ahead go newest first.
     for chip in reversed(chips):
         if chip["key"] != "none":
             prefetch.route(dep, dest, ",".join(chip["stops"]))

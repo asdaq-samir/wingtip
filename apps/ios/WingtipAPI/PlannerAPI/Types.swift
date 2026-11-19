@@ -509,10 +509,12 @@ public protocol APIProtocol: Sendable {
     /// path, and there is no reason a pilot should watch an empty map for
     /// them.
     ///
-    /// And the route's slow parts are started here, the first thing the web
-    /// app asks for a route: the chart's read and the ground under it, on
-    /// threads of their own (app.prefetch), so the nav log asked for beside
-    /// this finds them under way or done.
+    /// And the ground under the route is started here, the first thing the
+    /// web app asks for a route, on a thread of its own (app.prefetch), so
+    /// the nav log asked for beside this finds it under way or done. Not the
+    /// chart's read for checkpoints: nothing finds them until the pilot asks
+    /// (/api/checkpoints, or a nav log with checkpoints), the owner's rule
+    /// (2026-11-18). checkpoints_ready only looks at what is kept.
     ///
     /// - Remark: HTTP `GET /api/course`.
     /// - Remark: Generated from `#/paths//api/course/get(course)`.
@@ -617,7 +619,7 @@ public protocol APIProtocol: Sendable {
     /// to a field, in the planner's air on the way there at `altitude_ft` --
     /// the winds and temperature aloft for the hour (wingtip.weather, the FD
     /// period for `depart`, now by default), the airplane's true airspeed and
-    /// burn in that air (wingtip.performance) and the variation (wingtip.magnetic,
+    /// burn in that air (the engine's wingtip_flight::performance) and the variation (wingtip.magnetic,
     /// the WMM) -- the true course and distance, the wind triangle, the
     /// magnetic heading, ground speed, time and fuel, each step in words;
     /// and the student's estimates (`mh`, `gs`, `ete`, `fuel`) checked
@@ -1013,6 +1015,15 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/pilot/experience`.
     /// - Remark: Generated from `#/paths//api/pilot/experience/post(experience)`.
     func experience(_ input: Operations.Experience.Input) async throws -> Operations.Experience.Output
+    /// Instructor Records Since
+    ///
+    /// The first day an instructor's page lists what they signed: 3 years
+    /// before `today`, as 14 CFR 61.189(c) has them keep the records (the
+    /// engine's instructor_records_since).
+    ///
+    /// - Remark: HTTP `GET /api/pilot/instructor-records-since`.
+    /// - Remark: Generated from `#/paths//api/pilot/instructor-records-since/get(instructor_records_since)`.
+    func instructorRecordsSince(_ input: Operations.InstructorRecordsSince.Input) async throws -> Operations.InstructorRecordsSince.Output
     /// Places Search
     ///
     /// Where a place typed is, for Nearest to find the fields near it
@@ -1048,7 +1059,7 @@ public protocol APIProtocol: Sendable {
     /// them in its own air: the cruise figures are the aeroplane's at a
     /// reference altitude on a standard day, and the forecast temperature
     /// at the leg's altitude gives the density altitude they are flown at
-    /// (wingtip.performance). depart, an ISO time (UTC when naive), picks the
+    /// (the engine's wingtip_flight::performance). depart, an ISO time (UTC when naive), picks the
     /// winds-aloft forecast period the legs are flown on -- the 6-, 12- or
     /// 24-hour product, whichever is valid closest to the departure;
     /// without it, the 6-hour product, i.e. about now -- and whether the
@@ -1078,17 +1089,6 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/retrain`.
     /// - Remark: Generated from `#/paths//api/retrain/post(retrain)`.
     func retrain(_ input: Operations.Retrain.Input) async throws -> Operations.Retrain.Output
-    /// Route Check
-    ///
-    /// Whether a route would plan, checked as a typed one is (load_route):
-    /// a 404 naming an ident that is not one, a 422 for a stop at the point
-    /// before it or too many stops. With an end missing, each ident given is
-    /// checked alone. Nothing is read or planned. The gateway forwards
-    /// no app here.
-    ///
-    /// - Remark: HTTP `GET /api/route-check`.
-    /// - Remark: Generated from `#/paths//api/route-check/get(route_check)`.
-    func routeCheck(_ input: Operations.RouteCheck.Input) async throws -> Operations.RouteCheck.Output
     /// Route Options
     ///
     /// The ways to fly from `dep` to `dest` in the airplane, at the owner's
@@ -1462,58 +1462,6 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/words/changes/sources`.
     /// - Remark: Generated from `#/paths//api/words/changes/sources/post(changes_sources)`.
     func changesSources(_ input: Operations.ChangesSources.Input) async throws -> Operations.ChangesSources.Output
-    /// Coach Sources
-    ///
-    /// A proficiency plan's lines, each a source a sentence can cite.
-    ///
-    /// - Remark: HTTP `POST /api/words/coach/sources`.
-    /// - Remark: Generated from `#/paths//api/words/coach/sources/post(coach_sources)`.
-    func coachSources(_ input: Operations.CoachSources.Input) async throws -> Operations.CoachSources.Output
-    /// Debrief Sources
-    ///
-    /// A flown flight's debrief as sources (POST /api/debrief: the time in
-    /// the air, each leg's altitude and course held, each checkpoint's time,
-    /// each pattern entry, its notes, and the ACS tolerances they are marked
-    /// against). A 422 where there is no debrief: the track never flew.
-    ///
-    /// - Remark: HTTP `POST /api/words/debrief/sources`.
-    /// - Remark: Generated from `#/paths//api/words/debrief/sources/post(debrief_sources)`.
-    func debriefSources(_ input: Operations.DebriefSources.Input) async throws -> Operations.DebriefSources.Output
-    /// Notam Sources
-    ///
-    /// The NOTAMs and TFRs of a flight as sources, with the flight itself
-    /// first: the NOTAMs in force or to come at every field the route lands
-    /// at, as the FAA's NOTAM feed gave them (wingtip.notams, SWIM's FNS),
-    /// and the TFRs near the route over the briefing's hours
-    /// (wingtip.tfr.along_route, as GET /api/briefing asks them: two hours of
-    /// flight and an hour past, the route's own time not being known here).
-    /// None at all where there is no NOTAM and no TFR: nothing to say.
-    /// `coverage_since`, the day the NOTAM feed was first heard (UTC); `unchecked`, "tfrs"
-    /// where tfr.faa.gov did not answer.
-    ///
-    /// - Remark: HTTP `POST /api/words/notams/sources`.
-    /// - Remark: Generated from `#/paths//api/words/notams/sources/post(notam_sources)`.
-    func notamSources(_ input: Operations.NotamSources.Input) async throws -> Operations.NotamSources.Output
-    /// Risk Sources
-    ///
-    /// The Go / No-Go as sources (POST /api/go-no-go's line, each
-    /// finding's line, the risk assessment's level and every factor it
-    /// counted) and the pilot's own record as the client sends it.
-    ///
-    /// - Remark: HTTP `POST /api/words/risk/sources`.
-    /// - Remark: Generated from `#/paths//api/words/risk/sources/post(risk_sources)`.
-    func riskSources(_ input: Operations.RiskSources.Input) async throws -> Operations.RiskSources.Output
-    /// Weather Sources
-    ///
-    /// The briefing of a flight as sources (GET /api/briefing, asked here
-    /// with the same parameters: its METARs, its TAF stations at the flight's
-    /// time there, its hazards, G-AIRMETs, pilot reports and TFRs, the fields
-    /// below VFR and its own "VFR flight not recommended"), the flight first.
-    /// A briefing that cannot be had fails as it does there (a 502).
-    ///
-    /// - Remark: HTTP `POST /api/words/weather/sources`.
-    /// - Remark: Generated from `#/paths//api/words/weather/sources/post(weather_sources)`.
-    func weatherSources(_ input: Operations.WeatherSources.Input) async throws -> Operations.WeatherSources.Output
 }
 
 /// Convenience overloads for operation inputs.
@@ -2324,10 +2272,12 @@ extension APIProtocol {
     /// path, and there is no reason a pilot should watch an empty map for
     /// them.
     ///
-    /// And the route's slow parts are started here, the first thing the web
-    /// app asks for a route: the chart's read and the ground under it, on
-    /// threads of their own (app.prefetch), so the nav log asked for beside
-    /// this finds them under way or done.
+    /// And the ground under the route is started here, the first thing the
+    /// web app asks for a route, on a thread of its own (app.prefetch), so
+    /// the nav log asked for beside this finds it under way or done. Not the
+    /// chart's read for checkpoints: nothing finds them until the pilot asks
+    /// (/api/checkpoints, or a nav log with checkpoints), the owner's rule
+    /// (2026-11-18). checkpoints_ready only looks at what is kept.
     ///
     /// - Remark: HTTP `GET /api/course`.
     /// - Remark: Generated from `#/paths//api/course/get(course)`.
@@ -2484,7 +2434,7 @@ extension APIProtocol {
     /// to a field, in the planner's air on the way there at `altitude_ft` --
     /// the winds and temperature aloft for the hour (wingtip.weather, the FD
     /// period for `depart`, now by default), the airplane's true airspeed and
-    /// burn in that air (wingtip.performance) and the variation (wingtip.magnetic,
+    /// burn in that air (the engine's wingtip_flight::performance) and the variation (wingtip.magnetic,
     /// the WMM) -- the true course and distance, the wind triangle, the
     /// magnetic heading, ground speed, time and fuel, each step in words;
     /// and the student's estimates (`mh`, `gs`, `ete`, `fuel`) checked
@@ -3140,6 +3090,23 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// Instructor Records Since
+    ///
+    /// The first day an instructor's page lists what they signed: 3 years
+    /// before `today`, as 14 CFR 61.189(c) has them keep the records (the
+    /// engine's instructor_records_since).
+    ///
+    /// - Remark: HTTP `GET /api/pilot/instructor-records-since`.
+    /// - Remark: Generated from `#/paths//api/pilot/instructor-records-since/get(instructor_records_since)`.
+    public func instructorRecordsSince(
+        query: Operations.InstructorRecordsSince.Input.Query,
+        headers: Operations.InstructorRecordsSince.Input.Headers = .init()
+    ) async throws -> Operations.InstructorRecordsSince.Output {
+        try await instructorRecordsSince(Operations.InstructorRecordsSince.Input(
+            query: query,
+            headers: headers
+        ))
+    }
     /// Places Search
     ///
     /// Where a place typed is, for Nearest to find the fields near it
@@ -3183,7 +3150,7 @@ extension APIProtocol {
     /// them in its own air: the cruise figures are the aeroplane's at a
     /// reference altitude on a standard day, and the forecast temperature
     /// at the leg's altitude gives the density altitude they are flown at
-    /// (wingtip.performance). depart, an ISO time (UTC when naive), picks the
+    /// (the engine's wingtip_flight::performance). depart, an ISO time (UTC when naive), picks the
     /// winds-aloft forecast period the legs are flown on -- the 6-, 12- or
     /// 24-hour product, whichever is valid closest to the departure;
     /// without it, the 6-hour product, i.e. about now -- and whether the
@@ -3222,25 +3189,6 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//api/retrain/post(retrain)`.
     public func retrain(headers: Operations.Retrain.Input.Headers = .init()) async throws -> Operations.Retrain.Output {
         try await retrain(Operations.Retrain.Input(headers: headers))
-    }
-    /// Route Check
-    ///
-    /// Whether a route would plan, checked as a typed one is (load_route):
-    /// a 404 naming an ident that is not one, a 422 for a stop at the point
-    /// before it or too many stops. With an end missing, each ident given is
-    /// checked alone. Nothing is read or planned. The gateway forwards
-    /// no app here.
-    ///
-    /// - Remark: HTTP `GET /api/route-check`.
-    /// - Remark: Generated from `#/paths//api/route-check/get(route_check)`.
-    public func routeCheck(
-        query: Operations.RouteCheck.Input.Query = .init(),
-        headers: Operations.RouteCheck.Input.Headers = .init()
-    ) async throws -> Operations.RouteCheck.Output {
-        try await routeCheck(Operations.RouteCheck.Input(
-            query: query,
-            headers: headers
-        ))
     }
     /// Route Options
     ///
@@ -3879,98 +3827,6 @@ extension APIProtocol {
         body: Operations.ChangesSources.Input.Body
     ) async throws -> Operations.ChangesSources.Output {
         try await changesSources(Operations.ChangesSources.Input(
-            headers: headers,
-            body: body
-        ))
-    }
-    /// Coach Sources
-    ///
-    /// A proficiency plan's lines, each a source a sentence can cite.
-    ///
-    /// - Remark: HTTP `POST /api/words/coach/sources`.
-    /// - Remark: Generated from `#/paths//api/words/coach/sources/post(coach_sources)`.
-    public func coachSources(
-        headers: Operations.CoachSources.Input.Headers = .init(),
-        body: Operations.CoachSources.Input.Body
-    ) async throws -> Operations.CoachSources.Output {
-        try await coachSources(Operations.CoachSources.Input(
-            headers: headers,
-            body: body
-        ))
-    }
-    /// Debrief Sources
-    ///
-    /// A flown flight's debrief as sources (POST /api/debrief: the time in
-    /// the air, each leg's altitude and course held, each checkpoint's time,
-    /// each pattern entry, its notes, and the ACS tolerances they are marked
-    /// against). A 422 where there is no debrief: the track never flew.
-    ///
-    /// - Remark: HTTP `POST /api/words/debrief/sources`.
-    /// - Remark: Generated from `#/paths//api/words/debrief/sources/post(debrief_sources)`.
-    public func debriefSources(
-        headers: Operations.DebriefSources.Input.Headers = .init(),
-        body: Operations.DebriefSources.Input.Body
-    ) async throws -> Operations.DebriefSources.Output {
-        try await debriefSources(Operations.DebriefSources.Input(
-            headers: headers,
-            body: body
-        ))
-    }
-    /// Notam Sources
-    ///
-    /// The NOTAMs and TFRs of a flight as sources, with the flight itself
-    /// first: the NOTAMs in force or to come at every field the route lands
-    /// at, as the FAA's NOTAM feed gave them (wingtip.notams, SWIM's FNS),
-    /// and the TFRs near the route over the briefing's hours
-    /// (wingtip.tfr.along_route, as GET /api/briefing asks them: two hours of
-    /// flight and an hour past, the route's own time not being known here).
-    /// None at all where there is no NOTAM and no TFR: nothing to say.
-    /// `coverage_since`, the day the NOTAM feed was first heard (UTC); `unchecked`, "tfrs"
-    /// where tfr.faa.gov did not answer.
-    ///
-    /// - Remark: HTTP `POST /api/words/notams/sources`.
-    /// - Remark: Generated from `#/paths//api/words/notams/sources/post(notam_sources)`.
-    public func notamSources(
-        headers: Operations.NotamSources.Input.Headers = .init(),
-        body: Operations.NotamSources.Input.Body
-    ) async throws -> Operations.NotamSources.Output {
-        try await notamSources(Operations.NotamSources.Input(
-            headers: headers,
-            body: body
-        ))
-    }
-    /// Risk Sources
-    ///
-    /// The Go / No-Go as sources (POST /api/go-no-go's line, each
-    /// finding's line, the risk assessment's level and every factor it
-    /// counted) and the pilot's own record as the client sends it.
-    ///
-    /// - Remark: HTTP `POST /api/words/risk/sources`.
-    /// - Remark: Generated from `#/paths//api/words/risk/sources/post(risk_sources)`.
-    public func riskSources(
-        headers: Operations.RiskSources.Input.Headers = .init(),
-        body: Operations.RiskSources.Input.Body
-    ) async throws -> Operations.RiskSources.Output {
-        try await riskSources(Operations.RiskSources.Input(
-            headers: headers,
-            body: body
-        ))
-    }
-    /// Weather Sources
-    ///
-    /// The briefing of a flight as sources (GET /api/briefing, asked here
-    /// with the same parameters: its METARs, its TAF stations at the flight's
-    /// time there, its hazards, G-AIRMETs, pilot reports and TFRs, the fields
-    /// below VFR and its own "VFR flight not recommended"), the flight first.
-    /// A briefing that cannot be had fails as it does there (a 502).
-    ///
-    /// - Remark: HTTP `POST /api/words/weather/sources`.
-    /// - Remark: Generated from `#/paths//api/words/weather/sources/post(weather_sources)`.
-    public func weatherSources(
-        headers: Operations.WeatherSources.Input.Headers = .init(),
-        body: Operations.WeatherSources.Input.Body
-    ) async throws -> Operations.WeatherSources.Output {
-        try await weatherSources(Operations.WeatherSources.Input(
             headers: headers,
             body: body
         ))

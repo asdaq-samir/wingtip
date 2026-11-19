@@ -36,15 +36,6 @@ fn a_pilots_own_altitude_is_warned_with_the_rule_it_breaks() {
 }
 
 #[test]
-fn the_91_119_floor_by_the_rules_own_figure() {
-    let f = fixture();
-    for case in cases(&f, "floor") {
-        let got = ask("floor_caution", json!({ "segment": case["segment"], "altitude_ft": case["altitude_ft"] }));
-        assert_same(&got, &case["answer"], case);
-    }
-}
-
-#[test]
 fn prohibited_airspace_is_a_warning() {
     let f = fixture();
     for case in cases(&f, "prohibited") {

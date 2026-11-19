@@ -18,7 +18,7 @@ import datetime as dt
 
 import numpy as np
 
-from .. import airports, geo, weather_loop, weather_store
+from .. import airports, geo, utc, weather_loop, weather_store
 from . import iem
 
 #: How near the track a station's reports are given: a design choice for
@@ -40,14 +40,6 @@ MOST_FRAMES = 288
 #: The most points a track's nearness is worked out from: a long track
 #: is thinned evenly, which leaves the stations near it the same.
 MOST_POINTS = 200
-
-
-def _iso(t: float) -> str:
-    return dt.datetime.fromtimestamp(t, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _epoch(iso: str) -> float:
-    return dt.datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp()
 
 
 def _thinned(items: list, most: int) -> list:
@@ -122,7 +114,7 @@ def metars(stations: list[str], start: float, end: float) -> list[dict]:
     out = []
     for day in _days(lo, hi):
         for reports in iem.day_reports("metar", stations, day).values():
-            out.extend(r for r in reports if lo <= _epoch(r["time"]) <= hi)
+            out.extend(r for r in reports if lo <= utc.epoch(r["time"]) <= hi)
     return sorted(out, key=lambda r: (r["time"], r["station"]))
 
 
@@ -139,8 +131,8 @@ def tafs(stations: list[str], start: float, end: float) -> list[dict]:
     out = []
     for station in stations:
         issued = sorted(by_station[station], key=lambda r: r["issued"])
-        before = [r for r in issued if _epoch(r["issued"]) <= start]
-        during = [r for r in issued if start < _epoch(r["issued"]) <= end]
+        before = [r for r in issued if utc.epoch(r["issued"]) <= start]
+        during = [r for r in issued if start < utc.epoch(r["issued"]) <= end]
         out.extend(([before[-1]] if before else []) + during)
     return [{"station": r["station"], "issued": r["issued"], "raw": r["raw"]} for r in out]
 
@@ -152,7 +144,7 @@ def radar_frames(start: float, end: float) -> list[dict]:
     most, thinned evenly beyond."""
     first = int(start // RADAR_STEP_S * RADAR_STEP_S)
     stamps = list(range(first, int(end) + 1, RADAR_STEP_S))
-    return [{"valid": _iso(t), "tiles": weather_loop.radar_tiles(t)} for t in _thinned(stamps, MOST_FRAMES)]
+    return [{"valid": utc.iso(t), "tiles": weather_loop.radar_tiles(t)} for t in _thinned(stamps, MOST_FRAMES)]
 
 
 def weather_then(start: float, end: float, points: list[tuple[float, float]]) -> dict:

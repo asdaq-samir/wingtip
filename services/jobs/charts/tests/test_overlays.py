@@ -26,8 +26,8 @@ import pytest
 import shapely
 from shapely.geometry import Polygon
 
-from charts import airports, overlays
-from wingtip import cycle_pack, vector_tiles
+from charts import airports, nasr_layers, overlay_layers, overlays
+from wingtip import cycle_pack, phone_pack_shapes, vector_tiles
 from wingtip import fixes as wingtip_fixes
 
 #: The shared fixtures, beside wingtip's own tests.
@@ -296,7 +296,7 @@ def _lines(lines) -> list[dict]:
 
 def test_the_airspace_carries_the_shapefiles_fields_and_its_shape_unchanged(sources):
     pack, _ = sources
-    features = _lines(overlays.airspace_features(pack))
+    features = _lines(overlay_layers.airspace_features(pack))
     assert len(features) == len(pack.attrs("airspace")) == 21
     floors = sorted(f["properties"]["floor_ft"] for f in features if f["properties"]["class"] == "B")
     # The Chicago Class B's six shelves, from the surface to 4,000 ft MSL,
@@ -330,23 +330,23 @@ def test_each_class_b_c_and_d_shelf_has_one_label_on_its_ring(sources):
     three), on the shelf's own ring, its outer edge, turned along it and
     upright."""
     pack, _ = sources
-    labels = _lines(overlays.airspace_label_features(pack))
+    labels = _lines(overlay_layers.airspace_label_features(pack))
     shapes = {
         n: g
-        for a, n, g in zip(pack.attrs("airspace"), cycle_pack._controlled_numbers(pack), pack.geometries("airspace"))
+        for a, n, g in zip(pack.attrs("airspace"), phone_pack_shapes._controlled_numbers(pack), pack.geometries("airspace"))
         if a["CLASS"] in "BCD"
     }
     assert sorted(f["properties"]["number"] for f in labels) == sorted(shapes)
     for f in labels:
         p = f["properties"]
         assert -90 < p["angle"] <= 90
-        assert f["tippecanoe"]["minzoom"] == overlays.AIRSPACE_MIN_ZOOM[p["class"]]
+        assert f["tippecanoe"]["minzoom"] == overlay_layers.AIRSPACE_MIN_ZOOM[p["class"]]
         ring = shapes[p["number"]]
         rings = [q.exterior for q in getattr(ring, "geoms", [ring])]
         assert min(r.distance(shapely.Point(f["geometry"]["coordinates"])) for r in rings) < 1e-6
-    # The figures the map writes the label from: O'Hare's surface area's.
+    # Its figures and the engine's words, ceiling over floor: O'Hare's surface area's.
     surface = next(f for f in labels if f["properties"]["class"] == "B" and f["properties"]["floor_ft"] == 0)
-    assert {"ceiling_ft": 10000.0, "ceiling_excluded": False}.items() <= surface["properties"].items()
+    assert {"ceiling_ft": 10000.0, "ceiling_excluded": False, "tab": "100\nSFC"}.items() <= surface["properties"].items()
 
 
 def test_a_round_rings_label_is_north_north_west_along_the_ring():
@@ -357,7 +357,7 @@ def test_a_round_rings_label_is_north_north_west_along_the_ring():
     lat0 = 43.14
     k = math.cos(math.radians(lat0))
     circle = Polygon([(-89.35 + 0.07 * math.sin(math.radians(a)) / k, lat0 + 0.07 * math.cos(math.radians(a))) for a in range(0, 360, 5)])
-    (lon, lat), angle = overlays._label_place(circle, (-89.35, lat0))
+    (lon, lat), angle = overlay_layers._label_place(circle, (-89.35, lat0))
     azimuth = math.degrees(math.atan2((lon + 89.35) * k, lat - lat0)) % 360
     assert azimuth == pytest.approx(330, abs=3)
     assert angle == pytest.approx(-30, abs=3)
@@ -368,14 +368,14 @@ def test_a_round_rings_label_is_north_north_west_along_the_ring():
         for r, angles in ((0.14, range(150, 211, 5)), (0.07, range(210, 149, -5)))
         for a in angles
     ]
-    (lon, lat), angle = overlays._label_place(Polygon(arc), (-89.35, lat0))
+    (lon, lat), angle = overlay_layers._label_place(Polygon(arc), (-89.35, lat0))
     assert lon == pytest.approx(-89.35, abs=1e-6) and lat == pytest.approx(lat0 - 0.14, abs=1e-6)
     assert angle == pytest.approx(0, abs=1)
 
 
 def test_the_special_use_area_keeps_its_hole_and_fields(sources):
     pack, _ = sources
-    [area] = _lines(overlays.special_use_features(pack))
+    [area] = _lines(overlay_layers.special_use_features(pack))
     expected = {
         "type": "R",
         "kind": "restricted area",
@@ -430,12 +430,12 @@ def test_the_runways_from_their_surveyed_ends(sources):
     its two ends, its centreline, and each end numbered and headed along
     it; 06C's 11/29, with one end unsurveyed, is left out."""
     _, nasr = sources
-    found = _lines(overlays.runway_features(nasr / "APT_RWY.csv", nasr / "APT_RWY_END.csv"))
+    found = _lines(nasr_layers.runway_features(nasr / "APT_RWY.csv", nasr / "APT_RWY_END.csv"))
     assert {f["properties"]["runway"] for f in found} == {"10L/28R"}
     parts = {f["properties"]["part"]: f for f in found if f["properties"]["part"] != "end"}
     ends = {f["properties"]["end_id"]: f for f in found if f["properties"]["part"] == "end"}
     assert set(parts) == {"surface", "centreline"} and set(ends) == {"10L", "28R"}
-    assert all(f["tippecanoe"]["minzoom"] == overlays.RUNWAY_MIN_ZOOM for f in found)
+    assert all(f["tippecanoe"]["minzoom"] == overlay_layers.RUNWAY_MIN_ZOOM for f in found)
     assert parts["surface"]["properties"] == {
         "site_no": "04508.",
         "runway": "10L/28R",
@@ -475,12 +475,12 @@ def test_the_runways_from_their_surveyed_ends(sources):
     ],
 )
 def test_a_hard_surface_is_one_paved_all_through(surface, hard):
-    assert overlays._hard(surface) is hard
+    assert nasr_layers._hard(surface) is hard
 
 
 def test_the_navaids_and_every_fix(sources):
     _, nasr = sources
-    navaids = {f["properties"]["ident"]: f for f in _lines(overlays.navaid_features(nasr / "NAV_BASE.csv"))}
+    navaids = {f["properties"]["ident"]: f for f in _lines(nasr_layers.navaid_features(nasr / "NAV_BASE.csv"))}
     assert navaids["DPA"]["properties"] == {
         "ident": "DPA",
         "name": "Dupage",
@@ -498,12 +498,12 @@ def test_the_navaids_and_every_fix(sources):
     # view reads them (wingtip.fixes.navaid_remarks), one a line.
     remarked = {
         f["properties"]["ident"]: f["properties"]
-        for f in _lines(overlays.navaid_features(nasr / "NAV_BASE.csv", rmk_path=nasr / "NAV_RMK.csv"))
+        for f in _lines(nasr_layers.navaid_features(nasr / "NAV_BASE.csv", rmk_path=nasr / "NAV_RMK.csv"))
     }
     assert remarked["DPA"]["remarks"] == "\n".join(wingtip_fixes.navaid_remarks("DPA", "VOR/DME", nasr))
     assert "072-090" in remarked["DPA"]["remarks"]
     assert "remarks" not in remarked["CGT"]
-    fixes = {f["properties"]["ident"]: f for f in _lines(overlays.fix_features(nasr / "FIX_BASE.csv"))}
+    fixes = {f["properties"]["ident"]: f for f in _lines(nasr_layers.fix_features(nasr / "FIX_BASE.csv"))}
     assert fixes["VPAON"]["properties"] == {"ident": "VPAON", "kind": "VFR waypoint", "vfr": True, "enroute_low": False}
     assert fixes["VPDVA"]["properties"]["kind"] == "Helicopter route waypoint"
     assert {k: f["tippecanoe"]["minzoom"] for k, f in fixes.items()} == {"VPAON": 8, "VPDVA": 10, "ACCRA": 8, "EVRSN": 10}
@@ -563,7 +563,7 @@ def test_the_archive_is_pmtiles_of_vector_tiles_with_its_layers_and_fields(built
     layers = {layer["id"]: layer for layer in meta["vector_layers"]}
     assert set(layers) == set(vector_tiles.LAYERS)
     assert {"class", "local_type", "floor_ft", "floor_ref", "ceiling_ft", "name", "ident"} <= set(layers["airspace"]["fields"])
-    assert {"class", "floor_ft", "ceiling_ft", "angle", "number"} <= set(layers["airspace_labels"]["fields"])
+    assert {"class", "tab", "floor_ft", "ceiling_ft", "angle", "number"} <= set(layers["airspace_labels"]["fields"])
     assert {"type", "name", "floor_ft", "ceiling_ft", "times_of_use"} <= set(layers["special_use"]["fields"])
     assert {"label", "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref", "angle", "side"} <= set(layers["special_use_labels"]["fields"])
     assert {"ident", "name", "towered", "airspace", "hard_ft", "longest_ft", "use", "rank", "size"} <= set(layers["airports"]["fields"])
@@ -574,8 +574,8 @@ def test_the_archive_is_pmtiles_of_vector_tiles_with_its_layers_and_fields(built
     # Every feature that meets the box, and nothing else.
     pack, nasr = sources
     assert {layer["name"]: layer["features"] for layer in index["layers"]} == {
-        "airspace": len(list(overlays.airspace_features(pack, BBOX))),
-        "airspace_labels": len(list(overlays.airspace_label_features(pack, BBOX))),
+        "airspace": len(list(overlay_layers.airspace_features(pack, BBOX))),
+        "airspace_labels": len(list(overlay_layers.airspace_label_features(pack, BBOX))),
         "special_use": 1,
         "special_use_labels": 1,
         "airports": 4,
@@ -604,7 +604,7 @@ def test_each_feature_starts_at_its_zoom(built, sources):
         }
 
     starts = {}
-    for line in overlays.airspace_features(pack, BBOX):
+    for line in overlay_layers.airspace_features(pack, BBOX):
         f = json.loads(line)
         starts[f["properties"]["local_type"]] = f["tippecanoe"]["minzoom"]
     assert set(starts) >= {"CLASS_B", "CLASS_D", "CLASS_E2", "CLASS_E5"}

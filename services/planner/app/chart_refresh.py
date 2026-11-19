@@ -5,7 +5,7 @@ check (app.main's warm-up loop), a new cycle pack, and the Dev console's
 chart cycle's download, render and archives, and the map's overlay tiles
 -- in a container of its own, started through the dev-services sidecar
 (app.dev_services), so the planner only serves what it built.
-wingtip.charts and wingtip.vector_tiles answer what is on disk; this is
+wingtip.chart_upkeep and wingtip.vector_tiles answer what is on disk; this is
 only the policy of when.
 
 Rendering a cycle is every sheet of the country, hours of every core it
@@ -27,7 +27,7 @@ the chart cycle, the server's cron for the overlays).
 import logging
 import time
 
-from wingtip import charts, cycle_pack, vector_tiles
+from wingtip import chart_cycle, chart_serving, chart_upkeep, cycle_pack, vector_tiles
 
 from . import dev_services
 from .settings import CHARTS_REFRESH_WINDOW, get_settings
@@ -86,22 +86,22 @@ def maybe_refresh() -> None:
     check tries again, and the map keeps serving what it has."""
     ask_for_overlays()
     try:
-        if not charts.refresh_due() or charts.refresh_running():
+        if not chart_upkeep.refresh_due() or chart_upkeep.refresh_running():
             return
-        served = charts.serving_cycle()
+        served = chart_serving.serving_cycle()
         # Something whole is being served -- its sectional, the rule
         # serving_cycle itself uses -- so the new cycle can wait for the
         # window.
-        if charts.pyramid_complete(served, ("sec",)) and not in_window():
+        if chart_serving.pyramid_complete(served, ("sec",)) and not in_window():
             log.info(
                 "chart cycle %s is due; rendering it in the %s window (serving %s until then)",
-                charts.current_cycle(),
+                chart_cycle.current_cycle(),
                 CHARTS_REFRESH_WINDOW,
                 served,
             )
             return
         if dev_services.start(CHARTS_SERVICE):
-            log.info("chart cycle %s is not complete on disk; the charts job is fetching and rendering it", charts.current_cycle())
+            log.info("chart cycle %s is not complete on disk; the charts job is fetching and rendering it", chart_cycle.current_cycle())
     except Exception:  # noqa: BLE001 -- the next hourly check tries again; the map keeps serving what it has
         log.warning("chart cycle check failed", exc_info=True)
 

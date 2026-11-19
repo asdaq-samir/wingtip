@@ -6,20 +6,24 @@
 //! - cruising: the cruising altitudes by course, VFR's (14 CFR 91.159,
 //!   every 500 ft within 3,000 ft of the ground, under Class A) and IFR's
 //!   (91.179(b), FAA Order JO 7110.65 TBL 4-5-1), the tight one under a
-//!   shelf, and the altitude wheel's rows;
+//!   ceiling, and the altitude wheel's rows;
 //! - clouds: 91.155's distance under a cloud base, and each leg's lowest
 //!   forecast base from the TAFs near it;
 //! - congested: whether a point is over a congested area, or within
-//!   91.119(b)'s 2,000 ft of one, from the towns the planner reads;
+//!   91.119(b)'s 2,000 ft of one, from the towns the planner reads, and
+//!   how far round a point it looks for them (`congested_reach`);
 //! - floor: the terrain and obstacle floor of each leg under VFR (91.119)
 //!   and the minimum IFR altitude (91.177(a)), over Part 95's mountainous
 //!   areas (`mountainous`);
-//! - select: the band of each leg -- the floor up to the lowest of the
-//!   Class B shelf, the clouds and the service ceiling, nothing in
+//! - ground: the figures the planner's readers of the ground and the
+//!   obstacles take: where a tile's height is the sea's, the obstacles
+//!   drawn (77.9(a)), the side view's width, the finer terrain's reach;
+//! - select: the band of each leg -- the floor up to the lower of the
+//!   clouds and the service ceiling, nothing in
 //!   prohibited airspace -- and the recommendation;
 //! - words: the altitude flown where none is legal (the owner's "warn,
 //!   never limit") and why none is, in a pilot's words;
-//! - cautions: what a pilot's own altitude breaks (91.119, 91.159, 91.131,
+//! - cautions: what a pilot's own altitude breaks (91.119, 91.159,
 //!   91.155, 71.33, 91.211, 91.177, 91.179) and prohibited airspace on
 //!   the way (73.83), as warnings;
 //! - clearance: the profile's red and yellow preview of the ground and
@@ -38,8 +42,10 @@ pub mod cautions;
 pub mod clearance;
 pub mod clouds;
 pub mod congested;
+pub mod congested_reach;
 pub mod cruising;
 pub mod floor;
+pub mod ground;
 pub mod mountainous;
 pub mod profile_calls;
 pub mod select;

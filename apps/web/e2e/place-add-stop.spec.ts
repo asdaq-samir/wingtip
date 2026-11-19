@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { settle, sideDrawer } from "./helpers";
+import { inSheet, openPanel, settle, sideDrawer, slow } from "./helpers";
 
 /**
  * An airport already on the route keeps Add Stop on its card, greyed, and
@@ -23,6 +23,36 @@ test("Add Stop takes a tap for an airport off the route", async ({ page }) => {
   await settle(page);
   const addStop = sideDrawer(page).getByTestId("place-card").getByTestId("place-add-stop");
   await expect(addStop).toBeEnabled({ timeout: 20_000 });
+});
+
+test("an airport opened while a stop is asked for has Add Stop in Fly Here's place and Address last", async ({ page }) => {
+  // The owner, 2026-11-18: "when tapping add stop, and the card opens,
+  // replace fly here with add stop. And at the add fourth button for address".
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  // The timeline's last row, under FPL's floating bar at half with the
+  // fields open: the sheet raised to it, as a finger does.
+  const addStop = sideDrawer(page).getByTestId("timeline-add-stop");
+  await inSheet(page, addStop);
+  await addStop.click();
+  await expect(page.getByTestId("search-airports")).toBeFocused({ timeout: slow(10_000) });
+  // A field off the route opened from the search's page (Nearest), not picked from a row.
+  const field = sideDrawer(page)
+    .getByTestId("nearest-strip-field")
+    .filter({ hasNotText: /C81|KDLH/ })
+    .first();
+  await field.click({ timeout: slow(20_000) });
+  const card = sideDrawer(page).getByTestId("place-card");
+  const row = card.getByTestId("place-actions");
+  await expect(row.getByTestId("place-add-stop")).toBeEnabled({ timeout: slow(20_000) });
+  await expect(row.getByTestId("fly-here")).toHaveCount(0);
+  await expect(row.locator("[data-testid]").filter({ visible: true })).toHaveCount(4);
+  await expect(row.locator("[data-testid]").first()).toHaveAttribute("data-testid", "place-add-stop");
+  await expect(row.locator("[data-testid]").last()).toHaveAttribute("data-testid", "place-address-action");
+  await row.getByTestId("place-add-stop").click();
+  await expect(page).toHaveURL(/[?&]stops=/, { timeout: slow(15_000) });
+  await expect(page).toHaveURL(/dest=KDLH/);
 });
 
 test("the longest runway carries a badge in the Runways tab, not a row of Details", async ({ page }) => {

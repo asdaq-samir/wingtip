@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 import { Share } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
-import RoundButton from "./RoundButton";
+import IconButton from "./IconButton";
 import { CardHeadRow } from "./CardHead";
-import { closeTopCard, useHeldCard, type PillHead } from "../lib/openCards";
+import { closeTopCard, useHeldCard } from "../lib/openCards";
 import { TEXT } from "../lib/text";
 
 /**
@@ -16,8 +16,7 @@ import { TEXT } from "../lib/text";
  * a line under that scrolling with the card; at the row's start its share,
  * the name centred, and at its end its close, which goes back one card, as
  * every card's does: two buttons at most (the owner, 2026-11-11: the star
- * a Favorite tile in the card's action row). What the
- * pill shows of it down at its smallest is its own (`pill`).
+ * a Favorite tile in the card's action row).
  */
 export function CardTitle({
   title,
@@ -26,13 +25,11 @@ export function CardTitle({
   line,
   onClose,
   onShare,
-  pill,
   testId,
   titleTestId,
   subtitleTestId,
   closeTestId,
   shareTestId,
-  twoLines = false,
 }: {
   title: string;
   /** The line under the name inside the pinned head row, centred with it
@@ -43,17 +40,13 @@ export function CardTitle({
   line?: ReactNode;
   onClose: () => void;
   onShare?: () => void;
-  pill?: PillHead;
   testId: string;
   titleTestId: string;
   subtitleTestId?: string;
   closeTestId: string;
   shareTestId?: string;
-  /** The subtitle two lines tall whatever it holds, so the card keeps one
-   *  layout for a short name and a long one (places.spec). */
-  twoLines?: boolean;
 }) {
-  useHeldCard(onClose, onShare, true, pill);
+  useHeldCard(onClose, onShare, true);
   const close = () => {
     if (!closeTopCard()) onClose();
   };
@@ -69,15 +62,15 @@ export function CardTitle({
         {/* Its Share at the row's start, as Apple Maps' place card has it
             (the owner, 2026-11-11), the close alone at its end. */}
         {onShare && (
-          <RoundButton label={`Share ${title}`} onClick={onShare} data-testid={shareTestId}>
+          <IconButton round label={`Share ${title}`} onClick={onShare} data-testid={shareTestId}>
             <Share className="size-5" strokeWidth={2} />
-          </RoundButton>
+          </IconButton>
         )}
       </CardHeadRow>
       {(subtitle != null || line != null) && (
         <div className="min-w-0 pt-1">
           {subtitle != null && (
-            <p className={cn("line-clamp-2 text-foreground/80", twoLines && "min-h-[2lh]", TEXT.prose)} data-testid={subtitleTestId}>
+            <p className={cn("line-clamp-2 text-foreground/80", TEXT.prose)} data-testid={subtitleTestId}>
               {subtitle}
             </p>
           )}

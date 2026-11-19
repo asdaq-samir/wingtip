@@ -1,5 +1,16 @@
 import { test, expect, type Page } from "@playwright/test";
-import { closeSidebarWithTheStockKey, expectDrawerClosed, mapStill, openPanel, settle, settled, sideDrawer, slow } from "./helpers";
+import {
+  closeSidebarWithTheStockKey,
+  expectDrawerClosed,
+  mapStill,
+  openPanel,
+  settle,
+  settled,
+  sideDrawer,
+  slow,
+  openRoute,
+  grabberTo,
+} from "./helpers";
 import { courseBox } from "./mapProbes";
 
 /**
@@ -29,6 +40,7 @@ test("the route box's pills sit as close to their marks and arrows as each other
   await page.goto("/app/plan?dep=C81&stops=KUGN&dest=KPWK");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   const slide = sideDrawer(page).getByTestId("route-slide");
   await expect(slide.getByRole("group")).toHaveCount(3);
   // Each pill's ident, from its mark's right to the next arrow's glyph:
@@ -59,13 +71,16 @@ test("a stop taken out fits the map to the course again, above the half sheet", 
   await page.goto("/app/plan?dep=C81&stops=KDPA&dest=KPWK");
   await settle(page);
   await openPanel(page);
+  // Opened to edit, all the way up, the stop taken out, and back at half,
+  // where the route folds (the one layout).
+  await openRoute(page);
   await settled(sideDrawer(page));
-  await mapStill(page);
   // The same two ends: the fit was once per departure and destination,
   // and a stop put in or taken out left the map where it was.
   await sideDrawer(page).getByRole("group", { name: "Stop 1 KDPA" }).focus();
   await page.keyboard.press("Delete");
   await expect(page).not.toHaveURL(/[?&]stops=/);
+  await grabberTo(page, "half");
   await mapStill(page);
   await centredAboveSheet(page);
 });
@@ -75,6 +90,7 @@ test("a destination typed as the sheet goes down is fitted to the room the sheet
   await page.goto("/app/plan?dep=C81&dest=KUGN");
   await settle(page);
   await openPanel(page);
+  await openRoute(page);
   await settled(sideDrawer(page));
   await mapStill(page);
   const field = sideDrawer(page).getByTestId("route-type");

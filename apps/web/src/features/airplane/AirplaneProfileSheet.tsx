@@ -20,7 +20,7 @@ import AircraftAlertMenu from "../../components/airplane/AircraftAlertMenu";
 import PastFlights from "../../components/airplane/PastFlights";
 import { FavoriteTile } from "../../components/FavoriteTile";
 import { CardTabPages, CardTabPanel } from "../../components/CardTabs";
-import { CardTabBar, TabCount } from "../../components/CardTabBar";
+import { CardTabBar } from "../../components/CardTabBar";
 import { CardPictures } from "../../components/CardPictures";
 import { PhotoSlide } from "../../components/PictureSlides";
 import { AirplaneFacts } from "../../components/airplane/AirplaneFacts";
@@ -41,9 +41,7 @@ function FigureRow({ vm, row }: { vm: AirplaneProfileModel; row: AirplaneProfile
         title={words.label}
         description={
           <span className="flex flex-wrap items-center gap-x-6 gap-y-1">
-            <span className={row.source == null ? "text-destructive-ink" : undefined} data-testid={`figure-source-${row.key}`}>
-              {sourceWords(row.source)}
-            </span>
+            <span className={row.source == null ? "text-destructive-ink" : undefined}>{sourceWords(row.source)}</span>
             {row.resettable && (
               <Button
                 type="button"
@@ -52,7 +50,6 @@ function FigureRow({ vm, row }: { vm: AirplaneProfileModel; row: AirplaneProfile
                 className={LINK}
                 disabled={vm.busy === row.key}
                 onClick={() => vm.reset(row.key)}
-                data-testid={`figure-reset-${row.key}`}
               >
                 Reset to book figure
               </Button>
@@ -96,7 +93,6 @@ function PhotoRead({ vm }: { vm: AirplaneProfileModel }) {
       <FileTrigger
         acceptedFileTypes={["image/*"]}
         defaultCamera="environment"
-        data-testid="profile-photo-input"
         onSelect={(files) => {
           const file = files?.[0];
           if (file) void read(file);
@@ -108,7 +104,7 @@ function PhotoRead({ vm }: { vm: AirplaneProfileModel }) {
           </Pressable>
         </ListGroup>
       </FileTrigger>
-      <div className={cn("space-y-0.5 px-1", TEXT.detail)} role="status" data-testid="profile-photo-read">
+      <div className={cn("space-y-0.5 px-1", TEXT.detail)} role="status">
         {problem && <p className="text-destructive-ink">{problem}</p>}
         {words.length > 0 && <p className="font-semibold">Read from the page: check each against it before saving.</p>}
         {words.map((w) => (
@@ -118,7 +114,7 @@ function PhotoRead({ vm }: { vm: AirplaneProfileModel }) {
         ))}
       </div>
       {pending && (
-        <Button type="button" size="sm" className="self-end" onClick={vm.commitAll} data-testid="profile-photo-save">
+        <Button type="button" size="sm" className="self-end" onClick={vm.commitAll}>
           Save
         </Button>
       )}
@@ -206,7 +202,7 @@ export default function AirplaneProfileSheet() {
         data-testid="airplane-status"
       >
         {card.track ? (
-          <Button type="button" variant="link" size="sm" className={LINK} onClick={card.track} data-testid="airplane-status-track">
+          <Button type="button" variant="link" size="sm" className={LINK} onClick={card.track}>
             <StatusLine words={card.status} />
           </Button>
         ) : (
@@ -223,13 +219,7 @@ export default function AirplaneProfileSheet() {
             tabTestId="airplane-tab-"
             onPick={setTab}
             tabs={[
-              {
-                value: "flights",
-                label: "Flights",
-                icon: History,
-                hint: card.flightCount ? String(card.flightCount) : null,
-                badge: card.flightCount ? <TabCount count={card.flightCount} testId="airplane-tab-count" /> : null,
-              },
+              { value: "flights", label: "Flights", icon: History, hint: card.flightCount ? String(card.flightCount) : null },
               { value: "info", label: "Info", icon: Info },
               { value: "figures", label: "Figures", icon: Gauge },
             ]}
@@ -257,7 +247,6 @@ export default function AirplaneProfileSheet() {
             <div>
               <CardPictures
                 label={`${vm.tail}: its photo`}
-                testId="airplane-pictures"
                 slides={[
                   {
                     key: "photo",

@@ -1,11 +1,11 @@
 import type { AltitudeOption, Leg, Runway, Totals } from "../../lib/api/types";
-import { altFt, bearing, flightLevel, gal, miles, one } from "../../lib/format";
+import { altFt, bearing, feet, flightLevel, gal, miles, one } from "../../lib/format";
 import { clockTime, duration, zuluTime } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
-import { calmOnRunway, isCalm } from "./lib/wind";
+import { calmOnRunway, isCalm } from "./wind";
 import { modelledWinds, windsSource } from "../../lib/windsAloft";
 
-export { altFt, bearing, one };
+export { altFt, bearing, feet, one };
 
 /** How far below the clouds VFR keeps at a ceiling, feet: 14 CFR 91.155(a),
  *  500 ft, 1,000 ft at or above 10,000 ft MSL -- the engine's
@@ -22,14 +22,6 @@ export function feetBelowClouds(ceilingFt: number | null | undefined): number {
  * flown, a route whose nav log has not arrived yet), and they are only
  * testable while they have no map and no DOM attached.
  */
-
-/** Total time in decimal hours, as a logbook keeps it: "19.9h", where
- *  the flight's line has no room for "19h 50m" (FlightLine). Up to the
- *  next tenth, so the time is never said short of what it is; whole
- *  minutes first, as lib/format's duration's are. */
-export function decimalHours(minutes: number): string {
-  return `${(Math.ceil(Math.round(minutes) / 6) / 10).toFixed(1)}h`;
-}
 
 /** The nav log's warning that some legs were worked out with no wind:
  *  "3 legs without wind data", or null with every leg's. (Its totals'
@@ -199,7 +191,7 @@ export function surfaceName(surface: string | null | undefined): string | null {
 
 /** A runway's wind in its parts, signed as wingtip.runway_wind's are (a
  *  tailwind negative, a crosswind from the right positive): the planner's
- *  Runway["wind"] and features/plan/lib/pattern's WindPick alike. */
+ *  Runway["wind"] and features/plan/pattern's WindPick alike. */
 interface WindParts {
   headwindKt: number;
   crosswindKt: number;
@@ -244,51 +236,70 @@ export function windOnRunway(wind: NonNullable<Runway["wind"]>): string {
   return `${along}, ${cross.kt} kt crosswind${cross.side ? ` from the ${cross.side}` : ""}${cross.gustKt != null ? `, ${cross.gustKt} in the gusts` : ""}`;
 }
 
-/** The wind as a METAR reports it, true and marked so: "240°T at 15 kt,
- *  gusts 25", "Calm" (00000KT, features/plan/lib/wind's isCalm),
- *  "Variable at 4 kt" (VRB) -- FAA Order JO 7900.5's codes as the planner
- *  reads them; "Not reported" with no speed. The airport's card's and the
- *  Brief's, built from reportedWind so the two forms agree: it wrote
- *  "240° at 15 kt" beside the runways' magnetic numbers and the hourly
- *  row's "240°T" (the code audit's CODE-11, the web audit's WEB-44). */
+/** Which north a wind's direction is from: true for a METAR's and a
+ *  TAF's ("in tens of degrees referenced to true north", AIM 7-1-29) and
+ *  the forecast winds aloft ("referenced to true north", AIM 7-1-5);
+ *  magnetic for one said on the radio ("Wind direction is reported
+ *  relative to magnetic north in ATIS as well as ASOS and AWOS radio
+ *  (voice) broadcasts", AIM 7-1-10), as a tower's and a runway's number
+ *  are. */
+export type North = "T" | "M";
+
+/** A wind, the one way the app writes it: its direction marked with its
+ *  north (North) over its speed and gusts in knots -- "210°T 3 kt",
+ *  "240°T 12G20 kt", "VRB 4 kt" with no direction, "Calm" (isCalm), "Not
+ *  reported" with no speed. A field's report, the Brief's, the airport
+ *  card's and the nav log's winds aloft were written four ways ("210° 3
+ *  kt", "210°/3", "200°T 9 kt", "198°/26 kt"; the UI audit's A7), and a
+ *  true wind unmarked reads as the magnetic one a tower gives. */
+export function windText(
+  dirDeg: number | null | undefined,
+  speedKt: number | null | undefined,
+  gustKt: number | null | undefined,
+  north: North,
+): string {
+  const said = reportedWind(dirDeg, speedKt, gustKt, north);
+  if (said === null) return "Not reported";
+  return said === "calm" ? "Calm" : `${said.dir} ${said.speed} kt`;
+}
+
+/** A field's report's wind (windText), true as a METAR's is. The airport
+ *  card's, the Brief's and the search's. */
 export function windLine(metar: {
   wind_speed_kt?: number | null;
   wind_dir_true_deg?: number | null;
   wind_gust_kt?: number | null;
 }): string {
-  const said = reportedWind(metar.wind_dir_true_deg, metar.wind_speed_kt, metar.wind_gust_kt);
-  if (said === null) return "Not reported";
-  if (said === "calm") return "Calm";
-  const gust = metar.wind_gust_kt ? `, gusts ${Math.round(metar.wind_gust_kt)}` : "";
-  return `${said.dir === "VRB" ? "Variable" : said.dir} at ${Math.round(metar.wind_speed_kt!)} kt${gust}`;
+  return windText(metar.wind_dir_true_deg, metar.wind_speed_kt, metar.wind_gust_kt, "T");
 }
 
-/** A wind reported or forecast at a field, as FPL's list writes it on the
- *  field's button: its true direction marked "T" ("240°T", "VRB") over
- *  its speed ("12G20", knots), and in words for a screen reader
- *  ("240 true at 12 knots, gusts 20"); "calm" (isCalm), or null with no
- *  speed to go by. */
+/** A wind reported or forecast at a field, its parts as windText writes
+ *  them: its direction marked with its north ("240°T", "VRB") over its
+ *  speed ("12G20", knots), and in words for a screen reader ("240 true
+ *  at 12 knots, gusts 20"); "calm" (isCalm), or null with no speed to go
+ *  by. True unless said otherwise, as a METAR's and a TAF's are. */
 export type ReportedWind = "calm" | { dir: string; speed: string; spoken: string };
 
 export function reportedWind(
-  dirTrueDeg: number | null | undefined,
+  dirDeg: number | null | undefined,
   speedKt: number | null | undefined,
   gustKt: number | null | undefined,
+  north: North = "T",
 ): ReportedWind | null {
   if (speedKt == null) return null;
   if (isCalm(speedKt)) return "calm";
   const kt = Math.round(speedKt),
     gust = gustKt ? Math.round(gustKt) : null;
   return {
-    dir: dirTrueDeg == null ? "VRB" : `${bearing(dirTrueDeg)}T`,
+    dir: dirDeg == null ? "VRB" : `${bearing(dirDeg)}${north}`,
     speed: gust ? `${kt}G${gust}` : `${kt}`,
-    spoken: `${dirTrueDeg == null ? "variable" : `${Math.round(dirTrueDeg)} true`} at ${kt} knots${gust ? `, gusts ${gust}` : ""}`,
+    spoken: `${dirDeg == null ? "variable" : `${Math.round(dirDeg)} ${north === "T" ? "true" : "magnetic"}`} at ${kt} knots${gust ? `, gusts ${gust}` : ""}`,
   };
 }
 
-/** A wind aloft as the nav log writes it, true: "270°/15", direction
- *  over speed in knots -- the form of the nav log's own columns (headed
- *  °/kt); running text adds " kt". */
+/** A wind aloft as the nav log's table writes it, true: "270°/15",
+ *  direction over speed in knots -- the form of the table's own column,
+ *  headed °/kt. Running text writes windText's. */
 export function windAloft(dirTrueDeg: number, speedKt: number): string {
   return `${bearing(dirTrueDeg)}/${Math.round(speedKt)}`;
 }
@@ -301,5 +312,5 @@ export function ceilingAndVisibility(
   visibilitySm: number | null | undefined,
   visibilityPlus = false,
 ): string {
-  return `${ceilingFt == null ? "no ceiling" : `${altFt(ceilingFt)} ft`} · ${miles(visibilitySm, visibilityPlus)}`;
+  return `${ceilingFt == null ? "no ceiling" : feet(ceilingFt)} · ${miles(visibilitySm, visibilityPlus)}`;
 }

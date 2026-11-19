@@ -1,4 +1,4 @@
-import { PLAN_KEYS } from "../lib/address";
+import { ADDRESS_HISTORY_KEYS, AIRPLANE_KEY, HISTORY_KEYS } from "./planHistoryKeys";
 
 /**
  * Undo and redo for the route, kept from the address (PlanWorkspace keeps
@@ -11,6 +11,12 @@ import { PLAN_KEYS } from "../lib/address";
  * Here, Direct to, a food or fuel stop, a procedure picked) writes the
  * address, so watching it catches each one, and the next way added is
  * caught too. The native app keeps the same history (ios PlanHistory).
+ *
+ * Every FPL edit is in it (the FPL redesign, the owner 2026-11-17): the
+ * route, the altitude, the procedures and stops -- the plan's keys -- and
+ * the departure time and the airplane flown, which are not the plan's
+ * keys but are the pilot's edits on FPL (HISTORY_KEYS). The airplane is
+ * the preferences', kept here under AIRPLANE_KEY as its JSON.
  */
 
 /** The plan as the address has it: only the keys set. */
@@ -18,7 +24,7 @@ export type PlanState = Readonly<Record<string, string>>;
 
 export function planStateOf(params: URLSearchParams): PlanState {
   const state: Record<string, string> = {};
-  for (const key of PLAN_KEYS) {
+  for (const key of HISTORY_KEYS) {
     const value = params.get(key);
     if (value) state[key] = value;
   }
@@ -26,14 +32,14 @@ export function planStateOf(params: URLSearchParams): PlanState {
 }
 
 function sameState(a: PlanState, b: PlanState): boolean {
-  return PLAN_KEYS.every((key) => (a[key] ?? "") === (b[key] ?? ""));
+  return HISTORY_KEYS.every((key) => (a[key] ?? "") === (b[key] ?? ""));
 }
 
 /** The address with the plan put back as it was, the page's own keys
- *  left as they are. */
+ *  left as they are; the airplane is not the address's (its own setter). */
 export function restored(params: URLSearchParams, state: PlanState): URLSearchParams {
   const next = new URLSearchParams(params);
-  for (const key of PLAN_KEYS) {
+  for (const key of ADDRESS_HISTORY_KEYS) {
     const value = state[key];
     if (value) next.set(key, value);
     else next.delete(key);
@@ -101,4 +107,40 @@ export function describeEdit(before: PlanState, after: PlanState): string | null
   if (listOf(after.procs).length < listOf(before.procs).length) return "Procedure Removed";
   if (listOf(after.holds).length < listOf(before.holds).length) return "Hold Removed";
   return null;
+}
+
+/** What a step changed, in the one place's words ("Undo Altitude", "Redo
+ *  Route"): the first part of the plan it touched, in the order a pilot
+ *  plans -- the route, the altitude, the procedures, the stops' fuel and
+ *  times, the departure time, the airplane. */
+const PARTS: readonly (readonly [string, readonly string[]])[] = [
+  ["Route", ["dep", "dest", "stops", "direct", "was"]],
+  ["Altitude", ["altitude_ft", "altitude_nearest", "altitude_choice", "altitudes"]],
+  ["Procedures", ["procs", "cross", "holds", "pattern", "takeoff", "auto"]],
+  ["Stops", ["fuel", "ground", "alternate"]],
+  ["Departure Time", ["depart"]],
+  ["Airplane", [AIRPLANE_KEY]],
+];
+
+export function editName(before: PlanState, after: PlanState): string {
+  const part = PARTS.find(([, keys]) => keys.some((key) => (before[key] ?? "") !== (after[key] ?? "")));
+  return part?.[0] ?? "Change";
+}
+
+/** The one place's Undo and Redo, named by what they put back; null where
+ *  there is no step that way. */
+export function stepNames(h: PlanHistory): { undoName: string | null; redoName: string | null } {
+  const back = h.past.at(-1);
+  const again = h.future[0];
+  return { undoName: back ? editName(back, h.now) : null, redoName: again ? editName(h.now, again) : null };
+}
+
+/** A history kept from before a reload, taken up where the plan is still
+ *  the one it ended on; else a new one. What was kept is read warily: it
+ *  is the browser's, from any build. */
+export function resumed(kept: unknown, now: PlanState, at: number): PlanHistory {
+  const k = kept as Partial<PlanHistory> | null;
+  const states = (v: unknown): v is PlanState[] => Array.isArray(v) && v.every((x) => x !== null && typeof x === "object");
+  if (!k || typeof k !== "object" || !states(k.past) || !states(k.future) || !k.now || !sameState(k.now, now)) return started(now, at);
+  return { past: k.past.slice(-LIMIT), now, future: k.future.slice(0, LIMIT), at };
 }

@@ -43,7 +43,18 @@
     "nightPassengersUntil": null,
     "landings": 9,
     "totalHours": 4.0,
-    "flights": 4
+    "flights": 4,
+    "due": [
+     {
+      "what": "day-passengers",
+      "itemId": null,
+      "label": "Passengers by day",
+      "rule": "14 CFR 61.57(a)",
+      "until": "2026-11-08",
+      "dueAtHours": null,
+      "lead": "You may carry passengers by day until"
+     }
+    ]
    }
   },
   {
@@ -102,7 +113,27 @@
     "instrumentCurrentUntil": null,
     "ipcNeededAfter": null,
     "flights": 0,
-    "landings": 0
+    "landings": 0,
+    "due": [
+     {
+      "what": "flight-review",
+      "itemId": null,
+      "label": "Flight review",
+      "rule": "14 CFR 61.56(c)",
+      "until": "2027-06-30",
+      "dueAtHours": null,
+      "lead": "Your flight review runs out"
+     },
+     {
+      "what": "medical",
+      "itemId": null,
+      "label": "Medical certificate",
+      "rule": "14 CFR 61.23",
+      "until": "2027-06-30",
+      "dueAtHours": null,
+      "lead": "Your medical certificate runs out"
+     }
+    ]
    }
   },
   {

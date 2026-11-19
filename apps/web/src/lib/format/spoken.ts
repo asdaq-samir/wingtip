@@ -130,6 +130,12 @@ export function spokenDistance(nm: number | null | undefined): string {
   return unit(tenthsWords(nm), "nautical mile", "nautical miles");
 }
 
+/** A distance in statute miles, as the strip writes it at the pilot's tap. */
+export function spokenStatute(sm: number | null | undefined): string {
+  if (sm === null || sm === undefined || !Number.isFinite(sm)) return NOT_KNOWN;
+  return unit(tenthsWords(sm), "statute mile", "statute miles");
+}
+
 /** A speed in whole knots, as written: "one hundred ten knots". */
 export function spokenSpeed(kt: number | null | undefined): string {
   if (kt === null || kt === undefined || !Number.isFinite(kt)) return NOT_KNOWN;

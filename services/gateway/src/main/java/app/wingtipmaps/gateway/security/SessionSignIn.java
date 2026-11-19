@@ -14,9 +14,9 @@ import org.springframework.security.web.context.SecurityContextRepository;
  * Signs a pilot in on this request's session, for the ways in that are
  * not Spring Security's own filters -- the emailed link
  * (MagicLinkController), Sign in with Apple in the iOS app
- * (AppleNativeSignInController) and a TV's code (DeviceSignInController).
+ * (AppleNativeSignInController).
  * Each endpoint is its own success handler, so what the filter chain does
- * after a sign-in is done here, once, the same for all three.
+ * after a sign-in is done here, once, the same for both.
  */
 public final class SessionSignIn {
 

@@ -1,0 +1,127 @@
+import { ChevronRight } from "lucide-react";
+import { cn } from "cn";
+import { Button } from "../../../components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../components/ui/collapsible";
+import { faaWords } from "../../../lib/advisories";
+import type { Leg, NavLogAltitude, RouteProfile, Totals } from "../../../lib/api/types";
+import { altFt } from "../../../lib/format";
+import { callEngine } from "../../../lib/engine/engine";
+import { SECTION_TITLE, TEXT } from "../../../lib/text";
+import AltitudeReasoning from "../AltitudeReasoning";
+
+/**
+ * What the Profile card says under the Altitude Advisor, moved from the
+ * card's body as it was: Class B entered at the altitude in sight with the
+ * clearance it takes (14 CFR 91.131), a route always being planned through
+ * it (the owner, 2026-11-17); a
+ * pilot's own altitude's cautions with the way round high ground; a tight
+ * altitude; and how the altitude was chosen, folded.
+ */
+/** A note of the route's airspace. */
+const NOTE_ROW = "flex items-center justify-between gap-2 rounded-xl bg-card py-1.5 pr-1.5 pl-3";
+
+export default function ProfileNotes({
+  nav,
+  legs,
+  profile,
+  shownAt,
+  tight,
+  onGoRound,
+  winds,
+}: {
+  nav: NavLogAltitude | null;
+  legs: Leg[];
+  profile: RouteProfile | undefined;
+  shownAt: number | null;
+  tight: string | null;
+  onGoRound?: (via: string[], stopIndex: number) => void;
+  winds?: Totals["winds"];
+}) {
+  // The Class B band the altitude in sight is in, the engine's rule (14 CFR
+  // 91.131(a)(1)): where the view compared it here and took a band with no
+  // ceiling to top out at 10,000 ft, which Class B tops from 7,000 to
+  // 12,500 ft are not (the aviation audit's AV-9).
+  const bravoAt =
+    profile && shownAt !== null
+      ? callEngine("class_b_at_altitude", {
+          bands: profile.airspace.map((a) => ({ class: a.class, floor_ft: a.floor_ft, ceiling_ft: a.ceiling_ft ?? null })),
+          altitude_ft: shownAt,
+        })
+      : null;
+  const bravo = profile && bravoAt != null ? (profile.airspace[bravoAt] ?? null) : null;
+  const detours = nav?.detours ?? [];
+  const cautions = nav?.cautions ?? [];
+  return (
+    <>
+      {bravo && (
+        <div className={NOTE_ROW} data-testid="class-b-accepted">
+          <span className={TEXT.detail}>Through {faaWords(bravo.name)}: clearance needed</span>
+        </div>
+      )}
+      {cautions.length > 0 && (
+        <div
+          className={cn("space-y-1.5 rounded-lg bg-caution-wash p-2.5 text-caution-ink", TEXT.detail)}
+          data-testid="own-altitude-cautions"
+        >
+          {cautions.map((c) => (
+            <div key={`${c.from_ident}-${c.to_ident}`}>
+              <p className="font-semibold">
+                {altFt(c.altitude_ft)} ft {c.from_ident} → {c.to_ident}
+              </p>
+              <ul className="list-disc pl-4">
+                {c.reasons.map((r) => (
+                  <li key={r}>{r}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          {/* Flown over the high ground anyway, at the owner's "no hard
+              limits": the way round it the planner found, to take or not. */}
+          {onGoRound &&
+            detours
+              .filter((d) => d.via?.length)
+              .map((d) => (
+                <div key={d.via!.join(" ")} className="flex items-center justify-between gap-2 pt-1">
+                  <span>
+                    By {d.via!.join(", ")} · +{Math.round(d.added_nm)} nm
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="shrink-0 text-tint"
+                    onClick={() => onGoRound(d.via!, d.stop_index)}
+                  >
+                    Go Round
+                  </Button>
+                </div>
+              ))}
+        </div>
+      )}
+      {tight && (
+        <p className={cn("rounded-lg bg-caution-wash p-2.5 text-caution-ink", TEXT.detail)}>
+          <span className="font-semibold">Tight altitude. </span>
+          {tight}
+        </p>
+      )}
+      {nav && (
+        <Collapsible>
+          <CollapsibleTrigger
+            className={cn(
+              "group relative flex min-h-11 w-full items-center gap-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              SECTION_TITLE,
+            )}
+          >
+            <ChevronRight className="size-4 text-tint transition-transform group-data-panel-open:rotate-90" aria-hidden />
+            How the Altitude Was Chosen
+          </CollapsibleTrigger>
+          {/* Kept in the page folded: the reasoning is found by the page's
+              own search and read by its text while closed. */}
+          <CollapsibleContent keepMounted>
+            <AltitudeReasoning nav={nav} legs={legs} plansAbove winds={winds} />
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+    </>
+  );
+}

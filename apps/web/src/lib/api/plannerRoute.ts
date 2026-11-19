@@ -62,9 +62,8 @@ export const plannerRoute = {
     depart?: string,
     signal?: AbortSignal,
     stops?: string[],
-    classBClearance?: boolean,
     altitudes?: string,
-    checkpoints = true,
+    checkpoints = false,
     rules: "vfr" | "ifr" = "vfr",
     alternate = "",
     procedures = "",
@@ -89,10 +88,11 @@ export const plannerRoute = {
           altitude_choice: altitudeChoice && altitudeChoice !== "fastest" ? altitudeChoice : undefined,
           ...airplaneQuery(aircraft),
           depart: depart || undefined,
-          class_b_clearance: classBClearance || undefined,
           altitudes: altitudes || undefined,
           altitude_starts: altitudeStarts || undefined, // begun there: Start At
-          checkpoints: checkpoints ? undefined : false,
+          // Asked for only once the pilot has turned Checkpoints on: the
+          // planner finds none unless asked (the owner, 2026-11-18).
+          checkpoints: checkpoints || undefined,
           // Under IFR (the planner's wingtip.ifr); VFR, the default, unsaid.
           rules: rules === "ifr" ? rules : undefined,
           // The IFR alternate filed, whose fuel is in the totals.
@@ -232,6 +232,9 @@ export const plannerRoute = {
     aircraft: AircraftChoice | undefined,
     depart: string | undefined,
     minimums: { ceilingFt: number | null; visibilitySm: number | null },
+    /** The route as planned's highest cruise altitude: where it enters
+     *  Class B there, Avoid Class B is offered (14 CFR 91.131(a)(1)). */
+    altitudeFt: number | null = null,
   ) =>
     planner
       .GET("/api/route-options", {
@@ -244,6 +247,7 @@ export const plannerRoute = {
             depart: depart || undefined,
             min_ceiling_ft: minimums.ceilingFt ?? undefined,
             min_visibility_sm: minimums.visibilitySm ?? undefined,
+            altitude_ft: altitudeFt ?? undefined,
           },
         },
       })

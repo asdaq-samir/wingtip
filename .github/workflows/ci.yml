@@ -431,7 +431,10 @@ jobs:
                 - engine/**
               ingest:
                 - services/ingest/**
+                - services/Dockerfile.base
                 - services/planner/wingtip/**
+                - services/planner/requirements-wingtip.txt
+                - engine/**
               weather:
                 - services/weather/**
                 - services/Dockerfile.base
@@ -712,7 +715,7 @@ jobs:
             !data/raw/charts.nosync
             !data/raw/chart_tiles.nosync
             !data/raw/weather
-          key: planner-data-v1-${{ hashFiles('data/processed/candidates_*.csv', 'services/planner/wingtip/faa_data.py', 'services/planner/wingtip/airports.py', 'services/planner/wingtip/elevation.py', 'services/planner/wingtip/charts.py') }}
+          key: planner-data-v1-${{ hashFiles('data/processed/candidates_*.csv', 'services/planner/wingtip/faa_data.py', 'services/planner/wingtip/airports.py', 'services/planner/wingtip/elevation.py', 'services/planner/wingtip/chart_*.py') }}
           restore-keys: planner-data-v1-
       # The corridor's charts, tiles and detections (a minute of a shard's
       # processors to read again), keyed by cycle and reader code.
@@ -797,7 +800,7 @@ jobs:
         id: cycle
         if: matrix.shard == 1
         env:
-          READER: ${{ hashFiles('services/planner/wingtip/chartvision.py', 'services/planner/app/detection.py', 'apps/web/src/lib/map/route/keepRoute.ts', 'apps/web/src/lib/map/sources/tiles.ts') }}
+          READER: ${{ hashFiles('services/planner/wingtip/chartvision.py', 'services/planner/wingtip/chartpalette.py', 'services/planner/wingtip/chartmosaic.py', 'services/planner/wingtip/chartlines.py', 'services/planner/wingtip/chart_line_mask.py', 'services/planner/app/detection.py', 'apps/web/src/lib/map/route/keepRoute.ts', 'apps/web/src/lib/map/sources/tiles.ts') }}
           RESTORED: ${{ steps.charts.outputs.cache-matched-key || 'no chart cache' }}
         run: |
           cycle=$(curl -sf http://localhost:8084/api/status | python3 -c 'import json, sys; print(json.load(sys.stdin)["charts"]["cycle"])')
@@ -1165,8 +1168,9 @@ jobs:
   # links, file sizes, versions, brand tokens, ruff, the phones' lint.
   # `web`: tsc, ESLint, Prettier, knip. `engine`: rustfmt, clippy, machete.
   # And flight-critical (the owner, 2026-11-09), on every change but words
-  # alone: the engine's FAA examples here (`engine`); the planner's nav log
-  # is test-python's, which has the engine's wheel, so no leg waits for it.
+  # alone: the engine's FAA examples here (`engine`), or test-engine's where
+  # the engine changed, so they build once; the planner's nav log is
+  # test-python's, which has the engine's wheel, so no leg waits for it.
   guards:
     name: Guards (${{ matrix.part }})
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}

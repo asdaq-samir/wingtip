@@ -1,6 +1,6 @@
 import type { Control, FieldErrors } from "react-hook-form";
 import { ListGroup } from "../../components/GroupedList";
-import type { AircraftFormValues } from "./AccountPanels";
+import type { AircraftFormValues } from "./aircraftForm";
 import NumberRow from "./NumberRow";
 
 /**

@@ -2,6 +2,7 @@ import type { StopField } from "./api/types";
 import { compassPoint } from "./compass";
 import { fuelNames } from "./stopServices";
 import { BADGE } from "./tokens";
+import { capitalised } from "./capitals";
 
 /** What the map's Stops look for at a field, in the order a row lists
  *  them (the owner's layout, 2026-10-27). */
@@ -64,8 +65,6 @@ export const PICK_ORDER: StopPick[] = ["all", "food", "fuel", "repair", "trainin
  *  (the owner's discrete settings), 25 the first (the owner, 2026-10-27). */
 export const STOP_RADII = [10, 25, 50, 100] as const;
 
-const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
 /** NASR's repair codes (APT_BASE's AIRFRAME_REPAIR_SER_CODE and
  *  PWR_PLANT_REPAIR_SER, MAJOR or MINOR) in words: "Airframe major,
  *  engine minor". Empty where it has neither. */
@@ -73,7 +72,7 @@ export function repairWords(f: Pick<StopField, "airframe_repair" | "powerplant_r
   const parts = [f.airframe_repair && `airframe ${f.airframe_repair}`, f.powerplant_repair && `engine ${f.powerplant_repair}`].filter(
     Boolean,
   );
-  return capital(parts.join(", "));
+  return capitalised(parts.join(", "));
 }
 
 /** One line of a row: the kind and what the field has of it, by name --

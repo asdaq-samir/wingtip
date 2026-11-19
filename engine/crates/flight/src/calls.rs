@@ -5,7 +5,7 @@
 //! planned at (limits.rs) and FAA Form 7233-4's items (filing.rs), as the
 //! planner's wingtip_native functions of the same names work them out.
 
-use crate::{based, field, filing, flight, limits, sun};
+use crate::{based, field, filing, flight, limits, route_read, sun, typed};
 use wingtip_core::ask::Ask;
 use wingtip_core::json::{self, Value};
 
@@ -20,8 +20,28 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         "density_ratio" => flight::density_ratio(ask.num("altitude_ft")?, ask.num("oat_c")?),
         "density_altitude_ft" => flight::density_altitude_ft(ask.num("sigma")?),
         "pressure_altitude_ft" => flight::pressure_altitude_ft(ask.num("elevation_ft")?, ask.num("altimeter_inhg")?),
-        "lowest_vfr_cruising_altitude" => flight::lowest_vfr_cruising_altitude(ask.num("floor_ft")?, ask.num("magnetic_course_deg")?),
         "is_eastbound" => return Ok(flight::is_eastbound(ask.num("magnetic_course_deg")?).to_string()),
+        "average_groundspeed_kt" => flight::average_groundspeed_kt(ask.num("distance_nm")?, ask.num("minutes")?),
+        "nm_along" => {
+            let legs = ask
+                .list("legs_nm")?
+                .iter()
+                .map(|nm| match nm {
+                    Value::Null => Ok(None),
+                    Value::Number(n) => Ok(Some(*n)),
+                    _ => Err(format!("{name}: \"legs_nm\" is not a list of numbers or nulls")),
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            out.push('[');
+            for (i, nm) in flight::nm_along(&legs).iter().enumerate() {
+                if i > 0 {
+                    out.push(',');
+                }
+                json::number(&mut out, *nm);
+            }
+            out.push(']');
+            return Ok(out);
+        }
         "groundspeed_kt" => flight::groundspeed_kt(
             ask.num("true_course_deg")?,
             ask.num("wind_from_deg")?,
@@ -56,7 +76,6 @@ pub fn night(name: &str, v: &Value) -> Result<String, String> {
     };
     let night = match name {
         "night_on_the_way" => sun::night_on_the_way(pair("start")?, pair("end")?, ask.num("depart_s")?, ask.num("minutes")?),
-        "passenger_night" => sun::passenger_night(ask.num("lat")?, ask.num("lon")?, ask.num("at_s")?),
         // The sky's own day and night (sunset to sunrise), not 1.1's.
         "sun_down" => sun::sun_down(ask.num("lat")?, ask.num("lon")?, ask.num("at_s")?),
         "passenger_night_on_the_way" => {
@@ -68,7 +87,7 @@ pub fn night(name: &str, v: &Value) -> Result<String, String> {
 }
 
 /// The altitudes a flight may be planned at (limits.rs: 71.33, 91.119(c),
-/// 91.121, 91.159, 91.179).
+/// 91.121, 91.159, 91.179), and one typed, read (typed.rs: 1.1, 71.33).
 #[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn altitudes(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
@@ -88,6 +107,14 @@ pub fn altitudes(name: &str, v: &Value) -> Result<String, String> {
             out.push('}');
         }
         "altitude_allowed" => out.push_str(&limits::allowed(ask.num("ft")?, ask.opt_bool("ifr")?).to_string()),
+        "altitude_typed" => {
+            let read = typed::read(ask.str("text")?, ask.opt_bool("ifr")?);
+            out.push_str("{\"ft\":");
+            json::opt_number(&mut out, read.ft);
+            out.push_str(",\"reason\":");
+            json::opt_string(&mut out, read.reason);
+            out.push('}');
+        }
         "vfr_altitudes" => {
             out.push('[');
             for (i, ft) in limits::vfr_altitudes(ask.opt_num("from_ft")?.unwrap_or(1000.0)).iter().enumerate() {
@@ -130,6 +157,8 @@ pub fn filed(name: &str, v: &Value) -> Result<String, String> {
             Some(m) => out.push_str(&m.to_string()),
             None => out.push_str("null"),
         },
+        // Item 16's EET and item 19's endurance, each in minutes and HHMM.
+        "filed_times" => filed_times(&ask, &mut out)?,
         "filed_dof" => json::opt_string(&mut out, filing::date_of_flight(ask.str("depart")?, ask.str("today")?).as_deref()),
         "filed_rnav" => {
             let airways: Vec<&str> = match v.get("airways") {
@@ -139,9 +168,48 @@ pub fn filed(name: &str, v: &Value) -> Result<String, String> {
             };
             out.push_str(&filing::rnav_route(&airways).to_string());
         }
+        // A route typed as item 15's words, read back (route_read.rs).
+        "route_read" => route_read::write(&route_read::read(ask.str("text")?), &mut out),
         _ => json::string(&mut out, &filed_route(&ask)?),
     }
     Ok(out)
+}
+
+/// `filed_times`: item 16's total EET rounded up and item 19's endurance
+/// at the cruise burn rounded down (filing.rs), each in minutes and HHMM,
+/// and the burn the endurance was worked at; null where the plan cannot say.
+fn filed_times(ask: &Ask, out: &mut String) -> Result<(), String> {
+    let name = ask.name;
+    let legs = match ask.v.get("legs") {
+        None | Some(Value::Null) => Vec::new(),
+        Some(Value::Array(list)) => list
+            .iter()
+            .map(|l| {
+                let phase = match l.get("phase") {
+                    None | Some(Value::Null) => None,
+                    Some(Value::String(p)) => Some(p.as_str()),
+                    Some(_) => return Err(format!("{name}: a leg's \"phase\" is not a string")),
+                };
+                Ok(filing::BurnLeg { phase, burn_gph: wingtip_core::ask::opt_num_in(name, l, "fuel_burn_gph")? })
+            })
+            .collect::<Result<Vec<_>, String>>()?,
+        Some(_) => return Err(format!("{name}: \"legs\" is not a list")),
+    };
+    let eet = ask.opt_num("ete_min")?.and_then(filing::eet_minutes);
+    let burn = filing::endurance_burn_gph(&legs, ask.opt_num("cruise_burn_gph")?);
+    let endurance = ask.opt_num("fuel_gal")?.zip(burn).and_then(|(fuel, burn)| filing::endurance_minutes(fuel, burn));
+    let minutes = |out: &mut String, key: &str, m: Option<i64>| {
+        out.push_str(&format!(",\"{key}_minutes\":"));
+        out.push_str(&m.map_or_else(|| "null".to_owned(), |m| m.to_string()));
+        out.push_str(&format!(",\"{key}\":"));
+        json::opt_string(out, m.map(|m| filing::duration(m as f64)).as_deref());
+    };
+    out.push_str("{\"burn_gph\":");
+    json::opt_number(out, burn);
+    minutes(out, "eet", eet);
+    minutes(out, "endurance", endurance);
+    out.push('}');
+    Ok(())
 }
 
 /// Item 15's route from its stops, airways and procedures.
@@ -195,6 +263,21 @@ pub fn field_military(name: &str, v: &Value) -> Result<String, String> {
     };
     let mut out = String::from("{\"military\":");
     json::opt_string(&mut out, field::military(code("ownership")?, code("use")?));
+    out.push('}');
+    Ok(out)
+}
+
+/// `field_site_type`: the words for a field's kind of landing site, from
+/// NASR APT_BASE's SITE_TYPE_CODE (field.rs's site_words):
+/// `{"words": "Heliport" | ... | null}`, null for an airport.
+pub fn field_site_type(name: &str, v: &Value) -> Result<String, String> {
+    let code = match v.get("site_type") {
+        None | Some(Value::Null) => None,
+        Some(Value::String(s)) => Some(s.as_str()),
+        Some(_) => return Err(format!("{name}: \"site_type\" is not a string or null")),
+    };
+    let mut out = String::from("{\"words\":");
+    json::opt_string(&mut out, field::site_words(code));
     out.push('}');
     Ok(out)
 }
@@ -270,5 +353,19 @@ pub fn usual_base(name: &str, v: &Value) -> Result<String, String> {
     ));
     json::number(&mut out, based::MIN_SHARE);
     out.push('}');
+    Ok(out)
+}
+
+/// A field's ident as its FAA one, and whether two name one field
+/// (field.rs, `bare_field`, `same_field`).
+#[cfg_attr(target_arch = "wasm32", inline(always))]
+pub fn field_ident(name: &str, v: &Value) -> Result<String, String> {
+    let ask = Ask::new(name, v);
+    let mut out = String::new();
+    match name {
+        "bare_field" => json::string(&mut out, &field::bare_field(ask.str("ident")?)),
+        "same_field" => out.push_str(if field::same_field(ask.str("a")?, ask.str("b")?) { "true" } else { "false" }),
+        _ => return Err(format!("the engine has no rule called {name:?}")),
+    }
     Ok(out)
 }

@@ -1,0 +1,35 @@
+{
+  "x-call": "wingtip_flight::calls::call",
+  "description": "The average ground speed over a stretch, knots: its miles over its hours (FAA-H-8083-25C, PHAK ch. 16); null where no time passed. The copilot's planned speed (the nav log's distance over its time en route) and a past flight's (the miles flown over its time aloft).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AverageGroundspeedKtInput",
+      "type": "object",
+      "properties": {
+        "distance_nm": {
+          "type": "number"
+        },
+        "minutes": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "distance_nm",
+        "minutes"
+      ]
+    },
+    "answer": {
+      "title": "AverageGroundspeedKtAnswer",
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

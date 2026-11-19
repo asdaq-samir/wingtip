@@ -1,0 +1,102 @@
+{
+  "x-call": "wingtip_flight::calls::filed",
+  "description": "FAA Form 7233-4's item 16 total EET and item 19 endurance (AIM Appendix 4: HHMM; E/ the fuel endurance time). The EET is the nav log's minutes rounded up; the endurance the fuel aboard at the cruise burn rounded down: the highest burn of the legs flown at cruise (no phase), never a climb's or a descent's, else the airplane's own cruise burn. Each null where the plan cannot say.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FiledTimesInput",
+      "type": "object",
+      "properties": {
+        "ete_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "legs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "phase": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "fuel_burn_gph": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "cruise_burn_gph": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "legs"
+      ]
+    },
+    "answer": {
+      "title": "FiledTimesAnswer",
+      "type": "object",
+      "properties": {
+        "burn_gph": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "eet_minutes": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "eet": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "endurance_minutes": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "endurance": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "burn_gph",
+        "eet_minutes",
+        "eet",
+        "endurance_minutes",
+        "endurance"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

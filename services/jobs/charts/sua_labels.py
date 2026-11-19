@@ -8,7 +8,7 @@ references for a map that still writes them.
 
 The tab's words -- the name cut as ForeFlight cuts it and the limits as
 the FAA's CIFP writes them ("to but not including" FL180 as 17999 MSL,
-14 CFR 71.33) -- are the engine's `special_use_tab`, the one copy the
+14 CFR 71.33) -- are the engine's `special_use_tab` (wingtip.airspace_tabs), the one copy the
 iPhone's map asks too (engine/crates/airspace/src/sua_tab.rs), from the
 FAA's special use airspace feature service (ADDS) as the cycle pack holds
 it and wingtip.sua `_area` reads it: NAME, TYPE_CODE, each limit's figure,
@@ -22,23 +22,9 @@ from __future__ import annotations
 import json
 import math
 
-import wingtip_native
+from wingtip import airspace_tabs
 
-from .overlays import SPECIAL_USE_MIN_ZOOM, _feature, _meets, _orient
-
-
-def tab_words(area: dict) -> dict | None:
-    """The engine's tab for one area as wingtip.sua `_area` describes it:
-    {"text", "name", "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref"},
-    or None for a piece marked EXCLUSION or a limit with no figure."""
-    asked = {
-        "name": area["name"],
-        "type": area["type"].strip(),
-        "floor": {"ft": area["floor_ft"], "code": area["floor_ref"], "desc": area.get("floor_desc")},
-        "ceiling": {"ft": area["ceiling_ft"], "code": area["ceiling_ref"], "desc": area.get("ceiling_desc")},
-        "excluded": bool(area.get("excluded")),
-    }
-    return json.loads(wingtip_native.call("special_use_tab", json.dumps(asked)))
+from .overlay_layers import SPECIAL_USE_MIN_ZOOM, _feature, _meets, _orient
 
 
 def _edge_place(geometry) -> tuple[tuple[float, float], float, int]:
@@ -49,7 +35,7 @@ def _edge_place(geometry) -> tuple[tuple[float, float], float, int]:
     map to set the tab just inside the line. In a plane tangent at the
     side's middle (east scaled by the cosine of the latitude), the web
     map's own angle near it (Mercator is conformal). The outer ring runs
-    counter-clockwise (overlays._orient), so the area is on its left."""
+    counter-clockwise (overlay_layers._orient), so the area is on its left."""
     polygon = max(getattr(geometry, "geoms", [geometry]), key=lambda p: p.area)
     ring = list(polygon.exterior.coords)
     k = math.cos(math.radians(polygon.centroid.y))
@@ -71,7 +57,7 @@ def special_use_label_features(pack, bbox=None):
     """The `special_use_labels` layer's lines of GeoJSON: one point an
     area's polygon (_edge_place) with `tab`, the engine's words as the
     map writes them, `label`, `type`, its floor and ceiling as
-    `floor_ft`/`floor_ref` and `ceiling_ft`/`ceiling_ref` (tab_words),
+    `floor_ft`/`floor_ref` and `ceiling_ft`/`ceiling_ref` (wingtip.airspace_tabs.special_use_tab),
     `angle` and `side`. A piece the FAA marks EXCLUSION 1
     (Brady Low's airspace above 1,500 ft AGL round the fields it excludes
     below that, the engine's sua_tab) is the area's own and has none."""
@@ -84,7 +70,7 @@ def special_use_label_features(pack, bbox=None):
         if geometry is None or geometry.is_empty or not _meets(geometry.bounds, bbox):
             continue
         area = sua._area(props or {})
-        tab = tab_words(area)
+        tab = airspace_tabs.special_use_tab(area)
         if tab is None:
             continue
         (lon, lat), angle, side = _edge_place(geometry)

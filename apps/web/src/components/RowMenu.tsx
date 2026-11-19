@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { Ellipsis } from "lucide-react";
-import RoundButton from "./RoundButton";
+import IconButton from "./IconButton";
 import { loadPopups, usePopups } from "./popupsChunk";
+import { SwipeRow } from "./SwipeRow";
 
 /** One of a row's actions: Share, Clear, Delete… */
 interface RowAction {
@@ -23,6 +24,9 @@ export interface RowMenuProps {
   label: string;
   actions: RowAction[];
   testId?: string;
+  /** Its red action (Remove) also by a swipe to the left (SwipeRow), as
+   *  iOS's lists' rows; not while the list is being edited. */
+  swipe?: boolean;
   children: ReactNode;
 }
 
@@ -46,6 +50,17 @@ export const ROW_MORE =
  * open, as Maps lifts it.
  */
 export default function RowMenu(props: RowMenuProps) {
+  const removing = props.swipe ? props.actions.find((a) => a.destructive && !a.asks) : undefined;
+  const row = <RowMenuRow {...props} />;
+  if (!removing) return row;
+  return (
+    <SwipeRow word={removing.label} label={removing.spoken ?? removing.label} onRemove={removing.onSelect}>
+      {row}
+    </SwipeRow>
+  );
+}
+
+function RowMenuRow(props: RowMenuProps) {
   // The menus are on the popups' chunk (popupsChunk): until it is in, the
   // row and its •••, a tap on which opens the menu once it is.
   const popups = usePopups();
@@ -54,7 +69,8 @@ export default function RowMenu(props: RowMenuProps) {
   return (
     <div className={ROW_LIFT}>
       <div className="min-w-0 flex-1">{props.children}</div>
-      <RoundButton
+      <IconButton
+        round
         label={props.label}
         className={ROW_MORE}
         data-testid={props.testId}
@@ -64,7 +80,7 @@ export default function RowMenu(props: RowMenuProps) {
         }}
       >
         <Ellipsis className="size-5" aria-hidden="true" />
-      </RoundButton>
+      </IconButton>
     </div>
   );
 }

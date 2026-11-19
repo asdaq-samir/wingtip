@@ -23,3 +23,11 @@ export function areaColour(area: Pick<WeatherArea, "kind" | "hazard">): string {
   if (area.kind === "convective") return AREA_COLOURS.convective!;
   return AREA_COLOURS[area.hazard ?? ""] ?? WEATHER.other;
 }
+
+/** A hazard's colour as words on the map's white halo: its own, but
+ *  turbulence's amber, 3.2:1 on white, deepened to 5:1
+ *  (color.weather.turbulence-text), as a category's chip deepens LIFR
+ *  (CATEGORY_CHIP): every other hazard's is 4.5:1 or more already. */
+export function hazardTextInk(colour: string): string {
+  return colour === WEATHER.turbulence ? WEATHER.turbulenceText : colour;
+}

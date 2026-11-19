@@ -103,36 +103,26 @@ export function SimExportMenu({ track, ground }: { track: ReplayTrack; ground: S
         <DropdownMenuContent align="start">
           <DropdownMenuGroup>
             <DropdownMenuLabel>Microsoft Flight Simulator</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => pick("fcr")} data-testid="sim-export-fcr">
-              FlightControlReplay (KML)
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => pick("skydolly")} data-testid="sim-export-skydolly">
-              Sky Dolly (CSV)
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => pick("fcr")}>FlightControlReplay (KML)</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => pick("skydolly")}>Sky Dolly (CSV)</DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuLabel>X-Plane 12</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => pick("xplane")} data-testid="sim-export-xplane">
-              Flight data recorder (FDR)
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => pick("xplane")}>Flight data recorder (FDR)</DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuLabel>Whole track</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => pick("earth")} data-testid="sim-export-earth">
-              Google Earth (KML)
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => pick("gpx")} data-testid="sim-export-gpx">
-              GPX
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => pick("earth")}>Google Earth (KML)</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => pick("gpx")}>GPX</DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
       <p className={cn("text-muted-foreground", TEXT.note)}>
         Simulator files hold the flight at the replay's moment; KML and GPX hold the whole day. Attitude, gear and lights are estimated.
       </p>
-      {problem && <FieldError data-testid="sim-export-problem">{problem}</FieldError>}
+      {problem && <FieldError>{problem}</FieldError>}
     </div>
   );
 }

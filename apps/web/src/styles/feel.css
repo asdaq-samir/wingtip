@@ -57,12 +57,16 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* A scroller's bar thin and in the words' grey where the platform
-     draws one (a desktop's), and the page's edge never pulled: a map app
-     has no page to pull, and Chrome's pull to reload took the map with it. */
+  /* No scroller draws a bar, on a desktop either (the owner, 2026-11-18:
+     "No visible bar needed on any page"): everything still scrolls by
+     touch, wheel and keys, as an iPhone's lists do with their bar out of
+     sight. And the page's edge is never pulled: a map app has no page to
+     pull, and Chrome's pull to reload took the map with it. */
   * {
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent) transparent;
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
   }
   html,
   body {
@@ -71,9 +75,7 @@
 }
 
 /* A sheet's, a dialog's and a popover's scroll stays theirs: scrolled
-   to its end, it does not carry on into the map or the page under it.
-   And a desktop's popover keeps its bar's room whether or not it scrolls,
-   so its rows do not jump sideways as a list grows past its height. */
+   to its end, it does not carry on into the map or the page under it. */
 :where(
     [data-slot="map-panel"],
     [data-slot="dialog-content"],
@@ -84,9 +86,6 @@
   :where(.overflow-y-auto, .overflow-auto),
 :where([data-slot="popover-content"], [data-slot="command-list"], [data-slot="dropdown-menu-content"]) {
   overscroll-behavior: contain;
-}
-:where([data-slot="popover-content"], [data-slot="command-list"]) {
-  scrollbar-gutter: stable;
 }
 
 /* What comes into a page as it is -- a banner, a problem's line, an

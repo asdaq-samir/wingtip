@@ -1,0 +1,32 @@
+/** The screen edge the map panel is on -- and so what the consoles and
+ *  panels come in from, and which edge the map's buttons keep clear
+ *  of (useNavEdge): the bottom on a phone, always (the owner, 2026-11-13,
+ *  Position taken out of the settings), the top from `md` up. */
+export type NavEdge = "top" | "bottom";
+/** The app's look (lib/brand): Wingtip, the brand's blue and the
+ *  default (the owner, 2026-11-09), Glass Cockpit or Chart ink (kept
+ *  2026-11-04), or Native, stock out of the box (2026-11-10). */
+export type Brand = "wingtip" | "cockpit" | "ink" | "native";
+/** The flight rules a route is planned under (the altitude's popover):
+ *  VFR, or IFR -- its minimum altitudes, its thousands by direction of
+ *  flight and its 45-minute reserve (the planner's wingtip.ifr). */
+export type FlightRules = "vfr" | "ifr";
+/** How own ship is drawn on the chart (lib/map/position/ownShipLook): an
+ *  airplane from above -- a single, the default, a twin or a jet -- or the
+ *  arrow, a dot with no heading. The Map card's Own Ship (the owner,
+ *  2026-11-14), back after You on the Map was taken out on 2026-11-13. */
+export type OwnShipLook = "arrow" | "single" | "twin" | "jet";
+
+/** The app's look and the flight rules: Settings' Look. */
+export interface LookSlice {
+  /** The app's look: its tint, its typeface and its corners (lib/brand). */
+  brand: Brand;
+  /** The flight rules every route is planned under, kept: a pilot who
+   *  files IFR files it flight after flight. */
+  flightRules: FlightRules;
+  /** How own ship is drawn on the chart (OwnShipLook). */
+  ownShipLook: OwnShipLook;
+  setBrand: (brand: Brand) => void;
+  setFlightRules: (flightRules: FlightRules) => void;
+  setOwnShipLook: (ownShipLook: OwnShipLook) => void;
+}

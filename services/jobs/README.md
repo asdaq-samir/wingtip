@@ -10,7 +10,7 @@ starts none of them.
 |---|---|---|
 | [`retrain/`](retrain) | The training run: `python -m wingtip.pipeline run` retrains, evaluates and promotes the chart model (and the landmark model where the ratings are enough), each promoted only if it beats the one serving | `wingtip.pipeline`, `wingtip.chartmodel`, `wingtip.model_registry` (shared with the planner, which loads the promoted model) |
 | [`crash/`](crash) | The Studio's crash leads ([docs/STUDIO-PIPELINE.md](../../docs/STUDIO-PIPELINE.md)): the FAA's statements and notices read into leads, each lead's identity checked by the engine's `occurrence_identity` against the FAA's registry and an ADS-B track, and a kit made for each confirmed one; it keeps its own schedule, a run every half hour (`python -m crash every`, the compose service `crash-leads`) | `crash/cli.py`; `wingtip.crash_drafts` (shared with the planner, which serves the drafts) |
-| [`charts/`](charts) | A new FAA chart cycle fetched, rendered and packed into one PMTiles archive per kind and density; the map's overlay tiles (tippecanoe) from the planner's cycle pack; publishing to S3 | `charts/cli.py` (the commands), `charts/overlays.py` (the vector tiles); `wingtip.charts` and `wingtip.tile_archive` (shared with the planner, which serves the tiles) |
+| [`charts/`](charts) | A new FAA chart cycle fetched, rendered and packed into one PMTiles archive per kind and density; the map's overlay tiles (tippecanoe) from the planner's cycle pack; publishing to S3 | `charts/cli.py` (the commands), `charts/overlays.py` (the vector tiles, its layers in `overlay_layers.py` and `nasr_layers.py`); wingtip's chart modules (`wingtip.charts` maps them) and `wingtip.tile_archive` (shared with the planner, which serves the tiles) |
 
 Chart vision (`wingtip.chartvision`) stays in the planner: it reads the
 chart along a pilot's route as the route is planned, which is serving
@@ -61,7 +61,7 @@ and `charts-overlays` whenever its cycle pack has no overlay tiles.
 `CHARTS_CYCLE_LEAD_DAYS` (7) days before the FAA's next 56-day cycle: it
 fetches, renders and packs that cycle into its own folder while the
 current one serves, and the map goes over to it at 0901Z on its
-effective date (`charts.in_force`); the next run after deletes the old
+effective date (`wingtip.chart_cycle.in_force`); the next run after deletes the old
 cycle. It waits for a turn among the Mac's heavy work, through
 `scripts/dev/one-at-a-time.sh`'s lock in `/tmp` (`charts/turn.py`).
 `CHARTS_CYCLE_AUTO=0` turns that off (production and CI have it off: the
@@ -104,7 +104,7 @@ once a cycle.
 | Layer | From | Fields | First zoom |
 |---|---|---|---|
 | `airspace` | NASR Class_Airspace.shp, Class B–E | `class`, `local_type`, `name`, `ident`, `floor_ft`, `floor_ref` (SFC/AGL/MSL), `ceiling_ft` (MSL), `ceiling_excluded`, `number`, `hours_code`, `hours_remark` | B 4, C 5, D 6, E2–E4 7, E5–E7 8 |
-| `airspace_labels` | the same file, Class B–D: one point a volume on its ring's outer edge, where the map writes its altitudes | `class`, `floor_ft`, `ceiling_ft`, `ceiling_excluded`, `number`, `angle` (the text's clockwise turn along the ring, −90 to 90) | B 4, C 5, D 6 |
+| `airspace_labels` | the same file, Class B–D: one point a volume on its ring's outer edge, where the map writes its altitudes | `tab` ("100\n30", "T\nSFC", "-30": the sectional's ceiling over floor in hundreds, the engine's `airspace_shelf_label` words the map draws, `wingtip.airspace_tabs`), `class`, `floor_ft`, `ceiling_ft`, `ceiling_excluded`, `number`, `angle` (the text's clockwise turn along the ring, −90 to 90) | B 4, C 5, D 6 |
 | `special_use` | FAA special use airspace (ADDS) | `type` (P/R/MOA/W/A/D), `kind`, `name`, `floor_ft`, `floor_ref`, `ceiling_ft`, `ceiling_ref`, `times_of_use`, `time_zone`, `controlling_agency` | 5 |
 | `special_use_labels` | the same, one point an area (not the pieces it excludes, EXCLUSION 1) on its longest side, where the map writes its tab (`sua_labels.py`) | `tab` ("M-BRADY NOR*:\n3600-17999", the engine's words the map draws), `label` ("M-BRADY NOR*"), `type`, `floor_ft`/`floor_ref` and `ceiling_ft`/`ceiling_ref` (SFC/AGL/MSL/FL/UNL, "to but not including" FL180 as 17999 MSL, as the FAA's CIFP writes it), `angle`, `side` (1 the area below the text, −1 above) | 5 |
 | `airports` (`charts/airports.py`) | NASR APT_BASE, APT_RWY, APT_RWY_END (operational only), and Class_Airspace.shp for the class at each field's surface | `ident`, `faa_id`, `name`, `type`, `use`, `military`, `towered`, `airspace` (B, C, D, E or G at the surface: the mark's ring), `elevation_ft`, `longest_ft`, `hard_ft` (the longest runway the engine's `runway_hard_surface` calls hard), `runway_true`, `fuel`, `rank` (the engine's `field_mark_rank` order, lower kept first where marks overlap: a Class B's field, a Class C's, then each tier by its longest hard runway), `size` (the rule's step the mark is drawn at: largest, larger, regular, small) | by the rule's tier (towered, public with 3,000 ft hard, other public, private, heliports): 5, 6, 7, 9, 10 |

@@ -1,5 +1,5 @@
-import type { Marker } from "maplibre-gl";
-import { useEffect, useRef } from "react";
+import type { MapGeoJSONFeature, Marker } from "maplibre-gl";
+import { useEffect, useRef, type ReactNode } from "react";
 import { SHEET_SECONDS } from "../../../mapChrome";
 import { underway } from "../../position/glide";
 import { ownShipHtml } from "../../marks/icons";
@@ -9,9 +9,18 @@ import { useOwnShip } from "../../position/ownShip";
 import { useGlMap } from "../glLayer";
 import { glZoom } from "../glStyle";
 import { cameraOf } from "../camera";
+import { TAP } from "./common";
 
 /** The location arrow's close-in, in the app's levels. */
 const LOCAL_ZOOM = 9;
+
+/** The last recentre (own ship's `recentred`) flown to or let go, kept for
+ *  the page rather than the map's mount: locateOnOpen asks for the position
+ *  as the page opens, and when the map came up after that ask it took the
+ *  ask as done already, so the first fix was only followed, at the
+ *  country's zoom (sheet-fly-here's KMSN never drawn, 3 runs in 8). A map
+ *  made again still does not fly to an old recentre. */
+let flownRecentre = 0;
 
 /**
  * Own ship as a MapLibre marker: an element the map places in the same
@@ -27,8 +36,8 @@ const LOCAL_ZOOM = 9;
  * audit's FL-13). Grey at its last place when own ship is turned off (the
  * owner, 2026-10-06).
  */
-export function OwnShipGl() {
-  const { map } = useGlMap();
+export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
+  const { map, addTap, openCard } = useGlMap();
   // How it is drawn, the Map card's Own Ship (lib/map/position/ownShipLook).
   const look = usePreferences((s) => s.ownShipLook);
   const enabled = useOwnShip((s) => s.enabled);
@@ -40,13 +49,13 @@ export function OwnShipGl() {
   const marker = useRef<Marker | null>(null);
   // The mark's HTML as last written (drawOwnShip).
   const drawn = useRef("");
-  const flown = useRef(recentred);
+  const flown = useRef(flownRecentre);
   useEffect(() => {
     marker.current = ownShipMarker();
     // A drag ends the follow (the camera's owner), and a flight to the
     // position still waiting on its fix is let go.
     const stop = (e: { originalEvent?: Event }) => {
-      if (e.originalEvent) flown.current = useOwnShip.getState().recentred;
+      if (e.originalEvent) flown.current = flownRecentre = useOwnShip.getState().recentred;
     };
     map.on("dragstart", stop);
     return () => {
@@ -75,7 +84,7 @@ export function OwnShipGl() {
     const camera = cameraOf(map);
     const intent = simulated ? "dry-run" : "own-ship";
     if (flown.current !== recentred) {
-      flown.current = recentred;
+      flown.current = flownRecentre = recentred;
       const zoom = recentreZoom !== null ? glZoom(recentreZoom) : Math.max(map.getZoom(), glZoom(LOCAL_ZOOM));
       camera.pick([fix.lon, fix.lat], { zoom, duration: SHEET_SECONDS * 2000, keeps: intent });
       return;
@@ -86,5 +95,29 @@ export function OwnShipGl() {
     // levels short of the run's zoom (dry-run.spec, 2026-11-13).
     if (follow) camera.follow(intent, [fix.lon, fix.lat]);
   }, [map, fix, enabled, simulated, follow, recentred, recentreZoom]);
+  // A tap on it its card (`card`), as Apple Maps' My Location opens one:
+  // in the map's one tap, before anything under it, within a finger's
+  // reach of where it is drawn. The marker itself stays untouchable, so a
+  // drag that starts on it moves the map.
+  useEffect(() => {
+    if (!card) return;
+    return addTap({
+      layers: [],
+      reach: TAP.mark,
+      rank: TAP.rank.field - 1,
+      find: (point) => {
+        const { enabled: on, fix: f } = useOwnShip.getState();
+        if (!on || !f) return null;
+        const p = map.project([f.lon, f.lat]);
+        if (Math.hypot(p.x - point.x, p.y - point.y) > TAP.mark) return null;
+        return {
+          type: "Feature",
+          properties: {},
+          geometry: { type: "Point", coordinates: [f.lon, f.lat] },
+        } as unknown as MapGeoJSONFeature;
+      },
+      onTap: () => openCard(card),
+    });
+  }, [map, addTap, openCard, card]);
   return null;
 }

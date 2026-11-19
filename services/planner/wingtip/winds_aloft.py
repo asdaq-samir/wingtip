@@ -30,7 +30,7 @@ from datetime import datetime, timezone
 
 import numpy as np
 
-from . import weather, weather_flow, weather_store, winds_stations
+from . import utc, weather, weather_flow, weather_store, winds_stations
 from .engine import ask
 
 #: A grid key's form: the time, UTC, to the minute.
@@ -57,17 +57,9 @@ def _record():
     return record
 
 
-def _epoch(iso: str) -> float:
-    return datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp()
-
-
-def _iso(at_s: float) -> str:
-    return datetime.fromtimestamp(at_s, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
 def _frames(record) -> list[tuple[float, dict]]:
     """The record's hours that hold numbers, oldest first."""
-    frames = [(_epoch(f["valid"]), f) for f in (record.data or {}).get("frames", [])]
+    frames = [(utc.epoch(f["valid"]), f) for f in (record.data or {}).get("frames", [])]
     return sorted(((t, f) for t, f in frames if any((p or {}).get("numbers") for p in (f.get("parts") or {}).values())), key=lambda x: x[0])
 
 
@@ -98,11 +90,11 @@ def later(key: str | None, seconds: float) -> str | None:
     A stations period is the flight's whole."""
     if not is_grid(key) or not seconds:
         return key
-    return _key(_epoch(key.replace("Z", ":00Z")) + seconds)
+    return _key(utc.epoch(key.replace("Z", ":00Z")) + seconds)
 
 
 def _at_s(key: str) -> float:
-    return _epoch(key.replace("Z", ":00Z"))
+    return utc.epoch(key.replace("Z", ":00Z"))
 
 
 def _resolved(key: str | None) -> str:
@@ -287,9 +279,9 @@ def winds_period(key: str | None = None) -> dict | None:
     label = f"NOAA GFS winds{hour}, in place of AWC" if wind["fallback"] else f"AWC winds{hour}"
     span = (hours[0][0], hours[-1][0]) if len(hours) > 1 else (valid_s - 3600, valid_s + 3600)
     return {
-        "valid_at": _iso(at_s),
-        "use_from": _iso(span[0]),
-        "use_to": _iso(span[1]),
+        "valid_at": utc.iso(at_s),
+        "use_from": utc.iso(span[0]),
+        "use_to": utc.iso(span[1]),
         "run": issued,
         "forecast_hour": (part.get("key") or {}).get("forecast_hour"),
         "modelled": bool(wind["fallback"]),

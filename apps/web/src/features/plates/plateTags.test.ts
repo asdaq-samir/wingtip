@@ -14,18 +14,18 @@ describe("KOSH ILS 36's tags on its plate", () => {
 
   it("bars POBER's altitude as the plate does and gives the glide slope there", () => {
     expect(of("POBER").lines).toEqual([
-      { text: "2,700'", under: true, over: false },
-      { text: "GS 2,610'", under: false, over: false },
+      { text: "2,700", under: true, over: false },
+      { text: "GS 2,610", under: false, over: false },
     ]);
-    expect(of("CFBSM").lines).toEqual([{ text: "2,700'", under: true, over: false }]);
+    expect(of("CFBSM").lines).toEqual([{ text: "2,700", under: true, over: false }]);
   });
 
   it("gives the runway its TCH and TDZE, never a DA", () => {
-    expect(of("RW36").lines.map((l) => l.text)).toEqual(["TCH 53'", "TDZE 809'"]);
+    expect(of("RW36").lines.map((l) => l.text)).toEqual(["TCH 53", "TDZE 809"]);
   });
 
   it("names the missed approach's hold and its altitude", () => {
-    expect(of("LEWKO").lines).toEqual([{ text: "3,000'", under: true, over: false }]);
+    expect(of("LEWKO").lines).toEqual([{ text: "3,000", under: true, over: false }]);
   });
 
   it("names a fix with no altitude of its own", () => {

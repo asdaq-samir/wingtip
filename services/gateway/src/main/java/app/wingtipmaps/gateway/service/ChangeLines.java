@@ -8,12 +8,15 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.util.RawValue;
 
 /**
  * What changed in a watched flight's briefing, in the planner's own lines.
  *
  * <p>The planner finds the changes (POST /api/words/changes/sources,
- * routers/words.py briefing_changes: a field's flight category, a SIGMET
+ * app/words_changes.py briefing_changes: a field's flight category, a SIGMET
  * or AIRMET new or gone, a TFR new, a field newly below VFR, a TAF
  * crossing a category line). Each change's own heading ("KDLH METAR, VFR
  * to IFR") is the sentence, citing that change, and its raw reports go
@@ -51,7 +54,17 @@ public class ChangeLines {
      *     refuses, or answers something that is not its answer
      */
     public Changes changes(String dep, String dest, List<String> stops, String then, String now) {
-        return lines(planner.changeSources(dep, dest, stops, then, now));
+        return lines(planner.changeSources(ask(dep, dest, stops, then, now)));
+    }
+
+    /** The changes' ask: both briefings embedded as the JSON they already
+     *  are, not as strings holding JSON. */
+    static String ask(String dep, String dest, List<String> stops, String then, String now) {
+        ObjectNode body = JsonNodeFactory.instance.objectNode().put("dep", dep).put("dest", dest);
+        (stops == null ? List.<String>of() : stops).forEach(body.putArray("stops")::add);
+        return body.putRawValue("then", new RawValue(then))
+                .putRawValue("now", new RawValue(now))
+                .toString();
     }
 
     /** The planner's WordsSources as the watch's changes: a sentence a

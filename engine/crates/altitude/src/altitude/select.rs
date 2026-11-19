@@ -1,6 +1,6 @@
 //! The band of each leg and the altitude recommended: the planner's
 //! select_cruise_altitude once its data is read (#482 phase 3). The
-//! planner reads the floors, the Class B shelves, the service ceilings in
+//! planner reads the floors, the service ceilings in
 //! the forecast air, the TAFs, the special-use airspace, the freezing
 //! level and the hazards, all in parallel, and asks this with them.
 
@@ -12,6 +12,7 @@ use super::track::Point;
 use crate::flight::is_eastbound;
 use crate::geo::{bearing_deg, py_mod};
 use crate::json::Value;
+use wingtip_core::ask::opt_num_in as opt_num;
 
 type R<T> = Result<T, String>;
 
@@ -64,31 +65,22 @@ fn lowest(values: impl IntoIterator<Item = Option<f64>>) -> Option<f64> {
 /// limit": a forecast is a reason to warn, and a nav log refused for it
 /// could not be looked at for a later departure either). Under IFR the
 /// IFR altitudes from the floor to the service ceiling alone: an IFR
-/// clearance takes the flight into Class B, the clouds and Class A.
-#[allow(clippy::too_many_arguments)]
-fn band(
-    rules: &Rules, floor: f64, airspace: Option<f64>, service: Option<f64>, cloud_base: Option<f64>, course: f64, areas: &[&Area],
-    rule_from: f64,
-) -> Band {
+/// clearance takes the flight into the clouds and Class A. Class B is no
+/// ceiling under either rules: a route is always planned through it with
+/// the clearance it takes (14 CFR 91.131(a)(1); the owner, 2026-11-17),
+/// its transits saying so, and the Routes offer Avoid Class B.
+fn band(rules: &Rules, floor: f64, service: Option<f64>, cloud_base: Option<f64>, course: f64, areas: &[&Area], rule_from: f64) -> Band {
     if rules.ifr {
         let top = lowest([service, rules.maa_ft]);
         let altitudes = cruising::legal_ifr(floor, top, course).into_iter().filter(|&a| !blocked(a, areas)).collect();
         return Band { ceiling: top, altitudes, cloud_kept: true, tight: false };
     }
-    // The airspace ceiling is a Class B shelf's floor, and the floor is
-    // inside Class B ("from 3,000 feet MSL" upward), which 14 CFR
-    // 91.131(a)(1) takes no flight into without a clearance: an altitude
-    // equal to it is not under it, so the band keeps strictly below, as
-    // `cruising::tight` does and as cautions.rs's "Into Class B" reads
-    // (alt >= shelf). The service ceiling and the clouds' highest stay
-    // inclusive: an airplane may cruise at its ceiling, and
-    // clouds::highest_under_ft already keeps 91.155's distance below.
-    let under_airspace = |a: f64| airspace.is_none_or(|shelf| a < shelf);
+    // The service ceiling and the clouds' highest are inclusive: an
+    // airplane may cruise at its ceiling, and clouds::highest_under_ft
+    // already keeps 91.155's distance below.
     let legal = |ceiling: Option<f64>| -> (Vec<f64>, bool) {
-        let found: Vec<f64> = cruising::legal_vfr(floor, ceiling, course, Some(rule_from))
-            .into_iter()
-            .filter(|&a| !blocked(a, areas) && under_airspace(a))
-            .collect();
+        let found: Vec<f64> =
+            cruising::legal_vfr(floor, ceiling, course, Some(rule_from)).into_iter().filter(|&a| !blocked(a, areas)).collect();
         if !found.is_empty() {
             return (found, false);
         }
@@ -97,14 +89,13 @@ fn band(
             _ => (Vec::new(), false),
         }
     };
-    let ceiling = lowest([airspace, service, cloud_base.map(clouds::highest_under_ft)]);
+    let ceiling = lowest([service, cloud_base.map(clouds::highest_under_ft)]);
     let (altitudes, tight) = legal(ceiling);
     if !altitudes.is_empty() || cloud_base.is_none() {
         return Band { ceiling, altitudes, cloud_kept: true, tight };
     }
-    let ceiling = lowest([airspace, service]);
-    let (altitudes, tight) = legal(ceiling);
-    Band { ceiling, altitudes, cloud_kept: false, tight }
+    let (altitudes, tight) = legal(service);
+    Band { ceiling: service, altitudes, cloud_kept: false, tight }
 }
 
 fn num(x: f64) -> Value {
@@ -133,14 +124,6 @@ fn point(name: &str, v: Option<&Value>) -> R<Point> {
     }
 }
 
-fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
-
 fn list<'a>(v: &'a Value, key: &str) -> &'a [Value] {
     v.get(key).and_then(Value::as_array).unwrap_or(&[])
 }
@@ -158,7 +141,6 @@ pub fn select(name: &str, v: &Value) -> R<Value> {
     let end = point(name, v.get("end"))?;
     let fixes: Vec<Point> = list(v, "fixes").iter().map(|f| point(name, Some(f))).collect::<R<_>>()?;
     let ifr = v.get("rules").and_then(Value::as_str) == Some("ifr");
-    let class_b_cleared = matches!(v.get("class_b_cleared"), Some(Value::Bool(true)));
     let legs: Vec<(Point, Point)> = if fixes.len() >= 2 { fixes.windows(2).map(|w| (w[0], w[1])).collect() } else { vec![(start, end)] };
     let count = legs.len();
 
@@ -186,16 +168,8 @@ pub fn select(name: &str, v: &Value) -> R<Value> {
         .map(|f| if ifr { Ok(0.0) } else { opt_num(name, f, "lowest_ground_ft").map(|g| g.unwrap_or(0.0) + HEMISPHERIC_RULE_AGL_FT) })
         .collect::<R<_>>()?;
 
-    // Class B is no ceiling under IFR or with a clearance: the route is
-    // planned through it, and its transits still say it takes one.
-    let airspace: Vec<Option<f64>> = if ifr || class_b_cleared {
-        vec![None; count]
-    } else {
-        let given = list(v, "airspace_ceilings_ft");
-        (0..count).map(|i| given.get(i).and_then(Value::as_f64)).collect()
-    };
     // A leg's service ceiling null is no airplane: no ceiling of its own,
-    // the band then the rules' and the airspace's alone (the owner,
+    // the band then the rules' and the clouds' alone (the owner,
     // 2026-11-09: "don't assume").
     let service: Vec<Option<f64>> = list(v, "service_ceilings_ft").iter().map(Value::as_f64).collect();
     if service.len() != count {
@@ -233,14 +207,13 @@ pub fn select(name: &str, v: &Value) -> R<Value> {
     let rules = Rules { ifr, maa_ft: if on_airway { airway.and_then(|a| a.get("maa_ft")).and_then(Value::as_f64) } else { None } };
     let course = py_mod(bearing_deg(start.0, start.1, end.0, end.1) - variation, 360.0);
 
-    // The whole route's own band: the highest floor and the lowest shelf,
-    // cloud and service ceiling anywhere along it -- the altitude that
+    // The whole route's own band: the highest floor and the lowest cloud
+    // and service ceiling anywhere along it -- the altitude that
     // works everywhere.
     let floor_ft = floors_ft.iter().copied().fold(f64::NEG_INFINITY, f64::max);
     let rule_from = rules_from.iter().copied().fold(f64::INFINITY, f64::min);
-    let airspace_ceiling = lowest(airspace.iter().copied());
     let service_ceiling = lowest(service.iter().copied());
-    let route = band(&rules, floor_ft, airspace_ceiling, service_ceiling, cloud.as_ref().map(|c| c.0), course, &all_areas, rule_from);
+    let route = band(&rules, floor_ft, service_ceiling, cloud.as_ref().map(|c| c.0), course, &all_areas, rule_from);
 
     // Leg by leg, for the stepped plans, each against its own magnetic
     // course: 91.159 goes by the course flown, and near north or south a
@@ -258,7 +231,7 @@ pub fn select(name: &str, v: &Value) -> R<Value> {
             let leg_course = py_mod(bearing_deg(a.0, a.1, b.0, b.1) - leg_variations.get(i).copied().unwrap_or(variation), 360.0);
             let here: Vec<&Area> = areas.iter().filter(|area| area.legs.contains(&i)).collect();
             let base = cloud_bases[i].as_ref();
-            let leg = band(&rules, floors_ft[i], airspace[i], service[i], base.map(|c| c.0), leg_course, &here, rules_from[i]);
+            let leg = band(&rules, floors_ft[i], service[i], base.map(|c| c.0), leg_course, &here, rules_from[i]);
             all_kept &= leg.cloud_kept;
             legal.extend(&leg.altitudes);
             let f = &floors[i];
@@ -266,7 +239,6 @@ pub fn select(name: &str, v: &Value) -> R<Value> {
                 ("from_nm", num(tenth(breaks[i]))),
                 ("to_nm", num(tenth(breaks[i + 1]))),
                 ("floor_ft", num(floors_ft[i])),
-                ("airspace_ceiling_ft", opt(airspace[i])),
                 ("service_ceiling_ft", opt(service[i])),
                 ("cloud_base_ft", opt(base.map(|c| c.0))),
                 ("cloud_station", base.map_or(Value::Null, |c| Value::String(c.1.clone()))),
@@ -329,8 +301,6 @@ pub fn select(name: &str, v: &Value) -> R<Value> {
         // the route. Below it, any altitude.
         ("hemispheric_rule_from_ft", num(rule_from.round_ties_even())),
         ("floor_ft", num(floor_ft)),
-        ("airspace_ceiling_ft", opt(airspace_ceiling)),
-        ("class_b_cleared", Value::Bool(class_b_cleared)),
         ("service_ceiling_ft", opt(service_ceiling)),
         ("cloud_base_ft", opt(cloud.as_ref().map(|c| c.0))),
         ("cloud_station", cloud.as_ref().map_or(Value::Null, |c| Value::String(c.1.clone()))),

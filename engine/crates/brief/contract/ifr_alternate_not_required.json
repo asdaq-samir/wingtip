@@ -1,0 +1,22 @@
+{
+  "x-call": "wingtip_brief::alternates::not_required",
+  "description": "Why a destination needs no IFR alternate, in 14 CFR 91.169(b)'s own figures: an instrument approach, and a forecast of at least 2,000 ft and 3 sm for an hour before and after the ETA ((b)(2)(i), the \"1-2-3\").",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "IfrAlternateNotRequiredInput",
+      "type": "object",
+      "properties": {},
+      "required": []
+    },
+    "answer": {
+      "title": "IfrAlternateNotRequiredAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,20 +1,5 @@
 {
-  "src/components/AircraftAlerts.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/components/GroupedList.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
-  "src/components/QueryState.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/features/plan/components/navlog/altitude/AltitudeAdvisor.tsx": {
+  "src/features/navlog/altitude/AltitudeAdvisor.tsx": {
     "no-restricted-syntax": {
       "count": 1
     }

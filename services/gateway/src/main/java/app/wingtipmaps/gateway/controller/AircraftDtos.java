@@ -1,13 +1,17 @@
 package app.wingtipmaps.gateway.controller;
 
 import app.wingtipmaps.gateway.domain.Aircraft;
+import app.wingtipmaps.gateway.domain.AircraftDueItem;
 import app.wingtipmaps.gateway.dto.AircraftDto;
+import app.wingtipmaps.gateway.dto.SquawkDto;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.service.AircraftService;
 import app.wingtipmaps.gateway.service.DueItemService;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.service.SquawkService;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * An airplane as the API answers it, with when its inspections fall due
@@ -33,6 +37,25 @@ final class AircraftDtos {
     }
 
     AircraftDto of(Aircraft a) {
+        return of(List.of(a)).get(0);
+    }
+
+    /** The airplanes in order, their open squawks and due items read in
+     *  one query each for them all, not two an airplane. */
+    List<AircraftDto> of(List<Aircraft> all) {
+        List<Long> ids =
+                all.stream().map(Aircraft::getId).filter(Objects::nonNull).toList();
+        Map<Long, List<SquawkDto>> open = squawks.openOf(ids);
+        Map<Long, List<AircraftDueItem>> kept = dueItems.of(ids);
+        return all.stream()
+                .map(a -> of(
+                        a,
+                        a.getId() == null ? List.of() : open.getOrDefault(a.getId(), List.of()),
+                        a.getId() == null ? List.of() : kept.getOrDefault(a.getId(), List.of())))
+                .toList();
+    }
+
+    private AircraftDto of(Aircraft a, List<SquawkDto> open, List<AircraftDueItem> kept) {
         PlannerInspections due = dueOf(a);
         return new AircraftDto(
                 a.getId(),
@@ -49,15 +72,11 @@ final class AircraftDtos {
                 a.getCreatedAt(),
                 AircraftController.vorCheckOf(a, due),
                 AircraftController.inspectionsOf(a, due),
-                a.getId() == null ? List.of() : squawks.open(a.getId()),
+                open,
                 a.getEquipment(),
                 a.getSurveillance(),
                 a.getColour(),
-                a.getId() == null
-                        ? List.of()
-                        : dueItems.of(a.getId()).stream()
-                                .map(DueItemService::toDto)
-                                .toList(),
+                kept.stream().map(DueItemService::toDto).toList(),
                 AircraftService.handbookOf(a),
                 AircraftService.figuresOf(a));
     }

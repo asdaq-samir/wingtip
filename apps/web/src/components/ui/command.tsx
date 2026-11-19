@@ -4,9 +4,7 @@ import * as React from "react";
 import { Autocomplete as AutocompletePrimitive } from "@base-ui/react/autocomplete";
 import { cn } from "cn";
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
-import { SearchIcon } from "lucide-react";
+import { FIELD_CLEAR, FieldClearGlyph } from "@/components/ui/field-clear";
 
 /**
  * shadcn's Command, on Base UI's Autocomplete where it was on cmdk: a field
@@ -63,66 +61,27 @@ function Command({
   );
 }
 
-function CommandDialog({
-  title = "Command Palette",
-  description = "Search for a command to run...",
-  children,
-  className,
-  ...props
-}: Omit<React.ComponentProps<typeof Dialog>, "children"> & {
-  title?: string;
-  description?: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Dialog {...props}>
-      <DialogContent className={cn("top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0", className)}>
-        <DialogHeader className="sr-only">
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        {children}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/** The field, in shadcn's input group with its glass. */
-function CommandInput({ className, ...props }: AutocompletePrimitive.Input.Props) {
-  return (
-    <div data-slot="command-input-wrapper" className="p-1 pb-0">
-      <InputGroup className="h-8! rounded-lg! border-input/30 bg-input/30 shadow-none! *:data-[slot=input-group-addon]:pl-2!">
-        <AutocompletePrimitive.Input
-          data-slot="command-input"
-          className={cn(
-            "w-full text-sm pointer-coarse:text-(length:--type-row) outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
-            className,
-          )}
-          {...props}
-        />
-        <InputGroupAddon>
-          <SearchIcon className="size-4 shrink-0 opacity-50" />
-        </InputGroupAddon>
-      </InputGroup>
-    </div>
-  );
-}
-
 /** A plain field of the caller's own as the list's field (a route's box,
  *  a card's ident): Base UI's Input with its own props and element. */
 const CommandField = AutocompletePrimitive.Input;
 
 /** The field's clear: Base UI's own, shown while something is typed,
  *  clearing it through the root's `onValueChange` and keeping the focus
- *  in the field (drawn as the app's ClearButton by its `render`). */
-const CommandClear = AutocompletePrimitive.Clear;
+ *  in the field, drawn as every field's clear is (ui/field-clear's
+ *  FIELD_CLEAR, iOS's grey disc). */
+function CommandClear({ className, ...props }: AutocompletePrimitive.Clear.Props) {
+  return (
+    <AutocompletePrimitive.Clear data-slot="clear-button" className={cn(FIELD_CLEAR, className)} {...props}>
+      <FieldClearGlyph />
+    </AutocompletePrimitive.Clear>
+  );
+}
 
 function CommandList({ className, ...props }: AutocompletePrimitive.List.Props) {
   return (
     <AutocompletePrimitive.List
       data-slot="command-list"
-      className={cn("no-scrollbar max-h-72 scroll-py-1 overflow-x-hidden overflow-y-auto outline-none", className)}
+      className={cn("max-h-72 scroll-py-1 overflow-x-hidden overflow-y-auto outline-none", className)}
       {...props}
     />
   );
@@ -204,11 +163,9 @@ function CommandShortcut({ className, ...props }: React.ComponentProps<"span">) 
 export {
   Command,
   CommandClear,
-  CommandDialog,
   CommandEmpty,
   CommandField,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
   CommandRoot,

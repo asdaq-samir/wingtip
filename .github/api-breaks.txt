@@ -247,3 +247,18 @@
 2026-11-13 PUT /api/aircraft/{id}/vor-check the `figures/serviceCeilingFt` response property's min was unset from `1000.00` for the response status `200` -- the same
 2026-11-13 PUT /api/aircraft/{id}/vor-check the `figures/taxiFuelGal` response property's max was unset from `50.00` for the response status `200` -- the same
 2026-11-13 PUT /api/aircraft/{id}/vor-check the `figures/taxiFuelGal` response property's min was unset from `0.00` for the response status `200` -- the same
+2026-11-18 POST /api/departure-window added the new `oxygen` enum value to the `hours/items/reasons/items/key` response property for the response status `200` -- 91.211's Oxygen finding (2e279a6b4); the web ships with it, and no app is released (nothing in production, the owner: break freely until launch)
+2026-11-18 POST /api/go-no-go added the new `oxygen` enum value to the `items/items/key` response property for the response status `200` -- the same
+2026-11-18 GET /api/plan the response property `altitude_selection/anyOf[subschema #1: AltitudeBreakdown]/airspace_ceiling_ft` became optional for the status `200` -- Class B is no ceiling now (8d73de567); always null, kept for the phones' readers until they follow; no app is released
+2026-11-18 GET /api/plan removed the required property `altitude_selection/anyOf[subschema #1: AltitudeBreakdown]/segments/items/airspace_ceiling_ft` from the response with the `200` status -- the same
+2026-11-18 GET /api/route-options added the new `class_b` enum value to the `options/items/kind` response property for the response status `200` (shared schema: `RouteOption`, also at `own/anyOf[subschema #1: RouteOption]/kind`) -- Avoid Class B, a route option (8d73de567); the web ships with it, and no app is released
+2026-11-18 GET /api/route-options added the new `class_b` enum value to the `options/items/kinds/items/` response property for the response status `200` (shared schema: `RouteOption`, also at `own/anyOf[subschema #1: RouteOption]/kinds/items/`) -- the same
+2026-11-18 GET /api/route-check api path removed without deprecation -- no web, MCP, gateway or phone source called it (c41a8b5a4, the owner 2026-11-17: "Yes delete them")
+2026-11-18 POST /api/words/coach/sources api path removed without deprecation -- the same
+2026-11-18 POST /api/words/debrief/sources api path removed without deprecation -- the same
+2026-11-18 POST /api/words/notams/sources api path removed without deprecation -- the same
+2026-11-18 POST /api/words/risk/sources api path removed without deprecation -- the same
+2026-11-18 POST /api/words/weather/sources api path removed without deprecation -- the same
+2026-11-18 POST /api/auth/device api path removed without deprecation -- the TV sign-in, deleted with the web's TV mode (f3a81945c); no phone calls it
+2026-11-18 POST /api/auth/device/approve api path removed without deprecation -- the same
+2026-11-18 POST /api/auth/device/token api path removed without deprecation -- the same

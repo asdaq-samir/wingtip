@@ -8,6 +8,7 @@ export const CHART = {
   routeEdge: "#0b0f0a",
   waypoint: "#c0309f",
   mapBlue: "#007aff",
+  mapBlueInk: "#0066d6",
   towered: "#2465b8",
   untowered: "#c0309f",
   fieldUnknown: "#6b7280",
@@ -113,10 +114,12 @@ export const BADGE = {
   statusLater: "#b45309",
   statusCold: "#6b7280",
   statusClosed: "#991b1b",
+  statusRestricted: "#854d0e",
   statusOutOfService: "#9a3412",
   statusPrivate: "#475569",
   statusMilitary: "#4d7c0f",
   statusJoint: "#3f6212",
+  statusSite: "#155e75",
   statusEmergency: "#dc2626",
   statusGround: "#52525b",
 };
@@ -125,6 +128,7 @@ export const WEATHER = {
   convective: "#c2410c",
   icing: "#2563eb",
   turbulence: "#d97706",
+  turbulenceText: "#b45309",
   ifr: "#7c3aed",
   mountains: "#78716c",
   shear: "#be185d",
@@ -239,14 +243,10 @@ export const TYPE_POINTS = {
 /** Motion: durations in seconds, curves as cubic-bezier points. */
 export const MOTION = {
   sheet: 0.3,
-  sheetLeast: 0.22,
-  sheetMost: 0.35,
   sheetEase: [0, 0, 0.58, 1],
-  sheetBackEase: [0.2, 0.9, 0.3, 1],
   drawer: 0.45,
   drawerEase: [0.32, 0.72, 0, 1],
   fade: 0.2,
-  quick: 0.15,
   page: 0.25,
   skeletonPulse: 1.5,
 } as const;
@@ -275,6 +275,13 @@ export const MAP = {
   airspaceFaded: 0.35,
   airspaceHeld: 1.8,
   airspaceLabelFaded: 0.6,
+  labelSmall: 11,
+  label: 12,
+  labelLarge: 13,
+  labelCount: 14,
+  labelRunway: 16,
+  labelHalo: 2,
+  labelHaloNight: 0.6,
 } as const;
 
 /** A colour-ramp stop: the value in the field's unit and its colour as [r, g, b, 255ths], as weatherlayers-gl takes it. */
@@ -353,5 +360,4 @@ export const SIZE = {
   panel: 384,
   panelWide: 448,
   desktop: 1024,
-  refreshPull: 64,
 } as const;

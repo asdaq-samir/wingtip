@@ -1,8 +1,10 @@
 import type { ExpressionSpecification } from "maplibre-gl";
 import type { AirspaceClass } from "../../preferences";
-import { AIRPORT_MARK, airportMarkSvg } from "../marks/airportMark";
+import { AIRPORT_MARK, TOWERED_BLUE, UNTOWERED_MAGENTA, airportMarkSvg } from "../marks/airportMark";
 import { colourOf } from "../marks/flightCategory";
 import { svgPicture, type GlPicture } from "./useGlSymbols";
+import { glZoom } from "./glStyle";
+import { LABEL_SIZE, labelByZoom } from "./layers/common";
 
 /**
  * The tile airports' symbols (glOverlays' airports layer): the planner's
@@ -66,7 +68,21 @@ const TILE_USE: ExpressionSpecification = [
   "heliport",
   "",
 ];
-export const TOWERED: ExpressionSpecification = ["==", ["get", "towered"], true];
+const TOWERED: ExpressionSpecification = ["==", ["get", "towered"], true];
+
+/** A field's ident in its symbol's colour, as the sectional sets a
+ *  field's name (Chart User's Guide, Airports: towered blue, the rest
+ *  magenta), by the feature's `towered`: the tiles' every field, and the
+ *  marks the map draws itself (the Class B fields', a stop's) the same,
+ *  so a field reads alike whichever layer draws it. */
+export const AIRPORT_IDENT_INK: ExpressionSpecification = ["case", TOWERED, TOWERED_BLUE, UNTOWERED_MAGENTA];
+/** And its size by zoom, the map's label scale (map.label-*): 11 far
+ *  out, 12 at a county's zoom, 13 close in. */
+export const AIRPORT_IDENT_SIZE = labelByZoom([
+  [glZoom(4), LABEL_SIZE.small],
+  [glZoom(10), LABEL_SIZE.normal],
+  [glZoom(13), LABEL_SIZE.large],
+]);
 
 /** The map's global state the airports' layer reads (MapLibre's
  *  `global-state` expression, set by glOverlays): each field's weather

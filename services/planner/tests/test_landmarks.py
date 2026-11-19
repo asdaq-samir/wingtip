@@ -8,11 +8,11 @@ import threading
 
 import numpy as np
 import pytest
-from app import chart_reader, detection, landmarks
+from app import chart_reader, detection, landmark_cells, landmarks
 from PIL import Image
-from wingtip import charts, chartvision
+from wingtip import chart_coverage, chart_prepare, chart_serving, chart_sheets, chart_tiles, chartvision
 
-# Near Rockford, on the Chicago sectional (charts.COVERAGE), so the
+# Near Rockford, on the Chicago sectional (chart_coverage.COVERAGE), so the
 # reader's own test of whether a block has chart says yes.
 START, END = (42.20, -89.10), (42.32, -88.86)
 HALF_WIDTH_NM = 4.0
@@ -76,14 +76,14 @@ def drawn_chart(monkeypatch, tmp_path):
     """The chart above in place of the FAA's, cells kept under tmp_path,
     and cells of 8 by 8 tiles read 4 by 4 at a time, so a short route
     crosses many of each and their edges."""
-    monkeypatch.setattr(charts, "tile_image", lambda x, y, zoom, kind="sec": _tile(x, y))
-    monkeypatch.setattr(charts, "tile_cached", lambda *args, **kwargs: True)
-    monkeypatch.setattr(charts, "prepare_for_bbox", lambda *args, **kwargs: [])
-    monkeypatch.setattr(charts, "serving_cycle", lambda: "09-03-2026")
-    monkeypatch.setattr(charts, "tiles_revision", lambda cycle: 3)
-    monkeypatch.setattr(landmarks, "LANDMARKS_ROOT", tmp_path / "landmarks")
-    monkeypatch.setattr(landmarks, "CELL_TILES", 8)
-    monkeypatch.setattr(landmarks, "CORE_TILES", 4)
+    monkeypatch.setattr(chart_tiles, "tile_image", lambda x, y, zoom, kind="sec": _tile(x, y))
+    monkeypatch.setattr(chart_tiles, "tile_cached", lambda *args, **kwargs: True)
+    monkeypatch.setattr(chart_prepare, "prepare_for_bbox", lambda *args, **kwargs: [])
+    monkeypatch.setattr(chart_serving, "serving_cycle", lambda: "09-03-2026")
+    monkeypatch.setattr(chart_serving, "tiles_revision", lambda cycle: 3)
+    monkeypatch.setattr(landmark_cells, "LANDMARKS_ROOT", tmp_path / "landmarks")
+    monkeypatch.setattr(landmark_cells, "CELL_TILES", 8)
+    monkeypatch.setattr(landmark_cells, "CORE_TILES", 4)
     landmarks._CELLS.clear()
     yield tmp_path
     landmarks._CELLS.clear()
@@ -106,14 +106,14 @@ def _with_cells(tmp_path, blocks) -> list:
 
 def _corridor_cells() -> list:
     tiles = chartvision.corridor_tiles(START, END, HALF_WIDTH_NM + 1.0)
-    return sorted({landmarks.cell_of(tile) for tile in tiles})
+    return sorted({landmark_cells.cell_of(tile) for tile in tiles})
 
 
 @pytest.mark.parametrize("built", ["all", "some"])
 def test_a_read_with_the_cells_is_the_readers_own_to_the_digit(drawn_chart, monkeypatch, built):
     cells = _corridor_cells()
     for cell in cells if built == "all" else cells[::2]:
-        landmarks.build_cell(cell, landmarks.cells_dir())
+        landmark_cells.build_cell(cell, landmark_cells.cells_dir())
     read = []
     detect = chartvision.detect_landmarks
 
@@ -140,26 +140,28 @@ def test_with_no_cell_built_there_is_no_read_of_its_own(drawn_chart):
 
 def test_a_blob_cut_off_by_its_cells_block_is_not_kept_and_its_tiles_say_so(drawn_chart):
     cell = _corridor_cells()[0]
-    landmarks.build_cell(cell, landmarks.cells_dir())
-    loaded = landmarks._cell(landmarks.cells_dir(), cell)
+    landmark_cells.build_cell(cell, landmark_cells.cells_dir())
+    loaded = landmarks._cell(landmark_cells.cells_dir(), cell)
     cut = {
-        tile for tile, bits in loaded["bits"].items() if any(bits >> (kind * landmarks._BITS_PER_KIND) & landmarks.CUT for kind in range(2))
+        tile
+        for tile, bits in loaded["bits"].items()
+        if any(bits >> (kind * landmark_cells.BITS_PER_KIND) & landmark_cells.CUT for kind in range(2))
     }
     assert cut, "the drawn chart has lakes bigger than a block"
     kept_tiles = set(loaded["blobs"])
     # Every blob kept sits in a tile of its cell.
-    assert all(landmarks.cell_of(tile) == cell for tile in kept_tiles)
+    assert all(landmark_cells.cell_of(tile) == cell for tile in kept_tiles)
 
 
 def test_the_cells_are_named_for_the_cycle_its_tiles_and_the_reader(monkeypatch, tmp_path):
-    monkeypatch.setattr(landmarks, "LANDMARKS_ROOT", tmp_path)
-    monkeypatch.setattr(charts, "tiles_revision", lambda cycle: 4)
-    path = landmarks.cells_dir("10-29-2026")
+    monkeypatch.setattr(landmark_cells, "LANDMARKS_ROOT", tmp_path)
+    monkeypatch.setattr(chart_serving, "tiles_revision", lambda cycle: 4)
+    path = landmark_cells.cells_dir("10-29-2026")
     assert path == tmp_path / "10-29-2026" / f"landmarks-r4-{detection._READER}"
-    monkeypatch.setattr(charts, "tiles_revision", lambda cycle: 5)
-    assert landmarks.cells_dir("10-29-2026") != path
-    monkeypatch.setattr(charts, "serving_cycle", lambda: "09-03-2026")
-    assert landmarks.cells_dir().parent.name == "09-03-2026"
+    monkeypatch.setattr(chart_serving, "tiles_revision", lambda cycle: 5)
+    assert landmark_cells.cells_dir("10-29-2026") != path
+    monkeypatch.setattr(chart_serving, "serving_cycle", lambda: "09-03-2026")
+    assert landmark_cells.cells_dir().parent.name == "09-03-2026"
 
 
 def test_the_reader_keeps_a_read_with_the_cells_without_reading_the_chart_again(monkeypatch, tmp_path):
@@ -198,10 +200,10 @@ def test_the_reader_reads_as_before_where_the_cells_cannot(monkeypatch, tmp_path
 
 
 def test_the_cells_under_a_sectional_are_the_zoom_7_tiles_it_spans():
-    cells = landmarks.sheet_cells(["Chicago"])
-    west, south, east, north = charts.COVERAGE["sec"]["Chicago"]
+    cells = landmark_cells.sheet_cells(["Chicago"])
+    west, south, east, north = chart_coverage.COVERAGE["sec"]["Chicago"]
     corners = [
-        landmarks.cell_of(tuple(int(v) // 256 for v in chartvision.latlon_to_global_px(lat, lon)))
+        landmark_cells.cell_of(tuple(int(v) // 256 for v in chartvision.latlon_to_global_px(lat, lon)))
         for lat, lon in ((north, west), (south, east))
     ]
     assert cells[0] == corners[0] and cells[-1] == corners[1]
@@ -211,16 +213,16 @@ def test_the_cells_under_a_sectional_are_the_zoom_7_tiles_it_spans():
 def test_the_planner_builds_the_cells_of_the_sectionals_it_has_and_fetches_none(monkeypatch):
     """At start (app.main), only the sheets already prepared here: the
     rest are the daily refresh's to bring."""
-    monkeypatch.setattr(charts, "sheets", lambda kind: [("Chicago", (0, 0, 1, 1)), ("Omaha", (0, 0, 1, 1))])
-    monkeypatch.setattr(charts, "_latest_on_disk", lambda kind, name: object() if name == "Chicago" else None)
+    monkeypatch.setattr(chart_coverage, "sheets", lambda kind: [("Chicago", (0, 0, 1, 1)), ("Omaha", (0, 0, 1, 1))])
+    monkeypatch.setattr(chart_sheets, "latest_on_disk", lambda kind, name: object() if name == "Chicago" else None)
     asked = []
-    monkeypatch.setattr(landmarks, "build", lambda names, **kwargs: asked.append((names, kwargs)) or 7)
-    assert landmarks.build_on_disk() == 7
-    assert asked == [(["Chicago"], {"workers": 1, "cycle": None, "initializer": landmarks._low_priority})]
+    monkeypatch.setattr(landmark_cells, "build", lambda names, **kwargs: asked.append((names, kwargs)) or 7)
+    assert landmark_cells.build_on_disk() == 7
+    assert asked == [(["Chicago"], {"workers": 1, "cycle": None, "initializer": landmark_cells._low_priority})]
 
 
 def test_with_no_sectional_on_disk_nothing_is_built(monkeypatch):
-    monkeypatch.setattr(charts, "sheets", lambda kind: [("Chicago", (0, 0, 1, 1))])
-    monkeypatch.setattr(charts, "_latest_on_disk", lambda kind, name: None)
-    monkeypatch.setattr(landmarks, "build", lambda *args, **kwargs: pytest.fail("built with no chart"))
-    assert landmarks.build_on_disk() == 0
+    monkeypatch.setattr(chart_coverage, "sheets", lambda kind: [("Chicago", (0, 0, 1, 1))])
+    monkeypatch.setattr(chart_sheets, "latest_on_disk", lambda kind, name: None)
+    monkeypatch.setattr(landmark_cells, "build", lambda *args, **kwargs: pytest.fail("built with no chart"))
+    assert landmark_cells.build_on_disk() == 0

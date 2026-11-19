@@ -2,12 +2,12 @@ import type { CircleLayerSpecification, GeoJSONSource, SymbolLayerSpecification 
 import { useEffect, useMemo } from "react";
 import { prefersReducedMotion } from "../../../motion";
 import { CHART } from "../../../tokens";
-import { MAP_BLUE } from "../../marks/chartColors";
 import { useLessonMap } from "../../route/lessonMap";
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../glLayer";
 import { cameraOf } from "../camera";
 import { pictureLayer } from "../markLayers";
 import { useGlLines, type GlRun } from "../useGlLines";
+import { useGlProbe } from "../useGlProbe";
 import { svgPicture, useGlSymbols, type GlSymbol } from "../useGlSymbols";
 
 const RING = "lesson-ring";
@@ -18,9 +18,9 @@ const RING_LAYER: CircleLayerSpecification = {
   source: RING,
   paint: {
     "circle-radius": 15.5,
-    "circle-color": MAP_BLUE,
+    "circle-color": CHART.mapBlue,
     "circle-opacity": 0.12,
-    "circle-stroke-color": MAP_BLUE,
+    "circle-stroke-color": CHART.mapBlue,
     "circle-stroke-width": 3,
   },
 };
@@ -31,7 +31,7 @@ const AIRPLANE = "lesson-airplane";
 const AIRPLANE_PICTURE = svgPicture(
   "lesson-airplane",
   () =>
-    `<svg width="16" height="16" viewBox="0 0 22 22"><path d="M11 2 L18 19 L11 14.5 L4 19 Z" fill="${MAP_BLUE}" stroke="${CHART.casing}" stroke-width="2.75" stroke-linejoin="round"/></svg>`,
+    `<svg width="16" height="16" viewBox="0 0 22 22"><path d="M11 2 L18 19 L11 14.5 L4 19 Z" fill="${CHART.mapBlue}" stroke="${CHART.casing}" stroke-width="2.75" stroke-linejoin="round"/></svg>`,
 );
 const AIRPLANE_LAYERS: SymbolLayerSpecification[] = [
   pictureLayer(AIRPLANE, AIRPLANE, {}, { "icon-rotate": ["get", "track"], "icon-rotation-alignment": "map" }),
@@ -50,7 +50,7 @@ export function LessonGl() {
       drawing && focus.segment
         ? drawing.lines
             .filter((l) => l.role === focus.segment)
-            .map((l) => ({ points: l.points as [number, number][], colour: MAP_BLUE, width: 10, opacity: 0.35 }))
+            .map((l) => ({ points: l.points as [number, number][], colour: CHART.mapBlue, width: 10, opacity: 0.35 }))
         : null,
     [drawing, focus.segment],
   );
@@ -62,6 +62,9 @@ export function LessonGl() {
     [fix],
   );
   useGlData(RING, ring);
+  // The ring as the browser tests see it, its fix by ident: a circle layer,
+  // which no symbol's or line's probe reads (approach-lesson.spec).
+  useGlProbe("lesson-ring", [RING], (f) => ({ ident: f.properties.ident }));
   useEffect(() => {
     if (fix) cameraOf(map).pick([fix.lon, fix.lat], { duration: 400 });
   }, [map, fix]);

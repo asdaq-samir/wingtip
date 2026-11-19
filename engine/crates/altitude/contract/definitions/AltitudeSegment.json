@@ -10,12 +10,6 @@
     "floor_ft": {
       "type": "number"
     },
-    "airspace_ceiling_ft": {
-      "type": [
-        "number",
-        "null"
-      ]
-    },
     "service_ceiling_ft": {
       "type": [
         "number",

@@ -5,7 +5,8 @@ for what they mean (CLAUDE.md: Spring Boot holds no aviation logic). The
 rules are the shared engine's (pilot_currency, pilot_experience:
 engine/crates/pilot/src/pilot/currency.rs; endorsement_records,
 inspections_due: records.rs; AC 61-65K's endorsements and their words,
-endorsement_kinds and endorsement_fill: kinds.rs), asked by name through wingtip_native.call;
+endorsement_kinds and endorsement_fill: kinds.rs; how far back an
+instructor's page lists, instructor_records_since: instructor_records.rs), asked by name through wingtip_native.call;
 this only carries the records across.
 
 The entries are the gateway's LogbookEntry, camelCase, as the engine
@@ -57,6 +58,20 @@ class CurrencyAsk(BaseModel):
     today: date
 
 
+class PaperworkDue(BaseModel):
+    """One thing that falls due, named and with the rule that asks for it
+    (the engine's PaperworkDue), for the gateway's Coming up list and its
+    reminders, which add only the days and hours left."""
+
+    what: str
+    itemId: int | None
+    label: str
+    rule: str | None = Field(description="14 CFR 61.56(c); an AD its own number and 14 CFR 39.7; an owner's item its reference.")
+    until: date | None
+    dueAtHours: float | None
+    lead: str = Field(description="The reminder sentence's start, to which the day is added.")
+
+
 class Currency(BaseModel):
     """Where the pilot stands (the engine's pilot_currency): each date
     null where it cannot be had."""
@@ -83,6 +98,7 @@ class Currency(BaseModel):
     approachesInWindow: int = Field(description="Approaches logged in the 6 calendar months before this one (61.57(c)(1)(i)).")
     holdingInWindow: bool
     trackingInWindow: bool
+    due: list[PaperworkDue] = Field(description="What falls due, each named and cited (61.56(c), 61.23, 61.57(a)-(c)).")
 
 
 class ExperienceAsk(BaseModel):
@@ -222,6 +238,14 @@ def endorsement_kinds() -> list[EndorsementKind]:
     return [EndorsementKind(**k) for k in _ask("endorsement_kinds")]
 
 
+@router.get("/api/pilot/instructor-records-since")
+def instructor_records_since(today: date) -> date:
+    """The first day an instructor's page lists what they signed: 3 years
+    before `today`, as 14 CFR 61.189(c) has them keep the records (the
+    engine's instructor_records_since)."""
+    return date.fromisoformat(_ask("instructor_records_since", today=today.isoformat()))
+
+
 class EndorsementFillAsk(BaseModel):
     """An endorsement to sign: its code, the student's name as on their
     certificate, and the fields the instructor gave."""
@@ -258,9 +282,29 @@ class VorCheckAsk(BaseModel):
     errorDeg: float
 
 
+class KeptItem(BaseModel):
+    """An owner's own item: an AD (14 CFR part 39) or anything else, with
+    its next day or hours."""
+
+    id: int
+    kind: Literal["AD", "OTHER"]
+    title: str
+    reference: str | None = None
+    dueOn: date | None = None
+    dueAtHours: float | None = None
+
+
 class InspectionsAsk(BaseModel):
     """The days the airplane's inspections and checks were done, and the
-    hours of its last 100-hour; each left out where not recorded."""
+    hours of its last 100-hour; each left out where not recorded. With the
+    airplane's registration, whether it is flown for hire, its ELT
+    battery's marked date and the owner's items, for the list of what
+    falls due (`due`)."""
+
+    tailNumber: str | None = None
+    forHire: bool = False
+    eltBatteryDueOn: date | None = None
+    kept: list[KeptItem] = []
 
     annualOn: date | None = None
     eltOn: date | None = None
@@ -285,6 +329,7 @@ class Inspections(BaseModel):
     transponderCheckUntil: date | None = Field(description="The end of the 24th calendar month after (91.413(a)).")
     hundredHourDueAtHours: float | None = Field(description="100 hours of time in service after the last (91.409(b)).")
     vorCheck: VorCheck | None
+    due: list[PaperworkDue] = Field(description="Each recorded one named and cited, then the owner's dated items (an AD by 14 CFR 39.7).")
 
 
 @router.post("/api/aircraft/inspections")
@@ -300,6 +345,13 @@ def inspections(ask: InspectionsAsk) -> Inspections:
         transponder_check_on=day(ask.transponderCheckOn),
         hundred_hour_at_hours=ask.hundredHourAtHours,
         vor_check=None if vor is None else {"on": vor.on.isoformat(), "kind": vor.kind, "error_deg": vor.errorDeg},
+        tail_number=ask.tailNumber,
+        for_hire=ask.forHire,
+        elt_battery_due_on=day(ask.eltBatteryDueOn),
+        kept=[
+            {"id": k.id, "kind": k.kind, "title": k.title, "reference": k.reference, "due_on": day(k.dueOn), "due_at_hours": k.dueAtHours}
+            for k in ask.kept
+        ],
     )
     v = got["vor_check"]
     return Inspections(
@@ -309,4 +361,5 @@ def inspections(ask: InspectionsAsk) -> Inspections:
         transponderCheckUntil=got["transponder_check_until"],
         hundredHourDueAtHours=got["hundred_hour_due_at_hours"],
         vorCheck=None if v is None else VorCheck(limitDeg=v["limit_deg"], within=v["within"], until=v["until"]),
+        due=[PaperworkDue(**d) for d in got["due"]],
     )

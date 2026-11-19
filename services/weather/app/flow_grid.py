@@ -58,11 +58,12 @@ from __future__ import annotations
 import io
 import math
 
-import gribberish
 import numpy as np
 from PIL import Image
 from wingtip.engine import ask
 from wingtip.units import K_AT_0C, M_PER_FT, M_PER_SM, MS_TO_KT
+
+from . import nomads
 
 #: The output grid: the GFS 0.25-degree points from 5 to 75 N, 180 to 50 W
 #: (the filter's box), north row first as a picture is.
@@ -164,11 +165,8 @@ def read(body: bytes) -> tuple[dict[str, np.ndarray], tuple[np.ndarray, np.ndarr
     ValueError where the wind is missing."""
     found: dict[str, tuple[bool, np.ndarray]] = {}
     where = None
-    offset = 0
-    while offset < len(body):
-        message = gribberish.parse_grib_message(body, offset)
+    for message in nomads.messages(body):
         meta = message.metadata
-        offset += meta.message_size
         name = RECORDS.get((meta.var_abbrev, meta.level_type, float(meta.level_value)))
         if name is None:
             continue

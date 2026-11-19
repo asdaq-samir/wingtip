@@ -24,14 +24,19 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("the route box is one row under FPL's bar, the airplane's strip over it and not in it, at the owner's text size", async ({ page }) => {
-  // The owner, 2026-11-14: "The route box just become a single row under
-  // it", the N-number strip with its buttons the sheet's first row's bar.
+test("the route's field is under FPL's bar and the route's cards, the airplane's strip over it and not in it, at the owner's text size", async ({
+  page,
+}) => {
+  // The owner, 2026-11-14: the N-number strip with its buttons the sheet's
+  // first row's bar; half a route is open to edit (the one layout, decision
+  // 0047), its field under its timeline once its Type or Paste a Route
+  // opens it (the owner, 2026-11-18).
   await page.setViewportSize({ width: 390, height: 844 });
   await ownersText(page);
   await page.goto(ROUTE);
   await settle(page);
   await openPanel(page);
+  await sideDrawer(page).getByTestId("timeline-type-route").click();
   const box = sideDrawer(page).getByTestId("route-box");
   const m = await box.evaluate((el) => {
     const strip = document.querySelector('[data-testid="route-strip"]')!.getBoundingClientRect();
@@ -43,8 +48,6 @@ test("the route box is one row under FPL's bar, the airplane's strip over it and
   });
   expect(m.inBox).toBe(0);
   expect(m.strip).toBeLessThanOrEqual(m.box);
-  // The bar's 46 and its row's room under it: the box close under it.
-  expect(m.box - m.strip).toBeLessThanOrEqual(16);
 });
 
 test("a field of half a route offers its procedures whole, with no runways' outlines waiting for a briefing that never comes", async ({
@@ -56,20 +59,22 @@ test("a field of half a route offers its procedures whole, with no runways' outl
   await settle(page);
   await openPanel(page);
   const field = sideDrawer(page).getByTestId("procedures").getByRole("region", { name: "KJAX · Arrive" });
-  const toggle = field.getByTestId("field-toggle");
-  if ((await toggle.getAttribute("aria-expanded")) === "false") await toggle.click();
+  // Its runways and procedures under its line, a tap on it opening them
+  // where they are not open already (the timeline, 2026-11-17).
+  await expect(field).toBeVisible({ timeout: slow(30_000) });
+  if ((await field.getByTestId("procedure-kind").count()) === 0) await field.getByTestId("timeline-toggle").click();
   const adds = field.getByTestId("procedure-kind");
   await expect(adds.first()).toBeVisible({ timeout: slow(30_000) });
   await expect(field.locator('[data-slot="skeleton"]')).toHaveCount(0);
   for (const add of await adds.all()) {
     // Its words whole: no ellipsis, nothing past the button's edge.
-    await expect(add).toHaveText(/^\+ (Arrival|Approach)$/);
+    await expect(add).toHaveText(/^\+ (ARR|APCH)$/);
     const cut = await add.evaluate((el) => [...el.querySelectorAll("span")].some((s) => s.scrollWidth > s.clientWidth + 1));
     expect(cut).toBe(false);
   }
 });
 
-test("the box's Departure asks for it in the search, where the airplane is first, and a pick plans from there", async ({
+test("the timeline's Departure asks for it in the search, where the airplane is first, and a pick plans from there", async ({
   page,
   context,
 }) => {
@@ -81,11 +86,13 @@ test("the box's Departure asks for it in the search, where the airplane is first
   await page.goto(ROUTE);
   await settle(page);
   await openPanel(page);
-  // The word itself is the ask, as a field's placeholder takes the tap.
-  await sideDrawer(page).getByTestId("route-box").getByText("Departure", { exact: true }).click();
+  // Its row in the departure's place, a placeholder's word, is the ask.
+  await sideDrawer(page).getByTestId("timeline-pick-dep").click();
   const here = page.getByTestId("search-do-my-position");
   await expect(here).toBeVisible({ timeout: slow(10_000) });
   await here.click();
   await expect(page).toHaveURL(/dep=%40|dep=@/);
-  await expect(sideDrawer(page).getByTestId("route-dep")).toContainText("POS0");
+  await expect(sideDrawer(page).getByTestId("timeline-line").first().getByTestId("timeline-ident")).toHaveText("My Location", {
+    timeout: slow(30_000),
+  });
 });

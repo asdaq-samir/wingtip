@@ -18,7 +18,7 @@ component (`MapPage`) in two modes:
   minutes by day, 45 at night) the fuel check holds the tanks against.
   Printed, the log is a landscape page with blank ATA and
   fuel-remaining columns to fill in in flight. Opened wide
-  (`?view=briefing`, or the sidebar toggle), the same drawer is the
+  (`?view=full`, or the sidebar toggle), the same drawer is the
   FAA-sequence briefing: the nav log with the briefing's sections
   under it and Print in its header, the map still beside it. The
   pilot console drops down over the map from the header: sign-in, the
@@ -37,7 +37,7 @@ component (`MapPage`) in two modes:
   pilot console.
 
 Both pages are one `MapPage` component (`features/shell/MapPage.tsx`)
-around a different `WorkspacePieces` (`features/shell/workspace.ts`):
+around a different `WorkspacePieces` (`lib/workspace.ts`):
 the workspace owns its own data and hands back a map, a sidebar, a
 console and a submit action; the page owns the shell around them — the
 header, the sidebar panel, the console sheet — so the two pages cannot
@@ -217,14 +217,25 @@ src/
     problems.ts, text.ts, tokens.ts, geo.ts, storage.ts, …   The rest every feature leans on
   features/                One folder per feature; a file used by one feature lives in it, not in lib/;
                            another feature or a shared component reaches it only through its index.ts
-    shell/MapPage.tsx, workspace.ts  The shell both pages mount into, and the contract a workspace hands it;
-                                      the page's start (dynamicType, freshLoad, storageRename) that main.tsx runs
-    plan/PlanWorkspace.tsx           The pilot's workspace: hooks/usePlan.ts (state), components/: RouteMap,
-                                      BuildNotice, AltitudeReasoning, navlog/, briefing/, procedures/
-    plan/lib/                        The plan's own rules and readings: pattern, wind, radio, routeHolds,
-                                      runwayCheck, passTimes, hourly, glance, flightPlanForm, …
-    plan/map/                        The planner's own map: GlRouteMap, layers/ only it draws (traffic, TFRs,
-                                      weather, tracks, marks), terrain/ (the 3D view), its traffic and TFR cards
+    shell/MapPage.tsx  The shell both pages mount into (the contract a workspace hands it is lib/workspace.ts);
+                                      the page's start (dynamicType, freshLoad) that main.tsx runs
+    fpl/PlanWorkspace.tsx            The pilot's workspace, FPL, which composes the planner's features:
+                                      vm/ (its view model, usePlanWorkspace, a hook per concern), workspace/
+                                      (the sheet's parts), search/ (the one search), routePanel (the cards' chunk)
+    plan/                            The plan's core, which every planner feature stands on: the address
+                                      (planAddress), the queries (usePlan), the nav log's rows, format, pattern,
+                                      wind, radio, routeHolds, passTimes, the sheet's state (usePanelView)
+    plan-map/                        The planner's own map: GlRouteMap, layers/ only it draws (TFRs, weather,
+                                      tracks, marks), terrain/ (the 3D view), forecastRun/, its TFR and weather cards
+    navlog/                          The nav log and the profile: NavLogView, altitude/, FlightInputs, the kneeboard
+    brief/                           The Brief: FlightBriefingView and its parts, glance, the go / no-go, Save
+    place/                           The airport card: PlaceCard and its tabs, NOTAMs, runways, the airspace's card
+    procedures/                      The route's fields and points in FPL's list: ProceduresRoute, FieldStep, holds
+    route/                           The route box (RouteBox), its pills and edits, a point's altitude and controls
+    flying/                          The dry run, the head in flight, a flight flown's card
+    search/                          Search's results and filters, Nearest, Recents
+    share/, stops/, traffic/,        The Share menu; the Stops card; a traffic airplane's card; the Aircraft
+      aircraft-pick/, first-flight/   tab's lists; the first open's welcome
     chart-labels/TrainWorkspace.tsx  The developer's workspace: hooks/useTraining.ts (state), logic.ts (pure,
                                       tested), components/: ChartMap, WaypointPanel, PointPopup, FilterBar
     pilot/PilotPanel.tsx             The pilot console: AccountPanels.tsx (sign-in, aircraft, flights),
@@ -232,6 +243,7 @@ src/
     emergency/                       The emergency assistant, emergency.ts its reading of the engine's answers
     chart-labels/dev/DevPanel.tsx    The dev console (its own chunk — see Architecture), drawn in the pilot console's
                                       PilotPanel, which the training workspace loads beside it (pilot's loadPilotPanel)
+                                      its parts beside it: SystemTab and SystemPages (Status), PerformancePanel (Perf)
 ```
 
 A file goes in `lib/` only when two or more features use it; one feature's
@@ -242,14 +254,23 @@ another feature's files; what two need moves to `lib/` (or `components/`
 for a screen), and what a feature offers the rest is its `index.ts`, with a
 loader (`loadPilotPanel = () => import("./PilotPanel")`) for a part on a
 chunk of its own, so naming the entry never pulls the chunk into a first
-load.
+load. A feature whose parts other features draw only inside their own
+lazily loaded chunks (the route panel's cards, the Brief's airport rows)
+offers those from a second entry, `lazy.ts`, which nothing on the first
+load imports: the bundler keeps every module an imported entry re-exports
+in the importer's chunk, so the plan's cards named in an `index.ts` would
+load with the page (the plan's split measured 2.23 MB against 1.04 MB).
 
 dependency-cruiser holds the layers (`.dependency-cruiser.cjs`, `npm run
 layers`): `lib/` and `hooks/` import neither `components/` nor
 `features/`; `components/` import a feature only through its `index.ts`;
-a feature imports another only through its `index.ts`; `main.tsx`, which
+a feature imports another only through its `index.ts` or its `lazy.ts`,
+and no `index.ts` reaches a `lazy.ts` (`index-not-lazy`); `main.tsx`, which
 wires them, may name any. Every way a module is named counts: `import`,
-`export ... from`, `import()`, a type-only import.
+`export ... from`, `import()`, a type-only import. No file reaches itself
+through its imports (`no-circular`), a type-only import included; a lazy
+chunk's `import()` back to what loads it is how a chunk is split and does
+not count, nor does a cycle through the popups' loader (`popupsChunk`).
 
 ## Architecture
 
@@ -264,11 +285,11 @@ are `React.lazy`, so a pilot loading `/app/plan` never pays for either
 — importing `DevButton` used to pull the console in by accident, since
 it lived in the same module `DevPanel` did. The nav log's calendar
 popover (`react-day-picker`, one component behind one button) is lazy
-the same way. The div-icon marks (`lib/map/marks/icons.ts`: traffic, own
-ship, the replay's airplane, put on the map as MapLibre markers by
-`lib/map/gl/htmlMarker.ts`) are built from template strings rather than JSX rendered with
-`renderToStaticMarkup`, which otherwise pulled the whole of
-`react-dom/server` into every page's chunk for four spans. Together
+the same way. Own ship's arrow, the map's one HTML marker
+(`lib/map/marks/icons.ts`, put on the map by
+`lib/map/gl/layers/ownShipMarker.ts`), is built from a template string
+rather than JSX rendered with `renderToStaticMarkup`, which otherwise
+pulled the whole of `react-dom/server` into every page's chunk. Together
 these took the planner's cold-load JavaScript from 1.67 MB to 1.00 MB.
 
 **Cold load.** `main.tsx` asks the planner for the course named in the
@@ -349,7 +370,9 @@ Everything drawn on it is a React component in `lib/map/gl/layers` (`ChartGl`,
 that says through `glLayer.ts`'s hooks what it adds -- its sources and
 style layers, in one of the map's slots (base, chart, imagery, areas,
 lines, route, marks, top), the data it gives them, and what a tap on it
-does. The slots keep the order bottom to top however the layers come
+does. A GeoJSON source with nothing in it is left out of the frame
+(`drawnWithData`: its layers get no zoom to draw at until data comes), as
+MapLibre keeps and draws tiles of every source a drawn layer uses. The slots keep the order bottom to top however the layers come
 and go. `glStyle.ts` is the style as plain data (the chart's raster
 sources, the airspace's lines, the zooms), which the tests read without
 a map. MapLibre's zoom is a level lower than the app's levels (its
@@ -418,7 +441,7 @@ covers, eased in the sheet's own time, so what was in the middle of the
 room left stays there.
 
 **The first flight.** The first time the planner opens with no route on
-a device, `FirstFlight` (its view model `hooks/useFirstFlight.ts`) is a
+a device, `FirstFlight` (its view model `features/first-flight/useFirstFlight.ts`) is a
 card over the map: a destination from the same airport search the
 route's box uses (`useAirportSearch`, through `PanelCapsule`'s field and
 results), and Plan it, which plans from own ship's nearest field, else

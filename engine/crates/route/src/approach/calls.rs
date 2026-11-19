@@ -189,7 +189,6 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             debrief::findings_json(&mut out, &kept);
             Ok(out)
         }
-        "approach_descent_fpm" => Ok(number_json(lesson::descent_fpm(num(name, v, "gs_kt")?, num(name, v, "angle_deg")?))),
         "approach_category" => Ok(opt_string_json(lesson::approach_category(opt_num(name, v, "vref_kt")?, opt_num(name, v, "vso_kt")?))),
         "approach_lesson_path" => Ok(places_json(&lesson::lesson_path(&drawing(name, v)?))),
         "approach_path_between" => {

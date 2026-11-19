@@ -32,6 +32,7 @@
 
 use crate::json;
 use crate::pack::Pack;
+use crate::pack::{f64_at, u32_at};
 use crate::rules::{self, FloorRef, Volume};
 use wingtip_core::sort::StableSort;
 
@@ -44,14 +45,6 @@ pub fn region_of(lat: f64, lon: f64) -> String {
     let south = ((lat / REGION_DEG).floor() * REGION_DEG) as i32;
     let west = ((lon / REGION_DEG).floor() * REGION_DEG) as i32;
     format!("{}{:02}{}{:03}", if south >= 0 { 'n' } else { 's' }, south.abs(), if west >= 0 { 'e' } else { 'w' }, west.abs())
-}
-
-fn u32_at(b: &[u8], o: usize) -> Option<u32> {
-    b.get(o..o + 4).map(|s| u32::from_le_bytes(s.try_into().unwrap()))
-}
-
-fn f64_at(b: &[u8], o: usize) -> Option<f64> {
-    b.get(o..o + 8).map(|s| f64::from_le_bytes(s.try_into().unwrap()))
 }
 
 fn text_at<'a>(names: &'a [u8], record: &[u8], at: usize) -> Option<&'a str> {

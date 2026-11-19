@@ -1,0 +1,53 @@
+import { Suspense, lazy, useEffect, useState } from "react";
+import { useFailedAction } from "../../lib/problems";
+import { holdAskOnOpen } from "../../lib/map/position/ownShip";
+import { useFirstFlight } from "./useFirstFlight";
+import type { PanelState } from "../../lib/mapChrome";
+import type { PanelView } from "../plan";
+import type { RouteParts } from "../route";
+
+/** Each its own chunk, off the first load every pilot waits for
+ *  (scripts/first-load.mjs): drawn once on a device, if ever. */
+const WelcomeSheet = lazy(() => import("./WelcomeSheet"));
+const FplTip = lazy(() => import("./FplTip"));
+
+/**
+ * The first flight (useFirstFlight; the owner's option A, 2026-11-13):
+ * the welcome sheet the first time the planner opens with no route on
+ * this device, whose Let's Go Flying leaves the one search ready for
+ * where to; then, after the first route, the tip on the FPL toggle. Each once.
+ */
+export default function FirstFlight({
+  routed,
+  onPlan,
+  pickView,
+  setPanel,
+}: {
+  routed: boolean;
+  onPlan: (parts: RouteParts) => void;
+  pickView: (view: PanelView) => void;
+  setPanel: (state: PanelState) => void;
+}) {
+  const { welcome, go, tip, closeTip } = useFirstFlight({ routed, onPlan, pickView, setPanel });
+  // Kept once drawn, so the sheet closes with its own motion.
+  const [drawn, setDrawn] = useState(welcome);
+  if (welcome && !drawn) setDrawn(true);
+  // Nothing stacked over the welcome: an alert raised meanwhile (a refused
+  // position's "No position" on a first launch) waits until it closes.
+  // Nor the browser's position question on load: the welcome's Location
+  // row asks it, at a tap (holdAskOnOpen).
+  useEffect(() => {
+    useFailedAction.setState({ held: welcome });
+    holdAskOnOpen(welcome);
+    return () => {
+      useFailedAction.setState({ held: false });
+      holdAskOnOpen(false);
+    };
+  }, [welcome]);
+  return (
+    <Suspense fallback={null}>
+      {drawn && <WelcomeSheet open={welcome} onGo={go} />}
+      {tip && <FplTip onClose={closeTip} />}
+    </Suspense>
+  );
+}

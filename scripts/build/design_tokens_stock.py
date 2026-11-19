@@ -25,7 +25,7 @@ def _tokens(group):
 
 def material_css(mat):
     """A material group's declarations, the look's own and the Native look's alike: the map buttons'
-    glass, the floating bar's denser glass (the airport card's tabs) and the sheet's frost."""
+    glass, the floating bar's denser glass (the airport card's tabs), the sheet's frost and its pinned heads' fill."""
     return [
         ("glass-blur", "%gpx" % mat["glass-blur"]),
         ("glass-fill-light", "%g%%" % (mat["glass-fill"] * 100)),
@@ -33,6 +33,7 @@ def material_css(mat):
         ("glass-bar-blur", "%gpx" % mat["bar-blur"]),
         ("glass-bar-fill", "%g%%" % (mat["bar-fill"] * 100)),
         ("sheet-blur", "%gpx" % mat["sheet-blur"]),
+        ("head-fill", "%g%%" % (mat["head-fill"] * 100)),
     ]
 
 

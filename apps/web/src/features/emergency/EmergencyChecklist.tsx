@@ -30,7 +30,6 @@ export default function EmergencyChecklist({ vm }: { vm: EmergencyModel }) {
           muted
           title={`No emergency checklist for ${airplaneName ?? "this airplane"}`}
           description="Write it from the airplane's handbook in Brief's Checklists"
-          data-testid="emergency-no-checklist"
         />
       </ListGroup>
     );
@@ -38,16 +37,7 @@ export default function EmergencyChecklist({ vm }: { vm: EmergencyModel }) {
   const shown = sections[section]!;
   const menu = (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="sm"
-            className="relative text-tint after:absolute after:-inset-1.5"
-            data-testid="emergency-checklist-pick"
-          />
-        }
-      >
+      <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="relative text-tint after:absolute after:-inset-1.5" />}>
         Other <ChevronDown className="size-4" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -77,7 +67,6 @@ export default function EmergencyChecklist({ vm }: { vm: EmergencyModel }) {
             checkbox={{ checked: !!ticked[key], onChange: (on) => setTicked((t) => ({ ...t, [key]: on })) }}
             title={<span className={cn(TEXT.row, ticked[key] && "text-muted-foreground")}>{item.challenge}</span>}
             value={item.response ?? undefined}
-            data-testid="emergency-checklist-item"
           />
         );
       })}

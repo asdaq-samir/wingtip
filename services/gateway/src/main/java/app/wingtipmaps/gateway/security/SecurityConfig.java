@@ -63,20 +63,8 @@ import org.springframework.security.web.savedrequest.NullRequestCache;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    /** The overlay's tile hosts (see the headers below). */
-    // And the weather loop's tiles (web features/weather-loop), IEM's NEXRAD and nowCOAST's GOES; in
-    // connect-src too, as MapLibre fetches a raster tile to read its caching headers.
-    private static final String WEATHER_TILES = "https://mesonet.agron.iastate.edu https://nowcoast.noaa.gov";
-
-    // MapLibre fetches its raster tiles (the USGS's too), so img-src and connect-src list the same hosts.
-    private static final String OVERLAY_TILES =
-            "https://basemap.nationalmap.gov https://tile.googleapis.com " + WEATHER_TILES;
-    // An airplane's photo (planePhoto.ts): Planespotters' API and image server, per its terms.
-    private static final String PHOTO_IMAGES = "https://t.plnspttrs.net";
-    private static final String PHOTO_CONNECT = "https://api.planespotters.net";
-
     private final boolean oauthConfigured;
-    private final String chartTilesOrigin;
+    private final String contentSecurityPolicy;
     // HSTS is right behind a TLS-terminating load balancer and wrong on
     // the local HTTPS port (HttpsConnectorConfig): a browser that once
     // opened https://localhost:8443 would remember to upgrade every
@@ -114,10 +102,7 @@ public class SecurityConfig {
             }
         });
         this.signIn = new SignInOptions(List.copyOf(providers), SignInOptions.accessFor(signInPossible, openWrites));
-        // The CDN the chart tiles come from on AWS (application.yml's
-        // app.chart-tiles-origin), which img-src must allow; blank
-        // locally, where the tiles are same-origin.
-        this.chartTilesOrigin = chartTilesOrigin.isBlank() ? "" : " " + chartTilesOrigin.trim();
+        this.contentSecurityPolicy = ContentSecurityPolicy.directives(chartTilesOrigin);
     }
 
     /** Published so SignInCapabilitiesController can answer the same
@@ -206,15 +191,6 @@ public class SecurityConfig {
                             // session exists, and its nonce (AppleNativeSignInController).
                             .requestMatchers(HttpMethod.POST, "/api/auth/apple/native/**")
                             .permitAll()
-                            // A TV asking for its code and whether it has
-                            // been typed in, before it has a session; the
-                            // phone's approval is a signed-in pilot's
-                            // (DeviceSignInController). And /tv, the short
-                            // address the TV shows, a redirect into the app.
-                            .requestMatchers(HttpMethod.POST, "/api/auth/device", "/api/auth/device/token")
-                            .permitAll()
-                            .requestMatchers(HttpMethod.GET, "/tv")
-                            .permitAll()
                             // Who is signed in, asked by every page as it opens: signed out is an
                             // answer (204), not a refusal -- a 401 here was an error in the browser's
                             // console on every signed-out visit, which Lighthouse's best practices
@@ -289,26 +265,11 @@ public class SecurityConfig {
 
                 // Spring Security already writes X-Content-Type-Options
                 // and a frame-options header by default; this makes both
-                // explicit and adds a CSP. Everything the app loads is
-                // same-origin, the map included: its tiles are the
-                // FAA's charts, rendered by this app from the FAA's
-                // GeoTIFFs and proxied from planner
-                // (apps/web/src/lib/map/leaflet.tsx). That is what let the
-                // old chart mirror's host, the connect-src its dynamic
-                // layer needed, and then OpenStreetMap's tile host all
-                // go. style-src keeps 'unsafe-inline' for Swagger UI's
-                // own inline styles. HSTS is a no-op locally (Spring
-                // Security only sends it over a request it sees as
-                // secure) and only takes effect once behind a
-                // TLS-terminating ALB with
+                // explicit and adds a CSP (ContentSecurityPolicy). HSTS is
+                // a no-op locally (Spring Security only sends it over a
+                // request it sees as secure) and only takes effect once
+                // behind a TLS-terminating ALB with
                 // server.forward-headers-strategy: framework set.
-                // The map's overlay (apps/web/src/lib/map/OverlayTiles.tsx)
-                // is the one place the browser asks others directly:
-                // the USGS's imagery tiles and Google's Map Tiles API,
-                // whose terms have the browser draw its tiles and ask
-                // for its session and viewport itself. Only those two
-                // hosts, and Google's works only with a key the
-                // deployment sets, so both are allowed always.
                 .headers(headers -> headers.frameOptions(frame -> frame.deny())
                         .httpStrictTransportSecurity(strict -> {
                             if (!hsts) strict.disable();
@@ -321,20 +282,7 @@ public class SecurityConfig {
                         // makes after that redirect. no-referrer drops it
                         // (and every other page's query string) entirely.
                         .referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.NO_REFERRER))
-                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; "
-                                + "img-src 'self' data:" + chartTilesOrigin + " " + OVERLAY_TILES + " " + PHOTO_IMAGES
-                                + "; "
-                                + "style-src 'self' 'unsafe-inline'; "
-                                // 'wasm-unsafe-eval': WebAssembly compiled from
-                                // this origin's own files, the page reader's
-                                // engine (web features/plan/lib/readPage); no script eval.
-                                + "script-src 'self' 'wasm-unsafe-eval'; "
-                                + "connect-src 'self' " + OVERLAY_TILES + " " + PHOTO_CONNECT + " "
-                                + ModelHosts.CONNECT
-                                + "; "
-                                + "object-src 'none'; "
-                                + "base-uri 'self'; "
-                                + "frame-ancestors 'none'")));
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(contentSecurityPolicy)));
 
         // logout() is unconditional -- it is plain session invalidation,
         // not specific to OIDC, and a magic-link sign-in (which needs no

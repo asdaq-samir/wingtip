@@ -33,7 +33,7 @@ The owner, 2026-11-09, standing:
 - **The platform's own component, even in a release candidate**, never a
   copy of our own, and bumped to stable when it ships (decision
   [0016](decisions/0016-stock-components.md)). Android's Material 3
-  1.5.0-rc01 and AppFunctions 1.0.0-rc01 are on that rule.
+  1.5.0-rc01 is on that rule (AppFunctions went stable, 1.0.0, 2026-11-18).
 - **Exact pins.** Python requirements pin `==`, the web's lockfile is
   committed, every image is pinned by digest beside its tag, and every
   GitHub Action is pinned to its newest release's commit with the
@@ -84,7 +84,7 @@ mode with complete strict concurrency.
 
 ### Android (`apps/android/gradle/libs.versions.toml`)
 
-AGP **9.6.0-alpha03** (its built-in Kotlin compiles the app), Kotlin
+AGP **9.6.0-alpha04** (its built-in Kotlin compiles the app), Kotlin
 **2.5.0-RC**, KSP 2.3.13, the Compose alpha BOM (`compose-bom-alpha`)
 2026.11.00, which carries Material 3 **1.5.0-rc01** (for Material 3
 Expressive) and Material adaptive 1.4.0-alpha03 with its Navigation 3
@@ -92,7 +92,7 @@ scenes, Navigation 3 **1.3.0-alpha04**, Lifecycle **2.12.0-alpha05**,
 Activity 1.14.0-alpha03, Hilt (Dagger) 2.60.1 with AndroidX Hilt 1.4.0,
 Room 3.0.3
 (`androidx.room3`), DataStore 1.3.0, WorkManager 2.12.0, Glance 1.2.0,
-MapLibre Android 13.7.1, OkHttp 5.5.1, AppFunctions 1.0.0-rc01, ML Kit's
+MapLibre Android 13.7.1, OkHttp 5.5.1, AppFunctions 1.0.0, ML Kit's
 Prompt API (`genai-prompt`) 1.0.0-beta5. compileSdk 37 (its 37.2 minor
 SDK), targetSdk 37, minSdk 26.
 

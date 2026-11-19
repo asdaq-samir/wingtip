@@ -2,6 +2,7 @@ import { useEffect, type ComponentProps, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, usePanelDragging } from "../../lib/mapChrome";
+import { SETTLE_MS } from "./insets";
 import { sheetTopRef } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
 
@@ -114,7 +115,6 @@ export function SheetDrawer({
             <Drawer.Popup
               {...popup}
               ref={popupRef}
-              data-sheet=""
               // The Drawer's own word on a finger's drag, its or a card's on it.
               render={(own, state) => <Told swiping={state.swiping || state.nestedDrawerSwiping} {...own} />}
               initialFocus={false}
@@ -183,8 +183,40 @@ export function SheetDrawer({
 }
 
 /** The popup's element, telling the page while a finger drags the sheet
- *  (usePanelDragging): what is drawn under the pill is drawn as it comes. */
+ *  (usePanelDragging): what is drawn under the pill is drawn as it comes.
+ *  Held from the finger's first move until the sheet has settled, the
+ *  Drawer's own time after the lift (insets' SETTLE_MS), and marked on the
+ *  popup (data-risen) for sheet/insets' faces: Base UI's data-swiping goes
+ *  the moment the finger lifts, a frame before the sheet's new size is
+ *  told, and what had risen with it dipped out and back (the owner,
+ *  2026-11-16: "still not as seamless as the airport/search card"). */
 function Told({ swiping, ...own }: ComponentProps<"div"> & { swiping: boolean }) {
-  useEffect(() => usePanelDragging.setState({ dragging: swiping }), [swiping]);
-  return <div {...own} />;
+  useEffect(() => {
+    if (swiping) {
+      usePanelDragging.setState({ dragging: true });
+      return;
+    }
+    const settle = setTimeout(() => usePanelDragging.setState({ dragging: false }), SETTLE_MS);
+    return () => clearTimeout(settle);
+  }, [swiping]);
+  // And over once the finger has lifted and the sheet settled, whatever the
+  // Drawer's state says: a press that never became a swipe left it
+  // "swiping", the pill drawn as risen with nothing moving (a touch drag in
+  // Chromium, 2026-11-16).
+  useEffect(() => {
+    if (!swiping) return;
+    let settle: ReturnType<typeof setTimeout> | undefined;
+    const over = () => {
+      clearTimeout(settle);
+      settle = setTimeout(() => usePanelDragging.setState({ dragging: false }), SETTLE_MS);
+    };
+    const ends = ["pointerup", "pointercancel", "touchend", "touchcancel"] as const;
+    for (const e of ends) window.addEventListener(e, over, true);
+    return () => {
+      for (const e of ends) window.removeEventListener(e, over, true);
+      clearTimeout(settle);
+    };
+  }, [swiping]);
+  const risen = usePanelDragging((d) => d.dragging);
+  return <div {...own} data-risen={risen ? "" : undefined} />;
 }

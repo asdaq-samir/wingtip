@@ -9,7 +9,7 @@ test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setu
  * (e2e/ios): WCAG 2 A and AA on the planner's main states -- the search
  * bar, a route's panel out with its sections, the console, the route in
  * every look by day, at night and in sunlight -- no serious or critical
- * violation; and the solid glass, twice the text size and the keyboard. The chart itself (Leaflet's panes and tiles) is
+ * violation; and the solid glass, twice the text size and the keyboard. The chart itself (MapLibre's canvas and tiles) is
  * left out: its markers are named for a screen reader where they matter,
  * and its tiles are pictures of a chart.
  */
@@ -49,7 +49,7 @@ test("the search bar, with no route", async ({ page }) => {
 });
 
 test("a route's panel out, each of its tabs", async ({ page }) => {
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
+  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   for (const tab of ["Nav Log", "Weather", "Brief", "Performance"] as const) {
@@ -159,7 +159,7 @@ test("at twice the text size the route's panel reflows: nothing sideways, the fi
   });
   await atRest(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  // The flight's figures shrink to fit rather than cut (useFigureFit): the
+  // The flight's figures shrink to fit rather than cut (FigureStrip): the
   // fuel's whole figure is still in its box.
   const fuel = page.getByTestId("navlog-fuel");
   expect(await fuel.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);

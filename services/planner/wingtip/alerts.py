@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 import requests
 from shapely.geometry import box as envelope
 
-from . import airports, airspace, elevation, faa_data, saa, sua, terrain, tfr
+from . import airports, airspace, elevation, faa_data, saa, sua, terrain, tfr, utc
 from .engine import ask as engine
 from .units import M_TO_FT
 
@@ -56,10 +56,6 @@ def _ground_under(geometry, refs: tuple) -> float | None:
         return None
     point = geometry.representative_point()
     return _ground_ft(point.y, point.x)
-
-
-def _unix(when: str | None) -> float | None:
-    return datetime.fromisoformat(when.replace("Z", "+00:00")).timestamp() if when else None
 
 
 def _volumes(shp_path, box: tuple) -> list:
@@ -123,8 +119,8 @@ def _tfrs(box: tuple) -> list | None:
                 "floor_ref": restriction.get("floor_ref"),
                 "ceiling_ft": restriction.get("ceiling_ft"),
                 "ceiling_ref": restriction.get("ceiling_ref"),
-                "effective": _unix(restriction.get("effective")),
-                "expires": _unix(restriction.get("expires")),
+                "effective": utc.epoch_or_none(restriction.get("effective")),
+                "expires": utc.epoch_or_none(restriction.get("expires")),
                 "ground_ft": _ground_under(geometry, (restriction.get("floor_ref"), restriction.get("ceiling_ref"))),
                 "polygons": _polygons(geometry),
             }

@@ -5,6 +5,8 @@
 //!
 //! - watch, checks, message: `copilot_watch`, the in-flight copilot's
 //!   messages, most pressing first, each with its sources;
+//! - flight: `copilot_flight`, the planned flight the copilot starts
+//!   from (the fuel at takeoff, the planned ground speed, passengers);
 //! - fields: the copilot's best alternative, brief's best_fields in its
 //!   diversion mode held to the copilot's own checks (weather, fuel).
 //!
@@ -14,6 +16,7 @@
 
 pub mod checks;
 pub mod fields;
+pub mod flight;
 pub mod input;
 pub mod message;
 pub mod watch;
@@ -24,6 +27,7 @@ use wingtip_core::json::{self, Value};
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let answer = match name {
         "copilot_watch" => watch::rule(name, v)?,
+        "copilot_flight" => return flight::rule(name, v),
         _ => return Err(format!("the engine has no rule called {name:?}")),
     };
     let mut out = String::new();

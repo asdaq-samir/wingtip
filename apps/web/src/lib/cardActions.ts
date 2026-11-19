@@ -16,6 +16,9 @@ import { ICON } from "./icons";
  * - Favorite: the airport or the airplane in the Favorites or out, a
  *   switch, in the action row rather than the head, so every card's head
  *   holds its Share and its close alone (the owner, 2026-11-11).
+ * - Address: the field in Maps, by its street address where the FAA lists
+ *   one; the airport card's fourth tile while a stop is asked for, where
+ *   Fly Here gives way to Add Stop (the owner, 2026-11-18).
  */
 export const ACTION = {
   flyHere: { label: "Fly Here", icon: ICON.flyHere },
@@ -25,6 +28,7 @@ export const ACTION = {
   holdHere: { label: "Hold Here", icon: ICON.holdHere },
   call: { label: "Call", icon: ICON.call },
   favorite: { label: "Favorite", icon: ICON.favorite },
+  address: { label: "Address", icon: ICON.address },
   copy: { label: "Copy", icon: ICON.copy },
 } as const;
 
@@ -33,6 +37,9 @@ type ActionName = keyof typeof ACTION;
 /** The actions each card kind offers, in order. */
 export const CARD_ACTIONS = {
   airport: ["flyHere", "addStop", "call", "favorite"],
+  /** An airport's, opened while the pilot adds a stop (the one search
+   *  asked for one): Add Stop first and filled, no Fly Here. */
+  airportAsStop: ["addStop", "call", "favorite", "address"],
   /** A point held on the map: the airspace card's. */
   point: ["directTo", "addToRoute", "holdHere"],
   /** A VOR, a fix or a VFR waypoint. */

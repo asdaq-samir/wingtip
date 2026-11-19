@@ -1,0 +1,55 @@
+{
+  "x-call": "wingtip_flight::calls::altitudes",
+  "description": "A cruise altitude as a pilot types it, read to feet: a flight level's three figures in hundreds of feet (\"075\", \"FL075\", \"FL-075\"; 14 CFR 1.1), or feet in four or five figures (\"7500\", \"7,500\"), rounded to the hundred. Nothing is guessed: four or five figures starting with 0, six or more, under 500 ft MSL (the planning floor, limits.rs) or above FL600 (Class A's top, 71.33(a)) give no ft and the reason. Warn, never limit: VFR in Class A (18,000 ft MSL up, 71.33(a), 91.135(a)) and IFR above FL410 (91.179(b)) give the ft with the reason as a warning. Nothing typed gives neither.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AltitudeTypedInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "ifr": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "AltitudeTypedAnswer",
+      "type": "object",
+      "properties": {
+        "ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The altitude to plan, ft MSL; null where none can be."
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Why there is no ft, or the warning a planned one carries; null where there is none."
+        }
+      },
+      "required": [
+        "ft",
+        "reason"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

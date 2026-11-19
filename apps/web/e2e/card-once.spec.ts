@@ -75,8 +75,9 @@ test("Fly Here closes the airport's card once, to the route, and it never comes 
     async () => {
       await card.getByTestId("fly-here").tap();
       await expect(page).toHaveURL(/[?&]dest=KUGN/, { timeout: 15_000 });
-      await expect(page.getByTestId("route-dep")).toContainText("POS0");
-      await expect(page.getByTestId("route-dest")).toContainText("KUGN");
+      // The route arrives whole, so folded to its one line, which names the
+      // destination; opening it for the pills would move the sheet.
+      await expect(page.getByTestId("route-summary")).toContainText("KUGN");
       await expect(card).toHaveCount(0);
     },
     // A second and a half for anything that would bring it back: the
@@ -278,6 +279,9 @@ test("a kept card closes where it is, the map's buttons never off the screen", a
   await settled(page.locator("[data-sheet-card]").filter({ has: page.getByTestId("console-sheet") }));
   const you = page.getByTestId("console-sheet");
   await expectDrawnOnce(page, () => closeCard(page, "console-close").then(() => expect(you).toHaveCount(0)), { maxMoves: 0 });
+  // Back on FPL, the sheet's second page, whose Nav Log and Profile these
+  // are: You was opened over the search's page.
+  await showPage(page, 1);
   await openNavLog(page);
   await settled(page.locator("[data-sheet-card]").filter({ has: navLogSheet(page) }));
   await expectDrawnOnce(page, () => closeCard(page, "navlog-close").then(() => expect(navLogSheet(page)).toBeHidden()), { maxMoves: 0 });

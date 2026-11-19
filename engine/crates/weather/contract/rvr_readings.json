@@ -1,0 +1,64 @@
+{
+  "x-call": "wingtip_weather::rvr_read::call",
+  "description": "An RVR system's readings as STDDS's APDS feed sends them, two figures in hundreds of feet (\"35\" is 3,500 ft; \"00\", \"FF\" or blank none), each with whether it is the system's most: AIM 7-1-13's readouts run 'to a maximum value of 6,000 feet', so a reading of 6,000 is '6,000 or more'.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RvrReadingsInput",
+      "type": "object",
+      "properties": {
+        "readings": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": "Each part's reading as sent (touchdown, midpoint, rollout ...), in any order."
+        }
+      },
+      "required": [
+        "readings"
+      ]
+    },
+    "answer": {
+      "title": "RvrReadingsAnswer",
+      "type": "object",
+      "properties": {
+        "readings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ft": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "The reading, ft; null where the part reports none."
+              },
+              "more": {
+                "type": "boolean",
+                "description": "The system's most, 6,000 ft or more (AIM 7-1-13)."
+              }
+            },
+            "required": [
+              "ft",
+              "more"
+            ]
+          },
+          "description": "Each reading, in the order given."
+        }
+      },
+      "required": [
+        "readings"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

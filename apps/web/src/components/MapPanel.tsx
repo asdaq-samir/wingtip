@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { useIsMobile } from "../hooks/use-mobile";
@@ -6,7 +6,8 @@ import { useIsDesktop } from "../hooks/use-desktop";
 import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useSafeArea } from "../hooks/use-viewport";
-import { GLASS_SHEET, PILL_RADIUS, type MapInsets, type PanelState } from "../lib/mapChrome";
+import { GLASS_SHEET, PILL_RADIUS, useSlidingSheet, type MapInsets, type PanelState } from "../lib/mapChrome";
+import { feel } from "../lib/haptics";
 import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
 import { FLOAT_PX, insetsOf, letGo, snapsOf } from "./sheet/insets";
@@ -14,10 +15,11 @@ import { useSheetCover } from "./sheet/useSheetCover";
 import { useDrawn } from "./sheet/useDrawn";
 import { SHEET_BELOW, SheetParts, type PartsProps } from "./sheet/SheetParts";
 import { SheetGrabber } from "./sheet/SheetGrabber";
+import { SHEET_SIZES, SIDE_SIZES } from "./sheet/grabberSizes";
 import { CardStack, type StackProps } from "./sheet/CardStack";
 import { SheetDrawer } from "./sheet/SheetDrawer";
 import { useRidingCard } from "./sheet/sheetTopSlot";
-import type { SheetPages } from "./sheet/SheetPages";
+import type { SheetPages } from "../lib/sheetPages";
 import { usePageToggle } from "./sheet/pageToggle";
 
 interface Props {
@@ -44,8 +46,6 @@ interface Props {
   bar?: ReactNode;
   /** What the panel is showing: the workspace, or a card open alone over it. */
   layer?: "tab" | "card";
-  /** A card from elsewhere open over the workspace. */
-  cardOver?: boolean;
   /** Pinned at the sheet's foot at every size: the route's figures -- in
    *  the pill its one row. */
   foot?: ReactNode;
@@ -132,6 +132,13 @@ export default function MapPanel(props: Props) {
   const ready = useDrawn();
   const hasPill = !!bar || !!compact;
   const atPill = size === "peek" && hasPill;
+  // A light tick as the sheet settles at another size, as iOS's sheet
+  // gives one (lib/haptics: Chrome on Android; Safari has none).
+  const settled = useRef(props.state);
+  useEffect(() => {
+    if (onPhone && settled.current !== props.state) feel("detent");
+    settled.current = props.state;
+  }, [props.state, onPhone]);
 
   // The sheet's element (the Drawer's popup, or the side panel), for what
   // it covers of the map.
@@ -141,7 +148,14 @@ export default function MapPanel(props: Props) {
   // The room the sheet in sight (the top card, else the sheet) leaves the
   // map, from the size it is set to: the map eases with the sheet
   // (GlMapShell, in the Drawer's time).
-  const cover = useSheetCover(sheetNode, front, onPhone, fromBottom);
+  const { cover, least, most } = useSheetCover(sheetNode, front, onPhone, fromBottom);
+  // The sheet the map slides with, frame by frame (useSlidingSheet): a
+  // phone's bottom sheet with no card over it.
+  const slides = bottomSheet && !cardsUp && !!sheetNode && most > 0;
+  useEffect(() => {
+    useSlidingSheet.setState({ sheet: slides && sheetNode ? { node: sheetNode, least, most } : null, half: bottomSheet ? most : 0 });
+  }, [slides, sheetNode, least, most, bottomSheet]);
+  useEffect(() => () => useSlidingSheet.setState({ sheet: null, half: 0 }), []);
   // The pages, drawn whenever the workspace has them and is not flying: a
   // card alone over them (`layer` "card") is drawn from inside one, the
   // Brief from FPL's (PlanPage), so put away with them it never opened.
@@ -159,7 +173,9 @@ export default function MapPanel(props: Props) {
     () => ({ ...insetsOf(front, cover, onPhone, fromBottom, safe.top, desktop), card: cardsUp }),
     [front, cover, onPhone, fromBottom, safe.top, desktop, cardsUp],
   );
-  useEffect(() => tellInsets(insetsNow), [insetsNow, tellInsets]);
+  // Told in the commit that changes them, before any effect after paint: a
+  // place picked with a card centres itself in the card's room (GlMapShell).
+  useLayoutEffect(() => tellInsets(insetsNow), [insetsNow, tellInsets]);
 
   // Escape with no card over it (a card's own drawer takes it) lowers the
   // sheet to the pill; whether it took the key.
@@ -193,7 +209,6 @@ export default function MapPanel(props: Props) {
     flying,
     size,
     atPill,
-    resting: atPill,
     fromBottom: bottomSheet,
     onPhone,
     desktop,
@@ -212,7 +227,9 @@ export default function MapPanel(props: Props) {
   };
   // The sheet's grabber and each card's, the one plain bar.
   const grabberAt = bottomSheet ? "top" : "bottom";
-  const sheetGrabber = <SheetGrabber label={label} size={size} ask={ask} at={grabberAt} />;
+  // A tap puts the side panel in or out: half and all the way up are one box there.
+  const grabberSizes = onPhone ? SHEET_SIZES : SIDE_SIZES;
+  const sheetGrabber = <SheetGrabber label={label} size={size} ask={ask} at={grabberAt} sizes={grabberSizes} />;
   // Solid at every size, the look's --sheet (Canvas in Native), the light
   // grey of Apple Maps' web sheet (2026-11-10): glass is only for what
   // floats over the map (CLAUDE.md, owner decision 2026-11-10). The side
@@ -241,7 +258,7 @@ export default function MapPanel(props: Props) {
     onPhone,
     fromBottom: bottomSheet,
     ready,
-    grabber: (cardSize, cardAsk) => <SheetGrabber label={label} size={cardSize} ask={cardAsk} at={grabberAt} />,
+    grabber: (cardSize, cardAsk) => <SheetGrabber label={label} size={cardSize} ask={cardAsk} at={grabberAt} sizes={grabberSizes} />,
     look: onPhone ? GLASS_SHEET : "bg-background dark:bg-popover",
     below: SHEET_BELOW,
   };

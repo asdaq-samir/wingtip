@@ -2,7 +2,7 @@
 //! don't want to put hard limits on anything. A warning tick or a label
 //! is enough" (2026-10-23), and why none is, in a pilot's words. Moved
 //! from app.planning (#482 phase 3); the selection is select's answer
-//! with the planner's own members (`airspace_transits`, `special_use`).
+//! with the planner's own member `special_use`.
 
 use super::cruising::{self, LOW_STEP_FT};
 use super::floor::IFR_CLEARANCE_FT;
@@ -65,9 +65,6 @@ pub struct NoAltitude {
     pub reasons: Vec<String>,
     /// What to do about it.
     pub advice: String,
-    /// Class B is what stops it, for the page to offer a clearance or a
-    /// way round.
-    pub class_b: bool,
 }
 
 impl NoAltitude {
@@ -78,47 +75,13 @@ impl NoAltitude {
     }
 }
 
-/// A waypoint round the Class B, as the planner's class_b_detours finds it.
-pub struct Via {
-    pub ident: String,
-    pub added_nm: f64,
-}
-
-/// The Class B a leg is stuck under, as a pilot says it ("Chicago Class
-/// B"): of the route's Class B transits, the one nearest the leg's
-/// middle; "Class B airspace" where none is named.
-fn class_b_over(selection: &Value, segment: &Value) -> String {
-    let middle = (num(segment, "from_nm").unwrap_or(0.0) + num(segment, "to_nm").unwrap_or(0.0)) / 2.0;
-    let near =
-        list(selection, "airspace_transits").iter().filter(|t| t.get("class").and_then(Value::as_str) == Some("B")).min_by(|a, b| {
-            let off = |t: &Value| (num(t, "along_track_nm").unwrap_or(0.0) - middle).abs();
-            off(a).total_cmp(&off(b))
-        });
-    let Some(name) = near.and_then(|t| t.get("name")).and_then(Value::as_str) else {
-        return "Class B airspace".to_owned();
-    };
-    name.split_whitespace()
-        .map(|w| {
-            if w.chars().count() > 1 {
-                let mut c = w.chars();
-                let first = c.next().map(|f| f.to_uppercase().collect::<String>()).unwrap_or_default();
-                first + &c.as_str().to_lowercase()
-            } else {
-                w.to_owned()
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
-}
-
 /// Why no plan has an altitude: a headline saying where along the route
 /// it fails, the reasons there -- the terrain's floor, the first altitude
 /// above it on that course, what stops the climb -- and what to do.
 /// `between`, the hop of a route with stops it fails on (the distances
-/// are from its start); `via`, the best waypoint round a Class B; `place`,
-/// where it binds by the route's own points ("540 nm past KDLH"), else
-/// how far along.
-pub fn no_altitude(selection: &Value, between: Option<(&str, &str)>, via: Option<&Via>, place: Option<&str>) -> NoAltitude {
+/// are from its start); `place`, where it binds by the route's own points
+/// ("540 nm past KDLH"), else how far along.
+pub fn no_altitude(selection: &Value, between: Option<(&str, &str)>, place: Option<&str>) -> NoAltitude {
     let ifr = is_ifr(selection);
     let kind = if ifr { "IFR" } else { "legal VFR" };
     // Prohibited airspace is closed whatever the rules or the altitude:
@@ -135,7 +98,6 @@ pub fn no_altitude(selection: &Value, between: Option<(&str, &str)>, via: Option
             brief: format!("{first} is prohibited airspace"),
             reasons: prohibited.iter().map(|n| format!("{n} is closed to every altitude.")).collect(),
             advice: "Plan around it.".to_owned(),
-            class_b: false,
         };
     }
     let stuck = list(selection, "segments").iter().find(|s| list(s, "candidates_ft").is_empty());
@@ -150,7 +112,6 @@ pub fn no_altitude(selection: &Value, between: Option<(&str, &str)>, via: Option
             brief: format!("No {} altitude fits this aircraft", if ifr { "IFR" } else { "VFR" }),
             reasons: Vec::new(),
             advice: "Set a cruise altitude of your own to plan it anyway.".to_owned(),
-            class_b: false,
         };
     };
     let (from_nm, to_nm) = (num(stuck, "from_nm").unwrap_or(0.0), num(stuck, "to_nm").unwrap_or(0.0));
@@ -198,7 +159,6 @@ pub fn no_altitude(selection: &Value, between: Option<(&str, &str)>, via: Option
                 format!("The aircraft's service ceiling stops at {} ft.", grouped(top)),
             ],
             advice: "Route around the high ground, plan it in an aircraft that climbs higher, or set a cruise altitude of your own to plan it anyway.".to_owned(),
-            class_b: false,
         };
     }
     // The first altitude the band would have taken: the band's own rule,
@@ -213,41 +173,17 @@ pub fn no_altitude(selection: &Value, between: Option<(&str, &str)>, via: Option
     } else {
         format!("The first {heading} VFR altitude above that is {} ft.", grouped(first))
     };
-    let mut advice = "Route around the high ground, or set a cruise altitude of your own to plan it anyway.".to_owned();
-    let mut class_b = false;
+    let advice = "Route around the high ground, or set a cruise altitude of your own to plan it anyway.".to_owned();
     let need = format!("terrain {place} needs {}", grouped(first));
-    let mut brief = format!("Clouds at {} ft: {need}", grouped(top));
-    let stops;
-    if Some(top) == num(stuck, "service_ceiling_ft") {
-        stops = format!("The aircraft's service ceiling stops at {} ft.", grouped(top));
-        brief = format!("Ceiling {} ft: {need}", grouped(top));
-    } else if Some(top) == num(stuck, "airspace_ceiling_ft") {
-        // The Class B by name, and what it takes (14 CFR 91.131(a)(1)).
-        let bravo = format!("The {}", class_b_over(selection, stuck));
-        stops = if top <= 0.0 {
-            format!("{bravo} reaches the ground there; going through it needs a clearance.")
-        } else {
-            format!("{bravo} over it starts at {} ft; going into it needs a clearance.", grouped(top))
-        };
-        brief = if top <= 0.0 { format!("Class B to the ground {place}") } else { format!("Class B at {} ft: {need}", grouped(top)) };
-        class_b = true;
-        advice = match via {
-            Some(via) => format!("Fly via {} ({} nm further) to stay out of it", via.ident, to_fixed(via.added_nm, 0)),
-            None => "Add a stop to route around it".to_owned(),
-        } + ", or plan it with a Class B clearance.";
+    let (stops, brief) = if Some(top) == num(stuck, "service_ceiling_ft") {
+        (format!("The aircraft's service ceiling stops at {} ft.", grouped(top)), format!("Ceiling {} ft: {need}", grouped(top)))
     } else {
-        stops = format!("The cloud base stops at {} ft.", grouped(top));
-    }
-    if top <= 0.0 {
-        // Airspace from the ground up leaves no altitude whatever the
-        // terrain: the floor and the first altitude over it were noise.
-        return NoAltitude { title, brief, reasons: vec![stops], advice, class_b };
-    }
+        (format!("The cloud base stops at {} ft.", grouped(top)), format!("Clouds at {} ft: {need}", grouped(top)))
+    };
     NoAltitude {
         title,
         brief,
         reasons: vec![format!("The terrain and obstacles there need {} ft.", grouped(floor)), first_line, stops],
         advice,
-        class_b,
     }
 }

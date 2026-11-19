@@ -18,7 +18,7 @@ export const SIMULATED_FIX_MS = 250;
  *  the route"). */
 export const DRY_RUN_ZOOM = 10;
 
-/** A point of the planned flight's dry run (features/plan/map/pastFlight's). */
+/** A point of the planned flight's dry run (features/plan/pastFlight's). */
 interface SimulatedPoint {
   t: number;
   lat: number;

@@ -20,7 +20,12 @@ not timed on a device.
 
 - **Tap what you see.** Anything shown that is explained or changed
   somewhere opens that place: a field's name its card, the figures their
-  nav log, a waypoint its menu. Closing goes back to where the pilot was
+  nav log, a waypoint its menu. In FPL's route list an airport's ident
+  (the departure, a stop, the destination) is a link in the tint to its
+  card, as the nav log's names are; the rest of its row folds its runways
+  and procedures open, its one disclosure, and its symbol is its menu,
+  where Change asks the one search for another airport (in the Plan's
+  cards too, where the ident was a text box; the owner, 2026-11-17). Closing goes back to where the pilot was
   (one level: `lib/openCards` on the web, the card's
   close and the stack's Back on iOS (`Navigation/Navigator`); on Android
   the card's ← and system Back, its ✕ closing every card, since the card
@@ -29,7 +34,7 @@ not timed on a device.
   screen gets a way in from a list that already holds its kind, never a new
   place on the screen; moving a panel or a control is the owner's call.
 - **One way in per platform.** Every screen opens by its name from one place:
-  the web's `useOpenScreen` (`features/plan/hooks`) through
+  the web's `useOpenScreen` (`features/fpl/vm`) through
   `lib/navigation/wanted`, iOS's `RootView.openScreen` (through
   `AppCommand.open`, a card's through the environment's `appCommand`;
   the strip's `ScreenAsk`), which opens the card
@@ -165,8 +170,10 @@ trailing button, and the page toggle at its end, where the account
 button was until the owner swapped the two (2026-11-14: "Swap the fpl
 toggle and account buttons"); the account button rides the sheet's top
 under the 3D. FPL's first row is the same size: the airplane's strip
-(N-number, altitude, Profile, Brief, •••) with the toggle at its end, and
-the route one row under it in whichever of its three layouts; Search's
+(N-number, altitude, •••) with the toggle at its end, the route one row
+under it in whichever of its three layouts, under the route its figures,
+and at the sheet's foot the floating bar of Brief, Nav Log, Profile and
+Share, the figures alone and large at the pill (2026-11-16); Search's
 page under the search is the search's own page (with nothing typed, or
 the field in use). On a desktop the same in the
 side panel, ⌘K or Ctrl K focusing the field (the command palette it
@@ -184,15 +191,15 @@ list is where it was.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| Plan: route box, route list, nav log rows | the sheet (with a route); the search's Your Flight card | 1 → **0** with a route, 1 from the search | Route pills drag to reorder; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; altitude and departure time chips open popovers; Undo bar under the route after a removal or clear |
-| Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; Dist opens the nav log |
+| Plan: the route (one layout, decision 0047), its cards, nav log rows | the sheet (with a route, folded to its line); the search's Your Flight card | 1 → **0** with a route to read, 1 more to edit (a tap on the line; Done folds it), 1 from the search | Opened: the cards held or dragged by their grips to reorder, swiped to remove; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; the route's field typed or pasted; altitude and departure time chips open popovers; Undo bar under the route after a removal or clear |
+| Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; Distance switches nm and sm; in flight the phone's GPS altitude ends the strip, "GPS alt", to 10 ft (the owner, 2026-11-17) |
 | Brief | plan → Brief; search → Do → Brief | 2 | Alternate filed or taken off (iOS too: the Brief's Alternate sections, and the plan's Alternate row under IFR, 1 tap); Ask chips apply changes |
-| Nav log card | plan → ••• → Nav log; Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
-| Profile | plan → Profile | 2 → **1** with a route | VFR/IFR, altitude in the side view, Dry run |
+| Nav log card | plan → Nav Log tile; Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
+| Profile | plan → Profile tile | 2 → **1** with a route | altitude in the side view, Dry run (VFR/IFR is FPL's first row's, beside the altitude, 2026-11-17) |
 | Search results (Airports, Waypoints and Navaids, Airplanes, Do, Ask) | the search field, typed | **new: 1** | -- |
 | Saved flights | search → Saved; account → Flights | 2 | Name and notes edited in the row; delete with a confirm |
 | Airport card | Tap a field; a search result; a route row's More Info; a nav log field | 1 (2 from the search) | **Fly Here, Depart From, Add as Stop at its top (new)**, favorite; frequencies copy |
-| Favorites, Recents (airports' and airplanes') | search → Favorites / Recents | 2 | Drag to reorder, swipe to delete, Undo row; the airplanes after the airports in each, and in the search page's rows |
+| Favorites, Recents (airports' and airplanes') | search → Favorites / Recents | 2 | Drag to reorder (Edit's grip), swipe left to remove (a full swipe removes), Undo in the toast; the airplanes after the airports in each, and in the search page's rows |
 | Nearest | search → Nearest; search → Do → Nearest | 2 | Change the place it is from in the one search's field, scoped to it (no second field) |
 | Airplane profile | an N-number tapped; a search result (yours, the FAA registry's) | 1, 2 | **Fly This Airplane (new)**; every figure edited in place; a card in the sheet over the search with ✕ (one card rule, 2026-11-10; was a dimmed sheet on a phone) |
 | Airplane card, past flight | Tap traffic; the airplane found in the one search (heard on the map by callsign or address, kept, or the FAA registry's in the air); a Favorite's or Recent's tile; its past row | 1, 2 | Replay; search → Do → Show Traffic turns the traffic on the map. The traffic's own page, with a second search field, went for the one search (the owner, 2026-11-14), and an old `?aircraft=1` link lands on the search |
@@ -310,6 +317,19 @@ or overflow).
 | An approach | Brief, Dry Run, Load into Route, Plate | procedures sheet | -- (ProceduresRow picks the procedure only; gap) | -- (no approach list on Android; gap) |
 | An alert | what it is and its fix | AlertsBanner opens it | **the airspace card; copilot: Direct To, More Info (new)** | **the Ahead sheet; copilot: Fly to, More Info (new)** |
 | A Go / No-Go item, a Brief line | its fix | opens its page | targets only | **not tappable (gap)** |
+
+### Gestures on a list's row
+
+A swipe and a hold are additions to the row's menu, never the only way
+(rules.md section 12, decision 0046). Web first; the phones on the
+owner's word.
+
+| Gesture | Does | Web | iOS | Android |
+|---|---|---|---|---|
+| Swipe left | Uncovers Remove; a full swipe removes, with the menu's Undo | Recents and Favorites (airports', airplanes', routes'), Home, your Airplane, saved Flights, logbook flights, a typed stop in FPL's list (`SwipeRow`) | -- | -- |
+| Touch and hold, then drag | Lifts a row to move it, the drop line showing where | FPL's typed points where the list edits the route (React Aria's drag, the browser's own lift); Favorites in Edit by the grip | -- | -- |
+| Touch and hold, still | The row's menu (where the row does not move) | every kept list's row (Base UI's ContextMenu), a route pill | context menus | long press |
+| Pinch, double tap | Zoom | the map, a plate, the airport diagram (MapLibre) | the same | the same |
 
 ## Gaps left, for the owner
 

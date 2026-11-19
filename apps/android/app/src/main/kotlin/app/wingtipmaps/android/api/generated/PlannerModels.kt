@@ -576,6 +576,9 @@ data class AirportPlace (
     val region: String? = null,
     val runways: List<Runway>,
 
+    @SerialName("site_type")
+    val siteType: String? = null,
+
     @SerialName("standard_keying")
     val standardKeying: Boolean? = null,
 
@@ -2446,6 +2449,11 @@ data class Currency (
      */
     val dayPassengersUntil: String? = null,
 
+    /**
+     * What falls due, each named and cited (61.56(c), 61.23, 61.57(a)-(c)).
+     */
+    val due: List<PaperworkDue>,
+
     val flightReviewOn: String? = null,
 
     /**
@@ -2486,6 +2494,31 @@ data class Currency (
 
     val totalHours: Double,
     val trackingInWindow: Boolean
+)
+
+/**
+ * One thing that falls due, named and with the rule that asks for it
+ * (the engine's PaperworkDue), for the gateway's Coming up list and its
+ * reminders, which add only the days and hours left.
+ */
+@Serializable
+data class PaperworkDue (
+    val dueAtHours: Double? = null,
+    val itemId: Int? = null,
+    val label: String,
+
+    /**
+     * The reminder sentence's start, to which the day is added.
+     */
+    val lead: String,
+
+    /**
+     * 14 CFR 61.56(c); an AD its own number and 14 CFR 39.7; an owner's item its reference.
+     */
+    val rule: String? = null,
+
+    val until: String? = null,
+    val what: String
 )
 
 /**
@@ -2802,18 +2835,6 @@ data class DebriefPoint (
     val t: Double
 )
 
-/**
- * The debrief as POST /api/debrief answered it (the debrief and the
- * tolerances), or as the web app's own twin keeps it (lib/debrief: the
- * figures alone, their keys camel-cased, without the flown line and the
- * profile, thousands of points a sentence cannot use): `debrief_of`
- * reads either.
- */
-@Serializable
-data class DebriefWordsAsk (
-    val debrief: JsonObject
-)
-
 @Serializable
 data class DepartureEvents (
     val events: List<DepartureEvent>
@@ -2932,9 +2953,6 @@ data class DepartureWindowAsk (
 
     val altitudes: String? = null,
     val checkpoints: Boolean? = null,
-
-    @SerialName("class_b_clearance")
-    val classBClearance: Boolean? = null,
 
     @SerialName("climb_fuel_burn_gph")
     val climbFuelBurnGph: Double? = null,
@@ -4311,9 +4329,6 @@ data class GoNoGoAsk (
     val altitudes: String? = null,
     val checkpoints: Boolean? = null,
 
-    @SerialName("class_b_clearance")
-    val classBClearance: Boolean? = null,
-
     @SerialName("climb_fuel_burn_gph")
     val climbFuelBurnGph: Double? = null,
 
@@ -4547,6 +4562,11 @@ data class Inspections (
     val annualUntil: String? = null,
 
     /**
+     * Each recorded one named and cited, then the owner's dated items (an AD by 14 CFR 39.7).
+     */
+    val due: List<PaperworkDue>,
+
+    /**
      * The end of the 12th calendar month after (91.207(d)).
      */
     val eltUntil: String? = null,
@@ -4586,16 +4606,37 @@ data class VorCheck (
 
 /**
  * The days the airplane's inspections and checks were done, and the
- * hours of its last 100-hour; each left out where not recorded.
+ * hours of its last 100-hour; each left out where not recorded. With the
+ * airplane's registration, whether it is flown for hire, its ELT
+ * battery's marked date and the owner's items, for the list of what
+ * falls due (`due`).
  */
 @Serializable
 data class InspectionsAsk (
     val annualOn: String? = null,
+    val eltBatteryDueOn: String? = null,
     val eltOn: String? = null,
+    val forHire: Boolean? = null,
     val hundredHourAtHours: Double? = null,
+    val kept: List<KeptItem>? = null,
     val staticCheckOn: String? = null,
+    val tailNumber: String? = null,
     val transponderCheckOn: String? = null,
     val vorCheck: VorCheckAsk? = null
+)
+
+/**
+ * An owner's own item: an AD (14 CFR part 39) or anything else, with
+ * its next day or hours.
+ */
+@Serializable
+data class KeptItem (
+    val dueAtHours: Double? = null,
+    val dueOn: String? = null,
+    val id: Int,
+    val kind: String,
+    val reference: String? = null,
+    val title: String
 )
 
 /**
@@ -5073,10 +5114,7 @@ data class NavLogAltitude (
     val altitudeSelection: AltitudeBreakdown,
 
     val cautions: List<AltitudeCaution>? = null,
-
-    @SerialName("class_b_detours")
-    val classBDetours: List<Detour>? = null,
-
+    val detours: List<Detour>? = null,
     val flown: String? = null,
     val options: List<AltitudeOption>? = null,
     val type: String? = null
@@ -5190,9 +5228,6 @@ data class AltitudeBreakdown (
     @SerialName("candidates_ft")
     val candidatesFt: List<Double>? = null,
 
-    @SerialName("class_b_cleared")
-    val classBCleared: Boolean? = null,
-
     @SerialName("cloud_base_ft")
     val cloudBaseFt: Double? = null,
 
@@ -5274,15 +5309,12 @@ data class AirspaceTransit (
 )
 
 /**
- * One leg's own band: its floor, the shelf and the clouds over it
- * alone, and the legal cruising altitudes between -- what lets a plan
- * step down under a Class B shelf and climb again past it.
+ * One leg's own band: its floor, the clouds and the service ceiling
+ * over it alone, and the legal cruising altitudes between -- what lets a
+ * plan step over high ground or under low cloud leg by leg.
  */
 @Serializable
 data class AltitudeSegment (
-    @SerialName("airspace_ceiling_ft")
-    val airspaceCeilingFt: Double? = null,
-
     val airway: AirwayAltitudes? = null,
 
     @SerialName("band_ceiling_ft")
@@ -5422,9 +5454,9 @@ data class AltitudeCaution (
 )
 
 /**
- * A named fix that keeps a route out of the Class B airspace it is
- * stopped by (wingtip.airspace.detour_waypoint), and where it goes in the
- * stops: before the stop at `stop_index`, so on the hop it is for.
+ * A way round the high ground that leaves a route no altitude
+ * (wingtip.terrain_detour), and where it goes in the stops: before the
+ * stop at `stop_index`, so on the hop it is for.
  */
 @Serializable
 data class Detour (
@@ -6024,10 +6056,6 @@ data class NavLogMessage (
     val altitudeSelection: AltitudeBreakdown? = null,
 
     val cautions: List<AltitudeCaution>? = null,
-
-    @SerialName("class_b_detours")
-    val classBDetours: List<Detour>? = null,
-
     val flown: String? = null,
     val options: List<AltitudeOption>? = null,
     val airway: AirwayAltitudes? = null,
@@ -6751,14 +6779,12 @@ data class Plan (
     @SerialName("chart_tiles_base")
     val chartTilesBase: String? = null,
 
-    @SerialName("class_b_detours")
-    val classBDetours: List<Detour>? = null,
-
     @SerialName("course_line")
     val courseLine: List<List<Double>>,
 
     val departure: AirportEnd,
     val destination: AirportEnd,
+    val detours: List<Detour>? = null,
 
     @SerialName("distance_nm")
     val distanceNm: Double,
@@ -6783,7 +6809,7 @@ data class Plan (
  * exceeds true airspeed, i.e. the leg cannot be flown.
  *
  * The true airspeed and fuel flow are the aeroplane's in the leg's own
- * air (wingtip.performance): its cruise figures are at a reference
+ * air (the engine's wingtip_flight::performance): its cruise figures are at a reference
  * altitude on a standard day, and the forecast temperature at this
  * altitude gives the density altitude they are flown at, at the power
  * it allows -- the cruise power, or less where full throttle cannot
@@ -7322,69 +7348,6 @@ data class RetrainStarted (
 )
 
 /**
- * The Go / No-Go as the client has it (RiskVerdict), and the pilot's
- * own record as the client keeps it -- personal minimums, currency,
- * recency, whatever it has, by its own keys -- given to the model as one
- * source the words can cite.
- */
-@Serializable
-data class RiskAsk (
-    val pilot: JsonObject? = null,
-    val verdict: RiskVerdict
-)
-
-/**
- * The Go / No-Go as POST /api/go-no-go answers it (its line, its
- * items, its risk assessment), or as the web app's own twin keeps it
- * (lib/verdict: the line's finding and words on the object itself, its
- * items, no risk assessment): either reads here, the extras dropped.
- */
-@Serializable
-data class RiskVerdict (
-    val finding: String? = null,
-    val items: List<VerdictItemLoose>? = null,
-    val line: VerdictLineLoose? = null,
-    val risk: RiskAssessment? = null,
-    val words: String? = null
-)
-
-@Serializable
-data class VerdictItemLoose (
-    val detail: String? = null,
-    val finding: String,
-    val key: String,
-    val label: String
-)
-
-@Serializable
-data class VerdictLineLoose (
-    val finding: String,
-    val words: String? = null
-)
-
-/**
- * A route as the words are asked for it: its ends, the stops landed
- * at between them in order (app.router_basics.load_route) and when it leaves
- * (UTC when naive; now when not given).
- */
-@Serializable
-data class RouteAsk (
-    val dep: String,
-    val depart: String? = null,
-    val dest: String,
-    val stops: List<String>? = null
-)
-
-/**
- * A route that would plan (GET /api/route-check): its stops as the
- * planner reads them.
- */
-@Serializable
-data class RouteChecked (
-    val stops: List<String>
-)
-
-/**
  * A route's checkpoints in along-track order, for their notes.
  */
 @Serializable
@@ -7439,6 +7402,10 @@ data class RouteNotesRequest (
 @Serializable
 data class RouteOptions (
     val chips: List<RouteChip>? = null,
+
+    @SerialName("class_b")
+    val classB: RouteOption? = null,
+
     val current: List<Int>? = null,
 
     @SerialName("current_along")
@@ -7473,49 +7440,6 @@ data class RouteChip (
     val key: String,
     val label: String,
     val stops: List<String>
-)
-
-/**
- * What a way meets along it: its weather strip, its mean wind (kt,
- * a tailwind positive) and its floor (ft, the highest ground with
- * 14 CFR 91.119's 1,000 ft).
- */
-@Serializable
-data class RouteAlong (
-    val bands: List<RouteBand>,
-
-    @SerialName("floor_ft")
-    val floorFt: Int,
-
-    @SerialName("tail_kt")
-    val tailKt: Double,
-
-    @SerialName("water_nm")
-    val waterNm: Int? = null
-)
-
-/**
- * A run of the weather a way meets (the engine's route_options): VFR,
- * marginal (MVFR), IFR or a thunderstorm, and how many minutes of the
- * flight it lasts, in the order flown.
- */
-@Serializable
-data class RouteBand (
-    val kind: String,
-    val min: Double
-)
-
-/**
- * What a way keeps clear of or is told of (wingtip.route_options): its
- * kind -- storm, weather, marginal, sigmet, tfr, prohibited, terrain,
- * fuel, or a special-use area a way is flown through and stays open
- * across (restricted, moa, warning, alert; AIM 3-4-3 to 3-4-6) -- and its
- * words ("Restricted area R-2508").
- */
-@Serializable
-data class RouteHazard (
-    val kind: String,
-    val name: String
 )
 
 /**
@@ -7564,6 +7488,49 @@ data class RouteOption (
 
     @SerialName("water_nm")
     val waterNm: Int? = null
+)
+
+/**
+ * A run of the weather a way meets (the engine's route_options): VFR,
+ * marginal (MVFR), IFR or a thunderstorm, and how many minutes of the
+ * flight it lasts, in the order flown.
+ */
+@Serializable
+data class RouteBand (
+    val kind: String,
+    val min: Double
+)
+
+/**
+ * What a way meets along it: its weather strip, its mean wind (kt,
+ * a tailwind positive) and its floor (ft, the highest ground with
+ * 14 CFR 91.119's 1,000 ft).
+ */
+@Serializable
+data class RouteAlong (
+    val bands: List<RouteBand>,
+
+    @SerialName("floor_ft")
+    val floorFt: Int,
+
+    @SerialName("tail_kt")
+    val tailKt: Double,
+
+    @SerialName("water_nm")
+    val waterNm: Int? = null
+)
+
+/**
+ * What a way keeps clear of or is told of (wingtip.route_options): its
+ * kind -- storm, weather, marginal, sigmet, tfr, prohibited, terrain,
+ * fuel, or a special-use area a way is flown through and stays open
+ * across (restricted, moa, warning, alert; AIM 3-4-3 to 3-4-6) -- and its
+ * words ("Restricted area R-2508").
+ */
+@Serializable
+data class RouteHazard (
+    val kind: String,
+    val name: String
 )
 
 /**
@@ -8492,29 +8459,6 @@ data class WaypointPin (
     val ident: String,
     val lat: Double,
     val lon: Double
-)
-
-/**
- * The briefing's own parameters besides the route (GET /api/briefing):
- * the flight's minutes, and the nav log's fixes ("lat,lon;lat,lon") and
- * each leg's minutes where the page has them, for each hazard to be
- * placed where the flight meets it.
- */
-@Serializable
-data class WeatherAsk (
-    val dep: String,
-    val depart: String? = null,
-    val dest: String,
-
-    @SerialName("ete_min")
-    val eteMin: Double? = null,
-
-    val fixes: String? = null,
-
-    @SerialName("leg_min")
-    val legMin: String? = null,
-
-    val stops: List<String>? = null
 )
 
 /**

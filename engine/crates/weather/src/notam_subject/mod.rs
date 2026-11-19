@@ -154,7 +154,7 @@ pub(crate) fn subject_of(text: &str) -> Option<(String, Vec<String>, String)> {
 /// A closure's words after CLSD, read for what it leaves: the word, how
 /// bad, and a label of its own where the NOTAM's words would not say it
 /// at a glance.
-fn closure(after: &[String]) -> (&'static str, Severity, Option<&'static str>) {
+pub(crate) fn closure(after: &[String]) -> (&'static str, Severity, Option<&'static str>) {
     let first = after.first().map(String::as_str);
     let exc: Vec<&str> = after.iter().skip(1).map(String::as_str).collect();
     let schedule = |w: &str| {

@@ -11,6 +11,7 @@
 
 use crate::geo::{angle_between, bearing_deg, destination, distance_nm, py_mod};
 use crate::json::{self, Value};
+use wingtip_core::ask::opt_num_in as opt_num;
 
 /// A hold drawn at a light airplane's speed: a one-minute leg (AIM 5-3-8,
 /// at or below 14,000 ft MSL) and standard-rate turns (3° a second) at
@@ -27,6 +28,17 @@ pub const HOLD_SPEED_KT: f64 = 120.0;
 pub fn hold_turn_nm() -> f64 {
     HOLD_SPEED_KT * (120.0 / 3600.0) / (2.0 * std::f64::consts::PI)
 }
+
+/// Vectors to final, as a controller turns an airplane onto an approach
+/// from vectors (no transition picked): onto the final approach course
+/// "at least 2 miles outside the approach gate" (FAA Order JO 7110.65,
+/// 5-9-1a1), the gate "1 mile from the final approach fix on the side
+/// away from the airport" (Pilot/Controller Glossary, "Approach gate") --
+/// 3 nm outside the final's first fix -- at TBL 5-9-1's most for 2 miles
+/// or more from the gate, 30 degrees (5-9-2). The planner's
+/// procedure_paths joins the final there (`procedure_path_figures`).
+pub const VECTORS_JOIN_NM: f64 = 1.0 + 2.0;
+pub const VECTORS_INTERCEPT_DEG: f64 = 30.0;
 
 /// How long a leg with no end is drawn, nm: about a turn's worth at a
 /// light airplane's speed, enough to show which way it goes.
@@ -149,14 +161,6 @@ fn num(name: &str, v: &Value, key: &str) -> Result<f64, String> {
     v.get(key).and_then(Value::as_f64).ok_or_else(|| format!("{name}: \"{key}\" is not a number"))
 }
 
-fn opt_num(name: &str, v: &Value, key: &str) -> Result<Option<f64>, String> {
-    match v.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::Number(n)) => Ok(Some(*n)),
-        Some(_) => Err(format!("{name}: \"{key}\" is not a number")),
-    }
-}
-
 fn point(name: &str, v: &Value, key: &str) -> Result<P, String> {
     match v.get(key).and_then(Value::as_array) {
         Some([lat, lon]) => match (lat.as_f64(), lon.as_f64()) {
@@ -198,7 +202,6 @@ fn points_json(points: &[P]) -> String {
 ///   "leg_nm"}`;
 /// - `procedure_turn`: the turn from `{"fix", "inbound_deg",
 ///   "pt_course_deg"}`;
-/// - `procedure_climb_nm`: nm, from `{"altitude_ft"?, "known_ft"?}`;
 /// - `procedure_hold_leg_nm`: nm or null, from `{"minutes"?,
 ///   "distance_nm"?}`.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
@@ -212,14 +215,21 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         "procedure_turn" => {
             Ok(points_json(&procedure_turn(point(name, v, "fix")?, num(name, v, "inbound_deg")?, num(name, v, "pt_course_deg")?)))
         }
-        "procedure_climb_nm" => {
-            let mut out = String::new();
-            json::number(&mut out, climb_nm(opt_num(name, v, "altitude_ft")?, opt_num(name, v, "known_ft")?));
-            Ok(out)
-        }
         "procedure_hold_leg_nm" => {
             let mut out = String::new();
             json::opt_number(&mut out, hold_leg_nm(opt_num(name, v, "minutes")?, opt_num(name, v, "distance_nm")?));
+            Ok(out)
+        }
+        // The figures the planner's procedure_paths draws a flown path
+        // with: a hold entry's turn and the join from vectors.
+        "procedure_path_figures" => {
+            let mut out = String::from("{\"hold_turn_nm\":");
+            json::number(&mut out, hold_turn_nm());
+            out.push_str(",\"vectors_join_nm\":");
+            json::number(&mut out, VECTORS_JOIN_NM);
+            out.push_str(",\"vectors_intercept_deg\":");
+            json::number(&mut out, VECTORS_INTERCEPT_DEG);
+            out.push('}');
             Ok(out)
         }
         _ => Err(format!("the engine has no rule called {name:?}")),

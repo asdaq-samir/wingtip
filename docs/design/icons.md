@@ -39,7 +39,7 @@ own maps follow this table.
 ## The panel's tabs (`TAB_ICON`)
 
 The tab glyphs are the app's own, on one 28-point grid with a 2-point line,
-each with a filled face for the tab that is up (apps/web/src/lib/glyphs/tabGlyphs.tsx).
+each with a filled face for the tab that is up, on the phones; the web's went with its tab bar when the sheet became one search (2026-11-09).
 
 | Tab | Glyph | iOS | Android |
 |---|---|---|---|
@@ -55,7 +55,8 @@ filled:
 
 | Card | Actions, in order |
 |---|---|
-| Airport | Fly Here, Depart From, Add as Stop, Call, Address |
+| Airport | Fly Here, Depart From, Add as Stop, Call, Address (the web: Fly Here, Add Stop, Call, Favorite) |
+| Airport, opened while a stop is asked for (the web, 2026-11-18) | Add Stop, Call, Favorite, Address |
 | A point held on the map (the airspace card) | Direct To, Add to Route, Hold Here |
 | A VOR, a fix or a VFR waypoint | Direct To, Add to Route, Copy (the first two greyed with no route) |
 
@@ -67,6 +68,8 @@ filled:
 - **Add to Route**: the point a turn on the way, where it bends the route
   least; not a landing.
 - **Hold Here**: a hold at the point (AIM 5-3-8).
+- **Address**: the field in Maps, by its street address where the FAA
+  lists one.
 
 ## Small buttons have words
 

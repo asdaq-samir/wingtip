@@ -12,7 +12,7 @@ from app.mcp import calls, records
 
 from .mcp_harness import call
 from .test_gonogo_api import stubbed  # noqa: F401 -- the route, plan and briefing of a quiet flight
-from .test_plan import _stubbed_world  # noqa: F401 -- the stubbed chart, altitude and air, autouse
+from .plan_world import _stubbed_world  # noqa: F401 -- the stubbed chart, altitude and air, autouse
 from .test_mcp_tools import AIRPLANE, answer
 
 

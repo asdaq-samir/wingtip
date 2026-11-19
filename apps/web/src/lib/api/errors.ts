@@ -6,14 +6,12 @@ import type { Detour } from "./types";
 export class ApiError extends Error {
   /** `reasons` and `advice`: why, and what to do, where the server says
    *  (a nav log with no legal altitude), apart from the message;
-   *  `classB`, Class B airspace is what stops it, and `detours` the
-   *  waypoints round it, best first; `brief`, all of it in a few words. */
+   *  `detours` the waypoints round high ground, best first; `brief`, all of it in a few words. */
   constructor(
     message: string,
     readonly status: number,
     readonly reasons: string[] = [],
     readonly advice: string | null = null,
-    readonly classB = false,
     readonly detours: Detour[] = [],
     readonly brief: string | null = null,
   ) {
@@ -116,6 +114,22 @@ export function isUnknownPlace(err: unknown): boolean {
 export function unknownPlaceOf(err: unknown): string | null {
   return isUnknownPlace(err) ? (/'([^']+)'/.exec((err as ApiError).message)?.[1]?.toUpperCase() ?? null) : null;
 }
+
+/** A point of the route the planner will not plan to: `ident` the one its
+ *  404 names (null where it names none), and `outside` where it is a real
+ *  field abroad, which the planner says is "outside the US charts"
+ *  (wingtip.airport_lookup OutsideCharts), not an ident nobody uses. */
+export type UnknownPlace = { ident: string | null; outside: boolean };
+
+/** The unknown place a planner's answer says, or null where it is none. */
+export function unknownPlaceIn(err: unknown): UnknownPlace | null {
+  if (!isUnknownPlace(err)) return null;
+  return { ident: unknownPlaceOf(err), outside: /outside the US charts/i.test((err as ApiError).message) };
+}
+
+/** What is wrong with it, after its ident: the route box's line and the
+ *  strip's To say the same. */
+export const unknownWhy = (place: UnknownPlace) => (place.outside ? "is outside the US charts" : "isn't an airport or waypoint we know");
 
 /** `describeError` for a query's `error` field, which is null while
  *  nothing has failed -- and so is this. */

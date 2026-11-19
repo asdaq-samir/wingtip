@@ -37,7 +37,7 @@ export default function ActionsList({ vm }: { vm: EmergencyModel }) {
           data-testid="emergency-squawk"
           value={
             <span className={FIGURE}>
-              <FrequencyButton mhz={mayday.squawk} name="Squawk" testId="emergency-squawk-copy" />
+              <FrequencyButton mhz={mayday.squawk} name="Squawk" />
             </span>
           }
         />
@@ -94,12 +94,7 @@ export default function ActionsList({ vm }: { vm: EmergencyModel }) {
       </ListGroup>
       <ListGroup title="Phone">
         {phone && picked && (
-          <ListRow
-            title={`Call ${picked.ident}`}
-            description="The airport's phone, as the FAA lists it"
-            href={`tel:${phone}`}
-            data-testid="emergency-call-field"
-          />
+          <ListRow title={`Call ${picked.ident}`} description="The airport's phone, as the FAA lists it" href={`tel:${phone}`} />
         )}
         <ListRow title="Call 911" href="tel:911" data-testid="emergency-call-911" />
       </ListGroup>

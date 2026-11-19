@@ -34,15 +34,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.retry.RetryPolicy;
 import org.springframework.core.retry.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
-import tools.jackson.databind.node.JsonNodeFactory;
-import tools.jackson.databind.node.ObjectNode;
-import tools.jackson.databind.util.RawValue;
 
 /**
  * This app's one client of the planner on its own behalf
@@ -99,9 +97,8 @@ public class PlannerClient {
     }
 
     /** What changed between two briefings, as the planner lines it up (ChangeLines). */
-    PlannerWordsSources changeSources(String dep, String dest, List<String> stops, String then, String now) {
-        String body = changesAsk(dep, dest, stops, then, now);
-        return rule("the changes", () -> planner.changeSources(body), a -> a);
+    PlannerWordsSources changeSources(String ask) {
+        return rule("the changes", () -> planner.changeSources(ask), a -> a);
     }
 
     /** The checkpoint notes the pilot wrote for themselves (CheckpointNotesClient). */
@@ -129,16 +126,6 @@ public class PlannerClient {
                     return id;
                 },
                 a -> a);
-    }
-
-    /** The changes' ask (ChangeLines):
-     *  both briefings embedded as the JSON they already are, not as strings holding JSON. */
-    static String changesAsk(String dep, String dest, List<String> stops, String then, String now) {
-        ObjectNode body = JsonNodeFactory.instance.objectNode().put("dep", dep).put("dest", dest);
-        (stops == null ? List.<String>of() : stops).forEach(body.putArray("stops")::add);
-        return body.putRawValue("then", new RawValue(then))
-                .putRawValue("now", new RawValue(now))
-                .toString();
     }
 
     /**
@@ -207,7 +194,7 @@ public class PlannerClient {
     }
 
     /** The columns the planner's rules read, as its LogbookEntry has them. */
-    private static List<PlannerLogbookEntry> entriesOf(List<LogbookEntry> entries) {
+    static List<PlannerLogbookEntry> entriesOf(List<LogbookEntry> entries) {
         return entries.stream()
                 .map(e -> new PlannerLogbookEntry(e.getFlownOn())
                         .totalHours(decimal(e.getTotalHours()))
@@ -252,19 +239,38 @@ public class PlannerClient {
         return new ReviewCheckDto(c.getRule(), c.getLabel(), c.getMet(), c.getDetail());
     }
 
+    /** How long the endorsements' catalogue is kept: the catalogue as last
+     *  asked, and when (null before the first ask). */
+    static final Duration KINDS_KEPT = Duration.ofMinutes(10);
+
+    private record Kinds(List<EndorsementKindDto> kinds, Instant at) {}
+
+    private volatile @Nullable Kinds kinds;
+
     /**
      * AC 61-65K's endorsements a student meets, in order, word for word
      * (GET /api/pilot/endorsement-kinds, the engine's endorsement_kinds):
      * the catalogue the Checkride page lists, a student records from paper
-     * and an instructor signs from.
+     * and an instructor signs from. Its words change only with the
+     * planner's build: kept KINDS_KEPT, not asked again on every page.
      *
      * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public List<EndorsementKindDto> endorsementKinds() {
+        Kinds kept = kinds;
+        Instant now = Instant.now();
+        if (kept == null || now.isAfter(kept.at().plus(KINDS_KEPT))) {
+            kept = new Kinds(askKinds(), now);
+            kinds = kept;
+        }
+        return kept.kinds();
+    }
+
+    private List<EndorsementKindDto> askKinds() {
         return rule(
                 "the endorsements' words",
                 planner::endorsementKinds,
-                kinds -> kinds.stream()
+                all -> all.stream()
                         .map(k -> new EndorsementKindDto(
                                 k.getCode(),
                                 k.getParagraph(),
@@ -276,6 +282,21 @@ public class PlannerClient {
                                                 f.getKey(), f.getLabel(), f.getExample(), f.getRequired()))
                                         .toList()))
                         .toList());
+    }
+
+    /**
+     * The first day an instructor's page lists what they signed (GET
+     * /api/pilot/instructor-records-since, the engine's
+     * instructor_records_since): 3 years before {@code today}, as 14 CFR
+     * 61.189(c) has them keep the records.
+     *
+     * @throws PlannerUnavailableException when the planner cannot be reached or refuses
+     */
+    public LocalDate instructorRecordsSince(LocalDate today) {
+        return rule(
+                "how far back an instructor's records go",
+                () -> planner.instructorRecordsSince(today.toString()),
+                d -> d);
     }
 
     /** The endorsement of {@code code} in the catalogue, if there is one. */
@@ -339,7 +360,7 @@ public class PlannerClient {
         return n == null ? null : n.doubleValue();
     }
 
-    private static BigDecimal decimal(Double d) {
+    static BigDecimal decimal(Double d) {
         return d == null ? null : BigDecimal.valueOf(d);
     }
 

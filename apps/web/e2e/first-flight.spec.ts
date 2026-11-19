@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { frontSheet, searchAirports, settle, slow } from "./helpers";
-import { expectPage, toggle } from "./sheetPages";
+import { frontSheet, grabberTo, searchAirports, settle, slow } from "./helpers";
+import { expectPage, expectSearchInUse, toggle } from "./sheetPages";
 
 /**
  * The first flight (FirstFlight, useFirstFlight; the owner's option A,
@@ -64,6 +64,18 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   await expect(welcome.getByRole("heading", { name: "Welcome to Wingtip Maps" })).toBeVisible();
   for (const row of ["Search, like Maps", "FPL, like your EFB", "FAA charts that move like Maps"])
     await expect(welcome.getByText(row)).toBeVisible();
+  // Its search row in the search field's own words (UI audit C17).
+  await expect(welcome).toContainText("Search airports and airplanes the way you would in Apple or Google Maps.");
+  // Theme and Appearance on the Map card's own look tiles (lookPicks'
+  // LayerMenuTile), two side by side and one size, each its value under
+  // its name and a tap its menu.
+  const [theme, appearance] = [welcome.getByTestId("brand-select"), welcome.getByTestId("theme-select")];
+  await expect(theme).toHaveAccessibleName(/^Theme: /);
+  await expect(appearance).toHaveAccessibleName(/^Appearance: /);
+  const [themeBox, appearanceBox] = [await theme.boundingBox(), await appearance.boundingBox()];
+  expect(Math.abs(themeBox!.y - appearanceBox!.y)).toBeLessThan(1);
+  expect(Math.abs(themeBox!.height - appearanceBox!.height)).toBeLessThan(1);
+  expect(themeBox!.height).toBeGreaterThanOrEqual(80);
   // The position not yet allowed: Turn On Location and Later at its foot
   // (Apple's permission priming, the owner, 2026-11-13), Later going on
   // without asking.
@@ -73,7 +85,8 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   // the destination -- not focused, so no keyboard jumps up.
   await welcome.getByTestId("first-flight-later").click();
   await expect(welcome).toHaveCount(0);
-  await expectPage(page, 0);
+  // The field in use, asking: its Cancel where the toggle rides at rest.
+  await expectSearchInUse(page);
   // Risen from the pill to half, so the search's page is seen (rule 11).
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   const search = page.getByTestId("search-airports");
@@ -117,5 +130,34 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   await page.goto("/app/plan?dep=C81&dest=KMSN");
   await settle(page);
   await page.waitForTimeout(1500);
+  await expect(tip).toHaveCount(0);
+});
+
+test("the FPL tip stays off the sheet all the way up, and once the toggle has been tapped to FPL it is not shown again", async ({
+  page,
+}) => {
+  // The welcome seen, the tip not (lib/firstRunTips' store).
+  await page.addInitScript(() => localStorage.setItem("wingtip.tips", JSON.stringify({ state: { seen: ["first-flight"] }, version: 0 })));
+  await page.goto("/app/plan?dep=C81&dest=KMSN");
+  await settle(page);
+  const tip = page.getByTestId("fpl-tip");
+  // A route's link opens at the pill, FPL's figures in its row: half way
+  // the first row, and the toggle at its end, are in sight.
+  await grabberTo(page, "half");
+  if ((await toggle(page).getAttribute("data-shows")) === "0") await toggle(page).click();
+  await expectPage(page, 0);
+  await expect(tip).toBeVisible({ timeout: slow(15_000) });
+  // All the way up the toggle is at the screen's top, with no room over it:
+  // the tip is not drawn there, over Nearest (the UI audit's B5).
+  await grabberTo(page, "full");
+  await expect(tip).toHaveCount(0);
+  await grabberTo(page, "half");
+  await expect(tip).toBeVisible();
+  // The toggle tapped to FPL: the tip has done its work.
+  await toggle(page).click();
+  await expectPage(page, 1);
+  await toggle(page).click();
+  await expectPage(page, 0);
+  await page.waitForTimeout(1000);
   await expect(tip).toHaveCount(0);
 });

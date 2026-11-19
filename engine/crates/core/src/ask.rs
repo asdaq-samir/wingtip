@@ -70,6 +70,35 @@ pub fn num_in(name: &str, v: &Value, key: &str) -> Result<f64, String> {
     opt_num_in(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
 }
 
+/// Member `key` of `v` as a string, None where missing or null.
+pub fn opt_str_in<'a>(name: &str, v: &'a Value, key: &str) -> Result<Option<&'a str>, String> {
+    match v.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(s)) => Ok(Some(s)),
+        Some(_) => Err(format!("{name}: \"{key}\" is not a string")),
+    }
+}
+
+/// Polygons, each its outer ring then its holes, each ring [(lon, lat), ...].
+pub type Polygons = Vec<Vec<Vec<(f64, f64)>>>;
+
+/// `v` read as polygons, `[[[[lon, lat], ...], ...], ...]` (GeoJSON's
+/// MultiPolygon coordinates), `bad`'s complaint where it is not: the one
+/// reader for airspace's TFR shapes and altitude's congested areas.
+pub fn polygons(v: &Value, bad: &dyn Fn() -> String) -> Result<Polygons, String> {
+    let ring = |ring: &Value| -> Result<Vec<(f64, f64)>, String> {
+        ring.as_array()
+            .ok_or_else(bad)?
+            .iter()
+            .map(|p| match p.as_array() {
+                Some([x, y]) => Ok((x.as_f64().ok_or_else(bad)?, y.as_f64().ok_or_else(bad)?)),
+                _ => Err(bad()),
+            })
+            .collect()
+    };
+    v.as_array().ok_or_else(bad)?.iter().map(|rings| rings.as_array().ok_or_else(bad)?.iter().map(ring).collect()).collect()
+}
+
 /// A list of strings as a JSON array.
 pub fn strings(out: &mut String, items: &[String]) {
     out.push('[');

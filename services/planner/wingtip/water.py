@@ -104,13 +104,6 @@ def glide_nm(height_ft: float, speed_kt: float, glide_ratio: float | None) -> fl
     return float(answer) if answer is not None else 0.0
 
 
-def cell_shares(far: np.ndarray, rows: int, cols: int) -> np.ndarray:
-    """out_of_glide_samples' answer as each cell's share out of glide, 0 to 1:
-    a cell's share of water farther from dry land than the airplane glides."""
-    per = far.shape[0] // rows
-    return far.reshape(rows, per, cols, per).mean(axis=(1, 3))
-
-
 def out_of_glide_samples(
     lat0: float, lon0: float, rows: int, cols: int, cell_deg: float, *, height_ft: float, speed_kt: float, glide_ratio: float | None = None
 ) -> np.ndarray:

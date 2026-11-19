@@ -1,3 +1,4 @@
+import type { PickKind } from "../mapPick";
 import { createContext, useContext, useEffect, useRef, type ReactNode, useEffectEvent } from "react";
 import { prefersReducedMotion } from "../../motion";
 import type {
@@ -48,7 +49,7 @@ export interface GlTap {
 
 /** What a tap finds under the finger, within its reach: the nearest
  *  feature of its layers (nearestHit), or what its own finder picks. */
-export function tapHit(map: MlMap, tap: GlTap, point: { x: number; y: number }): MapGeoJSONFeature | null {
+function tapHit(map: MlMap, tap: GlTap, point: { x: number; y: number }): MapGeoJSONFeature | null {
   if (tap.find) return tap.find(point);
   const layers = tap.layers.filter((l) => map.getLayer(l));
   if (!layers.length) return null;
@@ -61,6 +62,25 @@ export function tapHit(map: MlMap, tap: GlTap, point: { x: number; y: number }):
     { layers, filter: tap.filter },
   );
   return nearestHit(found, point, r, (at) => map.project(at));
+}
+
+/** The tap a finger's tap is for and what it found: the lowest rank that
+ *  finds anything, and of that rank's taps the one whose mark is nearest
+ *  the finger. An airplane drawn under the finger won over nothing of its
+ *  own rank before; a field's mark 20 points off, registered first, took
+ *  the tap at a pick's zoom (tracking.spec). */
+export function pickTap(map: MlMap, taps: Iterable<GlTap>, point: { x: number; y: number }) {
+  let best: { tap: GlTap; hit: MapGeoJSONFeature } | null = null,
+    near = Infinity;
+  for (const tap of [...taps].sort((a, b) => a.rank - b.rank)) {
+    if (best && tap.rank > best.tap.rank) break;
+    const hit = tapHit(map, tap, point);
+    if (!hit) continue;
+    const at = hit.geometry.type === "Point" ? map.project(hit.geometry.coordinates as [number, number]) : point;
+    const d = Math.hypot(at.x - point.x, at.y - point.y);
+    if (d < near) [best, near] = [{ tap, hit }, d];
+  }
+  return best;
 }
 
 /** Of the features MapLibre found in a finger's square, the one the tap
@@ -98,8 +118,10 @@ export interface GlMapApi {
    *  away (an airport's, which the page holds). */
   addMiss: (miss: (event: MapMouseEvent) => void) => () => void;
   /** A card in the map's sheet (SheetCard), for what a tap on the map
-   *  opens; null puts it away. */
-  openCard: (card: ReactNode | null) => void;
+   *  opens, every other pick put away first (lib/map/mapPick), and `also`
+   *  what was picked with it and goes with it (a point's ring); null puts
+   *  it away. */
+  openCard: (card: ReactNode | null, also?: readonly PickKind[]) => void;
   /** Whether the map has the cycle's overlay tiles (glOverlays): its
    *  airspace, airports, navaids, fixes and runways drawn per tile from
    *  the archive, a layer of them adding only its taps, its filters and
@@ -267,20 +289,80 @@ export function useGlData(source: string, data: GeoJSON.GeoJSON | null) {
   const { map } = useGlMap();
   useEffect(() => {
     map.getSource<GeoJSONSource>(source)?.setData(data ?? EMPTY);
+    drawnWithData(map, source, data);
   }, [map, source, data]);
 }
 
-/** Paint properties set on layers as they change: a theme, the night. */
+/** The highest zoom MapLibre has: a layer whose range starts there is
+ *  drawn at no level. */
+const NO_LEVEL = 24;
+
+/** A source with nothing in it left out of the frame, its layers given no
+ *  level to draw at, and their own levels back as data comes. MapLibre
+ *  keeps tiles only of a source a drawn layer uses: at rest on a route,
+ *  29 of the map's 43 sources were empty (the glide ring, a lesson, the
+ *  emergency's, the patterns ...), each tiled and drawn again at every
+ *  frame of a pan. Leaving them out took a pan's median frame from 100 to
+ *  67 ms and its JavaScript from 1.50 to 1.24 s at CPU 4x (2026-11-18). By zoom range, not
+ *  visibility, which the settings set on some of these layers
+ *  (AirportWeatherGl). */
+export function drawnWithData(map: MlMap, source: string, data: GeoJSON.GeoJSON | null) {
+  if (!map.style) return;
+  const empty = !data || (data.type === "FeatureCollection" && data.features.length === 0);
+  let kept = ranges.get(map);
+  if (!kept) ranges.set(map, (kept = new Map()));
+  for (const id of map.getLayersOrder()) {
+    const layer = map.getLayer(id);
+    if (!layer || !("source" in layer) || layer.source !== source) continue;
+    const was = kept.get(id);
+    if (empty && layer.minzoom !== NO_LEVEL) {
+      // A spec with no range reads back as undefined, which
+      // setLayerZoomRange would leave as it is: MapLibre's own 0 to 24.
+      kept.set(id, [layer.minzoom ?? 0, layer.maxzoom ?? NO_LEVEL]);
+      map.setLayerZoomRange(id, NO_LEVEL, NO_LEVEL);
+    } else if (!empty && was) {
+      kept.delete(id);
+      // Given back only if it is still hidden by this: a layer whose range
+      // its owner set while it was hidden (AirportWeatherGl's station model
+      // from zoom 10) keeps that one, where giving back the range kept
+      // before put the station model, its barbs and its "10 SM" on every
+      // field at the whole country's zoom (the owner's screenshot,
+      // 2026-11-18).
+      if (layer.minzoom === NO_LEVEL) map.setLayerZoomRange(id, was[0], was[1]);
+    }
+  }
+}
+/** Each hidden layer's own zoom range, to give back. */
+const ranges = new WeakMap<MlMap, Map<string, [number, number]>>();
+
+/** Paint properties set on layers as they change: a theme, the night.
+ *  Set again whenever the style changes and a layer has not got them: a
+ *  layer added after the paint was set (made again from its spec, or not
+ *  there yet) came back in its spec's day paint, and in the dark theme
+ *  the chart close in was drawn undimmed while the region's level under
+ *  it was dimmed (UI audit B10, 2026-11-17). */
 export function useGlPaint(layers: string[], paint: Record<string, unknown>) {
   const { map } = useGlMap();
   const key = JSON.stringify(paint);
   const ids = layers.join();
   useEffect(() => {
-    const values = JSON.parse(key) as Record<string, unknown>;
-    for (const id of ids.split(",")) {
-      if (!map.getLayer(id)) continue;
-      for (const [k, v] of Object.entries(values)) map.setPaintProperty(id, k as Parameters<MlMap["setPaintProperty"]>[1], v as never);
-    }
+    const values = Object.entries(JSON.parse(key) as Record<string, unknown>);
+    const apply = () => {
+      for (const id of ids.split(",")) {
+        if (!map.getLayer(id)) continue;
+        for (const [k, v] of values) {
+          const name = k as Parameters<MlMap["setPaintProperty"]>[1];
+          // Only where it differs: setting it changes the style, which
+          // would ask for this again.
+          if (JSON.stringify(map.getPaintProperty(id, name)) !== JSON.stringify(v)) map.setPaintProperty(id, name, v as never);
+        }
+      }
+    };
+    apply();
+    map.on("styledata", apply);
+    return () => {
+      map.off("styledata", apply);
+    };
     // By value: the paint by its JSON, the layers by their names.
   }, [map, key, ids]);
 }
@@ -302,62 +384,3 @@ export function useGlMiss(onMiss: (event: MapMouseEvent) => void) {
 }
 
 export const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
-
-/** A picture that stretches to fit its text (icon-text-fit), its corners
- *  `inset` px each way kept as drawn; or, for a picture with more than
- *  corners to keep (a chip's diamond at its left, a callout's tail under
- *  it), the band each way that stretches and the box the text fills, px
- *  of the picture as drawn. */
-export interface Stretch {
-  inset: number;
-  x?: [number, number];
-  y?: [number, number];
-  content?: [number, number, number, number];
-}
-
-/** A picture ready for addImage: drawn, and its density and stretch. */
-export interface DrawnImage {
-  /** An SVG drawn (drawSvg), or a canvas's pixels (drawTag). */
-  image: HTMLImageElement | ImageData;
-  options: { pixelRatio: number; stretchX?: [number, number][]; stretchY?: [number, number][]; content?: [number, number, number, number] };
-}
-
-/** A stretch in the picture's pixels, at its density. */
-function stretchOf(
-  stretch: Stretch,
-  w: number,
-  h: number,
-  ratio: number,
-): Pick<DrawnImage["options"], "stretchX" | "stretchY" | "content"> {
-  const { inset } = stretch;
-  const s = (v: number) => v * ratio;
-  const [x0, x1] = stretch.x ?? [inset, w - inset];
-  const [y0, y1] = stretch.y ?? [inset, h - inset];
-  const box = stretch.content ?? [inset, inset, w - inset, h - inset];
-  return { stretchX: [[s(x0), s(x1)]], stretchY: [[s(y0), s(y1)]], content: box.map(s) as [number, number, number, number] };
-}
-
-/** A picture's SVG markup drawn at the screen's density (up to three
- *  pixels a point), with its stretch for icon-text-fit; null where it
- *  cannot be drawn. */
-export function drawSvg(svg: string, stretch?: Stretch): Promise<DrawnImage | null> {
-  const ratio = Math.max(1, Math.min(3, Math.ceil(window.devicePixelRatio || 1)));
-  return new Promise((resolve) => {
-    const w = Number(/width="([\d.]+)"/.exec(svg)?.[1] ?? 24),
-      h = Number(/height="([\d.]+)"/.exec(svg)?.[1] ?? 24);
-    const sized = svg
-      .replace(`width="${w}"`, `width="${w * ratio}"`)
-      .replace(`height="${h}"`, `height="${h * ratio}"`)
-      .replace(/^<svg (?!xmlns)/, `<svg xmlns="http://www.w3.org/2000/svg" `);
-    const image = new Image(w * ratio, h * ratio);
-    image.onload = () => {
-      // A label's box (icon-text-fit) stretches between its corners.
-      const fit = stretch && stretchOf(stretch, w, h, ratio);
-      resolve({ image, options: { pixelRatio: ratio, ...fit } });
-    };
-    // A picture that cannot be drawn leaves its symbol bare, not the
-    // layer waiting.
-    image.onerror = () => resolve(null);
-    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(sized)}`;
-  });
-}

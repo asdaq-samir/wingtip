@@ -77,10 +77,7 @@ public class InternalRecordsController {
     public ResponseEntity<List<AircraftDto>> aircraft(
             @RequestHeader(value = TOKEN_HEADER, required = false) String token,
             @RequestHeader(value = PlannerProxyController.PILOT_HEADER, required = false) String pilotId) {
-        return asPilot(
-                token,
-                pilotId,
-                pilot -> aircraft.list(pilot).stream().map(dtos::of).toList());
+        return asPilot(token, pilotId, pilot -> dtos.of(aircraft.list(pilot)));
     }
 
     @GetMapping("/flights")

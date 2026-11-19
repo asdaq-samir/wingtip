@@ -11,7 +11,7 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
 
 - `apps/android/`: a Gradle project of one module, `app`, in the Kotlin DSL,
   every version in the catalog `gradle/libs.versions.toml`, on Gradle
-  9.9.1 and AGP 9.6.0-alpha03, whose built-in Kotlin compiles the app (no Kotlin
+  9.9.1 and AGP 9.6.0-alpha04, whose built-in Kotlin compiles the app (no Kotlin
   Android plugin), for API 37 (compiled against 37.2, the newest minor SDK), on Java 25 (the gateway's LTS): Gradle
   runs on the Temurin 25 that `gradle/gradle-daemon-jvm.properties`
   names, fetched once into `~/.gradle/jdks` by the foojay resolver, and
@@ -270,7 +270,7 @@ and `glOverlays.ts`):
   (the engine's `own_ship_hex`). A tap opens its card, with Track, which
   rings it on the map.
 - **Terrain and 3D** (`Map3dLayer`, `MapTerrain`, the web's
-  `features/plan/map/terrain`): the 2D chart is shaded (Relief) and 3D
+  `features/plan-map/terrain`): the 2D chart is shaded (Relief) and 3D
   is the map's own round button (`MapCard`; Terrain was taken out of the
   settings on 2026-11-13). Relief shades the planner's terrain tiles
   (`/api/terrain-tile`, terrarium, to {z} 13, a `RasterDemSource`) over
@@ -572,7 +572,7 @@ the SAFETY briefing's seven items for the planned flight, each with its
 source under it (14 CFR 91.107(a) for the belts, the FAASTeam's
 "Passenger SAFETY briefing" and the Private Pilot ACS PA.II.B.S2 for the
 rest), ticked and kept for that flight. Under them, the flight in a few
-lines as the web's features/plan/components/briefing/passengers writes it -- the route, leaving now in
+lines as the web's features/brief/passengers writes it -- the route, leaving now in
 local time and Z, about how long in the air, the landing time, the
 destination's weather in words from the planner's airport card -- and
 Share, Android's share sheet (ACTION_SEND). The live shareable track

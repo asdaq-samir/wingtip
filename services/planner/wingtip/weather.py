@@ -32,13 +32,16 @@ asks.
 
 import logging
 import time
-from datetime import datetime
 
 import numpy as np
 
-from . import geo, weather_store
+from . import geo, utc, weather_store
 from .engine import ask as _ask
-from .units import NM_PER_SM
+from .weather_asks import below_vfr_minimums as below_vfr_minimums, forecast_hour as forecast_hour, temperature_at as temperature_at
+from .weather_asks import temperature_at_altitude as temperature_at_altitude, temperatures_aloft as temperatures_aloft
+from .weather_asks import vfr_not_recommended_reasons as vfr_not_recommended_reasons
+from .weather_asks import wind_at_altitude as wind_at_altitude, winds_period as winds_period
+from .weather_status import _PRODUCT_WORDS, dataset_status as dataset_status, preload as preload, sources_status as sources_status
 
 log = logging.getLogger(__name__)
 
@@ -53,35 +56,7 @@ class WeatherServiceError(RuntimeError):
     """
 
 
-# --- Winds and temperatures aloft, and the freezing level ---
-# The map's grid (AWC's winds, the GFS's in their place) at a plan's time
-# where its timeline holds it, the GFS's FB stations by period past it:
-# wingtip.winds_aloft, by the key winds_aloft.winds_key_for gives (None,
-# now). The engine interpolates (winds.rs, aloft_grid.rs).
-
-
-def temperatures_aloft(lat: float, lon: float, fcst_hr: str | None = None) -> list:
-    """The forecast temperatures over a place, [(altitude_ft, temp_c)] from
-    the lowest level up; empty where none is known."""
-    from . import winds_aloft
-
-    return winds_aloft.temperatures_aloft(lat, lon, fcst_hr)
-
-
-def temperature_at(profile: list, altitude_ft: float) -> float | None:
-    """The temperature at `altitude_ft` from a temperatures_aloft profile:
-    the engine's (winds.rs temperature_at) -- interpolated between the
-    levels either side, past the ends the nearest one's difference from a
-    standard day kept. None for an empty profile."""
-    return _ask("temperature_at", profile=[list(p) for p in profile], altitude_ft=altitude_ft)
-
-
-def temperature_at_altitude(lat: float, lon: float, altitude_ft: float, fcst_hr: str | None = None) -> float | None:
-    """The forecast temperature at `altitude_ft` over (lat, lon); None where
-    there is none: a standard day then, assumed rather than known."""
-    from . import winds_aloft
-
-    return winds_aloft.temperature_at_altitude(lat, lon, altitude_ft, fcst_hr)
+# --- The freezing level (the winds and temperatures aloft: weather_asks) ---
 
 
 def freezing_level(lat: float, lon: float, fcst_hr: str | None = None) -> dict | None:
@@ -96,31 +71,7 @@ def freezing_level(lat: float, lon: float, fcst_hr: str | None = None) -> dict |
     return _ask("freezing_level", profile=[list(p) for p in profile])
 
 
-def winds_period(fcst_hr: str | None = None) -> dict | None:
-    """Whose winds a plan flies and for when (winds_aloft.winds_period),
-    for the screens to say: None where they cannot be had."""
-    from . import winds_aloft
-
-    return winds_aloft.winds_period(fcst_hr)
-
-
-def wind_at_altitude(lat: float, lon: float, altitude_ft: float, fcst_hr: str | None = None) -> dict | None:
-    """Wind (true direction/speed) at altitude_ft over (lat, lon),
-    interpolated between the forecast's levels and hours; None where none
-    is known -- callers treat that as "no wind data available," not
-    "calm"."""
-    from . import winds_aloft
-
-    return winds_aloft.wind_at_altitude(lat, lon, altitude_ft, fcst_hr)
-
-
 # --- Every product, read from the weather store ---
-
-# Each source as a pilot knows it, for the line said when it cannot be had.
-_PRODUCT_WORDS = {"metars": "METARs", "tafs": "TAFs", "airsigmets": "AIRMETs and SIGMETs", "pireps": "PIREPs", "gairmets": "G-AIRMETs"}
-
-#: The reports and advisories, each a cache file of aviationweather.gov's.
-_CACHE_SOURCES = ("metars", "tafs", "airsigmets", "pireps", "gairmets")
 
 
 def _dataset(name: str):
@@ -135,69 +86,6 @@ def _dataset(name: str):
     if not weather_store.servable(record):
         raise WeatherServiceError(f"{_PRODUCT_WORDS.get(name, name)} unavailable from aviationweather.gov just now")
     return record.data
-
-
-def preload() -> None:
-    """Every product read from the store now, so the first plan after a
-    restart finds each decoded rather than decoding it (a stat after)."""
-    for name in (*_CACHE_SOURCES, *(f"winds-{hr}" for hr in weather_store.WIND_PERIODS)):
-        weather_store.read(name)
-
-
-def dataset_status() -> dict[str, float | None]:
-    """When each source's stored copy was fetched, None for one not held --
-    what the Dev console (/api/status) and the map's layer ages
-    (/api/map/ages) show as the weather's age. A copy served on through
-    an outage keeps its own fetch time, so the age said grows with it. The
-    winds aloft, the GFS's, are "winds-06", "winds-12" and "winds-24", by
-    period."""
-    out = {}
-    for name in (*_CACHE_SOURCES, *(f"winds-{hr}" for hr in weather_store.WIND_PERIODS)):
-        record = weather_store.read(name)
-        out[name] = record.fetched_at if record else None
-    return out
-
-
-def _failing(name: str, record) -> bool:
-    """Whether the service's last try for a newer copy than the one held failed."""
-    tried = weather_store.attempt(name)
-    return bool(tried and tried.get("error") and (record is None or tried["attempted"] >= record.fetched_at))
-
-
-def sources_status() -> list[dict]:
-    """Each source as the pilot's Status page lists it: its name in a
-    pilot's words, its weather store name (`key`, which the feed watch's
-    lines go by), when the copy held was fetched, to when that copy may
-    still be served (its product's own validity, the record's `until`;
-    None for no limit, as the METARs, each carrying its own time), and
-    whether the service's last ask for a newer one failed -- the copy
-    held then served on (UNIX seconds; None where there is none). The
-    winds aloft, the GFS's, each period held to the end of its own window."""
-    named = [(name, _PRODUCT_WORDS.get(name, name)) for name in _CACHE_SOURCES]
-    named += [(f"winds-{hr}", f"Winds aloft, modelled (GFS), {int(hr)}-hour") for hr in weather_store.WIND_PERIODS]
-    out = []
-    for key, words in named:
-        record = weather_store.read(key)
-        out.append(
-            {
-                "name": words,
-                "key": key,
-                "fetched_at": record.fetched_at if record else None,
-                "kept_until": record.until if record else None,
-                "failing": _failing(key, record),
-            }
-        )
-    return out
-
-
-def _unix(iso: str | None) -> float | None:
-    """2026-09-20T01:41:00.000Z -> seconds since the epoch."""
-    if not iso:
-        return None
-    try:
-        return datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp()
-    except ValueError:
-        return None
 
 
 # --- METAR ---
@@ -238,13 +126,6 @@ def recent_wind(ident: str) -> dict | None:
     return {"wind_dir_true_deg": float(held["wind_dir_true_deg"]), "wind_speed_kt": float(held["wind_speed_kt"])}
 
 
-#: How far a station's report is said of a field, approximately: a design
-#: choice, not a rule. FAA-H-8083-28B 24.4.3.8.2 (Aviation Weather Handbook) takes a METAR's
-#: "VC" to be 5 to 10 statute miles from the station for the phenomena it
-#: reports, and does not say a station's flight category holds at another
-#: field; the top of that range is where the card's "≈" chip stops, and
-#: farther only the report and how far it is are given.
-NEAR_REPORT_SM = 10.0
 #: The oldest report given as the nearest: METARs come hourly, so this
 #: allows one missed cycle; the server keeps a held copy for hours when a
 #: refresh fails, and an older report is not "current".
@@ -259,17 +140,23 @@ def nearest_report(lat: float, lon: float, exclude: str | None = None, within_nm
     """The nearest station with a current METAR within `within_nm` of a
     point, for a field with no report of its own, as {"ident",
     "distance_nm", "bearing_deg" (true, from the point), "near" (within
-    NEAR_REPORT_SM, close enough to say the field's weather by it,
+    the engine's report_near, close enough to say the field's weather by it,
     approximately), "metar"}; None with none that close."""
     current = []
     for ident, report in _dataset("metars").items():
         s_lat, s_lon = report.get("lat"), report.get("lon")
         if ident == exclude or s_lat is None or s_lon is None or not np.isfinite([s_lat, s_lon]).all():  # NaN: argmin's least
             continue
+        # Nor a place off the earth: the METAR table's -99.99 for a station
+        # it has no position for (KQFT, 2026-11-18) gave a NaN distance,
+        # argmin took it as the least, and every field with no report of
+        # its own was told of none near it.
+        if not (-90 <= s_lat <= 90 and -180 <= s_lon <= 180):
+            continue
         # Before the distance test, so an old near station does not hide a
         # current farther one; a report with no readable time is not known
         # to be current.
-        observed = _unix(report.get("observed_at"))
+        observed = utc.epoch_or_none(report.get("observed_at"))
         if observed is None or time.time() - observed > NEAREST_REPORT_MAX_AGE_S:
             continue
         current.append((ident, report, s_lat, s_lon))
@@ -285,7 +172,9 @@ def nearest_report(lat: float, lon: float, exclude: str | None = None, within_nm
         "ident": ident,
         "distance_nm": round(nm, 1),
         "bearing_deg": round(geo.bearing_deg(lat, lon, s_lat, s_lon)),
-        "near": nm <= NEAR_REPORT_SM * NM_PER_SM,
+        # Close enough to say the field's weather by, approximately: a
+        # METAR's vicinity, the engine's report_near (FAA-H-8083-28B).
+        "near": _ask("report_near", distance_nm=nm)["near"],
         "metar": report,
     }
 
@@ -428,29 +317,6 @@ def tafs_over(windows: dict) -> dict:
     return found
 
 
-# --- Go/no-go: the basic VFR weather minimums ---
-
-
-def below_vfr_minimums(ceiling_ft: float | None, visibility_sm: float | None) -> bool:
-    """Whether either figure is under 14 CFR 91.155(c), (d)'s basic VFR
-    minimums, 1,000 ft and 3 sm in a surface area of controlled airspace:
-    the engine's `below_vfr_minimums` (rules.rs's figures). A missing figure
-    is not below anything: unknown is reported as unknown by the caller,
-    not decided here. wingtip.altitude's go/no-go flag and the briefing's
-    fields below VFR ask it."""
-    return _ask("below_vfr_minimums", ceiling_ft=ceiling_ft, visibility_sm=visibility_sm)
-
-
-def vfr_not_recommended_reasons(idents: list, metars: dict, forecast: dict) -> list[str]:
-    """ "VFR flight not recommended" (AIM 7-1-5) as its reasons, in
-    briefing order: the engine's (vfr_not_recommended_reasons) -- either
-    end reporting IFR, LIFR or a ceiling of unknown height, then the
-    forecast along the route under 14 CFR 91.155's basic minimums or of
-    unknown height. `metars` is metar_for_idents()'s answer, `forecast`
-    ceiling_visibility_along_route()'s. Empty when nothing warrants it."""
-    return _ask("vfr_not_recommended_reasons", idents=list(idents), metars=metars, forecast=forecast)
-
-
 # --- SIGMET hazards ---
 
 
@@ -507,10 +373,3 @@ def gairmet_snapshots_along_route(path: list, window: tuple) -> list:
     briefing to pick each hazard's snapshot for when the flight is in it."""
     start, end = window
     return _ask("gairmets_along_route", advisories=_dataset("gairmets"), path=[list(p) for p in path], start=start, end=end)
-
-
-def forecast_hour(hours_ahead: float | None) -> str:
-    """Which winds period ("06", "12", "24") fits a departure `hours_ahead`
-    hours from now, where no period's window can be read to say: the
-    engine's (winds.rs forecast_hour). None (no departure time) is now."""
-    return _ask("forecast_hour", hours_ahead=hours_ahead)

@@ -1,5 +1,5 @@
 {
-  "_note": "Rules the web app held and the engine now answers (#482 phase 1): the TAF that speaks for a field (field_taf), the radio calls for a route (radio_script, radio_call_sign, radio_place_name; AIM 4-2, AC 90-66C) and a student's solo endorsement's standing (solo_standing, 14 CFR 61.87(n), the owner's week). engine/facade/tests/web_rules.rs holds the engine to it; the web's tests read it too. Also #482 phase 0's copies the apps kept: the passengers' briefing (passenger_briefing, 14 CFR 91.107(a), the FAA's SAFETY briefing, ACS PA.II.B.S2), 61.93(d)(1)-(3)'s determinations (solo_xc_determinations), own ship on the airport diagram (diagram_fix_usable, AC 120-76D 11.17.2.3's 3 s and 11.17.2.4's 30 m, at and past each), the traffic asked round an airport (traffic_reach) and 91.185(c)(2) in words (lost_comms' altitude). Since 2026-11-14 also the Profile card's Class B band at an altitude (class_b_at_altitude, 14 CFR 91.131(a)(1); Chicago's shelf 3,600 to 10,000 ft and Denver's 12,500 ft top as the FAA's Class Airspace shapefile gives them, a band with no ceiling held from its floor up) and the Go / No-Go's fuel and TFR figures from the nav log's totals (gonogo_route_figures, 14 CFR 91.151(a) and 91.167: the least margin over the route and its flights), both written from those sources, not from the code.",
+  "_note": "Rules the web app held and the engine now answers (#482 phase 1): the TAF that speaks for a field (field_taf), the radio calls for a route (radio_script, radio_call_sign, radio_place_name; AIM 4-2, AC 90-66C) and a student's solo endorsement's standing (solo_standing, 14 CFR 61.87(n), the owner's week). engine/facade/tests/web_rules.rs holds the engine to it; the web's tests read it too. Also #482 phase 0's copies the apps kept: the passengers' briefing (passenger_briefing, 14 CFR 91.107(a), the FAA's SAFETY briefing, ACS PA.II.B.S2), 61.93(d)(1)-(3)'s determinations (solo_xc_determinations), own ship on the airport diagram (diagram_fix_usable, AC 120-76D 11.17.2.3's 3 s and 11.17.2.4's 30 m, at and past each) and 91.185(c)(2) in words (lost_comms' altitude). Since 2026-11-14 also the Profile card's Class B band at an altitude (class_b_at_altitude, 14 CFR 91.131(a)(1); Chicago's shelf 3,600 to 10,000 ft and Denver's 12,500 ft top as the FAA's Class Airspace shapefile gives them, a band with no ceiling held from its floor up) and the Go / No-Go's fuel and TFR figures from the nav log's totals (gonogo_route_figures, 14 CFR 91.151(a) and 91.167: the least margin over the route and its flights), both written from those sources, not from the code.",
   "fieldTaf": [
     {
       "about": "a three-letter ident's own TAF is K and the ident",
@@ -355,10 +355,6 @@
       "usable": false
     }
   ],
-  "trafficReach": {
-    "around_nm": 10,
-    "relation_nm": 40
-  },
   "lostCommsAltitude": "On each segment, the highest of the altitude assigned in the last clearance, the minimum altitude for IFR operations, and the altitude ATC said to expect in a further clearance.",
   "terrainViewBands": [
     {

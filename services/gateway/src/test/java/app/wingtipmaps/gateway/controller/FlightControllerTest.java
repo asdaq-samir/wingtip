@@ -196,7 +196,7 @@ class FlightControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         "{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\","
-                                                + "\"picks\":\"pattern=KMSN%3A18&holds=KMSN%3A180%3AL%3A1M%3A2T&class_b=0&altitude_choice=economical\"}"))
+                                                + "\"picks\":\"pattern=KMSN%3A18&holds=KMSN%3A180%3AL%3A1M%3A2T&altitude_choice=economical\"}"))
                 .andExpect(status().is2xxSuccessful());
         mockMvc.perform(
                         post("/api/flights")
@@ -211,11 +211,11 @@ class FlightControllerTest {
     @Test
     void list_carriesThePicksItWasPlannedWith() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-        given(flightService.list(any())).willReturn(List.of(sampleFlight().withPicks("class_b=0")));
+        given(flightService.list(any())).willReturn(List.of(sampleFlight().withPicks("altitude_choice=economical")));
 
         mockMvc.perform(get("/api/flights").with(oidcLogin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].picks").value("class_b=0"));
+                .andExpect(jsonPath("$[0].picks").value("altitude_choice=economical"));
     }
 
     @Test

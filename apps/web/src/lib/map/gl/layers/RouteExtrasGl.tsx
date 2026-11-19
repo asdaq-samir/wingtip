@@ -1,23 +1,22 @@
-import type { CircleLayerSpecification, ExpressionSpecification, MapGeoJSONFeature, SymbolLayerSpecification } from "maplibre-gl";
-import { useEffect, useMemo, useEffectEvent } from "react";
+import type { ExpressionSpecification, MapGeoJSONFeature, SymbolLayerSpecification } from "maplibre-gl";
+import { useEffect, useMemo, useEffectEvent, type ReactNode } from "react";
 import type { Leg, ProcedureDrawing } from "../../../api/types";
 import { useGeo, type LatLon } from "../../../geo";
 import { useAirplaneChosen } from "../../../preferences";
 import type { TrafficPattern } from "../../../trafficPattern";
 import { altFt } from "../../../format";
-import { COURSE_MAGENTA, MAP_BLUE } from "../../marks/chartColors";
 import { FIX_PILL, FIX_PILL_SHIFT } from "../../marks/markPictures";
 import { PATTERN_ARROW, PATTERN_LABEL, PATTERN_WORDS_FROM_ZOOM, TEAL } from "../../marks/patternMarks";
 import { PROCEDURE_INK, PROCEDURE_WORDS_FROM_ZOOM, STALE_INK, fixMarks } from "../../marks/procedureMarks";
 import { ROUTE_MARKS_LOWEST } from "../../marks/routeMarks";
-import { WAY_CHIP_PLACE, WAY_SHARES, wayAt, wayChip, wayInk, type RouteWay } from "../../route/routeWays";
 import { useGlData, useGlLayer, useGlMap } from "../glLayer";
 import { chipLayer, pictureLayer } from "../markLayers";
 import { useGlLines, type GlRun } from "../useGlLines";
 import { useGlProbe } from "../useGlProbe";
 import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
 import { useGlView } from "../useGlView";
-import { GL_FONT, GL_FONT_BOLD, TAP } from "./common";
+import { TAP, selectionRing } from "./common";
+import { useMapRing } from "../../mapPick";
 import { CHART } from "../../../tokens";
 
 /** The level the map is at, the app's, as the camera comes to rest: what
@@ -26,36 +25,6 @@ const useGlLevel = () => useGlView(noBox, "rest").level;
 const noBox = () => null;
 
 const KIND = (kind: string) => ["==", ["get", "kind"], kind] as ExpressionSpecification;
-
-/** A way's chip: its time in bold, and on the one shown its name under it. */
-const WAY_LAYERS: SymbolLayerSpecification[] = [
-  chipLayer(
-    "route-way-chips",
-    "route-way-chips",
-    {},
-    {
-      "text-field": [
-        "case",
-        ["!=", ["get", "name"], ""],
-        [
-          "format",
-          ["get", "label"],
-          { "text-font": ["literal", GL_FONT_BOLD] },
-          "\n",
-          {},
-          ["get", "name"],
-          { "text-font": ["literal", GL_FONT] },
-        ],
-        ["get", "label"],
-      ] as ExpressionSpecification,
-      "text-size": 13,
-      "text-line-height": 1.25,
-      "text-justify": "left",
-      ...WAY_CHIP_PLACE,
-    },
-    { "text-color": ["get", "ink"] as ExpressionSpecification },
-  ),
-];
 
 /** A pattern's arrows turned along their legs on the chart, its names on
  *  their teal chips. */
@@ -107,35 +76,6 @@ const LEG_POINT_LAYERS: SymbolLayerSpecification[] = [
   ),
 ];
 
-/** FPL's Routes' other ways beside the route: each a wide
- *  faint magenta line, the one shown solid, with its chip a tap picks. */
-export function WaysGl({ ways, shown: shown_, onPick }: { ways: RouteWay[]; shown: string | null; onPick: (key: string) => void }) {
-  const runs = useMemo<GlRun[]>(
-    () =>
-      ways.map((w) => ({ points: w.path, colour: COURSE_MAGENTA, width: w.key === shown_ ? 7 : 6, opacity: w.key === shown_ ? 1 : 0.35 })),
-    [ways, shown_],
-  );
-  useGlLines("route-ways", "lines", runs, null);
-  const marks = useMemo<GlSymbol[]>(
-    () =>
-      ways.map((w, i) => {
-        const [lat, lon] = wayAt(w.path, w.share ?? WAY_SHARES[i % WAY_SHARES.length]!);
-        const shown = w.key === shown_;
-        return {
-          key: w.key,
-          lat,
-          lon,
-          picture: wayChip(shown),
-          props: { label: w.label, name: shown ? (w.name ?? "") : "", ink: wayInk(shown) },
-          onTap: () => onPick(w.key),
-        };
-      }),
-    [ways, shown_, onPick],
-  );
-  useGlSymbols("route-way-chips", WAY_LAYERS, marks);
-  return null;
-}
-
 const pair = (p: LatLon): [number, number] => [p.lat, p.lon];
 const along = (a: LatLon, b: LatLon, f: number): LatLon => ({ lat: a.lat + (b.lat - a.lat) * f, lon: a.lon + (b.lon - a.lon) * f });
 
@@ -167,7 +107,7 @@ export function PatternsGl({ patterns }: { patterns: TrafficPattern[] }) {
         : patterns.flatMap((p) => {
             const downwind = p.legs.find((l) => l.name === "Downwind");
             const downwindAt = downwind && along(downwind.from, downwind.to, 0.5);
-            const downwindWords = `${p.traffic === "right" ? "Right" : "Left"} downwind ${p.runway}${p.altitudeFt != null ? ` · ${altFt(p.altitudeFt)} ft` : ""}`;
+            const downwindWords = `${p.traffic === "right" ? "Right" : "Left"} downwind ${p.runway}${p.altitudeFt != null ? ` · ${altFt(p.altitudeFt)}` : ""}`;
             const entryAt = p.kind === "departure" ? p.entry.to : p.entry.from;
             const entryWords = p.kind === "departure" ? `${p.entry.name} · ${p.runway}` : p.entry.name;
             const at = (point: LatLon, key: string) => ({ key: `${p.ident}-${p.runway}-${key}`, lat: point.lat, lon: point.lon });
@@ -210,11 +150,15 @@ export function ProceduresGl({
   drawings,
   crossings,
   directs,
+  plated = NONE_PLATED,
   onFix,
 }: {
   drawings: ProcedureDrawing[];
   crossings: Record<string, number>;
   directs: string;
+  /** Whether an approach's plate tags its fixes (features/plates'
+   *  usePlateTagged): its tags then say the pilot's own lines alone. */
+  plated?: (d: ProcedureDrawing) => boolean;
   onFix?: (field: string, kind: ProcedureDrawing["kind"], fix: string) => void;
 }) {
   const level = useGlLevel();
@@ -263,6 +207,7 @@ export function ProceduresGl({
             !!d.stale,
             fix.missed ? null : (crossings[fix.ident] ?? null),
             directs.split(",").includes(`${d.airport}:${d.id}:${fix.ident}`),
+            plated(d),
           );
           return {
             key: `${d.airport}-${d.id}-${d.transition ?? ""}-${fix.ident}`,
@@ -275,7 +220,7 @@ export function ProceduresGl({
           };
         }),
       ),
-    [drawings, words, crossings, directs, onFix],
+    [drawings, words, crossings, directs, plated, onFix],
   );
   useGlSymbols("procedure-fixes", PROCEDURE_LAYERS, marks);
   return null;
@@ -285,7 +230,7 @@ export function ProceduresGl({
  *  dashed in the course's magenta. */
 export function HoldTracksGl({ legs }: { legs: Leg[] }) {
   const runs = useMemo<GlRun[]>(
-    () => legs.flatMap((l) => (l.hold ? [{ points: l.hold.path as [number, number][], colour: COURSE_MAGENTA, width: 2.5 }] : [])),
+    () => legs.flatMap((l) => (l.hold ? [{ points: l.hold.path as [number, number][], colour: CHART.course, width: 2.5 }] : [])),
     [legs],
   );
   useGlLines("hold-tracks", "route", runs, null, [6 / 2.5, 5 / 2.5]);
@@ -293,11 +238,21 @@ export function HoldTracksGl({ legs }: { legs: Leg[] }) {
 }
 
 /** Each leg's top of climb and of descent (RouteMap's LegPoints): a pill on
- *  the course, a tap brings the map to it. Under the route's own marks,
+ *  the course, a tap its card (`cardOf`) and its ring, the map brought to
+ *  it. Under the route's own marks,
  *  so it gives way to them: a little above, below or to either side of
  *  its point where one is on it, or left out (MapLibre's variable anchor
  *  and collision; routeMarks). */
-export function LegPointsGl({ legs: allLegs, onSelectPoint }: { legs: Leg[]; onSelectPoint: (lat: number, lon: number) => void }) {
+export function LegPointsGl({
+  legs: allLegs,
+  onSelectPoint,
+  cardOf,
+}: {
+  legs: Leg[];
+  onSelectPoint: (lat: number, lon: number) => void;
+  cardOf: (words: "TOC" | "TOD", at: { lat: number; lon: number }) => ReactNode;
+}) {
+  const { openCard } = useGlMap();
   // No airplane picked, no tops of climb and descent: they are its climb and descent (the owner, 2026-11-08: "don't assume").
   const airplane = useAirplaneChosen();
   const legs = airplane ? allLegs : NO_LEGS;
@@ -318,51 +273,32 @@ export function LegPointsGl({ legs: allLegs, onSelectPoint }: { legs: Leg[]; onS
                   lon: at.lon,
                   text: words,
                   picture: FIX_PILL,
-                  onTap: () => onSelectPoint(at.lat, at.lon),
+                  onTap: () => {
+                    // Its card first, every other pick put away, then its ring (lib/map/mapPick).
+                    openCard(cardOf(words, at), ["point"]);
+                    onSelectPoint(at.lat, at.lon);
+                  },
                 },
               ]
             : [],
         ),
       ),
-    [legs, onSelectPoint],
+    [legs, onSelectPoint, openCard, cardOf],
   );
   useGlSymbols("leg-points", LEG_POINT_LAYERS, marks, { under: ROUTE_MARKS_LOWEST, rank: TAP.rank.checkpoint });
   return null;
 }
 
 const RING_SOURCE = "picked-ring";
-/** The ring round a picked point (Halo: cased both sides), and the held
- *  point's blue dot. */
-const RINGS: CircleLayerSpecification[] = [
-  {
-    id: "picked-ring-outer",
-    type: "circle",
-    source: RING_SOURCE,
-    paint: { "circle-radius": 19, "circle-opacity": 0, "circle-stroke-color": `${CHART.shade}8c`, "circle-stroke-width": 9 },
-  },
-  {
-    id: "picked-ring-inner",
-    type: "circle",
-    source: RING_SOURCE,
-    paint: { "circle-radius": 19, "circle-opacity": 0, "circle-stroke-color": CHART.casing, "circle-stroke-width": 6 },
-  },
-  {
-    id: "picked-ring",
-    type: "circle",
-    source: RING_SOURCE,
-    paint: { "circle-radius": 19, "circle-opacity": 0, "circle-stroke-color": CHART.selected, "circle-stroke-width": 3 },
-  },
-  {
-    id: "held-dot",
-    type: "circle",
-    source: RING_SOURCE,
-    filter: ["get", "held"],
-    paint: { "circle-radius": 6, "circle-color": MAP_BLUE, "circle-stroke-color": CHART.casing, "circle-stroke-width": 2 },
-  },
-];
+/** The one ring round a point picked (selectionRing), a held point's too:
+ *  no blue dot in it, blue being own ship's alone (the owner, 2026-11-18). */
+const RINGS = selectionRing("picked-ring", RING_SOURCE);
 
-/** A point picked (a checkpoint's ring), and a point held on the chart --
- *  a finger held, a right-click -- for its airspace card (HeldPoint). */
+/** A point picked -- the Nav Log's point (`focus`: a checkpoint's, a
+ *  route point's), the point a map card is open for (useMapRing: a VOR, a
+ *  fix, a waypoint, a PIREP, a wind barb) -- and a point held on the chart
+ *  -- a finger held, a right-click -- for its airspace card (HeldPoint),
+ *  each in the one ring. */
 export function PickedGl({
   focus,
   held,
@@ -373,18 +309,20 @@ export function PickedGl({
   onHold: (point: { lat: number; lon: number }) => void;
 }) {
   const { map } = useGlMap();
+  const carded = useMapRing((s) => s.at);
   useGlLayer("top", { [RING_SOURCE]: { type: "geojson", data: { type: "FeatureCollection", features: [] } } }, RINGS);
   const data = useMemo<GeoJSON.FeatureCollection>(
     () => ({
       type: "FeatureCollection",
-      features: [...(focus ? [{ p: focus, held: false }] : []), ...(held ? [{ p: held, held: true }] : [])].map(({ p, held }) => ({
-        type: "Feature",
-        properties: { held },
-        geometry: { type: "Point", coordinates: [p.lon, p.lat] },
-      })),
+      features: [focus, carded, held]
+        .filter((p): p is { lat: number; lon: number } => !!p)
+        .map((p) => ({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [p.lon, p.lat] } })),
     }),
-    [focus, held],
+    [focus, carded, held],
   );
+  // Each ring drawn, for the browser tests: a ring left on the map once its
+  // card has gone is the bug they hold (the selection audit, 2026-11-18).
+  useGlProbe("picked-ring", ["picked-ring"], () => ({ ring: true }));
   useGlData(RING_SOURCE, data);
   const hold = useEffectEvent(onHold);
   useEffect(() => {
@@ -398,3 +336,4 @@ export function PickedGl({
 }
 
 const NO_LEGS: Leg[] = [];
+const NONE_PLATED = () => false;

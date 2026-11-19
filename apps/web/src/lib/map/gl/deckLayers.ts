@@ -11,7 +11,7 @@ import { slotId, useGlMap, type GlTap } from "./glLayer";
  * docs give MapLibre 5 and 6), one overlay a map -- it allows no second
  * interleaved one -- shared by everything drawn with deck.gl: the weather
  * flow (features/weather-flow/FlowGl) and the 3D view's airspace, route
- * and approach (features/plan/map/terrain). Each part gives its layers
+ * and approach (features/plan-map/terrain). Each part gives its layers
  * under a key of its own, and puts each where it belongs in the map's
  * slots with the layer's own `beforeId` (deckSlot). The overlay reads the
  * map's camera, the 3D ground's height at its centre among it, through

@@ -3,7 +3,7 @@ import { settle, slow } from "./helpers";
 import { setMap3d } from "./mapCard";
 
 /**
- * The airspace stood up in 3D (features/plan/map/terrain/AirspaceVolumesGl):
+ * The airspace stood up in 3D (features/plan-map/terrain/AirspaceVolumesGl):
  * from the map's round 3D button (ThreeDButton), the Class B, C and D, the special use
  * areas and the TFRs drawn whole with deck.gl between their floors and
  * ceilings (the planner's /api/airspace/volumes), each area named once at

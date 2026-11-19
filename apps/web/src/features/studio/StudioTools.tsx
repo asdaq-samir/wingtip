@@ -60,7 +60,7 @@ export function StudioTools({ studio, track }: { studio: Studio; track: ReplayTr
         <Section title="Captions">
           <CaptionsPanel callsign={studio.registration} />
         </Section>
-        <Section title="Video" testId="studio-video">
+        <Section title="Video">
           <ExportPanel key={track.id} track={track} scene={scene} credits={credits} render={render} />
         </Section>
       </Suspense>

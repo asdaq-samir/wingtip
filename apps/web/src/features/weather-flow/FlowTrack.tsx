@@ -1,7 +1,7 @@
 import { cn } from "cn";
 import { keepSliderKeys } from "../../components/playbackKeys";
 import { Button } from "../../components/ui/button";
-import { Slider } from "../../components/ui/slider";
+import { Slider, THUMB_HIT } from "../../components/ui/slider";
 import { useIsMobile } from "../../hooks/use-mobile";
 import { TEXT } from "../../lib/text";
 import { hourName, nowIndex, type FlowFrame } from "./useWeatherFlow";
@@ -66,9 +66,8 @@ export function FlowTrack({
           thumb={{
             "aria-label": `${name} hour`,
             "aria-valuetext": shown >= 0 ? `${zulu(shown)}, ${hourName(frames, shown)}` : undefined,
-            className: "relative after:absolute after:-inset-3.5 after:content-['']",
+            className: THUMB_HIT,
           }}
-          data-testid="weather-flow-scrubber"
         />
         {/* A tick for each hour, over the track and under the thumb. */}
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
@@ -89,7 +88,7 @@ export function FlowTrack({
           const label = i === now ? "Now" : HOUR.format(new Date(frames[i]!.valid));
           return (
             <Button
-              variant="ghost"
+              variant="plain"
               size="inline"
               key={i}
               type="button"
@@ -97,7 +96,6 @@ export function FlowTrack({
               onClick={() => (i === now ? onNow() : seek(i))}
               data-testid={i === now ? testIdNow : undefined}
               className={cn(
-                "justify-start text-inherit hover:bg-transparent",
                 "absolute top-0 -translate-x-1/2 font-semibold whitespace-nowrap outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-['']",
                 TEXT.caption,
                 i === shown ? "text-foreground" : "text-muted-foreground",

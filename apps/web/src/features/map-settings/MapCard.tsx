@@ -20,7 +20,7 @@ import { USGS_URL } from "../../lib/map/sources/imagery";
 import { useGoogleSession } from "../../lib/map/sources/googleSession";
 import { googleMapsQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
-import { useTerrainView, useTrueHeightView } from "../plan";
+import { useTerrainView, useTrueHeightView } from "../plan-map";
 
 /**
  * The Map card, what is on the map and nothing else, one screen at a
@@ -30,7 +30,8 @@ import { useTerrainView, useTrueHeightView } from "../plan";
  * as the overlay's, the owner, 2026-11-14), the overlay
  * over them with its strength, in 3D how tall it stands its heights
  * (HeightsChoice), the four layers as tiles (MapLayers), and the app's
- * Look, Theme, Appearance, Sunlight and Position, last (LookChoice; the owner, 2026-11-14). How the
+ * Look, Theme, Appearance, Sunlight and Own Ship, and the chart's Dimmer and
+ * Contrast under them, last (LookChoice; the owner, 2026-11-14 and 2026-11-18). How the
  * map behaves -- the airport weather, the glide ring, the alerts, keeping
  * the charts, where the data comes from -- is the app's Settings, which
  * the gear at the card's head opens at its Map group (option A of the
@@ -43,7 +44,7 @@ export default function MapCard() {
     // iOS Settings spaces its groups; every section's tiles the one 2x2
     // grid (LayerTile), so the four line up (the owner, 2026-11-14:
     // "every section should have 4 tiles like Layers one").
-    <div className="flex flex-col gap-6" data-testid="map-settings-groups">
+    <div className="flex flex-col gap-6">
       <ChartChoice />
       <OverlayChoice />
       <HeightsChoice />
@@ -166,11 +167,7 @@ function HeightsChoice() {
   return (
     <ListGroup
       footer={
-        trueView && (
-          <span data-testid="heights-true">
-            {trueView === "pilot" ? "True height in the pilot's view" : "True height while a replay camera follows"}
-          </span>
-        )
+        trueView && <span>{trueView === "pilot" ? "True height in the pilot's view" : "True height while a replay camera follows"}</span>
       }
     >
       <ListRow title="Heights">
@@ -178,7 +175,6 @@ function HeightsChoice() {
           label="Heights"
           value={String(stretch)}
           onChange={(v) => setStretch(Number(v) as HeightStretch)}
-          testId="heights-stretch"
           options={HEIGHT_STRETCHES.map((k) => ({ value: String(k), label: `×${k}` }))}
         />
       </ListRow>
