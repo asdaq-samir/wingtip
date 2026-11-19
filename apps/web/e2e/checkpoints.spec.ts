@@ -92,7 +92,17 @@ test("plan page: a click or Enter selects a nav log checkpoint, with the briefin
   await grabberTo(page, "full");
   await briefPage(page, "En route");
   const tabs = panelTabs(page).getByRole("tab");
-  await panelTabs(page).getByRole("tab", { name: "En route" }).focus();
+  const enRoute = panelTabs(page).getByRole("tab", { name: "En route" });
+  // Pressed once the tabs know it is the one with the focus: the stock
+  // roving tabindex, 0 on that tab. Focused in the moment the tab list
+  // mounts, before it has its tabs, the focus went unnoticed and an arrow
+  // went from the first tab, to Depart (traced 3 of 8, the night of
+  // 2026-11-19), which no key from a person comes fast enough to meet: so
+  // focused again until the list has taken it.
+  await expect(async () => {
+    await enRoute.focus();
+    await expect(enRoute).toHaveAttribute("tabindex", "0", { timeout: 500 });
+  }).toPass({ timeout: slow(10_000) });
   await page.keyboard.press("ArrowRight");
   await expect(tabs.filter({ hasText: "Arrive" })).toBeFocused();
 });
