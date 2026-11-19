@@ -123,8 +123,10 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await expect(sideDrawer(page).getByTestId("route-undo")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("panel-tab-enroute")).toBeHidden();
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
-  await showTabs(page);
-  // The search's own page (the sheet's first) all the way up, as it was.
+  // The search's own page (the sheet's first) all the way up, as it was:
+  // turned by the toggle that ends FPL's first row, in sight there
+  // (showTabs looked for the search's field, which is the other page's,
+  // and lowered the sheet to half to find it).
   await showPage(page, 0);
   await search.click();
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");

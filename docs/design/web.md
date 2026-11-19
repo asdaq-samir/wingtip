@@ -477,17 +477,20 @@ the results for both the field and the dialog.
 
 **Primary action.** Enter opens the highlighted row's card (Raycast's
 primary action), the first row highlighted as the results come
-(`autoHighlight="always"`), rows that answer after the typing too since
-Base UI 1.9 fixed it for asynchronous results (#5818). A second action on
+(`autoHighlight="always"`). Rows that answer after the typing come in
+with none lit in the one search, Base UI 1.9's fix for asynchronous
+results (#5818) notwithstanding (no aria-activedescendant and no
+data-highlighted row, airport-search.spec), so the one
+search's Enter takes the first of them by hand there. A second action on
 ⌘Enter was dropped on 2026-11-10 with the stock component's own keys kept.
 Base UI's handler is kept from running (`preventBaseUIHandler`, its own
 documented way) in three places only, where no prop says what is wanted
 (the owner, 2026-11-17: each checked against Base UI 1.9): a picker's
 Enter while the rows are not yet the answer to what is typed (the one
 search, the airport search), the typed ident going through rather than
-an older answer's lit row; and a card's ident (`CardIdent`) on Enter where
-what is typed is a row's own ident or no list is open. The rest went: the
-first row taken by hand where the rows came late (Base UI's now), an
+an older answer's lit row, and the one search's Enter on late rows with
+none lit, the first taken; and a card's ident (`CardIdent`) on Enter where
+what is typed is a row's own ident or no list is open. The rest went: an
 Escape and an Enter with nothing of Base UI's to stop (its inline list,
 always open, has none), and the route pill's tap over its popover's
 trigger (the pill is the popover's anchor now, `ResponsivePopoverAnchor`,

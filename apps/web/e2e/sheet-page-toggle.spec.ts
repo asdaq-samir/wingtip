@@ -17,8 +17,8 @@ import { expectPage, expectSearchInUse, expectShown, openAirport, toggle } from 
  * the screen's foot. No sideways swipe turns a page; the grabber is the
  * one plain bar. With no route FPL is its empty box, a route made goes to
  * FPL, and a drag up or down still sizes the sheet on either page. A card
- * open covers the row, the toggle with it; its close brings it back. The
- * cards over the pages: sheet-pages-cards.spec.
+ * open covers the row, the toggle with it; its close and the search's
+ * Cancel bring it back. The cards over the pages: sheet-pages-cards.spec.
  */
 
 test("Search to FPL and back by the toggle, the sheet's size kept", { tag: "@smoke" }, async ({ page }) => {
@@ -96,6 +96,8 @@ test("the toggle ends the first row on both pages, the bar before it one size, a
   // page's own: the search's field fills to the toggle, FPL's strip is
   // centred in the row (the owner, 2026-11-17).
   for (const k of ["top", "h"] as const) expect(search.bar[k], `the bar's ${k}`).toBeCloseTo(fpl.bar[k], 0);
+  // The search's field runs on to eight before the toggle.
+  expect(search.toggle.left - search.bar.right).toBeCloseTo(8, 0);
   for (const k of ["top", "left", "w", "h"] as const) expect(search.toggle[k], `the toggle's ${k}`).toBeCloseTo(fpl.toggle[k], 0);
   // FPL's strip is centred between the row's ends (the routes button's slot
   // at the left, which may be empty, and the page toggle at the right).
@@ -259,7 +261,7 @@ test("a sideways drag on the Nearest row is the row's, and no page turns", async
   await expectPage(page, 0);
 });
 
-test("a card open covers the row and its toggle, the account button riding its top, and its close brings the toggle back", async ({
+test("a card open covers the row and its toggle, the account button riding its top, and its close and the search's Cancel bring the toggle back", async ({
   page,
 }) => {
   // The toggle is the sheet's own row's since the owner swapped it with

@@ -117,14 +117,18 @@ export async function inSheet(page: Page, locator: Locator) {
     if (!sheet || sheet.getAttribute("data-panel") === "full") return false;
     const box = sheet.getBoundingClientRect();
     // A bottom sheet's edge is the screen's foot; a top sheet's, its own;
-    // either way above the route's figures pinned at its foot.
+    // either way above the route's figures pinned at its foot, and above
+    // FPL's floating bar, whose capsule the route runs on under (FplTabBar).
     const foot = sheet.querySelector("[data-testid=panel-foot]")?.getBoundingClientRect();
-    // A card's floating tab bar (CardTabBar) holds at that edge too.
+    // A card's floating tab bar (CardTabBar) holds at that edge too, and
+    // FPL's own floating bar of actions.
     const tabs = [...sheet.querySelectorAll("[data-testid$=tab-bar] > *")].find((b) => !b.contains(el))?.getBoundingClientRect();
+    const bar = sheet.querySelector("[data-testid=fpl-actions] [role=toolbar]")?.getBoundingClientRect();
     const edge = Math.min(
       box.top < 0 ? box.bottom : window.innerHeight,
       foot && foot.height > 0 ? foot.top : Infinity,
       tabs && tabs.height > 0 ? tabs.top : Infinity,
+      bar && bar.height > 0 ? bar.top : Infinity,
     );
     return el.getBoundingClientRect().bottom > edge + 1;
   });

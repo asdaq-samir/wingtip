@@ -242,12 +242,15 @@ test("Avoid Class B is asked at the planned altitude, shown as a chip like the o
   // The owner, 2026-11-17: "You can still avoid class B in the suggested
   // routes". The plan flies through Class B with its clearance (14 CFR
   // 91.131(a)(1)); the way round it is the planner's (wingtip.class_b_route).
+  // Round by a fix the planner knows, the Badger VOR: a point it does not
+  // know opens the route's field (decision 0047), where the suggested
+  // routes are not offered, and the chip picked was never shown pressed.
   const round = {
     ...WAYS.options[0],
     kind: "class_b",
     kinds: ["class_b"],
     title: "Avoid Class B",
-    stops: ["VPNEAR"],
+    stops: ["BAE"],
     distance_nm: 360.1,
     fuel_gal: 26.2,
   };
@@ -260,7 +263,7 @@ test("Avoid Class B is asked at the planned altitude, shown as a chip like the o
         json: {
           ...WAYS,
           class_b: round,
-          chips: [...WAYS.chips, { key: "class_b", label: "Avoid Class B", stops: ["VPNEAR"], fuel: [], crosses: [] }],
+          chips: [...WAYS.chips, { key: "class_b", label: "Avoid Class B", stops: ["BAE"], fuel: [], crosses: [] }],
         },
       });
     },
@@ -275,7 +278,7 @@ test("Avoid Class B is asked at the planned altitude, shown as a chip like the o
   // Asked again at the plan's altitude once it is planned.
   await expect.poll(() => asked.some((ft) => ft !== null && Number(ft) > 0), { timeout: slow(30_000) }).toBe(true);
   await chips.filter({ hasText: "Avoid Class B" }).click();
-  await expect(page).toHaveURL(stopsAre("VPNEAR"));
+  await expect(page).toHaveURL(stopsAre("BAE"));
   await expect(chips.filter({ hasText: "Avoid Class B" })).toHaveAttribute("data-pressed", "");
 });
 

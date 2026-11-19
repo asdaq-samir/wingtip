@@ -62,6 +62,7 @@ test.describe("cards over the pages", () => {
     await expect(page).toHaveURL(/[?&]dest=KOSH/, { timeout: slow(15_000) });
     // Flown to from where the airplane is, a whole route: cleared from its
     // ••• (half a route has the route box's own ✕, the owner, 2026-11-18).
+    await expect(sideDrawer(page).getByTestId("timeline-ident")).toHaveText(["My Location", "KOSH"], { timeout: slow(15_000) });
     await clearTheRoute(page);
     await expect(page).not.toHaveURL(/[?&]dest=/);
     await expectShown(page, 1);

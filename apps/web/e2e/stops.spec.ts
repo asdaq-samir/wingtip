@@ -105,6 +105,9 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   // it folds).
   await openPanel(page);
   await openRoute(page);
+  // The route's field, still open from the stop's adding at half, runs
+  // on past the sheet's edge there: the sheet raised to its pill.
+  await inSheet(page, stop);
   await stop.click({ button: "right" });
   await page.getByRole("menuitem", { name: "Remove", exact: true }).click();
   await expect(page).not.toHaveURL(/[?&]stops=/);

@@ -70,7 +70,11 @@ test("a cleared route comes back from the empty route's Undo, which goes once a 
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
 
   // Cleared again and a new route started in the field Type or Paste a
-  // Route opens, focused: no Undo then.
+  // Route opens, focused: no Undo then. Past the route's settling once it
+  // is put back (its runway and pattern picked again), which the history
+  // takes in as part of the Undo (SETTLE_MS): a clear inside it was taken
+  // in too, and left nothing to undo.
+  await pastSettling(page);
   await clearTheRoute(page);
   await expect(undo).toBeVisible();
   await sideDrawer(page).getByTestId("timeline-type-route").click();

@@ -82,7 +82,9 @@ test.describe("/app/plan", () => {
     await foldRoute(page);
     await expect(drawer.getByTestId("route-box")).toHaveCount(0);
 
-    // A line opened leaves the sheet where it is.
+    // A line opened leaves the sheet where it is: at half again, where
+    // More's menu took it all the way up for the route's field (openRoute).
+    await grabberTo(page, "half");
     await expect(drawer).toHaveAttribute("data-panel", "half");
     await timeline.locator('[data-testid="timeline-line"][data-ident="KOMA"]').getByTestId("timeline-toggle").click();
     await expect(drawer).toHaveAttribute("data-panel", "half");
@@ -210,11 +212,49 @@ test.describe("/app/plan", () => {
   });
 
   test("the routes button resets with the route: pills out, the route cleared, a new route's pills hidden", async ({ page }) => {
+    // A way besides the route as typed: with As typed alone there is
+    // nothing to suggest and no button (useRouteLine's routeLine).
+    const way = {
+      kind: "fastest",
+      kinds: ["fastest"],
+      title: "Fastest",
+      stops: ["KDSM"],
+      fuel: [],
+      path: [
+        [41.98, -87.9],
+        [41.53, -93.66],
+        [39.86, -104.67],
+      ],
+      distance_nm: 905.3,
+      air_min: 402,
+      ground_min: 0,
+      fuel_gal: 52.1,
+      landings: 0,
+      crosses: [],
+      marginal: [],
+      bands: [{ kind: "vfr", min: 402 }],
+      tail_kt: 0,
+      floor_ft: 2000,
+    };
     await page.route(
       (url) => url.pathname.endsWith("/route-options"),
       (route) =>
         route.fulfill({
-          json: { chips: [{ key: "none", label: "As typed", stops: [], fuel: [], crosses: [] }], hazards: [], unchecked: [] },
+          json: {
+            options: [way],
+            own: null,
+            direct: [0],
+            ends: [],
+            current: [],
+            current_marginal: [],
+            current_along: { bands: [], tail_kt: 0, floor_ft: 0 },
+            chips: [
+              { key: "none", label: "As typed", stops: [], fuel: [], crosses: [] },
+              { key: "fastest", label: "Fastest", stops: ["KDSM"], fuel: [], crosses: [] },
+            ],
+            hazards: [],
+            unchecked: [],
+          },
         }),
     );
     await page.goto("/app/plan?dep=KORD&dest=KDEN");

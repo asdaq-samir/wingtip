@@ -69,9 +69,11 @@ test("Fly Here from the map over a route, from Search at the pill", async ({ pag
   await grabberTo(page, "half");
   await toggle(page).tap();
   await grabberTo(page, "peek");
-  // Dubuque, towered: drawn with the whole route in sight, clear of its line.
-  await tapAirportOnMap(page, "KDBQ");
-  await flyHere(page, "KDBQ");
+  // Cedar Rapids, towered: drawn with the whole route in sight, clear of
+  // its line. Dubuque, nearer the line, is no longer drawn at the pill's
+  // zoom (6.2) beside the bigger fields round it.
+  await tapAirportOnMap(page, "KCID");
+  await flyHere(page, "KCID");
   await grabberTo(page, "half");
   await expectPlanLive(page);
 });

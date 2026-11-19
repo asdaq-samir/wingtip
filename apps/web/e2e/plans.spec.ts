@@ -321,7 +321,8 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
   await page.getByTestId("altitude-input").press("Enter");
   await expect(page).toHaveURL(/[?&]altitude_ft=12500/);
 
-  // Or a stop: the route's box takes the typing. Once planned again at that
+  // Or a stop: the one search asked for it, as the timeline's Add a Stop
+  // asks (decision 0047, useRouteListEdit's typeStopAt). Once planned again at that
   // altitude: the problem goes and comes back as the plan is made, and a
   // tap while it was gone found nothing -- the tap tried again with it.
   await expect(page.locator("[data-slot=toast][data-type=loading]")).toHaveCount(0, { timeout: slow(30000) });
@@ -329,5 +330,7 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
     if (!(await problem.isVisible())) await openProfile(page);
     await problem.getByTestId("unflyable-add-stop").click({ timeout: 2000 });
   }).toPass({ timeout: slow(30000) });
-  await expect(sideDrawer(page).getByTestId("route-type")).toBeFocused();
+  const search = page.getByTestId("search-airports");
+  await expect(search).toBeFocused();
+  await expect(search).toHaveAttribute("placeholder", "Search airports and waypoints");
 });
