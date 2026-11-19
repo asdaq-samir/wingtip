@@ -110,6 +110,8 @@ test("reloaded where it was, the map opens on the position in the middle of what
   await settle(page);
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
   await shipInTheMiddle(page);
+  // Watched for a while from the frame the map is shown, which comes with its tiles in, after the pill and the ship are placed.
+  await expect(page.getByTestId("gl-map")).toHaveAttribute("data-revealed", "", { timeout: slow(10_000) });
   await page.waitForTimeout(1500);
   // Made there, and never moved: the first fix was put, not panned to. The
   // fix a few metres from the kept one may set the map a fraction of a
