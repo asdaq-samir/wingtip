@@ -52,7 +52,10 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     `scripts/build/api-models-apps.sh` writes from the planner's and the
     gateway's OpenAPI documents with quicktype, committed and checked by
     CI, so a renamed field fails the build; the pilot and AirportPin
-    stay by hand), `NavLog.kt` (the nav log's streamed lines, by hand);
+    stay by hand). Every model is read by `Gateway.json`
+    (`ignoreUnknownKeys`, `coerceInputValues`), and enums are plain
+    strings, so a field or an enum value a server adds before the app
+    knows it never fails a decode (`ApiToleranceTest`), `NavLog.kt` (the nav log's streamed lines, by hand);
   - `Charts`, `Session`, `Plan`: the models of state, ViewModels with
     their state in flows (which chart, who is signed in, the route and
     what the planner said of it), and `Links` (the site's links the app

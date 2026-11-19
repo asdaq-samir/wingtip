@@ -7,7 +7,8 @@
 //   node api-models-apps.mjs openapi <openapi.json> <out.json>
 //   node api-models-apps.mjs aliases <Types+Components+Schemas.swift> <module> <prefix> <out.swift>
 //
-// prep makes the document's enums and consts plain strings and its tuples
+// prep makes the document's enums and consts plain strings, every object
+// open to keys it does not name, and its tuples
 // (prefixItems, a lat/lon pair) arrays of their one type, which quicktype
 // otherwise reads as JSONAny; kotlin puts the header on the written file
 // and fits it to the app's coder (the shell script says how); client
@@ -47,6 +48,11 @@ function plain(v) {
   const o = {};
   for (const [k, x] of Object.entries(v)) {
     if (DROPPED.has(k)) continue;
+    // A closed object (Pydantic's extra="forbid") would make
+    // swift-openapi-generator write a decoder that refuses any key it does
+    // not know, so a field the server adds would fail a phone not yet
+    // updated: every object stays open, its unknown keys passed over.
+    if (k === "additionalProperties" && x === false) continue;
     // A schema's properties by name: a property may be named as a keyword.
     o[k] = k === "properties" ? Object.fromEntries(Object.entries(x).map(([name, p]) => [name, plain(p)])) : plain(x);
   }
