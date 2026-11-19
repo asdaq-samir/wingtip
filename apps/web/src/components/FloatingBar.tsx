@@ -86,17 +86,20 @@ export function FloatingBarButton({
  *  the tab's name, and a black disc over a tab read as one more alert. */
 export function TabCount({ count, testId, mark }: { count: number; testId?: string; mark: "stop" | "caution" }) {
   return (
+    // The figure drawn from data-count, not a text node: the button's name
+    // ("Brief, 3 findings to look at") says it, and axe's Label in Name
+    // (WCAG 2.5.3) read the badge's "3" run into the word under it, "3Brief",
+    // which no name can start with and still say what is in it.
     <span
       aria-hidden
       data-testid={testId}
       data-finding={mark}
+      data-count={count}
       className={cn(
-        "pointer-events-none absolute -top-2 left-full -ml-2 min-w-4 rounded-full px-1 text-center leading-4 font-semibold tabular-nums text-background",
+        "pointer-events-none absolute -top-2 left-full -ml-2 min-w-4 rounded-full px-1 text-center leading-4 font-semibold tabular-nums text-background after:content-[attr(data-count)]",
         mark === "stop" ? "bg-destructive" : "bg-caution",
         TEXT.caption,
       )}
-    >
-      {count}
-    </span>
+    />
   );
 }

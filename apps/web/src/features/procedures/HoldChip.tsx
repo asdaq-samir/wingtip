@@ -22,7 +22,13 @@ export function HoldChip({ ident, hold, onOpen }: { ident: string; hold: Hold | 
       data-testid="hold-chip"
       data-look={hold ? "chip" : "add"}
       className={chipLook(!hold)}
-      aria-label={`${ident} hold: ${hold ? holdWords(hold) : "none set"}`}
+      // Its name starts with the words it shows (WCAG 2.5.3, Label in Name),
+      // then the hold whole for a reader.
+      aria-label={
+        hold
+          ? `Hold ${bearing(hold.inbound)} ${hold.right ? "R" : "L"}, ${ident} hold: ${holdWords(hold)}`
+          : `+ HOLD, ${ident} hold: none set`
+      }
     >
       {hold ? (
         <>
