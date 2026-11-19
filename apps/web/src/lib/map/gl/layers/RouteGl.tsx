@@ -171,6 +171,7 @@ export function RouteGl({
   // The checkpoints' names the chart shows, those MapLibre placed clear of
   // each other (a name it could not fit is not drawn), for the tests.
   useGlProbe("checkpoint-names", [NAMES.id], (f) => ({ name: f.properties.name }));
+  useNamesInView();
   const dots = useMemo<GeoJSON.FeatureCollection>(
     () => ({
       type: "FeatureCollection",
@@ -275,3 +276,38 @@ export function RouteGl({
   return null;
 }
 
+/** Only the checkpoints whose dots are in the view named, set as the map
+ *  comes to rest. MapLibre places a symbol up to a margin past the view's
+ *  edge, so a dot just off the screen had its name drawn on it with no dot
+ *  beside it ("Milny Lake" for a dot 17 points past the left edge,
+ *  checkpoints.spec, 2026-11-18): a name is kept with its dot. */
+function useNamesInView() {
+  const { map } = useGlMap();
+  useEffect(() => {
+    const inView = () => {
+      if (!map.getLayer(NAMES.id)) return;
+      const b = map.getBounds();
+      const [w, s, e, n] = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+      map.setFilter(NAMES.id, [
+        "within",
+        {
+          type: "Polygon",
+          coordinates: [
+            [
+              [w, s],
+              [e, s],
+              [e, n],
+              [w, n],
+              [w, s],
+            ],
+          ],
+        },
+      ]);
+    };
+    inView();
+    map.on("moveend", inView);
+    return () => {
+      map.off("moveend", inView);
+    };
+  }, [map]);
+}
