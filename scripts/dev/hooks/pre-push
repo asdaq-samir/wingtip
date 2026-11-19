@@ -384,11 +384,11 @@ gen '^(apps/android/.*\.kt$|scripts/ci/phones/detekt)' \
   "detekt" "scripts/ci/phones/detekt.yml says what each rule wants" \
   "$here/scripts/ci/phone_lint.sh" android --base "$judged"
 
-# --- the browser specs a web change reaches, passed on this tree (decision 0048);
-# the wave's own branch answers on its pull request instead.
+# --- the browser specs a web change reaches, passed on this tree (decision 0048):
+# a "<commit> <tree>" line of branch-specs.sh's, each a pass from the last; the wave's branch answers on its pull request.
 if grep -qE '^apps/web/(src|e2e)/|^apps/web/(index\.html|vite\.config\.ts|package(-lock)?\.json)$' <<<"$changed" &&
   ! grep -q ' refs/heads/claude/integration ' <<<"$refs" &&
-  [ "$(cat "$(git rev-parse --git-dir)/branch-specs-passed" 2>/dev/null)" != "$(git rev-parse "${pushed:-HEAD}^{tree}")" ]; then
+  ! grep -qE "(^| )$(git rev-parse "${pushed:-HEAD}^{tree}")$" "$(git rev-parse --git-dir)/branch-specs-passed" 2>/dev/null; then
   fail "the browser specs this change reaches (scripts/dev/branch-specs.sh runs them and records the pass)"
 fi
 if [ "$failed" -ne 0 ]; then

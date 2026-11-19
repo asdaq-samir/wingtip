@@ -68,3 +68,40 @@ a fix of minutes on the day it was written.
   request.
 - A spec that asks for no test id is followed nowhere, so any web change
   runs it. Such a spec costs every pull request; give it a test id.
+
+## Amendment, 2026-11-19: the Mac's check runs what changed since its last pass
+
+The owner approved two changes the same day, since the local check was
+costing about 15 minutes before every push: a fix to one file ran the
+branch's whole reached set again, and a spec that failed only on CI's
+stack had no quick way to be run on one.
+
+1. **Incremental.** `scripts/dev/branch-specs.sh` runs the specs reached
+   by what changed since the branch's last pass, not since the branch it
+   builds on. A pass is recorded as its commit and tree (a
+   `<commit> <tree>` line in the git dir's `branch-specs-passed`), and the
+   next run diffs from the newest recorded commit HEAD descends from. The
+   first run on a branch, or one whose earlier pass is no longer in its
+   history (amended, reset), has none to start from and diffs from the
+   base, as before; `--from-base` asks for that. Past 30, the cut to the
+   `@smoke` ones still keeps the specs changed in that range. The
+   pre-push hook asks for a line with the pushed tree; since each line is
+   a pass from the base or from an earlier line, the chain covers all the
+   branch changed. The whole reached set stays the pull request's (point
+   1, the `specs` job), which is unchanged.
+2. **A local copy of CI's stack, one command.** `scripts/dev/ci-stack.sh
+   up|page|run|logs|down` starts CI's e2e stack from the worktree
+   (docker-compose.yml with infra/docker-compose.ci.yml, the cut Chicago
+   overlay tiles, `CHARTS_AUTO_REFRESH=0`, the images built from the
+   checkout and its page mounted over the gateway's) under a compose
+   project of the worktree's own on free ports Docker picks, never 8080 or
+   8443; `run`
+   takes Playwright's arguments, with `CI=1`, `--retries=0` and an optional
+   `--cpus N`; `down` removes its containers, volumes, network, images and
+   page. `scripts/dev/validate-wave.sh`'s browser step now runs on it
+   rather than on a copy of its own.
+3. **No fixed ports.** `branch-specs.sh` served every worktree's page on
+   4174, and two runs at once shared it: when one's server stopped, the
+   other's tests met 330 "connection refused". Its page server now takes
+   a free port and the tests are pointed at it, and `ci-stack.sh`'s
+   project and ports are the worktree's own, as above.

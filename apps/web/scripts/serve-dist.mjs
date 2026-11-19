@@ -4,13 +4,17 @@
 // Over localhost, which the browser counts as a secure origin (a position,
 // the service worker), as CI's stack is.
 //
-//   PORT=4173 GATEWAY=8080 node scripts/serve-dist.mjs <dist>
+//   [PORT=4173] GATEWAY=8080 node scripts/serve-dist.mjs <dist>
+//
+// With no PORT, a free one the system picks, said on the first line: two
+// worktrees' runs on one fixed port sent one's tests to the other's server
+// (330 "connection refused" when it stopped, 2026-11-19).
 import { createReadStream, existsSync, statSync } from "node:fs";
 import http from "node:http";
 import { extname, join, resolve } from "node:path";
 
 const dist = resolve(process.argv[2] ?? "dist-branch");
-const port = Number(process.env.PORT ?? 4173);
+const port = Number(process.env.PORT ?? 0);
 const gateway = Number(process.env.GATEWAY ?? 8080);
 const TYPES = {
   ".js": "text/javascript",
@@ -45,4 +49,10 @@ http
     up.on("error", () => res.writeHead(502).end());
     req.pipe(up);
   })
-  .listen(port, "127.0.0.1", () => console.log(`serve-dist: ${dist} on :${port}, the rest to :${gateway}`));
+  .on("error", (err) => {
+    console.error(`serve-dist: ${err.message}`);
+    process.exit(1);
+  })
+  .listen(port, "127.0.0.1", function () {
+    console.log(`serve-dist: ${dist} on :${this.address().port}, the rest to :${gateway}`);
+  });

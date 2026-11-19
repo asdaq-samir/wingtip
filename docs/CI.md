@@ -184,9 +184,12 @@ script can check, and the rest are for whoever writes a test or a job.
     added or changed, beside the gate: a three-day redesign changed few
     spec files, so almost none ran, and #585 merged with three red. A
     web change now takes the pull request past the three minutes, to the
-    browser run's 6 to 15. *Guard:* `test_tiers.py` (`specs`, `e2e-images`
-    and `e2e` are tier 1 and in the gate, and `e2e` runs what `specs`
-    chose).
+    browser run's 6 to 15. On the Mac, a branch passes the specs reached
+    since its last pass before its push (`scripts/dev/branch-specs.sh`),
+    and a spec red here alone is run on `scripts/dev/ci-stack.sh`, a copy
+    of this job's stack; the whole reached set is this job's. *Guard:*
+    `test_tiers.py` (`specs`, `e2e-images` and `e2e` are tier 1 and in
+    the gate, and `e2e` runs what `specs` chose).
 19. **No job waits for what it does not use** (decision 0044). The
     guards' three legs waited about a minute each for the engine's wheel
     (run 43783303925), which only the planner's flight-critical test
