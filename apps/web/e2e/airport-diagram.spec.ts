@@ -54,7 +54,17 @@ async function withDiagram(page: Page, picture: "drawn" | "missing", pdf = true)
       const metar = { raw: "KDLH 102155Z 27008KT 10SM CLR 12/02 A3001", flight_category: "VFR" };
       await route.fulfill({
         response: answer,
-        json: { ...place, metar, weather_unavailable: false, airport_diagram_url: pdf ? PDF : null, airport_diagram_cycle: "2610" },
+        // The crop worth asking for where it is drawn (airport_diagram_runways,
+        // e8231075f): the planner's own answer is false once it has kept a
+        // miss for the cycle, and the card then draws its sketch unasked.
+        json: {
+          ...place,
+          metar,
+          weather_unavailable: false,
+          airport_diagram_url: pdf ? PDF : null,
+          airport_diagram_cycle: "2610",
+          ...(picture === "drawn" && { airport_diagram_runways: true }),
+        },
       });
     },
   );

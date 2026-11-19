@@ -79,7 +79,9 @@ test("once the rows answer the box, Enter takes the highlighted row", async ({ p
  *  lines' sizes and the town's grey. */
 const rowLook = (row: Locator) =>
   row.evaluate((el) => {
-    const lines = [...el.querySelectorAll<HTMLElement>("span.block")];
+    // Its lines of words, each a truncated block: the field's chart mark
+    // at its left (ChartMark) is a block too, but a picture, not a line.
+    const lines = [...el.querySelectorAll<HTMLElement>("span.block.truncate")];
     const ident = el.querySelector<HTMLElement>(".font-mono")!;
     return {
       height: Math.round(el.getBoundingClientRect().height),

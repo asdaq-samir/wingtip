@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { airportMark, drawn, openMapSettings, slow } from "./helpers";
+import { wheelIn } from "./mapZoom";
 
 /**
  * The Class B, C and D over the chart, with their altitudes as the
@@ -42,6 +43,15 @@ test("Chicago's airspace is drawn over the chart with its altitudes, and the swi
   // ceiling alone, a minus where it stops under a Class B shelf ("-30");
   // the same words the 3D view stands at each shelf's top.
   await expect.poll(async () => (await labels(page)).some((l) => /^100\n(SFC|\d+)$/.test(l.text)), { timeout: slow(15000) }).toBe(true);
+  // Closer in over Wheeling, where a Class D's small ring has room for its
+  // tab: a tab in its ceiling over its floor is a box two lines tall, and
+  // MapLibre keeps it off the fields' marks and the other tabs, so at the
+  // card's zoom a ring 35 px across has none (the labels audit, 6fe7e631a).
+  await wheelIn(
+    page,
+    async () => (await airportMark(page, "KPWK")) ?? { x: page.viewportSize()!.width / 2, y: 200 },
+    async () => (await labels(page)).some((l) => /^-?\d+$/.test(l.text)),
+  );
   const written = await labels(page);
   expect(written.some((l) => /^-?\d+$/.test(l.text))).toBe(true);
   expect(written.some((l) => /^\d+\n\d+$/.test(l.text))).toBe(true);
@@ -80,15 +90,34 @@ test("a tap on a Class D ring opens its card, with its ceiling and hours", async
       // Only the fields wearing a mark take a tap near them; the canvas
       // writes every field it knows, mark or not.
       const fields: { x: number; y: number; chip: boolean }[] = marks.flatMap((m) => JSON.parse(m.dataset.airportMarks || "[]"));
-      // A point on each line drawn (AirspaceGl's probe: its middle vertex).
-      const rings: { class: string; x: number; y: number }[] = (
-        JSON.parse(canvas.dataset.airspaceLines || "[]") as { cls: string; x: number; y: number }[]
-      ).map((l) => ({ class: l.cls, x: l.x, y: l.y }));
+      // Each Class D ring's box (AirspaceGl's probe), its pieces cut at the
+      // tiles' edges put back together: the probe places a ring, a polygon
+      // in the tiles, at the middle of its box, which is its field, not its
+      // line. A ring is round, so the middle of each side of its box is on
+      // it.
+      const pieces = JSON.parse(canvas.dataset.airspaceLines || "[]") as { id: string; cls: string; box?: number[] }[];
+      const boxes = new Map<string, number[]>();
+      for (const l of pieces) {
+        if (l.cls !== "D" || !l.box) continue;
+        const was = boxes.get(l.id);
+        boxes.set(
+          l.id,
+          was
+            ? [Math.min(was[0]!, l.box[0]!), Math.min(was[1]!, l.box[1]!), Math.max(was[2]!, l.box[2]!), Math.max(was[3]!, l.box[3]!)]
+            : l.box,
+        );
+      }
+      const onRings = [...boxes.values()].flatMap(([x0, y0, x1, y1]) => [
+        { x: (x0! + x1!) / 2, y: y0! },
+        { x: (x0! + x1!) / 2, y: y1! },
+        { x: x0!, y: (y0! + y1!) / 2 },
+        { x: x1!, y: (y0! + y1!) / 2 },
+      ]);
       // A Class D ring is 35 px across its radius at the card's zoom on a
       // phone, so the clearance is the mark's own reach (22 px) and a little;
       // and clear of the map's buttons down the right edge (BUTTONS_CLEAR).
-      for (const ring of rings) {
-        if (ring.class !== "D" || ring.y < 80 || ring.y > box.height * 0.48 || ring.x < 20 || ring.x > box.width - 64) continue;
+      for (const ring of onRings) {
+        if (ring.y < 80 || ring.y > box.height * 0.48 || ring.x < 20 || ring.x > box.width - 64) continue;
         if (fields.some((f) => f.chip && Math.hypot(f.x - ring.x, f.y - ring.y) < 26)) continue;
         return { x: box.left + ring.x, y: box.top + ring.y };
       }
