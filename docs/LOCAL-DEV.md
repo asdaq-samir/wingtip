@@ -283,6 +283,7 @@ All in `scripts/dev/`, each with its usage at its top.
 | `dev.sh doctor` or `dev.sh up` | What `make dev` and `make doctor` run (First run, above) |
 | `one-at-a-time.sh "<label>" <command>` | Runs a heavy command (a suite, an image build, a browser run) in one of the turns the swap watcher allows (below), waiting while memory is short; `--alone` takes the whole machine for a measurement |
 | `swap-watch.sh`, `install-swap-watch.sh` | Full throttle without swapping: a LaunchAgent that holds the heavy-turn limit as high as the Mac takes (below) |
+| `branch-specs.sh [--list]` | The browser specs a branch's change reaches (`apps/web/scripts/reached-specs.mjs`), run on its own page beside the live stack before its push, the pass recorded for the pre-push hook (decision 0048); over 30, the `@smoke` ones, and the pull request runs all |
 | `validate-wave.sh` | The end-of-wave validation on `claude/integration`: every check area, the image builds, the `@smoke` browser specs on a throwaway stack, the iPad tests; one table of what passed |
 | `go-live.sh [branch]` | A branch on the owner's stack for the phone (above) |
 | `simulators.sh [ios\|android\|both] [--tree <dir>]` | The iPhone simulator and the Android emulator, each with the app built for the live stack and launched ([above](#the-phone-simulators)) |
