@@ -70,8 +70,11 @@ const SIZES: PanelState[] = ["peek", "half", "full"];
  * down and came back up (the owner's screen recording, 2026-11-16).
  */
 export const PILL_BODY = "invisible group-data-swiping/sheet:visible [&_*:not([data-pin-foot])]:transition-none";
-/** And a body that is the pill's one surface: its title row kept in sight. */
-export const AT_PILL = `${PILL_BODY} [&_[data-sheet-head]]:visible`;
+/** And a body that is the pill's one surface: its title row kept in sight,
+ *  and only the row: what a head shows under its name (CardHead's `below`,
+ *  the Brief's verdict) is not laid out there, as it made the head taller
+ *  than the pill's room and pushed the row's ✕ off the screen's foot. */
+export const AT_PILL = `${PILL_BODY} [&_[data-sheet-head]]:visible [&_[data-head-below]]:hidden`;
 
 const HANDED = "transition-opacity duration-(--motion-drawer) ease-(--motion-drawer-ease) motion-reduce:transition-none";
 /** What a sheet shows risen where its pill is not simply its top (FPL's
