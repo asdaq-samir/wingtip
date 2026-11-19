@@ -128,6 +128,10 @@ export function TimelineLine({
   const tank = point.role === "Departure" ? tanks.get("departure") : row ? tanks.get(row.key) : undefined;
   const reported = reportedOf(point.ident);
   const parts = field ? fieldParts(vm, field, row) : [];
+  // A stop's departure time under its arrival's, at the line's end, as the
+  // flight's own "Now" has the clock under it (the owner, 2026-11-19: "the
+  // next departure time"), not in its takeoff's tray below.
+  const leaves = parts.find((part) => part.role === "Depart" && part.leaves)?.leaves ?? null;
   // Each part's tray, a stop's takeoff a region of its own as the list
   // read in flight names it ("KMSN · Depart"); a procedure picked as its
   // short name's chip ("ILS 26 ⌄"), a kind not picked as "+ APCH"; the
@@ -138,7 +142,7 @@ export function TimelineLine({
         key={part.role}
         vm={vm}
         a={field!}
-        part={part}
+        part={leaves ? { ...part, leaves: null } : part}
         trailing={[
           ...part.kinds.map((k) => kindMenu(vm, field!, k, kindPicked(vm, field!, k) ? "chip" : "add")),
           // The destination's hold after its procedures (HoldChip), once
@@ -233,8 +237,12 @@ export function TimelineLine({
               owner, 2026-11-17: "Fuel should go right after airport"). */}
           {tank && <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />}
           <span className="flex-1" />
-          <span className={cn("relative z-10 shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
+          <span
+            className={cn("relative z-10 flex shrink-0 flex-col items-end leading-tight text-muted-foreground tabular-nums", TEXT.row)}
+            data-testid="timeline-time"
+          >
             {point.time}
+            {leaves}
           </span>
           {/* Its details' chevron, turned while they are open (the
               owner, 2026-11-19: "replace three lines with the arrow for
