@@ -151,9 +151,12 @@ RUN npx vite build --outDir /web/dist
 FROM maven:4.0.0-rc-7-eclipse-temurin-25 AS build
 COPY services/gateway/src ./src
 RUN mvn -q package -DskipTests
+RUN java -Djarmode=tools -jar target/*.jar extract --layers --destination extracted \
+      --application-filename app.jar
 
 FROM eclipse-temurin:25-jre
-COPY --from=build /build/target/*.jar app.jar
+COPY --from=build /build/extracted/dependencies/ ./
+COPY --from=build /build/extracted/application/ ./
 COPY --from=web /web/dist ./static/app
 ENV APP_STATIC_LOCATION=file:/app/static/app/
 CMD ["java", "-jar", "app.jar"]
@@ -161,10 +164,15 @@ CMD ["java", "-jar", "app.jar"]
 
 Three `FROM` lines means three stages. The first has Node and builds the
 React bundle; the second has the full Maven toolchain (hundreds of MB)
-and compiles a JAR; the third starts fresh from a much smaller JRE-only
-base image and copies in just the JAR and the bundle (`COPY
---from=build`, `COPY --from=web`), which Spring serves from that
-directory. None of Node, Maven, the `.m2` cache or the source files make
+and compiles a JAR, which Spring Boot's `extract` then unpacks into a
+plain `app.jar` and the libraries beside it; the third starts fresh
+from a much smaller JRE-only base image and copies in just those and
+the bundle (`COPY --from=build`, `COPY --from=web`), which Spring serves
+from that directory. The libraries go in their own layer, before the
+application's, so a change to the gateway's code ships one small layer;
+and the JVM reads them as ordinary jars rather than through Spring
+Boot's loader of nested jars, which once closed a library under the
+running server (the Dockerfile says how). None of Node, Maven, the `.m2` cache or the source files make
 it into the final image. This is the standard pattern for any compiled
 language in Docker: build fat, ship thin. The first two stages are
 independent of each other, so a front-end change never re-runs Maven and

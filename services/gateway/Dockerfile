@@ -59,17 +59,38 @@ COPY services/planner/openapi.json /planner/openapi.json
 # wanted in the layer, where an edited test rebuilt the jar.
 COPY services/gateway/src/main ./src/main
 RUN mvn -B -q package -DskipTests -Dmaven.repo.local=/build/m2
+# The jar unpacked into a plain one and its libraries beside it (Spring
+# Boot's extract, a layer of files each), which the JVM's own class
+# loader reads, rather than run as the one jar of jars Spring Boot's
+# nested loader reads. That loader closed a library under a running
+# server: at the context's refresh, ClearCachesApplicationListener has
+# it close the jar files it keeps open while Tomcat, already
+# listening, loads its classes from them on the acceptor's thread. The
+# first connection to come in that instant failed with "Zip file
+# closed", NioSocketWrapper was then never loadable, and every later
+# connection was dropped: the gateway never became healthy (CI run
+# 44566705876, shard 1; 3 of 12 cold starts of that image here with a
+# client at its port, 0 of 12 of its jar unpacked). Unpacked, no nested jar is open to close, and
+# the class-data archive (docker-compose.yml's JAVA_TOOL_OPTIONS) can
+# hold the libraries' classes, which it skips in a jar of jars.
+RUN java -Djarmode=tools -jar target/*.jar extract --layers --destination extracted \
+      --application-filename app.jar
 
 FROM eclipse-temurin:25-jre@sha256:ecdc0adb37bde1a281c4d245a3cd535004b1fc8322d560f5b09463b248c81df0
 WORKDIR /app
-COPY --from=build /build/target/*.jar app.jar
+# Libraries first, the application last: a change to the gateway's own
+# code changes only the last layer.
+COPY --from=build /build/extracted/dependencies/ ./
+COPY --from=build /build/extracted/spring-boot-loader/ ./
+COPY --from=build /build/extracted/snapshot-dependencies/ ./
+COPY --from=build /build/extracted/application/ ./
 COPY --from=web /web/dist ./static/app
 ENV APP_STATIC_LOCATION=file:/app/static/app/
 # /cds: where the JVM keeps its class-data-sharing archive when
 # docker-compose.yml asks for one (-XX:+AutoCreateSharedArchive) -- a
 # named volume, so it outlives the container and the next start of the
 # same jar skips class loading and verification it already did.
-RUN useradd -m appuser && chown appuser /app/app.jar && mkdir /cds && chown appuser /cds
+RUN useradd -m appuser && mkdir /cds && chown appuser /cds
 USER appuser
 EXPOSE 8080
 CMD ["java", "-jar", "app.jar"]
