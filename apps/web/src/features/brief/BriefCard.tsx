@@ -11,7 +11,7 @@ import { CardLayer } from "../../components/sheet/CardLayer";
  * FPL's Brief, a card over it as an airport's is, at the owner's ask ("we
  * can have a brief button which can open a new brief card to have
  * everything preflight, depart, enroute, arrive. But FPL is simple with
- * route, navlog, profile and calculations"): the route's name and its plan
+ * route, navlog, profile and calculations"): "Brief" and its plan, the route first
  * at its head (CardHead) with whether to go under them (VerdictPill), then
  * when, one grouped list of the findings and the parts of the flight, and
  * the flight watch (BriefOverview round BriefGlance, the owner's pick of

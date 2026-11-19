@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { altitudesOf, visitKey } from "../../../lib/identSchema";
+import { altitudesOf, routeName, visitKey } from "../../../lib/identSchema";
 import { cruiseTasOf, shortName, taxiFuelOf } from "../../../lib/aircraftChoice";
 import { clockTime, flightLevel } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
@@ -113,7 +113,7 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
     },
     [altitudes, s.legs, s.nav, routeAirport],
   );
-  // Its head: the route by name, and its plan under it -- where from and
+  // Its head: "Brief", and its plan under it -- where from and
   // to, the airplane, the altitude, when -- as an airport's card has its
   // name and where it is. Worked out in a memo: the course's and the
   // airplane's fields handed to plain functions in the render counted, to
@@ -123,11 +123,13 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
   const briefLine = useMemo(() => {
     if (!course) return null;
     const cruiseFt = s.legs.length ? Math.max(...s.legs.map((leg) => leg.altitude_ft)) : null;
-    // The Brief's head's one line: the altitude, when and the airplane. No
-    // airport names: the title has the idents, and the names ran the line
-    // off a phone's width ("FL-145 · leaving now · Chicago Exec to Harry
-    // R…"; the owner, 2026-11-17: "Yes to all recs").
+    // The Brief's head's one line, under its title "Brief" (named as the
+    // Nav Log and the Profile are; the owner, 2026-11-19): the route by its
+    // idents, the altitude, when and the airplane. Idents, not airport
+    // names, which ran the line off a phone's width ("FL-145 · leaving now
+    // · Chicago Exec to Harry R…"; the owner, 2026-11-17: "Yes to all recs").
     return [
+      routeName(planned.dep, planned.dest, planned.stops),
       // Written as the route box writes it (FL-090), the owner's format.
       cruiseFt ? flightLevel(cruiseFt) : null,
       depart ? `leaving ${clockTime(new Date(depart))}` : "leaving now",
@@ -135,7 +137,7 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
     ]
       .filter(Boolean)
       .join(" · ");
-  }, [course, s.legs, aircraftLabel, depart]);
+  }, [course, s.legs, aircraftLabel, depart, planned.dep, planned.dest, planned.stops]);
   // The flight to save and file, and what the Brief reads of it
   // (useFlightToSave).
   const saving = useFlightToSave({
