@@ -28,7 +28,7 @@ The rules over all of it, as on the iPhone:
 
 | Area | What it is | Version on 2026-11-09 | Source |
 |---|---|---|---|
-| AppFunctions ("Android MCP") | The app's actions and entities as tools Gemini and the system's agents discover and run on the phone; Android 16+; Gemini's use is a private preview with an early-access programme | `androidx.appfunctions:appfunctions` and `-compiler` **1.0.0-rc01** (4 Nov 2026) | [AppFunctions](https://developer.android.com/ai/appfunctions), [release notes](https://developer.android.com/jetpack/androidx/releases/appfunctions), [Google Maven](https://dl.google.com/android/maven2/androidx/appfunctions/group-index.xml) |
+| AppFunctions ("Android MCP") | The app's actions and entities as tools Gemini and the system's agents discover and run on the phone; Android 16+; Gemini's use is a private preview with an early-access programme | `androidx.appfunctions:appfunctions` and `-compiler` **1.0.0** (stable, 18 Nov 2026) | [AppFunctions](https://developer.android.com/ai/appfunctions), [release notes](https://developer.android.com/jetpack/androidx/releases/appfunctions), [Google Maven](https://dl.google.com/android/maven2/androidx/appfunctions/group-index.xml) |
 | Android intelligence system | AppFunctions, remote MCP, and Computer Control (an upcoming API for the OEM's assistant to drive any app's UI, no app code) | Preview | [Intelligence system](https://developer.android.com/ai/intelligence-system), [Android Developer Summit, 5 Nov 2026](https://developer.android.com/blog/posts/android-intelligence-system-in-app-agents-ads) |
 | Connected Apps Platform | Reaching Gemini and Search with AppFunctions plus a remote MCP server; preview waitlist | Preview | same post, [Connected Apps](https://developers.google.com/connected-apps) |
 | ML Kit Prompt API (Gemini Nano) | Text and image prompts, system instructions, typed (structured) output, tool declarations, multi-turn, thinking mode, prefix caching; checks and downloads the model through AICore | `com.google.mlkit:genai-prompt` **1.0.0-beta5** (26 Oct 2026); minSdk 26 | [Prompt API](https://developers.google.com/ml-kit/genai/prompt/android), [ML Kit GenAI](https://developers.google.com/ml-kit/genai), [Google Maven](https://dl.google.com/android/maven2/com/google/mlkit/group-index.xml) |
@@ -99,7 +99,7 @@ each bound to `OPEN_APP_FEATURE`.
 
 ### Choices, and the current alternative
 
-- **AppFunctions 1.0.0-rc01 over the Agent API's AppFunctions path.**
+- **AppFunctions 1.0.0 over the Agent API's AppFunctions path.**
   `genai-agent` 1.0.0-alpha1 is built against AppFunctions alpha13: it
   references `androidx.appfunctions.metadata.AppFunctionName`, which
   beta01 moved to `androidx.appfunctions`, so with rc01 its discovery

@@ -73,7 +73,7 @@ coreSplashscreen = "1.2.0"
 # actions and entities offered to Gemini and the system's agents
 # (ai/functions/), its KSP compiler writing the service and its schema;
 # the release candidate, the owner's rule for a stock component.
-appfunctions = "1.0.0-rc01"
+appfunctions = "1.0.0"
 # ML Kit's Prompt API over Gemini Nano (AICore): the words, drafts and the
 # on-phone Ask with tools (ai/). Beta, the only release there is; the
 # Summarization, Proofreading and Rewriting APIs (1.0.0-beta1, May 2025,

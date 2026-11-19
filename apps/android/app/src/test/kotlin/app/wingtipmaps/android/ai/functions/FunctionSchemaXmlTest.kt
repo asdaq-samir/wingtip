@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /** The compiler's schema read back as Gemini Nano's tools, in the shape
- *  appfunctions-compiler 1.0.0-rc01 writes it. */
+ *  appfunctions-compiler 1.0.0 writes it. */
 class FunctionSchemaXmlTest {
     private val xml = """
         <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
