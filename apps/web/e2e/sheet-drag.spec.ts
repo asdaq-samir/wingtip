@@ -40,6 +40,11 @@ async function onGrabber(page: Page) {
 
 test("the panel follows a finger from its grabber out to the top, and down from its content's start", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  // On an iPhone SE's screen (375 x 667), so the Brief's Preflight has room
+  // to scroll past the drag whatever the day's weather adds to it: at 844
+  // tall it was about 230 past the screen on CI and less on the Mac, and
+  // the check below failed there (the night of 2026-11-19).
+  await page.setViewportSize({ width: 375, height: 667 });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   // The Brief's pages, half way as it opens: its tabs' bar and a page.
