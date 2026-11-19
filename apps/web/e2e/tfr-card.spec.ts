@@ -137,7 +137,10 @@ test("in 3D a tap on a TFR's volume opens its card by its address", async ({ pag
   await expect.poll(async () => Number((await gl.getAttribute("data-tfr3d")) ?? 0), { timeout: slow(60_000) }).toBeGreaterThan(0);
   await mapStill(page);
   const map = (await gl.boundingBox())!;
-  await page.mouse.click(map.x + map.width * 0.4, map.y + Math.min(map.height * 0.25, 200));
+  // Inside the stub's box, which stands over most of the country in the
+  // view, its top a quarter of the way down the screen: two fifths down
+  // is on it, clear of the fields' marks.
+  await page.mouse.click(map.x + map.width * 0.4, map.y + map.height * 0.4);
 
   await expect(page.getByTestId("tfr-card")).toBeVisible();
   expect(new URL(page.url()).searchParams.get("tfr")).toBe("6/4116");

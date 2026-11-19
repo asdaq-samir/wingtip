@@ -16,6 +16,7 @@ import {
 } from "./helpers";
 import { routeMenuSwitch } from "./mapCard";
 import { drawnMarks, markWith, tapMark } from "./marks";
+import { mapZoom } from "./mapZoom";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -92,23 +93,28 @@ test("plan page: every popup the map opens dismisses the same way", async ({ pag
 });
 
 test(
-  "plan page: a checkpoint picked on the map brings the map in to it, so there is no zoom button",
+  "plan page: a checkpoint tapped on the map opens its card at the pilot's zoom, so there is no zoom button",
   { tag: "@smoke" },
   async ({ page }) => {
     // The map's buttons had a zoom toggle between the whole route and the
-    // selected point; picking a point already does the one, and the wheel
-    // or a pinch the other.
+    // selected point; the wheel or a pinch does both. A thing tapped on
+    // the chart keeps the pilot's zoom and comes up above its card
+    // (docs/design/rules.md §14, 5), where a checkpoint's tap brought the
+    // map in to it.
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
     await expect(page.locator("[data-map-controls]")).toBeVisible();
     await expect(page.locator("[data-map-controls]").getByRole("button", { name: /zoom|fit route|show selected/i })).toHaveCount(0);
-    const zoomOfTiles = () => chartZoom(page);
-    const before = await zoomOfTiles();
+    await mapStill(page);
+    const before = await mapZoom(page);
     // A checkpoint drawn at this zoom: those without room for their dots
     // wait for the map to come in, and those a higher mark covers are
     // left out until then (MapLibre's collision).
     await tapMark(page, "route-marks", /^\d+$/);
-    await expect.poll(zoomOfTiles, { timeout: slow(10000) }).toBeGreaterThan(before);
+    const card = page.locator("[data-sheet-card]").filter({ visible: true }).last();
+    await expect(card).toContainText("nm along", { timeout: slow(10000) });
+    await mapStill(page);
+    expect(await mapZoom(page)).toBeCloseTo(before, 2);
     await expect.poll(async () => (await drawn(page, "route-line")).length).toBeGreaterThan(0);
   },
 );

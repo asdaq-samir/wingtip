@@ -64,6 +64,25 @@ export function tapHit(map: MlMap, tap: GlTap, point: { x: number; y: number }):
   return nearestHit(found, point, r, (at) => map.project(at));
 }
 
+/** The tap a finger's tap is for and what it found: the lowest rank that
+ *  finds anything, and of that rank's taps the one whose mark is nearest
+ *  the finger. An airplane drawn under the finger won over nothing of its
+ *  own rank before; a field's mark 20 points off, registered first, took
+ *  the tap at a pick's zoom (tracking.spec). */
+export function pickTap(map: MlMap, taps: Iterable<GlTap>, point: { x: number; y: number }) {
+  let best: { tap: GlTap; hit: MapGeoJSONFeature } | null = null,
+    near = Infinity;
+  for (const tap of [...taps].sort((a, b) => a.rank - b.rank)) {
+    if (best && tap.rank > best.tap.rank) break;
+    const hit = tapHit(map, tap, point);
+    if (!hit) continue;
+    const at = hit.geometry.type === "Point" ? map.project(hit.geometry.coordinates as [number, number]) : point;
+    const d = Math.hypot(at.x - point.x, at.y - point.y);
+    if (d < near) [best, near] = [{ tap, hit }, d];
+  }
+  return best;
+}
+
 /** Of the features MapLibre found in a finger's square, the one the tap
  *  is for: a mark (a point) only where its point is within `reach` of the
  *  finger, its 44-point target, the nearest first; a line or an area in
