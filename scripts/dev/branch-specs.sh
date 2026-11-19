@@ -17,10 +17,12 @@
 # fix after a pass runs the specs the fix reaches, not the branch's whole
 # set again (the owner, 2026-11-19: that cost 15 minutes a push); the
 # whole set is the pull request's, as before. Otherwise it builds this
-# checkout's page into apps/web/dist-branch, serves it on BRANCH_SPECS_PORT
-# (4174) with the API passed to the local stack's gateway on :8080, which
-# must be up (scripts/dev/go-live.sh --up), and runs the specs on the phone
-# project with CI's waits, each heavy step in its turn of one-at-a-time.sh.
+# checkout's page into apps/web/dist-branch, serves it on a free port (the
+# server's own pick, so two worktrees' runs never share one;
+# BRANCH_SPECS_PORT fixes one) with the API passed to the local stack's
+# gateway on :8080, which must be up (scripts/dev/go-live.sh --up), and
+# runs the specs on the phone project with CI's waits, each heavy step in
+# its turn of one-at-a-time.sh.
 # A clean pass adds "<commit> <tree>" to branch-specs-passed; the pre-push
 # hook asks for the pushed tree there before a push that changes the web
 # app. Every line is a pass from the base or from an earlier line, so the
@@ -30,13 +32,13 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin
 turn="$here/scripts/dev/one-at-a-time.sh"
-port=${BRANCH_SPECS_PORT:-4174}
+port=${BRANCH_SPECS_PORT:-}
 list="" from_base=""
 for a in "$@"; do
   case $a in
     --list) list=1 ;;
     --from-base) from_base=1 ;;
-    *) sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'; exit 64 ;;
+    *) sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//'; exit 64 ;;
   esac
 done
 stamp="$(git -C "$here" rev-parse --git-dir)/branch-specs-passed"
@@ -104,11 +106,20 @@ image=$(sed -nE 's/^ *PLAYWRIGHT_IMAGE: *([^ ]+).*/\1/p' "$here/.github/workflow
 vol=wingtip-npm-branch-specs-$({ cat "$here/apps/web/package-lock.json"; echo "$image"; } | shasum -a 256 | cut -c1-12)
 auth=$(sed -n 's/^MAILPIT_UI_AUTH=//p' "$HOME/Developer/wingtip/.env" 2>/dev/null || true)
 # shellcheck disable=SC2086 # one argument per spec file
-"$turn" "branch-specs e2e ($(basename "$here"))" docker run --rm --network host -e CI=1 -e PORT="$port" \
-  -e BASE_URL="http://localhost:$port" -e MAILPIT_URL=http://localhost:8025 -e MAILPIT_UI_AUTH="$auth" \
+"$turn" "branch-specs e2e ($(basename "$here"))" docker run --rm --network host -e CI=1 ${port:+-e PORT="$port"} \
+  -e MAILPIT_URL=http://localhost:8025 -e MAILPIT_UI_AUTH="$auth" \
   -v "$here/apps/web:/w" -v "$vol:/w/node_modules" -w /w "$image" sh -c '
     [ -f node_modules/.package-lock.json ] || npm ci --no-audit --no-fund --loglevel=error
+    # The page on the port its server was given (serve-dist.mjs), and the
+    # tests at that one: another worktree may be running its own beside it.
     node scripts/serve-dist.mjs dist-branch > /tmp/serve.log 2>&1 &
-    npx playwright test --project=mobile --reporter=list "$@"' sh $specs
+    for _ in $(seq 1 100); do
+      port=$(sed -n "s/^serve-dist: .* on :\([0-9]*\),.*/\1/p" /tmp/serve.log)
+      [ -n "$port" ] && break
+      sleep 0.1
+    done
+    [ -n "$port" ] || { cat /tmp/serve.log; exit 1; }
+    echo "branch-specs: the page on :$port"
+    BASE_URL=http://localhost:$port npx playwright test --project=mobile --reporter=list "$@"' sh $specs
 record
 echo "branch-specs: passed; recorded for commit $(git -C "$here" rev-parse --short=12 HEAD), tree ${tree:0:12}"

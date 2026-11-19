@@ -2,12 +2,14 @@
 # A local copy of the stack CI's e2e job runs the browser suite against, as
 # one command (the owner, 2026-11-19), for a spec that fails on CI and not
 # beside the live stack, and for validate-wave.sh's browser step, which runs
-# on it. It never touches the owner's stack: its own compose project on
-# shifted ports (never 8080 or 8443), and `down` takes it all away.
+# on it. It never touches the owner's stack, nor another worktree's: a
+# compose project of this worktree's own on ports Docker picks, and `down`
+# takes it all away.
 #
 #   scripts/dev/ci-stack.sh up [--no-build]   build (--no-build: the images built already), start, wait until warm
 #   scripts/dev/ci-stack.sh page              build the page again (the gateway serves it at once)
 #   scripts/dev/ci-stack.sh run [--cpus N] [playwright args...]
+#   scripts/dev/ci-stack.sh port              the host ports it was given
 #   scripts/dev/ci-stack.sh logs              the stack's logs
 #   scripts/dev/ci-stack.sh down              containers, volumes, network, images and page gone
 #
@@ -31,19 +33,24 @@
 # --grep @smoke); --project=mobile is added when none is given.
 #
 # Heavy steps (the image and page builds, the run) take their turn of
-# scripts/dev/one-at-a-time.sh. CI_STACK_PROJECT (wingtip-ci) and
-# CI_STACK_GATEWAY_PORT, _MAILPIT_PORT and _PLANNER_PORT (28080, 28025,
-# 28084: clear of the 18xxx a hand-made CI clone takes, the checks skill) name
-# it; one such stack at a time on these ports.
+# scripts/dev/one-at-a-time.sh. The project is wingtip-ci-<worktree>
+# (CI_STACK_PROJECT names another), and its gateway, inbox and planner are
+# published on free ports Docker chooses, read back with `docker compose
+# port`, so two worktrees' stacks never meet: a fixed port shared by two
+# runs of branch-specs.sh sent one's tests to the other's server, 330
+# "connection refused" when it stopped (2026-11-19). `up` prints them.
+# CI_STACK_GATEWAY_PORT, _MAILPIT_PORT and _PLANNER_PORT fix them instead,
+# for a person signing in by hand (the emailed link is to the gateway's).
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")/../.." && pwd)
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin
 turn="$here/scripts/dev/one-at-a-time.sh"
-project=${CI_STACK_PROJECT:-wingtip-ci}
-gateway_port=${CI_STACK_GATEWAY_PORT:-28080}
-mailpit_port=${CI_STACK_MAILPIT_PORT:-28025}
-planner_port=${CI_STACK_PLANNER_PORT:-28084}
+tree=$(basename "$here" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9\n' '-')
+project=${CI_STACK_PROJECT:-wingtip-ci-${tree#wingtip-}}
+gateway_port=${CI_STACK_GATEWAY_PORT:-}
+mailpit_port=${CI_STACK_MAILPIT_PORT:-}
+planner_port=${CI_STACK_PLANNER_PORT:-}
 seed=${CI_STACK_SEED_DATA:-$HOME/Developer/wingtip/data/raw}
 page=$here/apps/web/dist-ci
 override=$(git -C "$here" rev-parse --absolute-git-dir)/ci-stack.$project.yml
@@ -51,7 +58,7 @@ images="gateway planner weather"
 say() { echo "ci-stack: $*"; }
 
 for p in "$gateway_port" "$mailpit_port" "$planner_port"; do
-  case $p in 8080 | 8443 | 8025 | 8084) say "port $p is the owner's stack's; choose another" >&2; exit 64 ;; esac
+  case $p in 8080 | 8443 | 8025 | 8084 | 5432) say "port $p is the owner's stack's; choose another" >&2; exit 64 ;; esac
 done
 
 # The ports and images CI's override names are the runner's; here the
@@ -84,8 +91,16 @@ EOF
 stack() {
   [ -f "$override" ] || write_override
   env -u PUBLISH_ADDRESS -u PHONE_BASE_URL -u DEV_PUBLISH_ADDRESS -u MAILPIT_UI_AUTH -u WEB_DIST_MOUNT \
-    APP_PUBLIC_BASE_URL="http://localhost:$gateway_port" \
+    ${gateway_port:+APP_PUBLIC_BASE_URL="http://localhost:$gateway_port"} \
     docker compose -p "$project" -f "$here/docker-compose.yml" -f "$here/infra/docker-compose.ci.yml" -f "$override" "$@"
+}
+
+# The host ports of a running stack, as Docker published them.
+ports() {
+  gateway_port=$(stack port gateway 8080 2>/dev/null | sed 's/.*://')
+  mailpit_port=$(stack port mailpit 8025 2>/dev/null | sed 's/.*://')
+  planner_port=$(stack port planner 8000 2>/dev/null | sed 's/.*://')
+  [ -n "$gateway_port" ] && [ -n "$mailpit_port" ] && [ -n "$planner_port" ]
 }
 
 build_images() {
@@ -143,14 +158,15 @@ up() {
   # A session signed in on another stack is not this one's.
   rm -rf "$here/apps/web/e2e/.auth"
   stack down -v --remove-orphans >/dev/null 2>&1 || true
-  if curl -s -o /dev/null "http://localhost:$gateway_port/"; then
-    say "something else answers on :$gateway_port (CI_STACK_GATEWAY_PORT chooses another)" >&2
+  if [ -n "$gateway_port" ] && curl -s -o /dev/null "http://localhost:$gateway_port/"; then
+    say "something else answers on :$gateway_port (leave CI_STACK_GATEWAY_PORT unset for a free one)" >&2
     return 1
   fi
   if ! stack up -d --no-build --wait db mailpit gateway planner weather; then
     stack logs --no-color --tail 60 gateway planner weather
     return 1
   fi
+  ports || { say "no published ports"; return 1; }
   for _ in $(seq 1 240); do curl -sf -o /dev/null "http://localhost:$gateway_port/app/plan" && break; sleep 1; done
   for _ in $(seq 1 1200); do curl -sf "http://localhost:$planner_port/" | grep -q '"warm":true' && break; sleep 1; done
   if ! curl -sf "http://localhost:$planner_port/" | grep -q '"warm":true'; then
@@ -171,6 +187,7 @@ run() {
   local cpus=() image vol project_arg=(--project=mobile) a
   if [ "${1:-}" = --cpus ]; then cpus=(--cpus "${2:?--cpus N}"); shift 2; fi
   for a in "$@"; do case $a in --project*) project_arg=() ;; esac; done
+  ports || { say "$project is not up (ci-stack.sh up)" >&2; return 2; }
   curl -sf -o /dev/null "http://localhost:$gateway_port/app/" || { say "not up on :$gateway_port (ci-stack.sh up)" >&2; return 2; }
   image=$(sed -nE 's/^ *PLAYWRIGHT_IMAGE: *([^ ]+).*/\1/p' "$here/.github/workflows/ci.yml" | head -1)
   # The suite's packages, as installed in the Playwright image, kept in a
@@ -198,7 +215,8 @@ case $cmd in
   up) up "$@" ;;
   page) build_page ;;
   run) run "$@" ;;
+  port) ports && echo "gateway $gateway_port mailpit $mailpit_port planner $planner_port" ;;
   logs) stack logs --no-color --timestamps planner gateway weather ;;
   down) down ;;
-  *) sed -n '2,37p' "$0" | sed 's/^# \{0,1\}//'; [ "$cmd" = -h ] || [ "$cmd" = --help ] ;;
+  *) sed -n '2,43p' "$0" | sed 's/^# \{0,1\}//'; [ "$cmd" = -h ] || [ "$cmd" = --help ] ;;
 esac

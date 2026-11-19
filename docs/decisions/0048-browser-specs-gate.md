@@ -93,9 +93,15 @@ stack had no quick way to be run on one.
    up|page|run|logs|down` starts CI's e2e stack from the worktree
    (docker-compose.yml with infra/docker-compose.ci.yml, the cut Chicago
    overlay tiles, `CHARTS_AUTO_REFRESH=0`, the images built from the
-   checkout and its page mounted over the gateway's) under its own compose
-   project on ports 28080, 28025 and 28084, never 8080 or 8443; `run`
+   checkout and its page mounted over the gateway's) under a compose
+   project of the worktree's own on free ports Docker picks, never 8080 or
+   8443; `run`
    takes Playwright's arguments, with `CI=1`, `--retries=0` and an optional
    `--cpus N`; `down` removes its containers, volumes, network, images and
    page. `scripts/dev/validate-wave.sh`'s browser step now runs on it
    rather than on a copy of its own.
+3. **No fixed ports.** `branch-specs.sh` served every worktree's page on
+   4174, and two runs at once shared it: when one's server stopped, the
+   other's tests met 330 "connection refused". Its page server now takes
+   a free port and the tests are pointed at it, and `ci-stack.sh`'s
+   project and ports are the worktree's own, as above.
