@@ -856,7 +856,12 @@ them); nothing is handed over at the pill, where two copies flickered. It measur
 FPL's bar and route are laid out at the pill with `RISEN_FACE`
 (SheetParts' `rises`), in sight from the finger's first move by
 visibility alone, as the cards' bodies come into sight (`PILL_BODY`,
-nothing in it eased at the pill); a tap on the held figures raises the
+nothing in it eased at the pill), on a phone only: the desktop's side
+panel has no detents and no finger takes it, so there they are not laid
+out at the pill, the figures alone its pill (SheetParts' `DESK_PILL`,
+FplRoute's `data-pill-keeps`), and the panel is as tall as what is in
+sight (503 px, mostly empty, before; the owner, 2026-11-19: desktop cards
+keep one height); a tap on the held figures raises the
 sheet to half as a tap on the foot does; `feel("detent")`
 as the sheet settles (MapPanel); in flight the tiles are `FplActions`
 at the top of the flying drawer. Under the folded route, `FplRoute`: the

@@ -536,7 +536,9 @@ off by default (the owner, 2026-11-13).
    sheet (the owner, 2026-11-16: "can we make it a shared code for all
    cards?"): what the sheet shows risen is laid out at the pill too, out
    of sight, and comes into sight by CSS the moment a finger takes the
-   sheet, nothing built or swapped while it moves; where the pill's face
+   sheet, nothing built or swapped while it moves (on a phone: the
+   desktop's side panel has no detents, nothing is laid out out of sight
+   there, and its cards keep one height; the owner, 2026-11-19); where the pill's face
    is not the sheet's top (FPL's figures at the foot), it fades out as
    the risen face (the actions' bar) fades in, in the sheet's settle
    time. A light tick as it settles where the browser has one. In flight the

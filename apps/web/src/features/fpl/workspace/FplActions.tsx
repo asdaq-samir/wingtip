@@ -92,7 +92,8 @@ export function FplRoute({
   const figures = useRef<HTMLDivElement>(null);
   usePinAtFoot(figures, SHEET_FOOT, { on: ground && !editing, held: ground && !panelOpen });
   return (
-    <div className="flex w-full min-w-0 flex-1 flex-col">
+    // The figures alone are the side panel's pill (SheetParts' DESK_PILL).
+    <div className="flex w-full min-w-0 flex-1 flex-col" data-pill-row="">
       {/* The suggested routes' pills just above the stops, out while the
           first row's button is on (RoutesToggle; the owner, 2026-11-17:
           "Which shows route pills just above the stops"), where they were a
@@ -105,7 +106,7 @@ export function FplRoute({
         </section>
       )}
       <RouteHead vm={vm} />
-      <div className={cn("pt-2 pb-1", editing && "hidden")}>
+      <div className={cn("pt-2 pb-1", editing && "hidden")} data-pill-keeps="">
         <div ref={figures} data-pin-foot="" className={cn(PIN_AT_FOOT, PINNED)}>
           {!editing && <FlightFigures vm={vm} grow={false} />}
         </div>
