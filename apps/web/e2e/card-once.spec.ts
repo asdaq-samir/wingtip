@@ -279,6 +279,9 @@ test("a kept card closes where it is, the map's buttons never off the screen", a
   await settled(page.locator("[data-sheet-card]").filter({ has: page.getByTestId("console-sheet") }));
   const you = page.getByTestId("console-sheet");
   await expectDrawnOnce(page, () => closeCard(page, "console-close").then(() => expect(you).toHaveCount(0)), { maxMoves: 0 });
+  // Back on FPL, the sheet's second page, whose Nav Log and Profile these
+  // are: You was opened over the search's page.
+  await showPage(page, 1);
   await openNavLog(page);
   await settled(page.locator("[data-sheet-card]").filter({ has: navLogSheet(page) }));
   await expectDrawnOnce(page, () => closeCard(page, "navlog-close").then(() => expect(navLogSheet(page)).toBeHidden()), { maxMoves: 0 });
