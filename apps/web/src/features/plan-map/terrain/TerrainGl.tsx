@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDrawnStretch } from "./heightStretch";
 import { useGlMap } from "../../../lib/map/gl/glLayer";
+import { coarseGroundOnSoftware } from "../../../lib/map/gl/softwareGl";
 import AirspaceVolumesGl from "./AirspaceVolumesGl";
 import { planAltitudes } from "./airspaceShelves";
 import AloftGl from "./AloftGl";
@@ -98,6 +99,8 @@ export default function TerrainGl({
   useEffect(() => {
     if (!raised) return;
     map.setTerrain({ source: DEM, exaggeration: stretch });
+    // A coarser ground where WebGL has no graphics chip (softwareGl).
+    coarseGroundOnSoftware(map);
     map.getContainer().dataset.heightStretch = String(stretch);
   }, [map, raised, stretch]);
   if (!raised) return null;

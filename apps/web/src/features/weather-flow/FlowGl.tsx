@@ -20,7 +20,7 @@ import { FlowPins } from "./FlowPins";
 import { fileOf, levelShown } from "./flowLevels";
 import { STREAK_RAMP, hasStreaks, lookOf, streaksAt, type ShownField } from "./flowLook";
 import { pictureQuery, useFlowTexture } from "./flowTexture";
-import { softwareGl } from "./softwareGl";
+import { softwareGl } from "../../lib/map/gl/softwareGl";
 import { useWeatherFlow, type FlowFrame, type FlowLayer } from "./useWeatherFlow";
 
 /** A streak's width, CSS pixels: a hairline, as Apple's are. */

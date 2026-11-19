@@ -1,3 +1,5 @@
+import type { Map as GlMap } from "maplibre-gl";
+
 /** A software rasteriser's name in WebGL's unmasked renderer string:
  *  Chrome's SwiftShader, Mesa's llvmpipe and softpipe, Windows' Basic
  *  Render Driver (WARP). */
@@ -26,4 +28,22 @@ export function softwareGl(): boolean {
     // Asked as a hint: where it cannot be asked, the streaks move.
   }
   return software;
+}
+
+/** The 3D ground's mesh on a software renderer, squares a tile side
+ *  (MapLibre's own is 128). */
+const SOFTWARE_MESH = 32;
+
+/**
+ * The 3D ground made coarser where WebGL has no graphics chip under it,
+ * once the map's terrain is set (TerrainGl). Each tile's mesh is MapLibre's
+ * 128 squares a side, every vertex reading the heights, and on a software
+ * renderer that was nearly the whole of a 3D frame: 0.8 to 1.4 s of the
+ * Studio's chase view on two cores, 0.2 s at 32 (CI's SwiftShader, where
+ * studio, terrain and airspace-3d.spec ran out their two minutes waiting
+ * on frames). A height every eight of the DEM's pixels still stands the
+ * ground up. Where there is a graphics chip, MapLibre's own.
+ */
+export function coarseGroundOnSoftware(map: GlMap) {
+  if (softwareGl() && map.terrain) map.terrain.meshSize = SOFTWARE_MESH;
 }
