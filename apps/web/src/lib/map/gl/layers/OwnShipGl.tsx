@@ -14,6 +14,14 @@ import { TAP } from "./common";
 /** The location arrow's close-in, in the app's levels. */
 const LOCAL_ZOOM = 9;
 
+/** The last recentre (own ship's `recentred`) flown to or let go, kept for
+ *  the page rather than the map's mount: locateOnOpen asks for the position
+ *  as the page opens, and when the map came up after that ask it took the
+ *  ask as done already, so the first fix was only followed, at the
+ *  country's zoom (sheet-fly-here's KMSN never drawn, 3 runs in 8). A map
+ *  made again still does not fly to an old recentre. */
+let flownRecentre = 0;
+
 /**
  * Own ship as a MapLibre marker: an element the map places in the same
  * frame it draws the chart, so it stays on its point through a pinch, at
@@ -41,13 +49,13 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
   const marker = useRef<Marker | null>(null);
   // The mark's HTML as last written (drawOwnShip).
   const drawn = useRef("");
-  const flown = useRef(recentred);
+  const flown = useRef(flownRecentre);
   useEffect(() => {
     marker.current = ownShipMarker();
     // A drag ends the follow (the camera's owner), and a flight to the
     // position still waiting on its fix is let go.
     const stop = (e: { originalEvent?: Event }) => {
-      if (e.originalEvent) flown.current = useOwnShip.getState().recentred;
+      if (e.originalEvent) flown.current = flownRecentre = useOwnShip.getState().recentred;
     };
     map.on("dragstart", stop);
     return () => {
@@ -76,7 +84,7 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
     const camera = cameraOf(map);
     const intent = simulated ? "dry-run" : "own-ship";
     if (flown.current !== recentred) {
-      flown.current = recentred;
+      flown.current = flownRecentre = recentred;
       const zoom = recentreZoom !== null ? glZoom(recentreZoom) : Math.max(map.getZoom(), glZoom(LOCAL_ZOOM));
       camera.pick([fix.lon, fix.lat], { zoom, duration: SHEET_SECONDS * 2000, keeps: intent });
       return;

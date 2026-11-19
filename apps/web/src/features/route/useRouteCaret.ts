@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useLayoutEffect, useRef, type MouseEvent, ty
 import { TokenFieldValue } from "react-aria-components";
 import { setTokenFieldSelection } from "react-aria-components/TokenField";
 import type { Detour } from "../../lib/api/types";
+import { focusAsShown } from "../../lib/focusAsShown";
 import { prefersReducedMotion } from "../../lib/motion";
 import { caretBefore, type RouteValue } from "./routeTokens";
 
@@ -122,22 +123,9 @@ export function useRouteCaret({
   useEffect(() => {
     if (!adding) return;
     askedNow();
-    // Asked as a card over the sheet goes (the Profile's Add a Stop): the
-    // sheet comes back into sight a frame or two after the card leaves
-    // (SheetDrawer's GIVE_WAY, a visibility transition), and a field still
-    // hidden takes no focus -- the box said "A stop here" with no caret in
-    // it (plans.spec, "no legal altitude", 2026-11-13). Asked again as it
-    // shows, for half a second at most.
-    let frame = 0;
-    let frames = 0;
-    const again = () => {
-      const el = field.current;
-      if (!el || document.activeElement === el || ++frames > 30) return;
-      if (el.checkVisibility({ visibilityProperty: true })) askedNow();
-      else frame = requestAnimationFrame(again);
-    };
-    frame = requestAnimationFrame(again);
-    return () => cancelAnimationFrame(frame);
+    // Asked as a card over the sheet goes, asked again as the field shows
+    // (plans.spec, "no legal altitude", 2026-11-13).
+    return focusAsShown(() => field.current, askedNow);
   }, [adding, field]);
   // Idents, typed in capitals, not words for the keyboard to correct; its
   // Return says Done. TokenInput passes no such props, so they are the

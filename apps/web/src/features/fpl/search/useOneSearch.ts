@@ -12,6 +12,7 @@ import { keptOf, keptPlane } from "./keptAircraft";
 import { useRadioActions } from "../../../lib/atcRadio";
 import { SCREENS, type ScreenId } from "../../../lib/navigation/generated/screens";
 import { wantScreen } from "../../../lib/navigation/wanted";
+import { focusAsShown } from "../../../lib/focusAsShown";
 import { takeSearchAsk, useSearchAsk, useSearchPick } from "../../../lib/oneSearch";
 import { usePickScope } from "./usePickScope";
 import { POSITION_NAME, positionIdent } from "../../../lib/identSchema";
@@ -299,24 +300,34 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   // ⌘K, `/`, the Map menu's row and D ask for the field (lib/oneSearch):
   // focused within the ask, so the keyboard comes up.
   const input = vm.search.searchInput;
-  useEffect(
-    () =>
-      useSearchAsk.subscribe(({ ask }) => {
-        if (!ask) return;
-        takeSearchAsk();
-        setDirect(ask.mode === "direct");
-        setProblem(null);
-        // A picker's ask on the Search page, where its field and rows are:
-        // asked from FPL (the route box's Departure), it focused a field on
-        // the page not up, and nothing seemed to happen (2026-11-13). Any
-        // ask while that page is put away likewise. The page drawn up before
-        // the focus: put away it is inert (SheetPage), and an inert field
-        // takes no focus, so the route box's stop asked for none came.
-        if (ask.mode === "pick" || input.current?.closest("[inert]")) flushSync(() => pickView("search"));
-        input.current?.focus();
-      }),
-    [input, pickView],
-  );
+  useEffect(() => {
+    let stop = () => {};
+    const unsubscribe = useSearchAsk.subscribe(({ ask }) => {
+      if (!ask) return;
+      takeSearchAsk();
+      setDirect(ask.mode === "direct");
+      setProblem(null);
+      // A picker's ask on the Search page, where its field and rows are:
+      // asked from FPL (the route box's Departure), it focused a field on
+      // the page not up, and nothing seemed to happen (2026-11-13). Any
+      // ask while that page is put away likewise. The page drawn up before
+      // the focus: put away it is inert (SheetPage), and an inert field
+      // takes no focus, so the route box's stop asked for none came.
+      if (ask.mode === "pick" || input.current?.closest("[inert]")) flushSync(() => pickView("search"));
+      input.current?.focus();
+      // Asked as a card goes (the Profile's Add a Stop): the sheet under it
+      // is still hidden, and the field takes the focus as it shows.
+      stop();
+      stop = focusAsShown(
+        () => input.current,
+        () => input.current?.focus(),
+      );
+    });
+    return () => {
+      unsubscribe();
+      stop();
+    };
+  }, [input, pickView]);
 
   return {
     typed,
