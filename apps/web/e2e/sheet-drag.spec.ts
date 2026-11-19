@@ -136,8 +136,17 @@ test("a flick goes on the way it was thrown: up from the pill, down from all the
     const box = (await firstRow(page).boundingBox())!;
     const at = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     const cdp = await page.context().newCDPSession(page);
+    // Each event stamped a frame (16 ms) after the last, the times the
+    // Drawer reads the throw's speed from, whatever the time it takes to
+    // send one: on a loaded runner the release came 90 ms after the last
+    // move, which the Drawer rightly reads as a finger held still and let
+    // go -- not a flick -- and the sheet stayed where it was (CI, shard 9
+    // of run 44566705876; and here under a 6x CPU throttle, 3 runs of 4,
+    // on main's build as on this one).
+    const start = Date.now() / 1000;
+    let frame = 0;
     const touch = (type: string, p?: { x: number; y: number }) =>
-      cdp.send("Input.dispatchTouchEvent", { type, touchPoints: p ? [{ ...p, id: 1 }] : [] });
+      cdp.send("Input.dispatchTouchEvent", { type, touchPoints: p ? [{ ...p, id: 1 }] : [], timestamp: start + 0.016 * frame++ });
     await touch("touchStart", at);
     for (let i = 1; i <= 2; i++) await touch("touchMove", { x: at.x, y: at.y + (dy * i) / 2 });
     await touch("touchEnd");
