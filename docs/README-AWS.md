@@ -49,7 +49,7 @@ pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                           caddy ─▶ gateway ─▶ planner (the chart model and the engine in-process)
                                      └──▶ db (Postgres 18, on the data disk)
                           ingest (the FAA's SWIM feeds, the followed airplanes, 384 MB) ─▶ SQLite
-                          weather (METARs, TAFs, advisories, the GFS's winds, GLMP, TFRs, 384 MB)
+                          weather (METARs, TAFs, advisories, the GFS's winds, GLMP, TFRs, 768 MB)
                                      ─▶ the weather store; both on the data disk, which the planner reads
                           nightly pg_dump ─▶ S3 server bucket (14 days)
 

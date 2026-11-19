@@ -30,6 +30,24 @@ const chip = async (page: Page, ident: string) => (await chips(page)).find((c) =
 /** KORD's mark drawn on the map's canvas, where it is on the page. */
 const ord = (page: Page) => markWith(page, "class-b-fields", "KORD");
 
+/** KORD's mark on the screen. On a desktop the route's whole view runs the
+ *  window's height, and O'Hare, south of C81, is drawn just past its foot
+ *  (MapLibre places a mark a little out of the view): dragged up into
+ *  sight first, as a pilot would, where a tap or the wheel off the window
+ *  was lost. A phone's view, narrower, is further out and has it in sight. */
+async function ordInSight(page: Page) {
+  const viewport = page.viewportSize()!;
+  const at = (await ord(page)())!;
+  if (at.y <= viewport.height - 60) return at;
+  const from = { x: viewport.width - 200, y: viewport.height / 2 };
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(from.x, from.y - (at.y - viewport.height * 0.6), { steps: 10 });
+  await page.mouse.up();
+  await mapStill(page);
+  return (await ord(page)())!;
+}
+
 /** The route on the map: its destination drawn, which is after the
  *  course has arrived and the marks laid out. It used to be a flat four
  *  seconds a test. */
@@ -118,7 +136,7 @@ test("tapping one opens its card in the panel, with Fly Here, as any airport on 
   // from C81's chip, which the map's one tap takes first within its reach
   // (TAP.rank): closer in round O'Hare, so the tap is plainly its.
   await expect.poll(ord(page), { timeout: slow(30000) }).not.toBeNull();
-  const at = (await ord(page)())!;
+  const at = await ordInSight(page);
   await page.mouse.move(at.x, at.y);
   await page.mouse.wheel(0, -600);
   await tapMark(page, "class-b-fields", "KORD");
@@ -153,6 +171,7 @@ test("on the training map, which has no card, a tap brings the field to the map'
   await expect(page.getByTestId("gl-map")).toHaveAttribute("data-chart-kinds", "sec tac");
 
   await mapStill(page);
+  await ordInSight(page);
   const before = await mapZoom(page);
   await tapMark(page, "class-b-fields", "KORD");
   // GlMapShell's data-center, the map's middle once at rest.
@@ -184,6 +203,8 @@ test("on an IFR base, the IFR area chart is drawn at a Class B field", async ({ 
   await page.getByTestId("base-chart-select").getByRole("button", { name: "IFR low" }).click();
   await page.keyboard.press("Escape");
 
+  await mapStill(page);
+  await ordInSight(page);
   await tapMark(page, "class-b-fields", "KORD");
   await expect.poll(() => areaTiles.length, { timeout: 20000 }).toBeGreaterThan(0);
 });

@@ -39,7 +39,13 @@ function SelectTrigger({ className, size = "default", children, ...props }: Sele
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon render={<ChevronsUpDownIcon className="pointer-events-none size-4" />} />
+      {/* The chevron inside Select.Icon's span, not as its render: Base UI
+          gives the Icon a "▼" child of its own, which a rendered svg then
+          held as a stray text node, read into the trigger's text
+          ("Within 25 nm▼", stops-sheet.spec). */}
+      <SelectPrimitive.Icon className="flex">
+        <ChevronsUpDownIcon className="pointer-events-none size-4" />
+      </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
 }

@@ -17,7 +17,10 @@ test("a fresh device opens straight onto the map, and About says what the planne
   });
   await page.goto("/app/plan");
   await settle(page);
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  // Nothing to accept: no dialog but the map's own sheet, which on a phone
+  // is Base UI's stock Drawer, a non-modal dialog by its own role (decision
+  // 0018; sheet-cards.spec leaves it out the same way).
+  await expect(page.locator('[role="dialog"]:not([data-slot="map-panel"])')).toHaveCount(0);
   await expect(page.getByText("Before you fly")).toHaveCount(0);
 
   // The console's About page says it again in full, at

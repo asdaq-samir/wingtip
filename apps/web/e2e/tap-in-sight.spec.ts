@@ -8,15 +8,18 @@ import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
  * iPhone, 2026-11-14: "When I tap the EON ... It flickers" -- the map eased
  * the VORTAC up over its card, and half a second later own ship's next GPS
  * fix eased it back to the pilot's position, as the tap had left own ship
- * followed (OwnShipGl). The GPS here is a fake one standing south of
- * Chicago, its next fix sent while the card is up. Against the planner's overlay tiles round Chicago (in CI
- * the suite's own), where Peotone's VORTAC, EON, is.
+ * followed (OwnShipGl). The GPS here is a fake one standing over
+ * Chicago, its next fix sent while the card is up. The VOR tapped is
+ * Chicago Heights' VORTAC, CGT, not the owner's EON: Peotone (41.27 N) is
+ * south of the box CI's overlay tiles are cut to (41.4 to 43.4 N,
+ * scripts/build/e2e-overlay-tiles.sh), so CI never drew it; CGT, 15 nm
+ * north-east of it, is inside, and as low on the chart over the pill.
  */
 
 test.use({ permissions: ["geolocation"] });
 
-/** Where the fake GPS stands: over Chicago, north of EON (41.27, -87.79), so
- *  the map, opened on it, has EON low on the chart over the search's pill. */
+/** Where the fake GPS stands: over Chicago, north of CGT (41.51, -87.57), so
+ *  the map, opened on it, has CGT low on the chart over the search's pill. */
 const HERE = { lat: 42.2, lon: -87.85 };
 
 async function standing(page: Page) {
@@ -62,10 +65,10 @@ async function standing(page: Page) {
   }, HERE);
 }
 
-/** EON's mark on the page, as NavaidsGl's probe has it; null while it is not drawn. */
-async function eon(page: Page): Promise<{ x: number; y: number } | null> {
+/** CGT's mark on the page, as NavaidsGl's probe has it; null while it is not drawn. */
+async function vor(page: Page): Promise<{ x: number; y: number } | null> {
   const box = (await page.getByTestId("gl-map").first().boundingBox())!;
-  const mark = (await drawn(page, "navaid-marks")).find((m) => m.ident === "EON");
+  const mark = (await drawn(page, "navaid-marks")).find((m) => m.ident === "CGT");
   return mark ? { x: box.x + Number(mark.x), y: box.y + Number(mark.y) } : null;
 }
 
@@ -76,8 +79,8 @@ test("a VOR tapped low on the chart is brought over its card once, and own ship'
   await settle(page);
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1, { timeout: slow(15000) });
   await mapStill(page);
-  await expect.poll(() => eon(page), { timeout: slow(30000) }).not.toBeNull();
-  const tapped = (await eon(page))!;
+  await expect.poll(() => vor(page), { timeout: slow(30000) }).not.toBeNull();
+  const tapped = (await vor(page))!;
   // On the chart, under where the card comes to rest at half.
   expect(tapped.y).toBeLessThan((await frontSheet(page).boundingBox())!.y);
   // Every frame for three and a half seconds from the tap, as painted:
@@ -98,13 +101,13 @@ test("a VOR tapped low on the chart is brought over its card once, and own ship'
       }),
   );
   await page.mouse.click(tapped.x, tapped.y);
-  // The GPS's next fix once the card is up and EON brought over it.
+  // The GPS's next fix once the card is up and CGT brought over it.
   await page.waitForTimeout(1500);
   await page.evaluate(() => (window as unknown as { __nextFix: () => void }).__nextFix());
   const frames = await recording;
   const card = page.locator("[data-sheet-card][data-open]");
   await expect(card).toHaveAttribute("data-panel", "half");
-  // One move, to bring EON out from under the card.
+  // One move, to bring CGT out from under the card.
   const starts = frames.filter((f, i) => f.moving && !frames[i - 1]?.moving).length;
   expect(starts).toBe(1);
   // Where it ended held from then on, the GPS fix among it, for a second at least.
@@ -113,9 +116,9 @@ test("a VOR tapped low on the chart is brought over its card once, and own ship'
   const after = frames.slice(ended);
   expect(after[after.length - 1]!.t - after[0]!.t).toBeGreaterThan(1000);
   expect(after.every((f) => !f.moving && f.center === after[0]!.center)).toBe(true);
-  // And EON in sight over the card.
+  // And CGT in sight over the card.
   await mapStill(page);
-  expect((await eon(page))!.y).toBeLessThan((await card.boundingBox())!.y);
+  expect((await vor(page))!.y).toBeLessThan((await card.boundingBox())!.y);
 });
 
 test("an airport tapped low on the chart below zoom 9 is eased over its card once, never flown to", async ({ page }) => {

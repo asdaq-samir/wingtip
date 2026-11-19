@@ -151,6 +151,12 @@ button,
 body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-food]) {
   opacity: 0;
   pointer-events: none;
+  /* Gone for the keyboard and VoiceOver too: at nought opacity, ridden
+     past the screen's top, the account button still took a Tab and was
+     read out, and was a button "in sight" no finger could reach
+     (tab-consistency.spec's openConsole, the night of 2026-11-19). Shown
+     again at once as the sheet comes down, the opacity fading it in. */
+  visibility: hidden;
   /* Gone at once, back with the fade: riding a card that rises all the way
      (Settings from the Map card's gear opens there), they went past the
      screen's top while still fading, 200 px over a card moving faster than

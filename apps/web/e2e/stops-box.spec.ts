@@ -203,7 +203,10 @@ test("an airport's card adds it as the route's next stop; a card of the route's 
   await page.goto("/app/plan?dep=C81&stops=KJVL&dest=KMSN&place=KDLH");
   const add = page.getByTestId("place-add-stop");
   await expect(add).toBeVisible({ timeout: slow(30000) });
-  await expect(add).toHaveText("Add Stop");
+  // Its name, not its text: on a desktop its key, Alt+S, is shown beside
+  // the word (the owner, 2026-11-09), hidden from the name it is read by
+  // (CardAction's aria-hidden Kbd, its aria-keyshortcuts).
+  await expect(add).toHaveAccessibleName("Add Stop");
   await add.click();
   await expect(page).toHaveURL(stopsAre("KJVL,KDLH"));
   await expect(page).toHaveURL(/[?&]dest=KMSN/);

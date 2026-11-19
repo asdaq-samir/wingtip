@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { settle, sideDrawer } from "./helpers";
+import { inSheet, settle, sideDrawer } from "./helpers";
 
 /**
  * A frequency wherever it is shown is copied by a tap (components/
@@ -25,7 +25,10 @@ test("an airport's frequency is copied as pilots write it, and says so where it 
   await card.getByTestId("place-tab-radio").click();
   const tower = card.getByTestId("place-frequency").filter({ hasText: "Tower" }).first();
   const copy = tower.getByTestId("frequency-copy");
-  await copy.scrollIntoViewIfNeeded();
+  // The card opens at half, where its body does not scroll (rules.md,
+  // "Grow, then scroll"): a row under the half's edge is pulled up into
+  // sight first, as a pilot does, not scrolled behind the pinned head.
+  await inSheet(page, copy);
   await expect(copy).toHaveAccessibleName(/^Copy .*Tower 118\.3$/);
   await copy.click();
   await expect(copy).toHaveText("Copied");

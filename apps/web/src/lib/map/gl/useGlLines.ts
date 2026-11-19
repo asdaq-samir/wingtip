@@ -4,7 +4,13 @@ import { useGlData, useGlLayer, type Slot } from "./glLayer";
 import { useGlProbe } from "./useGlProbe";
 
 // Each line drawn, by its name where it has one, for the browser tests.
-const DRAWN = (f: MapGeoJSONFeature) => (f.properties.name ? { drawn: true, name: f.properties.name } : { drawn: true });
+// With its colour, which says what a run is: a flown track's black where it
+// kept to the course, red where it did not (TracksGl's FlownTrackGl).
+const DRAWN = (f: MapGeoJSONFeature) => ({
+  drawn: true,
+  colour: f.properties.colour as string,
+  ...(f.properties.name ? { name: f.properties.name } : {}),
+});
 
 export interface GlRun {
   /** [lat, lon], as the app keeps its lines. */

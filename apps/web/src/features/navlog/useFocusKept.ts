@@ -23,8 +23,14 @@ export function useFocusKept(
     const lost = hadFocusRef.current && document.activeElement === document.body;
     hadFocusRef.current = false;
     if (!lost) return;
-    pagesRef.current?.closest<HTMLElement>("[data-sheet-card]")?.focus({ preventScroll: true });
+    const card = pagesRef.current?.closest<HTMLElement>("[data-sheet-card]");
+    card?.focus({ preventScroll: true });
     const frame = requestAnimationFrame(() => {
+      // Only while the card still holds it: a key pressed in that frame (an
+      // arrow along the tabs) has moved it on, and taking it back put the
+      // focus on the old tab again 4 ms after the arrow moved it
+      // (checkpoints.spec, 3 of 4 runs, the night of 2026-11-19).
+      if (document.activeElement !== card && document.activeElement !== document.body) return;
       const to = tab
         ? headRef.current?.querySelector<HTMLElement>(`[data-testid="panel-tab-${tab}"]`)
         : pagesRef.current?.querySelector<HTMLElement>("button, a[href], [tabindex='0']");

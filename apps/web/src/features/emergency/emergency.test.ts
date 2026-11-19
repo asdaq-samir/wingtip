@@ -56,6 +56,26 @@ describe("the emergency assistant, by the engine", () => {
     expect(said(second!.ident)).toMatch(/military/i);
   });
 
+  test("the field picked stays ranked when a newer answer no longer lists it, its figures from own ship now", () => {
+    const data = planner();
+    const picked = data.fields.at(-1)!;
+    const ranked = bestFields({ ...data, fields: data.fields.slice(0, -1) }, FIX, -3.5, picked);
+    const kept = ranked.fields.find((f) => f.ident === picked.ident);
+    // As the engine ranks it among them all, not a figure kept from before.
+    expect(kept).toEqual(bestFields(data, FIX, -3.5).fields.find((f) => f.ident === picked.ident));
+  });
+
+  test("the field picked stays at the foot where the engine's best few leave it out", () => {
+    // Twelve fields, the engine's best ten: the last of all ranked is the one picked.
+    const data = planner();
+    const many = { ...data, fields: Array.from({ length: 12 }, (_, i) => ({ ...data.fields[i % data.fields.length]!, ident: `F${i}` })) };
+    const order = bestFields(many, FIX, -3.5).fields.map((f) => f.ident);
+    expect(order).toHaveLength(10);
+    const left = many.fields.find((f) => !order.includes(f.ident))!;
+    const ranked = bestFields(many, FIX, -3.5, left);
+    expect(ranked.fields.map((f) => f.ident)).toEqual([...order, left.ident]);
+  });
+
   test("with no airplane the glide is not guessed: nearest first", () => {
     const ranked = bestFields(planner(false), FIX, null);
     expect(ranked.needs_airplane).toBe(true);

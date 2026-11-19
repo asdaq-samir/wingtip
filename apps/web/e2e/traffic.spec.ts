@@ -185,6 +185,14 @@ test("an answer missed while the map is panned is not said; traffic is said unav
         ? route.fulfill({ status: 503, json: { detail: "Traffic isn't available right now: adsb.lol has not answered for a minute." } })
         : route.fulfill({ json: TRAFFIC }),
   );
+  // The TFRs answered, none: a feed of the stack's that fails too -- CI's,
+  // whose weather service was restarting before it had fetched them --
+  // puts its own line in the map's one banner beside this one, which then
+  // reads "2 problems", traffic's words folded under it (ProblemBanner).
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/tfrs"),
+    (route) => route.fulfill({ json: { tfrs: [] } }),
+  );
   await page.clock.install();
   await page.goto("/app/plan?place=C81");
   await settle(page);
@@ -210,7 +218,8 @@ test("an airplane's card opens at its size: where it left and its record come in
   await expectDrawnOnce(
     page,
     async () => {
-      await row.tap();
+      // Clicked: the project has no touch screen, and a tap() threw there.
+      await row.click();
       await expect(page.getByTestId("flight-card")).toBeVisible();
     },
     { card: "flight-card", maxMoves: Number.POSITIVE_INFINITY, shiftBudget: 0.01, settleMs: 2500 },

@@ -22,8 +22,14 @@ test("profile: the slider, its tag and the ruler all say the planned cruise, wit
   // with the tag (it sat a step a row down the graph, at about 9,500).
   const wheel = card.getByRole("slider", { name: "Cruise altitude" });
   await expect(wheel).toHaveAttribute("aria-valuenow", String(cruiseFt));
-  const knob = await card.locator("[data-slot=slider-thumb]").boundingBox();
-  const tag = await card.getByTestId("mini-profile-cruise").boundingBox();
+  // Both read in one frame: the card is still easing into its place as it
+  // opens, and two reads a frame or two apart differed by the slide (4.7 px
+  // on CI's slower runner, nightly run 44503184146), not by the scales.
+  const [knob, tag] = await card.evaluate((c) =>
+    ["[data-slot=slider-thumb]", "[data-testid=mini-profile-cruise]"].map(
+      (s) => c.querySelector(s)!.getBoundingClientRect().toJSON() as DOMRect,
+    ),
+  );
   expect(Math.abs(knob!.y + knob!.height / 2 - (tag!.y + tag!.height / 2))).toBeLessThan(4);
   // The ruler's figures and the tag beside the slider's track, not under it.
   expect(tag!.x).toBeGreaterThanOrEqual(knob!.x + knob!.width);

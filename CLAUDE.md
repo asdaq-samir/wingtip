@@ -103,8 +103,12 @@ integration branch"):
   `vitest <files>` or `--changed`, `pytest <paths>`, `cargo test -p
   <crate>`, `gradlew … --tests <class>`, `xcodebuild … -only-testing:<class>`.
   A few minutes, never a whole suite. No browser run while coding (the
-  owner, 2026-11-14): a spec is written with the code and runs at the
-  wave's validation on CI.
+  owner, 2026-11-14): a spec is written with the code. **When a piece's
+  web code is done, the browser specs it reaches pass before its push**
+  (hard rule, decision 0048): `scripts/dev/branch-specs.sh` (the local
+  stack up) runs them on the branch's own page and records the pass; the
+  pre-push hook refuses a web push without one. A red spec is fixed, never
+  skipped, loosened or moved to the night.
 - Work that builds on an unmerged branch merges that branch in; nothing
   waits for a merge.
 - **The order, a hard rule** (the owner, 2026-11-14: "make all the code
@@ -130,9 +134,10 @@ integration branch"):
   narrow test run at any time and refuses a whole suite until the live
   stack runs the current `claude/integration`.
 - **Then one validation pass, on GitHub** (decision 0042): the wave's
-  pull request to `main` and its CI (tier 1, about three minutes), plus
-  the browser specs the wave touched; the full browser suite stays CI's
-  nightly (decision 0034), and the Mac runs no suite for it. A failure is
+  pull request to `main` and its CI (tier 1, about three minutes), whose
+  "CI passed" waits for every browser spec the wave reaches (decision
+  0048, 6 to 15 minutes more on a web change); the full browser suite
+  stays CI's nightly (decision 0034), and the Mac runs no suite for it. A failure is
   reproduced with its narrow test, fixed in one commit set and pushed
   once; the pull request merges by itself once "CI passed" is green
   (auto-merge-agents.yml). Nothing merges red. CI failures are fixed in

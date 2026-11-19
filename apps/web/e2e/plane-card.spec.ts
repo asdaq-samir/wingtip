@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, slow } from "./helpers";
+import { inSheet, settle, slow } from "./helpers";
 import { FAA } from "./faaRecord";
 
 /**
@@ -89,8 +89,10 @@ test("an airplane not heard now has its registration and type from the FAA's rec
   expect(Math.abs(pic!.width - list!.width)).toBeLessThan(4);
   await expect(card.getByTestId("flight-trail-empty")).toHaveText("Its flights could not be fetched", { timeout: slow(30_000) });
 
-  // Scrolled to its end, its last row is in sight.
+  // Scrolled to its end, its last row is in sight: the card pulled up
+  // first, as a pilot does, since at half a card's body does not scroll
+  // (it opens at half, rules.md's "Detents" and "Grow, then scroll").
   const last = card.getByTestId("faa-airworthiness");
-  await last.scrollIntoViewIfNeeded();
+  await inSheet(page, last);
   await expect(last).toBeInViewport();
 });

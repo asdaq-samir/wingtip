@@ -97,6 +97,12 @@ export const RISEN_OVER = `${PILL_BODY} ${HANDED} opacity-0 group-data-swiping/s
  *  takes some of it back (FplTabBar). */
 export const EDGE_ROOM = "max(0px, calc(8px - env(safe-area-inset-bottom) - var(--drawer-keyboard-inset, 0px) * 1000))";
 
+/** The room under a card's content (SheetCard), 16 points or the home
+ *  indicator's inset: its last row clear of the screen's foot. A card's
+ *  floating tab bar (CardTabBar) takes it back, so the bar rests in the
+ *  same place scrolled to the end as it does pinned. */
+export const CARD_FOOT_ROOM = "max(1rem, env(safe-area-inset-bottom))";
+
 /** Held at a sheet's free edge however far the sheet is slid: moved back by
  *  the Drawer's snap offset and the finger's movement, on its curve, held
  *  still under a finger -- the foot's figures and bar (SheetParts), a

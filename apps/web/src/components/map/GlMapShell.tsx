@@ -10,6 +10,8 @@ import { SheetCard } from "../SheetCard";
 import { DRAWER_MS } from "../sheet/insets";
 import { drawerEasing } from "./drawerEasing";
 import { useRouteFit } from "./useRouteFit";
+import { useIsMobile } from "../../hooks/use-mobile";
+import { useOwnShip } from "../../lib/map/position/ownShip";
 import { useTappedInSight } from "./cardRoom";
 import { useSheetSlide } from "./useSheetSlide";
 import { REVEAL_EVENT, loaded, makeMap, overlaysOf, padOf, picturesDrawn, picturesReady } from "./makeMap";
@@ -274,6 +276,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   // again at the room now left by the camera's owner, not stopped by a
   // second move.
   const sliding = useSheetSlide(map, insetsRef);
+  const onPhone = useIsMobile();
   const follow = useCallback(
     (to: MapInsets) => {
       const was = insetsRef.current;
@@ -285,11 +288,20 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       // A card come or gone: its room is the map's from now on, the chart
       // kept where it is under it, what was tapped brought into sight once
       // the card is up if it hides it (useTappedInSight). Half way to all
-      // the way up and back the map stays put.
-      const how = to.card || was.card ? "still" : to.up !== was.up && to.out === was.out ? "set" : "ease";
-      cameraOf(map).room(padOf(to), how, { duration: DRAWER_MS, easing: drawerEasing });
+      // the way up and back the map stays put. A desktop's side panel put
+      // in to its pill or out again leaves the chart where it is too, as
+      // Maps on a Mac leaves its map as the sidebar comes and goes: its
+      // room's middle moves across and up the window, and eased there the
+      // route slid half under the pill, the pill's height told a render
+      // after its size (route-fit.spec's desktop runs, 2026-11-19). Own
+      // ship followed stays in the middle of the room, as on a phone.
+      const own = useOwnShip.getState();
+      const card = !!(to.card || was.card);
+      const still = card || (!onPhone && !(own.enabled && own.follow));
+      const how = still ? "still" : to.up !== was.up && to.out === was.out ? "set" : "ease";
+      cameraOf(map).room(padOf(to), how, { duration: DRAWER_MS, easing: drawerEasing }, card);
     },
-    [map, sliding],
+    [map, sliding, onPhone],
   );
   // Told as the room changes, in the store's own call, not a render and an
   // effect later.

@@ -91,7 +91,12 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   // The gusts' crosswind, the figure held against the demonstrated
   // (features/brief/runwayCheck), on one row; what to do under its tap
   // (the owner, 2026-11-16: the Brief less cluttered).
-  await expect(runways.getByTestId("brief-line-words")).toContainText(/C81 has 22 kt across, past the POH's demonstrated$/);
+  // C81's is the stubbed wind; the destination's is the day's own report,
+  // which may name its runway too ("…, Runway 27 at KDLH has 18 kt across,
+  // …", CI on 2026-11-19), so only C81's figure and the line's end are held.
+  const words = runways.getByTestId("brief-line-words");
+  await expect(words).toContainText("C81 has 22 kt across");
+  await expect(words).toContainText(/, past the POH's demonstrated$/);
   // The rest folded into one row, and none where everything else is fine.
   if (await glance.getByTestId("brief-rest").count())
     await expect(glance.getByTestId("brief-rest-words")).toContainText(/more to look at|Still checking/);

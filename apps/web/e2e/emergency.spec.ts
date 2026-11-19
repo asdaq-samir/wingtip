@@ -165,10 +165,17 @@ test("each field's row says its reported visibility, and none where the report g
   const said = sheet.getByTestId("emergency-field-visibility");
   await expect(said).toHaveCount(1);
   await expect(said).toHaveText("Visibility 10+ sm");
+  // The fields are asked for again as own ship moves, so one may be on its
+  // way through the callback above as the test ends: let it go quietly, or
+  // Playwright counts its route.fetch against the run (the night of
+  // 2026-11-19, "1 error was not a part of any test").
+  await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
 test.describe("from the search, where the pilot is", () => {
-  test.use({ geolocation: { latitude: 42.3246, longitude: -88.0741 }, permissions: ["geolocation"] });
+  // A finger's tap on the search's row (row.tap), so the page has touch:
+  // the mobile and desktop projects have none of their own.
+  test.use({ geolocation: { latitude: 42.3246, longitude: -88.0741 }, permissions: ["geolocation"], hasTouch: true });
 
   test("Emergency opens at its size: Direct To and the fields come into the room held for them", async ({ page }) => {
     await installFrameRecorder(page);

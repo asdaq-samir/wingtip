@@ -4,7 +4,7 @@ import { AirspaceGl } from "../../components/map/layers/AirspaceGl";
 import { LandWaterGl, OverlayGl } from "../../lib/map/gl/layers/BaseGl";
 import { ChartGl } from "../../lib/map/gl/layers/ChartGl";
 import { RadarFrameGl } from "../weather-loop";
-import { loadReplayLayers, loadTerrainGl } from "../plan-map";
+import { loadReplayLayers, loadTerrainGl, ReliefGl } from "../plan-map";
 import { ExportMapGl, type ReplayTrack } from "../replay";
 
 // The one 3D view (features/plan-map/terrain), Plan's and Dev's, and the
@@ -19,6 +19,9 @@ const ReplayTrackGl = lazy(loadReplayLayers);
  * replay's camera on it (TerrainGl, features/replay/camera) -- the same 3D
  * view as Plan's; the radar mosaic at the replay's moment (`radar`, the
  * loop's own layer); and the map handed to a video's export (ExportMapGl).
+ * The relief (ReliefGl) is mounted here as on Plan's map: the 3D view
+ * stands the ground up on its source and waits for it, so without it the
+ * Studio stayed flat and the replay's camera never came on.
  * `googleOff`: the model's word that Google's overlay is left off while a
  * video is rendered (useStudio).
  */
@@ -27,6 +30,7 @@ export function StudioMap({ track, radar, googleOff }: { track: ReplayTrack | nu
     <GlMapShell course={null} focus={null} focusZoom={12} place={null}>
       <LandWaterGl />
       <ChartGl course={null} publicOnly />
+      <ReliefGl />
       {!googleOff && <OverlayGl />}
       {radar && <RadarFrameGl key={radar} url={radar} />}
       <AirspaceGl />

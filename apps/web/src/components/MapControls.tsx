@@ -122,6 +122,9 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
   // The group of buttons, one soft card of glass.
   const group = (
     <div
+      // The group's own mark, for the browser tests: the compass and the 3D
+      // button stand over it in the same column from md up.
+      data-map-group=""
       className={cn(
         // One soft rounded card of glass round them, as Apple Maps on
         // the web groups its map button over its location arrow (the

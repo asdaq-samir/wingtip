@@ -19,6 +19,10 @@ export interface RouteShape {
   hasDep: boolean;
   hasDest: boolean;
   isEnd: (ident: string) => boolean;
+  /** The destination as the pilot typed it, where the plan has named it
+   *  anew by its field's ICAO ident since (useRouteTidy: "OSH" typed is
+   *  KOSH); the point the route goes on past is this (withTyped). */
+  typedDest?: string | null;
 }
 
 /** The points of a route, in the order flown. */
@@ -109,21 +113,41 @@ export function withoutPoint(shape: RouteShape, i: number): RouteParts | null {
  * the first airport typed is the departure, the last the destination.
  * The route, or null where it would break routeOf's rules, and where the
  * caret goes next: after what was put in, or (null) after the last point.
+ *
+ * Where the route `goesOn` -- the words typed end in a SID or STAR, whose
+ * field is still to be typed -- the last point typed is no destination:
+ * "OSH OSHH2" says OSH is the STAR's transition fix, flown through, and
+ * the destination comes after it (readTyped). The route stays without one
+ * till it is typed. And the destination the route goes on past is the
+ * point as typed (`typedDest`), not the field the plan named it by as an
+ * end: three letters that are both a navaid and a field's FAA ident are
+ * the navaid where the route flies on through them, as a flight plan
+ * reads them (the planner's resolve_stop: "RFD" is the Rockford DME, the
+ * airport KRFD; FAA JO 7350.9's three-letter location identifiers are
+ * shared by a navaid and its field, OSH the Oshkosh VORTAC and Wittman
+ * Regional's FAA ident). Made a stop at KOSH, it was landed at.
  */
-export function withTyped(shape: RouteShape, fresh: string[], at: number | null): { route: RouteParts | null; next: number | null } {
+export function withTyped(
+  shape: RouteShape,
+  fresh: string[],
+  at: number | null,
+  goesOn = false,
+): { route: RouteParts | null; next: number | null } {
   const { points, hasDep, hasDest, isEnd } = shape;
-  if (!points.length) return { route: routeOf(fresh, isEnd(fresh[0]!), fresh.length > 1 && isEnd(fresh.at(-1)!), isEnd), next: null };
+  if (!points.length)
+    return { route: routeOf(fresh, isEnd(fresh[0]!), !goesOn && fresh.length > 1 && isEnd(fresh.at(-1)!), isEnd), next: null };
   if (at !== null && at < points.length) {
     const departure = at === 0 && !hasDep && isEnd(fresh[0]!);
     const list = [...points.slice(0, at), ...fresh, ...points.slice(at)];
     return { route: routeOf(list, hasDep || departure, hasDest, isEnd), next: at + fresh.length };
   }
   const dest = points.at(-1)!;
-  if (!isEnd(fresh.at(-1)!)) {
+  if (!goesOn && !isEnd(fresh.at(-1)!)) {
     const list = [...points.slice(0, hasDest ? -1 : undefined), ...fresh, ...(hasDest ? [dest] : [])];
     return { route: routeOf(list, hasDep, hasDest, isEnd), next: null };
   }
-  return { route: routeOf([...points, ...fresh], hasDep, true, isEnd), next: null };
+  const passed = hasDest ? [...points.slice(0, -1), shape.typedDest || dest] : points;
+  return { route: routeOf([...passed, ...fresh], hasDep, !goesOn, isEnd), next: null };
 }
 
 /**
@@ -136,12 +160,13 @@ export function withTyped(shape: RouteShape, fresh: string[], at: number | null)
  * with the points typed either side of it, to be picked once the route is
  * in. Procedures are read only where the box has somewhere to send them.
  * `words` are the words read, for what is held to come after them
- * (releaseTyped); `cruiseFt` the cruise a group typed asks for.
+ * (releaseTyped); `cruiseFt` the cruise a group typed asks for; `goesOn`
+ * where they end in a procedure, its field still to come (withTyped).
  */
 export function readTyped(
   typed: string[],
   withProcedures: boolean,
-): { fresh: string[]; procedures: TypedProcedure[]; words: string[]; cruiseFt: number | null } {
+): { fresh: string[]; procedures: TypedProcedure[]; words: string[]; cruiseFt: number | null; goesOn: boolean } {
   const { words, cruiseFt } = filedWords(typed.map((t) => t.trim().toUpperCase()).filter(Boolean));
   const isProcedure = (word: string) => withProcedures && TYPED_PROCEDURE.test(word);
   const procedures = words.flatMap((word, i) =>
@@ -163,7 +188,9 @@ export function readTyped(
     .filter((w) => !isProcedure(w))
     .map(stopOf)
     .filter(Boolean);
-  return { fresh, procedures, words, cruiseFt };
+  // Words that end in a procedure end before its field: the route goes
+  // on past the last point (withTyped).
+  return { fresh, procedures, words, cruiseFt, goesOn: !!words.length && isProcedure(words.at(-1)!) };
 }
 
 /** The words a route typed whole says, by the engine's reader, word by
