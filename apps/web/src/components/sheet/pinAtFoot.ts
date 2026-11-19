@@ -86,9 +86,10 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       // owner's "When I tap the fuel and close it, the strip becomes bigger
       // hiding the departure" (2026-11-17). Measured again as it comes back.
       if (edge && edge.getClientRects().length === 0) return;
-      const natural = row.getBoundingClientRect().bottom - moved(row) - moved(row.closest(SHEET));
+      const sheet = row.closest(SHEET);
+      const natural = row.getBoundingClientRect().bottom - moved(row) - moved(sheet);
       const room = restingEdge(edge) - natural;
-      row.style.setProperty("--pin-room", `${room}px`);
+      setRoom(row, `${room}px`, sheet ? getComputedStyle(sheet).getPropertyValue("--sheet-offset") : "");
       row.toggleAttribute("data-pinned", pinnedNow(heldNow.current, moved(row.closest(SHEET)), room));
       const bar = edge?.querySelector<HTMLElement>("[data-makes-way]");
       if (bar) bar.style.setProperty("--pin-bar-room", `${barRoom(restingTop(bar), natural)}px`);
@@ -130,6 +131,35 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
 }
 
 const SHEET = ".group\\/sheet";
+
+/** The sheet's offset at each row's last measure (setRoom). */
+const offsetAtMeasure = new WeakMap<HTMLElement, string>();
+
+/**
+ * The row's room set, eased only with the sheet. The row's ease is there
+ * to follow the sheet's slide (PIN_AT_FOOT); a room changed with the sheet
+ * where it was is the route above the row grown or shrunk (its timeline
+ * come in, a stop added), and eased it threw the pill's figures down off
+ * the screen's foot and slid them back up over the ease's time, as the
+ * row's place in the page moved at once and its transform followed slowly
+ * (brief-glance.spec: 193 points down at the pill as the route came in, a
+ * layout shift of 0.017 under the opening Brief). So that change is set
+ * with no ease, committed at once (the computed transform read), and the
+ * ease put back for the sheet's next move.
+ */
+function setRoom(row: HTMLElement, room: string, offset: string) {
+  const was = row.style.getPropertyValue("--pin-room");
+  const still = offsetAtMeasure.get(row) === offset;
+  offsetAtMeasure.set(row, offset);
+  if (!was || was === room || !still) {
+    row.style.setProperty("--pin-room", room);
+    return;
+  }
+  row.style.transition = "none";
+  row.style.setProperty("--pin-room", room);
+  void getComputedStyle(row).transform;
+  row.style.removeProperty("transition");
+}
 
 /** How far `el` is moved down by its own transform now. */
 function moved(el: Element | null) {
