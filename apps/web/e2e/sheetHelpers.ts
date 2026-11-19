@@ -112,6 +112,12 @@ export async function sheetUpToType(page: Page) {
 export async function inSheet(page: Page, locator: Locator) {
   const panel = frontSheet(page);
   await locator.waitFor();
+  // Measured once the card is at rest: a card opened over one at full is
+  // drawn at the top and eases down to half over about 450 ms, already
+  // marked half, and a row measured on the way down read as on screen and
+  // was left under the edge (instrument-currency.spec, the night of
+  // 2026-11-19).
+  await settled(panel);
   const under = await locator.evaluate((el) => {
     const sheet = el.closest("[data-sheet-card], [data-slot=map-panel]");
     if (!sheet || sheet.getAttribute("data-panel") === "full") return false;
