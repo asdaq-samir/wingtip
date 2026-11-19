@@ -7,10 +7,11 @@ test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setu
 /**
  * The Brief at a glance (the owner's rule, 2026-11-03: "a pilot doesn't
  * want to spend too much time in studying the briefs so make it simpler
- * for them to just look and go"): the verdict, then at most three
- * one-sentence lines a pilot acts on, the rest folded into one row, and
- * a tap on a line unfolds why it matters with its rule and the report it
- * was read from. The briefing's answer is changed on its way in to put
+ * for them to just look and go"; his pick of option A, 2026-11-19): the
+ * verdict under the Brief's name, then one grouped list whose first rows
+ * are at most three one-sentence lines a pilot acts on, the rest folded
+ * into one row, and a tap on a line unfolds why it matters with its rule
+ * and the report it was read from. The briefing's answer is changed on its way in to put
  * a crosswind past the airplane's demonstrated on the departure.
  */
 
@@ -63,9 +64,10 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   await settle(page);
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);
-  const glance = sideDrawer(page).getByTestId("brief-glance");
+  const card = sideDrawer(page).getByTestId("brief-card");
+  const glance = card.getByTestId("brief-glance");
   // Runways in the verdict's line (with the day's risk, which may stop it).
-  await expect(glance.getByTestId("brief-verdict")).toContainText(/Runways/, { timeout: slow(30_000) });
+  await expect(card.getByTestId("brief-verdict")).toContainText(/Runways/, { timeout: slow(30_000) });
 
   // The lines a pilot acts on: at most three, each one sentence of at
   // most 140 characters, the crosswind's with its figures and its action.
@@ -74,8 +76,9 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   const count = await lines.count();
   expect(count).toBeGreaterThanOrEqual(1);
   expect(count).toBeLessThanOrEqual(3);
-  // Verdict first, then its lines (the owner, 2026-11-08: "Verdict first").
-  const top = async (id: string) => (await glance.getByTestId(id).first().boundingBox())!.y;
+  // Verdict first, then its lines (the owner, 2026-11-08: "Verdict first"),
+  // the lines the list's first rows.
+  const top = async (id: string) => (await card.getByTestId(id).first().boundingBox())!.y;
   expect(await top("brief-verdict")).toBeLessThan(
     await lines
       .last()
@@ -110,8 +113,10 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   );
   await expect(runways.getByTestId("brief-line-why")).toContainText("14 CFR 91.103(b)");
   await expect(runways.getByTestId("brief-line-raw")).toContainText("METAR C81 031753Z 36022G26KT");
-  // The cards with their figures still under the lines.
-  await expect(glance.locator("button[data-testid^='brief-glance-']")).toHaveCount(4);
+  // The parts of the flight with their figures under the lines, in the same list.
+  expect(await top("brief-line-runways")).toBeLessThan(await top("brief-glance-preflight"));
+  await expect(glance.getByTestId("brief-list").locator("button[data-testid^='brief-glance-']")).toHaveCount(4);
+  await expect(glance.getByTestId("brief-glance-depart")).toContainText(/Runway/);
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
@@ -126,7 +131,7 @@ test("a private destination is a line of the Brief: land only with the owner's p
   await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);
   const glance = sideDrawer(page).getByTestId("brief-glance");
-  await expect(glance.getByTestId("brief-verdict")).toBeVisible({ timeout: slow(30_000) });
+  await expect(sideDrawer(page).getByTestId("brief-card").getByTestId("brief-verdict")).toBeVisible({ timeout: slow(30_000) });
   const fields = glance.locator("[data-testid=brief-line-fields], [data-testid=brief-rest-fields]");
   await expect(fields).toHaveCount(1, { timeout: slow(15_000) });
   if (await glance.getByTestId("brief-line-fields").count()) {
@@ -152,9 +157,13 @@ test("the Brief opens at its size, and asking its weather again moves nothing", 
   // flicker audit's FL-21).
   await expectDrawnOnce(page, () => openBrief(page), { card: "brief-card", maxMoves: Number.POSITIVE_INFINITY, shiftBudget: 0.01 });
   const glance = sideDrawer(page).getByTestId("brief-glance");
-  await expect(glance.getByTestId("brief-verdict")).not.toHaveAttribute("data-finding", "pending", { timeout: slow(30_000) });
-  // Every part in, the last of them Ready to Fly's checks, before the ask again.
-  await expect(glance.getByTestId("ready-to-fly")).toBeVisible({ timeout: slow(30_000) });
+  await expect(sideDrawer(page).getByTestId("brief-card").getByTestId("brief-verdict")).not.toHaveAttribute("data-finding", "pending", {
+    timeout: slow(30_000),
+  });
+  // Every part in, the last of them Before You Go's count of what is left
+  // (Ready to Fly's) and the NOTAMs' count, before the ask again.
+  await expect(glance.getByTestId("ready-todo")).toBeVisible({ timeout: slow(30_000) });
+  await expect(glance.getByTestId("brief-notams-row")).not.toContainText("Ranking", { timeout: slow(30_000) });
   await expect(glance.getByTestId("departure-window-pending")).toHaveCount(0, { timeout: slow(30_000) });
   await page.waitForTimeout(3000);
   // The connection lost and back, as the phone does in a hangar: every

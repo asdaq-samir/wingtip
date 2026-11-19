@@ -26,8 +26,10 @@ import FindingIcon from "../../components/FindingIcon";
 import { Flag, PassNote, Pending } from "./BriefingBits";
 import { SUA_FINDING, SUA_WORDS } from "./briefingWords";
 import StatusBadge from "../../components/StatusBadge";
+import { ReadyToFly } from "../readyToFly";
+import { NotamRankingSection } from "../notamRanking";
 
-/** Preflight's sections its checks' tiles open (BriefChecks): the
+/** Preflight's sections its checks' rows open (BriefChecks): the
  *  airspace's, the risk's and the loading's. */
 const TILE_SECTIONS = ["TFRs & Special Use", "Risk Assessment", "Fuel", "Weight & Balance"];
 
@@ -40,20 +42,25 @@ interface Props {
   depart: string;
 }
 
-/** Preflight: the go / no-go first, then what is done before leaving --
- *  the airspace, the risk, the paperwork, the loading. */
+/** Preflight: the checks first, then what is left to do on this device
+ *  and the NOTAMs, then what is done before leaving -- the airspace, the
+ *  risk, the paperwork, the loading. */
 export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Props) {
-  const { items, line, landings, setFolds, printing, folds, assessment, briefingPendingMessage, ifr, planForms, briefing } = vm;
+  const { items, landings, setFolds, printing, folds, assessment, briefingPendingMessage, ifr, planForms, briefing } = vm;
   return (
     <>
       <BriefChecks
         items={items}
-        line={line}
         flight={`${landings.join("-")}|${depart}`}
         here={TILE_SECTIONS}
         onOpen={(section) => setFolds((open) => (open.includes(section) ? open : [...open, section]))}
       />
-      {/* What a tile opens, and what is done before leaving -- the
+      {/* What is left to do on this device, and the NOTAMs that matter:
+          the overview's Before You Go and NOTAMs rows open them here
+          (option A, the owner 2026-11-19). */}
+      <ReadyToFly />
+      <NotamRankingSection />
+      {/* What a row opens, and what is done before leaving -- the
           paperwork, the passengers -- a row each, at the owner's pick
           of the redesign: they were laid open, ten screens of them
           under the Go / No-Go. */}

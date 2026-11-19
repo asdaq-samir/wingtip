@@ -1,58 +1,46 @@
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { useId } from "react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "cn";
-import { CARD, TRIGGER } from "../../components/glanceLook";
 import KeptAge from "../../components/KeptAge";
+import SectionTitle from "../../components/SectionTitle";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { Skeleton } from "../../components/ui/skeleton";
 import { describeError } from "../../lib/api/client";
 import { notamCredit, notamNone } from "../../lib/notamCoverage";
 import { TEXT } from "../../lib/text";
-import { useNotamRanking } from "./useNotamRanking";
 import NotamLine from "./NotamLine";
 import NotamToolbar from "./NotamToolbar";
 import { useNotamMarks } from "./notamMarks";
-import { ALL_NOTAMS, arrangeNotams } from "./notamView";
+import { ALL_NOTAMS } from "./notamView";
+import { useArrangedNotams } from "./useArrangedNotams";
 
 /**
- * The Brief's NOTAMs that matter (useNotamRanking): the top three the
- * engine ranked for this flight, each with its line and its chip, then
- * the rest folded under "N more", none dropped; the feed's coverage line
- * under them (lib/notamCoverage), and none heard said as such, never as
- * no NOTAMs.
+ * The NOTAMs that matter (useNotamRanking), on Preflight, where the
+ * Brief's NOTAMs row opens them (option A, the owner 2026-11-19; they
+ * were a fold of the overview): the top three the engine ranked for this
+ * flight, each with its line and its chip, then the rest folded under "N
+ * more", none dropped; the feed's coverage line under them
+ * (lib/notamCoverage), and none heard said as such, never as no NOTAMs.
+ * How many there are beside its title, as the row says it.
  * Filtered, sorted, pinned and marked read as the pilot asks (web.md §6,
  * NotamToolbar, NotamLine): what the filters leave out is counted, with
  * Show All, so a NOTAM is folded or filtered by the pilot, never dropped.
- * All of it folded into one row that says how many there are, "NOTAMs · 3
- * that matter, 44 more", the way Every check is (the owner, 2026-11-16:
- * "How do we make brief less cluttered?"): three NOTAMs' lines and the
- * feed's line took a screen of the Brief.
  */
 export default function NotamRankingSection() {
-  const { shown, answer, error, pending, fetchedAt, failed } = useNotamRanking();
-  const filter = useNotamMarks((s) => s.filter);
-  const sort = useNotamMarks((s) => s.sort);
-  const pinned = useNotamMarks((s) => s.pinned);
-  const read = useNotamMarks((s) => s.read);
+  const { shown, answer, error, pending, fetchedAt, failed, all, top, rest, hidden, since, count } = useArrangedNotams();
   const setFilter = useNotamMarks((s) => s.setFilter);
+  const titleId = useId();
   if (!shown) return null;
-  const all = answer?.notams ?? [];
-  const { top, rest, hidden } = arrangeNotams(all, filter, sort, { pinned, read });
-  const since = answer?.coverage_since;
-  const count = pending
-    ? "Ranking…"
-    : all.length === 0
-      ? notamNone(since)
-      : `${top.length} that matter${rest.length ? `, ${rest.length} more` : ""}`;
   return (
-    <Collapsible className={CARD} data-testid="brief-notams">
-      <CollapsibleTrigger className={cn(TRIGGER, "items-center", TEXT.row)} data-testid="brief-notams-open">
-        <span className="min-w-0 flex-1">
-          NOTAMs <span className="text-muted-foreground">· {count}</span>
+    <section aria-labelledby={titleId} className="py-3" data-testid="brief-notams" data-title="NOTAMs">
+      <div className="flex items-baseline justify-between gap-2 pb-1.5">
+        <SectionTitle id={titleId}>NOTAMs</SectionTitle>
+        <span className={cn("text-muted-foreground", TEXT.detail)} data-testid="brief-notams-count">
+          {count}
         </span>
-        <ChevronRight className="size-5 shrink-0 text-tint transition-transform group-data-panel-open:rotate-90" aria-hidden />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="flex flex-col gap-2 px-3.5 pb-1">
+      </div>
+      <div className="flex flex-col gap-2 rounded-(--radius-card) border border-border bg-card p-3">
         {pending ? (
           <div className="flex flex-col gap-2 py-0.5" aria-busy="true">
             <Skeleton className="h-4 w-full" />
@@ -63,7 +51,7 @@ export default function NotamRankingSection() {
         ) : (
           <>
             {/* The ranking kept on this device, with its age, where it could
-              not be asked again (no signal). */}
+            not be asked again (no signal). */}
             <KeptAge kind="notams" atMs={fetchedAt} failed={failed} />
             {all.length > 0 && <NotamToolbar />}
             {hidden > 0 && (
@@ -119,12 +107,12 @@ export default function NotamRankingSection() {
             {answer?.unchecked.includes("tfrs") && (
               <p className={cn("text-muted-foreground", TEXT.note)}>TFRs could not be checked just now.</p>
             )}
-            <p className={cn("pb-2 text-muted-foreground", TEXT.note)} data-testid="brief-notams-credit">
+            <p className={cn("text-muted-foreground", TEXT.note)} data-testid="brief-notams-credit">
               {notamCredit(since)}
             </p>
           </>
         )}
-      </CollapsibleContent>
-    </Collapsible>
+      </div>
+    </section>
   );
 }

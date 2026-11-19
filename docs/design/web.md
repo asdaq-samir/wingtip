@@ -1182,38 +1182,60 @@ are designed ([Vercel guidelines][vercel-guidelines]).
 
 **Structure, top to bottom** (decision 0012, verdict first; made less
 cluttered at the owner's word, 2026-11-16, "How do we make brief less
-cluttered?" then "Do it").
-1. The verdict, as the engine words it, and at most three findings, each
-   two rows at most, the finding alone (the engine's `gonogo_glance_lines`' `lead`, the risk
-   in plain words, "High risk, 16 points on the PAVE and IMSAFE checklist"); under its tap
-   what to do first (`action`), then why it matters with its rule, the
-   reports as sent and the way to its page. No "nothing to fix" row: the
-   verdict says the rest is fine. What the briefing could not check
-   (`BriefingNotices`) under them, not over the verdict (the UI audit,
-   2026-11-17). When to go only when signed in.
-2. The part cards, each named by a `SectionTitle` (a span in the card's
-   button), its figures' names in sentence case, each with only the figures it has: no Risk on Before
-   you go (a finding already), no dashes where there is no airplane or
-   runway, no copy of the weather finding's line in En route.
-3. The NOTAMs folded into one row, "NOTAMs · 3 that matter, 44 more",
-   each NOTAM's reason two lines until opened with the NOTAM as sent.
-4. Ready to Fly, one row, its line ("5 things to fix while you have a
-   signal"), opening to its actions, every check with its source, and
-   the next FAA cycle.
+cluttered?" then "Do it"; one grouped list at his pick of option A,
+2026-11-19, so the Brief reads as Settings and FPL's timeline do).
+1. The verdict, as the engine words it, a pill under the Brief's name in
+   its pinned head (`VerdictPill`, `CardHead`'s `below`), in sight on
+   every page of the Brief; Preflight no longer says it again over its
+   checks. What the briefing could not check (`BriefingNotices`) and
+   when to go (signed in only) under the head, over the list.
+2. One grouped list (`ListGroup`, a hairline between rows, no shadowed
+   cards), each row opening its page:
+   - at most three findings first, each two rows at most, the finding
+     alone (the engine's `gonogo_glance_lines`' `lead`, the risk in plain
+     words, "High risk, 16 points on the PAVE and IMSAFE checklist");
+     under its tap what to do first (`action`), then why it matters with
+     its rule, the reports as sent and the way to its page. The rest of
+     the findings folded into one row after them. No "nothing to fix"
+     row: the verdict says the rest is fine;
+   - Before You Go, its value what is left to do on the device ("4 to
+     do", Ready to Fly's count, the engine's `ready_to_fly` items not
+     done), with an airplane its fuel to spare and its loading under it;
+     it opens Preflight;
+   - Depart with its time, Arrive with its field, each with its runway,
+     takeoff or landing over 50 ft and first frequency, and En Route
+     with its time and its three figures (ceiling, visibility, wind
+     aloft); only the figures each has, no dashes where there is no
+     airplane or runway, no copy of the weather finding's line in En
+     Route;
+   - NOTAMs, its value "3 that matter, 44 more", opening Preflight at
+     its NOTAMs (the overview's `onOpen` names the section, PanelTabs
+     scrolls to it).
+3. The flight watch and the instructor's note under the list.
+
+**Preflight** uses the same grouped rows: Checks (the Go / No-Go's seven
+in the engine's order, then the alternates, NOTAMs on 1800wxbrief.com and
+ATC delays on fly.faa.gov), "N of 10 looked at" at its title's right;
+then Ready to Fly, the engine's line, at most three actions that fix in
+place and every check with its source, the next FAA cycle under it; then
+the NOTAMs that matter, laid open (§6); then Before You Go's folds (the
+airspace, the risk, the loading, the flight plan, the passengers, the
+checklists), which the checks' rows open. Option A's TFR and Risk as
+cards of their own, in place of their folds, is still to come.
 
 **Stock parts.** Base UI Accordion for the folded detail (its keyboard
-follows the APG since 1.6, [Base UI releases][bui-releases]); shadcn Card,
-Item and Badge; Base UI Checkbox for Ready to Fly's checks; `alert` role
+follows the APG since 1.6, [Base UI releases][bui-releases]); the app's
+grouped list on shadcn's Item (`components/GroupedList`) for every row,
+Ready to Fly's checks too, and Badge; `alert` role
 only for a change that appears while the pilot reads (a new TFR), never
 for the verdict at load ([APG alert][apg-alert]). On desktop the Brief
-opens in the side panel at full height; a wider desktop window may show
-the glance cards two columns wide by container query.
+opens in the side panel at full height.
 
 **Primary action.** The first of the three actions, as a filled button
 under the verdict. Ready to Fly's primary is the next unchecked item.
 
 **Keyboard and hover.** Alt+B opens the Brief (WCAG 2.1.4); Tab
-through the actions, then the cards. A card's hover on desktop
+through the list's rows, then the actions. A row's hover on desktop
 outlines what it refers to on the map (a TFR, a field).
 
 **Motion.** The verdict appears with no animation; folded detail opens

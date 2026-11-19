@@ -76,8 +76,8 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   // The route's pages, the Brief's, all the way up.
   await openBrief(page);
   await grabberTo(page, "full");
-  // Opened on its cards, one a part of the flight (the owner's D′), each
-  // opening its page; the pages' tabs over a page.
+  // Opened on its grouped list, a row a part of the flight (the owner's
+  // option A), each opening its page; the pages' tabs over a page.
   await expect(drawer.getByTestId("brief-glance").locator("button[data-testid^='brief-glance-']")).toHaveCount(4);
   await briefPage(page, "Preflight");
   await expect(panelTabs(page).getByRole("tab")).toHaveText(["Preflight", "Depart", "En route", "Arrive"]);

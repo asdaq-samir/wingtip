@@ -25,6 +25,7 @@ import { TEXT } from "../lib/text";
 export function CardHeadRow({
   name,
   sub,
+  below,
   nameId,
   nameTestId,
   leading,
@@ -39,6 +40,10 @@ export function CardHeadRow({
 }: {
   name: ReactNode;
   sub?: ReactNode;
+  /** Under the name and its line, centred with them and pinned with them:
+   *  the Brief's verdict, in sight on every page of it (option A, the
+   *  owner, 2026-11-19). */
+  below?: ReactNode;
   /** The name's id, which names the card for a screen reader. */
   nameId?: string;
   nameTestId?: string;
@@ -80,6 +85,7 @@ export function CardHeadRow({
           {sub}
         </p>
       )}
+      {below}
     </>
   );
   const start =
@@ -114,6 +120,7 @@ export function CardHeadRow({
 export function CardHead({
   name,
   sub,
+  below,
   line,
   nameTestId,
   lineClassName,
@@ -127,6 +134,8 @@ export function CardHead({
    *  the smallest too (the owner, 2026-11-11: the Nav Log's totals, the
    *  Profile's cruise and clearance, the Stops' count). */
   sub?: ReactNode;
+  /** Under that line, pinned with it (CardHeadRow's). */
+  below?: ReactNode;
   /** Under the name; none where the caller sets it out itself (an
    *  airport's card, beside its diagram's thumbnail). */
   line?: ReactNode;
@@ -146,6 +155,7 @@ export function CardHead({
       <CardHeadRow
         name={name}
         sub={sub}
+        below={below}
         nameTestId={nameTestId}
         end={<CardClose onClose={onClose} onShare={onShare} testId={closeTestId} />}
       >

@@ -74,8 +74,8 @@ test("the Brief says when to go: an hour strip under the verdict, the best windo
   const strip = glance.getByTestId("departure-window");
   await expect(strip).toBeVisible({ timeout: slow(30_000) });
 
-  // The verdict first, then the strip (the owner's "Verdict first").
-  const top = async (id: string) => (await glance.getByTestId(id).first().boundingBox())!.y;
+  // The verdict first, under the Brief's name, then the strip (the owner's "Verdict first").
+  const top = async (id: string) => (await sideDrawer(page).getByTestId("brief-card").getByTestId(id).first().boundingBox())!.y;
   expect(await top("brief-verdict")).toBeLessThan(await top("departure-window"));
 
   // The best window in a line over the hours, in the device's clock.
