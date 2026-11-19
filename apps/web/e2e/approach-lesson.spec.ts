@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, drawn, openTab, settle, slow, openRoute } from "./helpers";
+import { closeCard, drawn, grabberTo, openTab, settle, slow, openRoute } from "./helpers";
 
 /**
  * An approach taught (ApproachLesson), at the owner's ask ("do it all",
@@ -132,12 +132,17 @@ test("a picked approach is taught: briefed a step at a time, flown fix by fix wi
   await brief.getByTestId("approach-brief-next").click();
   await expect(brief).toContainText("Initial Approach Fix");
   await expect(brief).toContainText("Cross at or above 3,300 ft");
-  await expect.poll(async () => (await drawn(page, "lesson")).length).toBeGreaterThan(0);
+  // The step's fix, DL, ringed on the chart (LessonGl's ring).
+  await expect.poll(async () => (await drawn(page, "lesson-ring")).map((r) => r.ident)).toEqual(["DL"]);
 
   // Fly: the airplane taken fix by fix, a coaching word at each.
   await lesson.getByTestId("approach-lesson-steps").getByRole("button", { name: "Fly" }).click();
   const fly = lesson.getByTestId("approach-fly");
   await expect(fly.getByTestId("approach-coach")).toBeVisible();
+  // The card opens at half, as every card does (rules.md): its coaching,
+  // profile and Next run past the half on a phone, so it is pulled all the
+  // way up, as a pilot would, the body not scrolling at half.
+  await grabberTo(page, "full");
   for (let i = 0; i < 3; i++) await fly.getByTestId("approach-fly-next").click();
   await expect(fly.getByTestId("approach-coach")).toHaveText("Descend on the 3.00° path, about 480 ft/min at 90 kt, and start the timer.");
   await expect(fly.getByTestId("approach-profile-airplane")).toBeVisible();
@@ -164,4 +169,5 @@ test("a picked approach is taught: briefed a step at a time, flown fix by fix wi
   await closeCard(page, "approach-lesson-close");
   await expect(lesson).toHaveCount(0);
   await expect.poll(async () => (await drawn(page, "lesson")).length).toBe(0);
+  await expect.poll(async () => (await drawn(page, "lesson-ring")).length).toBe(0);
 });

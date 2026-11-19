@@ -7,6 +7,7 @@ import { EMPTY, useGlData, useGlLayer, useGlMap } from "../glLayer";
 import { cameraOf } from "../camera";
 import { pictureLayer } from "../markLayers";
 import { useGlLines, type GlRun } from "../useGlLines";
+import { useGlProbe } from "../useGlProbe";
 import { svgPicture, useGlSymbols, type GlSymbol } from "../useGlSymbols";
 
 const RING = "lesson-ring";
@@ -61,6 +62,9 @@ export function LessonGl() {
     [fix],
   );
   useGlData(RING, ring);
+  // The ring as the browser tests see it, its fix by ident: a circle layer,
+  // which no symbol's or line's probe reads (approach-lesson.spec).
+  useGlProbe("lesson-ring", [RING], (f) => ({ ident: f.properties.ident }));
   useEffect(() => {
     if (fix) cameraOf(map).pick([fix.lon, fix.lat], { duration: 400 });
   }, [map, fix]);
