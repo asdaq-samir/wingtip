@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator } from "@playwright/test";
 import { chartZoom, frontSheet, grabberTo, openPanel, openProfile, pressDryRunStart, settle, settled, sideDrawer, slow } from "./helpers";
 import { pickAirplane } from "./startState";
 import { middleOfFront, shipAt } from "./ownShipProbes";
@@ -137,13 +137,24 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
   await expect(start).toBeEnabled({ timeout: slow(60_000) });
   const line = sideDrawer(page).getByTestId("flight-line");
   // Each figure's name as shown: TripFigures' dt also holds the words a
-  // screen reader hears ("To KDLH"), hidden from sight (sr-only).
-  const planned = await line.locator("dt > [aria-hidden]").allTextContents();
+  // screen reader hears ("To KDLH"), hidden from sight (sr-only), and a
+  // name that explains itself is a button (Explain), not a hidden span.
+  const names = (strip: Locator) =>
+    strip.locator("dt").evaluateAll((dts) =>
+      dts.map((dt) => {
+        const shown = dt.cloneNode(true) as HTMLElement;
+        shown.querySelectorAll(".sr-only").forEach((n) => n.remove());
+        return (shown.textContent ?? "").trim();
+      }),
+    );
+  const planned = await names(line);
   expect(planned).toEqual(["Dest", "Distance", "Time", "Fuel"]);
   // The figures once the plan has settled: the runways picked into the
   // wind as the route comes in plan it again with their patterns flown
   // (with_procedures), a few miles more.
-  const distNow = async () => line.locator("dd").nth(1).innerText();
+  // Read from the page, not as drawn: FPL's strip is under the Profile's
+  // card, out of sight (SheetParts' cardsUp), where innerText reads nothing.
+  const distNow = async () => ((await line.locator("dd").nth(1).textContent()) ?? "").replace(/,/g, "");
   await expect
     .poll(
       async () => {
@@ -158,7 +169,7 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
 
   await pressDryRunStart(page, start);
   const figures = sideDrawer(page).getByTestId("dry-run-figures");
-  await expect.poll(async () => (await figures.locator("dt > [aria-hidden]").allTextContents()).slice(0, 3)).toEqual(planned.slice(1));
+  await expect.poll(async () => (await names(figures)).slice(0, 3)).toEqual(planned.slice(1));
   await expect(figures.getByTestId("navlog-to")).toHaveCount(0);
   await expect(figures.getByTestId("ete-eta-toggle")).toBeVisible();
   await expect(figures.getByTestId("fuel-breakdown-open")).toBeVisible();

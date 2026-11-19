@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openNavLog, navLogSheet, settle, sideDrawer, slow } from "./helpers";
+import { grabberTo, openNavLog, navLogSheet, settle, sideDrawer, slow } from "./helpers";
 
 /**
  * With no airplane picked, the plan shows what the route is -- its
@@ -35,6 +35,11 @@ test("no airplane picked: the strip is To and Dist, the nav log its courses and 
   await expect(asks.first()).toHaveText("—");
   await expect(asks.first()).toHaveAccessibleName("Time en route: pick an airplane for it");
   await expect(asks.last()).toHaveAccessibleName("Fuel required: pick an airplane for it");
+  // At the pill a tap on the figures opens the sheet half way (SheetParts'
+  // foot), and at half a short route's figures pass under the actions'
+  // floating bar (docs/design/web.md, FplTabBar): all the way up, each dash
+  // is its own button.
+  await grabberTo(page, "full");
   await asks.first().click();
   await expect(page.getByTestId("aircraft-input")).toBeFocused();
   await page.getByTestId("aircraft-input").blur();

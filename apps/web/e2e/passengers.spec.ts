@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { slow, settle, openTab, openSection, openPanel } from "./helpers";
+import { pickAirplane } from "./startState";
 
 /**
  * The Brief's Passengers: 14 CFR 91.107's briefing ticked off for the
@@ -8,6 +9,9 @@ import { slow, settle, openTab, openSection, openPanel } from "./helpers";
 test("the passengers are briefed as 91.107 asks, and sent the flight", async ({ page, context }) => {
   test.slow();
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  // The time in the air sent is the airplane's: none is assumed (the setup
+  // picks none), so one is picked.
+  await pickAirplane(page);
   await page.addInitScript(() => {
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
     localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, waypoints: false } }));
@@ -21,7 +25,7 @@ test("the passengers are briefed as 91.107 asks, and sent the flight", async ({ 
   await expect(section).toContainText("14 CFR 91.107(a)(1)");
   await section.getByTestId("passenger-pax-belts").click();
   await expect(section.getByTestId("passenger-pax-belts")).toHaveAttribute("aria-checked", "true");
-  await expect(section).toContainText("Brief them · 1 of 5");
+  await expect(section).toContainText("Brief them · 1 of 7");
   // Sent once the nav log has the time in the air.
   await expect(section).toContainText("in the air", { timeout: slow(90000) });
   // What is sent under the row that sends it, where it was a footnote.

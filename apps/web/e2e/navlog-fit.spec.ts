@@ -121,8 +121,10 @@ test("a long trip's figures are set smaller together to fit the strip, exact, ne
   await expect(sideDrawer(page).getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
   await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
   const figures = sideDrawer(page).getByTestId("flight-line").locator("dd");
-  // Its unit after a no-break space, the Dist a button to the nav log (TripFigures).
-  await expect(figures.filter({ hasText: /\snm$/ }).first()).toHaveText(/^1\d{3}(\.\d)?\snm$/);
+  // Its unit after a no-break space, the Dist a button to the nav log
+  // (TripFigures): whole miles with their thousands' comma, as every
+  // summary writes them (the owner's list, 2026-11-17).
+  await expect(figures.filter({ hasText: /\snm$/ }).first()).toHaveText(/^1,\d{3}\snm$/);
   // At the default text size and the two above it, as an iPhone sets the
   // root from Settings' text size (features/shell/dynamicType, which a test browser
   // does not run): a 19-point Body, 17.88 px; a 21-point one, held to the
@@ -135,8 +137,13 @@ test("a long trip's figures are set smaller together to fit the strip, exact, ne
     await page.evaluate((size) => {
       document.documentElement.style.fontSize = size;
     }, root);
+    // To a tenth of a pixel: the grid's columns come out a 64th of a pixel
+    // apart (its sub-pixel layout), and each column's size with them, which
+    // no eye tells apart ("18.2684px" and "18.2719px" at 17.88).
     const sizes = () =>
-      figures.evaluateAll((dds) => dds.map((dd) => parseFloat(getComputedStyle(dd.querySelector(".figure-roll") ?? dd).fontSize)));
+      figures.evaluateAll((dds) =>
+        dds.map((dd) => Math.round(parseFloat(getComputedStyle(dd.querySelector(".figure-roll") ?? dd).fontSize) * 10) / 10),
+      );
     await expect.poll(async () => new Set(await sizes()).size, { message: `one size at a root of ${root || "16px"}` }).toBe(1);
     const [size] = await sizes();
     expect(size, `at a root of ${root || "16px"}`).toBeGreaterThanOrEqual(0.7 * 20 * (parseFloat(root || "16px") / 16) - 0.1);

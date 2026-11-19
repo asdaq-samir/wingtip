@@ -17,7 +17,7 @@ import {
   settled,
   openPanel,
 } from "./helpers";
-import { drawnMarks, tapMark } from "./marks";
+import { drawnMarks } from "./marks";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -82,6 +82,9 @@ test("plan page: a click or Enter selects a nav log checkpoint, with the briefin
   // Arrive, after En route.
   await closeNavLog(page);
   await openBrief(page);
+  // Its page cards past the half card's foot: all the way up, as a finger
+  // takes it (as briefing.spec does).
+  await grabberTo(page, "full");
   await briefPage(page, "En route");
   const tabs = panelTabs(page).getByRole("tab");
   await panelTabs(page).getByRole("tab", { name: "En route" }).focus();
@@ -101,42 +104,30 @@ test(
     // not the wind's runway.
     await page.goto("/app/plan?dep=C81&dest=KDLH&pattern=C81:9,KDLH:27&auto=-");
     await settle(page);
-    // A checkpoint late on the route, so the log has rows above it: one
-    // the map shows, as its badges now give way to each other and a
-    // phone's view leaves some out until closer in (MapLibre's collision).
-    await tapMark(page, "route-marks", /^(?:[89]|1\d)$/);
-    // On a phone its card comes up in the map's sheet over the route
-    // (openCard): put away, the pick kept, for the route's box under it.
-    if (page.viewportSize()!.width < 768) {
-      const card = page.locator("[data-sheet-card]");
-      await expect(card).toBeVisible();
-      // Its own close in its head, the tabs static over it.
-      await card.getByTestId("sheet-card-close").click();
-      await expect(card).toHaveCount(0);
-    }
-
-    // Then a short window, so the nav log has to scroll: the row used to
-    // come to rest at the bottom edge (scrollIntoView "nearest"), the
-    // last visible line when the drawer was opened after the pick. (The
-    // pick first, at full height: at 420px a phone's map is too short
-    // for a marker along the route to be clicked.)
-    const viewport = page.viewportSize()!;
-    // 462, not the 420 this was written at: there a scroller left under the
-    // route's head and the table's sticky heading was too short for a row
-    // to stay put.
-    await page.setViewportSize({ width: viewport.width, height: 462 });
-    // A resize starts no animation for settled() to wait on, so the drawer
-    // is waited on until it fits the new height.
-    await expect.poll(async () => (await sideDrawer(page).boundingBox())?.height ?? Infinity).toBeLessThanOrEqual(462);
-    await settled(sideDrawer(page));
-    await grabberTo(page, "full");
-    // The nav log opened from the route's box shows the pick, brought in.
+    await openPanel(page);
+    // The Nav Log open over FPL, lowered to half, the route's map above it:
+    // a pick on the map selects its row while the pick's card is up, and
+    // the card's close puts the selection away with its ring (rules.md §14,
+    // the owner, 2026-11-18), where the pick outlived its card before.
     await openNavLog(page);
     const table = page.getByRole("table", { name: /Navigation log from/i });
-    await expect(table).toBeVisible();
-    // Its card come all the way up first: still sliding in, it carried the
-    // row clicked below 15 points up with it (2026-11-13).
-    await settled(page.locator("[data-sheet-card]").filter({ has: navLogSheet(page) }));
+    await expect(table.locator('[role="row"][data-kind="checkpoint"]').first()).toBeVisible({ timeout: slow(60_000) });
+    await grabberTo(page, "half");
+    const logCard = page.locator("[data-sheet-card]").filter({ has: navLogSheet(page) });
+    const edge = (await logCard.boundingBox())!.y;
+    // A checkpoint late on the route, so the log has rows above it: one
+    // the map shows above the card, as its badges give way to each other
+    // and a phone's view leaves some out until closer in (MapLibre's
+    // collision).
+    const late = async () =>
+      (await drawnMarks(page, "route-marks")).find((m) => m.kind === "checkpoint" && Number(m.text) >= 8 && m.y < edge - 16) ?? null;
+    await mapStill(page);
+    await expect.poll(late, { timeout: slow(30_000) }).not.toBeNull();
+    const mark = (await late())!;
+    await page.mouse.click(mark.x, mark.y);
+    // Its card over the log's, the one picked.
+    const pickCard = page.locator("[data-sheet-card][data-open]").last();
+    await expect(pickCard).toContainText(`Checkpoint ${mark.text}`);
     const selectedRow = table.locator('[role="row"][data-selected]');
     await expect(selectedRow).toHaveCount(1);
     const scroller = navLogScroller(page);
@@ -145,17 +136,24 @@ test(
       const view = (await scroller.boundingBox())!;
       return Math.abs(row.y + row.height / 2 - (view.y + view.height / 2)) / view.height;
     };
-    // Within a quarter of the scroller's height of its middle.
-    // Once the drawer has come all the way up and stood still, which on a
-    // busy phone is more than a few seconds.
+    // Its row brought to within a quarter of the scroller's height of its
+    // middle, where it used to come to rest at the bottom edge
+    // (scrollIntoView "nearest"), the last line in sight.
     await expect.poll(middle, { timeout: slow(10000) }).toBeLessThan(0.25);
-
-    // The row above it, in view beside it, clicked: selected, and
-    // nothing moves. Clicked on its name, where a finger would.
     const rows = table.locator('[role="row"][tabindex="0"]');
     const index = await selectedRow.evaluate((row) =>
       Array.from(row.closest('[role="table"]')!.querySelectorAll('[role="row"][tabindex="0"]')).indexOf(row),
     );
+    // The card's close: the pick put away, its row's selection with it.
+    await pickCard.getByTestId("sheet-card-close").click();
+    await expect(selectedRow).toHaveCount(0);
+    // The log all the way up for the rest, come to rest first: still
+    // moving, it carried the row clicked with it (2026-11-13).
+    await grabberTo(page, "full");
+    await settled(logCard);
+
+    // The row above it, in view beside it, clicked: selected, and
+    // nothing moves. Clicked on its name, where a finger would.
     const neighbour = rows.nth(index - 1);
     // In view whole first, as the claim is about: centred to within a
     // quarter of the middle, the row above can sit half under the top
@@ -163,11 +161,14 @@ test(
     // tabs -- and a row half out of view is rightly brought in.
     await neighbour.evaluate((row) => row.scrollIntoView({ block: "center" }));
     await page.waitForTimeout(200);
-    // Where the row is on the screen, which is the claim: not the
+    // Where the row is in the log's window, which is the claim: not the
     // scroller's offset, which the browser moves itself to keep what is
     // on screen still (scroll anchoring) while the legs still streaming
-    // in give a row above a second line -- 22 px, on a CI phone.
-    const onScreen = async () => (await neighbour.boundingBox())!.y;
+    // in give a row above a second line -- 22 px, on a CI phone. Nor the
+    // screen's: a row picked brings the map to its point above the card's
+    // half detent (rules.md §14.5), the card and its scroller lowered with
+    // the row in it.
+    const onScreen = async () => (await neighbour.boundingBox())!.y - (await scroller.boundingBox())!.y;
     const before = await onScreen();
     // Its name before the click: `neighbour` is a place in the list, read
     // again at each use.
@@ -184,7 +185,11 @@ test(
     await expect(sideDrawer(page).getByRole("heading", { name: "Adverse Conditions" })).toBeVisible();
     await openNavLog(page);
     await expect(selectedRow).toBeInViewport();
-    await neighbour.scrollIntoViewIfNeeded();
+    // The log all the way up, as a finger takes it, and the row brought to
+    // its middle, clear of the card's head over the scroller.
+    await grabberTo(page, "full");
+    await settled(logCard);
+    await neighbour.evaluate((row) => row.scrollIntoView({ block: "center" }));
 
     // The selected row clicked again: deselected, and its note closed.
     await expect(selectedRow).toHaveAttribute("data-expanded", "true");

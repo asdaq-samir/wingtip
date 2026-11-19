@@ -161,9 +161,12 @@ test("in flight the strip gives the phone's GPS altitude, to the nearest 10 ft",
   // distance, time, fuel and GPS altitude, four columns on one row, where
   // the altitude, a fifth in four, went onto a row of its own (the owner,
   // 2026-11-17).
+  // The strip in sight: FPL's own copy, laid out at no width while the
+  // sheet shows Search's page in flight, is not the pilot's.
   const strip = page
     .locator("dl")
     .filter({ has: page.getByTestId("strip-gps-alt") })
+    .locator("visible=true")
     .first();
   await expect(strip.getByTestId("navlog-to")).toHaveCount(0);
   const tops = await strip.locator("dd").evaluateAll((dds) => dds.map((dd) => Math.round(dd.getBoundingClientRect().top)));

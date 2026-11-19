@@ -101,7 +101,8 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   await controlsInSight(page);
   await expect(drawer.getByTestId("altitude-why")).toHaveAccessibleName(/\d,\d{3} feet|FL\d{3}/, { timeout: slow(60000) });
   await grabberTo(page, "full");
-  await expect(drawer.locator('[data-slot="section-summary"]').first()).toContainText(/\d nm/, { timeout: slow(60000) });
+  // The figure and its unit held together by a no-break space (FigureStrip).
+  await expect(drawer.locator('[data-slot="section-summary"]').first()).toContainText(/\d\snm/, { timeout: slow(60000) });
   // Leaving's weather on Depart, laid open, the nav log out of the page.
   await openTab(page, "Depart");
   await expect(drawer.locator('[data-tab="depart"]').getByRole("heading", { name: "Weather" })).toBeVisible();

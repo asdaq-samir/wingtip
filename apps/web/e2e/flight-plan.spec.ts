@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { slow, settle, openTab, openSection, openConsole, openPanel } from "./helpers";
 import { NO_OWN_FIGURES } from "./airplaneMocks";
+import { pickAirplane } from "./startState";
 
 /**
  * The Brief tab's Flight Plan: the FAA's form (FAA Form 7233-4) filled in
@@ -13,6 +14,9 @@ import { NO_OWN_FIGURES } from "./airplaneMocks";
 test("under VFR the flight plan flies direct, with no alternate, and says where to file it", async ({ page, context }) => {
   test.slow();
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  // Item 16's EET is the airplane's time en route: none is assumed (the
+  // setup picks none), so one is picked.
+  await pickAirplane(page);
   await page.addInitScript(() => {
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
     localStorage.setItem(
