@@ -129,11 +129,15 @@ test("You opened again opens at half, not at the size it was put away at", async
 
 test.describe("by a pointer's drag", () => {
   test.use({ hasTouch: false });
-  // A phone's sheet: from 768 wide the cards ride the side panel, which has
-  // one height and does not swipe (CardStack's data-base-ui-swipe-ignore off
-  // a phone; rules.md's Detents, 92e217114), so there is no half to drag to.
-  test.beforeEach(({ page }) => {
-    test.skip(page.viewportSize()!.width >= 768, "a phone's sheet; the side panel's cards do not swipe");
+  // A phone's sheet: on the desktop project, and from 768 wide, the cards
+  // ride the side panel, which keeps one height and does not swipe
+  // (CardStack's data-base-ui-swipe-ignore off a phone; rules.md's Detents,
+  // 92e217114), so there is no half to drag to.
+  test.beforeEach(({ page }, info) => {
+    test.skip(
+      info.project.name === "desktop" || page.viewportSize()!.width >= 768,
+      "a phone's detents; the owner, 2026-11-19, desktop cards keep one height",
+    );
   });
   test("a swipe down closes You, a settings card, and parks an airport's card at the pill", async ({ page }) => {
     await page.goto("/app/plan");

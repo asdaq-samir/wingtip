@@ -736,7 +736,11 @@ Done sits at the pill's start, over the airplane's pill in the same bar.
 2026-11-14): the head (callsign, what it is and who flies it, Share, ✕);
 Follow, Alert, Debrief and Favorite; the flight in its summary
 (`FlightSummary`: its ends, the bar of the way flown, height, speed and
-track, or where its last flight landed), the card's head; then Info,
+track, or where its last flight landed), the card's head; the ends' row
+always there, held while they are asked for and "—" for an end not
+known, each end its ident's line and its town's (kept empty), so nothing
+under it moves as they come in or come back empty (the owner,
+2026-11-19); then Info,
 starting with the facts strip (`AirplaneFacts`, from the FAA record, the
 traffic's type and year where it has none) and the pictures (its
 Planespotters photo, then the sketch of where it has flown), then
@@ -852,7 +856,12 @@ them); nothing is handed over at the pill, where two copies flickered. It measur
 FPL's bar and route are laid out at the pill with `RISEN_FACE`
 (SheetParts' `rises`), in sight from the finger's first move by
 visibility alone, as the cards' bodies come into sight (`PILL_BODY`,
-nothing in it eased at the pill); a tap on the held figures raises the
+nothing in it eased at the pill), on a phone only: the desktop's side
+panel has no detents and no finger takes it, so there they are not laid
+out at the pill, the figures alone its pill (SheetParts' `DESK_PILL`,
+FplRoute's `data-pill-keeps`), and the panel is as tall as what is in
+sight (503 px, mostly empty, before; the owner, 2026-11-19: desktop cards
+keep one height); a tap on the held figures raises the
 sheet to half as a tap on the foot does; `feel("detent")`
 as the sheet settles (MapPanel); in flight the tiles are `FplActions`
 at the top of the flying drawer. Under the folded route, `FplRoute`: the

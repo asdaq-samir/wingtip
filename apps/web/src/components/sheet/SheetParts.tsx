@@ -85,6 +85,10 @@ export interface PartsProps {
   pages?: SheetPages;
 }
 
+/** The side panel's pill, a row's part alone (FPL's figures, data-pill-keeps):
+ *  the rest not laid out, with no detents to rise with (the owner, 2026-11-19). */
+const DESK_PILL = "[&_[data-pill-row]>*:not([data-pill-keeps])]:hidden";
+
 /** The body cut off at a bottom sheet's figures by the same offset. */
 const CUT_BOTTOM = "[clip-path:inset(0_0_max(0px,calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)))_0)]";
 
@@ -155,11 +159,12 @@ export function SheetParts(p: PartsProps) {
   const barRow = p.bar && barRowOf(p.bar, p.barShown, true);
   // The route's row (or a workspace's head) and the controls under it: under
   // the search, or paged under FPL's bar.
-  const headBlock = (shownAtRest: boolean, alone: boolean, rises = false) => {
+  // `pillRow`: the side panel's pill, the row's pill part alone (DESK_PILL).
+  const headBlock = (shownAtRest: boolean, alone: boolean, rises = false, pillRow = false) => {
     // Drawn at the pill too where it rises with the sheet, as at half.
     const risen = rises && !shownAtRest;
-    const shown = shownAtRest || risen;
-    const content = risen ? p.top : headContent;
+    const shown = shownAtRest || risen || pillRow;
+    const content = risen || pillRow ? p.top : headContent;
     const keptHere = p.kept != null && shown && content === p.kept;
     return (
       <div
@@ -168,6 +173,7 @@ export function SheetParts(p: PartsProps) {
           p.bar && p.barShown && (!atPill || risen) && SHEET_BELOW,
           ((!shown && p.kept == null) || alone) && "hidden",
           risen && RISEN_FACE,
+          pillRow && DESK_PILL,
         )}
       >
         {(shown || p.kept != null) && (
@@ -177,11 +183,13 @@ export function SheetParts(p: PartsProps) {
                 ? "contents"
                 : cn(
                     "@container flex items-center gap-2 print:hidden",
-                    atPill && !risen
-                      ? cn("px-2.25 pb-3", ROW_PAD)
-                      : p.top == null
-                        ? undefined
-                        : cn("px-3 pb-1", p.barShown ? "pt-1" : ROW_PAD),
+                    pillRow
+                      ? "px-3"
+                      : atPill && !risen
+                        ? cn("px-2.25 pb-3", ROW_PAD)
+                        : p.top == null
+                          ? undefined
+                          : cn("px-3 pb-1", p.barShown ? "pt-1" : ROW_PAD),
                   )
             }
           >
@@ -332,8 +340,12 @@ export function SheetParts(p: PartsProps) {
     // At the pill whose face is the route's figures held on the foot's
     // edge (FplRoute), FPL's bar and route are laid out out of sight and
     // rise with the sheet (RISEN_FACE): the airport card's way, nothing
-    // swapped as a finger takes it (the owner, 2026-11-16).
-    const rises = atPill && footShown && !p.flying && !cardsUp && p.top != null;
+    // swapped as a finger takes it (the owner, 2026-11-16). On a phone only:
+    // the side panel has no detents, so its pill is the figures alone
+    // (DESK_PILL), not 503 px mostly empty (the owner, 2026-11-19).
+    const pillFace = atPill && footShown && !p.flying && !cardsUp && p.top != null;
+    const rises = p.onPhone && pillFace;
+    const deskPill = !p.onPhone && pillFace;
     // One page up at a time (SheetPage), turned by its toggle (PageToggle);
     // the other kept, inert.
     content = (
@@ -345,7 +357,7 @@ export function SheetParts(p: PartsProps) {
           {scroller(
             <>
               {barRowOf(bar, planShown, false, rises)}
-              {headBlock(routeShown, false, rises)}
+              {headBlock(routeShown, false, rises, deskPill)}
             </>,
             second,
             routeAlone,
