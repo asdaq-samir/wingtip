@@ -74,7 +74,7 @@ export function useFirstFlight({
     see(FIRST_FLIGHT);
     pickView("search");
     riseToSee(setPanel);
-    asked.current = { label: "Destination", fixes: false, onPick: planTo };
+    asked.current = { label: "Destination", fixes: false, onPick: planTo, waiting: true };
     useSearchPick.setState({ pick: asked.current });
   }, [pickView, planTo, see, setPanel]);
 

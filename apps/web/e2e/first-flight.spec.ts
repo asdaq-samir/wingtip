@@ -85,17 +85,21 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   // the destination -- not focused, so no keyboard jumps up.
   await welcome.getByTestId("first-flight-later").click();
   await expect(welcome).toHaveCount(0);
-  // The field in use, asking: its Cancel where the toggle rides at rest.
-  await expectSearchInUse(page);
   // Risen from the pill to half, so the search's page is seen (rule 11).
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   const search = page.getByTestId("search-airports");
   await expect(search).not.toBeFocused();
   await expect(search).toHaveAttribute("placeholder", /destination/i);
+  // At rest until it is tapped: the page toggle, no Cancel (the owner,
+  // 2026-11-19: "I see cancel on fresh load").
+  await expect(page.getByTestId("one-search-cancel")).toHaveCount(0);
+  await expect(toggle(page)).toBeVisible();
 
   // Oshkosh picked: planned from the nearest field to the fix (Campbell),
   // FPL up with the route; the tip on the toggle once it shows FPL.
   await search.click();
+  // Tapped, the field in use: its Cancel where the toggle rode.
+  await expectSearchInUse(page);
   await search.fill("KOSH");
   await searchAirports(page)
     .filter({ hasText: "KOSH" })

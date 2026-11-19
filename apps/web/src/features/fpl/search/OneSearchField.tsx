@@ -41,7 +41,9 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
     model.setTyped(said);
     inputRef.current?.focus();
   });
-  const using = model.focused || !!model.typed || model.direct || !!model.pick || voice.listening;
+  // A picker's ask is the field in use, but for one that waits for a tap
+  // (the first flight's destination): at rest until the pilot uses it.
+  const using = model.focused || !!model.typed || model.direct || (!!model.pick && !model.pick.waiting) || voice.listening;
   // Drawn, so the pickers ask it for their airport (lib/oneSearch's fields).
   useEffect(() => {
     useSearchPick.setState((s) => ({ fields: s.fields + 1 }));
