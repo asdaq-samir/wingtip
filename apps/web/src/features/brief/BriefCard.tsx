@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { CardHead } from "../../components/CardHead";
 import { PanelTabs } from "../navlog/lazy";
 import BriefOverview from "./BriefOverview";
+import VerdictPill from "./VerdictPill";
 import type { PanelTab } from "../plan";
 import { useLiveRefresh } from "../../lib/liveRefresh";
 import { CardLayer } from "../../components/sheet/CardLayer";
@@ -11,10 +12,10 @@ import { CardLayer } from "../../components/sheet/CardLayer";
  * can have a brief button which can open a new brief card to have
  * everything preflight, depart, enroute, arrive. But FPL is simple with
  * route, navlog, profile and calculations"): the route's name and its plan
- * at its head (CardHead), then whether to go, when, the NOTAMs that
- * matter and the flight watch round a card
- * for each part of the flight (BriefOverview round BriefGlance, the
- * owner's pick of the redesign, D′), each card opening its page
+ * at its head (CardHead) with whether to go under them (VerdictPill), then
+ * when, one grouped list of the findings and the parts of the flight, and
+ * the flight watch (BriefOverview round BriefGlance, the owner's pick of
+ * option A, 2026-11-19), each row opening its page
  * (PanelTabs) -- Preflight, Depart, En route, the legs left to FPL, and
  * Arrive -- the close going back from a page to the cards. On paper the
  * briefing is FPL's, every page after the legs (NavLogView).
@@ -63,7 +64,15 @@ export default function BriefCard({
           before={
             // Its room over the name the grabber's, which the pinned head's frost reaches up over (PinnedHead).
             <div className="px-4 pt-(--pinned-room) [--pinned-room:var(--corner-inset,0.75rem)]">
-              <CardHead name={name} sub={line} nameTestId="brief-name" onClose={onClose} onShare="brief" closeTestId="brief-close" />
+              <CardHead
+                name={name}
+                sub={line}
+                below={<VerdictPill />}
+                nameTestId="brief-name"
+                onClose={onClose}
+                onShare="brief"
+                closeTestId="brief-close"
+              />
             </div>
           }
         />

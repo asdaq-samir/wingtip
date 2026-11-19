@@ -50,9 +50,20 @@ test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on
   const weather = drawer.getByTestId("verdict-weather");
   await expect(weather).toHaveAttribute("data-finding", "stop");
   await expect(weather).toContainText("VFR not recommended: KDLH currently reporting IFR");
-  await expect(drawer.getByTestId("verdict-line")).toContainText(/^No-go as planned: Weather/);
-  // Every tab's finding, in the order a pilot goes through them.
-  await expect(drawer.locator("[data-testid^='verdict-'][data-finding]")).toHaveCount(8);
+  // What they come to, in the pill under the Brief's name, over every page.
+  await expect(drawer.getByTestId("brief-card").getByTestId("brief-verdict")).toContainText(/^No-go as planned: Weather/);
+  // Every tab's finding, a row each in the order a pilot goes through them.
+  await expect(drawer.locator("[data-testid^='verdict-'][data-finding]")).toHaveCount(7);
+  await expect(drawer.getByTestId("verdict").getByRole("button")).toHaveText([
+    /^Weather/,
+    /^TFRs & special use/,
+    /^Altitude/,
+    /^Fuel/,
+    /^Runways/,
+    /^Weight & balance/,
+    /^Risk/,
+    /^Alternates/,
+  ]);
 
   await weather.click();
   await expect(panelTabs(page).getByRole("tab", { name: "En route", exact: true })).toHaveAttribute("aria-selected", "true");
@@ -68,8 +79,8 @@ test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("Preflight's checks are the Go / No-Go's and 14 CFR 91.103's, a tile each, counted as they are looked at", async ({ page }) => {
-  // The owner's pick of the redesign: the answer first, every check a tile
+test("Preflight's checks are the Go / No-Go's and 14 CFR 91.103's, a row each, counted as they are looked at", async ({ page }) => {
+  // The owner's pick of option A: every check a row of one grouped list,
   // opening where it is said in full, the paperwork folded under them.
   await planned(page);
   const drawer = sideDrawer(page);
@@ -78,7 +89,7 @@ test("Preflight's checks are the Go / No-Go's and 14 CFR 91.103's, a tile each, 
   // The two the planner does not fetch, where a pilot reads them.
   await expect(drawer.getByTestId("check-notams")).toHaveAttribute("href", "https://www.1800wxbrief.com");
   await expect(drawer.getByTestId("check-delays")).toHaveAttribute("href", "https://www.fly.faa.gov");
-  // A tile opened is a check looked at: the weather's opens En route.
+  // A row opened is a check looked at: the weather's opens En route.
   await drawer.getByTestId("verdict-weather").click();
   await expect(panelTabs(page).getByRole("tab", { name: "En route", exact: true })).toHaveAttribute("aria-selected", "true");
   await openTab(page, "Preflight");
@@ -236,12 +247,14 @@ test("a route from the pilot's position has a section for its airports alone, no
   await expect(drawer.locator('[data-tab="depart"]').getByTestId("airport-section")).toHaveCount(0);
 });
 
-test("the Brief opens on whether to go and a card for each part of the flight, a card opens its page, and the close goes back to them", async ({
+test("the Brief opens on whether to go and one grouped list, a row for each part of the flight opening its page, and the close goes back to it", async ({
   page,
 }) => {
-  // The owner's pick of the redesign (D′): the cards stacked, all four in
-  // one scroll, a tap on one its page; the close goes back (the owner's
-  // "close button should behave as the back button").
+  // The owner's pick of option A (2026-11-19): the verdict a pill under the
+  // Brief's name, then one grouped list -- the findings first, then Before
+  // You Go, Depart, En Route, Arrive and the NOTAMs -- a tap on a row its
+  // page; the close goes back (the owner's "close button should behave as
+  // the back button").
   await briefingAs(page, (json) => {
     Object.assign(json, { vfr_not_recommended: ["KDLH currently reporting IFR"], tfrs: [] });
   });
@@ -249,9 +262,24 @@ test("the Brief opens on whether to go and a card for each part of the flight, a
   const drawer = sideDrawer(page);
   await openBrief(page);
   const glance = drawer.getByTestId("brief-glance");
-  await expect(glance.getByTestId("brief-verdict")).toContainText(/^No-go as planned: Weather/, { timeout: slow(30_000) });
+  const card = drawer.getByTestId("brief-card");
+  await expect(card.getByTestId("brief-verdict")).toContainText(/^No-go as planned: Weather/, { timeout: slow(30_000) });
   await expect(glance.getByTestId("brief-glance-enroute")).toHaveAttribute("data-finding", "stop");
-  // Said once, in the weather's own line over the cards, the En route card
+  // One list, in this order: the findings, then the parts of the flight, then the NOTAMs.
+  const list = glance.getByTestId("brief-list");
+  const rows = list.locator("[data-testid^='brief-line-'][data-finding], [data-testid^='brief-glance-'], [data-testid=brief-notams-row]");
+  const order = await rows.evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")));
+  expect(order.slice(order.indexOf("brief-glance-preflight"))).toEqual([
+    "brief-glance-preflight",
+    "brief-glance-depart",
+    "brief-glance-enroute",
+    "brief-glance-arrive",
+    "brief-notams-row",
+  ]);
+  const findings = order.slice(0, order.indexOf("brief-glance-preflight"));
+  expect(findings).toContain("brief-line-weather");
+  for (const id of findings) expect(id).toMatch(/^brief-line-/);
+  // Said once, in the weather's own line over the rows, the En Route row
   // not repeating it (the owner, 2026-11-16: "How do we make brief less
   // cluttered?", 5c55321c4).
   await expect(glance.getByTestId("brief-line-weather")).toHaveAttribute("data-finding", "stop");
@@ -259,9 +287,9 @@ test("the Brief opens on whether to go and a card for each part of the flight, a
     "VFR not recommended: KDLH currently reporting IFR",
   );
   await expect(glance.getByTestId("brief-glance-enroute")).not.toContainText("VFR not recommended");
-  // The verdict the one red wash: a no-go card as plain as the others, its
+  // The verdict the one red wash: a no-go row as plain as the others, its
   // red in its icon and figures alone (the design review, 2026-10-28).
-  const fill = (id: string) => glance.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundColor);
+  const fill = (id: string) => card.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundColor);
   expect(await fill("brief-glance-enroute")).toBe(await fill("brief-glance-depart"));
   expect(await fill("brief-verdict")).not.toBe(await fill("brief-glance-depart"));
   await expect(glance.getByTestId("brief-glance-depart")).toContainText("C81");
@@ -269,14 +297,22 @@ test("the Brief opens on whether to go and a card for each part of the flight, a
   await expect(glance.getByTestId("brief-glance-arrive")).toContainText(/Runway/);
   await expect(panelTabs(page)).toHaveCount(0);
 
-  // Under the Brief's edge as it opens half way, its lines over the cards:
+  // Under the Brief's edge as it opens half way, its lines over the rows:
   // pulled up to, as a finger would (inSheet).
   await inSheet(page, glance.getByTestId("brief-glance-enroute"));
   await glance.getByTestId("brief-glance-enroute").click();
   await expect(panelTabs(page).getByRole("tab", { name: "En route", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(glance).toHaveCount(0);
-  // Back to the cards, the Brief still open.
+  // Back to the list, the Brief still open, the verdict still under its name.
   await closeCard(page, "brief-close");
   await expect(drawer.getByTestId("brief-glance")).toBeVisible();
-  await expect(drawer.getByTestId("brief-card")).toBeVisible();
+  await expect(card).toBeVisible();
+  // The NOTAMs' row says how many matter and opens them on Preflight, at their section.
+  const notams = drawer.getByTestId("brief-notams-row");
+  await expect(notams).toContainText(/NOTAMs.+(that matter|None heard|Ranking)/);
+  await inSheet(page, notams);
+  await notams.click();
+  await expect(panelTabs(page).getByRole("tab", { name: "Preflight", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(drawer.locator('[data-tab="preflight"] [data-title="NOTAMs"]')).toBeInViewport();
+  await expect(card.getByTestId("brief-verdict")).toBeVisible();
 });

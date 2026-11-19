@@ -1,12 +1,12 @@
-import { Button as BaseButton } from "@base-ui/react/button";
 import { useContext } from "react";
-import { ExternalLink, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { cn } from "cn";
 import FindingIcon from "../../components/FindingIcon";
+import { ListGroup, ListRow } from "../../components/GroupedList";
 import { useTicked, usePreflight } from "./preflight";
 import { FINDING_TONE, type Finding } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
-import type { Verdict, VerdictItem, Where } from "../../lib/verdict";
+import type { VerdictItem, Where } from "../../lib/verdict";
 import { GoToTab, LEGS } from "../plan";
 
 /** A check the planner does not make, and where the pilot makes it: the
@@ -24,38 +24,37 @@ interface Elsewhere {
 /** 14 CFR 91.103's other three, beside the Go / No-Go's seven: NOTAMs
  *  ("all available information", AIM 5-1-3), known ATC delays and the
  *  alternatives if the flight cannot be completed (91.103(a)). */
+// After the Go / No-Go's, the alternates first, beside the route's
+// findings, then the two read on the FAA's own pages (option A).
 const ELSEWHERE: Elsewhere[] = [
-  { key: "notams", label: "NOTAMs", detail: "Read them on 1800wxbrief.com", href: "https://www.1800wxbrief.com" },
-  { key: "delays", label: "ATC delays", detail: "On fly.faa.gov", href: "https://www.fly.faa.gov" },
   { key: "alternatives", label: "Alternates", detail: "Divert from any leg", at: { tab: "enroute", section: LEGS } },
+  { key: "notams", label: "NOTAMs", detail: "1800wxbrief.com", href: "https://www.1800wxbrief.com" },
+  { key: "delays", label: "ATC Delays", detail: "fly.faa.gov", href: "https://www.fly.faa.gov" },
 ];
 
 /**
- * Preflight's answer first, at the owner's pick of the redesign: what the
- * checks come to in a line, and every check as a tile, two to a row -- the
- * Go / No-Go's seven (lib/verdict: the weather, the airspace, the altitude,
- * the fuel, the runways, the loading and the risk) and 14 CFR 91.103's
- * other three -- each with its mark and its finding in a line, opening
- * where it is said in full: a section of the Brief (`onOpen`, for one on
- * this page, folded until then), FPL's legs, or the FAA's own page. They
- * were the Go / No-Go's rows and a 91.103 list to tick under them, the
- * same weather, fuel and runways said twice; one tile now, and a tile
- * opened is a check looked at, counted over them for this flight
- * (features/brief/preflight's ticks: another route or time starts again).
+ * Preflight's checks, at the owner's pick of option A (2026-11-19): one
+ * grouped list, as Settings and the Brief's overview are, a row a check
+ * -- the Go / No-Go's (lib/verdict: the weather, the airspace, the
+ * altitude, the fuel, the runways, the loading and the risk), in the
+ * engine's order, then 14 CFR 91.103's other three -- each with its mark
+ * and its finding, opening where it is said in full: a section of the
+ * Brief (`onOpen`, for one on this page, folded until then), FPL's legs,
+ * or the FAA's own page. Whether to go is over it, under the Brief's name
+ * (VerdictPill). A row opened is a check looked at, counted beside the
+ * list's title for this flight (features/brief/preflight's ticks: another
+ * route or time starts again). They were tiles, two to a row.
  */
 export default function BriefChecks({
   items,
-  line,
   flight,
   here,
   onOpen,
 }: {
   items: VerdictItem[];
-  /** What they come to, the engine's line over them (gonogo_brief). */
-  line: Verdict["line"];
   /** The flight the looks are for: its route and time. */
   flight: string;
-  /** The sections of this page a tile opens, by their titles. */
+  /** The sections of this page a row opens, by their titles. */
   here: string[];
   /** A section of this page opened, before it is scrolled to. */
   onOpen: (section: string) => void;
@@ -71,83 +70,60 @@ export default function BriefChecks({
     if (at.section && at.tab === "preflight" && here.includes(at.section)) onOpen(at.section);
     go(at.tab, at.section);
   };
-  // NOTAMs and ATC delays first after the airspace, where a pilot reads
-  // them with it; the alternates last, after the risk.
-  const tiles: { key: string; label: string; detail: string; finding: Finding | "elsewhere"; href?: string; at?: Where; testId: string }[] =
-    [
-      ...items.slice(0, 2).map((i) => ({ ...i, at: i as Where, testId: `verdict-${i.key}` })),
-      ...ELSEWHERE.slice(0, 2).map((e) => ({ ...e, finding: "elsewhere" as const, testId: `check-${e.key}` })),
-      ...items.slice(2).map((i) => ({ ...i, at: i as Where, testId: `verdict-${i.key}` })),
-      ...ELSEWHERE.slice(2).map((e) => ({ ...e, finding: "elsewhere" as const, testId: `check-${e.key}` })),
-    ];
+  // A finding to look at says itself under the check's name, where it has
+  // room for its words; a check that is fine, or one made elsewhere, at the
+  // row's end.
+  const words = (finding: Finding | "elsewhere", detail: string) =>
+    finding === "stop" || finding === "caution"
+      ? { description: <span className={finding === "stop" ? FINDING_TONE.stop : undefined}>{detail}</span> }
+      : { value: detail };
   return (
-    <section aria-label="Checks" className="py-3" data-testid="verdict" data-title="Go / No-Go">
-      <p
-        className={cn("flex items-start gap-2 font-semibold", FINDING_TONE[line.finding], TEXT.row)}
-        data-testid="verdict-line"
-        data-finding={line.finding}
+    <div className="py-3" data-testid="verdict" data-title="Go / No-Go">
+      <ListGroup
+        title="Checks"
+        action={
+          <span className={cn("pb-1.5 text-muted-foreground", TEXT.detail)} data-testid="preflight-count">
+            {seen === keys.length ? "All looked at" : `${seen} of ${keys.length} looked at`}
+          </span>
+        }
       >
-        <FindingIcon finding={line.finding} className="mt-0.5" />
-        <span>{line.words}</span>
-      </p>
-      <p className={cn("mt-1 mb-3 pl-7 text-muted-foreground", TEXT.note)} data-testid="preflight-count">
-        {seen === keys.length ? "All looked at" : `${seen} of ${keys.length} looked at`}
-      </p>
-      <ul className="grid grid-cols-2 gap-2">
-        {tiles.map((tile) => {
-          const inner = (
-            <>
-              <span className={cn("flex items-start gap-1.5 pr-4 font-semibold text-foreground", TEXT.prose)}>
-                {tile.finding === "elsewhere" ? (
-                  <Info className="mt-px size-5 shrink-0 text-muted-foreground" aria-hidden />
-                ) : (
-                  <FindingIcon finding={tile.finding} className="mt-px" />
-                )}
-                <span className="min-w-0">{tile.label}</span>
-              </span>
-              <span
-                className={cn("mt-1 block line-clamp-3", TEXT.note, tile.finding === "stop" ? FINDING_TONE.stop : "text-muted-foreground")}
-              >
-                {tile.detail}
-              </span>
-              {tile.href && <ExternalLink className="absolute top-3 right-2.5 size-4 text-tint" aria-hidden />}
-              {looked[tile.key] && <span className="sr-only">, looked at</span>}
-            </>
-          );
-          const look = cn(
-            "relative block h-full min-h-[4.75rem] w-full rounded-(--radius-card) bg-card px-3 pt-2.5 pb-3 text-left outline-none",
-            "shadow-float focus-visible:ring-2 focus-visible:ring-ring active:bg-foreground/8 pointer-coarse:active:opacity-70",
-            looked[tile.key] && "bg-card/70",
-          );
-          return (
-            <li key={tile.key}>
-              {tile.href ? (
-                <a
-                  href={tile.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={look}
-                  onClick={() => tick(flight, tile.key, true)}
-                  data-testid={tile.testId}
-                  data-looked={looked[tile.key] || undefined}
-                >
-                  {inner}
-                </a>
-              ) : (
-                <BaseButton
-                  className={look}
-                  onClick={() => open(tile.key, tile.at)}
-                  data-testid={tile.testId}
-                  data-finding={tile.finding === "elsewhere" ? undefined : tile.finding}
-                  data-looked={looked[tile.key] || undefined}
-                >
-                  {inner}
-                </BaseButton>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </section>
+        {items.map((i) => (
+          <ListRow
+            key={i.key}
+            media={<FindingIcon finding={i.finding} />}
+            title={
+              <>
+                {i.label}
+                {looked[i.key] && <span className="sr-only">, looked at</span>}
+              </>
+            }
+            {...words(i.finding, i.detail)}
+            chevron
+            onClick={() => open(i.key, i)}
+            data-testid={`verdict-${i.key}`}
+            data-finding={i.finding}
+            data-looked={looked[i.key] || undefined}
+          />
+        ))}
+        {ELSEWHERE.map((e) => (
+          <ListRow
+            key={e.key}
+            media={<Info className="size-5 text-muted-foreground" aria-hidden />}
+            title={
+              <>
+                {e.label}
+                {looked[e.key] && <span className="sr-only">, looked at</span>}
+              </>
+            }
+            value={e.detail}
+            href={e.href}
+            chevron={!e.href}
+            onClick={() => (e.href ? tick(flight, e.key, true) : open(e.key, e.at))}
+            data-testid={`check-${e.key}`}
+            data-looked={looked[e.key] || undefined}
+          />
+        ))}
+      </ListGroup>
+    </div>
   );
 }

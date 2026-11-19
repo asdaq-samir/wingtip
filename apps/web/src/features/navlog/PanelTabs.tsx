@@ -67,13 +67,13 @@ export default function PanelTabs({
   route,
   overview: Overview,
 }: {
-  /** What shows before any page, its cards each opening one (`open`):
-   *  the Brief's glance (BriefGlance), at the owner's pick of the redesign
-   *  (D′). A page opened from it goes back to it by the close, a swipe to
+  /** What shows before any page, its rows each opening one (`open`), at
+   *  a section of it where a row names one: the Brief's glance
+   *  (BriefGlance), at the owner's pick of option A (2026-11-19). A page opened from it goes back to it by the close, a swipe to
    *  the right or a device's Back (lib/openCards); its tabs stay over it
    *  for going from page to page. Without one, Preflight is up to begin
    *  with. */
-  overview?: ComponentType<{ onOpen: (tab: PanelTab) => void; notice?: ReactNode }>;
+  overview?: ComponentType<{ onOpen: (tab: PanelTab, section?: string) => void; notice?: ReactNode }>;
   /** Over the tabs: the printed title. */
   before: ReactNode;
   contents: Record<PanelTab, ReactNode>;
@@ -198,8 +198,9 @@ export default function PanelTabs({
     };
   }, [tab, asked]);
   useFocusKept(tab, hadFocus, localHead, pages);
-  // A page opened from the overview's card, the panel all the way up.
-  const openPage = useCallback((next: PanelTab) => goTo(next), [goTo]);
+  // A page opened from the overview's row, at a section of it where the
+  // row names one (the NOTAMs' row, Preflight's NOTAMs).
+  const openPage = useCallback((next: PanelTab, section?: string) => goTo(next, section), [goTo]);
   // A tab and section asked for from outside the tabs (useTabAsk): heard
   // as it is asked, and once drawn, one asked before the tabs were there;
   // the card they are in all the way up where it asks (its own drawer).
