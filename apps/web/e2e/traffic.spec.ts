@@ -210,7 +210,8 @@ test("an airplane's card opens at its size: where it left and its record come in
   await expectDrawnOnce(
     page,
     async () => {
-      await row.tap();
+      // Clicked: the project has no touch screen, and a tap() threw there.
+      await row.click();
       await expect(page.getByTestId("flight-card")).toBeVisible();
     },
     { card: "flight-card", maxMoves: Number.POSITIVE_INFINITY, shiftBudget: 0.01, settleMs: 2500 },

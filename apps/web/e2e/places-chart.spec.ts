@@ -65,7 +65,11 @@ test("a tap on an airport on the chart opens its card, a tap elsewhere puts it a
   await tapTheChart(page);
   await expect(page).not.toHaveURL(/[?&]place=/);
   await expect(card(page)).toHaveCount(0);
-  await expectDrawerClosed(page);
+  // A phone's sheet down to its pill, as Maps'; a desktop's side panel
+  // back out as it was under the card, since it opens out (92e217114) and
+  // a card's close goes back one level.
+  if ((page.viewportSize()?.width ?? 0) >= 768) await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
+  else await expectDrawerClosed(page);
   const arrow = page.locator("[data-map-controls]").getByTestId("my-position-button");
   await expect(arrow).toHaveAttribute("data-face", "route");
   await arrow.click();
