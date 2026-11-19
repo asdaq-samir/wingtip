@@ -1,6 +1,7 @@
 import type { PickKind } from "../mapPick";
 import { createContext, useContext, useEffect, useRef, type ReactNode, useEffectEvent } from "react";
 import { prefersReducedMotion } from "../../motion";
+import { toDrawnLine } from "./legTap";
 import type {
   FilterSpecification,
   GeoJSONSource,
@@ -85,8 +86,10 @@ export function pickTap(map: MlMap, taps: Iterable<GlTap>, point: { x: number; y
 
 /** Of the features MapLibre found in a finger's square, the one the tap
  *  is for: a mark (a point) only where its point is within `reach` of the
- *  finger, its 44-point target, the nearest first; a line or an area in
- *  the square as MapLibre gave it, the topmost. The square also takes in
+ *  finger, its 44-point target, the nearest first; a line the nearest as
+ *  drawn (a Class D ring under the finger, not a Class B line 10 points
+ *  off that MapLibre listed first: airspace-lines.spec); an area in the
+ *  square as MapLibre gave it, the topmost. The square also takes in
  *  a mark's drawn words and chip, so a field's ident or a route's pill
  *  whose point was a finger and more away took the tap: on the chart
  *  beside a field's name, its card opened rather than the open card
@@ -105,8 +108,9 @@ export function nearestHit(
     if (f.geometry.type === "Point") {
       const at = project(f.geometry.coordinates as [number, number]);
       d = Math.hypot(at.x - finger.x, at.y - finger.y);
-    }
-    if (d <= reach && d < near) [best, near] = [f, d];
+      if (d > reach) continue;
+    } else if (f.layer?.type === "line") d = toDrawnLine(f.geometry, finger, project);
+    if (!best || d < near) [best, near] = [f, d];
   }
   return best;
 }

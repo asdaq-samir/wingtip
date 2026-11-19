@@ -18,7 +18,7 @@ import { expect, type Page } from "@playwright/test";
 
 type Card = { id: number; mine: boolean; top: number; opacity: number; open: boolean };
 type Frame = { t: number; cards: Card[]; controlsTop: number | null; anchor: { x: number; y: number } | null };
-type Recording = { frames: Frame[]; cameraMoves: { t: number; name: string; who: string }[]; shift: number };
+type Recording = { frames: Frame[]; cameraMoves: { t: number; name: string; who: string }[]; shift: number; shifts: string[] };
 
 /** Put on the page before it loads (addInitScript), once per page. */
 export async function installFrameRecorder(page: Page) {
@@ -36,6 +36,7 @@ export async function installFrameRecorder(page: Page) {
       frames: [] as unknown[],
       moves: [] as unknown[],
       shift: 0,
+      shifts: [] as string[],
       anchor: null as null | [number, number],
     };
     const w = window as unknown as Record<string, unknown>;
@@ -63,8 +64,22 @@ export async function installFrameRecorder(page: Page) {
     };
     try {
       new PerformanceObserver((list) => {
-        for (const e of list.getEntries() as unknown as { value: number; hadRecentInput: boolean }[])
-          if (st.armed && !e.hadRecentInput) st.shift += e.value;
+        type Src = { node?: Node | null; previousRect: DOMRectReadOnly; currentRect: DOMRectReadOnly };
+        type Shift = { value: number; hadRecentInput: boolean; startTime: number; sources?: Src[] };
+        // What moved, in words, so a failure names the element and not only the sum.
+        const name = (n?: Node | null) => {
+          const el = n instanceof Element ? n : n?.parentElement;
+          if (!el) return "?";
+          const tid = el.closest("[data-testid]")?.getAttribute("data-testid");
+          return `${el.tagName.toLowerCase()}${tid ? `@${tid}` : ""}.${String(el.className).slice(0, 40)}`;
+        };
+        const box = (r: DOMRectReadOnly) => `${Math.round(r.x)},${Math.round(r.y)} ${Math.round(r.width)}x${Math.round(r.height)}`;
+        for (const e of list.getEntries() as unknown as Shift[])
+          if (st.armed && !e.hadRecentInput) {
+            st.shift += e.value;
+            const srcs = (e.sources ?? []).map((s) => `${name(s.node)} ${box(s.previousRect)} → ${box(s.currentRect)}`).join("; ");
+            st.shifts.push(`${e.value.toFixed(3)}@${Math.round(e.startTime - st.t0)} [${srcs}]`);
+          }
       }).observe({ type: "layout-shift", buffered: false } as PerformanceObserverInit);
     } catch {
       // WebKit has no layout-shift entries.
@@ -98,11 +113,20 @@ export async function installFrameRecorder(page: Page) {
     w.__drawnArm = (card: string) => {
       const m = maps[0] as unknown as { getCenter(): { lng: number; lat: number } } | undefined;
       const c = m?.getCenter();
-      Object.assign(st, { armed: true, t0: performance.now(), card, frames: [], moves: [], shift: 0, anchor: c ? [c.lng, c.lat] : null });
+      Object.assign(st, {
+        armed: true,
+        t0: performance.now(),
+        card,
+        frames: [],
+        moves: [],
+        shift: 0,
+        shifts: [],
+        anchor: c ? [c.lng, c.lat] : null,
+      });
     };
     w.__drawnStop = () => {
       st.armed = false;
-      return { frames: st.frames, cameraMoves: st.moves, shift: st.shift };
+      return { frames: st.frames, cameraMoves: st.moves, shift: st.shift, shifts: st.shifts };
     };
   });
 }
@@ -185,6 +209,7 @@ function drawnOnceProblems(rec: Recording, { card, maxMoves, shiftBudget }: { ca
     if (far > 24 && away.slice(0, at).some((d) => d < far - 24))
       problems.push(`the map went ${Math.round(far)} px on ${axis} and came back`);
   }
-  if (rec.shift > shiftBudget) problems.push(`layout shift ${rec.shift.toFixed(3)}, over the budget of ${shiftBudget}`);
+  if (rec.shift > shiftBudget)
+    problems.push(`layout shift ${rec.shift.toFixed(3)}, over the budget of ${shiftBudget}: ${rec.shifts.join(" | ")}`);
   return problems;
 }

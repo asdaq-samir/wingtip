@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Map as MlMap } from "maplibre-gl";
 import { cn } from "cn";
 import { Button } from "../../../components/ui/button";
@@ -40,16 +41,32 @@ function fieldWords(f: Field): string {
  * middle first, each a button opening its card as a tap on its symbol
  * does -- the web's counterpart of the iPhone's map rotor and Android's
  * map actions. Hidden from sight, shown to a keyboard's focus at the
- * map's top corner, as a skip link is.
+ * map's top corner, as a skip link is: laid out there all the time and
+ * only clipped away, so the focus coming moves nothing (as sr-only, one
+ * point wide, its rows were laid out elsewhere and jumped to the corner, a
+ * layout shift of 0.6 in card-once.spec).
+ *
+ * Its rows are held while the focus is in it: a field picked here opens
+ * its card and the map comes to rest on it with the focus still on the
+ * pick, and the rows sorted again under the focus moved where the reader
+ * was (card-once.spec: a layout shift of 0.044 as the card came up). Each
+ * held row keeps its field's latest words; the list is the view's again
+ * once the focus leaves it.
  */
 export default function MapMarksList({ fields, onSelect }: { fields: Field[]; onSelect: (ident: string) => void }) {
   const { box: bounds } = useGlView(boxOf, "rest");
-  const shown = inSight(fields, bounds);
+  const live = inSight(fields, bounds);
+  const [held, setHeld] = useState<Field[] | null>(null);
+  const shown = held ? held.map((h) => fields.find((f) => f.ident === h.ident) ?? h) : live;
   if (!shown.length) return null;
   return (
     <nav
       aria-label="Airports on the map"
-      className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:top-2 focus-within:left-2 focus-within:z-[1100] focus-within:max-h-[50%] focus-within:overflow-y-auto focus-within:rounded-xl focus-within:bg-popover focus-within:p-2 focus-within:shadow-(--depth-overlay)"
+      onFocus={() => setHeld((was) => was ?? live)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setHeld(null);
+      }}
+      className="absolute top-2 left-2 z-[1100] max-h-[50%] overflow-y-auto rounded-xl p-2 not-focus-within:[clip-path:inset(50%)] focus-within:bg-popover focus-within:shadow-(--depth-overlay)"
     >
       <ul className="flex flex-col gap-2">
         {shown.map((f) => (

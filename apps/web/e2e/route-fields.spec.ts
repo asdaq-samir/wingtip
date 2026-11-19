@@ -150,8 +150,12 @@ test("while a line is open the map shows the route's points alone; folded, every
   // The chart's other airports drawn now (AirportsGl's probe, rendered
   // marks only): some with every line folded, none while one is open.
   await expect.poll(async () => (await airportMarks(page)).length, { timeout: slow(30_000) }).toBeGreaterThan(0);
-  await openLine(page, "KDLH");
+  // The departure's line, so the map is centred on C81 and folded shows
+  // Chicago's fields: CI's overlay tiles are cut round Chicago (41.4 to
+  // 43.4 N, scripts/build/e2e-overlay-tiles.sh), and centred on Duluth,
+  // KDLH's line, its map had no other field to draw again.
+  await openLine(page, "C81");
   await expect.poll(async () => (await airportMarks(page)).length, { timeout: slow(10_000) }).toBe(0);
-  await timelineLine(page, "KDLH").getByTestId("timeline-toggle").click();
+  await timelineLine(page, "C81").getByTestId("timeline-toggle").click();
   await expect.poll(async () => (await airportMarks(page)).length, { timeout: slow(10_000) }).toBeGreaterThan(0);
 });
