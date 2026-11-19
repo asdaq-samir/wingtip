@@ -60,8 +60,11 @@ test("nav log and brief: no zero count, the dashes said, the plan line in the Br
   await closeNavLog(page);
   await openBrief(page);
   const brief = page.getByTestId("brief-card");
-  // The plan's line is the pinned head's own, the altitude first.
-  await expect(brief.getByTestId("card-sub")).toHaveText(/^FL-\d{3} · leaving /);
+  // Named "Brief" as the Nav Log and the Profile are (the owner,
+  // 2026-11-19), the plan's line under it the pinned head's own, the route
+  // by its idents first.
+  await expect(brief.getByTestId("brief-name")).toHaveText("Brief");
+  await expect(brief.getByTestId("card-sub")).toHaveText(/^C81 → KDLH · FL-\d{3} · leaving /);
   // The rows' names are words, not small grey capitals (option A's grouped list).
   const label = brief.getByTestId("brief-glance-preflight").getByText("Before You Go", { exact: true });
   await expect(label).toHaveCSS("text-transform", "none");

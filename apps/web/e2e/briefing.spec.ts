@@ -80,7 +80,7 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   // option A), each opening its page; the pages' tabs over a page.
   await expect(drawer.getByTestId("brief-glance").locator("button[data-testid^='brief-glance-']")).toHaveCount(4);
   await briefPage(page, "Preflight");
-  await expect(panelTabs(page).getByRole("tab")).toHaveText(["Preflight", "Depart", "En route", "Arrive"]);
+  await expect(panelTabs(page).getByRole("tab")).toHaveText(["Preflight", "Depart", "En Route", "Arrive"]);
   // All four on the panel's line, none past its edge.
   const tabsBox = (await panelTabs(page).boundingBox())!;
   for (const tab of await panelTabs(page).getByRole("tab").all()) {

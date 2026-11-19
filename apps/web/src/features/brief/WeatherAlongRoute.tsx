@@ -260,7 +260,7 @@ export default function WeatherAlongRoute({
                 </ListGroup>
               )}
               {next && stretchShown && (
-                <ListGroup title={places.length > 2 ? `${place.ident} to ${next.ident}` : "En route"}>
+                <ListGroup title={places.length > 2 ? `${place.ident} to ${next.ident}` : "En Route"}>
                   {stretch.length === 0 ? (
                     <ListRow muted title="No TAFs or pilot reports near this stretch" />
                   ) : (

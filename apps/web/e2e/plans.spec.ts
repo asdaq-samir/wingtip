@@ -108,7 +108,7 @@ test(
     // ceiling once each, with their reasons (the owner's pick of the
     // redesign): there is no list over the steps that said them again.
     const drawer = sideDrawer(page);
-    await openTab(page, "En route"); // the Brief pulled up first: half way, its pages' cards are under its foot
+    await openTab(page, "En Route"); // the Brief pulled up first: half way, its pages' cards are under its foot
     await openSection(page, "Cruise Altitude");
     const cruise = drawer.locator('[data-title="Cruise Altitude"]');
     await expect(cruise).toBeVisible();

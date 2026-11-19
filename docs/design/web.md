@@ -1184,10 +1184,14 @@ are designed ([Vercel guidelines][vercel-guidelines]).
 cluttered at the owner's word, 2026-11-16, "How do we make brief less
 cluttered?" then "Do it"; one grouped list at his pick of option A,
 2026-11-19, so the Brief reads as Settings and FPL's timeline do).
-1. The verdict, as the engine words it, a pill under the Brief's name in
-   its pinned head (`VerdictPill`, `CardHead`'s `below`), in sight on
-   every page of the Brief; Preflight no longer says it again over its
-   checks. What the briefing could not check (`BriefingNotices`) and
+1. The head: "Brief", as the Nav Log and the Profile are named (the
+   owner, 2026-11-19: "Title of brief should just say Brief like Navlog
+   and others"), and under it one line, the route by its idents, the
+   altitude, when and the airplane. The verdict, as the engine words it,
+   a pill under that line in the pinned head (`VerdictPill`, `CardHead`'s
+   `below`), in sight on every page of the Brief but not at the pill,
+   where the card is its one title row; Preflight no longer says it again
+   over its checks. What the briefing could not check (`BriefingNotices`) and
    when to go (signed in only) under the head, over the list.
 2. One grouped list (`ListGroup`, a hairline between rows, no shadowed
    cards), each row opening its page:

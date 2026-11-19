@@ -92,7 +92,7 @@ const WHY: [(&str, &str, &str); 9] = [
 /// a look). Flight Service's number with non-breaking hyphens (U+2011):
 /// it broke after "(1-" on a phone (the web audit's WEB-43).
 const ACTION: [(&str, &str, &str); 9] = [
-    ("weather", "wait for it to lift, or plan another day", "read it on En route and plan around it"),
+    ("weather", "wait for it to lift, or plan another day", "read it on En Route and plan around it"),
     ("airspace", "route around it, or go later", "ask Flight Service (1\u{2011}800\u{2011}WX\u{2011}BRIEF) before you go"),
     ("altitude", "pick another altitude or route", "pick an altitude the profile offers"),
     ("oxygen", "carry oxygen, or plan lower", "carry oxygen, or plan lower"),

@@ -85,7 +85,12 @@ export function CardHeadRow({
           {sub}
         </p>
       )}
-      {below}
+      {/* Not laid out at the pill (AT_PILL): there the card is its one title row. */}
+      {below != null && (
+        <div className="contents" data-head-below="">
+          {below}
+        </div>
+      )}
     </>
   );
   const start =

@@ -1807,9 +1807,9 @@
             "finding": "caution",
             "tab": "preflight",
             "section": "x",
-            "line": "AIRMET Sierra along the route: read it on En route and plan around it",
+            "line": "AIRMET Sierra along the route: read it on En Route and plan around it",
             "lead": "AIRMET Sierra along the route",
-            "action": "Read it on En route and plan around it",
+            "action": "Read it on En Route and plan around it",
             "why": "VFR needs 14 CFR 91.155's visibility and distance from clouds all the way; a briefer's \"VFR not recommended\" (AIM 7-1-5) means the forecast is under them somewhere on the route, and your own minimums are stricter still.",
             "cite": "14 CFR 91.155; AIM 7-1-5",
             "raw": [
