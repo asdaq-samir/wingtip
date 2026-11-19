@@ -301,6 +301,13 @@ export async function locateOnOpen() {
     quiet = true;
     setEnabled(true);
   }
+  // A route already drawn by the time the permission is known -- one in
+  // the address, planned on the device -- is what was opened, fitted
+  // (useRouteFit), with the arrow offering the position: brought to the
+  // position after it, the map left the route it had just fitted, and the
+  // arrow offered the route back (route-fit.spec, 1 run in 4, 2026-11-18).
+  // A route that comes after this ends the follow by its own fit.
+  if (useOwnShip.getState().routeDrawn) return;
   recentre(OPEN_ZOOM);
 }
 

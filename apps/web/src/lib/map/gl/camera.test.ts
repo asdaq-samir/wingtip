@@ -126,6 +126,23 @@ describe("the camera's one owner", () => {
     expect(calls.map((c) => c.name)).toEqual(["fitBounds"]);
   });
 
+  it("lets go of a follow's step asked in the frame of a fit made at once, which ends the follow", () => {
+    const { map, calls, state } = fakeMap();
+    const camera = cameraOf(map);
+    camera.follow("own-ship", [0.5, 0.5]);
+    camera.fit(
+      [
+        [-2, -2],
+        [2, 2],
+      ],
+      { margin: { top: 0, bottom: 0, left: 0, right: 0 }, duration: 0 },
+    );
+    state.moving = false;
+    nextFrame();
+    expect(calls.map((c) => c.name)).toEqual(["fitBounds"]);
+    expect(useOwnShip.getState().follow).toBe(false);
+  });
+
   it("moves for the latest of a follow's points in a frame, over the time between them, and not for one under a pixel off (FL-13)", () => {
     const { map, calls, state } = fakeMap();
     const camera = cameraOf(map);

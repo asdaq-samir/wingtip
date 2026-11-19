@@ -55,7 +55,7 @@ class Camera {
     // Only a drag ends a follow: a pinch keeps own ship in the middle, as
     // Apple Maps' tracking does.
     map.on("dragstart", (e: { originalEvent?: unknown }) => {
-      if (e.originalEvent) endFollows();
+      if (e.originalEvent) this.endFollows();
     });
     // Let go once at rest. Not at the moveend a move aimed again fires:
     // MapLibre stops the old one and starts the new in the same call, so
@@ -76,6 +76,16 @@ class Camera {
     return this.running && this.map.isMoving() ? this.running.intent : null;
   }
 
+  /** Every follow ended but `keeps`, and an ended follow's point still
+   *  waiting for its frame let go with it: a fit made at once (a route's
+   *  first, no ease) is not moving by that frame, so the point went ahead
+   *  and eased the map off the route just fitted to own ship (route-fit.spec,
+   *  2026-11-18; FL-22's same frame, with a fit that moves, held already). */
+  private endFollows(keeps?: Follow) {
+    endFollows(keeps);
+    if (this.pending && this.pending.intent !== keeps) this.pending = null;
+  }
+
   /** Whether a pick or a fit is under way. */
   picking(): boolean {
     const h = this.holder();
@@ -87,7 +97,7 @@ class Camera {
    *  EON back under the card it had just been brought over). */
   tapped() {
     picked();
-    endFollows();
+    this.endFollows();
   }
 
   /** `at` brought into sight: eased within a few screens, flown beyond
@@ -102,7 +112,7 @@ class Camera {
     if (this.holder() === "pick" && aim && "center" in aim && aim.center[0] === at[0] && aim.center[1] === at[1] && aim.zoom === zoom)
       return false;
     picked();
-    endFollows(o.keeps);
+    this.endFollows(o.keeps);
     const { width, height } = map.getContainer().getBoundingClientRect();
     const there = map.project(at),
       middle = map.project(map.getCenter());
@@ -136,7 +146,7 @@ class Camera {
       return;
     }
     picked();
-    endFollows();
+    this.endFollows();
     this.running = { intent: "fit", aim: { bounds, margin: o.margin, ...(o.maxZoom !== undefined ? { maxZoom: o.maxZoom } : {}) } };
     log("fit", "fitBounds", o);
     // At the bearing the pilot turned the map to: MapLibre's fit turns it

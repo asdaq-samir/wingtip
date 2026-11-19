@@ -21,6 +21,20 @@ describe("own ship's start", () => {
     expect(useOwnShip.getState()).toMatchObject({ enabled: true, byPage: true });
   });
 
+  test("turned on as the map opens on a route already drawn, the map stays on the route", async () => {
+    useOwnShip.setState({ routeDrawn: true, follow: false });
+    const was = useOwnShip.getState().recentred;
+    await locateOnOpen();
+    expect(useOwnShip.getState()).toMatchObject({ enabled: true, follow: false, recentred: was });
+    useOwnShip.setState({ routeDrawn: false });
+  });
+
+  test("turned on as the map opens with no route, the map goes to the position", async () => {
+    const was = useOwnShip.getState().recentred;
+    await locateOnOpen();
+    expect(useOwnShip.getState()).toMatchObject({ follow: true, recentred: was + 1 });
+  });
+
   test("turned on by the pilot is the pilot's", () => {
     useOwnShip.getState().setEnabled(true);
     expect(useOwnShip.getState()).toMatchObject({ enabled: true, byPage: false });
