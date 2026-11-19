@@ -4,7 +4,7 @@ import { cn } from "cn";
 import FindingIcon from "../../components/FindingIcon";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { useTicked, usePreflight } from "./preflight";
-import { FINDING_TONE, type Finding } from "../../lib/findings";
+import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 import type { VerdictItem, Where } from "../../lib/verdict";
 import { GoToTab, LEGS } from "../plan";
@@ -70,13 +70,6 @@ export default function BriefChecks({
     if (at.section && at.tab === "preflight" && here.includes(at.section)) onOpen(at.section);
     go(at.tab, at.section);
   };
-  // A finding to look at says itself under the check's name, where it has
-  // room for its words; a check that is fine, or one made elsewhere, at the
-  // row's end.
-  const words = (finding: Finding | "elsewhere", detail: string) =>
-    finding === "stop" || finding === "caution"
-      ? { description: <span className={finding === "stop" ? FINDING_TONE.stop : undefined}>{detail}</span> }
-      : { value: detail };
   return (
     <div className="py-3" data-testid="verdict" data-title="Go / No-Go">
       <ListGroup
@@ -97,7 +90,8 @@ export default function BriefChecks({
                 {looked[i.key] && <span className="sr-only">, looked at</span>}
               </>
             }
-            {...words(i.finding, i.detail)}
+            // The engine's finding under its name, where its words have the row's width.
+            description={<span className={i.finding === "stop" ? FINDING_TONE.stop : undefined}>{i.detail}</span>}
             chevron
             onClick={() => open(i.key, i)}
             data-testid={`verdict-${i.key}`}

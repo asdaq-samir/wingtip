@@ -28,7 +28,7 @@ function Stat({ label, value, finding }: { label: string; value: ReactNode; find
       <span className={cn("truncate text-muted-foreground", TEXT.note)}>{label}</span>
       <span
         className={cn(
-          "truncate font-semibold text-foreground tabular-nums",
+          "font-semibold break-words text-foreground tabular-nums",
           TEXT.heading,
           finding && finding !== "ok" && FINDING_TONE[finding],
         )}
@@ -52,14 +52,30 @@ function Figures({ children, note }: { children?: ReactNode; note?: ReactNode })
 /** A part's name and the field it is at, bold, with the field's category
  *  and the part's mark where it has something to fix or look at: the row
  *  itself plain, its red or amber in the mark and the figures that make it
- *  alone, the verdict the one wash (the design review, 2026-10-28). */
-function Title({ label, ident, category, finding }: { label: string; ident?: string; category?: string | null; finding: Finding }) {
+ *  alone, the verdict the one wash (the design review, 2026-10-28). Its
+ *  value (`at`: a time, what is left to do) at the line's end, in the
+ *  title rather than the row's value, so the figures under it have the
+ *  row's whole width, as the mockup's En Route has (option A). */
+function Title({
+  label,
+  ident,
+  category,
+  finding,
+  at,
+}: {
+  label: string;
+  ident?: string;
+  category?: string | null;
+  finding: Finding;
+  at?: ReactNode;
+}) {
   return (
-    <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+    <span className="flex w-full flex-wrap items-center gap-x-1.5 gap-y-0.5">
       {label}
       {ident && <strong>{ident}</strong>}
       <CategoryBadge category={category} />
       {(finding === "stop" || finding === "caution") && <FindingIcon finding={finding} className="size-4" />}
+      {at && <span className="ml-auto text-muted-foreground tabular-nums">{at}</span>}
     </span>
   );
 }
@@ -73,8 +89,8 @@ type Open = (tab: PanelTab, section?: string) => void;
 export function BeforeRow({ before, airplane, onOpen }: { before?: BriefGlance["before"]; airplane: boolean; onOpen: Open }) {
   return (
     <ListRow
-      title={<Title label="Before You Go" finding={before?.finding ?? "pending"} />}
-      value={<ReadyTodo />}
+      title={<Title label="Before You Go" finding={before?.finding ?? "pending"} at={<ReadyTodo />} />}
+      wide
       description={
         airplane && (
           <Figures note={before?.balance?.problem ?? undefined}>
@@ -121,8 +137,16 @@ export function FieldRow({
     undefined;
   return (
     <ListRow
-      title={<Title label={label} ident={here ? POSITION_NAME : field.ident} category={field.category} finding={field.finding} />}
-      value={time(field.at)}
+      title={
+        <Title
+          label={label}
+          ident={here ? POSITION_NAME : field.ident}
+          category={field.category}
+          finding={field.finding}
+          at={time(field.at)}
+        />
+      }
+      wide
       description={
         // The figures it has, no dashes for those it has not (no airplane, no runway picked).
         !here && (field.runway || field.overFiftyFt != null || field.radio || note) ? (
@@ -154,8 +178,14 @@ export function EnrouteRow({ enroute, said, onOpen }: { enroute?: BriefGlance["e
   const stop = enroute?.finding === "stop";
   return (
     <ListRow
-      title={<Title label="En Route" finding={enroute?.finding ?? "pending"} />}
-      value={enroute?.eteMin != null ? duration(enroute.eteMin) : undefined}
+      title={
+        <Title
+          label="En Route"
+          finding={enroute?.finding ?? "pending"}
+          at={enroute?.eteMin != null ? duration(enroute.eteMin) : undefined}
+        />
+      }
+      wide
       description={
         <Figures note={said ? undefined : (enroute?.line ?? undefined)}>
           <Stat

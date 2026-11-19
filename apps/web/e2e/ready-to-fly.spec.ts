@@ -27,18 +27,22 @@ test("the Brief's Before You Go says what is left to do, and opens Ready to Fly 
   await expect(before.getByTestId("ready-todo")).toHaveText(/^(\d+ to do|Ready)$/, { timeout: slow(30_000) });
   // No airplane picked: one thing at least is left (asked for, never a 172).
   await expect(before.getByTestId("ready-todo")).toHaveText(/^\d+ to do$/);
-  const left = Number((await before.getByTestId("ready-todo").textContent())!.split(" ")[0]);
   // Not on the overview any more: on Preflight, which the row opens.
   await expect(glance.getByTestId("ready-to-fly")).toHaveCount(0);
   await inSheet(page, before);
   await before.click();
   const ready = sideDrawer(page).locator('[data-tab="preflight"]').getByTestId("ready-to-fly");
   await expect(ready).toBeVisible({ timeout: slow(30_000) });
-  await expect(ready.getByTestId("ready-line")).toHaveText(
-    left === 1 ? "1 thing left to do before you go" : `${left} things left to do before you go`,
-  );
-  // Every check with its mark, as many not done as the row said.
-  await expect(ready.locator("[data-testid^='ready-item-'] [data-finding=caution]")).toHaveCount(left);
+  await expect(ready.getByTestId("ready-line")).toHaveText(/^\d+ things? left to do before you go$/);
+  // As many checks not done as the line says, read together: a check can
+  // finish while the Brief comes in (5 of 6 done between the two reads).
+  await expect
+    .poll(async () => {
+      const said = Number((await ready.getByTestId("ready-line").textContent())!.split(" ")[0]);
+      const marked = await ready.locator("[data-testid^='ready-item-'] [data-finding=caution]").count();
+      return said === marked;
+    })
+    .toBe(true);
   // At most three actions, laid open: no fold to open first.
   const actions = ready.locator("[data-testid^='ready-action-']");
   expect(await actions.count()).toBeGreaterThanOrEqual(1);
