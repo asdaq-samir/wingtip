@@ -235,6 +235,10 @@ test("a drag up or down still sizes the sheet on either page", async ({ page, br
     await fingerDown(page, grabber.x + grabber.width / 2, grabber.y + 6, 200);
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
     await settled(sideDrawer(page));
+    // And the drag's risen face put away, held a moment past the lift
+    // (SheetDrawer's data-risen): read in that moment the page's row was in
+    // sight, then hidden at the pill, and its name gone with it.
+    await expect(sideDrawer(page)).not.toHaveAttribute("data-risen");
     await expectPage(page, at);
     await grabberTo(page, "half");
   }
