@@ -56,13 +56,13 @@ E2E = ROOT / "apps/web/e2e"
 NIGHTLY_LIST = ROOT / "scripts/ci/test_tiers_nightly.txt"
 PR_TAGS = ("@smoke", "@flight-critical")
 MAX_RETRIES = 1
-# The slower proofs, after merge; on a pull request the browser jobs run
-# only for the specs it adds or changes (OWN_SPECS in their `if`, decision
-# 0044), beside the gate: "CI passed" does not wait for them (4 min 07 s
-# for one spec, #582). The whole suite and the smoke set are never a pull
-# request's again.
-AFTER_MERGE = {"e2e", "e2e-images", "build-images"}
-OWN_SPECS = "needs.changes.outputs.specs != ''"
+# The stack's image builds, after merge. The browser jobs are tier 1
+# (decision 0048): a pull request runs the specs its change reaches
+# (scripts/ci/browser_specs.py, the `specs` job) and "CI passed" waits for
+# them, after #585 merged with three red. The smoke set and the whole suite
+# are never a pull request's.
+AFTER_MERGE = {"build-images"}
+BROWSER = ("specs", "e2e-images", "e2e")
 # ci.yml's jobs about the run rather than in a tier.
 META = {"passed", "budget", "halt"}
 # The script ci.yml's test-web runs the tests and the build through.
@@ -218,15 +218,14 @@ def tiers() -> list[str]:
         for i in sorted(tier1 - gate)
     ]
     errors += [f"ci.yml: \"CI passed\" waits for {i}, which is not a tier-1 job" for i in sorted(gate - tier1)]
-    own_specs = {i for i in ("e2e", "e2e-images") if i in jobs and OWN_SPECS in jobs[i].keys.get("if", "")}
-    if own_specs and own_specs != {"e2e", "e2e-images"}:
-        errors.append("ci.yml: e2e and e2e-images run a pull request's own specs together, or neither (the stack needs its images)")
-    smoke = "\n".join(jobs["e2e"].body) if "e2e" in jobs else ""
-    own_run = r"github\.event_name == 'pull_request' && format\('--project=mobile [^']*\{0\}', needs\.changes\.outputs\.specs\)"
-    if own_specs and not re.search(own_run, smoke):
-        errors.append(
-            "ci.yml: on a pull request e2e runs the changed specs alone (PROJECTS names needs.changes.outputs.specs), never the smoke set"
-        )
+    errors += [
+        f"ci.yml: {i} must be a tier-1 job that \"CI passed\" waits for (decision 0048)"
+        for i in BROWSER
+        if i not in jobs or i not in gate or jobs[i].tier != 1
+    ]
+    e2e = "\n".join(jobs["e2e"].body) if "e2e" in jobs else ""
+    if "PROJECTS: ${{ needs.specs.outputs.args }}" not in e2e or "needs.specs.outputs.shards" not in e2e:
+        errors.append("ci.yml: e2e runs what the specs job chose (PROJECTS and the shards from needs.specs.outputs; decision 0048)")
     errors += [
         f"ci.yml: {i} runs after merge (the owner, 2026-11-10): `if: github.event_name != 'pull_request'`"
         for i in sorted(AFTER_MERGE)
