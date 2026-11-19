@@ -74,8 +74,9 @@ export interface CardRow {
   /** The short line under its name in its title row, in sight at the pill
    *  too (the owner, 2026-11-11: the pages that became cards). */
   pillLine?: RegExp;
-  /** Something opened inside it, and the way back to it. */
-  inside?: { open: (page: Page) => Promise<void>; back: (page: Page) => Promise<void> };
+  /** Something opened inside it, and the way back to it; `atItsTop` where
+   *  going back opens it at its own top, not where it was, and why. */
+  inside?: { open: (page: Page) => Promise<void>; back: (page: Page) => Promise<void>; atItsTop?: string };
   not?: Partial<Record<Check, string>>;
 }
 
@@ -133,6 +134,10 @@ export const CARDS: CardRow[] = [
       back: async (p) => {
         await sideDrawer(p).getByTestId("place-tab-radio").click();
       },
+      // A tab picked opens at its own top under the actions, Info's too when
+      // it is picked again (the owner, 2026-11-14: "Switching tabs should
+      // not show those"; lib/tabScroll), where it once kept its place.
+      atItsTop: "a tab picked opens at its own top (useTabScroll)",
     },
   },
   {

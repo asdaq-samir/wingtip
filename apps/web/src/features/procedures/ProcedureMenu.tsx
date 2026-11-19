@@ -210,7 +210,14 @@ export default function ProcedureMenu({
             data-kind={kind}
             data-look={look}
             className={chipLook(look === "add")}
-            aria-label={`${ident} ${TITLE[kind].toLowerCase()}: ${label ?? "none picked"}`}
+            // Its name starts with the words it shows, "+ ARR" or the one picked
+            // (WCAG 2.5.3, Label in Name: a voice user says what they see), then
+            // the whole word for a reader.
+            aria-label={
+              look === "add"
+                ? `+ ${CHIP[kind]}, ${ident} ${TITLE[kind].toLowerCase()}: none picked`
+                : `${label ?? SHORT[kind]}, ${ident} ${TITLE[kind].toLowerCase()}`
+            }
           >
             {look === "add" ? <span>+ {CHIP[kind]}</span> : <span className="truncate">{label ?? SHORT[kind]}</span>}
             {look !== "add" && <ChevronDown className="size-4 shrink-0" aria-hidden />}

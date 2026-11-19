@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { locateOnOpen, useOwnShipNear } from "../../../lib/map/position/ownShip";
 import { useKeptAirport } from "../../../lib/preferences";
@@ -59,10 +59,16 @@ export function useMapPins({
   const pinIdent = placeData?.ident ?? place;
   const pinLat = placeData?.lat ?? keptPlace?.lat ?? indexed?.lat;
   const pinLon = placeData?.lon ?? keptPlace?.lon ?? indexed?.lon;
-  const placePin = useMemo(
+  const freshPin = useMemo(
     () => (pinIdent && pinLat != null && pinLon != null ? { ident: pinIdent, lat: pinLat, lon: pinLon } : null),
     [pinIdent, pinLat, pinLon],
   );
+  // One pin a place, from where it was first known: the index's figures
+  // (single precision), the planner's answer and the recent fields' copy of
+  // it name the same spot to a few metres, and each new object was another
+  // camera move to it, the map eased twice for one tap (card-once.spec).
+  const [placePin, setPlacePin] = useState(freshPin);
+  if (freshPin?.ident !== placePin?.ident) setPlacePin(freshPin);
   // A departure typed with no destination yet: the map brought to it, at
   // the owner's screenshot (KBDL in, the map left on the whole country).
   // Not a present position, where the map is already.

@@ -64,7 +64,9 @@ function RunwayTray({
               type="button"
               data-testid="runway-line-toggle"
               data-disclosure=""
-              aria-label={lineOpen ? `${a.ident}: fold the runways` : `${a.ident}: all the runways`}
+              // Its name starts with the "RWY" it shows (WCAG 2.5.3, Label in Name: a
+              // voice user says what they see), then the field and what a tap does.
+              aria-label={`RWY, ${a.ident} ${role === "Arrive" ? "landing" : "takeoff"}: ${lineOpen ? "fold the runways" : "all the runways"}`}
               className={cn("justify-start text-inherit", TRAY_HEAD, "outline-none focus-visible:ring-2 focus-visible:ring-ring")}
             />
           }
