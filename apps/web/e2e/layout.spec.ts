@@ -292,8 +292,10 @@ for (const path of PAGES) {
     if (!viewport) throw new Error("no viewport configured");
 
     // The group's own first, not the radio's mic, which stands over it in
-    // the same column (the owner, 2026-11-06; on a phone too, 2026-11-13).
-    const first = page.locator("[data-map-controls] > div:not([data-map-food]) button").first();
+    // the same column (the owner, 2026-11-06; on a phone too, 2026-11-13),
+    // nor, from md up, the compass and the 3D button, over the group at the
+    // right since the owner's 2026-11-18 compass (Apple Maps stacks them so).
+    const first = page.locator("[data-map-controls] [data-map-group] button").first();
     const firstBox = (await first.boundingBox())!;
     // On the map, flush with its right edge -- the same on both pages: on a
     // phone just over the sheet's top, the search's row, riding it as the

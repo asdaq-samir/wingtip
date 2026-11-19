@@ -156,9 +156,13 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   const zoomOfTiles = () => chartZoom(page);
   const map = (await page.locator(".maplibregl-map").boundingBox())!;
   await page.mouse.move(map.x + map.width / 2, map.y + map.height / 2);
-  for (let i = 0; i < 3; i++) {
+  // A notch at a time till the tiles are a region's: a desktop's wider
+  // view opens a level closer in than a phone's, where three notches
+  // were all it took.
+  for (let i = 0; i < 8 && !((await zoomOfTiles()) <= 5); i++) {
     await page.mouse.wheel(0, 300);
     await page.waitForTimeout(400);
+    await mapStill(page);
   }
   await expect.poll(zoomOfTiles, { timeout: slow(10000) }).toBeLessThanOrEqual(5);
   // So far out the route is a few points across: its numbered dots give

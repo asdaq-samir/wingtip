@@ -82,7 +82,12 @@ export function RulerGl() {
         from: [pointOf(a), pointOf(b)],
         zoom: map.getZoom(),
         bearing: map.getBearing(),
-        timer: window.setTimeout(begin, HOLD_MS),
+        // Begun at the frame after the hold, not at the timer: a finger's
+        // moves are handed to the page once a frame, so on a busy page the
+        // timer ran before a pinch's first move was heard, and the ruler
+        // came up under a pinch (ruler.spec:82 on a phone's CPU). By that
+        // frame a move has cancelled the hold.
+        timer: window.setTimeout(() => requestAnimationFrame(begin), HOLD_MS),
       };
       held = hold.from;
     };

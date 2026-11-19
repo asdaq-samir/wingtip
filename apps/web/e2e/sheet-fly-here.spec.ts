@@ -71,9 +71,12 @@ test("Fly Here from the map over a route, from Search at the pill", async ({ pag
   await grabberTo(page, "peek");
   // Cedar Rapids, towered: drawn with the whole route in sight, clear of
   // its line. Dubuque, nearer the line, is no longer drawn at the pill's
-  // zoom (6.2) beside the bigger fields round it.
-  await tapAirportOnMap(page, "KCID");
-  await flyHere(page, "KCID");
+  // zoom (6.2) beside the bigger fields round it. A desktop's wider window
+  // fits the route a level closer in, its foot north of Cedar Rapids:
+  // Rochester, towered, beside the panel and clear of the line, there.
+  const field = (page.viewportSize()?.width ?? 0) >= 768 ? "KRST" : "KCID";
+  await tapAirportOnMap(page, field);
+  await flyHere(page, field);
   await grabberTo(page, "half");
   await expectPlanLive(page);
 });
