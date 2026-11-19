@@ -38,6 +38,12 @@ export interface SearchPick {
    *  Fly Here's place, and adds the field where the pilot asked
    *  (the owner, 2026-11-18). */
   stop?: boolean;
+  /** An ask that waits for the pilot to tap the field (the first flight's
+   *  destination, the owner, 2026-11-13): until then the field is at rest,
+   *  the page toggle beside it and no Cancel, as Apple Maps' field is
+   *  before it is touched (the owner, 2026-11-19: "I see cancel on fresh
+   *  load"). */
+  waiting?: boolean;
 }
 export const useSearchPick = create<{ pick: SearchPick | null; fields: number }>(() => ({ pick: null, fields: 0 }));
 
