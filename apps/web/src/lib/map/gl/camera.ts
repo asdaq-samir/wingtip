@@ -285,14 +285,17 @@ class Camera {
    * first where it is, the course left half fitted). Otherwise the padding
    * is taken as `how` says.
    */
-  room(pad: Pad, how: RoomHow, ease: { duration: number; easing: (t: number) => number }) {
+  room(pad: Pad, how: RoomHow, ease: { duration: number; easing: (t: number) => number }, card = false) {
     const map = this.map;
     this.later = null;
     // A fit made at once just now counts as under way: the route's first
     // fit, as the page opened with own ship's position asked for, came
     // before a desktop's side panel had settled out, and was left fitted
-    // to the room of its pill (sheet-fly-here.spec on a desktop).
-    const fresh = this.fresh && performance.now() - this.fresh.at < FRESH_MS ? this.fresh.aim : null;
+    // to the room of its pill (sheet-fly-here.spec on a desktop). Not for
+    // a card come or gone, whose room leaves the chart where it is: the
+    // Map card opened from the pill a moment after the page had fitted
+    // its route eased the map under it (sheet-cards.spec:36).
+    const fresh = !card && this.fresh && performance.now() - this.fresh.at < FRESH_MS ? this.fresh.aim : null;
     const aim = this.picking() ? this.running?.aim : fresh;
     if (aim && "center" in aim) {
       // Where it lands: the middle of the room it was aimed at.

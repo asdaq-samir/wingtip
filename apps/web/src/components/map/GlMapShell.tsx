@@ -296,9 +296,10 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       // after its size (route-fit.spec's desktop runs, 2026-11-19). Own
       // ship followed stays in the middle of the room, as on a phone.
       const own = useOwnShip.getState();
-      const still = to.card || was.card || (!onPhone && !(own.enabled && own.follow));
+      const card = !!(to.card || was.card);
+      const still = card || (!onPhone && !(own.enabled && own.follow));
       const how = still ? "still" : to.up !== was.up && to.out === was.out ? "set" : "ease";
-      cameraOf(map).room(padOf(to), how, { duration: DRAWER_MS, easing: drawerEasing });
+      cameraOf(map).room(padOf(to), how, { duration: DRAWER_MS, easing: drawerEasing }, card);
     },
     [map, sliding, onPhone],
   );

@@ -125,6 +125,12 @@ describe("the camera's one owner", () => {
     camera.room(side, "still", ease);
     expect(calls.map((c) => c.name)).toEqual(["fitBounds", "easeTo"]);
     expect(calls.at(-1)!.options).toMatchObject({ padding: side });
+    // Fitted again, then a card come over the sheet: the chart kept still.
+    calls.length = 0;
+    camera.fit(bounds, { margin, duration: 0 });
+    state.moving = false;
+    camera.room({ ...side, bottom: 400 }, "still", ease, true);
+    expect(calls.map((c) => c.name)).not.toContain("easeTo");
     // Fitted again, then moved by hand: the room keeps the chart still.
     calls.length = 0;
     camera.fit(bounds, { margin, duration: 0 });
