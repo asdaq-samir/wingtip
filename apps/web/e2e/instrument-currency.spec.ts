@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { inSheet, library, openConsole, showTabs } from "./helpers";
+import { frontSheet, inSheet, library, openConsole, settled, showTabs } from "./helpers";
 import { fillDate } from "./ariaFields";
 import { NO_OWN_FIGURES } from "./airplaneMocks";
 
@@ -77,6 +77,12 @@ test("the Logbook says how far instrument currency runs, logs approaches with a 
 
   // A flight with its approaches, holding and tracking.
   await console.getByTestId("logbook-add").click();
+  await page.getByTestId("logbook-totalHours").waitFor();
+  // At rest before inSheet measures: a card opened over the You card at
+  // full is drawn at the top and eases down to half for about 450 ms, so
+  // measured on the way its foot looked in sight, it was not pulled up, and
+  // the click waited on a button under the screen's foot to the timeout.
+  await settled(frontSheet(page));
   await page.getByTestId("logbook-totalHours").fill("1.5");
   await page.getByTestId("logbook-approaches").fill("3");
   // Add Entry is a card opened half way on a phone (docs/design/rules.md,
@@ -130,6 +136,9 @@ test("an airplane's VOR check is recorded with its kind and error, and says how 
   const console = page.getByTestId("console-sheet");
   await library(console, "Airplanes");
   await console.getByRole("button", { name: "Edit N12345" }).click();
+  await page.getByTestId("vor-check-error").waitFor();
+  // At rest before inSheet measures, as Add Entry is above.
+  await settled(frontSheet(page));
   await expect(page.getByTestId("vor-check-standing")).toHaveText("To 2099-10-31");
   await page.getByTestId("vor-check-error").fill("-3");
   // The airplane's form is a card opened half way on a phone, its VOR

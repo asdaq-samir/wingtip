@@ -1,5 +1,5 @@
 import { test, expect, type Route } from "@playwright/test";
-import { inSheet, library, openConsole, showTabs } from "./helpers";
+import { frontSheet, inSheet, library, openConsole, settled, showTabs } from "./helpers";
 
 /**
  * The pilot console's Logbook: where the pilot stands first, then the
@@ -51,6 +51,12 @@ test("the logbook says where the pilot stands, and a flight logged is posted as 
   await expect(console.getByTestId("currency-review")).toHaveText("To 30 Jun 2027");
 
   await console.getByTestId("logbook-add").click();
+  await page.getByTestId("logbook-totalHours").waitFor();
+  // At rest before inSheet measures: a card opened over the You card at
+  // full is drawn at the top and eases down to half for about 450 ms, so
+  // measured on the way its foot looked in sight, it was not pulled up, and
+  // the click waited on a button under the screen's foot to the timeout.
+  await settled(frontSheet(page));
   await page.getByTestId("logbook-totalHours").fill("3.4");
   // Add Entry is a card opened half way on a phone (docs/design/rules.md,
   // the cards and detents), its Save under the edge: pulled up to it.
