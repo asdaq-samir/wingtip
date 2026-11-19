@@ -54,7 +54,8 @@ export default function MapBanners({ map }: { map: GlMap | null }) {
  *
  * At the top under a bottom sheet, clear of the map's buttons, which stand
  * at the top right there since the owner's Apple Maps screenshot
- * (2026-11-10).
+ * (2026-11-10); in flight under the next checkpoint's head (FlyingHead,
+ * its measured --flying-head-h), which stands at the top too.
  *
  * The radio's (RadioLayer) after what is ahead: a call to us with its
  * actions, and the captions while the app listens, once it first has.
@@ -77,7 +78,7 @@ function MapBannersDrawn({ map }: { map: GlMap | null }) {
       className={cn(
         "pointer-events-none absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] z-[1000] flex flex-col items-center gap-2 nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:left-[calc(max(1rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] nav-bottom:bottom-auto",
         flying
-          ? "right-[calc(max(0.5rem,env(safe-area-inset-right))+4.75rem)] nav-bottom:right-[calc(max(0.5rem,env(safe-area-inset-right))+4.75rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+4.75rem)]"
+          ? "nav-bottom:top-[calc(max(0.75rem,env(safe-area-inset-top))+var(--map-inset-top,0px)+var(--flying-head-h,0px)+0.5rem)] right-[calc(max(0.5rem,env(safe-area-inset-right))+4.75rem)] nav-bottom:right-[calc(max(0.5rem,env(safe-area-inset-right))+4.75rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+4.75rem)]"
           : "right-[calc(max(0.5rem,env(safe-area-inset-right))+3.25rem)] nav-bottom:right-[calc(max(0.5rem,env(safe-area-inset-right))+3.25rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+3.25rem)]",
       )}
     >

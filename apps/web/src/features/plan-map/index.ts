@@ -8,6 +8,9 @@
 
 export { useKeepOffline } from "./keepStatus";
 export { BootMap, RouteMap } from "./routeMapChunk";
+/** The ground's relief under the chart, the source the 3D view stands up
+ *  (TerrainGl waits for it): every map with the 3D view mounts it. */
+export { default as ReliefGl } from "./terrain/ReliefGl";
 export { useTrueHeightView } from "./terrain/heightStretch";
 export { setPilotView, usePilotView } from "./terrain/pilotView";
 export { useTerrainView } from "./terrain/useTerrainView";
