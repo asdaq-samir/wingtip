@@ -97,7 +97,7 @@ MVN = (
 )
 # docs/CI.md, "API compatibility", with CI's --fail-on and its list of meant breaks.
 OASDIFF = (
-    'git show origin/main:{} > /tmp/base.json && docker run --rm -v /tmp:/base -v "$PWD:/head" tufin/oasdiff:v1.34.1 '
+    'git show origin/main:{} > /tmp/base.json && docker run --rm -v /tmp:/base -v "$PWD:/head" tufin/oasdiff:v1.39.0 '
     "breaking /base/base.json /head/{} --fail-on ERR --format singleline --err-ignore /head/.github/api-breaks.txt"
 )
 # check.sh's `ios`, on the scheme a pull request tests (WingtipUnit builds no UI test).
