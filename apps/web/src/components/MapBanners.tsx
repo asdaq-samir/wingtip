@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import type { Map as GlMap } from "maplibre-gl";
 import AircraftAlerts from "./AircraftAlerts";
 import AlertsBanner from "./AlertsBanner";
@@ -73,8 +73,26 @@ function MapBannersDrawn({ map }: { map: GlMap | null }) {
   // The loop's bar only while the Map card's Weather is on too.
   const weather = usePreferences((s) => s.weather);
   const loop = useWeatherLayers((s) => s.loop !== "off") && weather;
+  // Its height, for what stands under the column at a phone's top: the
+  // model weather's legend (FlowLegend), whose close and field menu were
+  // under a could-not line there, a tap on them taken by the banner
+  // (weather-flow.spec on CI, while tfr.faa.gov had no answer). Measured,
+  // as the lines come and go and the pilot's text size sets them.
+  const column = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = column.current;
+    const root = document.documentElement.style;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const watch = new ResizeObserver(() => root.setProperty("--map-banners-h", `${el.offsetHeight}px`));
+    watch.observe(el);
+    return () => {
+      watch.disconnect();
+      root.removeProperty("--map-banners-h");
+    };
+  }, []);
   return (
     <div
+      ref={column}
       className={cn(
         "pointer-events-none absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] z-[1000] flex flex-col items-center gap-2 nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:left-[calc(max(1rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] nav-bottom:bottom-auto",
         flying
