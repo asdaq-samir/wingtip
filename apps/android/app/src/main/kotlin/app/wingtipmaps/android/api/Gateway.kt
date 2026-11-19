@@ -40,10 +40,14 @@ import java.util.concurrent.TimeUnit
 @SuppressLint("StaticFieldLeak") // the application's context alone (attach), which lives as long as the process
 object Gateway {
     /** The coder for the servers' JSON: a key not modelled is passed
-     *  over, and a null is left out of a body. The planner's snake case
-     *  is carried by each model's @SerialName (Models.kt). */
+     *  over, a value that does not fit a property with a default (an enum
+     *  value the server added after this build) is that default, and a
+     *  null is left out of a body, so a server that ships first never
+     *  fails a phone not yet updated (ApiToleranceTest). The planner's
+     *  snake case is carried by each model's @SerialName (Models.kt). */
     val json: Json = Json {
         ignoreUnknownKeys = true
+        coerceInputValues = true
         explicitNulls = false
     }
 

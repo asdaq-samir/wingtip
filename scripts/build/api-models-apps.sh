@@ -39,8 +39,15 @@
 # How the documents are read (api-models-apps.mjs):
 # - Enums and consts become plain strings: a value the server adds later
 #   must not make a whole answer fail to decode on a phone that has not
-#   been updated. A string's format (a date) is dropped too, so a date
-#   stays the string the apps read.
+#   been updated, so a value the app does not know arrives as the string
+#   the server sent, the fallback each app's code reads it to (its
+#   `default:` / `else`). A string's format (a date) is dropped too, so a
+#   date stays the string the apps read.
+# - Every object is open: a key the app does not know is passed over
+#   (Swift's Codable does; an object marked additionalProperties: false,
+#   for which swift-openapi-generator would write a decoder that refuses
+#   one, is opened; Android's coder, Gateway.json, ignores unknown keys).
+#   ApiTolerance tests on each phone hold it to that.
 # - Tuples (a [lat, lon] pair) become arrays of their one type.
 # - A member a document leaves untyped is OpenAPIRuntime's
 #   OpenAPIValueContainer on the iPhone and kotlinx's JsonElement on Android.

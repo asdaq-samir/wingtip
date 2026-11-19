@@ -1252,6 +1252,7 @@ jobs:
           ENGINE: ${{ needs.changes.outputs.test-engine }}
           IOS: ${{ needs.changes.outputs.ios }}
           ANDROID: ${{ needs.changes.outputs.android }}
+          API: ${{ needs.changes.outputs.api }}
           FLIGHT: ${{ needs.changes.outputs.docs-only != 'true' }}
         run: scripts/ci/guards.sh
       - if: github.event_name != 'pull_request' && steps.cargo.outputs.cache-primary-key != '' && steps.cargo.outputs.cache-hit != 'true'
@@ -1380,7 +1381,7 @@ jobs:
     needs: [changes]
     if: github.event_name == 'pull_request' && needs.changes.outputs.api == 'true'
     env:
-      OASDIFF_IMAGE: tufin/oasdiff:v1.34.1@sha256:67a23cfea7d251e2ae34ee703ac8733c5d96bc2e7b90fd0f4d475ec99367b85f
+      OASDIFF_IMAGE: tufin/oasdiff:v1.39.0@sha256:004bef22058ace818b61f0eb2f05efb89fc6a3882f68bf4db0b6a86f40723fe0
     steps:
       # Two commits deep: a pull request's checkout is its merge with
       # main, and the merge's first parent is the main it was made on --

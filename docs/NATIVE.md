@@ -32,8 +32,12 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
   as extensions. The documents are fitted to the generator first
   (`api-models-apps.mjs`'s `openapi`): FastAPI's `anyOf` with null is a
   type that includes null (the generator skipped those properties when it
-  was first tried, 24 October), enums are strings, and operations are named
-  by their functions. Still by hand: Spring Security's `/logout` and the
+  was first tried, 24 October), enums are strings, every object is open
+  to keys it does not name, and operations are named by their functions.
+  So a server that ships first never fails a phone not yet updated: a
+  field the app does not know is passed over, and an enum value it does
+  not know arrives as the string the server sent, which the app's code
+  reads to its `default:` (`ApiToleranceTests`). Still by hand: Spring Security's `/logout` and the
   data export's download, which the documents do not describe as the app
   needs them, and the planner's pictures, which Nuke loads (`PictureViewer`,
   with Keep for the Air's pictures as its data loader's answer offline).

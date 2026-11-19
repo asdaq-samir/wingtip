@@ -453,7 +453,7 @@ change needs; a job it skips counts as passing.
 | Job | What it runs |
 |---|---|
 | `changes` | The path filter: which suites, images and phone builds a change touches, and whether it is docs only. Tier 1 |
-| `guards` | Every quick check, in three legs on a runner each, a leg's checks all at once (`scripts/ci/guards.sh`; `repo` holds those of the whole tree, `web` the web app's, `engine` the engine's and its flight-critical): the paths filter is `scripts/areas.yml`'s; no aviation rule outside the engine (below); the legal pages; CI's own rules (`test_tiers.py`, `warnings_fatal.py`, `workflow_rules.py` with actionlint and zizmor, "Rules" above); every Markdown link (lychee); shellcheck over the scripts; no source file new or grown past 400 lines, nor new past 300 (below, "The layers"), one version of each toolchain, no raw style value outside the tokens, no unused Python, the simplicity rules (below); a phone's SwiftLint or detekt where the change touched it; ruff over every Python suite and the Python's layout; where the change touched them, the website, the web app's types, tsc, ESLint, Prettier and knip, and the engine's layering, WebAssembly size, cargo-machete, rustfmt and clippy; the web's engine rules (`scripts/build/web_rules.py --check`). And **flight-critical**, on every change but words alone: what must never break in the air. The engine against worked examples from the FAA's own texts (`apps/web/src/lib/fixtures/flightCritical.json`: the nav log's wind triangle, groundspeed, heading and fuel from FAA-H-8083-25C ch. 16; 14 CFR 91.159 and 91.179 cruising altitudes; 91.151 and 91.167 reserves; 91.155 minimums; AIM 5-3-8 hold entries; glide at a ratio), and the planner's KMSN to KOSH nav log and nearest fields (`tests/test_flight_critical.py`). Where the engine changed, its worked examples run once, in `test-engine` (wingtip-engine's tests), not again in `guards`. The browser's journey is tagged `@flight-critical` and runs in `e2e`; the phones' twins run in their native jobs. Tier 1 |
+| `guards` | Every quick check, in three legs on a runner each, a leg's checks all at once (`scripts/ci/guards.sh`; `repo` holds those of the whole tree, `web` the web app's, `engine` the engine's and its flight-critical): the paths filter is `scripts/areas.yml`'s; no aviation rule outside the engine (below); the legal pages; CI's own rules (`test_tiers.py`, `warnings_fatal.py`, `workflow_rules.py` with actionlint and zizmor, "Rules" above); every Markdown link (lychee); shellcheck over the scripts; no source file new or grown past 400 lines, nor new past 300 (below, "The layers"), one version of each toolchain, no raw style value outside the tokens, no unused Python, the simplicity rules (below); a phone's SwiftLint or detekt where the change touched it; ruff over every Python suite and the Python's layout; on an API document's change, no removed operation, field or enum value a client still names (`scripts/ci/api_removals.py`, "API compatibility" below); where the change touched them, the website, the web app's types, tsc, ESLint, Prettier and knip, and the engine's layering, WebAssembly size, cargo-machete, rustfmt and clippy; the web's engine rules (`scripts/build/web_rules.py --check`). And **flight-critical**, on every change but words alone: what must never break in the air. The engine against worked examples from the FAA's own texts (`apps/web/src/lib/fixtures/flightCritical.json`: the nav log's wind triangle, groundspeed, heading and fuel from FAA-H-8083-25C ch. 16; 14 CFR 91.159 and 91.179 cruising altitudes; 91.151 and 91.167 reserves; 91.155 minimums; AIM 5-3-8 hold entries; glide at a ratio), and the planner's KMSN to KOSH nav log and nearest fields (`tests/test_flight_critical.py`). Where the engine changed, its worked examples run once, in `test-engine` (wingtip-engine's tests), not again in `guards`. The browser's journey is tagged `@flight-critical` and runs in `e2e`; the phones' twins run in their native jobs. Tier 1 |
 | `test-engine` | The engine's `cargo test`: on a pull request the crates it touched, those that use them and the contract test (`scripts/ci/engine_affected.py`), elsewhere every crate; that the committed WebAssembly matches the engine, where its inputs changed. Tier 1 |
 | `test-web` | `npm run types`, then one of three legs of `scripts/ci/web_suite.sh`, each on its own runner: `tests`, Vitest (`--changed` on a pull request); `build`, `vite build` and the first-load budget; `generated`, the generated files (the phones' API models and engine calls, the tokens, the screens, the icons) being the committed ones. Tier 1 |
 | `test-gateway` | The Java's layout and `mvn test`: the gateway's JUnit suite, with a real Postgres in Testcontainers. Tier 1 |
@@ -606,11 +606,35 @@ its ignore matching (single quotes do not match) -- for example
 ```
 
 The lines stay after the merge, as the record of what was broken when.
+
+`guards` adds one more, on the same change (`scripts/ci/api_removals.py`,
+the "API removals" check, the same pinned oasdiff): every operation,
+path, parameter, field or enum value a document removes or renames
+against the base branch (oasdiff's `changelog`) is looked up in the code
+that calls that server -- the web's `lib/api`, the planner's MCP connector
+(`planner_calls.py`, `app/mcp`), the gateway's `PlannerClient` and
+`upstream/` interfaces, and the phones' `API` folders -- and a name still
+there fails, with its file and line. `api-breaks.txt` does not let it
+through: a client in the same tree still asking for what is gone is a bug
+whatever the released apps do. A name is looked up only once the new
+document has it nowhere (a field `kind` taken from one schema but kept in
+others cannot be told apart by text, and is left to the apps' compilers
+and `api-compat`). With neither document changed it ends at once, without
+Docker. To see it before pushing:
+
+```sh
+python3 scripts/ci/api_removals.py --base origin/main
+```
+
+The phones decode leniently too, so the other direction, a server that
+ships before the app, needs no rule: a field or an enum value the app does
+not know yet is passed over or kept as its string (docs/NATIVE.md,
+docs/NATIVE-ANDROID.md).
 To see the breaks before pushing:
 
 ```sh
 git show origin/main:services/planner/openapi.json > /tmp/base.json
-docker run --rm -v /tmp:/base -v "$PWD:/head" tufin/oasdiff:v1.34.1 \
+docker run --rm -v /tmp:/base -v "$PWD:/head" tufin/oasdiff:v1.39.0 \
   breaking /base/base.json /head/services/planner/openapi.json --format singleline
 ```
 

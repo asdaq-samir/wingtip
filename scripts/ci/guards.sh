@@ -15,6 +15,9 @@
 #            outside the tokens, no unused Python; the simplicity rules on
 #            the files changed: one home per constant or helper (Semgrep),
 #            no new copy-paste (jscpd), and the simplicity ratchet
+#   API      no operation, field or enum value an OpenAPI document removes
+#            that a client of it still calls or reads
+#            (scripts/ci/api_removals.py, oasdiff against the base)
 #   IOS      SwiftLint on the Swift changed (scripts/ci/phone_lint.sh)
 #   ANDROID  detekt on the Kotlin changed
 #   SITE     the website built and checked
@@ -99,7 +102,7 @@ ruff_check() {
 # The branch a change is held against, fetched once for every check that
 # reads it (one deep: a tree is all they compare).
 base=refs/guards/base
-if part repo && { on ARCH || on IOS || on ANDROID; }; then
+if part repo && { on ARCH || on IOS || on ANDROID || on API; }; then
   git fetch -q --depth=1 origin "+refs/heads/${BASE_REF:-main}:$base" 2> /dev/null || base=origin/${BASE_REF:-main}
 fi
 
@@ -188,6 +191,8 @@ if part repo; then
     start "Copy-paste (jscpd)" python3 scripts/ci/jscpd_check.py --base "$base"
     start "Simplicity ratchet" python3 scripts/ci/simplicity_ratchet.py --base "$base"
   fi
+  # No operation, field or enum value removed that a client still names.
+  on API && start "API removals" python3 scripts/ci/api_removals.py --base "$base"
   on IOS && start "iPhone: SwiftLint" scripts/ci/phone_lint.sh ios --base "$base"
   on ANDROID && start "Android: detekt" scripts/ci/phone_lint.sh android --base "$base"
   on SITE && start "Website" site
