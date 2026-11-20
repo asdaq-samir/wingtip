@@ -115,7 +115,9 @@ export function PartTray({
         lineOpen={vm.openLines.includes(part.line.key)}
         chips={part.chips(trailing.length > 0 ? trailing : null)}
       />
-      {part.leaves && <span className="shrink-0">{part.leaves}</span>}
+      {/* When it leaves again at the line's right, under the landing's time
+          (the owner, 2026-11-20: "11:33 can be right aligned"). */}
+      {part.leaves && <span className="ml-auto shrink-0">{part.leaves}</span>}
     </div>
   );
 }
