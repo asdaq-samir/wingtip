@@ -1,4 +1,4 @@
-import { lazy, useEffect } from "react";
+import { lazy, useEffect, useEffectEvent } from "react";
 import { fromChunk } from "../../../lib/fromChunk";
 import { loadAccountPanels } from "../../pilot";
 import type { LatLon } from "../../../lib/geo";
@@ -113,6 +113,18 @@ export default function PlanSidebar({
   // the search's page or the map: its Add Stop is the pick, put in where
   // the pilot asked, as a row tapped in the search would be.
   const stopAsked = !!model.pick?.stop;
+  // A stop asked for starts at the search, never at an airport's card left
+  // open from before (one on the map, kept in the address): it showed in
+  // the ask's place, as if Add a Stop opened that field (the owner,
+  // 2026-11-20: "Add stop opens the first stop after departure every time
+  // I tap it"). A card opened during the ask is kept.
+  const asked = model.pick;
+  const closeLeftCard = useEffectEvent(() => {
+    if (place) closePlace();
+  });
+  useEffect(() => {
+    if (asked?.stop) closeLeftCard();
+  }, [asked]);
   // A picker's ask draws the one search's field in the body, under the
   // ask's title in the sheet's first row (OneSearchField, Apple Maps' Add Stop).
   const askField = model.pick && !model.pick.waiting ? <SearchBox model={model} inputRef={vm.search.searchInput} using /> : null;
