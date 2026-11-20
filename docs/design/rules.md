@@ -518,7 +518,13 @@ off by default (the owner, 2026-11-13).
    (minimumScaleFactor 0.7), and past 0.7 cut with "…", never a rounded
    form in their place (the owner's pick of the stock fit, 2026-11-17); in
    flight and in a dry run no To, which the flying head names, so Distance,
-   Time, Fuel and the GPS altitude are its four columns; and at the sheet's foot from
+   Time, Fuel and the GPS altitude are its four columns; whenever the
+   airplane's position is known, on the ground too, "GPS alt" is the last
+   column, in feet to the nearest 10, "—" where the fix gives no altitude
+   (the owner, 2026-11-20: "The figures don't show gps altitude"). It is
+   the GPS's height, the W3C Geolocation API's metres above the WGS84
+   ellipsoid (section 9.2), never named MSL or the altimeter's
+   (`gpsFigure`); and at the sheet's foot from
    half up a floating glass bar, the one floating bar the airport card's
    tabs are drawn in, the same height and width (`FloatingBar`, 2026-11-18),
    round Base UI's stock Toolbar (one tab stop, the arrows between them),
@@ -1084,10 +1090,14 @@ WETEV → KMYJ) and own ship on POS0.
 3. **Airports keep their mark.** The departure, stops and destination are
    the chart's airport mark with the ident on its dark pill (section 5);
    a top of climb or descent is the fix's small magenta diamond on the
-   course, no words, and only the next leg's, none within 2 NM of its
-   leg's ends, where it sat on the airplane and "My Location"; a tap opens
-   its card (the owner, 2026-11-20, the readability list's F;
-   `LegPointsGl`, `LEG_POINT_DIAMOND`).
+   course, and only the next leg's, none within 2 NM of its leg's ends,
+   where it sat on the airplane and "My Location"; a tap opens its card
+   (the owner, 2026-11-20, the readability list's F; `LegPointsGl`,
+   `LEG_POINT_DIAMOND`). "TOC" or "TOD" is beside it as My Location's
+   name is beside its dot: the same white pill edged in magenta, square to
+   the course on its upper side, turning with the map, giving way to the
+   route's own marks (the owner, 2026-11-20: "label toc and Tod just like
+   my location"; the `leg-point-names` layer, `squareToCourse`).
 4. **Taps are as they were:** the dot or the name opens the point's card.
 
 Web: `lib/map/marks/routeMarks` (the layers `route-fix-dots` and

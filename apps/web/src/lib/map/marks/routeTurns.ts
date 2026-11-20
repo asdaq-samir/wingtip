@@ -72,6 +72,19 @@ export function outsideOfTurn(line: LatLon[], at: { lat: number; lon: number }):
   return Math.round((deg + 360) % 360);
 }
 
+/**
+ * The side a name goes beside a point on a straight course, degrees
+ * clockwise from up on a north-up screen: square to the course, on its
+ * upper side, as outsideOfTurn puts a name on a straight leg (a top of
+ * climb's or descent's, `courseDeg` its leg's true course; the map is
+ * conformal, so the course on the screen near the point is the true one).
+ * A course due north or south has its name on the east.
+ */
+export function squareToCourse(courseDeg: number): number {
+  const left = (((Math.round(courseDeg) - 90) % 360) + 360) % 360;
+  return left > 90 && left <= 270 ? (left + 180) % 360 : left;
+}
+
 /** Ems of the name's 11 points from the point to the pill's words: clear
  *  of the 12-point dot and the pill's own edge round its words. */
 const NEAR = 1.4;

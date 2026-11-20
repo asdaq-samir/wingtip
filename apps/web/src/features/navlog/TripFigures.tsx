@@ -1,7 +1,7 @@
 import { Button as BaseButton } from "@base-ui/react/button";
 import { useAirplaneChosen } from "../../lib/preferences";
 import { Suspense, lazy, useState, type ReactNode } from "react";
-import { grouped, zoneName } from "../../lib/format";
+import { zoneName } from "../../lib/format";
 import { useOwnFix } from "../../lib/map/position/ownShip";
 import { cn } from "cn";
 import type { ExplainedTerm } from "../../lib/explain";
@@ -12,6 +12,7 @@ import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger }
 import { Button } from "../../components/ui/button";
 import { nextLanding, shortFlights, tripFigures, type Flown } from "../plan";
 import { requestAirplanePick } from "../../lib/pickAirplane";
+import { gpsFigure } from "./gpsFigure";
 
 /** What the fuel is made of, from the figure's first tap: its own chunk,
  *  off the first load (scripts/first-load.mjs's budget). */
@@ -128,25 +129,9 @@ export default function TripFigures({
   // went and the strip said nothing of why (the UI audit's C2,
   // 2026-11-17): what the airplane would make of the route, none assumed.
   const airplane = useAirplaneChosen();
-  // The phone's own GPS altitude at the strip's end while flying (or a dry
-  // run flies own ship), the owner's ask (2026-11-17: "true altitude of the
-  // phone from gps"): MSL as iOS's location gives it, to the nearest 10 ft,
-  // since a GPS height wanders by tens of feet. Named "GPS" so it is never
-  // read as the altimeter, which is what altitudes are flown and assigned by
-  // (14 CFR 91.121); none on the ground or with no altitude in the fix.
-  const fix = useOwnFix();
-  const gpsFt = (flying || flown) && fix?.altitudeFt != null ? Math.round(fix.altitudeFt / 10) * 10 : null;
-  const gps: StripFigure | null =
-    gpsFt === null
-      ? null
-      : {
-          name: "GPS",
-          label: "GPS alt",
-          value: grouped(gpsFt),
-          unit: "ft",
-          testId: "strip-gps-alt",
-          said: `GPS altitude, ${grouped(gpsFt)} feet`,
-        };
+  // The airplane's GPS altitude at the strip's end whenever its position
+  // is known (gpsFigure: what the figure is and where it comes from).
+  const gps = gpsFigure(useOwnFix());
   const ours: StripFigure[] = [
     ...tripFigures(input)
       .map((f) => (airplane || f.name === "To" || f.name === "Dist" ? f : wantsAirplane(f)))
