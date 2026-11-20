@@ -17,6 +17,7 @@ import {
   frontSheet,
 } from "./helpers";
 import { fromRest } from "./startState";
+import { showPage } from "./oneSearch";
 
 /**
  * The regressions this file exists to catch (see playwright.config.ts
@@ -283,7 +284,7 @@ test.describe("/app/plan", () => {
 });
 
 for (const path of PAGES) {
-  test(`${path}: the map's buttons sit at the map's right edge, away from the panel, and the console's button is over the map on the planner, on the training page's route capsule`, async ({
+  test(`${path}: the map's buttons sit at the map's right edge, away from the panel, and the console's button ends the search's row on the planner, on the training page's route capsule`, async ({
     page,
   }) => {
     await page.goto(`${path}?dep=C81&dest=KDLH`);
@@ -316,8 +317,8 @@ for (const path of PAGES) {
     expect(viewport.width - (mic.x + mic.width)).toBeLessThan(20);
     // Their first is the map's own, its card the map's settings in the
     // sheet (a desktop's side panel too), as Apple Maps' Choose Map card is
-    // (the owner, 2026-11-10); the planner's account button is a circle of
-    // its own under them from md up (data-map-food), not in the group.
+    // (the owner, 2026-11-10); the planner's account button is not among
+    // them: it ends the search's row in the sheet (the owner, 2026-11-20).
     await expect(first).toHaveAttribute("data-testid", "map-settings-button");
     await first.click();
     await expect(sideDrawer(page).getByTestId("map-settings").getByRole("heading", { name: "Map", level: 2 })).toBeVisible();
@@ -331,18 +332,28 @@ for (const path of PAGES) {
       await showTabs(page);
       await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
     } else {
-      // Over the map, where the page toggle was until the owner swapped the
-      // two (2026-11-14): under the 3D at the left on a phone, under the
-      // map's buttons from md up; never in the sheet, whose first row ends
-      // in the page toggle on either page.
+      // At the end of the search's row in the sheet, the page toggle at its
+      // start, as Apple Maps' avatar is (the owner, 2026-11-20: "move the
+      // fpl button on the left side of search and avatar to the right
+      // side"), on a phone and beside a desktop's side panel alike; never a
+      // circle over the map (MapControls' AccountCircle is gone).
       await showTabs(page);
-      await expect(page.getByTestId("account-button")).toBeVisible();
-      // A circle of its own over the map (MapControls' AccountCircle), riding
-      // the front sheet's top as the map's buttons do (OnSheetTop, so in its
-      // popup), never in the sheet's own rows.
-      await expect(page.locator("[data-map-food]").getByTestId("account-button")).toBeVisible();
-      expect(await sideDrawer(page).getByTestId("sheet-pages").getByTestId("account-button").count()).toBe(0);
-      await expect(sideDrawer(page).getByTestId("sheet-page-toggle")).toBeVisible();
+      // With the route FPL is up, its own row Share and the ✕: the account
+      // button is Search's.
+      await expect(page.getByTestId("account-button")).toBeHidden();
+      await showPage(page, 0);
+      const row = firstRow(page);
+      await expect(row.getByTestId("account-button")).toBeVisible();
+      await expect(row.getByTestId("sheet-page-toggle")).toBeVisible();
+      await expect(page.locator("[data-map-food]").getByTestId("account-button")).toHaveCount(0);
+      await expect(page.locator("[data-map-controls]").getByTestId("account-button")).toHaveCount(0);
+      const [toggleBox, fieldBox, accountBox] = [
+        (await row.getByTestId("sheet-page-toggle").boundingBox())!,
+        (await row.getByTestId("search-airports").boundingBox())!,
+        (await row.getByTestId("account-button").boundingBox())!,
+      ];
+      expect(toggleBox.x + toggleBox.width, "the toggle before the field").toBeLessThanOrEqual(fieldBox.x);
+      expect(fieldBox.x + fieldBox.width, "the account button after the field").toBeLessThanOrEqual(accountBox.x);
       await page.goto(path);
       await settle(page);
       await showTabs(page);

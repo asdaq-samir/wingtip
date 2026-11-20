@@ -45,18 +45,26 @@ test(
     // the whole sentence its name (the sheet audit's F-S2).
     await expect(row.getByTestId("search-airports")).toHaveAttribute("placeholder", "Search airports and airplanes");
     await expect(row.getByTestId("search-airports")).toHaveAttribute("aria-label", "Search airports and airplanes");
-    // The page toggle at the row's end, where the account button was (the
-    // owner, 2026-11-14: "Swap the fpl toggle and account buttons").
+    // The page toggle at the row's start and the account button at its
+    // end, as Apple Maps' avatar is (the owner, 2026-11-20: "move the fpl
+    // button on the left side of search and avatar to the right side").
     await expect(row.getByTestId("sheet-page-toggle")).toBeVisible();
-    await expect(row.getByTestId("account-button")).toHaveCount(0);
+    await expect(row.getByTestId("account-button")).toBeVisible();
+    const [toggleBox, fieldBox, accountBox] = [
+      (await row.getByTestId("sheet-page-toggle").boundingBox())!,
+      (await row.getByTestId("search-airports").boundingBox())!,
+      (await row.getByTestId("account-button").boundingBox())!,
+    ];
+    expect(toggleBox.x + toggleBox.width, "the toggle before the field").toBeLessThanOrEqual(fieldBox.x);
+    expect(fieldBox.x + fieldBox.width, "the account button after the field").toBeLessThanOrEqual(accountBox.x);
     await expect(sideDrawer(page).getByTestId("sheet-title")).toHaveCount(0);
     await expect(sideDrawer(page).getByRole("tablist", { name: "Tabs" })).toHaveCount(0);
     await expect(sideDrawer(page).getByTestId("route-summary")).toContainText("C81");
 
     // Focused: the search's own page, its home list (Favorites, Recents),
     // with no flight on it since the saved flights went to FPL (3eb6e1417),
-    // Cancel beside the field in the account button's place, as iOS's
-    // search fields have it.
+    // Cancel beside the field in the account button's place, the toggle
+    // put away too, as iOS's search fields have it.
     const search = await airportSearch(page);
     await search.click();
     const home = sideDrawer(page).getByTestId("search-home");
@@ -65,6 +73,7 @@ test(
     await expect(home.getByTestId("pill-section-favorites")).toBeVisible();
     await expect(row.getByTestId("one-search-cancel")).toBeVisible();
     await expect(row.getByTestId("sheet-page-toggle")).toHaveCount(0);
+    await expect(row.getByTestId("account-button")).toHaveCount(0);
 
     // Typed: one list, grouped as Apple Maps' results are (the owner's
     // screenshot, 2026-11-10): the top hit with its quick actions, then the
@@ -92,10 +101,11 @@ test(
     await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
     // The plan up (FPL, the sheet's second page), and the search, its own
     // page now (its toggle, PageToggle), let go: back on it, the toggle
-    // in Cancel's place.
+    // and the account button where Cancel put them away.
     await expect(sideDrawer(page).getByTestId("sheet-pages")).toHaveAttribute("data-page", "1");
     await showPage(page, 0);
     await expect(row.getByTestId("sheet-page-toggle")).toBeVisible();
+    await expect(row.getByTestId("account-button")).toBeVisible();
   },
 );
 
@@ -140,9 +150,9 @@ test("the account button opens the account page itself, no menu first, and its c
   }
   await account.getByTestId("console-close").click();
   await expect(account).toHaveCount(0);
-  // Its button over the map, which comes back as the sheet comes down.
+  // Its button back at the end of the search's row (the owner, 2026-11-20).
   await grabberTo(page, "half");
-  await expect(page.getByTestId("account-button")).toBeVisible();
+  await expect(firstRow(page).getByTestId("account-button")).toBeVisible();
 });
 
 test("the search's Do runs a screen by its name, and Show Traffic", async ({ page }) => {

@@ -1,13 +1,32 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { frontSheet, showTabs, grabberTo, inSheet } from "./sheetHelpers";
+import { showPage } from "./oneSearch";
 
-/** The console out, all the way up: the account button (over the map, on
- *  either page, gone all the way up) opens the account page (Setup) itself.
- *  At the pill, where the developer's page rests, the page is under the
- *  pill's edge. */
+/** The account button in sight: at the end of the search's row (the
+ *  owner, 2026-11-20; OneSearchField), so on Search, with no card over the
+ *  row and the field not in use (Cancel in its place). The developer's page
+ *  keeps it in its own bar (no sheet-pages, so showPage leaves it). */
+async function accountInSight(page: Page) {
+  const account = page.getByTestId("account-button");
+  if (await account.isVisible()) return;
+  const cards = page.locator("[data-sheet-card][data-open]");
+  for (let open = await cards.count(); open > 0; open--) {
+    await cards.last().focus();
+    await page.keyboard.press("Escape");
+    await expect(cards).toHaveCount(open - 1);
+  }
+  await showPage(page, 0);
+  const cancel = page.getByTestId("one-search-cancel");
+  if (await cancel.isVisible()) await cancel.click();
+  if (!(await account.isVisible())) await grabberTo(page, "half");
+}
+
+/** The console out, all the way up: the account button (the search's row's
+ *  end) opens the account page (Setup) itself. At the pill, where the
+ *  developer's page rests, the page is under the pill's edge. */
 export async function openConsole(page: Page) {
   await showTabs(page);
-  if (!(await page.getByTestId("account-button").isVisible())) await grabberTo(page, "half");
+  await accountInSight(page);
   await page.getByTestId("account-button").click();
   await expect(page.getByTestId("console-sheet")).toBeVisible(); // there before it is raised
   await expandConsole(page);
