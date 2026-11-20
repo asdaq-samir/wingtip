@@ -1,16 +1,14 @@
 import { useEffect, useEffectEvent } from "react";
-import { Search } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { cn } from "cn";
-import { SHEET_BAR } from "../../../components/panelField";
+import IconButton from "../../../components/IconButton";
 import PageToggle from "../../../components/PageToggle";
-import { CommandClear, CommandField } from "../../../components/ui/command";
-import { Kbd } from "../../../components/ui/kbd";
 import { isSearchKey } from "../../../hooks/use-shortcuts";
-import { useIsDesktop } from "../../../hooks/use-desktop";
-import { askSearch, searchKeys, useSearchPick } from "../../../lib/oneSearch";
+import { askSearch, useSearchPick, type SearchPick } from "../../../lib/oneSearch";
 import { TEXT } from "../../../lib/text";
-import { useVoice, VoiceButton } from "../../voice";
+import { useVoice } from "../../voice";
+import SearchBox from "./SearchBox";
 import { AccountButton } from "../../pilot";
 import type { OneSearchModel } from "./useOneSearch";
 
@@ -35,8 +33,11 @@ import type { OneSearchModel } from "./useOneSearch";
  * reader alone. ⌘K or Ctrl K focuses it from anywhere, its keys
  * shown in it on a desktop: the command palette it replaced.
  */
+/** What a picker's ask is called over its field: its own title (Change
+ *  Stop), else Add Stop for a stop, else what it asks for (Departure). */
+const askTitle = (pick: SearchPick) => pick.title ?? (pick.stop ? "Add Stop" : pick.label);
+
 export default function OneSearchField({ model, inputRef }: { model: OneSearchModel; inputRef: React.RefObject<HTMLInputElement | null> }) {
-  const desktop = useIsDesktop();
   // What is said typed in the field once a pause ends it, the field
   // focused to go on from there.
   const voice = useVoice("search", (said) => {
@@ -67,103 +68,28 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [model, inputRef]);
+  // A picker's ask (Add Stop, Change Stop, the departure): its title and a
+  // ✕ in this row, the field under them at the top of its suggestions
+  // (OneSearchResults), as Apple Maps' Add Stop sheet (the owner's
+  // screenshot, 2026-11-20: "Title for add stop"). The ✕ is the ask's
+  // Cancel, back where it was asked from.
+  if (model.pick && !model.pick.waiting)
+    return (
+      <div className="flex w-full items-center gap-2" role="search">
+        <h1 className="sr-only">Wingtip Maps</h1>
+        <h2 className={cn("min-w-0 flex-1 truncate font-bold text-foreground", TEXT.hero)} data-testid="search-pick-title">
+          {askTitle(model.pick)}
+        </h2>
+        <IconButton round label="Cancel" onClick={model.cancel} data-testid="one-search-cancel">
+          <X className="size-5" aria-hidden="true" />
+        </IconButton>
+      </div>
+    );
   return (
     <div className="flex w-full items-center gap-2" role="search">
       <h1 className="sr-only">Wingtip Maps</h1>
       {!using && <PageToggle page={0} />}
-      {/* 46 tall, a white card on the sheet's grey, its own 44-point hit
-          area (the sheet audit's F-P2, 2026-11-10: the title row over it
-          the same height). */}
-      <label
-        className={cn(
-          "relative flex items-center gap-2 pr-0.5 pl-3.5 text-muted-foreground",
-          SHEET_BAR,
-          // Focused, a fine ring in the tint round it, as Apple's field has.
-          "focus-within:ring-1 focus-within:ring-tint",
-          TEXT.row,
-        )}
-      >
-        <Search className="size-5 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
-        <CommandField
-          ref={inputRef}
-          type="search"
-          enterKeyHint="search"
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck={false}
-          // The short words in sight, which fit beside the mic and Cancel at
-          // the larger text sizes; the whole sentence said (F-S2).
-          placeholder={voice.listening ? voice.prompt : model.placeholder}
-          aria-label={model.label}
-          // Open only while its results are in the sheet (PlanSidebar's
-          // search page): the Autocomplete is always open, inline, and
-          // said "expanded" with no list to point at (axe's
-          // aria-required-attr, aria-controls missing).
-          {...(model.typed || model.direct ? {} : { "aria-expanded": false })}
-          data-testid="search-airports"
-          onFocus={model.focus}
-          // The APG combobox's keys (docs/design/web.md §1) are Base UI's
-          // as they are, the first row highlighted for Enter (the root's
-          // autoHighlight), and the clear the search field's own; Escape
-          // lets the field go.
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              e.preventDefault();
-              model.cancel();
-            }
-            // A picker's Enter before the rows answer what is typed: what
-            // is typed, not the first row of an older answer -- an ident the
-            // lookup does not know (a private strip) still goes through, as
-            // each picker's own field did (airport-search.spec). Base UI's
-            // Enter would take the lit row of the older answer, and it has
-            // no prop for rows that are not the answer yet, so its handler
-            // is kept from running (its documented way, preventBaseUIHandler).
-            const rows = model.airports.length + model.waypoints.length;
-            if (e.key === "Enter" && model.pick && model.typed && (!model.answered || rows === 0)) {
-              e.preventDefault();
-              e.preventBaseUIHandler();
-              model.pickIdent(model.typed);
-            } else if (e.key === "Enter" && model.pick && model.typed && !e.currentTarget.getAttribute("aria-activedescendant")) {
-              // Rows that answered after the typing (the planner's lookup on
-              // a slow link) come in with none lit, Base UI 1.9's fix for
-              // asynchronous results (#5818) notwithstanding: no
-              // aria-activedescendant and no data-highlighted row
-              // (airport-search.spec), so its Enter did nothing. Enter takes
-              // the first, as it would have been lit.
-              const first = model.airports[0]?.ident ?? model.waypoints[0]?.ident;
-              if (first) {
-                e.preventDefault();
-                e.preventBaseUIHandler();
-                model.pickIdent(first);
-              }
-            }
-          }}
-          // The browser's own clear put away for the field's (CommandClear),
-          // the one every field has.
-          className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
-        />
-        {/* Base UI's own clear: shown while something is typed, the
-            words cleared through the root's onValueChange, the focus kept. */}
-        <CommandClear aria-label="Clear the search" data-testid="search-clear" />
-        {!model.typed && desktop && !using && <Kbd aria-hidden="true">{searchKeys()}</Kbd>}
-        {/* The microphone, the field's trailing button: on-device speech
-            only (lib/speechLocal), so none where the browser has no
-            recognizer. In the tint, pressed while it listens. */}
-        {voice.offered && (
-          <VoiceButton
-            field="search"
-            label="Search by voice"
-            onPress={() => {
-              // The search opened as the mic is tapped, so the words show
-              // in the field and why nothing was heard under it.
-              if (!voice.listening) model.focus();
-              voice.press();
-            }}
-            testId="one-search-mic"
-            className="size-9"
-          />
-        )}
-      </label>
+      <SearchBox model={model} inputRef={inputRef} using={using} />
       {using && (
         <Button
           variant="plain"

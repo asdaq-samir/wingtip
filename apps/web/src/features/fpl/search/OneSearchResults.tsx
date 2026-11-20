@@ -224,13 +224,6 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
     // Its sides the page's own sixteen (TabPage), where its own sixteen
     // more put the list 32 in (the sheet audit's F-P1).
     <div className="flex flex-col gap-2 pt-2 pb-4" data-testid="one-search-results">
-      {/* What is asked for, over its suggestions: Apple Maps' Change Stop
-          (the owner's screenshot, 2026-11-19). */}
-      {model.pick?.title && (
-        <h2 className={cn("px-1 font-bold", TEXT.card)} data-testid="search-pick-title">
-          {model.pick.title}
-        </h2>
-      )}
       {problem && <FieldError className={cn("appear text-destructive-ink", TEXT.note)}>{problem}</FieldError>}
       {unheard && <FieldError className={cn("appear text-destructive-ink", TEXT.note)}>{unheard}</FieldError>}
       <CommandList
