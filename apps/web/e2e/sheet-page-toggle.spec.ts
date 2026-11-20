@@ -130,9 +130,7 @@ test("on Search the toggle starts the first row and the account button ends it, 
   await expect(page.getByTestId("sheet-tab-bar")).toHaveCount(0);
 });
 
-test("the toggle is a 44-point disc, the account button 44 to a finger without growing, and the grabber is one plain bar", async ({
-  page,
-}) => {
+test("the toggle and the account button are 44-point discs, and the grabber is one plain bar", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
   await page.goto("/app/plan");
   await settle(page);
@@ -159,8 +157,8 @@ test("the toggle is a 44-point disc, the account button 44 to a finger without g
         finds(box.left + box.width / 2, box.bottom - 2, "sheet-page-toggle"),
       ],
       account: hit(account),
-      // And the account button past its disc's edge, its pseudo-element.
-      accountEdge: finds(disc.left + disc.width / 2, disc.bottom + 3, "account-button"),
+      // And the account button right to its disc's edge.
+      accountEdge: finds(disc.left + disc.width / 2, disc.bottom - 2, "account-button"),
       grabber: hit(grabber),
       bar: grabber.querySelector("span")!.getBoundingClientRect(),
       bars: document.querySelectorAll('[data-slot="map-panel"] [data-testid="sidebar-trigger-button"] span').length,
@@ -171,10 +169,10 @@ test("the toggle is a 44-point disc, the account button 44 to a finger without g
   expect(sizes.toggle.w).toBeCloseTo(44, 0);
   expect(sizes.toggle.h).toBeCloseTo(44, 0);
   expect(sizes.edges).toEqual([true, true, true, true]);
-  // The account button a 36-point disc, not grown, its 44 the pseudo-element's (accountLook).
-  expect(sizes.account.h).toBeCloseTo(36, 0);
-  expect(sizes.account.hitW).toBeGreaterThanOrEqual(44);
-  expect(sizes.account.hitH).toBeGreaterThanOrEqual(44);
+  // The account button a 44-point disc too, as Apple Maps' avatar (the
+  // owner, 2026-11-20: "make all buttons like Apple Maps size"; accountLook).
+  expect(sizes.account.w).toBeCloseTo(44, 0);
+  expect(sizes.account.h).toBeCloseTo(44, 0);
   expect(sizes.accountEdge).toBe(true);
   expect(sizes.grabber.hitH).toBeGreaterThanOrEqual(44);
   expect(sizes.grabber.h, "the grabber's room").toBeLessThanOrEqual(16);

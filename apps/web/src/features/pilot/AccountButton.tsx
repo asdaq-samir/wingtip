@@ -9,7 +9,7 @@ import { accountButton } from "./accountLook";
 /**
  * The account button at the end of the search's row, as Apple Maps'
  * avatar is (the owner, 2026-11-20; OneSearchField): the pilot's initials on the
- * tint, or a person's glyph in the tint on grey signed out, 36 points
+ * tint, or a person's glyph in the tint on grey signed out, 44 points
  * round with a 44-point hit area (accountLook). A tap opens You
  * (PilotPanel), who the pilot is and what is theirs, Settings one of its
  * rows -- the owner's pick, option A of the account canvas (2026-11-13),
