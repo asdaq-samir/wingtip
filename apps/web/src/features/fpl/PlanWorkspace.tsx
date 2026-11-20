@@ -271,7 +271,16 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           // The first row is FPL's title between Share and the ✕, as Apple
           // Maps' Directions (the owner, 2026-11-19: "Maybe we can have
           // similar buttons x and share"); Share only once there is a route.
-          bar: <FplBar share={routed ? shareMenu("start", "fpl-share", undefined, "head") : null} />,
+          // Under the title, between the buttons, Route Options and the
+          // airplane's pills (the owner: "Make two rows between the close
+          // and share button").
+          bar: (
+            <FplBar
+              share={routed ? shareMenu("start", "fpl-share", undefined, "head") : null}
+              strip={<RouteControls vm={vm} flightInputs={flightInputs} />}
+              options={routesOffered(vm) ? <RoutesToggle shown={vm.routeList.routesShown} onShown={vm.routeList.setRoutesShown} /> : null}
+            />
+          ),
           second: <PlanPage vm={vm} navLog={navLog} more={shareMenu("end", undefined, undefined, "tile")} />,
         },
         // The one search's Autocomplete round the whole panel: its field (the first row) and its list (the body) one combobox.
@@ -296,13 +305,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // heads), in its one layout (the owner, 2026-11-17, decision 0047):
         // folded to its line, the figures and the Routes' chips under it, or
         // open to edit, its head over the cards in the page (FplRoute).
-        route: (
-          <FplRoute
-            vm={vm}
-            strip={<RouteControls vm={vm} flightInputs={flightInputs} />}
-            options={routesOffered(vm) ? <RoutesToggle shown={vm.routeList.routesShown} onShown={vm.routeList.setRoutesShown} /> : null}
-          />
-        ),
+        route: <FplRoute vm={vm} />,
         console: <PilotPanel />,
       })}
       {/* FPL's cards over the sheet, beside its pages, kept in flight (PlanCards). */}
