@@ -17,7 +17,7 @@ export function FloatingBar({ className, ...rest }: ComponentProps<"div">) {
       {...rest}
       data-floating-bar=""
       className={cn(
-        "liquid-glass rounded-full p-0.5 [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)]",
+        "liquid-glass rounded-full p-1 [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)]",
         FLOATING_BAR_COLUMNS,
         FLOATING_BAR_WIDTH,
         className,
@@ -26,14 +26,13 @@ export function FloatingBar({ className, ...rest }: ComponentProps<"div">) {
   );
 }
 
-/** An item's face: its 22-point glyph (the bar 48 tall, the owner,
- *  2026-11-19), a badge over its corner, over its
+/** An item's face: its 24-point glyph, a badge over its corner, over its
  *  word on the tab bar's own type (iOS 26's tab bar: Caption 1, 12 on 16,
  *  regular), on one line. */
 export function FloatingBarFace({ icon, badge, label }: { icon: ReactNode; badge?: ReactNode; label: string }) {
   return (
     <>
-      <span className="relative flex shrink-0 [&_svg]:size-[1.375rem]">
+      <span className="relative flex shrink-0 [&_svg]:size-6">
         {icon}
         {badge}
       </span>
