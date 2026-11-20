@@ -125,10 +125,11 @@ def _sample(ink: _Ink, lats: np.ndarray, lons: np.ndarray) -> tuple:
     return dark, white, tint, inside
 
 
-def _find_edge(ink: _Ink, envelope: Box, res_m: float, edge: str) -> tuple:
+def _find_edge(ink: _Ink, envelope: Box, res_m: float, edge: str, search: float = 0.25) -> tuple:
     """Where the chart face ends along one edge: (position in degrees,
     how it was found), the position None when nothing chart-like lies
-    within a quarter of the raster of that edge.
+    within `search` of the raster (a share of its width or height) of
+    that edge (the kind's edge_search).
 
     Walks inward from the raster's edge, sampling each candidate line
     along the chart's middle three-fifths -- along the geographic
@@ -150,11 +151,11 @@ def _find_edge(ink: _Ink, envelope: Box, res_m: float, edge: str) -> tuple:
     if horizontal:
         along = np.linspace(west + 0.2 * (east - west), east - 0.2 * (east - west), _SAMPLES_ALONG)
         deg_per_px = res_m / _METRES_PER_DEGREE
-        start, inward, depth = (south, 1.0, 0.25 * (north - south)) if edge == "s" else (north, -1.0, 0.25 * (north - south))
+        start, inward, depth = (south, 1.0, search * (north - south)) if edge == "s" else (north, -1.0, search * (north - south))
     else:
         along = np.linspace(south + 0.2 * (north - south), north - 0.2 * (north - south), _SAMPLES_ALONG)
         deg_per_px = res_m / (_METRES_PER_DEGREE * math.cos(math.radians((south + north) / 2)))
-        start, inward, depth = (west, 1.0, 0.25 * (east - west)) if edge == "w" else (east, -1.0, 0.25 * (east - west))
+        start, inward, depth = (west, 1.0, search * (east - west)) if edge == "w" else (east, -1.0, search * (east - west))
 
     def sample_lines(at: np.ndarray) -> tuple:
         across = np.repeat(at, len(along))
@@ -336,7 +337,7 @@ def detect_face(path: Path, kind: ChartKind) -> tuple[Box, Box, Path | None]:
     fallback = {"w": west + collar[0], "s": south + collar[1], "e": east - collar[2], "n": north - collar[3]}
     face = []
     for i, edge in enumerate("wsen"):
-        position, how = _find_edge(ink, envelope, res_m, edge)
+        position, how = _find_edge(ink, envelope, res_m, edge, kind.edge_search)
         if position is None:
             log.warning("%s: nothing chart-like near the %s edge; assuming a %.2f-degree collar", path.name, edge, collar[i])
             face.append(fallback[edge])
