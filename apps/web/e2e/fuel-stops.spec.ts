@@ -218,3 +218,23 @@ test("a long flight the tanks hold is offered a break about half way, kept as th
   await expect(page).toHaveURL(stopsAre("KRPD"));
   await expect(page).not.toHaveURL(/[?&]fuel=/);
 });
+
+test("FPL's Add a Stop row has Add Fuel Stops, and once they are in, Remove Fuel Stops", async ({ page }) => {
+  // The owner's ask (2026-11-20): "We should have a add fuel stops pill in
+  // the last row and when added, remove fuel stops pill".
+  await suggested(page);
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  const pill = sideDrawer(page).getByTestId("timeline-add-stop").locator("..").getByTestId("timeline-fuel-stops");
+  await expect(pill).toHaveText("Add Fuel Stops", { timeout: slow(60_000) });
+  await inSheet(page, pill);
+  await page.screenshot({ path: "test-results/fuel-pill-add.png" });
+  await pill.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("fuel")).toBe("KRPD");
+  await expect(pill).toHaveText("Remove Fuel Stops", { timeout: slow(60_000) });
+  await inSheet(page, pill);
+  await page.screenshot({ path: "test-results/fuel-pill-remove.png" });
+  await pill.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("stops")).toBeNull();
+});

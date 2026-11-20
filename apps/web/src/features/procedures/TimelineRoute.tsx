@@ -58,6 +58,7 @@ export default function TimelineRoute({
   head,
   tail,
   foot,
+  addTrailing,
   allStops,
   onAllStops,
   ...props
@@ -70,6 +71,8 @@ export default function TimelineRoute({
   /** The card's last row where it is not Add a Stop: before the route is
    *  whole, the route typed or pasted (TypeRouteRow). */
   foot?: ReactNode;
+  /** A control at Add a Stop's end (RouteTimeline's fuel stops' pill). */
+  addTrailing?: ReactNode;
   /** Every stop its own row: the sheet at full, or the route read. */
   allStops: boolean;
   /** The sheet taken all the way up, where every stop is listed. */
@@ -186,7 +189,10 @@ export default function TimelineRoute({
       {head}
       <RouteGrid items={items} onMove={edit?.onMove} canMove={edit?.canDrop} />
       {tail}
-      {foot ?? (edit && routePoints.length > 1 && <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} />)}
+      {foot ??
+        (edit && routePoints.length > 1 && (
+          <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} trailing={addTrailing} />
+        ))}
     </div>
   );
   // Read in a dry run, the list read under it has the sheets.

@@ -9,7 +9,7 @@ import { NO_CONNECTION, noConnection } from "../../../lib/problems";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
 import { DepartPicker } from "../../navlog/lazy";
-import { TimelineRoute, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
+import { FuelStopsChip, TimelineRoute, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
 import { etaAt } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
 import type { ProceduresRouteProps } from "../../procedures/lazy";
@@ -41,7 +41,7 @@ export default function RouteTimeline({
   vm,
   props,
 }: {
-  vm: PlanSlices<"brief" | "flight" | "leg" | "plan" | "route" | "routeList" | "view">;
+  vm: PlanSlices<"brief" | "flight" | "leg" | "plan" | "route" | "routeList" | "stops" | "view">;
   /** The route's fields and points as the procedures draw them (useRouteListProps). */
   props: ProceduresRouteProps;
 }) {
@@ -50,6 +50,8 @@ export default function RouteTimeline({
   const { routeRows } = vm.leg;
   const { metarCategory } = vm.brief;
   const { waypointStops } = vm.routeList;
+  const { setStops } = vm.route;
+  const { firstFuelStop } = vm.stops;
   const { panel, setPanel } = vm.view;
   const read = !!vm.flight.flying || !!vm.flight.dryRunning;
   // From md up the side panel is the window's height at half as at full
@@ -159,6 +161,15 @@ export default function RouteTimeline({
   // Half a route, open to edit: the end it lacks in its place, and the
   // route typed or pasted where Add a Stop is on a whole one (RouteStart).
   const half = !read && !wholeRoute;
+  // The fuel stops' pill at Add a Stop's end: the planner's suggested ones
+  // put in, or, once the route has fuel stops, taken out again (the owner,
+  // 2026-11-20); none where there are neither.
+  const fuelIn = planned.stops.some((stop) => fuel.some((f) => sameField(f, stop)));
+  const fuelPill = fuelIn ? (
+    <FuelStopsChip added onClick={() => setStops(planned.stops.filter((stop) => !fuel.some((f) => sameField(f, stop))))} />
+  ) : firstFuelStop ? (
+    <FuelStopsChip added={false} onClick={firstFuelStop.add} />
+  ) : null;
   return (
     <TimelineRoute
       {...props}
@@ -166,6 +177,7 @@ export default function RouteTimeline({
       head={half && !planned.dep ? <MissingEnd vm={vm} end="Departure" /> : undefined}
       tail={half && !planned.dest ? <MissingEnd vm={vm} end="Destination" /> : undefined}
       foot={half ? <TypeRow vm={vm} /> : undefined}
+      addTrailing={read ? undefined : fuelPill}
       allStops={read || tall || panel === "full"}
       onAllStops={() => setPanel("full")}
     />

@@ -1,9 +1,10 @@
 import type { ComponentProps, ReactNode } from "react";
-import { ChevronsUpDown, Keyboard, Plus } from "lucide-react";
+import { ChevronsUpDown, Fuel, Keyboard, Plus } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { TEXT } from "../../lib/text";
 import { stopsNames, stopsTitle } from "./stopsRow";
+import { chipLook } from "./chipLook";
 
 /** The route's magenta, one solid line from under a line's mark into the
  *  next line, centred under the marks (TimelineLine's and the rows here);
@@ -48,6 +49,7 @@ function TimelineAction({
   first = false,
   placeholder = false,
   trailing,
+  room = "pr-12",
   ...button
 }: Omit<ComponentProps<typeof Button>, "children"> & {
   mark: ReactNode;
@@ -57,6 +59,8 @@ function TimelineAction({
   /** Its words a field's placeholder's grey, not the tint. */
   placeholder?: boolean;
   trailing?: ReactNode;
+  /** The words' room kept clear of `trailing`, its width. */
+  room?: string;
 }) {
   return (
     <div className="relative">
@@ -74,7 +78,7 @@ function TimelineAction({
             "flex h-full min-w-0 flex-1 items-center",
             !first && "border-t border-border",
             placeholder ? "text-muted-foreground" : "text-tint",
-            trailing && "pr-12",
+            trailing && room,
           )}
         >
           {children}
@@ -116,16 +120,39 @@ export function StopsRow({ idents, onShowAll }: { idents: string[]; onShowAll: (
 /** A stop before the destination, as Maps' Add Stop is, the last row of
  *  FPL's timeline on a whole route: its mark Apple Maps' -- a filled
  *  circle in the tint with a white + -- and its words in the tint. */
-export function AddStopRow({ disabled, onClick }: { disabled: boolean; onClick: () => void }) {
+export function AddStopRow({ disabled, onClick, trailing }: { disabled: boolean; onClick: () => void; trailing?: ReactNode }) {
   return (
     <TimelineAction
       mark={<RowMark filled glyph={<Plus className="size-4" strokeWidth={2.6} aria-hidden />} />}
       disabled={disabled}
       onClick={onClick}
+      trailing={trailing}
+      room="pr-48"
       data-testid="timeline-add-stop"
     >
       Add a Stop
     </TimelineAction>
+  );
+}
+
+/** The planner's fuel stops, a pill at Add a Stop's end (the owner,
+ *  2026-11-20: "We should have a add fuel stops pill in the last row and
+ *  when added, remove fuel stops pill"): "Add Fuel Stops" puts the first
+ *  flight's suggested ones in, "Remove Fuel Stops" takes the fuel stops
+ *  out again. The procedures' "+ APCH" chip's look (chipLook). */
+export function FuelStopsChip({ added, onClick }: { added: boolean; onClick: () => void }) {
+  return (
+    <Button
+      variant="glass"
+      type="button"
+      onClick={onClick}
+      data-testid="timeline-fuel-stops"
+      data-look={added ? "remove" : "add"}
+      className={chipLook(true)}
+    >
+      <Fuel className="mr-1 size-4" aria-hidden="true" />
+      {added ? "Remove Fuel Stops" : "Add Fuel Stops"}
+    </Button>
   );
 }
 

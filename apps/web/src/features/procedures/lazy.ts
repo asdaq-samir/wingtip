@@ -8,5 +8,6 @@
 
 export { default as ProceduresRoute, RouteLine } from "./ProceduresRoute";
 export { default as TimelineRoute, type TimelinePoint } from "./TimelineRoute";
+export { FuelStopsChip } from "./TimelineRows";
 export type { ProceduresRouteProps } from "./routeProps";
 export { visitAt, visitRow } from "./visits";
