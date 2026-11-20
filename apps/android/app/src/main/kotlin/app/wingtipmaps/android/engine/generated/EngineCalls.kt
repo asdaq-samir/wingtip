@@ -907,7 +907,7 @@ fun Engine.fuelEstimate(distanceNm: Double, cruiseTasKt: Double? = null, fuelBur
     rule("fuel_estimate", EngineContract.FuelEstimateInput(distanceNm = distanceNm, cruiseTasKt = cruiseTasKt, fuelBurnGph = fuelBurnGph, taxiFuelGal = taxiFuelGal))
 
 /**
- * The fuel in the tanks at each point of the route and whether it is under the reserve: full at the departure, the start, taxi and takeoff allowance and each leg's burn taken from them after, filled again at each field landed at, as the planner checks each flight; null at a point past a leg whose burn is not known, until the next fill.
+ * The fuel in the tanks at each point of the route and whether it is under the reserve: full at the departure, the start, taxi and takeoff allowance and each leg's burn taken from them after, filled again at each field landed at, as the planner checks each flight; negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.
  */
 fun Engine.fuelInTanks(points: List<EngineContract.FuelInTanksInputPointsItem>, usableGal: Double, taxiGal: Double, reserveGal: Double): Result<List<EngineContract.FuelInTanksAnswerItem?>> =
     rule("fuel_in_tanks", EngineContract.FuelInTanksInput(points = points, usableGal = usableGal, taxiGal = taxiGal, reserveGal = reserveGal))

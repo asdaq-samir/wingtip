@@ -8,7 +8,8 @@ import { TEXT } from "../../lib/text";
  * the share of the tanks left, filled. A fuel stop's in the text's own
  * colour, a step up from the grey, not the caution's amber, which means a
  * caution wherever it is drawn (the owner, 2026-11-17: "Yes to all recs");
- * one under the reserve the flight is held to in red.
+ * one under the reserve the flight is held to in red, and one past empty
+ * the gallons short, "−12 gal", its gauge empty.
  *
  * With the tanks' size known it is React Aria's stock Meter (role meter,
  * its value the gallons over the usable fuel), so VoiceOver hears "Fuel in
@@ -22,7 +23,12 @@ export function FuelGauge({ gal, usable, tone }: { gal: number; usable: number |
     TEXT.note,
     tone === "low" ? "text-destructive-ink" : tone === "fuel" ? "text-foreground" : "text-muted-foreground",
   );
-  const words = `${Math.floor(gal)} gal`;
+  // Past empty the gallons short, with a minus (the engine's
+  // fuel_in_tanks; the owner, 2026-11-20: "Instead of showing 0 gal, can
+  // you show negative gal"), rounded the same way down, so never fewer
+  // short than there are.
+  const whole = Math.floor(gal);
+  const words = `${whole < 0 ? "\u2212" : ""}${Math.abs(whole)} gal`;
   if (!usable)
     return (
       <span className={look}>

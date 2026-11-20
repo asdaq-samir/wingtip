@@ -98,7 +98,10 @@ pub struct TankPoint {
 /// takeoff allowance and each leg's burn taken from them after, filled
 /// again at each field landed at, as the planner checks each flight
 /// (wingtip.planning.route_totals). None at a point past a leg whose burn is
-/// not known, until the next fill.
+/// not known, until the next fill. Below empty it is negative, the gallons
+/// short, not 0: a 0 read as landing on fumes where the airplane cannot
+/// reach the point at all (the owner, 2026-11-20: "Instead of showing 0
+/// gal, can you show negative gal"); it is low then too.
 pub fn tanks(points: &[TankPoint], usable_gal: f64, taxi_gal: f64, reserve_gal: f64) -> Vec<Option<(f64, bool)>> {
     let mut burned = 0.0;
     points
@@ -109,11 +112,27 @@ pub fn tanks(points: &[TankPoint], usable_gal: f64, taxi_gal: f64, reserve_gal: 
             }
             burned += p.fuel_gal.unwrap_or(f64::NAN);
             let gal = usable_gal - taxi_gal - burned;
-            let at = gal.is_finite().then(|| (gal.max(0.0), gal < reserve_gal));
+            let at = gal.is_finite().then(|| (gal, gal < reserve_gal));
             if p.refuel {
                 burned = 0.0;
             }
             at
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_point_past_empty_reads_the_gallons_short() {
+        let leg = |gal: f64, refuel: bool| TankPoint { departure: false, fuel_gal: Some(gal), refuel };
+        let departure = TankPoint { departure: true, fuel_gal: None, refuel: false };
+        // 40 usable, 1.5 taxi: 38.5 left before the legs, 30 burned to the
+        // stop, 20 more to the end with no fuel bought: 11.5 short.
+        let at = tanks(&[departure, leg(30.0, false), leg(20.0, false)], 40.0, 1.5, 7.5);
+        assert_eq!(at[1], Some((8.5, false)));
+        assert_eq!(at[2], Some((-11.5, true)));
+    }
 }
