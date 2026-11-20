@@ -42,8 +42,14 @@ test("every point's row ends in its time over its altitude and a menu: an airpor
   for (const name of ["C81 · Depart"]) {
     await inSheet(page, route.getByRole("region", { name }).getByTestId("point-menu"));
     await route.getByRole("region", { name }).getByTestId("point-menu").click();
+    // The menu in sight first: it draws a frame or two after the tap, and
+    // an absence read before then held for nothing, and the Escape after it
+    // went to the mark, leaving the menu to open over the rows below.
+    const menu = page.getByRole("menu", { name: `${name.split(" ")[0]}: more` });
+    await expect(menu).toBeVisible();
     await expect(page.getByTestId("point-menu-direct")).toHaveCount(0);
     await page.keyboard.press("Escape");
+    await expect(menu).toHaveCount(0);
   }
 
   // Set from its menu, as the route box's menu sets it: the address's
