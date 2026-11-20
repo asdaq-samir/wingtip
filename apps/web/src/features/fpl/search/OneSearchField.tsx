@@ -1,6 +1,5 @@
 import { useEffect, useEffectEvent } from "react";
 import { X } from "lucide-react";
-import { Button } from "../../../components/ui/button";
 import { cn } from "cn";
 import IconButton from "../../../components/IconButton";
 import PageToggle from "../../../components/PageToggle";
@@ -90,18 +89,13 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
       <h1 className="sr-only">Wingtip Maps</h1>
       {!using && <PageToggle page={0} />}
       <SearchBox model={model} inputRef={inputRef} using={using} />
+      {/* In use, a round ✕ at the row's end where the avatar was, as Apple
+          Maps' search has on iOS 26, not the word Cancel (the owner,
+          2026-11-20: "Instead just show the close/clear button when typing"). */}
       {using && (
-        <Button
-          variant="plain"
-          size="inline"
-          type="button"
-          onClick={model.cancel}
-          data-testid="one-search-cancel"
-          // Its 44-point hit area the pseudo-element's (index.css), not its own height.
-          className={cn("relative shrink-0 px-1 text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring", TEXT.row)}
-        >
-          Cancel
-        </Button>
+        <IconButton round label="Cancel" onClick={model.cancel} data-testid="one-search-cancel">
+          <X className="size-5" aria-hidden="true" />
+        </IconButton>
       )}
       {!using && <AccountButton />}
     </div>

@@ -99,7 +99,13 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
     >
       {/* In flight the mic alone grows to 60 points (FLYING_BUTTON), not
           the pill's chips. */}
-      <span className={cn("flex shrink-0 [&_button]:rounded-full", flying && "[&_button]:size-[60px]", pillDone && !flying && "hidden")}>
+      <span
+        className={cn(
+          "flex shrink-0 [&_button]:rounded-full",
+          flying ? "[&_button]:size-[60px]" : "[&_button]:size-11",
+          pillDone && !flying && "hidden",
+        )}
+      >
         <RadioButton />
       </span>
       <div
@@ -127,8 +133,11 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
         // the web groups its map button over its location arrow (the
         // owner's screenshot, 2026-11-10); a button pressed or open a
         // rounded square in it.
-        "flex flex-col gap-2 rounded-2xl p-1 [&_button]:rounded-xl",
-        flying && FLYING_STACK,
+        // At rest a capsule of 44-point buttons, as Apple Maps' map buttons
+        // are (the owner, 2026-11-20: "make all buttons same size as Apple
+        // Maps"), 52 across with the glass's 4 round them.
+        "flex flex-col gap-2 p-1",
+        flying ? cn("rounded-2xl [&_button]:rounded-xl", FLYING_STACK) : "rounded-full [&_button]:size-11 [&_button]:rounded-full",
         GLASS,
       )}
     >

@@ -630,6 +630,12 @@ off by default (the owner, 2026-11-13).
    first-flight card until the owner's word).
    FPL has no field of its own: adding a stop asks the one search.
 
+- **FPL's head** has Search at its start, where Share was, and the ✕ at its
+  end (the owner, 2026-11-20: "replace the share button with search
+  button"); the sharing is More's. The search in use on Search ends its row
+  with a round ✕, not the word Cancel. The map's buttons are 44-point
+  buttons in their glass, Apple Maps' size, the right-hand group one
+  capsule.
 - **One round toggle button turns the page** (the owner, 2026-11-13), a
   44-point disc in the field's white: on Search at the start of the first
   row, before the field, with the account button at its end, as Apple

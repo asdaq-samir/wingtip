@@ -29,16 +29,16 @@ export default function FplBar({ share, strip, onHold }: { share?: ReactNode; st
       <div className="flex justify-start">{share}</div>
       <div className="flex min-w-0 flex-col items-center" data-testid="fpl-head">
         <h2
-          // Lifted 4 points off the pills under it, the head's height
-          // and its place kept (the owner, 2026-11-20: "move the title up a
-          // few px to have some space in between it and the pills").
-          className={cn("max-w-full -translate-y-1 truncate font-bold text-foreground", TEXT.row, "leading-[1.125rem]")}
+          // Its line the row's own 22, so a descender (the g of "Flight")
+          // is not cut, the pills right under it (the owner, 2026-11-20: "move
+          // the pills a bit lower so the g above it is not cutting out").
+          className={cn("max-w-full truncate font-bold text-foreground", TEXT.row, "leading-[1.375rem]")}
           data-testid="fpl-title"
         >
           Flight Plan
         </h2>
         {strip && (
-          <div className="flex h-7 max-w-full min-w-0 items-center justify-center" data-testid="route-strip">
+          <div className="flex h-6 max-w-full min-w-0 items-center justify-center" data-testid="route-strip">
             {strip}
           </div>
         )}

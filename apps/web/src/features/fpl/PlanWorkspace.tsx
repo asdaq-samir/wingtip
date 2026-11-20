@@ -27,6 +27,9 @@ import FlightFoot from "./workspace/FlightFoot";
 import { FplRoute } from "./workspace/FplActions";
 import RouteControls from "./workspace/RouteControls";
 import FplBar from "./workspace/FplBar";
+import { Search } from "lucide-react";
+import IconButton from "../../components/IconButton";
+import { askSearch } from "../../lib/oneSearch";
 import { useConfirm } from "../../components/useConfirm";
 import { routesOffered } from "./workspace/routeEditing";
 import OneSearchField from "./search/OneSearchField";
@@ -289,7 +292,14 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           bar: (
             <>
               <FplBar
-                share={routed ? shareMenu("start", "fpl-share", undefined, "head") : null}
+                // Search at the head's start, where Share was (the owner,
+                // 2026-11-20: "replace the share button with search button");
+                // the sharing is More's (FplTabBar).
+                share={
+                  <IconButton round label="Search" onClick={() => askSearch()} data-testid="fpl-search">
+                    <Search className="size-5" aria-hidden="true" />
+                  </IconButton>
+                }
                 strip={<RouteControls vm={vm} flightInputs={flightInputs} />}
                 onHold={vm.route.hasPoints ? askClear : undefined}
               />

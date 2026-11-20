@@ -9,9 +9,6 @@ import { MAKES_WAY } from "../../../components/sheet/pinAtFoot";
 import { EDGE_ROOM } from "../../../components/sheet/insets";
 import { FLOATING_BAR_SHEET_ROOM } from "../../../components/floatingBarLook";
 import { cn } from "cn";
-import { Search } from "lucide-react";
-import { Button } from "../../../components/ui/button";
-import { askSearch } from "../../../lib/oneSearch";
 
 /**
  * FPL's actions as a floating glass bar at the sheet's foot (the owner,
@@ -99,20 +96,6 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
         />
         {more}
       </Toolbar.Root>
-      {/* The search beside the bar, its own glass disc, as iOS 26's tab
-          bars keep Search apart at their end (the owner, 2026-11-19: "a
-          search button next to the bar below"), where it was the page
-          toggle's magnifier at the top: the one search, its field up with
-          the keyboard (askSearch). */}
-      <Button
-        variant="ghost"
-        onClick={() => askSearch()}
-        aria-label="Search"
-        data-testid="fpl-search"
-        className="liquid-glass pointer-events-auto ml-2 size-14 shrink-0 self-center rounded-full p-0 text-tint [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)]"
-      >
-        <Search className="size-7" strokeWidth={1.75} aria-hidden="true" />
-      </Button>
     </div>
   );
 }

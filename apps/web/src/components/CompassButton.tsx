@@ -45,7 +45,7 @@ export default function CompassButton({ map }: { map: GlMap | null }) {
         label={`Compass, the map turned ${bearing}°: turn north up`}
         data-testid="map-compass"
         data-bearing={bearing}
-        className="relative size-9 rounded-full text-foreground"
+        className="relative size-11 rounded-full text-foreground"
         onClick={() => cameraOf(map).northUp()}
       >
         <svg viewBox="-18 -18 36 36" className="absolute inset-0 size-full" style={{ rotate: `${-bearing}deg` }} aria-hidden="true">
