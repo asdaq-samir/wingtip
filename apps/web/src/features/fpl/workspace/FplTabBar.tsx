@@ -64,8 +64,12 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
       data-testid="fpl-actions"
     >
       {/* The one floating bar's capsule (FloatingBar), the airport
-          card's too: glass only on what floats (rules.md). */}
-      <Toolbar.Root aria-label="Route" render={<FloatingBar className="pointer-events-auto min-w-0 flex-1" />}>
+          card's too: glass only on what floats (rules.md). As wide as its
+          buttons and centred, as the airport card's is, not stretched
+          across the sheet, which spread its buttons further apart than
+          the card's tabs (the owner, 2026-11-20: "How come fpl tab bar is
+          more spaced out then airport one?"). */}
+      <Toolbar.Root aria-label="Route" render={<FloatingBar className="pointer-events-auto min-w-0" />}>
         <BarAction
           icon={<ICON.brief />}
           badge={briefMark && found > 0 && <TabCount count={found} mark={briefMark} testId="route-brief-count" />}
