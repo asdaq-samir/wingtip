@@ -299,7 +299,9 @@ test("a field the FAA draws no diagram for has the row all the same, showing the
   await settled(viewer);
   const box = (await sketch.boundingBox())!;
   expect(box.width).toBeGreaterThan(page.viewportSize()!.width - 2);
-  await expect(viewer).toContainText("Not an FAA airport diagram");
+  // Marked as ours, the app's mark faint in its corner, and one line under it (the owner, 2026-11-20).
+  await expect(viewer.getByTestId("airport-sketch-watermark")).toBeVisible();
+  await expect(viewer).toContainText("Not an FAA diagram.");
   await viewer.getByTestId("airport-sketch-close").click();
   await expect(viewer).toHaveCount(0);
 });
