@@ -31,8 +31,10 @@ export default function FplBar({ share, strip, onHold }: { share?: ReactNode; st
         <h2
           // Its line the row's own 22, so a descender (the g of "Flight")
           // is not cut, the pills right under it (the owner, 2026-11-20: "move
-          // the pills a bit lower so the g above it is not cutting out").
-          className={cn("max-w-full truncate font-bold text-foreground", TEXT.row, "leading-[1.375rem]")}
+          // the pills a bit lower so the g above it is not cutting out"),
+          // lifted 3 points, its whole line with it, so nothing is cut ("Can
+          // you move the flight plan up a bit").
+          className={cn("max-w-full -translate-y-[3px] truncate font-bold text-foreground", TEXT.row, "leading-[1.375rem]")}
           data-testid="fpl-title"
         >
           Flight Plan
