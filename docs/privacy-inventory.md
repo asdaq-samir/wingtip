@@ -195,6 +195,11 @@ longer than it takes to answer the request.
   (2026-11-12, decision 0041).
 - **Purchases** are the stores' own: the app keeps only the plan's term
   and the store's id for it (above), never a card.
+- **The avatar's photo**, if the pilot chooses one in Pilot Details: a
+  256-pixel square JPEG the app makes from the photo picked, kept in the
+  gateway's Postgres (`pilot_avatars`, V45), served only to its own pilot
+  (`GET /api/me/avatar`), in the account's export as a data: URL, and
+  deleted with the account or by Remove Photo.
 - Deleting an account (`DELETE /api/me` from Setup, or from the web
   without the app at `/delete-account`, an emailed link confirming it,
   `DeleteAccountController`) removes everything linked to it above, its

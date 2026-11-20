@@ -33,6 +33,27 @@ export const gatewayPilot = {
    *  for a flight plan's item 19 (PilotController); blank is none. */
   setContact: (body: PilotContactRequest) => gateway.PUT("/api/me/contact", { body }).then(data<Pilot>),
 
+  /** The signed-in pilot's photo for their avatar, a JPEG, PNG or WebP of
+   *  at most 512 KB in place of any before it (AvatarController), sent as
+   *  the form's `photo`: GET /api/me then gives its new avatarUrl. A 413
+   *  or 415 throws with the server's words. */
+  async setAvatar(photo: Blob): Promise<void> {
+    await gateway.PUT("/api/me/avatar", {
+      // The document types a binary part as a string; the form carries the Blob.
+      body: { photo: photo as unknown as string },
+      bodySerializer: () => {
+        const form = new FormData();
+        form.append("photo", photo, "avatar.jpg");
+        return form;
+      },
+    });
+  },
+
+  /** Takes the pilot's photo out: their initials show again. */
+  async removeAvatar(): Promise<void> {
+    await gateway.DELETE("/api/me/avatar");
+  },
+
   /** Deletes the signed-in pilot's account and everything that was
    *  theirs, on every device, and signs them out (a 204). A 502 deleted
    *  nothing: the planner could not take their notes. */

@@ -67,7 +67,16 @@ const params: PlanParams = {
   checkpoints: true,
 };
 
-const signedIn = { id: 7, displayName: "A. Pilot", email: "a@example.com", developer: false, fullName: null, phone: null, homeBase: null };
+const signedIn = {
+  id: 7,
+  displayName: "A. Pilot",
+  email: "a@example.com",
+  developer: false,
+  fullName: null,
+  phone: null,
+  homeBase: null,
+  avatarUrl: null,
+};
 
 const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: queryClient }, children);
 

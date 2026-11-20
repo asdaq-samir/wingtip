@@ -24,8 +24,7 @@ import { TEXT } from "../../lib/text";
 import { useDevMode } from "../../hooks/use-dev-mode";
 import { SettingsPage, type HelpPages } from "../settings";
 import { FlightsPanel } from "./AccountPanels";
-import { AccountFace } from "./AccountFace";
-import { accountFill } from "./accountLook";
+import { LargeFace } from "./AccountFace";
 import { LogbookPanel } from "./LogbookPanel";
 import MinimumsPanel from "./MinimumsPanel";
 import SubscriptionPanel from "./SubscriptionPanel";
@@ -201,10 +200,11 @@ function minimumsWords(m: Minimums): string | null {
 }
 
 /** Who is signed in, at You's top, as Apple Maps' account card heads
- *  itself (the owner's screenshot, 2026-11-13): their initials in a large
- *  round avatar, their name in large bold under it and the address
- *  smaller in grey under that ("the name bigger and then below it smaller
- *  email"). The avatar and the name are Pilot Details' way in, a tap on
+ *  itself (the owner's screenshot, 2026-11-13): their photo (Pilot
+ *  Details' Choose Photo) or their initials in a large round avatar
+ *  (LargeFace), their name in large bold under it and the address
+ *  smaller in grey under that ("the name bigger and then below it
+ *  smaller email"). The avatar and the name are Pilot Details' way in, a tap on
  *  them, not a row of the list (the owner, 2026-11-20: "Pilot details
  *  should not be a separate list item but just a tap on the avatar/name");
  *  signed out with dev mode, the avatar alone (its developer's switch).
@@ -217,14 +217,7 @@ function YouHead({ pilot, opens }: { pilot: Pilot | null; opens: boolean }) {
   const address = pilot?.email ?? (given !== name ? given : null);
   // Pilot Details, its close back to You.
   const openPage = useOpenPage();
-  const avatar = (
-    <span
-      aria-hidden="true"
-      className={cn("mb-2 grid size-22 place-items-center rounded-full font-bold [&_svg]:size-10!", accountFill(!!name), TEXT.hero)}
-    >
-      <AccountFace name={name} />
-    </span>
-  );
+  const avatar = <LargeFace name={name} photo={pilot?.avatarUrl} />;
   const who = pilot && (
     <>
       {name ? (

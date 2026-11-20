@@ -29,7 +29,7 @@ import org.springframework.web.client.RestClientResponseException;
  * the database cascades it to their aircraft, flights, logbook and
  * endorsements, their instructors and students and the solo
  * cross-countries between them (V26), the approaches set as lessons
- * between them (V30) -- and the sign-in links ever sent
+ * between them (V30), their avatar's photo (V45) -- and the sign-in links ever sent
  * to their address, and the connections to AI apps they made (the
  * connector's tokens and consents, ConnectorGrants); last
  * every session they hold, on any device, under any of the names they

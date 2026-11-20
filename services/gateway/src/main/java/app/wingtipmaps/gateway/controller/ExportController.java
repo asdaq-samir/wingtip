@@ -19,6 +19,7 @@ import app.wingtipmaps.gateway.dto.TrainingDto;
 import app.wingtipmaps.gateway.planner.model.PlannerCheckpointNote;
 import app.wingtipmaps.gateway.security.mcp.ConnectorGrants;
 import app.wingtipmaps.gateway.service.AccountRecords;
+import app.wingtipmaps.gateway.service.AvatarService;
 import app.wingtipmaps.gateway.service.CheckpointNotesClient;
 import app.wingtipmaps.gateway.service.PlannerUnavailableException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,7 +43,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Everything the gateway keeps for a pilot, in one file they can take
- * away: the account (with the phone number and home base), their
+ * away: the account (with the phone number and home base, and their
+ * avatar's photo as a data: URL), their
  * airplanes with their squawks, every saved flight with its nav log,
  * track, share link and flight watch, the logbook, currency, training and
  * the instructing they do -- each part exactly as the app's own endpoint
@@ -75,6 +77,7 @@ public class ExportController {
     private final FlightWatchController watches;
     private final CheckpointNotesClient notes;
     private final AccountRecords records;
+    private final AvatarService avatars;
     /** The connector's grants, absent in a slice test with no database. */
     private ConnectorGrants connections;
 
@@ -87,7 +90,8 @@ public class ExportController {
             InstructorController instructing,
             FlightWatchController watches,
             CheckpointNotesClient notes,
-            AccountRecords records) {
+            AccountRecords records,
+            AvatarService avatars) {
         this.account = account;
         this.airplanes = airplanes;
         this.flights = flights;
@@ -97,6 +101,7 @@ public class ExportController {
         this.watches = watches;
         this.notes = notes;
         this.records = records;
+        this.avatars = avatars;
     }
 
     @Autowired(required = false)
@@ -120,6 +125,7 @@ public class ExportController {
             String format,
             Instant exportedAt,
             PilotDto account,
+            @Nullable String photo,
             List<ExportedAirplane> airplanes,
             List<ExportedFlight> flights,
             List<LogbookEntryDto> logbook,
@@ -135,8 +141,8 @@ public class ExportController {
             summary = "Everything kept for the signed-in pilot, as one JSON file",
             description = "The account, airplanes and squawks, flights with nav logs, tracks, share links and "
                     + "watches, logbook, currency, training and instructing, each as its own endpoint answers it; "
-                    + "the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected "
-                    + "AI apps (never a token); sent as a download.")
+                    + "the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders, subscription, "
+                    + "paid-feature counts and connected AI apps (never a token); sent as a download.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "The file"),
         @ApiResponse(responseCode = "401", description = "No session")
@@ -154,6 +160,7 @@ public class ExportController {
                 FORMAT,
                 Instant.now(),
                 body(account.me(authentication), null),
+                avatars.dataUrl(pilot),
                 planes,
                 saved,
                 body(logbook.list(pilot), List.of()),

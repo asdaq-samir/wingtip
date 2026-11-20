@@ -29,7 +29,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,8 +44,6 @@ import org.springframework.session.Session;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
@@ -59,12 +56,18 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Testcontainers
 abstract class AccountTestBase {
 
-    @Container
+    /** One Postgres for every class that extends this, started once and
+     *  left to Testcontainers' own reaper: a container a class stopped
+     *  would leave the next class's cached context (the same one, its
+     *  configuration being the same) pointing at a port that is gone. */
     @ServiceConnection
     static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18");
+
+    static {
+        postgres.start();
+    }
 
     /** The planner, which keeps the pilot's own checkpoint notes. */
     private static HttpServer planner;
@@ -72,6 +75,9 @@ abstract class AccountTestBase {
     /** The pilot's own note, as the planner answers GET /api/checkpoint-notes/mine. */
     static final String NOTES =
             "{\"notes\":[{\"route\":\"C81->KDLH\",\"lat\":45.0,\"lon\":-90.0,\"description\":\"Water tower\",\"created_at\":\"2026-10-01T00:00:00+00:00\"}]}";
+
+    /** A PNG's eight-byte signature: what AvatarService checks a PNG by. */
+    static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'};
 
     static final List<String> plannerAsked = new CopyOnWriteArrayList<>();
     static volatile int plannerStatus = 200;
@@ -112,8 +118,13 @@ abstract class AccountTestBase {
     @Autowired
     JdbcTemplate jdbc;
 
+    /** Started once for every class that extends this, as the database
+     *  is: the cached context keeps the first one's address. */
     @BeforeAll
     static void startPlanner() throws IOException {
+        if (planner != null) {
+            return;
+        }
         planner = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         planner.createContext("/", exchange -> {
             plannerAsked.add(
@@ -134,11 +145,6 @@ abstract class AccountTestBase {
             exchange.close();
         });
         planner.start();
-    }
-
-    @AfterAll
-    static void stopPlanner() {
-        planner.stop(0);
     }
 
     @DynamicPropertySource
@@ -227,6 +233,11 @@ abstract class AccountTestBase {
                 "INSERT INTO reminders_sent (pilot_id, what, due_on, days_before) VALUES (?, 'medical', ?, 30)",
                 pilot.getId(),
                 LocalDate.of(2026, 12, 1));
+        // Their avatar's photo (V45): a PNG's signature is enough of one here.
+        jdbc.update(
+                "INSERT INTO pilot_avatars (pilot_id, content_type, image, updated_at) VALUES (?, 'image/png', ?, now())",
+                pilot.getId(),
+                PNG);
         String client = UUID.randomUUID().toString();
         jdbc.update(
                 "INSERT INTO oauth2_registered_client (id, client_id, client_name, client_authentication_methods,"
@@ -308,6 +319,7 @@ abstract class AccountTestBase {
                         id),
                 jdbc.queryForObject("SELECT count(*) FROM flight_watch WHERE pilot_id = ?", Integer.class, id),
                 jdbc.queryForObject("SELECT count(*) FROM reminders_sent WHERE pilot_id = ?", Integer.class, id),
+                jdbc.queryForObject("SELECT count(*) FROM pilot_avatars WHERE pilot_id = ?", Integer.class, id),
                 jdbc.queryForObject(
                         "SELECT count(*) FROM oauth2_authorization WHERE principal_name = ?",
                         Integer.class,
