@@ -937,7 +937,17 @@ way: three homes, and every control in one of them.
    Airplanes (each airplane's checklists inside it, and the picked one's
    Checklists row), Flights, Logbook, Minimums, Training (the Coach and
    Practice), the Emergency Assistant -- then Subscription; Settings is
-   the gear at its top left, the ✕ at its right.
+   the gear at its top left, the ✕ at its right. The avatar is the
+   pilot's own photo where they chose one, their initials where not, on
+   every avatar (the account button, You's head, Pilot Details'): Pilot
+   Details heads itself with it, Choose Photo under it and Remove Photo
+   beside that once there is one, as Contacts heads a card (the owner,
+   2026-11-20: "Yes to choose photo"). An app cannot read the phone's own
+   profile picture, so Choose Photo opens the system's picker (Photos,
+   the camera or Files on an iPhone); the photo is cropped square from
+   its middle and sent 256 pixels across as a JPEG, kept by the gateway
+   with the account (`PUT /api/me/avatar`), and a refusal is said under
+   the buttons.
 2. **Settings**, one page, You's gear: Map (Airport Weather, Glide Ring, Clear Your Path), In
    Flight (Alerts; ATC, one page of Comms Assist, ATC Alerts and the
    Copilot), Data (Keep for the Air), and Help & About (Guide, Status,

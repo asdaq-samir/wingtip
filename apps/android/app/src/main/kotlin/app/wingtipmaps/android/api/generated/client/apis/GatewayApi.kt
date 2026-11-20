@@ -161,6 +161,21 @@ interface GatewayApi {
     suspend fun assignLesson(@Path("studentId") studentId: kotlin.Long, @Body appWingtipmapsAndroidApiGeneratedGatewayAssignLessonRequest: app.wingtipmaps.android.api.generated.gateway.AssignLessonRequest): Response<app.wingtipmaps.android.api.generated.gateway.TrainingDto>
 
     /**
+     * GET api/me/avatar
+     * The signed-in pilot&#39;s photo
+     * Their avatar&#39;s image, as they set it, at the address GET /api/me gives as avatarUrl (its v is the version, so a browser may keep it).
+     * Responses:
+     *  - 200: The image
+     *  - 401: No session
+     *  - 404: They have set no photo
+     *
+     * @param v The photo&#39;s version, which only makes its address new (optional)
+     * @return [Unit]
+     */
+    @GET("api/me/avatar")
+    suspend fun avatar(@Query("v") v: kotlin.Long? = null): Response<Unit>
+
+    /**
      * POST api/flight-service/briefings
      *
      *
@@ -321,7 +336,7 @@ interface GatewayApi {
     /**
      * GET api/me/export
      * Everything kept for the signed-in pilot, as one JSON file
-     * The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the pilot&#39;s own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.
+     * The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar&#39;s photo as a data: URL; the pilot&#39;s own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.
      * Responses:
      *  - 200: The file
      *  - 401: No session
@@ -675,6 +690,20 @@ interface GatewayApi {
     suspend fun reminders(): Response<app.wingtipmaps.android.api.generated.gateway.RemindersDto>
 
     /**
+     * DELETE api/me/avatar
+     * Take out the signed-in pilot&#39;s photo
+     * Their initials show again.
+     * Responses:
+     *  - 204: Taken out
+     *  - 401: No session
+     *  - 404: They had no photo
+     *
+     * @return [Unit]
+     */
+    @DELETE("api/me/avatar")
+    suspend fun removeAvatar(): Response<Unit>
+
+    /**
      * DELETE api/instructor/students/{studentId}/lessons/{id}
      *
      *
@@ -768,6 +797,24 @@ interface GatewayApi {
      */
     @PUT("api/instructor")
     suspend fun set(@Body appWingtipmapsAndroidApiGeneratedGatewayInstructorRequest: app.wingtipmaps.android.api.generated.gateway.InstructorRequest): Response<app.wingtipmaps.android.api.generated.gateway.InstructorDto>
+
+    /**
+     * PUT api/me/avatar
+     * Set the signed-in pilot&#39;s photo
+     * One image, as the form&#39;s photo: a JPEG, PNG or WebP of at most 512 KB (the app sends it about 256 pixels square). It takes the place of any before it.
+     * Responses:
+     *  - 204: Kept; GET /api/me gives its new address
+     *  - 400: The photo was empty
+     *  - 401: No session
+     *  - 413: Over 512 KB
+     *  - 415: Not a JPEG, PNG or WebP image
+     *
+     * @param photo
+     * @return [Unit]
+     */
+    @Multipart
+    @PUT("api/me/avatar")
+    suspend fun setAvatar(@Part("photo") photo: kotlin.String): Response<Unit>
 
     /**
      * PUT api/me/contact

@@ -240,6 +240,27 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /api/me`.
     /// - Remark: Generated from `#/paths//api/me/delete(delete_me)`.
     func deleteMe(_ input: Operations.DeleteMe.Input) async throws -> Operations.DeleteMe.Output
+    /// The signed-in pilot's photo
+    ///
+    /// Their avatar's image, as they set it, at the address GET /api/me gives as avatarUrl (its v is the version, so a browser may keep it).
+    ///
+    /// - Remark: HTTP `GET /api/me/avatar`.
+    /// - Remark: Generated from `#/paths//api/me/avatar/get(avatar)`.
+    func avatar(_ input: Operations.Avatar.Input) async throws -> Operations.Avatar.Output
+    /// Set the signed-in pilot's photo
+    ///
+    /// One image, as the form's photo: a JPEG, PNG or WebP of at most 512 KB (the app sends it about 256 pixels square). It takes the place of any before it.
+    ///
+    /// - Remark: HTTP `PUT /api/me/avatar`.
+    /// - Remark: Generated from `#/paths//api/me/avatar/put(setAvatar)`.
+    func setAvatar(_ input: Operations.SetAvatar.Input) async throws -> Operations.SetAvatar.Output
+    /// Take out the signed-in pilot's photo
+    ///
+    /// Their initials show again.
+    ///
+    /// - Remark: HTTP `DELETE /api/me/avatar`.
+    /// - Remark: Generated from `#/paths//api/me/avatar/delete(removeAvatar)`.
+    func removeAvatar(_ input: Operations.RemoveAvatar.Input) async throws -> Operations.RemoveAvatar.Output
     /// Forget the signed-in pilot's own checkpoint notes
     ///
     /// Every note they wrote for themselves, which the planner keeps; the shared notes stay. The planner's own route for it is internal (no x-gateway mark): this names the pilot from the session, as the account's deletion does.
@@ -256,7 +277,7 @@ public protocol APIProtocol: Sendable {
     func setContact(_ input: Operations.SetContact.Input) async throws -> Operations.SetContact.Output
     /// Everything kept for the signed-in pilot, as one JSON file
     ///
-    /// The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.
+    /// The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.
     ///
     /// - Remark: HTTP `GET /api/me/export`.
     /// - Remark: Generated from `#/paths//api/me/export/get(export)`.
@@ -984,6 +1005,39 @@ extension APIProtocol {
     public func deleteMe(headers: Operations.DeleteMe.Input.Headers = .init()) async throws -> Operations.DeleteMe.Output {
         try await deleteMe(Operations.DeleteMe.Input(headers: headers))
     }
+    /// The signed-in pilot's photo
+    ///
+    /// Their avatar's image, as they set it, at the address GET /api/me gives as avatarUrl (its v is the version, so a browser may keep it).
+    ///
+    /// - Remark: HTTP `GET /api/me/avatar`.
+    /// - Remark: Generated from `#/paths//api/me/avatar/get(avatar)`.
+    public func avatar(
+        query: Operations.Avatar.Input.Query = .init(),
+        headers: Operations.Avatar.Input.Headers = .init()
+    ) async throws -> Operations.Avatar.Output {
+        try await avatar(Operations.Avatar.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Set the signed-in pilot's photo
+    ///
+    /// One image, as the form's photo: a JPEG, PNG or WebP of at most 512 KB (the app sends it about 256 pixels square). It takes the place of any before it.
+    ///
+    /// - Remark: HTTP `PUT /api/me/avatar`.
+    /// - Remark: Generated from `#/paths//api/me/avatar/put(setAvatar)`.
+    public func setAvatar(headers: Operations.SetAvatar.Input.Headers = .init()) async throws -> Operations.SetAvatar.Output {
+        try await setAvatar(Operations.SetAvatar.Input(headers: headers))
+    }
+    /// Take out the signed-in pilot's photo
+    ///
+    /// Their initials show again.
+    ///
+    /// - Remark: HTTP `DELETE /api/me/avatar`.
+    /// - Remark: Generated from `#/paths//api/me/avatar/delete(removeAvatar)`.
+    public func removeAvatar() async throws -> Operations.RemoveAvatar.Output {
+        try await removeAvatar(Operations.RemoveAvatar.Input())
+    }
     /// Forget the signed-in pilot's own checkpoint notes
     ///
     /// Every note they wrote for themselves, which the planner keeps; the shared notes stay. The planner's own route for it is internal (no x-gateway mark): this names the pilot from the session, as the account's deletion does.
@@ -1010,7 +1064,7 @@ extension APIProtocol {
     }
     /// Everything kept for the signed-in pilot, as one JSON file
     ///
-    /// The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.
+    /// The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.
     ///
     /// - Remark: HTTP `GET /api/me/export`.
     /// - Remark: Generated from `#/paths//api/me/export/get(export)`.

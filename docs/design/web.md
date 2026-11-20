@@ -1559,8 +1559,11 @@ an alternative or help ([WCAG 2.2][wcag22]).
 at the search row's end, beside the field, as on iOS and Android) opens
 You (`PilotPanel`, `lib/openSettings` `openYou`; the owner's option A,
 2026-11-13, [rules.md](rules.md) §8), as Apple Maps' avatar opens yours:
-a centred avatar and the name, a tap on them Pilot Details (not a row,
-the owner 2026-11-20) with the account's menu
+a centred avatar (the pilot's photo or their initials, `AccountFace`) and
+the name, a tap on them Pilot Details (not a row, the owner 2026-11-20),
+headed by the avatar with Choose Photo and Remove Photo (`AvatarPhoto`,
+`useAvatarPhoto`: a hidden file input the stock Button opens, the photo
+cropped and scaled on a canvas by `squarePhoto` before it is sent), with the account's menu
 (signing in and out, the mode, a copy of the data, deleting the
 account), then Airplanes (the checklists inside), Flights, Logbook,
 Minimums, Training (Coach, Practice), the Emergency Assistant, Settings

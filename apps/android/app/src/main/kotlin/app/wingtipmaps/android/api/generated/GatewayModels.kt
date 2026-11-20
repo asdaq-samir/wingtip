@@ -21,6 +21,7 @@ data class AccountExport (
     val format: String,
     val instructing: InstructorDto,
     val logbook: List<LogbookEntryDto>,
+    val photo: String? = null,
     val records: AccountRecordsDto,
     val reminders: RemindersDto,
     val training: TrainingDto
@@ -31,6 +32,12 @@ data class AccountExport (
  */
 @Serializable
 data class PilotDto (
+    /**
+     * Where their avatar's photo is read, its version in the address so a new photo is never a
+     * cached one (GET /api/me/avatar); null when they have set none and their initials show
+     */
+    val avatarUrl: String? = null,
+
     /**
      * Whether this pilot also does development work here: the training workspace and the
      * developer console are theirs, a plain pilot's are not.

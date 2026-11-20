@@ -6,6 +6,7 @@ import app.wingtipmaps.gateway.dto.PilotContactRequest;
 import app.wingtipmaps.gateway.dto.PilotDto;
 import app.wingtipmaps.gateway.service.AccountService;
 import app.wingtipmaps.gateway.service.AccountService.AccountNotDeletedException;
+import app.wingtipmaps.gateway.service.AvatarService;
 import app.wingtipmaps.gateway.service.CheckpointNotesClient;
 import app.wingtipmaps.gateway.service.PilotService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -130,6 +131,7 @@ public class PilotController {
                 pilot.getRole().isDeveloper(),
                 pilot.getFullName(),
                 pilot.getPhone(),
-                pilot.getHomeBase());
+                pilot.getHomeBase(),
+                AvatarService.url(pilot));
     }
 }

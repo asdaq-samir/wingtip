@@ -186,6 +186,17 @@ match your entities, which is convenient right up to the moment it drops
 a column in production. Flyway owns the schema; Hibernate is only allowed
 to check that it matches and refuse to start if not.
 
+**The avatar's photo is kept apart from the pilot.** `PUT /api/me/avatar`
+(multipart, the form's `photo`: a JPEG, PNG or WebP of at most 512 KB,
+its first bytes checked against the type it says, `AvatarService`) keeps
+one photo a pilot in `pilot_avatars` (V45), `GET /api/me/avatar` serves
+it to that pilot alone, private and kept a year by the browser, and
+`DELETE /api/me/avatar` takes it out. `GET /api/me` gives its address as
+`avatarUrl` with its version (`?v=`, when it was set), read with the
+pilot by a `@Formula` subquery, so the pilot's row never carries the
+bytes and a new photo is never a cached one. It goes with the account
+by the table's cascade, and comes with the export as a data: URL.
+
 **Settings are one record.** application.yml's `app` block is bound to
 `AppProperties` and checked at start (`@Validated`), so a class takes the
 record, not a value by name. `app.planner.base-url` reads

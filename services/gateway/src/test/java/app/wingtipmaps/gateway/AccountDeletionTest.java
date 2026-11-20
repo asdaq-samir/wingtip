@@ -78,6 +78,8 @@ class AccountDeletionTest extends AccountTestBase {
                 .andExpect(header().string("Content-Disposition", startsWith("attachment; filename=\"wingtip-maps-")))
                 .andExpect(jsonPath("$.format").value("wingtip-maps-export/1"))
                 .andExpect(jsonPath("$.account.email").value(pilot.getEmail()))
+                .andExpect(jsonPath("$.account.avatarUrl").value(startsWith("/api/me/avatar?v=")))
+                .andExpect(jsonPath("$.photo").value("data:image/png;base64,iVBORw0KGgo="))
                 .andExpect(jsonPath("$.airplanes.length()").value(1))
                 .andExpect(jsonPath("$.airplanes[0].squawks[0].text").value("Landing light out"))
                 .andExpect(jsonPath("$.flights.length()").value(1))

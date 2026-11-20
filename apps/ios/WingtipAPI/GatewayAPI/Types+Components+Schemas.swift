@@ -32,6 +32,8 @@ extension Components {
             public var instructing: Components.Schemas.InstructorDto
             /// - Remark: Generated from `#/components/schemas/AccountExport/logbook`.
             public var logbook: [Components.Schemas.LogbookEntryDto]
+            /// - Remark: Generated from `#/components/schemas/AccountExport/photo`.
+            public var photo: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AccountExport/records`.
             public var records: Components.Schemas.AccountRecordsDto
             /// - Remark: Generated from `#/components/schemas/AccountExport/reminders`.
@@ -51,6 +53,7 @@ extension Components {
             ///   - format:
             ///   - instructing:
             ///   - logbook:
+            ///   - photo:
             ///   - records:
             ///   - reminders:
             ///   - training:
@@ -65,6 +68,7 @@ extension Components {
                 format: Swift.String,
                 instructing: Components.Schemas.InstructorDto,
                 logbook: [Components.Schemas.LogbookEntryDto],
+                photo: Swift.String? = nil,
                 records: Components.Schemas.AccountRecordsDto,
                 reminders: Components.Schemas.RemindersDto,
                 training: Components.Schemas.TrainingDto
@@ -79,6 +83,7 @@ extension Components {
                 self.format = format
                 self.instructing = instructing
                 self.logbook = logbook
+                self.photo = photo
                 self.records = records
                 self.reminders = reminders
                 self.training = training
@@ -94,6 +99,7 @@ extension Components {
                 case format
                 case instructing
                 case logbook
+                case photo
                 case records
                 case reminders
                 case training
@@ -3421,6 +3427,10 @@ extension Components {
         ///
         /// - Remark: Generated from `#/components/schemas/PilotDto`.
         public struct PilotDto: Codable, Hashable, Sendable {
+            /// Where their avatar's photo is read, its version in the address so a new photo is never a cached one (GET /api/me/avatar); null when they have set none and their initials show
+            ///
+            /// - Remark: Generated from `#/components/schemas/PilotDto/avatarUrl`.
+            public var avatarUrl: Swift.String?
             /// Whether this pilot also does development work here: the training workspace and the developer console are theirs, a plain pilot's are not.
             ///
             /// - Remark: Generated from `#/components/schemas/PilotDto/developer`.
@@ -3452,6 +3462,7 @@ extension Components {
             /// Creates a new `PilotDto`.
             ///
             /// - Parameters:
+            ///   - avatarUrl: Where their avatar's photo is read, its version in the address so a new photo is never a cached one (GET /api/me/avatar); null when they have set none and their initials show
             ///   - developer: Whether this pilot also does development work here: the training workspace and the developer console are theirs, a plain pilot's are not.
             ///   - displayName: Display name
             ///   - email: Email address from the identity provider
@@ -3460,6 +3471,7 @@ extension Components {
             ///   - id: Internal id
             ///   - phone: Their telephone number, the contact a flight plan's item 19 C/ asks for
             public init(
+                avatarUrl: Swift.String? = nil,
                 developer: Swift.Bool,
                 displayName: Swift.String,
                 email: Swift.String,
@@ -3468,6 +3480,7 @@ extension Components {
                 id: Swift.Int,
                 phone: Swift.String? = nil
             ) {
+                self.avatarUrl = avatarUrl
                 self.developer = developer
                 self.displayName = displayName
                 self.email = email
@@ -3477,6 +3490,7 @@ extension Components {
                 self.phone = phone
             }
             public enum CodingKeys: String, CodingKey {
+                case avatarUrl
                 case developer
                 case displayName
                 case email

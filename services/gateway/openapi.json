@@ -49,6 +49,9 @@
             },
             "type" : "array"
           },
+          "photo" : {
+            "type" : [ "string", "null" ]
+          },
           "records" : {
             "$ref" : "#/components/schemas/AccountRecordsDto"
           },
@@ -59,7 +62,7 @@
             "$ref" : "#/components/schemas/TrainingDto"
           }
         },
-        "required" : [ "account", "airplanes", "checkpointNotes", "connectedApps", "currency", "exportedAt", "flights", "format", "instructing", "logbook", "records", "reminders", "training" ],
+        "required" : [ "account", "airplanes", "checkpointNotes", "connectedApps", "currency", "exportedAt", "flights", "format", "instructing", "logbook", "photo", "records", "reminders", "training" ],
         "type" : "object"
       },
       "AccountRecordsDto" : {
@@ -2208,6 +2211,11 @@
       "PilotDto" : {
         "description" : "The signed-in pilot",
         "properties" : {
+          "avatarUrl" : {
+            "description" : "Where their avatar's photo is read, its version in the address so a new photo is never a cached one (GET /api/me/avatar); null when they have set none and their initials show",
+            "example" : "/api/me/avatar?v=1763650000000",
+            "type" : [ "string", "null" ]
+          },
           "developer" : {
             "description" : "Whether this pilot also does development work here: the training workspace and the developer console are theirs, a plain pilot's are not.",
             "example" : false,
@@ -2245,7 +2253,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "developer", "displayName", "email", "fullName", "homeBase", "id", "phone" ],
+        "required" : [ "avatarUrl", "developer", "displayName", "email", "fullName", "homeBase", "id", "phone" ],
         "type" : "object"
       },
       "PlannerCheckpointNote" : {
@@ -4891,6 +4899,146 @@
         "tags" : [ "pilot-controller" ]
       }
     },
+    "/api/me/avatar" : {
+      "delete" : {
+        "description" : "Their initials show again.",
+        "operationId" : "removeAvatar",
+        "responses" : {
+          "204" : {
+            "description" : "Taken out"
+          },
+          "401" : {
+            "description" : "No session"
+          },
+          "404" : {
+            "description" : "They had no photo"
+          }
+        },
+        "summary" : "Take out the signed-in pilot's photo",
+        "tags" : [ "Pilot" ]
+      },
+      "get" : {
+        "description" : "Their avatar's image, as they set it, at the address GET /api/me gives as avatarUrl (its v is the version, so a browser may keep it).",
+        "operationId" : "avatar",
+        "parameters" : [ {
+          "description" : "The photo's version, which only makes its address new",
+          "in" : "query",
+          "name" : "v",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "image/jpeg" : {
+                "schema" : {
+                  "format" : "binary",
+                  "type" : "string"
+                }
+              },
+              "image/png" : {
+                "schema" : {
+                  "format" : "binary",
+                  "type" : "string"
+                }
+              },
+              "image/webp" : {
+                "schema" : {
+                  "format" : "binary",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "The image"
+          },
+          "401" : {
+            "description" : "No session"
+          },
+          "404" : {
+            "description" : "They have set no photo"
+          }
+        },
+        "summary" : "The signed-in pilot's photo",
+        "tags" : [ "Pilot" ]
+      },
+      "put" : {
+        "description" : "One image, as the form's photo: a JPEG, PNG or WebP of at most 512 KB (the app sends it about 256 pixels square). It takes the place of any before it.",
+        "operationId" : "setAvatar",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "photo" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "photo" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "204" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Kept; GET /api/me gives its new address"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "The photo was empty"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "No session"
+          },
+          "413" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Over 512 KB"
+          },
+          "415" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Not a JPEG, PNG or WebP image"
+          }
+        },
+        "summary" : "Set the signed-in pilot's photo",
+        "tags" : [ "Pilot" ]
+      }
+    },
     "/api/me/checkpoint-notes" : {
       "delete" : {
         "description" : "Every note they wrote for themselves, which the planner keeps; the shared notes stay. The planner's own route for it is internal (no x-gateway mark): this names the pilot from the session, as the account's deletion does.",
@@ -4983,7 +5131,7 @@
     },
     "/api/me/export" : {
       "get" : {
-        "description" : "The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.",
+        "description" : "The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.",
         "operationId" : "export",
         "responses" : {
           "200" : {

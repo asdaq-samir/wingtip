@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalDate;
 import lombok.Getter;
+import org.hibernate.annotations.Formula;
 
 /**
  * Someone who flies. Identity for everything else in the schema.
@@ -98,6 +99,13 @@ public class Pilot {
 
     @Column(length = 11)
     private String homeBase;
+
+    /** When their avatar's photo was last set (V45's pilot_avatars), null
+     *  with none: read with the pilot, never written through it, so
+     *  GET /api/me can give the photo's versioned address without its
+     *  bytes or a second query (AvatarService.url). */
+    @Formula("(SELECT a.updated_at FROM pilot_avatars a WHERE a.pilot_id = id)")
+    private Instant avatarUpdatedAt;
 
     /** A flight instructor's certificate number ("987654321CFI"), its
      *  recent experience end date or expiration date, and which of the
