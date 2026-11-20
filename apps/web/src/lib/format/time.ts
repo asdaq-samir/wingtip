@@ -82,6 +82,14 @@ export function clockElsewhere(
   return there.time === departure ? null : there;
 }
 
+/** A clock time and its zone's short name in a field's zone (an IANA
+ *  name), else this device's: every point's time once one of the route's
+ *  keeps another zone than the departure's (the owner, 2026-11-20: "When
+ *  the time zone changes then show it on all the stops"). */
+export function clockIn(at: Date, timeZone: string | null | undefined): { time: string; zone: string } | null {
+  return wallIn(at, timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+}
+
 /** UTC hours and minutes in four figures, as a flight plan's item 13
  *  takes them: "1505". */
 export function utcFigures(at: Date): string {

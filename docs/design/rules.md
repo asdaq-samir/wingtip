@@ -578,7 +578,10 @@ off by default (the owner, 2026-11-13).
    there it is the field's own time with its zone after it, smaller,
    "18:24 MST" (the owner, 2026-11-20: "just if any stop differs from the
    departure"; `lib/format`'s `clockElsewhere`, the field cards'
-   `time_zone`; My Location, with none, takes the phone's). The fuel
+   `time_zone`; My Location, with none, takes the phone's). Once one
+   point keeps another zone, every point says its own, the departure's
+   too, each its own clock ("When the time zone changes then show it on
+   all the stops"; `clockIn`). The fuel
    stays the gauge after the ident ("I like the previous fuel tanks"). A point's mark is its
    menu where the list edits the route, an airport's glyph "•••" to say so
    (the owner, the same day: "Stops should have ... buttons to show that

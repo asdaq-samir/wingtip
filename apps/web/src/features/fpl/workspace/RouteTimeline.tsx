@@ -2,7 +2,7 @@ import { useQueries } from "@tanstack/react-query";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import { unknownWhy } from "../../../lib/api/client";
 import { leaveWhen } from "../../../lib/format/leaveWhen";
-import { clockElsewhere } from "../../../lib/format";
+import { clockElsewhere, clockIn } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
 import { identOf, isPosition } from "../../../lib/identSchema";
 import { NO_CONNECTION, noConnection } from "../../../lib/problems";
@@ -80,19 +80,56 @@ export default function RouteTimeline({
   // The departure's own zone, from its card; none at My Location, where
   // this device's stands in for it.
   const departZone = planned.dep && fields.includes(planned.dep) ? cardOf(planned.dep)?.data?.time_zone : null;
-  const timeOf = (ident: string, role: TimelinePoint["role"], seen: number) => {
-    if (role === "Departure")
-      return read ? depart ? leaveWhen(new Date(depart)) : "Now" : <DepartPicker value={depart} onChange={changeDepart} look="time" />;
-    if (aircraft.none) return "—";
+  // When the airplane is at a point flown to: from the departure's time,
+  // on this device's clock; none with no airplane or no nav log row yet.
+  const from = depart || new Date().toISOString();
+  const arrivalAt = (ident: string, role: TimelinePoint["role"], seen: number) => {
+    if (role === "Departure" || aircraft.none) return null;
     const row = visitRow(routeRows, role, ident, seen);
-    if (!row || row.minutesFlown === null) return "—";
-    // On this device's clock, as the departure's; a field that keeps
-    // another time than the departure's then says its own and its zone
-    // (clockElsewhere).
-    const from = depart || new Date().toISOString();
-    const at = new Date(new Date(from).getTime() + row.minutesFlown * 60_000);
-    const there = clockElsewhere(at, cardOf(ident)?.data?.time_zone, departZone);
-    return there ? <ZonedTime {...there} /> : etaAt(from, row.minutesFlown);
+    if (!row || row.minutesFlown === null) return null;
+    return { at: new Date(new Date(from).getTime() + row.minutesFlown * 60_000), minutes: row.minutesFlown };
+  };
+  // Whether any point keeps another clock than the departure's: then every
+  // point says its zone, the departure's too (the owner, 2026-11-20: "When
+  // the time zone changes then show it on all the stops"); else none does.
+  const zoned = routePoints.some((ident, index) => {
+    const role =
+      index === 0 && ident === planned.dep
+        ? "Departure"
+        : index === routePoints.length - 1 && ident === planned.dest
+          ? "Destination"
+          : "Stop";
+    const arrival = arrivalAt(ident, role, visitAt(routePoints, index).seen);
+    return !!arrival && !!clockElsewhere(arrival.at, cardOf(ident)?.data?.time_zone, departZone);
+  });
+  const zoneOf = (at: Date, ident: string) => clockIn(at, fields.includes(ident) ? cardOf(ident)?.data?.time_zone : departZone);
+  const timeOf = (ident: string, role: TimelinePoint["role"], seen: number) => {
+    if (role === "Departure") {
+      const leave = read ? (
+        depart ? (
+          leaveWhen(new Date(depart))
+        ) : (
+          "Now"
+        )
+      ) : (
+        <DepartPicker value={depart} onChange={changeDepart} look="time" />
+      );
+      const there = zoned ? zoneOf(new Date(from), ident) : null;
+      return there ? (
+        <span className="inline-flex items-baseline">
+          {leave}
+          <span className={`ml-1 font-normal ${TEXT.caption}`}>{there.zone}</span>
+        </span>
+      ) : (
+        leave
+      );
+    }
+    const arrival = arrivalAt(ident, role, seen);
+    if (!arrival) return "—";
+    // On this device's clock, as the departure's; each in its own zone, its
+    // zone said, once any point keeps another than the departure's.
+    const there = zoned ? zoneOf(arrival.at, ident) : null;
+    return there ? <ZonedTime {...there} /> : etaAt(from, arrival.minutes);
   };
   const points: TimelinePoint[] = routePoints.map((ident, index) => {
     const role =
