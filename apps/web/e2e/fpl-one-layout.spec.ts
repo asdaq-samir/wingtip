@@ -63,9 +63,9 @@ test.describe("/app/plan", () => {
     // No city on a line (the owner: "We don't need to say the city name").
     await expect(timeline).not.toContainText("Chicago");
     await expect(timeline.getByTestId("timeline-line")).toHaveCount(3);
-    // Each field's chevron at its end, where its grip's three lines were
-    // (the owner, 2026-11-19); the drag buttons kept for the keyboard.
-    await expect(timeline.getByTestId("timeline-chevron")).toHaveCount(3);
+    // No grip's three lines nor a chevron at a field's end (the owner,
+    // 2026-11-19); the drag buttons kept for the keyboard.
+    await expect(timeline.getByTestId("timeline-chevron")).toHaveCount(0);
     await expect(timeline.getByTestId("route-grip")).toHaveCount(3);
     // Each line one 44-point row while folded.
     for (const line of await timeline.getByTestId("timeline-line").all()) expect((await line.boundingBox())!.height).toBeLessThan(46);

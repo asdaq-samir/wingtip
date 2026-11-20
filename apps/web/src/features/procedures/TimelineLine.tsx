@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ChevronDown, Ellipsis, Fuel, Navigation, Plane, Triangle, X } from "lucide-react";
+import { Ellipsis, Fuel, Navigation, Plane, Triangle, X } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
@@ -244,16 +244,8 @@ export function TimelineLine({
             {point.time}
             {leaves}
           </span>
-          {/* Its details' chevron, turned while they are open (the
-              owner, 2026-11-19: "replace three lines with the arrow for
-              expanding list"); the line itself is the tap. */}
-          {opens && (
-            <ChevronDown
-              className={cn("pointer-events-none size-5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
-              aria-hidden
-              data-testid="timeline-chevron"
-            />
-          )}
+          {/* No chevron at its end (the owner, 2026-11-19: "Also remove
+              the chevrons"): the line itself is the tap that opens it. */}
           {end.grip}
         </div>
         {/* A field it cannot land at, or a point the planner does not
@@ -271,10 +263,9 @@ export function TimelineLine({
         </p>
         {opens && (
           <CollapsibleContent className="space-y-2 pb-2" data-testid="timeline-details">
-            {/* The elevation under the time, clear of the chevron's column
-                (its 32 points and the gap; the owner, 2026-11-17: "the
+            {/* The elevation under the time (the owner, 2026-11-17: "the
                 elevation should be under the time"). */}
-            <div className={cn("flex min-h-6 items-center justify-between gap-2", opens && "pr-7")}>
+            <div className="flex min-h-6 items-center justify-between gap-2">
               <WindLine direct={end.direct} wind={windWords(reported)} reported={reported} />
               {end.elevation}
             </div>

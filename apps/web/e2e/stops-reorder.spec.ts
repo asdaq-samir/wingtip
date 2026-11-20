@@ -92,16 +92,11 @@ test("a point's grip in FPL's list moves it anywhere, by a mouse or the keyboard
   // pilot's finger would: half way the sheet's body does not scroll there.
   await inSheet(page, row("KDLH"));
   const target = (await row("C81").boundingBox())!;
-  // By the row, at its end where its chevron is: React Aria's GridList
-  // leaves the drag button to the keyboard (out of sight since the owner's
-  // "replace three lines with the arrow", 2026-11-19) and lets the row be
-  // dragged.
-  const chevron = list.locator('[data-testid=timeline-line][data-ident="KDLH"] [data-testid=timeline-chevron]');
-  const [from, on] = [(await row("KDLH").boundingBox())!, (await chevron.boundingBox())!];
-  await row("KDLH").dragTo(row("C81"), {
-    sourcePosition: { x: on.x - from.x + on.width / 2, y: on.y - from.y + on.height / 2 },
-    targetPosition: { x: target.width / 2, y: 4 },
-  });
+  // By the row, sixteen in from its end: React Aria's GridList leaves the
+  // drag button to the keyboard (out of sight since the owner's "replace
+  // three lines with the arrow", 2026-11-19) and lets the row be dragged.
+  const from = (await row("KDLH").boundingBox())!;
+  await row("KDLH").dragTo(row("C81"), { sourcePosition: { x: from.width - 16, y: 22 }, targetPosition: { x: target.width / 2, y: 4 } });
   await expect(page).toHaveURL(/[?&]dep=KDLH(&|$)/);
   await expect(page).toHaveURL(/[?&]dest=KMSN(&|$)/);
   await expect(page).toHaveURL(stopsAre("C81,KRYV"));
