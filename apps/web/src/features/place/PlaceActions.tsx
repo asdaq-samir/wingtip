@@ -39,6 +39,10 @@ import { mapsLink } from "./mapsLink";
  * pilot asked, and the row's fourth tile is Address, the field in Maps,
  * after Favorite (the owner, 2026-11-18: "replace fly here with add stop.
  * And at the add fourth button for address"); Fly Here is not offered.
+ * Where Add Stop cannot be used (the field already on the route, closed),
+ * the row holds Address last in its place, not a greyed tile (the owner,
+ * 2026-11-20: "If add stop is disabled, just show the address at the end
+ * instead").
  */
 export default function PlaceActions({
   place,
@@ -80,7 +84,9 @@ export default function PlaceActions({
   useLiveRefresh("airport");
   // The time where it is known, never for a field closed to landing.
   const timed = time && !closed ? time : null;
-  const addStop = onAddStop && (
+  // Add Stop off: Address at the row's end in its place, off the stop's ask.
+  const stopOff = !!onAddStop && (!!addStopOff || !!closed);
+  const addStop = onAddStop && (asStop || !stopOff) && (
     <Action
       icon={<ACTION.addStop.icon />}
       label={ACTION.addStop.label}
@@ -130,7 +136,7 @@ export default function PlaceActions({
         testId="place-call"
       />
       <PlaceFavorite ident={place?.ident ?? ident} place={place} />
-      {asStop && (
+      {(asStop || stopOff) && (
         <Action
           icon={<ACTION.address.icon />}
           label={ACTION.address.label}

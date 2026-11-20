@@ -193,12 +193,13 @@ test("a long route's box is one row that slides sideways to the rest, faded wher
 // Add Stop, beside Fly Here, at the pilot's ask: the field the route's
 // next stop, after the ones it makes and before its destination; none on
 // a card of the route's own points; with no route, the first point of one.
-test("an airport's card adds it as the route's next stop; a card of the route's own points has it greyed, saying why", async ({ page }) => {
+test("an airport's card adds it as the route's next stop; a card of the route's own points has Address in its place", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KMSN&place=KMSN");
   await expect(page.getByTestId("place-card")).toBeVisible({ timeout: slow(30000) });
   await expect(page.getByTestId("fly-here")).toBeVisible();
-  await expect(page.getByTestId("place-add-stop")).toBeDisabled(); // shown, off (0612a82b3)
-  await expect(page.getByTestId("place-add-stop")).toHaveAccessibleName(/already on the route/);
+  // Not offered, Address at the row's end instead (the owner, 2026-11-20).
+  await expect(page.getByTestId("place-address-action")).toBeVisible();
+  await expect(page.getByTestId("place-add-stop")).toHaveCount(0);
 
   await page.goto("/app/plan?dep=C81&stops=KJVL&dest=KMSN&place=KDLH");
   const add = page.getByTestId("place-add-stop");
