@@ -201,11 +201,10 @@ export function PointMenuItems({
  * A point's menu, at the owner's ask ("Each stop can have a menu (set
  * altitude, create a fix, hold here, More Info)", "And the menu can
  * include direct to"): shadcn's DropdownMenu, its items the route box's
- * pill's (PointMenuItems). Behind the point's own mark in FPL's list
- * (`face`), at the owner's ask ("Use the airport icon as the more button
- * instead of having one to the right", 2026-10-22): the mark a button,
- * its 44 points a pseudo-element round its 28; else the "⋯" (IconButton round,
- * 36 with a 20-point glyph, as every icon button is).
+ * pill's (PointMenuItems). Behind a face of its own (`face`), the mark a
+ * button, its 44 points a pseudo-element; `bare` with no face, FPL's
+ * timeline's plain "•••" at a line's end (the owner, 2026-11-20); else the
+ * "⋯" in a round glass button (IconButton round).
  */
 export function PointMenu({
   testId = "point-menu",
@@ -224,7 +223,21 @@ export function PointMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          face && bare ? (
+          !face && bare ? (
+            // FPL's timeline: the tint's "•••" alone at the line's end, no
+            // disc round it, so a stop shows it has more to it (the owner,
+            // 2026-11-20: "Stops should have ... buttons to show that there
+            // are more options"); its 44 points a pseudo-element.
+            <Button
+              variant="plain"
+              size="icon-sm"
+              aria-label={`${actions.ident}: more`}
+              data-testid={testId}
+              className="relative z-10 shrink-0 rounded-full text-tint hover:bg-transparent aria-expanded:bg-transparent after:absolute after:-inset-1.5 after:content-['']"
+            >
+              <Ellipsis className="size-5!" aria-hidden="true" />
+            </Button>
+          ) : face && bare ? (
             <Button
               variant="plain"
               size="icon-sm"

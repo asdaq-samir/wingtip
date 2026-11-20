@@ -101,8 +101,8 @@ export function pointEnd(
     // line, the elevation on its wind's.
     time: <PointFigures time={at.time} altitude={null} kind={kind} />,
     elevation: <PointFigures time={null} altitude={shown === null ? null : altFt(shown)} kind={kind} />,
-    // Behind the point's mark (`face`), at the owner's ask ("Use the
-    // airport icon as the more button instead of having one to the right").
+    // Behind a face of its own (`face`), else the "⋯"; `bare` with no face
+    // is FPL's timeline's plain "•••" at the line's end (PointMenu).
     menu: (face: ReactNode, bare = false) => (
       <PointMenu
         face={face}

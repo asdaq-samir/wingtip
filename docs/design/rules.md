@@ -491,11 +491,12 @@ off by default (the owner, 2026-11-13).
    44-point line a point: its mark a filled circle with a white glyph (My
    Location the tint and the location arrow, an airport its flight
    category's colour and an airplane, a fuel stop the pump, a waypoint a
-   grey triangle), the mark its menu (Change by the one search, Direct To,
-   Set Altitude, Hold, Add a Stop After, Move, Remove); the route's magenta
+   grey triangle); its menu the tint's plain "•••" at the line's end
+   (Change by the one search, Direct To, Set Altitude, Hold, Add a Stop
+   After, Move, Remove); the route's magenta
    in short rounded dashes between the marks; after a hairline inset to the
    text its ident (a link to its card), the fuel in the tanks there right
-   after it, at the right its time (the departure's a picker) and its grip; no city; below full, two stops
+   after it, at the right its time (the departure's a picker) and its "•••"; no city; below full, two stops
    or more one row between the ends, "2 Stops" and their idents, a tap taking the sheet all the way up, where each is its own row (one stop always its own); Add a Stop the last row, by the one
    search; a hold or the grip moves a point, a swipe to the left takes a
    stop out, the plan's toast Undo putting either back. A tap on a field's
@@ -578,10 +579,11 @@ off by default (the owner, 2026-11-13).
    "18:24 MST" (the owner, 2026-11-20: "just if any stop differs from the
    departure"; `lib/format`'s `clockElsewhere`, the field cards'
    `time_zone`; My Location, with none, takes the phone's). The fuel
-   stays the gauge after the ident ("I like the previous fuel tanks"). A point's mark is its
-   menu where the list edits the route, drawn as the point's own mark,
-   not the "•••" on the tint's wash (A); a hold on its line still lifts
-   it to move. Winds stay as they are, by the owner's choice the
+   stays the gauge after the ident ("I like the previous fuel tanks"). A point's menu,
+   where the list edits the route, is the tint's plain "•••" at its line's
+   end, no wash round it (the owner, the same day: "Stops should have ...
+   buttons to show that there are more options"); the mark is only a
+   mark; a hold on its line still lifts it to move. Winds stay as they are, by the owner's choice the
    same day: no "T" after the direction in FPL's rows (his "No need to put
    T next to wind"), "°T" in the Brief and the Nav Log, where a true wind
    unmarked reads as the magnetic one a tower gives (the UI audit's A7).
