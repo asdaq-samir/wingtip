@@ -134,8 +134,9 @@ export async function openAccount(page: Page) {
   // 2026-11-13), once the sign-in is known: greyed signed out with no dev
   // mode, You's own head then the way in (its Sign In).
   await expect(sheet.getByText("Checking your sign-in…")).toHaveCount(0);
+  // You's avatar and name (pilot-row), there signed in or in dev mode.
   const row = sheet.getByTestId("pilot-row");
-  if (await row.isEnabled()) await row.click();
+  if (await row.count()) await row.click();
 }
 
 /** One of the console's places by name: the developer's console's tab of

@@ -131,7 +131,7 @@ function Personal({
               screenshot of iOS 27, 2026-11-13): the avatar, the name and
               the address over a single inset group, each row a round
               badge, its name, where it stands at its end and the chevron. */}
-          <YouHead pilot={signedIn ? pilot : null} />
+          <YouHead pilot={signedIn ? pilot : null} opens={signedIn || devAllowed} />
           {account}
           {/* The account's rows greyed until there is one, with no word of
               their own: the head's one Sign In says it (the owner,
@@ -140,21 +140,6 @@ function Personal({
               device's. */}
           <div data-testid="library-section">
             <ListGroup glass>
-              {/* Pilot Details, with the role's menu in it (sign out,
-                  export, delete), where it sat beside the name: the
-                  developer's switch too, signed out. */}
-              <PageRow
-                page="pilot"
-                title="Pilot Details"
-                testId="pilot-row"
-                disabled={!signedIn && !devAllowed}
-                value={signedIn ? (pilot.homeBase ?? undefined) : undefined}
-                media={
-                  <RowBadge colour={SETTING_BADGE.pilot} round>
-                    <UserRound />
-                  </RowBadge>
-                }
-              />
               <PageRow
                 page="aircraft"
                 title="Airplanes"
@@ -218,30 +203,67 @@ function minimumsWords(m: Minimums): string | null {
 /** Who is signed in, at You's top, as Apple Maps' account card heads
  *  itself (the owner's screenshot, 2026-11-13): their initials in a large
  *  round avatar, their name in large bold under it and the address
- *  smaller in grey under that, as Apple Maps' card has it (the owner,
- *  2026-11-13: "the name bigger and then below it smaller email"). An
- *  address is never the name: an email sign-in's display name is the
+ *  smaller in grey under that ("the name bigger and then below it smaller
+ *  email"). The avatar and the name are Pilot Details' way in, a tap on
+ *  them, not a row of the list (the owner, 2026-11-20: "Pilot details
+ *  should not be a separate list item but just a tap on the avatar/name");
+ *  signed out with dev mode, the avatar alone (its developer's switch).
+ *  An address is never the name: an email sign-in's display name is the
  *  address itself, and where there is no name the large line asks for
- *  one, opening Pilot Details at its Name. Signed out, the avatar's glyph
- *  and, in the name's place, Sign In. */
-function YouHead({ pilot }: { pilot: Pilot | null }) {
+ *  one. Signed out, the avatar's glyph and, in the name's place, Sign In. */
+function YouHead({ pilot, opens }: { pilot: Pilot | null; opens: boolean }) {
   const given = pilot ? pilot.fullName || pilot.displayName : null;
   const name = given && given !== pilot?.email && !given.includes("@") ? given : null;
   const address = pilot?.email ?? (given !== name ? given : null);
-  // Pilot Details as its row opens it, its close back to You.
+  // Pilot Details, its close back to You.
   const openPage = useOpenPage();
+  const avatar = (
+    <span
+      aria-hidden="true"
+      className={cn("mb-2 grid size-22 place-items-center rounded-full font-bold [&_svg]:size-10!", accountFill(!!name), TEXT.hero)}
+    >
+      <AccountFace name={name} />
+    </span>
+  );
+  const who = pilot && (
+    <>
+      {name ? (
+        <span className={cn("max-w-full truncate font-bold tracking-tight text-foreground", TEXT.hero)} data-testid="you-name">
+          {name}
+        </span>
+      ) : (
+        <span className={cn("max-w-full truncate font-bold tracking-tight text-tint", TEXT.hero)} data-testid="you-name">
+          Add Your Name
+        </span>
+      )}
+      {address && (
+        <span className={cn("max-w-full truncate font-normal text-muted-foreground", TEXT.detail)} data-testid="you-address">
+          {address}
+        </span>
+      )}
+    </>
+  );
   return (
     // Up beside the card's gear and close, which float over it (ConsoleLayer),
     // the avatar large: Apple Maps' account card, the owner's screenshot of
     // 2026-11-14 ("So much space between buttons and avatar and list").
     <div role="group" aria-label="Account" className="-mt-11 flex flex-col items-center gap-1" data-testid="setup-pill-account">
-      <span
-        aria-hidden="true"
-        className={cn("mb-2 grid size-22 place-items-center rounded-full font-bold [&_svg]:size-10", accountFill(!!name), TEXT.hero)}
-      >
-        <AccountFace name={name} />
-      </span>
-      {!pilot ? (
+      {opens ? (
+        <Button
+          variant="plain"
+          size="inline"
+          onClick={() => openPage("pilot")}
+          aria-label={name ? `${name}, Pilot Details` : "Pilot Details"}
+          data-testid="pilot-row"
+          className="flex h-auto max-w-full flex-col items-center gap-1 whitespace-normal"
+        >
+          {avatar}
+          {who}
+        </Button>
+      ) : (
+        avatar
+      )}
+      {!pilot && (
         // Signed out, the large line is the way in, said once: no "You"
         // over a link of its own (the owner, 2026-11-13).
         <div className="flex min-h-11 items-center">
@@ -249,27 +271,6 @@ function YouHead({ pilot }: { pilot: Pilot | null }) {
             <SignInModal hero />
           </Suspense>
         </div>
-      ) : name ? (
-        <span className={cn("max-w-full truncate font-bold tracking-tight text-foreground", TEXT.hero)} data-testid="you-name">
-          {name}
-        </span>
-      ) : (
-        <Button
-          variant="link"
-          className={cn(
-            "relative h-auto max-w-full truncate p-0 font-bold tracking-tight after:absolute after:-inset-y-2 after:inset-x-0",
-            TEXT.hero,
-          )}
-          onClick={() => openPage("pilot")}
-          data-testid="you-name"
-        >
-          Add Your Name
-        </Button>
-      )}
-      {address && (
-        <span className={cn("max-w-full truncate text-muted-foreground", TEXT.detail)} data-testid="you-address">
-          {address}
-        </span>
       )}
     </div>
   );

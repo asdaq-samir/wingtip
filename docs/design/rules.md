@@ -922,7 +922,8 @@ The owner's pick of option A of the account canvas
 way: three homes, and every control in one of them.
 
 1. **You**, the avatar's card: who the pilot is (a centred avatar, the
-   name, Pilot Details and the account's menu) and what is theirs --
+   name, a tap on them Pilot Details with the account's menu, not a row
+   of the list, the owner, 2026-11-20) and what is theirs --
    Airplanes (each airplane's checklists inside it, and the picked one's
    Checklists row), Flights, Logbook, Minimums, Training (the Coach and
    Practice), the Emergency Assistant -- then Subscription; Settings is
