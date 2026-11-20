@@ -1098,9 +1098,10 @@ WETEV → KMYJ) and own ship on POS0.
 3. **Airports keep their mark.** The departure, stops and destination are
    the chart's airport mark with the ident on its dark pill (section 5);
    a top of climb or descent is the fix's small magenta diamond on the
-   course, and only the next leg's, none within 2 NM of its leg's ends,
-   where it sat on the airplane and "My Location"; a tap opens its card
-   (the owner, 2026-11-20, the readability list's F; `LegPointsGl`,
+   course, on every leg (the owner, 2026-11-20: "toc/tod on every leg if
+   possible"), none within 2 NM of its leg's ends, where it would sit on
+   the field or the airplane; a tap opens its card
+   (the readability list's F; `LegPointsGl`,
    `LEG_POINT_DIAMOND`). "TOC" or "TOD" is beside it as My Location's
    name is beside its dot: the same white pill edged in magenta, square to
    the course on its upper side, turning with the map, giving way to the

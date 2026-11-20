@@ -235,12 +235,12 @@ export function HoldTracksGl({ legs }: { legs: Leg[] }) {
   return null;
 }
 
-/** The next leg's top of climb and of descent (RouteMap's LegPoints), the
- *  first leg's -- the one flown now or next -- alone, as a small diamond on
- *  the course (LEG_POINT_DIAMOND) named beside it as My Location is
- *  (LEG_POINT_LAYERS), none within OFF_THE_ENDS_NM of its
- *  leg's ends (the owner, 2026-11-20, the readability list's F: a route's
- *  every TOD a pill, one on the airplane). A tap its card (`cardOf`) and
+/** Every leg's top of climb and of descent (RouteMap's LegPoints), each a
+ *  small diamond on the course (LEG_POINT_DIAMOND) named beside it as My
+ *  Location is (LEG_POINT_LAYERS) -- on every leg, not the first alone (the
+ *  owner, 2026-11-20: "toc/tod on every leg if possible") -- none within
+ *  OFF_THE_ENDS_NM of its leg's ends, where the field's or the stop's own
+ *  mark already is. A tap its card (`cardOf`) and
  *  its ring, the map brought to it. Under the route's own marks, so it
  *  gives way to them (MapLibre's collision; routeMarks). */
 export function LegPointsGl({
@@ -255,7 +255,7 @@ export function LegPointsGl({
   const { openCard } = useGlMap();
   // No airplane picked, no tops of climb and descent: they are its climb and descent (the owner, 2026-11-08: "don't assume").
   const airplane = useAirplaneChosen();
-  const legs = airplane ? allLegs.slice(0, 1) : NO_LEGS;
+  const legs = airplane ? allLegs : NO_LEGS;
   const marks = useMemo<GlSymbol[]>(
     () =>
       legs.flatMap((leg, i) =>
