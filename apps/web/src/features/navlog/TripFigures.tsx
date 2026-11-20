@@ -50,7 +50,10 @@ const seen = (f: { value: string; unit?: string }) => (f.unit ? `${f.value} ${f.
 /** A figure's button, the figure itself in the tint as what is tapped is,
  *  its 44-point area round it (the after), the figure not grown to make it. */
 /** The strip's names as shown (FigureStrip's `label`). */
-const LABEL: Record<string, string> = { Dist: "Distance", ETE: "Time", Fuel: "Fuel" };
+// The time en route and the arrival by the FAA's own shorthand (the owner,
+// 2026-11-20: "Figures can say ETA or ETE"), where they were "Time" and
+// "Arrival"; a tap on either still explains it (EXPLAIN).
+const LABEL: Record<string, string> = { Dist: "Distance", ETE: "ETE", Fuel: "Fuel" };
 
 /** The names a tap explains (components/Explain; decision 0045): the time
  *  en route, the arrival, the fuel required. */
@@ -144,7 +147,7 @@ export default function TripFigures({
           : f,
       )
       // Each named in a short word in sentence case, "Leg" or "Dest", "Distance",
-      // "Time", "Fuel" (the owner's list, 2026-11-17), where "TO / DIST /
+      // "ETE", "Fuel" (the owner's list, 2026-11-17; ETE since 2026-11-20), where "TO / DIST /
       // ETE / FUEL REQ" were capitals and shorthand; the fuel is still the
       // fuel required, said so in its name to a screen reader and in its
       // breakdown (FuelBreakdown).
@@ -154,7 +157,7 @@ export default function TripFigures({
       // and on a flight to the field itself.
       .map((f) => ({
         ...f,
-        label: f.name === "To" ? toLabel : (LABEL[f.name] ?? (f.name === "ETA" ? `Arrival ${zoneName()}` : f.name)),
+        label: f.name === "To" ? toLabel : (LABEL[f.name] ?? (f.name === "ETA" ? `ETA ${zoneName()}` : f.name)),
         explain: EXPLAIN[f.name],
       }))
       // An airplane's figure before the nav log's totals and with no

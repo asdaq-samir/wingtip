@@ -148,7 +148,7 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
       }),
     );
   const planned = await names(line);
-  expect(planned).toEqual(["Dest", "Distance", "Time", "Fuel"]);
+  expect(planned).toEqual(["Dest", "Distance", "ETE", "Fuel"]);
   // The figures once the plan has settled: the runways picked into the
   // wind as the route comes in plan it again with their patterns flown
   // (with_procedures), a few miles more.

@@ -982,7 +982,7 @@ Edit and Done.
    field under the card, focused in the tap so a phone's keyboard comes
    up (`routeBoxOpen`). On a whole route More's Type the Route opens it.
 4. The altitude (`FL045` style, decision 0009) and the figure strip at
-   the foot: Leg or Dest, Distance, Time, Fuel (Time and Fuel only with
+   the foot: Leg or Dest, Distance, ETE, Fuel (ETE and Fuel only with
    an airplane), named in short words in sentence case. The first is
    "Leg" while it shows the next stop and "Dest" once a tap shows the
    destination, as it always is on a route with no stops (the owner,
