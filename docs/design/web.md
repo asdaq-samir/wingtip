@@ -1001,7 +1001,9 @@ Edit and Done.
    One strip in every state, FPL's route row on the ground, a dry run and
    in flight, and the training page's too: `components/FigureStrip`, the
    plan's figures and their taps given it by `features/navlog`'s
-   `TripFigures` (`FlightLine` until 2026-11-17). The figures are always
+   `TripFigures` (`FlightLine` until 2026-11-17), its last column "GPS
+   alt" whenever own ship has a fix (`features/navlog/gpsFigure`, "—"
+   with no altitude in it; 2026-11-20). The figures are always
    exact and fitted as iOS fits a label to its width
    (`adjustsFontSizeToFitWidth`, `minimumScaleFactor` 0.7, the owner's pick of 2026-11-17): all of them
    set smaller together where the widest does not fit its column, never

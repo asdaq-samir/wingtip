@@ -5,10 +5,12 @@ import { useGeo, type LatLon } from "../../../geo";
 import { useAirplaneChosen } from "../../../preferences";
 import type { TrafficPattern } from "../../../trafficPattern";
 import { altFt } from "../../../format";
-import { LEG_POINT_DIAMOND } from "../../marks/markPictures";
+import { LEG_POINT_DIAMOND, ROUTE_POINT_PILL } from "../../marks/markPictures";
 import { PATTERN_ARROW, PATTERN_LABEL, PATTERN_WORDS_FROM_ZOOM, TEAL } from "../../marks/patternMarks";
 import { PROCEDURE_INK, PROCEDURE_WORDS_FROM_ZOOM, STALE_INK, fixMarks } from "../../marks/procedureMarks";
 import { ROUTE_MARKS_LOWEST } from "../../marks/routeMarks";
+import { squareToCourse, turnSide } from "../../marks/routeTurns";
+import { useTurnedNames } from "../useTurnedNames";
 import { useGlData, useGlLayer, useGlMap } from "../glLayer";
 import { chipLayer, pictureLayer } from "../markLayers";
 import { useGlLines, type GlRun } from "../useGlLines";
@@ -51,9 +53,20 @@ const PROCEDURE_LAYERS: SymbolLayerSpecification[] = [
   pictureLayer("procedure-fix-diamonds", "procedure-fixes"),
 ];
 
-/** A top of climb's or descent's diamond, on its point, left out where a
- *  mark of the route's own is on it (collision, under ROUTE_MARKS_LOWEST). */
-const LEG_POINT_LAYERS: SymbolLayerSpecification[] = [pictureLayer("leg-points", "leg-points", { collide: true, sort: 0 })];
+/** The layer of a top of climb's or descent's name, whose side turns with
+ *  the map (useTurnedNames). */
+const LEG_POINT_NAMES = "leg-point-names";
+
+/** A top of climb's or descent's diamond, on its point, and its name
+ *  beside it on the pill My Location's name wears on the route
+ *  (ROUTE_POINT_PILL, as routeMarks' route-fixes draw it: the same chip,
+ *  type and ink), square to the course on its upper side (squareToCourse),
+ *  each left out where a mark of the route's own is on it (collision,
+ *  under ROUTE_MARKS_LOWEST). */
+const LEG_POINT_LAYERS: SymbolLayerSpecification[] = [
+  pictureLayer("leg-points", "leg-points", { collide: true, sort: 0 }),
+  chipLayer(LEG_POINT_NAMES, "leg-points", { collide: true, sort: 0 }, { "icon-image": ROUTE_POINT_PILL.id, ...turnSide(0) }),
+];
 
 /** How near either end of its leg a top of climb or descent is not drawn,
  *  in nautical miles: there it sits on the field, or on the airplane where
@@ -224,7 +237,8 @@ export function HoldTracksGl({ legs }: { legs: Leg[] }) {
 
 /** The next leg's top of climb and of descent (RouteMap's LegPoints), the
  *  first leg's -- the one flown now or next -- alone, as a small diamond on
- *  the course (LEG_POINT_DIAMOND), none within OFF_THE_ENDS_NM of its
+ *  the course (LEG_POINT_DIAMOND) named beside it as My Location is
+ *  (LEG_POINT_LAYERS), none within OFF_THE_ENDS_NM of its
  *  leg's ends (the owner, 2026-11-20, the readability list's F: a route's
  *  every TOD a pill, one on the airplane). A tap its card (`cardOf`) and
  *  its ring, the map brought to it. Under the route's own marks, so it
@@ -258,9 +272,13 @@ export function LegPointsGl({
                   lat: at.lat,
                   lon: at.lon,
                   picture: LEG_POINT_DIAMOND,
-                  // Its words for a reader of the drawn marks (the specs'
-                  // markWith), not drawn.
-                  props: { ident: words },
+                  // Its words on the pill beside it, as My Location's are
+                  // (the owner, 2026-11-20: "label toc and Tod just like my
+                  // location"), and for a reader of the drawn marks (the
+                  // specs' markWith).
+                  text: words,
+                  also: [ROUTE_POINT_PILL],
+                  props: { ident: words, out: squareToCourse(leg.true_course_deg) },
                   onTap: () => {
                     // Its card first, every other pick put away, then its ring (lib/map/mapPick).
                     openCard(cardOf(words, at), ["point"]);
@@ -274,6 +292,7 @@ export function LegPointsGl({
     [legs, onSelectPoint, openCard, cardOf],
   );
   useGlSymbols("leg-points", LEG_POINT_LAYERS, marks, { under: ROUTE_MARKS_LOWEST, rank: TAP.rank.checkpoint });
+  useTurnedNames(LEG_POINT_NAMES);
   return null;
 }
 

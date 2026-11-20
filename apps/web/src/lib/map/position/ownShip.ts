@@ -32,7 +32,9 @@ export interface Fix {
   /** True heading from the GPS, degrees, or null while stationary. */
   headingDeg: number | null;
   speedKt: number | null;
-  /** The GPS's altitude, feet MSL, where it gives one (a phone does). */
+  /** The GPS's altitude in feet, where it gives one (a phone does): the
+   *  W3C Geolocation API's `coords.altitude`, metres above the WGS84
+   *  ellipsoid (section 9.2), not MSL; a dry run's, the plan's. */
   altitudeFt: number | null;
   at: number;
 }

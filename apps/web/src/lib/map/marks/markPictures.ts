@@ -56,11 +56,13 @@ export function dotPicture(fill: string): GlPicture {
 }
 
 /** A point the route works out -- a top of climb or descent -- as the
- *  chart's magenta diamond of a fix alone, on a white edge, on the course
- *  itself: no "TOC" or "TOD" pill, its words its card's at a tap (the
- *  owner, 2026-11-20, the readability list's F: the pills sat on the
- *  airplane and "My Location", two to a route). 12 points across, a
- *  fix's own size on the sectional, under a field's mark and own ship. */
+ *  chart's magenta diamond of a fix, on a white edge, on the course
+ *  itself, where a "TOC" or "TOD" pill on the point sat on the airplane
+ *  and "My Location" (the owner, 2026-11-20, the readability list's F);
+ *  its words are beside it now, on the pill My Location's name wears
+ *  (ROUTE_POINT_PILL; LegPointsGl; the owner, 2026-11-20: "label toc and
+ *  Tod just like my location"). 12 points across, a fix's own size on the
+ *  sectional, under a field's mark and own ship. */
 export const LEG_POINT_DIAMOND: GlPicture = framed(
   "leg-point-diamond",
   () => `<path d="M7 0.8L13.2 7L7 13.2L0.8 7Z" fill="${CHART.waypoint}" stroke="${CHART.casing}" stroke-width="1.6"/>`,
