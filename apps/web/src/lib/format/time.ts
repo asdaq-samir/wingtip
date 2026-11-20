@@ -44,14 +44,10 @@ export function zoneName(at: Date = new Date()): string {
 }
 
 const fieldZones = new Map<string, Intl.DateTimeFormat | null>();
-/** A clock time in a field's own zone (an IANA name, the planner's
- *  `time_zone`) and that zone's short name, "18:24" and "MST" -- or null
- *  where it keeps this device's time at that instant, or the browser does
- *  not know the zone: FPL says a stop's zone only where it is another (the
- *  owner, 2026-11-20: "Only say the time zone if it becomes different for
- *  the destination"). One formatter a zone, made the first time. */
-export function clockElsewhere(at: Date, timeZone: string | null | undefined): { time: string; zone: string } | null {
-  if (!timeZone) return null;
+/** A zone's wall clock and short name at an instant, or null where the
+ *  browser does not know the zone. One formatter a zone, made the first
+ *  time. */
+function wallIn(at: Date, timeZone: string): { time: string; zone: string } | null {
   if (!fieldZones.has(timeZone)) {
     try {
       fieldZones.set(
@@ -65,8 +61,25 @@ export function clockElsewhere(at: Date, timeZone: string | null | undefined): {
   const format = fieldZones.get(timeZone);
   if (!format) return null;
   const parts = Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value]));
-  const time = `${parts.hour}:${parts.minute}`;
-  return time === clockTime(at) ? null : { time, zone: parts.timeZoneName ?? timeZone };
+  return { time: `${parts.hour}:${parts.minute}`, zone: parts.timeZoneName ?? timeZone };
+}
+
+/** A clock time in a field's own zone (an IANA name, the planner's
+ *  `time_zone`) and that zone's short name, "18:24" and "MST" -- or null
+ *  where it keeps the departure's time at that instant (`from`, the
+ *  departure's zone; this device's where it has none, as My Location), or
+ *  the browser does not know the zone: FPL says a stop's zone only where
+ *  it is not the departure's (the owner, 2026-11-20: "No not even from
+ *  phones, just if any stop differs from the departure"). */
+export function clockElsewhere(
+  at: Date,
+  timeZone: string | null | undefined,
+  from: string | null | undefined,
+): { time: string; zone: string } | null {
+  const there = timeZone ? wallIn(at, timeZone) : null;
+  if (!there) return null;
+  const departure = from ? wallIn(at, from)?.time : clockTime(at);
+  return there.time === departure ? null : there;
 }
 
 /** UTC hours and minutes in four figures, as a flight plan's item 13

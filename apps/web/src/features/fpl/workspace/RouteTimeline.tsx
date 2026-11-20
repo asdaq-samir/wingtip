@@ -77,6 +77,9 @@ export default function RouteTimeline({
       };
     return { closed: null, checking: true, failed: null };
   };
+  // The departure's own zone, from its card; none at My Location, where
+  // this device's stands in for it.
+  const departZone = planned.dep && fields.includes(planned.dep) ? cardOf(planned.dep)?.data?.time_zone : null;
   const timeOf = (ident: string, role: TimelinePoint["role"], seen: number) => {
     if (role === "Departure")
       return read ? depart ? leaveWhen(new Date(depart)) : "Now" : <DepartPicker value={depart} onChange={changeDepart} look="time" />;
@@ -84,10 +87,11 @@ export default function RouteTimeline({
     const row = visitRow(routeRows, role, ident, seen);
     if (!row || row.minutesFlown === null) return "—";
     // On this device's clock, as the departure's; a field that keeps
-    // another zone then says its own time and its zone (clockElsewhere).
+    // another time than the departure's then says its own and its zone
+    // (clockElsewhere).
     const from = depart || new Date().toISOString();
     const at = new Date(new Date(from).getTime() + row.minutesFlown * 60_000);
-    const there = clockElsewhere(at, cardOf(ident)?.data?.time_zone);
+    const there = clockElsewhere(at, cardOf(ident)?.data?.time_zone, departZone);
     return there ? <ZonedTime {...there} /> : etaAt(from, row.minutesFlown);
   };
   const points: TimelinePoint[] = routePoints.map((ident, index) => {

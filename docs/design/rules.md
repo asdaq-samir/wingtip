@@ -565,16 +565,14 @@ off by default (the owner, 2026-11-13).
    gauge in the text's colour, never the amber (the owner, 2026-11-17:
    "Yes to all recs"). The gauge is React Aria's stock Meter
    (`procedures/FuelGauge`), heard as "Fuel in the tanks" with its
-   gallons as its value. In FPL's timeline the fuel is words under the
-   ident instead, "36 gal on arrival" (the departure's "in the tanks"),
-   small and grey, no gauge: a gauge after the ident read as part of its
-   name (the owner, 2026-11-20, the readability list's B). A stop's or
+   gallons as its value. In FPL's timeline a stop's or
    the destination's time is on the device's clock, as the departure's,
-   except at a field that keeps another zone then: there it is the
-   field's own time with its zone after it, smaller, "18:24 MST" (the
-   owner, 2026-11-20: "Only say the time zone if it becomes different for
-   the destination"; `lib/format`'s `clockElsewhere`, the field card's
-   `time_zone`). A point's mark is its
+   except at a field that keeps another time than the departure then:
+   there it is the field's own time with its zone after it, smaller,
+   "18:24 MST" (the owner, 2026-11-20: "just if any stop differs from the
+   departure"; `lib/format`'s `clockElsewhere`, the field cards'
+   `time_zone`; My Location, with none, takes the phone's). The fuel
+   stays the gauge after the ident ("I like the previous fuel tanks"). A point's mark is its
    menu where the list edits the route, drawn as the point's own mark,
    not the "•••" on the tint's wash (A); a hold on its line still lifts
    it to move. Winds stay as they are, by the owner's choice the

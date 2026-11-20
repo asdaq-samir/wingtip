@@ -30,12 +30,12 @@ export function FloatingBar({ className, ...rest }: ComponentProps<"div">) {
  *  word on the tab bar's own type (iOS 26's tab bar: Caption 1, 12 on 16,
  *  regular), on one line. A step bigger in the same 48-point item (the
  *  owner, 2026-11-20: "Tab font/icon can be bigger but keeping the same tab
- *  bar size"): the glyph 28 over the footnote's 13 on a 16 line, no gap
- *  between, 44 inside the item's 2 over and under. */
+ *  bar size"; "Can the tabs icon be bigger"): the glyph 32 over the
+ *  footnote's 13 on a 16 line, no gap between, the item's whole 48. */
 export function FloatingBarFace({ icon, badge, label }: { icon: ReactNode; badge?: ReactNode; label: string }) {
   return (
     <>
-      <span className="relative flex shrink-0 [&_svg]:size-7">
+      <span className="relative flex shrink-0 [&_svg]:size-8">
         {icon}
         {badge}
       </span>

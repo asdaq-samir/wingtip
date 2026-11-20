@@ -189,10 +189,7 @@ export function TimelineLine({
             />
           )}
           {/* The ident in the regular weight (the owner, 2026-11-20: "Stops
-              font can be non-bold"), and under it the fuel in the tanks there in small
-              grey words (the owner, 2026-11-20, the readability list's B:
-              "36 gal" and its gauge right after the ident read as part of
-              its name); the time at the right. */}
+              font can be non-bold"). */}
           <div className="flex min-w-0 shrink flex-col">
             {end.change || (point.field && !point.problem) ? (
               <h3 className="relative z-10 flex min-w-0 shrink">
@@ -226,15 +223,11 @@ export function TimelineLine({
                 {pointName(point.ident)}
               </span>
             )}
-            {tank && (
-              <FuelGauge
-                gal={tank.gal}
-                usable={tank.usable}
-                tone={tank.low ? "low" : undefined}
-                when={point.role === "Departure" ? "in the tanks" : "on arrival"}
-              />
-            )}
           </div>
+          {/* The fuel right after the ident, the time at the right (the
+              owner, 2026-11-17: "Fuel should go right after airport"; kept
+              as the gauge, 2026-11-20: "I like the previous fuel tanks"). */}
+          {tank && <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />}
           <span className="flex-1" />
           <span className={cn("relative z-10 shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
             {point.time}

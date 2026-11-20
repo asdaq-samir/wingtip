@@ -15,20 +15,15 @@ import { TEXT } from "../../lib/text";
  * the tanks, 23 gal" as a gauge rather than a picture and a number; the
  * stock part works out the share, clamped to the tanks. Without it, the
  * gallons alone, no gauge to read.
- *
- * `when` says it as a line of words under a point's ident in FPL's
- * timeline, "36 gal on arrival", no gauge (the owner, 2026-11-20, the
- * readability list's B: the gauge after the ident read as part of it).
  */
-export function FuelGauge({ gal, usable, tone, when }: { gal: number; usable: number | null; tone?: "fuel" | "low"; when?: string }) {
+export function FuelGauge({ gal, usable, tone }: { gal: number; usable: number | null; tone?: "fuel" | "low" }) {
   const look = cn(
-    "inline-flex shrink-0 items-center gap-1 tabular-nums",
-    when ? "font-normal" : "font-semibold",
+    "inline-flex shrink-0 items-center gap-1 font-semibold tabular-nums",
     TEXT.note,
     tone === "low" ? "text-destructive-ink" : tone === "fuel" ? "text-foreground" : "text-muted-foreground",
   );
-  const words = `${Math.floor(gal)} gal${when ? ` ${when}` : ""}`;
-  if (!usable || when)
+  const words = `${Math.floor(gal)} gal`;
+  if (!usable)
     return (
       <span className={look}>
         <span className="sr-only">Fuel in the tanks </span>

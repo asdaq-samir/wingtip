@@ -28,7 +28,13 @@ export default function FplBar({ share, strip }: { share?: ReactNode; strip?: Re
     <div className="grid w-full grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-2">
       <div className="flex justify-start">{share}</div>
       <div className="flex min-w-0 flex-col items-center" data-testid="fpl-head">
-        <h2 className={cn("max-w-full truncate font-bold text-foreground", TEXT.row, "leading-[1.125rem]")} data-testid="fpl-title">
+        <h2
+          // Lifted 4 points off the pills under it, the head's height
+          // and its place kept (the owner, 2026-11-20: "move the title up a
+          // few px to have some space in between it and the pills").
+          className={cn("max-w-full -translate-y-1 truncate font-bold text-foreground", TEXT.row, "leading-[1.125rem]")}
+          data-testid="fpl-title"
+        >
           Flight Plan
         </h2>
         {strip && (

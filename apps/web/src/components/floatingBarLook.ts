@@ -32,7 +32,7 @@ export const FLOATING_BAR_COLUMNS = "grid auto-cols-fr grid-flow-col";
  * fill; the stock parts' own edge, shadow and fill taken off.
  */
 export const FLOATING_BAR_ITEM = cn(
-  "h-auto min-h-12 min-w-0 flex-col justify-center gap-0 rounded-full border-0 px-2 py-0.5 shadow-none",
+  "h-auto min-h-12 min-w-0 flex-col justify-center gap-0 rounded-full border-0 px-2 py-0 shadow-none",
   "hover:bg-foreground/10 active:bg-foreground/10 aria-expanded:bg-foreground/10 data-active:bg-foreground/10",
   "dark:hover:bg-foreground/15 dark:active:bg-foreground/15 dark:aria-expanded:bg-foreground/15 dark:data-active:bg-foreground/15",
 );
