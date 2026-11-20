@@ -19,7 +19,7 @@ test("the N-number field takes an N typed first as its own, and says in red what
   await expect(picker).toHaveValue("");
   // "N12" after the fixed "N-" read "N-N12", which no list matched.
   await picker.fill("N-N12");
-  await expect(picker).toHaveValue("N-12");
+  await expect(picker).toHaveValue("12");
   await expect(picker).not.toHaveAttribute("aria-invalid");
   // An airport's ident is no registration: said as it is typed.
   await picker.fill("N-KOSH");

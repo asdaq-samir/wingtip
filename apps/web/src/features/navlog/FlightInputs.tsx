@@ -9,7 +9,8 @@ import DepartPicker from "./DepartPicker";
 import AirplaneSuggestions, { type SuggestionRow } from "./AirplaneSuggestions";
 import { useAirplaneSuggestions } from "./useAirplaneSuggestions";
 import { Combobox, ComboboxContent, ComboboxInput } from "../../components/ui/combobox";
-import { PILL, PILL_FIELD } from "./pillLook";
+import { PILL, PILL_FIELD, PILL_PREFIX, PREFIXED_FIELD } from "./pillLook";
+import { InputGroupAddon } from "../../components/ui/input-group";
 
 /**
  * The two inputs the nav log is computed from, in the planning panel's
@@ -144,15 +145,14 @@ export default function FlightInputs({
       if (now.pending) focus();
     });
   }, []);
-  // The N fixed before what is typed, in the field's own text, at the
-  // owner's ask (2026-10-27: "add a - after N"): a US registration always
-  // starts with it. In the text, not a label beside it: iOS keeps a few
-  // points inside an input's edge, which set the number apart from it
-  // ("N- 654FL" on the owner's phone). Empty, the field shows its
-  // placeholder, "N-" and five blanks, one for each place a US
-  // registration has after the N (14 CFR 47.15(b): at most five; the owner,
-  // 2026-11-04), the stock input's own placeholder rather than grey blanks
-  // laid over the text.
+  // The N fixed before what is typed, at the owner's ask (2026-10-27: "add
+  // a - after N"; 2026-11-19: "N and FL should be static letter and black,
+  // not grey, so input can be entered after the dash"): a US registration
+  // always starts with it. "N-" is the pill's own black letters before the
+  // field (PILL_PREFIX), the field after it unpadded, so no gap sets the
+  // number apart; empty, the field's placeholder is five blanks, one for
+  // each place a US registration has after the N (14 CFR 47.15(b): at most
+  // five; the owner, 2026-11-04).
   const rest = shown.replace(/^N-?/, "");
   return (
     <>
@@ -166,7 +166,7 @@ export default function FlightInputs({
         value={null}
         onValueChange={(row) => row && pick(row)}
         itemToStringLabel={(row) => row.title}
-        inputValue={rest ? `N-${rest}` : ""}
+        inputValue={rest}
         onInputValueChange={(next, details) => {
           // Only what the pilot types: the stock part's own resets (to the
           // label of a value, here none) would empty what is half typed.
@@ -192,10 +192,10 @@ export default function FlightInputs({
           showTrigger={false}
           className={PILL}
           group={{ "aria-label": "Airplane", "data-testid": "aircraft-select" }}
-          // As wide as "N-888MM", five places after the N, whatever is in it.
-          inputClassName={cn(PILL_FIELD, "w-[calc(8ch+0.75rem)]", wrong ? "text-destructive" : "text-foreground")}
+          // As wide as "888MM", five places after the N, whatever is in it.
+          inputClassName={cn(PILL_FIELD, PREFIXED_FIELD, "w-[calc(6ch+0.25rem)]", wrong ? "text-destructive" : "text-foreground")}
           ref={field}
-          placeholder="N-_____"
+          placeholder="_____"
           enterKeyHint="done"
           autoCapitalize="characters"
           autoCorrect="off"
@@ -219,7 +219,11 @@ export default function FlightInputs({
           }}
           onBlur={() => setTyped(null)}
           data-testid="aircraft-input"
-        />
+        >
+          <InputGroupAddon className={PILL_PREFIX} aria-hidden="true">
+            N-
+          </InputGroupAddon>
+        </ComboboxInput>
         <ComboboxContent data-testid="aircraft-suggestions">
           <AirplaneSuggestions groups={suggest.groups} />
         </ComboboxContent>

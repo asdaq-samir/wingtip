@@ -58,13 +58,13 @@ function pills(aircraftValue = "", aircraftOptions: { value: string; label: stri
 describe("FlightInputs' airplane", () => {
   test("left half typed, nothing is taken and the airplane stays", () => {
     const { input, type, onAircraftChange, onTailPick } = pills("mine", [{ value: "mine", label: "N12345" }]);
-    expect(input.value).toBe("N-12345");
+    expect(input.value).toBe("12345");
     type("N4");
-    expect(input.value).toBe("N-4");
+    expect(input.value).toBe("4");
     act(() => input.blur());
     expect(onTailPick).not.toHaveBeenCalled();
     expect(onAircraftChange).not.toHaveBeenCalled();
-    expect(input.value).toBe("N-12345");
+    expect(input.value).toBe("12345");
   });
 
   test("Enter takes what is typed once", () => {

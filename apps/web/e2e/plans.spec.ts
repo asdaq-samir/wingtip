@@ -46,7 +46,7 @@ test(
     const input = page.getByTestId("altitude-input");
     await expect(why).toHaveAccessibleName(/\d,\d{3} feet|FL\d{3}/, { timeout: slow(60000) });
     // Hundreds of feet after "FL", at the owner's pick: FL045 for 4,500 ft.
-    await expect(input).toHaveValue(/^FL-\d{3}$/);
+    await expect(input).toHaveValue(/^\d{3}$/);
     await openProfile(page);
     // The Profile card: the side view with its slider, the Altitude Advisor
     // under it (Fastest marked), the flight rules, and how it was chosen, folded.
@@ -210,7 +210,7 @@ test("plan page: the nav log is computed for an airplane the pilot picks in its 
   // owner, 2026-10-27 and 2026-11-04); the N kept in the text once a number
   // is typed.
   await expect(picker).toHaveValue("");
-  await expect(picker).toHaveAttribute("placeholder", "N-_____");
+  await expect(picker).toHaveAttribute("placeholder", "_____");
   await expect(picker).toHaveAccessibleName("Airplane, N-number: none picked; pick one for times and fuel");
   // An N-number typed is added at once, its type looked up behind it (the
   // owner's "You can do the lookup in the background") -- here a made-up
@@ -222,7 +222,7 @@ test("plan page: the nav log is computed for an airplane the pilot picks in its 
   );
   await picker.fill("N181PA");
   await picker.press("Enter");
-  await expect(picker).toHaveValue("N-181PA");
+  await expect(picker).toHaveValue("181PA");
   // No card button at its end since the owner's "we don't need the info
   // for n number" (2026-10-27).
   await expect(page.getByTestId("aircraft-card-button")).toHaveCount(0);
@@ -235,7 +235,7 @@ test("plan page: the nav log is computed for an airplane the pilot picks in its 
   await settle(page);
   await expectDrawerOpen(page);
   await controlsInSight(page);
-  await expect(page.getByTestId("aircraft-input")).toHaveValue("N-181PA");
+  await expect(page.getByTestId("aircraft-input")).toHaveValue("181PA");
 });
 
 test("plan page: no legal altitude is the route's own problem: its chip says so at rest, and a mark beside the Nav Log opens to why and the two ways on", async ({

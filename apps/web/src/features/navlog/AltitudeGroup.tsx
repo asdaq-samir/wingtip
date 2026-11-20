@@ -1,7 +1,6 @@
 import { useId, useState } from "react";
 import { cn } from "cn";
-import { InputGroup, InputGroupInput } from "../../components/ui/input-group";
-import { Button } from "../../components/ui/button";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "../../components/ui/input-group";
 import type { Leg, NavLogAltitude } from "../../lib/api/types";
 import type { FlightRules } from "../../lib/preferences";
 import { TEXT } from "../../lib/text";
@@ -9,18 +8,18 @@ import { flightLevel } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 import { useEngineReady } from "../../lib/engine/useEngineReady";
 import { cruiseOf } from "./altitude/plans";
-import { PILL, PILL_FIELD } from "./pillLook";
+import { PILL, PILL_FIELD, PILL_PREFIX, PREFIXED_FIELD } from "./pillLook";
 
 /** What the empty field says: an example of what it takes, at the owner's
  *  ask ("I want it to say Alt: 080 as a text filler example"). */
 // Dashes, not an example figure: grey "080" after FL- read as an
 // altitude planned (the owner's screenshot, 2026-10-27, while the
 // altitudes were still being planned).
-/** With no altitude, "FL-" and its three blanks (flightLevel(null),
- *  "FL-___"), as the airplane's empty field shows "N-_____": the field's
- *  own placeholder, the engine's words, so only "FL-" until its .wasm is
- *  in (the row is drawn at once, the engine or not; firstDraw.test). */
-const placeholder = (engineReady: boolean) => (engineReady ? flightLevel(null) : "FL-");
+/** With no altitude, three blanks after the pill's own "FL-" (the blanks
+ *  of flightLevel(null), "FL-___"), as the airplane's empty field shows
+ *  five after its "N-": the engine's words, so none until its .wasm is in
+ *  (the row is drawn at once, the engine or not; firstDraw.test). */
+const placeholder = (engineReady: boolean) => (engineReady ? flightLevel(null).replace(/^FL-/, "") : "");
 /** An altitude as said: feet under 18,000 ft, a flight level from there
  *  up, where altimeters are set to 29.92 (the engine's `altitude_said`;
  *  14 CFR 91.121(a)(2), AIM 4-2-9), its "ft" said in full as "feet", as
@@ -77,8 +76,6 @@ export default function AltitudeGroup({
   // warning it was planned with (the owner's warn, never limit).
   const [note, setNote] = useState<{ text: string; refused: boolean } | null>(null);
   const ids = useId();
-  // Being typed in: its Done shown (at the pill's start, below).
-  const [editing, setEditing] = useState(false);
   // Written as a flight level at every altitude -- FL045 for 4,500 ft --
   // at the owner's pick (2026-10-20), told that the FAA's flight levels
   // start at 18,000 ft MSL, where altimeters go to 29.92 (14 CFR 1.1,
@@ -137,12 +134,13 @@ export default function AltitudeGroup({
       : nav?.flown === null
         ? "no altitude: no winds"
         : "not yet planned";
-  // Three figures are a flight level's, written after "FL-"; four or more
-  // are feet, written as typed, so "7500" never reads "FL-7500" and the
-  // field holds what it shows. At most six kept: the sixth is there to be
-  // seen and said to be one too many (the engine's), the field never
-  // wider than its box.
-  const value = shown === "" ? "" : shown.length > 3 ? shown : `FL-${shown}`;
+  // Three figures are a flight level's, after the pill's "FL-"; four or
+  // more are feet, written as typed with no "FL-" before them, so "7500"
+  // never reads "FL-7500". At most six kept: the sixth is there to be seen
+  // and said to be one too many (the engine's), the field never wider than
+  // its box.
+  const value = shown;
+  const feet = shown.length > 3;
   const whyId = `${ids}-why`;
   const noteId = `${ids}-note`;
   const described = [profiled || entered ? whyId : null, note ? noteId : null].filter(Boolean).join(" ") || undefined;
@@ -153,45 +151,26 @@ export default function AltitudeGroup({
     // levels and no chevron, at the owner's word (2026-11-17: "No need for
     // drop down for FL"): the levels are the Profile's.
     <InputGroup className={cn(PILL, "w-auto shrink-0")} aria-label="Cruise altitude" data-testid="altitude-group">
-      {/* Done while it is typed in: the number pad iOS gives a numeric
-          field has no Return, so the altitude went in only when the field
-          was left (the FPL audit's A6). At the pill's start, over the
-          airplane's pill beside it in the same bar, which waits while the
-          keyboard is up: at its end it floated past the centred bar over
-          the search's toggle. The field itself not widened for it. */}
-      {editing && (
-        <span className="relative flex size-0 shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onMouseDown={(e) => e.preventDefault()}
-            onPointerDown={(e) => e.preventDefault()}
-            // Its blur flies what was typed (the field's onBlur).
-            onClick={() => (document.activeElement as HTMLElement | null)?.blur()}
-            data-testid="altitude-done"
-            // The stock small Button, a card's capsule: the card's fill and
-            // its soft edge. Centred by its top, not a translate, which the
-            // stock press's own one-point nudge would replace.
-            className={cn(
-              "absolute top-[calc(50%-0.875rem)] right-1 z-20 h-7 rounded-full border-0 bg-card px-3 font-semibold shadow-(--depth-float)",
-              "after:absolute after:-inset-2 after:content-['']",
-              TEXT.row,
-            )}
-          >
-            Done
-          </Button>
-        </span>
+      {/* "FL-" the pill's own black letters before the figures (the owner,
+          2026-11-19: "N and FL should be static letter and black, not
+          grey, so input can be entered after the dash"); none before feet
+          typed in four or five figures, which are no flight level. No Done
+          of our own: the keyboard's own ✓ leaves the field, whose blur
+          flies what was typed (the owner, 2026-11-19: "What's Done for?"). */}
+      {!feet && (
+        <InputGroupAddon className={PILL_PREFIX} aria-hidden="true">
+          FL-
+        </InputGroupAddon>
       )}
       <InputGroupInput
         // As wide as "FL-000", whatever is in it.
         className={cn(
           PILL_FIELD,
-          "w-[calc(7ch+0.75rem)] tabular-nums",
+          !feet && PREFIXED_FIELD,
+          "w-[calc(5ch+0.25rem)] tabular-nums",
           problem || note?.refused ? "text-destructive-ink" : "text-foreground",
         )}
-        // "FL-" in the field's own text, not a label beside it: iOS keeps a
-        // few points inside an input's edge, which set the figures apart
-        // from it ("FL- 125" on the owner's phone, 2026-10-27).
+        // The figures alone, "FL-" the pill's before them (PILL_PREFIX).
         value={value}
         onChange={(e) => {
           setNote(null);
@@ -218,26 +197,22 @@ export default function AltitudeGroup({
           }
         }}
         // Its figures taken whole as it is tapped, as iOS selects a field
-        // whose value is replaced: the caret fell between "FL" and "-",
-        // and a new altitude took three deletes before three figures (the
+        // whose value is replaced, so three figures typed replace them (the
         // FPL audit's A6, 2026-11-08). After the tap's own caret, a frame
         // on, which would put it back.
         onFocus={(e) => {
           const input = e.currentTarget;
-          setEditing(true);
           const tapped = input.value;
-          const from = tapped.startsWith("FL-") ? 3 : 0;
           // Not once a figure is typed: a key inside that frame had its
           // figure taken whole and typed over by the next ("075" went in as
           // FL-75, plans.spec, 2026-11-13).
           const pick = () => {
-            if (document.activeElement === input && input.value === tapped) input.setSelectionRange(from, input.value.length);
+            if (document.activeElement === input && input.value === tapped) input.setSelectionRange(0, input.value.length);
           };
           pick();
           requestAnimationFrame(pick);
         }}
         onBlur={() => {
-          setEditing(false);
           fly();
         }}
         data-testid="altitude-input"

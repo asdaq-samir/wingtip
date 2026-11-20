@@ -288,7 +288,7 @@ test("the FPL's airplane field suggests as it is typed: the pilot's own, the typ
   });
   await list.getByTestId("aircraft-suggestions-faa").getByTestId("aircraft-suggestion").click();
   // Picked: the FPL flies it, the list gone.
-  await expect(field).toHaveValue("N-654FL");
+  await expect(field).toHaveValue("654FL");
   await expect(list).toHaveCount(0);
   // Escape closes the list, what is typed kept.
   await field.click();

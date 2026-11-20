@@ -31,3 +31,14 @@ export const PILL_FIELD = cn(
   "relative z-10 -my-2 h-11 min-w-0 flex-initial py-0 pr-0.5 pl-2.5 font-semibold placeholder:font-normal placeholder:text-foreground/70",
   "text-[length:inherit] md:text-[length:inherit] pointer-coarse:text-[length:inherit]",
 );
+
+/**
+ * A pill's fixed letters before what is typed -- the N of an N-number, the
+ * FL of a flight level -- in the text's own colour, not the placeholder's
+ * grey, so what is typed goes in after the dash (the owner, 2026-11-19:
+ * "N and FL should be static letter and black, not grey, so input can be
+ * entered after the dash"); the field after it with no padding of its own
+ * (PREFIXED_FIELD), so nothing sets the figures apart from it.
+ */
+export const PILL_PREFIX = cn("pr-0 pl-2.5 font-semibold text-foreground", "text-[length:inherit] pointer-coarse:text-[length:inherit]");
+export const PREFIXED_FIELD = "pl-0!";
