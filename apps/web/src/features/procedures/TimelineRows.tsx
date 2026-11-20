@@ -152,16 +152,19 @@ export function AddStopRow({ disabled, onClick, trailing }: { disabled: boolean;
  *  2026-11-20: "We should have a add fuel stops pill in the last row and
  *  when added, remove fuel stops pill"): "Add Fuel Stops" puts the first
  *  flight's suggested ones in, "Remove Fuel Stops" takes the fuel stops
- *  out again. The procedures' "+ APCH" chip's look (chipLook). */
+ *  out again. The procedures' "+ APCH" chip's shape (chipLook), in the
+ *  tint's light wash to add and the stock destructive's light red to
+ *  remove (the owner, 2026-11-20: "Adding fuel stops capsule should be
+ *  light blue and removing should be light red"). */
 export function FuelStopsChip({ added, onClick }: { added: boolean; onClick: () => void }) {
   return (
     <Button
-      variant="glass"
+      variant={added ? "destructive" : "ghost"}
       type="button"
       onClick={onClick}
       data-testid="timeline-fuel-stops"
       data-look={added ? "remove" : "add"}
-      className={chipLook(true)}
+      className={cn(chipLook(true), !added && "bg-tint/12 hover:bg-tint/20! dark:hover:bg-tint/20!")}
     >
       <Fuel className="mr-1 size-4" aria-hidden="true" />
       {added ? "Remove Fuel Stops" : "Add Fuel Stops"}

@@ -504,7 +504,8 @@ off by default (the owner, 2026-11-13).
    or more one row between the ends, "2 Stops" and their idents, a tap taking the sheet all the way up, where each is its own row (one stop always its own); Add a Stop the last row, by the one
    search, with a pill at its end where there is fuel to plan: "Add Fuel
    Stops" puts the planner's suggested ones in, then "Remove Fuel Stops"
-   takes them out (the owner, 2026-11-20; `FuelStopsChip`); a hold moves
+   takes them out, the first in the tint's light wash and the second in the
+   destructive light red (the owner, 2026-11-20; `FuelStopsChip`); a hold moves
    a point and its menu's Remove takes a stop out, the plan's toast Undo
    putting either back. A tap on a field's
    line opens it, one at a time: its wind at the left and elevation at the
