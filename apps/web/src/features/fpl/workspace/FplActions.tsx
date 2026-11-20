@@ -76,10 +76,13 @@ export function FplActions({ vm, more }: { vm: PlanSlices<"brief" | "flight" | "
 export function FplRoute({
   vm,
   strip,
+  options,
 }: {
   vm: PlanSlices<"brief" | "cards" | "flight" | "leg" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
   /** The airplane's strip (RouteControls), under FPL's title. */
   strip?: ReactNode;
+  /** Route Options (RoutesToggle), over the strip, where there are some. */
+  options?: ReactNode;
 }) {
   const { panelOpen } = vm.view;
   const { dryRunning, flying } = vm.flight;
@@ -100,7 +103,7 @@ export function FplRoute({
     <div className="flex w-full min-w-0 flex-1 flex-col" data-pill-row="">
       {/* The airplane's strip under FPL's title (FplBar), as Directions has
           its options under its own. */}
-      {strip && <FplStrip strip={strip} />}
+      {strip && <FplStrip strip={strip} options={options} />}
       {/* The suggested routes' pills just above the stops, out while the
           first row's button is on (RoutesToggle; the owner, 2026-11-17:
           "Which shows route pills just above the stops"), where they were a

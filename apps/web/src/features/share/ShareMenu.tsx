@@ -73,7 +73,7 @@ export default function ShareMenu({
    *  or of the flying drawer's tiles ("tile", FplActions), its glyph over
    *  "More" (the owner, 2026-11-17: "move everything to the tab bar with a
    *  ... instead of share"); else the first row's round glyph. */
-  look?: "bar" | "tile";
+  look?: "bar" | "tile" | "head";
   /** The suggested fuel stops taken out of the route box, put back. */
   onShowFuel?: () => void;
   /** The route's field opened over its timeline, to type or paste the
@@ -201,7 +201,7 @@ export default function ShareMenu({
           {/* In FPL's floating bar a button of its Toolbar (FplTabBar),
               in the arrows' roving focus, as the NOTAM filters' menus are. */}
           <DropdownMenuTrigger render={look === "bar" ? <Toolbar.Button render={trigger} /> : trigger}>
-            {!look && <TriggerFace card={card} stale={planAgain?.stale ?? []} />}
+            {(!look || look === "head") && <TriggerFace card={card} stale={planAgain?.stale ?? []} share={look === "head"} />}
           </DropdownMenuTrigger>
         </ResponsivePopoverAnchor>
         <DropdownMenuContent align={align} className="min-w-56 print:hidden">

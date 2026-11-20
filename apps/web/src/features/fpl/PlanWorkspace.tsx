@@ -209,7 +209,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     ],
   );
 
-  const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard, look?: "bar" | "tile") => (
+  const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard, look?: "bar" | "tile" | "head") => (
     <ShareMenu
       look={look}
       align={align}
@@ -268,19 +268,10 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           at: view === "plan" ? 1 : 0,
           go: pickPage,
           floats: !flying && !vm.flight.dryRunning,
-          // The first row is the airplane's strip alone: the route's •••
-          // is the floating bar's More once there is a route (FlightFoot;
-          // the owner, 2026-11-17: "move everything to the tab bar with a
-          // ... instead of share"), and before one nothing of it is wanted
-          // there (the owner, 2026-11-18): a cleared route's Undo and a
-          // half route's ✕ are the route box's own (RouteEditor), and the
-          // checkpoints come after the route is drawn.
-          // The suggested routes' button beside the search's, where there are some (RoutesToggle).
-          bar: (
-            <FplBar
-              routes={routesOffered(vm) ? <RoutesToggle shown={vm.routeList.routesShown} onShown={vm.routeList.setRoutesShown} /> : null}
-            />
-          ),
+          // The first row is FPL's title between Share and the ✕, as Apple
+          // Maps' Directions (the owner, 2026-11-19: "Maybe we can have
+          // similar buttons x and share"); Share only once there is a route.
+          bar: <FplBar share={routed ? shareMenu("start", "fpl-share", undefined, "head") : null} />,
           second: <PlanPage vm={vm} navLog={navLog} more={shareMenu("end", undefined, undefined, "tile")} />,
         },
         // The one search's Autocomplete round the whole panel: its field (the first row) and its list (the body) one combobox.
@@ -305,7 +296,13 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // heads), in its one layout (the owner, 2026-11-17, decision 0047):
         // folded to its line, the figures and the Routes' chips under it, or
         // open to edit, its head over the cards in the page (FplRoute).
-        route: <FplRoute vm={vm} strip={<RouteControls vm={vm} flightInputs={flightInputs} />} />,
+        route: (
+          <FplRoute
+            vm={vm}
+            strip={<RouteControls vm={vm} flightInputs={flightInputs} />}
+            options={routesOffered(vm) ? <RoutesToggle shown={vm.routeList.routesShown} onShown={vm.routeList.setRoutesShown} /> : null}
+          />
+        ),
         console: <PilotPanel />,
       })}
       {/* FPL's cards over the sheet, beside its pages, kept in flight (PlanCards). */}

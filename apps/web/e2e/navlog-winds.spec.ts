@@ -74,7 +74,8 @@ test("a plan whose winds are past their forecast's period marks the route box's 
   // Plan again in the route's Share menu, at the owner's pick ("A"),
   // Share marked with the dot and its name saying why.
   const share = page.getByTestId("share-route");
-  await expect(page.getByTestId("plan-again-mark")).toBeVisible({ timeout: slow(60_000) });
+  // On the floating bar's More (and Share at the top, the same menu).
+  await expect(page.getByTestId("share-route").getByTestId("plan-again-mark")).toBeVisible({ timeout: slow(60_000) });
   await expect(share).toHaveAccessibleName(/winds are out of date/);
   await expect(page.getByTestId("navlog-winds-old")).toHaveCount(0);
   const before = asked;

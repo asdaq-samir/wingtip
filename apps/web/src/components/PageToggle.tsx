@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import { Route, Search } from "lucide-react";
+import { Route, X } from "lucide-react";
 import { Toggle } from "./ui/toggle";
 import { PANEL_FIELD_FILL } from "./panelField";
 import { useConsoleOpen } from "../lib/mapChrome";
@@ -43,7 +43,11 @@ export default function PageToggle({ page }: { page: 0 | 1 }) {
   );
   if (!pages || pages.at !== page) return null;
   const onSearch = page === 0;
-  const Glyph = onSearch ? Route : Search;
+  // On FPL a ✕, as Apple Maps' Directions closes with one (the owner,
+  // 2026-11-19: "Maybe we can have similar buttons x and share"): it closes
+  // the flight plan's page to Search, the route kept; the search itself is
+  // the round button beside FPL's floating bar (FplTabBar).
+  const Glyph = onSearch ? Route : X;
   return (
     <Toggle
       ref={drawn}
@@ -60,10 +64,11 @@ export default function PageToggle({ page }: { page: 0 | 1 }) {
         // again (the UI audit's B5).
         if (onSearch) useTips.getState().see(FPL_TIP);
       }}
-      aria-label={onSearch ? "Show flight plan" : "Show search"}
+      aria-label={onSearch ? "Show flight plan" : "Close flight plan"}
       data-testid="sheet-page-toggle"
       data-shows={onSearch ? 1 : 0}
-      className={`relative size-9 shrink-0 rounded-full p-0 text-tint after:absolute after:-inset-1 after:rounded-full after:content-[''] print:hidden ${PANEL_FIELD_FILL}`}
+      // FPL's ✕ in the text's colour, as Share's beside it and a card's ✕.
+      className={`relative size-9 shrink-0 rounded-full p-0 after:absolute after:-inset-1 after:rounded-full after:content-[''] print:hidden ${onSearch ? "text-tint" : "text-foreground"} ${PANEL_FIELD_FILL}`}
     >
       <Glyph className="size-5" strokeWidth={1.75} aria-hidden="true" />
     </Toggle>

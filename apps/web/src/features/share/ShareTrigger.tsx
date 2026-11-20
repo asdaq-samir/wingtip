@@ -33,7 +33,7 @@ export function TriggerButton({
   stale,
   testId,
   ...trigger
-}: { look?: "bar" | "tile"; card: "route" | RouteCard; stale: string[]; testId: string } & Omit<
+}: { look?: "bar" | "tile" | "head"; card: "route" | RouteCard; stale: string[]; testId: string } & Omit<
   ComponentProps<"button">,
   "children" | "onClick" | "disabled"
 >) {
@@ -49,6 +49,10 @@ export function TriggerButton({
         {...trigger}
       />
     );
+  // At the start of FPL's first row, Share's own disc, as a card's Share and
+  // Apple Maps' Directions' (the owner, 2026-11-19: "similar buttons x and
+  // share"): the same menu as the floating bar's More.
+  if (look === "head") return <IconButton round label="Share" data-testid={testId} {...trigger} />;
   if (look)
     return (
       <CardAction
@@ -81,10 +85,10 @@ export function TriggerButton({
 
 /** The round button's glyph: the route's ••• a size down, as the first
  *  row's other buttons are; a card's Share. */
-export function TriggerFace({ card, stale }: { card: "route" | RouteCard; stale: string[] }) {
+export function TriggerFace({ card, stale, share = false }: { card: "route" | RouteCard; stale: string[]; share?: boolean }) {
   return (
     <span className="relative">
-      {card === "route" ? <Ellipsis className="size-[18px]" strokeWidth={2.4} /> : <Share className="size-5" strokeWidth={2} />}
+      {card === "route" && !share ? <Ellipsis className="size-[18px]" strokeWidth={2.4} /> : <Share className="size-5" strokeWidth={2} />}
       <StaleMark stale={stale} />
     </span>
   );
