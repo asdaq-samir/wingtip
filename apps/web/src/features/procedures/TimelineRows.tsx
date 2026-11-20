@@ -3,6 +3,7 @@ import { ChevronsUpDown, Fuel, Keyboard, Plus } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { TEXT } from "../../lib/text";
+import { MAX_STOPS } from "../../lib/identSchema";
 import { stopsNames, stopsTitle } from "./stopsRow";
 import { chipLook } from "./chipLook";
 
@@ -20,8 +21,14 @@ export const TIMELINE_THREAD = "absolute top-10 -bottom-1 left-1/2 -translate-x-
 
 /** FPL's timeline's card, iOS's inset grouped list: never wider than the
  *  sheet, a row laid out past it clipped, not a sideways scroll of the
- *  panel (the iOS audit's rule). */
-export const TIMELINE_CARD = "overflow-x-clip rounded-(--radius-banner) bg-card px-3";
+ *  panel (the iOS audit's rule). The app's grouped lists' box
+ *  (GroupedList's GROUP: the card's corner, its edge) and 16 points in at
+ *  the leading side, none at the trailing, so a row's hairline runs to the
+ *  card's edge as iOS's does; each row keeps its own 16 there (the grouped
+ *  box's audit, 2026-11-20). */
+export const TIMELINE_CARD = "overflow-x-clip rounded-(--radius-card) border border-border bg-card pl-4";
+/** A row's words' room at the trailing side, inside its hairline. */
+export const TIMELINE_END = "pr-4";
 
 /** The circle in the marks' column: the tint's wash with the tint's glyph,
  *  as a point's "•••" (TimelineMark), or filled in the tint with a white
@@ -37,7 +44,7 @@ function RowMark({ glyph, filled }: { glyph: ReactNode; filled: boolean }) {
 /**
  * A row of the timeline that does one thing at a tap: the stock Button a
  * whole row wide and 44 points tall (the audit's WEB-18), its mark in the
- * marks' column, the route's magenta in short rounded dashes from under it
+ * marks' column, the route's magenta, one solid line, from under it
  * into the next row where one follows (`line`), as a point's line draws
  * it, and its words after the hairline (none on the card's first row).
  * `trailing`, a control of its own at the row's end, over the hairline.
@@ -49,7 +56,7 @@ function TimelineAction({
   first = false,
   placeholder = false,
   trailing,
-  room = "pr-12",
+  room = "pr-16",
   ...button
 }: Omit<ComponentProps<typeof Button>, "children"> & {
   mark: ReactNode;
@@ -67,7 +74,11 @@ function TimelineAction({
       <Button
         variant="ghost"
         {...button}
-        className={cn("h-11 w-full justify-start gap-3 px-0 font-normal hover:bg-transparent dark:hover:bg-transparent", TEXT.row)}
+        // Greyed under a finger as iOS's rows are (the grouped box's audit).
+        className={cn(
+          "h-11 w-full justify-start gap-3 rounded-none px-0 font-normal hover:bg-transparent pointer-coarse:active:bg-muted pointer-coarse:active:opacity-100 dark:hover:bg-transparent",
+          TEXT.row,
+        )}
       >
         <span className="relative flex h-11 w-8 shrink-0 items-center justify-center">
           <span className="relative z-10">{mark}</span>
@@ -78,13 +89,13 @@ function TimelineAction({
             "flex h-full min-w-0 flex-1 items-center",
             !first && "border-t border-border",
             placeholder ? "text-muted-foreground" : "text-tint",
-            trailing && room,
+            trailing ? room : TIMELINE_END,
           )}
         >
           {children}
         </span>
       </Button>
-      {trailing && <span className="absolute top-1/2 right-0 flex -translate-y-1/2 items-center">{trailing}</span>}
+      {trailing && <span className="absolute top-1/2 right-4 flex -translate-y-1/2 items-center">{trailing}</span>}
     </div>
   );
 }
@@ -92,7 +103,7 @@ function TimelineAction({
 /**
  * The stops between the two ends as one row of the timeline below full
  * (the owner, 2026-11-18: "let's just show the stops as another row in
- * between"; listedPoints): the tint's wash with the expand glyph in the
+ * between"; listedPoints): the tint filled with the expand glyph in the
  * marks' column, "2 Stops" in the tint and their idents after it in grey,
  * cut short where they do not fit, the route's magenta on down to the
  * destination. A tap takes the sheet all the way up, where every stop is
@@ -103,7 +114,7 @@ export function StopsRow({ idents, onShowAll }: { idents: string[]; onShowAll: (
   const { line, label } = stopsNames(idents);
   return (
     <TimelineAction
-      mark={<RowMark filled={false} glyph={<ChevronsUpDown className="size-4" strokeWidth={2.4} aria-hidden />} />}
+      mark={<RowMark filled glyph={<ChevronsUpDown className="size-4" strokeWidth={2.4} aria-hidden />} />}
       line
       onClick={onShowAll}
       aria-label={label}
@@ -127,10 +138,12 @@ export function AddStopRow({ disabled, onClick, trailing }: { disabled: boolean;
       disabled={disabled}
       onClick={onClick}
       trailing={trailing}
-      room="pr-48"
+      room="pr-52"
       data-testid="timeline-add-stop"
     >
       Add a Stop
+      {/* Why it is greyed, said in it (the grouped box's audit, 2026-11-20). */}
+      {disabled && <span className={cn("ml-2 truncate text-muted-foreground", TEXT.note)}>Up to {MAX_STOPS} stops</span>}
     </TimelineAction>
   );
 }

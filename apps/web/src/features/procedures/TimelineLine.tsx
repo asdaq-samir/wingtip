@@ -11,7 +11,7 @@ import { FuelGauge } from "./FuelGauge";
 import { WindLine } from "./FieldHead";
 import { fieldParts, kindMenu, kindPicked, windWords } from "./fieldParts";
 import { PartTray } from "./RunwayTray";
-import { TIMELINE_THREAD } from "./TimelineRows";
+import { TIMELINE_END, TIMELINE_THREAD } from "./TimelineRows";
 import { askHold, type pointEnd } from "./pointEnd";
 import { HoldChip } from "./HoldChip";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
@@ -173,7 +173,7 @@ export function TimelineLine({
         <span className="relative z-10 flex h-11 items-center">{mark}</span>
         {!last && <span aria-hidden="true" className={TIMELINE_THREAD} />}
       </span>
-      <div className={cn("min-w-0 flex-1 pr-1", !first && "border-t border-border")}>
+      <div className={cn("min-w-0 flex-1", TIMELINE_END, !first && "border-t border-border")}>
         <div className="relative flex min-h-11 min-w-0 items-center gap-2 py-0.5">
           {opens && (
             <CollapsibleTrigger
@@ -184,7 +184,9 @@ export function TimelineLine({
                   type="button"
                   data-testid="timeline-toggle"
                   aria-label={`${point.ident}: runways and procedures`}
-                  className="absolute inset-0 rounded-lg outline-none hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring"
+                  // Greyed under a finger as iOS's rows are, under the line's words
+                  // (the grouped box's audit, 2026-11-20).
+                  className="absolute inset-0 rounded-lg outline-none hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent pointer-coarse:active:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
                 />
               }
             />

@@ -494,7 +494,11 @@ off by default (the owner, 2026-11-13).
    plane icon with three dots"), a fuel stop the pump, a waypoint a
    grey triangle), the mark its menu (Change by the one search, Direct To,
    Set Altitude, Hold, Add a Stop After, Move, Remove); the route's magenta
-   in short rounded dashes between the marks; after a hairline inset to the
+   one solid line between the marks; the card the grouped lists' box (its
+   corner and edge), each row's hairline running to its trailing edge, a
+   row greyed under a finger, a drag button shown while the keyboard has
+   it, and Add a Stop saying "Up to 16 stops" when the route is full (the
+   grouped box's audit, 2026-11-20); after a hairline inset to the
    text its ident (a link to its card), the fuel in the tanks there right
    after it, at the right its time (the departure's a picker); no city; below full, two stops
    or more one row between the ends, "2 Stops" and their idents, a tap taking the sheet all the way up, where each is its own row (one stop always its own); Add a Stop the last row, by the one

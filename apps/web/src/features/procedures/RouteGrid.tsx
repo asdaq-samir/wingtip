@@ -1,5 +1,6 @@
 import { useRef, type DragEvent, type ReactNode } from "react";
 import { Button, DropIndicator, GridList, GridListItem, useDragAndDrop, type Key } from "react-aria-components";
+import { GripVertical } from "lucide-react";
 import { cn } from "cn";
 import { pointName } from "../../lib/identSchema";
 import { feel } from "../../lib/haptics";
@@ -158,8 +159,12 @@ export function PointGrip({ ident }: { ident: string }) {
       // Aria asks one of every row): its three lines gave way to the
       // line's chevron (the owner, 2026-11-19: "replace three lines with the
       // arrow for expanding list"); a finger or a mouse drags the row itself,
-      // and the point's menu has Move Up and Move Down.
-      className="sr-only"
-    />
+      // and the point's menu has Move Up and Move Down. Shown with its
+      // grip while the keyboard has it, so a Tab never lands out of sight
+      // (WCAG 2.4.7; the grouped box's audit, 2026-11-20).
+      className="sr-only data-focus-visible:not-sr-only data-focus-visible:grid data-focus-visible:size-11 data-focus-visible:shrink-0 data-focus-visible:place-items-center data-focus-visible:rounded-lg data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:outline-none"
+    >
+      <GripVertical className="size-4 text-muted-foreground" aria-hidden="true" />
+    </Button>
   );
 }
