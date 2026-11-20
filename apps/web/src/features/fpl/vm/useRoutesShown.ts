@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 /**
- * Whether FPL's suggested routes are out (RoutesToggle, FplRoute) and their
+ * Whether FPL's suggested routes are out (ShareMenu's Route Options, FplRoute) and their
  * ways drawn on the map (PlanMap), for the route they were turned on for:
  * `key` is that route, its two ends (null while there are no ways to
  * suggest). Put away whenever it changes -- another plan, the route

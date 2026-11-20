@@ -68,8 +68,8 @@ export function FplActions({ vm, more }: { vm: PlanSlices<"brief" | "flight" | "
  *  (the one layout, decision 0047, where it is read and edited), the
  *  flight's figures under it, which are its pill too (the owner,
  *  2026-11-16: the calculations strip where the action tiles were), and
- *  the suggested routes' chips over it while the first row's button has
- *  them out (RoutesToggle; the owner, 2026-11-17). While the route's field is open (RouteEditor) the figures
+ *  the suggested routes' chips over it while More's Route Options has
+ *  them out (ShareMenu; the owner, 2026-11-17). While the route's field is open (RouteEditor) the figures
  *  go under it and the chips away, as they change the route rather than
  *  edit it. */
 export function FplRoute({
@@ -95,7 +95,7 @@ export function FplRoute({
     // The figures alone are the side panel's pill (SheetParts' DESK_PILL).
     <div className="flex w-full min-w-0 flex-1 flex-col" data-pill-row="">
       {/* The suggested routes' pills just above the stops, out while the
-          first row's button is on (RoutesToggle; the owner, 2026-11-17:
+          More's Route Options is on (ShareMenu; the owner, 2026-11-17:
           "Which shows route pills just above the stops"), where they were a
           section under the figures. */}
       {routesShown && routeLine && (

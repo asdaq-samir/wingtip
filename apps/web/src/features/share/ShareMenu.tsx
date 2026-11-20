@@ -1,11 +1,12 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { done } from "../../lib/doneNote";
-import { FileArchive, FileText, Fuel, Keyboard, Link2, MapPinned, Printer, RotateCw, Send, Trash2 } from "lucide-react";
+import { FileArchive, FileText, Fuel, Keyboard, Link2, MapPinned, Printer, RotateCw, Send, Signpost, Trash2 } from "lucide-react";
 import { Toolbar } from "@base-ui/react/toolbar";
 import { TriggerButton, TriggerFace } from "./ShareTrigger";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../components/ResponsivePopover";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -67,6 +68,7 @@ export default function ShareMenu({
   onShowFuel,
   onTypeRoute,
   onClear,
+  routeOptions,
   look,
 }: {
   /** The route's ••• as a button of FPL's floating bar ("bar", FplTabBar)
@@ -74,6 +76,11 @@ export default function ShareMenu({
    *  "More" (the owner, 2026-11-17: "move everything to the tab bar with a
    *  ... instead of share"); else the first row's round glyph. */
   look?: "bar" | "tile" | "head";
+  /** The suggested routes out above the route and on the map, or put
+   *  away: More's first item (the owner, 2026-11-19: "Let's put the more
+   *  route options in the ... button"), where it was a pill under FPL's
+   *  title; given only while there are ways to offer (routesOffered). */
+  routeOptions?: { shown: boolean; onShown: (shown: boolean) => void };
   /** The suggested fuel stops taken out of the route box, put back. */
   onShowFuel?: () => void;
   /** The route's field opened over its timeline, to type or paste the
@@ -206,6 +213,12 @@ export default function ShareMenu({
         </ResponsivePopoverAnchor>
         <DropdownMenuContent align={align} className="min-w-56 print:hidden">
           {card === "route" && <PlanUndoItems />}
+          {routeOptions && (
+            <DropdownMenuCheckboxItem checked={routeOptions.shown} onCheckedChange={routeOptions.onShown} data-testid="routes-toggle">
+              <Signpost />
+              Route Options
+            </DropdownMenuCheckboxItem>
+          )}
           {routed && onShowFuel && (
             <DropdownMenuItem onClick={onShowFuel} data-testid="route-show-fuel">
               <Fuel />

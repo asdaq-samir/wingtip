@@ -78,11 +78,23 @@ export async function controlsInSight(page: Page) {
   await planFromSearch(page);
 }
 
-/** The suggested routes' chips, put out above the route by the first row's
- *  button (RoutesToggle) where they are not out already. */
+/** More's Route Options (ShareMenu; the owner, 2026-11-19: "Let's put the
+ *  more route options in the ... button"), the menu opened from FPL's
+ *  floating bar: the item, which says whether the suggested routes are out
+ *  (aria-checked). Escape puts the menu away again. */
+export async function routeOptionsItem(page: Page): Promise<Locator> {
+  await sideDrawer(page).getByTestId("share-route").click();
+  return page.getByRole("menuitemcheckbox", { name: "Route Options" });
+}
+
+/** The suggested routes' chips, put out above the route by More's Route
+ *  Options where they are not out already. */
 export async function suggestedRoutes(page: Page): Promise<Locator> {
-  const toggle = sideDrawer(page).getByTestId("routes-toggle");
-  await expect(toggle).toBeVisible({ timeout: slow(30_000) });
-  if ((await toggle.getAttribute("aria-pressed")) !== "true") await toggle.click();
+  await expect(async () => {
+    const item = await routeOptionsItem(page);
+    await expect(item).toBeVisible({ timeout: 2000 });
+    if ((await item.getAttribute("aria-checked")) === "true") await page.keyboard.press("Escape");
+    else await item.click();
+  }).toPass({ timeout: slow(30_000) });
   return sideDrawer(page).getByTestId("route-line");
 }

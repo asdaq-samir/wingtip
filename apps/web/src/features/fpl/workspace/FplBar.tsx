@@ -11,8 +11,8 @@ import { TEXT } from "../../../lib/text";
  * start (the route's menu, ShareMenu) and the ✕ at its end, which closes the
  * page to Search where the search's row has its toggle (PageToggle), and
  * between them two rows: "Flight Plan" at the row's 17 in bold, as
- * Directions' headline is, and under it Route Options and the airplane's
- * pills (RouteControls), as "Now · Avoid" is under "Directions". The head
+ * Directions' headline is, and under it the airplane's pills
+ * (RouteControls; Route Options is More's, ShareMenu), as "Now · Avoid" is under "Directions". The head
  * keeps the search's height, so a turn of the page moves nothing (the
  * owner, 2026-11-14): the title's line is 18 points and the pills 28, the
  * search field's 46, so the ✕ stands where the search's toggle does.
@@ -23,7 +23,7 @@ import { TEXT } from "../../../lib/text";
  * a local flight's date and time, a 320-point phone -- the airplane's pill
  * gives way first (navlog's pillLook).
  */
-export default function FplBar({ share, strip, options }: { share?: ReactNode; strip?: ReactNode; options?: ReactNode }) {
+export default function FplBar({ share, strip }: { share?: ReactNode; strip?: ReactNode }) {
   return (
     <div className="grid w-full grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-2">
       <div className="flex justify-start">{share}</div>
@@ -31,12 +31,9 @@ export default function FplBar({ share, strip, options }: { share?: ReactNode; s
         <h2 className={cn("max-w-full truncate font-bold text-foreground", TEXT.row, "leading-[1.125rem]")} data-testid="fpl-title">
           Flight Plan
         </h2>
-        {(strip || options) && (
-          <div className="flex h-7 max-w-full min-w-0 items-center justify-center gap-1.5">
-            {options}
-            <div className="flex min-w-0 items-center" data-testid="route-strip">
-              {strip}
-            </div>
+        {strip && (
+          <div className="flex h-7 max-w-full min-w-0 items-center justify-center" data-testid="route-strip">
+            {strip}
           </div>
         )}
       </div>

@@ -181,9 +181,12 @@ test("an ident only a field abroad goes by is no destination: no distance, no wa
     "isn't an airport or waypoint we know",
     { timeout: 20000 },
   );
-  // No ways to suggest, so no button for them: the chips' count below is
-  // then no vacuous zero (they render only while the button is on).
+  // No ways to suggest, so no Route Options in More: the chips' count below
+  // is then no vacuous zero (they render only while it is on).
+  await page.getByTestId("share-route").click();
+  await expect(page.getByRole("menuitem").first()).toBeVisible();
   await expect(page.getByTestId("routes-toggle")).toHaveCount(0);
+  await page.keyboard.press("Escape");
   await openRoute(page);
   const said = page.getByTestId("route-unknown");
   await expect(said).toContainText("KIGN isn't an airport or waypoint we know", { timeout: 20000 });

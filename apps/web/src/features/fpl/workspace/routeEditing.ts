@@ -20,7 +20,7 @@ export function routeBoxOpen(vm: PlanSlices<"flight" | "routeList">): boolean {
   return routeEditing(vm) && vm.routeList.boxOpen;
 }
 
-/** Whether FPL offers its suggested routes (RoutesToggle): there are ways
+/** Whether FPL offers its suggested routes (ShareMenu's Route Options): there are ways
  *  to suggest, on the ground, not in a dry run, and the route's field not
  *  open -- the ways change the route rather than edit it, so the toggle
  *  went on doing nothing while the field was open, and a dry run flies the

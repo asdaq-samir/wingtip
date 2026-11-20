@@ -27,7 +27,6 @@ import FlightFoot from "./workspace/FlightFoot";
 import { FplRoute } from "./workspace/FplActions";
 import RouteControls from "./workspace/RouteControls";
 import FplBar from "./workspace/FplBar";
-import { RoutesToggle } from "./workspace/RoutesToggle";
 import { routesOffered } from "./workspace/routeEditing";
 import OneSearchField from "./search/OneSearchField";
 import { useOneSearch } from "./search/useOneSearch";
@@ -238,6 +237,10 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       // keep the route box's row on one line; Share marked where it is due.
       planAgain={card === undefined && routed && !s.local ? { stale, onPlan: () => setLoad((n) => n + 1) } : undefined}
       onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
+      // The suggested routes, More's first item while there are some.
+      routeOptions={
+        card === undefined && routesOffered(vm) ? { shown: vm.routeList.routesShown, onShown: vm.routeList.setRoutesShown } : undefined
+      }
       // The route's field over its timeline, to type or paste it in whole.
       onTypeRoute={
         card === undefined && vm.route.wholeRoute && vm.routeList.routeFolded && !vm.flight.flying
@@ -271,14 +274,12 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           // The first row is FPL's title between Share and the ✕, as Apple
           // Maps' Directions (the owner, 2026-11-19: "Maybe we can have
           // similar buttons x and share"); Share only once there is a route.
-          // Under the title, between the buttons, Route Options and the
-          // airplane's pills (the owner: "Make two rows between the close
-          // and share button").
+          // Under the title, between the buttons, the airplane's pills (the
+          // owner: "Make two rows between the close and share button").
           bar: (
             <FplBar
               share={routed ? shareMenu("start", "fpl-share", undefined, "head") : null}
               strip={<RouteControls vm={vm} flightInputs={flightInputs} />}
-              options={routesOffered(vm) ? <RoutesToggle shown={vm.routeList.routesShown} onShown={vm.routeList.setRoutesShown} /> : null}
             />
           ),
           second: <PlanPage vm={vm} navLog={navLog} more={shareMenu("end", undefined, undefined, "tile")} />,

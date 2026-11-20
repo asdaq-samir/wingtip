@@ -8,6 +8,7 @@ import {
   inSheet,
   openPanel,
   openRoute,
+  routeOptionsItem,
   settle,
   sideDrawer,
   slow,
@@ -70,11 +71,11 @@ test.describe("/app/plan", () => {
     for (const line of await timeline.getByTestId("timeline-line").all()) expect((await line.boundingBox())!.height).toBeLessThan(46);
     await expect(timeline.getByTestId("timeline-add-stop")).toBeVisible();
     await expect(drawer.getByTestId("flight-line")).toBeVisible();
-    // The suggested routes behind the first row's button, out above the stops.
+    // The suggested routes behind More's Route Options, out above the stops.
     await expect(drawer.getByTestId("route-group")).toHaveCount(0);
-    await drawer.getByTestId("routes-toggle").click({ timeout: slow(30_000) });
+    await (await suggestedRoutes(page)).first().waitFor();
     await expect(drawer.getByTestId("route-group")).toBeVisible();
-    await drawer.getByTestId("routes-toggle").click();
+    await (await routeOptionsItem(page)).click();
     await expect(drawer.getByTestId("route-box")).toHaveCount(0);
     await expect(drawer.getByTestId("route-done")).toHaveCount(0);
     await expect(drawer.getByTestId("route-summary-open")).toHaveCount(0);
@@ -290,9 +291,12 @@ test.describe("/app/plan", () => {
     await expect(drawer.getByTestId("route-done")).toBeVisible({ timeout: slow(30_000) });
     await foldRoute(page);
     await expect(page).toHaveURL(/[?&]dest=KMSP(&|$)/);
-    const toggle = drawer.getByTestId("routes-toggle");
-    await expect(toggle).toBeVisible({ timeout: slow(30_000) });
-    await expect(toggle).not.toHaveAttribute("aria-pressed", "true");
+    await expect(async () => {
+      const item = await routeOptionsItem(page);
+      await expect(item).toBeVisible({ timeout: 2000 });
+      await expect(item).toHaveAttribute("aria-checked", "false");
+      await page.keyboard.press("Escape");
+    }).toPass({ timeout: slow(30_000) });
     await expect(drawer.getByTestId("route-group")).toHaveCount(0);
   });
 });
