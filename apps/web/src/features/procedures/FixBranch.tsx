@@ -1,12 +1,10 @@
-import { Button as BaseButton } from "@base-ui/react/button";
 import type { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 import { cn } from "cn";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
-import { altitudeLines, decorationOf, fixRoles, type BranchFix } from "../../lib/procedures";
-import { altFt } from "../../lib/format";
+import type { BranchFix } from "../../lib/procedures";
 import { TEXT } from "../../lib/text";
-import { PointFigures, PointMenu } from "../route/lazy";
+import { FixList } from "./FixList";
 
 /**
  * A procedure picked at a field, its fixes a branch off the route's line in
@@ -48,7 +46,6 @@ export default function FixBranch({
   onDirect: (fix: string | null) => void;
   onOpen: (fix: string) => void;
 }) {
-  const directAt = direct ? fixes.findIndex((f) => f.ident === direct) : -1;
   const count = fixes.length ? ` · ${fixes.length} ${fixes.length === 1 ? "fix" : "fixes"}` : "";
   return (
     <Collapsible data-testid="fix-branch" data-kind={kind.toLowerCase()}>
@@ -87,80 +84,7 @@ export default function FixBranch({
         {menu}
       </div>
       <CollapsibleContent>
-        <ol className="mt-1" aria-label={`${name}, its fixes`}>
-          {fixes.map((fix, i) => {
-            const skipped = directAt > 0 && i < directAt;
-            const isDirect = i === directAt;
-            const own = crossings[fix.ident] ?? null;
-            const charted = altitudeLines(fix).lines[0] ?? null;
-            const roles = fixRoles(fix).join(" · ");
-            const sub = isDirect ? `${roles ? `${roles} · ` : ""}direct to` : skipped ? `${roles ? `${roles} · ` : ""}skipped` : roles;
-            return (
-              <li
-                key={`${fix.ident}-${i}`}
-                className={cn("relative flex min-h-12 items-center gap-2 pl-7", isDirect && "rounded-xl bg-tint/8")}
-                data-testid="fix-branch-row"
-              >
-                {/* The branch's line and the fix's mark: dashed and hollow where
-                    skipped, a filled tint dot where the airplane is sent. */}
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "absolute top-0 bottom-0 left-3 border-l-2",
-                    skipped ? "border-dashed border-muted-foreground/40" : "border-procedure",
-                    i === 0 && "top-1/2",
-                    i === fixes.length - 1 && "bottom-1/2",
-                  )}
-                />
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "absolute top-1/2 left-3 -translate-x-[calc(50%-1px)] -translate-y-1/2",
-                    isDirect
-                      ? "size-3.5 rounded-full border-2 border-white bg-tint"
-                      : cn(
-                          "size-2.5 rotate-45 border-2",
-                          skipped ? "border-muted-foreground/40 bg-background" : "border-white bg-procedure",
-                        ),
-                  )}
-                />
-                <BaseButton
-                  onClick={() => onOpen(fix.ident)}
-                  className={cn("flex min-w-0 flex-1 flex-col py-1 text-left", skipped && "opacity-50")}
-                >
-                  <span className={cn("font-semibold", TEXT.row, isDirect && "text-tint")}>{fix.ident}</span>
-                  {sub && <span className={cn(TEXT.note, isDirect ? "font-semibold text-tint" : "text-muted-foreground")}>{sub}</span>}
-                </BaseButton>
-                <PointFigures
-                  time={null}
-                  kind={own != null ? "set" : "pub"}
-                  spoken={
-                    own != null
-                      ? `cross at ${altFt(own)} ft, set by you`
-                      : altitudeLines(fix).words
-                        ? `published, ${altitudeLines(fix).words}`
-                        : undefined
-                  }
-                  altitude={
-                    own != null ? (
-                      altFt(own)
-                    ) : charted ? (
-                      <span style={{ textDecoration: decorationOf(charted) }}>{charted.text}</span>
-                    ) : null
-                  }
-                />
-                <PointMenu
-                  ident={fix.ident}
-                  direct={isDirect}
-                  testId="fix-branch-menu"
-                  onDirect={() => onDirect(isDirect ? null : fix.ident)}
-                  onAltitude={() => onOpen(fix.ident)}
-                />
-                <span className="w-1 shrink-0" aria-hidden="true" />
-              </li>
-            );
-          })}
-        </ol>
+        <FixList name={name} fixes={fixes} direct={direct} crossings={crossings} onDirect={onDirect} onOpen={onOpen} />
       </CollapsibleContent>
     </Collapsible>
   );

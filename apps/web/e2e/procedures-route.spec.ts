@@ -123,9 +123,12 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   await openTab(page, "Nav Log");
   await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
-  const approach = kdlh.locator("[data-testid=procedure-kind][data-kind=approach]");
+  // A procedure picked is a light blue pill opening its fixes, the button to pick another at their head (the owner, 2026-11-20).
+  const approach = kdlh.locator("[data-testid=procedure-pill][data-kind=approach]");
   await expect(approach).toContainText("ILS 09 · DLH", { timeout: slow(20000) });
   await approach.click();
+  await expect(kdlh.getByTestId("procedure-pill-fixes").getByTestId("fix-branch-row").first()).toBeVisible();
+  await kdlh.locator("[data-testid=procedure-pill-fixes] [data-testid=procedure-kind]").click();
   const menu = page.getByTestId("procedure-menu");
   await expect(menu.getByTestId("procedure-menu-direct")).toContainText("As charted");
   await menu.getByTestId("procedure-menu-direct").click();
@@ -137,14 +140,15 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   await openTab(page, "Nav Log");
   await openRoute(page);
   await expect(approach).toContainText("ILS 09 · direct FAKER");
-  // Back as charted.
-  await approach.click();
+  // Back as charted: its fixes still open under the pill, from the button
+  // at their head.
+  await kdlh.locator("[data-testid=procedure-pill-fixes] [data-testid=procedure-kind]").click();
   await menu.getByTestId("procedure-menu-direct").click();
   await menu.getByTestId("procedure-menu-direct-fix").filter({ hasText: "As charted" }).click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
 });
 
-test("a procedure picked is its short name's chip on its field's line, and its fixes are sent direct to or given an altitude from the map", async ({
+test("a procedure picked is its short name's light blue pill on its field's line, and its fixes are sent direct to or given an altitude from the map", async ({
   page,
 }) => {
   // The owner's two-row timeline (2026-11-17): a picked procedure is its
@@ -166,9 +170,12 @@ test("a procedure picked is its short name's chip on its field's line, and its f
   await settle(page);
   await openTab(page, "Nav Log");
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
-  const chip = kdlh.locator("[data-testid=procedure-kind][data-look=chip]");
+  const chip = kdlh.locator("[data-testid=procedure-pill][data-kind=approach]");
   await expect(chip).toContainText("ILS 09", { timeout: slow(20000) });
-  // No branch of fixes on the ground: the chips are the line's all.
+  // Its fixes folded until the pill is tapped (the owner, 2026-11-20), and
+  // no branch of FixBranch's on the timeline.
+  await expect(chip).toHaveAttribute("aria-expanded", "false");
+  await expect(kdlh.getByTestId("procedure-pill-fixes")).toHaveCount(0);
   await expect(kdlh.getByTestId("fix-branch")).toHaveCount(0);
   // FAKER's card from the map: direct to it, then as charted again.
   await grabberTo(page, "peek");

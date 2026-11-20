@@ -509,8 +509,12 @@ off by default (the owner, 2026-11-13).
    a point and its menu's Remove takes a stop out, the plan's toast Undo
    putting either back. A tap on a field's
    line opens it, one at a time: its wind at the left and elevation at the
-   right, then one row of runway and procedure chips (a picked one its
-   short name, "ILS 26 ⌄"), wrapping where they do not fit; the map centres
+   right, then one row of runway and procedure chips, wrapping where they
+   do not fit: a procedure picked is a light blue pill of its short name,
+   "ILS 26 ⌄", which opens its fixes under the chips in the order they are
+   flown, each with its altitude and Direct To, the button to pick another
+   at their head (the owner, 2026-11-20; `TimelineProcedure`, `FixList`);
+   the map centres
    it above the sheet and shows the route's points alone (the chart and
    the TFRs kept; lib/map/routeOnly). My Location and a waypoint open
    nothing; a closed field or an unknown point says why in red under its
