@@ -92,7 +92,14 @@ export default function FigureStrip({
         style={room}
         data-testid={testId}
       >
-        {figures.map((f) => {
+        {figures.map((f, i) => {
+          // The first figure flush with the strip's leading edge and the
+          // last with its trailing one, the rest centred in their columns,
+          // so the figures span the sheet's whole width (the owner,
+          // 2026-11-20: "Why aren't we using the full width for the figures
+          // at the bottom?"), where each centred in its fifth left the ends
+          // inset. Not in the two-column stack of a narrow strip.
+          const edge = figures.length > 2 && (i === 0 ? "start" : i === figures.length - 1 ? "end" : null);
           const button = tap?.(
             f,
             <>
@@ -120,7 +127,14 @@ export default function FigureStrip({
           return (
             // Each column a container, so the figure's size is worked out
             // from its own width (FIT's 100cqi), the same in every column.
-            <div key={f.name} className="@container min-w-0 text-center">
+            <div
+              key={f.name}
+              className={cn(
+                "@container min-w-0 text-center",
+                edge === "start" && "@min-[16rem]/figures:text-left",
+                edge === "end" && "@min-[16rem]/figures:text-right",
+              )}
+            >
               {/* Its names and units a grey that reads on the pill's glass
                   over any chart (WCAG's 4.5:1), where the muted one did not;
                   its names in sentence case, short words ("Distance"), not a
@@ -146,6 +160,8 @@ export default function FigureStrip({
                   // A figure that is not a button said wrong in red, its
                   // mark before it (a destination not known, TripFigures).
                   !button && f.alert && "inline-flex w-full items-baseline justify-center text-destructive",
+                  !button && f.alert && edge === "start" && "@min-[16rem]/figures:justify-start",
+                  !button && f.alert && edge === "end" && "@min-[16rem]/figures:justify-end",
                 )}
                 data-testid={f.testId}
                 data-alert={(!button && f.alert) || undefined}

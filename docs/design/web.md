@@ -1006,7 +1006,11 @@ Edit and Done.
    plan's figures and their taps given it by `features/navlog`'s
    `TripFigures` (`FlightLine` until 2026-11-17), its last column "GPS
    alt" whenever own ship has a fix (`features/navlog/gpsFigure`, "—"
-   with no altitude in it; 2026-11-20). The figures are always
+   with no altitude in it; 2026-11-20). The first figure sits flush with
+   the strip's leading edge and the last with its trailing one, the rest
+   centred in their equal columns, so the strip spans the sheet's width
+   (the owner, 2026-11-20: "Why aren't we using the full width for the
+   figures at the bottom?"). The figures are always
    exact and fitted as iOS fits a label to its width
    (`adjustsFontSizeToFitWidth`, `minimumScaleFactor` 0.7, the owner's pick of 2026-11-17): all of them
    set smaller together where the widest does not fit its column, never
