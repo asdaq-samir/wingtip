@@ -632,7 +632,7 @@ off by default (the owner, 2026-11-13).
 
 - **One round toggle button turns the page** (the owner, 2026-11-13), at
   the end of the sheet's first row on both pages, after the search's
-  field on Search and FPL's bar on FPL, a 36-point disc in the field's
+  field on Search and FPL's bar on FPL, a 44-point disc in the field's
   white, eight after the bar, the bar the same size on both: where the
   account button was, the two swapped (the owner, 2026-11-14: "Swap the
   fpl toggle and account buttons"). The account button took its place

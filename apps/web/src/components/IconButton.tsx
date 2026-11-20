@@ -9,9 +9,10 @@ type Props = ComponentProps<typeof Button> & {
   label: string;
   /** A round pane of glass, as Maps' buttons are on iOS 26: the console's
    *  gear, every panel's close (CloseButton), Share, Refresh, a row's
-   *  "⋯". The stock Button's glass variant at its icon size (36 points),
-   *  made round, with a finger's 44 round it (index.css's pseudo-element),
-   *  the glyph the caller's at 20 (`size-5`). */
+   *  "⋯". The stock Button's glass variant, made round at 44 points, the
+   *  size of iOS 26's glass buttons in a sheet's head (the owner,
+   *  2026-11-20: "let's do what Apple does"), the glyph the caller's at
+   *  20 (`size-5`). */
   round?: boolean;
 };
 
@@ -38,7 +39,9 @@ type Props = ComponentProps<typeof Button> & {
  * nothing to a sighted pilot on a phone.
  */
 export default function IconButton({ round = false, ...given }: Props) {
-  const props = round ? { variant: "glass" as const, ...given, className: cn("shrink-0 rounded-full", given.className) } : given;
+  const props = round
+    ? { variant: "glass" as const, size: "icon-round" as const, ...given, className: cn("shrink-0 rounded-full", given.className) }
+    : given;
   // Its tooltip is on the popups' chunk (popupsChunk): until that is in,
   // the button alone, named the same.
   const popups = usePopups();

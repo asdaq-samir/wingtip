@@ -24,9 +24,9 @@ import { keepPlanButton, noteFocus, takeFocus, usePageToggle } from "./sheet/pag
  * mode it switches to: on Search FPL's route glyph, on FPL the magnifier.
  * The stock Toggle (Base UI's, ui/toggle), never pressed -- a tap goes
  * somewhere, it turns nothing on -- so to a screen reader it is a button
- * whose name says where it goes. A 36-point disc in the field's own fill,
- * as the account button was, its 44-point area a pseudo-element, never a
- * bigger button. Not drawn while the pages cannot be turned (flying).
+ * whose name says where it goes. A 44-point disc in the field's own fill,
+ * as iOS 26's round buttons are (the owner, 2026-11-20: "let's do what
+ * Apple does"), its own 44 its hit area. Not drawn while the pages cannot be turned (flying).
  */
 export default function PageToggle({ page }: { page: 0 | 1 }) {
   const pages = usePageToggle((s) => s.pages);
@@ -68,7 +68,7 @@ export default function PageToggle({ page }: { page: 0 | 1 }) {
       data-testid="sheet-page-toggle"
       data-shows={onSearch ? 1 : 0}
       // FPL's ✕ in the text's colour, as Share's beside it and a card's ✕.
-      className={`relative size-9 shrink-0 rounded-full p-0 after:absolute after:-inset-1 after:rounded-full after:content-[''] print:hidden ${onSearch ? "text-tint" : "text-foreground"} ${PANEL_FIELD_FILL}`}
+      className={`relative size-11 shrink-0 rounded-full p-0 print:hidden ${onSearch ? "text-tint" : "text-foreground"} ${PANEL_FIELD_FILL}`}
     >
       <Glyph className="size-5" strokeWidth={1.75} aria-hidden="true" />
     </Toggle>

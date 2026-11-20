@@ -18,14 +18,14 @@ import { TEXT } from "../../../lib/text";
  * search field's 46, so the ✕ stands where the search's toggle does.
  *
  * Three columns, the two rows in the middle: either side a round button's
- * 36 points, so the title stays in the row's middle whether Share is there
+ * 44 points, so the title stays in the row's middle whether Share is there
  * or not (its slot kept, empty). In a row too narrow for all the pills --
  * a local flight's date and time, a 320-point phone -- the airplane's pill
  * gives way first (navlog's pillLook).
  */
 export default function FplBar({ share, strip }: { share?: ReactNode; strip?: ReactNode }) {
   return (
-    <div className="grid w-full grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-2">
+    <div className="grid w-full grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-2">
       <div className="flex justify-start">{share}</div>
       <div className="flex min-w-0 flex-col items-center" data-testid="fpl-head">
         <h2

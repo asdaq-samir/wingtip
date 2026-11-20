@@ -54,6 +54,9 @@ const buttonVariants = cva(
         "icon-xs": "size-6 rounded-[min(var(--radius-md),8px)] in-data-[slot=button-group]:rounded-md [&_svg:not([class*='size-'])]:size-3",
         "icon-sm": "size-8 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-md",
         "icon-lg": "size-10",
+        // The round glass buttons (IconButton's `round`): 44 points, as
+        // iOS 26's glass buttons in a sheet's head are.
+        "icon-round": "size-11",
         // The app's own: words in a line of words, tapped as a link is (a
         // strip's "Show my position", a figure that opens its sheet) -- no
         // height, padding, gap or edge of its own, the text's size and
