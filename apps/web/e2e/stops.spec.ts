@@ -249,15 +249,16 @@ test("a stop is left again at the time picked on its Depart step, 30 minutes aft
   const leaves = sideDrawer(page).getByTestId("depart-date-KMSN");
   await expect(leaves).toBeVisible({ timeout: slow(30_000) });
   await expect(sideDrawer(page).getByTestId("ground-menu")).toHaveCount(0);
+  // The time it leaves, in minutes; none while the nav log is being worked
+  // out again after an edit (the row is drawn then without its time), so a
+  // poll waits for it rather than failing on the gap.
   const at = async () => {
-    const [h, m] = (await leaves.innerText())
-      .match(/(\d\d):(\d\d)/)!
-      .slice(1)
-      .map(Number);
-    return h! * 60 + m!;
+    const time = (await leaves.innerText()).match(/(\d\d):(\d\d)/);
+    return time ? Number(time[1]) * 60 + Number(time[2]) : null;
   };
   const hhmm = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
-  const planned = await at();
+  await expect.poll(at).not.toBeNull();
+  const planned = (await at())!;
   // A quarter of an hour later: 45 minutes on the ground in the address.
   await inSheet(page, leaves);
   await leaves.click();

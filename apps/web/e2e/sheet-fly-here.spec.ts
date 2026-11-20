@@ -69,11 +69,17 @@ test("Fly Here from the map over a route, from Search at the pill", async ({ pag
   await grabberTo(page, "half");
   await toggle(page).tap();
   await grabberTo(page, "peek");
-  // Cedar Rapids, towered: drawn with the whole route in sight, clear of
-  // its line. Dubuque, nearer the line, is no longer drawn at the pill's
-  // zoom (6.2) beside the bigger fields round it.
-  await tapAirportOnMap(page, "KCID");
-  await flyHere(page, "KCID");
+  // A Class C field, drawn with the whole route in sight and clear of its
+  // line, inside the box CI's overlay tiles are cut to (41.4 to 43.4 N,
+  // 91.5 to 87.2 W; scripts/build/e2e-overlay-tiles.sh), where the marks
+  // are the tiles' alone: Cedar Rapids and Rochester, west and north of
+  // it, were drawn only on the Mac's whole-country tiles, never in CI.
+  // A phone's pill fits the route at zoom 6.2, where Quad City is the one
+  // field of the box still drawn; a desktop's wider window fits it a level
+  // closer in, its foot north of Quad City, with Rockford beside the panel.
+  const field = (page.viewportSize()?.width ?? 0) >= 768 ? "KRFD" : "KMLI";
+  await tapAirportOnMap(page, field);
+  await flyHere(page, field);
   await grabberTo(page, "half");
   await expectPlanLive(page);
 });

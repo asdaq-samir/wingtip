@@ -26,7 +26,9 @@ export default function ThreeDButton() {
         aria-label={on ? "Show in 2D" : "Show in 3D"}
         data-testid="map-3d-button"
         className={cn(
-          "relative size-9 rounded-full font-semibold text-foreground after:absolute after:-inset-1 after:rounded-full after:content-['']",
+          // The area square, as the account button's under it: round, its
+          // corners were the glass's, not the button's (the iOS audit's P1).
+          "relative size-9 rounded-full font-semibold text-foreground after:absolute after:-inset-1 after:content-['']",
           "aria-pressed:bg-transparent data-pressed:text-tint",
           TEXT.detail,
         )}

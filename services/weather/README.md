@@ -60,4 +60,5 @@ three of its idle intervals or past its own validity.
 
 The image is built FROM wingtip's base (`services/Dockerfile.base`) and
 copies `services/planner/wingtip` beside `app`. Production runs it from
-`infra/docker-compose.prod.yml` held to 384 MB.
+`infra/docker-compose.prod.yml` held to 768 MB (the model weather's
+timeline, fetched afresh, takes it to about 565 MB on x86).

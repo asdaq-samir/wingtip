@@ -9,6 +9,7 @@ import {
   openAccount,
   openSidebar,
   openMapSettings,
+  mapLook,
   pickControl,
   settle,
   settled,
@@ -199,7 +200,10 @@ test("The Map card's Look is four tiles in the layers' grid, each its value unde
   await page.goto("/app/plan");
   await settle(page);
   await openMapSettings(page);
-  const look = page.getByTestId("map-look");
+  // The Map card opens at half as every card does, its Look under the
+  // half's edge, where a card's body does not scroll (rules.md, "Detents"
+  // and "Grow, then scroll"): pulled up into sight, as pickControl does.
+  const look = await mapLook(page);
   await expect(look.getByTestId("brand-select")).toHaveAccessibleName(/^Theme: /);
   await expect(look.getByTestId("theme-select")).toHaveAccessibleName(/^Appearance: /);
   await expect(look.getByTestId("sunlight-select")).toHaveAccessibleName(/^Sunlight: /);
@@ -211,5 +215,5 @@ test("The Map card's Look is four tiles in the layers' grid, each its value unde
   await page.reload();
   await settle(page);
   await openMapSettings(page);
-  await expect(page.getByTestId("map-look").getByTestId("own-ship-select")).toHaveAccessibleName("Own Ship: Jet");
+  await expect((await mapLook(page)).getByTestId("own-ship-select")).toHaveAccessibleName("Own Ship: Jet");
 });

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, settle, showSearch, sideDrawer } from "./helpers";
+import { grabberTo, inSheet, settle, showSearch, sideDrawer } from "./helpers";
 import { ownHomeBase } from "./oneSearch";
 
 // Apple Maps' Favorites row has one Add at its end: the airports, then the
@@ -43,6 +43,11 @@ test("the Favorites' Add, Airplane, asks the one search for one, and the one pic
   await settle(page);
   await showSearch(page);
   const row = page.getByTestId("pill-favorites-row");
+  // Half way the Favorites are under the sheet's edge, below Nearest and
+  // Find Nearby, where a row is reached by pulling the sheet up, not by
+  // scrolling (the owner, 2026-11-05; inSheet): the first test goes all the
+  // way up for the same reason.
+  await inSheet(page, row.getByTestId("pill-favorite-add"));
   await row.getByTestId("pill-favorite-add").click();
   await page.getByTestId("pill-favorite-add-airplane").click();
   const search = page.getByTestId("search-airports");

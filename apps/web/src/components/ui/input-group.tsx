@@ -107,12 +107,16 @@ function InputGroupText({ className, ...props }: React.ComponentProps<"span">) {
   );
 }
 
+// The group draws the focus ring round itself, so its input has none -- nor
+// the Input's white ring offset, which ring-0 leaves drawn: round the
+// N-number's input, taller than its pill for a finger, it showed a square
+// white box outside the rounded pill on the iPhone (the owner, 2026-11-19).
 function InputGroupInput({ className, ...props }: React.ComponentProps<"input">) {
   return (
     <Input
       data-slot="input-group-control"
       className={cn(
-        "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 aria-invalid:ring-0 dark:bg-transparent",
+        "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 aria-invalid:ring-0 dark:bg-transparent",
         className,
       )}
       {...props}

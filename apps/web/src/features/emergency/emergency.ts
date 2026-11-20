@@ -34,15 +34,23 @@ type Mayday = EngineAnswer<"mayday_call">;
  *  the engine's EMERGENCY_PHASES). */
 const ENGINE_FAILURE = "Engine failure in flight";
 
+type PlannerField = EmergencyFields["fields"][number];
+
 /** The fields ranked from own ship, in "glide" mode: the airplane's
- *  figures as the planner sent them (none: the glide is not guessed). */
+ *  figures as the planner sent them (none: the glide is not guessed).
+ *  `picked`, the field the pilot picked, is ranked with them even where
+ *  the planner's newer answer, asked from further on, no longer lists it:
+ *  its record from the answer that did, its course, reach and reasons
+ *  worked out afresh from own ship like every other's. */
 export function bestFields(
   data: EmergencyFields,
   fix: Pick<Fix, "lat" | "lon" | "altitudeFt" | "speedKt">,
   variationDeg: number | null,
+  picked: PlannerField | null = null,
 ): BestFields {
-  const fields = engineFields(data);
-  return ranked(fields, data.airplane ?? null, data.wind ?? null, fix, variationDeg);
+  const listed = !picked || data.fields.some((f) => f.ident === picked.ident);
+  const fields = engineFields(listed ? data : { ...data, fields: [...data.fields, picked] });
+  return ranked(fields, data.airplane ?? null, data.wind ?? null, fix, variationDeg, picked?.ident ?? null);
 }
 
 /** The same from the fields the browser keeps (lib/fieldsOnDevice), when
@@ -60,15 +68,36 @@ export function bestFieldsOnDevice(
     null,
     fix,
     variationDeg,
+    null,
   );
 }
 
+/** The engine's order, its best few; and the field the pilot picked kept
+ *  at the foot where it is not among them, so the list never loses it as
+ *  own ship flies on, nor the line and the MAYDAY go on to another field
+ *  the pilot did not pick. A closed field the engine drops still goes
+ *  (decision 0043). */
 function ranked(
   fields: EngineInput<"best_fields">["fields"],
   airplane: EmergencyFields["airplane"] | null,
   wind: EmergencyFields["wind"] | null,
   fix: Pick<Fix, "lat" | "lon" | "altitudeFt" | "speedKt">,
   variationDeg: number | null,
+  picked: string | null,
+): BestFields {
+  const best = rankedOf(fields, airplane, wind, fix, variationDeg, null);
+  if (!picked || best.fields.some((f) => f.ident === picked)) return best;
+  const own = rankedOf(fields, airplane, wind, fix, variationDeg, fields.length).fields.find((f) => f.ident === picked);
+  return own ? { ...best, fields: [...best.fields, own] } : best;
+}
+
+function rankedOf(
+  fields: EngineInput<"best_fields">["fields"],
+  airplane: EmergencyFields["airplane"] | null,
+  wind: EmergencyFields["wind"] | null,
+  fix: Pick<Fix, "lat" | "lon" | "altitudeFt" | "speedKt">,
+  variationDeg: number | null,
+  limit: number | null,
 ): BestFields {
   const input: EngineInput<"best_fields"> = {
     mode: "glide",
@@ -88,6 +117,7 @@ function ranked(
         }
       : null,
     fields,
+    limit,
   };
   return callEngine("best_fields", input);
 }

@@ -15,6 +15,12 @@ import { stopsAre } from "./stopsParam";
 // change: a menu out hides the page from the role queries.
 async function touchHold(page: Page, from: Locator, to: Locator) {
   const middle = async (pill: Locator) => {
+    // Brought to the middle of the sheet first, as a finger scrolls to it:
+    // the open route's field is under its airport cards since one route
+    // layout (decision 0047, 2026-11-17), so on a phone its
+    // pills start below the fold, behind the floating bar's Brief and Nav
+    // Log, where a touch landed on Nav Log and no menu opened.
+    await pill.evaluate((el) => el.scrollIntoView({ block: "center", inline: "center" }));
     // The box the poll found, not a second measure after it: the pill
     // drawn again between the two (the address just changed) measured
     // null the second time, now and then. And the same twice a tenth of

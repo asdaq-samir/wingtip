@@ -55,7 +55,13 @@ test("studio: a day of an airplane replays in the chase camera, its data block a
   await expect(time).not.toHaveText(before ?? "");
   await expect(page.getByTestId("replay-data-block")).toContainText("Press alt");
   await expect(page.getByTestId("replay-data-vs")).toHaveText(/fpm|Level/);
-  // Another camera from the menu.
+  // Another camera from the menu, the replay held: played on, each frame
+  // of the chase view is a whole 3D redraw, a second or more on CI's
+  // SwiftShader, and the menu's open and pick waited on several, past the
+  // test's two minutes (run 44621875032).
+  const play = page.getByTestId("studio-timeline-play");
+  await play.click();
+  await expect(play).toHaveAttribute("aria-pressed", "false");
   await page.getByTestId("studio-camera").click();
   await page.getByTestId("studio-camera-orbit").click();
   await expect(page.locator("[data-replay-camera='orbit']")).toBeAttached();

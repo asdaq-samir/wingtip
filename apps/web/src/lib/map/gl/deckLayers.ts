@@ -43,7 +43,15 @@ export function useDeckLayers(key: string, layers: Layer[]) {
   useEffect(() => {
     let h = held.get(map);
     if (!h) {
-      h = { overlay: new MapLibreOverlay({ interleaved: true, layers: [] }), sets: new Map() };
+      // No picking but the map's one tap's (useDeckTap, which turns it on
+      // for its own pick): nothing of ours hovers, clicks or drags through
+      // deck.gl, and its own pointer handling picked under the pointer at
+      // every move and press, a readPixels each that waits for the whole
+      // 3D frame. On a software renderer a drag across the 3D airspace
+      // took 40 s, 6.9 of them in that wait (airspace-3d.spec on CI).
+      // deck.gl's `_pickable` (DeckProps, experimental) is the switch.
+      const overlay = new MapLibreOverlay({ interleaved: true, layers: [], _pickable: false });
+      h = { overlay, sets: new Map() };
       held.set(map, h);
       map.addControl(h.overlay as unknown as IControl);
     }
@@ -90,8 +98,16 @@ export function useDeckTap(layerIds: string[], reach: number, rank: number, onTa
         rank,
         onTap: (f, e) => handler(f, e),
         find: (point) => {
-          const info = held.get(map)?.overlay.pickObject({ x: point.x, y: point.y, radius: reach, layerIds: ids.split(",") });
-          return (info?.object as MapGeoJSONFeature | undefined) ?? null;
+          const overlay = held.get(map)?.overlay;
+          if (!overlay) return null;
+          // Picking on for this pick alone (useDeckLayers keeps it off).
+          overlay.setProps({ _pickable: true });
+          try {
+            const info = overlay.pickObject({ x: point.x, y: point.y, radius: reach, layerIds: ids.split(",") });
+            return (info?.object as MapGeoJSONFeature | undefined) ?? null;
+          } finally {
+            overlay.setProps({ _pickable: false });
+          }
         },
       }),
     [map, addTap, ids, reach, rank],

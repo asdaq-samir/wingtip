@@ -151,16 +151,22 @@ pub fn condition(mut reports: Vec<Report>, gap_s: f64) -> Vec<Sample> {
 /// The climb or descent at report `i`, ft/min: the slope of a straight
 /// line fitted (least squares) through the heights reported within
 /// VS_SPAN_S each side in its run, which reads a steady climb's rate
-/// through the 25 ft steps even at a run's ends; None where it has no
-/// height or no neighbour to read a change from.
+/// through the 25 ft steps even at a run's ends; with none other in the
+/// span, the reports either side in its run; None where it has no height
+/// or no neighbour to read a change from.
 fn vertical_speed(reports: &[Report], run: &[usize], i: usize) -> Option<f64> {
     reports[i].alt_ft?;
-    let near: Vec<(f64, f64)> = reports
-        .iter()
-        .zip(run)
-        .filter(|(r, k)| **k == run[i] && (r.t - reports[i].t).abs() <= VS_SPAN_S)
-        .filter_map(|(r, _)| Some((r.t - reports[i].t, r.alt_ft?)))
-        .collect();
+    // The heights in its run, as (s from report i, ft).
+    let heights = || reports.iter().zip(run).filter(|(_, k)| **k == run[i]).filter_map(|(r, _)| Some((r.t - reports[i].t, r.alt_ft?)));
+    let mut near: Vec<(f64, f64)> = heights().filter(|p| p.0.abs() <= VS_SPAN_S).collect();
+    // Level in cruise readsb keeps a point only every 20 s or so, wider
+    // than the span: there the reports either side of it are read, which
+    // the run holds within GAP_S, rather than no climb at all.
+    if near.len() < 2 {
+        let before = heights().rfind(|p| p.0 < -VS_SPAN_S);
+        let after = heights().find(|p| p.0 > VS_SPAN_S);
+        near.extend(before.into_iter().chain(after));
+    }
     if near.len() < 2 {
         return None;
     }
@@ -282,6 +288,14 @@ mod tests {
         let s = condition(reports, GAP_S);
         let vs = s[20].vs_fpm.unwrap();
         assert!((vs - 500.0).abs() < 40.0, "{vs}");
+    }
+
+    #[test]
+    fn level_reports_twenty_seconds_apart_read_level_not_unknown() {
+        // readsb's cruise: a point every 20 s, wider than VS_SPAN_S each side.
+        let reports: Vec<Report> = (0..6).map(|i| at(i as f64 * 20.0, Some(35000.0))).collect();
+        let s = condition(reports, GAP_S);
+        assert!(s.iter().all(|x| x.vs_fpm == Some(0.0)), "{:?}", s.iter().map(|x| x.vs_fpm).collect::<Vec<_>>());
     }
 
     #[test]

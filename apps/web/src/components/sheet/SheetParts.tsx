@@ -6,6 +6,7 @@ import { AT_PILL, EDGE_ROOM, HOLD_AT_EDGE, PILL_BODY, RISEN_FACE } from "./inset
 import { SheetPage } from "./SheetPages";
 import type { SheetPages } from "../../lib/sheetPages";
 import { PointerTapDiv } from "./PointerTapDiv";
+import { bandFits } from "./bandFits";
 
 /** The first row's room under the grabber: ten points, the grabber's bar
  *  in it four from the edge. */
@@ -224,6 +225,8 @@ export function SheetParts(p: PartsProps) {
     >
       <PointerTapDiv
         data-head-band=""
+        // In the flow while taller than the scroller (bandFits), where sticking it hid the body.
+        ref={bandFits}
         style={vars}
         // Risen from a pill that is a row of it (FPL's figures, held at the
         // foot), a tap on that row raises the sheet to half, as on the foot.
@@ -234,7 +237,7 @@ export function SheetParts(p: PartsProps) {
         // phone only settled all the way up, solid below (SOLID_BAND) and
         // while it moves (FULL_BAND).
         className={cn(
-          "sticky top-0 flex shrink-0 flex-col",
+          "sticky top-0 flex shrink-0 flex-col data-band-tall:static",
           !atPill ? cn("z-20", !p.onPhone ? "frost-head" : size !== "full" ? SOLID_BAND : FULL_BAND) : rises && RISEN_BAND,
         )}
       >

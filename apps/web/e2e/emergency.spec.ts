@@ -24,6 +24,15 @@ async function flying(page: Page) {
   await expect(start).toBeVisible({ timeout: slow(60_000) });
   await pressDryRunStart(page, start);
   await expect(page.getByTestId("flying-head")).toBeVisible({ timeout: slow(10_000) });
+  // Held where it is, still in flight: flown on at the dry run's 50 times,
+  // the best fields were ranked again between a row read and the tap or
+  // key that acted on it, and the app rightly went by the new order --
+  // Direct To flew to 50IL where the row had read 3LL4, a second field
+  // picked by name was another by the click (CI, and here with the browser
+  // held to 1.5 cores, 4 of 24 runs of this file and flight-critical.spec).
+  const play = sideDrawer(page).getByTestId("dry-run-play");
+  await play.click();
+  await expect(play).toHaveAttribute("aria-pressed", "false");
 }
 
 test("in flight, Emergency opens the best fields, the squawk and the MAYDAY", { tag: "@smoke" }, async ({ page }) => {
@@ -46,9 +55,8 @@ test("in flight, Emergency opens the best fields, the squawk and the MAYDAY", { 
   await expect(call).toContainText("[people on board]");
   await sheet.getByTestId("emergency-souls").fill("2");
   await expect(call).toContainText("2 people on board");
-  // A second field picked: the call's intentions follow it.
-  // By its name: the list is ranked again as own ship flies on, and the
-  // field picked may move in it.
+  // A second field picked: the call's intentions follow it. By its name,
+  // as the list is ranked again as own ship moves.
   const second = sheet.getByTestId("emergency-field").nth(1);
   if (await second.count()) {
     const name = (await second.locator(".font-semibold").first().textContent())!;
@@ -165,10 +173,17 @@ test("each field's row says its reported visibility, and none where the report g
   const said = sheet.getByTestId("emergency-field-visibility");
   await expect(said).toHaveCount(1);
   await expect(said).toHaveText("Visibility 10+ sm");
+  // The fields are asked for again as own ship moves, so one may be on its
+  // way through the callback above as the test ends: let it go quietly, or
+  // Playwright counts its route.fetch against the run (the night of
+  // 2026-11-19, "1 error was not a part of any test").
+  await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
 test.describe("from the search, where the pilot is", () => {
-  test.use({ geolocation: { latitude: 42.3246, longitude: -88.0741 }, permissions: ["geolocation"] });
+  // A finger's tap on the search's row (row.tap), so the page has touch:
+  // the mobile and desktop projects have none of their own.
+  test.use({ geolocation: { latitude: 42.3246, longitude: -88.0741 }, permissions: ["geolocation"], hasTouch: true });
 
   test("Emergency opens at its size: Direct To and the fields come into the room held for them", async ({ page }) => {
     await installFrameRecorder(page);

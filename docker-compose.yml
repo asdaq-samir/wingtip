@@ -438,10 +438,16 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
       TRACING: ${TRACING:-}
       OTEL_SERVICE_NAME: weather
-    # Python, the engine, and a GLMP issue's two grids at their largest
-    # while it reads them: well under this, which keeps it from crowding
-    # the planner (infra/docker-compose.prod.yml has the same).
-    mem_limit: 384m
+    # Python, the engine, a GLMP issue's two grids and the model
+    # weather's timeline (app.flow) fetched afresh into an empty store:
+    # CI's own x86 image (under emulation, no swap) held 374 MB after its
+    # first round and peaked at 565 MB with its file cache, and at 384 MB
+    # the kernel killed it before the timeline was in. So it was on CI's
+    # runners without swap, restarted each minute, the TFRs and the
+    # timeline never stored and the browser suite reading their failures
+    # (run 44566705876). Still well short of crowding the planner
+    # (infra/docker-compose.prod.yml has the same).
+    mem_limit: 768m
     healthcheck:
       <<: *python-healthcheck
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]

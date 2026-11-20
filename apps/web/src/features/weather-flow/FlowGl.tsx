@@ -20,6 +20,7 @@ import { FlowPins } from "./FlowPins";
 import { fileOf, levelShown } from "./flowLevels";
 import { STREAK_RAMP, hasStreaks, lookOf, streaksAt, type ShownField } from "./flowLook";
 import { pictureQuery, useFlowTexture } from "./flowTexture";
+import { softwareGl } from "../../lib/map/gl/softwareGl";
 import { useWeatherFlow, type FlowFrame, type FlowLayer } from "./useWeatherFlow";
 
 /** A streak's width, CSS pixels: a hairline, as Apple's are. */
@@ -56,8 +57,8 @@ function usePageShown() {
  * route and the airspace stay on top. A chunk of its own, loaded only
  * once the layer is turned on.
  *
- * Under Reduce Motion the streaks are still arrows (GridLayer's), and
- * nothing moves; in a hidden tab the streaks stop. For an hour already
+ * Under Reduce Motion, and on a software renderer (softwareGl), the
+ * streaks are still arrows (GridLayer's), and nothing moves; in a hidden tab the streaks stop. For an hour already
  * past, the precipitation is the radar's mosaic, observed, in place of
  * the model's. With it, the legend (top left, its close and its field
  * menu), the timeline (above the sheet), the value bubble and, on the
@@ -84,7 +85,12 @@ export default function FlowGl() {
   const windTexture = useFlowTexture(frame, windFile, streaks);
   const worldTexture = useFlowTexture(frame, "world", world);
   const shown = usePageShown();
-  const [reduced] = useState(prefersReducedMotion);
+  // Still arrows in place of the moving streaks under Reduce Motion, and
+  // where WebGL has no graphics chip under it: there the streaks, half a
+  // million segments a frame, took four seconds a frame at a desktop's
+  // size and the page stopped answering a tap (weather-flow.spec on CI's
+  // software renderer).
+  const [reduced] = useState(() => prefersReducedMotion() || softwareGl());
   const phone = map.getContainer().clientWidth < 640;
 
   // The next hour's pictures fetched ahead, so play steps without a wait.

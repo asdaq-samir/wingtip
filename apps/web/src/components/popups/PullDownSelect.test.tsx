@@ -32,7 +32,9 @@ describe("PullDownSelect", () => {
     const trigger = screen.getByTestId("aloft");
     expect(trigger.getAttribute("aria-label")).toBe("Time aloft: 1h");
     expect(trigger.getAttribute("aria-haspopup")).toBe("listbox");
-    expect(trigger.textContent).toContain("1h");
+    // Its words and the chevron, nothing else: Base UI's Select.Icon
+    // brings a "▼" of its own, once held as text in the chevron's svg.
+    expect(trigger.textContent).toBe("1h");
     fireEvent.click(trigger);
     const list = await screen.findByRole("listbox");
     expect(list.getAttribute("aria-label")).toBe("Time aloft");

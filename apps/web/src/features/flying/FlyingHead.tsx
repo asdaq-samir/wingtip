@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { cn } from "cn";
 import { GLASS } from "../../lib/mapChrome";
 import { Button } from "../../components/ui/button";
@@ -126,8 +126,25 @@ export default function FlyingHead({ run, rows, line }: { run: DryRun | null; ro
 /** The head's glass at the map's top. Off the route (`off`) it is
  *  Emergency alone, at the right, as wide as it. */
 function Head({ off = false, children }: { off?: boolean; children: ReactNode }) {
+  // Its height for the map's banners (MapBanners), which stand under it
+  // at a phone's top: in the same place, the copilot's message was drawn
+  // under the head, its words and its OK covered (copilot.spec). Measured,
+  // as the pilot's text size sets it.
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    const root = document.documentElement.style;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const watch = new ResizeObserver(() => root.setProperty("--flying-head-h", `${el.offsetHeight}px`));
+    watch.observe(el);
+    return () => {
+      watch.disconnect();
+      root.removeProperty("--flying-head-h");
+    };
+  }, []);
   return (
     <div
+      ref={box}
       data-testid="flying-head"
       data-off-route={off || undefined}
       className={cn(

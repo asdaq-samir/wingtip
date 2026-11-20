@@ -20,7 +20,10 @@ import type { FlowFrame, FlowLayer } from "./useWeatherFlow";
  * the field and its unit, a slim bar of the colour ramp with its marks
  * (knots, degrees, or for precipitation, the ceiling and CAPE their bands'
  * words, the engine's), and small, whose the picture is (sourceLine). Where
- * the field has levels, a menu of them beside the field's.
+ * the field has levels, a menu of them beside the field's. At a phone's
+ * top it stands under the map's banners (MapBanners' --map-banners-h),
+ * which are drawn there across it, the column's own gap between (none
+ * while there is no banner).
  */
 export function FlowLegend({
   field,
@@ -46,7 +49,7 @@ export function FlowLegend({
   const levels = levelsOf(layer, field).map((value) => ({ value, label: levelName(value) }));
   const source = sourceLine(frame, file, radar, world);
   return (
-    <div className="pointer-events-none absolute top-[max(0.5rem,env(safe-area-inset-top))] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] z-[1000] flex flex-col items-start gap-2">
+    <div className="pointer-events-none absolute top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:top-[calc(max(0.5rem,env(safe-area-inset-top))+var(--map-banners-h,0px)+min(var(--map-banners-h,0px),0.5rem))] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] z-[1000] flex flex-col items-start gap-2">
       <div className="pointer-events-auto flex items-center gap-2">
         <span className={cn(GLASS, "rounded-full p-1")}>
           <CloseButton

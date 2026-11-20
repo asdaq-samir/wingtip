@@ -84,14 +84,21 @@ export function useEmergency() {
   const index = useAirportIndex(true, true);
   const unanswered = !data && (asked.isError || noConnection(asked));
   const onDevice = unanswered && !!index && !!fix;
+  // The field the pilot picked, and its record from the last answer that
+  // listed it: asked again from further on, the planner may list it no
+  // more, and it stays in the list, picked (bestFields).
+  const [pickedIdent, pick] = useState<string | null>(null);
+  const [pickedField, keepPickedField] = useState<EmergencyFields["fields"][number] | null>(null);
+  const listed = data?.fields.find((f) => f.ident === pickedIdent);
+  if (listed && listed !== pickedField) keepPickedField(listed);
+  const keptField = pickedField?.ident === pickedIdent ? pickedField : null;
   const ranked = useMemo(() => {
     if (!fix) return null;
-    if (data) return bestFields(data, fix, variationAt(fix));
+    if (data) return bestFields(data, fix, variationAt(fix), keptField);
     if (onDevice && index) return bestFieldsOnDevice(fieldsNear(index, fix, FIELDS), keptAirplane, fix, variationAt(fix));
     return null;
-  }, [data, fix, onDevice, index, keptAirplane]);
+  }, [data, fix, onDevice, index, keptAirplane, keptField]);
 
-  const [pickedIdent, pick] = useState<string | null>(null);
   const picked = ranked?.fields.find((f) => f.ident === pickedIdent) ?? ranked?.fields[0] ?? null;
   const pickedData = data?.fields.find((f) => f.ident === picked?.ident) ?? null;
   // Each field's reported visibility, written for its row.
