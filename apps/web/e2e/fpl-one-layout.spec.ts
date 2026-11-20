@@ -5,6 +5,7 @@ import {
   emptyPlan,
   foldRoute,
   grabberTo,
+  inSheet,
   openPanel,
   openRoute,
   settle,
@@ -163,8 +164,12 @@ test.describe("/app/plan", () => {
     const direct = drawer.getByTestId("direct-strip");
     await expect(direct).toBeVisible();
     await expect(drawer).not.toContainText("POS0");
-    // Cancel gives the route back as it was.
-    await direct.getByRole("button", { name: /Cancel/ }).click();
+    // Cancel gives the route back as it was; brought into sight first, the
+    // airplane's strip over the route since FPL's title took the first row
+    // (the owner, 2026-11-19), so at half it can be under the floating bar.
+    const cancel = direct.getByRole("button", { name: /Cancel/ });
+    await inSheet(page, cancel);
+    await cancel.click();
     await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
     await expect(page).not.toHaveURL(/[?&]direct=/);
   });

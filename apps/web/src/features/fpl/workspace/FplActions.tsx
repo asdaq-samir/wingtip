@@ -1,6 +1,6 @@
 import { Suspense, useRef, type ReactNode } from "react";
 import { cn } from "cn";
-import { TEXT } from "../../../lib/text";
+import { FplStrip } from "./FplBar";
 import { PIN_AT_FOOT, usePinAtFoot } from "../../../components/sheet/pinAtFoot";
 import { CardAction as Action } from "../../../components/CardAction";
 import { ICON } from "../../../lib/icons";
@@ -75,8 +75,11 @@ export function FplActions({ vm, more }: { vm: PlanSlices<"brief" | "flight" | "
  *  edit it. */
 export function FplRoute({
   vm,
+  strip,
 }: {
   vm: PlanSlices<"brief" | "cards" | "flight" | "leg" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
+  /** The airplane's strip (RouteControls), under FPL's title. */
+  strip?: ReactNode;
 }) {
   const { panelOpen } = vm.view;
   const { dryRunning, flying } = vm.flight;
@@ -95,13 +98,9 @@ export function FplRoute({
   return (
     // The figures alone are the side panel's pill (SheetParts' DESK_PILL).
     <div className="flex w-full min-w-0 flex-1 flex-col" data-pill-row="">
-      {/* Its title over the route, as Apple Maps' "Directions" is (the
-          owner, 2026-11-19: "Maybe we can show Flight Plan title on top?"),
-          under FPL's bar, whose row keeps the search's height so a turn
-          of the page moves nothing. */}
-      <h2 className={cn("pb-2 text-center font-bold text-foreground", editing && "hidden", TEXT.heading)} data-testid="fpl-title">
-        Flight Plan
-      </h2>
+      {/* The airplane's strip under FPL's title (FplBar), as Directions has
+          its options under its own. */}
+      {strip && <FplStrip strip={strip} />}
       {/* The suggested routes' pills just above the stops, out while the
           first row's button is on (RoutesToggle; the owner, 2026-11-17:
           "Which shows route pills just above the stops"), where they were a

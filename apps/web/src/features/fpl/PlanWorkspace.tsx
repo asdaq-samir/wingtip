@@ -278,7 +278,6 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           // The suggested routes' button beside the search's, where there are some (RoutesToggle).
           bar: (
             <FplBar
-              strip={<RouteControls vm={vm} flightInputs={flightInputs} />}
               routes={routesOffered(vm) ? <RoutesToggle shown={vm.routeList.routesShown} onShown={vm.routeList.setRoutesShown} /> : null}
             />
           ),
@@ -306,7 +305,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // heads), in its one layout (the owner, 2026-11-17, decision 0047):
         // folded to its line, the figures and the Routes' chips under it, or
         // open to edit, its head over the cards in the page (FplRoute).
-        route: <FplRoute vm={vm} />,
+        route: <FplRoute vm={vm} strip={<RouteControls vm={vm} flightInputs={flightInputs} />} />,
         console: <PilotPanel />,
       })}
       {/* FPL's cards over the sheet, beside its pages, kept in flight (PlanCards). */}
