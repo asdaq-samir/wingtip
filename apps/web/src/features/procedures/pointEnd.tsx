@@ -21,7 +21,7 @@ function stopRemoval(vm: ProceduresRouteModel, ident: string, stop: boolean, ind
  * A point of the route changed, the owner's "Changeable by tapping"
  * (2026-11-17, Apple Maps' Directions as the model): the one search asked
  * for the point to put in its place, My Location first where the point is
- * an end and not it already, and the pick put there (a Direct To's start
+ * an end and the route is not at it already, and the pick put there (a Direct To's start
  * changed is a route from there; the plan's Undo takes it back). A stop
  * may be a fix, never My Location (placeAllowed); an end is an airport or
  * My Location.
@@ -34,7 +34,10 @@ function askChange(vm: ProceduresRouteModel, ident: string, index: number, stop:
     title: "Change Stop",
     query: isPosition(ident) ? undefined : ident,
     fixes,
-    position: !isPosition(ident) && !stop,
+    // Not where the route is at My Location already, at its other end
+    // (the owner, 2026-11-20: "Why show my location for destination when
+    // it's already picked for departure").
+    position: !isPosition(ident) && !stop && !vm.routePoints.some(isPosition),
     onPick: (picked) => {
       if (!sameField(picked, ident)) edit.onReplace(index, isPosition(picked) ? picked : picked.toUpperCase());
     },
@@ -101,8 +104,8 @@ export function pointEnd(
     // line, the elevation on its wind's.
     time: <PointFigures time={at.time} altitude={null} kind={kind} />,
     elevation: <PointFigures time={null} altitude={shown === null ? null : altFt(shown)} kind={kind} />,
-    // Behind a face of its own (`face`), else the "⋯"; `bare` with no face
-    // is FPL's timeline's plain "•••" at the line's end (PointMenu).
+    // Behind a face of its own (`face`; `bare`, FPL's timeline's filled
+    // mark), else the "⋯" (PointMenu).
     menu: (face: ReactNode, bare = false) => (
       <PointMenu
         face={face}

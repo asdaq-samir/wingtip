@@ -202,9 +202,8 @@ export function PointMenuItems({
  * altitude, create a fix, hold here, More Info)", "And the menu can
  * include direct to"): shadcn's DropdownMenu, its items the route box's
  * pill's (PointMenuItems). Behind a face of its own (`face`), the mark a
- * button, its 44 points a pseudo-element; `bare` with no face, FPL's
- * timeline's plain "•••" at a line's end (the owner, 2026-11-20); else the
- * "⋯" in a round glass button (IconButton round).
+ * button, its 44 points a pseudo-element (`bare`, FPL's timeline's own
+ * filled mark); else the "⋯" in a round glass button (IconButton round).
  */
 export function PointMenu({
   testId = "point-menu",
@@ -223,21 +222,7 @@ export function PointMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          !face && bare ? (
-            // FPL's timeline: the tint's "•••" alone at the line's end, no
-            // disc round it, so a stop shows it has more to it (the owner,
-            // 2026-11-20: "Stops should have ... buttons to show that there
-            // are more options"); its 44 points a pseudo-element.
-            <Button
-              variant="plain"
-              size="icon-sm"
-              aria-label={`${actions.ident}: more`}
-              data-testid={testId}
-              className="relative z-10 shrink-0 rounded-full text-tint hover:bg-transparent aria-expanded:bg-transparent after:absolute after:-inset-1.5 after:content-['']"
-            >
-              <Ellipsis className="size-5!" aria-hidden="true" />
-            </Button>
-          ) : face && bare ? (
+          face && bare ? (
             <Button
               variant="plain"
               size="icon-sm"

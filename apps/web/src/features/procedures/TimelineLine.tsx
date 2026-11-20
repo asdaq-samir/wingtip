@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Fuel, Navigation, Plane, Triangle, X } from "lucide-react";
+import { Ellipsis, Fuel, Navigation, Triangle, X } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
@@ -51,14 +51,15 @@ export interface TimelinePoint {
  * the location arrow; an airport its flight category's colour (the map's,
  * grey with no report) with an airplane, a fuel stop's the pump; a
  * waypoint a grey triangle; one that cannot be flown to the red with ✕.
- * The point's menu is the tint's plain "•••" at its line's end, no disc
- * (the owner, 2026-11-20: "Stops should have ... buttons to show that
- * there are more options"; the discs that were there were the list's
- * loudest marks, and the mark alone hid the menu). A hold on the line
- * stays the row's lift to move it (RouteGrid).
+ * An airport's glyph is "•••", not an airplane: where the list edits the
+ * route the mark is the point's menu (pointEnd's `menu`), and its dots say
+ * so (the owner, 2026-11-20: "Stops should have ... buttons to show that
+ * there are more options", "I meant replace the plane icon with three
+ * dots"); its colour still the field's flight category. A hold on the
+ * line stays the row's lift to move it (RouteGrid).
  */
 export function TimelineMark({ point, position }: { point: TimelinePoint; position: boolean }) {
-  const Glyph = point.problem ? X : position ? Navigation : !point.field ? Triangle : point.fuelStop ? Fuel : Plane;
+  const Glyph = point.problem ? X : position ? Navigation : !point.field ? Triangle : point.fuelStop ? Fuel : Ellipsis;
   return (
     <span
       className={cn(
@@ -75,11 +76,11 @@ export function TimelineMark({ point, position }: { point: TimelinePoint; positi
 }
 
 /**
- * One line of FPL's timeline (TimelineRoute): its mark, the
+ * One line of FPL's timeline (TimelineRoute): its mark (its menu), the
  * route's magenta, one solid line, down to the next, and
  * after a hairline from the text on -- iOS's inset grouped list -- its ident
  * (a tap changes it where the list edits the route, else opens its card),
- * the fuel in the tanks there, its time and its menu's "•••".
+ * the fuel in the tanks there, and its time.
  * A field's line is a stock Collapsible: a tap on it off the ident opens
  * two rows under it, its wind at the left and its elevation at the right,
  * then its runway and procedure chips (the owner, 2026-11-17: "exactly
@@ -93,7 +94,6 @@ export function TimelineLine({
   field,
   end,
   mark,
-  more,
   first,
   last,
   open,
@@ -107,9 +107,6 @@ export function TimelineLine({
   field: ProcedureAirport | undefined;
   end: ReturnType<typeof pointEnd>;
   mark: ReactNode;
-  /** The point's menu, the "•••" at its line's end, where the list edits
-   *  the route (pointEnd's `menu`). */
-  more: ReactNode;
   first: boolean;
   last: boolean;
   open: boolean;
@@ -238,7 +235,6 @@ export function TimelineLine({
           </span>
           {/* No chevron at its end (the owner, 2026-11-19: "Also remove
               the chevrons"): the line itself is the tap that opens it. */}
-          {more}
           {end.grip}
         </div>
         {/* A field it cannot land at, or a point the planner does not

@@ -33,7 +33,7 @@ const focusStops = { asked: false };
  * carries the list (RouteGrid): a hold or the grip moves a point, the
  * keyboard's and VoiceOver's moves its drag button's; a stop is taken out
  * by its menu's Remove (the plan's toast Undo puts it back);
- * the "•••" at a line's end is the point's menu (PointMenu: Change by the one search,
+ * the mark, an airport's "•••", is the point's menu (PointMenu: Change by the one search,
  * Direct To, Set Altitude, Hold, Add a Stop After, Move, Remove). A tap on
  * a field's line opens it, Base UI's Collapsible: its wind and elevation,
  * then its runway and procedure chips -- Base UI's menus (RunwayTray,
@@ -167,8 +167,7 @@ export default function TimelineRoute({
           row={row}
           field={field}
           end={end}
-          mark={mark}
-          more={edit ? end.menu(null, true) : null}
+          mark={edit ? end.menu(mark, true) : mark}
           first={i === 0 && !head}
           last={i === shown.length - 1 && !tail}
           // The browser specs' fields open at first, each its own
