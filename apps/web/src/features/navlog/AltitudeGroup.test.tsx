@@ -37,7 +37,7 @@ describe("AltitudeGroup", () => {
     expect(input.getAttribute("role")).toBeNull();
     expect(group.getAttribute("data-slot")).toBe("input-group");
     expect(group.getAttribute("aria-label")).toBe("Cruise altitude");
-    expect(group.className).toMatch(/\bh-7\b/);
+    expect(group.className).toMatch(/\bh-6\b/);
     expect(group.className).toMatch(/\brounded-full\b/);
     expect(input.value).toBe("065");
   });
