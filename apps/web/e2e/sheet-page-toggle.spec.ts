@@ -65,9 +65,10 @@ test("the toggle ends the first row on both pages, the bar before it one size, a
       };
       const up = document.querySelector('[data-testid="sheet-pages"]')!.getAttribute("data-page");
       // The page's first row's middle: the search's field on Search, FPL's
-      // title on FPL (the owner, 2026-11-19: "Flight plan should be the
-      // title under the grabber just like Directions of Apple Maps").
-      const bar = up === "0" ? '[data-sheet-page="0"] label:has([data-testid="search-airports"])' : '[data-testid="fpl-title"]';
+      // two rows on FPL, its title over its pills between Share and the ✕
+      // (the owner, 2026-11-19: "Make two rows between the close and share
+      // button").
+      const bar = up === "0" ? '[data-sheet-page="0"] label:has([data-testid="search-airports"])' : '[data-testid="fpl-head"]';
       return {
         sheet: box('[data-slot="map-panel"]'),
         bar: box(bar),
@@ -97,17 +98,18 @@ test("the toggle ends the first row on both pages, the bar before it one size, a
   // the bars are level and the same height. Their left and width are the
   // page's own: the search's field fills to the toggle, FPL's strip is
   // centred in the row (the owner, 2026-11-17).
-  // The title level with the search's field, the row the same.
-  expect(fpl.bar.top + fpl.bar.h / 2, "the title level with the field").toBeCloseTo(search.bar.top + search.bar.h / 2, 0);
+  // FPL's two rows level with the search's field, the row the same.
+  expect(fpl.bar.top + fpl.bar.h / 2, "the two rows level with the field").toBeCloseTo(search.bar.top + search.bar.h / 2, 0);
   // The search's field runs on to eight before the toggle.
   expect(search.toggle.left - search.bar.right).toBeCloseTo(8, 0);
   for (const k of ["top", "left", "w", "h"] as const) expect(search.toggle[k], `the toggle's ${k}`).toBeCloseTo(fpl.toggle[k], 0);
   // FPL's strip is centred between the row's ends (the routes button's slot
   // at the left, which may be empty, and the page toggle at the right).
   const sheetMid = (fpl.sheet.left + fpl.sheet.right) / 2;
-  expect((fpl.bar.left + fpl.bar.right) / 2, "the title is centred in the row").toBeCloseTo(sheetMid, -1);
+  expect((fpl.bar.left + fpl.bar.right) / 2, "the two rows are centred in the row").toBeCloseTo(sheetMid, -1);
   expect(fpl.bar.right).toBeLessThanOrEqual(fpl.toggle.left);
   expect(search.bar.h).toBeCloseTo(46, 0);
+  expect(fpl.bar.h, "FPL's two rows the field's height").toBeCloseTo(46, 0);
   // No bar under the sheet: the pill is the search's own 4.25 rem off the
   // screen's foot (no home indicator here), its 44 points back.
   await grabberTo(page, "peek");

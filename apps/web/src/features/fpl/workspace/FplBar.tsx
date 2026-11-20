@@ -14,9 +14,8 @@ import { TEXT } from "../../../lib/text";
  * Directions' headline is, and under it Route Options and the airplane's
  * pills (RouteControls), as "Now · Avoid" is under "Directions". The head
  * keeps the search's height, so a turn of the page moves nothing (the
- * owner, 2026-11-14): the title's line is 20 points and the pills 28, the
- * row's 46 between the grabber's room and its foot, a point over it either
- * way.
+ * owner, 2026-11-14): the title's line is 18 points and the pills 28, the
+ * search field's 46, so the ✕ stands where the search's toggle does.
  *
  * Three columns, the two rows in the middle: either side a round button's
  * 36 points, so the title stays in the row's middle whether Share is there
@@ -28,12 +27,12 @@ export default function FplBar({ share, strip, options }: { share?: ReactNode; s
   return (
     <div className="grid w-full grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-2">
       <div className="flex justify-start">{share}</div>
-      <div className="flex min-w-0 flex-col items-center gap-0">
-        <h2 className={cn("max-w-full truncate leading-5 font-bold text-foreground", TEXT.row)} data-testid="fpl-title">
+      <div className="flex min-w-0 flex-col items-center" data-testid="fpl-head">
+        <h2 className={cn("max-w-full truncate font-bold text-foreground", TEXT.row, "leading-[1.125rem]")} data-testid="fpl-title">
           Flight Plan
         </h2>
         {(strip || options) && (
-          <div className="flex max-w-full min-w-0 items-center justify-center gap-1.5">
+          <div className="flex h-7 max-w-full min-w-0 items-center justify-center gap-1.5">
             {options}
             <div className="flex min-w-0 items-center" data-testid="route-strip">
               {strip}
