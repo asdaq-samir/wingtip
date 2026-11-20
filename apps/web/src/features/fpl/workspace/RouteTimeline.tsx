@@ -2,11 +2,13 @@ import { useQueries } from "@tanstack/react-query";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import { unknownWhy } from "../../../lib/api/client";
 import { leaveWhen } from "../../../lib/format/leaveWhen";
+import { clockElsewhere } from "../../../lib/format";
+import { TEXT } from "../../../lib/text";
 import { identOf, isPosition } from "../../../lib/identSchema";
 import { NO_CONNECTION, noConnection } from "../../../lib/problems";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
-import { DepartPicker, ZonedTime } from "../../navlog/lazy";
+import { DepartPicker } from "../../navlog/lazy";
 import { TimelineRoute, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
 import { etaAt } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
@@ -80,8 +82,13 @@ export default function RouteTimeline({
       return read ? depart ? leaveWhen(new Date(depart)) : "Now" : <DepartPicker value={depart} onChange={changeDepart} look="time" />;
     if (aircraft.none) return "—";
     const row = visitRow(routeRows, role, ident, seen);
-    const eta = row ? etaAt(depart || new Date().toISOString(), row.minutesFlown) : "—";
-    return eta === "—" ? eta : <ZonedTime time={eta} />;
+    if (!row || row.minutesFlown === null) return "—";
+    // On this device's clock, as the departure's; a field that keeps
+    // another zone then says its own time and its zone (clockElsewhere).
+    const from = depart || new Date().toISOString();
+    const at = new Date(new Date(from).getTime() + row.minutesFlown * 60_000);
+    const there = clockElsewhere(at, cardOf(ident)?.data?.time_zone);
+    return there ? <ZonedTime {...there} /> : etaAt(from, row.minutesFlown);
   };
   const points: TimelinePoint[] = routePoints.map((ident, index) => {
     const role =
@@ -121,5 +128,15 @@ export default function RouteTimeline({
       allStops={read || tall || panel === "full"}
       onAllStops={() => setPanel("full")}
     />
+  );
+}
+
+/** A time at a field in another zone, its zone smaller after it, "18:24 MST". */
+function ZonedTime({ time, zone }: { time: string; zone: string }) {
+  return (
+    <span className="whitespace-nowrap">
+      {time}
+      <span className={`ml-1 font-normal ${TEXT.caption}`}>{zone}</span>
+    </span>
   );
 }

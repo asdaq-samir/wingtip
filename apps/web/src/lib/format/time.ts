@@ -43,6 +43,32 @@ export function zoneName(at: Date = new Date()): string {
   return name;
 }
 
+const fieldZones = new Map<string, Intl.DateTimeFormat | null>();
+/** A clock time in a field's own zone (an IANA name, the planner's
+ *  `time_zone`) and that zone's short name, "18:24" and "MST" -- or null
+ *  where it keeps this device's time at that instant, or the browser does
+ *  not know the zone: FPL says a stop's zone only where it is another (the
+ *  owner, 2026-11-20: "Only say the time zone if it becomes different for
+ *  the destination"). One formatter a zone, made the first time. */
+export function clockElsewhere(at: Date, timeZone: string | null | undefined): { time: string; zone: string } | null {
+  if (!timeZone) return null;
+  if (!fieldZones.has(timeZone)) {
+    try {
+      fieldZones.set(
+        timeZone,
+        new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", hour: "2-digit", minute: "2-digit", timeZoneName: "short" }),
+      );
+    } catch {
+      fieldZones.set(timeZone, null);
+    }
+  }
+  const format = fieldZones.get(timeZone);
+  if (!format) return null;
+  const parts = Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value]));
+  const time = `${parts.hour}:${parts.minute}`;
+  return time === clockTime(at) ? null : { time, zone: parts.timeZoneName ?? timeZone };
+}
+
 /** UTC hours and minutes in four figures, as a flight plan's item 13
  *  takes them: "1505". */
 export function utcFigures(at: Date): string {

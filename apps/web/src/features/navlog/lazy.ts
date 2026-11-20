@@ -8,7 +8,7 @@
 
 export { default as AltitudeGroup } from "./AltitudeGroup";
 export { default as AltitudeReasoning } from "./AltitudeReasoning";
-export { default as DepartPicker, ZonedTime } from "./DepartPicker";
+export { default as DepartPicker } from "./DepartPicker";
 export { default as FlightInputs } from "./FlightInputs";
 export { default as Kneeboard } from "./Kneeboard";
 export { default as NavLogView } from "./NavLogView";

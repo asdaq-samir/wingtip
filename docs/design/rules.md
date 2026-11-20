@@ -568,9 +568,13 @@ off by default (the owner, 2026-11-13).
    gallons as its value. In FPL's timeline the fuel is words under the
    ident instead, "36 gal on arrival" (the departure's "in the tanks"),
    small and grey, no gauge: a gauge after the ident read as part of its
-   name (the owner, 2026-11-20, the readability list's B). Its times say
-   their zone after them, smaller, "23:24 CST", and so does "Now"'s
-   clock (C; `navlog/DepartPicker`'s `ZonedTime`). A point's mark is its
+   name (the owner, 2026-11-20, the readability list's B). A stop's or
+   the destination's time is on the device's clock, as the departure's,
+   except at a field that keeps another zone then: there it is the
+   field's own time with its zone after it, smaller, "18:24 MST" (the
+   owner, 2026-11-20: "Only say the time zone if it becomes different for
+   the destination"; `lib/format`'s `clockElsewhere`, the field card's
+   `time_zone`). A point's mark is its
    menu where the list edits the route, drawn as the point's own mark,
    not the "•••" on the tint's wash (A); a hold on its line still lifts
    it to move. Winds stay as they are, by the owner's choice the
