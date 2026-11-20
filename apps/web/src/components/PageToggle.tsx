@@ -1,4 +1,5 @@
 import { useCallback, useRef } from "react";
+import { useLongPress } from "react-aria/useLongPress";
 import { Route, X } from "lucide-react";
 import { Toggle } from "./ui/toggle";
 import { PANEL_FIELD_FILL } from "./panelField";
@@ -28,9 +29,28 @@ import { keepPlanButton, noteFocus, takeFocus, usePageToggle } from "./sheet/pag
  * as iOS 26's round buttons are (the owner, 2026-11-20: "let's do what
  * Apple does"), its own 44 its hit area. Not drawn while the pages cannot be turned (flying).
  */
-export default function PageToggle({ page }: { page: 0 | 1 }) {
+/** `onHold`: a long press's own action, FPL's ✕ asking to clear the route
+ *  (the owner, 2026-11-20: "With long press on close button, it should ask
+ *  clear route"), by React Aria's stock long press (half a second), the
+ *  release after it not also a tap. */
+export default function PageToggle({ page, onHold }: { page: 0 | 1; onHold?: () => void }) {
   const pages = usePageToggle((s) => s.pages);
   const self = useRef<HTMLElement | null>(null);
+  const held = useRef(false);
+  const { longPressProps } = useLongPress({
+    isDisabled: !onHold,
+    accessibilityDescription: onHold ? "Long press to clear the route" : undefined,
+    onLongPressStart: () => {
+      held.current = false;
+    },
+    onLongPress: () => {
+      held.current = true;
+      onHold?.();
+    },
+  });
+  // The keys stay the toggle's own (IconTip's reason: usePress would take
+  // Enter and Space and never make them a click).
+  const { onKeyDown: _keyDown, onKeyUp: _keyUp, ...holdProps } = longPressProps;
   // FPL's glyph is where the first flight's tip points (FplTip). And
   // drawn after a turn, it takes the focus the other page's held.
   const drawn = useCallback(
@@ -50,11 +70,16 @@ export default function PageToggle({ page }: { page: 0 | 1 }) {
   const Glyph = onSearch ? Route : X;
   return (
     <Toggle
+      {...holdProps}
       ref={drawn}
       pressed={false}
       // A card over the sheet covers this row; were one opening as it is
       // tapped, it closes them -- You too -- and turns to the other page.
       onPressedChange={() => {
+        if (held.current) {
+          held.current = false;
+          return;
+        }
         noteFocus(self.current);
         closeEveryCard();
         useConsoleOpen.getState().setOpen(false);

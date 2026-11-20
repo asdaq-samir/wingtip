@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Navigation, Route } from "lucide-react";
+import { Expand, Navigation } from "lucide-react";
 import { showError } from "../lib/problems";
 import { cn } from "cn";
 import IconButton from "./IconButton";
@@ -102,7 +102,10 @@ export default function MyPositionButton() {
       {/* Fine and sharp-cornered, as iOS's own arrow is: lucide's is
           drawn with round joins at 2, a heavier mark than any around it. */}
       {routeFace ? (
-        <Route strokeWidth={1.5} className="size-5" />
+        // Arrows out to the corners, the whole route fitted in: FPL's toggle
+        // has the route's own glyph, and the two read the same (the owner,
+        // 2026-11-20: "Can fit to route and fpl have different icons?").
+        <Expand strokeWidth={1.5} className="size-5" />
       ) : (
         <Navigation
           strokeWidth={1.5}

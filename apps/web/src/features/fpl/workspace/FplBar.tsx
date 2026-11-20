@@ -23,7 +23,7 @@ import { TEXT } from "../../../lib/text";
  * a local flight's date and time, a 320-point phone -- the airplane's pill
  * gives way first (navlog's pillLook).
  */
-export default function FplBar({ share, strip }: { share?: ReactNode; strip?: ReactNode }) {
+export default function FplBar({ share, strip, onHold }: { share?: ReactNode; strip?: ReactNode; onHold?: () => void }) {
   return (
     <div className="grid w-full grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-2">
       <div className="flex justify-start">{share}</div>
@@ -44,7 +44,7 @@ export default function FplBar({ share, strip }: { share?: ReactNode; strip?: Re
         )}
       </div>
       <div className="flex justify-end">
-        <PageToggle page={1} />
+        <PageToggle page={1} onHold={onHold} />
       </div>
     </div>
   );

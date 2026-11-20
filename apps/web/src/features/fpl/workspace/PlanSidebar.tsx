@@ -119,7 +119,11 @@ export default function PlanSidebar({
         key={place}
         ident={place}
         from={measuredFrom}
-        onClose={closePlace}
+        // A stop asked for from FPL: the card's ✕ ends the ask and goes
+        // back to FPL, where the pilot asked from, not to the search's page
+        // (the owner, 2026-11-20: "When I add stop from fpl and search for
+        // airport, then close, it goes back to search page instead of fpl").
+        onClose={stopAsked ? model.cancel : closePlace}
         // The route set from the card ends the search it was opened from,
         // its words and Cancel let go, as the top hit's Fly Here does
         // (one-search.spec's smoke test, 2026-11-12).
