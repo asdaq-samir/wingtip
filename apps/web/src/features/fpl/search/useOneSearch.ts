@@ -177,8 +177,10 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   const does: DoHit[] = [];
   // The departure asked for: where the airplane is, first, as Maps' From
   // offers My Location -- a route may start at a present position, as Fly
-  // Here's does (the owner's "Departure → HSKEL → KJAX", 2026-11-13).
-  if ((pick?.label === "Departure" || pick?.position) && positioned && (!typed || finds(typed, POSITION_NAME)))
+  // Here's does (the owner's "Departure → HSKEL → KJAX", 2026-11-13);
+  // a pick that says `position: false` not, as where the route is at My
+  // Location already (useRouteListEdit's pickEnd).
+  if ((pick?.position ?? pick?.label === "Departure") && positioned && (!typed || finds(typed, POSITION_NAME)))
     does.push({ key: "my-position", label: POSITION_NAME, kind: "action", run: () => pickIdent(positionNow() ?? "") });
   const trafficOn = usePreferences((p) => p.traffic);
   if (!direct && !pick && !airplaneAsk) {
