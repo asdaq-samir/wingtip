@@ -25,14 +25,16 @@ export const FLOATING_BAR_WIDTH = "w-fit min-w-[min(18.75rem,100%)] max-w-full";
 export const FLOATING_BAR_COLUMNS = "grid auto-cols-fr grid-flow-col";
 
 /**
- * One item's look, a tab's and a button's: 48 tall (min-h-12, in rem, so
- * taller with the text rather than its word cut), its own hit area, over
- * 44 points (CLAUDE.md), the items meeting side by side. Picked, pressed
+ * One item's look, a tab's and a button's: 44 tall (min-h-11, in rem, so
+ * taller with the text rather than its word cut), its own hit area, the
+ * 44 points CLAUDE.md asks, the items meeting side by side; in a 2-point
+ * rim the bar is 48 (the owner, 2026-11-19: "that bar can be shorter",
+ * where it was 56 with too much room over and under its glyphs and words). Picked, pressed
  * or its menu out, the soft lighter pill of iOS 26's tab bar, not a solid
  * fill; the stock parts' own edge, shadow and fill taken off.
  */
 export const FLOATING_BAR_ITEM = cn(
-  "h-auto min-h-12 min-w-0 flex-col justify-center gap-0.5 rounded-full border-0 px-2 py-0.5 shadow-none",
+  "h-auto min-h-11 min-w-0 flex-col justify-center gap-0 rounded-full border-0 px-2 py-0.5 shadow-none",
   "hover:bg-foreground/10 active:bg-foreground/10 aria-expanded:bg-foreground/10 data-active:bg-foreground/10",
   "dark:hover:bg-foreground/15 dark:active:bg-foreground/15 dark:aria-expanded:bg-foreground/15 dark:data-active:bg-foreground/15",
 );

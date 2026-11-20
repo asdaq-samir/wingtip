@@ -15,7 +15,7 @@ import { FloatingBar, FloatingBarButton } from "./FloatingBar";
 afterEach(cleanup);
 
 /** The classes that make an item's height and pill, and the capsule's width. */
-const ITEM = ["min-h-12", "rounded-full", "flex-col", "data-active:bg-foreground/10"];
+const ITEM = ["min-h-11", "rounded-full", "flex-col", "data-active:bg-foreground/10"];
 const WIDTH = ["w-fit", "min-w-[min(18.75rem,100%)]", "max-w-full"];
 
 function cardBar() {
@@ -60,7 +60,7 @@ describe("the floating bar", () => {
     expect(look(card)).toEqual(look(fpl));
   });
 
-  test("a tab and an action are the same item: 48 tall, the soft pill, icon over its word", () => {
+  test("a tab and an action are the same item: 44 tall, the soft pill, icon over its word", () => {
     cardBar();
     const tab = screen.getByTestId("tab-info");
     for (const c of ITEM) expect(tab.classList).toContain(c);
