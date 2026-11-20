@@ -111,7 +111,7 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
         data-testid="fpl-search"
         className="liquid-glass pointer-events-auto ml-2 size-14 shrink-0 self-center rounded-full p-0 text-tint [--glass-blur:var(--glass-bar-blur)] [--glass-fill:var(--glass-bar-fill)]"
       >
-        <Search className="size-6" strokeWidth={1.75} aria-hidden="true" />
+        <Search className="size-7" strokeWidth={1.75} aria-hidden="true" />
       </Button>
     </div>
   );

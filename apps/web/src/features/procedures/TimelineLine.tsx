@@ -188,7 +188,8 @@ export function TimelineLine({
               }
             />
           )}
-          {/* The ident, and under it the fuel in the tanks there in small
+          {/* The ident in the regular weight (the owner, 2026-11-20: "Stops
+              font can be non-bold"), and under it the fuel in the tanks there in small
               grey words (the owner, 2026-11-20, the readability list's B:
               "36 gal" and its gauge right after the ident read as part of
               its name); the time at the right. */}
@@ -209,7 +210,7 @@ export function TimelineLine({
                   }
                   data-testid="timeline-ident"
                   className={cn(
-                    "relative min-w-0 truncate font-semibold after:absolute after:-inset-y-3 after:-inset-x-1 after:content-['']",
+                    "relative min-w-0 truncate font-normal after:absolute after:-inset-y-3 after:-inset-x-1 after:content-['']",
                     point.problem && "text-destructive",
                     TEXT.row,
                   )}
@@ -219,7 +220,7 @@ export function TimelineLine({
               </h3>
             ) : (
               <span
-                className={cn("min-w-0 truncate font-semibold", point.problem && "text-destructive", TEXT.row)}
+                className={cn("min-w-0 truncate font-normal", point.problem && "text-destructive", TEXT.row)}
                 data-testid="timeline-ident"
               >
                 {pointName(point.ident)}

@@ -76,10 +76,11 @@ describe("the floating bar", () => {
     expect(screen.getByTestId("route-more").textContent).toBe("More");
   });
 
-  test("the words are the tab bar's type, regular, on one line", () => {
+  test("the words are the footnote's 13 on a 16 line, regular, on one line", () => {
     cardBar();
     const word = screen.getByText("Info");
-    expect(word.className).toContain("text-(length:--type-tab-bar)");
+    expect(word.className).toContain("text-(length:--type-tab)");
+    expect(word.className).toContain("leading-4");
     expect(word.className).toContain("font-normal");
     expect(word.className).toContain("whitespace-nowrap");
   });
