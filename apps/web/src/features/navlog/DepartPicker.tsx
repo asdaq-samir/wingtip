@@ -1,5 +1,5 @@
 import { Suspense, lazy, useState } from "react";
-import { clockTime, localDay, twoFigures } from "../../lib/format";
+import { clockTime, localDay, twoFigures, zoneName } from "../../lib/format";
 import { leaveWhen } from "../../lib/format/leaveWhen";
 import { CalendarIcon } from "lucide-react";
 import { Button } from "../../components/ui/button";
@@ -102,7 +102,7 @@ export default function DepartPicker({
                 2026-11-17, "Now ⌄"). "Now" says the clock's time under it
                 (the owner, 2026-11-19: "Can depart time show under now?"). */}
             {date ? (
-              leaveWhen(date)
+              <ZonedTime time={leaveWhen(date)} />
             ) : (
               <span className="flex flex-col items-end leading-tight">
                 Now
@@ -204,8 +204,28 @@ export default function DepartPicker({
   );
 }
 
-/** The time now, under "Now", kept to the minute. */
+/** The time now, under "Now", kept to the minute, in its zone. */
 function NowTime() {
   const now = useMinuteClock();
-  return <span className={cn("font-normal text-muted-foreground", TEXT.caption)}>{clockTime(new Date(now))}</span>;
+  return (
+    <span className={cn("font-normal text-muted-foreground", TEXT.caption)}>
+      {clockTime(new Date(now))} {zoneName(new Date(now))}
+    </span>
+  );
+}
+
+/**
+ * A clock time on this device's clock and, smaller after it, the zone it
+ * is in, "23:24 CST" (the owner, 2026-11-20, the readability list's C):
+ * FPL's times were a bare "23:24", where a pilot reads Z as often as
+ * local. The zone is said once a time, in the caption's size, so the
+ * figures keep their place.
+ */
+export function ZonedTime({ time }: { time: string }) {
+  return (
+    <span className="whitespace-nowrap">
+      {time}
+      <span className={cn("ml-1 font-normal", TEXT.caption)}>{zoneName()}</span>
+    </span>
+  );
 }

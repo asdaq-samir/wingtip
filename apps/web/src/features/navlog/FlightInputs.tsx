@@ -192,8 +192,10 @@ export default function FlightInputs({
           showTrigger={false}
           className={PILL}
           group={{ "aria-label": "Airplane", "data-testid": "aircraft-select" }}
-          // As wide as "888MM", five places after the N, whatever is in it.
-          inputClassName={cn(PILL_FIELD, PREFIXED_FIELD, "w-[calc(6ch+0.25rem)]", wrong ? "text-destructive" : "text-foreground")}
+          // Five places after "N-", whatever is in it (the owner, 2026-11-20:
+          // "N number should be a fixed length for 5 letters"): five figures
+          // and room for two letters wider than a figure, "888MM".
+          inputClassName={cn(PILL_FIELD, PREFIXED_FIELD, "w-[calc(5ch+0.5rem)]", wrong ? "text-destructive" : "text-foreground")}
           ref={field}
           placeholder="_____"
           enterKeyHint="done"

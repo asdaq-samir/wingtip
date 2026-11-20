@@ -970,7 +970,7 @@ Edit and Done.
    at the end. A new plan, and half a route, are the same card with no
    head (the owner, 2026-11-18): each end still to pick a row in its
    place, its role ("Departure", "Destination") in a placeholder's grey
-   and a + on the tint's wash where a point's "•••" is, the course's
+   and a + on the tint's wash where a point's mark is, the course's
    dotted line and the hairlines as a whole route's
    (`procedures/TimelineRows`' `EndRow`); a tap asks the one search for
    it, My Location first (`useRouteListEdit`'s `pickEnd`), as a point's

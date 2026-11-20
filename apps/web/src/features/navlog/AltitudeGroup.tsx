@@ -163,11 +163,14 @@ export default function AltitudeGroup({
         </InputGroupAddon>
       )}
       <InputGroupInput
-        // As wide as "FL-000", whatever is in it.
+        // Three figures after "FL-", whatever is in it (the owner,
+        // 2026-11-20: "FL for 3 letters after the dashes"); five once feet
+        // are typed, which have no "FL-" before them.
         className={cn(
           PILL_FIELD,
           !feet && PREFIXED_FIELD,
-          "w-[calc(5ch+0.25rem)] tabular-nums",
+          feet ? "w-[calc(5ch+0.25rem)]" : "w-[calc(3ch+0.25rem)]",
+          "tabular-nums",
           problem || note?.refused ? "text-destructive-ink" : "text-foreground",
         )}
         // The figures alone, "FL-" the pill's before them (PILL_PREFIX).

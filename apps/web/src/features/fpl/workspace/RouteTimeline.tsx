@@ -6,7 +6,7 @@ import { identOf, isPosition } from "../../../lib/identSchema";
 import { NO_CONNECTION, noConnection } from "../../../lib/problems";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
-import { DepartPicker } from "../../navlog/lazy";
+import { DepartPicker, ZonedTime } from "../../navlog/lazy";
 import { TimelineRoute, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
 import { etaAt } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
@@ -80,7 +80,8 @@ export default function RouteTimeline({
       return read ? depart ? leaveWhen(new Date(depart)) : "Now" : <DepartPicker value={depart} onChange={changeDepart} look="time" />;
     if (aircraft.none) return "—";
     const row = visitRow(routeRows, role, ident, seen);
-    return row ? etaAt(depart || new Date().toISOString(), row.minutesFlown) : "—";
+    const eta = row ? etaAt(depart || new Date().toISOString(), row.minutesFlown) : "—";
+    return eta === "—" ? eta : <ZonedTime time={eta} />;
   };
   const points: TimelinePoint[] = routePoints.map((ident, index) => {
     const role =

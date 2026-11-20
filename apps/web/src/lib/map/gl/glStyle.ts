@@ -150,9 +150,11 @@ export const AIRSPACE_INK: Record<AirspaceClass, { colour: string; dash?: number
 };
 
 /** From which zoom each class is drawn, in the app's levels:
- *  B from 6, C from 7, D (and E) and every label from 8. */
+ *  B from 6, C from 7, D (and E) from 8, and every label from 9 (the
+ *  owner, 2026-11-20, the readability list's G: farther out the tabs were
+ *  the largest marks on the map, over the fields' names). */
 const AIRSPACE_FROM: Record<AirspaceClass, number> = { B: 6, C: 7, D: 8, E: 8 };
-export const AIRSPACE_LABELS_FROM = 8;
+export const AIRSPACE_LABELS_FROM = 9;
 
 export const AIRSPACE_LINE_LAYERS = (["D", "C", "B"] as const).map((c) => `airspace-${c}`);
 
@@ -237,16 +239,16 @@ export function airspaceLayers(font: string[]): LayerSpecification[] {
     layout: {
       "text-field": AIRSPACE_TAB as never,
       "text-font": font,
-      "text-size": byZoom([
-        [8, LABEL_SIZE.small],
-        [12, LABEL_SIZE.large],
-      ]),
+      // The map's smallest words at every zoom, in a tab hugging them
+      // (the readability list's G): they had grown to the large label's
+      // size in a roomy tab, the biggest marks on the chart.
+      "text-size": LABEL_SIZE.small,
       // The ceiling over the floor, close as the chart sets them.
-      "text-line-height": 1.1,
+      "text-line-height": 1,
       "icon-image": ["concat", "airspace|tab|", ["get", "class"]] as never,
       "icon-text-fit": "both" as const,
-      "icon-text-fit-padding": [2, 6, 2, 6] as [number, number, number, number],
-      "text-padding": 4,
+      "icon-text-fit-padding": [1, 3, 1, 3] as [number, number, number, number],
+      "text-padding": 2,
       // Never on another tab or an airport's mark (the marks' layers are
       // above and place first); where tabs compete the nearer class wins
       // (B, C, D).

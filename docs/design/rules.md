@@ -565,7 +565,15 @@ off by default (the owner, 2026-11-13).
    gauge in the text's colour, never the amber (the owner, 2026-11-17:
    "Yes to all recs"). The gauge is React Aria's stock Meter
    (`procedures/FuelGauge`), heard as "Fuel in the tanks" with its
-   gallons as its value. Winds stay as they are, by the owner's choice the
+   gallons as its value. In FPL's timeline the fuel is words under the
+   ident instead, "36 gal on arrival" (the departure's "in the tanks"),
+   small and grey, no gauge: a gauge after the ident read as part of its
+   name (the owner, 2026-11-20, the readability list's B). Its times say
+   their zone after them, smaller, "23:24 CST", and so does "Now"'s
+   clock (C; `navlog/DepartPicker`'s `ZonedTime`). A point's mark is its
+   menu where the list edits the route, drawn as the point's own mark,
+   not the "•••" on the tint's wash (A); a hold on its line still lifts
+   it to move. Winds stay as they are, by the owner's choice the
    same day: no "T" after the direction in FPL's rows (his "No need to put
    T next to wind"), "°T" in the Brief and the Nav Log, where a true wind
    unmarked reads as the magnetic one a tower gives (the UI audit's A7).
@@ -1077,7 +1085,11 @@ WETEV → KMYJ) and own ship on POS0.
    stays.
 3. **Airports keep their mark.** The departure, stops and destination are
    the chart's airport mark with the ident on its dark pill (section 5);
-   a top of climb or descent keeps its fix pill on the course.
+   a top of climb or descent is the fix's small magenta diamond on the
+   course, no words, and only the next leg's, none within 2 NM of its
+   leg's ends, where it sat on the airplane and "My Location"; a tap opens
+   its card (the owner, 2026-11-20, the readability list's F;
+   `LegPointsGl`, `LEG_POINT_DIAMOND`).
 4. **Taps are as they were:** the dot or the name opens the point's card.
 
 Web: `lib/map/marks/routeMarks` (the layers `route-fix-dots` and

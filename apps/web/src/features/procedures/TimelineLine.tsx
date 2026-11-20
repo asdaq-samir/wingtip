@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Ellipsis, Fuel, Navigation, Plane, Triangle, X } from "lucide-react";
+import { Fuel, Navigation, Plane, Triangle, X } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
@@ -51,22 +51,13 @@ export interface TimelinePoint {
  * the location arrow; an airport its flight category's colour (the map's,
  * grey with no report) with an airplane, a fuel stop's the pump; a
  * waypoint a grey triangle; one that cannot be flown to the red with ✕.
- * Where it is the point's menu (`more`, while the route is edited) it says
- * "•••" alone, the tint's ellipsis on the tint's wash, as iOS's More button
- * (the owner, 2026-11-17: "Make the left buttons say ... only"); a fuel
- * stop still told to a reader, the category in its ident's label.
+ * Where the list edits the route it is also the point's menu (pointEnd's
+ * `menu`), drawn as the point's own mark, not the tint's "•••" on its wash
+ * it was from 2026-11-17: three blue discs down the list were its loudest
+ * marks and its least used (the owner, 2026-11-20, the readability list's
+ * A). A hold on the line stays the row's lift to move it (RouteGrid).
  */
-export function TimelineMark({ point, position, more = false }: { point: TimelinePoint; position: boolean; more?: boolean }) {
-  if (more)
-    return (
-      <span
-        className="grid size-8 place-items-center rounded-full bg-tint/12 text-tint"
-        data-testid={point.fuelStop ? "timeline-fuel" : undefined}
-      >
-        <Ellipsis className="size-5" strokeWidth={2.4} aria-hidden />
-        {point.fuelStop && <span role="img" aria-label="fuel stop" />}
-      </span>
-    );
+export function TimelineMark({ point, position }: { point: TimelinePoint; position: boolean }) {
   const Glyph = point.problem ? X : position ? Navigation : !point.field ? Triangle : point.fuelStop ? Fuel : Plane;
   return (
     <span
@@ -182,7 +173,7 @@ export function TimelineLine({
         {!last && <span aria-hidden="true" className={TIMELINE_THREAD} />}
       </span>
       <div className={cn("min-w-0 flex-1 pr-1", !first && "border-t border-border")}>
-        <div className="relative flex h-11 min-w-0 items-center gap-2">
+        <div className="relative flex min-h-11 min-w-0 items-center gap-2 py-0.5">
           {opens && (
             <CollapsibleTrigger
               render={
@@ -197,41 +188,52 @@ export function TimelineLine({
               }
             />
           )}
-          {end.change || (point.field && !point.problem) ? (
-            <h3 className="relative z-10 flex min-w-0 shrink">
-              {/* A tap on the name changes the point where the list edits
-                  the route (pointEnd's `change`, the one search with its
-                  suggestions); elsewhere it opens the airport's card. */}
-              <Button
-                variant="plain"
-                size="inline"
-                onClick={end.change ?? (() => onInfo(point.ident))}
-                aria-label={
-                  end.change
-                    ? `${pointName(point.ident)}${point.category ? `, ${point.category}` : ""}: change it`
-                    : `${point.ident}${point.category ? `, ${point.category}` : ""}: open the airport`
-                }
+          {/* The ident, and under it the fuel in the tanks there in small
+              grey words (the owner, 2026-11-20, the readability list's B:
+              "36 gal" and its gauge right after the ident read as part of
+              its name); the time at the right. */}
+          <div className="flex min-w-0 shrink flex-col">
+            {end.change || (point.field && !point.problem) ? (
+              <h3 className="relative z-10 flex min-w-0 shrink">
+                {/* A tap on the name changes the point where the list edits
+                    the route (pointEnd's `change`, the one search with its
+                    suggestions); elsewhere it opens the airport's card. */}
+                <Button
+                  variant="plain"
+                  size="inline"
+                  onClick={end.change ?? (() => onInfo(point.ident))}
+                  aria-label={
+                    end.change
+                      ? `${pointName(point.ident)}${point.category ? `, ${point.category}` : ""}: change it`
+                      : `${point.ident}${point.category ? `, ${point.category}` : ""}: open the airport`
+                  }
+                  data-testid="timeline-ident"
+                  className={cn(
+                    "relative min-w-0 truncate font-semibold after:absolute after:-inset-y-3 after:-inset-x-1 after:content-['']",
+                    point.problem && "text-destructive",
+                    TEXT.row,
+                  )}
+                >
+                  {pointName(point.ident)}
+                </Button>
+              </h3>
+            ) : (
+              <span
+                className={cn("min-w-0 truncate font-semibold", point.problem && "text-destructive", TEXT.row)}
                 data-testid="timeline-ident"
-                className={cn(
-                  "relative min-w-0 truncate font-semibold after:absolute after:-inset-y-3 after:-inset-x-1 after:content-['']",
-                  point.problem && "text-destructive",
-                  TEXT.row,
-                )}
               >
                 {pointName(point.ident)}
-              </Button>
-            </h3>
-          ) : (
-            <span
-              className={cn("min-w-0 truncate font-semibold", point.problem && "text-destructive", TEXT.row)}
-              data-testid="timeline-ident"
-            >
-              {pointName(point.ident)}
-            </span>
-          )}
-          {/* The fuel right after the ident, the time at the right (the
-              owner, 2026-11-17: "Fuel should go right after airport"). */}
-          {tank && <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />}
+              </span>
+            )}
+            {tank && (
+              <FuelGauge
+                gal={tank.gal}
+                usable={tank.usable}
+                tone={tank.low ? "low" : undefined}
+                when={point.role === "Departure" ? "in the tanks" : "on arrival"}
+              />
+            )}
+          </div>
           <span className="flex-1" />
           <span className={cn("relative z-10 shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
             {point.time}

@@ -130,7 +130,7 @@ describe("airspaceLayers", () => {
     expect(band!["source-layer"]).toBe("special_use");
   });
 
-  it("draws each class from its own zoom, the labels from 8", () => {
+  it("draws each class from its own zoom, the labels from 9", () => {
     const layers = airspaceLayers(["Inter"]);
     const from = Object.fromEntries(layers.map((l) => [l.id, l.minzoom]));
     expect(from).toMatchObject({
@@ -138,7 +138,7 @@ describe("airspaceLayers", () => {
       "airspace-B-band": glZoom(6),
       "airspace-C": glZoom(7),
       "airspace-D": glZoom(8),
-      "airspace-labels": glZoom(8),
+      "airspace-labels": glZoom(9),
     });
   });
 });

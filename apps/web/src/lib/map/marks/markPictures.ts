@@ -55,27 +55,18 @@ export function dotPicture(fill: string): GlPicture {
   );
 }
 
-/** A point the route works out -- a top of climb or descent -- as a pill
- *  on the course itself, centred on its point (a waypoint or POS0 the route
- *  turns at is turnDotPicture and its name beside it since 2026-11-14):
- *  the chart's magenta diamond
- *  of a fix and its name, white edged in the magenta (the owner's "TOC and
- *  TOD should have the fix on the course for those labels. Just like that
- *  POS0 should have a fix symbol with a label POS0"; "still make those
- *  route labels as pills", 2026-10-26). The words start 18 points in, past
- *  the diamond; FIX_PILL_SHIFT centres the whole pill on the point. */
-export const FIX_PILL: GlPicture = framed(
-  "fix-pill",
-  () =>
-    `<rect x="1" y="1" width="30" height="17" rx="8.5" fill="${CHART.casing}" stroke="${CHART.waypoint}" stroke-width="2"/>` +
-    `<path d="M10 4.4L14.6 9.5L10 14.6L5.4 9.5Z" fill="${CHART.waypoint}"/>`,
-  32,
-  19,
-  { inset: 9, x: [20, 22], y: [9, 10], content: [18, 4, 24, 15] },
+/** A point the route works out -- a top of climb or descent -- as the
+ *  chart's magenta diamond of a fix alone, on a white edge, on the course
+ *  itself: no "TOC" or "TOD" pill, its words its card's at a tap (the
+ *  owner, 2026-11-20, the readability list's F: the pills sat on the
+ *  airplane and "My Location", two to a route). 12 points across, a
+ *  fix's own size on the sectional, under a field's mark and own ship. */
+export const LEG_POINT_DIAMOND: GlPicture = framed(
+  "leg-point-diamond",
+  () => `<path d="M7 0.8L13.2 7L7 13.2L0.8 7Z" fill="${CHART.waypoint}" stroke="${CHART.casing}" stroke-width="1.6"/>`,
+  14,
+  14,
 );
-/** The words' shift right of the point, ems, so the pill (18 points of
- *  diamond to their left, 8 to their right) is centred on it. */
-export const FIX_PILL_SHIFT = 5 / 11;
 
 /** Where the route turns (the owner's option A, 2026-11-14): a small
  *  ringed dot exactly on a route point the legs meet at -- a waypoint, a

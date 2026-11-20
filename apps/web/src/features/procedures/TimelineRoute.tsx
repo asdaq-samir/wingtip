@@ -154,7 +154,7 @@ export default function TimelineRoute({
       index: point.index,
       visit: point.visit,
     });
-    const mark = <TimelineMark point={point} position={isPosition(point.ident)} more={!!edit} />;
+    const mark = <TimelineMark point={point} position={isPosition(point.ident)} />;
     const key = keyOf(point);
     return {
       id: key,

@@ -5,7 +5,7 @@ import { useGeo, type LatLon } from "../../../geo";
 import { useAirplaneChosen } from "../../../preferences";
 import type { TrafficPattern } from "../../../trafficPattern";
 import { altFt } from "../../../format";
-import { FIX_PILL, FIX_PILL_SHIFT } from "../../marks/markPictures";
+import { LEG_POINT_DIAMOND } from "../../marks/markPictures";
 import { PATTERN_ARROW, PATTERN_LABEL, PATTERN_WORDS_FROM_ZOOM, TEAL } from "../../marks/patternMarks";
 import { PROCEDURE_INK, PROCEDURE_WORDS_FROM_ZOOM, STALE_INK, fixMarks } from "../../marks/procedureMarks";
 import { ROUTE_MARKS_LOWEST } from "../../marks/routeMarks";
@@ -51,30 +51,15 @@ const PROCEDURE_LAYERS: SymbolLayerSpecification[] = [
   pictureLayer("procedure-fix-diamonds", "procedure-fixes"),
 ];
 
-/** A top of climb's or descent's pill: on its point where that is clear,
- *  else a little above, below, then to either side of it (ems of its 11
- *  points; the pill's middle 5 points right of its words'), else left out. */
-const LEG_POINT_LAYERS: SymbolLayerSpecification[] = [
-  chipLayer(
-    "leg-points",
-    "leg-points",
-    { collide: true, sort: 0 },
-    {
-      "text-variable-anchor-offset": [
-        "center",
-        [FIX_PILL_SHIFT, 0],
-        "bottom",
-        [FIX_PILL_SHIFT, -0.9],
-        "top",
-        [FIX_PILL_SHIFT, 0.9],
-        "right",
-        [-1.3, 0],
-        "left",
-        [2.2, 0],
-      ],
-    },
-  ),
-];
+/** A top of climb's or descent's diamond, on its point, left out where a
+ *  mark of the route's own is on it (collision, under ROUTE_MARKS_LOWEST). */
+const LEG_POINT_LAYERS: SymbolLayerSpecification[] = [pictureLayer("leg-points", "leg-points", { collide: true, sort: 0 })];
+
+/** How near either end of its leg a top of climb or descent is not drawn,
+ *  in nautical miles: there it sits on the field, or on the airplane where
+ *  the leg starts at My Location, and the field's own mark says as much. A
+ *  mark's room on the map, not a figure of flight. */
+const OFF_THE_ENDS_NM = 2;
 
 const pair = (p: LatLon): [number, number] => [p.lat, p.lon];
 const along = (a: LatLon, b: LatLon, f: number): LatLon => ({ lat: a.lat + (b.lat - a.lat) * f, lon: a.lon + (b.lon - a.lon) * f });
@@ -237,12 +222,13 @@ export function HoldTracksGl({ legs }: { legs: Leg[] }) {
   return null;
 }
 
-/** Each leg's top of climb and of descent (RouteMap's LegPoints): a pill on
- *  the course, a tap its card (`cardOf`) and its ring, the map brought to
- *  it. Under the route's own marks,
- *  so it gives way to them: a little above, below or to either side of
- *  its point where one is on it, or left out (MapLibre's variable anchor
- *  and collision; routeMarks). */
+/** The next leg's top of climb and of descent (RouteMap's LegPoints), the
+ *  first leg's -- the one flown now or next -- alone, as a small diamond on
+ *  the course (LEG_POINT_DIAMOND), none within OFF_THE_ENDS_NM of its
+ *  leg's ends (the owner, 2026-11-20, the readability list's F: a route's
+ *  every TOD a pill, one on the airplane). A tap its card (`cardOf`) and
+ *  its ring, the map brought to it. Under the route's own marks, so it
+ *  gives way to them (MapLibre's collision; routeMarks). */
 export function LegPointsGl({
   legs: allLegs,
   onSelectPoint,
@@ -255,7 +241,7 @@ export function LegPointsGl({
   const { openCard } = useGlMap();
   // No airplane picked, no tops of climb and descent: they are its climb and descent (the owner, 2026-11-08: "don't assume").
   const airplane = useAirplaneChosen();
-  const legs = airplane ? allLegs : NO_LEGS;
+  const legs = airplane ? allLegs.slice(0, 1) : NO_LEGS;
   const marks = useMemo<GlSymbol[]>(
     () =>
       legs.flatMap((leg, i) =>
@@ -265,14 +251,16 @@ export function LegPointsGl({
             ["tod", "TOD", leg.tod],
           ] as const
         ).flatMap(([kind, words, at]) =>
-          at
+          at && at.along_nm >= OFF_THE_ENDS_NM && leg.distance_nm - at.along_nm >= OFF_THE_ENDS_NM
             ? [
                 {
                   key: `${kind}-${i}`,
                   lat: at.lat,
                   lon: at.lon,
-                  text: words,
-                  picture: FIX_PILL,
+                  picture: LEG_POINT_DIAMOND,
+                  // Its words for a reader of the drawn marks (the specs'
+                  // markWith), not drawn.
+                  props: { ident: words },
                   onTap: () => {
                     // Its card first, every other pick put away, then its ring (lib/map/mapPick).
                     openCard(cardOf(words, at), ["point"]);
