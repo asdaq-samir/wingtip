@@ -30,9 +30,10 @@ export function FloatingBar({ className, ...rest }: ComponentProps<"div">) {
  *  word on the tab bar's own type (iOS 26's tab bar: Caption 1, 12 on 16,
  *  regular), on one line. A step bigger in the same 48-point item (the
  *  owner, 2026-11-20: "Tab font/icon can be bigger but keeping the same tab
- *  bar size"; "Can the tabs icon be bigger", twice): the glyph 28, as
- *  iOS's tab bar's are, over the footnote's 13 on a 16 line, within the
- *  item's 48, so the bar stays 56. */
+ *  bar size"; "Can the tabs icon be bigger", twice), then back a step (the
+ *  owner, 2026-11-20: "I think the tab icons can be a bit smaller"): the
+ *  glyph 24, over the footnote's 13 on a 16 line, within the item's 48,
+ *  so the bar stays 56. */
 export function FloatingBarFace({ icon, badge, label }: { icon: ReactNode; badge?: ReactNode; label: string }) {
   return (
     <>
@@ -40,7 +41,7 @@ export function FloatingBarFace({ icon, badge, label }: { icon: ReactNode; badge
         // Important, as the stock Button's own rule for a glyph with no size
         // of its own (16, `[&_svg:not([class*='size-'])]`) outranks a plain
         // descendant rule: every size set here read 16 on the phone.
-        className="relative flex shrink-0 [&_svg]:size-7!"
+        className="relative flex shrink-0 [&_svg]:size-6!"
       >
         {icon}
         {badge}
