@@ -127,10 +127,30 @@ export function TimelineLine({
   const panelId = useId();
   const pickedLabel = (kind: string) => vm.inRoute.find((p) => sameField(p.ident, point.ident) && p.kind === kind)?.label;
   // Each part's tray, a stop's takeoff a region of its own as the list
-  // read in flight names it ("KMSN · Depart"); a procedure picked as its
-  // short name's chip ("ILS 26 ⌄"), a kind not picked as "+ APCH"; the
-  // destination's hold last, once it has one.
+  // read in flight names it ("KMSN · Depart"); a kind not picked as
+  // "+ APCH"; the destination's hold last, once it has one; the procedures
+  // picked on their own line under them.
   const chips = parts.map((part, i) => {
+    // A procedure picked, a light blue pill opening its fixes
+    // (TimelineProcedure), on a line of its own under the runway's chips
+    // (the owner, 2026-11-20: "Selected procedure should be on a new
+    // line"); a kind not picked, "+ APCH", stays among them.
+    const pills = part.kinds.flatMap((k) => {
+      const label = kindPicked(vm, field!, k) ? pickedLabel(k) : undefined;
+      return label
+        ? [
+            <TimelineProcedurePill
+              key={k}
+              ident={point.ident}
+              kind={k}
+              label={label}
+              open={shown === k}
+              panel={`${panelId}-${k}`}
+              onToggle={() => setShown(shown === k ? null : k)}
+            />,
+          ]
+        : [];
+    });
     const tray = (
       <PartTray
         key={part.role}
@@ -138,24 +158,7 @@ export function TimelineLine({
         a={field!}
         part={part}
         trailing={[
-          // A procedure picked, a light blue pill opening its fixes
-          // (TimelineProcedure); a kind not picked, "+ APCH".
-          ...part.kinds.map((k) => {
-            const label = kindPicked(vm, field!, k) ? pickedLabel(k) : undefined;
-            return label ? (
-              <TimelineProcedurePill
-                key={k}
-                ident={point.ident}
-                kind={k}
-                label={label}
-                open={shown === k}
-                panel={`${panelId}-${k}`}
-                onToggle={() => setShown(shown === k ? null : k)}
-              />
-            ) : (
-              kindMenu(vm, field!, k, "add")
-            );
-          }),
+          ...part.kinds.filter((k) => !(kindPicked(vm, field!, k) && pickedLabel(k))).map((k) => kindMenu(vm, field!, k, "add")),
           // The destination's hold after its procedures (HoldChip), once
           // there is one: no "+ HOLD" to add one (the owner, 2026-11-19: "No
           // need for +HOLD"); its menu's Hold adds it.
@@ -170,6 +173,11 @@ export function TimelineLine({
     const body = (
       <>
         {tray}
+        {pills.length > 0 && (
+          <div className="flex basis-full flex-wrap items-center gap-2" data-testid="timeline-procedures">
+            {pills}
+          </div>
+        )}
         {open && <TimelineProcedureFixes vm={vm} field={field!} kind={open} id={`${panelId}-${open}`} />}
       </>
     );
@@ -178,7 +186,7 @@ export function TimelineLine({
         {body}
       </div>
     ) : (
-      <section key={part.role} aria-label={`${point.ident} · ${part.role}`} className={cn(open && "basis-full")}>
+      <section key={part.role} aria-label={`${point.ident} · ${part.role}`} className={cn((open || pills.length > 0) && "basis-full")}>
         {body}
       </section>
     );

@@ -511,7 +511,8 @@ off by default (the owner, 2026-11-13).
    line opens it, one at a time: its wind at the left and elevation at the
    right, then one row of runway and procedure chips, wrapping where they
    do not fit: a procedure picked is a light blue pill of its short name,
-   "ILS 26 ⌄", which opens its fixes under the chips in the order they are
+   "ILS 26 ⌄", on a line of its own under them, which opens its fixes
+   under it in the order they are
    flown, each with its altitude and Direct To, the button to pick another
    at their head (the owner, 2026-11-20; `TimelineProcedure`, `FixList`);
    the map centres
