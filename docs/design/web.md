@@ -813,10 +813,9 @@ photo that pushes the actions below the half detent.
 The phone's sheet and the desktop's side panel hold two peer pages,
 Search and FPL ([rules.md](rules.md) §4a), turned by one round button
 (the owner, 2026-11-13: "Why not make the same tab on the right toggle
-between search and fpl") at the end of each page's first row, where the
-account button was (the owner, 2026-11-14: "Swap the fpl toggle and
-account buttons. Then for all three fpl layouts, keep the n-number strip
-with buttons in the same size as search bar"), where a tab bar under the
+between search and fpl") in each page's first row: at the start of
+Search's, the account button at its end (the owner, 2026-11-20), and at
+the end of FPL's bar, where a tab bar under the
 sheet, and before it a sideways pager and a split grabber, were. It is
 the app's shadcn Toggle on Base UI's, never pressed (`aria-pressed="false"`:
 a tap goes somewhere, it turns nothing on), its name where it goes:

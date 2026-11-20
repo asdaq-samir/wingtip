@@ -7,9 +7,8 @@ import { AccountFace } from "./AccountFace";
 import { accountButton } from "./accountLook";
 
 /**
- * The account button over the map, on a phone under the 3D where the page
- * toggle was, the two swapped at the owner's ask (2026-11-14; MapControls'
- * AccountCircle): the pilot's initials on the
+ * The account button at the end of the search's row, as Apple Maps'
+ * avatar is (the owner, 2026-11-20; OneSearchField): the pilot's initials on the
  * tint, or a person's glyph in the tint on grey signed out, 36 points
  * round with a 44-point hit area (accountLook). A tap opens You
  * (PilotPanel), who the pilot is and what is theirs, Settings one of its

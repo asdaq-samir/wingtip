@@ -11,6 +11,7 @@ import { useIsDesktop } from "../../../hooks/use-desktop";
 import { askSearch, searchKeys, useSearchPick } from "../../../lib/oneSearch";
 import { TEXT } from "../../../lib/text";
 import { useVoice, VoiceButton } from "../../voice";
+import { AccountButton } from "../../pilot";
 import type { OneSearchModel } from "./useOneSearch";
 
 /**
@@ -24,9 +25,10 @@ import type { OneSearchModel } from "./useOneSearch";
  * dictation types them, as the field's own trailing button; and Cancel
  * beside it while the field is in use -- a search sent let go with it too,
  * as Apple Maps' Cancel does -- as iOS's search fields have it. The
- * page toggle at the row's end while the field is not in use (PageToggle),
- * where the account button was until the owner swapped the two
- * (2026-11-14): the field the same size as FPL's strip in its place
+ * page toggle at the row's start and the account button at its end while
+ * the field is not in use, as Apple Maps' avatar is (the owner,
+ * 2026-11-20: "move the fpl button on the left side of search and avatar
+ * to the right side"; PageToggle, AccountButton): the field the same size as FPL's strip in its place
  * (SHEET_BAR), so a turn changes only what is in the bar. The title row
  * that was over the field went for the map's room (the owner,
  * 2026-11-10); the app's name stays the page's heading, for a screen
@@ -68,6 +70,7 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
   return (
     <div className="flex w-full items-center gap-2" role="search">
       <h1 className="sr-only">Wingtip Maps</h1>
+      {!using && <PageToggle page={0} />}
       {/* 46 tall, a white card on the sheet's grey, its own 44-point hit
           area (the sheet audit's F-P2, 2026-11-10: the title row over it
           the same height). */}
@@ -174,7 +177,7 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
           Cancel
         </Button>
       )}
-      {!using && <PageToggle page={0} />}
+      {!using && <AccountButton />}
     </div>
   );
 }

@@ -15,7 +15,7 @@ import { TEXT } from "../../../lib/text";
  * (RouteControls; Route Options is More's, ShareMenu), as "Now · Avoid" is under "Directions". The head
  * keeps the search's height, so a turn of the page moves nothing (the
  * owner, 2026-11-14): the title's line is 18 points and the pills 28, the
- * search field's 46, so the ✕ stands where the search's toggle does.
+ * search field's 46.
  *
  * Three columns, the two rows in the middle: either side a round button's
  * 44 points, so the title stays in the row's middle whether Share is there

@@ -158,8 +158,8 @@ Compose. Nothing here is built by hand where a stock part does it.
     many ("2 stops", "None on the route"). With no card open the pill is
     the page's own: the search on Search, the route's figures on FPL (with
     no route, FPL's bar); on the web the one round toggle that turns the
-    pages ends the first row and the account button rides the sheet's top
-    at the left, under the 3D (the owner, 2026-11-14; §4a), nothing under the sheet.
+    pages starts Search's first row and the account button ends it (the
+    owner, 2026-11-20; §4a), nothing under the sheet.
     **The smallest size is one fixed
     height for every page and card**, never one a page: the web's
     `"4.25rem"` on the screen's foot (sheet/insets), which the search's row, a
@@ -630,23 +630,19 @@ off by default (the owner, 2026-11-13).
    first-flight card until the owner's word).
    FPL has no field of its own: adding a stop asks the one search.
 
-- **One round toggle button turns the page** (the owner, 2026-11-13), at
-  the end of the sheet's first row on both pages, after the search's
-  field on Search and FPL's bar on FPL, a 44-point disc in the field's
-  white, eight after the bar, the bar the same size on both: where the
-  account button was, the two swapped (the owner, 2026-11-14: "Swap the
-  fpl toggle and account buttons"). The account button took its place
-  over the map: riding the sheet's top at the left in a glass circle the
-  size of the 3D's, directly under it, 8 points apart, level with the
-  map's buttons' group at the right; beside a side panel, under the
-  map's buttons at the bottom right. The toggle shows the page a tap goes to, as
+- **One round toggle button turns the page** (the owner, 2026-11-13), a
+  44-point disc in the field's white: on Search at the start of the first
+  row, before the field, with the account button at its end, as Apple
+  Maps' avatar is (the owner, 2026-11-20: "move the fpl button on the left
+  side of search and avatar to the right side"); on FPL its ✕ at the end
+  of FPL's bar. Both hide while the search is in use, Cancel in their
+  place. The toggle shows the page a tap goes to, as
   Apple Maps' 2D/3D button shows the mode it switches to: on Search FPL's
   route glyph ("Show flight plan" to a screen reader), on FPL the
   magnifier ("Show search"). A real button, never pressed, its name
   saying where it goes; a 44-point tap by its hit area, never grown. It
   turns the page and leaves the sheet's size. A card over the sheet
-  covers the row and the toggle with it (the account button rides the
-  card's top); the card's ✕ brings them back.
+  covers the row and both buttons with it; the card's ✕ brings them back.
 - **Nothing under the sheet**: its three sizes stand on the screen's foot
   (the home indicator's inset), the bar's room given back. The account
   button gives way with the map's buttons all the way up, where the
@@ -674,7 +670,7 @@ off by default (the owner, 2026-11-13).
 
 | Web | iPhone | Android |
 |---|---|---|
-| shadcn's Toggle on Base UI's (`components/PageToggle`), never pressed, at the end of each page's first row (`OneSearchField`, `features/fpl/workspace/FplBar`), drawn on the page that is up, told the pages by `MapPanel` (`sheet/pageToggle`); the bar before it one size on both (`panelField`'s `SHEET_BAR`), each page's first row laid out by the same `barRowOf` (`SheetParts`); the account button in the left-hand column under the 3D (`MapControls`' `AccountCircle`, riding the sheet's top through `OnSheetTop`), beside the side panel under the map's buttons; the two pages the sheet's scrollers (`SheetParts`, `sheet/SheetPages`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/fpl/workspace/PlanPage` (the open route's field and figures `RouteEditor`), the route's row under the bar `RouteHead` (folded, `route/RouteSummary`; whether it is open, `routeEditing`) | One round glass button in the map's left column under 3D (`Views/MapButtonsDock`), in sight over any card; a tap closes the cards and turns the sheet's page | One round button in the left column's floating toolbar under 3D (`SheetSideButtons`), in sight over any card; a tap closes the cards and turns the page (`SheetNav.togglePage`) |
+| shadcn's Toggle on Base UI's (`components/PageToggle`), never pressed, at the start of Search's first row and the end of FPL's (`OneSearchField`, `features/fpl/workspace/FplBar`), drawn on the page that is up, told the pages by `MapPanel` (`sheet/pageToggle`); the bar before it one size on both (`panelField`'s `SHEET_BAR`), each page's first row laid out by the same `barRowOf` (`SheetParts`); the account button at the end of Search's first row (`OneSearchField`); the two pages the sheet's scrollers (`SheetParts`, `sheet/SheetPages`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/fpl/workspace/PlanPage` (the open route's field and figures `RouteEditor`), the route's row under the bar `RouteHead` (folded, `route/RouteSummary`; whether it is open, `routeEditing`) | One round glass button in the map's left column under 3D (`Views/MapButtonsDock`), in sight over any card; a tap closes the cards and turns the sheet's page | One round button in the left column's floating toolbar under 3D (`SheetSideButtons`), in sight over any card; a tap closes the cards and turns the page (`SheetNav.togglePage`) |
 
 The iPhone's and Android's columns are still the tab bar's design; the
 toggle reaches them at the owner's word (web first), and so does the
