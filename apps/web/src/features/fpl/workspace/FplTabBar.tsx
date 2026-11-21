@@ -5,7 +5,7 @@ import { findingRows } from "../vm/planWords";
 import { FloatingBar, FloatingBarButton, TabCount } from "../../../components/FloatingBar";
 import { ICON } from "../../../lib/icons";
 import type { PlanSlices } from "../vm/planSlices";
-import { MAKES_WAY } from "../../../components/sheet/pinAtFoot";
+import { RIDES_ON_PIN } from "../../../components/sheet/pinAtFoot";
 import { EDGE_ROOM } from "../../../components/sheet/insets";
 import { FLOATING_BAR_ROOM, FLOATING_BAR_SHEET_ROOM } from "../../../components/floatingBarLook";
 import { cn } from "cn";
@@ -50,18 +50,18 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
     // Is it different then airport card?"), where a fade to the sheet's
     // solid colour behind it (the UI audit's B1) hid the route as a white
     // band. Across the sheet's whole width, out over the foot's 16-point
-    // sides (SheetParts' px-4); only the capsule takes taps. Never an edge
-    // the route's figures stop at: they pass under it as anything does,
-    // and it moves down out of their way as the sheet goes down toward the
-    // pill, where they are held on the foot's edge (data-makes-way,
-    // sheet/pinAtFoot's MAKES_WAY; the owner, 2026-11-18: "the main issue
-    // is tab bar is not allowing the figures to go past it").
+    // sides (SheetParts' px-4); only the capsule takes taps. It sits on the
+    // route's figures, held on the foot's edge under it, its foot 4 points
+    // over theirs, so both are whole in sight and the route scrolls under
+    // both (data-makes-way, sheet/pinAtFoot's RIDES_ON_PIN; the owner,
+    // 2026-11-21: "they would go to bottom and stay there while the rest
+    // slides under it").
     // Its room under it the floating bar's (FLOATING_BAR_SHEET_ROOM), in
     // place of the sheet's 8-point edge (EDGE_ROOM) under the foot: the
     // margin takes back the difference, 4 points with no home indicator.
     <div
       data-makes-way=""
-      className={cn("pointer-events-none -mx-4 flex justify-center px-4 pt-2", FLOATING_BAR_ROOM, MAKES_WAY)}
+      className={cn("pointer-events-none -mx-4 flex justify-center px-4 pt-2", FLOATING_BAR_ROOM, RIDES_ON_PIN)}
       style={{ marginBottom: `calc(${FLOATING_BAR_SHEET_ROOM} - ${EDGE_ROOM})` }}
       data-testid="fpl-actions"
     >

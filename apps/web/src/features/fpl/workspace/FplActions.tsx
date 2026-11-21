@@ -124,7 +124,8 @@ const SHEET_FOOT = '[data-testid="panel-foot"]';
 
 /** The figures held at the foot (data-pinned) drawn as the pill: in sight
  *  where the rest of the head is not (sheet/insets' RISEN_FACE at the
- *  pill), a Direct to's strip over them kept out of sight there in its
+ *  pill), a Direct to's strip over them kept out of sight there (data-pill;
+ *  held at the foot off the pill too now, they keep it in sight) in its
  *  room, so nothing moves; the foot's 16-point sides where the head's 12
  *  laid them 8 points wider (the owner, 2026-11-16: "is it changing size
  *  at the end? And do you see a small gap below/above the strip?"); over
@@ -133,4 +134,4 @@ const SHEET_FOOT = '[data-testid="panel-foot"]';
  *  grabber to the screen's foot, where the figures' own box let the
  *  route's white box show a line above and below them. */
 const PINNED =
-  "relative data-pinned:visible data-pinned:[&_[data-pill-hides]]:invisible data-pinned:z-30 data-pinned:-mx-3 data-pinned:px-4 data-pinned:bg-(--sheet) data-pinned:after:absolute data-pinned:after:inset-x-0 data-pinned:after:-top-1.5 data-pinned:after:-bottom-10 data-pinned:after:-z-10 data-pinned:after:bg-(--sheet)";
+  "relative data-pinned:visible data-pill:[&_[data-pill-hides]]:invisible data-pinned:z-30 data-pinned:-mx-3 data-pinned:px-4 data-pinned:bg-(--sheet) data-pinned:after:absolute data-pinned:after:inset-x-0 data-pinned:after:-top-1.5 data-pinned:after:-bottom-10 data-pinned:after:-z-10 data-pinned:after:bg-(--sheet)";

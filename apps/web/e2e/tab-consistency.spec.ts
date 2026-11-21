@@ -113,9 +113,12 @@ async function floatingBar(page: Page) {
     if (!bar) return null;
     const items = [...bar.querySelectorAll("button, [role=tab]")].filter((e) => !e.parentElement?.closest("button, [role=tab]"));
     const box = bar.getBoundingClientRect();
+    // FPL's figures held at the foot under its bar: their top from the window's foot.
+    const strip = document.querySelector("[data-pin-foot]")?.getBoundingClientRect();
     return {
       centre: box.left + box.width / 2,
       foot: innerHeight - box.bottom,
+      strip: strip && strip.height > 0 ? innerHeight - strip.top : 0,
       height: box.height,
       items: items.map((i) => {
         const b = i.getBoundingClientRect();
@@ -154,7 +157,11 @@ test("FPL's floating bar and the airport card's sit in one place and look alike:
       NonNullable<Awaited<ReturnType<typeof floatingBar>>>,
     ];
     const where = root || "the default size";
-    expect(fpl.foot, `${where}: foot`).toBeCloseTo(card.foot, 0);
+    // FPL's sits on its figures, held at the foot's edge under it (its foot
+    // 4 points over theirs, sheet/pinAtFoot's RIDES_ON_PIN; the owner,
+    // 2026-11-21); with no figures showing it is where the card's is.
+    if (fpl.strip) expect(fpl.foot, `${where}: FPL's foot on its figures`).toBeCloseTo(fpl.strip + 4, 0);
+    else expect(fpl.foot, `${where}: foot`).toBeCloseTo(card.foot, 0);
     expect(fpl.height, `${where}: height`).toBeCloseTo(card.height, 0);
     expect(fpl.centre, `${where}: centre`).toBeCloseTo(card.centre, 0);
     for (const item of [...fpl.items, ...card.items]) {

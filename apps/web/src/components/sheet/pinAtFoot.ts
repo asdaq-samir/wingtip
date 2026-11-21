@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
 import { usePanelDragging } from "../../lib/mapChrome";
-import { SETTLE_MS, shownPx } from "./insets";
+import { SETTLE_MS } from "./insets";
 
 /**
  * The row held by its CSS, as the sheet's foot is (sheet/insets'
@@ -18,19 +18,17 @@ import { SETTLE_MS, shownPx } from "./insets";
  * data-pin-foot so that nothing stops its ease at the pill
  * (sheet/insets' PILL_BODY).
  *
- * Off the pill its lowest place is the foot's top, not its edge
- * (--pin-lift, the foot's height; usePinAtFoot), so the figures sit over
- * the floating bar, never under it: a route longer than the sheet held
- * them on the foot's edge behind FPL's actions, their names showing past
- * the capsule's ends and their values not at all, at half and all the way
- * up, where the page's scroller ends at the foot's top and cut them off
- * whole (the owner's iPhone at his larger text, 2026-11-21). The lift
- * goes in the last stretch of a slide to the pill (--pin-pill, the
- * sheet's offset there), as the bar makes way, so the figures come down
- * onto the foot's edge there as before.
+ * On a phone's bottom sheet it is held on the foot's edge at every size,
+ * never only "no lower" (--pin-cap, usePinAtFoot, lets the move go down
+ * as well as up): the figures go to the bottom and stay there while the
+ * rest slides and scrolls under them (the owner, 2026-11-21: "The figures
+ * used to be fine before, they would go to bottom and stay there while the
+ * rest slides under it"), the floating bar sitting on them (RIDES_ON_PIN).
+ * Beside the side panel, which slides nowhere, they sit in their place
+ * under the route as before.
  */
 export const PIN_AT_FOOT =
-  "[transform:translateY(min(0px,calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px)-min(var(--pin-lift,0px),max(0px,calc(var(--pin-pill,0px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px)))))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
+  "[transform:translateY(min(var(--pin-cap,0px),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
 
 /**
  * A row of a sheet's head that is its pill (PIN_AT_FOOT on it): held on
@@ -54,18 +52,18 @@ export const PIN_AT_FOOT =
  * sheet or it settles.
  *
  * A floating bar in the foot (FPL's actions, FplTabBar, marked
- * data-makes-way and drawn with MAKES_WAY) is never an edge the row stops
- * at: off the pill the row sits in its place under the route and passes
- * under the bar as anything under a floating bar does, and the bar makes
- * way as the sheet goes down so the row is in sight on its way to the
- * foot (the owner, 2026-11-18: "the main issue is tab bar is not allowing
- * the figures to go past it"). Held over the bar's top, the figures
- * covered a short panel's route (an iPhone in landscape at half: the
- * departure's row alone in sight, the stops' row cut in half); held on
- * the foot's edge under a bar that stayed, a slow pull down from half hid
- * them under the bar and its fade. The script measures the bar's room
- * too (--pin-bar-room on the bar, barRoom); the bar's own CSS does the
- * rest.
+ * data-makes-way and drawn with RIDES_ON_PIN) sits on the row, its foot 4
+ * points over the row's top, the floating bar's room over the screen's
+ * foot (--pin-bar-lift on the bar, barLift), so the figures' values and
+ * the bar's buttons are both whole in sight: held on the foot's edge under
+ * the bar, the values were behind it, the names past the capsule's ends
+ * (the owner's iPhone at his larger text, 2026-11-21); held on the foot's
+ * top over the bar instead (fc0b49a47), the figures were no longer at the
+ * bottom. And FPL's foot floats over the end of its page, the page running
+ * on to the foot's edge with the foot's height as room at its end
+ * (--pin-foot-room on the sheet's page, SheetParts' scroller and foot), so
+ * the figures are not cut off all the way up, where the page ended at the
+ * foot's top, and the route's last row still scrolls up clear of the bar.
  */
 export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, { on, held }: { on: boolean; held: boolean }) {
   const dragging = usePanelDragging((d) => d.dragging);
@@ -83,9 +81,15 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     const row = ref.current;
     if (!row) return;
     const barOf = () => document.querySelector<HTMLElement>(foot)?.querySelector<HTMLElement>("[data-makes-way]");
+    const page = row.closest<HTMLElement>("[data-sheet-scroll]");
+    const pageBox = row.closest<HTMLElement>("[data-sheet-page]");
+    const letGo = () => {
+      for (const name of ["--pin-room", "--pin-cap"]) row.style.removeProperty(name);
+      barOf()?.style.removeProperty("--pin-bar-lift");
+      pageBox?.style.removeProperty("--pin-foot-room");
+    };
     if (!on) {
-      for (const name of ["--pin-room", "--pin-lift", "--pin-pill"]) row.style.removeProperty(name);
-      barOf()?.style.removeProperty("--pin-bar-room");
+      letGo();
       return;
     }
     const measure = () => {
@@ -100,18 +104,18 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       const sheet = row.closest(SHEET);
       const natural = row.getBoundingClientRect().bottom - moved(row) - moved(sheet);
       const room = restingEdge(edge) - natural;
-      const lift = liftOf(edge, sheet);
       setRoom(row, `${room}px`, sheet ? getComputedStyle(sheet).getPropertyValue("--sheet-offset") : "");
-      row.style.setProperty("--pin-lift", `${lift.lift}px`);
-      row.style.setProperty("--pin-pill", `${lift.pill}px`);
-      const slid = moved(sheet);
-      row.toggleAttribute("data-pinned", pinnedNow(heldNow.current, slid, room, liftAt(slid, lift.lift, lift.pill)));
+      const always = onBottomSheet(sheet);
+      row.style.setProperty("--pin-cap", always ? "9999px" : "0px");
+      row.toggleAttribute("data-pinned", pinnedNow(heldNow.current || always, moved(row.closest(SHEET)), room));
+      row.toggleAttribute("data-pill", heldNow.current);
       const bar = edge?.querySelector<HTMLElement>("[data-makes-way]");
-      if (bar) bar.style.setProperty("--pin-bar-room", `${barRoom(restingTop(bar), natural)}px`);
+      if (bar && always) bar.style.setProperty("--pin-bar-lift", `${barLift(restingBottom(bar), restingEdge(edge) - row.offsetHeight)}px`);
+      if (edge && always) pageBox?.style.setProperty("--pin-foot-room", `${edge.offsetHeight}px`);
+      else pageBox?.style.removeProperty("--pin-foot-room");
     };
     measure();
     const resized = new ResizeObserver(measure);
-    const page = row.closest("[data-sheet-scroll]");
     if (page) resized.observe(page.firstElementChild ?? page);
     // The row's place moves with the page as it scrolls, so its room does:
     // measured at the top alone, the translation kept as the page scrolled
@@ -128,7 +132,7 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       resized.disconnect();
       page?.removeEventListener("scroll", measure);
       removeEventListener("resize", measure);
-      barOf()?.style.removeProperty("--pin-bar-room");
+      letGo();
     };
   }, [on, foot, ref, held]);
   // Whether it is held now.
@@ -137,12 +141,15 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     if (!row) return;
     if (!on) {
       row.removeAttribute("data-pinned");
+      row.removeAttribute("data-pill");
       return;
     }
     const check = () => {
-      const px = (name: string) => parseFloat(row.style.getPropertyValue(name)) || 0;
-      const slid = moved(row.closest(SHEET));
-      row.toggleAttribute("data-pinned", pinnedNow(held, slid, px("--pin-room"), liftAt(slid, px("--pin-lift"), px("--pin-pill"))));
+      const room = parseFloat(row.style.getPropertyValue("--pin-room")) || 0;
+      const sheet = row.closest(SHEET);
+      row.toggleAttribute("data-pinned", pinnedNow(held || onBottomSheet(sheet), moved(sheet), room));
+      // At the pill, where its face is the figures alone (FplRoute's PINNED).
+      row.toggleAttribute("data-pill", held);
     };
     let frame = 0;
     const until = dragging ? Infinity : performance.now() + SETTLE_MS;
@@ -203,57 +210,49 @@ function restingEdge(foot: HTMLElement | null) {
   return foot.getBoundingClientRect().bottom - moved(foot) - moved(foot.closest(SHEET));
 }
 
-/** The top of the foot's floating bar at rest, its own way made (MAKES_WAY),
+/** The foot of the foot's floating bar at rest, unlifted (RIDES_ON_PIN),
  *  the foot's and the sheet's transforms taken off as restingEdge does. */
-function restingTop(bar: HTMLElement) {
+function restingBottom(bar: HTMLElement) {
   const foot = bar.closest('[data-testid="panel-foot"]');
-  return bar.getBoundingClientRect().top - moved(bar) - moved(foot) - moved(bar.closest(SHEET));
+  return bar.getBoundingClientRect().bottom - moved(bar) - moved(foot) - moved(bar.closest(SHEET));
 }
 
-/** Whether the row is held now: always at the pill, else once the sheet
- *  has slid further than its room (how far it may slide before the row
- *  reaches the foot's edge) less the lift it has there (liftAt). */
-export function pinnedNow(held: boolean, slid: number, room: number, lift = 0) {
-  return held || slid + lift > room;
+/** A phone's bottom sheet (Base UI's data-swipe-direction on its popup),
+ *  where the row is held on the foot's edge at every size; not the side
+ *  panel, which slides nowhere. */
+function onBottomSheet(sheet: Element | null) {
+  return sheet instanceof HTMLElement && sheet.dataset.swipeDirection === "down";
 }
 
-/** How far over the foot's edge the row is held with the sheet slid
- *  `slid`: the whole lift (the foot's height, so it sits on the foot's
- *  top, over the floating bar) until the sheet is within that of the pill
- *  (`pill`, its offset there), then less, to none at the pill, where the
- *  row is the pill's face on the foot's edge. PIN_AT_FOOT's CSS, as a sum. */
-export function liftAt(slid: number, lift: number, pill: number) {
-  return Math.min(lift, Math.max(0, pill - slid));
+/** Whether the row is held now: always at the pill and on a phone's
+ *  bottom sheet (`held`), else, beside the side panel, once the sheet has
+ *  slid further than its room (how far it may slide before the row
+ *  reaches the foot's edge). */
+export function pinnedNow(held: boolean, slid: number, room: number) {
+  return held || slid > room;
 }
 
-/** The foot's height, the row's lift off its edge, and the sheet's offset
- *  at the pill: a phone's bottom sheet only (Base UI's data-swipe-direction
- *  on its popup), none beside the side panel, which slides nowhere. */
-function liftOf(foot: HTMLElement | null, sheet: Element | null) {
-  if (!foot || !(sheet instanceof HTMLElement) || sheet.dataset.swipeDirection !== "down") return { lift: 0, pill: 0 };
-  return { lift: foot.offsetHeight, pill: sheet.offsetHeight - shownPx("peek", true, sheet.offsetHeight) };
+/** How far the floating bar is lifted so that its foot is 4 points over
+ *  the row's top (`rowTop`, held on the foot's edge), the floating bar's
+ *  room over the screen's foot (rules.md); none where it is clear already. */
+export function barLift(barBottom: number, rowTop: number) {
+  return Math.max(0, barBottom + BAR_GAP - rowTop);
 }
 
-/** How far the sheet may slide down before the row's foot reaches the
- *  floating bar's top (both at rest): past that, the bar makes way
- *  (MAKES_WAY). Below nothing where the row already sits under the bar. */
-export function barRoom(barTop: number, rowBottom: number) {
-  return barTop - rowBottom;
-}
+/** The room between the floating bar and the figures under it, as over
+ *  the screen's foot (floatingBarLook's EDGE, rules.md). */
+const BAR_GAP = 4;
 
 /**
- * A floating bar in the sheet's foot (FPL's actions, FplTabBar) making way
- * for the row held at the foot as the sheet goes down: moved down, off the
- * screen's foot, by as far as the sheet has slid past where the row would
- * meet its top (--pin-bar-room, usePinAtFoot), and never by more than the
- * finger has pulled the sheet down from where it rested (--sheet-swipe),
- * so a row already under the bar at rest (a short panel's figures, waiting
- * at the foot) comes out from under it as the pull begins, and the bar is
- * where it was at rest at every size, and back as the sheet settles there
- * again. Base UI's own offsets in CSS, on its curve, held still under a
- * finger, as PIN_AT_FOOT is: nothing mirrored, nothing a frame behind. A
- * drag up (the swipe below nothing) never moves it. At the pill it is put
- * away besides (RISEN_OVER, FlightFoot).
+ * A floating bar in the sheet's foot (FPL's actions, FplTabBar) sitting on
+ * the row held at the foot's edge: moved up by --pin-bar-lift (usePinAtFoot)
+ * and held there, the foot itself held at the sheet's edge (sheet/insets'
+ * HOLD_AT_EDGE), so as the sheet goes down the bar and the figures under it
+ * stay while the route slides on under both. Not eased: the lift changes
+ * only with the page's layout (the figures' height with the text size),
+ * and eased it rose into place under the eye as FPL opened. At the pill it is put
+ * away (RISEN_OVER, FlightFoot), the figures the pill's face. It no longer
+ * makes way down off the screen's foot: the figures never come down
+ * through it, being at the bottom already.
  */
-export const MAKES_WAY =
-  "[transform:translateY(max(0px,min(var(--sheet-swipe,0px),calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)-var(--pin-bar-room,9999px)))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
+export const RIDES_ON_PIN = "[transform:translateY(calc(-1*var(--pin-bar-lift,0px)))]";

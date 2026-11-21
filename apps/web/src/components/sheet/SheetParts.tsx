@@ -230,7 +230,7 @@ export function SheetParts(p: PartsProps) {
       // (a tab's lists); none over a card, which has the sheet to itself.
       // A row focused or brought into view stops under the search's row,
       // not behind it (WCAG 2.4.11).
-      style={{ "--sheet-head": head, scrollPaddingTop: head } as CSSProperties}
+      style={{ "--sheet-head": head, scrollPaddingTop: head, paddingBottom: "var(--pin-foot-room, 0px)" } as CSSProperties}
       className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible", p.onPhone && fromBottom && cut && CUT_BOTTOM)}
     >
       <PointerTapDiv
@@ -277,8 +277,7 @@ export function SheetParts(p: PartsProps) {
     </div>
   );
 
-  // The route's figures pinned at the sheet's foot. Paged, FPL's own, at
-  // its page's foot, put away with it while Search is up.
+  // The sheet's foot; FPL's at its page's, put away with it under Search, over the page's end (pinAtFoot's --pin-foot-room).
   const foot = !!p.foot && (footShown || cardsUp) && (
     <PointerTapDiv
       data-testid="panel-foot"
@@ -311,12 +310,13 @@ export function SheetParts(p: PartsProps) {
         pillFoot ? "border-transparent [&_[data-pill-hides]]:hidden [&>*]:flex-none" : cn("border-border/60", SHEET_BELOW),
         // No hairline over a bar that floats (FPL's actions' glass bar on
         // the ground), as none is over a card's tabs (the owner, 2026-11-16:
-        // "Why do I see a separator above the tabs bar?").
-        p.pages?.floats && "border-transparent",
+        // "Why do I see a separator above the tabs bar?"); off the pill taps go through it to the figures under it but the bar's.
+        p.pages?.floats && cn("border-transparent", !pillFoot && "pointer-events-none"),
       )}
       style={
         {
           "--sheet-progress": size === "half" && !p.desktop ? "0" : "1",
+          marginTop: "calc(-1 * var(--pin-foot-room, 0px))",
           ...(p.toEdge && fromBottom && !pillFoot ? { paddingBottom: "10px" } : {}),
           ...(figuresPill ? { height: `calc(${PILL_BELOW_GRABBER} - ${EDGE_ROOM})` } : {}),
         } as CSSProperties
