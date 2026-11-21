@@ -18,8 +18,10 @@ from ..mcp.calls import planner as _send
 
 def _seg(value: Any) -> str:
     """A path parameter as one segment, so a stray slash cannot reach
-    another path."""
-    return quote(str(value), safe="")
+    another path, nor a segment of dots alone, which the client takes for
+    "this" or "the one above" (RFC 3986 5.2.4) and drops."""
+    text = quote(str(value), safe="")
+    return text.replace(".", "%2E") if not text.strip(".") else text
 
 
 async def index() -> Any:
