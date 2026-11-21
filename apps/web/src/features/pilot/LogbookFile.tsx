@@ -86,7 +86,7 @@ export default function LogbookFile({ entries, onImported }: { entries: LogbookE
     try {
       await shareFile(`logbook-${localDay()}.csv`, "text/csv", logbookCsv(entries ?? []));
     } catch (err) {
-      if ((err as Error).name !== "AbortError") showError("Could not export the logbook", (err as Error).message);
+      if ((err as Error).name !== "AbortError") showError("Could not export the logbook", describeError(err));
     }
   };
 

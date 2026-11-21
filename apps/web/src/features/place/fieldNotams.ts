@@ -41,13 +41,16 @@ const FIRST = 3;
  * of its own (the owner, 2026-11-13: "I don't want search notams").
  */
 export function useFieldNotams(ident: string) {
-  const { data, isError } = useQuery(fieldNotamsQuery(ident));
+  const query = useQuery(fieldNotamsQuery(ident));
+  const { data, isError } = query;
   const [all, setAll] = useState(false);
   const notams = data?.notams ?? [];
   const long = notams.length > FIRST;
   return {
     data,
     isError,
+    /** The query itself, for the list's Try again where it failed (QueryState). */
+    query,
     total: notams.length,
     shown: all || !long ? notams : notams.slice(0, FIRST),
     long,
