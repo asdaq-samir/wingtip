@@ -2031,6 +2031,10 @@ What each fix asks for, by the phones' wasted-work audit:
   three-second-old fix). Otherwise, on the ground, to ten metres and
   only after a ten-metre move (`OwnShip.isPrecise`), which a parked
   phone answers with almost nothing.
+- **The radar loop and the model weather** pause while the sheet is at
+  full height over the map and while the app is put away, and play again
+  once back in sight if they were playing (`LoopSight`); put away, their
+  lists are not fetched either, and are asked again on return.
 
 ---
 

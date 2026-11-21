@@ -20,6 +20,11 @@ struct PlanSheetPresentation: ViewModifier {
             // floats over the map (docs/design/ios.md).
             .presentationBackground(WingtipInk.sheet)
             .interactiveDismissDisabled()
+            // The weather timelines paused while the sheet covers the map.
+            .onChange(of: detent, initial: true) { _, now in
+                WeatherLoop.shared.covered(now == .large)
+                ModelWeather.shared.covered(now == .large)
+            }
         // The system sheet settles at its detents with its own feel; no
         // tap of ours is added to a stock part (the owner, 2026-11-10).
     }

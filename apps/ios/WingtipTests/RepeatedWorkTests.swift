@@ -129,4 +129,26 @@ struct RepeatedWorkTests {
         await take(kt: 0, at: 20)
         #expect(ownShip.isPrecise)
     }
+
+    // MARK: The weather timelines out of sight (item 14)
+
+    @Test func aPlayingLoopPausesOutOfSightAndPlaysAgainOnlyOnceFullyBack() {
+        var sight = LoopSight()
+        // The sheet up to full height over a playing loop: paused.
+        #expect(sight.set(.covered, hidden: true, playing: true) == .pause)
+        // Put away meanwhile, then back: still covered, so nothing yet.
+        #expect(sight.set(.away, hidden: true, playing: false) == nil)
+        #expect(sight.away)
+        #expect(sight.set(.away, hidden: false, playing: false) == nil)
+        // The sheet down: in sight, and it plays again.
+        #expect(sight.set(.covered, hidden: false, playing: false) == .play)
+        #expect(sight.inSight)
+        // A loop the pilot had paused stays paused.
+        #expect(sight.set(.covered, hidden: true, playing: false) == nil)
+        #expect(sight.set(.covered, hidden: false, playing: false) == nil)
+        // A pick while out of sight is the pilot's word: no resume after it.
+        #expect(sight.set(.away, hidden: true, playing: true) == .pause)
+        sight.picked()
+        #expect(sight.set(.away, hidden: false, playing: false) == nil)
+    }
 }
