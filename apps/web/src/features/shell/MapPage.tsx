@@ -15,6 +15,7 @@ import { EmergencyHost } from "../emergency";
 import { AirplaneProfileHost } from "../airplane";
 import { AutoLogbookHost } from "../logbook-auto";
 import { SharedFlightHost } from "../shared-flight";
+import { DocumentReaderHost } from "../documents";
 import { BootMap } from "../plan-map";
 import { MODES, type Mode } from "./modes";
 import { isDesktopNow, useIsDesktop } from "../../hooks/use-desktop";
@@ -239,6 +240,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 <AutoLogbookHost />
                 {/* A flight another pilot sent, previewed before it is used (features/shared-flight). */}
                 <SharedFlightHost />
+                {/* A document in the reader, by the address's doc: a cite tapped, the library's row, a link (features/documents). */}
+                <DocumentReaderHost />
                 {/* Dev mode's refusal: someone it is not for, on the dev page, is taken to the map. */}
                 <DevGuard />
                 {/* For a keyboard: past the panel to the map in one press.

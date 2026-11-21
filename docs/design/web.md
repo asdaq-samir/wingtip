@@ -1704,8 +1704,8 @@ headed by the avatar with Choose Photo and Remove Photo (`AvatarPhoto`,
 cropped and scaled on a canvas by `squarePhoto` before it is sent), with the account's menu
 (signing in and out, the mode, a copy of the data, deleting the
 account), then Airplanes (the checklists inside), Flights, Logbook,
-Minimums, Training (Coach, Practice), the Emergency Assistant, Settings
-and Subscription. Settings (`features/settings`) is one page pushed over
+Minimums, Documents (§13a), Training (Coach, Practice), the Emergency
+Assistant, Settings and Subscription. Settings (`features/settings`) is one page pushed over
 You (`ConsolePages`): Map, In Flight
 (Alerts; ATC), Data and Help & About (Guide, Status, Log, About,
 Sources, the legal links); `openSettings` is the one way in, and the Map
@@ -1732,6 +1732,75 @@ second home for a control that already has one.
 
 **Sources.** [vercel-guidelines], [wcag22], [bui-releases],
 [apg-menubutton], [apg-menu].
+
+### 13a. The documents library and its reader
+
+**What it is.** ForeFlight's Documents for the web (the owner, 2026-11-21:
+"Do we support document library/reader like ForeFlight does?"; decision
+0056). You's Documents row (`features/documents`, `DocumentsPage`) lists,
+in order: Your Documents, the pilot's own PDFs (the POH, checklists,
+insurance, club rules), added from the device's files with React Aria's
+`FileTrigger` and kept in IndexedDB (`idb-keyval`, `deviceFiles`), never
+sent anywhere; then the FAA's shelf by its groups, Regulations (14 CFR
+parts 1, 43, 61, 68, 91, 97, 99 and 135, and 49 CFR 830, from the
+eCFR), AIM, Handbooks (PHAK, AFH, IFH, Instrument Procedures, Aviation
+Weather, Risk Management), Advisory Circulars and Charts (the Chart
+Users' Guide). Each row has its edition and date ("FAA-H-8083-25C · 3 Nov
+2026", "eCFR · 10 Nov 2026") and, at its end, Keep for the Air (the
+download glyph, its size in its name; kept, a tinted check that takes it
+off). Last comes a field's Chart Supplement: its ident typed, its entry
+opened in the chart viewer the airport card uses (`FaaChart`). The FAA
+and the eCFR are credited once, as a row of Settings' Sources.
+
+**Kept current, and offline.** The planner fetches the shelf
+(`wingtip.library`, once a day) and the page reads it through the
+generated client (`/api/library`). A document kept for the air is the
+whole file in IndexedDB, in its edition. When the shelf names a newer
+edition, the page fetches and keeps it again in the old one's place, so
+what is on board is the edition in force. With no signal the page lists
+what is kept, as it was kept. The service worker leaves the books alone
+(`LIBRARY_BOOKS`, NetworkOnly). It would otherwise download a whole
+handbook behind the reader's first look at its length. The reader's code
+and pdf.js's worker are precached with the app, so a kept document opens
+in the air.
+
+**The reader.** One full-screen viewer (`Reader`, in `FullScreenViewer`
+as the FAA's charts are), opened by the address's `doc` key
+(`ReaderHost`): `aim@7-1-5`, `cfr-14-91@91.155`, `phak@p42`,
+`own:<id>`. So a cite tapped, a library row, a bookmark and a shared link
+are one address, and Back closes it. Under the title is a search of its
+text and four buttons: Contents (the outline and the bookmarks, one
+segmented control), Bookmark This Page, Invert Colors (white on black,
+following the dark appearance until the pilot picks) and Share This Page
+(a link to the page, the platform's share sheet or copied; none for the
+pilot's own). A PDF is Mozilla's pdf.js and its own viewer (`PdfBody`:
+`PDFViewer`, `PDFLinkService`, `PDFFindController`), read a range at a
+time from the planner or whole from the device. Its find highlights in
+place with previous and next. A pinch, and a trackpad's, zooms about the
+fingers by pdf.js's `updateScale`, as Firefox's viewer does. A CFR part
+is text in the app's own type (`TextBody`), each section's heading an
+anchor, its find a list of every place found. The page left at is kept
+per document (`readerPlaces`), and a document opens there again.
+
+**Every cited rule a tap.** `Cited` shows a text with each cite in it as
+a link (the Brief's "Why it matters" and its cite, a Class B, C or D's
+entry rules). Where each rule lives is the engine's (`citations`, in
+wingtip-wording's `cite.rs`): "14 CFR 91.155" opens Part 91 at § 91.155,
+"AIM 7-1-5" the AIM at its paragraph, found in the PDF's outline or by
+its heading's words. A cite links only where the shelf holds the
+document in an edition. Elsewhere, and until the engine and the shelf
+are in, it is words.
+
+**Stock parts.** pdfjs-dist 6.5.438 and its viewer (Apache-2.0),
+loaded with the first PDF opened (about 0.5 MB of script and the 1.3 MB
+worker, none of it on the first load); idb-keyval 6.3.0 (Apache-2.0);
+React Aria's FileTrigger and SearchField; Base UI's Dialog (the viewer),
+Toast (Delete's Undo) and Menu (a row's •••, `RowMenu`).
+
+**Avoid.** A copy of a rule's citation typed into a screen: ask
+`citations`. A pilot's own document sent to the server: there is no sync
+yet, and any sync would go through the gateway's records and the privacy
+inventory first. A second home for a document control.
 
 ### 14. The welcome
 

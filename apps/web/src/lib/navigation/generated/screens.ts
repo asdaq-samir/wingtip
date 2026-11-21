@@ -21,6 +21,7 @@ export const SCREENS = {
   logbook: { title: "Logbook" },
   coach: { title: "Coach" },
   minimums: { title: "Personal Minimums" },
+  documents: { title: "Documents" },
   guide: { title: "Guide" },
   shared: { title: "Shared Flight" },
   about: { title: "About" },
