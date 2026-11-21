@@ -274,3 +274,35 @@ def test_a_radar_messages_tracks_are_kept_in_one_write_and_its_followed_ones_rec
     assert store.radar_heard_many([(other, wall["now"] - 9)]) == [False]
     assert store.radar_one("a6ed61", 0)[1] == wall["now"] - 2
     assert len(recorded._recorded("a3c858")) == 1 and recorded._recorded("a6ed61") == []
+
+
+def test_a_followed_airplane_nothing_hears_is_asked_for_every_two_minutes_not_each_round(clock, monkeypatch):
+    """Followed for 30 days, an airplane on the ground was asked of adsb.fi
+    every 30 s all that time. Quiet past FOLLOW_QUIET_AFTER_S it is asked
+    every FOLLOW_QUIET_EVERY_S; heard lately, each round."""
+    monkeypatch.setenv("ADSBFI_OPEN_DATA", "1")
+    get_settings.cache_clear()
+    wall = {"now": 1791800000.0}
+    stand_in(monkeypatch, "_wall", lambda: wall["now"])
+    traffic.follow("a128b9")
+    urls = []
+
+    def get(url, **kwargs):
+        urls.append(url)
+        resp = _answer([])
+        resp.status_code = 200
+        return resp
+
+    with patch("requests.get", side_effect=get):
+        traffic.follow_round()
+        clock.now += traffic.FOLLOW_EVERY_S
+        traffic.follow_round()
+        assert len(urls) == 1, "quiet: not asked again at the next round"
+        clock.now += traffic.FOLLOW_QUIET_EVERY_S
+        traffic.follow_round()
+        assert len(urls) == 2
+        # Heard a minute ago: asked each round again.
+        recorded._record("a128b9", {**common._aircraft(CESSNA), "seen_s": 60.0})
+        clock.now += traffic.FOLLOW_EVERY_S
+        traffic.follow_round()
+        assert len(urls) == 3

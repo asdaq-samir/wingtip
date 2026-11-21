@@ -84,7 +84,7 @@ from .radar import (
     radar_wanted,
 )
 from .recorded import FOLLOW_KEEP_S, RECORD_KEEP_S, follow, followed
-from .watched import FOLLOW_EVERY_S, WATCH_FOR_S, WATCH_GAP_S, follow_job, follow_round
+from .watched import FOLLOW_EVERY_S, FOLLOW_QUIET_AFTER_S, FOLLOW_QUIET_EVERY_S, WATCH_FOR_S, WATCH_GAP_S, follow_job, follow_round
 from .view import ALTIMETER_NM, near, on_altimeter
 from .lookup import ADSBX_BY, FOUND_TTL_S, find, find_credited, registered
 from .routes import OFF_ROUTE_NM, ROUTE_TTL_S, ROUTE_URL, route
@@ -144,6 +144,8 @@ __all__ = [
     "FIELD_NEAR_NM",
     "FIND_URL",
     "FOLLOW_EVERY_S",
+    "FOLLOW_QUIET_AFTER_S",
+    "FOLLOW_QUIET_EVERY_S",
     "FOUND_TTL_S",
     "FRESH_S",
     "GLOBE",

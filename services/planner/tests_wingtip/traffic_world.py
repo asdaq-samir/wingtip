@@ -81,6 +81,7 @@ def clock_fixture(monkeypatch, tmp_path):
     stand_in(monkeypatch, "_sleep", clock.sleep)
     stand_in(monkeypatch, "_WATCHED", {})
     stand_in(monkeypatch, "_WATCH_ASKED", {})
+    stand_in(monkeypatch, "_FOLLOW_ASKED", {})
     stand_in(monkeypatch, "_WATCH_SOURCE", {})
     stand_in(monkeypatch, "_ADSBFI", {"last": -1e9, "blocked_until": -1e9})
     stand_in(monkeypatch, "_GLOBE", {"blocked_until": -1e9})
