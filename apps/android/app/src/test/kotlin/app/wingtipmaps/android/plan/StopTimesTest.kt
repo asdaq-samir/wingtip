@@ -31,6 +31,13 @@ class StopTimesTest {
     }
 
     @Test
+    fun aFixFlownOverHasNoLeaveTime() {
+        val times = StopTimes.of(depart, legs, listOf("BAE", "KJVL"))
+        assertEquals(StopTimes.At(depart + 20 * 60_000L, null), times[0])
+        assertEquals(depart + 45 * 60_000L, times[1]?.arriveMs)
+    }
+
+    @Test
     fun noTimeAfterALegWithNone() {
         val times = StopTimes.of(depart, listOf(StopTimes.LegTime("KJVL", null, null)), listOf("KJVL"))
         assertNull(times[0])

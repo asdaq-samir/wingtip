@@ -35,9 +35,11 @@ object StopTimes {
             val ete = leg.eteMin ?: return out
             t += Math.round(ete * MS_PER_MIN)
             if (next < stops.size && stops[next].equals(leg.to, ignoreCase = true)) {
-                val leave = t + Math.round((leg.groundMin ?: 0.0) * MS_PER_MIN)
+                // A field landed at has the planner's minutes on the ground;
+                // a fix flown over has none, and no time it leaves again.
+                val leave = leg.groundMin?.let { t + Math.round(it * MS_PER_MIN) }
                 out[next] = At(t, leave)
-                t = leave
+                t = leave ?: t
                 next++
             }
         }
