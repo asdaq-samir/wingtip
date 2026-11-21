@@ -200,12 +200,18 @@ areas:
       - apps/web/public/support.html
   sim:
     ci: sim
-    check: the replay agent's build, format check and tests (dotnet, in Docker, scripts/ci/sim_suite.sh), cfn-lint on the trial's template, shellcheck on its scripts (the MSFS trial, infra/sim-trial and tools/msfs-agent)
+    check: the replay agent's build, format check and tests (dotnet, in Docker, scripts/ci/sim_suite.sh), the test flight's ruff and unit tests (tools/sim-flight, in the same script), cfn-lint on the trial's template, shellcheck on its scripts and the test flight's runner (the MSFS trial, infra/sim-trial, tools/msfs-agent; the test flight, docs/SIM-FLIGHT.md)
     paths:
       - tools/msfs-agent/**
       - tools/xplane-driver/wingtip_replay/shots.schema.json
       - infra/sim-trial/**
       - scripts/ci/sim_suite.sh
+      # The test flight: its Mac side, its runner, and what its tests read
+      # from elsewhere (the units, the engine's GDL 90 fixture).
+      - tools/sim-flight/**
+      - scripts/dev/sim-flight.sh
+      - services/planner/wingtip/units.py
+      - apps/web/src/lib/fixtures/gdl90.json
   xplane:
     ci: test-xplane
     check: ruff check . && pytest tests (tools/xplane-driver, the X-Plane trial's plugin, docs/XPLANE-TRIAL.md); CI runs the tests as test-python's xplane leg (scripts/ci/python_suite.sh), ruff in guards

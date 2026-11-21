@@ -12,3 +12,12 @@ dotnet=$(scripts/build/toolchain.sh get dotnet)
 docker run --rm -v "$PWD/tools:/src" -v wingtip-nuget:/root/.nuget/packages -w /src/msfs-agent \
   -e DOTNET_CLI_TELEMETRY_OPTOUT=1 -e DOTNET_NOLOGO=1 "mcr.microsoft.com/dotnet/sdk:$dotnet" \
   sh -c 'dotnet build MsfsAgent.slnx -v q && dotnet format MsfsAgent.slnx --verify-no-changes && dotnet test --solution MsfsAgent.slnx --no-build'
+# The test flight's Mac side (tools/sim-flight: the feed, GDL 90, the flight
+# scripts and the report; docs/SIM-FLIGHT.md): ruff and its unit tests, in
+# Python's own image at .tool-versions' version, the repository whole
+# (wingtip.units from services/planner, the GDL 90 fixture from apps/web).
+python=$(scripts/build/toolchain.sh get python)
+ruff=$(scripts/build/toolchain.sh get ruff)
+runner=$(grep -E '^pytest==' services/planner/requirements-dev.txt | sed 's/ .*//')
+docker run --rm -v "$PWD:/repo" -v wingtip-pip:/root/.cache/pip -w /repo/tools/sim-flight -e PYTHONDONTWRITEBYTECODE=1 \
+  "python:$python-slim" sh -c "pip install -q --root-user-action=ignore ruff==$ruff $runner && ruff check . && python -m pytest -q -p no:cacheprovider tests"

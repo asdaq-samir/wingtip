@@ -21,10 +21,11 @@ var waitSim = new Option<double>("--wait-sim-min") { Description = "Minutes to w
 var flight = new Option<string?>("--flight") { Description = "A saved flight (.FLT) to load when the simulator is at its menu" };
 var flipBank = new Option<bool>("--flip-bank") { Description = "Bank the other way (if the first run shows the turns banked outwards)" };
 var dryRun = new Option<bool>("--dry-run") { Description = "No simulator, no OBS: log the plan and the cameras only" };
+var feed = new Option<string?>("--feed") { Description = "HOST:PORT of the test flight's feed (docs/SIM-FLIGHT.md): each placed pose sent as a state line, once a second" };
 
 var root = new RootCommand("Fly a Studio track again in MSFS 2024 and record it with OBS.")
 {
-    track, outDir, resolution, shots, speed, offset, tower, settle, obsUrl, obsPassword, waitSim, flight, flipBank, dryRun,
+    track, outDir, resolution, shots, speed, offset, tower, settle, obsUrl, obsPassword, waitSim, flight, flipBank, dryRun, feed,
 };
 
 root.SetAction(async (parsed, cancel) =>
@@ -50,7 +51,13 @@ root.SetAction(async (parsed, cancel) =>
     try
     {
         var dry = parsed.GetValue(dryRun);
-        await using ISim sim = dry ? new DryRunSim(log) : RealSim(log, parsed.GetValue(flipBank));
+        ISim placed = dry ? new DryRunSim(log) : RealSim(log, parsed.GetValue(flipBank));
+        if (parsed.GetValue(feed) is { } address)
+        {
+            var (host, port) = StateLine.Address(address);
+            placed = new FeedingSim(placed, host, port, log);
+        }
+        await using ISim sim = placed;
         using IRecorder recorder = dry
             ? new NoRecorder(log)
             : new ObsRecorder(log, parsed.GetValue(obsUrl)!, ReadPassword(parsed.GetValue(obsPassword)), (3840, 2160), (width, height), dir.FullName);
