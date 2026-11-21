@@ -262,6 +262,7 @@
     <string name="passengers_briefed">Briefed: %1$d of %2$d</string>
     <string name="the_flight">The Flight</string>
     <string name="server">Server</string>
+    <string name="help_improve">Help Improve Wingtip Maps</string>
     <string name="cancel">Cancel</string>
     <string name="sign_in_link_title">Sign In With This Link?</string>
     <string name="sign_in_link_yes">Sign In</string>

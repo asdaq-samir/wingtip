@@ -22,6 +22,7 @@ import app.wingtipmaps.android.copilot.CopilotMode
 import app.wingtipmaps.android.copilot.CopilotSetting
 import app.wingtipmaps.android.design.ChoiceGroup
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.diagnostics.HelpImprove
 import app.wingtipmaps.android.firstflight.FirstFlightMemory
 
 /** A page of Settings: a column that scrolls, the app's side room. */
@@ -65,7 +66,8 @@ fun AtcPage() {
  * Settings' Help & About (the owner, 2026-11-13, where they were rows at
  * Settings' foot): the first flight's welcome offered again (the web's
  * Guide), About with its sources and credits, and the server the build
- * talks to, for a tester with more than one.
+ * talks to, for a tester with more than one; then Help Improve Wingtip
+ * Maps, on until the pilot turns it off.
  */
 @Composable
 fun HelpPage(open: (SheetPage) -> Unit) {
@@ -75,6 +77,11 @@ fun HelpPage(open: (SheetPage) -> Unit) {
             ActionSettingRow(stringResource(R.string.first_flight_again), index = 0, count = 3) { FirstFlightMemory.of(context).reset() }
             ActionSettingRow(stringResource(R.string.about), index = 1, count = 3) { open(SheetPage.About) }
             ValueSettingRow(stringResource(R.string.server), Config.host, index = 2, count = 3)
+        }
+        // Crashes and speed figures, with nothing of the pilot's (HelpImprove).
+        val helpOn by remember(context) { HelpImprove.on(context) }.collectAsStateWithLifecycle()
+        SettingsGroup {
+            SwitchSettingRow(stringResource(R.string.help_improve), helpOn, index = 0, count = 1) { HelpImprove.set(context, it) }
         }
     }
 }
