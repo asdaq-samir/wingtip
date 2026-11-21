@@ -68,6 +68,10 @@ class ChartKind:
     # neatline, the collar guessed, and the notes drawn over Wisconsin as
     # chart (the owner's screenshot, 2026-11-20).
     edge_search: float = 0.25
+    # Whether the sheets print paper panels over the chart face, cut out
+    # of it when the face is found (wingtip.chart_panels): a TAC's route
+    # diagrams and notes laid over open water.
+    paper_panels: bool = False
 
 
 SECTIONAL = ChartKind(
@@ -91,6 +95,7 @@ TAC = ChartKind(
     base=False,
     over=("sec",),
     edge_search=0.45,
+    paper_panels=True,
 )
 IFR_LOW = ChartKind(
     "ifr_low", "IFR low", FAA_ENROUTE_ZIP_URL, (".tif",), IFR_LOW_MIN_ZOOM, IFR_LOW_MAX_ZOOM, (0.3, 0.3, 0.3, 0.3), straight_border=True
