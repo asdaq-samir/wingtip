@@ -78,7 +78,7 @@ export default function BriefGlance({
   // The findings' group drawn only where it has a row: a line, the rest,
   // or what could not be checked (CautionRow draws nothing without).
   const unchecked = !!glance?.unchecked.length || !!dataWarning(useDataCycles());
-  const findings = !!lines?.act.length || rest || unchecked;
+  const findings = !!lines?.act.length || !!glance?.outside || rest || unchecked;
   return (
     <div className="flex flex-col gap-4 pt-1 pb-4" data-testid="brief-glance">
       <Accordion multiple data-testid="brief-list" className="flex flex-col gap-4">
@@ -87,6 +87,14 @@ export default function BriefGlance({
             {lines?.act.map((line) => (
               <Line key={line.key} line={line} onOpen={onOpen} />
             ))}
+            {/* A route outside the United States, said once among the
+                findings: its figures are by US rules (decision 0053). */}
+            {glance?.outside && (
+              <Line
+                line={{ ...glance.outside, key: "jurisdiction", finding: "caution", tab: "enroute", section: null, raw: [] }}
+                onOpen={onOpen}
+              />
+            )}
             {rest && <Rest rest={lines!.rest} onOpen={onOpen} />}
             <CautionRow unchecked={glance?.unchecked} />
           </ListGroup>

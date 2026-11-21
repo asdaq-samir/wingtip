@@ -1,5 +1,5 @@
 import type { Briefing, Course, Leg } from "../../lib/api/types";
-import { fieldPhases, windLine, windText, runwayNumber, type useLoad } from "../plan";
+import { fieldPhases, navLogRows, routeJurisdiction, windLine, windText, runwayNumber, type useLoad } from "../plan";
 import { fieldCategory } from "../../lib/fieldWeather";
 import { worstOf } from "../../lib/findings";
 import type { VerdictItem } from "../../lib/verdict";
@@ -96,6 +96,8 @@ export function buildGlance({
     arrive: course ? fieldAt(dest, "arrival", eteMin != null ? new Date(leaving.getTime() + eteMin * 60_000) : null) : null,
     adverse: adverseRows(briefing),
     unchecked: (briefing?.weather_unavailable ?? []).map((source) => WEATHER_SOURCE_LABEL[source]),
+    // The route's points and its legs between, every 2 nm (the engine's).
+    outside: course ? (routeJurisdiction(navLogRows(course, [], legs))?.brief ?? null) : null,
     // The reports as sent, for a finding's sources under its line.
     raw: {
       metars: landings.flatMap((i) => (briefing?.metars[i]?.raw ? [{ ident: i, raw: briefing.metars[i]!.raw! }] : [])),

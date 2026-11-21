@@ -42,6 +42,7 @@ export {
   windText,
   windsOutOfDate,
 } from "./format";
+export { type RouteJurisdiction, routeJurisdiction, rowCautions } from "./jurisdiction";
 export {
   type NavLogRow,
   type RouteEnds,

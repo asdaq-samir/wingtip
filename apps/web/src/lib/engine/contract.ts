@@ -2604,6 +2604,13 @@ export interface EngineContract {
     answer: IsaTempCAnswer;
   };
   /**
+   * Whose rules a point is under. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).
+   */
+  jurisdiction_of: {
+    input: JurisdictionOfInput;
+    answer: JurisdictionOfAnswer;
+  };
+  /**
    * A kept answer's age, as the apps show it with no signal ("Fetched 42 min ago"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.
    */
   kept_age: {
@@ -3309,6 +3316,13 @@ export interface EngineContract {
   reserve_min: {
     input: ReserveMinInput;
     answer: ReserveMinAnswer;
+  };
+  /**
+   * Which of a route's points and legs lie outside the United States, each leg checked every 2 nm along its geodesic, and the Brief's one line for them. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).
+   */
+  route_jurisdiction: {
+    input: RouteJurisdictionInput;
+    answer: RouteJurisdictionAnswer;
   };
   /**
    * The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.
@@ -8958,6 +8972,24 @@ export interface IsEastboundInput {
 export interface IsaTempCInput {
   altitude_ft: number;
 }
+export interface JurisdictionOfInput {
+  lat: number;
+  lon: number;
+}
+export interface JurisdictionOfAnswer {
+  /**
+   * US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+   */
+  code: "US" | "CA" | "MX" | "BS" | "other";
+  /**
+   * The country's name as the warning starts, "Canada"; "Outside the US" for other.
+   */
+  name: string;
+  /**
+   * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+   */
+  caution: string | null;
+}
 export interface KeptAgeInput {
   /**
    * Unix seconds, UTC: the engine has no clock.
@@ -11924,6 +11956,67 @@ export interface ReportNearAnswer {
 export interface ReserveMinInput {
   ifr?: boolean | null;
   night?: boolean | null;
+}
+export interface RouteJurisdictionInput {
+  /**
+   * The route's points in order, as the nav log's rows: a leg from each to the next.
+   */
+  points: {
+    lat: number;
+    lon: number;
+  }[];
+}
+export interface RouteJurisdictionAnswer {
+  /**
+   * Each point's, in order.
+   */
+  points: {
+    /**
+     * US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+     */
+    code: "US" | "CA" | "MX" | "BS" | "other";
+    /**
+     * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+     */
+    caution: string | null;
+  }[];
+  /**
+   * From each point to the next.
+   */
+  legs: {
+    /**
+     * The countries other than the United States met along the leg, its ends included, in the order met.
+     *
+     * Items: US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+     */
+    codes: ("US" | "CA" | "MX" | "BS" | "other")[];
+    /**
+     * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+     */
+    caution: string | null;
+  }[];
+  /**
+   * Every country other than the United States the route meets, once each in order.
+   *
+   * Items: US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+   */
+  outside: ("US" | "CA" | "MX" | "BS" | "other")[];
+  /**
+   * The Brief's line for the route, once; null where it is all in the United States.
+   */
+  brief: {
+    /**
+     * The finding alone.
+     */
+    lead: string;
+    /**
+     * The finding and what to do, in one line.
+     */
+    line: string;
+    action: string;
+    why: string;
+    cite: string;
+  } | null;
 }
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema

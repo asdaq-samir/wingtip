@@ -1552,6 +1552,33 @@ recommendation.
 | Ring and lit edge | `selectionRing` (lib/map/gl/layers/common), drawn by AirportsGl and PickedGl in the `top` slot; a card rings its point while it is drawn (`useRingWhileUp`) and lights its area (`useAreaWhileUp`: TfrGl's feature state, AirspaceGl's `airspace-picked`, WeatherGl's `wx-area-picked`); traffic's in `trafficMarks`' picture | --                                           | --      |
 | Tests             | `e2e/map-selection.spec.ts` (a ring clears on ✕ and on the chart, a route point opens its card, a new pick replaces the old card, own ship's card); `e2e/weather-map.spec.ts` and `e2e/airspace-lines.spec.ts` (an area lit while its card is up); `lib/address.test.ts` (the `mark` and `at` links)                          | --                                           | --      |
 
+## 15. Outside the United States, the figures say they are US ones (the owner, 2026-11-21)
+
+Every rule the engine holds is the FAA's (14 CFR 91.1; outside the
+United States a U.S. airplane flies by the country's own rules and over
+the high seas by ICAO Annex 2, 91.703(a)). A route that leaves the
+United States is planned as any other, never refused, and says so where
+its figures are (decision
+[0053](../decisions/0053-us-rules-outside-the-us.md)):
+
+1. **The words are the engine's** (`route_jurisdiction`): "Canada: rules
+   not checked — figures use US rules", Mexico's, the Bahamas' or
+   "Outside the US" by the same pattern, for a point or a leg (checked
+   every 2 nm) outside the United States.
+2. **Under the point's row in FPL's timeline**, in the caution's ink, for
+   the point or the legs since the point before; a stop with it keeps the
+   stops listed, as one that cannot be flown to does.
+3. **On the nav log's rail**, once before the first row of each stretch
+   outside, not on every row.
+4. **Once in the Brief**, a caution among its findings citing 14 CFR
+   91.703(a), unfolding to what to do: Canada's rules (the CARs and the
+   TC AIM) for Canada.
+
+|       | Web                                                                                                                                                                                         | iPhone                                       | Android |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------- |
+| Where | `features/plan/jurisdiction` (`routeJurisdiction`, `rowCautions`) over the nav log's rows; RouteTimeline's `caution` (TimelineLine), NavLogList's rail line, the Brief's glance `outside` line | Not yet: on the owner's word (decision 0038) | Not yet |
+| Tests | `engine/crates/flight/src/jurisdiction_tests.rs`, `engine/facade/tests/jurisdiction.rs` (`lib/fixtures/jurisdiction.json`); `features/plan/jurisdiction.test.ts`, `features/brief/GlanceLines.test.tsx`; `e2e/jurisdiction.spec.ts` (C81 to CYQT) | --                                           | --      |
+
 ## Changing a rule
 
 A rule here changes only when the owner says so (the `owner` label). Then

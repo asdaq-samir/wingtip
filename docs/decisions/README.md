@@ -58,3 +58,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0050 | [FPL's head is Search and the ✕, its foot is the figures and the floating bar](0050-fpl-head-and-foot.md) | 2026-11-21 | Accepted |
 | 0051 | [A confirmation is the stock centred alert at every width](0051-confirmation-centred-alert.md) | 2026-11-20 | Accepted |
 | 0052 | [The map shows the big fields and their airspace from zoom 5](0052-map-low-zoom-fields-and-airspace.md) | 2026-11-21 | Accepted |
+| 0053 | [A route outside the United States is warned of: its figures are by US rules](0053-us-rules-outside-the-us.md) | 2026-11-21 | Accepted |

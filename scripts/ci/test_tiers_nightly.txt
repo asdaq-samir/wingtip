@@ -61,6 +61,7 @@ instrument-currency.spec.ts
 ios/audit.spec.ts
 ios/gestures.spec.ts
 ios/menus.spec.ts
+jurisdiction.spec.ts
 kneeboard.spec.ts
 legal.spec.ts
 limits.spec.ts

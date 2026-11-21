@@ -45,7 +45,8 @@ const focusStops = { asked: false };
  * owner, 2026-11-18: "let's just show the stops as another row in between.
  * And when the card is full, no need to show that because it expands to
  * show all the stops"); one stop is its own row (listedPoints). A stop
- * whose line is open, or that cannot be flown to, keeps them listed, and a
+ * whose line is open, that cannot be flown to, or that lies outside the
+ * United States (its warning, decision 0053) keeps them listed, and a
  * point moved in among them takes the sheet up, so it is never moved out
  * of sight. Add a Stop is the last row, asking the one search;
  * before the route is whole, half a route's other end to pick and the
@@ -90,7 +91,7 @@ export default function TimelineRoute({
   // A pilot's one open stop keeps them listed; the specs' fields, each
   // open at first (openAtFirst), list them all as they work on them; a
   // stop that cannot be flown to keeps its why in sight (decision 0043).
-  const all = allStops || vm.openAtFirst || stops.some((p) => p.problem || openKey === keyOf(p));
+  const all = allStops || vm.openAtFirst || stops.some((p) => p.problem || p.caution || openKey === keyOf(p));
   const shown = listedPoints(points, all);
   const folded = shown.includes(null);
   // A point moved, from its menu or by a drop beside an end, in among
