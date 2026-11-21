@@ -2,7 +2,7 @@ import { callEngine } from "../../lib/engine/engine";
 import { legOf, type NavLogRow } from "../plan";
 
 /** The fuel in the tanks at a point: what is in them, what they hold, and
- *  whether it is under the reserve the flight is held to; and the pilot's
+ *  whether it is under the reserve the flight it is on is held to; and the pilot's
  *  own figure for them leaving there, where set (the address's `tanks`;
  *  none, full). */
 export interface TankAt {
@@ -22,11 +22,14 @@ export interface TankAt {
  * and takeoff allowance and the legs' own burn taken from them after,
  * fuelled again at each field landed at (full, or the pilot's own), as
  * the planner checks each flight (app.planning.route_totals); under the
- * reserve, low. No tanks known, none.
+ * reserve of the flight it is on (each flight's own, `reservesGal`: day,
+ * night or IFR by its own times and rules), the destination's with the
+ * fuel on to an IFR alternate too (`alternateGal`), and the departure's
+ * where what is on board is under its start, taxi and reserve: low. No tanks known, none.
  */
 export function tanksAt(
   rows: NavLogRow[],
-  fuel: { usableGal: number; taxiGal: number; reserveGal: number } | null,
+  fuel: { usableGal: number; taxiGal: number; reservesGal: (number | null)[]; alternateGal?: number | null } | null,
   own: Record<string, number> = {},
 ): Map<string, TankAt> {
   const tanks = new Map<string, TankAt>();
@@ -42,7 +45,8 @@ export function tanksAt(
     })),
     usable_gal: fuel.usableGal,
     taxi_gal: fuel.taxiGal,
-    reserve_gal: fuel.reserveGal,
+    reserves_gal: fuel.reservesGal,
+    alternate_gal: fuel.alternateGal ?? null,
   });
   rows.forEach((r, i) => {
     const at = walked[i];
