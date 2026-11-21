@@ -261,6 +261,10 @@ test("Add Fuel Stops puts in every flight's suggested stops, a later flight's to
   await openPanel(page);
   const pill = sideDrawer(page).getByTestId("timeline-add-stop").locator("..").getByTestId("timeline-fuel-stops");
   await expect(pill).toHaveText("Add Fuel Stops", { timeout: slow(60_000) });
+  // Two flights' rows put Add a Stop under the half sheet's edge, where a
+  // click finds the pill outside the viewport and retries till the test's
+  // end: brought up first, as the test above does.
+  await inSheet(page, pill);
   await pill.click();
   await expect(page).toHaveURL(stopsAre("KJVL,KMSN,KRPD"));
   await expect.poll(() => new URL(page.url()).searchParams.get("fuel")).toBe("KJVL,KRPD");
