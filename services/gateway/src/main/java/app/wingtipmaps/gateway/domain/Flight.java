@@ -101,7 +101,13 @@ public class Flight {
     @Column(length = 2000)
     private String riskFactors;
 
-    @OneToMany(mappedBy = "flight", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    // Lazy: the nav log is read only where a finder names it
+    // (FlightRepository's findByIdAndPilotId and findWithNavLogById, by
+    // their entity graphs). Eager, every other load of a flight read its
+    // 20-60 checkpoints for nothing: the flight watch's 50 each half hour,
+    // each cross-country review's flight on every training and instructor
+    // page, each lesson's.
+    @OneToMany(mappedBy = "flight", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("sequenceNo ASC")
     private List<FlightCheckpoint> checkpoints = new ArrayList<>();
 
