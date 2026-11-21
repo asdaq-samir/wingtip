@@ -282,7 +282,7 @@ struct FixRing: View {
     var body: some View {
         let indigo = Color(uiColor: WingtipColor.Chart.procedure)
         Image(systemName: "ellipsis")
-            .font(.system(size: size * 0.45, weight: .bold))
+            .font(WingtipType.note.weight(.bold))
             .foregroundStyle(direct ? Color.white : skipped ? Color.secondary : indigo)
             .frame(width: size, height: size)
             .background(direct ? Color.accentColor : WingtipInk.sheet, in: Circle())

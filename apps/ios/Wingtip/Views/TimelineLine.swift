@@ -15,7 +15,7 @@ struct TimelineMark: View {
 
     var body: some View {
         Image(systemName: glyph)
-            .font(.system(size: size * 0.45, weight: .bold))
+            .font(WingtipType.note.weight(.bold))
             .foregroundStyle(.white)
             .frame(width: size, height: size)
             .background(fill, in: Circle())
