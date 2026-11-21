@@ -142,6 +142,8 @@ interface DrawnAirport {
   y: number;
   chip: boolean;
   space: string;
+  /** The engine's size step (field_mark_rank), "" where none. */
+  size: string;
   use: string;
   weather: string;
 }

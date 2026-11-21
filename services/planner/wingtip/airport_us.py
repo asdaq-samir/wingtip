@@ -149,8 +149,8 @@ def search_index(cache_path: Path = DEFAULT_CACHE_PATH) -> bytes:
     JSON: `{"airports": [[ident, name, town, state, size, lat, lon, *other
     idents]]}` -- the ident pilots use, the name and town every word of
     which is searched, the state without "US-", the size rank the answers
-    are ordered by (0 large to 3 other), where it is (to a hundredth of a
-    degree), and OurAirports' ident and the local code where either is not
+    are ordered by (0 large to 3 other), where it is (to a ten-thousandth
+    of a degree), and OurAirports' ident and the local code where either is not
     the ident shown (KC81 for C81). 32,600 rows. Made once per file. `closed`:
     each closed field's ident and label, never offered to land (decision 0043)."""
     path = _ensure_cached(OURAIRPORTS_URL, cache_path)
@@ -182,10 +182,14 @@ def _search_index_bytes(path: str, _mtime: float, faa_path: str = "", _faa_mtime
                 town if isinstance(town, str) else "",
                 region.removeprefix("US-") if isinstance(region, str) else "",
                 int(size),
-                # Where it is, to a hundredth of a degree, for the nearest of a
-                # name first (searchIndex's `near`).
-                round(float(lat), 2) if lat == lat else 0.0,
-                round(float(lon), 2) if lon == lon else 0.0,
+                # Where it is, to a ten-thousandth of a degree (steps of 11 m),
+                # for the nearest of a name first (searchIndex's `near`) and
+                # for the map brought to a card's field before the planner's
+                # answer (web useMapPins), whose ring then sits on the tiles'
+                # mark: a hundredth, 1.1 km, put C81's 2 px off it at zoom 9
+                # (places-chart.spec). Some 58 KB more of the gzipped 480.
+                round(float(lat), 4) if lat == lat else 0.0,
+                round(float(lon), 4) if lon == lon else 0.0,
                 *others,
             ]
         )

@@ -20,8 +20,10 @@ import type {
  *  so a day's copy in the browser of an older shape is not read as this
  *  one: 2, each field's place after its size (2026-10-22); 3, the closed
  *  fields' labels beside the rows (2026-11-13, decision 0043); 4, each
- *  private, military or joint-use field's use (the private-fields audit). */
-const INDEX_VERSION = 4;
+ *  private, military or joint-use field's use (the private-fields audit);
+ *  5, each place to a ten-thousandth of a degree, not a hundredth, as the
+ *  map is brought to it (features/fpl/vm/useMapPins). */
+const INDEX_VERSION = 5;
 
 /** The planner's calls for airports and places (./client's `api`): the search,
  *  an airport's card and its procedures, the fields near a point or in view. */

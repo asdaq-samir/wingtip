@@ -64,9 +64,10 @@ export function useMapPins({
     [pinIdent, pinLat, pinLon],
   );
   // One pin a place, from where it was first known: the index's figures
-  // (single precision), the planner's answer and the recent fields' copy of
-  // it name the same spot to a few metres, and each new object was another
-  // camera move to it, the map eased twice for one tap (card-once.spec).
+  // (to a ten-thousandth of a degree, wingtip.airport_us), the planner's
+  // answer and the recent fields' copy of it name the same spot to a few
+  // metres, and each new object was another camera move to it, the map
+  // eased twice for one tap (card-once.spec).
   const [placePin, setPlacePin] = useState(freshPin);
   if (freshPin?.ident !== placePin?.ident) setPlacePin(freshPin);
   // A departure typed with no destination yet: the map brought to it, at
