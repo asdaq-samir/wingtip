@@ -1,0 +1,58 @@
+{
+  "_note": "citations (engine/crates/wording/src/wording/cite.rs): a text cut into pieces, each cited rule named by its library document and place. Held by engine/facade/tests/citations.rs and apps/web/src/features/documents/cited.test.ts. The texts are the engine's own cites and whys, and the cases a figure must not be taken for.",
+  "cases": [
+    {
+      "about": "A Go / No-Go finding's cite: a title, then a list, each section its own link.",
+      "text": "14 CFR 91.133, 91.137, 91.141",
+      "want": [
+        { "text": "14 CFR 91.133", "cite": { "kind": "cfr", "doc": "cfr-14-91", "at": "91.133", "paragraph": null } },
+        { "text": ", ", "cite": null },
+        { "text": "91.137", "cite": { "kind": "cfr", "doc": "cfr-14-91", "at": "91.137", "paragraph": null } },
+        { "text": ", ", "cite": null },
+        { "text": "91.141", "cite": { "kind": "cfr", "doc": "cfr-14-91", "at": "91.141", "paragraph": null } }
+      ]
+    },
+    {
+      "about": "A regulation and an AIM paragraph in one cite.",
+      "text": "14 CFR 91.155; AIM 7-1-5",
+      "want": [
+        { "text": "14 CFR 91.155", "cite": { "kind": "cfr", "doc": "cfr-14-91", "at": "91.155", "paragraph": null } },
+        { "text": "; ", "cite": null },
+        { "text": "AIM 7-1-5", "cite": { "kind": "aim", "doc": "aim", "at": "7-1-5", "paragraph": null } }
+      ]
+    },
+    {
+      "about": "A Class B's entry rule: the paragraph rides with its section.",
+      "text": "14 CFR 91.131(a)(1)",
+      "want": [{ "text": "14 CFR 91.131(a)(1)", "cite": { "kind": "cfr", "doc": "cfr-14-91", "at": "91.131", "paragraph": "(a)(1)" } }]
+    },
+    {
+      "about": "Currency's words: a bare section with its paragraph is a link.",
+      "text": "the flight review (61.56(c))",
+      "want": [
+        { "text": "the flight review (", "cite": null },
+        { "text": "61.56(c)", "cite": { "kind": "cfr", "doc": "cfr-14-61", "at": "61.56", "paragraph": "(c)" } },
+        { "text": ")", "cite": null }
+      ]
+    },
+    {
+      "about": "The emergency frequency and hours are figures, never sections.",
+      "text": "Call 121.5 MHz; 61.5 hours logged",
+      "want": [{ "text": "Call 121.5 MHz; 61.5 hours logged", "cite": null }]
+    },
+    {
+      "about": "An advisory circular by its number, the edition's letter left in the words only; NTSB 830 is 49 CFR's.",
+      "text": "AC 61-65K and 49 CFR 830.5",
+      "want": [
+        { "text": "AC 61-65K", "cite": { "kind": "ac", "doc": "ac-61-65", "at": null, "paragraph": null } },
+        { "text": " and ", "cite": null },
+        { "text": "49 CFR 830.5", "cite": { "kind": "cfr", "doc": "cfr-49-830", "at": "830.5", "paragraph": null } }
+      ]
+    },
+    {
+      "about": "No text, no pieces.",
+      "text": "",
+      "want": []
+    }
+  ]
+}

@@ -8,6 +8,7 @@
 //! copy; how a number is printed and how a row is laid out stay in each
 //! app. The names and their inputs are listed in crate::call.
 
+pub mod cite;
 pub mod faa;
 pub mod navaid;
 pub mod radio;
@@ -49,6 +50,36 @@ fn frequencies(name: &str, v: &Value) -> Result<Vec<Frequency>, String> {
             })
         })
         .collect()
+}
+
+/// A text's pieces, each cite named by its document and place (cite.rs).
+fn cite_pieces(text: &str) -> String {
+    let mut out = String::from("{\"pieces\":[");
+    for (i, piece) in cite::citations(text).iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str("{\"text\":");
+        json::string(&mut out, piece.text);
+        out.push_str(",\"cite\":");
+        match &piece.cite {
+            None => out.push_str("null"),
+            Some(c) => {
+                out.push_str("{\"kind\":");
+                json::string(&mut out, c.kind);
+                out.push_str(",\"doc\":");
+                json::string(&mut out, &c.doc);
+                out.push_str(",\"at\":");
+                json::opt_string(&mut out, c.at.as_deref());
+                out.push_str(",\"paragraph\":");
+                json::opt_string(&mut out, c.paragraph.as_deref());
+                out.push('}');
+            }
+        }
+        out.push('}');
+    }
+    out.push_str("]}");
+    out
 }
 
 fn index(at: Option<usize>) -> String {
@@ -123,6 +154,7 @@ pub fn answer(name: &str, v: &Value) -> Result<String, String> {
                 mid,
             )))
         }
+        "citations" => Ok(cite_pieces(opt_text(name, v, "text")?.unwrap_or(""))),
         "fuel_names" => Ok(quoted(&faa::fuel_names(&strings(name, v, "types")?))),
         "short_airspace_name" => Ok(quoted(&faa::short_airspace_name(opt_text(name, v, "name")?.unwrap_or("")))),
         "airspace_entry_rules" => {
