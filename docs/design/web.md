@@ -1833,6 +1833,18 @@ sheet scrolls one way on a phone:
 - The search row stays while the keyboard is up, as it is typed in (it
   went with the keyboard, the field and the keyboard with it).
 
+**3D on a software renderer.** Where WebGL has no graphics chip under it
+(a blocklisted driver, a virtual machine, CI's SwiftShader; `lib/map/gl`'s
+`softwareGl`), the 3D view draws lighter and looks the same otherwise:
+the ground's mesh is 32 squares a tile side instead of MapLibre's 128,
+and the chart and lines draped on it are drawn into textures at the
+terrain tile's own size, 512 px, instead of twice it
+(`coarseGroundOnSoftware`, as TerrainGl sets the terrain). MapLibre
+draws those textures again at each change of the style, some twenty in
+3D's first seconds, and on two cores each redraw at 1024 px was some
+2.5 s of work. The weather flow's streaks are the still arrows there too.
+With a graphics chip, MapLibre's own mesh and textures.
+
 **The airspace in 3D (the owner, 2026-11-14: "the class B airspace
 shelves are not differentiating altitudes").** The 3D button stands the
 Class B, C and D, the special use areas and the TFRs up

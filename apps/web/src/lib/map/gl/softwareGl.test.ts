@@ -35,3 +35,32 @@ describe("whether WebGL is drawn without a graphics chip", () => {
     expect(await asked()).toBe(false);
   });
 });
+
+/** A map whose terrain is just set, as MapLibre makes it: a mesh of 128,
+ *  its drape twice the 512 px tile. */
+const raisedMap = () => ({ terrain: { meshSize: 128, qualityFactor: 2 }, painter: { renderToTexture: { rttSize: 1024 } } });
+
+async function coarsened(renderer: string) {
+  fakeGl(renderer);
+  vi.resetModules();
+  const { coarseGroundOnSoftware } = await import("./softwareGl");
+  const map = raisedMap();
+  // Twice, as a second effect run would: the drape is halved once.
+  coarseGroundOnSoftware(map as never);
+  coarseGroundOnSoftware(map as never);
+  return map;
+}
+
+describe("the 3D ground on a software renderer", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("is a coarser mesh draped at the tile's own size", async () => {
+    const map = await coarsened("ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0)), SwiftShader driver)");
+    expect(map.terrain).toEqual({ meshSize: 32, qualityFactor: 1 });
+    expect(map.painter.renderToTexture.rttSize).toBe(512);
+  });
+
+  it("is MapLibre's own on a graphics chip", async () => {
+    expect(await coarsened("ANGLE (Apple, ANGLE Metal Renderer: Apple M4)")).toEqual(raisedMap());
+  });
+});
