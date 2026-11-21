@@ -46,6 +46,12 @@ pub(super) fn cases(c: &mut Checker) {
         "passenger_night_on_the_way",
         json!({ "start": [61.22, -149.9], "end": [60.57, -151.25], "depart_s": 1782118800, "minutes": 40 }),
     );
+    // 91.209(a)'s lights: from sunset, before 1.1's night (sun.rs).
+    c.ask("lights_on_the_way", json!({ "start": [41.88, -87.63], "end": [41.88, -87.63], "depart_s": 1774050600, "minutes": 30 }));
+    c.ask(
+        "lights_on_the_way",
+        json!({ "start": [61.22, -149.9], "end": [60.57, -151.25], "depart_s": 1782079200, "minutes": 40, "alaska_visibility_sm": 2.5 }),
+    );
     c.ask(
         "night_at_either_end",
         json!({ "start": [41.88, -87.63], "depart_s": 1790096400, "end": [41.88, -87.63], "arrive_s": 1790100000 }),

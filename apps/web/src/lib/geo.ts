@@ -52,6 +52,11 @@ export const FT_PER_SM = 5280;
  *  (1,609.344, NIST SP 811 B.9). */
 export const M_PER_SM = FT_PER_SM * M_PER_FT;
 
+/** Hectopascals in an inch of mercury at 0 °C, 33.86389 (NIST SP 811
+ *  B.9): a Q group's hectopascals as an altimeter set in inches. The one
+ *  copy, where two sim exports each wrote it. */
+export const HPA_PER_INHG = 33.86389;
+
 /** Statute miles in a nautical mile (1,852 / 1,609.344, about 1.1508),
  *  from the two exact definitions above: the strip's distance in statute
  *  miles at the pilot's tap. */

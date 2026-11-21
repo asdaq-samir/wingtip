@@ -23,8 +23,11 @@ import { useDebounced } from "../lib/useDebounced";
 import { useReadback } from "./useReadback";
 import { NotYet, Step, Verdict } from "./ClearanceSteps";
 import { ROW_BUTTON, ROW_MIC, routeLine } from "../lib/clearanceRows";
+import { clockTime, zoneName } from "../lib/format";
 
-const time = (at: number) => new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+// The app's own clock and zone, as every other time it writes: the
+// browser's locale wrote "02:05 PM" here, in a 24-hour app, with no zone.
+const time = (at: number) => `${clockTime(new Date(at))} ${zoneName(new Date(at))}`;
 
 /** A clearance as a recognizer writes one, for the empty field's example:
  *  fixtures/clearances.json's Duluth clearance, the form AIM 4-4-3 gives,

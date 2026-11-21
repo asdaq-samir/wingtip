@@ -2,7 +2,7 @@ import type { CellData, ColumnDef, RowData, TableFeatures } from "@tanstack/reac
 import { tableFeatures } from "@tanstack/react-table";
 import { altFt, bearing, etaAt, flownNmOf, isLegPoint, legOf, one, windAloft, type NavLogRow } from "../plan";
 import type { Leg, NavLogAltitude } from "../../lib/api/types";
-import { magneticVariation, windCorrection } from "../../lib/format";
+import { magneticVariation, windCorrection, zoneName } from "../../lib/format";
 import { PointMark } from "./PointMark";
 import { Heading } from "./ColumnHeading";
 import FigureWait from "../../components/FigureWait";
@@ -217,9 +217,13 @@ export function navLogColumns({
   // With a departure time, every row gets its ETA: the departure's own
   // time, then the time each leg ends -- "—" from the first leg that is
   // not in yet or cannot be flown (see navLogRows).
+  // The ETAs are on this device's clock: the column names its zone at the
+  // departure (a flight planned in winter for after the spring change is
+  // CDT, not today's CST), where "local" read as the field's own.
+  const clockZone = depart ? zoneName(new Date(depart)) : "local";
   const etaColumn: ColumnDef<typeof navLogTableFeatures, NavLogRow> = {
     id: "eta",
-    header: () => <Heading name="ETA" unit="local" spoken="Arrival time, local" />,
+    header: () => <Heading name="ETA" unit={clockZone} spoken={`Arrival time, ${clockZone}`} />,
     cell: ({ row }) => etaAt(depart, row.original.minutesFlown),
   };
   if (depart) columns.push(etaColumn);
@@ -227,7 +231,7 @@ export function navLogColumns({
   // the actual time over each fix and the fuel left -- what makes the
   // printed page a nav log to fly with rather than a table to read.
   for (const [id, name, unit, spoken] of [
-    ["ata", "ATA", "local", "Actual arrival time"],
+    ["ata", "ATA", clockZone, "Actual arrival time"],
     ["fuel_rem", "Fuel rem.", "gal", "Fuel remaining, gallons"],
   ] as const) {
     columns.push({

@@ -277,6 +277,7 @@ def findings_for(
             "hazards": 0 if unchecked("hazards") and unchecked("gairmets") else len(hazard_names),
             "night": (totals or {}).get("night") is True,
             "night_passengers": (totals or {}).get("night_passengers"),
+            "lights": (totals or {}).get("lights"),
             "fuel_margin_gal": route_figures["least_margin_gal"],
             "ifr": ifr,
             "currency": ask.currency.model_dump() if ask.currency else None,

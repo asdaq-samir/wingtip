@@ -68,7 +68,7 @@ struct AirplaneInfoSections: View {
         let engine = details?.engine
         let hp = engine?.horsepower ?? full.horsepower
         let thrust = engine?.thrustLb ?? full.thrustLb
-        let power = hp.map { "\($0.formatted()) hp" } ?? thrust.map { "\($0.formatted()) lb thrust" }
+        let power = hp.map { "\($0.formatted(.number.locale(Format.locale))) hp" } ?? thrust.map { "\($0.formatted(.number.locale(Format.locale))) lb thrust" }
         if full.engine != nil || engine != nil || power != nil {
             Section("Engine") {
                 fact("Model", [engine?.manufacturer, engine?.model].compactMap { $0 }.joined(separator: " ").nonEmpty ?? full.engine)

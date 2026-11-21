@@ -1,5 +1,5 @@
 import type { OnRoute } from "./api/types";
-import { clockTime } from "./format";
+import { clockAndZulu, clockTime } from "./format";
 
 /**
  * Where and when the flight meets a hazard, in the Brief's words and as
@@ -23,7 +23,11 @@ export function legWords(legs: number[]): string {
   return `${sorted.length === 1 ? "Leg" : "Legs"} ${said}`;
 }
 
-const at = (iso: string | null | undefined) => (iso ? clockTime(new Date(iso)) : null);
+// The product's own times with their zone and UTC, as the product gives
+// them ("valid till 15:00 CST (2100Z)"); the airplane's, on this
+// device's clock as the nav log's.
+const at = (iso: string | null | undefined) => (iso ? clockAndZulu(new Date(iso)) : null);
+const airplaneAt = (iso: string | null | undefined) => (iso ? clockTime(new Date(iso)) : null);
 
 /** The hazard's own time against the airplane's, in words: before it
  *  starts, after it ends, else until when it is valid; a report's when it
@@ -47,8 +51,8 @@ function validWords(on: OnRoute): string | null {
  *  airplane is there (one time where it passes a point), and the
  *  hazard's own time against it. */
 export function onRouteLine(on: OnRoute): string {
-  const enter = at(on.enter),
-    leave = at(on.leave);
+  const enter = airplaneAt(on.enter),
+    leave = airplaneAt(on.leave);
   const when = enter && leave && enter !== leave ? `${enter}–${leave}` : enter;
   const valid = validWords(on);
   return [legWords(on.legs), [when, valid].filter(Boolean).join(", ")].filter(Boolean).join(" · ");

@@ -11,6 +11,7 @@ import app.wingtipmaps.android.pilot.Minimums
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import app.wingtipmaps.android.api.generated.ForecastRun as RunAnswer
 
 /**
@@ -83,7 +84,7 @@ object ForecastPlay {
         return if (to > from) ((t - from) / (to - from)).coerceIn(0.0, 1.0).toFloat() else 0f
     }
 
-    private val HOUR_Z = DateTimeFormatter.ofPattern("HH'Z'").withZone(ZoneOffset.UTC)
+    private val HOUR_Z = DateTimeFormatter.ofPattern("HH'Z'", Locale.US).withZone(ZoneOffset.UTC)
 
     /** An hour as forecasts write it, UTC: "14Z". */
     fun hourZ(t: Double): String = HOUR_Z.format(Instant.ofEpochMilli((t * 1000).toLong()))

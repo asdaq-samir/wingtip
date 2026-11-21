@@ -61,7 +61,10 @@ enum FieldWeatherMarks {
     /// The station model's first line as a METAR writes it: "2 SM BR",
     /// the visibility in statute miles with the weather as reported.
     static func visibilityLine(_ sm: Double?, wx: String?) -> String? {
-        let visibility = sm.map { "\(Self.number($0)) SM" }
+        let visibility = sm.map { sm in
+            let (whole, fraction) = Format.reportedVisibility(sm)
+            return "\(fraction.map { whole > 0 ? "\(whole) \($0)" : $0 } ?? String(whole)) SM"
+        }
         let line = [visibility, wx].compactMap { $0 }.joined(separator: " ")
         return line.isEmpty ? nil : line
     }
@@ -83,11 +86,6 @@ enum FieldWeatherMarks {
     /// The covers that make a ceiling (14 CFR 1.1: broken, overcast, or an
     /// obscuration's vertical visibility).
     private static let ceilingCovers: Set<String> = ["BKN", "OVC", "VV"]
-
-    /// A figure with no trailing zeros: 2, 1.5, 0.25.
-    private static func number(_ x: Double) -> String {
-        x == x.rounded() ? String(Int(x)) : String(format: "%g", x)
-    }
 
     /// The mark for `report`: `demonstratedKt` the picked airplane's
     /// maximum demonstrated crosswind, nil with none picked or no figure

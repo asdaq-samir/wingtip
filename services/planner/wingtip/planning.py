@@ -94,6 +94,11 @@ def flight_totals(
     t["night_passengers"] = engine(
         "passenger_night_on_the_way", start=list(r.start), end=list(end), depart_s=depart.timestamp(), minutes=t["ete_min"] or 0.0
     )
+    # 14 CFR 91.209(a)'s position lights, sunset to sunrise, anywhere on
+    # the way: earlier than 1.1's night, so a squawk deferred for day
+    # flight grounds a flight landing twenty minutes after sunset (the
+    # engine's lights_on_the_way, sun.rs).
+    t["lights"] = engine("lights_on_the_way", start=list(r.start), end=list(end), depart_s=depart.timestamp(), minutes=t["ete_min"] or 0.0)
     t["alternate"] = alternate
     return t
 

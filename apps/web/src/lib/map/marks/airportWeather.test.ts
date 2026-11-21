@@ -54,6 +54,10 @@ describe("a field's marks", () => {
     expect(stationLines(pin({ visibility_sm: 10 }))).toBe("10 SM");
     expect(visibilityWords(0.5)).toBe("1/2 SM");
     expect(visibilityWords(1.5)).toBe("1 1/2 SM");
+    // Eighths and sixteenths as reported, never rounded up: 5/8 was "1 SM", 1/8 "0 SM".
+    expect(visibilityWords(0.625)).toBe("5/8 SM");
+    expect(visibilityWords(0.125)).toBe("1/8 SM");
+    expect(visibilityWords(1.375)).toBe("1 3/8 SM");
     // A layer sent with no height is a ceiling not known, not none (14 CFR 1.1).
     expect(ceilingWords(pin({ ceiling_unknown: true }))).toBe("CIG ///");
   });

@@ -3,6 +3,7 @@ import type { CopilotFlight } from "../../lib/copilot/flight";
 import { callEngine, type EngineAnswer, type EngineInput } from "../../lib/engine/engine";
 import type { Fix } from "../../lib/map/position/ownShip";
 import type { Minimums } from "../../lib/minimums";
+import { localDay } from "../../lib/format";
 
 export type CopilotInput = EngineInput<"copilot_watch">;
 export type CopilotAnswer = EngineAnswer<"copilot_watch">;
@@ -27,12 +28,15 @@ export function restOfRoute(fix: Pick<Fix, "lat" | "lon">, line: [number, number
 
 /** Whether the pilot's night passenger currency (14 CFR 61.57(b)) holds on
  *  a day, from the logbook's "until" date; null where the logbook is not
- *  read (signed out), which the copilot then says nothing of. */
+ *  read (signed out), which the copilot then says nothing of. The day is
+ *  this device's, as the logbook's dates are the pilot's own: UTC's turned
+ *  over at 18:00 in Minneapolis, so on the evening of the last day the
+ *  pilot was told they were not current, the evening the rule binds. */
 export function nightCurrent(currency: Currency | undefined, atS: number): boolean | null {
   if (!currency) return null;
   const until = currency.nightPassengersUntil;
   if (!until) return false;
-  return until >= new Date(atS * 1000).toISOString().slice(0, 10);
+  return until >= localDay(new Date(atS * 1000));
 }
 
 /** The engine's question from what the app has: own ship (the GPS's or

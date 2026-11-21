@@ -82,18 +82,12 @@ extension Atis {
         return parts.joined(separator: ", ")
     }
 
-    /// "10 sm", "2½ sm", "¾ sm".
+    /// "10 sm", "2½ sm", "¾ sm", "1 5/8 sm": to the reportable step at or
+    /// below (Format.reportedVisibility); an eighth was ".125 sm".
     static func visibilityWords(_ sm: Double) -> String {
-        let whole = Int(sm.rounded(.down))
-        let frac = sm - Double(whole)
-        let part: String
-        switch frac {
-        case 0.25: part = "¼"
-        case 0.5: part = "½"
-        case 0.75: part = "¾"
-        case 0: part = ""
-        default: part = String(String(frac).dropFirst())
-        }
+        let (whole, fraction) = Format.reportedVisibility(sm)
+        let glyph = ["1/4": "¼", "1/2": "½", "3/4": "¾"]
+        let part = fraction.map { glyph[$0] ?? "\(whole > 0 ? " " : "")\($0)" } ?? ""
         return "\(whole > 0 || part.isEmpty ? String(whole) : "")\(part) sm"
     }
 

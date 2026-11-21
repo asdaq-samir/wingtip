@@ -1,7 +1,7 @@
 import { cn } from "cn";
 import { plannedWords } from "../plan";
 import type { Totals } from "../../lib/api/types";
-import { weekdayDayMonthTime } from "../../lib/format";
+import { weekdayDayMonthTime, zoneName } from "../../lib/format";
 import { TEXT } from "../../lib/text";
 
 /** On paper only, at paper's own 14: no finger, no type scale. The panel's
@@ -26,7 +26,7 @@ export function NavLogPaperHead({
       </div>
       <div className="text-muted-foreground">
         {aircraftLabel}
-        {depart && ` · departing ${weekdayDayMonthTime(new Date(depart))}`}
+        {depart && ` · departing ${weekdayDayMonthTime(new Date(depart))} ${zoneName(new Date(depart))}`}
         {plannedWords(totals) && ` · ${plannedWords(totals)}`}
       </div>
     </div>

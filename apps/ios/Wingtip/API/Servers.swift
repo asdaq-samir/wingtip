@@ -100,7 +100,7 @@ extension Planner {
 extension Gateway {
     static let clients: [Servers.Wait: GatewayAPI.Client] = Dictionary(uniqueKeysWithValues: Servers.Wait.allCases.map {
         ($0, GatewayAPI.Client(serverURL: Config.gateway, configuration: Servers.configuration, transport: Servers.transport($0),
-                               middlewares: [CSRF(), Refusals(gateway: true)]))
+                               middlewares: [CSRF(), DeviceZone(), Refusals(gateway: true)]))
     })
 
     /// One of the gateway's calls, made with the generated client.
@@ -145,6 +145,21 @@ struct CSRF: ClientMiddleware {
             if Gateway.csrfToken == nil { _ = try? await Gateway.me() }
             if let token = Gateway.csrfToken { request.headerFields[Self.header] = token }
         }
+        return try await next(request, body, baseURL)
+    }
+}
+
+/// The zone the phone keeps, on every call to the gateway, which reads the
+/// pilot's currency and paperwork on the pilot's own day (PilotDay), not
+/// UTC's, which turns over in the U.S. evening: on the last evening of 61.57's
+/// 90 days the pilot was told they were no longer current.
+struct DeviceZone: ClientMiddleware {
+    static let header = HTTPField.Name("X-Time-Zone")!
+
+    func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
+                   next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
+        var request = request
+        request.headerFields[Self.header] = TimeZone.current.identifier
         return try await next(request, body, baseURL)
     }
 }

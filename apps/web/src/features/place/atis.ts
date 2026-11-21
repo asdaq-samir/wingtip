@@ -11,7 +11,7 @@ import { heardThrough, useAtcRadio } from "../../lib/atcRadio";
 import { holdForListening } from "../../lib/audioInput";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
 import { listen, saidSoFar } from "../../lib/listen";
-import { altFt, reportedDirection } from "../../lib/format";
+import { altFt, reportedDirection, reportedVisibility } from "../../lib/format";
 import { windText } from "../plan";
 
 /** A broadcast's figures as the engine reads them (read_atis): a figure
@@ -70,11 +70,13 @@ export function windWords(w: AtisWind): string {
   return [head && speed ? `${head} at ${speed}` : (head ?? speed), gusts].filter(Boolean).join(", ");
 }
 
-/** Statute miles as said: "10 sm", "2½ sm", "¾ sm". */
+/** Statute miles as said: "10 sm", "2½ sm", "¾ sm", "1 5/8 sm", at the
+ *  reportable value at or below it (reportedVisibility): an eighth was
+ *  written ".125 sm". */
 export function visibilityWords(sm: number): string {
-  const whole = Math.floor(sm),
-    frac = sm - whole;
-  const part = { 0.25: "¼", 0.5: "½", 0.75: "¾" }[frac] ?? (frac ? String(frac).slice(1) : "");
+  const [whole, fraction] = reportedVisibility(sm);
+  const glyph: Record<string, string> = { "1/4": "¼", "1/2": "½", "3/4": "¾" };
+  const part = fraction ? (glyph[fraction] ?? `${whole ? " " : ""}${fraction}`) : "";
   return `${whole || !part ? whole : ""}${part} sm`;
 }
 

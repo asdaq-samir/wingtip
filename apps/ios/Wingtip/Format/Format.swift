@@ -160,6 +160,21 @@ enum Format {
         x == x.rounded() && abs(x) < 1e9 ? String(Int(x)) : number(x, decimals: 1)
     }
 
+    /// A visibility as a whole and a fraction of a statute mile, as a METAR
+    /// writes it: 1.625 is (1, "5/8"), 10 is (10, nil). To the sixteenth
+    /// below 3 sm (the finest a US report gives, "1/16SM") and the whole
+    /// mile from 3, always down, as the web's reportedVisibility: a
+    /// visibility rounded up is more than was seen, and an eighth was
+    /// written ".125".
+    static func reportedVisibility(_ sm: Double) -> (whole: Int, fraction: String?) {
+        let whole = Int((sm + 1e-9).rounded(.down))
+        let sixteenths = sm >= 3 ? 0 : Int(((sm + 1e-9 - Double(whole)) * 16).rounded(.down))
+        guard sixteenths > 0 else { return (whole, nil) }
+        var (n, d) = (sixteenths, 16)
+        while n % 2 == 0 { n /= 2; d /= 2 }
+        return (whole, "\(n)/\(d)")
+    }
+
     /// Hours to a tenth as a logbook keeps them, "1.5 h".
     static func hours(_ h: Double, decimals: Int = 1) -> String { "\(number(h, decimals: decimals)) h" }
 

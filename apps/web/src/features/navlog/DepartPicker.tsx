@@ -1,6 +1,6 @@
 import { Suspense, useState } from "react";
-import { clockTime, localDay, twoFigures, zoneName } from "../../lib/format";
-import { leaveWhen } from "../../lib/format/leaveWhen";
+import { clockTime, localDay, zoneName } from "../../lib/format";
+import { dayAtNextHour, leaveWhen } from "../../lib/format/leaveWhen";
 import { CalendarIcon } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { fromChunk } from "../../lib/fromChunk";
@@ -52,12 +52,6 @@ interface Props {
 function instantAt(day: Date, time: string): string {
   const [h, m] = time.split(":").map(Number);
   return new Date(day.getFullYear(), day.getMonth(), day.getDate(), h || 0, m || 0).toISOString();
-}
-
-/** The next whole hour, local: the time a freshly picked day starts
- *  with, so picking a day alone already means something. */
-function nextHour(): string {
-  return `${twoFigures((new Date().getHours() + 1) % 24)}:00`;
 }
 
 /**
@@ -225,7 +219,7 @@ export default function DepartPicker({
               captionLayout="dropdown"
               min={earliest != null ? localDay(new Date(earliest)) : undefined}
               max={latest != null ? localDay(new Date(latest)) : undefined}
-              onChange={(day) => onChange(instantAt(new Date(`${day}T00:00`), time || nextHour()))}
+              onChange={(day) => onChange(time ? instantAt(new Date(`${day}T00:00`), time) : dayAtNextHour(new Date(`${day}T00:00`)))}
             />
           </Suspense>
         </div>

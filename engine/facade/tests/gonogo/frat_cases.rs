@@ -93,6 +93,19 @@ fn the_night_passenger_caution_follows_61_57_bs_own_window() {
     assert_eq!(risk["factors"][0]["key"], "recent-night");
 }
 
+/// 91.209(a) wants the position lights lit from sunset, before 1.1's
+/// night begins: a flight twenty minutes after sunset with an inoperative
+/// item deferred for VFR by day is grounded by it, as at night, and by
+/// day it is not.
+#[test]
+fn a_day_deferral_grounds_a_flight_after_sunset() {
+    let open = Some(vec![squawk("Left position light out", true, Some("VFR_DAY"))]);
+    let dusk = frat::Input { night: false, lights: Some(true), squawks: open.clone(), ..quiet_risk() };
+    assert_eq!(keys(&frat::assess(&dusk)), ["inoperative"]);
+    let day = frat::Input { night: false, lights: Some(false), squawks: open, ..quiet_risk() };
+    assert!(keys(&frat::assess(&day)).is_empty());
+}
+
 /// Approaches flown this month count from next month (61.57(c)(1)): with
 /// the currency's first day after the flight's, the pilot is not
 /// instrument current yet, whatever its last day.

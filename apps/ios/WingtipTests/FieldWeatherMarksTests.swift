@@ -122,7 +122,12 @@ struct FieldWeatherMarksTests {
 
     @Test func theStationLinesAreTheReportsFigures() {
         #expect(FieldWeatherMarks.visibilityLine(2, wx: "BR") == "2 SM BR")
-        #expect(FieldWeatherMarks.visibilityLine(0.5, wx: nil) == "0.5 SM")
+        #expect(FieldWeatherMarks.visibilityLine(0.5, wx: nil) == "1/2 SM")
+        // Eighths as a METAR writes them, never rounded up or a decimal.
+        #expect(FieldWeatherMarks.visibilityLine(1.625, wx: nil) == "1 5/8 SM")
+        #expect(FieldWeatherMarks.visibilityLine(0.125, wx: "FG") == "1/8 SM FG")
+        #expect(Atis.visibilityWords(1.125) == "1 1/8 sm")
+        #expect(Atis.visibilityWords(2.5) == "2½ sm")
         #expect(FieldWeatherMarks.ceilingLine(800, unknown: false) == "CIG 008")
         #expect(FieldWeatherMarks.ceilingLine(nil, unknown: true) == "CIG ///")
         #expect(FieldWeatherMarks.ceilingLine(nil, unknown: false) == nil)

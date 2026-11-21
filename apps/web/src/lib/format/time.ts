@@ -101,6 +101,24 @@ export function zuluTime(at: Date): string {
   return `${utcFigures(at)}Z`;
 }
 
+/** A feed's ISO time as an instant, ms: one with no zone read as UTC, as
+ *  every FAA and AWC time is (Date.parse reads "2026-11-21T14:00" as this
+ *  device's local time, hours out); null where there is none or it does
+ *  not read, which the caller takes as no bound. */
+export function instantOf(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const at = Date.parse(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`);
+  return Number.isNaN(at) ? null : at;
+}
+
+/** A product's or a report's time on this device's clock with its zone,
+ *  and UTC beside it as the product gives it: "15:00 CST (2100Z)". A
+ *  SIGMET valid until 2100Z read "valid till 15:00" beside raw text
+ *  saying 2100Z, with nothing to say whose 15:00. */
+export function clockAndZulu(at: Date): string {
+  return `${clockTime(at)} ${zoneName(at)} (${zuluTime(at)})`;
+}
+
 /** This device's calendar day, yyyy-MM-dd: the day a pilot means by
  *  "today", where an ISO string's slice is UTC's and turns over in the
  *  evening across the U.S. */

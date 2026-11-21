@@ -27,6 +27,7 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.coroutines.executeAsync
 import java.io.File
+import java.time.ZoneId
 import java.util.concurrent.TimeUnit
 
 /**
@@ -87,6 +88,17 @@ object Gateway {
                 val mark = asked.method != "GET" && asked.url.host == Config.host && asked.header(CSRF) == null && token != null
                 chain.proceed(if (mark) asked.newBuilder().header(CSRF, token).build() else asked)
             }
+            // The zone the phone keeps, on every call to the gateway, which
+            // reads the pilot's currency and paperwork on the pilot's own
+            // day (PilotDay), not UTC's, which turns over in the U.S.
+            // evening: on the last evening of 61.57's 90 days the pilot was
+            // told they were no longer current.
+            .addInterceptor { chain ->
+                val asked = chain.request()
+                chain.proceed(
+                    if (asked.url.host == Config.host) asked.newBuilder().header(TIME_ZONE, ZoneId.systemDefault().id).build() else asked,
+                )
+            }
             // A cache of the answers the gateway and the planner say may be
             // kept (Cache-Control: the chart's tiles for a cycle, the fields
             // and airspace of a box, a field's card for minutes), so a view
@@ -118,6 +130,7 @@ object Gateway {
     val writes: GatewayApi by lazy { NetworkModule.gateway(client.newBuilder().callTimeout(WRITE_TIMEOUT_S, TimeUnit.SECONDS).build()) }
 
     private const val CSRF = "X-XSRF-TOKEN"
+    private const val TIME_ZONE = "X-Time-Zone"
 
     /** The whole-call limits: a read, and a write, which may carry a
      *  scanned page or a track. */

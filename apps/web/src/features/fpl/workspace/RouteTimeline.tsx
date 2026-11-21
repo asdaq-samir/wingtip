@@ -102,7 +102,11 @@ export default function RouteTimeline({
   // Whether any point keeps another clock than the departure's: then every
   // point says its zone, the departure's too (the owner, 2026-11-20: "When
   // the time zone changes then show it on all the stops"); else none does.
-  const zoned = routePoints.some((ident, index) => {
+  // And where this device keeps another clock than the departure's (a
+  // pilot in Chicago planning Denver to Aspen): its unlabelled times read
+  // as Denver's, an hour out, so every point says its zone then too.
+  const deviceElsewhere = !!departZone && !!clockElsewhere(new Date(from), departZone, null);
+  const zoned = deviceElsewhere || routePoints.some((ident, index) => {
     const role =
       index === 0 && ident === planned.dep
         ? "Departure"
@@ -124,11 +128,19 @@ export default function RouteTimeline({
       ) : (
         <DepartPicker value={depart} onChange={changeDepart} look="time" />
       );
-      const there = zoned ? zoneOf(new Date(from), ident) : null;
-      return there ? (
+      // Read, the departure's own clock and zone, as the stops'. Picked,
+      // the picker keeps this device's clock, so it says this device's
+      // zone: it said the departure's beside the device's time, two hours
+      // out for a phone in New York leaving Denver.
+      if (zoned && read && depart) {
+        const there = zoneOf(new Date(depart), ident);
+        if (there) return <ZonedTime {...there} />;
+      }
+      const here = zoned ? clockIn(new Date(from), null) : null;
+      return here ? (
         <span className="inline-flex items-baseline">
           {leave}
-          <span className={`ml-1 font-normal ${TEXT.caption}`}>{there.zone}</span>
+          <span className={`ml-1 font-normal ${TEXT.caption}`}>{here.zone}</span>
         </span>
       ) : (
         leave

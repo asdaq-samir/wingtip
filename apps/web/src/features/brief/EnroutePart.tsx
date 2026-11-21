@@ -7,7 +7,7 @@ import { TEXT } from "../../lib/text";
 import { WINDS_MODELLED_LABEL, windsSource } from "../../lib/windsAloft";
 import type { Course, Leg, Totals } from "../../lib/api/types";
 import type { FlightBriefing } from "./useFlightBriefing";
-import { altFt, ceilingAndVisibility, feet, clockTime, windText } from "../plan";
+import { altFt, ceilingAndVisibility, feet, windText } from "../plan";
 import OnRouteRow from "./OnRouteRow";
 import { faaWords, gairmetAltitudes, gairmetTitle, sigmetHazard } from "../../lib/advisories";
 import WeatherAlongRoute from "./WeatherAlongRoute";
@@ -139,7 +139,7 @@ function AdverseConditions({ vm, legs }: { vm: FlightBriefing; legs: Leg[] }) {
               key={`g${i}`}
               media={<FindingIcon finding="caution" />}
               title={gairmetTitle(g)}
-              description={[gairmetAltitudes(g), faaWords(g.due_to), g.valid_at && `G-AIRMET for ${clockTime(new Date(g.valid_at))}`]
+              description={[gairmetAltitudes(g), faaWords(g.due_to), g.valid_at && `G-AIRMET for ${clockAndZulu(new Date(g.valid_at))}`]
                 .filter(Boolean)
                 .join(" · ")}
               data-testid="gairmet"

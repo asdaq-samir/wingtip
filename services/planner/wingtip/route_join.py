@@ -140,6 +140,7 @@ def route_totals(per_hop: list[dict], hops: list) -> dict:
         "legs_without_wind": sum(t["legs_without_wind"] for t in per_hop),
         "night": _either(t.get("night") for t in per_hop),
         "night_passengers": _either(t.get("night_passengers") for t in per_hop),
+        "lights": _either(t.get("lights") for t in per_hop),
         "rules": per_hop[0].get("rules", "vfr"),
         "alternate": per_hop[-1].get("alternate"),
         "planned_at": per_hop[0].get("planned_at"),

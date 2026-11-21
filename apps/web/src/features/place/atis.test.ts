@@ -43,6 +43,9 @@ describe("an ATIS heard", () => {
     expect(visibilityWords(2.5)).toBe("2½ sm");
     expect(visibilityWords(0.75)).toBe("¾ sm");
     expect(visibilityWords(10)).toBe("10 sm");
+    // An eighth was ".125 sm".
+    expect(visibilityWords(0.125)).toBe("1/8 sm");
+    expect(visibilityWords(1.125)).toBe("1 1/8 sm");
     // The ceiling is the lowest broken or overcast layer (14 CFR 1.1).
     expect(
       skyWords([

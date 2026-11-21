@@ -38,7 +38,7 @@ final class SpokenAlerts {
     /// off the banner, not heard.
     static func line(_ alert: AheadAlert) -> String {
         let title = alert.kind == "tfr" ? "TFR" : alert.name.replacingOccurrences(of: #"(\d) ft\b"#, with: "$1 feet", options: .regularExpression)
-        let clearance = alert.clearanceFt.map { "\(Int(abs($0).rounded()).formatted()) feet \($0 >= 0 ? "below" : "above") you" }
+        let clearance = alert.clearanceFt.map { "\(Int(abs($0).rounded()).formatted(.number.locale(Format.locale))) feet \($0 >= 0 ? "below" : "above") you" }
         return [title, clearance, when(alert)].compactMap { $0 }.joined(separator: ", ")
     }
 

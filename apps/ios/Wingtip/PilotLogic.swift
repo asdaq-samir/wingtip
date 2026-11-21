@@ -208,7 +208,7 @@ struct AircraftForm: Equatable {
         equipment = a.equipment ?? ""; surveillance = a.surveillance ?? ""; colour = a.colour ?? ""
     }
 
-    private static func number(_ s: String) -> Double? { Double(s.trimmingCharacters(in: .whitespaces)) }
+    private static func number(_ s: String) -> Double? { Typed.number(s) }
 
     /// The key of a problem with the form as a whole, said under it: the
     /// engine could not check the fields, so nothing may be saved.

@@ -64,7 +64,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     Ok(out)
 }
 
-/// Night and civil twilight (sun.rs, 14 CFR 1.1, 61.57(b)).
+/// Night and civil twilight (sun.rs, 14 CFR 1.1, 61.57(b), 91.209).
 #[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn night(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
@@ -81,6 +81,14 @@ pub fn night(name: &str, v: &Value) -> Result<String, String> {
         "passenger_night_on_the_way" => {
             sun::passenger_night_on_the_way(pair("start")?, pair("end")?, ask.num("depart_s")?, ask.num("minutes")?)
         }
+        // 91.209(a)'s position lights, sunset to sunrise.
+        "lights_on_the_way" => sun::lights_on_the_way(
+            pair("start")?,
+            pair("end")?,
+            ask.num("depart_s")?,
+            ask.num("minutes")?,
+            ask.opt_num("alaska_visibility_sm")?,
+        ),
         _ => sun::night_at_either_end(pair("start")?, ask.num("depart_s")?, pair("end")?, ask.num("arrive_s")?),
     };
     Ok(night.to_string())

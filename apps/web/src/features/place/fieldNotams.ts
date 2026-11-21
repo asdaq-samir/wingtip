@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fieldNotamsQuery, type FieldNotams } from "../../lib/queryClient";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
-import { twoFigures, zuluTime } from "../../lib/format";
+import { instantOf, twoFigures, zuluTime } from "../../lib/format";
 
 // The field's NOTAMs and their query are lib/queryClient's, which Keep
 // for the Air asks for each of the route's fields too.
@@ -124,8 +124,8 @@ export function numberOf(n: FieldNotam, ident: string): string {
 /** A feed's time as a date, one with no zone read as UTC; null where it
  *  is none. */
 export function dateOf(iso: string | null | undefined): Date | null {
-  const at = iso ? new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`) : null;
-  return at && !Number.isNaN(at.getTime()) ? at : null;
+  const at = instantOf(iso);
+  return at === null ? null : new Date(at);
 }
 
 /** The feed's times, or where it gave none the NOTAM's own (its
