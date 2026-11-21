@@ -52,7 +52,7 @@ class PhoneWipeTest {
         trail.took(fix(1_000L, 90.0))
         trail.took(fix(20_000L, 90.0))
         val recordedFile = File(dir, "flight-recorded.json")
-        val recorder = FlightRecorder(recordedFile, Dispatchers.Unconfined) { 60_000L }
+        val recorder = FlightRecorder(recordedFile, Dispatchers.Unconfined, underway = { (it ?: 0.0) >= 20.0 }) { 60_000L }
         recorder.took(fix(1_000L, 90.0))
         recorder.asked(600.0)
         assertTrue(recordedFile.isFile)

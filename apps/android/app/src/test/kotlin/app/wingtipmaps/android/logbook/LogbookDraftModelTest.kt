@@ -50,7 +50,9 @@ class LogbookDraftModelTest {
         override val recorded = MutableStateFlow(Recorded())
         override fun asked(to: Double) { recorded.value = recorded.value.copy(askedTo = to) }
         override fun forget() { recorded.value = Recorded() }
-        fun points(n: Int) { recorded.value = recorded.value.copy(points = (0 until n).map { DraftTrackPoint(lat = 42.0, lon = -88.0, t = it * 5_000.0) }) }
+        fun points(n: Int, flown: Boolean = true) {
+            recorded.value = recorded.value.copy(points = (0 until n).map { DraftTrackPoint(lat = 42.0, lon = -88.0, t = it * 5_000.0) }, flown = flown)
+        }
     }
 
     private class Shelf : TrackShelf {
@@ -99,7 +101,7 @@ class LogbookDraftModelTest {
     fun aFlightEndedIsDrawnChangedAndLoggedOnlyOnLog() {
         val flight = Flight()
         val servers = Servers()
-        val model = LogbookDraftModel(flight, Shelf(), landed, servers) { -360.0 }
+        val model = LogbookDraftModel(flight, Shelf(), landed, servers, Dispatchers.Unconfined) { -360.0 }
         model.context(signedIn = true, tail = "N123AB", type = "c172")
         // Under a minute of points: not read yet.
         flight.points(11)
@@ -135,7 +137,7 @@ class LogbookDraftModelTest {
         val flight = Flight()
         val shelf = Shelf()
         val servers = Servers(signal = false)
-        val model = LogbookDraftModel(flight, shelf, landed, servers) { 0.0 }
+        val model = LogbookDraftModel(flight, shelf, landed, servers, Dispatchers.Unconfined) { 0.0 }
         model.context(signedIn = true, tail = "N123AB", type = "c172")
         flight.points(150)
         model.log()
@@ -157,7 +159,7 @@ class LogbookDraftModelTest {
     @Test
     fun laterAndNotAFlightLetItGo() {
         val flight = Flight()
-        val model = LogbookDraftModel(flight, Shelf(), landed, Servers()) { 0.0 }
+        val model = LogbookDraftModel(flight, Shelf(), landed, Servers(), Dispatchers.Unconfined) { 0.0 }
         flight.points(150)
         assertTrue(model.state.value.open)
         // Signed out: no draft asked.
@@ -166,7 +168,7 @@ class LogbookDraftModelTest {
         assertFalse(model.state.value.open)
         assertEquals(150, flight.recorded.value.points.size)
         // Still in the air by the engine: nothing offered.
-        val flying = LogbookDraftModel(flight, Shelf(), { TrackReading(1, endsAirborne = true, blockTo = 600_000.0) }, Servers()) { 0.0 }
+        val flying = LogbookDraftModel(flight, Shelf(), { TrackReading(1, endsAirborne = true, blockTo = 600_000.0) }, Servers(), Dispatchers.Unconfined) { 0.0 }
         flight.asked(0.0)
         assertFalse(flying.state.value.open)
         model.discard()
@@ -196,7 +198,7 @@ class LogbookDraftModelTest {
     fun theRecorderKeepsAPointEachFiveSecondsAcrossLaunches() {
         val file = File(Files.createTempDirectory("rec").toFile(), "flight.json")
         var now = 0L
-        val rec = FlightRecorder(file, Dispatchers.Unconfined) { now }
+        val rec = FlightRecorder(file, Dispatchers.Unconfined, underway = { false }) { now }
         fun fix(atMs: Long) = OwnShip.Fix(42.0, -88.0, 800.0, 90.0, 0.0, 5.0, atMs)
         rec.took(fix(1_000))
         rec.took(fix(3_000))
@@ -204,8 +206,47 @@ class LogbookDraftModelTest {
         assertEquals(listOf(1_000.0, 6_000.0), rec.recorded.value.points.map { it.t })
         now = 40_000
         rec.asked(600.0)
-        val again = FlightRecorder(file, Dispatchers.Unconfined) { now }
+        val again = FlightRecorder(file, Dispatchers.Unconfined, underway = { false }) { now }
         assertEquals(2, again.recorded.value.points.size)
         assertEquals(600.0, again.recorded.value.askedTo!!, 0.0)
+    }
+
+    @Test
+    fun aPhoneParkedAllDayKeepsTenMinutesAndStillRecordsTheNextFlight() {
+        val file = File(Files.createTempDirectory("rec").toFile(), "flight.json")
+        val rec = FlightRecorder(file, Dispatchers.Unconfined, underway = { (it ?: 0.0) >= 40.0 }) { 0L }
+        fun fix(atMs: Long, kt: Double) = OwnShip.Fix(42.0, -88.0, 800.0, 90.0, kt, 5.0, atMs)
+        // Eight hours parked, a fix each 5 s: past where MOST once stopped it.
+        val parked = 8 * 3_600_000L
+        for (t in 0..parked step 5_000L) rec.took(fix(t, 0.0))
+        val ground = rec.recorded.value
+        assertFalse(ground.flown)
+        assertTrue(ground.points.size <= 121)
+        assertEquals(parked.toDouble(), ground.points.last().t, 0.0)
+        assertTrue(parked - ground.points.first().t <= FlightRecorder.GROUND_KEPT_MS)
+        // The takeoff roll: flown, and from then on every point is kept.
+        for (t in parked + 5_000L..parked + 3_600_000L step 5_000L) rec.took(fix(t, 90.0))
+        val flight = rec.recorded.value
+        assertTrue(flight.flown)
+        assertEquals(ground.points.size + 720, flight.points.size)
+        // Kept across a launch, flown and all.
+        assertTrue(FlightRecorder(file, Dispatchers.Unconfined, underway = { false }) { 0L }.recorded.value.flown)
+    }
+
+    @Test
+    fun groundAloneIsNeverReadByTheEngine() {
+        val flight = Flight()
+        var reads = 0
+        val counting = DraftRules { reads++; TrackReading(landings = 1, endsAirborne = false, blockTo = 600_000.0) }
+        val model = LogbookDraftModel(flight, Shelf(), counting, Servers(), Dispatchers.Unconfined) { 0.0 }
+        flight.points(120, flown = false)
+        assertEquals(0, reads)
+        assertFalse(model.state.value.open)
+        // Flown: read once a minute of points, not at each one.
+        flight.points(150)
+        assertEquals(1, reads)
+        assertTrue(model.state.value.open)
+        flight.points(151)
+        assertEquals(1, reads)
     }
 }

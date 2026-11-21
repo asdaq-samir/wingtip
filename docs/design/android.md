@@ -1040,7 +1040,10 @@ a Material `Badge` at the top of the map, beside the receiver's, says
   4. A new entry (`LogbookForm`) opens as a full-height sheet with its
      fields.
   5. Flights recorded automatically arrive as drafts (`DraftEntry`) at
-     the top, with Keep and Discard. A logged flight is linked to the
+     the top, with Keep and Discard. The recorder (`FlightRecorder`)
+     keeps only the last ten minutes until the airplane first reaches
+     flying speed (the engine's `underway`), as the iPhone's does, and the
+     engine reads the track only once it has flown, off the main thread. A logged flight is linked to the
      saved flight whose ends are its route's, and its flown track is sent
      to it (PUT /api/flights/{id}/track). Where that fails (no signal
      after landing), the track is kept on the phone (`UnsentTracks`,
