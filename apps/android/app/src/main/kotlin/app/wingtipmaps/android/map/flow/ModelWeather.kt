@@ -10,6 +10,7 @@ import app.wingtipmaps.android.api.generated.FlowLayer
 import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.flowLevels
+import app.wingtipmaps.android.flight.Ticker
 import app.wingtipmaps.android.settings
 import app.wingtipmaps.android.ui.A11y
 import kotlinx.coroutines.CancellationException
@@ -168,6 +169,9 @@ class ModelWeather private constructor(private val context: Context, private val
 
     private suspend fun fetchForever() {
         while (true) {
+            // Only for the map on the screen: put away, nothing is asked
+            // until the app is back (Android keeps the process).
+            Ticker.shared.inFront.first { it }
             try {
                 val layer = Planner.api.flowLayer().planned()
                 _state.update { it.copy(layer = layer, failed = false) }

@@ -50,6 +50,8 @@ import app.wingtipmaps.android.search.Remembered
 import app.wingtipmaps.android.search.SearchMemory
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 /**
  * A field's card, laid out as Google Maps' place sheet on Android is in
@@ -81,7 +83,12 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     val context = LocalContext.current
     val state by model.state.collectAsStateWithLifecycle()
     val planState by plan.state.collectAsStateWithLifecycle()
-    val fix by flight.ownShip.fix.collectAsStateWithLifecycle()
+    // The airplane's place to a thousandth of a degree, told only as it
+    // changes: the whole card was drawn again, and its facts asked of the
+    // engine again, at every fix.
+    val ship = flight.ownShip
+    val near by remember(ship) { ship.fix.map { it?.let(AirportFacts.From::near) }.distinctUntilChanged() }
+        .collectAsStateWithLifecycle(ship.fix.value?.let(AirportFacts.From::near))
     val airplane = rememberAirplaneNow(plan)
     val actions = rememberRouteActions(plan)
     LaunchedEffect(ident) { if (ident.isNotEmpty()) model.open(ident) }
@@ -91,7 +98,7 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     // route's departure, its place the course's or its own card's.
     val known = planState.course?.departure?.let { AirportModel.Departure(it.ident, it.lat, it.lon) }
     LaunchedEffect(planState.dep, known) { model.departFrom(planState.dep, known) }
-    val from = fix?.let { AirportFacts.From(it.lat, it.lon) } ?: state.departure?.let { AirportFacts.From(it.lat, it.lon, it.ident) }
+    val from = near ?: state.departure?.let { AirportFacts.From(it.lat, it.lon, it.ident) }
     val cruise = airplane.value(FigureKey.CRUISE)
     val facts = remember(place, from, cruise) { place?.let { AirportFacts.of(it, from, cruise) } }
     var section by rememberSaveable(ident) { mutableIntStateOf(0) }

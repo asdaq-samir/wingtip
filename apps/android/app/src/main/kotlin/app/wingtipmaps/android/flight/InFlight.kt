@@ -107,8 +107,13 @@ class InFlight {
         }
         val vs = Engine.verticalSpeed(altitudes.map { EngineContract.VerticalSpeedInputSamplesItem(it.first, it.second) })
         val glide = if (ringShown) Engine.glideRing(fix.lat, fix.lon, fix.altitudeFt, fix.groundspeedKt, terrainFt, fieldFt, glideRatio) else Result.success(null)
-        val progress = progress(fix, plan, nowMs)
         val underway = OwnShip.underway(fix.groundspeedKt)
+        // Where the airplane is on the route only once it moves: parked,
+        // the engine's answer is never on the route (ON_ROUTE_NM needs
+        // motion), the strip shows the planned totals, and the whole line
+        // went to the engine once a second for nothing. Where the engine
+        // cannot say, it is asked.
+        val progress = if (underway.getOrDefault(true)) progress(fix, plan, nowMs) else Result.success(null)
         // The first rule that failed, in the engine's words (Engine.rule
         // has logged it); the figures it would have given are left out.
         val failed = listOf("vertical speed" to vs, "glide ring" to glide, "route progress" to progress, "flying speed" to underway)

@@ -21,6 +21,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.PathPoint
@@ -86,7 +87,7 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  * @param layers Setup's switches: which overlays are drawn, and the
  *   terminal area chart pinned (`terminal`, where the chart has one).
  * @param weather each reporting field's weather pip by ident (AirportWeatherMarks).
- * @param traffic the airplanes heard (Traffic), `tracked` the one ringed.
+ * @param traffic the airplanes heard (Traffic), read here alone, `tracked` the one ringed.
  * @param night the chart dimmed (MapStyle.chartPaint): a dark Appearance but Dark + Bright.
  * @param bottomInset what the sheet covers of the map, in pixels: the
  *   map's padding, so its middle is the middle of what the sheet leaves.
@@ -112,7 +113,7 @@ fun ChartMap(
     layers: MapLayers = MapLayers(),
     terminal: Charts.Companion.Terminal? = null,
     weather: Map<String, String> = emptyMap(),
-    traffic: List<TrafficDrawing.Target> = emptyList(),
+    traffic: () -> List<TrafficDrawing.Target> = { emptyList() },
     tracked: String? = null,
     night: Boolean = false,
     bottomInset: Int = 0,
@@ -167,7 +168,7 @@ fun ChartMap(
     LaunchedEffect(holder, layers) { holder.layers(layers) }
     LaunchedEffect(holder, terminal, layers.tac) { holder.terminal(if (layers.tac) terminal else null) }
     LaunchedEffect(holder, weather) { holder.weather(weather) }
-    LaunchedEffect(holder, traffic, tracked) { holder.traffic(traffic, tracked) }
+    LaunchedEffect(holder, traffic(), tracked) { lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { holder.traffic(traffic(), tracked) } }
     LaunchedEffect(holder) { snapshotFlow { ring() }.collect(holder::glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
     LaunchedEffect(holder, selectedField) { holder.selectField(selectedField?.ident).also { MapTerrain.selected(selectedField?.ident) } }
@@ -638,7 +639,6 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private fun edgeColour(night: Boolean): Int = if (night) Color.WHITE else Color.rgb(0x0b, 0x0f, 0x0a)
 
     private companion object {
-
         const val ROUTE = "route"
         const val ROUTE_EDGE = "route-edge"
         /** The chart's magenta, the web's COURSE_MAGENTA. */
@@ -648,7 +648,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
          *  TAP.mark and TAP.line). */
         const val TAP_MARK = 22f
         const val TAP_LINE = 10f
-        /** How often each airplane is carried on between answers. */
+        /** How often each airplane is carried on between answers, while the map is started. */
         const val CARRY_MS = 1_000L
         const val GLIDE = "glide-ring"
         /** The sheet's own settle, so the map's middle moves with it. */

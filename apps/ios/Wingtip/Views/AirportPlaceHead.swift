@@ -45,7 +45,7 @@ struct AirportPlaceHead: View {
             }
             titles
             let distance = Result { try AirportDistance.of(lat: place.lat, lon: place.lon, ident: place.ident,
-                                                           fix: ownShip.fix?.coordinate, departure: plan.course?.departure) }
+                                                           fix: ownShip.coarseCoordinate, departure: plan.course?.departure) }
             actions(distance: try? distance.get())
             // A failure is said under the facts, so a missing distance is not read as none.
             AirportFacts(place: place, distance: try? distance.get(), fuel: fuel)
