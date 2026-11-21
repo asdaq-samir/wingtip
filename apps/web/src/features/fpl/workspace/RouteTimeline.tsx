@@ -10,7 +10,7 @@ import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
 import { DepartPicker } from "../../navlog/lazy";
 import { FuelStopsChip, TimelineRoute, TypeRouteButton, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
-import { etaAt } from "../../plan";
+import { etaAt, rowCautions } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
 import type { ProceduresRouteProps } from "../../procedures/lazy";
 import { MissingEnd, TypeRow } from "./RouteStart";
@@ -133,6 +133,18 @@ export default function RouteTimeline({
     const there = zoned ? zoneOf(arrival.at, ident) : null;
     return there ? <ZonedTime {...there} /> : etaAt(from, arrival.minutes);
   };
+  // Each point's warning where it, or a leg since the point before, lies
+  // outside the United States (the engine's route_jurisdiction, decision
+  // 0053): the nav log's rows from the point before's to its own.
+  const cautions = rowCautions(routeRows);
+  let fromRow = -1;
+  const cautionTo = (row: (typeof routeRows)[number] | undefined) => {
+    const at = row ? routeRows.indexOf(row) : -1;
+    if (at < 0) return null;
+    const said = cautions.slice(fromRow + 1, at + 1).find(Boolean) ?? null;
+    fromRow = at;
+    return said;
+  };
   const points: TimelinePoint[] = routePoints.map((ident, index) => {
     const role =
       index === 0 && ident === planned.dep
@@ -153,6 +165,7 @@ export default function RouteTimeline({
       time: timeOf(ident, role, seen),
       category: unknown || !field ? null : metarCategory(ident),
       problem: unknown ?? (status.closed ? `${status.closed}. Pick another field.` : status.failed),
+      caution: cautionTo(visitRow(routeRows, role, ident, seen)),
       checking: status.checking,
       fuelStop: role === "Stop" && fuel.some((f) => sameField(f, ident)),
       field,

@@ -190,6 +190,7 @@ readback_check
 ready_to_fly
 registered_profile
 replay_track
+route_jurisdiction
 route_position
 route_read
 route_way_warning

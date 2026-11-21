@@ -13,6 +13,7 @@ import { create } from "zustand";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
 import type { Finding } from "../../lib/findings";
 import type { VerdictItem } from "../../lib/verdict";
+import type { RouteJurisdiction } from "../plan";
 
 /** A field's: the departure's, or the destination's. */
 export interface FieldGlance {
@@ -60,6 +61,10 @@ export interface BriefGlance {
     finding: Finding;
   };
   arrive: FieldGlance | null;
+  /** The route's one line where any of it lies outside the United States
+   *  (the engine's route_jurisdiction, decision 0053): its figures are by
+   *  US rules. Null where it is all in the United States. */
+  outside: RouteJurisdiction["brief"];
   /** The reports the briefing holds as sent, for a finding's sources: the
    *  METARs and TAFs at the fields, and the TFRs by their NOTAM. */
   raw: { metars: { ident: string; raw: string }[]; tafs: { ident: string; raw: string }[]; tfrs: string[] };

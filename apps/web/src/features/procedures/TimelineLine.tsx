@@ -37,6 +37,9 @@ export interface TimelinePoint {
    *  not know, a field NASR lists as closed (decision 0043), or a field
    *  whose card could not be had to say. */
   problem: string | null;
+  /** Where it, or the leg to it, lies outside the United States: the
+   *  engine's warning that its figures are by US rules (decision 0053). */
+  caution: string | null;
   /** A field whose card has not said yet whether it is open: its line
    *  does not open to its runways and procedures till it has (0043). */
   checking: boolean;
@@ -273,6 +276,12 @@ export function TimelineLine({
         {point.problem && (
           <p className={cn("pb-2 text-destructive", TEXT.note)} data-testid="timeline-problem">
             {point.problem}
+          </p>
+        )}
+        {/* Outside the United States: said under it, never refused. */}
+        {point.caution && !point.problem && (
+          <p className={cn("pb-2 text-caution-ink", TEXT.note)} data-testid="timeline-caution">
+            {point.caution}
           </p>
         )}
         {/* A move of it the route cannot take, said where it was tried

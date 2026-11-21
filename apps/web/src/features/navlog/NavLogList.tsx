@@ -7,7 +7,7 @@ import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import type { Leg } from "../../lib/api/types";
 import { feet, nm, zoneName } from "../../lib/format";
-import { placeName, altFt, bearing, etaAt, one, windText, flownNmOf, isLegPoint, legOf, procedureOf, rowPoint } from "../plan";
+import { placeName, altFt, bearing, etaAt, one, windText, flownNmOf, isLegPoint, legOf, procedureOf, rowCautions, rowPoint } from "../plan";
 import type { NavLogRow } from "../plan";
 import { wantPlace } from "../../lib/navigation/wanted";
 import { TEXT } from "../../lib/text";
@@ -151,6 +151,8 @@ export function NavLogList({
   const airplane = useAirplaneChosen();
   const rows = airplane ? allRows : allRows.filter((r) => !isLegPoint(r));
   const rail = railOf(rows);
+  // Outside the United States the figures are still the FAA's (0053).
+  const cautions = rowCautions(rows);
   return (
     <>
       {/* Its age where it is the one kept on this device (lib/kept). */}
@@ -226,6 +228,16 @@ export function NavLogList({
                         2026-11-17). */}
                     <span className={cn("font-semibold text-muted-foreground", TEXT.note)} data-testid="navlog-wind-change">
                       Wind {wind}
+                    </span>
+                  </div>
+                )}
+                {/* Where the route leaves the United States, before the first
+                    row there: its figures are by US rules (warn, never limit). */}
+                {cautions[at] && cautions[at] !== cautions[at - 1] && (
+                  <div role="row" className="relative flex min-h-7 items-center py-1 pl-12.5" data-testid="navlog-jurisdiction">
+                    <span aria-hidden="true" className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
+                    <span role="cell" aria-colspan={7} className={cn("font-semibold text-caution-ink", TEXT.note)}>
+                      {cautions[at]}
                     </span>
                   </div>
                 )}
