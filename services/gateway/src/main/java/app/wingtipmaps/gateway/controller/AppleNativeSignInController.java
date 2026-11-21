@@ -52,8 +52,8 @@ import org.springframework.web.bind.annotation.RestController;
  * on this session, as the web's own Apple sign-in does (the same pilot,
  * found by Apple's subject, PilotService.fromOidcUser). The sheet's
  * authorization code, where the app sends it, is traded for the refresh
- * token that deleting the account revokes (AppleRevocation.tradeAppCode, App Review
- * 5.1.1(v)). The web view
+ * token that deleting the account revokes (AppleRevocation.tradeAppCode,
+ * App Review 5.1.1(v)). The web view
  * cannot use the web flow: Apple's page does not load inside an app's
  * app-bound web view, and App Review expects the native sheet.
  *
@@ -72,20 +72,20 @@ public class AppleNativeSignInController {
      *  the app sends one, then on (APP_APPLE_REQUIRE_NONCE). */
     private final boolean requireNonce;
     /** Trades the sheet's authorization code; null where none is traded. */
-    private final @Nullable AppleRevocation appleTokens;
+    private final @Nullable AppleRevocation appleGrants;
     /** The app's client at Apple, which the traded token is kept under. */
     private final @Nullable AppleAppTokens appClient;
 
     @Autowired
     public AppleNativeSignInController(
-            PilotService pilots, AppProperties app, AppleRevocation appleTokens, AppleAppTokens appClient) {
+            PilotService pilots, AppProperties app, AppleRevocation appleGrants, AppleAppTokens appClient) {
         this(
                 pilots,
                 app.ios().bundleId().isBlank()
                         ? null
                         : appleTokens(app.ios().bundleId().trim()),
                 app.apple().requireNonce(),
-                appleTokens,
+                appleGrants,
                 appClient);
     }
 
@@ -101,12 +101,12 @@ public class AppleNativeSignInController {
             PilotService pilots,
             JwtDecoder decoder,
             boolean requireNonce,
-            @Nullable AppleRevocation appleTokens,
+            @Nullable AppleRevocation appleGrants,
             @Nullable AppleAppTokens appClient) {
         this.pilots = pilots;
         this.decoder = decoder;
         this.requireNonce = requireNonce;
-        this.appleTokens = appleTokens;
+        this.appleGrants = appleGrants;
         this.appClient = appClient;
     }
 
@@ -218,10 +218,10 @@ public class AppleNativeSignInController {
     /** The sheet's code traded for Apple's refresh token and kept with
      *  the pilot, best effort: the sign-in stands whatever Apple says. */
     private void keepRefreshToken(Pilot pilot, @Nullable String authorizationCode) {
-        if (appleTokens == null || appClient == null || authorizationCode == null || authorizationCode.isBlank()) {
+        if (appleGrants == null || appClient == null || authorizationCode == null || authorizationCode.isBlank()) {
             return;
         }
-        appleTokens
+        appleGrants
                 .tradeAppCode(authorizationCode)
                 .ifPresent(token -> pilots.keepAppleRefreshToken(pilot, token, appClient.clientId()));
     }
