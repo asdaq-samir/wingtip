@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 
 def _rerender_tile(args: tuple) -> bytes | None | bool:
     """One tile rendered again from the sheets as they are now, the same
-    way `chart_tiles.tile_png` would render it: its PNG, None where no sheet draws it
+    way `chart_tiles.tile_bytes` would render it: its PNG, None where no sheet draws it
     any more, or False where a sheet it needs could not be had. A
     top-level function because it runs in a worker process."""
     kind_key, cycle, x, y, zoom, scale = args
@@ -31,7 +31,7 @@ def _rerender_tile(args: tuple) -> bytes | None | bool:
     if not complete:
         # A sheet this tile needs could not be had. Drawn without it, the
         # tile would go out under the bumped revision -- which browsers
-        # then keep for weeks -- missing that sheet; `chart_tiles.tile_png` never
+        # then keep for weeks -- missing that sheet; `chart_tiles.tile_bytes` never
         # caches such a tile either. The old tile stays until a run that
         # has every sheet.
         return False

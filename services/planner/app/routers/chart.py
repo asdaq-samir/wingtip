@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
-from wingtip import chart_kinds, chart_serving, chart_tiles, chartlabels, chartvision, geo
+from wingtip import chart_kinds, chart_serving, chart_tiles, chartlabels, chartvision, geo, tile_archive
 
 from .. import chart_model
 from ..chart_model import TRAINING_HALF_WIDTH_NM
@@ -60,22 +60,26 @@ def chart_info(response: Response) -> ChartInfo:
 def _chart_tile(request: Request, kind: chart_kinds.ChartKind, z: int, x: int, y: int, scale: int = 1) -> Response:
     if not (kind.min_zoom <= z <= kind.max_zoom):
         raise HTTPException(404, f"{kind.key} tiles exist for zoom {kind.min_zoom}-{kind.max_zoom}")
-    png = chart_tiles.tile_png(x, y, z, kind.key, scale)
-    if png is None:
+    tile = chart_tiles.tile_bytes(x, y, z, kind.key, scale)
+    if tile is None:
         # No sheet covers it -- the sea, Canada, Mexico round the country
         # as it opens: nothing to draw, which is no failure, so 204, kept
         # as long as a tile is. A 404 was an error in the browser's
         # console for every one, which Lighthouse's best practices count
         # (18 on the planner's first view, 2026-10-10).
         return Response(status_code=204, headers={"Cache-Control": _tile_cache(request, kind.key)})
-    return Response(content=png, media_type="image/png", headers={"Cache-Control": _tile_cache(request, kind.key)})
+    # Lossless WebP out of an archive packed since 2026-11-21, PNG out of
+    # one packed before or drawn on request: the address keeps its .png
+    # whatever the bytes are (every map's template has it), and the
+    # Content-Type says which (tile_archive.media_type).
+    return Response(content=tile, media_type=tile_archive.media_type(tile), headers={"Cache-Control": _tile_cache(request, kind.key)})
 
 
 # Before the plain tile's route, which would take "93@2x" for its y and
 # turn it away as no number.
 @router.get(
     "/api/chart-tile/{kind}/{z}/{x}/{y}@2x.png",
-    responses={200: {"content": {"image/png": {}}}, 204: {"description": "No sheet covers the tile"}},
+    responses={200: {"content": {"image/webp": {}, "image/png": {}}}, 204: {"description": "No sheet covers the tile"}},
     openapi_extra=SHARED,
 )
 def chart_tile_2x(request: Request, kind: str, z: int, x: int, y: int) -> Response:
@@ -90,7 +94,7 @@ def chart_tile_2x(request: Request, kind: str, z: int, x: int, y: int) -> Respon
 
 @router.get(
     "/api/chart-tile/{kind}/{z}/{x}/{y}.png",
-    responses={200: {"content": {"image/png": {}}}, 204: {"description": "No sheet covers the tile"}},
+    responses={200: {"content": {"image/webp": {}, "image/png": {}}}, 204: {"description": "No sheet covers the tile"}},
     openapi_extra=SHARED,
 )
 def chart_tile(request: Request, kind: str, z: int, x: int, y: int) -> Response:

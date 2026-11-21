@@ -4,6 +4,7 @@ import app.wingtipmaps.gateway.domain.InstructorLink;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,10 +15,14 @@ public interface InstructorLinkRepository extends JpaRepository<InstructorLink, 
     /** A student's instructors, asked and taken, oldest first. */
     List<InstructorLink> findByStudentIdOrderByAskedAt(Long studentId);
 
-    /** An instructor's students, oldest first. */
+    /** An instructor's students, oldest first, each student read with
+     *  it: the instructor's page names every one. */
+    @EntityGraph(attributePaths = "student")
     List<InstructorLink> findByInstructorIdOrderByAcceptedAt(Long instructorId);
 
-    /** Asks for an address not yet taken, whatever its case. */
+    /** Asks for an address not yet taken, whatever its case, each
+     *  student read with it. */
+    @EntityGraph(attributePaths = "student")
     @Query(
             "SELECT l FROM InstructorLink l WHERE l.instructor IS NULL AND lower(l.email) = lower(:email) ORDER BY l.askedAt")
     List<InstructorLink> findOpenFor(@Param("email") String email);

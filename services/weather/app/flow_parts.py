@@ -19,6 +19,7 @@ import time
 from datetime import datetime, timedelta
 
 import numpy as np
+from cachetools import LRUCache
 from wingtip import utc, weather_store
 from wingtip.units import M_PER_FT
 
@@ -34,6 +35,15 @@ REFRESH_H = 3
 BACKOFF_S = 300
 BACKOFF_MOST_S = 3600
 _failed: dict[str, tuple[int, float]] = {}
+#: The aloft part last made, by (run, step, fallback, the wind's levels):
+#: neighbouring hours of the timeline round to the same 3-hourly GFS step
+#: (flow_aloft.nearest_step), and the next frame is stored from what is
+#: kept here rather than download the run's column (about 2 MB) and world
+#: (0.16 MB) files and decode them again (waste-server.md F). Two entries,
+#: as the frames are made in time order: each its PNGs (a few hundred KB)
+#: and its numbers on the half-degree grid (three fields at the levels,
+#: some 15 MB at most), well inside the service's 768 MB.
+_ALOFT_MADE: LRUCache = LRUCache(maxsize=2)
 
 
 def backed_off(source: str, now: float | None = None) -> bool:
@@ -160,34 +170,11 @@ def aloft(valid: datetime, now: datetime, levels: dict, held: dict | None, fallb
             continue
 
         def make(run=run, step=step, key=key):
-            body = flow_aloft.column_body(flow_nomads.grouped, run, step, levels["temperature_hpa"], wind=fallback)
-            if body is None:
-                flow_nomads.NOT_UP[("aloft", run, step)] = time.time()
+            made = _aloft_made(run, step, levels, fallback)
+            if made is None:
                 return None
-            half = flow_aloft.at_levels_half(body, levels["wind"], levels["flight_levels_from_ft"])
-            terrain = _held_terrain()
-            bodies, numbers, kept = {}, {"temp": [], "u": [], "v": []}, []
-            for level in levels["wind"]:
-                level_id = level["id"]
-                if f"temp-{level_id}" not in half:
-                    continue
-                below = _under_ground(level.get("ft"), terrain, levels)
-                hide = lambda a, below=below: a if below is None else np.where(below, np.nan, a)  # noqa: E731
-                # The half-degree grid's points are the output's even rows and columns.
-                hide_half = lambda a, below=below: a if below is None else np.where(below[::2, ::2], np.nan, a)  # noqa: E731
-                kept.append({"id": level_id, "ft": level["ft"]})
-                for field in numbers:
-                    numbers[field].append(hide_half(half.get(f"{field}-{level_id}", np.full_like(half[f"temp-{level_id}"], np.nan))))
-                bodies[f"temp-{level_id}"] = flow_grid.png_values("temp", hide(flow_grid.upsample(half[f"temp-{level_id}"])))
-                if fallback and f"u-{level_id}" in half and f"v-{level_id}" in half:
-                    u, v = (hide(flow_grid.upsample(half[f"{c}-{level_id}"])) for c in ("u", "v"))
-                    bodies[f"wind-{level_id}"] = flow_grid.png_wind(u, v)
-            world = flow_aloft.world_body(flow_nomads.grouped, run, step)
-            if world is not None:
-                bodies["world"] = flow_grid.png_wind(*flow_aloft.world_wind(world))
+            bodies, kept, numbers = made
             tag = flow_store.tag(key["run"], step)
-            if not fallback:
-                numbers = {"temp": numbers["temp"]}
             stored = flow_store.store_numbers(valid, "aloft", tag, kept, numbers) if kept else None
             return _stored_part(valid, key, bodies, tag, stored)
 
@@ -195,3 +182,43 @@ def aloft(valid: datetime, now: datetime, levels: dict, held: dict | None, fallb
         if made is not None:
             return made
     return held
+
+
+def _aloft_made(run: datetime, step: int, levels: dict, fallback: bool) -> tuple[dict, list, dict] | None:
+    """The aloft part's pictures, its levels and its numbers from one GFS
+    run and step, made once for the frames that share it (_ALOFT_MADE).
+    None where NOMADS has not posted it yet."""
+    held_key = (utc.iso(run), step, fallback, tuple(lv["id"] for lv in levels["wind"]))
+    held = _ALOFT_MADE.get(held_key)
+    if held is not None:
+        return held
+    body = flow_aloft.column_body(flow_nomads.grouped, run, step, levels["temperature_hpa"], wind=fallback)
+    if body is None:
+        flow_nomads.NOT_UP[("aloft", run, step)] = time.time()
+        return None
+    half = flow_aloft.at_levels_half(body, levels["wind"], levels["flight_levels_from_ft"])
+    terrain = _held_terrain()
+    bodies, numbers, kept = {}, {"temp": [], "u": [], "v": []}, []
+    for level in levels["wind"]:
+        level_id = level["id"]
+        if f"temp-{level_id}" not in half:
+            continue
+        below = _under_ground(level.get("ft"), terrain, levels)
+        hide = lambda a, below=below: a if below is None else np.where(below, np.nan, a)  # noqa: E731
+        # The half-degree grid's points are the output's even rows and columns.
+        hide_half = lambda a, below=below: a if below is None else np.where(below[::2, ::2], np.nan, a)  # noqa: E731
+        kept.append({"id": level_id, "ft": level["ft"]})
+        for field in numbers:
+            numbers[field].append(hide_half(half.get(f"{field}-{level_id}", np.full_like(half[f"temp-{level_id}"], np.nan))))
+        bodies[f"temp-{level_id}"] = flow_grid.png_values("temp", hide(flow_grid.upsample(half[f"temp-{level_id}"])))
+        if fallback and f"u-{level_id}" in half and f"v-{level_id}" in half:
+            u, v = (hide(flow_grid.upsample(half[f"{c}-{level_id}"])) for c in ("u", "v"))
+            bodies[f"wind-{level_id}"] = flow_grid.png_wind(u, v)
+    world = flow_aloft.world_body(flow_nomads.grouped, run, step)
+    if world is not None:
+        bodies["world"] = flow_grid.png_wind(*flow_aloft.world_wind(world))
+    if not fallback:
+        numbers = {"temp": numbers["temp"]}
+    made = (bodies, kept, numbers)
+    _ALOFT_MADE[held_key] = made
+    return made

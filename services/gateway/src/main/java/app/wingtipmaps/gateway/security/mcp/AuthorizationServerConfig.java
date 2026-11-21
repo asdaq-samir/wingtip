@@ -122,8 +122,9 @@ public class AuthorizationServerConfig {
     }
 
     @Bean
-    OAuth2AuthorizationService authorizationService(JdbcOperations jdbc, RegisteredClientRepository clients) {
-        return new RotatedRefreshTokens(new JdbcOAuth2AuthorizationService(jdbc, clients), jdbc);
+    OAuth2AuthorizationService authorizationService(
+            JdbcOperations jdbc, RegisteredClientRepository clients, LiveConnections kept) {
+        return new RotatedRefreshTokens(new JdbcOAuth2AuthorizationService(jdbc, clients), jdbc, kept);
     }
 
     @Bean

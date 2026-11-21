@@ -56,14 +56,44 @@ def archive_name(kind_key: str, scale: int = 1) -> str:
     return f"{kind_key}.pmtiles" if scale == 1 else f"{kind_key}@{scale}x.pmtiles"
 
 
-def write(path: Path, tiles: Iterable[tuple[int, int, int, int, Callable[[], bytes]]], metadata: dict) -> int:
+#: The content type a tile of each kind is served as.
+MEDIA_TYPES = {TileType.PNG: "image/png", TileType.WEBP: "image/webp", TileType.JPEG: "image/jpeg"}
+
+
+def tile_type_of(data: bytes) -> TileType:
+    """What a raster tile is, from its own first bytes: a chart's archive
+    holds lossless WebP since 2026-11-21 (wingtip.chart_render.to_webp),
+    one packed before then PNG, and a tile drawn on request is a PNG."""
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return TileType.WEBP
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return TileType.PNG
+    if data[:3] == b"\xff\xd8\xff":
+        return TileType.JPEG
+    return TileType.UNKNOWN
+
+
+def media_type(data: bytes) -> str:
+    """The Content-Type a tile goes out with: whatever it is, so a map
+    reading an archive packed before the WebP and one after is told each
+    right."""
+    return MEDIA_TYPES.get(tile_type_of(data), "application/octet-stream")
+
+
+def write(
+    path: Path, tiles: Iterable[tuple[int, int, int, int, Callable[[], bytes]]], metadata: dict, tile_type: TileType | None = None
+) -> int:
     """The archive of `tiles` -- (z, x, y, length, read), `read` giving
-    that many bytes -- written whole to path: beside it first and renamed
-    over it, so a reader never meets half of one. Returns how many tiles
-    it holds; with none, nothing is written."""
+    that many bytes, asked once a tile in tile-id order -- written whole
+    to path: beside it first and renamed over it, so a reader never
+    meets half of one. Its header's tile type is `tile_type`, else the
+    first tile's own (read once more for it). Returns how many tiles it
+    holds; with none, nothing is written."""
     items = sorted(((zxy_to_tileid(z, x, y), length, read) for z, x, y, length, read in tiles), key=lambda t: t[0])
     if not items:
         return 0
+    if tile_type is None:
+        tile_type = tile_type_of(items[0][2]())
     entries, offset = [], 0
     for tile_id, length, _ in items:
         entries.append(Entry(tile_id, offset, length, 1))
@@ -86,7 +116,7 @@ def write(path: Path, tiles: Iterable[tuple[int, int, int, int, Callable[[], byt
         "clustered": True,
         "internal_compression": Compression.GZIP,
         "tile_compression": Compression.NONE,
-        "tile_type": TileType.PNG,
+        "tile_type": tile_type,
         "min_zoom": first[0],
         "max_zoom": last[0],
         "center_zoom": first[0],

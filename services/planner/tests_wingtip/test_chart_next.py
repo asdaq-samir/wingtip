@@ -135,7 +135,7 @@ def test_a_refresh_does_not_prune_before_the_cycle_is_in_force(disk, monkeypatch
     _complete("10-29-2026")
     _complete("12-24-2026")
     monkeypatch.setattr(chart_cycle, "current_cycle", lambda *a, **k: "12-24-2026")
-    monkeypatch.setattr(chart_archives, "pack_complete", lambda cycle, kinds=None: {})
+    monkeypatch.setattr(chart_archives, "pack_complete", lambda cycle, kinds=None, workers=None: {})
     monkeypatch.setattr(data_cycles, "in_force_day", lambda now=None: date(2026, 12, 23))
     chart_upkeep.refresh(publish_bucket=None)
     assert (disk / "tiles" / "10-29-2026").exists()

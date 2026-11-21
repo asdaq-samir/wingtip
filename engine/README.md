@@ -538,7 +538,13 @@ Then the callers switch to the name and the old copy is deleted.
   (`Cargo.toml`, said aloud there); only the WebAssembly's own profile
   aborts. A cycle pack's header is read with its count of sections held
   to what the file can hold before anything is allocated (`pack.rs`), as
-  an allocation too large aborts rather than panics.
+  an allocation too large aborts rather than panics. What the map's view
+  and a clearance's places read of a pack's tables (the `airports`,
+  `navaids` and `fixes` JSON, `airspace.attr`) is read once a pack and kept
+  between calls (`crates/airspace/src/pack_kept.rs`), by the pack's CRC-32,
+  build time and length, at most 32 readings: the one state the engine
+  keeps, a pure function of the bytes, so a pan reads only the rows in its
+  box.
   The phones' builds write the engine's hash (the engine store's,
   `scripts/build/shared-cache.sh`) beside what they build, `engine.hash`:
   `scripts/dev/xcodebuild.sh` refuses to build against an XCFramework

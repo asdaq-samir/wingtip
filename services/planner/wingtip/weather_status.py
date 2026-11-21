@@ -21,7 +21,8 @@ def preload() -> None:
 
 
 def dataset_status() -> dict[str, float | None]:
-    """When each source's stored copy was fetched, None for one not held --
+    """When each source's stored copy was last confirmed (fetched, or found
+    unchanged since: weather_store.confirmed_at), None for one not held --
     what the Dev console (/api/status) and the map's layer ages
     (/api/map/ages) show as the weather's age. A copy served on through
     an outage keeps its own fetch time, so the age said grows with it. The
@@ -30,20 +31,14 @@ def dataset_status() -> dict[str, float | None]:
     out = {}
     for name in (*_CACHE_SOURCES, *(f"winds-{hr}" for hr in weather_store.WIND_PERIODS)):
         record = weather_store.read(name)
-        out[name] = record.fetched_at if record else None
+        out[name] = weather_store.confirmed_at(name, record)
     return out
-
-
-def _failing(name: str, record) -> bool:
-    """Whether the service's last try for a newer copy than the one held failed."""
-    tried = weather_store.attempt(name)
-    return bool(tried and tried.get("error") and (record is None or tried["attempted"] >= record.fetched_at))
 
 
 def sources_status() -> list[dict]:
     """Each source as the pilot's Status page lists it: its name in a
     pilot's words, its weather store name (`key`, which the feed watch's
-    lines go by), when the copy held was fetched, to when that copy may
+    lines go by), when the copy held was last confirmed, to when that copy may
     still be served (its product's own validity, the record's `until`;
     None for no limit, as the METARs, each carrying its own time), and
     whether the service's last ask for a newer one failed -- the copy
@@ -58,9 +53,9 @@ def sources_status() -> list[dict]:
             {
                 "name": words,
                 "key": key,
-                "fetched_at": record.fetched_at if record else None,
+                "fetched_at": weather_store.confirmed_at(key, record),
                 "kept_until": record.until if record else None,
-                "failing": _failing(key, record),
+                "failing": weather_store.failing(key, record),
             }
         )
     return out

@@ -21,6 +21,10 @@ entry point):
   (wingtip.chart_archives.pack_complete), which `refresh` does at the end of its
   passes; on its own, the one-off conversion of a cycle drawn before
   there were archives.
+- `transcode`: every archive of a cycle packed before the tiles were
+  WebP (wingtip.chart_archives.transcode) written again as lossless WebP,
+  the same pixels and no tile drawn again; the one-off conversion of a
+  cycle on disk, then `publish` where it is published.
 - `prepare` fetches every sheet, `pyramid` renders every tile, `check`
   looks for daylight between adjacent sheets and for cuts a new cycle made
   that the served one did not (it fails on those, with a preview of each;
@@ -96,7 +100,7 @@ def main(argv: list | None = None) -> int:
         prog="python -m charts", description="FAA charts: fetch every sheet, render every tile, build the overlays."
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("run", "overlays", "prepare", "pyramid", "refresh", "check", "publish", "unmask", "pack", "next", "accept-cuts"):
+    for name in ("run", "overlays", "prepare", "pyramid", "refresh", "check", "publish", "unmask", "pack", "next", "accept-cuts", "transcode"):
         p = sub.add_parser(name)
         if name in ("prepare", "pyramid"):
             p.add_argument("--kind", nargs="+", choices=list(chart_kinds.KINDS), default=list(chart_kinds.KINDS))
@@ -143,8 +147,12 @@ def main(argv: list | None = None) -> int:
             )
         if name == "publish":
             p.add_argument("--cycle", help="the cycle to publish; the served one by default")
-        if name == "pack":
-            p.add_argument("--cycle", nargs="+", help="the cycles whose finished kinds to pack; every one on disk by default")
+        if name in ("pack", "transcode"):
+            p.add_argument("--cycle", nargs="+", help=f"the cycles whose archives to {name}; every one on disk by default")
+        if name == "transcode":
+            p.add_argument(
+                "--workers", type=int, default=None, help="processes encoding the WebP; the cores but one, four at most, by default"
+            )
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     if getattr(args, "tiles_dir", None):
@@ -190,8 +198,8 @@ def _locked(args, parser) -> int:
     an unmask waits, then renders its tiles again on what that run left; a
     publish waits rather than write back a ledger an unmask has struck
     tiles off."""
-    if args.command in ("refresh", "pyramid", "unmask", "publish", "pack", "next"):
-        wait = args.command in ("unmask", "publish", "pack")
+    if args.command in ("refresh", "pyramid", "unmask", "publish", "pack", "next", "transcode"):
+        wait = args.command in ("unmask", "publish", "pack", "transcode")
         with chart_upkeep.refresh_lock(wait=wait) as got:
             if not got:
                 log.info("a refresh, pyramid or unmask is already running on %s; leaving it to that", config.CHART_TILE_CACHE_DIR)
@@ -227,6 +235,11 @@ def _run(args, parser) -> int:
     if args.command == "pack":
         for cycle in args.cycle or chart_cycle.cycles_on_disk(config.CHART_TILE_CACHE_DIR):
             log.info("%s: packed %s", cycle, chart_archives.pack_complete(cycle) or "nothing (no finished kind with loose tiles)")
+        return 0
+    if args.command == "transcode":
+        for cycle in args.cycle or chart_cycle.cycles_on_disk(config.CHART_TILE_CACHE_DIR):
+            done = chart_archives.transcode(cycle, workers=args.workers)
+            log.info("%s: as WebP %s", cycle, done or "nothing (every archive is WebP already)")
         return 0
     if args.command == "check":
         gaps = chart_prepare.face_gaps()

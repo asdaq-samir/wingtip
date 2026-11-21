@@ -24,10 +24,12 @@ public class ConnectorGrants {
 
     private final JdbcOperations jdbc;
     private final OAuth2AuthorizationService authorizations;
+    private final LiveConnections kept;
 
-    public ConnectorGrants(JdbcOperations jdbc, OAuth2AuthorizationService authorizations) {
+    public ConnectorGrants(JdbcOperations jdbc, OAuth2AuthorizationService authorizations, LiveConnections kept) {
         this.jdbc = jdbc;
         this.authorizations = authorizations;
+        this.kept = kept;
     }
 
     /**
@@ -37,9 +39,19 @@ public class ConnectorGrants {
      * on every MCP call, since its JWTs are checked by signature alone and
      * would otherwise outlive both by up to 15 minutes (the security
      * audit's L4). By V41's index on the pilot, a pilot's few rows.
+     *
+     * <p>A live answer is kept by LiveConnections for at most a minute and
+     * never past the first of its tokens' own expiries, and forgotten the
+     * moment this app changes any of the pilot's connections (a revoke, a
+     * rotation, a replay, the account deleted): the check stays as strict,
+     * without its 2 + 2k queries and k row parses on every call.
      */
     public boolean live(long pilotId, String clientId) {
-        return jdbc
+        if (kept.isLive(pilotId, clientId)) {
+            return true;
+        }
+        long seen = kept.changes();
+        List<Instant> expiries = jdbc
                 .queryForList(
                         "SELECT a.id FROM oauth2_authorization a JOIN oauth2_registered_client c"
                                 + " ON c.id = a.registered_client_id WHERE a.principal_name = ? AND c.client_id = ?",
@@ -48,15 +60,33 @@ public class ConnectorGrants {
                         clientId)
                 .stream()
                 .map(authorizations::findById)
-                .anyMatch(ConnectorGrants::live);
+                .filter(ConnectorGrants::live)
+                .map(ConnectorGrants::firstExpiry)
+                .toList();
+        if (expiries.isEmpty()) {
+            return false;
+        }
+        kept.live(pilotId, clientId, expiries.stream().min(Instant::compareTo).orElseThrow(), seen);
+        return true;
     }
 
     private static boolean live(OAuth2Authorization connection) {
-        return connection != null
-                && ((connection.getAccessToken() != null
-                                && connection.getAccessToken().isActive())
-                        || (connection.getRefreshToken() != null
-                                && connection.getRefreshToken().isActive()));
+        return connection != null && (active(connection.getAccessToken()) || active(connection.getRefreshToken()));
+    }
+
+    private static boolean active(OAuth2Authorization.Token<?> token) {
+        return token != null && token.isActive();
+    }
+
+    /** The first moment one of a live connection's active tokens runs out
+     *  (Instant.MAX where none says): after it the answer may be no. */
+    private static Instant firstExpiry(OAuth2Authorization connection) {
+        return java.util.stream.Stream.of(connection.getAccessToken(), connection.getRefreshToken())
+                .filter(ConnectorGrants::active)
+                .map(t -> t.getToken().getExpiresAt())
+                .filter(java.util.Objects::nonNull)
+                .min(Instant::compareTo)
+                .orElse(Instant.MAX);
     }
 
     /**
@@ -93,11 +123,15 @@ public class ConnectorGrants {
     /** Ends every connection the pilot made: their tokens stop working at once. */
     public void forget(long pilotId) {
         String principal = Long.toString(pilotId);
+        kept.forget(principal);
         jdbc.update(
                 "DELETE FROM oauth2_spent_refresh_token WHERE authorization_id IN"
                         + " (SELECT id FROM oauth2_authorization WHERE principal_name = ?)",
                 principal);
         jdbc.update("DELETE FROM oauth2_authorization WHERE principal_name = ?", principal);
         jdbc.update("DELETE FROM oauth2_authorization_consent WHERE principal_name = ?", principal);
+        // Again after the rows are gone: an answer read between the first
+        // forget and the delete is not kept either.
+        kept.forget(principal);
     }
 }

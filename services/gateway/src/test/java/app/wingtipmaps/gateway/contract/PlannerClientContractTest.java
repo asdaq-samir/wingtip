@@ -6,6 +6,9 @@ import static org.mockito.Mockito.mock;
 
 import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.domain.Pilot;
+import app.wingtipmaps.gateway.planner.model.PlannerEndorsementsAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerInspectionsAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerVorCheckAsk;
 import app.wingtipmaps.gateway.repository.MagicLinkRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.service.AccountService;
@@ -14,12 +17,14 @@ import app.wingtipmaps.gateway.service.ChangeLines;
 import app.wingtipmaps.gateway.service.CheckpointNotesClient;
 import app.wingtipmaps.gateway.service.CrashDraftMail;
 import app.wingtipmaps.gateway.service.Mailer;
+import app.wingtipmaps.gateway.service.PlannerAsks;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.service.PlannerUnavailableException;
 import app.wingtipmaps.gateway.upstream.PlannerApi;
 import app.wingtipmaps.gateway.upstream.Upstreams;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -94,17 +99,38 @@ class PlannerClientContractTest {
                     c -> c.planner()
                             .endorsements(
                                     List.of(
-                                            PlannerClient.held("solo", DAY, "C172"),
-                                            PlannerClient.held("solo-xc", DAY, null)),
+                                            PlannerAsks.held("solo", DAY, "C172"),
+                                            PlannerAsks.held("solo-xc", DAY, null)),
                                     DAY.plusDays(3))),
             new Call("endorsements (no flight)", c -> c.planner().endorsements(List.of(), null)),
             new Call("endorsementKinds", c -> c.planner().endorsementKinds()),
             new Call("instructorRecordsSince", c -> c.planner().instructorRecordsSince(DAY)),
             new Call("fill", c -> c.planner().fill("solo", "A. Pilot", Map.of("makeModel", "C172"))),
-            new Call("inspections", c -> c.planner().inspections(DAY, DAY, DAY, DAY, 1234.5, DAY, "VOT", 2.0)),
             new Call(
-                    "inspections (none recorded)",
-                    c -> c.planner().inspections(null, null, null, null, null, null, null, null)),
+                    "inspections",
+                    c -> c.planner()
+                            .inspections(List.of(
+                                    new PlannerInspectionsAsk()
+                                            .tailNumber("N12345")
+                                            .forHire(true)
+                                            .annualOn(DAY)
+                                            .eltOn(DAY)
+                                            .eltBatteryDueOn(DAY)
+                                            .staticCheckOn(DAY)
+                                            .transponderCheckOn(DAY)
+                                            .hundredHourAtHours(new BigDecimal("1234.5"))
+                                            .vorCheck(new PlannerVorCheckAsk(
+                                                    new BigDecimal("2.0"), PlannerVorCheckAsk.KindEnum.VOT, DAY)),
+                                    new PlannerInspectionsAsk()))),
+            new Call(
+                    "records",
+                    c -> c.planner()
+                            .records(
+                                    List.of(PlannerAsks.experienceAsk(logbook(), DAY)),
+                                    List.of(
+                                            new PlannerEndorsementsAsk(List.of(PlannerAsks.held("solo", DAY, "C172")))
+                                                    .flightOn(DAY.plusDays(3)),
+                                            new PlannerEndorsementsAsk(List.of())))),
             new Call(
                     "AccountService.delete",
                     c -> c.accounts().delete(new Pilot("pilot@example.com", "A. Pilot", "sub-1"))),

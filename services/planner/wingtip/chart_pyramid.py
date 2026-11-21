@@ -9,7 +9,7 @@ is mostly fixed overhead (opening the raster and setting up the
 reprojection, ~70 ms of ~90), so a row of tiles warped in one go is
 twenty times cheaper per tile. `chart_prepare.prepare_all` fetches every sheet;
 `render_pyramid` walks each sheet's face a tile row at a time and
-writes the same files `chart_tiles.tile_png` would, so nothing changes for the
+writes the same files `chart_tiles.tile_bytes` would, so nothing changes for the
 tile endpoint except that it stops rendering.
 """
 

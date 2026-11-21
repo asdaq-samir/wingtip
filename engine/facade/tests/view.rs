@@ -325,3 +325,32 @@ fn a_phone_view_is_answered_quickly() {
     // Loose for a debug build.
     assert!(least[0] + least[1] + least[2] < std::time::Duration::from_millis(500));
 }
+
+/// The tables a pack's view reads are kept between calls
+/// (wingtip_airspace's pack_kept): a pack read for the first time and the
+/// same pack asked again give the same answers, byte for byte, for every
+/// view and the places a clearance names. Each pack's build time is set to
+/// one no other test uses (the CRC-32 is over the bytes after the header,
+/// so it still verifies), so the first call here reads it anew.
+#[test]
+fn a_view_from_kept_tables_is_the_view_read_anew() {
+    let mut bytes = pack_bytes();
+    for (k, b) in bytes.iter_mut().enumerate() {
+        b[24..32].copy_from_slice(&(1.0e9 + 7.0 + k as f64).to_le_bytes());
+    }
+    let packs: Vec<Pack> = bytes.iter().map(|b| Pack::read(b).unwrap()).collect();
+    assert!(packs.iter().all(Pack::verify));
+    let (south, west, north, east) = (41.5, -88.5, 42.5, -87.5);
+    let all = |packs: &[Pack]| {
+        (
+            view::airspace_in_view(packs, south, west, north, east),
+            view::airports_in_view(packs, south, west, north, east),
+            view::navaids_in_view(packs, south, west, north, east),
+            wingtip_engine::view_marks::fixes_in_view(packs, south, west, north, east),
+            packs.iter().flat_map(wingtip_engine::spoken::places_of).collect::<Vec<_>>(),
+        )
+    };
+    let fresh = all(&packs);
+    assert_eq!(all(&packs), fresh);
+    assert!(fresh.1.contains("\"airports\":[{"));
+}
