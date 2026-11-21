@@ -33,6 +33,22 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 fun chartCount(place: AirportPlace): Int =
     place.procedures.orEmpty().count { it.kind != "APD" } + (if (place.airportDiagramUrl != null) 1 else 0)
 
+/** Where the FAA could not give the card its plates (the planner's
+ *  `publications`, the d-TPP): "unavailable", said in place of the empty
+ *  list rather than read as a field with none, or the kept earlier cycle
+ *  shown in its place; null while they are of the cycle in force. The
+ *  web's publicationNotes, the iPhone's AirportChartsTab.publicationNotes. */
+data class PlatesNote(val keptCycle: String?)
+
+fun platesNote(place: AirportPlace): PlatesNote? {
+    val plates = place.publications?.plates ?: return null
+    return when (plates.state) {
+        "unavailable" -> PlatesNote(null)
+        "kept" -> plates.edition?.let { PlatesNote(it) }
+        else -> null
+    }
+}
+
 /**
  * The airport card's section tabs, right under its four actions where they
  * are in sight at half (the owner's T4, 2026-11-14; the web's PlaceTabBar):

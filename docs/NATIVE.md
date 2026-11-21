@@ -558,7 +558,12 @@ region offers "Update to" it; on the day the old edition is replaced
 (0901Z on the next one's date, the engine's `data_cycle` asked at the
 minute) it is said to be expired and kept until
 its update is whole, then removed (`OfflineStore.sweep`; warn, never
-limit). `WingtipTests/OfflineChartsTests` reads an archive the planner's
+limit). Offline across a changeover, the chart answer still the old
+cycle's, a region of the next cycle updated ahead is drawn from 0901Z on
+its date (`OfflineStore.keptInForce`, the engine's `data_cycle`; asked
+each minute by `Charts.watchChangeover`, which draws the map again when
+it turns); past the region the old chart stays, and Ready to Fly says it
+is out of date. `WingtipTests/OfflineChartsTests` reads an archive the planner's
 writer made, leaf directories and all.
 
 The web app has no Downloads: a browser cannot be relied on to keep

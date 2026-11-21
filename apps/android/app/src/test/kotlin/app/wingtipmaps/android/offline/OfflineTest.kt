@@ -55,6 +55,32 @@ class OfflineTest {
     }
 
     @Test
+    fun theKeptNextCycleIsDrawnOverTheOldOneInItsRegionFrom0901Z() {
+        // Offline across a changeover, the chart answer still the old
+        // cycle's: the next cycle's region kept ahead is drawn over the old
+        // chart from 0901Z on its date, the engine's data_cycle asked; past
+        // the region the old chart shows (the data-cycles audit's 14).
+        val store = store()
+        val old = kept(done = listOf("sec@2x"))
+        val next = kept(cycle = "12-24-2026", expires = "2027-02-18")
+        store.update(old.id) { old }
+        store.update(next.id) { next }
+        store.finish("10-29-2026", "Chicago", "sec@2x", file("old"))
+        store.finish("12-24-2026", "Chicago", "sec@2x", file("new"))
+        val before = Instant.parse("2026-12-24T09:00:00Z")
+        val after = Instant.parse("2026-12-24T09:01:00Z")
+        assertNull(store.keptInForce("10-29-2026", before))
+        assertEquals(listOf(store.path("10-29-2026", "Chicago", "sec@2x")), store.archives("10-29-2026", "sec", 2, before))
+        assertEquals("12-24-2026", store.keptInForce("10-29-2026", after))
+        assertEquals(
+            listOf(store.path("10-29-2026", "Chicago", "sec@2x"), store.path("12-24-2026", "Chicago", "sec@2x")),
+            store.archives("10-29-2026", "sec", 2, after),
+        )
+        // Never an older cycle in place of the one asked for.
+        assertNull(store.keptInForce("12-24-2026", after))
+    }
+
+    @Test
     fun anExpiredEditionGoesOnlyOnceItsUpdateIsWhole() {
         val store = store()
         val old = kept(done = listOf("sec@2x"))

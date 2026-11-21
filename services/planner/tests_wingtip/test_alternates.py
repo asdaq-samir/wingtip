@@ -41,7 +41,7 @@ def world(monkeypatch):
             for ident, fcsts in tafs.items()
         ],
     )
-    monkeypatch.setattr(publications, "terminal_charts", lambda ident: charts.get(ident, []))
+    monkeypatch.setattr(publications, "terminal_charts", lambda ident, kept=True: charts.get(ident, []))
     # No field closed unless a test says so (NASR's file is not read here).
     monkeypatch.setattr(field_status, "closed_fields", lambda cache_dir: {})
     return tafs, charts

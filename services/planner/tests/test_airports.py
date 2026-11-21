@@ -125,6 +125,21 @@ def test_the_card_names_the_cycle_its_diagram_is_drawn_from(monkeypatch):
     assert card["procedures"] == [{"kind": "IAP", "name": "ILS OR LOC RWY 09", "url": "https://aeronav.faa.gov/d-tpp/2610/00125IL9.PDF"}]
 
 
+def test_the_card_says_when_the_faa_could_not_give_its_plates(monkeypatch):
+    # An outage is not read as a field with no plates (the data-cycles audit's 13).
+    stub_place(monkeypatch)
+    monkeypatch.setattr(
+        publications,
+        "editions",
+        lambda: {"plates": {"state": "unavailable", "edition": None}, "supplement": {"state": "kept", "edition": "29Oct2026"}},
+    )
+    card = client.get("/api/airport/KDLH").json()
+    assert card["publications"] == {
+        "plates": {"state": "unavailable", "edition": None},
+        "supplement": {"state": "kept", "edition": "29Oct2026"},
+    }
+
+
 def test_the_card_has_the_fields_phone_and_street_address(monkeypatch):
     stub_place(monkeypatch)
     duluth = {"phone": "218-727-2968", "address": "4701 Grinden Drive, Duluth, MN 55811"}

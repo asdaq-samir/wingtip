@@ -1,7 +1,10 @@
 package app.wingtipmaps.android.ui
 
+import app.wingtipmaps.android.api.AirportPlace
+import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Metar
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 /** The airport card's one-line report under its tabs (the owner's T4,
@@ -25,5 +28,18 @@ class AirportTabsTest {
     fun noCeilingIsSaidAndAnUnreportedWindLeftOut() {
         // Calm is the engine's wind_calm, which the JVM's tests do not load.
         assertEquals("No ceiling · 1255Z", line(Metar(observedAt = "2026-11-14T12:55:00Z")))
+    }
+
+    private fun place(publications: String) = Gateway.json.decodeFromString<AirportPlace>(
+        """{"ident":"KDLH","name":"Duluth","lat":46.84,"lon":-92.19,"kind":"medium","towered":true,"runways":[],"frequencies":[]$publications}""",
+    )
+
+    @Test
+    fun anFaaOutageIsSaidWhereThePlatesWouldBeAndAKeptCycleNamed() {
+        // The data-cycles audit's 13: an outage is not read as a field with no plates.
+        assertNull(platesNote(place("")))
+        assertNull(platesNote(place(""","publications":{"plates":{"state":"current","edition":"2610"}}""")))
+        assertEquals(PlatesNote(null), platesNote(place(""","publications":{"plates":{"state":"unavailable","edition":null}}""")))
+        assertEquals(PlatesNote("2609"), platesNote(place(""","publications":{"plates":{"state":"kept","edition":"2609"}}""")))
     }
 }

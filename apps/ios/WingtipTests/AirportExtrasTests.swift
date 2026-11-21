@@ -268,4 +268,18 @@ struct AirportExtrasTests {
         again.clearRecents()
         #expect(AirportShelf(defaults: defaults).recents.isEmpty)
     }
+
+    /// An FAA outage on the d-TPP is said where the plates would be, not
+    /// read as a field with none; a kept cycle shown in its place is named
+    /// (the data-cycles audit's 13). The web's publicationWords.test.
+    @Test func anFaaOutageIsSaidAndAKeptCycleNamed() throws {
+        let base = #"{"ident":"KDLH","name":"Duluth","lat":46.84,"lon":-92.19,"kind":"medium","towered":true,"runways":[],"frequencies":[]"#
+        let current = try decode(AirportPlace.self, base + "}")
+        #expect(AirportChartsTab.publicationNotes(current).isEmpty)
+        let out = try decode(AirportPlace.self, base + #","publications":{"plates":{"state":"unavailable","edition":null},"supplement":{"state":"kept","edition":"03Sep2026"}}}"#)
+        #expect(AirportChartsTab.publicationNotes(out) == [
+            .init(title: "Plates couldn't be fetched from the FAA"),
+            .init(title: "Chart Supplement from kept cycle 03Sep2026", detail: "The cycle in force couldn't be fetched from the FAA"),
+        ])
+    }
 }

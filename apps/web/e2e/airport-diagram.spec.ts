@@ -330,3 +330,22 @@ test("a tap on the card's sketch of a field the FAA draws no diagram for shows t
   await viewer.getByTestId("airport-sketch-close").click();
   await expect(viewer).toHaveCount(0);
 });
+
+test("where the FAA could not give the plates, the Charts tab says so, not that the field has none", async ({ page }) => {
+  // An outage on the d-TPP's index, the Chart Supplement's kept from the cycle before (the data-cycles audit's 13).
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/KDLH"),
+    async (route) => {
+      const answer = await route.fetch();
+      const publications = { plates: { state: "unavailable", edition: null }, supplement: { state: "kept", edition: "03Sep2026" } };
+      await route.fulfill({ response: answer, json: { ...(await answer.json()), airport_diagram_url: null, procedures: [], publications } });
+    },
+  );
+  await page.goto("/app/plan?place=KDLH");
+  await settle(page);
+  await toCharts(page);
+  const notes = card(page).getByTestId("place-charts");
+  await expect(notes.getByText("Plates couldn't be fetched from the FAA")).toBeVisible();
+  await expect(notes.getByText("Chart Supplement from kept cycle 03Sep2026")).toBeVisible();
+  await expect(notes.getByText("The FAA publishes no airport diagram for this field")).toHaveCount(0);
+});

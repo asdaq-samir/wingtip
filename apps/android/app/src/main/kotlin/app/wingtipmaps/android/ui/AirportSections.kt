@@ -138,6 +138,14 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
         AirportSection.APPROACHES -> {
             // The airport diagram first, as the web's Charts tab has it, with
             // own ship on it (DiagramOwnShipDialog).
+            // The FAA not reached: said where the plates would be, the kept
+            // cycle named where one stands in (the data-cycles audit's 13).
+            platesNote(place)?.let { note ->
+                item(key = "plates-note") {
+                    val title = note.keptCycle?.let { stringResource(R.string.plates_kept, it) } ?: stringResource(R.string.plates_unavailable)
+                    Row(title, note.keptCycle?.let { stringResource(R.string.plates_kept_why) }, pad)
+                }
+            }
             view.onDiagram?.let { open -> item(key = "diagram") { Row(stringResource(R.string.diagram), null, pad, onClick = open) } }
             items(place.procedures.orEmpty()) { p ->
                 val context = LocalContext.current

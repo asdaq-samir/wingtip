@@ -16,7 +16,7 @@ from .atomic import atomic_path
 from .single_flight import once, one_at_a_time
 from . import publications
 from .publication_drawing import DIAGRAM_SCALE, _PDFIUM, _drawn
-from .publications import _PDF_NAME, _faa_idents, _source_of, _supplement_pages, dcs_edition, dtpp_cycle
+from .publications import _PDF_NAME, _faa_idents, _source_of, _supplement_pages, serves
 
 log = logging.getLogger(__name__)
 
@@ -121,8 +121,7 @@ def chart_page_png(source: str, edition: str, name: str, page: int, on: date | N
     airport diagram is (`airport_diagram_png`); None for a chart not in
     force or not the FAA's, or a page it does not have; FaaUnreachable
     while the FAA cannot be reached."""
-    current = {"dtpp": dtpp_cycle(on), "dcs": dcs_edition(on)}
-    if current.get(source) != edition or not _PDF_NAME.match(name) or page < 1:
+    if not serves(source, edition, on) or not _PDF_NAME.match(name) or page < 1:
         return None
     path = publications.CACHE_DIR / "pages" / source / edition / f"{Path(name).stem}-{page}.png"
     if path.exists():

@@ -352,7 +352,10 @@ def plate_overlay(ident: str, procedure: str, on: date | None = None) -> dict | 
     if chart is None:
         return None
     source = publications._source_of(chart["url"], on)
-    if source is None:
+    # Only the cycle in force is placed on the map: a kept plate of the
+    # cycle before (publications.editions) is not drawn over this cycle's
+    # procedure fixes, nor kept under its name.
+    if source is None or source[1] != cycle:
         return None
     stem = f"{Path(source[2]).stem}-{summary['id']}"
     folder = publications.CACHE_DIR / "plates" / cycle

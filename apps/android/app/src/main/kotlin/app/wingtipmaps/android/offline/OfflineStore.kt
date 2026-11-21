@@ -11,6 +11,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -48,6 +49,15 @@ data class OfflineKept(
         return answer?.state == "expired"
     }
 
+    /** Whether the cycle has taken over by `now`: in force, or since
+     *  replaced (the engine's `data_cycle`, 0901Z on its date). A region of
+     *  the next cycle kept ahead is drawn from then on (OfflineStore.keptInForce). */
+    fun begun(now: Instant = AppClock.javaNow()): Boolean {
+        val effective = isoDay(cycle) ?: return false
+        val state = Engine.dataCycle(kind = "chart", effective = effective, on = now.truncatedTo(ChronoUnit.SECONDS).toString()).getOrNull()?.state
+        return state == "in_force" || state == "expired"
+    }
+
     companion object {
         /** A chart cycle's name, "10-29-2026" as the FAA's links write it, as
          *  "2026-10-29"; null where it is no such name. */
@@ -72,6 +82,8 @@ class OfflineStore(val root: File) {
     private val serializer = ListSerializer(OfflineKept.serializer())
     private val json = Json { ignoreUnknownKeys = true }
     private val _kept = MutableStateFlow(read())
+    /** Kept cycles known to have begun: once begun, always. */
+    private val begun = ConcurrentHashMap.newKeySet<String>()
     val kept: StateFlow<List<OfflineKept>> = _kept.asStateFlow()
 
     private fun read(): List<OfflineKept> =
@@ -108,14 +120,32 @@ class OfflineStore(val root: File) {
     }
 
     /**
+     * The newest kept cycle later than `cycle` that has taken over by
+     * `now`, null where none has: the phone offline across a changeover,
+     * its chart answer still the old cycle's, draws the next cycle where a
+     * region of it is kept, from 0901Z on its date (the data-cycles
+     * audit's 14, the owner's word 2026-11-21). Past the region the old
+     * chart stays, and Ready to Fly says it is out of date. The iPhone's
+     * OfflineStore.keptInForce.
+     */
+    fun keptInForce(cycle: String, now: Instant = AppClock.javaNow()): String? =
+        _kept.value.filter { sortable(it.cycle) > sortable(cycle) }.distinctBy { it.cycle }
+            .sortedByDescending { sortable(it.cycle) }
+            .firstOrNull { it.cycle in begun || it.begun(now).also { b -> if (b) begun += it.cycle } }?.cycle
+
+    /**
      * The archives the map draws for a chart kind of the cycle: each
      * region's at the density asked for, else at the other (a 256-pixel
-     * tile covers the same 256 dp, OfflineLayers), whole ones only.
+     * tile covers the same 256 dp, OfflineLayers), whole ones only; and
+     * after them, drawn over them, those of the kept cycle in force where
+     * it is later (`keptInForce`).
      */
-    fun archives(cycle: String, kind: String, scale: Int): List<File> =
-        _kept.value.filter { it.cycle == cycle }.mapNotNull { kept ->
-            listOf(archive(kind, scale), archive(kind, if (scale == 1) 2 else 1))
-                .firstOrNull { it in kept.done }?.let { path(cycle, kept.region, it) }?.takeIf { it.isFile }
+    fun archives(cycle: String, kind: String, scale: Int, now: Instant = AppClock.javaNow()): List<File> =
+        listOfNotNull(cycle, keptInForce(cycle, now)).flatMap { drawn ->
+            _kept.value.filter { it.cycle == drawn }.mapNotNull { kept ->
+                listOf(archive(kind, scale), archive(kind, if (scale == 1) 2 else 1))
+                    .firstOrNull { it in kept.done }?.let { path(drawn, kept.region, it) }?.takeIf { it.isFile }
+            }
         }
 
     /** The bytes on disk, for the list's Storage Used. */
