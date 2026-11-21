@@ -111,6 +111,13 @@ impl<'a> Pack<'a> {
         crc32(&self.bytes[HEADER..]) == self.crc32
     }
 
+    /// What tells this pack's bytes from any other's without reading them
+    /// all: the CRC-32 its writer stamped over every byte after the header,
+    /// when it was built and its length (crate::pack_kept's key).
+    pub fn identity(&self) -> (u32, u64, usize) {
+        (self.crc32, self.built_at.to_bits(), self.bytes.len())
+    }
+
     pub fn section(&self, name: &str) -> Option<&'a [u8]> {
         self.sections.iter().find(|(n, _, _)| n == name).map(|&(_, o, l)| &self.bytes[o..o + l])
     }
@@ -150,19 +157,27 @@ impl<'a> Layer<'a> {
         self.wkb.get(s..e)
     }
 
-    /// Each shape, in the layer's order, whose box holds the point and
-    /// whose rings (taken as a shapefile's, crate::airspace) hold it: what
-    /// the airspace layer is asked at a tap. None where a shape is not
-    /// WKB the engine reads.
-    pub fn holding(&self, lon: f64, lat: f64) -> Option<Vec<usize>> {
+    /// `holding` over only the shapes `among` (in the layer's order): the
+    /// same answer wherever `among` holds every shape whose box holds the
+    /// point, as the shapes whose box meets a box round every point asked
+    /// do (crate::view_airports' surface classes, 300 pins against one cut).
+    pub fn holding_among(&self, among: impl IntoIterator<Item = usize>, lon: f64, lat: f64) -> Option<Vec<usize>> {
         let mut out = Vec::new();
-        for i in 0..self.count {
+        for i in among {
             let [w, s, e, n] = self.bbox(i);
             if w <= lon && e >= lon && s <= lat && n >= lat && crate::airspace::wkb_holds(self.wkb(i)?, lon, lat)? {
                 out.push(i);
             }
         }
         Some(out)
+    }
+
+    /// Each shape, in the layer's order, whose box holds the point and
+    /// whose rings (taken as a shapefile's, crate::airspace) hold it: what
+    /// the airspace layer is asked at a tap. None where a shape is not
+    /// WKB the engine reads.
+    pub fn holding(&self, lon: f64, lat: f64) -> Option<Vec<usize>> {
+        self.holding_among(0..self.count, lon, lat)
     }
 }
 

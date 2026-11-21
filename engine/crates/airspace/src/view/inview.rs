@@ -4,13 +4,19 @@ use super::*;
 
 /// What `airspace.attr` says of a volume; every field None from a pack
 /// without it.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub(crate) struct Attr {
     pub(crate) ident: Option<String>,
     pub(super) number: Option<usize>,
     pub(super) ceiling_excluded: bool,
     pub(super) hours_code: Option<String>,
     pub(super) hours_remark: Option<String>,
+}
+
+/// `attrs_of`, read once a pack (crate::pack_kept): the airspace in view
+/// and the airports' primaries both ask it on every pan.
+pub(crate) fn attrs_kept(pack: &Pack) -> std::sync::Arc<Vec<Attr>> {
+    crate::pack_kept::kept(pack, "airspace.attr", attrs_of)
 }
 
 pub(crate) fn attrs_of(pack: &Pack) -> Vec<Attr> {
@@ -49,14 +55,14 @@ pub fn airspace_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
     let view: Bbox = [west, south, east, north];
     let tolerance = tolerance_for(south, north);
     let mut found: Vec<Found> = Vec::new();
+    let mut ids: std::collections::HashSet<String> = std::collections::HashSet::new();
     for p in packs {
         let (Some(layer), Some(vols), Some(names)) = (p.layer("airspace"), p.section("airspace.vol"), p.section("airspace.names")) else {
             continue;
         };
-        let mut attrs = attrs_of(p);
-        if attrs.len() != layer.count {
-            attrs = Vec::new();
-        }
+        let attrs = attrs_kept(p);
+        // A pack whose attr is not one a volume reads as having none.
+        let attrs: &[Attr] = if attrs.len() == layer.count { &attrs } else { &[] };
         for i in 0..layer.count {
             let Some(r) = vols.get(32 * i..32 * i + 32) else { continue };
             let class = r[0] as char;
@@ -71,7 +77,7 @@ pub fn airspace_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
             if !reaches(&polygons, view) {
                 continue;
             }
-            let attr = if attrs.is_empty() { Attr::default() } else { std::mem::take(&mut attrs[i]) };
+            let attr = if attrs.is_empty() { Attr::default() } else { attrs[i].clone() };
             let id = match (attr.number, &attr.ident) {
                 (Some(n), Some(ident)) => format!("{ident}-{n}"),
                 (Some(n), None) => format!("{class}-{n}"),
@@ -79,7 +85,7 @@ pub fn airspace_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
                 // in a region, and the same from one box to the next.
                 (None, _) => format!("{class}-{name}"),
             };
-            if found.iter().any(|f| f.id == id) {
+            if ids.contains(&id) {
                 continue;
             }
             let Some(label) = representative(&polygons) else { continue };
@@ -98,6 +104,7 @@ pub fn airspace_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
             if lines.is_empty() {
                 continue;
             }
+            ids.insert(id.clone());
             found.push(Found {
                 number: attr.number,
                 id,
