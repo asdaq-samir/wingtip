@@ -152,7 +152,7 @@ def test_what_the_pilot_sends_decides_the_minimums_the_loading_and_the_risk(stub
     assert items["balance"]["finding"] == "stop"
     assert "The baggage, 170 lb in all, is over its 120 lb" in body["balance"]["problems"]
     assert body["risk"]["level"] == "high"
-    assert body["line"]["words"] == "No-go as planned: Weather, Weight & balance, Risk"
+    assert body["line"]["words"] == "No-go as planned: weather, weight & balance, risk"
 
 
 def test_a_tfr_crossed_while_in_force_and_one_passed_before_it_starts(stubbed):
