@@ -973,6 +973,12 @@ fun Engine.glideRing(lat: Double, lon: Double, altitudeFt: Double? = null, speed
     rule("glide_ring", EngineContract.GlideRingInput(lat = lat, lon = lon, altitudeFt = altitudeFt, speedKt = speedKt, terrainFt = terrainFt, fieldFt = fieldFt, glideRatio = glideRatio))
 
 /**
+ * The Brief's Adverse Conditions rows under its findings, the standard briefing's first element (AIM 7-1-5(b)(1)): what the flight meets on the route while it is there (OnRoute `when` "during", or none given) -- a TFR the route goes through (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6), stops; a Center Weather Advisory (AIM 7-1-6), an urgent pilot report (UUA, AIM 7-1-18) and an AIRMET or G-AIRMET (AIM 7-1-6), cautions -- in that order, of a kind the one met first along the route first, at most three, with how many more. A TFR only near the route, a routine PIREP and a hazard before or after the flight are left to their pages. Each row's time is for the host to write: `at` when the flight meets a TFR, `until` an advisory's end, `reported` a pilot report's time.
+ */
+fun Engine.gonogoAdverseRows(advisories: List<EngineContract.GonogoAdverseRowsInputAdvisoriesItem>): Result<EngineContract.GonogoAdverseRowsAnswer> =
+    rule("gonogo_adverse_rows", EngineContract.GonogoAdverseRowsInput(advisories = advisories))
+
+/**
  * Weight and balance at takeoff and landing, against the profile's limits and envelope, with the problems found.
  */
 fun Engine.gonogoBalance(loading: EngineContract.GonogoLoading, load: EngineContract.GonogoLoad, tripFuelGal: Double? = null): Result<EngineContract.GonogoBalanceAnswer> =
@@ -1307,6 +1313,12 @@ fun Engine.keptAge(now: Double, fetchedAt: Double, kind: String): Result<EngineC
  */
 fun Engine.kneeboardRadio(frequencies: List<EngineContract.FieldFrequency>): Result<List<List<JsonElement>>> =
     rule("kneeboard_radio", EngineContract.KneeboardRadioInput(frequencies = frequencies))
+
+/**
+ * The runway landed on at a field the route flies an instrument approach to: the approach's own runway, straight in (AIM 5-4-20, Approach and Landing Minimums; 14 CFR 91.175, the runway of intended landing), unless the pilot picked another and the plate publishes circling minimums, a circle to land (AIM 5-4-20). A runway picked into the wind gives way to the approach's own. With no approach, or one circling only (no runway in its name), the pick stands and any runway may be picked. `circling` null (the plate still coming) is taken as no circling. The runway is answered as painted ("9", "8L").
+ */
+fun Engine.landingRunway(approach: Boolean, straightIn: String? = null, circling: Boolean? = null, picked: String? = null, byPilot: Boolean): Result<EngineContract.LandingRunwayAnswer> =
+    rule("landing_runway", EngineContract.LandingRunwayInput(approach = approach, straightIn = straightIn, circling = circling, picked = picked, byPilot = byPilot))
 
 /**
  * Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.
@@ -2117,6 +2129,12 @@ fun Engine.surfaceAirspace(elevationFt: Double? = null, volumes: List<EngineCont
  */
 fun Engine.surfaceHours(hours: String? = null, year: Int, month: Int, day: Int, weekday: Int, minute: Int, utcOffsetMin: Int, dst: Boolean? = null): Result<EngineContract.SurfaceHoursAnswer> =
     rule("surface_hours", EngineContract.SurfaceHoursInput(hours = hours, year = year, month = month, day = day, weekday = weekday, minute = minute, utcOffsetMin = utcOffsetMin, dst = dst))
+
+/**
+ * A TAF's own times and whether it speaks for now: its station, when it was issued and its valid period, as its header gives them, and its state, not yet before the period, in force during it and expired at its end (FAA-H-8083-28B 27.4.1, a TAF is a forecast for its valid period; the same rule as weather_in_force's for a TAF). The airport card says it under the hours, so a TAF kept from before the signal was lost is never read as today's forecast (14 CFR 91.103). Null where the words are not a TAF.
+ */
+fun Engine.tafValidity(taf: String, now: Double): Result<EngineContract.TafValidityAnswer?> =
+    rule("taf_validity", EngineContract.TafValidityInput(taf = taf, now = now))
 
 /**
  * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).

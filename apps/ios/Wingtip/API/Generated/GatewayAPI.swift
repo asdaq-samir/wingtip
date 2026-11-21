@@ -37,7 +37,6 @@ typealias GWExperienceItemDto = GatewayAPI.Components.Schemas.ExperienceItemDto
 typealias GWExportedAirplane = GatewayAPI.Components.Schemas.ExportedAirplane
 typealias GWExportedFlight = GatewayAPI.Components.Schemas.ExportedFlight
 typealias GWFaultReport = GatewayAPI.Components.Schemas.FaultReport
-typealias GWFeatureUse = GatewayAPI.Components.Schemas.FeatureUse
 typealias GWFieldReport = GatewayAPI.Components.Schemas.FieldReport
 typealias GWFlightCheckpointDto = GatewayAPI.Components.Schemas.FlightCheckpointDto
 typealias GWFlightDto = GatewayAPI.Components.Schemas.FlightDto

@@ -2249,6 +2249,13 @@ export interface EngineContract {
     answer: GlideRingAnswer;
   };
   /**
+   * The Brief's Adverse Conditions rows under its findings, the standard briefing's first element (AIM 7-1-5(b)(1)): what the flight meets on the route while it is there (OnRoute `when` "during", or none given) -- a TFR the route goes through (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6), stops; a Center Weather Advisory (AIM 7-1-6), an urgent pilot report (UUA, AIM 7-1-18) and an AIRMET or G-AIRMET (AIM 7-1-6), cautions -- in that order, of a kind the one met first along the route first, at most three, with how many more. A TFR only near the route, a routine PIREP and a hazard before or after the flight are left to their pages. Each row's time is for the host to write: `at` when the flight meets a TFR, `until` an advisory's end, `reported` a pilot report's time.
+   */
+  gonogo_adverse_rows: {
+    input: GonogoAdverseRowsInput;
+    answer: GonogoAdverseRowsAnswer;
+  };
+  /**
    * Weight and balance at takeoff and landing, against the profile's limits and envelope, with the problems found.
    */
   gonogo_balance: {
@@ -2639,6 +2646,13 @@ export interface EngineContract {
   kneeboard_radio: {
     input: KneeboardRadioInput;
     answer: KneeboardRadioAnswer;
+  };
+  /**
+   * The runway landed on at a field the route flies an instrument approach to: the approach's own runway, straight in (AIM 5-4-20, Approach and Landing Minimums; 14 CFR 91.175, the runway of intended landing), unless the pilot picked another and the plate publishes circling minimums, a circle to land (AIM 5-4-20). A runway picked into the wind gives way to the approach's own. With no approach, or one circling only (no runway in its name), the pick stands and any runway may be picked. `circling` null (the plate still coming) is taken as no circling. The runway is answered as painted ("9", "8L").
+   */
+  landing_runway: {
+    input: LandingRunwayInput;
+    answer: LandingRunwayAnswer;
   };
   /**
    * Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.
@@ -6888,6 +6902,9 @@ export interface EndorsementRecordsInput {
   flight_on?: string | null;
 }
 export interface EndorsementRecordsAnswer {
+  /**
+   * Items: YYYY-MM-DD
+   */
   until: (string | null)[];
   /**
    * YYYY-MM-DD
@@ -7727,6 +7744,39 @@ export interface GlideRingInput {
    * The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.
    */
   glide_ratio?: number | null;
+}
+export interface GonogoAdverseRowsInput {
+  advisories: {
+    /**
+     * OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET.
+     */
+    source: string;
+    /**
+     * Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions.
+     */
+    name: string | null;
+    when: "during" | "before" | "after" | null;
+    enter: string | null;
+    valid_to: string | null;
+    issued: string | null;
+    from_nm: number | null;
+    legs: number[];
+    crosses: boolean;
+    urgent: boolean;
+  }[];
+}
+export interface GonogoAdverseRowsAnswer {
+  rows: {
+    source: string;
+    title: string;
+    finding: "stop" | "caution";
+    tab: "enroute" | "preflight";
+    section: string;
+    time_kind: "at" | "until" | "reported" | null;
+    time: string | null;
+    legs: number[];
+  }[];
+  more: number;
 }
 export interface GonogoBalanceInput {
   loading: GonogoLoading;
@@ -8809,6 +8859,9 @@ export interface IfrAlternateWindowAnswer {
   end: number;
 }
 export interface IfrAlternatesRankedInput {
+  /**
+   * Items: An ifr_alternate_check answer with its distance_nm.
+   */
   checks: {}[];
   limit?: number;
 }
@@ -9045,6 +9098,17 @@ export interface KeptAgeAnswer {
 export interface KneeboardRadioInput {
   frequencies: FieldFrequency[];
 }
+export interface LandingRunwayInput {
+  approach: boolean;
+  straight_in: string | null;
+  circling: boolean | null;
+  picked: string | null;
+  by_pilot: boolean;
+}
+export interface LandingRunwayAnswer {
+  runway: string | null;
+  others_allowed: boolean;
+}
 export interface LeastCrosswindInput {
   runways?:
     | {
@@ -9211,6 +9275,9 @@ export interface LogbookCsvReadAnswer {
   }[];
 }
 export interface LogbookCsvWriteInput {
+  /**
+   * Items: The gateway's LogbookEntry, camelCase.
+   */
   entries: {}[];
 }
 export interface LogbookFromTrackInput {

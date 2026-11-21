@@ -4842,6 +4842,65 @@ enum EngineContract {
         }
     }
 
+    struct GonogoAdverseRowsAnswer: Codable, Equatable, Sendable {
+        var rows: [EngineContract.GonogoAdverseRowsAnswerRowsItem]
+        var more: Int
+    }
+
+    struct GonogoAdverseRowsAnswerRowsItem: Codable, Equatable, Sendable {
+        var source: String
+        var title: String
+        var finding: String
+        var tab: String
+        var section: String
+        var timeKind: String?
+        var time: String?
+        var legs: [Double]
+
+        enum CodingKeys: String, CodingKey {
+            case source
+            case title
+            case finding
+            case tab
+            case section
+            case timeKind = "time_kind"
+            case time
+            case legs
+        }
+    }
+
+    struct GonogoAdverseRowsInput: Codable, Equatable, Sendable {
+        var advisories: [EngineContract.GonogoAdverseRowsInputAdvisoriesItem]
+    }
+
+    struct GonogoAdverseRowsInputAdvisoriesItem: Codable, Equatable, Sendable {
+        /// OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET.
+        var source: String
+        /// Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions.
+        var name: String?
+        var when: String?
+        var enter: String?
+        var validTo: String?
+        var issued: String?
+        var fromNm: Double?
+        var legs: [Double]
+        var crosses: Bool
+        var urgent: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case source
+            case name
+            case when
+            case enter
+            case validTo = "valid_to"
+            case issued
+            case fromNm = "from_nm"
+            case legs
+            case crosses
+            case urgent
+        }
+    }
+
     /// The planner's /api/alternate answer, as much as the finding reads.
     struct GonogoAlternateData: Codable, Equatable, Sendable {
         var destination: EngineContract.GonogoAlternateDataDestination?
@@ -6919,6 +6978,32 @@ enum EngineContract {
 
     struct KneeboardRadioInput: Codable, Equatable, Sendable {
         var frequencies: [EngineContract.FieldFrequency]
+    }
+
+    struct LandingRunwayAnswer: Codable, Equatable, Sendable {
+        var runway: String?
+        var othersAllowed: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case runway
+            case othersAllowed = "others_allowed"
+        }
+    }
+
+    struct LandingRunwayInput: Codable, Equatable, Sendable {
+        var approach: Bool
+        var straightIn: String?
+        var circling: Bool?
+        var picked: String?
+        var byPilot: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case approach
+            case straightIn = "straight_in"
+            case circling
+            case picked
+            case byPilot = "by_pilot"
+        }
     }
 
     struct LeastCrosswindAnswer: Codable, Equatable, Sendable {
@@ -12354,6 +12439,32 @@ enum EngineContract {
             case start
             case end
         }
+    }
+
+    struct TafValidityAnswer: Codable, Equatable, Sendable {
+        var station: String
+        /// When it was issued, Unix seconds; the time it was read where its header gives none.
+        var issued: Double
+        /// The start of its valid period, Unix seconds.
+        var validFrom: Double
+        /// The end of its valid period, Unix seconds.
+        var validTo: Double
+        var state: String
+
+        enum CodingKeys: String, CodingKey {
+            case station
+            case issued
+            case validFrom = "valid_from"
+            case validTo = "valid_to"
+            case state
+        }
+    }
+
+    struct TafValidityInput: Codable, Equatable, Sendable {
+        /// The TAF as sent.
+        var taf: String
+        /// Unix seconds, UTC: the engine has no clock.
+        var now: Double
     }
 
     struct TafWindowAnswer: Codable, Equatable, Sendable {

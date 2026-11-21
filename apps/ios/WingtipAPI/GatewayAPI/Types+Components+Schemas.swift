@@ -107,8 +107,6 @@ extension Components {
         }
         /// - Remark: Generated from `#/components/schemas/AccountRecordsDto`.
         public struct AccountRecordsDto: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/AccountRecordsDto/featureUses`.
-            public var featureUses: [Components.Schemas.FeatureUse]
             /// - Remark: Generated from `#/components/schemas/AccountRecordsDto/remindersSent`.
             public var remindersSent: [Components.Schemas.SentReminder]
             /// - Remark: Generated from `#/components/schemas/AccountRecordsDto/subscription`.
@@ -116,20 +114,16 @@ extension Components {
             /// Creates a new `AccountRecordsDto`.
             ///
             /// - Parameters:
-            ///   - featureUses:
             ///   - remindersSent:
             ///   - subscription:
             public init(
-                featureUses: [Components.Schemas.FeatureUse],
                 remindersSent: [Components.Schemas.SentReminder],
                 subscription: Components.Schemas.SubscriptionRow? = nil
             ) {
-                self.featureUses = featureUses
                 self.remindersSent = remindersSent
                 self.subscription = subscription
             }
             public enum CodingKeys: String, CodingKey {
-                case featureUses
                 case remindersSent
                 case subscription
             }
@@ -1784,35 +1778,6 @@ extension Components {
                 case detail
                 case kind
                 case signature
-            }
-        }
-        /// - Remark: Generated from `#/components/schemas/FeatureUse`.
-        public struct FeatureUse: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/FeatureUse/feature`.
-            public var feature: Swift.String
-            /// - Remark: Generated from `#/components/schemas/FeatureUse/month`.
-            public var month: Swift.String
-            /// - Remark: Generated from `#/components/schemas/FeatureUse/uses`.
-            public var uses: Swift.Int
-            /// Creates a new `FeatureUse`.
-            ///
-            /// - Parameters:
-            ///   - feature:
-            ///   - month:
-            ///   - uses:
-            public init(
-                feature: Swift.String,
-                month: Swift.String,
-                uses: Swift.Int
-            ) {
-                self.feature = feature
-                self.month = month
-                self.uses = uses
-            }
-            public enum CodingKeys: String, CodingKey {
-                case feature
-                case month
-                case uses
             }
         }
         /// - Remark: Generated from `#/components/schemas/FieldReport`.

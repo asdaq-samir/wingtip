@@ -810,6 +810,11 @@ extension Engine {
         try Self.rule("glide_ring", EngineContract.GlideRingInput(lat: lat, lon: lon, altitudeFt: altitudeFt, speedKt: speedKt, terrainFt: terrainFt, fieldFt: fieldFt, glideRatio: glideRatio))
     }
 
+    /// The Brief's Adverse Conditions rows under its findings, the standard briefing's first element (AIM 7-1-5(b)(1)): what the flight meets on the route while it is there (OnRoute `when` "during", or none given) -- a TFR the route goes through (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6), stops; a Center Weather Advisory (AIM 7-1-6), an urgent pilot report (UUA, AIM 7-1-18) and an AIRMET or G-AIRMET (AIM 7-1-6), cautions -- in that order, of a kind the one met first along the route first, at most three, with how many more. A TFR only near the route, a routine PIREP and a hazard before or after the flight are left to their pages. Each row's time is for the host to write: `at` when the flight meets a TFR, `until` an advisory's end, `reported` a pilot report's time.
+    static func gonogoAdverseRows(advisories: [EngineContract.GonogoAdverseRowsInputAdvisoriesItem]) throws -> EngineContract.GonogoAdverseRowsAnswer {
+        try Self.rule("gonogo_adverse_rows", EngineContract.GonogoAdverseRowsInput(advisories: advisories))
+    }
+
     /// Weight and balance at takeoff and landing, against the profile's limits and envelope, with the problems found.
     static func gonogoBalance(loading: EngineContract.GonogoLoading, load: EngineContract.GonogoLoad, tripFuelGal: Double? = nil) throws -> EngineContract.GonogoBalanceAnswer {
         try Self.rule("gonogo_balance", EngineContract.GonogoBalanceInput(loading: loading, load: load, tripFuelGal: tripFuelGal))
@@ -1088,6 +1093,11 @@ extension Engine {
     /// A field's radio as the kneeboard lists it, [short name, MHz] in its order (the tower's before the CTAF's).
     static func kneeboardRadio(frequencies: [EngineContract.FieldFrequency]) throws -> [[OpenAPIValueContainer]] {
         try Self.rule("kneeboard_radio", EngineContract.KneeboardRadioInput(frequencies: frequencies))
+    }
+
+    /// The runway landed on at a field the route flies an instrument approach to: the approach's own runway, straight in (AIM 5-4-20, Approach and Landing Minimums; 14 CFR 91.175, the runway of intended landing), unless the pilot picked another and the plate publishes circling minimums, a circle to land (AIM 5-4-20). A runway picked into the wind gives way to the approach's own. With no approach, or one circling only (no runway in its name), the pick stands and any runway may be picked. `circling` null (the plate still coming) is taken as no circling. The runway is answered as painted ("9", "8L").
+    static func landingRunway(approach: Bool, straightIn: String? = nil, circling: Bool? = nil, picked: String? = nil, byPilot: Bool) throws -> EngineContract.LandingRunwayAnswer {
+        try Self.rule("landing_runway", EngineContract.LandingRunwayInput(approach: approach, straightIn: straightIn, circling: circling, picked: picked, byPilot: byPilot))
     }
 
     /// Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.
@@ -1763,6 +1773,11 @@ extension Engine {
     /// When a part-time surface area is in effect, day by day from the field's today for a week, read from NASR's CLS_ARSP AIRSPACE_HRS, the Chart Supplement's AIRSPACE line ("CLASS D SVC 0600-2200 MON-FRI, 0700-2200 SAT-SUN; OTHER TIMES CLASS E"): the class at other times the one the line names (AIM 3-2-5a1; 14 CFR 71.61, 71.71(b)), never a guess. A time with no Z is the field's local time; Z is UTC at the offset now; Z++ is the Chart Supplement's double dagger, one hour earlier in daylight saving time, so the figure at the field's standard offset all year. Reads CONTINUOUS, time ranges, days (MON-FRI, SAT & SUN, WKEND) and seasons (16 MAR-31 OCT, OCT-MAR); anything else (holidays, BY NOTAM, SR-SS) leaves the hours not known (`known` false). Spans are local minutes from midnight, [from, to), a span past midnight carried into the next day. `in_force` and `change` are now's: in effect until `change.at`, or not until `change.at`, `next_day` where that is tomorrow; null where today's hours are not known. The engine has no clock: the host gives the field's local date, minute, UTC offset and whether in daylight saving time.
     static func surfaceHours(hours: String? = nil, year: Int, month: Int, day: Int, weekday: Int, minute: Int, utcOffsetMin: Int, dst: Bool? = nil) throws -> EngineContract.SurfaceHoursAnswer {
         try Self.rule("surface_hours", EngineContract.SurfaceHoursInput(hours: hours, year: year, month: month, day: day, weekday: weekday, minute: minute, utcOffsetMin: utcOffsetMin, dst: dst))
+    }
+
+    /// A TAF's own times and whether it speaks for now: its station, when it was issued and its valid period, as its header gives them, and its state, not yet before the period, in force during it and expired at its end (FAA-H-8083-28B 27.4.1, a TAF is a forecast for its valid period; the same rule as weather_in_force's for a TAF). The airport card says it under the hours, so a TAF kept from before the signal was lost is never read as today's forecast (14 CFR 91.103). Null where the words are not a TAF.
+    static func tafValidity(taf: String, now: Double) throws -> EngineContract.TafValidityAnswer? {
+        try Self.rule("taf_validity", EngineContract.TafValidityInput(taf: taf, now: now))
     }
 
     /// What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).

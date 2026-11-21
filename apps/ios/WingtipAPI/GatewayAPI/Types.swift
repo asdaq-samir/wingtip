@@ -277,7 +277,7 @@ public protocol APIProtocol: Sendable {
     func setContact(_ input: Operations.SetContact.Input) async throws -> Operations.SetContact.Output
     /// Everything kept for the signed-in pilot, as one JSON file
     ///
-    /// The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.
+    /// The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders, subscription and connected AI apps (never a token); sent as a download.
     ///
     /// - Remark: HTTP `GET /api/me/export`.
     /// - Remark: Generated from `#/paths//api/me/export/get(export)`.
@@ -1064,7 +1064,7 @@ extension APIProtocol {
     }
     /// Everything kept for the signed-in pilot, as one JSON file
     ///
-    /// The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.
+    /// The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders, subscription and connected AI apps (never a token); sent as a download.
     ///
     /// - Remark: HTTP `GET /api/me/export`.
     /// - Remark: Generated from `#/paths//api/me/export/get(export)`.
