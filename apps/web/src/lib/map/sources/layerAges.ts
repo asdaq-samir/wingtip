@@ -3,6 +3,7 @@ import { api } from "../../api/client";
 import type { DataCycle, Traffic } from "../../api/types";
 import { ago } from "../../format";
 import { useMinuteClock } from "../../useMinuteClock";
+import { onThisDay } from "../../dataCycles";
 
 /** How long ago `at` (ms) was, in a few words: "just now" under a
  *  minute, "4m ago", "2h 5m ago" (lib/format ago); null for no time. */
@@ -38,9 +39,15 @@ export const mapAgesQuery = {
 } as const;
 
 /** Each FAA data set the planner uses and whether its edition is in its
- *  cycle (lib/dataCycles has the words). */
+ *  cycle on this device's day (lib/dataCycles' onThisDay, the engine's
+ *  data_cycle), so an answer kept through a flight with no signal still
+ *  turns out of date on the day it does; the words are lib/dataCycles'. */
 export function useDataCycles(): DataCycle[] {
-  return useQuery(mapAgesQuery).data?.data_cycles ?? [];
+  const now = useMinuteClock();
+  const cycles = useQuery(mapAgesQuery).data?.data_cycles;
+  // Judged once a day is enough, but the minute's clock is the one the
+  // page already keeps; the engine answers in microseconds.
+  return cycles?.length ? onThisDay(cycles, now) : [];
 }
 
 /**

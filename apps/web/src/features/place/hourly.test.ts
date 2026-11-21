@@ -144,6 +144,8 @@ describe("a field's weather hour by hour", () => {
     expect(hours).toHaveLength(1);
     expect(hours[0]).toMatchObject({ now: true, category: "VFR" });
     expect(sentenceOf(hours, zulu)).toBe("VFR now, no forecast for this field.");
+    // A TAF kept past its valid period is said to have run out (taf_validity).
+    expect(sentenceOf(hours, zulu, "its TAF has expired")).toBe("VFR now, its TAF has expired.");
     expect(series(null, null)).toEqual([]);
     expect(sentenceOf([], zulu)).toBeNull();
     expect(series("", null)).toEqual([]);

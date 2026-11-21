@@ -42,7 +42,7 @@ const FIRST = 3;
  */
 export function useFieldNotams(ident: string) {
   const query = useQuery(fieldNotamsQuery(ident));
-  const { data, isError } = query;
+  const { data, isError, dataUpdatedAt, errorUpdatedAt } = query;
   const [all, setAll] = useState(false);
   const notams = data?.notams ?? [];
   const long = notams.length > FIRST;
@@ -51,6 +51,10 @@ export function useFieldNotams(ident: string) {
     isError,
     /** The query itself, for the list's Try again where it failed (QueryState). */
     query,
+    // When the list came, and whether asking again since failed: its age
+    // where it is the one kept (PlaceNotamsSection's KeptAge).
+    atMs: dataUpdatedAt || null,
+    failed: errorUpdatedAt > dataUpdatedAt,
     total: notams.length,
     shown: all || !long ? notams : notams.slice(0, FIRST),
     long,
