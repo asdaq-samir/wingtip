@@ -2,7 +2,7 @@
 //! FlightLine, the iPhone's FiguresStrip, Android's Figures): one answer
 //! for the three, so the strip says the same fuel on each. The figure is
 //! the fuel required to the next landing -- the tanks are filled at each
-//! stop (the planner's wingtip.planning.route_totals) -- less what a flight
+//! stop (the planner's wingtip.route_join.route_totals) -- less what a flight
 //! under way has burnt; red where the tanks do not hold it on any flight
 //! of the route. Before the nav log's totals are in, an estimate from the
 //! airplane's book alone.
@@ -104,7 +104,7 @@ pub struct TankPoint {
 /// field landed at, the fuel on landing, the tanks then fuelled for the
 /// next flight (flight::tanks_leaving: full unless the pilot set what to),
 /// its own start and taxi taken again, as the planner checks each flight
-/// (wingtip.planning.route_totals). None at a point past a leg whose burn is
+/// (wingtip.route_join.route_totals). None at a point past a leg whose burn is
 /// not known, until the next fill. Below empty it is negative, the gallons
 /// short, not 0: a 0 read as landing on fumes where the airplane cannot
 /// reach the point at all (the owner, 2026-11-20: "Instead of showing 0

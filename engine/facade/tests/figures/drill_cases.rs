@@ -220,7 +220,7 @@ pub(super) fn ask(name: &str, input: serde_json::Value) -> serde_json::Value {
 fn the_strip_says_the_fuel_required_to_the_next_landing() {
     use serde_json::json;
     // A route with a stop: the first flight's fuel required, the tanks
-    // filled at the stop (app.planning.route_totals); short on the second.
+    // filled at the stop (wingtip.route_join.route_totals); short on the second.
     let route = json!({"fuel_required_gal": 50.0, "fuel_margin_gal": -3.5, "hops": [
         {"departure": "C81", "destination": "KMSN", "fuel_required_gal": 20.4, "fuel_margin_gal": 12.0},
         {"departure": "KMSN", "destination": "KDLH", "fuel_required_gal": 29.6, "fuel_margin_gal": -3.5}]});
