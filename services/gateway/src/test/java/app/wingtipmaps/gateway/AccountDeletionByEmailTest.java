@@ -109,14 +109,17 @@ class AccountDeletionByEmailTest extends AccountTestBase {
         Pilot pilot = pilotWithEverything();
         ask(pilot.getEmail());
         String token = emailedToken();
-        // As a sign-in link: refused.
-        mockMvc.perform(post("/api/auth/magic-link/verify")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("token", token))
-                .andExpect(status().isBadRequest());
+        // As a sign-in link: refused, and with its purpose written in
+        // front, which is the string its row is hashed over, refused too.
+        for (String asSignIn : new String[] {token, "delete-account:" + token}) {
+            mockMvc.perform(post("/api/auth/magic-link/verify")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                            .param("token", asSignIn))
+                    .andExpect(status().isBadRequest());
+        }
         // A good sign-in link for the same address cannot delete either.
-        String signIn = "sign-in-" + System.nanoTime();
+        String signIn = String.format("%043d", System.nanoTime());
         magicLinks.save(
                 new MagicLink(pilot.getEmail(), sha256(signIn), Instant.now().plusSeconds(600)));
         mockMvc.perform(post("/delete-account/confirm")

@@ -128,7 +128,7 @@ public class DeleteAccountController {
     /** Where the emailed link opens: the address it is for, and a Delete button. Uses nothing up. */
     @GetMapping("/delete-account/confirm")
     public String confirm(HttpServletRequest request, @RequestParam String token, Model model) {
-        if (tooMany(request)) {
+        if (tooMany(request) || !MagicLinkController.isLinkToken(token)) {
             return "delete-account/expired";
         }
         Optional<MagicLink> link = links.findByTokenHash(MagicLinkController.hash(PURPOSE + token))
@@ -144,7 +144,7 @@ public class DeleteAccountController {
     /** Delete pressed: the link used up, and the account deleted as Setup deletes it. */
     @PostMapping(value = "/delete-account/confirm", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public String delete(HttpServletRequest request, @RequestParam String token) {
-        if (tooMany(request)) {
+        if (tooMany(request) || !MagicLinkController.isLinkToken(token)) {
             return "delete-account/expired";
         }
         String hash = MagicLinkController.hash(PURPOSE + token);
