@@ -1224,6 +1224,40 @@ object WingtipMap {
     const val LABEL_HALO_NIGHT = 0.6
 }
 
+/** From which zoom each kind of airport and airspace is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1. */
+object WingtipMapZoom {
+    /** The farthest out the airports' layer is drawn, where its marks are smallest; each field within it from its own tier's zoom below. */
+    const val AIRPORTS_FARTHEST = 4.0
+    /** Towered fields (field_mark_rank's first tier), a few states on a phone, with the Class B and C they are named for. */
+    const val AIRPORT_TOWERED = 5.0
+    /** Public fields with a hard runway of 3,000 ft or more (field_mark_rank's second tier). */
+    const val AIRPORT_LONG_HARD = 7.0
+    /** Every other public field (field_mark_rank's third tier). */
+    const val AIRPORT_PUBLIC = 8.0
+    /** Private fields (field_mark_rank's fourth tier), behind their switch. */
+    const val AIRPORT_PRIVATE = 10.0
+    /** Heliports (field_mark_rank's last tier). */
+    const val AIRPORT_HELIPORT = 11.0
+    /** Every drawn field's ident from this zoom; farther out only a Class B field's, as there an ident is wider than the room between two towered fields. */
+    const val AIRPORT_IDENTS = 6.0
+    /** Class B rings. */
+    const val AIRSPACE_B = 5.0
+    /** Class C rings. */
+    const val AIRSPACE_C = 5.0
+    /** Class D rings. */
+    const val AIRSPACE_D = 7.0
+    /** Class E at the surface and a Class C's or D's surface-area extensions (E2, E3, E4): in the tiles, not drawn on the 2D map. */
+    const val AIRSPACE_E_SURFACE = 8.0
+    /** Every other Class E (E5, E6, E7): in the tiles, not drawn on the 2D map. */
+    const val AIRSPACE_E = 9.0
+    /** The rings at their full width with their band inside; farther out half their width and no band, so a Class C is a ring and not a dot. */
+    const val AIRSPACE_FULL = 7.0
+    /** The airspace and special-use altitude tabs: farther out they were the largest marks on the map, over the fields' names (the owner, 2026-11-20). */
+    const val AIRSPACE_LABELS = 9.0
+    /** Restricted, prohibited and warning areas and MOAs: at 6 California's 160 hatched lines hid the fields and the Class B and C under them (2026-11-21). */
+    const val SPECIAL_USE = 7.0
+}
+
 /** Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers. */
 object WingtipFlow {
     class Stop(val at: Double, val colour: Color, val alpha: Int)

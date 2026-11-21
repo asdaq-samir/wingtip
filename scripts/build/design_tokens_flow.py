@@ -11,11 +11,14 @@ generator's camelCase, and returns the text one generated file appends.
 
 import re
 
+import design_tokens_zoom as zoom
 from design_tokens_colour import rgba
 
 
 def _tokens(group):
-    return {k: v for k, v in group.items() if not k.startswith("$")}
+    """A group's own tokens: the `map.zoom` group within `map` is
+    design_tokens_zoom's, appended after WingtipMap."""
+    return {k: v for k, v in group.items() if not k.startswith("$") and "$value" in v}
 
 
 def _weather(tree, name):
@@ -51,6 +54,8 @@ def ts(tree):
         "export const MAP = {",
         *["  %s: %s," % (_camel(k), _num(t["$value"])) for k, t in m.items()],
         "} as const;",
+        "",
+        zoom.ts(tree),
         "",
         "/** A colour-ramp stop: the value in the field's unit and its colour as [r, g, b, 255ths], as weatherlayers-gl takes it. */",
         "type FlowStop = [number, [number, number, number, number]];",
@@ -94,6 +99,8 @@ def swift(tree):
     out += [
         "}",
         "",
+        zoom.swift(tree),
+        "",
         "/// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.",
         "enum WingtipFlow {",
         "    typealias Stop = (at: Double, colour: UIColor, alpha: UInt8)",
@@ -122,6 +129,8 @@ def kotlin(tree):
     out += ["    const val %s = %s" % (up(k), _num(t["$value"])) for k, t in m.items()]
     out += [
         "}",
+        "",
+        zoom.kotlin(tree),
         "",
         "/** Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers. */",
         "object WingtipFlow {",

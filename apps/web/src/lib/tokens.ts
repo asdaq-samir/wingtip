@@ -284,6 +284,40 @@ export const MAP = {
   labelHaloNight: 0.6,
 } as const;
 
+/** From which zoom each kind of airport and airspace is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1. */
+export const MAP_ZOOM = {
+  /** The farthest out the airports' layer is drawn, where its marks are smallest; each field within it from its own tier's zoom below. */
+  airportsFarthest: 4,
+  /** Towered fields (field_mark_rank's first tier), a few states on a phone, with the Class B and C they are named for. */
+  airportTowered: 5,
+  /** Public fields with a hard runway of 3,000 ft or more (field_mark_rank's second tier). */
+  airportLongHard: 7,
+  /** Every other public field (field_mark_rank's third tier). */
+  airportPublic: 8,
+  /** Private fields (field_mark_rank's fourth tier), behind their switch. */
+  airportPrivate: 10,
+  /** Heliports (field_mark_rank's last tier). */
+  airportHeliport: 11,
+  /** Every drawn field's ident from this zoom; farther out only a Class B field's, as there an ident is wider than the room between two towered fields. */
+  airportIdents: 6,
+  /** Class B rings. */
+  airspaceB: 5,
+  /** Class C rings. */
+  airspaceC: 5,
+  /** Class D rings. */
+  airspaceD: 7,
+  /** Class E at the surface and a Class C's or D's surface-area extensions (E2, E3, E4): in the tiles, not drawn on the 2D map. */
+  airspaceESurface: 8,
+  /** Every other Class E (E5, E6, E7): in the tiles, not drawn on the 2D map. */
+  airspaceE: 9,
+  /** The rings at their full width with their band inside; farther out half their width and no band, so a Class C is a ring and not a dot. */
+  airspaceFull: 7,
+  /** The airspace and special-use altitude tabs: farther out they were the largest marks on the map, over the fields' names (the owner, 2026-11-20). */
+  airspaceLabels: 9,
+  /** Restricted, prohibited and warning areas and MOAs: at 6 California's 160 hatched lines hid the fields and the Class B and C under them (2026-11-21). */
+  specialUse: 7,
+} as const;
+
 /** A colour-ramp stop: the value in the field's unit and its colour as [r, g, b, 255ths], as weatherlayers-gl takes it. */
 type FlowStop = [number, [number, number, number, number]];
 /** Model Weather's colour scales: ramps, the opacities of the banded fields, and how strongly each covers the chart. */

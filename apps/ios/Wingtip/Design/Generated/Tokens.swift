@@ -999,6 +999,40 @@ enum WingtipMap {
     static let labelHaloNight: Double = 0.6
 }
 
+/// From which zoom each kind of airport and airspace is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1.
+enum WingtipMapZoom {
+    /// The farthest out the airports' layer is drawn, where its marks are smallest; each field within it from its own tier's zoom below.
+    static let airportsFarthest: Double = 4
+    /// Towered fields (field_mark_rank's first tier), a few states on a phone, with the Class B and C they are named for.
+    static let airportTowered: Double = 5
+    /// Public fields with a hard runway of 3,000 ft or more (field_mark_rank's second tier).
+    static let airportLongHard: Double = 7
+    /// Every other public field (field_mark_rank's third tier).
+    static let airportPublic: Double = 8
+    /// Private fields (field_mark_rank's fourth tier), behind their switch.
+    static let airportPrivate: Double = 10
+    /// Heliports (field_mark_rank's last tier).
+    static let airportHeliport: Double = 11
+    /// Every drawn field's ident from this zoom; farther out only a Class B field's, as there an ident is wider than the room between two towered fields.
+    static let airportIdents: Double = 6
+    /// Class B rings.
+    static let airspaceB: Double = 5
+    /// Class C rings.
+    static let airspaceC: Double = 5
+    /// Class D rings.
+    static let airspaceD: Double = 7
+    /// Class E at the surface and a Class C's or D's surface-area extensions (E2, E3, E4): in the tiles, not drawn on the 2D map.
+    static let airspaceESurface: Double = 8
+    /// Every other Class E (E5, E6, E7): in the tiles, not drawn on the 2D map.
+    static let airspaceE: Double = 9
+    /// The rings at their full width with their band inside; farther out half their width and no band, so a Class C is a ring and not a dot.
+    static let airspaceFull: Double = 7
+    /// The airspace and special-use altitude tabs: farther out they were the largest marks on the map, over the fields' names (the owner, 2026-11-20).
+    static let airspaceLabels: Double = 9
+    /// Restricted, prohibited and warning areas and MOAs: at 6 California's 160 hatched lines hid the fields and the Class B and C under them (2026-11-21).
+    static let specialUse: Double = 7
+}
+
 /// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.
 enum WingtipFlow {
     typealias Stop = (at: Double, colour: UIColor, alpha: UInt8)

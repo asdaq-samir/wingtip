@@ -17,7 +17,7 @@ import { OVERLAY_SOURCE, SUA_LAYERS, airspaceLayers, glZoom, specialUseLayers } 
 import { GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE, labelByZoom } from "./layers/common";
 import { specialUseLabelLayer } from "./glSuaLabels";
 import { OVERLAY_PICTURES } from "./glOverlayPictures";
-import { CHART } from "../../tokens";
+import { CHART, MAP_ZOOM } from "../../tokens";
 
 export { OVERLAY_SOURCE };
 
@@ -57,22 +57,22 @@ export function overlayPictures(): Promise<Map<string, DrawnImage>> {
 
 // ---- The layers -----------------------------------------------------------
 
-/** The airports' zooms, in the app's levels: the farthest out any
- *  is drawn. Within it each field is in the tiles from its own zoom by
- *  its tier (AIRPORT_MIN_ZOOM in services/jobs/charts/overlay_layers.py):
- *  towered from 5, then the long hard runways from 7, other public fields
- *  from 8, private ones from 10, heliports from 11. */
-const AIRPORTS_FARTHEST_ZOOM = 4;
-/** A field's ident beside its mark: out at a few states (below the app's
- *  zoom 6) only a Class B's field's (the engine's field_mark_rank sizes
- *  it largest), as there an ident is wider than the room between two
- *  towered fields and took the place of the next one's mark (KSJC's of
- *  Fresno's); from 6 every field's. */
+/** The airports' zooms, in the app's levels (design/tokens.json's
+ *  map.zoom): the farthest out any is drawn. Within it each field is in
+ *  the tiles from its own tier's zoom (the charts job's AIRPORT_MIN_ZOOM
+ *  reads the same tokens): towered, then the long hard runways, other
+ *  public fields, private ones, heliports. */
+const AIRPORTS_FARTHEST_ZOOM = MAP_ZOOM.airportsFarthest;
+/** A field's ident beside its mark: out at a few states only a Class B's
+ *  field's (the engine's field_mark_rank sizes it largest), as there an
+ *  ident is wider than the room between two towered fields and took the
+ *  place of the next one's mark (KSJC's of Fresno's); from
+ *  map.zoom.airport-idents every field's. */
 const AIRPORT_IDENT_FAR: ExpressionSpecification = [
   "step",
   ["zoom"],
   ["case", ["==", ["get", "size"], "largest"], ["get", "ident"], ""],
-  glZoom(6),
+  glZoom(MAP_ZOOM.airportIdents),
   ["get", "ident"],
 ];
 

@@ -36,7 +36,8 @@ check "The phones' generated models and engine calls" scripts/ci/phones_generate
   "$A/api/generated" "$A/engine/generated"
 check "The design tokens" "scripts/build/design-tokens.sh --check" -- \
   design/tokens.json 'scripts/build/design-tokens.sh' 'scripts/build/design_tokens*' \
-  apps/web/src/styles/tokens.css apps/web/src/lib/tokens.ts apps/ios/Wingtip/Design/Generated "$A/design/generated"
+  apps/web/src/styles/tokens.css apps/web/src/lib/tokens.ts apps/ios/Wingtip/Design/Generated "$A/design/generated" \
+  services/jobs/charts/map_zoom.py
 check "The screens and their links" "scripts/build/screens.sh --check" -- \
   design/screens.json 'scripts/build/screens.*' docs/navigation.md \
   apps/web/src/lib/navigation/generated apps/ios/Wingtip/Navigation/Generated "$A/navigation/generated"

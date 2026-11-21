@@ -854,10 +854,11 @@ At each airport the chart already shows, from the map's own
   fields with 3,000 ft of hard runway, the Class D rings, the restricted
   areas and MOAs, and the rings at their full width with their band; the
   other public fields from 8, private ones from 10, heliports from 11,
-  and the altitude tabs from 9. The overlay tiles hold each from that
-  zoom (the charts job's `AIRPORT_MIN_ZOOM`, `AIRSPACE_MIN_ZOOM`). Where
-  marks would overlap, the rule's order keeps them, each 2 px from the
-  next.
+  and the altitude tabs from 9. Each number is a token, design/tokens.json's
+  `map.zoom`, which the web, the iPhone and Android read and the charts
+  job's overlay tiles hold each kind from (`map_zoom`, a zoom less in the
+  tiles' own levels), so no app keeps a tier of its own. Where marks
+  would overlap, the rule's order keeps them, each 2 px from the next.
 - **Station model from zoom 10 in** (the matching span on the iPhone):
   the engine's `wind_barb` (5, 10 and 50 kt barbs and flags, a ring for
   calm, 0 to 2 kt calm), and two lines beside the field, the visibility with its weather
