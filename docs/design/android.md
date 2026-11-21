@@ -1364,6 +1364,10 @@ for, by the phones' wasted-work audit:
 - **Own ship put away on the ground** stops reading (OwnShipControl's
   ON_STOP), as OwnShip says it does, and starts again at ON_RESUME; with
   own ship's service up (a flight under way) it goes on.
+- **The copilot** checks whether the planner or the engine is due, on a
+  key of tenths of a degree, before it measures the route
+  (`route_position`), so it measures at most every 3 s, as the iPhone
+  looks.
 
 ## 4. Not verified
 
