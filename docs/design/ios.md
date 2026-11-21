@@ -150,6 +150,12 @@ view without dismissing the sheet").
 - **Code.** `presentationDetents([pill, .half, .large], selection: $detent)`,
   with `presentationBackgroundInteraction(.enabled(upThrough: .half))`
   and a grabber (`presentationDragIndicator(.visible)`).
+  - **Solid at every detent** (`presentationBackground(WingtipInk.sheet)`,
+    the look's `sheet` token), the plan's sheet and every card, as the
+    web's sheet is: iOS 26's glass sheet at half took the yellow chart
+    under it, and the accessibility audit found the Nav Log's "No Legs
+    Yet", You's Sign In and the FPL's rows at the largest text under
+    4.5:1. Glass stays on what floats over the map.
   - `pill` is `.height(132)` for the page's first row plus the page
     dots' 28-point row (`RootView.pill`, `PageDots.row`).
   - **Half height (owner decision 2026-11-10).** `.half` is

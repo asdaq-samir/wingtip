@@ -38,6 +38,8 @@ private struct CardHost: ViewModifier {
                     // The map usable above a card up to half height; a
                     // question or a form stays modal (the scrolling rule).
                     .presentationBackgroundInteraction(card.page.modal ? .disabled : .enabled(upThrough: .half))
+                    // Solid at every detent, as the plan's sheet (RootView).
+                    .presentationBackground(WingtipInk.sheet)
                     .environment(\.cardExpanded, nav.cardDetent == .large)
                     .environment(\.cardAtPill, nav.cardDetent == RootView.pill)
                     // The map's buttons ride the card's top while it is up,
