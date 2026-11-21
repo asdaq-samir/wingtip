@@ -142,7 +142,9 @@ pub struct TankAt {
 /// route's last point, its destination, is held to `alternate_gal` more,
 /// the fuel on to an IFR alternate (91.167(a)(2)), as the planner's fuel
 /// check counts it; 0 under VFR or with no alternate filed.
-pub fn tanks(points: &[TankPoint], usable_gal: f64, taxi_gal: f64, reserves_gal: &[Option<f64>], alternate_gal: f64) -> Vec<Option<TankAt>> {
+pub fn tanks(
+    points: &[TankPoint], usable_gal: f64, taxi_gal: f64, reserves_gal: &[Option<f64>], alternate_gal: f64,
+) -> Vec<Option<TankAt>> {
     let strictest = reserves_gal.iter().flatten().fold(0.0_f64, |a, b| a.max(*b));
     let reserve_of = |flight: usize| reserves_gal.get(flight).copied().flatten().unwrap_or(strictest);
     let last = points.len().saturating_sub(1);

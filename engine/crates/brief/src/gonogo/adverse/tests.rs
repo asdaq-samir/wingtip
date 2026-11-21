@@ -27,12 +27,8 @@ fn a_tfr_crossed_comes_first_then_the_sigmets_then_the_g_airmets() {
         from_nm: Some(80.0),
         ..Advisory::default()
     };
-    let all = [
-        advisory("G-AIRMET", "IFR", 10.0),
-        advisory("Convective SIGMET", "Convective", 40.0),
-        tfr,
-        advisory("SIGMET", "Turbulence", 5.0),
-    ];
+    let all =
+        [advisory("G-AIRMET", "IFR", 10.0), advisory("Convective SIGMET", "Convective", 40.0), tfr, advisory("SIGMET", "Turbulence", 5.0)];
     let (rows, more) = adverse_rows(&all);
     let titles: Vec<&str> = rows.iter().map(|r| r.title.as_str()).collect();
     assert_eq!(titles, ["TFR 6/4116 Madison", "Convective SIGMET", "SIGMET: Turbulence"]);

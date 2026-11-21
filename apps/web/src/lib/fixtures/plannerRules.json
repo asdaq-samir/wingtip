@@ -13004,7 +13004,9 @@
     "usable_gal": 40.0,
     "start_gal": 40.0,
     "taxi_gal": 1.4,
-    "reserve_gal": 4.5
+    "reserve_gal": 4.5,
+    "alternate_gal": 0.0,
+    "on_board_short": false
    }
   },
   {
@@ -13052,7 +13054,9 @@
     "usable_gal": 40.0,
     "start_gal": 40.0,
     "taxi_gal": 1.4,
-    "reserve_gal": 6.8
+    "reserve_gal": 6.8,
+    "alternate_gal": 0.0,
+    "on_board_short": false
    }
   },
   {
@@ -13158,7 +13162,9 @@
     "usable_gal": 40.0,
     "start_gal": 40.0,
     "taxi_gal": 1.4,
-    "reserve_gal": 4.5
+    "reserve_gal": 4.5,
+    "alternate_gal": 0.0,
+    "on_board_short": false
    }
   },
   {
@@ -13198,7 +13204,9 @@
     "usable_gal": 40.0,
     "start_gal": 40.0,
     "taxi_gal": 1.4,
-    "reserve_gal": 6.75
+    "reserve_gal": 6.75,
+    "alternate_gal": 0.0,
+    "on_board_short": false
    }
   },
   {
@@ -13247,7 +13255,9 @@
     "usable_gal": 40.0,
     "start_gal": 30.0,
     "taxi_gal": 1.4,
-    "reserve_gal": 4.5
+    "reserve_gal": 4.5,
+    "alternate_gal": 0.0,
+    "on_board_short": false
    }
   }
  ],

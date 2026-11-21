@@ -184,10 +184,7 @@ pub fn taf_validity(taf_raw: &str, now_s: i64) -> String {
     };
     let mut out = String::from("{\"station\":");
     json::string(&mut out, &t.station);
-    out.push_str(&format!(
-        ",\"issued\":{},\"valid_from\":{},\"valid_to\":{},\"state\":\"{state}\"}}",
-        t.issued, t.valid_from, t.valid_to
-    ));
+    out.push_str(&format!(",\"issued\":{},\"valid_from\":{},\"valid_to\":{},\"state\":\"{state}\"}}", t.issued, t.valid_from, t.valid_to));
     out
 }
 

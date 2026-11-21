@@ -83,17 +83,19 @@ fn read(text: &str) -> Vec<Country> {
         let steps: Vec<i64> = line.split(' ').filter_map(|n| n.parse().ok()).collect();
         let (mut x, mut y) = (0i64, 0i64);
         let ring: Vec<(f64, f64)> = steps
-            .chunks_exact(2)
-            .map(|p| {
-                x += p[0];
-                y += p[1];
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|&[dx, dy]| {
+                x += dx;
+                y += dy;
                 (x as f64 / 1000.0, y as f64 / 1000.0)
             })
             .collect();
         for (i, &(x0, y0)) in ring.iter().enumerate() {
             let (x1, y1) = ring[(i + 1) % ring.len()];
-            for band in band_of(y0.min(y1))..=band_of(y0.max(y1)) {
-                country.bands[band].push([x0, y0, x1, y1]);
+            for band in &mut country.bands[band_of(y0.min(y1))..=band_of(y0.max(y1))] {
+                band.push([x0, y0, x1, y1]);
             }
         }
     }
@@ -119,8 +121,8 @@ fn distance_within(country: &Country, lat: f64, lon: f64, within: f64) -> Option
     let k = lat.to_radians().cos();
     let reach = within / NM_PER_DEG;
     let mut best: Option<f64> = None;
-    for band in band_of(lat - reach)..=band_of(lat + reach) {
-        for &[x0, y0, x1, y1] in &country.bands[band] {
+    for band in &country.bands[band_of(lat - reach)..=band_of(lat + reach)] {
+        for &[x0, y0, x1, y1] in band {
             let (ax, ay, bx, by) = ((x0 - lon) * k, y0 - lat, (x1 - lon) * k, y1 - lat);
             let (dx, dy) = (bx - ax, by - ay);
             let t = if dx == 0.0 && dy == 0.0 { 0.0 } else { (-(ax * dx + ay * dy) / (dx * dx + dy * dy)).clamp(0.0, 1.0) };
