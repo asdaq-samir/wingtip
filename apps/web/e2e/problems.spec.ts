@@ -307,8 +307,9 @@ test("the progress line spans the screen and is centred on it", async ({ page })
 test("a toast sits clear of the panel: at the top of a phone's screen, the bottom of a desktop's", async ({ page }) => {
   // On a phone the panel is a sheet up from the bottom of the screen,
   // and a toast anchored there covered it: it comes in from the top
-  // there, as an iOS banner does. From md up the panel is at the top,
-  // and the toast comes in from the bottom.
+  // there, as an iOS banner does. From md up the panel stands at the
+  // left the window's whole height, and the toast comes in from the
+  // bottom in the map's room beside it.
   await holdCourse(page);
   await page.goto(PLAN);
 
@@ -321,7 +322,8 @@ test("a toast sits clear of the panel: at the top of a phone's screen, the botto
     expect(box.y).toBeLessThan(60);
     expect(box.y + box.height).toBeLessThanOrEqual(panel.y);
   } else {
-    expect(box.y).toBeGreaterThanOrEqual(panel.y + panel.height);
+    expect(box.x).toBeGreaterThanOrEqual(panel.x + panel.width);
+    expect(box.y + box.height).toBeGreaterThan(page.viewportSize()!.height * 0.75);
   }
 });
 
