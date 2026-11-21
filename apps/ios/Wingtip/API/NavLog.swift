@@ -78,6 +78,11 @@ extension FuelStop: @retroactive Identifiable {
 /// reserve left (FuelStopSuggestion).
 typealias FuelStopSuggestion = APIFuelStopSuggestion
 
+/// A flight short of fuel the planner offers no stop on, and why: the
+/// fuel on board under its start, taxi and reserve already (`onBoard`),
+/// or no field with fuel in reach (the totals' no_fuel_stop).
+typealias NoFuelStop = APINoFuelStop
+
 extension FuelStopSuggestion: @retroactive Identifiable {
     public var id: String { "\(departure)-\(destination)" }
 }

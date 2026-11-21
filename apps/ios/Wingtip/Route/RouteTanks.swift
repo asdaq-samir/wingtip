@@ -36,18 +36,24 @@ enum RouteTanks {
     }
 
     /// The tanks' figures the gauges are read against: the first flight's
-    /// usable fuel and allowance, the strictest reserve of every flight
-    /// (each is fuelled again), as the web's tankFigures takes them. None
-    /// without an airplane's usable fuel.
+    /// usable fuel and allowance (each later flight is fuelled again), and
+    /// each flight's own reserve in order as the planner's totals give it,
+    /// which the engine holds each point to -- 30 minutes by day, 45 at
+    /// night (14 CFR 91.151(a)) or under IFR (91.167(a)(3)) -- with the
+    /// fuel on to an IFR alternate the destination is held to as well
+    /// (91.167(a)(2)), as the web's tankFigures takes them. None without an
+    /// airplane's usable fuel.
     struct Figures: Equatable, Sendable {
         let usableGal: Double
         let taxiGal: Double
-        let reserveGal: Double
+        let reservesGal: [Double?]
+        let alternateGal: Double?
 
-        init(usableGal: Double, taxiGal: Double, reserveGal: Double) {
+        init(usableGal: Double, taxiGal: Double, reservesGal: [Double?], alternateGal: Double? = nil) {
             self.usableGal = usableGal
             self.taxiGal = taxiGal
-            self.reserveGal = reserveGal
+            self.reservesGal = reservesGal
+            self.alternateGal = alternateGal
         }
 
         init?(_ totals: Totals?) {
@@ -56,7 +62,7 @@ enum RouteTanks {
             let flights = hops.isEmpty ? [totals] : hops
             guard let usable = flights.first?.usableFuelGal, usable > 0 else { return nil }
             self.init(usableGal: usable, taxiGal: flights.first?.taxiGal ?? 0,
-                      reserveGal: max(0, flights.compactMap(\.reserveGal).max() ?? 0))
+                      reservesGal: flights.map(\.reserveGal), alternateGal: totals.alternate?.fuelGal)
         }
     }
 
@@ -85,7 +91,8 @@ enum RouteTanks {
             points.append(.init(departure: false, fuelGal: leg.fuelGal, refuel: refuel,
                                 fillGal: refuel ? stop.flatMap { ownAt(stops[$0]) }.map(Double.init) : nil))
         }
-        let walked = try Engine.fuelInTanks(points: points, usableGal: figures.usableGal, taxiGal: figures.taxiGal, reserveGal: figures.reserveGal)
+        let walked = try Engine.fuelInTanks(points: points, usableGal: figures.usableGal, taxiGal: figures.taxiGal,
+                                            reservesGal: figures.reservesGal, alternateGal: figures.alternateGal)
         var tanks: [TankPoint: TankAt] = [:]
         func put(_ point: TankPoint, _ index: Int, own: Int?) {
             guard walked.indices.contains(index), let at = walked[index] else { return }
@@ -120,6 +127,18 @@ enum RouteTanks {
         return added.isEmpty ? nil : (route, added)
     }
 
+    /// Where a flight is short of fuel and the planner offers no stop on
+    /// it, why, for the first such flight, named by its two ends (the web's
+    /// NoFuelStopNote; warn, never limit): the fuel on board at the start
+    /// already under its start, taxi and reserve (14 CFR 91.151(a),
+    /// 91.167(a); the planner's `on_board`), or no field with fuel in the
+    /// tanks' reach. Nil where every short flight has a stop.
+    static func noFuelStopWords(_ flights: [NoFuelStop]) -> String? {
+        guard let flight = flights.first else { return nil }
+        let name = "\(flight.departure) → \(flight.destination)"
+        return flight.onBoard == true ? "Too little fuel on board for \(name)" : "No fuel stop in reach on \(name)"
+    }
+
     private static func same(_ a: String, _ b: String) -> Bool { a.uppercased() == b.uppercased() }
 }
 
@@ -141,36 +160,27 @@ extension Plan {
         plan()
     }
 
-    /// The stops "Add Fuel Stops" puts in, every flight's, and putting them
-    /// in: planned again, and each plan of the route with them read in turn
-    /// till one suggests none, four plans at most (the web's FUEL_ROUNDS),
-    /// as each stop's flight is then flown on its own altitude and winds.
+    /// The stops "Add Fuel Stops" puts in, every flight's, in one step:
+    /// the planner has already planned the route with its suggested stops
+    /// in, each flight between two of them on its own altitude, winds and
+    /// burn, and put in what those plans asked too, till none is short
+    /// (wingtip.fuel_rounds, the totals' fuel_stops), so one tap is the
+    /// whole answer, as the web's Add Fuel Stops makes one setStops.
     var fuelStopsToAdd: (stops: [String], added: [String])? {
         RouteTanks.withFuelStops(dep: dep, stops: stops, suggested: totals?.fuelStops ?? [])
     }
 
+    /// Why a flight short of fuel has no stop to add, where one has none.
+    var noFuelStop: String? { RouteTanks.noFuelStopWords(totals?.noFuelStop ?? []) }
+
     /// The fuel stops put in by Add Fuel Stops that are in the route still.
     var fuelStopsIn: [String] { extras.fuelStops.filter { stop in stops.contains { $0.uppercased() == stop } } }
 
-    func addFuelStops(round: Int = 1) {
+    func addFuelStops() {
         guard let next = fuelStopsToAdd else { return }
         stops = next.stops
         extras.fuelStops += next.added.map { $0.uppercased() }
         plan()
-        guard round < 4 else { return }
-        let asked = stops
-        Task { [weak self] in
-            // The plan of the route just set, then its own suggestions;
-            // a route the pilot changed meanwhile is left as they made it.
-            // Bounded: a plan that never ends adds nothing more after two minutes.
-            var waited = 0
-            while self?.planning == true, waited < 600 {
-                try? await Task.sleep(for: .milliseconds(200))
-                waited += 1
-            }
-            guard let self, !self.planning, self.stops == asked, self.fuelStopsToAdd != nil else { return }
-            self.addFuelStops(round: round + 1)
-        }
     }
 
     /// "Remove Fuel Stops": the ones Add Fuel Stops put in taken out.

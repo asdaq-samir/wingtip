@@ -163,9 +163,12 @@ struct FuelSetSheet: View {
 
 /// Add a Stop's neighbour, as the web's fuel stops pill ends that row:
 /// "Add Fuel Stops" where the planner suggests stops for a flight too long
-/// for the tanks, putting in every flight's (Plan.addFuelStops), and once
-/// the route has the ones it put in, "Remove Fuel Stops", in red as a
-/// removal is. Nothing where there is neither.
+/// for the tanks, putting in every flight's in one step (Plan.addFuelStops,
+/// the planner's answer already checked round by round), and once the
+/// route has the ones it put in, "Remove Fuel Stops", in red as a removal
+/// is. Where a flight is short and no stop is offered, why, in the
+/// problem's ink in their place (warn, never limit). Nothing where there
+/// is none of these.
 struct FuelStopsButton: View {
     @Environment(Plan.self) private var plan
 
@@ -179,6 +182,11 @@ struct FuelStopsButton: View {
             Button { plan.addFuelStops() } label: { Label("Add Fuel Stops", systemImage: "fuelpump") }
                 .accessibilityHint("Puts in \(next.added.joined(separator: ", "))")
                 .accessibilityIdentifier("fuel-stops-add")
+        } else if let why = plan.noFuelStop {
+            Label(why, systemImage: "fuelpump.exclamationmark")
+                .font(WingtipType.note)
+                .foregroundStyle(WingtipInk.problem)
+                .accessibilityIdentifier("no-fuel-stop")
         }
     }
 }

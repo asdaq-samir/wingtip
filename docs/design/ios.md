@@ -427,12 +427,17 @@ opened. Typing "traffic" offers Show Traffic in Do.
      (distance, ETE, fuel, altitude, airplane); Brief, Nav Log and File,
      the web's tab bar and its File button (2026-11-21); then the route
      itself (From and To, Routes, the airplane and the altitude), the
-     stops with Add a Stop and Add (or Remove) Fuel Stops, the fuel in
+     stops with Add a Stop and Add (or Remove) Fuel Stops (one tap puts
+     in every stop the planner's rounds found, already checked; a flight
+     short with none offered says why in their place, "No fuel stop in
+     reach on KMSN → KDLH"), the fuel in
      the tanks at each field (`FuelTanksSection`: the system's capacity
      gauge and the gallons, "−12 gal" past empty, red under the reserve,
      each field the airplane leaves a tap to set its fuel in a sheet of
      a segmented Full / No fuel / Gallons and a number field, Cancel and
-     Done; the engine's `fuel_in_tanks`, the planner's `tanks`) and the
+     Done; the engine's `fuel_in_tanks`, each point held to its own
+     flight's reserve and the destination to an IFR alternate's fuel too;
+     the planner's `tanks`) and the
      rest of the plan. At the pill, the search row alone. With no route,
      the same place holds Favorites, Recents, Find Nearby and Nearest.
      The ••• is the web's More (2026-11-21): Route Options (the ways'
