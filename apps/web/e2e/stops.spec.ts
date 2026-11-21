@@ -86,10 +86,9 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
       .click({ timeout: 2000 });
     await expect(page).toHaveURL(new RegExp(`[?&]takeoff=[^&]*KMSN(%3A|:)${name}(%2C|,|&|$)`), { timeout: 2000 });
   }).toPass({ timeout: slow(20000) });
-  // The figures to the next landing, KMSN, its fuel the tanks' for that
-  // flight; a tap on To, the destination and the whole route's distance.
+  // The figures to the next landing, KMSN, its time that flight's; a tap on To, the destination and the whole route's distance.
   await expect(sideDrawer(page).getByTestId("navlog-to")).toHaveText("KMSN", { timeout: slow(30000) });
-  await expect(sideDrawer(page).getByTestId("navlog-fuel")).toHaveText(/^\d+\.\d\s?gal$/);
+  await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText(/^(\d+h( \d+m)?|\d+m)$/);
   await expect(sideDrawer(page).getByTestId("to-toggle")).toHaveAccessibleName(/^Leg, /);
   await sideDrawer(page).getByTestId("to-toggle").click();
   await expect(sideDrawer(page).getByTestId("navlog-to")).toHaveText("KDLH");

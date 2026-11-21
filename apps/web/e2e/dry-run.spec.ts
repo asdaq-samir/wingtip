@@ -172,7 +172,6 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
   await expect.poll(async () => (await names(figures)).slice(0, 3)).toEqual(planned.slice(1));
   await expect(figures.getByTestId("navlog-to")).toHaveCount(0);
   await expect(figures.getByTestId("ete-eta-toggle")).toBeVisible();
-  await expect(figures.getByTestId("fuel-breakdown-open")).toBeVisible();
   const leftNm = async () => parseFloat((await figures.locator("dd").nth(0).innerText()).replace(/,/g, ""));
   expect(await leftNm()).toBeLessThanOrEqual(Math.ceil(plannedNm));
   await expect.poll(leftNm, { timeout: slow(15_000) }).toBeLessThan(plannedNm - 1);

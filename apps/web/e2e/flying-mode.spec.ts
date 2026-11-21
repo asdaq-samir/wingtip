@@ -158,7 +158,7 @@ test("in flight the strip gives the phone's GPS altitude, to the nearest 10 ft",
   const gps = page.getByTestId("strip-gps-alt").first();
   await expect(gps).toContainText("3,000", { timeout: slow(60_000) });
   // No To in flight (the head over the map names the next point): the
-  // distance, time, fuel and GPS altitude, four columns on one row, where
+  // distance, time, track and GPS altitude, four columns on one row, where
   // the altitude, a fifth in four, went onto a row of its own (the owner,
   // 2026-11-17).
   // The strip in sight: FPL's own copy, laid out at no width while the
@@ -172,4 +172,8 @@ test("in flight the strip gives the phone's GPS altitude, to the nearest 10 ft",
   const tops = await strip.locator("dd").evaluateAll((dds) => dds.map((dd) => Math.round(dd.getBoundingClientRect().top)));
   expect(tops).toHaveLength(4);
   expect(new Set(tops).size).toBe(1);
+  // The track in the fuel's place, magnetic: the GPS's true 090 less the
+  // variation at Campbell, some 4 degrees west, so about 094, in three figures.
+  await expect(strip.getByTestId("strip-track")).toHaveText(/^09[2-6]°$/);
+  await expect(strip.getByTestId("navlog-fuel")).toHaveCount(0);
 });

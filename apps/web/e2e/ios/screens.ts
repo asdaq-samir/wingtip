@@ -37,7 +37,7 @@ export const SCREENS: Screen[] = [
       await expect(sideDrawer(page).getByTestId("route-head").or(sideDrawer(page).getByTestId("route-summary")).first()).toBeVisible({
         timeout: slow(30000),
       });
-      await expect(sideDrawer(page).getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+      await expect(sideDrawer(page).getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
     },
   },
   {
@@ -49,7 +49,7 @@ export const SCREENS: Screen[] = [
       await expect(sideDrawer(page).getByTestId("route-brief")).toBeVisible({ timeout: slow(30000) });
       await controlsInSight(page);
       // The plan in, its figures whole: not judged fading in.
-      await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(30000) });
+      await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(30000) });
       await expect(page.getByTestId("share-route")).toBeEnabled();
     },
   },
@@ -61,7 +61,7 @@ export const SCREENS: Screen[] = [
       // panel back to half, and the map's tooltips came up under the
       // pointer where the panel had been, fading in, read at 1:1 (P15).
       await openTab(page, "Nav Log");
-      await page.getByTestId("navlog-fuel").waitFor({ timeout: slow(120000) });
+      await page.getByTestId("navlog-ete").waitFor({ timeout: slow(120000) });
       // The nav log in its own sheet, from the route's box.
       await openNavLog(page);
       // A tap's click, without Playwright's own scroll into view first:
@@ -84,7 +84,7 @@ export const SCREENS: Screen[] = [
     name: `panel, ${tab} tab`,
     ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}&view=full`);
-      await page.getByTestId("navlog-fuel").waitFor({ timeout: slow(120000) });
+      await page.getByTestId("navlog-ete").waitFor({ timeout: slow(120000) });
       await openTab(page, tab);
       if (tab === "En Route") await openSection(page, "Along the Route");
       await expect(sideDrawer(page).locator('[role="tabpanel"]:not([hidden]):not([inert])').getByTestId(shown).first()).toBeVisible({

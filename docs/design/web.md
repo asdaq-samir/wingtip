@@ -1724,7 +1724,7 @@ WebAssembly and what Keep for the Air fetched; the page asks it first.
   and `navlog_totals`, `features/plan/directOnDevice`), "Worked out
   on this device" under the Direct strip, and its fuel check as the
   planner makes it (`navlog_fuel_plan`, night from `night_at_either_end`),
-  so the strip's Fuel req has its figure offline too; where it cannot, the
+  so its fuel is worked out offline too; where it cannot, the
   route is left as it was and "Not changed: no connection" is said.
 - Keep for the Air keeps the route's own answers -- its course,
   checkpoints, nav log and briefing, by the addresses the page asked

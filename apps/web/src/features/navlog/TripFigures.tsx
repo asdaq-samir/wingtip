@@ -1,27 +1,24 @@
-import { Button as BaseButton } from "@base-ui/react/button";
 import { useAirplaneChosen } from "../../lib/preferences";
-import { Suspense, lazy, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { zoneName } from "../../lib/format";
 import { useOwnFix } from "../../lib/map/position/ownShip";
+import { underway } from "../../lib/map/position/glide";
+import { callEngine } from "../../lib/engine/engine";
 import { cn } from "cn";
 import type { ExplainedTerm } from "../../lib/explain";
 import { unknownWhy, type UnknownPlace } from "../../lib/api/client";
 import type { Totals } from "../../lib/api/types";
 import FigureStrip, { type StripFigure } from "../../components/FigureStrip";
-import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../components/ResponsivePopover";
 import { Button } from "../../components/ui/button";
-import { nextLanding, shortFlights, tripFigures, type Flown } from "../plan";
+import { tripFigures, type Flown } from "../plan";
 import { requestAirplanePick } from "../../lib/pickAirplane";
 import { gpsFigure } from "./gpsFigure";
-
-/** What the fuel is made of, from the figure's first tap: its own chunk,
- *  off the first load (scripts/first-load.mjs's budget). */
-const FuelBreakdown = lazy(() => import("./FuelBreakdown"));
+import { trackFigure } from "./trackFigure";
 
 /**
  * The flight's figures, the last of the route's panel over the tabs, at
  * the pilot's ask: the quick figures read with the route -- the distance,
- * the time en route, the arrival and the fuel -- the detail under the
+ * the time en route, the arrival and the track -- the detail under the
  * tabs. A strip of them as ForeFlight's is, each figure large under its
  * name in the nav log's shorthand ("DIST", "ETE"), at the pilot's ask,
  * where they were one grey line ("Dist 323.6 nm · ETA 17:07 (2h 45m) ·
@@ -30,13 +27,11 @@ const FuelBreakdown = lazy(() => import("./FuelBreakdown"));
  * time aloft and the time back. Where no legal altitude can be had, the
  * figures stay -- the book's, marked "≈" -- and why is the Brief's (its Go
  * / No-Go, red) and the altitude chip's, at the pilot's ask: in red in the
- * strip's place, it hid the distance, the time and the fuel.
+ * strip's place, it hid the distance and the time.
  *
- * Each figure exact; where the widest does not fit its column (a long
- * trip's "13h 38m" at a larger text size, which the app follows
- * (features/shell/dynamicType), an iPhone SE's narrow columns), all of
- * them set smaller together, as iOS shrinks a label to fit its width,
- * down to 0.7 of their size, and only past that cut short (FigureStrip).
+ * Each figure exact and at its full size, a long trip's "13h 38m" as large
+ * as a short one's: the columns take what their content needs, and only
+ * where the strip is too narrow even so is a figure cut short (FigureStrip).
  *
  * Drawn by the one FigureStrip, in every state -- FPL's route row, a dry
  * run and in flight -- this saying only what the figures are and which of
@@ -53,18 +48,18 @@ const seen = (f: { value: string; unit?: string }) => (f.unit ? `${f.value} ${f.
 // The time en route and the arrival by the FAA's own shorthand (the owner,
 // 2026-11-20: "Figures can say ETA or ETE"), where they were "Time" and
 // "Arrival"; a tap on either still explains it (EXPLAIN).
-const LABEL: Record<string, string> = { Dist: "Distance", ETE: "ETE", Fuel: "Fuel" };
+const LABEL: Record<string, string> = { Dist: "Distance", ETE: "ETE" };
 
 /** The names a tap explains (components/Explain; decision 0045): the time
  *  en route, the arrival, the fuel required. */
-const EXPLAIN: Record<string, ExplainedTerm> = { ETE: "ETE", ETA: "ETA", Fuel: "Fuel req" };
+const EXPLAIN: Record<string, ExplainedTerm> = { ETE: "ETE", ETA: "ETA" };
 
 const AREA = "relative max-w-full after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']";
 
 /** A figure an airplane makes (the time, the fuel), with none picked: a
  *  dash, said as what it waits for. */
 function wantsAirplane(f: StripFigure): StripFigure {
-  const name = f.name === "Fuel" ? "Fuel required" : f.name === "ETA" ? "Arrival" : f.name === "Aloft" ? "Time aloft" : "Time en route";
+  const name = f.name === "ETA" ? "Arrival" : f.name === "Aloft" ? "Time aloft" : "Time en route";
   return { name: f.name, value: "—", said: `${name}: pick an airplane for it` };
 }
 
@@ -77,7 +72,6 @@ export default function TripFigures({
   grow = false,
   flown = null,
   flying = false,
-  fuelStop = null,
   unknown = null,
 }: {
   /** A point of the route the planner does not know, or a field abroad
@@ -105,10 +99,6 @@ export default function TripFigures({
   /** In flight (useFlyingMode): the figures one large size whatever the
    *  sheet's (FigureStrip's `flying`), over `grow`. */
   flying?: boolean;
-  /** The planner's suggested fuel stops for every flight longer than the
-   *  tanks (useSuggestedStops' fuelToAdd), offered under the fuel's
-   *  breakdown where the figure says it is short, as FPL's pill offers them. */
-  fuelStop?: { idents: string[]; add: () => void } | null;
 }) {
   // The time en route tapped, the arrival's clock time in its place, and
   // back, at the owner's ask ("Ete should change to eta when tapped").
@@ -119,24 +109,32 @@ export default function TripFigures({
   const [toDestination, setToDestination] = useState(false);
   // Nautical or statute miles, switched by a tap on the distance.
   const [statute, setStatute] = useState(false);
-  const [breakdownOpen, setBreakdownOpen] = useState(false);
   const stops = (totals?.hops.length ?? 0) > 0;
   const input = { totals, estimate, local, destination, depart, arrival, toDestination: stops && toDestination, flown, statute };
   const toLabel = stops && !local && !toDestination ? "Leg" : "Dest";
   // No airplane picked: the route's own figures alone, To and Dist --
-  // the time and the fuel are an airplane's, and none is assumed (the
+  // the time is an airplane's, and none is assumed (the
   // owner, 2026-11-08: "only show the distance and the things you can
   // without airplane profile, don't assume").
-  // The four columns kept all the same, the time and the fuel a dash in
-  // the tint that asks for an airplane (lib/pickAirplane), where the two
+  // The columns kept all the same, the time a dash in
+  // the tint that asks for an airplane (lib/pickAirplane), where it
   // went and the strip said nothing of why (the UI audit's C2,
   // 2026-11-17): what the airplane would make of the route, none assumed.
   const airplane = useAirplaneChosen();
   // The airplane's GPS altitude at the strip's end whenever its position
   // is known (gpsFigure: what the figure is and where it comes from).
-  const gps = gpsFigure(useOwnFix());
+  const fix = useOwnFix();
+  const gps = gpsFigure(fix);
+  // The track in the fuel's place (trackFigure): always a column, a dash
+  // while there is no course to give.
+  const track = trackFigure(fix, underway(fix), (lat, lon) =>
+    callEngine("magnetic_variation", { lat, lon, date: new Date().toISOString().slice(0, 10) }),
+  );
   const ours: StripFigure[] = [
     ...tripFigures(input)
+      // The fuel is the timeline's tank gauges' and the nav log's, not the
+      // strip's (the owner, 2026-11-21).
+      .filter((f) => f.name !== "Fuel")
       .map((f) => (airplane || f.name === "To" || f.name === "Dist" ? f : wantsAirplane(f)))
       // The destination the planner does not know, said on the figure in
       // red with its mark, the pill too, where the pill read "ZZZZ" over
@@ -147,10 +145,8 @@ export default function TripFigures({
           : f,
       )
       // Each named in a short word in sentence case, "Leg" or "Dest", "Distance",
-      // "ETE", "Fuel" (the owner's list, 2026-11-17; ETE since 2026-11-20), where "TO / DIST /
-      // ETE / FUEL REQ" were capitals and shorthand; the fuel is still the
-      // fuel required, said so in its name to a screen reader and in its
-      // breakdown (FuelBreakdown).
+      // "ETE" (the owner's list, 2026-11-17; ETE since 2026-11-20), where "TO / DIST /
+      // ETE / FUEL REQ" were capitals and shorthand.
       // The To named for what it reaches (the owner, 2026-11-18: "Replace
       // To with Leg or Dest when tapped"): "Leg" while it is the next stop,
       // "Dest" while it is the destination, which it always is with no stops
@@ -166,18 +162,14 @@ export default function TripFigures({
       .map((f) => (airplane && !totals && f.value === "—" && f.name !== "To" ? { ...f, waiting: true } : f))
       // In flight (a dry run too) no To: the flying head over the map names
       // the next point, and the strip keeps four columns for the distance,
-      // the time, the fuel and the GPS altitude (the owner, 2026-11-17).
+      // the time, the track and the GPS altitude (the owner, 2026-11-17, 2026-11-21).
       .filter((f) => !(flying || flown) || f.name !== "To"),
+    track,
     ...(gps === null ? [] : [gps]),
   ];
-  // The fuel required tapped, what it is made of (FuelBreakdown), at the
-  // owner's ask ("fuel is the fuel required which gives a breakdown when
-  // tapped"): once the nav log's figures are in.
-  const next = nextLanding(totals, destination, flown?.hop);
-  const breakdown = next.totals?.fuel_required_gal != null ? next : null;
   const tap = (f: StripFigure, face: ReactNode): ReactNode => {
     const said = f.said ?? f.name;
-    if (!airplane && f.name !== "To" && f.name !== "Dist")
+    if (!airplane && (f.name === "ETE" || f.name === "ETA" || f.name === "Aloft"))
       return (
         <Button
           variant="link"
@@ -189,43 +181,6 @@ export default function TripFigures({
         >
           {face}
         </Button>
-      );
-    if (f.name === "Fuel" && breakdown)
-      return (
-        <ResponsivePopover open={breakdownOpen} onOpenChange={setBreakdownOpen}>
-          <ResponsivePopoverTrigger asChild>
-            <BaseButton
-              data-testid="fuel-breakdown-open"
-              data-alert={f.alert || undefined}
-              aria-label={`${seen(f)}, ${said}: what it is made of`}
-              className={cn(AREA, "inline-flex items-baseline", f.alert ? "text-destructive" : "text-tint")}
-            >
-              {face}
-            </BaseButton>
-          </ResponsivePopoverTrigger>
-          <ResponsivePopoverContent title={`Fuel to ${breakdown.to}`} className="w-72 p-3" side="top" align="end">
-            <Suspense fallback={null}>
-              <FuelBreakdown totals={breakdown.totals!} short={shortFlights(totals)} burnt={flown?.burntGal} />
-            </Suspense>
-            {f.alert && fuelStop && (
-              <Button
-                type="button"
-                variant="ghost"
-                data-testid="fuel-short-add-stop"
-                // Its 44-point area made by the after, the button not grown to it;
-                // the popover put away as the stop is kept, so a second tap cannot
-                // keep it again over figures that are changing.
-                className="relative mt-2 w-full text-tint after:absolute after:-inset-y-1 after:content-['']"
-                onClick={() => {
-                  setBreakdownOpen(false);
-                  fuelStop.add();
-                }}
-              >
-                {fuelStop.idents.length > 1 ? "Add fuel stops at" : "Add fuel stop at"} {fuelStop.idents.join(", ")}
-              </Button>
-            )}
-          </ResponsivePopoverContent>
-        </ResponsivePopover>
       );
     if (f.name === "To" && stops && !local)
       return (

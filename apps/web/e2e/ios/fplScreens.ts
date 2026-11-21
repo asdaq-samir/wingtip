@@ -226,7 +226,7 @@ export const FPL_SCREENS: Screen[] = [
       await expect(page.getByTestId("depart-time")).toBeVisible();
       // The plan made again for that day, its arrival in behind the sheet:
       // not judged greyed out mid-plan.
-      await expect(page.getByTestId("navlog-fuel")).toBeAttached({ timeout: slow(120000) });
+      await expect(page.getByTestId("navlog-ete")).toBeAttached({ timeout: slow(120000) });
     },
   },
   {
@@ -247,7 +247,7 @@ export const FPL_SCREENS: Screen[] = [
       await expect(page.locator('[data-slot="section-summary"]').first()).toContainText("Aloft", { timeout: slow(30000) });
       // Its fuel required among the figures.
       await openTab(page, "Local");
-      await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(30000) });
+      await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(30000) });
     },
   },
 ];

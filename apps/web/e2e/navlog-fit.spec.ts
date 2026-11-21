@@ -61,7 +61,7 @@ test("the nav log fits a phone's panel with long names, five-figure altitudes an
   const depart = new Date(Date.now() + 26 * 3600_000).toISOString().slice(0, 16);
   await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${encodeURIComponent(depart)}&view=full`);
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   await openNavLog(page);
   const scroller = navLogScroller(page);
   const log = navLogSheet(page).getByTestId("navlog-list");
@@ -146,7 +146,11 @@ test("a long trip's figures keep their full size on one line in the strip, exact
     await expect.poll(async () => new Set(await sizes()).size, { message: `one size at a root of ${root || "16px"}` }).toBe(1);
     const [size] = await sizes();
     expect(size, `at a root of ${root || "16px"}`).toBeGreaterThanOrEqual(20 * (parseFloat(root || "16px") / 16) - 0.1);
-    const cut = await figures.evaluateAll((dds) => dds.filter((dd) => dd.scrollWidth > dd.clientWidth + 1).length);
+    const cut = await figures.evaluateAll(
+      // A button's dd does not clip (its 44-point area reaches past it): its run is what is cut.
+      (dds) =>
+        dds.map((dd) => dd.querySelector<HTMLElement>("span.truncate") ?? dd).filter((el) => el.scrollWidth > el.clientWidth + 1).length,
+    );
     expect(cut, `figures cut short at a root of ${root || "16px"}`).toBe(0);
     await expect(sideDrawer(page).getByTestId("navlog-ete")).not.toHaveText(/\d\.\dh$/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -163,7 +167,7 @@ test("each row's miles over its groundspeed come to its minutes, a pattern's mil
   test.skip((page.viewportSize()?.width ?? 0) >= 1024, "the phone's list");
   await page.goto("/app/plan?dep=KUGN&dest=KOSH&pattern=KUGN%3A23%2CKOSH%3A27");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   await openNavLog(page);
   const log = navLogSheet(page).getByTestId("navlog-list");
   await expect(log.locator('[role="row"][data-kind="destination"]')).toBeVisible();
