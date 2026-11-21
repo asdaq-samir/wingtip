@@ -13,10 +13,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.Session;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -127,6 +132,40 @@ class PilotServiceTest {
         assertThat(pilots.findById(before.getId()).orElseThrow().getEmail()).isEqualTo(subject + "@new.example.com");
         assertThat(pilotService.fromVerifiedEmail(subject + "@new.example.com").getId())
                 .isEqualTo(before.getId());
+    }
+
+    @Autowired
+    private FindByIndexNameSessionRepository<? extends Session> sessions;
+
+    /**
+     * The deep security review of 2026-11-21: an emailed link's sessions
+     * are signed in under the address, so once the provider moved the pilot
+     * to a new one they named an address nobody holds here, and whoever
+     * signed up with it next was signed in on them. They end with the change.
+     */
+    @Test
+    void aChangedAddressEndsTheSessionsSignedInUnderTheOldOne() {
+        String subject = UUID.randomUUID().toString();
+        String old = subject + "@old.example.com";
+        pilotService.fromOidcUser(oidcUser(subject, old, "A. Pilot"), "google");
+        String kept = signedInUnder(sessions, old);
+        String another = signedInUnder(sessions, "someone-" + subject + "@example.com");
+
+        pilotService.fromOidcUser(oidcUser(subject, subject + "@new.example.com", "A. Pilot"), "google");
+
+        assertThat(sessions.findById(kept)).isNull();
+        assertThat(sessions.findByPrincipalName(old)).isEmpty();
+        assertThat(sessions.findById(another)).isNotNull();
+    }
+
+    private static <S extends Session> String signedInUnder(
+            FindByIndexNameSessionRepository<S> repository, String email) {
+        S session = repository.createSession();
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(new MagicLinkAuthenticationToken(email));
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+        repository.save(session);
+        return session.getId();
     }
 
     /** Unless another pilot already holds the new address: the unique
