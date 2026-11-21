@@ -13,6 +13,8 @@ import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.planner.model.PlannerInspectionsAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerPilotNotes;
 import app.wingtipmaps.gateway.planner.model.PlannerPilotNotesForgotten;
+import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatch;
+import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatchAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerStudioDraft;
 import app.wingtipmaps.gateway.planner.model.PlannerWordsSources;
 import java.time.LocalDate;
@@ -53,6 +55,11 @@ public interface PlannerApi {
     @PostExchange("/api/pilot/endorsements")
     PlannerEndorsements endorsements(@RequestBody PlannerEndorsementsAsk ask);
 
+    /** Many students' experience and endorsements at once, for an
+     *  instructor's page (PlannerClient#records). */
+    @PostExchange("/api/pilot/records-batch")
+    PlannerRecordsBatch recordsBatch(@RequestBody PlannerRecordsBatchAsk ask);
+
     @GetExchange("/api/pilot/endorsement-kinds")
     List<PlannerEndorsementKind> endorsementKinds();
 
@@ -64,8 +71,10 @@ public interface PlannerApi {
     @PostExchange("/api/pilot/endorsement-fill")
     PlannerEndorsementFilled fill(@RequestBody PlannerEndorsementFillAsk ask);
 
-    @PostExchange("/api/aircraft/inspections")
-    PlannerInspections inspections(@RequestBody PlannerInspectionsAsk ask);
+    /** Each airplane's inspections_due, in the order asked: an aircraft
+     *  list's and the reminders' one call (PlannerClient#inspections). */
+    @PostExchange("/api/aircraft/inspections-batch")
+    List<PlannerInspections> inspectionsBatch(@RequestBody List<PlannerInspectionsAsk> asks);
 
     /** What is wrong with an airplane's fields, by field (the engine's
      *  aircraft_problems): AircraftLimits. */

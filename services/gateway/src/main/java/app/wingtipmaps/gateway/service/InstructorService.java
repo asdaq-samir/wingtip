@@ -1,33 +1,22 @@
 package app.wingtipmaps.gateway.service;
 
 import app.wingtipmaps.gateway.domain.CrossCountryReview;
-import app.wingtipmaps.gateway.domain.Endorsement;
 import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.domain.InstructorLink;
 import app.wingtipmaps.gateway.domain.Pilot;
-import app.wingtipmaps.gateway.domain.SignedEndorsement;
 import app.wingtipmaps.gateway.dto.AskReviewRequest;
-import app.wingtipmaps.gateway.dto.CrossCountryReviewDto;
 import app.wingtipmaps.gateway.dto.InstructorDto;
 import app.wingtipmaps.gateway.dto.InstructorRequest;
-import app.wingtipmaps.gateway.dto.StudentDto;
 import app.wingtipmaps.gateway.repository.ApproachLessonRepository;
 import app.wingtipmaps.gateway.repository.CrossCountryReviewRepository;
-import app.wingtipmaps.gateway.repository.EndorsementRepository;
 import app.wingtipmaps.gateway.repository.FlightRepository;
 import app.wingtipmaps.gateway.repository.InstructorLinkRepository;
-import app.wingtipmaps.gateway.repository.LogbookRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
-import app.wingtipmaps.gateway.repository.SignedEndorsementRepository;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hibernate.Hibernate;
 import org.springframework.http.HttpStatus;
@@ -51,36 +40,27 @@ public class InstructorService {
 
     private final PilotRepository pilots;
     private final InstructorLinkRepository links;
-    private final SignedEndorsementRepository signed;
     private final CrossCountryReviewRepository reviews;
-    private final EndorsementRepository recorded;
     private final FlightRepository flights;
-    private final LogbookRepository logbook;
     private final ApproachLessonRepository lessons;
     private final InstructorMail mail;
-    private final PlannerClient planner;
+    private final InstructorPage page;
 
     public InstructorService(
             PilotRepository pilots,
             InstructorLinkRepository links,
-            SignedEndorsementRepository signed,
             CrossCountryReviewRepository reviews,
-            EndorsementRepository recorded,
             FlightRepository flights,
-            LogbookRepository logbook,
             ApproachLessonRepository lessons,
             InstructorMail mail,
-            PlannerClient planner) {
+            InstructorPage page) {
         this.pilots = pilots;
         this.links = links;
-        this.signed = signed;
         this.reviews = reviews;
-        this.recorded = recorded;
         this.flights = flights;
-        this.logbook = logbook;
         this.lessons = lessons;
         this.mail = mail;
-        this.planner = planner;
+        this.page = page;
     }
 
     // ---- The student's side
@@ -257,74 +237,9 @@ public class InstructorService {
     }
 
     /** The instructor's page: their certificate, students, asks, reviews
-     *  waiting and their record of the last 3 years. */
-    @Transactional(readOnly = true)
+     *  waiting and their record of the last 3 years (InstructorPage). */
     public InstructorDto instructor(Pilot pilot, Instant now) {
-        List<CrossCountryReview> unanswered =
-                reviews.findByInstructorIdAndAnsweredAtIsNullOrderByAskedAt(pilot.getId());
-        // Each student's reviews waiting on this instructor, counted from
-        // the list above rather than asked again a student.
-        Map<Long, Long> waitingBy = unanswered.stream()
-                .collect(Collectors.groupingBy(r -> r.getStudent().getId(), Collectors.counting()));
-        List<StudentDto> students = links.findByInstructorIdOrderByAcceptedAt(pilot.getId()).stream()
-                .map(l -> studentOf(l, waitingBy.getOrDefault(l.getStudent().getId(), 0L)))
-                .toList();
-        List<StudentDto> asking = links.findOpenFor(pilot.getEmail()).stream()
-                .map(l -> studentOf(l, 0L))
-                .toList();
-        List<CrossCountryReviewDto> waiting =
-                unanswered.stream().map(this::reviewOf).toList();
-        // As far back as 14 CFR 61.189(c) has them keep it: the engine's.
-        Instant since = planner.instructorRecordsSince(LocalDate.ofInstant(now, ZoneOffset.UTC))
-                .atStartOfDay(ZoneOffset.UTC)
-                .toInstant();
-        return new InstructorDto(
-                pilot.getFullName(),
-                pilot.getInstructorCertificate(),
-                pilot.getInstructorUntil(),
-                pilot.getInstructorUntilKind(),
-                students,
-                asking,
-                waiting,
-                EndorsementRecords.dtos(
-                        planner, signed.findByInstructorIdAndSignedAtAfterOrderBySignedAtDesc(pilot.getId(), since)),
-                planner.endorsementKinds());
-    }
-
-    /** A review as its instructor or student reads it, with what the
-     *  student's record answers of 61.93(d). */
-    CrossCountryReviewDto reviewOf(CrossCountryReview r) {
-        Long studentId = r.getStudent().getId();
-        return EndorsementRecords.dto(
-                planner,
-                r,
-                EndorsementRecords.checks(
-                        planner,
-                        r.getFlightOn(),
-                        recorded.findByKeyPilotIdOrderByKeyCode(studentId),
-                        signed.findByStudentIdOrderBySignedAtDesc(studentId)));
-    }
-
-    /** A student or an ask, with how many of their reviews wait on the
-     *  instructor (none for an ask). */
-    private StudentDto studentOf(InstructorLink l, long waiting) {
-        Pilot student = l.getStudent();
-        var experience = planner.experience(
-                logbook.findByPilotIdOrderByFlownOnDescIdDesc(student.getId()), LocalDate.now(ZoneOffset.UTC));
-        List<Endorsement> paper = recorded.findByKeyPilotIdOrderByKeyCode(student.getId());
-        List<SignedEndorsement> theirs = signed.findByStudentIdOrderBySignedAtDesc(student.getId());
-        return new StudentDto(
-                l.getId(),
-                student.getId(),
-                EndorsementRecords.nameOf(student),
-                student.getEmail(),
-                l.getAskedAt(),
-                l.isAccepted(),
-                (int) experience.stream().filter(i -> i.met()).count(),
-                experience.size(),
-                planner.endorsements(EndorsementRecords.held(paper, theirs), null)
-                        .getSoloUntil(),
-                (int) waiting);
+        return page.of(pilot, now);
     }
 
     /** A link ended, by either: the reviews still waiting between the two

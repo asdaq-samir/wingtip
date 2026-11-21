@@ -30,6 +30,16 @@ the fields they take (GET /api/pilot/endorsement-kinds, POST
 /api/pilot/endorsement-fill: the engine's endorsement_kinds and
 endorsement_fill). Add no rule here.
 
+A page of records asks the planner once, after its reads: the
+Checkride page and an instructor's page gather every student's
+experience and every endorsements ask while they read (`RecordsAsks`)
+and send them together (POST /api/pilot/records-batch), and the
+aircraft list, the Coming up list and the daily reminders ask every
+airplane at once (POST /api/aircraft/inspections-batch). The reads run
+in a short read-only transaction of their own (`ReadOnly`), and the
+planner is asked after it ends, so no pooled connection waits on the
+planner.
+
 ## Contents
 
 - [Running it](#running-it)
@@ -167,7 +177,7 @@ One job per class.
 | Package | What lives there |
 |---|---|
 | `controller/` | HTTP endpoints. `PlannerProxyController` forwards `/api/planner/*` to `planner`; `GlobalExceptionHandler` turns exceptions into JSON; `MagicLinkController` is the email sign-in flow's own two steps (request, verify). |
-| `service/` | The records' logic: `PilotService`, `AircraftService`, `FlightService`, `LogbookService` and the rest, each scoped to the signed-in pilot; `PlannerClient`, the planner asked on this app's own behalf; `InstructorService` (a student's instructors, their reviews and an instructor's page) beside `EndorsementSigning` (an instructor's signature and its voiding) and `InstructorMail` (the mail between them); `ReminderService` and `FlightWatchService`, the scheduled mail. |
+| `service/` | The records' logic: `PilotService`, `AircraftService`, `FlightService`, `LogbookService` and the rest, each scoped to the signed-in pilot; `PlannerClient`, the planner asked on this app's own behalf; `InstructorService` (a student's instructors and their reviews) and `InstructorPage` (an instructor's page, read then asked of the planner in one call) beside `EndorsementSigning` (an instructor's signature and its voiding) and `InstructorMail` (the mail between them); `ReminderService` and `FlightWatchService`, the scheduled mail. |
 | `repository/` | Spring Data interfaces. No implementations — Spring writes them. |
 | `domain/` | JPA entities: `Pilot`, `Aircraft`, `Flight`, `FlightCheckpoint`, `MagicLink`, `LogbookEntry`, `Endorsement` and the rest. |
 | `dto/` | Request and response shapes, kept separate from entities so the API and the schema can change independently. |

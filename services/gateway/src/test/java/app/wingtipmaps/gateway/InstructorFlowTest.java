@@ -18,9 +18,6 @@ import app.wingtipmaps.gateway.dto.SaveFlightRequest;
 import app.wingtipmaps.gateway.dto.SignRequest;
 import app.wingtipmaps.gateway.dto.TrainingDto;
 import app.wingtipmaps.gateway.planner.model.PlannerEndorsementFilled;
-import app.wingtipmaps.gateway.planner.model.PlannerEndorsements;
-import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
-import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.service.EndorsementSigning;
 import app.wingtipmaps.gateway.service.FlightService;
@@ -108,28 +105,7 @@ class InstructorFlowTest {
         // instructor_records_since, held in the engine to shellFigures.json).
         org.mockito.BDDMockito.given(planner.instructorRecordsSince(any()))
                 .willAnswer(ask -> ((LocalDate) ask.getArgument(0)).minusYears(3));
-        org.mockito.BDDMockito.given(planner.endorsements(any(), any())).willAnswer(ask -> {
-            List<PlannerHeldEndorsement> held = ask.getArgument(0);
-            LocalDate flightOn = ask.getArgument(1);
-            return new PlannerEndorsements()
-                    .until(java.util.Collections.nCopies(held.size(), (LocalDate) null))
-                    .soloUntil(
-                            held.stream()
-                                            .anyMatch(h -> List.of("solo-first", "solo-90")
-                                                    .contains(h.getCode()))
-                                    ? SOLO_UNTIL
-                                    : null)
-                    .checks(
-                            flightOn == null
-                                    ? List.of()
-                                    : CHECKS.stream()
-                                            .map(c -> new PlannerReviewCheck()
-                                                    .rule(c.rule())
-                                                    .label(c.label())
-                                                    .met(c.met())
-                                                    .detail(c.detail()))
-                                            .toList());
-        });
+        RecordsStandIn.answer(planner, SOLO_UNTIL, CHECKS);
         // AC 61-65K's words are the engine's (kinds.rs, records.json's
         // fills); here every code is one, its words standing in for them.
         org.mockito.BDDMockito.given(planner.endorsementKind(any()))

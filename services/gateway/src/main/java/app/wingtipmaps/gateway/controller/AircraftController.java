@@ -214,7 +214,7 @@ public class AircraftController {
                 due.getAnnualUntil(),
                 a.getHundredHourAtHours(),
                 a.getHoursNow(),
-                PlannerClient.number(due.getHundredHourDueAtHours()),
+                PlannerAsks.number(due.getHundredHourDueAtHours()),
                 a.getStaticCheckOn(),
                 due.getStaticCheckUntil(),
                 a.getTransponderCheckOn(),

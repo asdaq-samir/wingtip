@@ -21,6 +21,7 @@ import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.AircraftDto;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
+import app.wingtipmaps.gateway.planner.model.PlannerVorCheckAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerVorCheckOutput;
 import app.wingtipmaps.gateway.service.AircraftLimits;
 import app.wingtipmaps.gateway.service.AircraftService;
@@ -76,8 +77,8 @@ class AircraftControllerTest {
 
     @BeforeEach
     void nothingDue() {
-        given(planner.inspections(any(), any(), any(), any(), any(), any(), any(), any()))
-                .willReturn(NOTHING_DUE);
+        given(planner.inspections(any()))
+                .willAnswer(InspectionsStub.each(NOTHING_DUE));
     }
 
     private static Pilot samplePilot() {
@@ -217,20 +218,15 @@ class AircraftControllerTest {
     @Test
     void aVorCheckIsRecordedAndSaysHowLongItIsGoodFor() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-        given(planner.inspections(
-                        any(),
-                        any(),
-                        any(),
-                        any(),
-                        any(),
-                        eq(java.time.LocalDate.of(2026, 10, 1)),
-                        eq("VOT"),
-                        eq(-5.0)))
-                .willReturn(new PlannerInspections()
+        given(planner.inspections(InspectionsStub.one(ask -> ask.getVorCheck() != null
+                        && java.time.LocalDate.of(2026, 10, 1).equals(ask.getVorCheck().getOn())
+                        && ask.getVorCheck().getKind() == PlannerVorCheckAsk.KindEnum.VOT
+                        && ask.getVorCheck().getErrorDeg().compareTo(new BigDecimal("-5.0")) == 0)))
+                .willReturn(List.of(new PlannerInspections()
                         .vorCheck(new PlannerVorCheckOutput()
                                 .limitDeg(new BigDecimal("4.0"))
                                 .within(false)
-                                .until(java.time.LocalDate.of(2026, 10, 31))));
+                                .until(java.time.LocalDate.of(2026, 10, 31)))));
         given(aircraftService.recordVorCheck(any(), eq(7L), any(), any(), any(), anyDouble()))
                 .willReturn(Optional.of(sampleAircraft()
                         .recordVorCheck(
@@ -280,21 +276,18 @@ class AircraftControllerTest {
                                 java.time.LocalDate.of(2028, 6, 1))));
         // The days are the engine's, through the planner (inspections_due):
         // its answer for the airplane's own dates, which the gateway sends.
-        given(planner.inspections(
-                        eq(java.time.LocalDate.of(2025, 10, 5)),
-                        eq(java.time.LocalDate.of(2026, 1, 31)),
-                        eq(java.time.LocalDate.of(2024, 11, 30)),
-                        eq(java.time.LocalDate.of(2025, 2, 1)),
-                        eq(1200.5),
-                        any(),
-                        any(),
-                        any()))
-                .willReturn(new PlannerInspections()
+        given(planner.inspections(InspectionsStub.one(ask ->
+                        java.time.LocalDate.of(2025, 10, 5).equals(ask.getAnnualOn())
+                                && java.time.LocalDate.of(2026, 1, 31).equals(ask.getEltOn())
+                                && java.time.LocalDate.of(2024, 11, 30).equals(ask.getStaticCheckOn())
+                                && java.time.LocalDate.of(2025, 2, 1).equals(ask.getTransponderCheckOn())
+                                && new BigDecimal("1200.5").compareTo(ask.getHundredHourAtHours()) == 0)))
+                .willReturn(List.of(new PlannerInspections()
                         .annualUntil(java.time.LocalDate.of(2026, 10, 31))
                         .eltUntil(java.time.LocalDate.of(2027, 1, 31))
                         .staticCheckUntil(java.time.LocalDate.of(2026, 11, 30))
                         .transponderCheckUntil(java.time.LocalDate.of(2027, 2, 28))
-                        .hundredHourDueAtHours(new BigDecimal("1300.5")));
+                        .hundredHourDueAtHours(new BigDecimal("1300.5"))));
 
         mockMvc.perform(put("/api/aircraft/7/inspections")
                         .with(oidcLogin())
