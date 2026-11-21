@@ -1,5 +1,5 @@
 {
- "_note": "The FAA data sets' cycles, by hand from the FAA's own pages (2026-11-06): the \"28 and 56 Day Product Schedule 2025-2049\" (aeronav.faa.gov/content/aeronav/DOLES/Product_Schedule.pdf), the \"28 Day NASR Subscription\" page's effective dates (26 Nov 2026 preview, 29 Oct 2026 current, 1 Oct 2026 ...), and the Digital Obstacle File page (DOF_260927.zip: changes to 27 Sep 2026, released 29 Sep 2026; the next, changes to 22 Nov 2026, released 24 Nov 2026). The engine (engine/facade/tests/data_cycles.rs), the planner (services/planner/tests_wingtip/test_data_cycles.py) and the web (lib/dataCycles.test.ts) are held to it. Each case asks data_cycle with {kind, effective, on} and expects its state, expires, current, current_ident, next and behind.",
+ "_note": "The FAA data sets' cycles, by hand from the FAA's own pages (2026-11-06): the \"28 and 56 Day Product Schedule 2025-2049\" (aeronav.faa.gov/content/aeronav/DOLES/Product_Schedule.pdf), the \"28 Day NASR Subscription\" page's effective dates (26 Nov 2026 preview, 29 Oct 2026 current, 1 Oct 2026 ...), and the Digital Obstacle File page (DOF_260927.zip: changes to 27 Sep 2026, released 29 Sep 2026; the next, changes to 22 Nov 2026, released 24 Nov 2026). The engine (engine/facade/tests/data_cycles.rs), the planner (services/planner/tests_wingtip/test_data_cycles.py) and the web (lib/dataCycles.test.ts) are held to it. Each case asks data_cycle with {kind, effective, on} and expects its state, expires, current, current_ident, next and behind. The boundary cases ask with a UTC time, the minute before, of and after the change: an AIRAC or charting edition takes over at 0901Z on its date (\"Effective 0901 UTC\", the Federal Register's amendments), the DOF at 0000Z on its release day; they also expect next_at and expires_at.",
  "cases": [
   {
    "why": "NASR current on the subscription page",
@@ -237,6 +237,182 @@
     "current_ident": null,
     "next": "2026-11-24",
     "behind": 1
+   }
+  },
+  {
+   "why": "NASR 2611 the minute before 2612 takes over",
+   "kind": "airac",
+   "effective": "2026-10-29",
+   "on": "2026-11-26T09:00:00Z",
+   "expected": {
+    "state": "in_force",
+    "expires": "2026-11-26",
+    "current": "2026-10-29",
+    "current_ident": "2611",
+    "next": "2026-11-26",
+    "behind": 0,
+    "next_at": "2026-11-26T09:01:00Z",
+    "expires_at": "2026-11-26T09:01:00Z"
+   }
+  },
+  {
+   "why": "NASR 2611 the minute 2612 takes over",
+   "kind": "airac",
+   "effective": "2026-10-29",
+   "on": "2026-11-26T09:01:00Z",
+   "expected": {
+    "state": "expired",
+    "expires": "2026-11-26",
+    "current": "2026-11-26",
+    "current_ident": "2612",
+    "next": "2026-12-24",
+    "behind": 1,
+    "next_at": "2026-12-24T09:01:00Z",
+    "expires_at": "2026-11-26T09:01:00Z"
+   }
+  },
+  {
+   "why": "NASR 2611 the minute after",
+   "kind": "airac",
+   "effective": "2026-10-29",
+   "on": "2026-11-26T09:02:00Z",
+   "expected": {
+    "state": "expired",
+    "expires": "2026-11-26",
+    "current": "2026-11-26",
+    "current_ident": "2612",
+    "next": "2026-12-24",
+    "behind": 1,
+    "next_at": "2026-12-24T09:01:00Z",
+    "expires_at": "2026-11-26T09:01:00Z"
+   }
+  },
+  {
+   "why": "the 2612 preview the minute before it takes effect",
+   "kind": "airac",
+   "effective": "2026-11-26",
+   "on": "2026-11-26T09:00:00Z",
+   "expected": {
+    "state": "not_yet",
+    "expires": "2026-12-24",
+    "current": "2026-10-29",
+    "current_ident": "2611",
+    "next": "2026-11-26",
+    "behind": 0,
+    "next_at": "2026-11-26T09:01:00Z",
+    "expires_at": "2026-12-24T09:01:00Z"
+   }
+  },
+  {
+   "why": "the 2612 preview the minute it takes effect",
+   "kind": "airac",
+   "effective": "2026-11-26",
+   "on": "2026-11-26T09:01:00Z",
+   "expected": {
+    "state": "in_force",
+    "expires": "2026-12-24",
+    "current": "2026-11-26",
+    "current_ident": "2612",
+    "next": "2026-12-24",
+    "behind": 0,
+    "next_at": "2026-12-24T09:01:00Z",
+    "expires_at": "2026-12-24T09:01:00Z"
+   }
+  },
+  {
+   "why": "the 29 Oct 2026 charts the minute before the 24 Dec edition",
+   "kind": "chart",
+   "effective": "2026-10-29",
+   "on": "2026-12-24T09:00:00Z",
+   "expected": {
+    "state": "in_force",
+    "expires": "2026-12-24",
+    "current": "2026-10-29",
+    "current_ident": null,
+    "next": "2026-12-24",
+    "behind": 0,
+    "next_at": "2026-12-24T09:01:00Z",
+    "expires_at": "2026-12-24T09:01:00Z"
+   }
+  },
+  {
+   "why": "the 29 Oct 2026 charts the minute the 24 Dec edition takes over",
+   "kind": "chart",
+   "effective": "2026-10-29",
+   "on": "2026-12-24T09:01:00Z",
+   "expected": {
+    "state": "expired",
+    "expires": "2026-12-24",
+    "current": "2026-12-24",
+    "current_ident": null,
+    "next": "2027-02-18",
+    "behind": 1,
+    "next_at": "2027-02-18T09:01:00Z",
+    "expires_at": "2026-12-24T09:01:00Z"
+   }
+  },
+  {
+   "why": "the 29 Oct 2026 charts the minute after",
+   "kind": "chart",
+   "effective": "2026-10-29",
+   "on": "2026-12-24T09:02:00Z",
+   "expected": {
+    "state": "expired",
+    "expires": "2026-12-24",
+    "current": "2026-12-24",
+    "current_ident": null,
+    "next": "2027-02-18",
+    "behind": 1,
+    "next_at": "2027-02-18T09:01:00Z",
+    "expires_at": "2026-12-24T09:01:00Z"
+   }
+  },
+  {
+   "why": "DOF_260927 the minute before the 24 Nov 2026 release",
+   "kind": "dof",
+   "effective": "2026-09-27",
+   "on": "2026-11-23T23:59:00Z",
+   "expected": {
+    "state": "in_force",
+    "expires": "2026-11-24",
+    "current": "2026-09-29",
+    "current_ident": null,
+    "next": "2026-11-24",
+    "behind": 0,
+    "next_at": "2026-11-24T00:00:00Z",
+    "expires_at": "2026-11-24T00:00:00Z"
+   }
+  },
+  {
+   "why": "DOF_260927 the minute of the 24 Nov 2026 release",
+   "kind": "dof",
+   "effective": "2026-09-27",
+   "on": "2026-11-24T00:00:00Z",
+   "expected": {
+    "state": "expired",
+    "expires": "2026-11-24",
+    "current": "2026-11-24",
+    "current_ident": null,
+    "next": "2027-01-19",
+    "behind": 1,
+    "next_at": "2027-01-19T00:00:00Z",
+    "expires_at": "2026-11-24T00:00:00Z"
+   }
+  },
+  {
+   "why": "DOF_260927 the minute after",
+   "kind": "dof",
+   "effective": "2026-09-27",
+   "on": "2026-11-24T00:01:00Z",
+   "expected": {
+    "state": "expired",
+    "expires": "2026-11-24",
+    "current": "2026-11-24",
+    "current_ident": null,
+    "next": "2027-01-19",
+    "behind": 1,
+    "next_at": "2027-01-19T00:00:00Z",
+    "expires_at": "2026-11-24T00:00:00Z"
    }
   }
  ]

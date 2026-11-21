@@ -55,22 +55,17 @@ describe("FAA data past its cycle, in words", () => {
     ];
     expect(outOfDate(stale)).toHaveLength(3);
     expect(dataWarning(stale)).toBe("FAA data out of date: airports and frequencies, charts, and procedures");
+    expect(dataWarning([cycle({ key: "sua", name: "Special-use airspace", kind: "airac", state: "expired" })])).toBe(
+      "FAA data out of date: special-use airspace",
+    );
   });
 
   it("the engine's rule is the shared fixture's, asked from the web", () => {
     for (const c of fixture.cases) {
       const got = callEngine("data_cycle", { kind: c.kind as "airac" | "chart" | "dof", effective: c.effective, on: c.on });
-      expect(
-        {
-          state: got.state,
-          expires: got.expires,
-          current: got.current,
-          current_ident: got.current_ident,
-          next: got.next,
-          behind: got.behind,
-        },
-        c.why,
-      ).toEqual(c.expected);
+      // The boundary cases, asked at a minute, expect the instants too.
+      const keys = Object.keys(c.expected) as (keyof typeof got)[];
+      expect(Object.fromEntries(keys.map((k) => [k, got[k]])), c.why).toEqual(c.expected);
     }
   });
 });

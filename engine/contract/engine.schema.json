@@ -6389,7 +6389,7 @@
       "additionalProperties": false
     },
     "data_cycle": {
-      "description": "Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page.",
+      "description": "Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page. An AIRAC or charting edition takes over at 0901Z on its date (\"Effective 0901 UTC\", the Federal Register's airspace and procedure amendments), the DOF at 0000Z on its release day: asked with a UTC time the answer is exact to the minute.",
       "type": "object",
       "properties": {
         "input": {
@@ -6414,7 +6414,7 @@
             },
             "on": {
               "type": "string",
-              "description": "YYYY-MM-DD: the UTC day it is used on."
+              "description": "YYYY-MM-DD, the UTC day it is used on (the whole effective day counted as the new edition's, toward the safe side), or a UTC time, YYYY-MM-DDTHH:MM[:SS]Z, exact to 0901Z: what a host choosing what to fetch, draw or warn of asks with."
             }
           },
           "required": [
@@ -6453,6 +6453,10 @@
               "type": "string",
               "description": "YYYY-MM-DD: the day the next edition takes its place."
             },
+            "next_at": {
+              "type": "string",
+              "description": "YYYY-MM-DDTHH:MM:SSZ: the instant the next edition takes over, 0901Z on `next` (0000Z for the DOF)."
+            },
             "effective": {
               "type": [
                 "string",
@@ -6466,6 +6470,13 @@
                 "null"
               ],
               "description": "YYYY-MM-DD: the first day the edition held no longer counts; null where unknown."
+            },
+            "expires_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "YYYY-MM-DDTHH:MM:SSZ: the instant the edition held stops counting; null where unknown."
             },
             "state": {
               "type": "string",
@@ -6487,8 +6498,10 @@
             "current",
             "current_ident",
             "next",
+            "next_at",
             "effective",
             "expires",
+            "expires_at",
             "state",
             "behind"
           ],
