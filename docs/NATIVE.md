@@ -555,7 +555,8 @@ header once, each directory once as it is needed, then the tile's own
 bytes, by ranged reads of the file, never mapped whole (Alaska's
 sectional at 2x is 7 GB). When the planner has the next cycle, a kept
 region offers "Update to" it; on the day the old edition is replaced
-(0901Z on the next one's date) it is said to be expired and kept until
+(0901Z on the next one's date, the engine's `data_cycle` asked at the
+minute) it is said to be expired and kept until
 its update is whole, then removed (`OfflineStore.sweep`; warn, never
 limit). `WingtipTests/OfflineChartsTests` reads an archive the planner's
 writer made, leaf directories and all.

@@ -22,22 +22,28 @@ struct OfflineKept: Codable, Equatable, Sendable, Identifiable {
     var complete: Bool { Set(done) == Set(wanted.keys) }
     var bytes: Int { wanted.values.reduce(0, +) }
 
-    /// Past its date: an edition is replaced at 0901Z on the next one's
-    /// effective day (the FAA's 28 and 56 Day Product Schedule, as the
-    /// planner's wingtip.data_cycles.in_force_day has it). Said on the
-    /// list, never removed for it alone (warn, never limit; docs/decisions/0008).
+    /// Past its date: the engine's `data_cycle` on the FAA's 56-day chart
+    /// schedule, asked at the minute, as an edition is replaced at 0901Z on
+    /// the next one's date ("Effective 0901 UTC"). The rule was worked out
+    /// here as `expires` plus nine hours and a minute. Said on the list,
+    /// never removed for it alone (warn, never limit; docs/decisions/0008).
     func expired(now: Date = .now) -> Bool {
-        guard let day = expires.flatMap(Self.utcDay) else { return false }
-        return now >= day.addingTimeInterval(9 * 3600 + 60)
+        guard let effective = Self.isoDay(cycle),
+              let answer = try? Engine.dataCycle(kind: "chart", effective: effective, on: Self.utcTime(now)) else { return false }
+        return answer.state == "expired"
     }
 
-    /// "2026-12-24" as that day's 0000Z.
-    static func utcDay(_ text: String) -> Date? {
-        let parts = text.split(separator: "-").compactMap { Int($0) }
-        guard parts.count == 3 else { return nil }
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC")!
-        return calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
+    /// A chart cycle's name, "10-29-2026" as the FAA's links write it, as
+    /// "2026-10-29"; nil where it is no such name.
+    static func isoDay(_ cycle: String) -> String? {
+        let parts = cycle.split(separator: "-")
+        guard parts.count == 3, parts.allSatisfy({ Int($0) != nil }) else { return nil }
+        return "\(parts[2])-\(parts[0])-\(parts[1])"
+    }
+
+    /// A moment as the engine reads it, "2026-12-24T09:01:00Z".
+    static func utcTime(_ date: Date) -> String {
+        date.formatted(.iso8601)
     }
 }
 
