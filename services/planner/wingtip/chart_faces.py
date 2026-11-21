@@ -20,6 +20,8 @@ from pathlib import Path
 
 import numpy as np
 
+from . import chart_panels
+from .chart_bands import faces_in_blocks
 from .chart_masked_lines import find_masked_lines, remove_masked_lines
 from .chart_kinds import SECTIONAL, Box, ChartKind
 from .chart_raster import WHITE_MIN_CHANNEL, read_rgb
@@ -66,6 +68,18 @@ _MAX_OUTSIDE_TINT = 0.15
 _CONTENT_STEP_PX = 20
 _CONTENT_MIN_TINT = 0.5
 _CONTENT_MARGIN_PX = 100
+# The tint the face starts with is the run of it the search ends in, not
+# the first tint met: Los Angeles prints its VFR route insets (Coliseum,
+# Mini, Coastal, the Special Flight Rules Area), tinted maps of their
+# own, in two framed columns down its west collar, and the first tint
+# was theirs; the face took them in and the map drew them over the
+# Pacific south of Santa Barbara (the owner's phone, 2026-11-20). The
+# paper between the inset columns and between them and the chart is 6
+# and 10 steps wide (130 and 200 px). A gap this short is bridged
+# rather than taken for the collar, against a line of chart that dips
+# under half tint; on the 32 TAC rasters of the 10-29-2026 cycle only
+# Los Angeles's west edge moves (0.70 degrees in, to the chart).
+_CONTENT_BRIDGE_STEPS = 2
 # Sectional sheets end on whole and quarter degrees; a measured edge
 # that close to one is that one.
 _SNAP_GRID_DEG = 0.25
@@ -191,13 +205,30 @@ def _find_edge(ink: _Ink, envelope: Box, res_m: float, edge: str, search: float 
     # outside the raster) inward.
     coarse = start + inward * (_POOL_PX * deg_per_px + np.arange(0.0, depth, _CONTENT_STEP_PX * deg_per_px))
     _, _, tint, _ = sample_lines(coarse)
-    tinted = np.flatnonzero(tint >= _CONTENT_MIN_TINT)
-    if tinted.size == 0:
+    first = _chart_run_start(tint >= _CONTENT_MIN_TINT)
+    if first is None:
         return None, "none"
-    first = int(tinted[0])
     if first == 0:
         return float(start), "sheet edge"
     return float(coarse[first] + inward * _CONTENT_MARGIN_PX * deg_per_px), "content"
+
+
+def _chart_run_start(tinted: np.ndarray) -> int | None:
+    """The first line of the chart among lines sampled inward from a
+    sheet's edge: where the tinted run the search ends in begins, gaps
+    of up to _CONTENT_BRIDGE_STEPS untinted lines bridged. When the
+    search ends off the tint, the first tinted line, as it always was."""
+    hits = np.flatnonzero(tinted)
+    if hits.size == 0:
+        return None
+    if not tinted[-1]:
+        return int(hits[0])
+    first = len(tinted) - 1
+    for i in hits[::-1]:
+        if first - i - 1 > _CONTENT_BRIDGE_STEPS:
+            break
+        first = int(i)
+    return first
 
 
 def _snap(value: float) -> float:
@@ -260,9 +291,7 @@ def _straight_face(ink: _Ink, crs, transform, mask_path: Path) -> Box:
     two), so with the lines left out their masks stood a line's width
     apart and every seam was a hairline of map background; with them
     in, the masks overlap by that width."""
-    import rasterio
     import rasterio.warp
-    from rasterio.transform import Affine
 
     rows, cols = ink.dark.shape
     col_continuity = ink.dark[int(rows * 0.2) : int(rows * 0.8), :].mean(axis=0)
@@ -272,21 +301,9 @@ def _straight_face(ink: _Ink, crs, transform, mask_path: Path) -> Box:
 
     r_lo, r_hi = r0, min(r1 + 1, rows)  # pooled rows [r_lo, r_hi): the chart and its ruling lines
     c_lo, c_hi = c0, min(c1 + 1, cols)
-    inside = np.zeros((rows, cols), dtype=np.uint8)
-    inside[r_lo:r_hi, c_lo:c_hi] = 255
-    with rasterio.open(
-        mask_path,
-        "w",
-        driver="GTiff",
-        width=cols,
-        height=rows,
-        count=1,
-        dtype="uint8",
-        crs=crs,
-        transform=transform @ Affine.scale(_POOL_PX),
-        compress="deflate",
-    ) as out:
-        out.write(inside, 1)
+    inside = np.zeros((rows, cols), dtype=bool)
+    inside[r_lo:r_hi, c_lo:c_hi] = True
+    chart_panels.write_mask(mask_path, inside, crs, transform, _POOL_PX)
 
     x0, x1 = c_lo * _POOL_PX, c_hi * _POOL_PX
     y0, y1 = r_lo * _POOL_PX, r_hi * _POOL_PX
@@ -349,4 +366,26 @@ def detect_face(path: Path, kind: ChartKind) -> tuple[Box, Box, Path | None]:
             position = _snap(position)
         log.info("%s: %s edge at %.4f (%s)", path.name, edge, position, how)
         face.append(position)
-    return envelope, tuple(face), None
+    face = tuple(face)
+    return envelope, face, _cut_paper_panels(path, kind, ink, face)
+
+
+def _cut_paper_panels(path: Path, kind: ChartKind, ink: _Ink, face: Box) -> Path | None:
+    """For a kind that prints paper panels over its face (the TAC), the
+    mask raster that cuts them out (chart_panels), None when the sheet
+    has none; a mask left by an earlier detection is removed with it."""
+    if not kind.paper_panels:
+        return None
+    mask_path = path.with_name(f"{path.stem}.mask.tif")
+    # The band search's blocks are the face search's pooled ones, 4 px.
+    inside = faces_in_blocks(ink.crs, ink.transform, [face], ink.white.shape)
+    panels = chart_panels.find_paper_panels(ink.white, ink.tint, ink.dark, inside)
+    if not panels:
+        mask_path.unlink(missing_ok=True)
+        return None
+    keep = np.ones(ink.white.shape, dtype=bool)
+    for r0, r1, c0, c1 in panels:
+        keep[r0:r1, c0:c1] = False
+        log.info("%s: paper panel cut out, %d x %d px", path.name, (c1 - c0) * _POOL_PX, (r1 - r0) * _POOL_PX)
+    chart_panels.write_mask(mask_path, keep, ink.crs, ink.transform, _POOL_PX)
+    return mask_path

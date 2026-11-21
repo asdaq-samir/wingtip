@@ -2,6 +2,7 @@ import {
   ChartArea,
   ClipboardCopy,
   CloudSun,
+  Info,
   Ellipsis,
   ListOrdered,
   LocateFixed,
@@ -49,6 +50,8 @@ export const ICON = {
   navLog: ListOrdered,
   /** The side view (Profile), the route box's first button. */
   profile: ChartArea,
+  /** An airplane's card from FPL's N-number pill. */
+  info: Info,
   /** The map's layers and weather. */
   mapLayers: MapLayers,
   /** A route, as a list's mark. */

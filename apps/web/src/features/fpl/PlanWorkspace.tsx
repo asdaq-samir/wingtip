@@ -65,9 +65,10 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   const { cardOpen, flight, heldPoint, place } = vm.cards;
   const { filedProcedures } = vm.picks;
   const { fuelHidden, showFuelStops } = vm.stops;
-  const { briefShown, profileShown } = vm.fpl;
+  const { briefShown, openProfile, profileReady, profileShown } = vm.fpl;
   const { flying } = vm.flight;
-  const { fileFlightPlan, fileable, flightToSave, landedStops, landings, stale, tightLeg, unflyable, unflyableBrief } = vm.brief;
+  const { altitudeMark, fileFlightPlan, fileable, flightToSave, landedStops, landings, stale, tightLeg, unflyable, unflyableBrief } =
+    vm.brief;
   // Each tab's part of the briefing. Made once for the same plan
   // (useCallback), and each
   // part drawn again only when its plan changes (FlightBriefingView's
@@ -178,6 +179,9 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
               tight={unflyable ? null : tightLeg}
               disabled={!routed}
               rules={flightRules}
+              // The Profile's button, the tab bar's until the owner's ask
+              // (2026-11-20: "can FL show profile button").
+              profile={{ openProfile, profileReady, altitudeMark }}
             />
           )
         }
@@ -209,6 +213,9 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       s.replanning,
       altitudeFt,
       altitudeNearest,
+      openProfile,
+      profileReady,
+      altitudeMark,
     ],
   );
 

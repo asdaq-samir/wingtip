@@ -326,7 +326,12 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   `[data-nested-drawer-swiping]`, hidden once faded; its ground, edge and
   shadow the same on the Drawer's curve (`SheetDrawer`). A card's content stays drawn where
   its caller is (its providers) and is put in its drawer's scroller
-  (`useCardFrame`); touches on it are handed to its drawer's viewport
+  (`useCardFrame`), its dialogs under a Root of their own that never
+  opens (`CardDialogs`): in the sheet's React tree they told the sheet,
+  closing, that nothing was open over it, Base UI setting the nested
+  count rather than adding to it, and its ground came back as a grey
+  slab under a card at the pill (`e2e/card-pill-map.spec.ts`; the owner,
+  2026-11-20); touches on it are handed to its drawer's viewport
   (`SheetViewport`): Base UI 1.9 gives the viewport its touchstart,
   touchend and pointerdown as React props, and React sends a portal's
   events to its React parents, not to the viewport it sits in on the page.
@@ -832,8 +837,18 @@ after the bar. The bar before it is one size on both pages
 the toggle): on Search the one search's field (`OneSearchField`), on FPL
 the airplane's strip (`features/fpl/workspace/FplBar`, its
 `RouteControls`: the N-number and the altitude alone, on one line (VFR/IFR the Profile card's top,
-`PlanCards`' `rules`, since 2026-11-17), the N-number giving way first;
-the Brief, the Nav Log, the Profile and the route's ••• ("More", the
+`PlanCards`' `rules`, since 2026-11-17), the N-number giving way first,
+each pill ending in a glyph of its own in the tint (the owner, 2026-11-20:
+"can N number show an info button and can FL show profile button rather
+than in the tab bar?"): the N-number's ⓘ ("Airplane info", `aircraft-info`)
+opens the airplane's card (`openAirplaneProfile`), or with none picked puts
+the focus in the field; the altitude's the Profile's glyph ("Profile",
+`route-profile`, `ProfilePillButton`) opens the Profile card, greyed till
+there is a plan, the altitude's caution its 1 (`TabCount`), said in its
+name; each 20 wide in the 24 pill, its area a pseudo-element 44 tall and 32 wide out
+past the pill's end, never over the field's words (`pillLook`'s
+`PILL_END`);
+the Brief, the Nav Log and the route's ••• ("More", the
 route's one menu with its sharing; the owner, 2026-11-17: "move
 everything to the tab bar with a ... instead of share") are the floating
 glass bar at the sheet's foot

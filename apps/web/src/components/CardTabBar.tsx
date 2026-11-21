@@ -81,8 +81,11 @@ export function CardTabBar<T extends string>({
               value={t.value}
               className={cn(
                 FLOATING_BAR_ITEM,
-                // The picked tab in the tint, as iOS 26's tab bar, on the bar's soft pill.
-                "data-active:text-primary dark:data-active:border-transparent dark:data-active:text-primary group-data-[variant=default]/tabs-list:data-active:shadow-none",
+                // The picked tab in the tint, as iOS 26's tab bar, on the bar's
+                // soft pill: Fly Here's blue by day, and by night the look's
+                // light tint, which reads on the dark glass where the deep
+                // primary read 2.4 to 2.8:1 (the iOS audit's P15).
+                "data-active:text-primary dark:data-active:border-transparent dark:data-active:text-tint group-data-[variant=default]/tabs-list:data-active:shadow-none",
               )}
               disabled={disabled}
               aria-label={t.hint ? `${t.label}, ${t.hint}` : t.label}

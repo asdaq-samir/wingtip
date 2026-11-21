@@ -12,10 +12,16 @@ type ComponentFinding = { rule: string; what: string; measured: string };
  *    36, and the console's sheet at half the same 36; a phone's other
  *    sheets the same 36, floating as it does (PhoneSheetContent), and the
  *    centred dialogs in glass 28, as iOS's alerts are -- the owner's pick
- *    of the sheets audit (D1, D3, 2026-10-17);
- *  - one icon-only button, 36 with a 20 glyph -- outside the navigation
- *    bar, whose sizes are a decision still open, the map's markers, and
- *    the route's fold on the separator, small at the pilot's ask;
+ *    of the sheets audit (D1, D3, 2026-10-17); a grouped list's box the
+ *    look's card corner (GroupedList's GROUP, --radius-card);
+ *  - one icon-only button, 36 with a 20 glyph, and a round one 44, as
+ *    iOS 26's round buttons in a sheet's head and Apple Maps' map buttons
+ *    are (IconButton's `round` and the map's buttons, the owner,
+ *    2026-11-20: "let's do what Apple does", "make all buttons same size
+ *    as Apple Maps") --
+ *    outside the navigation bar, whose sizes are a decision still open,
+ *    the map's markers, and the route's fold on the separator, small at
+ *    the pilot's ask;
  *  - a drawer's or a sheet's words at least 16 in from its side, iOS's
  *    margin (a point less for a glyph's own side bearing);
  *  - a switch at iOS's own 51 by 31 to a finger, the pilot's one
@@ -55,6 +61,10 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
     theme.className = "rounded-lg";
     document.body.append(theme);
     const radius = parseFloat(getComputedStyle(theme).borderTopLeftRadius);
+    theme.style.borderRadius = "var(--radius-card)";
+    const cardRadius = parseFloat(getComputedStyle(theme).borderTopLeftRadius);
+    theme.style.borderRadius = "var(--radius-banner)";
+    const bannerRadius = parseFloat(getComputedStyle(theme).borderTopLeftRadius);
     theme.remove();
     const floats = [
       '[data-slot="sheet-content"][data-side="bottom"]',
@@ -76,16 +86,21 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
       // pill being the sheet at its lowest); a phone's other sheets (the
       // console) 36, with their far corners round.
       const sheet = box.matches('[data-slot="console-sheet"], [data-floating]');
-      // A toast is Apple Maps' banner, a capsule (the toast rewrite, 2026-10-27).
+      // A toast is Apple Maps' banner, a capsule (the toast rewrite,
+      // 2026-10-27), at the banner's corner (design/tokens.json's
+      // radius.banner, 22: half the 44-point tap target); the pill 24.
+      const capsule = box.matches("[data-slot=toast]") ? bannerRadius : 24;
       const shape = box.matches("[data-capsule], [data-slot=toast]")
-        ? Math.min(24, box.getBoundingClientRect().height / 2)
+        ? Math.min(capsule, box.getBoundingClientRect().height / 2)
         : box.matches('[data-slot="map-panel"]')
           ? 24
           : sheet
             ? 36
             : box.matches("[data-glass]")
               ? 28
-              : radius;
+              : box.matches('[data-slot="item-group"]')
+                ? cardRadius
+                : radius;
       if (Math.abs(r - shape) > 0.5) found.push({ rule: `one radius, ${Math.round(shape)}`, what: name(box), measured: `${r}` });
     }
     for (const button of document.querySelectorAll<HTMLElement>('button, a[data-slot="button"]')) {
@@ -126,9 +141,13 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
       // owner's ask (CloseButton, BackButton): lucide's span half their box
       // where the other glyphs span most of theirs.
       const glyph = button.querySelector("svg.lucide-x") ? 24 : 20;
-      if (Math.abs(b.width - 36) > 0.5 || Math.abs(b.height - 36) > 0.5 || Math.abs(g.width - glyph) > 0.5) {
+      // A round button (a disc: its corner half its height or more) is 44;
+      // any other icon-only button 36.
+      const round = parseFloat(getComputedStyle(button).borderTopLeftRadius) >= b.height / 2 - 0.5;
+      const side = round ? 44 : 36;
+      if (Math.abs(b.width - side) > 0.5 || Math.abs(b.height - side) > 0.5 || Math.abs(g.width - glyph) > 0.5) {
         found.push({
-          rule: `icon button 36, glyph ${glyph}`,
+          rule: `icon button ${side}, glyph ${glyph}`,
           what: name(button),
           measured: `${Math.round(b.width)}×${Math.round(b.height)}, glyph ${Math.round(g.width)}`,
         });

@@ -1,11 +1,12 @@
 import type { CellData, ColumnDef, RowData, TableFeatures } from "@tanstack/react-table";
 import { tableFeatures } from "@tanstack/react-table";
-import { altFt, bearing, etaAt, flownNmOf, isLegPoint, legOf, one, rowPoint, windAloft, type NavLogRow } from "../plan";
+import { altFt, bearing, etaAt, flownNmOf, isLegPoint, legOf, one, windAloft, type NavLogRow } from "../plan";
 import type { Leg, NavLogAltitude } from "../../lib/api/types";
 import { magneticVariation, windCorrection } from "../../lib/format";
 import { PointMark } from "./PointMark";
 import { Heading } from "./ColumnHeading";
 import FigureWait from "../../components/FigureWait";
+import { WaypointName } from "./WaypointName";
 
 // TanStack Table's own extension point for arbitrary per-column data --
 // used below to carry each numeric column's shared className (bordered,
@@ -98,7 +99,7 @@ export function navLogColumns({
             number={row.original.kind === "checkpoint" ? numbers.get(row.original.key) : undefined}
             weather={metarColourOf}
           />
-          <span className="min-w-0 [overflow-wrap:anywhere]">{rowPoint(row.original).name}</span>
+          <WaypointName row={row.original} link={onDesk} />
         </span>
       ),
       // On a phone a name wraps, and a long word is hyphenated rather

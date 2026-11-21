@@ -11,11 +11,12 @@ import { Ellipsis, Info, Plane } from "lucide-react";
 import { Tabs } from "./ui/tabs";
 import { CardTabBar } from "./CardTabBar";
 import { FloatingBar, FloatingBarButton } from "./FloatingBar";
+import { TEXT } from "../lib/text";
 
 afterEach(cleanup);
 
 /** The classes that make an item's height and pill, and the capsule's width. */
-const ITEM = ["min-h-12", "rounded-full", "flex-col", "data-active:bg-foreground/10"];
+const ITEM = ["min-h-12", "rounded-full", "flex-col", "data-active:bg-background/80"];
 const WIDTH = ["w-fit", "min-w-[min(18.75rem,100%)]", "max-w-full"];
 
 function cardBar() {
@@ -76,11 +77,10 @@ describe("the floating bar", () => {
     expect(screen.getByTestId("route-more").textContent).toBe("More");
   });
 
-  test("the words are the footnote's 13 on a 16 line, regular, on one line", () => {
+  test("the words are the footnote's 13 on its 18 line, regular, on one line", () => {
     cardBar();
     const word = screen.getByText("Info");
-    expect(word.className).toContain("text-(length:--type-tab)");
-    expect(word.className).toContain("leading-4");
+    expect(word.className).toContain(TEXT.note);
     expect(word.className).toContain("font-normal");
     expect(word.className).toContain("whitespace-nowrap");
   });

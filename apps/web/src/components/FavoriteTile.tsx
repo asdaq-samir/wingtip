@@ -22,7 +22,10 @@ export function FavoriteTile({ on, disabled, onToggle, testId }: { on: boolean; 
           icon={<ACTION.favorite.icon className={cn(on && FAVORITE_STAR_ON)} />}
           label={ACTION.favorite.label}
           pressed={on}
-          spoken={on ? "Remove from Favorites" : "Add to Favorites"}
+          // Its name is its word, "Favorite", its state the toggle's own
+          // (aria-pressed: "selected"), so the name holds what is in sight
+          // (WCAG 2.5.3, Label in Name; axe's label-content-name-mismatch,
+          // the iOS audit's airport and airplane cards).
           testId={testId}
         />
       }

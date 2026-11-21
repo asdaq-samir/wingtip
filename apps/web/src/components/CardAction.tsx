@@ -82,6 +82,11 @@ export function CardAction({
         // iOS audit's P15, an airplane's Alert menu, 2026-11-05); the menu
         // under it says it is open.
         "aria-expanded:bg-foreground/8",
+        // By night the glass's 8% of the light foreground is a lighter grey
+        // under the tint, 4.43 to 1 on a side panel's card (the iOS audit's
+        // P15, an iPad's and a sideways iPhone's airport and airplane cards,
+        // the nightly run of 2026-11-20): 5% there.
+        "dark:bg-foreground/5",
       ),
   );
   const face = (

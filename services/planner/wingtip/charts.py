@@ -20,7 +20,9 @@ Two things make that more than a file download:
   chart face. Drawn as-is, the legend of one chart would paper over its
   neighbour along every seam. `chart_faces.detect_face` finds the
   neatline (the black border the chart face ends at) in each raster, and
-  the renderer clips to it so adjacent charts butt together.
+  the renderer clips to it so adjacent charts butt together. A TAC's
+  paper panels printed over its own face (Puerto Rico's route panels
+  over the Atlantic) are cut out with a mask (chart_panels).
 
 - Charts overlap (the sheets of the 36-40N row share a degree or so
   with their neighbours; a TAC sits inside its sectional), so a tile is
@@ -37,7 +39,8 @@ The modules, lowest first, each with one job:
   under it, with the helpers every way of drawing a tile shares (the
   composite, the PNG, the cache path, the draw order).
 - chart_sheets: a prepared sheet on disk; chart_prepare: fetching and
-  preparing one (the face and masked lines are chart_faces').
+  preparing one (the face and masked lines are chart_faces', a TAC's
+  paper panels chart_panels').
 - chart_serving: each cycle's pyramid record, the cycle the map is drawn
   from, and the tile revision.
 - chart_archives: a finished pyramid packed into its archives;
