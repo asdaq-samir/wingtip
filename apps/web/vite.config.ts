@@ -134,13 +134,16 @@ export default defineConfig({
             // The chart tiles, served by the planner (…/chart-tile/…) or
             // from the CDN (…/tiles/<cycle>/…): cache first, they are
             // the same for the whole 56-day cycle, and a miss offline
-            // is simply a blank tile.
+            // is simply a blank tile. The planner's 204, no sheet there
+            // (the sea, Canada round the country), is kept as a drawn
+            // tile is: left out, every view by a coast or a border asked
+            // the network for each of its empty tiles again.
             urlPattern: ({ url }) => url.pathname.includes("/chart-tile/") || url.pathname.includes("/tiles/"),
             handler: "CacheFirst",
             options: {
               cacheName: "chart-tiles",
               expiration: { maxEntries: 20000, maxAgeSeconds: 60 * 24 * 3600, purgeOnQuotaError: true },
-              cacheableResponse: { statuses: [0, 200] },
+              cacheableResponse: { statuses: [0, 200, 204] },
             },
           },
           {
