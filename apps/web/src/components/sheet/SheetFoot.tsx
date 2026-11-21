@@ -65,6 +65,18 @@ export function SheetFoot(p: {
         // the ground), as none is over a card's tabs (the owner, 2026-11-16:
         // "Why do I see a separator above the tabs bar?"); off the pill taps go through it to the figures under it but the bar's.
         floats && cn("border-transparent", !pillFoot && "pointer-events-none"),
+        // Under the floating bar, iOS 26's soft scroll edge: what scrolls
+        // under it fades towards the sheet's own colour, from a little over
+        // the bar's top to most of the way solid at its foot, so the route
+        // still shows through the glass but its words never run into the
+        // bar's (the HIG review, 2026-11-21: "Brief Land RWY Nav Log ≋18
+        // More" at half; the owner took the fade under the bar only, not
+        // the solid band of the UI audit's B1). Drawn behind the bar, in
+        // the foot's own layer; no fade at the pill, where the bar is out
+        // of sight.
+        floats &&
+          !pillFoot &&
+          "before:pointer-events-none before:absolute before:inset-x-0 before:-top-4 before:bottom-0 before:-z-10 before:bg-linear-to-b before:from-transparent before:to-(--sheet)/85 before:to-60% before:content-['']",
       )}
       style={
         {

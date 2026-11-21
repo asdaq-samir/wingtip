@@ -61,6 +61,11 @@ export function RouteMore({
     [course, selected],
   );
   const { packHref, sentPack, sendPack } = usePack(route);
+  // With Route Options' checkmark column in the menu, every item's glyph and
+  // words start where its do, as an iOS menu lines up its titles with a
+  // ticked one's: Share link and Open in ForeFlight sat about 30 points
+  // further out (the HIG review, 2026-11-21).
+  const inset = !!routeOptions;
 
   return (
     <ShareMenuShell card="route" {...look}>
@@ -72,7 +77,7 @@ export function RouteMore({
               Route Options
             </DropdownMenuCheckboxItem>
           )}
-          <ShareLinkItem route={route} />
+          <ShareLinkItem route={route} inset={inset} />
           {/* ForeFlight sends the route on to the panel wirelessly
               (Garmin's Connext, Avidyne, Dynon): the owner's pick
               (2026-11-02), as most pilots have ForeFlight and not
@@ -83,6 +88,7 @@ export function RouteMore({
             points.length > 0 &&
             (packHref && !sentPack ? (
               <DropdownMenuItem
+                inset={inset}
                 data-testid="open-foreflight"
                 render={
                   <a href={openInForeFlight(new URL(packHref, packOrigin(window.location)).href)} onClick={sendPack}>
@@ -93,6 +99,7 @@ export function RouteMore({
               />
             ) : (
               <DropdownMenuItem
+                inset={inset}
                 data-testid="open-foreflight"
                 render={
                   <a href={foreflightRoute(points, altitudeFt, sentPack)}>

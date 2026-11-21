@@ -27,11 +27,12 @@ export interface SharedRoute {
  *  (Safari on an iPhone), otherwise copied. In the route's ••• since
  *  Share left the floating bar (the owner, 2026-11-17: "Yes to changing
  *  share to ... button"); each card's, its link. Only once it is routed. */
-export function ShareLinkItem({ route }: { route: SharedRoute }) {
+export function ShareLinkItem({ route, inset = false }: { route: SharedRoute; inset?: boolean }) {
   const { share } = useShareLink(route.planned, route.altitudeFt);
   if (!route.routed) return null;
   return (
-    <DropdownMenuItem onClick={() => void share()} data-testid="share-link">
+    // `inset` in a menu with a checkmark's column (RouteMore's Route Options).
+    <DropdownMenuItem inset={inset} onClick={() => void share()} data-testid="share-link">
       <Link2 />
       Share link
     </DropdownMenuItem>

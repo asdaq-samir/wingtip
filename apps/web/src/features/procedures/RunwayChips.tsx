@@ -107,8 +107,10 @@ export function Chips({
       >
         {children}
       </ToggleGroup>
+      {/* 12 between the pull-downs, so their 44-point areas (6 round a
+          32-point chip) meet and do not cross, as the folded line's. */}
       {trailing && (
-        <div ref={trailingRef} className="flex shrink-0 items-center gap-2">
+        <div ref={trailingRef} className="flex shrink-0 items-center gap-3">
           {trailing}
         </div>
       )}

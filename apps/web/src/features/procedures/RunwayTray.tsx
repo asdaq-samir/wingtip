@@ -39,6 +39,7 @@ function RunwayTray({
   /** The runway chips, with the pull-downs after them as their trailing part. */
   chips: ReactNode;
 }) {
+  const folded = foldable && !lineOpen && !!a.runways?.length;
   // The head and its runways one tray, at the owner's pick of the canvas (2026-10-27, G2, artifact
   //  JMQabZH2W33kzmvUuahbad): "RWY" at its head (RunwayWord; it was the landing's or the takeoff's glyph), the runway picked after it
   //  with its arrow while it is folded, every runway in it while it is open. The head is the line's button
@@ -55,8 +56,10 @@ function RunwayTray({
       open={foldable && lineOpen}
       onOpenChange={(next) => setRunwayLine(lineKey, next)}
       // As wide as its chips, sharing its line with a stop's leaving time
-      // where both fit (PartTray).
-      render={<div className="flex min-w-0 flex-auto items-start" />}
+      // where both fit (PartTray). Folded, the runway picked and the
+      // pull-downs are laid out in this row itself (PatternChips' folded
+      // line, `contents`), wrapping from its leading edge.
+      render={<div className={cn("flex min-w-0 flex-auto items-start", folded && "flex-wrap gap-y-3")} />}
     >
       {foldable ? (
         <CollapsibleTrigger
@@ -81,7 +84,7 @@ function RunwayTray({
           <RunwayWord role={role} />
         </span>
       )}
-      <div className={cn("min-w-0 flex-1", a.runways?.length === 0 && "pl-2")}>{chips}</div>
+      <div className={cn(folded ? "contents" : "min-w-0 flex-1", a.runways?.length === 0 && "pl-2")}>{chips}</div>
     </Collapsible>
   );
 }

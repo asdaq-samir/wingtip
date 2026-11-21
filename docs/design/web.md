@@ -403,7 +403,7 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   ([shadcn Base UI default][shadcn-base-default],
   [shadcn React Aria][shadcn-aria], [shadcn Drawer][shadcn-drawer],
   [shadcn Toast][shadcn-toast]). Wingtip's toasts are Base UI's
-  (`components/ui/toast.tsx`, `lib/toast.ts`): progress, Undo, and the
+  (`components/ui/toast.tsx`, `lib/toast.ts`; the ✓ and spinner 20, `size.glyph-row`, the corner `radius.banner` in px so it does not grow with the text size): progress, Undo, and the
   anchored confirmations, on Base UI's own 5 seconds, held under a
   touch or the pointer and swiped away (2026-11-11); a progress toast
   ("Drawing Route…") lets the pointer through to what is under it, the
@@ -648,7 +648,7 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    then the tabs, Info, Weather, Runways, Charts (`place/PlaceTabBar` on
    the shared `CardTabBar`, the pages in `CardTabPages`; each tab an icon
    from lucide-react, required on `CardTab` (Info, CloudSun, PlaneLanding,
-   FileText), every tab with its word under it (`TEXT.tabBar`, 12 on 16 regular, iOS 26's tab bar) in equal columns, each 48 points tall in the one floating bar FPL's actions share (`components/FloatingBar`: the capsule, `FloatingBarFace`, and `floatingBarLook`'s item and width; the owner, 2026-11-18: "Yes make it common ... apply the same height and width for both"), 56 tall, its items one width on every bar, 73 at the default size (`FLOATING_BAR_COLUMNS`: a quarter of 18.75 rem less the capsule's sides, so the airport card's four tabs make it 300 and FPL's three actions 227; in rem so it grows with the text as the words do, never narrower than its words, each column capped at a quarter of the room inside the sheet's 16-point sides, `FLOATING_BAR_ROOM`'s container, the same on a card and on FPL's foot; the owner, 2026-11-21: "fpl and other tabs placement look different"; 4 points over the screen's foot where there is no home indicator, else the indicator's own inset, `floatingBarLook`'s `FLOATING_BAR_FOOT_ROOM` on a card and `FLOATING_BAR_SHEET_ROOM` on FPL's foot, whose sheet already ends over the indicator: low, so FPL's figures at half clear its top with one stop or the stops' row in the route), the picked one in the tint on a soft `foreground/10` pill, all named
+   FileText), every tab with its word under it (`TEXT.tabBar`, 13 on 18 regular, iOS's Footnote, as FPL's bar; its glyph `size.glyph-bar`, 24; the scale audit, 2026-11-21) in equal columns, each 48 points tall in the one floating bar FPL's actions share (`components/FloatingBar`: the capsule, `FloatingBarFace`, and `floatingBarLook`'s item and width; the owner, 2026-11-18: "Yes make it common ... apply the same height and width for both"), 56 tall, its items one width on every bar, 73 at the default size (`FLOATING_BAR_COLUMNS`: a quarter of 18.75 rem less the capsule's sides, so the airport card's four tabs make it 300 and FPL's three actions 227; in rem so it grows with the text as the words do, never narrower than its words, each column capped at a quarter of the room inside the sheet's 16-point sides, `FLOATING_BAR_ROOM`'s container, the same on a card and on FPL's foot; the owner, 2026-11-21: "fpl and other tabs placement look different"; 4 points over the screen's foot where there is no home indicator, else the indicator's own inset, `floatingBarLook`'s `FLOATING_BAR_FOOT_ROOM` on a card and `FLOATING_BAR_SHEET_ROOM` on FPL's foot, whose sheet already ends over the indicator: low, so FPL's figures at half clear its top with one stop or the stops' row in the route), the picked one in the tint on a soft `foreground/10` pill, all named
    by aria-label, the dot and count over the icon's corner; a tab picked
    opens at its own top, just under the actions (`useTabScroll`'s
    `scrollOnPick`: the pages' top where the card was scrolled into the last
@@ -836,7 +836,8 @@ its head's Search button going back to Search's resting page, the route kept (th
 (`features/fpl/workspace/ClearRouteButton`: one tap, the stock centred alert) -- a 44-point disc (iOS 26's round button) in the field's white,
 the word in the text's colour, its 44-point area its `::after`, never grown, eight
 after the bar. The bar before it is one size on both pages
-(`panelField`'s `SHEET_BAR`, 46 tall, round-ended, the row's room less
+(`panelField`'s `SHEET_BAR`, as tall as FPL's title's 25-point line over
+its pills' 24, 49 at the default size, round-ended, the row's room less
 the toggle): on Search the one search's field (`OneSearchField`), on FPL
 the airplane's strip (`features/fpl/workspace/FplBar`, its
 `RouteControls`: the N-number and the altitude alone, on one line (VFR/IFR the Profile card's top,
@@ -1212,7 +1213,9 @@ are designed ([Vercel guidelines][vercel-guidelines]).
 **Structure, top to bottom** (decision 0012, verdict first; made less
 cluttered at the owner's word, 2026-11-16, "How do we make brief less
 cluttered?" then "Do it"; one grouped list at his pick of option A,
-2026-11-19, so the Brief reads as Settings and FPL's timeline do).
+2026-11-19, so the Brief reads as Settings and FPL's timeline do; the
+Brief audit's option 2, 2026-11-21: the findings straight under the
+verdict, then the Adverse Conditions, When to go at the foot).
 1. The head: "Brief", as the Nav Log and the Profile are named (the
    owner, 2026-11-19: "Title of brief should just say Brief like Navlog
    and others"), and under it one line, the route by its idents, the
@@ -1220,9 +1223,9 @@ cluttered?" then "Do it"; one grouped list at his pick of option A,
    a pill under that line in the pinned head (`VerdictPill`, `CardHead`'s
    `below`), in sight on every page of the Brief but not at the pill,
    where the card is its one title row; Preflight no longer says it again
-   over its checks. What the briefing could not check (`BriefingNotices`) and
-   when to go (signed in only) under the head, over the list.
-2. One grouped list (`ListGroup`, a hairline between rows, no shadowed
+   over its checks. Nothing between it and the findings: the verdict's
+   three actions come first (decision 0012).
+2. Grouped lists (`ListGroup`, a hairline between rows, no shadowed
    cards), each row opening its page:
    - at most three findings first, each two rows at most, the finding
      alone (the engine's `gonogo_glance_lines`' `lead`, the risk in plain
@@ -1230,7 +1233,18 @@ cluttered?" then "Do it"; one grouped list at his pick of option A,
      under its tap what to do first (`action`), then why it matters with
      its rule, the reports as sent and the way to its page. The rest of
      the findings folded into one row after them. No "nothing to fix"
-     row: the verdict says the rest is fine;
+     row: the verdict says the rest is fine. At their end one caution
+     row (`CautionRow`) for what could not be checked (aviationweather.gov
+     not answering) and FAA data past its cycle, where either;
+   - **Adverse Conditions**, a group of its own, only where there is
+     any: at most three rows, a TFR the route goes through, then the
+     Convective SIGMETs and SIGMETs, the CWAs, the urgent pilot reports
+     and the G-AIRMETs met on the route while the airplane is there,
+     each with its legs and its time (in force at, until, reported), in
+     the engine's order (`gonogo_adverse_rows`; AIM 7-1-5(b)(1), 7-1-6,
+     7-1-18; 14 CFR 91.137-91.145), each opening its section, and "N
+     more on the route" past three. The parts of the flight are then
+     titled "The Flight";
    - Before You Go, its value what is left to do on the device ("4 to
      do", Ready to Fly's count, the engine's `ready_to_fly` items not
      done), with an airplane its fuel to spare and its loading under it;
@@ -1244,7 +1258,8 @@ cluttered?" then "Do it"; one grouped list at his pick of option A,
    - NOTAMs, its value "3 that matter, 44 more", opening Preflight at
      its NOTAMs (the overview's `onOpen` names the section, PanelTabs
      scrolls to it).
-3. The flight watch and the instructor's note under the list.
+3. When to go (signed in only) under the list, the "when" after the
+   "whether", then the flight watch and the instructor's note.
 
 **Preflight** uses the same grouped rows: Checks (the Go / No-Go's seven
 in the engine's order, then the alternates, NOTAMs on 1800wxbrief.com and

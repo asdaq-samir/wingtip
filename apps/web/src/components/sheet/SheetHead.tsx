@@ -4,15 +4,20 @@ import { PanelSize } from "../../lib/mapChrome";
 import { RISEN_FACE } from "./insets";
 import { ROW_PAD, SHEET_BELOW, type PanelSizeValue, type SheetLayout, type SheetSlots } from "./sheetLayout";
 
-/** The one search's row, its 46-point field (OneSearchField) sixteen in
- *  from either side as everything in the sheet is (the sheet audit's
- *  F-P1, F-P2, 2026-11-10): on a bottom sheet under the grabber's 16-point
- *  room (SheetGrabber, the least iOS keeps: the owner, 2026-11-13) and six
- *  over its foot, 68; else ten over it and twelve under, 68 (BAR_HEIGHT). The pill is this row alone: the title row
- *  over it went for the map's room (the owner, 2026-11-10). */
+/** The one search's row, its field (OneSearchField, SHEET_BAR: FPL's
+ *  title line over its pills, 49 at the default size) sixteen in from
+ *  either side as everything in the sheet is (the sheet audit's F-P1,
+ *  F-P2, 2026-11-10): on a bottom sheet under the grabber's 16-point room
+ *  (SheetGrabber, the least iOS keeps: the owner, 2026-11-13) and what is
+ *  left of the 68 under it, 3; else ten over it and the rest under, 9
+ *  (BAR_HEIGHT). The field grew 3 when FPL's title took its 25-point
+ *  line (the HIG review, 2026-11-21), taken from the row's foot so the
+ *  pill, this row alone, keeps its 68 (sheet/insets' 4.25 rem). The pill
+ *  is this row alone: the title row over it went for the map's room (the
+ *  owner, 2026-11-10). */
 function barRowPad(underGrabber: boolean) {
-  if (underGrabber) return "h-[4.25rem] pt-4 pb-1.5";
-  return cn("h-[4.25rem] pb-3", ROW_PAD);
+  if (underGrabber) return "h-[4.25rem] pt-4 pb-[max(0px,calc(1.75rem-var(--lead-heading)))]";
+  return cn("h-[4.25rem] pb-[max(0px,calc(2.125rem-var(--lead-heading)))]", ROW_PAD);
 }
 /** That row's height either way, for what pins under it (--sheet-head). */
 export const BAR_HEIGHT = "4.25rem";

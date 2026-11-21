@@ -523,9 +523,13 @@ off by default (the owner, 2026-11-13).
    after it -- at the departure and at a stop the gauge is a button
    (the owner, 2026-11-21: "can we set the fuel tank by tapping on it?";
    `procedures/FuelSet`), named with its gallons ("36 gal, fuel on
-   board: change"), opening a stock Popover from a tablet's width up and
-   the app's sheet with Cancel and Done on a phone, as a waypoint's
-   altitude does: at the departure the fuel on board at engine start,
+   board: change"; its 44-point area 13 above and below, meeting the
+   ident's 9 past the name so neither takes the other's taps), opening a
+   stock Popover from a tablet's width up and on a phone a card over FPL
+   (the stock Drawer's nested drawer, `SheetCard`) with Cancel and Done in
+   its head, so FPL and the gauge stay in sight under it (the HIG review,
+   2026-11-21; iOS stacks a sheet over a sheet), its gallons field 44 tall
+   with "gal" at the figure's size: at the departure the fuel on board at engine start,
    Full (the airplane's usable fuel) or the gallons; at a stop what the
    tanks are fuelled to, Full, No fuel (what it lands with, kept) or the
    gallons -- a segmented control and a number field, no Tabs pick, as
@@ -576,7 +580,16 @@ off by default (the owner, 2026-11-13).
    line opens it, one at a time: its wind at the left and elevation at the
    right, then one row of runway and procedure chips, wrapping where they
    do not fit, each runway's tray saying what it is for, "Land RWY 24"
-   and "Takeoff RWY 24"; a kind not picked stays its "+ APCH" chip. A
+   and "Takeoff RWY 24"; a kind not picked stays its "+ APCH" chip. With
+   an approach picked the landing runway is the approach's own, folded to
+   "Land RWY 9" as soon as the approach is in the route, a wind's pick
+   giving way to it; another only where the pilot picks it and the plate
+   publishes circling minimums (the engine's `landing_runway`, AIM
+   5-4-20; the HIG review's Q3, the owner 2026-11-21). With the tray
+   folded to its runway the chips wrap from the line's leading edge,
+   under "Land RWY", not under the runway's chip; open, they slide with
+   the runways (the HIG review, 2026-11-21). The chips stand 12 apart, so
+   their 44-point areas meet and never cross. A
    procedure picked is no chip: its fixes are points on the route's
    magenta line itself, in the order they are flown (the owner's option
    D, 2026-11-21), an arrival's and an approach's before the field's line
@@ -627,14 +640,20 @@ off by default (the owner, 2026-11-13).
    strip is at the bottom, on the sheet's foot, at every size and scroll,
    the route sliding and scrolling under it (the owner, 2026-11-21: "they
    would go to bottom and stay there while the rest slides under it").
+   Under the bar, iOS 26's soft scroll edge: what scrolls under it fades
+   towards the sheet's colour from just over the bar's top, so the route
+   shows through but its words never run into the bar's (the HIG review,
+   2026-11-21; not a solid band).
    Sitting on it, 4 points over it, from half up a floating glass bar, the one floating bar the airport card's
    tabs are drawn in, the same height and width (`FloatingBar`, 2026-11-18),
    round Base UI's stock Toolbar (one tab stop, the arrows between them),
    of three buttons: Brief and Nav Log, each opening its card over FPL,
-   and the route's •••, "More", its one menu, three items (the owner, 2026-11-21): Route Options, Share link and Open in ForeFlight. Undo and Redo, Clear route, the map's choices,
+   and the route's •••, "More", its one menu, three items (the owner, 2026-11-21): Route Options, Share link and Open in ForeFlight, their glyphs and words lined up with Route Options' checkmark column as an iOS menu lines them up. Undo and Redo, Clear route, the map's choices,
    Show Fuel Stops, Refresh, Save and Type the Route are no longer its items:
    Undo is the toast's, "Route Cleared · Undo" or "Altitude Changed · Undo",
-   with Cmd-Z and Shift-Cmd-Z on a keyboard; Clear is FPL's ✕; Checkpoints
+   with Cmd-Z and Shift-Cmd-Z on a keyboard (the toast 5 s on screen, held
+   while hovered or focused: on a phone it lies over FPL's head; the HIG
+   review, 2026-11-21); Clear is FPL's ✕; Checkpoints
    a switch in the Map card (Route Checkpoints); Add Fuel Stops (also asking
    again for any taken out) the timeline's pill; Refresh and Save the Brief's
    Share menu (Refresh replans too); Type the Route a keyboard button at Add a
@@ -766,12 +785,18 @@ off by default (the owner, 2026-11-13).
   never a card, the page staying up, Undo bringing the route back; with no
   route it is dimmed, as iOS dims a toolbar button with nothing to do.
   The FPL button closes the page to Search, the route kept. Its title
-  "Flight Plan" is a heading's 20 in bold (CardHeadRow's name at
-  `nameSize="heading"`, the owner, 2026-11-21: "a bit bigger and move up a
-  bit"), lifted 4 points, the pills under it. The search in use on Search ends its row
+  "Flight Plan" is a heading's 20 in bold on the heading's own 25-point
+  line, iOS's Title 3 (CardHeadRow's name at `nameSize="heading"`, the
+  owner, 2026-11-21: "a bit bigger and move up a bit"; the rule over an
+  exemption, the HIG review), lifted 4 points, the pills under it; Search's
+  field is as tall as the two rows (49 at the default size), so a turn of
+  the page moves nothing. The search in use on Search ends its row
   with a round ✕, not the word Cancel. The map's buttons are 44-point
   buttons in their glass, Apple Maps' size, the right-hand group one
-  capsule.
+  capsule. They stay 44 and their glyphs 20 whatever the pilot's text
+  size, as Apple Maps' do not grow with Dynamic Type (`size.map-button`,
+  `size.glyph-map`; the scale audit, the owner, 2026-11-21): the 3D
+  button, the compass, the page toggle and the radio's circle too.
 - **One round toggle button turns the page** (the owner, 2026-11-13), a
   44-point disc in the field's white: on Search at the start of the first
   row, before the field, with the account button at its end, as Apple
@@ -1405,15 +1430,34 @@ word and figure drawn on the map, on all three apps, follows these rules:
    Inter in every look. A letter inside a mark's picture (R, M, H, a
    PIREP's glyph) is the system's sans serif (`MARK_FONT`), never the
    browser's default serif. Map words do not follow Dynamic Type: a
-   chart's lettering is fixed, and the map's density sets it.
-6. **Halos dim after dark.** The halo is one width (`map.label.halo`,
-   2 px), light (the chart's white round coloured or dark words) or dark
-   (the tag's dark round white words: a runway's number, the open field's
-   ident); words on their own chip, tab or pill have none. The white halo
-   is white at `map.label.halo-night` (0.6) in the page's dark theme, read
-   from `useDarkTheme`. Coloured words reach 4.5:1 on the white halo:
-   a VFR waypoint's ident is the green a step deeper
+   chart's lettering is fixed, and the map's density sets it. The one
+   exception is the Map card's **Larger Map Labels** switch (the owner,
+   2026-11-21, for his larger text size): on, every kind grows by the
+   pilot's text size over the standard 16 px, at most
+   `map.label.scale-max` (1.2x), one global state the layers' sizes read
+   (`labelScale`, `LABEL_SCALE`). Off by default. Words drawn as a picture
+   (a procedure's or a plate's tag, a way's chip, traffic's tag) keep
+   their size.
+6. **After dark, light words on a dark halo** (the owner, 2026-11-21,
+   in place of the white halo dimmed to 0.6 of 2026-11-18). The halo is
+   one width (`map.label.halo`, 2 px), light (the chart's white round
+   coloured or dark words) or dark (the tag's dark round white words: a
+   runway's number, the open field's ident); words on their own chip, tab
+   or pill have none. By day, coloured words reach 4.5:1 on the white
+   halo: a VFR waypoint's ident is the green a step deeper
    (`chart.vfr-green-text`), a cluster's count sits on `map-blue-ink`.
+   In the page's dark theme (`useDarkTheme`), as Apple Maps letters its
+   dark map, the light halo turns to the tag's dark at
+   `map.label.halo-night` (0.85) and each word's ink to its night ink
+   (`map.label.night-ink`: the towered blue #82b4ff, the untowered
+   magenta #f28ddc, the VFR green #62d48e, the fixes' near-white #eef1f5,
+   the TFR's and a limit's red #ff8a8a, and each hazard's colour lighter),
+   `labelInk` on every light-haloed layer. Worked out from the tokens
+   (WCAG 2.x relative luminance), on that halo over the chart dimmed to
+   half each ink is 6.5:1 or more, and 4.9:1 or more over an undimmed
+   white, so no word glares white and none falls under 4.5:1. Under the
+   white halo at 0.6 the coloured idents fell to about 2.5:1. The day
+   inks are the chart's own and stay as they are.
 7. **A field's ident looks the same whoever draws it.** Its colour is
    blue where it is towered and magenta where it is not, as the chart
    sets it. Its size follows the zoom. This holds on the tiles, a Class B
@@ -1436,7 +1480,7 @@ word and figure drawn on the map, on all three apps, follows these rules:
 
 |       | Web                                                                                                                                                                                                                                                                                                                                                 | iPhone                                                                        | Android           |
 | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------- |
-| Where | `lib/map/gl/layers/common` (`labelText`, `labelHalo`, `LABEL_HALO`), `glStyle`'s `airspaceLayers` and `TAB_BOX`, `glSuaLabels`, `glOverlays`' marks' order, `airportIcons`' `AIRPORT_IDENT_INK`, `procedureMarks`' `fixMarks(plated)`, `plates/plateLook`'s `usePlateTagged`, `plan-map/weatherMap`'s `areaLabel`, `TfrGl`, `TracksGl`'s `ReplayGl` | Not yet, on the owner's word (decision 0038): the tokens are generated for it | Not yet: the same |
+| Where | `lib/map/gl/layers/common` (`labelText`, `labelHalo`, `labelInk`, `labelScale`, `LABEL_HALO`), ChartGl's `LABEL_NIGHT` and `LABEL_SCALE`, MapLayers' Larger Map Labels, `glStyle`'s `airspaceLayers` and `TAB_BOX`, `glSuaLabels`, `glOverlays`' marks' order, `airportIcons`' `AIRPORT_IDENT_INK`, `procedureMarks`' `fixMarks(plated)`, `plates/plateLook`'s `usePlateTagged`, `plan-map/weatherMap`'s `areaLabel`, `TfrGl`, `TracksGl`'s `ReplayGl` | Not yet, on the owner's word (decision 0038): the tokens are generated for it | Not yet: the same |
 | Tests | `layers/common.test`, `glStyle.test`, `glOverlays.test`, `procedureMarks.test`, `plateTags.test`, `weatherMap.test`; `airspace-lines.spec`, `plates-map.spec`, `weather-map.spec`, `route-line.spec`; the tiles' `tab` in `services/jobs/charts/tests/test_overlays.py`, `services/planner/tests_wingtip/test_airspace_tabs.py`                     | --                                                                            | --                |
 
 ## 14. What is picked on the map (the owner, 2026-11-18)
