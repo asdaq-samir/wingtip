@@ -9,7 +9,7 @@ import Foundation
 /// pilot's own airplanes (in their account), and registrants the FAA types
 /// as an organisation. Anyone else is written as their kind and state,
 /// "Individual, WI", with no name, no town and no co-owners' names (the
-/// owner, 2026-11-21; docs/design/registry-names.md). The web keeps every
+/// owner, 2026-11-21; decision 0054, docs/design/rules.md 15). The web keeps every
 /// name, the owner's choice of 2026-11-14 ("it's public info"), since it is
 /// not on the App Store. A display rule of the store's, not an aviation
 /// rule, so it is the app's own, as Android's RegistryNames is.

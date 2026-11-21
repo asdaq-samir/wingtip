@@ -13,7 +13,7 @@ import app.wingtipmaps.android.api.generated.AircraftRegistration
  * airplanes (the card's OwnRecord, on the phone or the account), and
  * registrants the FAA types as an organisation. Anyone else
  * is their kind and state, "Individual, WI", with no name, no town and no
- * co-owners' names (the owner, 2026-11-21; docs/design/registry-names.md).
+ * co-owners' names (decision 0054; docs/design/rules.md, 15).
  * The web keeps every name, the owner's choice of 2026-11-14. A display
  * rule of the stores', not an aviation rule, so it is the app's own.
  */
@@ -29,7 +29,7 @@ object RegistryNames {
      */
     val ORGANISATIONS = setOf("corporation", "government", "llc", "non-citizen corporation")
 
-    fun isOrganisation(ownerType: String?): Boolean = ownerType?.trim()?.lowercase() in ORGANISATIONS
+    fun isOrganisation(ownerType: String?): Boolean = ownerType?.trim()?.lowercase()?.let { it in ORGANISATIONS } == true
 
     /** Whether the card names this registrant: the pilot's own airplane, or an organisation. */
     fun named(ownerType: String?, own: Boolean): Boolean = own || isOrganisation(ownerType)
