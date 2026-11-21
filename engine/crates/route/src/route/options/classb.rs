@@ -80,16 +80,9 @@ impl Edges {
     /// longitude had a mile short east and west by cos(latitude). Lines
     /// stay lines on that frame, so a crossing is a crossing on it too.
     fn near(&self, a: Point, b: Point, margin_nm: f64) -> bool {
-        let (s, w, n, e) = geo::corridor_bbox(a, b, margin_nm);
-        let (r0, c0) = cell_of((s, w));
-        let (r1, c1) = cell_of((n, e));
-        let flat = Flat::about((s + n) / 2.0, (w + e) / 2.0);
-        let on = |p: Point| {
-            let (x, y) = flat.nm(p.0, p.1);
-            (y, x)
-        };
-        let (a, b) = (on(a), on(b));
-        let check = |edges: &Vec<(Point, Point)>| edges.iter().any(|&(p, q)| segment_distance(a, b, on(p), on(q)) <= margin_nm);
+        let probe = Probe::new(a, b, margin_nm);
+        let (r0, c0, r1, c1) = probe.cells;
+        let check = |edges: &Vec<(Point, Point)>| edges.iter().any(|&(p, q)| probe.hits(p, q));
         let cells = ((r1 - r0 + 1) * (c1 - c0 + 1)) as usize;
         if cells > self.by_cell.len() {
             return self.by_cell.iter().any(|(&(r, c), edges)| (r0..=r1).contains(&r) && (c0..=c1).contains(&c) && check(edges));
@@ -105,6 +98,64 @@ impl Edges {
         }
         false
     }
+}
+
+/// One segment's test against edges, as Edges::near makes it: the index
+/// cells of its box padded by the margin, and its frame.
+struct Probe {
+    cells: (i64, i64, i64, i64),
+    flat: Flat,
+    a: Point,
+    b: Point,
+    margin_nm: f64,
+}
+
+impl Probe {
+    fn new(a: Point, b: Point, margin_nm: f64) -> Probe {
+        let (s, w, n, e) = geo::corridor_bbox(a, b, margin_nm);
+        let ((r0, c0), (r1, c1)) = (cell_of((s, w)), cell_of((n, e)));
+        let flat = Flat::about((s + n) / 2.0, (w + e) / 2.0);
+        let mut probe = Probe { cells: (r0, c0, r1, c1), flat, a, b, margin_nm };
+        (probe.a, probe.b) = (probe.on(a), probe.on(b));
+        probe
+    }
+
+    fn on(&self, p: Point) -> Point {
+        let (x, y) = self.flat.nm(p.0, p.1);
+        (y, x)
+    }
+
+    fn hits(&self, p: Point, q: Point) -> bool {
+        segment_distance(self.a, self.b, self.on(p), self.on(q)) <= self.margin_nm
+    }
+
+    /// Whether the cells from `lo` to `hi` (a box's corners) meet the
+    /// segment's.
+    fn meets(&self, lo: Point, hi: Point) -> bool {
+        let ((r0, c0), (r1, c1)) = (cell_of(lo), cell_of(hi));
+        let (s0, t0, s1, t1) = self.cells;
+        r0 <= s1 && r1 >= s0 && c0 <= t1 && c1 >= t0
+    }
+}
+
+/// Whether the leg crosses or touches an edge of one area: Edges::near at
+/// no margin over that area alone, without building its index. The edges
+/// tested are those the index would have filed in a cell of the leg's,
+/// the area let go at once where its whole box's cells meet none of them
+/// (every edge's cells lie in its box's), so the answer is the index's.
+fn crosses(area: &Area, start: Point, end: Point) -> bool {
+    let probe = Probe::new(start, end, 0.0);
+    let (s, w, n, e) = area.bounds();
+    if !probe.meets((s, w), (n, e)) {
+        return false;
+    }
+    area.rings.iter().any(|ring| {
+        let k = ring.len();
+        (0..k).any(|i| {
+            let (a, b) = (ring[i], ring[(i + 1) % k]);
+            probe.meets((a.0.min(b.0), a.1.min(b.1)), (a.0.max(b.0), a.1.max(b.1))) && probe.hits(a, b)
+        })
+    })
 }
 
 fn orient(a: Point, b: Point, c: Point) -> f64 {
@@ -138,7 +189,7 @@ pub fn entered(start: Point, end: Point, shelves: &[Shelf], altitude_ft: f64) ->
             && s.ceiling_ft.is_none_or(|c| altitude_ft <= c)
             && (s.area.contains(start.0, start.1)
                 || s.area.contains(end.0, end.1)
-                || Edges::new(std::iter::once(&s.area)).near(start, end, 0.0))
+                || crosses(&s.area, start, end))
     })
 }
 
@@ -264,71 +315,4 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    // A square of Class B, a tenth of a degree across each way, on the line
-    // from (0, 0) north to (1, 0): Midway to Duluth over O'Hare.
-    fn core(floor: f64, ceiling: f64) -> Shelf {
-        Shelf {
-            floor_ft: floor,
-            ceiling_ft: Some(ceiling),
-            area: Area { rings: vec![vec![(0.4, -0.1), (0.4, 0.1), (0.6, 0.1), (0.6, -0.1)]] },
-        }
-    }
-
-    fn fix(ident: &str, lat: f64, lon: f64, vfr: bool) -> Fix {
-        Fix { ident: ident.into(), lat, lon, vfr, kind: if vfr { "VFR waypoint".into() } else { "GPS waypoint".into() } }
-    }
-
-    fn idents(ways: &[Detour]) -> Vec<&str> {
-        ways.iter().map(|w| w.ident.as_str()).collect()
-    }
-
-    #[test]
-    fn the_margin_is_a_mile_east_and_west_too() {
-        // At 60 N a degree of longitude is 30 nm: 0.025 degrees east of the
-        // edge is 0.75 nm, inside the mile (degrees alone read 1.5 nm), and
-        // 0.04 degrees is 1.2 nm, outside it.
-        let edges = Edges::new(std::iter::once(&Area { rings: vec![vec![(59.9, -0.1), (59.9, 0.1), (60.1, 0.1), (60.1, -0.1)]] }));
-        assert!(edges.near((59.95, 0.125), (60.05, 0.125), DETOUR_MARGIN_NM));
-        assert!(!edges.near((59.95, 0.14), (60.05, 0.14), DETOUR_MARGIN_NM));
-        // And north, a minute of latitude a mile: 0.9 nm in, 1.2 nm out.
-        assert!(edges.near((60.115, -0.05), (60.115, 0.05), DETOUR_MARGIN_NM));
-        assert!(!edges.near((60.12, -0.05), (60.12, 0.05), DETOUR_MARGIN_NM));
-    }
-
-    #[test]
-    fn the_detour_is_the_shortest_way_round_out_of_the_class_b() {
-        let fixes = [fix("VPFAR", 0.5, -0.6, true), fix("VPMID", 0.5, 0.0, true), fix("VPNEAR", 0.5, -0.2, true)];
-        let ways = detours((0.0, 0.0), (1.0, 0.0), &[core(0.0, 10000.0)], 10000.0, &fixes);
-        assert_eq!(idents(&ways), vec!["VPNEAR", "VPFAR"]);
-        assert_eq!(ways[0].kind, "VFR waypoint");
-        assert!(ways[0].added_nm > 0.0 && ways[0].added_nm < 5.0);
-        // A mile's margin: a fix just outside the edge has its legs within it.
-        assert!(detours((0.0, 0.0), (1.0, 0.0), &[core(0.0, 10000.0)], 10000.0, &[fix("VPEDGE", 0.5, -0.105, true)]).is_empty());
-        // A shelf over the altitude flown is passed under.
-        assert!(detours((0.0, 0.0), (1.0, 0.0), &[core(3000.0, 10000.0)], 2500.0, &fixes).is_empty());
-    }
-
-    #[test]
-    fn a_vfr_waypoint_comes_before_a_gps_fix_that_saves_less_than_ten_miles_and_a_handful_at_most() {
-        let fixes = [fix("GPSNR", 0.5, -0.15, false), fix("VPOUT", 0.5, -0.25, true)];
-        assert_eq!(idents(&detours((0.0, 0.0), (1.0, 0.0), &[core(0.0, 10000.0)], 10000.0, &fixes)), vec!["VPOUT", "GPSNR"]);
-        assert!(detours((0.0, 0.0), (1.0, 0.0), &[core(0.0, 10000.0)], 10000.0, &[fix("VPGONE", 0.5, -3.0, true)]).is_empty());
-        let many: Vec<Fix> = (0..DETOUR_CHOICES + 3).map(|i| fix(&format!("VP{i:03}"), 0.5, -0.2 - i as f64 * 0.01, true)).collect();
-        assert_eq!(detours((0.0, 0.0), (1.0, 0.0), &[core(0.0, 10000.0)], 10000.0, &many).len(), DETOUR_CHOICES);
-    }
-
-    #[test]
-    fn a_leg_enters_class_b_only_between_its_floor_and_ceiling() {
-        let shelf = [core(3600.0, 10000.0)];
-        let through = ((0.0, 0.0), (1.0, 0.0));
-        assert!(entered(through.0, through.1, &shelf, 4500.0));
-        assert!(entered(through.0, through.1, &shelf, 3600.0));
-        assert!(!entered(through.0, through.1, &shelf, 3500.0));
-        assert!(!entered(through.0, through.1, &shelf, 10500.0));
-        // Beside it, not through it.
-        assert!(!entered((0.0, 0.5), (1.0, 0.5), &shelf, 4500.0));
-    }
-}
+mod tests;
