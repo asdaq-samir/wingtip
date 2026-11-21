@@ -1,6 +1,7 @@
 import { Meter } from "react-aria-components";
 import { cn } from "cn";
 import { TEXT } from "../../lib/text";
+import { gaugeWords } from "./gaugeWords";
 
 /**
  * The fuel in the tanks as a gauge and its gallons, as Tesla's trip planner
@@ -23,12 +24,7 @@ export function FuelGauge({ gal, usable, tone }: { gal: number; usable: number |
     TEXT.note,
     tone === "low" ? "text-destructive-ink" : tone === "fuel" ? "text-foreground" : "text-muted-foreground",
   );
-  // Past empty the gallons short, with a minus (the engine's
-  // fuel_in_tanks; the owner, 2026-11-20: "Instead of showing 0 gal, can
-  // you show negative gal"), rounded the same way down, so never fewer
-  // short than there are.
-  const whole = Math.floor(gal);
-  const words = `${whole < 0 ? "\u2212" : ""}${Math.abs(whole)} gal`;
+  const words = gaugeWords(gal);
   if (!usable)
     return (
       <span className={look}>

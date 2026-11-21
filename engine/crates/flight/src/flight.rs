@@ -116,6 +116,24 @@ pub const NIGHT_RESERVE_MIN: f64 = 45.0;
 /// the destination), day or night.
 pub const IFR_RESERVE_MIN: f64 = 45.0;
 
+/// The fuel in the tanks as a flight leaves a field, gallons: the pilot's
+/// own figure where they set one (`fill_gal`), else full, the usable fuel
+/// (the planner's way since the first fuel check: the tanks filled at the
+/// departure and at each field landed at). At the departure the figure is
+/// what is on board at engine start; at a stop it is what the tanks are
+/// fuelled to, so a figure under what is left (`left_gal`, None where the
+/// leg in has no burn known) keeps what is left -- 0 is "no fuel bought".
+/// A figure over the usable fuel is kept as set, with the app's warning:
+/// warn, never limit (the owner's rule); the tanks' size is the airplane's
+/// handbook figure, not ours to cap the pilot's word at.
+pub fn tanks_leaving(usable_gal: f64, fill_gal: Option<f64>, left_gal: Option<f64>) -> f64 {
+    match (fill_gal, left_gal) {
+        (Some(fill), Some(left)) => fill.max(left),
+        (Some(fill), None) => fill,
+        (None, _) => usable_gal,
+    }
+}
+
 /// The reserve in minutes for the rules flown and the time of day.
 pub fn reserve_min(ifr: bool, night: bool) -> f64 {
     if ifr {

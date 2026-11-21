@@ -4624,11 +4624,14 @@ enum EngineContract {
         var fuelGal: Double?
         /// The tanks filled on landing there.
         var refuel: Bool?
+        /// The pilot's own figure for the tanks as the airplane leaves there, gallons: at the departure the fuel on board at engine start, at a field landed at what it is fuelled to (under what is left keeps what is left; 0, no fuel bought); null, full.
+        var fillGal: Double?
 
         enum CodingKeys: String, CodingKey {
             case departure
             case fuelGal = "fuel_gal"
             case refuel
+            case fillGal = "fill_gal"
         }
     }
 
@@ -4678,6 +4681,8 @@ enum EngineContract {
         var fuelPerNm: Double
         var minPerNm: Double
         var usableGal: Double
+        /// The fuel in the tanks at the start, gallons (the pilot's own, at engine start; null, full, usable_gal): the first stretch's reach and its landing's fuel. Each stop fills the tanks.
+        var startGal: Double?
         var taxiGal: Double
         var reserveGal: Double
         var groundMin: Double?
@@ -4690,6 +4695,7 @@ enum EngineContract {
             case fuelPerNm = "fuel_per_nm"
             case minPerNm = "min_per_nm"
             case usableGal = "usable_gal"
+            case startGal = "start_gal"
             case taxiGal = "taxi_gal"
             case reserveGal = "reserve_gal"
             case groundMin = "ground_min"
@@ -7870,6 +7876,10 @@ enum EngineContract {
         var fuelRequiredGal: Double?
         var usableFuelGal: Double?
         var fuelMarginGal: Double?
+        /// The fuel in the tanks as the flight leaves, gallons; null with no airplane or no usable fuel known and none set.
+        var onBoardGal: Double?
+        /// The fuel it lands with: on_board_gal less the start and taxi allowance and the trip; null where either is not known.
+        var landsWithGal: Double?
         var night: Bool?
         var rules: String
 
@@ -7880,6 +7890,8 @@ enum EngineContract {
             case fuelRequiredGal = "fuel_required_gal"
             case usableFuelGal = "usable_fuel_gal"
             case fuelMarginGal = "fuel_margin_gal"
+            case onBoardGal = "on_board_gal"
+            case landsWithGal = "lands_with_gal"
             case night
             case rules
         }
@@ -7893,6 +7905,10 @@ enum EngineContract {
         var night: Bool?
         var rules: String?
         var alternateGal: Double?
+        /// The pilot's own figure for the tanks as the flight leaves, gallons: at the departure the fuel on board at engine start, at a stop what it is fuelled to (0, no fuel bought); null, full.
+        var fillGal: Double?
+        /// At a stop, what the flight before landed with (its lands_with_gal), which fuelling never takes from; null at the departure or where not known.
+        var leftGal: Double?
 
         enum CodingKeys: String, CodingKey {
             case totalFuelGal = "total_fuel_gal"
@@ -7900,6 +7916,8 @@ enum EngineContract {
             case night
             case rules
             case alternateGal = "alternate_gal"
+            case fillGal = "fill_gal"
+            case leftGal = "left_gal"
         }
     }
 
@@ -7907,6 +7925,8 @@ enum EngineContract {
         var fuelPerNm: Double
         var minPerNm: Double
         var usableGal: Double
+        /// The fuel in the tanks as the flight leaves (the totals' on_board_gal; full where it has none), for fuel_stops' first stretch.
+        var startGal: Double
         var taxiGal: Double
         var reserveGal: Double
 
@@ -7914,6 +7934,7 @@ enum EngineContract {
             case fuelPerNm = "fuel_per_nm"
             case minPerNm = "min_per_nm"
             case usableGal = "usable_gal"
+            case startGal = "start_gal"
             case taxiGal = "taxi_gal"
             case reserveGal = "reserve_gal"
         }
@@ -7961,6 +7982,8 @@ enum EngineContract {
     struct NavlogFuelStopNeedInputTotals: Codable, Equatable, Sendable {
         var fuelMarginGal: Double?
         var usableFuelGal: Double?
+        /// The fuel in the tanks as the flight leaves (navlog_fuel_plan's); null, full.
+        var onBoardGal: Double?
         var distanceNm: Double?
         var fuelGal: Double?
         var eteMin: Double?
@@ -7972,6 +7995,7 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case fuelMarginGal = "fuel_margin_gal"
             case usableFuelGal = "usable_fuel_gal"
+            case onBoardGal = "on_board_gal"
             case distanceNm = "distance_nm"
             case fuelGal = "fuel_gal"
             case eteMin = "ete_min"

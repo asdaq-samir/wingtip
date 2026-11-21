@@ -63,3 +63,47 @@ def test_none_where_the_fuel_check_passes_or_cannot_be_made(monkeypatch):
     assert plan.fuel_stops_of(ROUTE, [{**SHORT, "fuel_margin_gal": 2.0}], FLOWN) == []
     assert plan.fuel_stops_of(ROUTE, [{**SHORT, "usable_fuel_gal": None}], FLOWN) == []
     assert plan.fuel_stops_of(ROUTE, [{**SHORT, "fuel_gal": None}], FLOWN) == []
+
+
+def test_the_first_stretch_is_flown_on_the_fuel_on_board(monkeypatch):
+    # The pilot's own 30 gal at engine start (the query's `tanks`, the
+    # totals' on_board_gal): the stops are looked for from it, the tanks
+    # full at each stop after.
+    asked = {}
+
+    def suggest(start, end, **figures):
+        asked.update(figures)
+        return [STOP], []
+
+    monkeypatch.setattr(fuelstops, "suggest", suggest)
+    plan.fuel_stops_of(ROUTE, [{**SHORT, "on_board_gal": 30.0}], FLOWN)
+    assert (asked["start_gal"], asked["usable_gal"]) == (30.0, 48.0)
+    plan.fuel_stops_of(ROUTE, [SHORT], FLOWN)
+    assert asked["start_gal"] == 48.0
+
+
+def test_each_flights_check_is_against_what_the_tanks_leave_with():
+    from wingtip.planning import flight_totals
+
+    profile = {"fuel_burn_gph": 8.0, "usable_fuel_gal": 40.0, "taxi_fuel_gal": 1.4}
+    leg = {"distance_nm": 100.0, "ete_min": 60.0, "fuel_gal": 8.0, "tas_kt": 100.0, "wind": {}}
+    depart = datetime(2026, 6, 21, 15, 0, tzinfo=timezone.utc)
+    full = flight_totals([leg], profile, ROUTE, depart)
+    own = flight_totals([leg], profile, ROUTE, depart, tanks=(20.0, None))
+    assert (full["on_board_gal"], own["on_board_gal"]) == (40.0, 20.0)
+    assert round(full["fuel_margin_gal"] - own["fuel_margin_gal"], 1) == 20.0
+    # At a stop with no fuel bought (0): what the flight before landed with.
+    assert flight_totals([leg], profile, ROUTE, depart, tanks=(0.0, 12.5))["on_board_gal"] == 12.5
+
+
+def test_the_tanks_asked_are_read_by_field():
+    import pytest
+    from fastapi import HTTPException
+
+    from app.plan_query import PlanQuery
+
+    assert PlanQuery(dep="KOSH", dest="KJVL", tanks="kosh:30,KJVL:0").own_tanks() == {"KOSH": 30.0, "KJVL": 0.0}
+    # More than any tanks hold is the pilot's word (warn, never limit).
+    assert PlanQuery(dep="KOSH", dest="KJVL", tanks="KOSH:900").own_tanks() == {"KOSH": 900.0}
+    with pytest.raises(HTTPException):
+        PlanQuery(dep="KOSH", dest="KJVL", tanks="KOSH:full").own_tanks()

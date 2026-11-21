@@ -732,6 +732,10 @@ export type NavLogFuelStopNeedAnswer = {
   fuel_per_nm: number;
   min_per_nm: number;
   usable_gal: number;
+  /**
+   * The fuel in the tanks as the flight leaves (the totals' on_board_gal; full where it has none), for fuel_stops' first stretch.
+   */
+  start_gal: number;
   taxi_gal: number;
   reserve_gal: number;
 } | null;
@@ -2140,7 +2144,7 @@ export interface EngineContract {
     answer: FuelEstimateAnswer;
   };
   /**
-   * The fuel in the tanks at each point of the route and whether it is under the reserve: full at the departure, the start, taxi and takeoff allowance and each leg's burn taken from them after, filled again at each field landed at, as the planner checks each flight; negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.
+   * The fuel in the tanks at each point of the route and whether it is under the reserve: at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.
    */
   fuel_in_tanks: {
     input: FuelInTanksInput;
@@ -2749,7 +2753,7 @@ export interface EngineContract {
     answer: NavLogCandidatesAnswer;
   };
   /**
-   * The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), and 45 where `night` is null (no departure time: night cannot be ruled out, so the larger is assumed), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
+   * The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), and 45 where `night` is null (no departure time: night cannot be ruled out, so the larger is assumed), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel; the margin is against the fuel in the tanks as the flight leaves (on_board_gal): full, the usable fuel, unless the pilot set their own (fill_gal: at the departure the fuel on board at engine start, at a stop what it is fuelled to, never under what the flight before left, left_gal; more than usable kept as set, with a warning); lands_with_gal is what it lands with, the next flight's left_gal.
    */
   navlog_fuel_plan: {
     input: NavLogFuelPlanInput;
@@ -7521,6 +7525,10 @@ export interface FuelInTanksInput {
      * The tanks filled on landing there.
      */
     refuel?: boolean | null;
+    /**
+     * The pilot's own figure for the tanks as the airplane leaves there, gallons: at the departure the fuel on board at engine start, at a field landed at what it is fuelled to (under what is left keeps what is left; 0, no fuel bought); null, full.
+     */
+    fill_gal?: number | null;
   }[];
   usable_gal: number;
   taxi_gal: number;
@@ -7543,6 +7551,10 @@ export interface FuelStopsInput {
   fuel_per_nm: number;
   min_per_nm: number;
   usable_gal: number;
+  /**
+   * The fuel in the tanks at the start, gallons (the pilot's own, at engine start; null, full, usable_gal): the first stretch's reach and its landing's fuel. Each stop fills the tanks.
+   */
+  start_gal?: number | null;
   taxi_gal: number;
   reserve_gal: number;
   ground_min?: number | null;
@@ -9635,6 +9647,14 @@ export interface NavLogFuelPlanInput {
   night?: boolean | null;
   rules?: "vfr" | "ifr" | null;
   alternate_gal?: number | null;
+  /**
+   * The pilot's own figure for the tanks as the flight leaves, gallons: at the departure the fuel on board at engine start, at a stop what it is fuelled to (0, no fuel bought); null, full.
+   */
+  fill_gal?: number | null;
+  /**
+   * At a stop, what the flight before landed with (its lands_with_gal), which fuelling never takes from; null at the departure or where not known.
+   */
+  left_gal?: number | null;
 }
 export interface NavLogFuelPlanAnswer {
   reserve_min: number;
@@ -9643,6 +9663,14 @@ export interface NavLogFuelPlanAnswer {
   fuel_required_gal: number | null;
   usable_fuel_gal: number | null;
   fuel_margin_gal: number | null;
+  /**
+   * The fuel in the tanks as the flight leaves, gallons; null with no airplane or no usable fuel known and none set.
+   */
+  on_board_gal: number | null;
+  /**
+   * The fuel it lands with: on_board_gal less the start and taxi allowance and the trip; null where either is not known.
+   */
+  lands_with_gal: number | null;
   night: boolean | null;
   rules: string;
 }
@@ -9653,6 +9681,10 @@ export interface NavLogFuelStopNeedInput {
   totals: {
     fuel_margin_gal?: number | null;
     usable_fuel_gal?: number | null;
+    /**
+     * The fuel in the tanks as the flight leaves (navlog_fuel_plan's); null, full.
+     */
+    on_board_gal?: number | null;
     distance_nm?: number | null;
     fuel_gal?: number | null;
     ete_min?: number | null;

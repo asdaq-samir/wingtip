@@ -133,6 +133,11 @@ export interface ProceduresRouteProps {
    *  start, taxi and takeoff allowance and the reserve the flight is held
    *  to (the totals' fuel check); none known, no fuel shown. */
   fuel?: { usableGal: number; taxiGal: number; reserveGal: number } | null;
+  /** The pilot's own fuel leaving a field, gallons by its ident (the
+   *  address's `tanks`), and setting it from the field's gauge (FuelSet);
+   *  null back to full. None, the gauges are read only. */
+  tanks?: Record<string, number>;
+  onTanks?: (ident: string, gallons: number | null) => void;
   /** The route line under the departure (RouteLine): the planner's ways as
    *  chips, the one picked, and the way to pick one; none, no line. */
   routeLine?: RouteLineChoices | null;

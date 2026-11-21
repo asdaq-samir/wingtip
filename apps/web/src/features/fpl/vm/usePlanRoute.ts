@@ -2,7 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { useWindPicks, holdsOf, holdsParam, type PlanParams, departureRunways, landingRunways, namesRoute } from "../../plan";
 import type { PlannedRoute, PlanCourse } from "../../plan";
-import { altitudesOf, altitudesParam, departureOf, groundOf, identOf, nameOwnPoints, routeOf, stopsOf } from "../../../lib/identSchema";
+import {
+  altitudesOf,
+  altitudesParam,
+  departureOf,
+  groundOf,
+  identOf,
+  nameOwnPoints,
+  routeOf,
+  stopsOf,
+  tanksOf,
+} from "../../../lib/identSchema";
 import { useEngineWhen } from "../../../lib/engine/useEngineReady";
 import { usePreferences } from "../../../lib/preferences";
 import { addressParams, useAddress } from "../../../lib/address";
@@ -141,6 +151,10 @@ export function usePlanRoute() {
   // its point (plan.with_holds), set from a point's menu in FPL's list.
   const holdsParamText = address.holds;
   const holds = useMemo(() => holdsOf(holdsParamText), [holdsParamText]);
+  // The fuel the pilot set in the tanks leaving a field (`tanks`,
+  // "KOSH:30,KJVL:0"), from FPL's gauges (FuelSet); one not named, full.
+  const tanksParamText = address.tanks;
+  const tanks = useMemo(() => tanksOf(tanksParamText), [tanksParamText]);
   // The runway each departure picked is left from ("KSTL:30R"): the
   // departure field's runway picked, a stop's to leave from -- flown by its
   // runway transition for it (wingtip.procedure_paths), where St. Louis's
@@ -186,6 +200,7 @@ export function usePlanRoute() {
     crossings: altitudesParam(crossings),
     ground: altitudesParam(ground),
     holds: holdsParam(holds),
+    tanks: altitudesParam(tanks),
     localMin,
     rules: flightRules,
     // Under IFR, the alternate filed in the Weather tab (AlternateSection).
@@ -222,6 +237,7 @@ export function usePlanRoute() {
     crossings,
     ground,
     holds,
+    tanks,
     directParam: address.direct,
     planInputs,
     ...edits,

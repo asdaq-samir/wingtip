@@ -5575,6 +5575,9 @@ data class Totals (
     @SerialName("night_passengers")
     val nightPassengers: Boolean? = null,
 
+    @SerialName("on_board_gal")
+    val onBoardGal: Double? = null,
+
     @SerialName("planned_at")
     val plannedAt: String? = null,
 

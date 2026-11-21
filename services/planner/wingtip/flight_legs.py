@@ -117,8 +117,11 @@ def totals_of(r, runs: list[HopRun], outcome: Flown, asked: Asked) -> dict:
     through any waypoints (Route.flights), with its fuel check, joined
     (wingtip.planning.route_totals). Under IFR with an alternate filed
     (Asked.alternate), the last flight's check carries the leg on to it
-    (alternate_leg)."""
-    per_flight, flown, at = [], [], 0
+    (alternate_leg). Each flight's check is against the fuel in the tanks
+    as it leaves (Asked.tanks: the pilot's own, at engine start or fuelled
+    to at a stop, never under what the flight before landed with; else
+    full), as FPL's fuel gauges walk the tanks (fuel_in_tanks)."""
+    per_flight, flown, at, left = [], [], 0, None
     for i, flight in enumerate(r.flights):
         hops = len(flight.idents) - 1
         legs = [leg for legs in outcome.hop_legs[at : at + hops] for leg in legs]
@@ -127,7 +130,9 @@ def totals_of(r, runs: list[HopRun], outcome: Flown, asked: Asked) -> dict:
         if asked.rules == "ifr" and asked.alternate and i == len(r.flights) - 1 and legs:
             dest = {"ident": r.dest_ident, "lat": r.end[0], "lon": r.end[1]}
             leg_on = alternate_leg(dest, asked.alternate, legs[-1]["altitude_ft"], asked.profile, runs[-1].fcst_hr)
-        per_flight.append(flight_totals(legs, asked.profile, flight, runs[at].depart, asked.rules, leg_on))
+        tanks = (asked.tanks.get(flight.dep_ident.upper()), left)
+        per_flight.append(flight_totals(legs, asked.profile, flight, runs[at].depart, asked.rules, leg_on, tanks))
+        left = per_flight[-1].get("lands_with_gal")
         at += hops
     totals = route_totals(per_flight, r.flights)
     totals["fuel_stops"] = fuel_stops_of(r, per_flight, flown)
@@ -159,6 +164,7 @@ def fuel_stops_of(r, per_flight: list[dict], flown: list[tuple[list[dict], datet
                 for k in (
                     "fuel_margin_gal",
                     "usable_fuel_gal",
+                    "on_board_gal",
                     "distance_nm",
                     "fuel_gal",
                     "ete_min",

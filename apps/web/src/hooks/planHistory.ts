@@ -118,6 +118,7 @@ const PARTS: readonly (readonly [string, readonly string[]])[] = [
   ["Altitude", ["altitude_ft", "altitude_nearest", "altitude_choice", "altitudes"]],
   ["Procedures", ["procs", "cross", "holds", "pattern", "takeoff", "auto"]],
   ["Stops", ["fuel", "ground", "alternate"]],
+  ["Fuel", ["tanks"]],
   ["Departure Time", ["depart"]],
   ["Airplane", [AIRPLANE_KEY]],
 ];

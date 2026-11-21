@@ -32,7 +32,7 @@ class Asked:
     (wingtip.procedures.procedure_drawing), `leave_runways` and `land_runways`
     the runways picked by field, `wind_runways` whether the rest are picked
     into the wind (wind_picks), `ground` the minutes on the ground at stops,
-    `holds` the pilot's holds, `checkpoints` whether the legs run by the
+    `tanks` the fuel the pilot set in the tanks leaving a field, `holds` the pilot's holds, `checkpoints` whether the legs run by the
     chart's checkpoints, and `alternate` the IFR alternate filed, as the
     airports table has it with its ident."""
 
@@ -50,6 +50,7 @@ class Asked:
     land_runways: dict = field(default_factory=dict)
     wind_runways: bool = False
     ground: dict = field(default_factory=dict)
+    tanks: dict = field(default_factory=dict)  # the pilot's own fuel leaving a field, gallons
     holds: list = field(default_factory=list)
     checkpoints: bool = True
     alternate: dict | None = None

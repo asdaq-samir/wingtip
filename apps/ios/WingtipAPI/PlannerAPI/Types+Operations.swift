@@ -13133,6 +13133,8 @@ public enum Operations {
                 public var holds: Swift.String?
                 /// - Remark: Generated from `#/paths/api/local-flight/GET/query/ground`.
                 public var ground: Swift.String?
+                /// - Remark: Generated from `#/paths/api/local-flight/GET/query/tanks`.
+                public var tanks: Swift.String?
                 /// - Remark: Generated from `#/paths/api/local-flight/GET/query/checkpoints`.
                 public var checkpoints: Swift.Bool?
                 /// Creates a new `Query`.
@@ -13170,6 +13172,7 @@ public enum Operations {
                 ///   - crossings:
                 ///   - holds:
                 ///   - ground:
+                ///   - tanks:
                 ///   - checkpoints:
                 public init(
                     durationMin: Swift.Double? = nil,
@@ -13204,6 +13207,7 @@ public enum Operations {
                     crossings: Swift.String? = nil,
                     holds: Swift.String? = nil,
                     ground: Swift.String? = nil,
+                    tanks: Swift.String? = nil,
                     checkpoints: Swift.Bool? = nil
                 ) {
                     self.durationMin = durationMin
@@ -13238,6 +13242,7 @@ public enum Operations {
                     self.crossings = crossings
                     self.holds = holds
                     self.ground = ground
+                    self.tanks = tanks
                     self.checkpoints = checkpoints
                 }
             }
@@ -14189,6 +14194,8 @@ public enum Operations {
                 public var holds: Swift.String?
                 /// - Remark: Generated from `#/paths/api/navlog/GET/query/ground`.
                 public var ground: Swift.String?
+                /// - Remark: Generated from `#/paths/api/navlog/GET/query/tanks`.
+                public var tanks: Swift.String?
                 /// - Remark: Generated from `#/paths/api/navlog/GET/query/checkpoints`.
                 public var checkpoints: Swift.Bool?
                 /// Creates a new `Query`.
@@ -14226,6 +14233,7 @@ public enum Operations {
                 ///   - crossings:
                 ///   - holds:
                 ///   - ground:
+                ///   - tanks:
                 ///   - checkpoints:
                 public init(
                     ahead: Swift.Bool? = nil,
@@ -14260,6 +14268,7 @@ public enum Operations {
                     crossings: Swift.String? = nil,
                     holds: Swift.String? = nil,
                     ground: Swift.String? = nil,
+                    tanks: Swift.String? = nil,
                     checkpoints: Swift.Bool? = nil
                 ) {
                     self.ahead = ahead
@@ -14294,6 +14303,7 @@ public enum Operations {
                     self.crossings = crossings
                     self.holds = holds
                     self.ground = ground
+                    self.tanks = tanks
                     self.checkpoints = checkpoints
                 }
             }
@@ -17569,6 +17579,8 @@ public enum Operations {
                 public var holds: Swift.String?
                 /// - Remark: Generated from `#/paths/api/plan/GET/query/ground`.
                 public var ground: Swift.String?
+                /// - Remark: Generated from `#/paths/api/plan/GET/query/tanks`.
+                public var tanks: Swift.String?
                 /// - Remark: Generated from `#/paths/api/plan/GET/query/checkpoints`.
                 public var checkpoints: Swift.Bool?
                 /// Creates a new `Query`.
@@ -17605,6 +17617,7 @@ public enum Operations {
                 ///   - crossings:
                 ///   - holds:
                 ///   - ground:
+                ///   - tanks:
                 ///   - checkpoints:
                 public init(
                     dep: Swift.String,
@@ -17638,6 +17651,7 @@ public enum Operations {
                     crossings: Swift.String? = nil,
                     holds: Swift.String? = nil,
                     ground: Swift.String? = nil,
+                    tanks: Swift.String? = nil,
                     checkpoints: Swift.Bool? = nil
                 ) {
                     self.dep = dep
@@ -17671,6 +17685,7 @@ public enum Operations {
                     self.crossings = crossings
                     self.holds = holds
                     self.ground = ground
+                    self.tanks = tanks
                     self.checkpoints = checkpoints
                 }
             }

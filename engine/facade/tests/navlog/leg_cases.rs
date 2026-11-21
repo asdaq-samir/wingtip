@@ -129,3 +129,23 @@ fn the_alternate_leg_falls_back_to_still_air() {
     assert_eq!(flown["still_air"], json!(false));
     assert!(f(&flown["ete_min"]) != f(&still["ete_min"]));
 }
+
+#[test]
+fn the_fuel_check_is_against_the_fuel_on_board() {
+    // 40 usable, 1.4 taxi, 8 gph: a 20 gal trip by day needs 20 + 1.4 + 4
+    // (91.151(a)(1)'s 30 minutes) = 25.4. Full, 14.6 to spare; with the
+    // pilot's 25 at engine start, 0.4 short. At a stop fuelled "to 5" with
+    // 12 left, the 12 (fuelling takes none out), landing with 12 - 1.4 - 5.
+    let p = json!({"fuel_burn_gph": 8.0, "taxi_fuel_gal": 1.4, "usable_fuel_gal": 40.0});
+    let plan = |extra: serde_json::Value| {
+        let mut ask_in = json!({"total_fuel_gal": 20.0, "profile": p, "night": false});
+        ask_in.as_object_mut().unwrap().extend(extra.as_object().unwrap().clone());
+        ask("navlog_fuel_plan", ask_in)
+    };
+    let full = plan(json!({}));
+    assert_eq!((f(&full["on_board_gal"]), f(&full["fuel_margin_gal"]), f(&full["lands_with_gal"])), (40.0, 14.6, 18.6));
+    let own = plan(json!({"fill_gal": 25.0}));
+    assert_eq!((f(&own["on_board_gal"]), f(&own["fuel_margin_gal"])), (25.0, -0.4));
+    let stop = plan(json!({"total_fuel_gal": 5.0, "fill_gal": 5.0, "left_gal": 12.0}));
+    assert_eq!((f(&stop["on_board_gal"]), f(&stop["lands_with_gal"])), (12.0, 5.6));
+}

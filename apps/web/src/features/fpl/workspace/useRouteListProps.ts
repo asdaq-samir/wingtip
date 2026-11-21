@@ -13,8 +13,9 @@ export type RouteListSlices = PlanSlices<"route" | "plan" | "cards" | "picks" | 
  * (useRouteListEdit), on the ground alone.
  */
 export function useRouteListProps(vm: RouteListSlices) {
-  const { crossings, depart, directParam, ground, holds, insertStopAfter, planned, removeStop, routePoints, setPointAltitude } = vm.route;
-  const { changeDepart, directToPoint, setGround, setHold } = vm.plan;
+  const { crossings, depart, directParam, ground, holds, insertStopAfter, planned, removeStop, routePoints, setPointAltitude, tanks } =
+    vm.route;
+  const { changeDepart, directToPoint, setGround, setHold, setTanks } = vm.plan;
   const { selectPlace, setApproachesOf } = vm.cards;
   const {
     autoPicked,
@@ -79,6 +80,9 @@ export function useRouteListProps(vm: RouteListSlices) {
       routePoints,
       stopsFull: planned.stops.length >= MAX_STOPS,
       fuel: tankFigures,
+      // The gauges set where the list edits the route, on the ground.
+      tanks,
+      onTanks: read ? undefined : setTanks,
       onCharts: () => {
         if (planned.dest) {
           setApproachesOf(planned.dest);
@@ -132,6 +136,8 @@ export function useRouteListProps(vm: RouteListSlices) {
       routePoints,
       planned.stops.length,
       tankFigures,
+      tanks,
+      setTanks,
       listEdit,
       flying,
       read,

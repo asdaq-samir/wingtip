@@ -67,6 +67,7 @@ export function usePlan({
   altitudeNearest = false,
   patterns = "",
   settling = false,
+  tanks = "",
 }: PlanParams) {
   const routeKnown = routeOf(dep, dest, stops) !== null;
   // An airport to itself with no stop between: a local flight (the pattern,
@@ -114,6 +115,7 @@ export function usePlan({
     holds,
     altitudeNearest,
     patterns,
+    tanks,
   };
   const planKey = planKeyOf(plan);
   const navlog = useQuery({ ...navlogQuery(plan, withCheckpoints), enabled: routeKnown && !settling });

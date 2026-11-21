@@ -500,7 +500,24 @@ off by default (the owner, 2026-11-13).
    it, and Add a Stop saying "Up to 16 stops" when the route is full (the
    grouped box's audit, 2026-11-20); after a hairline inset to the
    text its ident (a link to its card), the fuel in the tanks there (past empty the gallons short, "−12 gal", the owner, 2026-11-20) right
-   after it, at the right its time (the departure's a picker); no city; below full, two stops
+   after it -- at the departure and at a stop the gauge is a button
+   (the owner, 2026-11-21: "can we set the fuel tank by tapping on it?";
+   `procedures/FuelSet`), named with its gallons ("36 gal, fuel on
+   board: change"), opening a stock Popover from a tablet's width up and
+   the app's sheet with Cancel and Done on a phone, as a waypoint's
+   altitude does: at the departure the fuel on board at engine start,
+   Full (the airplane's usable fuel) or the gallons; at a stop what the
+   tanks are fuelled to, Full, No fuel (what it lands with, kept) or the
+   gallons -- a segmented control and a number field, no Tabs pick, as
+   no airplane profile carries a tabs figure and none is assumed. More
+   than the tanks hold is kept, said under the field (warn, never
+   limit). The figure is the address's `tanks` ("C81:20,KMSN:0"), the
+   engine's `fuel_in_tanks` walks the gauges from it and the planner's
+   fuel check, fuel stops and loading fly the same (its `tanks` query,
+   `navlog_fuel_plan`'s `on_board_gal`); the plan's Undo ("Undo Fuel")
+   puts it back. The destination's gauge and a waypoint's are read only,
+   and with no airplane there is no gauge (the one ask for an airplane
+   stays the N-number field, the UI audit's C3), at the right its time (the departure's a picker); no city; below full, two stops
    or more one row between the ends, "2 Stops" and their idents, a tap taking the sheet all the way up, where each is its own row (one stop always its own); Add a Stop the last row, by the one
    search, with a pill at its end where there is fuel to plan: "Add Fuel
    Stops" puts the planner's suggested ones in, every flight's of the

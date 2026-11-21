@@ -156,6 +156,7 @@ def suggest(
     usable_gal: float,
     taxi_gal: float,
     reserve_gal: float,
+    start_gal: float | None = None,
     ground_min: float = 30.0,
     skip: set | None = None,
     fields: pd.DataFrame | None = None,
@@ -163,7 +164,8 @@ def suggest(
     """The stops that take a flight from `start` to `end` (lat, lon) with
     the reserve left on every landing -- the tanks filled at each -- and
     other fields the first could be: ([], []) where none is needed or no
-    fields reach. The engine's choice (fuel_stops): the quickest trip, the
+    fields reach. The first stretch is flown on `start_gal`, the fuel on
+    board at the start (None, full). The engine's choice (fuel_stops): the quickest trip, the
     first stop nearest the line among those as quick, then the one whose
     landings keep the most fuel."""
     fields = fields_with_fuel() if fields is None else fields
@@ -174,6 +176,7 @@ def suggest(
         fuel_per_nm=fuel_per_nm,
         min_per_nm=min_per_nm,
         usable_gal=usable_gal,
+        start_gal=start_gal,
         taxi_gal=taxi_gal,
         reserve_gal=reserve_gal,
         ground_min=ground_min,

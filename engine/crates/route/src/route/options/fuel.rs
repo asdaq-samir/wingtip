@@ -72,6 +72,9 @@ pub struct Figures {
     pub fuel_per_nm: f64,
     pub min_per_nm: f64,
     pub usable_gal: f64,
+    /// The fuel in the tanks at the start (the pilot's own, else full,
+    /// `usable_gal`): the first stretch's reach; each stop fills them.
+    pub start_gal: f64,
     pub taxi_gal: f64,
     pub reserve_gal: f64,
     pub ground_min: f64,
@@ -103,7 +106,7 @@ pub struct FuelStop {
 /// the most fuel, so no leg of it runs close; the others offered after.
 pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: &[String]) -> (Vec<FuelStop>, Vec<FuelStop>) {
     let direct = geo::distance_nm(start.0, start.1, end.0, end.1);
-    if fig.usable_gal - fig.taxi_gal - direct * fig.fuel_per_nm >= fig.reserve_gal {
+    if fig.start_gal - fig.taxi_gal - direct * fig.fuel_per_nm >= fig.reserve_gal {
         return (Vec::new(), Vec::new());
     }
     let nodes = corridor(start, end, fields, skip);
@@ -111,6 +114,7 @@ pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: 
         return (Vec::new(), Vec::new());
     }
     let reach_nm = (fig.usable_gal - fig.taxi_gal - fig.reserve_gal) / fig.fuel_per_nm;
+    let first_reach_nm = (fig.start_gal - fig.taxi_gal - fig.reserve_gal) / fig.fuel_per_nm;
     // Index 0 the destination, then the fields.
     let at: Vec<Point> = std::iter::once(end).chain(nodes.iter().map(|n| (n.lat, n.lon))).collect();
     let n = at.len();
@@ -151,13 +155,15 @@ pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: 
     let trip = |i: usize| from_start[i] * fig.min_per_nm + fig.ground_min + to_go[i];
     let least_landing = |i: usize| {
         let c = chain(i);
-        let mut legs = vec![from_start[i]];
+        let mut legs = Vec::new();
         for (k, &a) in c.iter().enumerate() {
             legs.push(apart[a][*c.get(k + 1).unwrap_or(&0)]);
         }
-        fig.usable_gal - fig.taxi_gal - legs.iter().copied().fold(f64::NEG_INFINITY, f64::max) * fig.fuel_per_nm
+        let first = fig.start_gal - fig.taxi_gal - from_start[i] * fig.fuel_per_nm;
+        first.min(fig.usable_gal - fig.taxi_gal - legs.iter().copied().fold(f64::NEG_INFINITY, f64::max) * fig.fuel_per_nm)
     };
-    let first: Vec<usize> = (1..n).filter(|&i| from_start[i] <= reach_nm && to_go[i].is_finite() && chain(i).len() <= MAX_STOPS).collect();
+    let first: Vec<usize> =
+        (1..n).filter(|&i| from_start[i] <= first_reach_nm && to_go[i].is_finite() && chain(i).len() <= MAX_STOPS).collect();
     if first.is_empty() {
         return (Vec::new(), Vec::new());
     }
@@ -168,9 +174,9 @@ pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: 
     ranked.stable_sort_by(|&a, &b| key(a).partial_cmp(&key(b)).unwrap_or(std::cmp::Ordering::Equal));
     let stop = |i: usize, prev: Option<usize>, flown_nm: f64| {
         let f = nodes[i - 1];
-        let leg = match prev {
-            None => from_start[i],
-            Some(p) => apart[p][i],
+        let (leg, tanks) = match prev {
+            None => (from_start[i], fig.start_gal),
+            Some(p) => (apart[p][i], fig.usable_gal),
         };
         let off = geo::distance_nm(start.0, start.1, f.lat, f.lon) + geo::distance_nm(f.lat, f.lon, end.0, end.1) - direct;
         let at_nm = flown_nm + leg;
@@ -178,7 +184,7 @@ pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: 
             field: f.clone(),
             from_nm: r1(at_nm),
             added_nm: r1(off),
-            lands_with_gal: r1(fig.usable_gal - fig.taxi_gal - leg * fig.fuel_per_nm),
+            lands_with_gal: r1(tanks - fig.taxi_gal - leg * fig.fuel_per_nm),
             minutes: r1(at_nm * fig.min_per_nm),
         }
     };
@@ -332,6 +338,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         fuel_per_nm: r.num(v, "fuel_per_nm")?,
         min_per_nm: r.num(v, "min_per_nm")?,
         usable_gal: r.num(v, "usable_gal")?,
+        start_gal: r.opt_num(v, "start_gal")?.unwrap_or(r.num(v, "usable_gal")?),
         taxi_gal: r.num(v, "taxi_gal")?,
         reserve_gal: r.num(v, "reserve_gal")?,
         // The owner's 30-minute turnaround (2026-10-20), the flight crate's.

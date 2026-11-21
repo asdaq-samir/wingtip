@@ -112,6 +112,9 @@ class Totals(BaseModel):
     fuel_required_gal: float | None = None
     usable_fuel_gal: float | None = None
     fuel_margin_gal: float | None = None
+    #: The fuel in the tanks as the flight leaves, the margin's measure:
+    #: the pilot's own where set (the query's `tanks`), else full.
+    on_board_gal: float | None = None
     night: bool | None = None
     #: Whether any of the flight is in 14 CFR 61.57(b)'s night-passenger
     #: period (1 hour after sunset to 1 hour before sunrise), its own

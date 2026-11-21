@@ -139,6 +139,9 @@ export const addressParsers = {
   cross: parseAsString,
   ground: parseAsString,
   holds: parseAsString,
+  // The fuel in the tanks as the airplane leaves a field, where the pilot
+  // set it on FPL's gauge (lib/identSchema's tanksOf): none named, full.
+  tanks: parseAsString,
   // The departure time (an ISO instant; none is about now), and a local
   // flight's time aloft.
   depart: parseAsString,
@@ -261,4 +264,5 @@ export const PLAN_KEYS = [
   "fuel",
   ...PICK_KEYS,
   "altitudes",
+  "tanks",
 ] as const satisfies readonly (keyof AddressParsers)[];

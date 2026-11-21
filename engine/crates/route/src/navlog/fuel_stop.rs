@@ -64,6 +64,9 @@ pub struct Need {
     pub fuel_per_nm: f64,
     pub min_per_nm: f64,
     pub usable_gal: f64,
+    /// The fuel in the tanks as the flight leaves (the totals'
+    /// `on_board_gal`: the pilot's own, else full), for its first stretch.
+    pub start_gal: f64,
     pub taxi_gal: f64,
     pub reserve_gal: f64,
 }
@@ -92,6 +95,7 @@ pub fn fuel_stop_need(totals: &Obj, legs: &[(f64, Option<f64>)], start: (f64, f6
         fuel_per_nm: worst.max(per_nm) * detour,
         min_per_nm: ete / distance * detour,
         usable_gal: usable,
+        start_gal: totals.opt("on_board_gal")?.unwrap_or(usable),
         taxi_gal: taxi,
         reserve_gal: reserve,
     }))
@@ -103,6 +107,7 @@ impl Need {
             ("fuel_per_nm", number(self.fuel_per_nm)),
             ("min_per_nm", number(self.min_per_nm)),
             ("usable_gal", number(self.usable_gal)),
+            ("start_gal", number(self.start_gal)),
             ("taxi_gal", number(self.taxi_gal)),
             ("reserve_gal", number(self.reserve_gal)),
         ])

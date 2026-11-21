@@ -90,6 +90,7 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
     routePoints,
     stopsFull = false,
     fuel = null,
+    tanks: ownTanks,
     routeLine = null,
   } = props;
   // The procedure on its own page in the sheet, over its kind's list.
@@ -252,7 +253,7 @@ export function useProceduresRoute(props: ProceduresRouteProps) {
     const found = routePoints.findIndex((p, j) => j > 0 && j < routePoints.length - 1 && sameField(p, ident));
     return found >= 0 ? found : undefined;
   };
-  const tanks = tanksAt(rows, fuel);
+  const tanks = tanksAt(rows, fuel, ownTanks);
   const points = rows.filter((r) => r.kind !== "checkpoint" && r.kind !== "toc" && r.kind !== "tod");
   const field = on ? airports.find((a) => sameField(a.ident, on.ident)) : undefined;
   const list = on ? listOf(on.ident) : undefined;

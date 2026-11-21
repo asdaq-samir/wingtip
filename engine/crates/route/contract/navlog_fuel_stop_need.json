@@ -23,6 +23,13 @@
                 "null"
               ]
             },
+            "on_board_gal": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The fuel in the tanks as the flight leaves (navlog_fuel_plan's); null, full."
+            },
             "distance_nm": {
               "type": [
                 "number",
@@ -146,6 +153,10 @@
         "usable_gal": {
           "type": "number"
         },
+        "start_gal": {
+          "type": "number",
+          "description": "The fuel in the tanks as the flight leaves (the totals' on_board_gal; full where it has none), for fuel_stops' first stretch."
+        },
         "taxi_gal": {
           "type": "number"
         },
@@ -157,6 +168,7 @@
         "fuel_per_nm",
         "min_per_nm",
         "usable_gal",
+        "start_gal",
         "taxi_gal",
         "reserve_gal"
       ]

@@ -147,6 +147,7 @@ pub fn fuel(name: &str, v: &Value) -> Result<String, String> {
                         departure: flag("departure"),
                         fuel_gal: opt_num_in(name, p, "fuel_gal")?,
                         refuel: flag("refuel"),
+                        fill_gal: opt_num_in(name, p, "fill_gal")?,
                     })
                 })
                 .collect::<Result<Vec<_>, String>>()?;

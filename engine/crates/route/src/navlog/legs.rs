@@ -219,7 +219,20 @@ pub fn totals(legs: &[Obj]) -> R<Value> {
 /// without one has `taxi_gal` null and its fuel required leaves the
 /// allowance out, which the apps say beside it -- no stock airplane's
 /// figure fills the gap (the owner, 2026-11-09).
-pub fn fuel_plan(total_fuel_gal: Option<f64>, profile: Option<&Profile>, night: Option<bool>, rules: &str, alternate_gal: f64) -> Value {
+///
+/// The margin is against the fuel in the tanks as the flight leaves
+/// (`on_board_gal`, flight::tanks_leaving), as the rules count it: 14 CFR
+/// 91.151(a), "unless ... there is enough fuel to fly to the first point
+/// of intended landing", and 91.167(a)'s "carries enough fuel" -- what is
+/// on board, not what the tanks could hold: full unless the pilot set
+/// their own (`fill_gal`: at the departure the fuel on board at engine
+/// start, at a stop what it is fuelled to, held to what the flight before
+/// left, `left_gal`); and `lands_with_gal` is what it lands with, that
+/// less the start, taxi and the trip, for the next flight's `left_gal`.
+pub fn fuel_plan(
+    total_fuel_gal: Option<f64>, profile: Option<&Profile>, night: Option<bool>, rules: &str, alternate_gal: f64, fill_gal: Option<f64>,
+    left_gal: Option<f64>,
+) -> Value {
     let reserve_min = flight::reserve_min(rules == "ifr", night.unwrap_or(true));
     let reserve_gal = profile.map(|p| py_round(reserve_min / 60.0 * p.airplane.fuel_burn_gph, 2));
     let taxi_gal = profile.and_then(|p| p.taxi_fuel_gal);
@@ -228,10 +241,12 @@ pub fn fuel_plan(total_fuel_gal: Option<f64>, profile: Option<&Profile>, night: 
         _ => None,
     };
     let usable = profile.and_then(|p| p.usable_fuel_gal);
-    let margin = match (required, usable) {
+    let on_board = profile.and(fill_gal.or(usable)).map(|base| flight::tanks_leaving(usable.unwrap_or(base), fill_gal, left_gal));
+    let margin = match (required, on_board) {
         (Some(r), Some(u)) => Some(py_round(u - r, 1)),
         _ => None,
     };
+    let lands_with = on_board.zip(total_fuel_gal).map(|(b, t)| py_round(b - taxi_gal.unwrap_or(0.0) - t, 1));
     object(vec![
         ("reserve_min", number(reserve_min)),
         ("reserve_gal", opt_number(reserve_gal)),
@@ -239,6 +254,8 @@ pub fn fuel_plan(total_fuel_gal: Option<f64>, profile: Option<&Profile>, night: 
         ("fuel_required_gal", opt_number(required)),
         ("usable_fuel_gal", opt_number(usable)),
         ("fuel_margin_gal", opt_number(margin)),
+        ("on_board_gal", opt_number(on_board)),
+        ("lands_with_gal", opt_number(lands_with)),
         ("night", night.map(Value::Bool).unwrap_or(Value::Null)),
         ("rules", Value::String(rules.to_owned())),
     ])

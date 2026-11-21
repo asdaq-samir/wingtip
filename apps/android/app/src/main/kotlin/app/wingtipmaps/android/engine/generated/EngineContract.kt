@@ -4658,6 +4658,11 @@ object EngineContract {
          * The tanks filled on landing there.
          */
         val refuel: Boolean? = null,
+        /**
+         * The pilot's own figure for the tanks as the airplane leaves there, gallons: at the departure the fuel on board at engine start, at a field landed at what it is fuelled to (under what is left keeps what is left; 0, no fuel bought); null, full.
+         */
+        @SerialName("fill_gal")
+        val fillGal: Double? = null,
     )
 
     @Serializable
@@ -4706,6 +4711,11 @@ object EngineContract {
         val minPerNm: Double,
         @SerialName("usable_gal")
         val usableGal: Double,
+        /**
+         * The fuel in the tanks at the start, gallons (the pilot's own, at engine start; null, full, usable_gal): the first stretch's reach and its landing's fuel. Each stop fills the tanks.
+         */
+        @SerialName("start_gal")
+        val startGal: Double? = null,
         @SerialName("taxi_gal")
         val taxiGal: Double,
         @SerialName("reserve_gal")
@@ -8028,6 +8038,16 @@ object EngineContract {
         val usableFuelGal: Double? = null,
         @SerialName("fuel_margin_gal")
         val fuelMarginGal: Double? = null,
+        /**
+         * The fuel in the tanks as the flight leaves, gallons; null with no airplane or no usable fuel known and none set.
+         */
+        @SerialName("on_board_gal")
+        val onBoardGal: Double? = null,
+        /**
+         * The fuel it lands with: on_board_gal less the start and taxi allowance and the trip; null where either is not known.
+         */
+        @SerialName("lands_with_gal")
+        val landsWithGal: Double? = null,
         val night: Boolean? = null,
         val rules: String,
     )
@@ -8047,6 +8067,16 @@ object EngineContract {
         val rules: String? = null,
         @SerialName("alternate_gal")
         val alternateGal: Double? = null,
+        /**
+         * The pilot's own figure for the tanks as the flight leaves, gallons: at the departure the fuel on board at engine start, at a stop what it is fuelled to (0, no fuel bought); null, full.
+         */
+        @SerialName("fill_gal")
+        val fillGal: Double? = null,
+        /**
+         * At a stop, what the flight before landed with (its lands_with_gal), which fuelling never takes from; null at the departure or where not known.
+         */
+        @SerialName("left_gal")
+        val leftGal: Double? = null,
     )
 
     @Serializable
@@ -8057,6 +8087,11 @@ object EngineContract {
         val minPerNm: Double,
         @SerialName("usable_gal")
         val usableGal: Double,
+        /**
+         * The fuel in the tanks as the flight leaves (the totals' on_board_gal; full where it has none), for fuel_stops' first stretch.
+         */
+        @SerialName("start_gal")
+        val startGal: Double,
         @SerialName("taxi_gal")
         val taxiGal: Double,
         @SerialName("reserve_gal")
@@ -8108,6 +8143,11 @@ object EngineContract {
         val fuelMarginGal: Double? = null,
         @SerialName("usable_fuel_gal")
         val usableFuelGal: Double? = null,
+        /**
+         * The fuel in the tanks as the flight leaves (navlog_fuel_plan's); null, full.
+         */
+        @SerialName("on_board_gal")
+        val onBoardGal: Double? = null,
         @SerialName("distance_nm")
         val distanceNm: Double? = null,
         @SerialName("fuel_gal")

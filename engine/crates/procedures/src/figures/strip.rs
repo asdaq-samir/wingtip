@@ -7,7 +7,7 @@
 //! of the route. Before the nav log's totals are in, an estimate from the
 //! airplane's book alone.
 
-use crate::flight::reserve_min;
+use crate::flight::{reserve_min, tanks_leaving};
 
 /// One flight between two landings, as the planner's totals give it.
 #[derive(Clone, Debug, PartialEq)]
@@ -84,37 +84,49 @@ pub fn estimate(
 
 /// One point of the route as the tanks are walked along it: the fuel its
 /// leg burns to get there (None where not known, which leaves the tanks
-/// unknown from there to the next fill), and whether the tanks are filled
-/// on landing there (a field stopped at, not a fix).
+/// unknown from there to the next fill), whether the tanks are filled
+/// on landing there (a field stopped at, not a fix), and the pilot's own
+/// figure for the tanks as the airplane leaves it (`fill_gal`: at the
+/// departure the fuel on board at engine start, at a stop what it is
+/// fuelled to; None, full), as flight::tanks_leaving reads it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct TankPoint {
     pub departure: bool,
     pub fuel_gal: Option<f64>,
     pub refuel: bool,
+    pub fill_gal: Option<f64>,
 }
 
 /// The fuel in the tanks at each point, gallons, and whether it is under
-/// the reserve: full (`usable_gal`) at the departure, the start, taxi and
-/// takeoff allowance and each leg's burn taken from them after, filled
-/// again at each field landed at, as the planner checks each flight
+/// the reserve: at the departure the fuel on board at engine start (full,
+/// `usable_gal`, unless the pilot set their own), the start, taxi and
+/// takeoff allowance and each leg's burn taken from them after; at each
+/// field landed at, the fuel on landing, the tanks then fuelled for the
+/// next flight (flight::tanks_leaving: full unless the pilot set what to),
+/// its own start and taxi taken again, as the planner checks each flight
 /// (wingtip.planning.route_totals). None at a point past a leg whose burn is
 /// not known, until the next fill. Below empty it is negative, the gallons
 /// short, not 0: a 0 read as landing on fumes where the airplane cannot
 /// reach the point at all (the owner, 2026-11-20: "Instead of showing 0
-/// gal, can you show negative gal"); it is low then too.
+/// gal, can you show negative gal"); it is low then too. A start over the
+/// usable fuel is kept as set (warn, never limit).
 pub fn tanks(points: &[TankPoint], usable_gal: f64, taxi_gal: f64, reserve_gal: f64) -> Vec<Option<(f64, bool)>> {
-    let mut burned = 0.0;
+    // What the flight under way left with, less its start and taxi; NaN
+    // where a leg's burn is not known, until the next fill.
+    let mut level = usable_gal - taxi_gal;
     points
         .iter()
         .map(|p| {
             if p.departure {
-                return Some((usable_gal, false));
+                let start = tanks_leaving(usable_gal, p.fill_gal, None);
+                level = start - taxi_gal;
+                return Some((start, false));
             }
-            burned += p.fuel_gal.unwrap_or(f64::NAN);
-            let gal = usable_gal - taxi_gal - burned;
+            level -= p.fuel_gal.unwrap_or(f64::NAN);
+            let gal = level;
             let at = gal.is_finite().then_some((gal, gal < reserve_gal));
             if p.refuel {
-                burned = 0.0;
+                level = tanks_leaving(usable_gal, p.fill_gal, gal.is_finite().then_some(gal)) - taxi_gal;
             }
             at
         })
@@ -127,12 +139,31 @@ mod tests {
 
     #[test]
     fn a_point_past_empty_reads_the_gallons_short() {
-        let leg = |gal: f64, refuel: bool| TankPoint { departure: false, fuel_gal: Some(gal), refuel };
-        let departure = TankPoint { departure: true, fuel_gal: None, refuel: false };
+        let leg = |gal: f64, refuel: bool| TankPoint { departure: false, fuel_gal: Some(gal), refuel, fill_gal: None };
+        let departure = TankPoint { departure: true, fuel_gal: None, refuel: false, fill_gal: None };
         // 40 usable, 1.5 taxi: 38.5 left before the legs, 30 burned to the
         // stop, 20 more to the end with no fuel bought: 11.5 short.
         let at = tanks(&[departure, leg(30.0, false), leg(20.0, false)], 40.0, 1.5, 7.5);
         assert_eq!(at[1], Some((8.5, false)));
         assert_eq!(at[2], Some((-11.5, true)));
+    }
+
+    #[test]
+    fn the_pilots_own_fuel_at_the_start_and_at_a_stop() {
+        let leg = |gal: f64, refuel: bool, fill: Option<f64>| TankPoint { departure: false, fuel_gal: Some(gal), refuel, fill_gal: fill };
+        let departure = |fill| TankPoint { departure: true, fuel_gal: None, refuel: false, fill_gal: fill };
+        // 30 on board of 40 at engine start, 1.5 taxi, 20 burned: 8.5 on
+        // landing; no fuel bought there (0), 1.5 taxi and 5 more: 2 left.
+        let at = tanks(&[departure(Some(30.0)), leg(20.0, true, Some(0.0)), leg(5.0, false, None)], 40.0, 1.5, 7.5);
+        assert_eq!(at[0], Some((30.0, false)));
+        assert_eq!(at[1], Some((8.5, false)));
+        assert_eq!(at[2], Some((2.0, true)));
+        // Full at the start, 18.5 on landing: fuelled to 25 there, 25 less
+        // 1.5 and 5, 18.5; to 5, under the 18.5 left, keeps it, 12. More
+        // than the tanks hold is kept as set.
+        let to = |fill| tanks(&[departure(None), leg(20.0, true, Some(fill)), leg(5.0, false, None)], 40.0, 1.5, 7.5)[2];
+        assert_eq!(to(25.0), Some((18.5, false)));
+        assert_eq!(to(5.0), Some((12.0, false)));
+        assert_eq!(tanks(&[departure(Some(50.0))], 40.0, 1.5, 7.5)[0], Some((50.0, false)));
     }
 }
