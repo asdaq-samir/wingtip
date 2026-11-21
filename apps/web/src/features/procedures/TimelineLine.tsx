@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Ellipsis, Fuel, Navigation, Triangle, X } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
@@ -15,7 +15,7 @@ import { PartTray } from "./RunwayTray";
 import { TIMELINE_END, TIMELINE_THREAD } from "./TimelineRows";
 import { askHold, type pointEnd } from "./pointEnd";
 import { HoldChip } from "./HoldChip";
-import { TimelineProcedureFixes, TimelineProcedurePill } from "./TimelineProcedure";
+import { TimelineProcedureBox } from "./TimelineProcedure";
 import { sameField } from "../../lib/procedures";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
@@ -123,35 +123,17 @@ export function TimelineLine({
   const tank = point.role === "Departure" ? tanks.get("departure") : row ? tanks.get(row.key) : undefined;
   const reported = reportedOf(point.ident);
   const parts = field ? fieldParts(vm, field, row) : [];
-  // The procedure pill whose fixes are open under the chips, one at a time.
-  const [shown, setShown] = useState<(typeof parts)[number]["kinds"][number] | null>(null);
-  const panelId = useId();
   const pickedLabel = (kind: string) => vm.inRoute.find((p) => sameField(p.ident, point.ident) && p.kind === kind)?.label;
   // Each part's tray, a stop's takeoff a region of its own as the list
   // read in flight names it ("KMSN · Depart"); a kind not picked as
   // "+ APCH"; the destination's hold last, once it has one; the procedures
-  // picked on their own line under them.
+  // picked in boxes of their own under them.
   const chips = parts.map((part, i) => {
-    // A procedure picked, a light blue pill opening its fixes
-    // (TimelineProcedure), on a line of its own under the runway's chips
-    // (the owner, 2026-11-20: "Selected procedure should be on a new
-    // line"); a kind not picked, "+ APCH", stays among them.
-    const pills = part.kinds.flatMap((k) => {
-      const label = kindPicked(vm, field!, k) ? pickedLabel(k) : undefined;
-      return label
-        ? [
-            <TimelineProcedurePill
-              key={k}
-              ident={point.ident}
-              kind={k}
-              label={label}
-              open={shown === k}
-              panel={`${panelId}-${k}`}
-              onToggle={() => setShown(shown === k ? null : k)}
-            />,
-          ]
-        : [];
-    });
+    // A procedure picked, its own grouped box of its fixes, open
+    // (TimelineProcedure; the owner, 2026-11-21), under the runway's chips
+    // (2026-11-20: "Selected procedure should be on a new line"); a kind
+    // not picked, "+ APCH", stays among them.
+    const boxes = part.kinds.filter((k) => kindPicked(vm, field!, k) && pickedLabel(k));
     const tray = (
       <PartTray
         key={part.role}
@@ -159,7 +141,7 @@ export function TimelineLine({
         a={field!}
         part={part}
         trailing={[
-          ...part.kinds.filter((k) => !(kindPicked(vm, field!, k) && pickedLabel(k))).map((k) => kindMenu(vm, field!, k, "add")),
+          ...part.kinds.filter((k) => !boxes.includes(k)).map((k) => kindMenu(vm, field!, k, "add")),
           // The destination's hold after its procedures (HoldChip), once
           // there is one: no "+ HOLD" to add one (the owner, 2026-11-19: "No
           // need for +HOLD"); its menu's Hold adds it.
@@ -169,17 +151,16 @@ export function TimelineLine({
         ]}
       />
     );
-    // Its open pill's fixes under its chips, the width of the line.
-    const open = shown && part.kinds.includes(shown) && kindPicked(vm, field!, shown) ? shown : null;
     const body = (
       <>
         {tray}
-        {pills.length > 0 && (
-          <div className="flex basis-full flex-wrap items-center gap-2" data-testid="timeline-procedures">
-            {pills}
+        {boxes.length > 0 && (
+          <div className="flex basis-full flex-col gap-2" data-testid="timeline-procedures">
+            {boxes.map((k) => (
+              <TimelineProcedureBox key={k} vm={vm} field={field!} kind={k} />
+            ))}
           </div>
         )}
-        {open && <TimelineProcedureFixes vm={vm} field={field!} kind={open} id={`${panelId}-${open}`} />}
       </>
     );
     return i === 0 ? (
@@ -187,7 +168,7 @@ export function TimelineLine({
         {body}
       </div>
     ) : (
-      <section key={part.role} aria-label={`${point.ident} · ${part.role}`} className={cn((open || pills.length > 0) && "basis-full")}>
+      <section key={part.role} aria-label={`${point.ident} · ${part.role}`} className={cn(boxes.length > 0 && "basis-full")}>
         {body}
       </section>
     );

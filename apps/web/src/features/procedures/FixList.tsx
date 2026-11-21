@@ -11,10 +11,13 @@ import { PointFigures, PointMenu } from "../route/lazy";
  * the pilot's own to cross it at, in the tint, else the chart's -- and
  * Direct to it. Sent direct to one, the branch runs straight there, the
  * fixes before it greyed on a dashed spur, skipped. A fix's row, or its
- * altitude, opens its card (FixCard). FixBranch's open body, and FPL's
- * timeline's procedure pill's (TimelineProcedure).
+ * altitude, opens its card (FixCard). FixBranch's open body, and the
+ * rows of FPL's timeline's procedure box (TimelineProcedure), `boxed`:
+ * 44-point rows with a hairline over each from the words on, as an iOS
+ * inset grouped list's.
  */
 export function FixList({
+  boxed = false,
   name,
   fixes,
   direct,
@@ -22,6 +25,7 @@ export function FixList({
   onDirect,
   onOpen,
 }: {
+  boxed?: boolean;
   name: string;
   fixes: BranchFix[];
   direct: string | null;
@@ -31,7 +35,7 @@ export function FixList({
 }) {
   const directAt = direct ? fixes.findIndex((f) => f.ident === direct) : -1;
   return (
-    <ol className="mt-1" aria-label={`${name}, its fixes`}>
+    <ol className={cn(!boxed && "mt-1")} aria-label={`${name}, its fixes`}>
       {fixes.map((fix, i) => {
         const skipped = directAt > 0 && i < directAt;
         const isDirect = i === directAt;
@@ -42,7 +46,11 @@ export function FixList({
         return (
           <li
             key={`${fix.ident}-${i}`}
-            className={cn("relative flex min-h-12 items-center gap-2 pl-7", isDirect && "rounded-xl bg-tint/8")}
+            className={cn(
+              "relative flex items-center gap-2 pl-7",
+              boxed ? "min-h-11" : "min-h-12",
+              isDirect && (boxed ? "bg-tint/8" : "rounded-xl bg-tint/8"),
+            )}
             data-testid="fix-branch-row"
           >
             {/* The branch's line and the fix's mark: dashed and hollow where
@@ -65,35 +73,37 @@ export function FixList({
                   : cn("size-2.5 rotate-45 border-2", skipped ? "border-muted-foreground/40 bg-background" : "border-white bg-procedure"),
               )}
             />
-            <BaseButton
-              onClick={() => onOpen(fix.ident)}
-              className={cn("flex min-w-0 flex-1 flex-col py-1 text-left", skipped && "opacity-50")}
-            >
-              <span className={cn("font-semibold", TEXT.row, isDirect && "text-tint")}>{fix.ident}</span>
-              {sub && <span className={cn(TEXT.note, isDirect ? "font-semibold text-tint" : "text-muted-foreground")}>{sub}</span>}
-            </BaseButton>
-            <PointFigures
-              time={null}
-              kind={own != null ? "set" : "pub"}
-              spoken={
-                own != null
-                  ? `cross at ${altFt(own)} ft, set by you`
-                  : altitudeLines(fix).words
-                    ? `published, ${altitudeLines(fix).words}`
-                    : undefined
-              }
-              altitude={
-                own != null ? altFt(own) : charted ? <span style={{ textDecoration: decorationOf(charted) }}>{charted.text}</span> : null
-              }
-            />
-            <PointMenu
-              ident={fix.ident}
-              direct={isDirect}
-              testId="fix-branch-menu"
-              onDirect={() => onDirect(isDirect ? null : fix.ident)}
-              onAltitude={() => onOpen(fix.ident)}
-            />
-            <span className="w-1 shrink-0" aria-hidden="true" />
+            <span className={cn("flex min-w-0 flex-1 items-center gap-2 self-stretch", boxed && "border-t border-border pr-1")}>
+              <BaseButton
+                onClick={() => onOpen(fix.ident)}
+                className={cn("flex min-w-0 flex-1 flex-col justify-center self-stretch py-1 text-left", skipped && "opacity-50")}
+              >
+                <span className={cn("font-semibold", TEXT.row, isDirect && "text-tint")}>{fix.ident}</span>
+                {sub && <span className={cn(TEXT.note, isDirect ? "font-semibold text-tint" : "text-muted-foreground")}>{sub}</span>}
+              </BaseButton>
+              <PointFigures
+                time={null}
+                kind={own != null ? "set" : "pub"}
+                spoken={
+                  own != null
+                    ? `cross at ${altFt(own)} ft, set by you`
+                    : altitudeLines(fix).words
+                      ? `published, ${altitudeLines(fix).words}`
+                      : undefined
+                }
+                altitude={
+                  own != null ? altFt(own) : charted ? <span style={{ textDecoration: decorationOf(charted) }}>{charted.text}</span> : null
+                }
+              />
+              <PointMenu
+                ident={fix.ident}
+                direct={isDirect}
+                testId="fix-branch-menu"
+                onDirect={() => onDirect(isDirect ? null : fix.ident)}
+                onAltitude={() => onOpen(fix.ident)}
+              />
+              <span className="w-1 shrink-0" aria-hidden="true" />
+            </span>
           </li>
         );
       })}
