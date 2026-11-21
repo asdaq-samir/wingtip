@@ -115,7 +115,7 @@ export default function PlanCards({
             rules={
               !s.local && (
                 <Segmented
-                  label="Flight rules"
+                  label="Flight Rules"
                   value={flightRules}
                   onChange={(v) => setFlightRules(v as FlightRules)}
                   testId="flight-rules"

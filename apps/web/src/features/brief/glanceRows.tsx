@@ -95,7 +95,7 @@ export function BeforeRow({ before, airplane, onOpen }: { before?: BriefGlance["
         airplane && (
           <Figures note={before?.balance?.problem ?? undefined}>
             <Stat
-              label="Fuel spare"
+              label="Fuel Spare"
               value={before?.spareGal != null ? `${before.spareGal.toFixed(1)} gal` : DASH}
               finding={before?.spareGal != null && before.spareGal < 0 ? "stop" : undefined}
             />
@@ -198,7 +198,7 @@ export function EnrouteRow({ enroute, said, onOpen }: { enroute?: BriefGlance["e
             value={enroute?.visibilitySm != null ? `${enroute.visibilitySm} sm` : DASH}
             finding={stop && enroute.visibilitySm != null ? "stop" : undefined}
           />
-          <Stat label="Wind aloft" value={enroute?.wind ?? DASH} />
+          <Stat label="Wind Aloft" value={enroute?.wind ?? DASH} />
         </Figures>
       }
       chevron

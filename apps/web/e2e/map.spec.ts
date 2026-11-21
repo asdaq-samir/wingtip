@@ -205,7 +205,7 @@ test("my position is the location arrow among the map's buttons, on both pages, 
     await arrow.click();
     // An alert, with OK: something the pilot just did.
     const alert = page.getByTestId("error-alert");
-    await expect(alert).toContainText("No position over this connection");
+    await expect(alert).toContainText("No Position over This Connection");
     // OK from md up; on a phone the sheet's close in its title row.
     await alert.getByRole("button", { name: /^(OK|Close)$/ }).click();
     await expect(alert).toHaveCount(0);

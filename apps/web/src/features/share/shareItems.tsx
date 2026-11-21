@@ -2,6 +2,7 @@ import { Link2 } from "lucide-react";
 import { DropdownMenuItem } from "../../components/ui/dropdown-menu";
 import type { Candidate, Course } from "../../lib/api/types";
 import { useShareLink } from "./useShareLink";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** The route as typed: its departure, stops and destination. */
 interface Planned {
@@ -34,7 +35,7 @@ export function ShareLinkItem({ route, inset = false }: { route: SharedRoute; in
     // `inset` in a menu with a checkmark's column (RouteMore's Route Options).
     <DropdownMenuItem inset={inset} onClick={() => void share()} data-testid="share-link">
       <Link2 />
-      Share link
+      {WORDING.shareLink}
     </DropdownMenuItem>
   );
 }

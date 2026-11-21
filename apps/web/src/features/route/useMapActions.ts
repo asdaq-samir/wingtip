@@ -84,7 +84,7 @@ export function useMapActions({
     useRadioActions.setState({
       directTo: async (said) => {
         const ship = useOwnShip.getState();
-        if (!ship.enabled || !ship.fix) return "Direct To flies from where the airplane is: turn on Show my position.";
+        if (!ship.enabled || !ship.fix) return "Direct To flies from where the airplane is: turn on Show My Position.";
         const near = [nearNow, `${ship.fix.lat.toFixed(3)},${ship.fix.lon.toFixed(3)}`].filter(Boolean).join(";");
         try {
           const found = await api.clearancePlaces({ route: [said], near });
@@ -111,7 +111,7 @@ export function useMapActions({
           let dep = planned.dep;
           if (!dep) {
             const ship = useOwnShip.getState();
-            if (!ship.enabled || !ship.fix) return "No departure: plan a route from a field first, or turn on Show my position.";
+            if (!ship.enabled || !ship.fix) return "No departure: plan a route from a field first, or turn on Show My Position.";
             dep = (await api.nearestAirports(ship.fix.lat, ship.fix.lon))[0]?.ident ?? "";
             if (!dep) return "No field was found near the airplane.";
           }

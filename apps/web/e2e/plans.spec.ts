@@ -179,7 +179,7 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   await openTab(page, "Preflight"); // the Brief pulled up first, as above
   await openSection(page, "Fuel");
   const detail = page.getByTestId("fuel-detail");
-  await expect(detail.locator("[data-slot=item]", { hasText: "Usable fuel" })).toContainText("40 gal");
+  await expect(detail.locator("[data-slot=item]", { hasText: "Usable Fuel" })).toContainText("40 gal");
   await expect(detail).toContainText("30 min day reserve");
 });
 
@@ -299,7 +299,7 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
     "The first westbound VFR altitude above that is 12,500 ft.",
     "The aircraft's service ceiling stops at 11,700 ft.",
   ]);
-  await expect(problem.getByRole("button", { name: "Try again" })).toHaveCount(0);
+  await expect(problem.getByRole("button", { name: "Try Again" })).toHaveCount(0);
   await expect(navLog).toBeAttached();
   await expect(sideDrawer(page).getByTestId("brief-card")).toHaveCount(0);
 

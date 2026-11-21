@@ -76,8 +76,8 @@ test.describe("signed out", () => {
     await openConsole(page);
     const sheet = consoleSheet(page).getByTestId("setup-page");
     await sheet.getByRole("button", { name: "Sign In", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "Sign in to Wingtip Maps" });
-    await expect(dialog.getByLabel("Email address")).toBeVisible();
+    const dialog = page.getByRole("dialog", { name: "Sign In to Wingtip Maps" });
+    await expect(dialog.getByLabel("Email Address")).toBeVisible();
     expect(await violations(page, '[role="dialog"]')).toEqual([]);
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);

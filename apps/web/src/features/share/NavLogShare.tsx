@@ -4,6 +4,7 @@ import { openInForeFlight, packOrigin } from "./foreflightPack";
 import { ShareMenuShell, type ShellLook } from "./ShareMenuShell";
 import { ShareLinkItem, type SharedRoute } from "./shareItems";
 import { usePack } from "./usePack";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * The nav log's share: its link, the checkpoints for ForeFlight and the
@@ -50,7 +51,7 @@ export function NavLogShare({ route, ...look }: ShellLook & { route: SharedRoute
               onClick={afterMenu(() => void import("./printKneeboard").then((m) => m.printKneeboard()))}
             >
               <Printer />
-              Print the nav log
+              {WORDING.printNavLog}
             </DropdownMenuItem>
           )}
         </>

@@ -63,7 +63,7 @@ export function useSearchAirplanes(a: {
   const keepTail = async (tail: string) => {
     const record = await queryClient.fetchQuery(registeredQuery(tail)).catch(() => null);
     if (record?.mode_s_hex) keep(keptOf({ ...record, mode_s_hex: record.mode_s_hex }), () => {});
-    else a.setProblem(`The FAA's registry gives no address for ${tail}, so it can't be kept.`);
+    else a.setProblem(`The FAA's registry gives no address for ${tail}, so it cannot be kept.`);
   };
   return [
     ...hits.own.map(({ record: r, ...row }) => ({

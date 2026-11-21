@@ -54,7 +54,7 @@ export function useAirplanes(onRefused: (save: AirplaneSave, problem: string) =>
           // row quietly changing below the form.
           done(asked.id ? "Airplane Saved" : "Airplane Added");
         } catch (err) {
-          onRefused(asked, describeError(err, asked.id ? "The airplane could not be saved" : "The airplane could not be added"));
+          onRefused(asked, describeError(err, asked.id ? "The airplane could not be saved." : "The airplane could not be added."));
         }
         await refresh();
       }),

@@ -12,6 +12,7 @@ import type { NavLogRow } from "../plan";
 import { wantPlace } from "../../lib/navigation/wanted";
 import { TEXT } from "../../lib/text";
 import { PointMark } from "./PointMark";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** The rail's middle, across the row: the row's own 6 and half the
  *  mark's column (2.125 rem). */
@@ -199,9 +200,9 @@ export function NavLogList({
             const { wind, airway, altitude } = rail[at]!;
             const name =
               row.kind === "toc"
-                ? "Top of climb"
+                ? WORDING.topOfClimb
                 : row.kind === "tod"
-                  ? "Top of descent"
+                  ? WORDING.topOfDescent
                   : "airport" in row && row.airport.kind !== "fix"
                     ? `${row.airport.ident} · ${placeName(row.airport.name, row.airport.ident)}`
                     : rowPoint(row).name;

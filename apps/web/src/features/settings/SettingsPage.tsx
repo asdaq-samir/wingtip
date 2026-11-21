@@ -12,6 +12,7 @@ import { usePreferences } from "../../lib/preferences";
 import { CardId, setCard, useSheetCards } from "../../lib/sheetCards";
 import GlideRingRow from "./GlideRingRow";
 import { AlertsPage, AtcPage, HelpPage, type HelpPages } from "./SettingsPages";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * The app's Settings, one page, the owner's pick of option A of the
@@ -123,7 +124,7 @@ function AirportWeatherRow() {
   const show = useAirportWeatherPrefs((s) => s.show);
   const set = useAirportWeatherPrefs((s) => s.set);
   return (
-    <ListRow title="Airport Weather">
+    <ListRow title={WORDING.airportWeather}>
       <PullDown<AirportWeather>
         label="Airport weather"
         value={show}

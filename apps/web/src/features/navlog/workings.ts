@@ -9,14 +9,15 @@
 import type { Leg } from "../../lib/api/types";
 import { callEngine } from "../../lib/engine/engine";
 import { bearing, gal, grouped, knots, magneticVariation, windCorrection } from "../../lib/format";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** What the student works out; how far off an E6B allows is the
  *  engine's (`workings_right`). */
 export const ANSWERS = [
-  { key: "wca", label: "Wind correction", unit: "°" },
-  { key: "th", label: "True heading", unit: "°" },
-  { key: "mh", label: "Magnetic heading", unit: "°" },
-  { key: "gs", label: "Ground speed", unit: "kt" },
+  { key: "wca", label: WORDING.windCorrection, unit: "°" },
+  { key: "th", label: WORDING.trueHeading, unit: "°" },
+  { key: "mh", label: WORDING.magneticHeading, unit: "°" },
+  { key: "gs", label: WORDING.groundSpeed, unit: "kt" },
   { key: "ete", label: "Time", unit: "min" },
   { key: "fuel", label: "Fuel", unit: "gal" },
 ] as const;
@@ -98,14 +99,14 @@ export function workingsOf(leg: Leg, phase: Phase = "cruise"): Workings | null {
   const east = variation >= 0;
   const r1 = (n: number) => n.toFixed(1);
   const steps = [
-    { name: "True course", sum: "measured on the chart", result: bearing(tc) },
+    { name: WORDING.trueCourse, sum: "measured on the chart", result: bearing(tc) },
     {
       name: "Wind",
       sum: leg.wind ? `forecast at ${grouped(leg.altitude_ft)} ft, from true north` : "no forecast near: calm",
       result: `${bearing(windDir)} at ${Math.round(windKt)} kt`,
     },
     {
-      name: "True airspeed",
+      name: WORDING.trueAirspeed,
       // A climb or a descent is flown at the airplane's speed for it, not
       // at a cruise power setting (FAA-H-8083-25C ch. 16: each phase at
       // its own figures); the descent's is its indicated speed made true
@@ -123,19 +124,19 @@ export function workingsOf(leg: Leg, phase: Phase = "cruise"): Workings | null {
       result: knots(tas),
     },
     {
-      name: "Wind correction",
+      name: WORDING.windCorrection,
       sum: `sin⁻¹(${Math.round(windKt)} × sin(${bearing(windDir)} − ${bearing(tc)}) ÷ ${Math.round(tas)})`,
       result: Math.round(wca) === 0 ? "0° (none)" : `${windCorrection(wca)} (${wca >= 0 ? "right" : "left"})`,
     },
-    { name: "True heading", sum: `${bearing(tc)} ${wca >= 0 ? "+" : "−"} ${Math.abs(wca).toFixed(0)}°`, result: bearing(th) },
+    { name: WORDING.trueHeading, sum: `${bearing(tc)} ${wca >= 0 ? "+" : "−"} ${Math.abs(wca).toFixed(0)}°`, result: bearing(th) },
     {
-      name: "Magnetic heading",
+      name: WORDING.magneticHeading,
       sum: `${bearing(th)} ${east ? "−" : "+"} ${magneticVariation(variation)} (east is least, west is best)`,
       result: bearing(mh),
     },
-    { name: "Compass heading", sum: "the magnetic heading with the deviation card's correction for it", result: bearing(mh) },
+    { name: WORDING.compassHeading, sum: "the magnetic heading with the deviation card's correction for it", result: bearing(mh) },
     {
-      name: "Ground speed",
+      name: WORDING.groundSpeed,
       sum: `${Math.round(tas)} × cos ${Math.abs(wca).toFixed(0)}° − ${Math.round(windKt)} × cos(${bearing(windDir)} − ${bearing(tc)})`,
       result: knots(gs),
     },

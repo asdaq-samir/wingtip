@@ -187,7 +187,7 @@ test("under IFR the AWC's forecast icing at the altitude flown is a caution, leg
   expect(query!.get("fixes")!.split(";")).toHaveLength(query!.get("alt_ft")!.split(",").length + 1);
   await openTab(page, "Weather");
   await openSection(page, "Adverse Conditions");
-  await expect(page.getByTestId("icing-flag")).toContainText("Icing forecast");
+  await expect(page.getByTestId("icing-flag")).toContainText("Forecast Icing");
   const rows = page.getByTestId("icing-forecast-leg");
   await expect(rows.first()).toContainText(/Moderate at [\d,]+ ft, 50% of it/);
   await expect(rows.first()).toContainText("Icing forecast 4,000–9,000 ft");

@@ -37,7 +37,7 @@ export function KnowledgeCodes({ codes }: { codes: string[] }) {
   return (
     // The codes on the Airman Knowledge Test Report: the examiner goes over
     // each one again, and the instructor endorses their review (61.39(a)(6)(iii)).
-    <ListGroup title="Knowledge test">
+    <ListGroup title="Knowledge Test">
       {codes.length === 0 ? (
         <ListRow muted title="No codes yet" />
       ) : (
@@ -118,7 +118,7 @@ export function ExperienceGroup({ training }: { training: Training }) {
     // 14 CFR 61.109(a), for an airplane single-engine rating, from the
     // logbook's columns: dual and cross-country counted as the smaller of
     // the two on each flight.
-    <ListGroup title="Private pilot experience">
+    <ListGroup title="Private Pilot Experience">
       {training.experience.map((item) => (
         <ListRow
           key={item.key}
@@ -170,10 +170,10 @@ function Instructors({ training }: { training: Training }) {
       {/* An instructor asked in sees the experience, endorsements and
           knowledge test codes here, reviews the solo cross-countries (14 CFR
           61.93(c)(3)) and signs the endorsements; either can end it. */}
-      <ListGroup title="Your instructor">
+      <ListGroup title="Your Instructor">
         <NameFieldRow
           id={nameId}
-          title="Your name"
+          title="Your Name"
           description="As on your student pilot certificate"
           placeholder="Avery B. Student"
           value={name}
@@ -203,7 +203,7 @@ function Instructors({ training }: { training: Training }) {
             </Button>
           </ListRow>
         ))}
-        <ListRow id={emailId} title="Ask an instructor">
+        <ListRow id={emailId} title="Ask an Instructor">
           <FieldHit htmlFor={emailId}>
             <Input
               id={emailId}
@@ -226,7 +226,7 @@ function Instructors({ training }: { training: Training }) {
         />
       </ListGroup>
       {training.reviews.length > 0 && (
-        <ListGroup title="Solo cross-countries">
+        <ListGroup title="Solo Cross-Countries">
           {training.reviews.map((r) => (
             <ListRow
               key={r.id}
@@ -254,7 +254,7 @@ function Lessons({ training }: { training: Training }) {
   if (training.lessons.length === 0) return null;
   const today = localDay();
   return (
-    <ListGroup title="Approach lessons">
+    <ListGroup title="Approach Lessons">
       {training.lessons.map((l) => (
         <ConsoleClose key={l.id}>
           <ListRow

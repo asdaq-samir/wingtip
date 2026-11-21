@@ -14,6 +14,7 @@ import { entryProblems } from "./entryChecks";
 import { FieldError } from "../../../components/ui/field";
 import { ariaInvalid } from "../../../components/ui/ariaInvalid";
 import { errorIdOf, invalidProps } from "../../../lib/fieldError";
+import { WORDING } from "../../../lib/wording/generated/wording";
 
 /**
  * One entry's form: a paper logbook's columns. In the plus's popover for a
@@ -79,9 +80,9 @@ export default function EntryForm({
     ),
   );
   const [askDiscard, discardDialog] = useConfirm({
-    title: "Discard Changes?",
+    title: WORDING.discardChangesQuestion,
     description: "What you typed in this flight is not saved.",
-    confirmLabel: "Discard",
+    confirmLabel: WORDING.discard,
     destructive: true,
     onConfirm: () => onCancel?.(),
   });
@@ -160,25 +161,25 @@ export default function EntryForm({
       {field("route", "Route")}
       {field("aircraft", "Airplane")}
       {field("aircraftType", "Type")}
-      {field("totalHours", "Total hours", "number")}
-      {field("nightHours", "Night hours", "number")}
+      {field("totalHours", "Total Hours", "number")}
+      {field("nightHours", "Night Hours", "number")}
       {field("crossCountryHours", "Cross-country", "number")}
-      {field("dayLandings", "Day landings", "number")}
-      {field("nightLandings", "Night landings", "number")}
+      {field("dayLandings", "Day Landings", "number")}
+      {field("nightLandings", "Night Landings", "number")}
       {/* What a student's 61.109 experience is counted from: the
           Checkride page. */}
-      {field("dualHours", "Dual received", "number")}
+      {field("dualHours", "Dual Received", "number")}
       {field("soloHours", "Solo", "number")}
-      {field("instrumentHours", "Sim. instrument", "number")}
-      {field("toweredLandings", "Towered landings", "number")}
+      {field("instrumentHours", "Sim. Instrument", "number")}
+      {field("toweredLandings", "Towered Landings", "number")}
       {field("distanceNm", "Distance (nm)", "number")}
-      {field("longestLegNm", "Longest leg (nm)", "number")}
+      {field("longestLegNm", "Longest Leg (nm)", "number")}
       {/* What instrument currency is counted from (14 CFR 61.57(c)): the
           approaches, holding and tracking courses, actual or simulated. */}
       {field("approaches", "Approaches", "number")}
       {/* Its two toggles a group named by its words (WCAG 1.3.1). */}
       <div role="group" aria-labelledby={`${formId}-also`} className={cn("grid grid-cols-[8rem_1fr] items-center gap-2", TEXT.detail)}>
-        <span id={`${formId}-also`}>Also flew</span>
+        <span id={`${formId}-also`}>Also Flew</span>
         <span className="flex gap-2">
           <Controller
             control={control}

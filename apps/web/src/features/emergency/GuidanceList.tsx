@@ -1,6 +1,7 @@
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { requestAirplanePick } from "../../lib/pickAirplane";
 import type { EmergencyModel } from "./useEmergency";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * With no airplane picked, in the checklist's place: the general guidance
@@ -12,12 +13,12 @@ import type { EmergencyModel } from "./useEmergency";
 export default function GuidanceList({ vm }: { vm: EmergencyModel }) {
   if (!vm.guidance) return null;
   return (
-    <ListGroup title="What to do">
+    <ListGroup title="What to Do">
       {vm.guidance.map((g) => (
         <ListRow key={g.title} title={g.title} description={`${g.detail} (${g.source})`} />
       ))}
       <ListRow
-        title="Pick an airplane"
+        title={WORDING.pickAnAirplane}
         description="For its own checklist and glide"
         onClick={() => {
           vm.close();

@@ -43,7 +43,7 @@ test("under VFR the flight plan flies direct, with no alternate, and says where 
   await form.getByTestId("flight-plan-copy").click();
   await expect(form.getByTestId("flight-plan-copy")).toHaveText("Copied");
   const text = await page.evaluate(() => navigator.clipboard.readText());
-  expect(text.split("\n").slice(0, 2)).toEqual(["KMSN to KOSH", "Item 8  Flight rules: VFR"]);
+  expect(text.split("\n").slice(0, 2)).toEqual(["KMSN to KOSH", "Item 8  Flight Rules: VFR"]);
   expect(text).toContain("Item 15  Route: DCT");
 });
 
@@ -134,9 +134,9 @@ test("items 10 and 19 come from the airplane's page, the pilot's and the persons
   const text = await page.evaluate(() => navigator.clipboard.readText());
   expect(text).toContain("Item 10a  Equipment: SDFGRY");
   expect(text).toContain("Item 10b  Surveillance: B1");
-  expect(text).toContain("Item 19  Persons on board: 2");
-  expect(text).toContain("Item 19  Color and markings: White blue stripes");
-  expect(text).toContain("Item 19  Pilot in command: Avery B. Pilot, 608-555-0100, home base KMSN");
+  expect(text).toContain("Item 19  Persons on Board: 2");
+  expect(text).toContain("Item 19  Color and Markings: White blue stripes");
+  expect(text).toContain("Item 19  Pilot in Command: Avery B. Pilot, 608-555-0100, home base KMSN");
 });
 
 test("where Flight Service is connected, the form is filed from here in the pilot's name", async ({ page }) => {

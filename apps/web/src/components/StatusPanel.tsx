@@ -10,6 +10,7 @@ import { useOnline } from "../lib/kept/useOnline";
 import { ageWords, mapAgesQuery, staleWords, useLayerAges } from "../lib/map/sources/layerAges";
 import { useCredits } from "../lib/map/gl/creditStore";
 import { TEXT } from "../lib/text";
+import { WORDING } from "../lib/wording/generated/wording";
 
 /**
  * The pilot's Status page, beside Guide and About, at the owner's ask
@@ -45,7 +46,7 @@ export default function StatusPanel() {
     <div className="space-y-5 pb-1">
       <ListGroup title="Connection">
         <ListRow
-          title="This phone"
+          title="This Phone"
           value={online ? "Online" : "Offline"}
           description={saved ? <span className={TEXT.detail}>{saved}</span> : undefined}
         />
@@ -69,7 +70,7 @@ export default function StatusPanel() {
             />
           ))
         ) : (
-          <ListRow muted title={isError ? "The planner could not be reached" : "Checking…"} />
+          <ListRow muted title={isError ? WORDING.plannerNotReached : "Checking…"} />
         )}
       </ListGroup>
 
@@ -103,7 +104,7 @@ export default function StatusPanel() {
       )}
 
       <ListGroup title="Traffic">
-        <ListRow title="Airplanes nearby" value={traffic ?? "None heard"} />
+        <ListRow title="Airplanes Nearby" value={traffic ?? "None heard"} />
       </ListGroup>
     </div>
   );

@@ -109,7 +109,7 @@ function OverlayChoice() {
   return (
     <div className="flex flex-col gap-2">
       <MapPictureChoices
-        title="Base map"
+        title="Base Map"
         value={overlay}
         testId="overlay-select"
         onChange={(v) => prefs.setOverlay(v as MapOverlay)}

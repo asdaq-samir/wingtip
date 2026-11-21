@@ -8,6 +8,7 @@ import { NumberField } from "../../components/ui/number-field";
 import { approachRelative, entrySteps, holdingEntry, holdingWind, type Entry, type Turns } from "../../lib/holdEntry";
 import { bearing } from "../../lib/format";
 import { TEXT } from "../../lib/text";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 const ENTRY_NAME: Record<Entry, string> = { direct: "Direct", teardrop: "Teardrop", parallel: "Parallel" };
 
@@ -193,8 +194,8 @@ export default function HoldingPage() {
 
   return (
     <div className="space-y-4">
-      <ListGroup title="The hold">
-        <NumberRow id={`${id}-in`} title="Inbound course" value={inbound} onChange={setInbound} unit="°" />
+      <ListGroup title="The Hold">
+        <NumberRow id={`${id}-in`} title="Inbound Course" value={inbound} onChange={setInbound} unit="°" />
         <ListRow title="Turns">
           <Segmented
             label="Turns"
@@ -209,7 +210,7 @@ export default function HoldingPage() {
         </ListRow>
         <NumberRow
           id={`${id}-hdg`}
-          title="Your heading to the fix"
+          title="Your Heading to the Fix"
           value={headingTo}
           onChange={setHeadingTo}
           unit="°"
@@ -242,10 +243,10 @@ export default function HoldingPage() {
       {/* The course and the wind in the same reference: magnetic, as a
           clearance gives the course (winds aloft are true, so the row says
           which). Turns at standard rate. */}
-      <ListGroup title="In the wind">
-        <NumberRow id={`${id}-tas`} title="True airspeed" value={tas} onChange={setTas} unit="kt" />
-        <NumberRow id={`${id}-wd`} title="Wind from, magnetic" value={windFrom} onChange={setWindFrom} unit="°" testId="hold-wind-from" />
-        <NumberRow id={`${id}-ws`} title="Wind speed" value={windKt} onChange={setWindKt} unit="kt" testId="hold-wind-kt" />
+      <ListGroup title="In the Wind">
+        <NumberRow id={`${id}-tas`} title={WORDING.trueAirspeed} value={tas} onChange={setTas} unit="kt" />
+        <NumberRow id={`${id}-wd`} title="Wind From, Magnetic" value={windFrom} onChange={setWindFrom} unit="°" testId="hold-wind-from" />
+        <NumberRow id={`${id}-ws`} title="Wind Speed" value={windKt} onChange={setWindKt} unit="kt" testId="hold-wind-kt" />
         <NumberRow id={`${id}-alt`} title="Altitude" value={altitude} onChange={setAltitude} unit="ft" />
       </ListGroup>
       {wind ? (
@@ -253,10 +254,10 @@ export default function HoldingPage() {
         // a half above (AIM 5-3-8); outbound timing from over or abeam the
         // fix, whichever is later.
         <ListGroup>
-          <ListRow title="Inbound heading" description={wind.words.inbound} value={bearing(wind.inbound.heading)} />
-          <ListRow title="Outbound heading" description={wind.words.outbound} value={bearing(wind.outbound.heading)} />
+          <ListRow title="Inbound Heading" description={wind.words.inbound} value={bearing(wind.inbound.heading)} />
+          <ListRow title="Outbound Heading" description={wind.words.outbound} value={bearing(wind.outbound.heading)} />
           <ListRow
-            title="Outbound time"
+            title="Outbound Time"
             description={wind.words.time}
             value={`${Math.round(wind.outboundSec)} s`}
             data-testid="hold-out-time"

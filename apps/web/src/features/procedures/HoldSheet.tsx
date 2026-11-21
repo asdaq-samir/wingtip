@@ -183,7 +183,7 @@ function HoldForm({ at, onSet }: { at: HoldAt; onSet: (fix: string, hold: Hold |
             )}
           </span>
         </ListRow>
-        <ListRow title="Hold for">
+        <ListRow title="Hold For">
           <PullDown
             label="Hold for"
             value={length}
@@ -205,7 +205,7 @@ function HoldForm({ at, onSet }: { at: HoldAt; onSet: (fix: string, hold: Hold |
           className={cn("w-full text-destructive", TEXT.row)}
           data-testid="hold-remove"
         >
-          Remove hold
+          Remove Hold
         </Button>
       )}
     </form>

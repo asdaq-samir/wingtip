@@ -56,7 +56,7 @@ const load: AddProtocolAction = async (params, abort) => {
     .replace("{x}", String(tile.x))
     .replace("{y}", String(tile.y));
   const res = await fetch(url, { signal: abort.signal });
-  if (!res.ok) throw new Error(`The terrain tile could not be had (${res.status}).`);
+  if (!res.ok) throw new Error(`The terrain tile could not be fetched (${res.status}).`);
   const png = await createImageBitmap(await res.blob(), { premultiplyAlpha: "none", colorSpaceConversion: "none" });
   const size = png.width;
   const ctx = new OffscreenCanvas(size, size).getContext("2d", { willReadFrequently: true })!;

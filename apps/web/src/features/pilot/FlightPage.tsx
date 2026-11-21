@@ -25,6 +25,7 @@ import { FINDING_TONE } from "../../lib/findings";
 import { airportQuery, trainingQuery } from "../../lib/queryClient";
 import { proceduresOf, sameField } from "../../lib/procedures";
 import { FieldError } from "../../components/ui/field";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 // Its own chunk: the approach's debrief is drawn only where a track came
 // down a final, and asks for the field's procedures as it is.
@@ -129,23 +130,23 @@ function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string
           </Pressable>
         </FileTrigger>
         {track && !onAccount && (
-          <ListRow title="Save to your account" onClick={() => save.mutate(track)} disabled={save.isPending} data-testid="debrief-save" />
+          <ListRow title={WORDING.saveToAccount} onClick={() => save.mutate(track)} disabled={save.isPending} data-testid="debrief-save" />
         )}
         {onAccount && (
           <ListRow
-            title="Remove from your account"
+            title={WORDING.removeFromAccount}
             onClick={() => unsave.mutate()}
             disabled={unsave.isPending}
             data-testid="debrief-unsave"
           />
         )}
-        {local && <ListRow title="Forget it on this device" onClick={forget} data-testid="debrief-forget" />}
+        {local && <ListRow title="Forget on This Device" onClick={forget} data-testid="debrief-forget" />}
         {result && (
           // Onto the chart over its own route, red where it was outside a
           // tolerance; the map's buttons have its key and Hide.
           <ConsoleClose>
             <ListRow
-              title="Show on the map"
+              title={WORDING.showOnMap}
               to={planHref}
               data-testid="debrief-show"
               onClick={() =>
@@ -205,7 +206,7 @@ function InstructorReview({ summary }: { summary: FlightSummary }) {
     <>
       {/* Before each solo cross-country the instructor reviews its planning
           and the weather and endorses it (14 CFR 61.93(c)(3), (d)). */}
-      <ListGroup title="Solo cross-country">
+      <ListGroup title="Solo Cross-Country">
         {asked.map((r) => (
           <ListRow
             key={r.id}
@@ -248,7 +249,7 @@ export default function FlightPage({ summary, planHref }: { summary: FlightSumma
         {summary.totalDistanceNm != null && <Row title="Distance" value={nm(summary.totalDistanceNm)} />}
         {summary.totalEteMin != null && <Row title="Time" value={hm(summary.totalEteMin)} />}
         {summary.totalFuelGal != null && <Row title="Fuel" value={gal(summary.totalFuelGal)} />}
-        {summary.plannedFor && <Row title="Planned for" value={dayMonthTime(new Date(summary.plannedFor))} />}
+        {summary.plannedFor && <Row title="Planned For" value={dayMonthTime(new Date(summary.plannedFor))} />}
         {summary.risk && (
           <ListRow
             title="Risk"
@@ -257,7 +258,7 @@ export default function FlightPage({ summary, planHref }: { summary: FlightSumma
           />
         )}
         <ConsoleClose>
-          <ListRow title="Open on the map" to={planHref} data-testid="flight-open" />
+          <ListRow title={WORDING.showOnMap} to={planHref} data-testid="flight-open" />
         </ConsoleClose>
       </ListGroup>
       <InstructorReview summary={summary} />

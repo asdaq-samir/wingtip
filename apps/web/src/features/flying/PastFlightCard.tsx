@@ -145,7 +145,7 @@ function Figures({ flight, points }: { flight: PastFlightSummary; points: PastFl
                 <Gauge />
               </RowBadge>
             }
-            title="Average ground speed"
+            title="Average Ground Speed"
             value={value(speed != null ? knots(speed) : "—")}
           />
         </>
@@ -295,7 +295,7 @@ function useHalfFit(box: RefObject<HTMLDivElement | null>): number | null {
  *  pilot uses (feet, knots, degrees, feet a minute). */
 function TrackLog({ points }: { points: PastFlightPoint[] }) {
   return (
-    <ListGroup title="Track log">
+    <ListGroup title="Track Log">
       <LogTable points={points} />
     </ListGroup>
   );

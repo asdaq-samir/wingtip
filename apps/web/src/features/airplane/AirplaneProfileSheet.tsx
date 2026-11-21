@@ -27,6 +27,7 @@ import { AirplaneFacts } from "../../components/airplane/AirplaneFacts";
 import { useTabScroll } from "../../lib/tabScroll";
 import AirplaneInfo from "./AirplaneInfo";
 import { StatusLine } from "../../components/StatusBadge";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** One figure: its name and where it comes from, its field (typed in place,
  *  kept as the pilot's when it changes), and Reset to book figure where
@@ -101,7 +102,7 @@ function PhotoRead({ vm }: { vm: AirplaneProfileModel }) {
       >
         <ListGroup>
           <Pressable isDisabled={busy}>
-            <ListRow title={busy ? "Reading the page…" : "Read from a Photo"} disabled={busy} />
+            <ListRow title={busy ? WORDING.readingThePage : "Read from a Photo"} disabled={busy} />
           </Pressable>
         </ListGroup>
       </FileTrigger>

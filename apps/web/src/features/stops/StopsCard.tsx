@@ -20,6 +20,7 @@ import { prefersReducedMotion } from "../../lib/motion";
 import { useStopsAlong } from "./stopsAlong";
 import { TEXT } from "../../lib/text";
 import { Skeleton } from "../../components/ui/skeleton";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** A kind's pill as iOS sets a filter: its round glyph and its name,
  *  filled in the tint when picked; 32 points with a 44-point area round
@@ -260,7 +261,7 @@ export default function StopsCard({
               onScope("near");
             }}
             options={[
-              ...(route ? [{ value: "route", label: "Along Route", testId: "stops-distance-option" }] : []),
+              ...(route ? [{ value: "route", label: WORDING.alongTheRoute, testId: "stops-distance-option" }] : []),
               ...STOP_RADII.map((nm) => ({ value: `${nm}`, label: `Within ${nm} nm`, testId: "stops-distance-option" })),
             ]}
           />

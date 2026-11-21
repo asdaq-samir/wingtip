@@ -76,7 +76,7 @@ export default function AirportSections({
               <PatternRadio briefing={briefing} landings={landings} legs={legs} callSign={callSign} at={ident} />
               {/* Each frequency as the field's card lists it (FrequencyRow):
                   its glyph and its name in words, the figure at the right. */}
-              <ListGroup title={phases.length ? "Other frequencies" : "Radio"}>
+              <ListGroup title={phases.length ? "Other Frequencies" : "Radio"}>
                 {otherFrequencies.length ? (
                   otherFrequencies.map((f, k) => (
                     <FrequencyRow
@@ -92,7 +92,7 @@ export default function AirportSections({
                   <ListRow muted title={<>{info?.frequencies.length ? "None but those on the calls" : NO_FREQUENCIES}</>} />
                 )}
               </ListGroup>
-              <ListGroup title={flown.size ? "Other runways" : "Runways"}>
+              <ListGroup title={flown.size ? "Other Runways" : "Runways"}>
                 {otherRunways.map((r, k) => (
                   <RunwayRow key={k} runway={r} />
                 ))}

@@ -18,7 +18,7 @@ describe("an abbreviation explained on a tap", () => {
     expect(container.textContent).toBe("MH 334°");
     fireEvent.click(screen.getByRole("button", { name: "MH: what it means" }));
     const popover = await screen.findByTestId("explain-popover");
-    expect(popover.textContent).toContain("Magnetic heading");
+    expect(popover.textContent).toContain("Magnetic Heading");
     expect(popover.textContent).toContain(EXPLAINED.MH.sentence);
     expect(popover.textContent).toContain(EXPLAINED.MH.source);
     // The tap is the word's, not the row's under it.
