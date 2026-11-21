@@ -49,6 +49,8 @@ Each fact lives in one doc; the others link to it.
 | [design/icons.md](design/icons.md) | The icon concepts and each platform's symbol for them |
 | [legal/](legal/privacy.md) | The privacy policy, terms, credits and support pages |
 | [store/listing.md](store/listing.md) | The App Store and Google Play listings and review notes; [store/privacy-labels.md](store/privacy-labels.md) the stores' privacy answers, [store/preview-video.md](store/preview-video.md) the App Preview's plan |
+| [store/beta.md](store/beta.md) | The pilot beta on TestFlight and Play internal testing: what the builds do, the owner's steps, the notes and the invitation ([store/beta/invitation.md](store/beta/invitation.md)) |
+| [store/feature-review.md](store/feature-review.md) | Keep, park or cut: each feature's pilots, cost and a recommendation, for the owner |
 | [SIM-EXPORT.md](SIM-EXPORT.md) | The Studio's "Export for simulator": each file, what is estimated, and how to replay it in MSFS (FlightControlReplay, Sky Dolly), X-Plane 12 and Google Earth |
 | [XPLANE-TRIAL.md](XPLANE-TRIAL.md) | The X-Plane 12 trial on the Mac: the demo, the replay plugin (tools/xplane-driver), the steps with times, what to judge, AutoOrtho |
 | [GOOGLE-MAPS.md](GOOGLE-MAPS.md) | The map's imagery under the chart: the USGS's, and Google's with the owner's key |

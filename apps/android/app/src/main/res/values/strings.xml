@@ -289,6 +289,9 @@
     <string name="about_privacy">Privacy Policy</string>
     <string name="about_terms">Terms of Use</string>
     <string name="about_support">Support</string>
+    <string name="about_send_feedback">Send Feedback</string>
+    <string name="about_feedback_subject">Wingtip Maps Feedback</string>
+    <string name="about_feedback_text">Wingtip Maps %1$s (%2$d), Android %3$s\n\nWhat I was doing:\n\nWhat happened:\n\nWhat I expected:\n</string>
     <string name="about_demo_flight">Demo Flight</string>
     <string name="account_and_settings">You and your account</string>
 

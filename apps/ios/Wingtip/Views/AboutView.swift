@@ -3,8 +3,8 @@ import SwiftUI
 /// About, as Settings > General > About has it: the app and its build, the
 /// editions of the FAA data in use, what the app is and is not (the
 /// planning aid's words, the same in every app), whose data and software
-/// it is made with, the site's legal pages, and the demo flight for a
-/// pilot or App Review trying it. Reached from Setup's last section.
+/// it is made with, the site's legal pages, Send Feedback, and the demo
+/// flight for a pilot or App Review trying it. Reached from Setup's last section.
 struct AboutView: View {
     @Environment(\.appCommand) private var appCommand
     @Environment(Charts.self) private var charts
@@ -47,6 +47,15 @@ struct AboutView: View {
                 Link("Privacy Policy", destination: AboutModel.page("privacy"))
                 Link("Terms of Use", destination: AboutModel.page("terms"))
                 Link("Support", destination: AboutModel.page("support"))
+            }
+            // A tester's word to the owner, through the share sheet to whoever
+            // they send it (docs/store/beta.md); TestFlight's own screenshot
+            // feedback goes to App Store Connect beside it.
+            Section {
+                ShareLink(item: AboutModel.feedback(version: model.version, system: "iOS \(UIDevice.current.systemVersion)"),
+                          subject: Text("Wingtip Maps Feedback")) {
+                    Text("Send Feedback")
+                }
             }
             // The flight planned and the map shown with the FPL tab up; the
             // route the pilot had is one Undo away (PlanHistory).

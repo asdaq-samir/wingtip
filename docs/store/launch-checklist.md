@@ -11,6 +11,38 @@ for the builds. From the privacy and store audit of 2026-11-10 (its
 owner steps O1 to O6, and the owner's half of B4 to B6, S4 to S6, S12 and
 S13). Tick each as it is done.
 
+## The order
+
+Each step needs the one before it:
+
+1. **The backend.** The AWS stack (docs/README-AWS.md, "The first
+   deploy"; issue #115) and the domain below. Every build, the beta's
+   too, talks to `WINGTIP_URL`'s host, and both stores' reviewers sign
+   in there.
+2. **The organization accounts.** The D-U-N-S number takes days, and
+   Apple's and Play's organization enrolments wait on it (below).
+3. **The pilot beta** ([beta.md](beta.md)): TestFlight external testing
+   and Play internal testing, about four weeks.
+4. **The listings and forms** below, then the review account switched
+   on, then submit.
+
+## The backend
+
+- [ ] The stack, its images, mail and first chart cycle, as
+      docs/README-AWS.md's "The first deploy" (its owner's steps are
+      issue #115's: the AWS account with MFA, the Route 53 zone, the
+      GitHub `production` environment, the AppSecret).
+- [ ] SES production access (README-AWS, "Mail", step 4). Until Amazon
+      grants it, the emailed sign-in link reaches only verified
+      addresses: no tester or reviewer could sign in by email.
+- [ ] The server's size: `InstanceType` t3a.large, not the template's
+      t3a.medium default. The services take about 3.5 GB of the
+      medium's 4 GB (the prelaunch audit of 2026-11-21).
+- [ ] A restore rehearsed once (README-AWS, "Backups and restore"). Then
+      delete again any account deleted since the backup restored: a
+      restore brings deleted accounts back, and nothing yet does it by
+      itself (the prelaunch audit's P3).
+
 ## The domain and the contact
 
 - [ ] Register `wingtipmaps.app` (and `wingtipmaps.com`), point it at the
@@ -153,6 +185,24 @@ About (docs/legal/credits.md) carry non-commercial terms:
       the rest of App content as listing.md says.
 - [ ] `APP_ANDROID_CERT_SHA256` in the AppSecret with Play's app signing
       certificate and the upload key's, so sign-in links open in the app.
+
+## Not yet anyone's step
+
+Found missing in the launch path on 2026-11-21. Each is code or a
+decision, not a console step:
+
+- [ ] A re-deletion after a restore (the prelaunch audit's P3): a
+      `deleted_accounts` log kept outside the dump, read after any
+      restore.
+- [ ] An open-source licence screen in the phones' About (Apache-2.0
+      notices; the store-review audit's 14). No store rule asks for it,
+      but the licences do.
+- [ ] A privacy contact address named in the policy, once the domain's
+      mailbox exists (the prelaunch audit, "For the owner").
+- [ ] The beta's outcome folded into the feature review
+      ([feature-review.md](feature-review.md)) before the listing's
+      words are final: a feature cut or parked leaves the listing and
+      the screenshots too.
 
 ## Google Cloud
 

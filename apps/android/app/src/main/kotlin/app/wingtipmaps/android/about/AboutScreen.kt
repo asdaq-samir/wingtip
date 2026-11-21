@@ -3,6 +3,7 @@ package app.wingtipmaps.android.about
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,7 +46,7 @@ import app.wingtipmaps.android.ui.ValueSettingRow
  * About, from the foot of Setup: the app and its build, the chart edition
  * and the cycle packs in use, the planning aid's words every app says
  * (docs/legal/credits.md), the credits, the privacy policy, terms and
- * support on the site, and the demo flight. A figure the phone does not
+ * support on the site, Send Feedback, and the demo flight. A figure the phone does not
  * have is left out rather than guessed.
  *
  * @param onDemo after the demo flight is put on the plan: the sheets close
@@ -96,6 +97,15 @@ fun AboutScreen(onDemo: () -> Unit, model: AboutModel = hiltViewModel(), charts:
             ActionSettingRow(stringResource(R.string.about_terms), index = 1, count = 3) { openSite(context, "/terms") }
             ActionSettingRow(stringResource(R.string.about_support), index = 2, count = 3) { openSite(context, "/support") }
         }
+        // A tester's word to the owner, through Android's sharesheet to
+        // whoever they send it (docs/store/beta.md): the build and the
+        // system, which the fault reports already carry, and three
+        // questions; the app itself sends nothing.
+        val feedback = stringResource(R.string.about_feedback_text, model.version, model.build, Build.VERSION.RELEASE)
+        val subject = stringResource(R.string.about_feedback_subject)
+        SettingsGroup {
+            ActionSettingRow(stringResource(R.string.about_send_feedback), index = 0, count = 1) { sendFeedback(context, subject, feedback) }
+        }
 
         Button(
             onClick = {
@@ -113,6 +123,12 @@ private fun Credit(credit: AboutCredits.Credit) {
         Text(credit.what, style = MaterialTheme.typography.bodyMedium)
         Text(credit.terms, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+/** The feedback in Android's sharesheet, for the tester's mail or messages. */
+private fun sendFeedback(context: Context, subject: String, text: String) {
+    val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT, subject).putExtra(Intent.EXTRA_TEXT, text)
+    context.startActivity(Intent.createChooser(send, null))
 }
 
 /** The site's page in the phone's browser: the policy and terms are the
