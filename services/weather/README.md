@@ -36,9 +36,19 @@ until the idle pace has come round. One fetch of a product runs at a time,
 | `satellite` | the times of nowCOAST's GOES East and West infrared and visible pictures (its WMS capabilities), the last three hours | 5 min | 30 min | no limit |
 | `flow` | the map's flow layer (`app.flow`): the GFS 0.25 degree from 5 to 75 N, 180 to 50 W, the HRRR's cell means over it where it covers, for the last hour, now and every even hour to 12 ahead; wind, gust, precipitation, cloud, 2 m temperature and visibility, a PNG each (`.png` beside the record, 55-130 KB). A frame already held from the same runs is not fetched again: about 2.2 MB a new GFS hour, 10.5 MB a new HRRR hour (`WEATHER_FLOW_HRRR_AHEAD_H`, 0 by default: the HRRR for the last hour and now) | 15 min | 3 h | an hour past its newest frame |
 
-A failed fetch leaves the stored copy in place and writes
-`<name>.attempt.json` beside it, which the pilot's Status page reads as
-"failing". Every request carries wingtip's User-Agent (the FAA's
+Each try writes `<name>.attempt.json` beside the record: when it began,
+its failure if it failed (the pilot's Status page reads that as
+"failing"), and when a try last confirmed the copy held. A failed fetch
+leaves the stored copy in place. A copy that comes back unchanged is not
+written again (`weather_store.write_if_changed`): the TFR list by a digest
+of the list, aviationweather.gov's files by a digest of the body as sent
+(their ETags and Last-Modified move every minute, so a 304 is rare, and
+the engine does not read the same body twice), and `recent-winds` only
+when a wind comes or goes. Its age, on the Status page, the map and the
+health below, is from the last confirmation, so a quiet product is never
+stale for being unchanged, and the planner does not decode it again. A
+source's validators for its next conditional GET are kept in
+`<name>.validators.json`. Every request carries wingtip's User-Agent (the FAA's
 browser-like one for tfr.faa.gov); aviationweather.gov is asked for its
 cache files, never a query per route, as its API terms ask heavy users.
 
@@ -50,8 +60,9 @@ down, the GFS's newest run, and a GRIB2 file read a message at a time.
 
 `GET :8000/` answers 200 while the process runs, with each product's
 `fetched_at`, `age_s`, `until`, `servable`, `failing` and `stale`, and an
-overall `"status": "ok" | "stale"`. A product is stale once older than
-three of its idle intervals or past its own validity.
+overall `"status": "ok" | "stale"`; `fetched_at` and `age_s` are from the
+copy's last confirmation. A product is stale once that is older than
+three of its idle intervals, or past its own validity.
 
 ## Running and checking
 

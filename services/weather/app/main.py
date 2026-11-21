@@ -21,8 +21,9 @@ request (the FAA's browser-like one where its sites want it).
 GET / (or /health) answers 200 while the process runs, with each
 product's age: {"status": "ok" | "stale", "in_use", "products": {name:
 {"fetched_at", "age_s", "until", "servable", "failing", "error",
-"every_s", "stale"}}}. A product is stale once its copy is older than
-three of its idle turns, or past its own validity; "stale" overall if any
+"every_s", "stale"}}}, "fetched_at" and the age from when the copy was
+last confirmed (fetched, or found unchanged since). A product is stale
+once that is older than three of its idle turns, or past its own validity; "stale" overall if any
 is. The answer says so rather than failing the container's health, since
 a restart fetches nothing an outage at NOAA would give.
 """
@@ -160,11 +161,14 @@ def health(now: float | None = None) -> dict:
     for product in PRODUCTS:
         record = weather_store.read(product.name)
         tried = weather_store.attempt(product.name)
-        age = None if record is None else round(now - record.fetched_at, 1)
+        # The age is from the copy's last confirmation, not its writing: a
+        # copy found unchanged is not written again (write_if_changed).
+        confirmed = weather_store.confirmed_at(product.name, record)
+        age = None if confirmed is None else round(now - confirmed, 1)
         servable = weather_store.servable(record, now)
-        failing = bool(tried and tried.get("error") and (record is None or tried["attempted"] >= record.fetched_at))
+        failing = weather_store.failing(product.name, record)
         products[product.name] = {
-            "fetched_at": record.fetched_at if record else None,
+            "fetched_at": confirmed,
             "age_s": age,
             "until": record.until if record else None,
             "servable": servable,

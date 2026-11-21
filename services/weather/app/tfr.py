@@ -175,7 +175,15 @@ def _keep_stored_details() -> None:
 
 
 def fetch() -> None:
-    """The list fetched and stored ("tfrs"). Raises TfrUnavailable where
-    tfr.faa.gov does not answer, the stored list left in place."""
+    """The list fetched and stored ("tfrs"), written only where it differs
+    from the copy held (its digest in the record's meta, "body"): TFRs
+    change a few times a day and the list is asked every ten minutes, and
+    each 200 KB rewrite had the planner rebuild its shapes' index and
+    encode /api/tfrs again. An unchanged list is confirmed by the try's
+    attempt file (weather_store.confirmed_at), the age the map and the
+    Status page say. Raises TfrUnavailable where tfr.faa.gov does not
+    answer, the stored list left in place."""
     now = time.time()
-    weather_store.write("tfrs", tfrs(_shapes()), fetched_at=now, until=None)
+    found = tfrs(_shapes())
+    digest = weather_store.body_hash(json.dumps(found, sort_keys=True, separators=(",", ":")).encode())
+    weather_store.write_if_changed("tfrs", found, fetched_at=now, until=None, meta={"body": digest})
