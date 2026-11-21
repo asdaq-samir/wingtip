@@ -235,10 +235,11 @@ with the sheet at rest: the search or a row of the plan is 1.
 **One row (owner decision 2026-11-10).** The "Flight Plan" title bar is
 gone on the iPhone: the sheet's top row is the search with the microphone
 and the account button beside it, and the route card sits under it (the
-route, Ready to Fly, the figures, Brief, Nav Log, Airplane, •••). Saved
-Flights, Share and Undo, which were the bar's, are in the route card's
-•••: Flights 1 → 2, Share 1 → 2 (its ways a submenu, 3 to pick one), Undo
-1 → 2, and Undo is still 0 taps by shaking the iPhone or ⌘Z.
+route, Ready to Fly, the figures, Brief, Nav Log, File, ••• and ✕). The
+••• is the web's More since 2026-11-21: Route Options, Share Link and
+Open in ForeFlight, then Undo, Saved Flights and Show Route As; the
+nav log's Share holds the other ways out, the checkpoints for ForeFlight
+and Print. Undo is still 0 taps by shaking the iPhone or ⌘Z.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
@@ -251,9 +252,9 @@ Flights, Share and Undo, which were the bar's, are in the route card's
 | Figures strip | the sheet's foot, with a route | 0 | Tapped, the nav log |
 | Nav Log | the route card's Nav Log; the strip | 2 → **1** / 1 | -- |
 | Brief | the route card's Brief; the search's Do | 2 → **1** | the Brief's one foot bar, Start Flight |
-| Profile | the route card's ••• → Profile; the cruise altitude in the route section; a stop's Set Altitude… (on that waypoint's Start At / Cross At popover); the search's Do | 1 / 2 | The vertical altitude slider (Set, Auto in flight); the Altitude Advisor's rows pick the cruise; a waypoint's altitude, typed or stepped |
+| Profile | the cruise altitude in the route section, its caution marked on it; a stop's Set Altitude… (on that waypoint's Start At / Cross At popover); the search's Do | 1 / 2 | The vertical altitude slider (Set, Auto in flight); the Altitude Advisor's rows pick the cruise; a waypoint's altitude, typed or stepped |
 | Saved Flights | the route card's ••• → Saved Flights (was the bar's, 1); the search's Do; Settings' Flights row | 1 → **2** (one-row header, owner decision 2026-11-10) | Swipe to delete with an Undo row |
-| Share | the route card's ••• → Share → a way (was the bar's Share, 1 → 2) | 2 → **3** | -- |
+| Share | the route card's ••• → Share Link or Open in ForeFlight; the Nav Log's Share → a way, the checkpoints for ForeFlight, Print | 2 / 3 | -- |
 | Undo | the route card's ••• → Undo (was the bar's, 1); shake; ⌘Z | 1 → **2**, shake 0 | -- |
 | Nearest | the instruments bar; the search's All Nearest; the plan's Nearest for a Diversion; Siri | 1–2 | **One list** from every way in: Divert on a swipe or a hold, Diversion Drill |
 | Map card (new) | the map's own Map button; Settings' Map row | **1** (was 2, Settings) | The layers, airport weather, traffic, the weather loop and the alerts, each switch in place |
