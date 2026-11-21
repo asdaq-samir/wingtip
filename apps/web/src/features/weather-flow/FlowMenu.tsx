@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { LayerSubmenu } from "../../components/LayerTile";
+import { prefetchFlowGl } from "./flowChunk";
 import { useWeatherLayers, type FlowField } from "../../lib/map/sources/weatherLayers";
 import { FIELDS } from "./flowLook";
 
@@ -17,6 +19,9 @@ const CHOICES: { value: FlowField; label: string }[] = [{ value: "off", label: "
 export function FlowMenu() {
   const flow = useWeatherLayers((s) => s.flow);
   const set = useWeatherLayers((s) => s.set);
+  // Drawn as the Weather menu opens: the layer's chunk asked for then, ahead
+  // of a field being picked in it.
+  useEffect(prefetchFlowGl, []);
   return (
     <LayerSubmenu<FlowField>
       name="Model Weather"

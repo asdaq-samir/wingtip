@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PIN_AT_FOOT, RIDES_ON_PIN, barLift, pinnedNow } from "./pinAtFoot";
+import { PIN_AT_FOOT, PIN_STICKS, RIDES_ON_PIN, barLift, pinnedNow } from "./pinAtFoot";
 
 describe("pinAtFoot", () => {
   it("holds the row at the pill whatever the slide", () => {
@@ -15,6 +15,14 @@ describe("pinAtFoot", () => {
 
   it("lets the row's move go down as well as up where --pin-cap says so (a phone's bottom sheet)", () => {
     expect(PIN_AT_FOOT).toContain("translateY(min(var(--pin-cap,0px),calc(var(--pin-room,9999px)");
+  });
+
+  it("holds the row's box at the page's foot by the browser's own sticky, on a phone's bottom sheet alone", () => {
+    expect(PIN_STICKS.split(" ")).toEqual([
+      "in-data-[swipe-direction=down]:sticky",
+      "in-data-[swipe-direction=down]:bottom-0",
+      "in-data-[swipe-direction=down]:z-30",
+    ]);
   });
 
   it("lifts the bar so its foot is 4 points over the figures held on the foot's edge, and no more", () => {

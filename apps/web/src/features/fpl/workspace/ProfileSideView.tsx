@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { Play } from "lucide-react";
 import IconButton from "../../../components/IconButton";
 import { AltitudeProfile, RouteProblem } from "../routePanelParts";
@@ -6,11 +6,9 @@ import { useQuery } from "@tanstack/react-query";
 import type { PlanSlices } from "../vm/planSlices";
 import { aircraftProfilesQuery } from "../../../lib/queryClient";
 import { bookOf, ownOf } from "../../../lib/airplane/figures";
-import { loadMiniProfile } from "../../navlog";
-
 // The route from the side, drawn only in the Profile's card: out of the
-// first load as the lists are.
-const MiniProfile = lazy(() => loadMiniProfile());
+// first load as the lists are (navlog's MiniProfile, its own chunk).
+import { MiniProfile } from "../../navlog";
 
 /** The Profile card's body (AltitudeProfile): the side view with the
  *  altitude's wheel in its corner, its dry run at its top right, and under

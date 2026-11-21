@@ -246,9 +246,9 @@ export function useProceduresRoute(given: ProceduresRouteProps) {
       else onPreselectTakeoff(ident, end);
     }
     // Still pending while a pick just made is on its way into the address,
-    // so the nav log is not asked for in between (usePlan's `settling`, the
-    // audit's WEB-14); the render that brings it runs this again. Never
-    // held for good: a pick that does not land lets go after a second.
+    // so Save does not keep the plan from before it (features/plan/windPicks);
+    // the render that brings it runs this again. Never held for good: a
+    // pick that does not land lets go after a second.
     useWindPicks.setState({ pending: windComing || picking });
     if (!picking) return;
     const letGo = window.setTimeout(() => useWindPicks.setState({ pending: false }), 1000);

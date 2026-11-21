@@ -61,7 +61,7 @@ export interface PlanParams {
   /** Checkpoints between the route's points, as the map shows them (the
    *  settings' Waypoints); without, the nav log runs point to point. */
   checkpoints?: boolean;
-  settling?: boolean; // Wind runways or procedures still coming: the nav log waits, asked once (WEB-14).
+  settling?: boolean; // Procedures still being drawn: the nav log waits, asked once (WEB-14).
   /** A local flight's time aloft, in minutes (one airport to itself). */
   localMin?: number;
   /** The flight rules it is planned under: IFR's minimum altitudes,
@@ -88,6 +88,8 @@ export type BriefingState =
 
 /** Where the runways left from are in a plan's key (planKeyOf). */
 export const PLAN_KEY_RUNWAYS = 14;
+/** Where the fuel set in the tanks is in a plan's key (planKeyOf). */
+export const PLAN_KEY_TANKS = 19;
 
 /** Everything the nav log is computed from. */
 export function planKeyOf({

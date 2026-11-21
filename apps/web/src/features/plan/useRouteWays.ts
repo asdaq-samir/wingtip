@@ -54,6 +54,7 @@ export function useRouteWays({
   local,
   flightRules,
   altitudeFt,
+  planSettled,
 }: {
   planned: PlannedRoute;
   aircraft: AircraftChoice;
@@ -65,6 +66,9 @@ export function useRouteWays({
    *  before the plan. Where the route enters Class B there, the ways
    *  offer Avoid Class B (the owner, 2026-11-17). */
   altitudeFt: number | null;
+  /** The plan is in whole, or has failed: the ways are asked then, once,
+   *  at its altitude (usePlanAnswer). */
+  planSettled: boolean;
 }) {
   const minimums = usePreferences((p) => p.minimums);
   const routeWeather = usePreferences((p) => p.routeWeather);
@@ -111,8 +115,10 @@ export function useRouteWays({
       : null;
   const baseStops = browsing?.stops ?? planned.stops;
   const vfrRoute = routeOf(planned.dep, planned.dest, planned.stops) !== null && !local && flightRules === "vfr";
-  // Asked for as soon as the route is known: nothing is planned till one
-  // of them is picked (below), so they no longer wait on the nav log.
+  // Asked for once the route's plan is in (or has failed), at its
+  // altitude, not before it and again at it: the planner's costliest call
+  // twice for every route (usePlanAnswer). While a way is browsed, at
+  // once, at the typed route's altitude kept with it.
   // The airplane handed on as a copy: handed to a plain function itself,
   // the compiler takes it as changed there and skips every later memo
   // that reads it (lib/queryClient's queries are pure).
@@ -128,7 +134,7 @@ export function useRouteWays({
       { ceilingFt, visibilitySm },
       browsing ? browsing.ownAltitudeFt : altitudeFt,
     ),
-    enabled: vfrRoute,
+    enabled: vfrRoute && (planSettled || !!browsing),
     // The ways before kept on the row while the same route is asked for
     // again -- another airplane, departure time or minimums -- so FPL's
     // Routes row stays where it is, dimmed, till the new ones come: it
