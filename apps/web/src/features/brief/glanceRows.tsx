@@ -198,7 +198,7 @@ export function EnrouteRow({ enroute, said, onOpen }: { enroute?: BriefGlance["e
             value={enroute?.visibilitySm != null ? `${enroute.visibilitySm} sm` : DASH}
             finding={stop && enroute.visibilitySm != null ? "stop" : undefined}
           />
-          <Stat label="Wind Aloft" value={enroute?.wind ?? DASH} />
+          <Stat label="Wind aloft" value={enroute?.wind ?? DASH} />
         </Figures>
       }
       chevron
