@@ -15,7 +15,10 @@ test.beforeEach(({ page }) => pickAirplane(page));
  */
 test("a long route scrolled at full: the figures stay at the sheet's foot, no row below them", async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
-  await page.goto("/app/plan?dep=C81&dest=KATW&stops=KUGN,KENW,BAE,OSH,KMKE,KRAC&view=full");
+  // Nine stops, the route several rows longer than the sheet: with six it
+  // was only 40 points longer at a large text size (CI, PR #589), too
+  // little room to scroll the strip through.
+  await page.goto("/app/plan?dep=C81&dest=KATW&stops=KUGN,KENW,BAE,OSH,KMKE,KRAC,KJVL,KMSN,KDLL&view=full");
   await settle(page);
   await grabberTo(page, "full");
   const scroller = page

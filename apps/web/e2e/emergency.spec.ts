@@ -128,9 +128,14 @@ test('the pilot\'s own "mayday" at the microphone opens it at once', async ({ pa
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   const sheet = page.getByTestId("emergency-sheet");
+  // Tapped again only while it is not listening: a tap while it listens
+  // (its pill's chunk still loading) stops it, and the button then goes
+  // with the pill (flakes audit, CI on PR #589), as clearance.spec taps it.
+  const button = page.getByTestId("radio-button");
   await expect(async () => {
-    if (!(await page.getByTestId("radio-pill").count())) await page.getByTestId("radio-button").click();
-    await expect(sheet).toBeVisible({ timeout: 2000 });
+    if (!(await page.getByTestId("radio-pill").count()) && (await button.getAttribute("aria-pressed", { timeout: 1000 })) !== "true")
+      await button.click({ timeout: 1000 });
+    await expect(sheet).toBeVisible({ timeout: slow(5000) });
   }).toPass({ timeout: slow(20_000) });
   // The radio's part needs no position: 7700 and the call are there at once.
   await expect(sheet.getByTestId("emergency-squawk")).toContainText("7700");

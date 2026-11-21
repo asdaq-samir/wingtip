@@ -3,7 +3,7 @@ import { settle, sideDrawer, slow, openBrief, openNavLog, navLogSheet } from "./
 import { pickAirplane } from "./startState";
 
 /**
- * A route into Canada (the owner's pick of 2026-11-21, decision 0053):
+ * A route through Canada (the owner's pick of 2026-11-21, decision 0053):
  * every figure is worked out by the FAA's rules, so where the route leaves
  * the United States the timeline's row and the nav log say "Canada: rules
  * not checked — figures use US rules", and the Brief says it once among
@@ -20,9 +20,12 @@ test.use({ viewport: { width: 402, height: 874 }, hasTouch: true, isMobile: true
 
 const WORDS = "Canada: rules not checked — figures use US rules";
 
-test("a route from C81 to Thunder Bay is planned and warned of where its figures are, and once in the Brief", async ({ page }) => {
+// Detroit to Buffalo: both ends US fields the planner knows, the great
+// circle between them across southern Ontario. Thunder Bay (CYQT) is in no
+// FAA data set, so its row said only that its card could not be had.
+test("a route from Detroit to Buffalo across Ontario is planned and warned of where its figures are, and once in the Brief", async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
-  await page.goto("/app/plan?dep=C81&dest=CYQT&view=full");
+  await page.goto("/app/plan?dep=KDET&dest=KBUF&view=full");
   await settle(page);
   // Planned as any route: its figures come.
   await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
