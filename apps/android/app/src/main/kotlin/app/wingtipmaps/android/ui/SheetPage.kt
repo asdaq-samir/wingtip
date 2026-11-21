@@ -120,6 +120,14 @@ sealed interface SheetPage {
     @Serializable
     data object Emergency : SheetPage
 
+    /** The ways the planner finds to fly the route, the plan's More. */
+    @Serializable
+    data object RouteOptions : SheetPage
+
+    /** The FAA's flight plan form from the plan, the plan's File. */
+    @Serializable
+    data object Filing : SheetPage
+
     @Serializable
     data object YourAirplanes : SheetPage
 

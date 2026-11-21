@@ -113,6 +113,7 @@ The plan's own keys go beside it, and alone they open what they name:
 - `type`: A shared plan's airplane type, its designator (C172); shown, never assumed: the receiver flies their own.
 - `rules`: A shared plan's flight rules, vfr or ifr.
 - `tail`: A shared plan's N-number, only where its pilot chose to send it.
+- `tanks`: A shared plan's fuel as the airplane leaves a field, where its pilot set it on a gauge: idents and whole gallons, KOSH:30,KJVL:0 (the planner's tanks); none named, full.
 - `share`: A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it.
 
 <!-- END generated -->
@@ -282,8 +283,10 @@ in the search is not counted.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Route fields, stops, VFR/IFR as before; Add a Stop and a point's Add a Stop After open the one search for the stop; each field of the route opens its card; under IFR an Alternate row after the destination (its card), or Add Alternate, which opens the Brief's Alternate (2026-11-10) |
-| Nav Log, Profile | the flight's card → Nav Log (or the figures); the plan's Profile row or "profile" in the search opens the Profile card: the side view, its vertical altitude slider (Set, Auto in flight), a waypoint's Start At / Cross At sheet | 2 → 2 | as the plan; the Altitude Advisor's rows pick the cruise |
+| Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Titled "Flight Plan", Search at its bar's start (back to the search, the route kept) and ✕ at its end ("Clear Route?" first, 2026-11-21); the airplane's pill (its ⓘ the airplane's card), the altitude's (its end the Profile) and the time's (Material's time picker); the route as a timeline, each point's ⋮ (its menu) and times at its end, a stop's "Leaves" a tap that sets its time on the ground; route fields, stops, VFR/IFR as before; Add a Stop and a point's Add a Stop After open the one search for the stop, which greys a closed field or one already on the route; each field of the route opens its card; under IFR an Alternate row after the destination (its card), or Add Alternate, which opens the Brief's Alternate (2026-11-10); at its foot the floating toolbar (Brief, Nav Log, More) over the figure strip |
+| Route Options | the plan's More → Route Options | 2 | Use puts an option's stops in the route ("Route Replaced", with its Undo) |
+| File Flight Plan | the plan's File (beside its toolbar, where the plan can be filed) | 1 | Persons on board typed; Copy the Flight Plan; File with Flight Service where connected and signed in; 1800wxbrief.com and Flight Service's numbers |
+| Nav Log, Profile | the flight's card → Nav Log (the foot's toolbar, or the figures); the altitude pill's end, the plan's Profile row or "profile" in the search opens the Profile card: the side view, its vertical altitude slider (Set, Auto in flight), a waypoint's Start At / Cross At sheet | 2 → 2 | as the plan; the Altitude Advisor's rows pick the cruise |
 | A leg | a leg on the map, a nav log row, or a strip checkpoint: the one leg card | 1 / 2 | Direct, Remove |
 | Brief | the flight's card → Brief; or search "brief" | 2 → 2 | Departure hour; Ready to Fly at its head; under IFR the Alternate (14 CFR 91.169): an alternate filed from those that will do, or taken off, as the web's (2026-11-10) |
 | Airport card | search → the field; tap it on the map; a list row; the plan's field | 1 + typing (map 1) | Fly Here (with its time), Add as Stop, Call and Favorite under its head, in sight at half; Overview, Weather, Frequencies, Runways, Charts, NOTAMs pinned right under them, and the field's report in a line |
