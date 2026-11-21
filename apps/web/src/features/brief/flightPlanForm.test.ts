@@ -228,9 +228,9 @@ describe("the FAA flight plan form, filled in from a plan", () => {
     expect(value(form!, "time")).toBeNull();
     expect(formText(form!).split("\n").slice(0, 4)).toEqual([
       "C81 to KATW",
-      "Item 8  Flight rules: IFR",
-      "Item 7  Aircraft identification: —",
-      "Item 9  Type of aircraft: P28A",
+      "Item 8  Flight Rules: IFR",
+      "Item 7  Aircraft Identification: —",
+      "Item 9  Type of Aircraft: P28A",
     ]);
     // A stock profile's equipment and colour are not known, and not the
     // pilot's to set anywhere: no word of where.
@@ -257,9 +257,9 @@ describe("the FAA flight plan form, filled in from a plan", () => {
     });
     expect(form!.items.filter((f) => f.item === "19").map((f) => `${f.label}: ${f.value}`)).toEqual([
       "Endurance: 0428",
-      "Persons on board: null",
-      "Color and markings: White blue stripes",
-      "Pilot in command: Avery B. Pilot, 608-555-0100, home base KMSN",
+      "Persons on Board: null",
+      "Color and Markings: White blue stripes",
+      "Pilot in Command: Avery B. Pilot, 608-555-0100, home base KMSN",
     ]);
     expect(form!.items.find((f) => f.key === "pilot")!.note).toBeUndefined();
     // No number: the pilot is asked for one good at the ETA (AIM Appendix 4).
@@ -277,12 +277,12 @@ describe("the FAA flight plan form, filled in from a plan", () => {
     const filled = withPersonsOnBoard(form!, 3);
     expect(value(filled, "persons")).toBe("3");
     expect(filled.filing!.personsOnBoard).toBe(3);
-    expect(formText(filled)).toContain("Item 19  Persons on board: 3");
+    expect(formText(filled)).toContain("Item 19  Persons on Board: 3");
     // Left blank, blank on both.
     const blank = withPersonsOnBoard(form!, null);
     expect(value(blank, "persons")).toBeNull();
     expect(blank.filing!.personsOnBoard).toBeNull();
-    expect(formText(blank)).toContain("Item 19  Persons on board: —");
+    expect(formText(blank)).toContain("Item 19  Persons on Board: —");
   });
 });
 

@@ -49,7 +49,7 @@ struct AlternateTests {
         var unsure = filed; unsure.good = nil; unsure.reasons = ["It publishes its own alternate minimums: check them."]
         #expect(AlternateSection.standing(unsure) == "Check it")
         #expect(AlternateSection.description(unsure) == "It publishes its own alternate minimums: check them.")
-        #expect(AlternateSection.ceilingAndVisibility(nil, 2) == "no ceiling · 2 SM")
+        #expect(AlternateSection.ceilingAndVisibility(nil, 2) == "no ceiling · 2 sm")
     }
 
     @Test func noReportOfTheAlternateNoArrow() {

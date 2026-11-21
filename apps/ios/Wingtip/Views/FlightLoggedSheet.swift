@@ -16,8 +16,8 @@ struct FlightLoggedSheet: View {
                     Text("\(logged.route ?? "") · \(Format.hours(logged.totalHours)), in your logbook; your currency is worked out again from it.")
                     if let problem = model.trackProblem {
                         // Where the logged flight shows, the error where it happened.
-                        ProblemLine("The track couldn't be sent to the saved flight: \(problem). It's kept on this iPhone and sent when you're next online.")
-                        Button("Try Again") { Task { await model.sendUnsent() } }
+                        ProblemLine("The track could not be sent to the saved flight: \(problem). It's kept on this iPhone and sent when you're next online.")
+                        Button(Wording.tryAgain) { Task { await model.sendUnsent() } }
                     } else if logged.flightId != nil {
                         Text("The track is with the saved flight too: its debrief is there in Flights.")
                     }
@@ -112,7 +112,7 @@ private struct DraftRows: View {
         }
         if !model.flights.isEmpty {
             Section("Debrief Against") {
-                Picker("Saved flight", selection: Binding(get: { model.linked }, set: { model.picked = .some($0) })) {
+                Picker("Saved Flight", selection: Binding(get: { model.linked }, set: { model.picked = .some($0) })) {
                     Text("No Saved Flight").tag(Int?.none)
                     ForEach(model.flights.prefix(5)) { f in
                         Text(([f.departureIdent] + f.stops + [f.destinationIdent]).joined(separator: " ")).tag(Int?.some(f.id))

@@ -135,7 +135,7 @@ enum FlagTone: Equatable, Sendable {
 
     var color: Color { self == .wrong ? WingtipInk.problem : WingtipInk.caution }
     var symbol: String { self == .wrong ? "xmark.octagon.fill" : "exclamationmark.triangle.fill" }
-    var said: String { self == .wrong ? "Can't be right" : "Check" }
+    var said: String { self == .wrong ? "Cannot be right" : "Check" }
 }
 
 /// One flag under its item, in its tone, with a mark beside the words for

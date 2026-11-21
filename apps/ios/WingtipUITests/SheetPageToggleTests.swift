@@ -9,8 +9,8 @@ import XCTest
 /// over Search closes back to Search, leaving Search puts the keyboard
 /// away, the toggle over a card closes it, an up or down drag still sizes
 /// the sheet on either page, and the
-/// first launch's welcome goes on to Search asking for the destination.
-/// Offline, but for Fly Here, whose card needs the planner (PlannerHost).
+/// first launch's welcome goes on to Search, and the route's ✕ asks
+/// "Clear Route?" before it clears. Offline, but for Fly Here, whose card needs the planner (PlannerHost).
 final class SheetPageToggleTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -99,9 +99,10 @@ final class SheetPageToggleTests: XCTestCase {
             let flyHere = app.descendants(matching: .any)["fly-here"]
             XCTAssertTrue(flyHere.waitForExistence(timeout: 30), "no Fly Here the \(time) time")
             flyHere.tap()
-            XCTAssertTrue(app.textFields["To"].waitForExistence(timeout: 20), "Fly Here did not show FPL the \(time) time")
+            // KOSH the destination: its line on the timeline once the
+            // route is whole and planned, else the To field's word.
+            XCTAssertTrue(CardTests.routeEnds(app, at: "KOSH", timeout: 20), "Fly Here did not show FPL with KOSH the \(time) time")
             XCTAssertEqual(toggle.label, "Show search", "Fly Here left the sheet on Search the \(time) time")
-            XCTAssertEqual(app.textFields["To"].value as? String, "KOSH")
             if time == "first" {
                 // Back to Search and the same field's card again.
                 toggle.tap()
@@ -196,7 +197,7 @@ final class SheetPageToggleTests: XCTestCase {
         XCTAssertTrue(later.exists || go.exists, "no way on from the welcome")
         (later.exists ? later : go).tap()
         XCTAssertTrue(welcome.waitForNonExistence(timeout: 5), "the welcome stayed up")
-        XCTAssertTrue(app.searchFields["Where are you flying to?"].waitForExistence(timeout: 10), "the search did not ask for the destination")
+        XCTAssertTrue(app.searchFields["Search"].waitForExistence(timeout: 10), "the welcome did not go on to Search")
         XCTAssertFalse(app.keyboards.firstMatch.exists, "the keyboard came up before a tap")
     }
 
@@ -226,5 +227,61 @@ final class SheetPageToggleTests: XCTestCase {
             XCTAssertEqual(toggle.frame.minY, half, accuracy: 8, "the sheet did not go back up on \(page)")
             toggle.tap()
         }
+    }
+
+    /// Add a Stop asks the one search to pick, titled as Maps' Add Stop
+    /// sheet, and the field's Cancel goes back to the plan unchanged.
+    @MainActor
+    func testAddAStopAsksTheSearchToPickAndCancelGoesBack() throws {
+        let app = launch()
+        toggle(app).tap()
+        let from = app.textFields["From"], to = app.textFields["To"]
+        XCTAssertTrue(to.waitForExistence(timeout: 10), "the toggle did not go to FPL")
+        from.tap()
+        from.typeText("KMSN")
+        to.tap()
+        to.typeText("KOSH")
+        // Planned, the fields put away: the route is its timeline.
+        app.buttons["plan-button"].tap()
+        let add = app.buttons["timeline-add-stop"]
+        XCTAssertTrue(add.waitForExistence(timeout: 10), "no Add Stop on the timeline")
+        CardTests.scrollTo(add, in: app)
+        add.tap()
+        let title = app.staticTexts["point-ask-title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 10), "Add Stop did not ask the search")
+        XCTAssertEqual(title.label, "Add Stop")
+        XCTAssertEqual(toggle(app).label, "Show flight plan", "the ask is not on the Search page")
+        app.buttons["Cancel"].firstMatch.tap()
+        XCTAssertTrue(title.waitForNonExistence(timeout: 10), "Cancel left the ask up")
+        XCTAssertEqual(toggle(app).label, "Show search", "Cancel did not go back to the plan")
+    }
+
+    @MainActor
+    func testTheRoutesCloseAsksBeforeClearing() throws {
+        let app = launch()
+        toggle(app).tap()
+        let from = app.textFields["From"], to = app.textFields["To"]
+        XCTAssertTrue(to.waitForExistence(timeout: 10), "the toggle did not go to FPL")
+        from.tap()
+        from.typeText("KMSN")
+        to.tap()
+        to.typeText("KOSH")
+        let clear = app.buttons["route-clear"]
+        XCTAssertTrue(clear.waitForExistence(timeout: 10), "no ✕ on the route card")
+        clear.tap()
+        let alert = app.alerts["Clear Route?"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5), "the ✕ did not ask first")
+        alert.buttons["Cancel"].tap()
+        XCTAssertEqual(to.value as? String, "KOSH", "Cancel cleared the route")
+        clear.tap()
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        alert.buttons["Clear Route"].tap()
+        XCTAssertTrue(app.buttons["route-close"].waitForExistence(timeout: 5), "the route was not cleared")
+        // The undo bar offers it back for a moment, as the web's toast does.
+        let undo = app.buttons["undo-bar-undo"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 5), "no undo bar after Clear Route")
+        undo.tap()
+        XCTAssertTrue(clear.waitForExistence(timeout: 10), "Undo did not bring the route back")
+        XCTAssertFalse(undo.exists, "the undo bar stayed after Undo")
     }
 }

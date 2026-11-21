@@ -16,32 +16,38 @@ import SwiftUI
 @MainActor
 @Observable
 final class OneSearchModel {
-    /// The field's prompt, a key so the string catalog gathers it and a
-    /// second language translates it (Localizable.xcstrings).
-    static let prompt: LocalizedStringKey = "Search airports and airplanes"
+    /// The field's prompt, the one word Search whatever the search is up
+    /// for (the owner, 2026-11-20: "just say Search"; 2026-11-21, also
+    /// while it asks for the destination or an airplane): a key so the
+    /// string catalog gathers it and a second language translates it
+    /// (Localizable.xcstrings).
+    static let prompt: LocalizedStringKey = "Search"
     /// The field's prompt while Ask by voice listens, nothing said yet.
     static let speak: LocalizedStringKey = "Speak your question"
-    /// The field's prompt after the welcome, asking for the first flight's
-    /// destination (the web's first flight, lib/oneSearch's pick), until
-    /// something is typed or the search is put away.
-    static let whereTo: LocalizedStringKey = "Where are you flying to?"
 
     /// What an airplane picked is for, where an Add asked the search for
     /// one (the owner, 2026-11-14; the web's searchPlaceholder): flown as
     /// the pilot's airplane, or kept in the Favorites, not opened.
     enum Keeping: Equatable {
         case yours, favorite
-
-        var prompt: LocalizedStringKey {
-            switch self {
-            case .yours: "Search for your airplane"
-            case .favorite: "Search for an airplane to keep"
-            }
-        }
     }
 
     /// The Add the search is up for; nil for the search itself.
     var keeping: Keeping?
+    /// The route's point the search is asked to pick (PointAsk): Add Stop,
+    /// Change Stop or an end; nil for the search itself.
+    var picking: PointAsk?
+
+    /// The search up to pick a point of the route (Add a Stop, a point's
+    /// ident tapped on FPL): its title over the suggestions, a tap on a
+    /// field picking it.
+    func ask(_ point: PointAsk) {
+        text = ""
+        clearFound()
+        keeping = nil
+        picking = point
+        presented = true
+    }
 
     var text = "" { didSet { if !text.isEmpty { askingDestination = false } } }
     /// The welcome put away: the field asks for the destination, not
@@ -127,7 +133,7 @@ final class OneSearchModel {
     /// What a failed search says: no connection said as such, with what
     /// the iPhone could still find.
     static func failedWords(_ error: any Error, kept: Bool) -> String {
-        guard error is URLError else { return "The search couldn't be done: \(error.localizedDescription)" }
+        guard error is URLError else { return "The search could not be done: \(error.localizedDescription)" }
         return kept ? "No connection: airports from the chart data on this iPhone only. Waypoints, towns and N-numbers need a connection."
             : "No connection: the search needs one, and no airport kept on this iPhone matches."
     }
@@ -162,6 +168,7 @@ final class OneSearchModel {
         presented = false
         askingDestination = false
         keeping = nil
+        picking = nil
         text = ""
         clearFound()
     }

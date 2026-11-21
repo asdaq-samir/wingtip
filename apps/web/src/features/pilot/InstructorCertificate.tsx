@@ -74,7 +74,7 @@ export function CertificateForm({ instructor, onDone }: { instructor: Instructor
           recent experience (14 CFR 61.197(a)) for a certificate issued on or
           after 1 Dec 2024, which has no expiration date (61.19(d)(1)), or an
           older certificate's expiration date (61.19(d)(2)). */}
-      <ListGroup title="Your flight instructor certificate">
+      <ListGroup title="Your Flight Instructor Certificate">
         <ListRow id={ids.name} title="Name">
           <RowField id={ids.name} error={errors.fullName?.message}>
             <FieldHit htmlFor={ids.name}>
@@ -112,7 +112,7 @@ export function CertificateForm({ instructor, onDone }: { instructor: Instructor
             </FieldHit>
           </RowField>
         </ListRow>
-        <ListRow title="Its date">
+        <ListRow title="Its Date">
           <Controller
             control={control}
             name="untilKind"
@@ -122,7 +122,7 @@ export function CertificateForm({ instructor, onDone }: { instructor: Instructor
                 value={field.value}
                 onChange={(v) => field.onChange(v as CertificateValues["untilKind"])}
                 options={[
-                  { value: "RE", label: "Recent experience" },
+                  { value: "RE", label: "Recent Experience" },
                   { value: "EXP", label: "Expires" },
                 ]}
                 testId="cfi-until-kind"
@@ -130,13 +130,13 @@ export function CertificateForm({ instructor, onDone }: { instructor: Instructor
             )}
           />
         </ListRow>
-        <ListRow id={ids.until} title={untilKind === "RE" ? "Recent experience through" : "Certificate expires"}>
+        <ListRow id={ids.until} title={untilKind === "RE" ? "Recent Experience Through" : "Certificate Expires"}>
           <RowField id={ids.until} error={errors.until?.message}>
             <FormDateField
               control={control}
               name="until"
               id={ids.until}
-              aria-label={untilKind === "RE" ? "Recent experience through" : "Certificate expires"}
+              aria-label={untilKind === "RE" ? "Recent Experience Through" : "Certificate Expires"}
               className="h-8 w-40"
               error={errors.until?.message}
               data-testid="cfi-until"

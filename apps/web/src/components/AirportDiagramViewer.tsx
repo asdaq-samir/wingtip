@@ -14,6 +14,7 @@ import { TEXT } from "../lib/text";
 import { cn } from "cn";
 import FullScreenViewer from "./FullScreenViewer";
 import { CHART } from "../lib/tokens";
+import { WORDING } from "../lib/wording/generated/wording";
 
 /** Between one page and the next, in the pages' own pixels. */
 const GAP = 60;
@@ -196,7 +197,7 @@ export default function ChartViewer({
         <div className="flex flex-col items-start gap-2 px-4 pt-4" data-testid="chart-viewer-status">
           <p className={cn("text-muted-foreground", TEXT.prose)}>
             {failed
-              ? "The FAA's chart could not be had. Try again in a moment."
+              ? "The FAA's chart could not be fetched. Try again in a moment."
               : loading
                 ? "Drawing the chart…"
                 : // A booklet lists a field only where it has an entry (takeoff
@@ -210,7 +211,7 @@ export default function ChartViewer({
               className="relative -ml-2 rounded-full text-tint after:absolute after:-inset-1"
               onClick={onRetry}
             >
-              Try again
+              {WORDING.tryAgain}
             </Button>
           )}
         </div>

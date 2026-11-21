@@ -17,7 +17,7 @@ import { callEngine } from "../../lib/engine/engine";
 export interface StudentLine {
   row: StudentRow;
   /** Why they need the instructor today, and the word on the button. */
-  needs: { words: string; action: "Sign off" | "Endorse" } | null;
+  needs: { words: string; action: "Sign Off" | "Endorse" } | null;
   /** Their solo endorsement's standing: in force (ok), lapsing within a
    *  week (caution), lapsed (stop), none on record (unknown). */
   currency: Finding;
@@ -53,7 +53,7 @@ export function studentLines(instructor: Instructor, today: string): { needs: St
     const needs: StudentLine["needs"] = due
       ? {
           words: `Solo ${reviewRoute(due)} ${due.flightOn === today ? "today" : said(due.flightOn)} · ${due.flight.risk ? riskLine(due.flight.risk) : "no risk assessment"}`,
-          action: "Sign off",
+          action: "Sign Off",
         }
       : soloDays != null && solo.standing !== "ok"
         ? { words: `Solo endorsement ${lapseWords(soloDays, s.soloUntil!)}`, action: "Endorse" }

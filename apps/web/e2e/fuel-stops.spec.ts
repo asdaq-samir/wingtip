@@ -168,7 +168,7 @@ test("a suggested stop's pin opens its card with its figures", async ({ page }) 
   const pin = (await drawnMarks(page, "fuel-stops")).find((m) => m.title === "Suggested fuel stop KRPD")!;
   await page.mouse.click(pin.x, pin.y);
   const card = page.getByTestId("place-card");
-  await expect(card.getByTestId("place-stop")).toContainText("Suggested fuel stop");
+  await expect(card.getByTestId("place-stop")).toContainText("Suggested Fuel Stop");
   await expect(card.getByTestId("place-stop-after")).toContainText("From C81");
   await expect(card.getByTestId("place-stop-after")).toContainText("1h 58m");
   await expect(card.getByTestId("place-stop-fuel")).toContainText("18 gal");
@@ -203,7 +203,7 @@ test("the airport's Info says its fuel in its details, and what is on the field 
   // The rest of On the field under its title, its first three rows Fuel,
   // its remarks and As Written (FirstFew; 263bd810d gave the remarks a row).
   await expect(services.getByTestId("services-courtesy-car")).toHaveCount(0);
-  const onTheField = services.getByRole("button", { name: /^On the field/ });
+  const onTheField = services.getByRole("button", { name: /^On the Field/ });
   await inSheet(page, onTheField);
   await onTheField.click();
   await expect(services.getByTestId("services-courtesy-car")).toBeVisible();

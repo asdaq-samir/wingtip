@@ -96,7 +96,7 @@ private struct OfflineKeptRow: View {
             }
             if let failed = kept.failed {
                 ProblemLine("Stopped: \(failed)")
-                Button("Try Again", action: retry)
+                Button(Wording.tryAgain, action: retry)
             }
             if updatable, let newest { Button("Update to \(newest)", action: update) }
         }

@@ -110,7 +110,7 @@ fun AirportTabRow(section: Int, onPick: (Int) -> Unit, category: String?, charts
 fun AirportWeatherLine(metar: Metar?, modifier: Modifier = Modifier) {
     if (metar == null) return
     val ceilingWords = stringResource(R.string.weather_line_ceiling)
-    val line = weatherLine(metar, stringResource(R.string.no_ceiling), stringResource(R.string.wind_calm)) { ceilingWords.format(it) }
+    val line = weatherLine(metar, stringResource(R.string.wording_no_ceiling), stringResource(R.string.wind_calm)) { ceilingWords.format(it) }
     val category = metar.flightCategory
     if (category == null && line.isEmpty()) return
     Row(modifier.padding(vertical = WingtipSpace.Xs), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {

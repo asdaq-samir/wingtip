@@ -50,7 +50,7 @@ test("a stop's No fuel keeps what it lands with, Full goes back to full", () => 
   const onSet = vi.fn();
   render(<FuelSet tank={{ gal: 13.6, usable: 40, low: false, own: null }} ident="KJVL" stop onSet={onSet} />);
   fireEvent.click(screen.getByRole("button", { name: "13 gal, fuel at KJVL: change" }));
-  fireEvent.click(screen.getByRole("button", { name: "No fuel" }));
+  fireEvent.click(screen.getByRole("button", { name: "No Fuel" }));
   fireEvent.click(screen.getByTestId("fuel-set-done"));
   expect(onSet).toHaveBeenLastCalledWith(0);
 });

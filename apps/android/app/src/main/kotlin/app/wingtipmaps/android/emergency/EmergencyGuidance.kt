@@ -21,7 +21,7 @@ import app.wingtipmaps.android.ui.SectionTitle
  */
 @Composable
 internal fun NoAirplaneGuidance(state: EmergencyModel.State, picker: @Composable () -> Unit) {
-    SectionTitle(stringResource(R.string.pick_an_airplane))
+    SectionTitle(stringResource(R.string.wording_pick_an_airplane))
     Text(stringResource(R.string.pick_an_airplane_line), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
     picker()
     SectionTitle(stringResource(R.string.emergency_guidance))

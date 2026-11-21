@@ -127,7 +127,7 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
     <ConsolePages
       back="Logbook"
       pages={{
-        checkride: { title: "Private pilot checkride", content: <CheckridePage /> },
+        checkride: { title: "Private Pilot Checkride", content: <CheckridePage /> },
         instructing: { title: "Instructing", content: <InstructorPage /> },
         coach: {
           title: "Coach",
@@ -175,14 +175,14 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
           counts takeoffs and landings in the same category and class; at
           night, to a full stop. */}
         <ListGroup title="Currency">
-          <ListRow title="Passengers by day" description="3 takeoffs and landings in 90 days">
+          <ListRow title="Passengers by Day" description="3 takeoffs and landings in 90 days">
             <Until date={currency?.dayPassengersUntil} what="day" />
           </ListRow>
-          <ListRow title="Passengers at night" description="3 to a full stop at night in 90 days">
+          <ListRow title="Passengers at Night" description="3 to a full stop at night in 90 days">
             <Until date={currency?.nightPassengersUntil} what="night" />
           </ListRow>
           <ListRow
-            title="Flight review"
+            title="Flight Review"
             description={
               currency?.flightReviewUntil ? <Until date={currency.flightReviewUntil} what="review" /> : "Within 24 calendar months"
             }
@@ -211,7 +211,7 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
           past, only an instrument proficiency check restores it. */}
         <ListGroup title="Instrument">
           <ListRow
-            title="Instrument currency"
+            title="Instrument Currency"
             description={`${currency?.approachesInWindow ?? 0} of 6 approaches${currency?.holdingInWindow ? ", holding" : ""}${currency?.trackingInWindow ? ", tracking" : ""} in the window`}
           >
             {ipcNeeded ? (
@@ -222,7 +222,7 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
               <Until date={currency?.instrumentCurrentUntil} from={currency?.instrumentCurrentFrom} what="instrument" />
             )}
           </ListRow>
-          <ListRow title="Proficiency check" description={ipcOn ? `On ${said(ipcOn)}` : "The day of your last IPC"}>
+          <ListRow title="Proficiency Check" description={ipcOn ? `On ${said(ipcOn)}` : "The day of your last IPC"}>
             <DateField value={ipcOn} label="Instrument proficiency check date" testId="ipc-date" onChange={(v) => setDates({ ipcOn: v })} />
           </ListRow>
         </ListGroup>

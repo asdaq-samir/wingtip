@@ -119,8 +119,8 @@ Where the Swift copies still differ, the fixtures leave the case out:
 
 ## The words, with no signal
 
-The Brief's "The weather in words" and the Go / No-Go's "The flight in
-words" (`Wingtip/Words/`) are a few plain sentences over the figures,
+The Brief's "The Weather in Words" and the Go / No-Go's "The Flight in
+Words" (`Wingtip/Words/`) are a few plain sentences over the figures,
 each with the chips of the figures it rests on; a chip opens the report
 as sent. Every figure is the engine's or the planner's; a model only
 writes the sentences, and never a figure of its own:
@@ -243,7 +243,7 @@ owner, 2026-11-03):
   the route the next waypoint's distance, time to go and desired track,
   the distance off course and the destination's arrival in Zulu with the
   fuel the plan leaves; Nearest (the Nearest list with Divert) one tap
-  away; and "Planning aid · not for navigation". The glide ring is drawn
+  away; and "A Planning Aid, Not for Navigation" (`Wording.planningAidNoticeTitle`). The glide ring is drawn
   dashed about the airplane (`FlightMapLayer`'s `GlidePolyline`) over the
   higher of the packs' ground under it (the packs' ahead answer's
   `ground_ft`, asked with the alerts network or none) and the nearest
@@ -589,7 +589,7 @@ offline audit of 2026-11-10:
   without weather": the packs hold no METAR, elevation or runway. The
   search's Nearest group and the Watch's take the same fallback
   (`Planner.nearestOrPacks`). With no GPS fix both say "Finding your
-  position…" for ten seconds, then "No GPS position" and what to do, or
+  position…" for ten seconds, then "No GPS Position" and what to do, or
   with Location off a link to Settings.
 - **Direct To and a diversion** need the planner for the new route's legs.
   The route before is held until the nav log is whole; with no connection

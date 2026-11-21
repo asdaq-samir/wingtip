@@ -89,11 +89,11 @@ export default function FlightInfoTab({
               the record is asked for and a dash where it has none: the
               rows came in as it answered and the card under them jumped
               (the flicker audit's FL-10). */}
-          <ListRow title="Registered to" value={recordValue(detail?.faa?.owner, detailLoading, "flight-owner")} />
+          <ListRow title="Registered To" value={recordValue(detail?.faa?.owner, detailLoading, "flight-owner")} />
           <ListRow title="Model" value={recordValue(detail?.description, detailLoading, "flight-model")} />
           <ListRow title="Operator" value={recordValue(detail?.operator, detailLoading, "flight-operator")} />
           <ListRow
-            title="ICAO address"
+            title="ICAO Address"
             value={<span className={cn("font-semibold text-foreground uppercase tabular-nums", TEXT.row)}>{hex}</span>}
           />
           <ListRow title="Callsign" value={<span className="font-semibold text-foreground">{plane?.callsign ?? "—"}</span>} />
@@ -105,7 +105,7 @@ export default function FlightInfoTab({
         // Its flight number's scheduled route (Virtual Radar Server's
         // route database), not the flight plan filed, which the FAA does
         // not publish openly: said in the row, not in a footnote.
-        <ListGroup title="Scheduled route">
+        <ListGroup title="Scheduled Route">
           <ListRow
             media={
               <RowBadge colour={BADGE.approach}>

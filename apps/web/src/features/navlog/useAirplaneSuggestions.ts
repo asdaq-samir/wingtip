@@ -3,6 +3,7 @@ import { shortName, tailTyped } from "../../lib/aircraftChoice";
 import { wantScreen } from "../../lib/navigation/wanted";
 import { useAirplaneHits } from "../plan";
 import type { SuggestionGroup } from "./AirplaneSuggestions";
+import { SCREENS } from "../../lib/navigation/generated/screens";
 
 /**
  * The FPL airplane field's suggestions (the owner's S1, 2026-11-14): the one
@@ -43,16 +44,16 @@ export function useAirplaneSuggestions({
   };
   const groups = (
     [
-      { heading: "Your airplanes", rows: hits.own.map((r) => ({ ...r, pick: () => fly(r.title) })) },
+      { heading: SCREENS.airplanes.title, rows: hits.own.map((r) => ({ ...r, pick: () => fly(r.title) })) },
       {
-        heading: "Recent and kept",
+        heading: "Recent and Kept",
         rows: hits.kept.flatMap((r) => {
           const kept = tailTyped(r.kept.name);
           return kept ? [{ ...r, pick: () => take(kept) }] : [];
         }),
       },
       {
-        heading: "FAA registry",
+        heading: "FAA Registry",
         rows: hits.registry ? [{ ...hits.registry, disabled: !hits.registry.whole, pick: () => take(hits.registry!.title) }] : [],
       },
       {

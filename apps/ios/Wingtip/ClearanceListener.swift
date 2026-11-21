@@ -96,7 +96,7 @@ final class ClearanceListener {
         // Asked first, so a phone that cannot keep speech on itself is
         // never even asked for the permission.
         guard canListen else {
-            problem = "Speech can't be recognised on this iPhone; type the clearance instead."
+            problem = "Speech cannot be recognised on this iPhone; type the clearance instead."
             Log.radio.error("on-device speech recognition is not available")
             return false
         }
@@ -199,7 +199,7 @@ final class ClearanceListener {
         // shown as not ours and the reason said (problem).
         var forUs = false
         if let tail {
-            do { forUs = try HeardCall.ourCall(text, tail: tail) } catch { problem = "Couldn't tell whether that was your call sign: \(error.localizedDescription)" }
+            do { forUs = try HeardCall.ourCall(text, tail: tail) } catch { problem = "Could not tell whether that was your call sign: \(error.localizedDescription)" }
         }
         let was = heard.firstIndex { $0.id == id }
         let wasFinal = was.map { heard[$0].final } ?? false

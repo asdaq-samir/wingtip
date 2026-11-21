@@ -6,10 +6,10 @@ import { practicePages } from "./practicePages";
 export function PracticeGroup({ title }: { title?: string }) {
   return (
     <ListGroup title={title}>
-      <PageRow page="light-gun" title="Light gun signals" description="14 CFR 91.125" />
-      <PageRow page="vfr-minimums" title="VFR weather minimums" description="14 CFR 91.155" />
-      <PageRow page="holding" title="Holding entries" description="AIM 5-3-8: the entry, drawn, and the wind" />
-      <PageRow page="lost-comms" title="Lost communications" description="14 CFR 91.185: route, altitude, and when to leave" />
+      <PageRow page="light-gun" title="Light Gun Signals" description="14 CFR 91.125" />
+      <PageRow page="vfr-minimums" title="VFR Weather Minimums" description="14 CFR 91.155" />
+      <PageRow page="holding" title="Holding Entries" description="AIM 5-3-8: the entry, drawn, and the wind" />
+      <PageRow page="lost-comms" title="Lost Communications" description="14 CFR 91.185: route, altitude, and when to leave" />
     </ListGroup>
   );
 }

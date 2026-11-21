@@ -101,7 +101,7 @@ object PastFlightReplay {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                state = state.copy(loading = false, problem = Problems.say("The flight couldn't be fetched", e))
+                state = state.copy(loading = false, problem = Problems.say("The flight could not be fetched", e))
             }
         }
     }

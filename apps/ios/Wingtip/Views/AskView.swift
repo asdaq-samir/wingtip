@@ -84,7 +84,7 @@ struct AskView: View {
 
     private var suggestionsList: some View {
         VStack(alignment: .leading, spacing: WingtipSpace.sm) {
-            Text("Ask about the flight")
+            Text(Wording.askAboutTheFlight)
                 .font(.title3.weight(.semibold))
             Text("The figures are the engine's and the planner's; each answer shows what it read.")
                 .font(.footnote).foregroundStyle(.secondary)

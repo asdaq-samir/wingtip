@@ -91,7 +91,7 @@ struct AirportWeatherRow: View {
     @AppStorage(AirportWeather.key) private var show = AirportWeather.kept().rawValue
 
     var body: some View {
-        Picker("Airport Weather", selection: $show) {
+        Picker(Wording.airportWeather, selection: $show) {
             ForEach(AirportWeather.allCases) { Text($0.label).tag($0.rawValue) }
         }
         .pickerStyle(.menu)

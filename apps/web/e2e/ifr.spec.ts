@@ -65,13 +65,13 @@ test("under IFR the altitude is chosen from the minimum IFR altitude by directio
   // (even thousands, 91.179(b)(1)(ii)).
   await expect(why).toHaveAccessibleName(/under IFR, (\d*[02468],000 feet|FL\d[02468]0)/, { timeout: slow(90000) });
   await openProfile(page);
-  await expect(popover).toContainText("Minimum IFR altitude", { timeout: slow(30000) });
+  await expect(popover).toContainText("Minimum IFR Altitude", { timeout: slow(30000) });
   await expect(popover).toContainText("14 CFR 91.179");
   await expect(popover).not.toContainText("14 CFR 91.159");
   // How the floor was found, under its step.
   // How it was chosen, folded under the altitude's figures.
   await popover.getByText("How the Altitude Was Chosen").click();
-  await popover.getByRole("button", { name: /Minimum IFR altitude/ }).click();
+  await popover.getByRole("button", { name: /Minimum IFR Altitude/ }).click();
   await expect(popover).toContainText("14 CFR 91.177");
   await closeCard(page, "profile-close");
   await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(60000) });
@@ -148,7 +148,7 @@ test("under IFR an airway in the route is flown fix by fix, its published MEA th
   const popover = page.getByTestId("profile-card");
   // How it was chosen, folded under the altitude's figures.
   await popover.getByText("How the Altitude Was Chosen").click();
-  await popover.getByRole("button", { name: /Minimum IFR altitude/ }).click();
+  await popover.getByRole("button", { name: /Minimum IFR Altitude/ }).click();
   await expect(popover).toContainText(/Along V191 from BAE the published MEA, [\d,]+ ft/);
   await closeCard(page, "profile-close");
 

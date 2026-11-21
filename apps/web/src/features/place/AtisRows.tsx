@@ -10,6 +10,7 @@ import { TEXT } from "../../lib/text";
 import { useCanListen } from "../../lib/speechLocal";
 import { chosenOutside, heardThrough, lostWords, useAtcRadio } from "../../lib/atcRadio";
 import { atisRows, glanceWords, heardAny, hearAtis, readAtis, type AtisReading } from "./atis";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * Listen to ATIS, on the field card's Weather tab under the report: a
@@ -98,7 +99,7 @@ export function AtisRows() {
               <Radio />
             </RowBadge>
           }
-          title={listening ? "Listening to the radio…" : "Listen to ATIS"}
+          title={listening ? WORDING.listeningToTheRadio : "Listen to ATIS"}
           description={
             listening
               ? heard ||

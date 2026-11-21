@@ -67,7 +67,7 @@ private fun Shown(s: SharedFlightModel.State.Shown, onUse: () -> Unit, onNotNow:
     val p = s.plan
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         Button(onClick = onUse) { Text(stringResource(R.string.shared_use)) }
-        TextButton(onClick = onNotNow) { Text(stringResource(R.string.not_now)) }
+        TextButton(onClick = onNotNow) { Text(stringResource(R.string.wording_not_now)) }
     }
     LazyColumn(Modifier.fillMaxWidth()) {
         item { Fact(R.string.shared_route, (listOf(p.dep) + p.stops + p.dest).joinToString(" → ")) }
@@ -80,6 +80,8 @@ private fun Shown(s: SharedFlightModel.State.Shown, onUse: () -> Unit, onNotNow:
         p.type?.let { item { Fact(R.string.shared_airplane, it, stringResource(R.string.shared_airplane_note)) } }
         p.rules?.let { item { Fact(R.string.shared_rules, it.uppercase()) } }
         p.tail?.let { item { Fact(R.string.shared_tail, it) } }
+        // The fuel its pilot set at a field, "C81 20 gal · KJVL 0 gal".
+        if (p.tanks.isNotEmpty()) item { Fact(R.string.shared_fuel_set, p.tanks.entries.joinToString(" · ") { (at, gal) -> "$at $gal gal" }) }
         s.totals?.let { t ->
             item {
                 Fact(

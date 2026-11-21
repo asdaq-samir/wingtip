@@ -78,7 +78,7 @@ fun AtcCardView(card: AtcCard, kept: AtcCopilotModel.Kept, problem: String?, wor
             if (!card.awaiting) {
                 TextButton(onClick = onReadBack) {
                     Icon(Icons.Filled.Mic, contentDescription = null)
-                    Text(stringResource(if (card.readback != null) R.string.atc_read_back_again else R.string.atc_read_back), Modifier.padding(start = WingtipSpace.Xs))
+                    Text(stringResource(if (card.readback != null) R.string.wording_read_back_again else R.string.wording_read_back), Modifier.padding(start = WingtipSpace.Xs))
                 }
             }
         }
@@ -103,7 +103,7 @@ private fun ItemRow(words: String, action: ItemAction?, done: Boolean, onAct: ()
 }
 
 private fun label(action: ItemAction): Int = when (action) {
-    ItemAction.DIRECT -> R.string.atc_direct_to
+    ItemAction.DIRECT -> R.string.wording_direct_to
     ItemAction.FREQUENCY -> R.string.atc_set_next
     ItemAction.SQUAWK -> R.string.atc_set_code
 }

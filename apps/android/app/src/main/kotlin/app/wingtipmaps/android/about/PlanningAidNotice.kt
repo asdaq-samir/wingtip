@@ -63,8 +63,8 @@ fun PlanningAidNotice() {
     if (accepted) return
     AlertDialog(
         onDismissRequest = {},
-        title = { Text(stringResource(R.string.planning_aid_title)) },
-        text = { Text(stringResource(R.string.about_planning_aid_text)) },
+        title = { Text(stringResource(R.string.wording_planning_aid_notice_title)) },
+        text = { Text(stringResource(R.string.wording_planning_aid)) },
         confirmButton = { TextButton(onClick = memory::accept) { Text(stringResource(R.string.planning_aid_accept)) } },
     )
 }

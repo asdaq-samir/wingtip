@@ -55,7 +55,7 @@ export function ProcedurePicker({
   const runways = (p: ProcedureSummary) =>
     p.runway_transitions.length
       ? p.runway_transitions.includes("ALL")
-        ? "All runways"
+        ? "All Runways"
         : `Runway ${p.runway_transitions.map((r) => r.replace(/^RW/, "").replace(/B$/, "")).join(", ")}`
       : undefined;
   // From the FAA's coded procedures (CIFP): a sketch on the chart to plan
@@ -70,7 +70,7 @@ export function ProcedurePicker({
         const windward = kind === "approach" && !!p.runway && !!wind && !wind.calm && runwayNumber(p.runway) === wind.ident;
         const said = [
           mine ? `In the route, ${transitionWords(kind, mine.transition, true)}` : null,
-          windward ? "Into the wind" : null,
+          windward ? "Into the Wind" : null,
           kind === "approach" ? null : runways(p),
         ]
           .filter(Boolean)

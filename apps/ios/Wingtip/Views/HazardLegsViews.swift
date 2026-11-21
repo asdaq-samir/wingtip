@@ -63,7 +63,7 @@ struct LayerAgesRows: View {
             LabeledContent("METARs", value: words("aviationweather.gov", AirportWords.date(ages?.metarsAt)))
             LabeledContent("TFRs", value: words("tfr.faa.gov", AirportWords.date(ages?.tfrsAt)))
             if traffic.on {
-                LabeledContent("Traffic data", value: words("adsb.lol", traffic.heardAt))
+                LabeledContent("Traffic Data", value: words("adsb.lol", traffic.heardAt))
             }
             // A feed the planner's watch finds not updating -- the NOTAMs,
             // the radar or satellite frames, a weather report -- said here,

@@ -135,7 +135,7 @@ final class CardScrollTests: XCTestCase {
             app.navigationBars.buttons["Cancel"].tap()
             let asked = app.staticTexts["Discard your changes?"]
             XCTAssertTrue(asked.waitForExistence(timeout: 10), "Cancel did not ask at \(size.name)")
-            XCTAssertTrue(app.buttons["Discard Changes"].exists, "the question has no Discard Changes at \(size.name)")
+            XCTAssertTrue(app.buttons["Discard"].exists, "the question has no Discard at \(size.name)")
             // Keep Editing, the dialog's cancel: a button where the dialog
             // is an action sheet, and a tap outside it where iOS 26 shows
             // it as a popover from Cancel, which leaves its cancel out.

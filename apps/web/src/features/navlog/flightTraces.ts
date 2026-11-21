@@ -1,3 +1,4 @@
+import { WORDING } from "../../lib/wording/generated/wording";
 /** A flight's two traces -- its height green, its ground speed amber, as
  *  FlightAware's Track Log draws them -- in one place for the chart that
  *  draws them (PastFlightChart) and the labels that say which is which,
@@ -7,5 +8,5 @@
  *  the chart's first greens and ambers read as lines but not as text. */
 export const TRACES = {
   alt: { label: "Altitude", colour: "var(--go-ink)", text: "text-go-ink" },
-  kt: { label: "Ground speed", colour: "var(--caution-ink)", text: "text-caution-ink" },
+  kt: { label: WORDING.groundSpeed, colour: "var(--caution-ink)", text: "text-caution-ink" },
 } as const;

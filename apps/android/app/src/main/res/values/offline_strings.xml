@@ -15,7 +15,6 @@
     <string name="offline_storage_used">Storage Used</string>
     <string name="offline_free">Free on Phone</string>
     <string name="offline_delete">Delete</string>
-    <string name="offline_try_again">Try Again</string>
     <string name="offline_update_to">Update to %1$s</string>
     <string name="offline_download_named">Download %1$s?</string>
     <string name="offline_download_size">Download %1$s</string>

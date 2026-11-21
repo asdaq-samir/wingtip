@@ -100,10 +100,10 @@ struct DirectToNearestIntent: AppIntent {
 
     func perform() async throws -> some IntentResult & ProvidesDialog & OpensIntent {
         guard let here = await SiriPosition.now() else {
-            return .result(opensIntent: OpenWingtipIntent(), dialog: "I can't tell where you are, so here are the nearest airports.")
+            return .result(opensIntent: OpenWingtipIntent(), dialog: "I cannot tell where you are, so here are the nearest airports.")
         }
         guard let field = try? await Planner.nearestOrPacks(lat: here.latitude, lon: here.longitude, limit: 1).fields.first else {
-            return .result(opensIntent: OpenWingtipIntent(), dialog: "The nearest airport couldn't be found; here's the list.")
+            return .result(opensIntent: OpenWingtipIntent(), dialog: "The nearest airport could not be found; here's the list.")
         }
         let said = "\(field.ident), \(Format.spokenDistance(field.distanceNm)), \(Format.spokenHeadingTrue(field.bearingDeg))"
         try await requestConfirmation(actionName: .go, dialog: IntentDialog(full: "The nearest is \(said). Go direct?", supporting: "Direct to \(field.ident)?"))

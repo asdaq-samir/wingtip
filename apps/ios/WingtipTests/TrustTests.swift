@@ -81,8 +81,8 @@ struct TrustTests {
         #expect(AboutCredits.data.count == 24)
         #expect(AboutCredits.data.first?.what == "FAA aeronautical charts: sectional, terminal area and IFR enroute")
         #expect(AboutCredits.software.map(\.what) == ["Apple MapKit"])
-        #expect(PlanningAid.words.hasPrefix("Wingtip Maps is a planning aid for VFR and IFR flight."))
-        #expect(PlanningAid.words.hasSuffix("applicable regulations (14 CFR 91.103)."))
+        #expect(Wording.planningAid.hasPrefix("Wingtip Maps is a planning aid for VFR and IFR flight."))
+        #expect(Wording.planningAid.hasSuffix("applicable regulations (14 CFR 91.103)."))
     }
 
     /// The open-source licences the app ships with: LicensePlist's

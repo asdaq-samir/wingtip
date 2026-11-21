@@ -7,9 +7,9 @@ import LostCommsPage from "./LostCommsPage";
  *  ones. */
 export function practicePages() {
   return {
-    "light-gun": { title: "Light gun signals", content: <DrillPage deck="light-gun" /> },
-    "vfr-minimums": { title: "VFR weather minimums", content: <DrillPage deck="vfr-minimums" /> },
-    holding: { title: "Holding entries", content: <HoldingPage /> },
-    "lost-comms": { title: "Lost communications", content: <LostCommsPage /> },
+    "light-gun": { title: "Light Gun Signals", content: <DrillPage deck="light-gun" /> },
+    "vfr-minimums": { title: "VFR Weather Minimums", content: <DrillPage deck="vfr-minimums" /> },
+    holding: { title: "Holding Entries", content: <HoldingPage /> },
+    "lost-comms": { title: "Lost Communications", content: <LostCommsPage /> },
   };
 }

@@ -110,14 +110,14 @@ struct AircraftView: View {
                     NavigationLink("Your Airplanes") { OwnAircraftListView() }
                 }
             }
-            Section("Types the Planner Has Figures for") {
+            Section("Types the Planner Has Figures For") {
                 if profiles.isEmpty {
                     if let problem = model.problem {
                         ProblemLine(problem)
                     } else {
                         ForEach(0..<3, id: \.self) { _ in
                             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                                Text("Airplane type").font(.headline)
+                                Text("Airplane Type").font(.headline)
                                 Text("Cruise speed · fuel burn · ceiling").font(.subheadline).foregroundStyle(.secondary)
                             }
                             .loading("Fetching the types")

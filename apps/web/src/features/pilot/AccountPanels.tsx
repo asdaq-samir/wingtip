@@ -25,6 +25,7 @@ import DueItemsGroup from "./DueItemsGroup";
 import { InspectionsGroup } from "./InspectionsGroup";
 import { VorCheckGroup } from "./VorCheckGroup";
 import { FieldError } from "../../components/ui/field";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** A form field as the request carries it: blank is null. */
 const orNull = (value: string) => (value.trim() ? Number(value) : null);
@@ -131,7 +132,7 @@ export function AircraftPanel() {
   const [askDelete, deleteDialog] = useConfirm({
     title: `Delete ${editing?.tailNumber ?? "this airplane"}?`,
     description: "It goes from your airplanes and from the nav log's picker. This can't be undone.",
-    confirmLabel: "Delete airplane",
+    confirmLabel: WORDING.deleteAirplane,
     destructive: true,
     onConfirm: () => {
       if (editingId === null) return;
@@ -194,7 +195,7 @@ export function AircraftPanel() {
                 if (a) fly(choiceOf(a, profiles ?? []));
               }}
             >
-              <ListGroup title="Your airplanes">
+              <ListGroup title="Your Airplanes">
                 {/* Which the nav log flies where it is none of these, said in its
                 place as a row: the one ticked otherwise. */}
                 {!!list?.length && flying.aircraftId == null && (
@@ -236,7 +237,7 @@ export function AircraftPanel() {
                     title={
                       <span className="flex items-center gap-2 font-medium">
                         <Plus className="size-4" />
-                        New airplane
+                        New Airplane
                       </span>
                     }
                     data-testid="new-aircraft-button"
@@ -250,7 +251,7 @@ export function AircraftPanel() {
               them; each field a row, its label at the start and the
               field at the end, units inside. */}
             <ResponsivePopoverContent
-              title={editingId ? "Edit airplane" : "New airplane"}
+              title={editingId ? WORDING.editAirplane : WORDING.newAirplane}
               align="start"
               className="w-80"
               leading={
@@ -268,7 +269,7 @@ export function AircraftPanel() {
                   className="-mr-1"
                   disabled={saving}
                   aria-busy={saving}
-                  aria-label={editingId ? "Save changes" : "Add airplane"}
+                  aria-label={editingId ? "Save changes" : WORDING.addAirplane}
                 >
                   {saving && <Spinner role="presentation" aria-label={undefined} aria-hidden />}
                   {editingId ? "Save" : "Add"}
@@ -302,7 +303,7 @@ export function AircraftPanel() {
                 {editingId !== null && (
                   <ListGroup>
                     <ListRow
-                      title={<span className="font-medium text-destructive">Delete airplane</span>}
+                      title={<span className="font-medium text-destructive">{WORDING.deleteAirplane}</span>}
                       onClick={askDelete}
                       data-testid="delete-aircraft-button"
                     />

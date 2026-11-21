@@ -5,7 +5,6 @@
     <string name="profile_card">Profile</string>
     <!-- The plan's Profile row: the side view, at the altitude flown. -->
     <string name="profile_row">Side view and altitude, %1$s</string>
-    <string name="profile_needs_route">Plan a route first.</string>
     <string name="altitude_slider">Altitude</string>
     <string name="altitude_set">Set</string>
     <string name="altitude_auto">Auto</string>

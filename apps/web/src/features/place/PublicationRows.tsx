@@ -41,12 +41,12 @@ export function PublicationRows({
       {diagramCycle ? (
         <DiagramRow media={<ChartBadge />} ident={ident} cycle={diagramCycle} url={diagram} testId="airport-diagram" />
       ) : diagram ? (
-        <ChartRow media={<ChartBadge />} title="Airport diagram" url={diagram} airport={ident} testId="airport-diagram" />
+        <ChartRow media={<ChartBadge />} title="Airport Diagram" url={diagram} airport={ident} testId="airport-diagram" />
       ) : (
         sketched && (
           <ListRow
             media={<ChartBadge />}
-            title="Airport diagram"
+            title="Airport Diagram"
             description="A sketch of the runways: the FAA publishes none"
             onClick={() => setSketchOpen(true)}
             chevron

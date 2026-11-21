@@ -30,18 +30,18 @@ struct StopServicesSections: View {
                 places("Places to stay", s.lodging, "bed.double", Badge.lodging)
                 places("Car rental", s.cars, "car", Badge.car)
                 if s.nearbyUnavailable == true {
-                    Section("Nearby") { Text("Places near the field could not be looked up").foregroundStyle(.secondary) }
+                    Section("Nearby") { Text(Wording.placesNotLookedUp).foregroundStyle(.secondary) }
                 }
             } else if let problem {
                 Section("Services") {
                     Text(problem).foregroundStyle(.secondary)
-                    Button("Try Again") { Task { await load() } }
+                    Button(Wording.tryAgain) { Task { await load() } }
                 }
             } else {
                 Section("On the Field") {
                     ForEach(0..<2, id: \.self) { _ in
                         CardRow(badge: RowBadge(systemImage: "fuelpump", colour: Badge.fuel), title: "The fuel sold on the field")
-                            .loading("Fetching the services")
+                            .loading(Wording.fetchingServices)
                     }
                 }
             }
@@ -80,7 +80,7 @@ struct StopServicesSections: View {
 
     private func load() async {
         problem = nil
-        do { services = try await Planner.services(ident) } catch { problem = "The services could not be fetched." }
+        do { services = try await Planner.services(ident) } catch { problem = Wording.servicesNotFetched }
     }
 
     private struct FieldRow { let symbol: String; let colour: Color; let title: String; var detail: String?; var value: String? }
@@ -88,12 +88,12 @@ struct StopServicesSections: View {
     private func onTheField(_ s: AirportServices) -> [FieldRow] {
         let repair = [s.airframeRepair.map { "airframe \($0)" }, s.powerplantRepair.map { "engine \($0)" }].compactMap { $0 }.joined(separator: ", ")
         return [
-            s.courtesyCar == true ? FieldRow(symbol: "car.fill", colour: Badge.car, title: "Courtesy car", detail: (s.groundNotes ?? []).joined(separator: " ")) : nil,
+            s.courtesyCar == true ? FieldRow(symbol: "car.fill", colour: Badge.car, title: "Courtesy Car", detail: (s.groundNotes ?? []).joined(separator: " ")) : nil,
             s.tieDown == true ? FieldRow(symbol: "parkingsign", colour: Badge.runway, title: "Tie-downs") : nil,
             s.hangar == true ? FieldRow(symbol: "house.lodge", colour: Badge.runway, title: "Hangars") : nil,
             repair.isEmpty ? nil : FieldRow(symbol: "wrench.and.screwdriver", colour: Badge.other, title: "Repair", value: repair.prefix(1).uppercased() + repair.dropFirst()),
             s.oxygen == true ? FieldRow(symbol: "aqi.medium", colour: Badge.other, title: "Oxygen") : nil,
-            s.landingFee.map { FieldRow(symbol: "doc.text", colour: Badge.other, title: "Landing fee", value: $0 ? "Yes" : "None") },
+            s.landingFee.map { FieldRow(symbol: "doc.text", colour: Badge.other, title: "Landing Fee", value: $0 ? "Yes" : "None") },
         ].compactMap { $0 }
     }
 

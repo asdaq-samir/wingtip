@@ -80,7 +80,7 @@ object AiSources {
     /** A logbook entry's facts as the pilot typed them (14 CFR 61.51(b)'s columns). */
     fun logbook(date: String, route: String, airplane: String, total: String, night: String, day: String, nightLandings: String, approaches: Int): List<AssistantSource> =
         listOf(
-            AssistantSource("entry", "Logbook entry", "flown $date, route ${route.ifBlank { "not written" }}, airplane ${airplane.ifBlank { "not written" }}"),
+            AssistantSource("entry", "Logbook Entry", "flown $date, route ${route.ifBlank { "not written" }}, airplane ${airplane.ifBlank { "not written" }}"),
             AssistantSource("times", "Times", "total $total h, night $night h"),
             AssistantSource("landings", "Landings", "day $day, night $nightLandings, approaches $approaches"),
         )

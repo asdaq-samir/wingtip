@@ -59,12 +59,12 @@ struct AirplanePlaceHead: View {
             }
             .glassProminentButton()
             .disabled(flying)
-            .accessibilityLabel(flying ? "Flying this airplane" : "Fly this airplane")
+            .accessibilityLabel(flying ? String(localized: "Flying This Airplane") : Wording.flyThisAirplane)
             .accessibilityIdentifier("fly-this-airplane")
             Menu {
                 if let hex {
-                    Toggle("Tell me when it takes off", isOn: watch(hex, .takeoff))
-                    Toggle("Tell me when it lands", isOn: watch(hex, .land))
+                    Toggle("Tell Me When It Takes Off", isOn: watch(hex, .takeoff))
+                    Toggle("Tell Me When It Lands", isOn: watch(hex, .land))
                 }
             } label: {
                 ActionFace(systemImage: following ? "bell.fill" : "bell", title: "Follow")
@@ -79,7 +79,7 @@ struct AirplanePlaceHead: View {
             .toggleStyle(.button)
             .glassButton()
             .disabled(kept == nil)
-            .accessibilityLabel(starred ? "Remove from Favorites" : "Add to Favorites")
+            .accessibilityLabel(starred ? Wording.removeFromFavorites : Wording.addToFavorites)
             .accessibilityIdentifier("airplane-favorite")
             ShareLink(item: Config.gateway.appending(path: "/app/plan").appending(queryItems: [URLQueryItem(name: "airplane", value: model.tail)]),
                       subject: Text(model.tail)) {

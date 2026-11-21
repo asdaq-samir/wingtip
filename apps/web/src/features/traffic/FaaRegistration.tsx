@@ -23,7 +23,7 @@ export default function FaaRegistration({ faa }: { faa: AircraftRegistration }) 
   return (
     // The registry's own record; an owner who asked the FAA to withhold
     // their name (49 U.S.C. 44114) is not in it, and the row is left out.
-    <ListGroup title="FAA registration">
+    <ListGroup title="FAA Registration">
       {faa.owner && (
         <ListRow
           media={
@@ -31,7 +31,7 @@ export default function FaaRegistration({ faa }: { faa: AircraftRegistration }) 
               <UserRound />
             </RowBadge>
           }
-          title="Registered to"
+          title="Registered To"
           data-testid="faa-owner"
           description={[
             faa.owner,

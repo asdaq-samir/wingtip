@@ -14,6 +14,7 @@ import { heardAny, readClearance } from "../lib/clearance";
 import { readbackCheck } from "../lib/readback";
 import { useAnnounce } from "../lib/announce";
 import { TEXT } from "../lib/text";
+import { WORDING } from "../lib/wording/generated/wording";
 
 /** A clearance's readback checked against it (lib/readback): what was
  *  missed or said differently as a warning line, never a stop. */
@@ -55,7 +56,7 @@ export function RadioPill() {
       ? `Listening to the radio through ${name}…`
       : chosen
         ? `Listening to the radio with ${chosen} chosen…`
-        : "Listening to the radio…";
+        : WORDING.listeningToTheRadio;
   return (
     <div className="min-w-0 py-1 px-1" data-testid="radio-pill">
       <div className="flex items-center gap-2">
@@ -163,7 +164,7 @@ function RadioCaptions() {
               ? `Listening to the radio through ${name}…`
               : chosen
                 ? `Listening to the radio with ${chosen} chosen…`
-                : "Listening to the radio…"}
+                : WORDING.listeningToTheRadio}
           </span>
         )}
         {lines.map((t) => (

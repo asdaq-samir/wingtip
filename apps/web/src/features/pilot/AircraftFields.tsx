@@ -8,6 +8,7 @@ import type { AircraftFormValues } from "./aircraftForm";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { cruiseReferenceFt } from "../../lib/performance";
 import { altFt } from "../../lib/format";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** What the gateway refused of a field, or nothing, as a row's description. */
 // What is wrong with a field, said under its title with the id its field is
@@ -42,7 +43,7 @@ export function AircraftFields({
       phase and the units in full. The identifiers are
       capitals and never autocorrected. */}
       <ListGroup>
-        <ListRow id={`${formId}-tail`} title="Tail number" description={problem(`${formId}-tail`, errors.tailNumber?.message)}>
+        <ListRow id={`${formId}-tail`} title="Tail Number" description={problem(`${formId}-tail`, errors.tailNumber?.message)}>
           <FieldHit htmlFor={`${formId}-tail`}>
             <Input
               id={`${formId}-tail`}
@@ -85,7 +86,7 @@ export function AircraftFields({
       <ListGroup title={`Cruise figures at ${altFt(cruiseReferenceFt())} ft, standard day`}>
         <NumberRow
           id={`${formId}-power`}
-          title="Cruise power"
+          title={WORDING.cruisePower}
           unit="%"
           placeholder="65"
           name="Cruise power in percent"
@@ -98,7 +99,7 @@ export function AircraftFields({
       <ListGroup>
         <NumberRow
           id={`${formId}-usable`}
-          title="Usable fuel"
+          title={WORDING.usableFuel}
           unit="gal"
           placeholder="40"
           name="Usable fuel in gallons"
@@ -113,7 +114,7 @@ export function AircraftFields({
       for GNSS); 10b, C for a transponder with Mode C, B1 or U1
       for ADS-B Out; item 19's colour and markings. Codes are
       capitals, never autocorrected. */}
-      <ListGroup title="Flight plan">
+      <ListGroup title="Flight Plan">
         <ListRow id={`${formId}-equipment`} title="Equipment" description={problem(`${formId}-equipment`, errors.equipment?.message)}>
           <FieldHit htmlFor={`${formId}-equipment`}>
             <Input

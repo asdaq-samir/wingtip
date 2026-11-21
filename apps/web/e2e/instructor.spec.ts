@@ -119,7 +119,7 @@ test("a student asks an instructor in, and the instructor endorses their solo cr
   const needs = desk.getByTestId("student-needs").filter({ hasText: "Avery B. Student" });
   await expect(needs).toBeVisible();
   await expect(needs).toContainText(/Solo KUGN KRFD KUGN today · no risk assessment/);
-  await expect(needs).toContainText("Sign off");
+  await expect(needs).toContainText("Sign Off");
   await expect(desk.getByTestId("student-row").filter({ hasText: "Avery B. Student" })).toContainText("1 waiting on you");
   await needs.click();
   const review = desk.getByTestId("review");

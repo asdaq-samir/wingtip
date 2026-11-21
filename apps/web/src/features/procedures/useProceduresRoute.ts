@@ -290,7 +290,7 @@ export function useProceduresRoute(given: ProceduresRouteProps) {
           .find((p) => !on.pick!.runway || p.runway === on.pick!.runway) ?? null)
       : null;
   if (wanted && on) setPage({ at: on, procedure: wanted });
-  const stale = list?.stale ? `Out of date: the ${cycleDate(list.cycle)} cycle, as the current one could not be had` : null;
+  const stale = list?.stale ? `Out of date: the ${cycleDate(list.cycle)} cycle, as the current one could not be fetched` : null;
 
   return {
     ...props,

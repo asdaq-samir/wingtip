@@ -25,9 +25,9 @@ const DATED: {
   rule: string;
 }[] = [
   { key: "annualOn", through: "annualGoodThrough", title: "Annual", rule: "12 calendar months, 14 CFR 91.409(a)" },
-  { key: "staticCheckOn", through: "staticCheckGoodThrough", title: "Altimeter and static", rule: "24 calendar months, for IFR, 91.411" },
+  { key: "staticCheckOn", through: "staticCheckGoodThrough", title: "Altimeter and Static", rule: "24 calendar months, for IFR, 91.411" },
   { key: "transponderCheckOn", through: "transponderCheckGoodThrough", title: "Transponder", rule: "24 calendar months, 91.413" },
-  { key: "eltInspectedOn", through: "eltInspectionGoodThrough", title: "ELT inspection", rule: "12 calendar months, 91.207(d)" },
+  { key: "eltInspectedOn", through: "eltInspectionGoodThrough", title: "ELT Inspection", rule: "12 calendar months, 91.207(d)" },
 ];
 
 // As the server checks them (InspectionsRequest.java): each may be left
@@ -157,7 +157,7 @@ export function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
       ))}
       <ListRow
         id={`${id}-battery`}
-        title="ELT battery replace by"
+        title="ELT Battery Replace By"
         description={
           <>
             As marked on the transmitter, 91.207(c)
@@ -194,7 +194,7 @@ export function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
         name="forHire"
         render={({ field }) => (
           <SwitchRow
-            title="Flown for hire"
+            title="Flown for Hire"
             description="Hire or instruction for hire: the 100-hour, 91.409(b)"
             on={field.value}
             onChange={field.onChange}
@@ -204,7 +204,7 @@ export function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
       />
       <ListRow
         id={`${id}-at`}
-        title="Hours at last 100-hour"
+        title="Hours at Last 100-Hour"
         description={
           !forHire ? (
             "Time in service, at the last annual or 100-hour"
@@ -236,7 +236,7 @@ export function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
           </FieldHit>
         </RowField>
       </ListRow>
-      <ListRow id={`${id}-now`} title="Hours now">
+      <ListRow id={`${id}-now`} title="Hours Now">
         <RowField id={`${id}-now`} error={errors.hoursNow?.message}>
           <FieldHit htmlFor={`${id}-now`}>
             <FormNumberField
@@ -253,7 +253,7 @@ export function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
         </RowField>
       </ListRow>
       <ListRow
-        title={<span className="font-medium text-tint">Save inspections</span>}
+        title={<span className="font-medium text-tint">Save Inspections</span>}
         onClick={() => void onSave()}
         disabled={save.isPending}
         data-testid="inspections-save"

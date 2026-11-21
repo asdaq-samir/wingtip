@@ -31,7 +31,13 @@ struct SearchSuggestions: View {
     @Environment(Traffic.self) private var traffic
 
     var body: some View {
-        if model.query.isEmpty { BrowseSections(nearest: model.nearest, pick: pick) } else { results }
+        if let ask = model.picking { PointAskHead(ask: ask) }
+        if model.query.isEmpty { BrowseSections(nearest: model.nearest, pick: pick, picking: model.picking) } else { results }
+    }
+
+    /// Why a field cannot be picked while the search picks a point, or nil.
+    private func refused(_ ident: String, closed: String?) -> String? {
+        model.picking.flatMap { plan.refusal(ident, closed: closed, for: $0) }
     }
 
     // MARK: Typing
@@ -43,18 +49,19 @@ struct SearchSuggestions: View {
         if !model.airports.isEmpty || !model.towns.isEmpty {
             Section {
                 ForEach(model.airports, id: \.ident) { field in
-                    Button { pick(.airport(field.ident)) } label: { found(field) }
+                    let refusal = refused(field.ident, closed: field.closed)
+                    Button { pick(.airport(field.ident)) } label: { found(field, refusal: refusal) }
                         .foregroundStyle(.primary)
-
+                        .disabled(refusal != nil)
                         .airportPreview(field.ident, closed: field.closed != nil) { pick(.plan) }
                         // The UI tests' handle on a result (WingtipUITests/FlowTests).
                         .accessibilityIdentifier("airport-result-\(field.ident)")
                 }
                 // A town or a street address: the fields nearest it, as
-                // Maps' search asks where.
-                ForEach(model.towns.prefix(3)) { place in
+                // Maps' search asks where; not while a point is picked.
+                ForEach(model.picking == nil ? Array(model.towns.prefix(3)) : []) { place in
                     Button { pick(.airport(AirportRoute.nearFrom(lat: place.lat, lon: place.lon, label: place.label).text)) } label: {
-                        Label("Fields near \(place.label)", systemImage: place.kind == "address" ? "mappin" : "building.2")
+                        Label("Fields Near \(place.label)", systemImage: place.kind == "address" ? "mappin" : "building.2")
                     }
                 }
             } header: { Text("Airports") }
@@ -62,14 +69,23 @@ struct SearchSuggestions: View {
         if !model.fixes.isEmpty {
             Section {
                 ForEach(model.fixes, id: \.ident) { fix in
-                    // A fix has no card: on a route, Direct To it.
-                    Button { pick(.directTo(fix.ident)) } label: { found(fix) }
+                    // A fix has no card: on a route, Direct To it; while a
+                    // point is picked, the point.
+                    let refusal = refused(fix.ident, closed: nil)
+                    Button { pick(.directTo(fix.ident)) } label: { found(fix, refusal: refusal) }
                         .foregroundStyle(.primary)
-                        .disabled(!plan.routed)
-                        .accessibilityHint(plan.routed ? "Direct To \(fix.ident)" : "Plan a route first for Direct To")
+                        .disabled(model.picking == nil ? !plan.routed : refusal != nil)
+                        .accessibilityHint(model.picking != nil ? "Puts \(fix.ident) in the route"
+                            : plan.routed ? "Direct To \(fix.ident)" : "Plan a route first for Direct To")
                 }
             } header: { Text("Waypoints and Navaids") }
         }
+        if model.picking == nil { others }
+    }
+
+    /// The rows that are not the route's points, left out while one is
+    /// picked: the airplanes and Do.
+    @ViewBuilder private var others: some View {
         let own = model.ownMatching(airplanes.records)
         let tail = model.typedTail(airplanes.records)
         let types = model.keeping == nil ? model.matchingTypes : []
@@ -109,10 +125,10 @@ struct SearchSuggestions: View {
 
     /// A field found, its closed label or its use first ("Closed
     /// indefinitely · Cooper Flying Service", "Private · Ravenwood").
-    private func found(_ field: AirportSuggestion) -> some View {
+    private func found(_ field: AirportSuggestion, refusal: String? = nil) -> some View {
         SearchRowLabel(title: field.ident, detail: [field.name, field.municipality, field.region].compactMap { $0 }.joined(separator: " · "),
                        systemImage: field.kind == "fix" ? WingtipIcon.waypoint : WingtipIcon.departFrom,
-                       flag: FieldUse.flag(closed: field.closed, use: field.use))
+                       flag: FieldUse.flag(closed: field.closed, use: field.use), refusal: refusal)
     }
 
     /// A result's two lines (SearchRowLabel).
@@ -122,6 +138,34 @@ struct SearchSuggestions: View {
 
     /// The registry's make and model, as the FAA writes them.
     static func registryLine(_ registration: AircraftRegistration) -> String { AirplaneHits.registryLine(registration) }
+}
+
+/// The ask's head over the search's rows while it picks a point of the
+/// route, as Apple Maps' Add Stop sheet titles its search (the owner's
+/// screenshot, 2026-11-20): Add Stop, Change Stop or the end, large and
+/// bold, and the point it takes the place of under it. The search field's
+/// own Cancel cancels it, back to the plan.
+struct PointAskHead: View {
+    let ask: PointAsk
+    @Environment(Plan.self) private var plan
+
+    var body: some View {
+        Section {
+            EmptyView()
+        } header: {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                Text(ask.title(points: plan.idents.count))
+                    .font(WingtipType.card)
+                    .foregroundStyle(.primary)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("point-ask-title")
+                if let replacing = ask.replacing {
+                    Text("In place of \(replacing)").font(WingtipType.detail).foregroundStyle(.secondary)
+                }
+            }
+            .textCase(nil)
+        }
+    }
 }
 
 /// The flight at the top of the search with nothing typed (the Main

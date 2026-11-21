@@ -21,23 +21,23 @@ export default function FlownTrackButton() {
           <Route strokeWidth={1.5} className="size-5" />
         </IconButton>
       </ResponsivePopoverTrigger>
-      <ResponsivePopoverContent title="Flown track" className="w-80 p-3" align="end" side="left">
+      <ResponsivePopoverContent title="Flown Track" className="w-80 p-3" align="end" side="left">
         <ListGroup>
           <ListRow title={track.title} description="As flown, from its debrief" />
           <ListRow
             media={
               <span className="inline-block h-1 w-5 rounded-full bg-(--chart-fix-ink) ring-2 ring-white dark:bg-white dark:ring-black" />
             }
-            title="Within the tolerances"
+            title="Within the Tolerances"
           />
           {/* The ACS's (PA.VI.A): over 3 nm off the route, or 200 ft off the altitude in the cruise. */}
           <ListRow
             media={<span className="inline-block h-1 w-5 rounded-full bg-(--chart-warning) ring-2 ring-white" />}
-            title="Outside them"
+            title="Outside Them"
             description="Over 3 nm off the route or 200 ft off the cruise altitude"
           />
           <ListRow
-            title="Hide the track"
+            title="Hide the Track"
             onClick={() => {
               setOpen(false);
               hide();

@@ -8,7 +8,7 @@
     <string name="clearance_words_hint_voice">Tap Listen and hold the phone to the speaker, or type the clearance.</string>
     <string name="clearance_words_hint">Type the clearance as ATC gave it.</string>
     <string name="clearance_heard">Heard</string>
-    <string name="clearance_cleared_to">Cleared to</string>
+    <string name="clearance_cleared_to">Cleared To</string>
     <string name="clearance_route">Route</string>
     <string name="clearance_altitude">Altitude</string>
     <string name="clearance_frequency">Frequency</string>
@@ -16,10 +16,7 @@
     <string name="clearance_your_readback">Your Read Back</string>
     <string name="clearance_listening_readback">Listening for your read back…</string>
     <string name="clearance_readback_line">Read it back to ATC with Read Back Again, and it is checked here line by line.</string>
-    <string name="clearance_readback_unchecked">The read back could not be checked.</string>
     <string name="clearance_differs">Differs from what you filed: %1$s</string>
-    <string name="clearance_enter">Enter the Route</string>
-    <string name="clearance_read_back_again">Read Back Again</string>
     <string name="clearance_transcript">Transcript</string>
     <string name="clearance_readback_hint">Your read back, as said</string>
     <string name="from_a_photo">From a Photo</string>

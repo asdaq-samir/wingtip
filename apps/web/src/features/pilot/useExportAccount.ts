@@ -31,7 +31,7 @@ export function useExportAccount() {
       await shareFile(exportFileName(response.headers.get("Content-Disposition")), "application/json", text ?? "");
     },
     onError: (err) => {
-      if ((err as Error).name !== "AbortError") showError("Your data was not exported", describeError(err));
+      if ((err as Error).name !== "AbortError") showError("Your Data Was Not Exported", describeError(err));
     },
   });
 }

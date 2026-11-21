@@ -10,6 +10,7 @@ import type { AtcCard as Card } from "./atcCards";
 import type { AtcItem } from "./atcEngine";
 import { ACTION_LABEL, itemWords, type ItemAction } from "./atcWords";
 import { capitalised } from "../../lib/capitals";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** A chip's 32 points made 44 to a finger without growing (the app's
  *  rule): a pseudo-element round it, the rows gap-2 so the areas meet. */
@@ -116,7 +117,7 @@ export default function AtcCard({
       {!card.awaiting && (
         <div className="flex flex-wrap gap-2 pt-1 pr-2">
           <Button size="sm" variant="secondary" className={CHIP} onClick={onReadBack}>
-            {card.readback ? "Read Back Again" : "Read Back"}
+            {card.readback ? WORDING.readBackAgain : WORDING.readBack}
           </Button>
         </div>
       )}

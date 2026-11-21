@@ -39,7 +39,7 @@ export function BriefShare({
               whole briefing. */}
           <DropdownMenuItem disabled={!route.routed} onClick={afterMenu(() => window.print())} data-testid="print-briefing">
             <Printer />
-            Print the briefing
+            Print the Briefing
           </DropdownMenuItem>
           {/* The Brief's live reports asked again now, as the route's
               Refresh is in its own menu: the head keeps its two buttons

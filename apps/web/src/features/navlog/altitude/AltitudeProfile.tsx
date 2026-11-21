@@ -203,7 +203,7 @@ export function AltitudeProfile({
       {clearance && clearance.least_ft !== null && (
         <div className={cn("grid grid-cols-3 gap-2 tabular-nums", TEXT.note)} data-testid="ground-strip" data-level={clearance.level ?? ""}>
           <div>
-            <div className="text-muted-foreground">Highest ground</div>
+            <div className="text-muted-foreground">Highest Ground</div>
             <div className="font-semibold" data-live="highest">
               {altFt(clearance.highest_ft)} ft
             </div>
@@ -215,7 +215,7 @@ export function AltitudeProfile({
             </div>
           </div>
           <div>
-            <div className="text-muted-foreground">First strike</div>
+            <div className="text-muted-foreground">First Strike</div>
             <div className="font-semibold" data-live="strike">
               {strikeWords(clearance.strike_nm)}
             </div>

@@ -48,7 +48,7 @@ describe("exporting the account", () => {
     get.mockRejectedValue(new Error("You are signed out."));
     const { result } = renderHook(() => useExportAccount(), { wrapper });
     act(() => result.current.mutate());
-    await waitFor(() => expect(shown).toHaveBeenCalledWith("Your data was not exported", "You are signed out."));
+    await waitFor(() => expect(shown).toHaveBeenCalledWith("Your Data Was Not Exported", "You are signed out."));
     expect(shared).not.toHaveBeenCalled();
   });
 });

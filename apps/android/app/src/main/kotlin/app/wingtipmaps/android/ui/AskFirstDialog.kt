@@ -20,6 +20,6 @@ fun AskFirstDialog(title: String, line: String, onAllow: () -> Unit, onNotNow: (
         title = { Text(title) },
         text = { Text(line) },
         confirmButton = { TextButton(onClick = onAllow) { Text(stringResource(R.string.allow)) } },
-        dismissButton = { TextButton(onClick = onNotNow) { Text(stringResource(R.string.not_now)) } },
+        dismissButton = { TextButton(onClick = onNotNow) { Text(stringResource(R.string.wording_not_now)) } },
     )
 }

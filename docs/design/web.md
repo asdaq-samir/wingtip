@@ -158,7 +158,15 @@ These hold on every screen below and win over any reference app.
 - **Words:** "airplane" (decision 0020), Title Case labels (0021; the
   map's words are sentence case with their codes in capitals, rules.md
   §13), no explanatory footnotes (0019), FAA text in sentence case with
-  its codes kept, raw reports as sent.
+  its codes kept, raw reports as sent. Section titles, row and figure
+  names, buttons, menu items and toast titles are in Title Case; messages
+  and errors are sentences that end with a full stop and say "could
+  not". A word all three apps say is design/wording.json's, imported as
+  `WORDING` (`lib/wording/generated/wording`, rules.md §15), and a
+  screen's name is `SCREENS`' title: the planning aid in About and the
+  kneeboard's foot, the figure names (`lib/explain`, `lib/airplane/figureWords`,
+  `navlog/workings`) and the common buttons (Try Again, Sign In, Show on
+  Map, Add Stop) are never typed again by hand.
 
 ## The web platform, today
 
@@ -787,7 +795,7 @@ airplane picked" and Pick Airplane, never a default type (decision 0011).
 An N-number typed is taken on Enter (the keyboard's Done) or a suggestion
 picked, never as the field is left, which lets go of it ("N4" half typed
 was taken as the airplane), and a registry's answer for a tail asked
-before the last is dropped. "Pick an airplane" focuses the field within
+before the last is dropped. "Pick an Airplane" focuses the field within
 the tap that asked, so iOS gives it its keyboard. The altitude typed is
 read by the engine's `altitude_typed` (14 CFR 1.1's three figures of a
 flight level, or feet in four or five, nothing guessed: "0450" or six

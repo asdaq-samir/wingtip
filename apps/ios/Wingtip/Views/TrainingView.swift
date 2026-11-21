@@ -19,7 +19,7 @@ struct TrainingView: View {
     var body: some View {
         List {
             if !session.signedIn {
-                ContentUnavailableView("Sign in for your training", systemImage: "graduationcap", description: Text("Your endorsements and reviews are kept with your account."))
+                ContentUnavailableView("Sign In for Your Training", systemImage: "graduationcap", description: Text("Your endorsements and reviews are kept with your account."))
             }
             if let training {
                 ExperienceSection(items: training.experience)
@@ -296,7 +296,7 @@ struct ReviewAskView: View {
                 } else if flights.isEmpty {
                     Text("Save the planned flight first, from Flights.").foregroundStyle(.secondary)
                 }
-                Picker("Saved flight", selection: $flightId) {
+                Picker("Saved Flight", selection: $flightId) {
                     Text("Pick one").tag(Int?.none)
                     ForEach(flights) { f in
                         Text(([f.departureIdent] + f.stops + [f.destinationIdent]).joined(separator: " ")).tag(Int?.some(f.id))
@@ -309,8 +309,8 @@ struct ReviewAskView: View {
                         ForEach(instructors) { l in Text(l.name ?? l.email).tag(Int?.some(l.id)) }
                     }
                 }
-                LabeledContent("Make and model") { TextField("Cessna 172", text: $makeModel).multilineTextAlignment(.trailing) }
-                DatePicker("Day of the flight", selection: $day, in: Date()..., displayedComponents: .date)
+                LabeledContent("Make and Model") { TextField("Cessna 172", text: $makeModel).multilineTextAlignment(.trailing) }
+                DatePicker("Day of the Flight", selection: $day, in: Date()..., displayedComponents: .date)
                 TextField("A note for your instructor", text: $note, axis: .vertical).lineLimit(1...4)
             }
             Section {
@@ -328,7 +328,7 @@ struct ReviewAskView: View {
         .navigationTitle("Ask for a Review")
         .task {
             do { flights = try await Gateway.flights(); flightsProblem = nil } catch {
-                flightsProblem = "Your saved flights couldn't be fetched: \(error.localizedDescription)"
+                flightsProblem = "Your saved flights could not be fetched: \(error.localizedDescription)"
             }
         }
     }

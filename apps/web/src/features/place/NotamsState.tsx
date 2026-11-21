@@ -1,6 +1,7 @@
 import { ListRow } from "../../components/GroupedList";
 import QueryState from "../../components/QueryState";
 import type { FieldNotams } from "./fieldNotams";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** What is said of the list itself, a row of the list as a section's
  *  "None listed" is: that it could not be fetched, with Try again in place
@@ -18,7 +19,7 @@ export function NotamsState({
   query: Parameters<typeof QueryState>[0]["query"];
   none?: string | null;
 }) {
-  if (query.isError) return <QueryState query={query} row fetching="Fetching the NOTAMs…" failed="The NOTAMs could not be fetched." />;
+  if (query.isError) return <QueryState query={query} row fetching={WORDING.fetchingNotams} failed={WORDING.notamsNotFetched} />;
   if (data && !data.notams.length)
     return (
       <ListRow

@@ -147,7 +147,7 @@ struct NavaidCard: View {
                 LabeledContent("Identifier") { Text(morse).fontWeight(.semibold) }
                     .accessibilityValue(SpokenFigures.digits(vor.ident))
             }
-            if let channel = vor.channel { LabeledContent("DME channel", value: channel) }
+            if let channel = vor.channel { LabeledContent("DME Channel", value: channel) }
             if let volume = NavaidWords.serviceVolume(vor) {
                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                     Text("Service volume")

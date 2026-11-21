@@ -10,6 +10,7 @@ import { Button } from "../../components/ui/button";
 import { tripFigures, type Flown } from "../plan";
 import { requestAirplanePick } from "../../lib/pickAirplane";
 import { useFixFigures } from "./useFixFigures";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * The flight's figures, the last of the route's panel over the tabs, at
@@ -55,7 +56,7 @@ const AREA = "relative max-w-full hit-x-2 hit-y-3";
 /** A figure an airplane makes (the time, the fuel), with none picked: a
  *  dash, said as what it waits for. */
 function wantsAirplane(f: StripFigure): StripFigure {
-  const name = f.name === "ETA" ? "Arrival" : f.name === "Aloft" ? "Time aloft" : "Time en route";
+  const name = f.name === "ETA" ? "Arrival" : f.name === "Aloft" ? "Time Aloft" : WORDING.timeEnRoute;
   return { name: f.name, value: "—", said: `${name}: pick an airplane for it` };
 }
 

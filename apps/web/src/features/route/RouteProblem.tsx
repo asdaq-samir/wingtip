@@ -4,6 +4,7 @@ import { cn } from "cn";
 import { TEXT } from "../../lib/text";
 import type { Unflyable } from "../plan";
 import { FINDING_TONE } from "../../lib/findings";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * No legal altitude for the route: where along it, why as a list, and the
@@ -47,16 +48,16 @@ export default function RouteProblem({
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" size="sm" onClick={() => onGoRound(round.via!, round.stop_index)}>
-              Go round the high ground
+              Go Round the High Ground
             </Button>
             <Button type="button" size="sm" variant="outline" onClick={onAddStop} data-testid="unflyable-add-stop">
-              Add a stop
+              {WORDING.addStop}
             </Button>
           </div>
         </div>
       ) : (
         <Button type="button" size="sm" variant="outline" onClick={onAddStop} data-testid="unflyable-add-stop">
-          Add a stop
+          {WORDING.addStop}
         </Button>
       )}
     </div>

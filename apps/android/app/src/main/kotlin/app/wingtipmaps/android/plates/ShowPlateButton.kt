@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 fun ShowPlateButton(ident: String, chartName: String, onPlaced: (Boolean) -> Unit) {
     val scope = rememberCoroutineScope()
     IconButton(onClick = { scope.launch { onPlaced(PlatesOnMap.shared.showChart(ident, chartName)) } }) {
-        Icon(WingtipIcons.showOnMap, contentDescription = stringResource(R.string.plate_show_on_map))
+        Icon(WingtipIcons.showOnMap, contentDescription = stringResource(R.string.wording_show_on_map))
     }
 }
 

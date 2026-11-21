@@ -25,12 +25,14 @@ import app.wingtipmaps.android.checklist.ChecklistScreen
 import app.wingtipmaps.android.clearance.ClearancePage
 import app.wingtipmaps.android.coach.CoachScreen
 import app.wingtipmaps.android.emergency.EmergencyCard
+import app.wingtipmaps.android.filing.FilingPage
 import app.wingtipmaps.android.flights.FlightsCard
 import app.wingtipmaps.android.logbook.LogbookScreen
 import app.wingtipmaps.android.offline.DownloadsScreen
 import app.wingtipmaps.android.plates.PlateCard
 import app.wingtipmaps.android.plates.PlatePick
 import app.wingtipmaps.android.route.RouteLegCard
+import app.wingtipmaps.android.route.RouteOptionsCard
 import app.wingtipmaps.android.search.SearchControl
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
@@ -95,7 +97,7 @@ private fun Card(
                 search.pickAirport(R.string.home_airport_pick) { ident -> onPicked(ident); sheet.show(SheetPage.PilotDetails) }
             }
         }
-        SheetPage.Minimums -> Page(stringResource(R.string.minimums), exit) { MinimumsScreen() }
+        SheetPage.Minimums -> Page(stringResource(R.string.screen_minimums), exit) { MinimumsScreen() }
         SheetPage.Settings -> Page(stringResource(R.string.settings), exit) { SettingsScreen(open = sheet::push) }
         SheetPage.Atc -> Page(stringResource(R.string.atc), exit) { AtcPage() }
         SheetPage.Help -> Page(stringResource(R.string.help_and_about), exit) { HelpPage(open = sheet::push) }
@@ -113,6 +115,8 @@ private fun Card(
         SheetPage.Profile -> ProfileCard(plan, exit)
         SheetPage.NavLog -> NavLogCard(plan, exit, onLeg = { sheet.push(SheetPage.Leg(it)) }, onAddStopAfter = search::addStopAfter)
         SheetPage.Emergency -> EmergencyCard(plan, control, exit)
+        SheetPage.RouteOptions -> RouteOptionsCard(plan, exit, onUsed = showPlan)
+        SheetPage.Filing -> FilingPage(plan, session, exit)
         is SheetPage.Checklist -> {
             val kind = ChecklistKind.entries.firstOrNull { it.name == page.kind } ?: ChecklistKind.NORMAL
             Page(stringResource(R.string.checklists_of, page.airplane.uppercase()), exit) { ChecklistScreen(airplane = page.airplane, kind = kind) }

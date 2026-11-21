@@ -16,13 +16,13 @@
     <string name="flow_precip">Precipitation</string>
     <string name="flow_cloud">Clouds</string>
     <string name="flow_ceiling">Ceiling</string>
-    <string name="flow_cape">Thunderstorm energy</string>
+    <string name="flow_cape">Thunderstorm Energy</string>
     <string name="flow_temp">Temperature</string>
     <string name="flow_vis">Visibility</string>
     <string name="flow_icing">Icing</string>
     <string name="flow_turb">Turbulence</string>
-    <string name="flow_frzlvl">Freezing level</string>
-    <string name="flow_tops">Cloud tops</string>
+    <string name="flow_frzlvl">Freezing Level</string>
+    <string name="flow_tops">Cloud Tops</string>
 
     <!-- The legend's titles, each field's name and unit. -->
     <string name="flow_title_wind">Wind (kt)</string>
@@ -50,8 +50,7 @@
     <string name="flow_pause">Pause</string>
     <string name="flow_span_1h">1h</string>
     <string name="flow_span_12h">12h</string>
-    <string name="flow_fetching">Fetching the model weather…</string>
-    <string name="flow_unavailable">The model weather isn\'t available now.</string>
+    <string name="flow_unavailable">The model weather is not available now.</string>
     <string name="flow_radar_observed">Radar, observed</string>
     <string name="flow_in_place_of_awc">%1$s in place of AWC</string>
 
@@ -59,8 +58,7 @@
     <string name="flow_reading">Value here</string>
     <string name="flow_no_value">–</string>
     <string name="flow_wind_reading">%1$03d° %2$d kt</string>
-    <string name="flow_no_ceiling">No ceiling</string>
     <string name="flow_none">None</string>
-    <string name="flow_reading_failed">The value there couldn\'t be worked out.</string>
+    <string name="flow_reading_failed">The value there could not be worked out.</string>
     <string name="flow_freezing_surface">Freezing at the surface</string>
 </resources>

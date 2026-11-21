@@ -31,7 +31,7 @@ export function useShareLink(planned: { dep: string; dest: string; stops: string
     try {
       if ((await shareOrCopy({ title: routeName(planned.dep, planned.dest, planned.stops), url })) === "copied") done("Link Copied");
     } catch (err) {
-      if (!cancelled(err)) showError("Could not share the route", describeError(err));
+      if (!cancelled(err)) showError("Could Not Share the Route", describeError(err));
     }
   }, [planned, altitudeFt, depart, type, rules, tail]);
 

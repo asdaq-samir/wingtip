@@ -23,6 +23,7 @@ import { useDebounced } from "../lib/useDebounced";
 import { useReadback } from "./useReadback";
 import { NotYet, Step, Verdict } from "./ClearanceSteps";
 import { ROW_BUTTON, ROW_MIC, routeLine } from "../lib/clearanceRows";
+import { WORDING } from "../lib/wording/generated/wording";
 
 const time = (at: number) => new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -132,7 +133,7 @@ export default function ClearanceCard({
     error ?? readbackProblem ?? (found.isError ? "The places in it could not be looked up; check the connection and try again." : null);
   const mic = useCanListen();
 
-  const hearState = onRadio ? "Listening to the radio…" : heardIt ? heardAt ? `Heard ${time(heardAt)}` : "Heard" : <NotYet />;
+  const hearState = onRadio ? WORDING.listeningToTheRadio : heardIt ? heardAt ? `Heard ${time(heardAt)}` : "Heard" : <NotYet />;
   const readbackState = readingBack ? (
     "Listening for your read back…"
   ) : !check ? (
@@ -230,7 +231,7 @@ export default function ClearanceCard({
         </Step>
         <Step
           id="readback"
-          title="Read back"
+          title={WORDING.readBack}
           state={readbackState}
           open={open.readback}
           onOpenChange={openRow("readback")}

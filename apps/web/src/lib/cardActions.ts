@@ -1,4 +1,5 @@
 import { ICON } from "./icons";
+import { WORDING } from "./wording/generated/wording";
 
 /**
  * Each kind of card's actions, in order, with one name and one glyph per
@@ -22,9 +23,9 @@ import { ICON } from "./icons";
  */
 export const ACTION = {
   flyHere: { label: "Fly Here", icon: ICON.flyHere },
-  directTo: { label: "Direct To", icon: ICON.directTo },
-  addStop: { label: "Add Stop", icon: ICON.addToRoute },
-  addToRoute: { label: "Add to Route", icon: ICON.addToRoute },
+  directTo: { label: WORDING.directTo, icon: ICON.directTo },
+  addStop: { label: WORDING.addStop, icon: ICON.addToRoute },
+  addToRoute: { label: WORDING.addToRoute, icon: ICON.addToRoute },
   holdHere: { label: "Hold Here", icon: ICON.holdHere },
   call: { label: "Call", icon: ICON.call },
   favorite: { label: "Favorite", icon: ICON.favorite },

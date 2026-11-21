@@ -43,7 +43,7 @@ export function RemovableRow({
   const shareIt = () => {
     if (!share) return;
     shareOrCopy(share).catch((err) => {
-      if (!cancelled(err)) showError("Not shared", describeError(err));
+      if (!cancelled(err)) showError("Not Shared", describeError(err));
     });
   };
   // Every list's menu the same two, at the owner's word (2026-10-28): "all

@@ -68,7 +68,7 @@ describe("an instructor's students as one list", () => {
   it("puts a flight today with a verdict and a solo endorsement lapsing within a week first", () => {
     const { needs, everyone } = studentLines(base, "2026-11-04");
     expect(needs.map((l) => l.row.name)).toEqual(["Jordan", "Riley"]);
-    expect(needs[0]!.needs).toEqual({ words: "Solo C81 KMSN today · Raised · 14 points", action: "Sign off" });
+    expect(needs[0]!.needs).toEqual({ words: "Solo C81 KMSN today · Raised · 14 points", action: "Sign Off" });
     expect(needs[1]!.needs).toEqual({ words: "Solo endorsement lapses in 2 days", action: "Endorse" });
     expect(everyone).toHaveLength(4);
   });
