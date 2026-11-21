@@ -26,6 +26,7 @@ copilot.spec.ts
 debrief.spec.ts
 delete-account.spec.ts
 departure-window.spec.ts
+desk-route-link.spec.ts
 desktop.spec.ts
 devswitch.spec.ts
 direct-to.spec.ts
