@@ -61,7 +61,13 @@ function RowMark({ glyph, filled }: { glyph: ReactNode; filled: boolean }) {
  * marks' column, the route's magenta, one solid line, from under it
  * into the next row where one follows (`line`), as a point's line draws
  * it, and its words after the hairline (none on the card's first row).
- * `trailing`, a control of its own at the row's end, over the hairline.
+ * `trailing`, controls of their own at the row's end, after the words on
+ * the row's line where both fit and on a 44-point line of their own under
+ * them, at the row's end, where they do not: held over the words at a
+ * fixed room, Add a Stop's keyboard and Add Fuel Stops wrote over "Add a
+ * Stop" at the owner's 19.65 px (the HIG review, 2026-11-21: "Add a
+ * [keyboard]top"). The hairline is the row's then, from the words' start
+ * to the card's edge, over both.
  */
 function TimelineAction({
   mark,
@@ -70,7 +76,6 @@ function TimelineAction({
   first = false,
   placeholder = false,
   trailing,
-  room = "pr-16",
   ...button
 }: Omit<ComponentProps<typeof Button>, "children"> & {
   mark: ReactNode;
@@ -80,17 +85,24 @@ function TimelineAction({
   /** Its words a field's placeholder's grey, not the tint. */
   placeholder?: boolean;
   trailing?: ReactNode;
-  /** The words' room kept clear of `trailing`, its width. */
-  room?: string;
 }) {
   return (
-    <div className="relative">
+    <div
+      className={cn(
+        "relative flex flex-wrap items-center",
+        // The hairline from the words' start (the marks' 2 rem and the
+        // 1 rem between, TIMELINE_GAP) to the card's edge.
+        trailing && !first && "before:absolute before:inset-x-0 before:top-0 before:left-12 before:border-t before:border-border",
+      )}
+    >
       <Button
         variant="ghost"
         {...button}
         // Greyed under a finger as iOS's rows are (the grouped box's audit).
+        // As wide as its words at the least, the controls after it going
+        // under it where the two do not fit on one line.
         className={cn(
-          "h-11 w-full justify-start rounded-none px-0 font-normal hover:bg-transparent pointer-coarse:active:bg-muted pointer-coarse:active:opacity-100 dark:hover:bg-transparent",
+          "h-11 flex-auto justify-start rounded-none px-0 font-normal hover:bg-transparent pointer-coarse:active:bg-muted pointer-coarse:active:opacity-100 dark:hover:bg-transparent",
           TIMELINE_GAP,
           TEXT.row,
         )}
@@ -102,15 +114,17 @@ function TimelineAction({
         <span
           className={cn(
             "flex h-full min-w-0 flex-1 items-center",
-            !first && "border-t border-border",
+            !first && !trailing && "border-t border-border",
             placeholder ? "text-muted-foreground" : "text-tint",
-            trailing ? room : TIMELINE_END,
+            trailing ? "pr-2" : TIMELINE_END,
           )}
         >
           {children}
         </span>
       </Button>
-      {trailing && <span className="absolute top-1/2 right-4 flex -translate-y-1/2 items-center">{trailing}</span>}
+      {/* 12 points between its 32-point chips, so their 44-point areas meet
+          and do not cross (the iOS rule's gap-3). */}
+      {trailing && <span className="ml-auto flex h-11 items-center gap-3 pr-4">{trailing}</span>}
     </div>
   );
 }
@@ -153,7 +167,6 @@ export function AddStopRow({ disabled, onClick, trailing }: { disabled: boolean;
       disabled={disabled}
       onClick={onClick}
       trailing={trailing}
-      room="pr-52"
       data-testid="timeline-add-stop"
     >
       Add a Stop

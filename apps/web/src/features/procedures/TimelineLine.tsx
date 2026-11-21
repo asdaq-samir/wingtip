@@ -199,7 +199,11 @@ export function TimelineLine({
         {(!last || after.length > 0) && <span aria-hidden="true" className={TIMELINE_THREAD} />}
       </span>
       <div className={cn("min-w-0 flex-1", TIMELINE_END, (!first || before.length > 0) && "border-t border-border")}>
-        <div className="relative flex min-h-11 min-w-0 items-center gap-2 py-0.5">
+        {/* Wrapping where the ident, its fuel and its time do not fit on one
+            line, the time going under them at the right: at the owner's
+            19.65 px on a 375-point phone KDEN's ident was cut to "KD…" by
+            "−26 gal" and "21:48 MST" (the HIG review, 2026-11-21). */}
+        <div className="relative flex min-h-11 min-w-0 flex-wrap items-center gap-x-2 py-0.5">
           {opens && (
             <CollapsibleTrigger
               render={
@@ -278,7 +282,7 @@ export function TimelineLine({
             tank && <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />
           )}
           <span className="flex-1" />
-          <span className={cn("relative z-10 shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
+          <span className={cn("relative z-10 ml-auto shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
             {point.time}
           </span>
           {/* No chevron at its end (the owner, 2026-11-19: "Also remove
