@@ -1894,7 +1894,8 @@ them as `airspace_labels.tab`, the engine's, so `glStyle` formats no
 figure. A special use area's 3D tab is its 2D tab. A fix is tagged once:
 the plate's tag wins while a plate is drawn with its annotations. Codes
 are in capitals and words in sentence case. A tag's figures have no unit
-or tick. Sizes come from `map.label-*`, never under 11. Halos dim with
+or tick. Each kind's size, weight and halo come from `map.label.kind`
+(`labelText`, `labelHalo`), never under 11. Halos dim with
 the dark theme: `ChartGl` sets the map's `labelNight` global state, and
 `common`'s halo expression reads it. Weather areas and TFRs are named
 along their outlines. The replay's airplane is the traffic's own symbol

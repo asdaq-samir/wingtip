@@ -1373,15 +1373,29 @@ word and figure drawn on the map, on all three apps, follows these rules:
    traffic's height when own ship's is unknown. On a chart MSL is implied.
    Weather and TCAS codes keep their source's form: a PIREP's "065", a
    METAR's "CIG 008", the traffic's "+05".
-5. **One type scale, one font.** Map labels use the sizes in
-   `design/tokens.json` `map.label-*`: 11 (`label-small`, the floor no
-   label goes under), 12, 13, the 14 of a cluster's count and the 16 of a
-   runway's number close in. They are set in Inter in every look. A
-   letter inside a mark's picture (R, M, H, a PIREP's glyph) is the
-   system's sans serif (`MARK_FONT`), never the browser's default serif.
-6. **Halos dim after dark.** The white halo (`map.label-halo`, 2 px) is
-   white at `map.label-halo-night` (0.6) in the page's dark theme, read
-   from `useDarkTheme`.
+5. **One type scale, one font, one look a kind.** Map labels use the
+   sizes in `design/tokens.json` `map.label`: 11 (`size-small`, the floor
+   no label goes under), 12, 13, the 14 of a cluster's count, the 16 of a
+   runway's number close in and the 17 of the open card's field. Each kind
+   of label (`map.label.kind`: a field's ident, a fix's, an airspace tab,
+   a checkpoint's name, a hazard's words …) has one size, by zoom where it
+   grows, one weight and one halo, and every layer that writes it takes
+   them (`labelText`, `labelHalo`), so a Class B tab and a special-use
+   area's tab, or a field's ident on the tiles and on a stop's mark, are
+   lettered alike. Idents and figures are bold; a place's name (a
+   checkpoint's) is regular, as the chart sets a town's. They are set in
+   Inter in every look. A letter inside a mark's picture (R, M, H, a
+   PIREP's glyph) is the system's sans serif (`MARK_FONT`), never the
+   browser's default serif. Map words do not follow Dynamic Type: a
+   chart's lettering is fixed, and the map's density sets it.
+6. **Halos dim after dark.** The halo is one width (`map.label.halo`,
+   2 px), light (the chart's white round coloured or dark words) or dark
+   (the tag's dark round white words: a runway's number, the open field's
+   ident); words on their own chip, tab or pill have none. The white halo
+   is white at `map.label.halo-night` (0.6) in the page's dark theme, read
+   from `useDarkTheme`. Coloured words reach 4.5:1 on the white halo:
+   a VFR waypoint's ident is the green a step deeper
+   (`chart.vfr-green-text`), a cluster's count sits on `map-blue-ink`.
 7. **A field's ident looks the same whoever draws it.** Its colour is
    blue where it is towered and magenta where it is not, as the chart
    sets it. Its size follows the zoom. This holds on the tiles, a Class B
@@ -1391,16 +1405,21 @@ word and figure drawn on the map, on all three apps, follows these rules:
    FL160", "Convective SIGMET to FL450"). A TFR carries its NOTAM number
    ("6/4116"). Words in a hazard's colour must reach 4.5:1 on white, so
    turbulence's amber is deepened for words (`weather.turbulence-text`).
-9. **No new range or leg labels.** Nothing is added to the range rings
-   or the legs.
-10. **Only own ship is an HTML marker.** The replay's airplane is drawn
+9. **Where words collide, the more important keeps its place.** The
+   route's marks and own ship are over everything; then the fields, by
+   the engine's rank (a Class B's field first); then the VORs, the VFR
+   waypoints and the enroute fixes, in that order, as the sectional
+   weighs them; then the airspace and special-use tabs, under every mark.
+10. **No new range or leg labels.** Nothing is added to the range rings
+    or the legs.
+11. **Only own ship is an HTML marker.** The replay's airplane is drawn
     with the traffic's own layers (`trafficMarks`), and its height is
     lifted with it in 3D.
 
-|       | Web                                                                                                                                                                                                                                                                                                                  | iPhone                                                                        | Android           |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------- |
-| Where | `lib/map/gl/layers/common` (`LABEL_SIZE`, `LABEL_HALO`, `labelByZoom`), `glStyle`'s `airspaceLayers`, `glSuaLabels`, `airportIcons`' `AIRPORT_IDENT_INK`/`_SIZE`, `procedureMarks`' `fixMarks(plated)`, `plates/plateLook`'s `usePlateTagged`, `plan-map/weatherMap`'s `areaLabel`, `TfrGl`, `TracksGl`'s `ReplayGl` | Not yet, on the owner's word (decision 0038): the tokens are generated for it | Not yet: the same |
-| Tests | `glStyle.test`, `glOverlays.test`, `procedureMarks.test`, `plateTags.test`, `weatherMap.test`; `airspace-lines.spec`, `plates-map.spec`, `weather-map.spec`, `route-line.spec`; the tiles' `tab` in `services/jobs/charts/tests/test_overlays.py`, `services/planner/tests_wingtip/test_airspace_tabs.py`            | --                                                                            | --                |
+|       | Web                                                                                                                                                                                                                                                                                                                                                 | iPhone                                                                        | Android           |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------- |
+| Where | `lib/map/gl/layers/common` (`labelText`, `labelHalo`, `LABEL_HALO`), `glStyle`'s `airspaceLayers` and `TAB_BOX`, `glSuaLabels`, `glOverlays`' marks' order, `airportIcons`' `AIRPORT_IDENT_INK`, `procedureMarks`' `fixMarks(plated)`, `plates/plateLook`'s `usePlateTagged`, `plan-map/weatherMap`'s `areaLabel`, `TfrGl`, `TracksGl`'s `ReplayGl` | Not yet, on the owner's word (decision 0038): the tokens are generated for it | Not yet: the same |
+| Tests | `layers/common.test`, `glStyle.test`, `glOverlays.test`, `procedureMarks.test`, `plateTags.test`, `weatherMap.test`; `airspace-lines.spec`, `plates-map.spec`, `weather-map.spec`, `route-line.spec`; the tiles' `tab` in `services/jobs/charts/tests/test_overlays.py`, `services/planner/tests_wingtip/test_airspace_tabs.py`                     | --                                                                            | --                |
 
 ## 14. What is picked on the map (the owner, 2026-11-18)
 

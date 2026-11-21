@@ -62,12 +62,13 @@ describe("the overlay tiles' layers", () => {
       "sua-labels",
     ]);
     expect(layers.marks!.map((l) => l.id)).toEqual([
-      "navaids",
-      "navaids-idents",
+      // Bottom to top: the VORs over the waypoints and fixes, so their idents are placed first.
       "fixes",
       "fixes-idents",
       "vfr-waypoints",
       "vfr-waypoints-idents",
+      "navaids",
+      "navaids-idents",
       "airports",
     ]);
     // Each class from its own zoom (AIRSPACE_FROM).

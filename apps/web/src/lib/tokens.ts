@@ -25,6 +25,7 @@ export const CHART = {
   specialUse: "#e0662a",
   fixInk: "#1c1a17",
   vfrGreen: "#148a3b",
+  vfrGreenText: "#117a35",
   runwayHard: "#4a4f57",
   runwaySoft: "#7d8a6a",
   procedure: "#5b5bd6",
@@ -275,13 +276,6 @@ export const MAP = {
   airspaceFaded: 0.35,
   airspaceHeld: 1.8,
   airspaceLabelFaded: 0.6,
-  labelSmall: 11,
-  label: 12,
-  labelLarge: 13,
-  labelCount: 14,
-  labelRunway: 16,
-  labelHalo: 2,
-  labelHaloNight: 0.6,
 } as const;
 
 /** From which zoom each kind of airport and airspace is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1. */
@@ -317,6 +311,61 @@ export const MAP_ZOOM = {
   /** Restricted, prohibited and warning areas and MOAs: at 6 California's 160 hatched lines hid the fields and the Class B and C under them (2026-11-21). */
   specialUse: 7,
 } as const;
+
+/** A kind of map label's look: its size, fixed or by zoom (the app's levels, interpolated), its weight and its halo. */
+export interface MapLabelKind {
+  size: number | readonly (readonly [zoom: number, px: number])[];
+  bold: boolean;
+  halo: "light" | "dark" | "none";
+}
+/** The map's words (design/tokens.json's map.label): the size scale (px), the halo, and each kind's size, weight and halo. */
+export const MAP_LABEL = {
+  size: { small: 11, normal: 12, large: 13, count: 14, runway: 16, picked: 17 },
+  halo: 2,
+  haloNight: 0.6,
+  kind: {
+    /** A field's ident beside its mark, in its symbol's blue or magenta (Chart User's Guide, Airports): the tiles' fields, a Class B field's, a stop's. */
+    airportIdent: { size: [[4, 11], [10, 12], [13, 13]], bold: true, halo: "light" },
+    /** The open card's field's ident, white over its ring. */
+    airportPicked: { size: 17, bold: true, halo: "dark" },
+    /** A VOR's ident and frequency on its blue tag, "GCO (108.25)", as ForeFlight writes it. */
+    navaidIdent: { size: [[7, 11], [11, 12]], bold: true, halo: "none" },
+    /** An enroute fix's or a VFR waypoint's ident, in capitals as NASR names it, the navaids' size. */
+    fixIdent: { size: [[7, 11], [11, 12]], bold: true, halo: "light" },
+    /** An airspace's or a special-use area's altitudes on its dark tab, as the sectional sets them; the map's smallest words at every zoom, so the tabs are never the largest marks on the chart. */
+    airspaceTab: { size: 11, bold: true, halo: "none" },
+    /** A 3D shelf's altitudes on its tab, standing over the tilted map. */
+    shelfTab: { size: 12, bold: true, halo: "none" },
+    /** A runway end's number, white on the dark halo, turned as painted. */
+    runwayNumber: { size: [[13.5, 11], [17, 16]], bold: true, halo: "dark" },
+    /** A checkpoint's name beside its dot: a place's name, in regular as the chart sets a town's, under the bold idents. */
+    checkpointName: { size: 12, bold: false, halo: "light" },
+    /** A checkpoint's number on its dot. */
+    checkpointNumber: { size: 11, bold: true, halo: "none" },
+    /** A route field's ident on its dark pill: the route's words over the chart's. */
+    routeIdent: { size: 12, bold: true, halo: "none" },
+    /** A route point's name, a top of climb's or descent's, on its white pill. */
+    routePoint: { size: 11, bold: true, halo: "none" },
+    /** A traffic pattern leg's name on its teal chip. */
+    patternLeg: { size: 11, bold: true, halo: "none" },
+    /** A way's chip: its time in bold, its name in regular. */
+    way: { size: 12, bold: true, halo: "none" },
+    /** A procedure's or a plate's tag of several lines, drawn as a picture (drawTag). */
+    fixTag: { size: 13, bold: true, halo: "none" },
+    /** A SIGMET's, an AIRMET's or a TFR's words along its outline, in its colour. */
+    hazard: { size: 11, bold: true, halo: "light" },
+    /** A field's weather beside it: a variable wind, its visibility and weather. */
+    airportWeather: { size: 11, bold: true, halo: "light" },
+    /** A PIREP's level on its chip. */
+    pirep: { size: 12, bold: true, halo: "none" },
+    /** Traffic's height and callsign on its dark tag. */
+    traffic: { size: 11, bold: true, halo: "none" },
+    /** A cluster's count on its blue disc. */
+    clusterCount: { size: 14, bold: true, halo: "none" },
+    /** Model Weather's pinned value on its white pill. */
+    flowPin: { size: 13, bold: true, halo: "none" },
+  },
+} as const satisfies { kind: Record<string, MapLabelKind> };
 
 /** A colour-ramp stop: the value in the field's unit and its colour as [r, g, b, 255ths], as weatherlayers-gl takes it. */
 type FlowStop = [number, [number, number, number, number]];

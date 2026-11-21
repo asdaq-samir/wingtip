@@ -10,7 +10,7 @@ import type { AirspaceVolume } from "../sources/overlayTypes";
 import { chartPair, tileTemplate } from "../sources/tiles";
 import { CHART, MAP_ZOOM } from "../../tokens";
 import { chartBrightness, chartContrast, NIGHT_DIM } from "../chartLook";
-import { LABEL_SIZE } from "./layers/common";
+import { labelText } from "./layers/common";
 
 /**
  * The map's style (the owner, 2026-11-06: "Like ForeFlight, I want
@@ -213,6 +213,16 @@ const lineWidth = (width: number) =>
     [BAND_FROM, width],
   ]);
 
+/** An altitude tab's box, the Class B, C and D's and the special-use
+ *  areas' alike: the lines close as the chart sets them (the ceiling over
+ *  the floor), the tab hugging the words, two points kept round it. */
+export const TAB_BOX = {
+  "text-line-height": 1,
+  "icon-text-fit": "both" as const,
+  "icon-text-fit-padding": [1, 3, 1, 3] as [number, number, number, number],
+  "text-padding": 2,
+};
+
 /** Each class's band and line, a line layer each drawn from that class's
  *  zoom, and the labels: white bold type in a dark tab bordered in the
  *  class's ink, kept off each other and off the route's marks by
@@ -255,17 +265,14 @@ export function airspaceLayers(font: string[]): LayerSpecification[] {
     filter: ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "tab"]],
     layout: {
       "text-field": AIRSPACE_TAB as never,
-      "text-font": font,
       // The map's smallest words at every zoom, in a tab hugging them
       // (the readability list's G): they had grown to the large label's
-      // size in a roomy tab, the biggest marks on the chart.
-      "text-size": LABEL_SIZE.small,
-      // The ceiling over the floor, close as the chart sets them.
-      "text-line-height": 1,
+      // size in a roomy tab, the biggest marks on the chart. The special-use
+      // areas' tabs are the same (glSuaLabels' suaTabLayout).
+      "text-font": font,
+      "text-size": labelText("airspaceTab")["text-size"],
+      ...TAB_BOX,
       "icon-image": ["concat", "airspace|tab|", ["get", "class"]] as never,
-      "icon-text-fit": "both" as const,
-      "icon-text-fit-padding": [1, 3, 1, 3] as [number, number, number, number],
-      "text-padding": 2,
       // Never on another tab or an airport's mark (the marks' layers are
       // above and place first); where tabs compete the nearer class wins
       // (B, C, D).
