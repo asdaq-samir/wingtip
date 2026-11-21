@@ -1944,6 +1944,15 @@ behaviour; only the content, its order and the brand tokens are ours.
 | The Watch's stopwatch redrawn each second (`TimelineView`) | `Text(timerInterval:pauseTime:countsDown:showsHours:)`, counted by the system |
 | The airport diagram's own pinch and pan over a picture of the page (`DiagramOwnShip`) | PDFKit's `PDFView` of the FAA's PDF, vector-sharp at any zoom, own ship a `PDFAnnotation` on the page (`DiagramPDFView`). The other charts stay in `UIScrollView` (`PagesScrollView`): the planner serves them as page pictures, not PDFs |
 
+**Replaced (2026-11-21, the stock audit of the whole project).**
+
+| Was hand-built | Now |
+|---|---|
+| Times written by calendar sums and `String(format:)` (`Format.duration`, `navLogTime`, `zulu`, the 24-hour clock in Passengers and BriefLegs, the instruments' and the diversion drill's stopwatch) | Foundation's styles: `Duration.UnitsFormatStyle` (narrow, the web's `Intl.DurationFormat` words), `Duration.TimeFormatStyle` (`.hourMinute`, `.minuteSecond`) and `Date.VerbatimFormatStyle` (`Format.clock`, `Format.stopwatch`) |
+| `DateFormatter` and `ISO8601DateFormatter` made per call (`Day`, the departure window's weekday, the logbook's month titles, the coach's days, the alternate's ETA, the emergency's variation day) | `Date.ISO8601FormatStyle`, `Date.VerbatimFormatStyle` and `Date.FormatStyle`: Sendable values kept in statics; ISO instants read by `AirportWords.date` alone |
+| VoiceOver announcements through `UIAccessibility.post` with an attributes dictionary (`Announce`) | `AccessibilityNotification.Announcement` of an `AttributedString` with its announcement priority (the queue flag iOS 17 deprecated is gone) |
+| The Watch's `CLLocationManager` delegate and a two-second wait for its fix (`WatchLocation`) | `CLLocationUpdate.liveUpdates()` under a `CLServiceSession` asking When In Use, the first fix waited for five seconds before the phone's stands in |
+
 The altitude is picked in the profile, ForeFlight's way (see
 [The profile](#the-profile-foreflights-way)): the system `Slider` turned
 upright beside the chart, the system `.popover` on a waypoint, and a
@@ -1960,6 +1969,9 @@ are gone.
 | Checklist ticks (checklists, emergency, passenger briefing) | iOS has no checkbox (`ToggleStyle.checkbox` is macOS only); the circle-and-tick row is what Reminders draws by hand too |
 | `FactsRow` | Maps' facts row (a caption over each value, four across) has no public SwiftUI view; it is a `Grid`/`HStack` of `Text` |
 | `MapChip` and the captions over pictures | Stock `Label`/`Text` on the system's glass (`glassEffect`), which a line over a busy chart needs to be read; no capsule is drawn |
+| `UndoBar` (the six-second undo offer at the plan's foot) | iOS has no undo toast; the step it takes back is the window's `UndoManager`'s, which shake, ⌘Z and the Edit menu also reach |
+| `PagesScrollView` (the planner's chart pages) | QuickLook zooms a picture but cannot carry own ship on a plate's page; the pages are pictures, not PDFs, so PDFKit does not fit |
+| Unit words in `Format` ("nm", "kt") | `Measurement`'s formatter writes "nmi" and "kn"; pilots and the FAA write "nm" and "kt" |
 | The Reduce Motion branch of `Symbols.swift` | Kept for now: neither the SDK's interfaces nor Apple's pages read on 2026-11-10 say that `symbolEffect` changes under Reduce Motion by itself; remove it once that is shown |
 
 ---

@@ -139,8 +139,7 @@ struct InstrumentsBar: View {
     /// Minutes as a clock counts them down, "7:05"; past an hour "1h 12m".
     static func minutesSeconds(_ minutes: Double) -> String {
         if minutes >= 60 { return Format.duration(minutes) }
-        let s = Int((minutes * 60).rounded())
-        return String(format: "%d:%02d", s / 60, s % 60)
+        return Format.stopwatch((minutes * 60).rounded())
     }
 
     /// The UTC clock time a flight plan and ATC use, "1432Z".

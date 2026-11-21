@@ -88,7 +88,7 @@ final class AlternateCheck {
         defer { asking = false }
         do {
             let fresh = try await Planner.call {
-                try await $0.alternate(query: .init(dest: ask.dest, eta: ISO8601DateFormatter().string(from: ask.eta), tasKt: ask.tasKt.rounded(),
+                try await $0.alternate(query: .init(dest: ask.dest, eta: ask.eta.formatted(.iso8601), tasKt: ask.tasKt.rounded(),
                                                     alternate: ask.alternate.isEmpty ? nil : ask.alternate)).ok.body.json
             }
             guard !Task.isCancelled else { return }

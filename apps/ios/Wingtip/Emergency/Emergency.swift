@@ -161,7 +161,7 @@ final class Emergency {
 
     /// Magnetic variation at a point today, east positive (the engine's WMM).
     static func variation(at: CLLocationCoordinate2D, on day: Date = Date()) -> Double? {
-        try? Engine.magneticVariation(lat: at.latitude, lon: at.longitude, date: String(ISO8601DateFormatter().string(from: day).prefix(10)))
+        try? Engine.magneticVariation(lat: at.latitude, lon: at.longitude, date: day.formatted(.iso8601.year().month().day()))
     }
 
     /// The fields ranked from the airplane in "glide" mode (or the
