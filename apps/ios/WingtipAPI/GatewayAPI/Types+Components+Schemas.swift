@@ -380,6 +380,29 @@ extension Components {
                 case usableFuelGal
             }
         }
+        /// - Remark: Generated from `#/components/schemas/AppVersionsDto`.
+        public struct AppVersionsDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AppVersionsDto/faults`.
+            public var faults: [Components.Schemas.VersionFaultsDto]
+            /// - Remark: Generated from `#/components/schemas/AppVersionsDto/figures`.
+            public var figures: [Components.Schemas.VersionFigureDto]
+            /// Creates a new `AppVersionsDto`.
+            ///
+            /// - Parameters:
+            ///   - faults:
+            ///   - figures:
+            public init(
+                faults: [Components.Schemas.VersionFaultsDto],
+                figures: [Components.Schemas.VersionFigureDto]
+            ) {
+                self.faults = faults
+                self.figures = figures
+            }
+            public enum CodingKeys: String, CodingKey {
+                case faults
+                case figures
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/AppleNonceAnswer`.
         public struct AppleNonceAnswer: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/AppleNonceAnswer/nonce`.
@@ -4627,6 +4650,100 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case name
                 case notes
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/VersionFaultsDto`.
+        public struct VersionFaultsDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/VersionFaultsDto/count`.
+            public var count: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/VersionFaultsDto/kind`.
+            public var kind: Swift.String
+            /// - Remark: Generated from `#/components/schemas/VersionFaultsDto/lastAt`.
+            public var lastAt: Swift.String
+            /// - Remark: Generated from `#/components/schemas/VersionFaultsDto/platform`.
+            public var platform: Swift.String
+            /// - Remark: Generated from `#/components/schemas/VersionFaultsDto/version`.
+            public var version: Swift.String
+            /// Creates a new `VersionFaultsDto`.
+            ///
+            /// - Parameters:
+            ///   - count:
+            ///   - kind:
+            ///   - lastAt:
+            ///   - platform:
+            ///   - version:
+            public init(
+                count: Swift.Int,
+                kind: Swift.String,
+                lastAt: Swift.String,
+                platform: Swift.String,
+                version: Swift.String
+            ) {
+                self.count = count
+                self.kind = kind
+                self.lastAt = lastAt
+                self.platform = platform
+                self.version = version
+            }
+            public enum CodingKeys: String, CodingKey {
+                case count
+                case kind
+                case lastAt
+                case platform
+                case version
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/VersionFigureDto`.
+        public struct VersionFigureDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/VersionFigureDto/count`.
+            public var count: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/VersionFigureDto/metric`.
+            public var metric: Swift.String
+            /// - Remark: Generated from `#/components/schemas/VersionFigureDto/p50`.
+            public var p50: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/VersionFigureDto/p75`.
+            public var p75: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/VersionFigureDto/p95`.
+            public var p95: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/VersionFigureDto/source`.
+            public var source: Swift.String
+            /// - Remark: Generated from `#/components/schemas/VersionFigureDto/version`.
+            public var version: Swift.String
+            /// Creates a new `VersionFigureDto`.
+            ///
+            /// - Parameters:
+            ///   - count:
+            ///   - metric:
+            ///   - p50:
+            ///   - p75:
+            ///   - p95:
+            ///   - source:
+            ///   - version:
+            public init(
+                count: Swift.Int,
+                metric: Swift.String,
+                p50: Swift.Double,
+                p75: Swift.Double,
+                p95: Swift.Double,
+                source: Swift.String,
+                version: Swift.String
+            ) {
+                self.count = count
+                self.metric = metric
+                self.p50 = p50
+                self.p75 = p75
+                self.p95 = p95
+                self.source = source
+                self.version = version
+            }
+            public enum CodingKeys: String, CodingKey {
+                case count
+                case metric
+                case p50
+                case p75
+                case p95
+                case source
+                case version
             }
         }
         /// A VOR check for IFR (14 CFR 91.171)

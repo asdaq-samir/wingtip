@@ -2867,6 +2867,11 @@ object EngineContract {
          */
         val next: String,
         /**
+         * YYYY-MM-DDTHH:MM:SSZ: the instant the next edition takes over, 0901Z on `next` (0000Z for the DOF).
+         */
+        @SerialName("next_at")
+        val nextAt: String,
+        /**
          * YYYY-MM-DD: the day the edition held counts from; null where unknown.
          */
         val effective: String? = null,
@@ -2874,6 +2879,11 @@ object EngineContract {
          * YYYY-MM-DD: the first day the edition held no longer counts; null where unknown.
          */
         val expires: String? = null,
+        /**
+         * YYYY-MM-DDTHH:MM:SSZ: the instant the edition held stops counting; null where unknown.
+         */
+        @SerialName("expires_at")
+        val expiresAt: String? = null,
         val state: String,
         /**
          * How many editions have come out since the one held; 0 unless expired.
@@ -2892,7 +2902,7 @@ object EngineContract {
          */
         val effective: String? = null,
         /**
-         * YYYY-MM-DD: the UTC day it is used on.
+         * YYYY-MM-DD, the UTC day it is used on (the whole effective day counted as the new edition's, toward the safe side), or a UTC time, YYYY-MM-DDTHH:MM[:SS]Z, exact to 0901Z: what a host choosing what to fetch, draw or warn of asks with.
          */
         val on: String,
     )
@@ -3920,6 +3930,10 @@ object EngineContract {
          * The site's kind in words, or null for an airport.
          */
         val words: String? = null,
+        /**
+         * Whether an airplane on wheels lands at a field of this kind: A, G and U, or no code.
+         */
+        val airplane: Boolean,
     )
 
     @Serializable
@@ -5560,6 +5574,10 @@ object EngineContract {
          */
         @SerialName("night_passengers")
         val nightPassengers: Boolean? = null,
+        /**
+         * Whether any of the flight is in 14 CFR 91.209(a)'s period for lighted position lights, sunset to sunrise (lights_on_the_way), which begins before 1.1's night: an open squawk deferred for day flight grounds such a flight. Left out or null, `night` stands for it.
+         */
+        val lights: Boolean? = null,
         @SerialName("fuel_margin_gal")
         val fuelMarginGal: Double? = null,
         /**
@@ -7270,6 +7288,26 @@ object EngineContract {
          * Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
          */
         val beacon: List<String>? = null,
+    )
+
+    @Serializable
+    data class LightsOnTheWayInput(
+        /**
+         * [lat, lon]
+         */
+        val start: List<Double>,
+        /**
+         * [lat, lon]
+         */
+        val end: List<Double>,
+        @SerialName("depart_s")
+        val departS: Double,
+        val minutes: Double,
+        /**
+         * In Alaska only, the reported visibility, statute miles; below 3 the lights are on whatever the sun (91.209(a)). Left out or null outside Alaska or where none is known.
+         */
+        @SerialName("alaska_visibility_sm")
+        val alaskaVisibilitySm: Double? = null,
     )
 
     @Serializable
@@ -11052,6 +11090,98 @@ object EngineContract {
     data class ReserveMinInput(
         val ifr: Boolean? = null,
         val night: Boolean? = null,
+    )
+
+    @Serializable
+    data class RouteAdizAnswer(
+        /**
+         * Each point's zone, null outside every one.
+         */
+        val points: List<String?>,
+        /**
+         * From each point to the next.
+         */
+        val legs: List<List<String>>,
+        /**
+         * Every zone the route meets, once each in order.
+         */
+        val zones: List<String>,
+        /**
+         * The Brief's line for the route, once; null where it meets no ADIZ.
+         */
+        val brief: EngineContract.RouteAdizAnswerBrief? = null,
+    )
+
+    @Serializable
+    data class RouteAdizAnswerBrief(
+        /**
+         * The finding alone, "Through the Alaska ADIZ".
+         */
+        val lead: String,
+        /**
+         * The finding and what part 99 asks, in one line.
+         */
+        val line: String,
+        /**
+         * What part 99 asks in the first zone met, its exceptions (99.1(b)) said.
+         */
+        val action: String,
+        val why: String,
+        val cite: String,
+    )
+
+    @Serializable
+    data class RouteAdizInput(
+        /**
+         * The route's points in order, as the nav log's rows: a leg from each to the next.
+         */
+        val points: List<EngineContract.RouteAdizInputPointsItem>,
+    )
+
+    @Serializable
+    data class RouteAdizInputPointsItem(
+        val lat: Double,
+        val lon: Double,
+    )
+
+    @Serializable
+    data class RouteHeadwindAnswer(
+        /**
+         * The headwind on that leg's course, kt; negative a tailwind.
+         */
+        @SerialName("headwind_kt")
+        val headwindKt: Double,
+        val from: String,
+        val to: String,
+        @SerialName("wind_dir_true_deg")
+        val windDirTrueDeg: Double,
+        @SerialName("wind_speed_kt")
+        val windSpeedKt: Double,
+    )
+
+    @Serializable
+    data class RouteHeadwindInput(
+        /**
+         * The nav log's legs in order, as the planner gives them.
+         */
+        val legs: List<EngineContract.RouteHeadwindInputLegsItem>,
+    )
+
+    @Serializable
+    data class RouteHeadwindInputLegsItem(
+        val from: String? = null,
+        val to: String? = null,
+        @SerialName("true_course_deg")
+        val trueCourseDeg: Double? = null,
+        val wind: EngineContract.RouteHeadwindInputLegsItemWind? = null,
+    )
+
+    @Serializable
+    data class RouteHeadwindInputLegsItemWind(
+        @SerialName("wind_dir_true_deg")
+        val windDirTrueDeg: Double,
+        @SerialName("wind_speed_kt")
+        val windSpeedKt: Double,
     )
 
     /**

@@ -2005,7 +2005,14 @@
           },
           "publications": {
             "$ref": "#/components/schemas/FaaPublications",
-            "default": {}
+            "default": {
+              "plates": {
+                "state": "current"
+              },
+              "supplement": {
+                "state": "current"
+              }
+            }
           },
           "radio_notes": {
             "default": [],
@@ -9417,11 +9424,15 @@
         "properties": {
           "plates": {
             "$ref": "#/components/schemas/PublicationEdition",
-            "default": {}
+            "default": {
+              "state": "current"
+            }
           },
           "supplement": {
             "$ref": "#/components/schemas/PublicationEdition",
-            "default": {}
+            "default": {
+              "state": "current"
+            }
           }
         },
         "title": "FaaPublications",
@@ -20532,6 +20543,62 @@
         "title": "RouteProfile",
         "type": "object"
       },
+      "RouteStat": {
+        "description": "One route and method as the planner has answered it since it\nstarted (app.route_metrics): calls, those of 500 or more, their share,\nand the time at the 50th and 95th percentile in milliseconds (none\nbefore a call).",
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "error_rate": {
+            "title": "Error Rate",
+            "type": "number"
+          },
+          "errors": {
+            "title": "Errors",
+            "type": "integer"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "p50_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P50 Ms"
+          },
+          "p95_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P95 Ms"
+          },
+          "route": {
+            "title": "Route",
+            "type": "string"
+          }
+        },
+        "required": [
+          "route",
+          "method",
+          "count",
+          "errors",
+          "error_rate"
+        ],
+        "title": "RouteStat",
+        "type": "object"
+      },
       "RouteTfr": {
         "description": "A TFR within a few miles of the route and in force at some time\nduring the flight: how far along the route it is, whether the route\ngoes through it, and whether it is in force now.",
         "properties": {
@@ -22314,6 +22381,14 @@
               "$ref": "#/components/schemas/RecentError"
             },
             "title": "Recent Errors",
+            "type": "array"
+          },
+          "routes": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RouteStat"
+            },
+            "title": "Routes",
             "type": "array"
           },
           "services": {
@@ -24515,6 +24590,18 @@
           "legs_without_wind": {
             "title": "Legs Without Wind",
             "type": "integer"
+          },
+          "lights": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Lights"
           },
           "night": {
             "anyOf": [

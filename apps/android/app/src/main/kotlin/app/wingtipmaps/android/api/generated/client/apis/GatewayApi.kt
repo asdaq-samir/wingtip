@@ -189,6 +189,19 @@ interface GatewayApi {
     suspend fun brief(@Body appWingtipmapsAndroidApiGeneratedGatewayFlightPlanFilingRequest: app.wingtipmaps.android.api.generated.gateway.FlightPlanFilingRequest): Response<Unit>
 
     /**
+     * GET api/diagnostics/versions
+     * The apps&#39; faults and speed figures by build
+     * Counted over the last few days (at most the 30 a fault is kept); the developer&#39;s.
+     * Responses:
+     *  - 200: OK
+     *
+     * @param days  (optional, default to 7)
+     * @return [app.wingtipmaps.android.api.generated.gateway.AppVersionsDto]
+     */
+    @GET("api/diagnostics/versions")
+    suspend fun byVersion(@Query("days") days: kotlin.Int? = 7): Response<app.wingtipmaps.android.api.generated.gateway.AppVersionsDto>
+
+    /**
      * POST api/speed/field
      * Report a page&#39;s speed from a pilot&#39;s browser
      * Core Web Vitals and timings, nothing of the pilot&#39;s; 60 an hour per caller, the rest dropped.
@@ -927,7 +940,7 @@ interface GatewayApi {
     /**
      * POST api/auth/apple/native
      * Sign in with Apple from the iOS app
-     * Checks the native sheet&#39;s identity token (Apple&#39;s keys, issuer, this app&#39;s bundle id, and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS app is set up.
+     * Checks the native sheet&#39;s identity token (Apple&#39;s keys, issuer, this app&#39;s bundle id, and its nonce where one is sent) and signs the pilot in on this session; an authorization code sent with it is traded for the refresh token deleting the account revokes. 404 where no iOS app is set up.
      * Responses:
      *  - 200: Signed in; `next` is where to go
      *  - 401: Not a token Apple issued to this app, or no verified email

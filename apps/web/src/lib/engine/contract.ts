@@ -695,6 +695,7 @@ export type LeastCrosswindAnswer = {
   crosswind_kt: number;
 } | null;
 export type LegalCruisingAltitudesAnswer = number[];
+export type LightsOnTheWayAnswer = boolean;
 export type LogbookCsvWriteAnswer = string;
 /**
  * The page's "total this page" row, where it has one.
@@ -903,6 +904,16 @@ export type RegionOfAnswer = string;
 export type RegionsAheadAnswer = string[];
 export type RegisteredProfileAnswer = string | null;
 export type ReserveMinAnswer = number;
+export type RouteHeadwindAnswer = {
+  /**
+   * The headwind on that leg's course, kt; negative a tailwind.
+   */
+  headwind_kt: number;
+  from: string;
+  to: string;
+  wind_dir_true_deg: number;
+  wind_speed_kt: number;
+} | null;
 export type RoutePositionAnswer = {
   along_nm: number;
   total_nm: number;
@@ -1689,7 +1700,7 @@ export interface EngineContract {
     answer: CtafOfAnswer;
   };
   /**
-   * Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page.
+   * Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page. An AIRAC or charting edition takes over at 0901Z on its date ("Effective 0901 UTC", the Federal Register's airspace and procedure amendments), the DOF at 0000Z on its release day: asked with a UTC time the answer is exact to the minute.
    */
   data_cycle: {
     input: DataCycleInput;
@@ -1948,7 +1959,7 @@ export interface EngineContract {
     answer: FieldMilitaryAnswer;
   };
   /**
-   * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport.
+   * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.
    */
   field_site_type: {
     input: FieldSiteTypeInput;
@@ -2676,6 +2687,13 @@ export interface EngineContract {
     answer: LightingReadAnswer;
   };
   /**
+   * Whether any of a flight from `start` to `end` of `minutes`, leaving at `depart_s`, falls in 14 CFR 91.209(a)'s period for lighted position lights, "from sunset to sunrise" (the sun's upper limb on the horizon, as sun_down), judged every half hour along the straight line as night_on_the_way judges the night. Not 1.1's night: twenty minutes after sunset the lights are needed though it is not yet night for 91.151 or 91.205(c). In Alaska the rule's period is the sun more than six degrees down or a prominent unlighted object not seen from 3 statute miles: sunset to sunrise is read there too, erring toward the lights, and `alaska_visibility_sm`, the reported visibility below 3 statute miles, puts the lights on all the way.
+   */
+  lights_on_the_way: {
+    input: LightsOnTheWayInput;
+    answer: LightsOnTheWayAnswer;
+  };
+  /**
    * How long an answer from one of the FAA's SWIM feeds (the planner's /api/live/*) is fresh and how often a screen showing it asks again: a runway's RVR each minute, as it is updated (AIM 7-1-13), the ITWS alerts and special activity airspace's SFDPS status as often (the app's choice), the Command Center's programs every five minutes, and the D-ATIS and a flight's tower departures fresh for five minutes and not polled (the app's choice).
    */
   live_feed_refresh: {
@@ -3346,6 +3364,20 @@ export interface EngineContract {
   reserve_min: {
     input: ReserveMinInput;
     answer: ReserveMinAnswer;
+  };
+  /**
+   * The Air Defense Identification Zones a route meets (14 CFR part 99, subpart B), each as the regulation draws it: the Contiguous U.S. ADIZ (99.43, its line along the U.S.-Mexico border taken as crossed by a leg from one country to the other), Alaska's (99.45), Guam's (99.47) and Hawaii's (99.49), great circles between their points and rhumb lines along a parallel (99.41). Each point, each leg checked every 2 nm along its geodesic, the zones met in order and the Brief's one line: a flight plan filed and open (99.11), a two-way radio and a listening watch (99.9), the transponder on (99.13) and a position report before crossing (99.15), with 99.1(b)'s exceptions said. Warn, never limit: any altitude or speed is taken as meeting the zone.
+   */
+  route_adiz: {
+    input: RouteAdizInput;
+    answer: RouteAdizAnswer;
+  };
+  /**
+   * The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.
+   */
+  route_headwind: {
+    input?: RouteHeadwindInput;
+    answer?: RouteHeadwindAnswer;
   };
   /**
    * Which of a route's points and legs lie outside the United States, each leg checked every 2 nm along its geodesic, and the Brief's one line for them. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).
@@ -6050,7 +6082,7 @@ export interface DataCycleInput {
    */
   effective?: string | null;
   /**
-   * YYYY-MM-DD: the UTC day it is used on.
+   * YYYY-MM-DD, the UTC day it is used on (the whole effective day counted as the new edition's, toward the safe side), or a UTC time, YYYY-MM-DDTHH:MM[:SS]Z, exact to 0901Z: what a host choosing what to fetch, draw or warn of asks with.
    */
   on: string;
 }
@@ -6073,6 +6105,10 @@ export interface DataCycleAnswer {
    */
   next: string;
   /**
+   * YYYY-MM-DDTHH:MM:SSZ: the instant the next edition takes over, 0901Z on `next` (0000Z for the DOF).
+   */
+  next_at: string;
+  /**
    * YYYY-MM-DD: the day the edition held counts from; null where unknown.
    */
   effective: string | null;
@@ -6080,6 +6116,10 @@ export interface DataCycleAnswer {
    * YYYY-MM-DD: the first day the edition held no longer counts; null where unknown.
    */
   expires: string | null;
+  /**
+   * YYYY-MM-DDTHH:MM:SSZ: the instant the edition held stops counting; null where unknown.
+   */
+  expires_at: string | null;
   state: "in_force" | "expired" | "not_yet" | "unknown";
   /**
    * How many editions have come out since the one held; 0 unless expired.
@@ -6283,6 +6323,10 @@ export interface GonogoRiskInput {
    * Whether any of the flight is in 14 CFR 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise (passenger_night_on_the_way), its own window rather than 1.1's night; left out or null, `night` stands for it.
    */
   night_passengers?: boolean | null;
+  /**
+   * Whether any of the flight is in 14 CFR 91.209(a)'s period for lighted position lights, sunset to sunrise (lights_on_the_way), which begins before 1.1's night: an open squawk deferred for day flight grounds such a flight. Left out or null, `night` stands for it.
+   */
+  lights?: boolean | null;
   fuel_margin_gal?: number | null;
   /**
    * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
@@ -7076,6 +7120,10 @@ export interface FieldSiteTypeAnswer {
    * The site's kind in words, or null for an airport.
    */
   words: "Balloonport" | "Seaplane base" | "Gliderport" | "Heliport" | "Ultralight" | null;
+  /**
+   * Whether an airplane on wheels lands at a field of this kind: A, G and U, or no code.
+   */
+  airplane: boolean;
 }
 export interface FieldStatusInput {
   /**
@@ -9213,6 +9261,28 @@ export interface LightingNote {
    */
   words: string;
   as_written: string;
+}
+export interface LightsOnTheWayInput {
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  depart_s: number;
+  minutes: number;
+  /**
+   * In Alaska only, the reported visibility, statute miles; below 3 the lights are on whatever the sun (91.209(a)). Left out or null outside Alaska or where none is known.
+   */
+  alaska_visibility_sm?: number | null;
 }
 export interface LiveFeedRefreshInput {
   feed: "rvr" | "itws" | "saa" | "flow" | "atis" | "departures";
@@ -12046,6 +12116,64 @@ export interface ReportNearAnswer {
 export interface ReserveMinInput {
   ifr?: boolean | null;
   night?: boolean | null;
+}
+export interface RouteAdizInput {
+  /**
+   * The route's points in order, as the nav log's rows: a leg from each to the next.
+   */
+  points: {
+    lat: number;
+    lon: number;
+  }[];
+}
+export interface RouteAdizAnswer {
+  /**
+   * Each point's zone, null outside every one.
+   */
+  points: (("contiguous" | "alaska" | "hawaii" | "guam") | null)[];
+  /**
+   * From each point to the next.
+   */
+  legs: ("contiguous" | "alaska" | "hawaii" | "guam")[][];
+  /**
+   * Every zone the route meets, once each in order.
+   *
+   * Items: 14 CFR part 99's zones: contiguous the Contiguous U.S. ADIZ (99.43), alaska (99.45), guam (99.47), hawaii (99.49).
+   */
+  zones: ("contiguous" | "alaska" | "hawaii" | "guam")[];
+  /**
+   * The Brief's line for the route, once; null where it meets no ADIZ.
+   */
+  brief: {
+    /**
+     * The finding alone, "Through the Alaska ADIZ".
+     */
+    lead: string;
+    /**
+     * The finding and what part 99 asks, in one line.
+     */
+    line: string;
+    /**
+     * What part 99 asks in the first zone met, its exceptions (99.1(b)) said.
+     */
+    action: string;
+    why: string;
+    cite: string;
+  } | null;
+}
+export interface RouteHeadwindInput {
+  /**
+   * The nav log's legs in order, as the planner gives them.
+   */
+  legs: {
+    from?: string | null;
+    to?: string | null;
+    true_course_deg?: number | null;
+    wind?: {
+      wind_dir_true_deg: number;
+      wind_speed_kt: number;
+    } | null;
+  }[];
 }
 export interface RouteJurisdictionInput {
   /**

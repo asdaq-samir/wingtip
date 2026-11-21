@@ -3,7 +3,7 @@
 //! them, what part 99 asks of the flight in the pilot's words.
 
 use crate::adiz::{leg_zones, zone_at, zone_name};
-use wingtip_core::ask::{Ask, num_in, strings};
+use wingtip_core::ask::{num_in, strings, Ask};
 use wingtip_core::json::{self, Value};
 
 /// Why it matters, as the Brief's line says under its tap (14 CFR 99.3).
@@ -45,11 +45,8 @@ fn lead(zones: &[&str]) -> Option<String> {
 #[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
-    let points = ask
-        .list("points")?
-        .iter()
-        .map(|p| Ok((num_in(name, p, "lat")?, num_in(name, p, "lon")?)))
-        .collect::<Result<Vec<_>, String>>()?;
+    let points =
+        ask.list("points")?.iter().map(|p| Ok((num_in(name, p, "lat")?, num_in(name, p, "lon")?))).collect::<Result<Vec<_>, String>>()?;
     let mut met: Vec<&str> = Vec::new();
     let mut add = |zones: &[&'static str]| {
         for z in zones {

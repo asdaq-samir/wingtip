@@ -410,7 +410,7 @@ extension Engine {
         try Self.rule("ctaf_of", EngineContract.CtafOfInput(frequencies: frequencies))
     }
 
-    /// Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page.
+    /// Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page. An AIRAC or charting edition takes over at 0901Z on its date ("Effective 0901 UTC", the Federal Register's airspace and procedure amendments), the DOF at 0000Z on its release day: asked with a UTC time the answer is exact to the minute.
     static func dataCycle(kind: String, effective: String? = nil, on: String) throws -> EngineContract.DataCycleAnswer {
         try Self.rule("data_cycle", EngineContract.DataCycleInput(kind: kind, effective: effective, on: on))
     }
@@ -595,7 +595,7 @@ extension Engine {
         try Self.rule("field_military", EngineContract.FieldMilitaryInput(ownership: ownership, use: use))
     }
 
-    /// The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport.
+    /// The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.
     static func fieldSiteType(siteType: String? = nil) throws -> EngineContract.FieldSiteTypeAnswer {
         try Self.rule("field_site_type", EngineContract.FieldSiteTypeInput(siteType: siteType))
     }
@@ -876,8 +876,8 @@ extension Engine {
     }
 
     /// The risk assessment (PAVE, IMSAFE): its points, level, line, what to do, and every factor marked.
-    static func gonogoRisk(vfrNotRecommended: Bool? = nil, underMinimums: [String]? = nil, tfrOnRoute: Bool? = nil, hazards: Double? = nil, night: Bool? = nil, nightPassengers: Bool? = nil, fuelMarginGal: Double? = nil, ifr: Bool? = nil, vorCheck: EngineContract.GonogoRiskInputVorCheck? = nil, inspections: EngineContract.GonogoInspections? = nil, squawks: [EngineContract.GonogoRiskInputSquawksItem]? = nil, currency: EngineContract.GonogoRiskInputCurrency? = nil, day: String, ticked: [String: OpenAPIValueContainer]? = nil) throws -> EngineContract.GonogoRiskAnswer {
-        try Self.rule("gonogo_risk", EngineContract.GonogoRiskInput(vfrNotRecommended: vfrNotRecommended, underMinimums: underMinimums, tfrOnRoute: tfrOnRoute, hazards: hazards, night: night, nightPassengers: nightPassengers, fuelMarginGal: fuelMarginGal, ifr: ifr, vorCheck: vorCheck, inspections: inspections, squawks: squawks, currency: currency, day: day, ticked: ticked))
+    static func gonogoRisk(vfrNotRecommended: Bool? = nil, underMinimums: [String]? = nil, tfrOnRoute: Bool? = nil, hazards: Double? = nil, night: Bool? = nil, nightPassengers: Bool? = nil, lights: Bool? = nil, fuelMarginGal: Double? = nil, ifr: Bool? = nil, vorCheck: EngineContract.GonogoRiskInputVorCheck? = nil, inspections: EngineContract.GonogoInspections? = nil, squawks: [EngineContract.GonogoRiskInputSquawksItem]? = nil, currency: EngineContract.GonogoRiskInputCurrency? = nil, day: String, ticked: [String: OpenAPIValueContainer]? = nil) throws -> EngineContract.GonogoRiskAnswer {
+        try Self.rule("gonogo_risk", EngineContract.GonogoRiskInput(vfrNotRecommended: vfrNotRecommended, underMinimums: underMinimums, tfrOnRoute: tfrOnRoute, hazards: hazards, night: night, nightPassengers: nightPassengers, lights: lights, fuelMarginGal: fuelMarginGal, ifr: ifr, vorCheck: vorCheck, inspections: inspections, squawks: squawks, currency: currency, day: day, ticked: ticked))
     }
 
     /// An assessment in a few words: "Raised · 8 points".
@@ -1113,6 +1113,11 @@ extension Engine {
     /// A field's lighting remarks read for a pilot (the Chart Supplement's, NASR APT_RMK.csv LGT_SKED and BCN_LGT_SKED): each system named, by its code in the Chart Supplement legend (Airport Lighting, Visual Glideslope Indicators) and its name in AIM 2-1 (approach lights 2-1-1, visual glideslope indicators 2-1-2, REIL 2-1-3, runway edge lights by intensity 2-1-4, in-runway lighting 2-1-5, the beacon 2-1-9, taxiway lights 2-1-10), the runways it serves as written, and how it is turned on: keying the mic on the CTAF or a frequency (AIM 2-1-8, Pilot Control of Airport Lighting), when the tower is closed, at a preset intensity a pilot turns up, on a schedule (sunset to sunrise), or on all the time; the contractions written out (JO 7340.2 and the Chart Supplement's Abbreviations). A sentence not read in full is a note, its known contractions written out and every other word kept as written, never guessed. standard_keying where a light is the pilot's and the remarks give no count of clicks of their own: AIM 2-1-8's 7 (highest), 5 (medium or lower) and 3 (lowest) within 5 seconds.
     static func lightingRead(lighting: [String], beacon: [String]? = nil) throws -> EngineContract.LightingReadAnswer {
         try Self.rule("lighting_read", EngineContract.LightingReadInput(lighting: lighting, beacon: beacon))
+    }
+
+    /// Whether any of a flight from `start` to `end` of `minutes`, leaving at `depart_s`, falls in 14 CFR 91.209(a)'s period for lighted position lights, "from sunset to sunrise" (the sun's upper limb on the horizon, as sun_down), judged every half hour along the straight line as night_on_the_way judges the night. Not 1.1's night: twenty minutes after sunset the lights are needed though it is not yet night for 91.151 or 91.205(c). In Alaska the rule's period is the sun more than six degrees down or a prominent unlighted object not seen from 3 statute miles: sunset to sunrise is read there too, erring toward the lights, and `alaska_visibility_sm`, the reported visibility below 3 statute miles, puts the lights on all the way.
+    static func lightsOnTheWay(start: [Double], end: [Double], departS: Double, minutes: Double, alaskaVisibilitySm: Double? = nil) throws -> Bool {
+        try Self.rule("lights_on_the_way", EngineContract.LightsOnTheWayInput(start: start, end: end, departS: departS, minutes: minutes, alaskaVisibilitySm: alaskaVisibilitySm))
     }
 
     /// How long an answer from one of the FAA's SWIM feeds (the planner's /api/live/*) is fresh and how often a screen showing it asks again: a runway's RVR each minute, as it is updated (AIM 7-1-13), the ITWS alerts and special activity airspace's SFDPS status as often (the app's choice), the Command Center's programs every five minutes, and the D-ATIS and a flight's tower departures fresh for five minutes and not polled (the app's choice).
@@ -1593,6 +1598,16 @@ extension Engine {
     /// The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).
     static func reserveMin(ifr: Bool? = nil, night: Bool? = nil) throws -> Double {
         try Self.rule("reserve_min", EngineContract.ReserveMinInput(ifr: ifr, night: night))
+    }
+
+    /// The Air Defense Identification Zones a route meets (14 CFR part 99, subpart B), each as the regulation draws it: the Contiguous U.S. ADIZ (99.43, its line along the U.S.-Mexico border taken as crossed by a leg from one country to the other), Alaska's (99.45), Guam's (99.47) and Hawaii's (99.49), great circles between their points and rhumb lines along a parallel (99.41). Each point, each leg checked every 2 nm along its geodesic, the zones met in order and the Brief's one line: a flight plan filed and open (99.11), a two-way radio and a listening watch (99.9), the transponder on (99.13) and a position report before crossing (99.15), with 99.1(b)'s exceptions said. Warn, never limit: any altitude or speed is taken as meeting the zone.
+    static func routeAdiz(points: [EngineContract.RouteAdizInputPointsItem]) throws -> EngineContract.RouteAdizAnswer {
+        try Self.rule("route_adiz", EngineContract.RouteAdizInput(points: points))
+    }
+
+    /// The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.
+    static func routeHeadwind(legs: [EngineContract.RouteHeadwindInputLegsItem]) throws -> EngineContract.RouteHeadwindAnswer? {
+        try Self.rule("route_headwind", EngineContract.RouteHeadwindInput(legs: legs))
     }
 
     /// Which of a route's points and legs lie outside the United States, each leg checked every 2 nm along its geodesic, and the Brief's one line for them. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).

@@ -54,4 +54,3 @@ fn plates_fetched_before_0901z_on_the_changeover_day_are_of_the_last_cycle() {
     let answer = ask(&json!({ "now": 1795683720, "fetched_at": 1795683660, "kind": "plates" })).unwrap();
     assert_eq!(answer["finding"], json!("ok"), "{answer}");
 }
-

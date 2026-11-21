@@ -36,6 +36,15 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/aircraft/inspections`.
     /// - Remark: Generated from `#/paths//api/aircraft/inspections/post(inspections)`.
     func inspections(_ input: Operations.Inspections.Input) async throws -> Operations.Inspections.Output
+    /// Inspections Batch
+    ///
+    /// Many airplanes' inspections in one call, each as
+    /// /api/aircraft/inspections answers it, in the order asked: a pilot's
+    /// aircraft list and the daily reminders ask every airplane at once.
+    ///
+    /// - Remark: HTTP `POST /api/aircraft/inspections-batch`.
+    /// - Remark: Generated from `#/paths//api/aircraft/inspections-batch/post(inspections_batch)`.
+    func inspectionsBatch(_ input: Operations.InspectionsBatch.Input) async throws -> Operations.InspectionsBatch.Output
     /// Check Airplane
     ///
     /// `{field: words}` for each field of the request that may not be
@@ -1024,6 +1033,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/pilot/instructor-records-since`.
     /// - Remark: Generated from `#/paths//api/pilot/instructor-records-since/get(instructor_records_since)`.
     func instructorRecordsSince(_ input: Operations.InstructorRecordsSince.Input) async throws -> Operations.InstructorRecordsSince.Output
+    /// Records Batch
+    ///
+    /// Many students' experience and endorsements in one call, each as
+    /// /api/pilot/experience and /api/pilot/endorsements answer it, in the
+    /// order asked: an instructor's page asks its students and the reviews
+    /// waiting on them together (14 CFR 61.109(a), 61.87, 61.93(d)).
+    ///
+    /// - Remark: HTTP `POST /api/pilot/records-batch`.
+    /// - Remark: Generated from `#/paths//api/pilot/records-batch/post(records_batch)`.
+    func recordsBatch(_ input: Operations.RecordsBatch.Input) async throws -> Operations.RecordsBatch.Output
     /// Places Search
     ///
     /// Where a place typed is, for Nearest to find the fields near it
@@ -1501,6 +1520,23 @@ extension APIProtocol {
         body: Operations.Inspections.Input.Body
     ) async throws -> Operations.Inspections.Output {
         try await inspections(Operations.Inspections.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Inspections Batch
+    ///
+    /// Many airplanes' inspections in one call, each as
+    /// /api/aircraft/inspections answers it, in the order asked: a pilot's
+    /// aircraft list and the daily reminders ask every airplane at once.
+    ///
+    /// - Remark: HTTP `POST /api/aircraft/inspections-batch`.
+    /// - Remark: Generated from `#/paths//api/aircraft/inspections-batch/post(inspections_batch)`.
+    public func inspectionsBatch(
+        headers: Operations.InspectionsBatch.Input.Headers = .init(),
+        body: Operations.InspectionsBatch.Input.Body
+    ) async throws -> Operations.InspectionsBatch.Output {
+        try await inspectionsBatch(Operations.InspectionsBatch.Input(
             headers: headers,
             body: body
         ))
@@ -3105,6 +3141,24 @@ extension APIProtocol {
         try await instructorRecordsSince(Operations.InstructorRecordsSince.Input(
             query: query,
             headers: headers
+        ))
+    }
+    /// Records Batch
+    ///
+    /// Many students' experience and endorsements in one call, each as
+    /// /api/pilot/experience and /api/pilot/endorsements answer it, in the
+    /// order asked: an instructor's page asks its students and the reviews
+    /// waiting on them together (14 CFR 61.109(a), 61.87, 61.93(d)).
+    ///
+    /// - Remark: HTTP `POST /api/pilot/records-batch`.
+    /// - Remark: Generated from `#/paths//api/pilot/records-batch/post(records_batch)`.
+    public func recordsBatch(
+        headers: Operations.RecordsBatch.Input.Headers = .init(),
+        body: Operations.RecordsBatch.Input.Body
+    ) async throws -> Operations.RecordsBatch.Output {
+        try await recordsBatch(Operations.RecordsBatch.Input(
+            headers: headers,
+            body: body
         ))
     }
     /// Places Search

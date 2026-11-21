@@ -2851,10 +2851,14 @@ enum EngineContract {
         var currentIdent: String?
         /// YYYY-MM-DD: the day the next edition takes its place.
         var next: String
+        /// YYYY-MM-DDTHH:MM:SSZ: the instant the next edition takes over, 0901Z on `next` (0000Z for the DOF).
+        var nextAt: String
         /// YYYY-MM-DD: the day the edition held counts from; null where unknown.
         var effective: String?
         /// YYYY-MM-DD: the first day the edition held no longer counts; null where unknown.
         var expires: String?
+        /// YYYY-MM-DDTHH:MM:SSZ: the instant the edition held stops counting; null where unknown.
+        var expiresAt: String?
         var state: String
         /// How many editions have come out since the one held; 0 unless expired.
         var behind: Int
@@ -2865,8 +2869,10 @@ enum EngineContract {
             case current
             case currentIdent = "current_ident"
             case next
+            case nextAt = "next_at"
             case effective
             case expires
+            case expiresAt = "expires_at"
             case state
             case behind
         }
@@ -2877,7 +2883,7 @@ enum EngineContract {
         var kind: String
         /// YYYY-MM-DD: the date the edition held is named by (its effective date; a DOF file's last day of changes). Missing or null where nothing says.
         var effective: String?
-        /// YYYY-MM-DD: the UTC day it is used on.
+        /// YYYY-MM-DD, the UTC day it is used on (the whole effective day counted as the new edition's, toward the safe side), or a UTC time, YYYY-MM-DDTHH:MM[:SS]Z, exact to 0901Z: what a host choosing what to fetch, draw or warn of asks with.
         var on: String
     }
 
@@ -3888,6 +3894,8 @@ enum EngineContract {
     struct FieldSiteTypeAnswer: Codable, Equatable, Sendable {
         /// The site's kind in words, or null for an airport.
         var words: String?
+        /// Whether an airplane on wheels lands at a field of this kind: A, G and U, or no code.
+        var airplane: Bool
     }
 
     struct FieldSiteTypeInput: Codable, Equatable, Sendable {
@@ -5456,6 +5464,8 @@ enum EngineContract {
         var night: Bool?
         /// Whether any of the flight is in 14 CFR 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise (passenger_night_on_the_way), its own window rather than 1.1's night; left out or null, `night` stands for it.
         var nightPassengers: Bool?
+        /// Whether any of the flight is in 14 CFR 91.209(a)'s period for lighted position lights, sunset to sunrise (lights_on_the_way), which begins before 1.1's night: an open squawk deferred for day flight grounds such a flight. Left out or null, `night` stands for it.
+        var lights: Bool?
         var fuelMarginGal: Double?
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var ifr: Bool?
@@ -5476,6 +5486,7 @@ enum EngineContract {
             case hazards
             case night
             case nightPassengers = "night_passengers"
+            case lights
             case fuelMarginGal = "fuel_margin_gal"
             case ifr
             case vorCheck = "vor_check"
@@ -7139,6 +7150,25 @@ enum EngineContract {
         var lighting: [String]
         /// Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
         var beacon: [String]?
+    }
+
+    struct LightsOnTheWayInput: Codable, Equatable, Sendable {
+        /// [lat, lon]
+        var start: [Double]
+        /// [lat, lon]
+        var end: [Double]
+        var departS: Double
+        var minutes: Double
+        /// In Alaska only, the reported visibility, statute miles; below 3 the lights are on whatever the sun (91.209(a)). Left out or null outside Alaska or where none is known.
+        var alaskaVisibilitySm: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case start
+            case end
+            case departS = "depart_s"
+            case minutes
+            case alaskaVisibilitySm = "alaska_visibility_sm"
+        }
     }
 
     struct LiveFeedRefreshAnswer: Codable, Equatable, Sendable {
@@ -10769,6 +10799,84 @@ enum EngineContract {
     struct ReserveMinInput: Codable, Equatable, Sendable {
         var ifr: Bool?
         var night: Bool?
+    }
+
+    struct RouteAdizAnswer: Codable, Equatable, Sendable {
+        /// Each point's zone, null outside every one.
+        var points: [String?]
+        /// From each point to the next.
+        var legs: [[String]]
+        /// Every zone the route meets, once each in order.
+        var zones: [String]
+        /// The Brief's line for the route, once; null where it meets no ADIZ.
+        var brief: EngineContract.RouteAdizAnswerBrief?
+    }
+
+    struct RouteAdizAnswerBrief: Codable, Equatable, Sendable {
+        /// The finding alone, "Through the Alaska ADIZ".
+        var lead: String
+        /// The finding and what part 99 asks, in one line.
+        var line: String
+        /// What part 99 asks in the first zone met, its exceptions (99.1(b)) said.
+        var action: String
+        var why: String
+        var cite: String
+    }
+
+    struct RouteAdizInput: Codable, Equatable, Sendable {
+        /// The route's points in order, as the nav log's rows: a leg from each to the next.
+        var points: [EngineContract.RouteAdizInputPointsItem]
+    }
+
+    struct RouteAdizInputPointsItem: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+    }
+
+    struct RouteHeadwindAnswer: Codable, Equatable, Sendable {
+        /// The headwind on that leg's course, kt; negative a tailwind.
+        var headwindKt: Double
+        var from: String
+        var to: String
+        var windDirTrueDeg: Double
+        var windSpeedKt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case headwindKt = "headwind_kt"
+            case from
+            case to
+            case windDirTrueDeg = "wind_dir_true_deg"
+            case windSpeedKt = "wind_speed_kt"
+        }
+    }
+
+    struct RouteHeadwindInput: Codable, Equatable, Sendable {
+        /// The nav log's legs in order, as the planner gives them.
+        var legs: [EngineContract.RouteHeadwindInputLegsItem]
+    }
+
+    struct RouteHeadwindInputLegsItem: Codable, Equatable, Sendable {
+        var from: String?
+        var to: String?
+        var trueCourseDeg: Double?
+        var wind: EngineContract.RouteHeadwindInputLegsItemWind?
+
+        enum CodingKeys: String, CodingKey {
+            case from
+            case to
+            case trueCourseDeg = "true_course_deg"
+            case wind
+        }
+    }
+
+    struct RouteHeadwindInputLegsItemWind: Codable, Equatable, Sendable {
+        var windDirTrueDeg: Double
+        var windSpeedKt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case windDirTrueDeg = "wind_dir_true_deg"
+            case windSpeedKt = "wind_speed_kt"
+        }
     }
 
     /// A pilot's hold as the route's address writes it ("VPBNG/090/30:270:R:1M:2T"): legs by minutes or by nm, length by turns or by minutes, the other of each pair null.

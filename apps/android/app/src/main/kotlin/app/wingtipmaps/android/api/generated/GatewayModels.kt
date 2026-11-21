@@ -817,6 +817,32 @@ data class AircraftRequest (
 )
 
 @Serializable
+data class AppVersionsDto (
+    val faults: List<VersionFaultsDto>,
+    val figures: List<VersionFigureDto>
+)
+
+@Serializable
+data class VersionFaultsDto (
+    val count: Long,
+    val kind: String,
+    val lastAt: String,
+    val platform: String,
+    val version: String
+)
+
+@Serializable
+data class VersionFigureDto (
+    val count: Long,
+    val metric: String,
+    val p50: Double,
+    val p75: Double,
+    val p95: Double,
+    val source: String,
+    val version: String
+)
+
+@Serializable
 data class AppleNonceAnswer (
     val nonce: String
 )

@@ -1811,7 +1811,7 @@ public enum Operations {
     }
     /// Sign in with Apple from the iOS app
     ///
-    /// Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS app is set up.
+    /// Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session; an authorization code sent with it is traded for the refresh token deleting the account revokes. 404 where no iOS app is set up.
     ///
     /// - Remark: HTTP `POST /api/auth/apple/native`.
     /// - Remark: Generated from `#/paths//api/auth/apple/native/post(signIn)`.
@@ -2999,6 +2999,136 @@ public enum Operations {
             ///
             /// A response with a code that is not documented in the OpenAPI document.
             case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+    }
+    /// The apps' faults and speed figures by build
+    ///
+    /// Counted over the last few days (at most the 30 a fault is kept); the developer's.
+    ///
+    /// - Remark: HTTP `GET /api/diagnostics/versions`.
+    /// - Remark: Generated from `#/paths//api/diagnostics/versions/get(byVersion)`.
+    public enum ByVersion {
+        public static let id: Swift.String = "byVersion"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/api/diagnostics/versions/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/diagnostics/versions/GET/query/days`.
+                public var days: Swift.Int?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - days:
+                public init(days: Swift.Int? = nil) {
+                    self.days = days
+                }
+            }
+            public var query: Operations.ByVersion.Input.Query
+            /// - Remark: Generated from `#/paths/api/diagnostics/versions/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ByVersion.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ByVersion.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ByVersion.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.ByVersion.Input.Query = .init(),
+                headers: Operations.ByVersion.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/diagnostics/versions/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/diagnostics/versions/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AppVersionsDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AppVersionsDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ByVersion.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ByVersion.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK
+            ///
+            /// - Remark: Generated from `#/paths//api/diagnostics/versions/get(byVersion)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ByVersion.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ByVersion.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
         }
     }
     /// - Remark: HTTP `GET /api/flight-service`.

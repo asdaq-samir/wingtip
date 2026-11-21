@@ -956,7 +956,7 @@ public struct Client: APIProtocol {
     }
     /// Sign in with Apple from the iOS app
     ///
-    /// Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS app is set up.
+    /// Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session; an authorization code sent with it is traded for the refresh token deleting the account revokes. 404 where no iOS app is set up.
     ///
     /// - Remark: HTTP `POST /api/auth/apple/native`.
     /// - Remark: Generated from `#/paths//api/auth/apple/native/post(signIn)`.
@@ -1579,6 +1579,75 @@ public struct Client: APIProtocol {
                     return .noContent(.init())
                 case 400:
                     return .badRequest(.init())
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// The apps' faults and speed figures by build
+    ///
+    /// Counted over the last few days (at most the 30 a fault is kept); the developer's.
+    ///
+    /// - Remark: HTTP `GET /api/diagnostics/versions`.
+    /// - Remark: Generated from `#/paths//api/diagnostics/versions/get(byVersion)`.
+    public func byVersion(_ input: Operations.ByVersion.Input) async throws -> Operations.ByVersion.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.ByVersion.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/diagnostics/versions",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "days",
+                    value: input.query.days
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ByVersion.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.AppVersionsDto.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
                 default:
                     return .undocumented(
                         statusCode: response.status.code,

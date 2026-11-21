@@ -1502,6 +1502,8 @@ extension Components {
             public var isPrivate: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/procedures`.
             public var procedures: [Components.Schemas.TerminalChart]?
+            /// - Remark: Generated from `#/components/schemas/AirportPlace/publications`.
+            public var publications: Components.Schemas.FaaPublications?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/radio_notes`.
             public var radioNotes: [Swift.String]?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/region`.
@@ -1559,6 +1561,7 @@ extension Components {
             ///   - phones:
             ///   - isPrivate:
             ///   - procedures:
+            ///   - publications:
             ///   - radioNotes:
             ///   - region:
             ///   - runways:
@@ -1603,6 +1606,7 @@ extension Components {
                 phones: [Components.Schemas.Phone]? = nil,
                 isPrivate: Swift.Bool? = nil,
                 procedures: [Components.Schemas.TerminalChart]? = nil,
+                publications: Components.Schemas.FaaPublications? = nil,
                 radioNotes: [Swift.String]? = nil,
                 region: Swift.String? = nil,
                 runways: [Components.Schemas.Runway],
@@ -1647,6 +1651,7 @@ extension Components {
                 self.phones = phones
                 self.isPrivate = isPrivate
                 self.procedures = procedures
+                self.publications = publications
                 self.radioNotes = radioNotes
                 self.region = region
                 self.runways = runways
@@ -1692,6 +1697,7 @@ extension Components {
                 case phones
                 case isPrivate = "private"
                 case procedures
+                case publications
                 case radioNotes = "radio_notes"
                 case region
                 case runways
@@ -8579,6 +8585,32 @@ extension Components {
                 case need
                 case rule
                 case unit
+            }
+        }
+        /// The card's plates (the d-TPP: diagram, procedures, minimums) and its
+        /// Chart Supplement page, each by the edition its links are of.
+        ///
+        /// - Remark: Generated from `#/components/schemas/FaaPublications`.
+        public struct FaaPublications: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FaaPublications/plates`.
+            public var plates: Components.Schemas.PublicationEdition?
+            /// - Remark: Generated from `#/components/schemas/FaaPublications/supplement`.
+            public var supplement: Components.Schemas.PublicationEdition?
+            /// Creates a new `FaaPublications`.
+            ///
+            /// - Parameters:
+            ///   - plates:
+            ///   - supplement:
+            public init(
+                plates: Components.Schemas.PublicationEdition? = nil,
+                supplement: Components.Schemas.PublicationEdition? = nil
+            ) {
+                self.plates = plates
+                self.supplement = supplement
+            }
+            public enum CodingKeys: String, CodingKey {
+                case plates
+                case supplement
             }
         }
         /// Every live feed as last checked (each minute), and after how many
@@ -17168,6 +17200,33 @@ extension Components {
                 case altFt = "alt_ft"
             }
         }
+        /// Which edition of one of the FAA's publications a card's links are of
+        /// (wingtip.publications.editions): an FAA outage is said, not read as a
+        /// field with no plates.
+        ///
+        /// - Remark: Generated from `#/components/schemas/PublicationEdition`.
+        public struct PublicationEdition: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PublicationEdition/edition`.
+            public var edition: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PublicationEdition/state`.
+            public var state: Swift.String?
+            /// Creates a new `PublicationEdition`.
+            ///
+            /// - Parameters:
+            ///   - edition:
+            ///   - state:
+            public init(
+                edition: Swift.String? = nil,
+                state: Swift.String? = nil
+            ) {
+                self.edition = edition
+                self.state = state
+            }
+            public enum CodingKeys: String, CodingKey {
+                case edition
+                case state
+            }
+        }
         /// A pass of the charts job's `pyramid` under way: sheets done of
         /// the sheets it set out to render, and the one it is on.
         ///
@@ -17441,6 +17500,60 @@ extension Components {
                 case method
                 case path
                 case status
+            }
+        }
+        /// The answers to a RecordsBatchAsk, each list in the order asked.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RecordsBatch`.
+        public struct RecordsBatch: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RecordsBatch/endorsements`.
+            public var endorsements: [Components.Schemas.Endorsements]
+            /// - Remark: Generated from `#/components/schemas/RecordsBatch/experience`.
+            public var experience: [[Components.Schemas.ExperienceItem]]
+            /// Creates a new `RecordsBatch`.
+            ///
+            /// - Parameters:
+            ///   - endorsements:
+            ///   - experience:
+            public init(
+                endorsements: [Components.Schemas.Endorsements],
+                experience: [[Components.Schemas.ExperienceItem]]
+            ) {
+                self.endorsements = endorsements
+                self.experience = experience
+            }
+            public enum CodingKeys: String, CodingKey {
+                case endorsements
+                case experience
+            }
+        }
+        /// Many students' records asked at once, for an instructor's page:
+        /// each student's experience (ExperienceAsk) and every endorsements ask
+        /// (EndorsementsAsk: a student's solo day, a review's 61.93(d) checks,
+        /// a signed list's last good days), answered in the same order. One
+        /// round trip for the page rather than two a student and two a review.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RecordsBatchAsk`.
+        public struct RecordsBatchAsk: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RecordsBatchAsk/endorsements`.
+            public var endorsements: [Components.Schemas.EndorsementsAsk]?
+            /// - Remark: Generated from `#/components/schemas/RecordsBatchAsk/experience`.
+            public var experience: [Components.Schemas.ExperienceAsk]?
+            /// Creates a new `RecordsBatchAsk`.
+            ///
+            /// - Parameters:
+            ///   - endorsements:
+            ///   - experience:
+            public init(
+                endorsements: [Components.Schemas.EndorsementsAsk]? = nil,
+                experience: [Components.Schemas.ExperienceAsk]? = nil
+            ) {
+                self.endorsements = endorsements
+                self.experience = experience
+            }
+            public enum CodingKeys: String, CodingKey {
+                case endorsements
+                case experience
             }
         }
         /// A document filed for recording against the N-number (DOCINDEX.txt,
@@ -18352,6 +18465,64 @@ extension Components {
                 case lengthNm = "length_nm"
                 case obstacles
                 case terrain
+            }
+        }
+        /// One route and method as the planner has answered it since it
+        /// started (app.route_metrics): calls, those of 500 or more, their share,
+        /// and the time at the 50th and 95th percentile in milliseconds (none
+        /// before a call).
+        ///
+        /// - Remark: Generated from `#/components/schemas/RouteStat`.
+        public struct RouteStat: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RouteStat/count`.
+            public var count: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/RouteStat/error_rate`.
+            public var errorRate: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/RouteStat/errors`.
+            public var errors: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/RouteStat/method`.
+            public var method: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RouteStat/p50_ms`.
+            public var p50Ms: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/RouteStat/p95_ms`.
+            public var p95Ms: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/RouteStat/route`.
+            public var route: Swift.String
+            /// Creates a new `RouteStat`.
+            ///
+            /// - Parameters:
+            ///   - count:
+            ///   - errorRate:
+            ///   - errors:
+            ///   - method:
+            ///   - p50Ms:
+            ///   - p95Ms:
+            ///   - route:
+            public init(
+                count: Swift.Int,
+                errorRate: Swift.Double,
+                errors: Swift.Int,
+                method: Swift.String,
+                p50Ms: Swift.Double? = nil,
+                p95Ms: Swift.Double? = nil,
+                route: Swift.String
+            ) {
+                self.count = count
+                self.errorRate = errorRate
+                self.errors = errors
+                self.method = method
+                self.p50Ms = p50Ms
+                self.p95Ms = p95Ms
+                self.route = route
+            }
+            public enum CodingKeys: String, CodingKey {
+                case count
+                case errorRate = "error_rate"
+                case errors
+                case method
+                case p50Ms = "p50_ms"
+                case p95Ms = "p95_ms"
+                case route
             }
         }
         /// A TFR within a few miles of the route and in force at some time
@@ -19826,6 +19997,8 @@ extension Components {
             public var pipeline: Components.Schemas.PipelineStatus
             /// - Remark: Generated from `#/components/schemas/Status/recent_errors`.
             public var recentErrors: [Components.Schemas.RecentError]?
+            /// - Remark: Generated from `#/components/schemas/Status/routes`.
+            public var routes: [Components.Schemas.RouteStat]?
             /// - Remark: Generated from `#/components/schemas/Status/services`.
             public var services: Components.Schemas.Services
             /// - Remark: Generated from `#/components/schemas/Status/weather`.
@@ -19842,6 +20015,7 @@ extension Components {
             ///   - model:
             ///   - pipeline:
             ///   - recentErrors:
+            ///   - routes:
             ///   - services:
             ///   - weather:
             public init(
@@ -19854,6 +20028,7 @@ extension Components {
                 model: Components.Schemas.ModelRegistry,
                 pipeline: Components.Schemas.PipelineStatus,
                 recentErrors: [Components.Schemas.RecentError]? = nil,
+                routes: [Components.Schemas.RouteStat]? = nil,
                 services: Components.Schemas.Services,
                 weather: [Components.Schemas.WeatherDataset]
             ) {
@@ -19866,6 +20041,7 @@ extension Components {
                 self.model = model
                 self.pipeline = pipeline
                 self.recentErrors = recentErrors
+                self.routes = routes
                 self.services = services
                 self.weather = weather
             }
@@ -19879,6 +20055,7 @@ extension Components {
                 case model
                 case pipeline
                 case recentErrors = "recent_errors"
+                case routes
                 case services
                 case weather
             }
@@ -21682,6 +21859,8 @@ extension Components {
             public var hops: [Components.Schemas.HopTotals]?
             /// - Remark: Generated from `#/components/schemas/Totals/legs_without_wind`.
             public var legsWithoutWind: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Totals/lights`.
+            public var lights: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Totals/night`.
             public var night: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Totals/night_passengers`.
@@ -21721,6 +21900,7 @@ extension Components {
             ///   - groundMin:
             ///   - hops:
             ///   - legsWithoutWind:
+            ///   - lights:
             ///   - night:
             ///   - nightPassengers:
             ///   - noFuelStop:
@@ -21745,6 +21925,7 @@ extension Components {
                 groundMin: Swift.Double? = nil,
                 hops: [Components.Schemas.HopTotals]? = nil,
                 legsWithoutWind: Swift.Int,
+                lights: Swift.Bool? = nil,
                 night: Swift.Bool? = nil,
                 nightPassengers: Swift.Bool? = nil,
                 noFuelStop: [Components.Schemas.NoFuelStop]? = nil,
@@ -21769,6 +21950,7 @@ extension Components {
                 self.groundMin = groundMin
                 self.hops = hops
                 self.legsWithoutWind = legsWithoutWind
+                self.lights = lights
                 self.night = night
                 self.nightPassengers = nightPassengers
                 self.noFuelStop = noFuelStop
@@ -21794,6 +21976,7 @@ extension Components {
                 case groundMin = "ground_min"
                 case hops
                 case legsWithoutWind = "legs_without_wind"
+                case lights
                 case night
                 case nightPassengers = "night_passengers"
                 case noFuelStop = "no_fuel_stop"

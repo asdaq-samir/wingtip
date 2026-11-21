@@ -23,10 +23,10 @@
 use crate::json;
 use crate::pack::f64_at;
 use crate::pack::Pack;
+use crate::pack_kept::kept;
 use crate::view::{
     in_box, meets, oriented, reaches, representative, rings_of, round5, simplified, text_at, tolerance_for, Bbox, Polygon, Pt,
 };
-use crate::pack_kept::kept;
 use crate::{sua_limit, sua_place, sua_tab};
 use std::collections::{HashMap, HashSet};
 use wingtip_core::sort::StableSort;

@@ -3,11 +3,7 @@ use super::*;
 // A square of Class B, a tenth of a degree across each way, on the line
 // from (0, 0) north to (1, 0): Midway to Duluth over O'Hare.
 fn core(floor: f64, ceiling: f64) -> Shelf {
-    Shelf {
-        floor_ft: floor,
-        ceiling_ft: Some(ceiling),
-        area: Area { rings: vec![vec![(0.4, -0.1), (0.4, 0.1), (0.6, 0.1), (0.6, -0.1)]] },
-    }
+    Shelf { floor_ft: floor, ceiling_ft: Some(ceiling), area: Area { rings: vec![vec![(0.4, -0.1), (0.4, 0.1), (0.6, 0.1), (0.6, -0.1)]] } }
 }
 
 fn fix(ident: &str, lat: f64, lon: f64, vfr: bool) -> Fix {

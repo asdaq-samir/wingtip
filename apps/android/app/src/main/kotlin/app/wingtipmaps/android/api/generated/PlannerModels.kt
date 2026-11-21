@@ -569,6 +569,7 @@ data class AirportPlace (
     @SerialName("private")
     val isPrivate: Boolean? = null,
     val procedures: List<TerminalChart>? = null,
+    val publications: FaaPublications? = null,
 
     @SerialName("radio_notes")
     val radioNotes: List<String>? = null,
@@ -773,6 +774,27 @@ data class TerminalChart (
     val kind: String,
     val name: String,
     val url: String
+)
+
+/**
+ * The card's plates (the d-TPP: diagram, procedures, minimums) and its
+ * Chart Supplement page, each by the edition its links are of.
+ */
+@Serializable
+data class FaaPublications (
+    val plates: PublicationEdition? = null,
+    val supplement: PublicationEdition? = null
+)
+
+/**
+ * Which edition of one of the FAA's publications a card's links are of
+ * (wingtip.publications.editions): an FAA outage is said, not read as a
+ * field with no plates.
+ */
+@Serializable
+data class PublicationEdition (
+    val edition: String? = null,
+    val state: String? = null
 )
 
 @Serializable
@@ -3608,87 +3630,6 @@ data class EndorsementField (
 )
 
 /**
- * What the endorsements say (the engine's endorsement_records).
- */
-@Serializable
-data class Endorsements (
-    /**
-     * 61.93(d)(4) and (5) for the solo cross-country on flightOn; none without.
-     */
-    val checks: List<ReviewCheck>,
-
-    /**
-     * The last day of the latest solo endorsement (61.87(n), (p)).
-     */
-    val soloUntil: String? = null,
-
-    /**
-     * Each held endorsement's last good day, in order: 90 days on for a solo (14 CFR 61.87(n),
-     * (o), (p)) or Class B one (61.95); null for one that does not run out.
-     */
-    val until: List<String?>
-)
-
-/**
- * One of 14 CFR 61.93(d)'s determinations, as far as the record
- * answers it (the gateway's ReviewCheckDto).
- */
-@Serializable
-data class ReviewCheck (
-    val detail: String,
-    val label: String,
-    val met: Boolean,
-    val rule: String
-)
-
-/**
- * The endorsements held, voided ones left out by the gateway where it
- * asks the solo endorsement's day and the review's checks, and the day of
- * a solo cross-country to check them for.
- */
-@Serializable
-data class EndorsementsAsk (
-    val flightOn: String? = null,
-    val held: List<HeldEndorsement>
-)
-
-/**
- * An endorsement the student holds: its code (AC 61-65K's, as the
- * engine's endorsement_kinds names it), the day it was given, and the make
- * and model it names where it says.
- */
-@Serializable
-data class HeldEndorsement (
-    val code: String,
-    val makeModel: String? = null,
-    val on: String
-)
-
-/**
- * The student's logbook and the day it is asked for.
- */
-@Serializable
-data class ExperienceAsk (
-    val entries: List<LogbookEntry>,
-    val today: String
-)
-
-/**
- * One of 14 CFR 61.109(a)'s requirements: how much of it the logbook
- * shows of how much, and whether that is met.
- */
-@Serializable
-data class ExperienceItem (
-    val have: Double,
-    val key: String,
-    val label: String,
-    val met: Boolean,
-    val need: Double,
-    val rule: String,
-    val unit: String
-)
-
-/**
  * An airplane and its flight today (wingtip.traffic.flight): what it is,
  * who flies it, where it took off from where its track shows that, and
  * its track since, from adsb.lol's open data (ODbL 1.0); and a US
@@ -5573,6 +5514,7 @@ data class Totals (
     @SerialName("legs_without_wind")
     val legsWithoutWind: Int,
 
+    val lights: Boolean? = null,
     val night: Boolean? = null,
 
     @SerialName("night_passengers")
@@ -7373,6 +7315,109 @@ data class CoachWeakArea (
 )
 
 /**
+ * The answers to a RecordsBatchAsk, each list in the order asked.
+ */
+@Serializable
+data class RecordsBatch (
+    val endorsements: List<Endorsements>,
+    val experience: List<List<ExperienceItem>>
+)
+
+/**
+ * What the endorsements say (the engine's endorsement_records).
+ */
+@Serializable
+data class Endorsements (
+    /**
+     * 61.93(d)(4) and (5) for the solo cross-country on flightOn; none without.
+     */
+    val checks: List<ReviewCheck>,
+
+    /**
+     * The last day of the latest solo endorsement (61.87(n), (p)).
+     */
+    val soloUntil: String? = null,
+
+    /**
+     * Each held endorsement's last good day, in order: 90 days on for a solo (14 CFR 61.87(n),
+     * (o), (p)) or Class B one (61.95); null for one that does not run out.
+     */
+    val until: List<String?>
+)
+
+/**
+ * One of 14 CFR 61.93(d)'s determinations, as far as the record
+ * answers it (the gateway's ReviewCheckDto).
+ */
+@Serializable
+data class ReviewCheck (
+    val detail: String,
+    val label: String,
+    val met: Boolean,
+    val rule: String
+)
+
+/**
+ * One of 14 CFR 61.109(a)'s requirements: how much of it the logbook
+ * shows of how much, and whether that is met.
+ */
+@Serializable
+data class ExperienceItem (
+    val have: Double,
+    val key: String,
+    val label: String,
+    val met: Boolean,
+    val need: Double,
+    val rule: String,
+    val unit: String
+)
+
+/**
+ * Many students' records asked at once, for an instructor's page:
+ * each student's experience (ExperienceAsk) and every endorsements ask
+ * (EndorsementsAsk: a student's solo day, a review's 61.93(d) checks,
+ * a signed list's last good days), answered in the same order. One
+ * round trip for the page rather than two a student and two a review.
+ */
+@Serializable
+data class RecordsBatchAsk (
+    val endorsements: List<EndorsementsAsk>? = null,
+    val experience: List<ExperienceAsk>? = null
+)
+
+/**
+ * The endorsements held, voided ones left out by the gateway where it
+ * asks the solo endorsement's day and the review's checks, and the day of
+ * a solo cross-country to check them for.
+ */
+@Serializable
+data class EndorsementsAsk (
+    val flightOn: String? = null,
+    val held: List<HeldEndorsement>
+)
+
+/**
+ * An endorsement the student holds: its code (AC 61-65K's, as the
+ * engine's endorsement_kinds names it), the day it was given, and the make
+ * and model it names where it says.
+ */
+@Serializable
+data class HeldEndorsement (
+    val code: String,
+    val makeModel: String? = null,
+    val on: String
+)
+
+/**
+ * The student's logbook and the day it is asked for.
+ */
+@Serializable
+data class ExperienceAsk (
+    val entries: List<LogbookEntry>,
+    val today: String
+)
+
+/**
  * The training run's container as the sidecar left it: `started`
  * false when it was running already.
  */
@@ -7680,6 +7725,7 @@ data class Status (
     @SerialName("recent_errors")
     val recentErrors: List<RecentError>? = null,
 
+    val routes: List<RouteStat>? = null,
     val services: Services,
     val weather: List<WeatherDataset>
 )
@@ -8009,6 +8055,31 @@ data class RecentError (
     val method: String,
     val path: String,
     val status: Int
+)
+
+/**
+ * One route and method as the planner has answered it since it
+ * started (app.route_metrics): calls, those of 500 or more, their share,
+ * and the time at the 50th and 95th percentile in milliseconds (none
+ * before a call).
+ */
+@Serializable
+data class RouteStat (
+    val count: Int,
+
+    @SerialName("error_rate")
+    val errorRate: Double,
+
+    val errors: Int,
+    val method: String,
+
+    @SerialName("p50_ms")
+    val p50Ms: Double? = null,
+
+    @SerialName("p95_ms")
+    val p95Ms: Double? = null,
+
+    val route: String
 )
 
 /**

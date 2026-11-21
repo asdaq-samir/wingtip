@@ -187,9 +187,7 @@ pub fn entered(start: Point, end: Point, shelves: &[Shelf], altitude_ft: f64) ->
     shelves.iter().any(|s| {
         s.floor_ft <= altitude_ft
             && s.ceiling_ft.is_none_or(|c| altitude_ft <= c)
-            && (s.area.contains(start.0, start.1)
-                || s.area.contains(end.0, end.1)
-                || crosses(&s.area, start, end))
+            && (s.area.contains(start.0, start.1) || s.area.contains(end.0, end.1) || crosses(&s.area, start, end))
     })
 }
 

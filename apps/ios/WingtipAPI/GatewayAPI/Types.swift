@@ -56,7 +56,7 @@ public protocol APIProtocol: Sendable {
     func vorCheck(_ input: Operations.VorCheck.Input) async throws -> Operations.VorCheck.Output
     /// Sign in with Apple from the iOS app
     ///
-    /// Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS app is set up.
+    /// Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session; an authorization code sent with it is traded for the refresh token deleting the account revokes. 404 where no iOS app is set up.
     ///
     /// - Remark: HTTP `POST /api/auth/apple/native`.
     /// - Remark: Generated from `#/paths//api/auth/apple/native/post(signIn)`.
@@ -115,6 +115,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/diagnostics`.
     /// - Remark: Generated from `#/paths//api/diagnostics/post(report)`.
     func report(_ input: Operations.Report.Input) async throws -> Operations.Report.Output
+    /// The apps' faults and speed figures by build
+    ///
+    /// Counted over the last few days (at most the 30 a fault is kept); the developer's.
+    ///
+    /// - Remark: HTTP `GET /api/diagnostics/versions`.
+    /// - Remark: Generated from `#/paths//api/diagnostics/versions/get(byVersion)`.
+    func byVersion(_ input: Operations.ByVersion.Input) async throws -> Operations.ByVersion.Output
     /// - Remark: HTTP `GET /api/flight-service`.
     /// - Remark: Generated from `#/paths//api/flight-service/get(status)`.
     func status(_ input: Operations.Status.Input) async throws -> Operations.Status.Output
@@ -537,7 +544,7 @@ extension APIProtocol {
     }
     /// Sign in with Apple from the iOS app
     ///
-    /// Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS app is set up.
+    /// Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session; an authorization code sent with it is traded for the refresh token deleting the account revokes. 404 where no iOS app is set up.
     ///
     /// - Remark: HTTP `POST /api/auth/apple/native`.
     /// - Remark: Generated from `#/paths//api/auth/apple/native/post(signIn)`.
@@ -637,6 +644,21 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//api/diagnostics/post(report)`.
     public func report(body: Operations.Report.Input.Body) async throws -> Operations.Report.Output {
         try await report(Operations.Report.Input(body: body))
+    }
+    /// The apps' faults and speed figures by build
+    ///
+    /// Counted over the last few days (at most the 30 a fault is kept); the developer's.
+    ///
+    /// - Remark: HTTP `GET /api/diagnostics/versions`.
+    /// - Remark: Generated from `#/paths//api/diagnostics/versions/get(byVersion)`.
+    public func byVersion(
+        query: Operations.ByVersion.Input.Query = .init(),
+        headers: Operations.ByVersion.Input.Headers = .init()
+    ) async throws -> Operations.ByVersion.Output {
+        try await byVersion(Operations.ByVersion.Input(
+            query: query,
+            headers: headers
+        ))
     }
     /// - Remark: HTTP `GET /api/flight-service`.
     /// - Remark: Generated from `#/paths//api/flight-service/get(status)`.

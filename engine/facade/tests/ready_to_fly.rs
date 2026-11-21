@@ -83,4 +83,3 @@ fn packs_go_out_of_date_at_0901z_on_the_next_cycles_day() {
         assert_eq!(find(&answer, "packs")["finding"], json!(finding), "{now}: {answer}");
     }
 }
-

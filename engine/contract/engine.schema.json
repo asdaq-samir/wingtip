@@ -6389,7 +6389,7 @@
       "additionalProperties": false
     },
     "data_cycle": {
-      "description": "Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page.",
+      "description": "Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page. An AIRAC or charting edition takes over at 0901Z on its date (\"Effective 0901 UTC\", the Federal Register's airspace and procedure amendments), the DOF at 0000Z on its release day: asked with a UTC time the answer is exact to the minute.",
       "type": "object",
       "properties": {
         "input": {
@@ -6414,7 +6414,7 @@
             },
             "on": {
               "type": "string",
-              "description": "YYYY-MM-DD: the UTC day it is used on."
+              "description": "YYYY-MM-DD, the UTC day it is used on (the whole effective day counted as the new edition's, toward the safe side), or a UTC time, YYYY-MM-DDTHH:MM[:SS]Z, exact to 0901Z: what a host choosing what to fetch, draw or warn of asks with."
             }
           },
           "required": [
@@ -6453,6 +6453,10 @@
               "type": "string",
               "description": "YYYY-MM-DD: the day the next edition takes its place."
             },
+            "next_at": {
+              "type": "string",
+              "description": "YYYY-MM-DDTHH:MM:SSZ: the instant the next edition takes over, 0901Z on `next` (0000Z for the DOF)."
+            },
             "effective": {
               "type": [
                 "string",
@@ -6466,6 +6470,13 @@
                 "null"
               ],
               "description": "YYYY-MM-DD: the first day the edition held no longer counts; null where unknown."
+            },
+            "expires_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "YYYY-MM-DDTHH:MM:SSZ: the instant the edition held stops counting; null where unknown."
             },
             "state": {
               "type": "string",
@@ -6487,8 +6498,10 @@
             "current",
             "current_ident",
             "next",
+            "next_at",
             "effective",
             "expires",
+            "expires_at",
             "state",
             "behind"
           ],
@@ -11587,7 +11600,7 @@
       "additionalProperties": false
     },
     "fuel_in_tanks": {
-      "description": "The fuel in the tanks at each point of the route and whether it is under the reserve: at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.",
+      "description": "The fuel in the tanks at each point of the route and whether it is under the reserve of the flight it is on (each flight's own: 30 minutes by day, 14 CFR 91.151(a)(1); 45 at night, 91.151(a)(2), or under IFR, 91.167(a)(3); by that flight's own times and rules): at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; the departure low where what is on board, less the start and taxi, is under its flight's reserve, and the destination held to the IFR alternate's fuel too (91.167(a)(2)); negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.",
       "type": "object",
       "properties": {
         "input": {
@@ -11635,15 +11648,29 @@
             "taxi_gal": {
               "type": "number"
             },
-            "reserve_gal": {
-              "type": "number"
+            "reserves_gal": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "description": "Each flight's own reserve, gallons, in order: the first the departure's flight, the next the one from the first field landed at (refuel), as the planner's totals give each flight's reserve_gal. A point is low against the reserve of the flight that lands at or passes it; a flight with none given (null, or past the list's end) is held to the strictest given."
+            },
+            "alternate_gal": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Under IFR with an alternate filed, the fuel on to it from the destination, gallons (14 CFR 91.167(a)(2)): the route's last point is held to its flight's reserve and this; null or 0 under VFR."
             }
           },
           "required": [
             "points",
             "usable_gal",
             "taxi_gal",
-            "reserve_gal"
+            "reserves_gal"
           ]
         },
         "answer": {
@@ -11659,6 +11686,13 @@
                   },
                   "low": {
                     "type": "boolean"
+                  },
+                  "leaves_gal": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "Where the tanks are filled (the departure, a field landed at), what they hold as the airplane leaves: the pilot's own figure, full, or what it landed with where the figure is under that; null elsewhere."
                   }
                 },
                 "required": [
@@ -11778,6 +11812,13 @@
               "items": {
                 "$ref": "#/definitions/FuelField"
               }
+            },
+            "alternate_gal": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Under IFR with an alternate filed, the fuel from the destination on to it, gallons (14 CFR 91.167(a)(2)): the stretch landing at the destination keeps it with the reserve. Each stop is itself a first point of intended landing under 91.167(a)(1); only the destination's alternate is counted, as the planner's fuel check counts it. Null or 0 under VFR."
             }
           },
           "required": [
@@ -12235,6 +12276,185 @@
               "type": "null"
             }
           ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "gonogo_adverse_rows": {
+      "description": "The Brief's Adverse Conditions rows under its findings, the standard briefing's first element (AIM 7-1-5(b)(1)): what the flight meets on the route while it is there (OnRoute `when` \"during\", or none given) -- a TFR the route goes through (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6), stops; a Center Weather Advisory (AIM 7-1-6), an urgent pilot report (UUA, AIM 7-1-18) and an AIRMET or G-AIRMET (AIM 7-1-6), cautions -- in that order, of a kind the one met first along the route first, at most three, with how many more. A TFR only near the route, a routine PIREP and a hazard before or after the flight are left to their pages. Each row's time is for the host to write: `at` when the flight meets a TFR, `until` an advisory's end, `reported` a pilot report's time.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GonogoAdverseRowsInput",
+          "type": "object",
+          "properties": {
+            "advisories": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "description": "OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET."
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions."
+                  },
+                  "when": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "during",
+                      "before",
+                      "after",
+                      null
+                    ]
+                  },
+                  "enter": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "valid_to": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "issued": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "from_nm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "legs": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  "crosses": {
+                    "type": "boolean"
+                  },
+                  "urgent": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "source",
+                  "name",
+                  "when",
+                  "enter",
+                  "valid_to",
+                  "issued",
+                  "from_nm",
+                  "legs",
+                  "crosses",
+                  "urgent"
+                ]
+              }
+            }
+          },
+          "required": [
+            "advisories"
+          ]
+        },
+        "answer": {
+          "title": "GonogoAdverseRowsAnswer",
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "finding": {
+                    "type": "string",
+                    "enum": [
+                      "stop",
+                      "caution"
+                    ]
+                  },
+                  "tab": {
+                    "type": "string",
+                    "enum": [
+                      "enroute",
+                      "preflight"
+                    ]
+                  },
+                  "section": {
+                    "type": "string"
+                  },
+                  "time_kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "at",
+                      "until",
+                      "reported",
+                      null
+                    ]
+                  },
+                  "time": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "legs": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "required": [
+                  "source",
+                  "title",
+                  "finding",
+                  "tab",
+                  "section",
+                  "time_kind",
+                  "time",
+                  "legs"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "more": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "rows",
+            "more"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -16904,6 +17124,74 @@
       ],
       "additionalProperties": false
     },
+    "landing_runway": {
+      "description": "The runway landed on at a field the route flies an instrument approach to: the approach's own runway, straight in (AIM 5-4-20, Approach and Landing Minimums; 14 CFR 91.175, the runway of intended landing), unless the pilot picked another and the plate publishes circling minimums, a circle to land (AIM 5-4-20). A runway picked into the wind gives way to the approach's own. With no approach, or one circling only (no runway in its name), the pick stands and any runway may be picked. `circling` null (the plate still coming) is taken as no circling. The runway is answered as painted (\"9\", \"8L\").",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "LandingRunwayInput",
+          "type": "object",
+          "properties": {
+            "approach": {
+              "type": "boolean"
+            },
+            "straight_in": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "circling": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "picked": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "by_pilot": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "approach",
+            "straight_in",
+            "circling",
+            "picked",
+            "by_pilot"
+          ]
+        },
+        "answer": {
+          "title": "LandingRunwayAnswer",
+          "type": "object",
+          "properties": {
+            "runway": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "others_allowed": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "runway",
+            "others_allowed"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "least_crosswind": {
       "description": "Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.",
       "type": "object",
@@ -17196,6 +17484,64 @@
             "notes",
             "standard_keying"
           ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "lights_on_the_way": {
+      "description": "Whether any of a flight from `start` to `end` of `minutes`, leaving at `depart_s`, falls in 14 CFR 91.209(a)'s period for lighted position lights, \"from sunset to sunrise\" (the sun's upper limb on the horizon, as sun_down), judged every half hour along the straight line as night_on_the_way judges the night. Not 1.1's night: twenty minutes after sunset the lights are needed though it is not yet night for 91.151 or 91.205(c). In Alaska the rule's period is the sun more than six degrees down or a prominent unlighted object not seen from 3 statute miles: sunset to sunrise is read there too, erring toward the lights, and `alaska_visibility_sm`, the reported visibility below 3 statute miles, puts the lights on all the way.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "LightsOnTheWayInput",
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "end": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[lat, lon]"
+            },
+            "depart_s": {
+              "type": "number"
+            },
+            "minutes": {
+              "type": "number"
+            },
+            "alaska_visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "In Alaska only, the reported visibility, statute miles; below 3 the lights are on whatever the sun (91.209(a)). Left out or null outside Alaska or where none is known."
+            }
+          },
+          "required": [
+            "start",
+            "end",
+            "depart_s",
+            "minutes"
+          ]
+        },
+        "answer": {
+          "title": "LightsOnTheWayAnswer",
+          "type": "boolean"
         }
       },
       "required": [
@@ -19480,7 +19826,7 @@
       "additionalProperties": false
     },
     "navlog_fuel_stop_need": {
-      "description": "What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given.",
+      "description": "What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given, with the fuel on to the alternate (91.167(a)(2)) the last stretch keeps; and whether the fuel on board is under the reserve already, no field in its reach.",
       "type": "object",
       "properties": {
         "input": {
@@ -19551,6 +19897,13 @@
                     "boolean",
                     "null"
                   ]
+                },
+                "alternate_gal": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "description": "Under IFR, the last flight's fuel on to its alternate (the alternate leg's fuel_gal, 14 CFR 91.167(a)(2)); null where none is filed."
                 }
               }
             },
@@ -19642,6 +19995,14 @@
             },
             "reserve_gal": {
               "type": "number"
+            },
+            "alternate_gal": {
+              "type": "number",
+              "description": "The fuel on to the IFR alternate the last stretch keeps with its reserve (91.167(a)(2)), for fuel_stops; 0 under VFR."
+            },
+            "on_board_short": {
+              "type": "boolean",
+              "description": "Whether the fuel on board at the start, less the start and taxi, is under the reserve already: no field is in its reach, so no stop is offered."
             }
           },
           "required": [
@@ -19650,7 +20011,9 @@
             "usable_gal",
             "start_gal",
             "taxi_gal",
-            "reserve_gal"
+            "reserve_gal",
+            "alternate_gal",
+            "on_board_short"
           ]
         }
       },
@@ -25702,6 +26065,106 @@
       ],
       "additionalProperties": false
     },
+    "route_headwind": {
+      "description": "The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RouteHeadwindInput",
+          "type": "object",
+          "properties": {
+            "legs": {
+              "type": "array",
+              "description": "The nav log's legs in order, as the planner gives them.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "to": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "true_course_deg": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "wind": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "wind_dir_true_deg": {
+                            "type": "number"
+                          },
+                          "wind_speed_kt": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "wind_dir_true_deg",
+                          "wind_speed_kt"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "legs"
+          ]
+        },
+        "answer": {
+          "title": "RouteHeadwindAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "headwind_kt": {
+                  "type": "number",
+                  "description": "The headwind on that leg's course, kt; negative a tailwind."
+                },
+                "from": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": "string"
+                },
+                "wind_dir_true_deg": {
+                  "type": "number"
+                },
+                "wind_speed_kt": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "headwind_kt",
+                "from",
+                "to",
+                "wind_dir_true_deg",
+                "wind_speed_kt"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
     "route_jurisdiction": {
       "description": "Which of a route's points and legs lie outside the United States, each leg checked every 2 nm along its geodesic, and the Brief's one line for them. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).",
       "type": "object",
@@ -28299,6 +28762,186 @@
       ],
       "additionalProperties": false
     },
+    "special_vfr": {
+      "description": "14 CFR 91.157's special VFR for an airplane (eCFR, current on 2026-11-21): within the surface area of an airport's Class B, C, D or E airspace and below 10,000 ft MSL (91.157(a)), never at the airports of part 91 appendix D, section 3 (fixed-wing special VFR prohibited: O'Hare, LaGuardia and 31 more, by FAA or ICAO ident); with an ATC clearance, clear of clouds and at least 1 statute mile flight visibility (91.157(b)(1)-(3)); between sunset and sunrise (in Alaska, the sun more than 6 degrees below the horizon) only for a pilot meeting part 61's requirements for instrument flight in an airplane equipped as 91.205(d) asks (91.157(b)(4)); and to take off or land, at least 1 sm ground visibility, or flight visibility where none is reported (91.157(c)). `available` is false where anything known rules it out (each in `problems`); what is not given rules nothing out and stays in `needs`, never said to be met.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "SpecialVfrInput",
+          "type": "object",
+          "properties": {
+            "surface_area": {
+              "enum": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E",
+                "G",
+                null
+              ],
+              "description": "The class of the surface area the airplane is in (controlled airspace designated to the surface for an airport); null or G where it is in none."
+            },
+            "airport": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The surface area's primary airport, FAA or ICAO ident, for appendix D, section 3."
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Feet MSL; null where not known."
+            },
+            "night": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Between sunset and sunrise; null where not known."
+            },
+            "alaska": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "In Alaska, where 91.157(b)(4) reads the sun's elevation."
+            },
+            "sun_elevation_deg": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The sun's elevation, degrees (negative below the horizon); read in Alaska alone."
+            },
+            "instrument_current": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "The pilot meets part 61's requirements for instrument flight (rated, and current under 61.57(c))."
+            },
+            "ifr_equipped": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "The airplane is equipped as 91.205(d) asks for IFR."
+            },
+            "flight_visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Statute miles."
+            },
+            "ground_visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Statute miles, as reported at the airport; null where none is."
+            },
+            "clear_of_clouds": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Whether the flight can keep clear of clouds."
+            },
+            "takeoff_or_landing": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Taking off or landing under special VFR (91.157(c))."
+            }
+          }
+        },
+        "answer": {
+          "title": "SpecialVfrAnswer",
+          "type": "object",
+          "properties": {
+            "available": {
+              "type": "boolean",
+              "description": "Nothing known rules special VFR out."
+            },
+            "problems": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "words": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string",
+                    "description": "The rule, \"14 CFR 91.157(b)(3)\"."
+                  }
+                },
+                "required": [
+                  "words",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              "description": "What rules it out, each with its rule."
+            },
+            "needs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "words": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string",
+                    "description": "The rule, \"14 CFR 91.157(b)(3)\"."
+                  }
+                },
+                "required": [
+                  "words",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              "description": "What it asks, each with its rule."
+            },
+            "listed": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The airport's entry in part 91 appendix D, section 3, \"Chicago, IL (Chicago-O'Hare International Airport)\"; null where it is not listed."
+            },
+            "visibility_sm": {
+              "type": "number"
+            },
+            "below_msl_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "available",
+            "problems",
+            "needs",
+            "listed",
+            "visibility_sm",
+            "below_msl_ft"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "squawk_meaning": {
       "description": "What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.",
       "type": "object",
@@ -28817,6 +29460,75 @@
             "days",
             "in_force",
             "change"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "taf_validity": {
+      "description": "A TAF's own times and whether it speaks for now: its station, when it was issued and its valid period, as its header gives them, and its state, not yet before the period, in force during it and expired at its end (FAA-H-8083-28B 27.4.1, a TAF is a forecast for its valid period; the same rule as weather_in_force's for a TAF). The airport card says it under the hours, so a TAF kept from before the signal was lost is never read as today's forecast (14 CFR 91.103). Null where the words are not a TAF.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TafValidityInput",
+          "type": "object",
+          "properties": {
+            "taf": {
+              "type": "string",
+              "description": "The TAF as sent."
+            },
+            "now": {
+              "type": "number",
+              "description": "Unix seconds, UTC: the engine has no clock."
+            }
+          },
+          "required": [
+            "taf",
+            "now"
+          ]
+        },
+        "answer": {
+          "title": "TafValidityAnswer",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "station": {
+              "type": "string"
+            },
+            "issued": {
+              "type": "number",
+              "description": "When it was issued, Unix seconds; the time it was read where its header gives none."
+            },
+            "valid_from": {
+              "type": "number",
+              "description": "The start of its valid period, Unix seconds."
+            },
+            "valid_to": {
+              "type": "number",
+              "description": "The end of its valid period, Unix seconds."
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "not_yet",
+                "in_force",
+                "expired"
+              ]
+            }
+          },
+          "required": [
+            "station",
+            "issued",
+            "valid_from",
+            "valid_to",
+            "state"
           ],
           "additionalProperties": false
         }
@@ -30290,6 +31002,97 @@
           "required": [
             "ceiling_ft",
             "visibility_sm"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "vfr_class_g_night_pattern": {
+      "description": "14 CFR 91.155(b)(2), Class G's one exception to 91.155(a) for an airplane (eCFR, current on 2026-11-21): below 1,200 ft above the surface (not at it: the table's low row is \"1,200 feet or less\"), at night, in an airport traffic pattern within 1/2 mile of the runway, with the visibility under 3 statute miles but not under 1, the airplane may fly clear of clouds. By day the table's low row already asks 1 sm and clear of clouds (91.155(a)); 91.155(b)(1) is the helicopter's. A visibility not given leaves the other conditions to decide.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "VfrClassGNightPatternInput",
+          "type": "object",
+          "properties": {
+            "class": {
+              "enum": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E",
+                "G"
+              ]
+            },
+            "agl_ft": {
+              "type": "number",
+              "description": "Feet above the surface."
+            },
+            "night": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "in_pattern": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "In an airport traffic pattern within 1/2 mile of the runway."
+            },
+            "visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Statute miles; null where not known."
+            }
+          },
+          "required": [
+            "class",
+            "agl_ft"
+          ]
+        },
+        "answer": {
+          "title": "VfrClassGNightPatternAnswer",
+          "type": "object",
+          "properties": {
+            "applies": {
+              "type": "boolean"
+            },
+            "visibility_sm": {
+              "type": "number",
+              "description": "The least visibility it asks, 1 sm."
+            },
+            "under_visibility_sm": {
+              "type": "number",
+              "description": "It is for a visibility under this, 3 sm."
+            },
+            "below_agl_ft": {
+              "type": "number",
+              "description": "1,200 ft above the surface."
+            },
+            "words": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "applies",
+            "visibility_sm",
+            "under_visibility_sm",
+            "below_agl_ft",
+            "words",
+            "source"
           ],
           "additionalProperties": false
         }
@@ -31797,6 +32600,7 @@
     "glide_range",
     "glide_reaches",
     "glide_ring",
+    "gonogo_adverse_rows",
     "gonogo_balance",
     "gonogo_brief",
     "gonogo_default_load",
@@ -31853,9 +32657,11 @@
     "jurisdiction_of",
     "kept_age",
     "kneeboard_radio",
+    "landing_runway",
     "least_crosswind",
     "legal_cruising_altitudes",
     "lighting_read",
+    "lights_on_the_way",
     "live_feed_refresh",
     "logbook_csv_read",
     "logbook_csv_write",
@@ -31953,6 +32759,7 @@
     "report_near",
     "reserve_min",
     "route_adiz",
+    "route_headwind",
     "route_jurisdiction",
     "route_options",
     "route_options_frame",
@@ -31982,12 +32789,14 @@
     "solo_standing",
     "solo_xc_determinations",
     "special_use_tab",
+    "special_vfr",
     "squawk_meaning",
     "strip_fuel",
     "sua_altitudes",
     "sun_down",
     "surface_airspace",
     "surface_hours",
+    "taf_validity",
     "taf_window",
     "tafs_along_route",
     "temperature_at",
@@ -32011,6 +32820,7 @@
     "vfr_altitudes",
     "vfr_at_hours",
     "vfr_basic_minimums",
+    "vfr_class_g_night_pattern",
     "vfr_floors",
     "vfr_minimums",
     "vfr_not_recommended_reasons",
@@ -35353,7 +36163,15 @@
             "number",
             "null"
           ],
-          "description": "6 where not given, avgas's standard (FAA-H-8083-1B)."
+          "description": "The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given."
+        },
+        "fuel_grade": {
+          "enum": [
+            "avgas",
+            "jet_a",
+            null
+          ],
+          "description": "The fuel the airplane burns, for its standard weight where its handbook gives none."
         },
         "start_taxi_fuel_lb": {
           "type": [
@@ -35566,6 +36384,13 @@
             "null"
           ],
           "description": "Whether any of the flight is in 14 CFR 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise (passenger_night_on_the_way), its own window rather than 1.1's night; left out or null, `night` stands for it."
+        },
+        "lights": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether any of the flight is in 14 CFR 91.209(a)'s period for lighted position lights, sunset to sunrise (lights_on_the_way), which begins before 1.1's night: an open squawk deferred for day flight grounds such a flight. Left out or null, `night` stands for it."
         },
         "fuel_margin_gal": {
           "type": [

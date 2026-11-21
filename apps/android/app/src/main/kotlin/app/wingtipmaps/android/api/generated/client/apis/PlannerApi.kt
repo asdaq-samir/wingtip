@@ -1072,6 +1072,20 @@ interface PlannerApi {
     suspend fun inspections(@Body appWingtipmapsAndroidApiGeneratedInspectionsAsk: app.wingtipmaps.android.api.generated.InspectionsAsk): Response<app.wingtipmaps.android.api.generated.Inspections>
 
     /**
+     * POST aircraft/inspections-batch
+     * Inspections Batch
+     * Many airplanes&#39; inspections in one call, each as /api/aircraft/inspections answers it, in the order asked: a pilot&#39;s aircraft list and the daily reminders ask every airplane at once.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param appWingtipmapsAndroidApiGeneratedInspectionsAsk
+     * @return [kotlin.collections.List<app.wingtipmaps.android.api.generated.Inspections>]
+     */
+    @POST("aircraft/inspections-batch")
+    suspend fun inspectionsBatch(@Body appWingtipmapsAndroidApiGeneratedInspectionsAsk: kotlin.collections.List<app.wingtipmaps.android.api.generated.InspectionsAsk>): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.Inspections>>
+
+    /**
      * GET pilot/instructor-records-since
      * Instructor Records Since
      * The first day an instructor&#39;s page lists what they signed: 3 years before &#x60;today&#x60;, as 14 CFR 61.189(c) has them keep the records (the engine&#39;s instructor_records_since).
@@ -1441,6 +1455,20 @@ interface PlannerApi {
      */
     @GET("plan")
     suspend fun plan(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("stops") stops: kotlin.String? = "", @Query("altitude_ft") altitudeFt: kotlin.Double? = null, @Query("altitude_nearest") altitudeNearest: kotlin.Boolean? = false, @Query("altitude_choice") altitudeChoice: kotlin.String? = "fastest", @Query("aircraft") aircraft: kotlin.String? = null, @Query("cruise_tas_kt") cruiseTasKt: kotlin.Double? = null, @Query("fuel_burn_gph") fuelBurnGph: kotlin.Double? = null, @Query("usable_fuel_gal") usableFuelGal: kotlin.Double? = null, @Query("climb_tas_kt") climbTasKt: kotlin.Double? = null, @Query("climb_fuel_burn_gph") climbFuelBurnGph: kotlin.Double? = null, @Query("descent_ias_kt") descentIasKt: kotlin.Double? = null, @Query("descent_fuel_burn_gph") descentFuelBurnGph: kotlin.Double? = null, @Query("cruise_power_pct") cruisePowerPct: kotlin.Double? = null, @Query("service_ceiling_ft") serviceCeilingFt: kotlin.Double? = null, @Query("climb_rate_fpm") climbRateFpm: kotlin.Double? = null, @Query("taxi_fuel_gal") taxiFuelGal: kotlin.Double? = null, @Query("glide_ratio") glideRatio: kotlin.Double? = null, @Query("depart") depart: kotlin.String? = null, @Query("rules") rules: kotlin.String? = "vfr", @Query("alternate") alternate: kotlin.String? = "", @Query("altitudes") altitudes: kotlin.String? = "", @Query("altitude_starts") altitudeStarts: kotlin.String? = "", @Query("procedures") procedures: kotlin.String? = "", @Query("runways") runways: kotlin.String? = "", @Query("patterns") patterns: kotlin.String? = "", @Query("wind_runways") windRunways: kotlin.Boolean? = false, @Query("crossings") crossings: kotlin.String? = "", @Query("holds") holds: kotlin.String? = "", @Query("ground") ground: kotlin.String? = "", @Query("tanks") tanks: kotlin.String? = "", @Query("checkpoints") checkpoints: kotlin.Boolean? = false): Response<app.wingtipmaps.android.api.generated.Plan>
+
+    /**
+     * POST pilot/records-batch
+     * Records Batch
+     * Many students&#39; experience and endorsements in one call, each as /api/pilot/experience and /api/pilot/endorsements answer it, in the order asked: an instructor&#39;s page asks its students and the reviews waiting on them together (14 CFR 61.109(a), 61.87, 61.93(d)).
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param appWingtipmapsAndroidApiGeneratedRecordsBatchAsk
+     * @return [app.wingtipmaps.android.api.generated.RecordsBatch]
+     */
+    @POST("pilot/records-batch")
+    suspend fun recordsBatch(@Body appWingtipmapsAndroidApiGeneratedRecordsBatchAsk: app.wingtipmaps.android.api.generated.RecordsBatchAsk): Response<app.wingtipmaps.android.api.generated.RecordsBatch>
 
     /**
      * POST charts/refresh
