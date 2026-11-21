@@ -454,8 +454,7 @@ jobs:
                 - design/**
                 - scripts/build/design-tokens.sh
                 - scripts/build/design_tokens*.py
-                - scripts/build/screens.sh
-                - scripts/build/screens.py
+                - scripts/build/screens.*
                 - docs/navigation.md
                 - apps/ios/Wingtip/Navigation/Generated/**
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/**

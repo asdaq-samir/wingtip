@@ -1,11 +1,10 @@
 import { Button as BaseButton } from "@base-ui/react/button";
 import { CircleMinus, House, ListFilter } from "lucide-react";
 import type { ComponentProps, CSSProperties, ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
-import { airportMarkSvg } from "../lib/map/marks/airportMark";
-import { colourOf } from "../lib/map/marks/flightCategory";
-import type { AirspaceClass, RecentAirport } from "../lib/preferences";
+import type { RecentAirport } from "../lib/preferences";
+import { KeptChartMark } from "./ChartMark";
+import { useKeptCategory } from "./keptCategory";
 import { useAirspace } from "../lib/useAirspace";
 import { useRowRemove } from "./rowRemove";
 import { useAway } from "../lib/useAway";
@@ -13,7 +12,6 @@ import { TEXT } from "../lib/text";
 import { Button } from "./ui/button";
 import PullDown from "./PullDown";
 import IconButton from "./IconButton";
-import { airportQuery } from "../lib/queryClient";
 import { PillSection } from "./PillSection";
 export { ListPageHead } from "./ListPageHead";
 export { PillSection };
@@ -272,61 +270,6 @@ export function PillStrip({ children, testId, className }: { children: ReactNode
 /** A strip's tile's round mark, the Favorites tile's size (PlaceTile). */
 export function SmallMark({ className, ...mark }: { icon: ReactNode; className?: string; style?: CSSProperties }) {
   return <Mark {...mark} className={cn("size-14 [&_svg]:size-6", className)} />;
-}
-
-/** An airport's own chart symbol, small, as the map draws it
- *  (lib/map/marks/airportMark): its airspace's ring and colour, its METAR's
- *  dot, a military or private field's letter -- one mark for the pills'
- *  airports, Favorites' as Nearest's, at the owner's ask ("Airports should
- *  have the same symbols as nearest"). */
-export function ChartMark({
-  space,
-  category,
-  use,
-  size = 22,
-}: {
-  space: AirspaceClass | null;
-  category: string | null | undefined;
-  use: "military" | "private" | null;
-  /** Its width in points: the pills' 22, a tile's 44; or "row", a list
-   *  row's 30 in rem (size.chart-mark), Search's, Nearest's and Favorites'
-   *  alike and growing with the row's words (the scale audit's Q5: Nearest
-   *  drew 26 and Search 30, neither growing). */
-  size?: number | "row";
-}) {
-  const box = size === "row" ? "var(--size-chart-mark)" : Math.max(28, size);
-  const drawn = size === "row" ? "var(--size-chart-mark)" : size;
-  return (
-    <span aria-hidden="true" className="grid shrink-0 place-items-center" style={{ width: box, height: box }}>
-      <span
-        className="block"
-        style={{ width: drawn, height: drawn }}
-        dangerouslySetInnerHTML={{ __html: airportMarkSvg(space, colourOf(category), use, "block size-full overflow-visible") }}
-      />
-    </span>
-  );
-}
-
-/** A kept airport's chart symbol (ChartMark), from the field as the
- *  planner has it -- the query useAirspace asks, so none more -- its
- *  weather and whose it is with its airspace. */
-export function KeptChartMark({ airport, size }: { airport: RecentAirport; size?: number | "row" }) {
-  const { data } = useQuery(airportQuery(airport.ident));
-  const use = data?.military === "military" ? "military" : data?.private ? "private" : null;
-  const category = useKeptCategory(airport);
-  return <ChartMark space={data?.airspace_class ?? airport.airspace ?? null} category={category} use={use} size={size} />;
-}
-
-/** A kept airport's flight category: with no report of its own, the
- *  weather modelled at it, else a station's within ten miles, as its
- *  card's chip and FPL's symbols have it. The same query as its mark's. */
-function useKeptCategory(airport: RecentAirport) {
-  const { data } = useQuery(airportQuery(airport.ident));
-  return (
-    data?.metar?.flight_category ??
-    data?.modelled_weather?.flight_category ??
-    (data?.nearby_metar?.near ? data.nearby_metar.metar.flight_category : null)
-  );
 }
 
 /** A kept airport -- a Favorite, a Recent -- as a pill's small tile: its

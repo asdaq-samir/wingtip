@@ -10,12 +10,13 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import type { Course, NavLogMessage } from "../../lib/api/types";
+import type { NavLogMessage } from "../../lib/api/types";
 import { useSystemProblems } from "../../lib/problems";
 import { queryClient } from "../../lib/queryClient";
 import { keptStore } from "../../lib/storage";
 import type { PlanParams } from "./planQuery";
 import { usePlan } from "./usePlan";
+import { courseFixture, params, signedIn } from "./usePlan.fixtures";
 
 vi.mock("../../lib/api/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../lib/api/client")>()),
@@ -34,51 +35,6 @@ vi.mock("../../lib/api/client", async (importOriginal) => ({
 }));
 
 const { api, ApiError } = await import("../../lib/api/client");
-
-function courseFixture(): Course {
-  return {
-    departure: { ident: "C81", name: "Campbell", lat: 42.1, lon: -88.1, elevation_ft: 890, kind: "airport" },
-    destination: { ident: "KDLH", name: "Duluth", lat: 46.8, lon: -92.2, elevation_ft: 1428, kind: "airport" },
-    stops: [],
-    distance_nm: 323.4,
-    bearing_deg: 328,
-    course_line: [
-      [42.1, -88.1],
-      [46.8, -92.2],
-    ],
-    checkpoints_ready: false,
-    max_zoom: 12,
-    min_zoom: 4,
-    chart_cycle: "09-03-2026",
-    chart_revision: 0,
-    chart_tiles_base: null,
-    chart_layers: [],
-  };
-}
-
-const params: PlanParams = {
-  dep: "C81",
-  dest: "KDLH",
-  stops: [],
-  altitudeFt: "",
-  altitudeChoice: "lowest",
-  depart: "",
-  aircraft: { profile: "c172", label: "Cessna 172" },
-  load: 0,
-  // The map's Checkpoints on: the plan these tests are about finds them.
-  checkpoints: true,
-};
-
-const signedIn = {
-  id: 7,
-  displayName: "A. Pilot",
-  email: "a@example.com",
-  developer: false,
-  fullName: null,
-  phone: null,
-  homeBase: null,
-  avatarUrl: null,
-};
 
 const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: queryClient }, children);
 

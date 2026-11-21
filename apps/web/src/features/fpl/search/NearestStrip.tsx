@@ -1,6 +1,7 @@
 import { cn } from "cn";
 import { Button } from "../../../components/ui/button";
-import { ChartMark, PillStrip, SmallTile, TileChartMark } from "../../../components/Favorites";
+import { ChartMark } from "../../../components/ChartMark";
+import { PillStrip, SmallTile, TileChartMark } from "../../../components/Favorites";
 import type { NearestAirport } from "../../../lib/api/types";
 import { compassPoint } from "../../../lib/compass";
 import { nmAway } from "../../../lib/useAway";

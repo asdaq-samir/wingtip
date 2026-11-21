@@ -1,6 +1,6 @@
 import type { MouseEvent, ReactNode } from "react";
 import { cn } from "cn";
-import { ChartMark, KeptChartMark } from "../../../components/Favorites";
+import { ChartMark, KeptChartMark } from "../../../components/ChartMark";
 import { Button } from "../../../components/ui/button";
 import { CommandGroup, CommandItem, CommandSeparator } from "../../../components/ui/command";
 import { TEXT } from "../../../lib/text";

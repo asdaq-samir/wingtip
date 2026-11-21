@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import type { RecentAirport } from "../lib/preferences";
 import { useAirspace } from "../lib/useAirspace";
 import { useAway } from "../lib/useAway";
-import { KeptChartMark, SmallMark, SmallTile } from "./Favorites";
+import { KeptChartMark } from "./ChartMark";
+import { SmallMark, SmallTile } from "./Favorites";
 
 // The search's round tiles, apart from the strips' small ones (Favorites):
 // drawn only in a picker's search (AirportSearch), which waits for its

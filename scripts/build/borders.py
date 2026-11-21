@@ -136,7 +136,9 @@ def main(path):
             lines.append(" ".join(out))
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"{OUT.relative_to(ROOT)}: {OUT.stat().st_size:,} bytes, {sum(len(l.split()) // 2 for l in lines if l[0] != '#' and l[0] != 'C'):,} points")
+    print(
+        f"{OUT.relative_to(ROOT)}: {OUT.stat().st_size:,} bytes, {sum(len(l.split()) // 2 for l in lines if l[0] != '#' and l[0] != 'C'):,} points"
+    )
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { useScrollPlace } from "../../lib/scrollPlace";
-import { ChartMark } from "../../components/Favorites";
+import { ChartMark } from "../../components/ChartMark";
 import { USE_WORDS } from "../../lib/airportIndex";
 import type { NearestAirport } from "../../lib/api/types";
 import { chipFillOf } from "../../lib/map/marks/flightCategory";
