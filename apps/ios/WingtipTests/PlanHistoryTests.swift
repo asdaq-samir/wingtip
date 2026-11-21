@@ -44,6 +44,31 @@ struct PlanHistoryTests {
         #expect(undo.canUndo)
     }
 
+    @Test @MainActor func theUndoBarOffersAClearedRouteAndGoesOnUndo() throws {
+        let (plan, undo) = planned()
+        #expect(plan.undoOffer == nil)
+        step(undo) { plan.clear() }
+        let offer = try #require(plan.undoOffer)
+        #expect(offer.words == "Route cleared")
+        // Undone, the offer goes with the step it offered.
+        undo.undo()
+        #expect(plan.undoOffer == nil)
+        #expect(plan.routeState == route)
+    }
+
+    @Test @MainActor func aLaterOfferStaysWhenTheEarlierTimesOut() throws {
+        let (plan, undo) = planned()
+        step(undo) { plan.stops = ["KRFD"]; plan.plan() }
+        let first = try #require(plan.undoOffer)
+        #expect(first.words == "KJVL removed")
+        step(undo) { plan.clear() }
+        let second = try #require(plan.undoOffer)
+        plan.dismissUndo(first)
+        #expect(plan.undoOffer == second)
+        plan.dismissUndo(second)
+        #expect(plan.undoOffer == nil)
+    }
+
     @Test @MainActor func theSameRouteIsNoStep() throws {
         let (plan, undo) = planned()
         step(undo) { plan.clear() }

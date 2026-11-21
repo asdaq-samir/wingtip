@@ -442,8 +442,12 @@ opened. Typing "traffic" offers Show Traffic in Do.
      the same place holds Favorites, Recents, Find Nearby and Nearest.
      The ••• is the web's More (2026-11-21): Route Options (the ways'
      menu picker), Share Link and Open in ForeFlight; under a divider
-     what the iPhone keeps there as view options, Undo (the web's toast;
-     shake and ⌘Z too), Saved Flights and Show Route As. The ✕ asks
+     what the iPhone keeps there as view options, Saved Flights and Show
+     Route As. Undo is the undo bar's (`UndoBar`, the web's per-edit
+     toast): after a stop or a procedure removed, the route cleared or
+     replaced, or a Direct To, the change's words and Undo in a glass
+     capsule over the figures strip for six seconds, the window's
+     UndoManager's step, so shake and ⌘Z take the same one back. The ✕ asks
      "Clear Route?" in the system's alert. The Profile is the cruise
      altitude's button, its caution marked on it; the rest of the
      sharing, the checkpoints for ForeFlight and Print are the Nav Log's
@@ -844,10 +848,11 @@ edged in the waypoint magenta outside the turn, turned with the map
    - Swipe to delete.
    - "Add a Stop After" in each row's menu.
    - After a delete or a change, the system's **Undo**: the window's
-     `UndoManager`, so shake, Command-Z, the Edit menu and an Undo button
-     in the sheet's bar (`arrow.uturn.backward`, shown while there is
-     something to undo) all take it back. Never a toast or an alert
-     ([HIG Alerts][hig-alerts]).
+     `UndoManager`, so shake, Command-Z, the Edit menu and the undo bar
+     at the plan's foot (`UndoBar`, the change's words and Undo for six
+     seconds, as Mail and Photos offer one after a delete) all take it
+     back; the iPad's sidebar keeps the bar's Undo button too
+     (`UndoToolbarItem`). Never an alert ([HIG Alerts][hig-alerts]).
 6. **Options:** flight rules, departure time and airplane, as menus
    (`Picker` with `.menu`), not sliders.
 

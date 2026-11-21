@@ -237,9 +237,11 @@ gone on the iPhone: the sheet's top row is the search with the microphone
 and the account button beside it, and the route card sits under it (the
 route, Ready to Fly, the figures, Brief, Nav Log, File, ••• and ✕). The
 ••• is the web's More since 2026-11-21: Route Options, Share Link and
-Open in ForeFlight, then Undo, Saved Flights and Show Route As; the
-nav log's Share holds the other ways out, the checkpoints for ForeFlight
-and Print. Undo is still 0 taps by shaking the iPhone or ⌘Z.
+Open in ForeFlight, then Saved Flights and Show Route As; the nav log's
+Share holds the other ways out, the checkpoints for ForeFlight and Print.
+Undo is the undo bar's after each change (a stop or a procedure removed,
+the route cleared or replaced, a Direct To: 1 tap for six seconds), and 0
+taps by shaking the iPhone or ⌘Z.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
@@ -255,7 +257,7 @@ and Print. Undo is still 0 taps by shaking the iPhone or ⌘Z.
 | Profile | the cruise altitude in the route section, its caution marked on it; a stop's Set Altitude… (on that waypoint's Start At / Cross At popover); the search's Do | 1 / 2 | The vertical altitude slider (Set, Auto in flight); the Altitude Advisor's rows pick the cruise; a waypoint's altitude, typed or stepped |
 | Saved Flights | the route card's ••• → Saved Flights (was the bar's, 1); the search's Do; Settings' Flights row | 1 → **2** (one-row header, owner decision 2026-11-10) | Swipe to delete with an Undo row |
 | Share | the route card's ••• → Share Link or Open in ForeFlight; the Nav Log's Share → a way, the checkpoints for ForeFlight, Print | 2 / 3 | -- |
-| Undo | the route card's ••• → Undo (was the bar's, 1); shake; ⌘Z | 1 → **2**, shake 0 | -- |
+| Undo | the undo bar at the plan's foot after a change (was the route card's ••• → Undo, 2); shake; ⌘Z | 2 → **1**, shake 0 | -- |
 | Nearest | the instruments bar; the search's All Nearest; the plan's Nearest for a Diversion; Siri | 1–2 | **One list** from every way in: Divert on a swipe or a hold, Diversion Drill |
 | Map card (new) | the map's own Map button; Settings' Map row | **1** (was 2, Settings) | The layers, airport weather, traffic, the weather loop and the alerts, each switch in place |
 | Settings (was Setup) | the account button, opening Settings with no menu between (the owner, 2026-11-10) | 1 → 1 | Every switch and picker in place; Sign In or the account's page with Sign Out |

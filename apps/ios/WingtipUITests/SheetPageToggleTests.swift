@@ -222,5 +222,11 @@ final class SheetPageToggleTests: XCTestCase {
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
         alert.buttons["Clear Route"].tap()
         XCTAssertTrue(app.buttons["route-close"].waitForExistence(timeout: 5), "the route was not cleared")
+        // The undo bar offers it back for a moment, as the web's toast does.
+        let undo = app.buttons["undo-bar-undo"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 5), "no undo bar after Clear Route")
+        undo.tap()
+        XCTAssertTrue(clear.waitForExistence(timeout: 10), "Undo did not bring the route back")
+        XCTAssertFalse(undo.exists, "the undo bar stayed after Undo")
     }
 }

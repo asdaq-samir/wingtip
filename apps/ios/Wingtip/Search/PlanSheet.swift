@@ -88,11 +88,17 @@ struct PlanSheet: View {
         // (safeAreaBar, glassFoot); over the map on the iPad. Not at the
         // pill, where it covered the route's row (sheetAtPill).
         .glassFoot {
-            if plan.routed, !split, !atPill, nav.sheetPage == .fpl {
-                FiguresStrip()
-                    .padding(.vertical, WingtipSpace.sm)
-                    .frame(maxWidth: .infinity)
+            VStack(spacing: 0) {
+                // The step just made, a moment to take it back (UndoBar):
+                // over the strip, on either page, a cleared route's too.
+                UndoBar()
+                if plan.routed, !split, !atPill, nav.sheetPage == .fpl {
+                    FiguresStrip()
+                        .padding(.vertical, WingtipSpace.sm)
+                        .frame(maxWidth: .infinity)
+                }
             }
+            .animation(.easeInOut(duration: WingtipMotion.fade), value: plan.undoOffer)
         }
         // The card over the plan and the alerts, on the iPhone; the
         // iPad's inspector holds the card (SplitLayout).

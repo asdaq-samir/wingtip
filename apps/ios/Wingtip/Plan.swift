@@ -89,6 +89,10 @@ final class Plan {
     /// The window's, from SwiftUI's environment (RootView): shake to undo,
     /// the Edit menu's Undo and Redo and the bar's Undo (UndoToolbarItem).
     @ObservationIgnored weak var undoManager: UndoManager?
+    /// The step just made that the undo bar offers to take back (UndoBar),
+    /// nil once it has gone; a step that only added or changed a figure has
+    /// none, though shake and the Edit menu still undo it.
+    private(set) var undoOffer: UndoOffer?
     /// Off while a kept plan is put back at launch: that is not the
     /// pilot's change to undo.
     @ObservationIgnored private var remembering = true
@@ -139,8 +143,8 @@ final class Plan {
     /// The route's idents in order, as the route box shows them.
     var idents: [String] { [dep] + stops + [dest] }
 
-    /// The route cleared at once, no question asked: the bar's Undo, shake
-    /// or the Edit menu brings it back (PlanHistory).
+    /// The route cleared, asked first by the route card's ✕: the undo bar,
+    /// shake or the Edit menu brings it back (PlanHistory).
     func clear() {
         dep = ""; dest = ""; stops = []
         ownAltitudeFt = nil; ownAltitudeLegal = false; altitudeChoice = nil; procedures = []
@@ -170,8 +174,11 @@ final class Plan {
         guard next != before else { return }
         lastState = next
         let note = PlanHistory.note(from: before, to: next)
-        if let note, undoManager?.isUndoing != true, undoManager?.isRedoing != true {
+        if undoManager?.isUndoing == true || undoManager?.isRedoing == true {
+            undoOffer = nil
+        } else if let note {
             UIAccessibility.post(notification: .announcement, argument: note)
+            undoOffer = UndoOffer(note)
         }
         guard let undoManager else { return }
         undoManager.levelsOfUndo = PlanHistory.limit
@@ -190,7 +197,14 @@ final class Plan {
     /// No steps back: a signed-out pilot's routes are not the next one's.
     func forgetHistory() {
         lastState = routeState
+        undoOffer = nil
         undoManager?.forget(self)
+    }
+
+    /// The undo bar's offer put away: its time up, or Undo tapped. A later
+    /// offer in its place stays.
+    func dismissUndo(_ offer: UndoOffer) {
+        if undoOffer?.id == offer.id { undoOffer = nil }
     }
 
     /// The plan's own kept answers (Kept) shown, from `at`, or fresh again
