@@ -17,6 +17,8 @@
 //!   over them, the pilot's minimums, icing under IFR, the risk
 //!   assessment, the runway check, the weight and balance and the pass
 //!   times (the web's lib/verdict and the modules it is fed from);
+//! - route_wind: the route's strongest headwind, the leg flown most into
+//!   the wind aloft, for the Brief's glance;
 //! - runway: runways, the wind on them and the traffic pattern -- the end
 //!   flown, its pattern's side, entry, altitude and legs, a POH's
 //!   short-field distances and how an end suits the airplane.
@@ -27,6 +29,7 @@ pub mod fields;
 pub mod gonogo;
 pub mod icing_forecast;
 pub mod passengers;
+pub mod route_wind;
 pub mod runway;
 
 // The modules below this crate by the names they had when the engine was

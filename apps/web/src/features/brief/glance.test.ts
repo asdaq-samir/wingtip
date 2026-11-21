@@ -1,6 +1,9 @@
 import { describe, expect, it, test } from "vitest";
 import { callEngine, type EngineInput } from "../../lib/engine/engine";
 import fixture from "../../lib/fixtures/goNoGoBrief.json";
+import headwinds from "../../lib/fixtures/routeHeadwind.json";
+import type { Leg } from "../../lib/api/types";
+import { routeHeadwind } from "./buildGlance";
 import type { VerdictItem } from "../../lib/verdict";
 import { glanceLines, type BriefGlance } from "./glance";
 
@@ -39,7 +42,7 @@ const field = (ident: string, runway: string, crosswindKt: number) => ({
 const glance: BriefGlance = {
   before: { spareGal: 12.4, balance: null, finding: "ok" },
   depart: field("C81", "27", 18),
-  enroute: { ceilingFt: null, visibilitySm: null, wind: null, eteMin: null, line: null, finding: "ok" },
+  enroute: { ceilingFt: null, visibilitySm: null, headwind: null, eteMin: null, line: null, finding: "ok" },
   arrive: null,
   adverse: { rows: [], more: 0 },
   unchecked: [],
@@ -63,5 +66,14 @@ describe("the Brief's lines at a glance, from the glance's figures", () => {
     const { act } = glanceLines([item("runways", "caution", "Crosswind past the POH's demonstrated at C81", "Runways")], null);
     expect(act[0]!.lead).toBe("Crosswind past the POH's demonstrated at C81");
     expect(act[0]!.raw).toEqual([]);
+  });
+});
+
+// The route's strongest headwind, the engine's route_headwind, held to the
+// shared cases (engine/facade/tests/route_headwind.rs reads the same file).
+describe("the En Route row's strongest headwind", () => {
+  test.each(headwinds.cases)("$why", ({ legs, expected }) => {
+    const most = routeHeadwind(legs as unknown as Leg[]);
+    expect(most).toEqual(expected && { kt: expected.headwind_kt, from: expected.from, to: expected.to });
   });
 });

@@ -731,7 +731,9 @@ off by default (the owner, 2026-11-13).
    unmarked reads as the magnetic one a tower gives (the UI audit's A7).
    The Brief's line under its name has no airport names: its title has
    the idents, and the names ran it off the line ("FL-145 · leaving now ·
-   Chicago Exec to Harry R…"). The Routes are one row of chips, each a way's name and time --
+   Chicago Exec to Harry R…"); its time carries its zone ("leaving 14:00
+   CST"), as the Depart row and the timeline write a clock time (the
+   Brief audit of 2026-11-21). The Routes are one row of chips, each a way's name and time --
    As typed, With Fuel Stops (the route as typed with the fuel stops it
    needs, each landing with 14 CFR 91.151's reserve, offered only where
    one is put in; the owner, 2026-11-17: "Suggested routes should also

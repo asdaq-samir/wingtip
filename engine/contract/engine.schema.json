@@ -25787,6 +25787,106 @@
       ],
       "additionalProperties": false
     },
+    "route_headwind": {
+      "description": "The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RouteHeadwindInput",
+          "type": "object",
+          "properties": {
+            "legs": {
+              "type": "array",
+              "description": "The nav log's legs in order, as the planner gives them.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "to": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "true_course_deg": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "wind": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "wind_dir_true_deg": {
+                            "type": "number"
+                          },
+                          "wind_speed_kt": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "wind_dir_true_deg",
+                          "wind_speed_kt"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "legs"
+          ]
+        },
+        "answer": {
+          "title": "RouteHeadwindAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "headwind_kt": {
+                  "type": "number",
+                  "description": "The headwind on that leg's course, kt; negative a tailwind."
+                },
+                "from": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": "string"
+                },
+                "wind_dir_true_deg": {
+                  "type": "number"
+                },
+                "wind_speed_kt": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "headwind_kt",
+                "from",
+                "to",
+                "wind_dir_true_deg",
+                "wind_speed_kt"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
     "route_options": {
       "description": "The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.",
       "type": "object",
@@ -31938,6 +32038,7 @@
     "replay_track",
     "report_near",
     "reserve_min",
+    "route_headwind",
     "route_options",
     "route_options_frame",
     "route_position",

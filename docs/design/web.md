@@ -1328,12 +1328,19 @@ verdict, then the Adverse Conditions, When to go at the foot).
      titled "The Flight";
    - Before You Go, its value what is left to do on the device ("4 to
      do", Ready to Fly's count, the engine's `ready_to_fly` items not
-     done), with an airplane its fuel to spare and its loading under it;
-     it opens Preflight;
+     done), with an airplane its fuel beyond the reserve ("Beyond
+     reserve": over the fuel the flight needs and its 14 CFR 91.151(a)
+     or 91.167(a) reserve, where "Fuel spare" was no pilot's term) and
+     its loading under it; it opens Preflight;
    - Depart with its time, Arrive with its field, each with its runway,
      takeoff or landing over 50 ft and first frequency, and En Route
-     with its time and its three figures (ceiling, visibility, wind
-     aloft); only the figures each has, no dashes where there is no
+     with its time and its three figures: "Lowest ceiling", the lowest
+     any TAF near the route forecasts over the flight, not a ceiling
+     now; visibility; and "Most headwind", the route's strongest, the
+     engine's `route_headwind` over every leg (the wind's component
+     along each leg's true course, "None" with tailwinds all the way),
+     where "Wind aloft" was the first stretch's alone (the Brief audit
+     of 2026-11-21); only the figures each has, no dashes where there is no
      airplane or runway, no copy of the weather finding's line in En
      Route;
    - NOTAMs, its value "3 that matter, 44 more", opening Preflight at

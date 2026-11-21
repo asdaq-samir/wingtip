@@ -227,7 +227,6 @@ export function useFlightBriefing({
         items,
         leastMarginGal,
         loaded,
-        wind: stretches[0]?.wind,
       })
     : null;
   const setGlance = useGlance((g) => g.set);
