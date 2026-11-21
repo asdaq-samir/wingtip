@@ -36,6 +36,29 @@ struct StorePrivacyTests {
         #expect(reasons["NSPrivacyAccessedAPICategoryFileTimestamp"] == ["C617.1"])
     }
 
+    /// The widget extension's own manifest, read from the source tree (the
+    /// simulator sees the Mac's files): it reads its own standard defaults
+    /// (Ink's look) as well as the App Group's, so both reasons (the store
+    /// review audit of 2026-11-21; ITMS-91053 otherwise).
+    @Test func theWidgetsManifestGivesBothDefaultsReasons() throws {
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "WingtipWidgets/PrivacyInfo.xcprivacy")
+        let plist = try #require(try PropertyListSerialization.propertyList(from: Data(contentsOf: url), format: nil) as? [String: Any])
+        let apis = try #require(plist["NSPrivacyAccessedAPITypes"] as? [[String: Any]])
+        let defaults = apis.first { $0["NSPrivacyAccessedAPIType"] as? String == "NSPrivacyAccessedAPICategoryUserDefaults" }
+        #expect(Set(defaults?["NSPrivacyAccessedAPITypeReasons"] as? [String] ?? []) == ["CA92.1", "1C8F.1"])
+        #expect(plist["NSPrivacyTracking"] as? Bool == false)
+    }
+
+    /// Sign in with Apple sends the sheet's authorization code with the
+    /// identity token, for the gateway to trade for the token deleting the
+    /// account revokes (5.1.1(v); AppleAppTokens).
+    @Test func appleSignInCarriesTheAuthorizationCode() throws {
+        let sent = try JSONEncoder().encode(GWAppleToken(authorizationCode: "c.code", identityToken: "i.token", nonce: "n"))
+        let json = try #require(try JSONSerialization.jsonObject(with: sent) as? [String: String])
+        #expect(json == ["authorizationCode": "c.code", "identityToken": "i.token", "nonce": "n"])
+    }
+
     // MARK: Signing out and deleting the account (the store audit's P7)
 
     @Test func forgettingTheDeviceDeletesThePathTheTrackAndTheCache() throws {

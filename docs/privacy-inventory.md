@@ -259,10 +259,16 @@ table:
 
 The widget extension has its own, `apps/ios/WingtipWidgets/PrivacyInfo.xcprivacy`:
 nothing collected, UserDefaults under `1C8F.1` for the App Group it
-reads. The Watch app's, `apps/ios/WingtipWatch/PrivacyInfo.xcprivacy`,
-declares nothing, as it calls no required-reason API; it is there so a
-reason added later has its place. `WingtipTests/StorePrivacyTests` reads
-the app's bundled manifest and fails where one of these is missing.
+reads and `CA92.1` for its own standard defaults, which `Design/Ink.swift`
+(compiled into the extension) reads for the look (the store-review audit
+of 2026-11-21: the extension declared only the App Group's). The Watch
+app's, `apps/ios/WingtipWatch/PrivacyInfo.xcprivacy`, declares nothing,
+as it calls no required-reason API; it is there so a reason added later
+has its place. `WingtipTests/StorePrivacyTests` reads the app's bundled
+manifest and the widgets' from the source tree, and fails where one of
+these is missing. A source compiled into an extension
+(`project.yml`'s `WingtipWidgets` sources) brings its required-reason APIs
+with it: check the extension's manifest when one is added.
 Check the files against this list before each submission.
 
 ## Kept without an account, and for how long
