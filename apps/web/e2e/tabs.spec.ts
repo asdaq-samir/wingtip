@@ -289,8 +289,12 @@ test("the Brief opens on whether to go and one grouped list, a row for each part
   await expect(glance.getByTestId("brief-glance-enroute")).not.toContainText("VFR not recommended");
   // The verdict the one red wash: a no-go row as plain as the others, its
   // red in its icon and figures alone (the design review, 2026-10-28).
+  // Read with the pointer off the rows, as a finger lifts: the Brief opens
+  // at half over where its button in FPL's bar was tapped, and a mouse left
+  // over a row is its hover's fill (bg-muted/50), not its own.
+  await page.mouse.move(0, 0);
   const fill = (id: string) => card.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundColor);
-  expect(await fill("brief-glance-enroute")).toBe(await fill("brief-glance-depart"));
+  await expect(card.getByTestId("brief-glance-enroute")).toHaveCSS("background-color", await fill("brief-glance-depart"));
   expect(await fill("brief-verdict")).not.toBe(await fill("brief-glance-depart"));
   await expect(glance.getByTestId("brief-glance-depart")).toContainText("C81");
   await expect(glance.getByTestId("brief-glance-arrive")).toContainText("KDLH");
@@ -307,9 +311,12 @@ test("the Brief opens on whether to go and one grouped list, a row for each part
   await closeCard(page, "brief-close");
   await expect(drawer.getByTestId("brief-glance")).toBeVisible();
   await expect(card).toBeVisible();
-  // The NOTAMs' row says how many matter and opens them on Preflight, at their section.
+  // The NOTAMs' row says how many matter and opens them on Preflight, at
+  // their section. Its name and its count are two spans side by side, so
+  // the row's text runs them together: "NOTAMs3 that matter", "NOTAMsNone
+  // heard" where the planner has none (CI's), "NOTAMsRanking…" (useArrangedNotams).
   const notams = drawer.getByTestId("brief-notams-row");
-  await expect(notams).toContainText(/NOTAMs.+(that matter|None heard|Ranking)/);
+  await expect(notams).toContainText(/^NOTAMs(\d+ that matter|None heard|Ranking…)/);
   await inSheet(page, notams);
   await notams.click();
   await expect(panelTabs(page).getByRole("tab", { name: "Preflight", exact: true })).toHaveAttribute("aria-selected", "true");

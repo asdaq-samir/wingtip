@@ -126,9 +126,10 @@ test("the dry run waits for the legs: no way to it until the plan is in, and the
 
 test("the dry run keeps the flight's own figures at the foot, counting down from where the airplane is", async ({ page }) => {
   // The owner's "Dry run should keep the calculations as in the profile":
-  // Dist, ETE and Fuel, their taps the same, where the run had its own
-  // (Dist left, Time left, ETA, To burn); no To, which the flying head
-  // over the map names (the owner, 2026-11-17).
+  // Dist, ETE and Track (Track in Fuel's place, the owner 2026-11-21:
+  // "replace Fuel with Track at the bottom figures"), their taps the same,
+  // where the run had its own (Dist left, Time left, ETA, To burn); no To,
+  // which the flying head over the map names (the owner, 2026-11-17).
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -148,7 +149,7 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
       }),
     );
   const planned = await names(line);
-  expect(planned).toEqual(["Dest", "Distance", "ETE", "Fuel"]);
+  expect(planned).toEqual(["Dest", "Distance", "ETE", "Track"]);
   // The figures once the plan has settled: the runways picked into the
   // wind as the route comes in plan it again with their patterns flown
   // (with_procedures), a few miles more.

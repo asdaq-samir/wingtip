@@ -81,15 +81,18 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   // without asking.
   await expect(welcome.getByTestId("first-flight-location")).toBeVisible();
 
-  // Later: the sheet gone, Search up and its field asking for
-  // the destination -- not focused, so no keyboard jumps up.
+  // Later: the sheet gone, Search up and its field asking for the
+  // destination -- not focused, so no keyboard jumps up. The field says
+  // the one word Search, what it asks for its name to a screen reader
+  // (the owner, 2026-11-21, 07b501762).
   await welcome.getByTestId("first-flight-later").click();
   await expect(welcome).toHaveCount(0);
   // Risen from the pill to half, so the search's page is seen (rule 11).
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   const search = page.getByTestId("search-airports");
   await expect(search).not.toBeFocused();
-  await expect(search).toHaveAttribute("placeholder", /destination/i);
+  await expect(search).toHaveAttribute("placeholder", "Search");
+  await expect(search).toHaveAccessibleName(/destination/i);
   // At rest until it is tapped: the page toggle, no Cancel (the owner,
   // 2026-11-19: "I see cancel on fresh load").
   await expect(page.getByTestId("one-search-cancel")).toHaveCount(0);

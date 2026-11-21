@@ -52,6 +52,23 @@ describe("planHistory", () => {
     expect(observed(started({ dep: "ORD" }, 0), { dep: "KORD" }, SETTLE_MS - 1).history.past).toEqual([]);
   });
 
+  it("takes runways picked into the wind as the page's, however late, and the pilot's own pick as a step", () => {
+    const flight = { dep: "C81", dest: "KDLH" };
+    const h = started(flight, 0);
+    // The weather in six seconds after the load: both ends picked for the wind.
+    const wind = { ...flight, pattern: "C81:24,KDLH:27", auto: "land:C81,land:KDLH" };
+    const picked = observed(h, wind, 6_000);
+    expect(picked.note).toBeNull();
+    expect(picked.history.past).toEqual([]);
+    expect(picked.history.now).toEqual(wind);
+    // The wind turned at KDLH: picked again, still the page's.
+    expect(observed(picked.history, { ...wind, pattern: "C81:24,KDLH:9" }, 60_000).note).toBeNull();
+    // The pilot's runway at KDLH is no longer the wind's: an Undo of its own.
+    const own = observed(picked.history, { ...wind, pattern: "C81:24,KDLH:3", auto: "land:C81" }, 60_000);
+    expect(own.note).toBe("Procedures Changed");
+    expect(own.history.past).toEqual([wind]);
+  });
+
   it("drops what was redone once the pilot changes the plan", () => {
     let h = started(route, 0);
     h = observed(h, { ...route, stops: "KJVL" }, 5_000).history;
