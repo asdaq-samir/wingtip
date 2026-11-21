@@ -103,7 +103,7 @@ fun RouteStops(
         }
 
         @Composable
-        fun fieldRows(at: Int, name: String?, role: Int, ask: Int, last: Boolean = false) {
+        fun fieldRows(at: Int, name: String?, role: Int, ask: Int, last: Boolean) {
             picked(picksAt(at, PlanProcedures.ARRIVING))
             val p = point(at)
             StopRow(plan, p, name, role, ask, index++, count, onField, onFind, onAddStopAfter, last) {
@@ -111,8 +111,8 @@ fun RouteStops(
             }
             picked(picksAt(at, PlanProcedures.LEAVING))
         }
-        fieldRows(-1, course?.departure?.name, R.string.route_depart, R.string.where_from)
-        state.stops.forEachIndexed { i, _ -> fieldRows(i, course?.stops?.getOrNull(i)?.name, R.string.route_stop, R.string.where_to) }
+        fieldRows(-1, course?.departure?.name, R.string.route_depart, R.string.where_from, last = false)
+        state.stops.forEachIndexed { i, _ -> fieldRows(i, course?.stops?.getOrNull(i)?.name, R.string.route_stop, R.string.where_to, last = false) }
         val thread = rememberThread()
         SegmentedListItem(
             onClick = onAddStop,
