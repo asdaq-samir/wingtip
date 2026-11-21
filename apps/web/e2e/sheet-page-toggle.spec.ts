@@ -9,12 +9,13 @@ import { expectPage, expectSearchInUse, expectShown, openAirport, showPage, togg
  * search"): on Search at the row's start, before the one search's field,
  * the account button at its end as Apple Maps' avatar is (the owner,
  * 2026-11-20: "move the fpl button on the left side of search and avatar
- * to the right side"); on FPL its ✕ at the row's end, after the two rows,
+ * to the right side"); on FPL its Search button at the start and its ✕ at the row's end,
  * the bars the same height on both. The account button is no longer over
  * the map. Both are 44-point discs to a finger (iOS 26's round buttons,
  * the owner, 2026-11-20), the toggle's its own size. It shows the page
- * a tap goes to, as Apple Maps' 2D/3D button does: FPL's route glyph on
- * Search, the magnifier on FPL. No bar under the sheet: its sizes stand on
+ * a tap goes to, as Apple Maps' 2D/3D button does: the word FPL on
+ * Search (the owner, 2026-11-20); FPL's page has its Search button at the
+ * start instead. No bar under the sheet: its sizes stand on
  * the screen's foot. No sideways swipe turns a page; the grabber is the
  * one plain bar. With no route FPL is its empty box, a route made goes to
  * FPL, and a drag up or down still sizes the sheet on either page. A card
@@ -120,8 +121,8 @@ test("on Search the toggle starts the first row and the account button ends it, 
   expect(mid(fpl.bar), "the two rows level with the field").toBeCloseTo(mid(search.bar), 0);
   for (const k of ["top", "w", "h"] as const) expect(search.toggle[k], `the toggle's ${k}`).toBeCloseTo(fpl.toggle[k], 0);
   expect(search.toggle.w).toBeCloseTo(44, 0);
-  // FPL's strip is centred between the row's ends (Share's slot at the
-  // left, which may be empty, and the ✕ and FPL button at the right).
+  // FPL's strip is centred between the row's ends (its Search button
+  // at the left, the ✕ at the right).
   const sheetMid = (fpl.sheet.left + fpl.sheet.right) / 2;
   expect((fpl.bar.left + fpl.bar.right) / 2, "the two rows are centred in the row").toBeCloseTo(sheetMid, -1);
   expect(fpl.bar.right).toBeLessThanOrEqual(fpl.clear!.left);

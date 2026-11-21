@@ -14,11 +14,11 @@ import { TEXT } from "../../lib/text";
  *  simple app with search like Apple/Google and a plan page like an EFB
  *  that can be easily accessed"). */
 const ROWS = [
-  // In the search field's own words (searchPlaceholder, the owner's "Search airports and airplanes"),
-  // so the welcome promises what the field says it does (UI audit C17, 2026-11-17).
+  // In the search field's accessible name (searchPlaceholder: "Search airports and airplanes"; its
+  // visible word is "Search" since 2026-11-20), so the welcome promises what the field finds (UI audit C17).
   { icon: Search, title: "Search, like Maps", line: "Search airports and airplanes the way you would in Apple or Google Maps." },
-  // FPL's own glyph on the page toggle (PageToggle), a round route glyph
-  // at the search's end with no "FPL" word on it (the web audit's WEB-42).
+  // FPL's own mark: the page toggle (PageToggle) now says the word FPL at the search's start
+  // (the owner, 2026-11-20), where it was a round route glyph (the web audit's WEB-42).
   {
     icon: Route,
     title: "FPL, like your EFB",

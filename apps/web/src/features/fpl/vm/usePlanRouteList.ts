@@ -139,7 +139,7 @@ export function usePlanRouteList(
     if (!hasPoints) edit.setRouteOpen(false);
   }
   // The route's field open (RouteEditor): asked for -- the timeline's Type
-  // or Paste a Route before the route is whole, More's Type the Route
+  // or Paste a Route before the route is whole, the keyboard button at Add a Stop's end
   // after -- a stop being typed into it, or a point the planner does not
   // know, which it says with its Remove (RouteBox), its line on the
   // timeline red with why. Before the route is whole the timeline is

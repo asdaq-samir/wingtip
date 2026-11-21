@@ -18,3 +18,9 @@ Do not redesign the sheet's nav log placement without an `owner` decision. The r
 ## Source
 
 The owner, 2026-11-09.
+
+## Amended 2026-11-21
+
+The nav log is a button of FPL's floating bar (Brief, Nav Log, More) since
+2026-11-16, not behind the ••• button; its Print and Share are its card's
+own Share's. See 0049.

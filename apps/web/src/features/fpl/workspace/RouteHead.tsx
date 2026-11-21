@@ -16,7 +16,7 @@ import { useRouteListProps } from "./useRouteListProps";
  * to pick and the route to type (EmptyRoute; the owner, 2026-11-18: "the
  * empty fpl page looks a bit different than filled one"), no head over
  * it. A whole route typed in (RouteEditor, in the page under it, from
- * More's Type the Route) has "Route" over it and Done, as an iOS list's
+ * the keyboard button at Add a Stop's end) has "Route" over it and Done, as an iOS list's
  * Done, folding the field away. The airplane's strip is not here but the
  * first row's bar over it (FplBar).
  */

@@ -166,14 +166,15 @@ otherwise.
 Since the one search (the owner's approved design, 2026-11-09, branch
 `claude/one-search-web`) the web's sheet has no tabs. Its first row is one
 field, "Search" (named "Search airports and airplanes") (the web has no Ask since decision 0041), with the microphone its
-trailing button, and the page toggle at its end, where the account
-button was until the owner swapped the two (2026-11-14: "Swap the fpl
-toggle and account buttons"); the account button rides the sheet's top
-under the 3D. FPL's first row is the same size: the airplane's strip
-(N-number, altitude, •••) with the toggle at its end, the route one row
-under it in whichever of its three layouts, under the route its figures,
-and at the sheet's foot the floating bar of Brief, Nav Log, Profile and
-Share, the figures alone and large at the pill (2026-11-16); Search's
+trailing button, and the page toggle, the word FPL, at its start and the
+account button at its end (the owner, 2026-11-20: "move the fpl button on
+the left side of search and avatar to the right side"). FPL's first row is
+the same size: its Search button at the start, the title, the airplane's and
+the altitude's pills and the ✕ (Clear Route, asking first) at the end, the
+route one row under it in its one layout (decision 0047), and at the
+sheet's foot the figures (Leg or Dest, Distance, ETE, Track, GPS alt) with
+the floating bar of Brief, Nav Log and More over them and the File button
+beside it, the figures alone and large at the pill (2026-11-16, 2026-11-21); Search's
 page under the search is the search's own page (with nothing typed, or
 the field in use). On a desktop the same in the
 side panel, ⌘K or Ctrl K focusing the field (the command palette it
@@ -191,11 +192,11 @@ list is where it was.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| Plan: the route (one layout, decision 0047), its cards, nav log rows | the sheet (with a route, folded to its line); the search's Your Flight card | 1 → **0** with a route to read, 1 more to edit (a tap on the line; Done folds it), 1 from the search | Opened: the cards held or dragged by their grips to reorder, swiped to remove; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; the route's field typed or pasted; altitude and departure time chips open popovers; Undo bar under the route after a removal or clear |
-| Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; Distance switches nm and sm; in flight the phone's GPS altitude ends the strip, "GPS alt", to 10 ft (the owner, 2026-11-17) |
+| Plan: the route (one layout, decision 0047), its cards, nav log rows | the sheet (with a route, folded to its line); the search's Your Flight card | 1 → **0** with a route to read, 1 more to edit (a tap on the line; Done folds it), 1 from the search | Opened: the cards held or dragged by their grips to reorder, swiped to remove; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; the route's field typed or pasted; altitude and departure time open popovers; each edit offers its own Undo toast ("KMSN Removed", "Altitude Changed") |
+| Figures at the sheet's foot | none | 0 | Track is the GPS track in degrees magnetic (the owner, 2026-11-21); ETE/ETA and To swap; Distance switches nm and sm; in flight the phone's GPS altitude ends the strip, "GPS alt", to 10 ft (the owner, 2026-11-17) |
 | Brief | plan → Brief; search → Do → Brief | 2 | Alternate filed or taken off (iOS too: the Brief's Alternate sections, and the plan's Alternate row under IFR, 1 tap); Ask chips apply changes |
 | Nav log card | plan → Nav Log tile; Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
-| Profile | plan → Profile tile | 2 → **1** with a route | altitude in the side view, Dry run (VFR/IFR is FPL's first row's, beside the altitude, 2026-11-17) |
+| Profile | plan → the altitude pill's Profile glyph (2026-11-20) | 2 → **1** with a route | altitude in the side view, Dry run (VFR/IFR is FPL's first row's, beside the altitude, 2026-11-17) |
 | Search results (Airports, Waypoints and Navaids, Airplanes, Do, Ask) | the search field, typed | **new: 1** | -- |
 | Saved flights | search → Saved; account → Flights | 2 | Name and notes edited in the row; delete with a confirm |
 | Airport card | Tap a field; a search result; a route row's More Info; a nav log field | 1 (2 from the search) | **Fly Here, Depart From, Add as Stop at its top (new)**, favorite; frequencies copy |

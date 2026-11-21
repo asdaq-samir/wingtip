@@ -86,7 +86,7 @@ mode with complete strict concurrency.
 
 AGP **9.6.0-alpha05** (its built-in Kotlin compiles the app), Kotlin
 **2.5.0-RC**, KSP 2.3.13, the Compose alpha BOM (`compose-bom-alpha`)
-2026.11.00, which carries Material 3 **1.5.0-rc01** (for Material 3
+2026.11.01, which carries Material 3 **1.5.0-rc01** (for Material 3
 Expressive) and Material adaptive 1.4.0-alpha03 with its Navigation 3
 scenes, Navigation 3 **1.3.0-alpha04**, Lifecycle **2.12.0-alpha05**,
 Activity 1.14.0-alpha03, Hilt (Dagger) 2.60.1 with AndroidX Hilt 1.4.0,
