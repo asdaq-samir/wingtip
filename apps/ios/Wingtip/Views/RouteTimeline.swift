@@ -24,9 +24,10 @@ struct RouteTimelineSection: View {
     var body: some View {
         let points = plan.timelinePoints
         let tanks = plan.tanks
+        let clock = TimelineClock(leaves: plan.extras.depart ?? Date(), points: points, zones: cards.zones)
         Section {
             ForEach(points) { point in
-                TimelinePointRow(point: point, last: point.index == points.count - 1, cards: cards,
+                TimelinePointRow(point: point, last: point.index == points.count - 1, cards: cards, clock: clock,
                                  tank: tanks[point.tank], ask: ask, setFuel: setFuel)
                     .listRowInsets(EdgeInsets(top: 0, leading: WingtipSpace.lg, bottom: 0, trailing: WingtipSpace.lg))
                     .deleteDisabled(point.role != .stop)
@@ -59,6 +60,7 @@ struct TimelinePointRow: View {
     let point: TimelinePoint
     let last: Bool
     let cards: RouteFieldCards
+    let clock: TimelineClock
     let tank: TankAt?
     let ask: (PointAsk) -> Void
     let setFuel: (FuelSetAsk) -> Void
@@ -111,7 +113,7 @@ struct TimelinePointRow: View {
                     .accessibilityIdentifier("timeline-ident-\(point.ident)")
                     if let tank { TimelineGauge(point: point, tank: tank, settable: settable, setFuel: setFuel) }
                     Spacer(minLength: WingtipSpace.sm)
-                    TimelineTime(point: point)
+                    TimelineTime(point: point, clock: clock)
                 }
                 .timelineFirstLine()
                 if let problem {
@@ -122,7 +124,7 @@ struct TimelinePointRow: View {
                         .accessibilityIdentifier("timeline-problem")
                 }
                 if opens {
-                    TimelineFieldParts(point: point, cards: cards).padding(.bottom, WingtipSpace.sm)
+                    TimelineFieldParts(point: point, cards: cards, clock: clock).padding(.bottom, WingtipSpace.sm)
                 }
             }
         }
@@ -145,23 +147,95 @@ struct TimelinePointRow: View {
     private var settable: Bool { point.role == .departure || (point.role == .stop && point.field) }
 }
 
-/// A line's time at its right: "Now" at the departure, the others' arrival
-/// on this iPhone's clock from the planner's minutes, a dash with no
-/// airplane or before the nav log (the web's timeOf).
+/// A line's time at its right (the web's timeOf): at the departure when
+/// it leaves, the one button with the hour and minute wheels
+/// (TimelineDepartPicker); at the others their arrival from the planner's
+/// minutes, a dash with no airplane or before the nav log; each with its
+/// zone once the route crosses one (TimelineClock).
 struct TimelineTime: View {
+    let point: TimelinePoint
+    let clock: TimelineClock
+
+    var body: some View {
+        if point.role == .departure {
+            TimelineDepartPicker(clock: clock, point: point)
+        } else if let at = clock.at(point) {
+            let said = clock.words(at, at: point)
+            ZonedTime(time: said.time, zone: said.zone)
+                .accessibilityLabel("Arrives \(said.time)\(said.zone.map { " \($0)" } ?? "")")
+                .accessibilityIdentifier("timeline-time")
+        } else {
+            Text(Format.none).font(WingtipType.row).foregroundStyle(.secondary).accessibilityIdentifier("timeline-time")
+        }
+    }
+}
+
+/// A time with its zone smaller after it, "18:24 MST" (the web's ZonedTime).
+struct ZonedTime: View {
+    let time: String
+    let zone: String?
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.xxs) {
+            Text(time).font(WingtipType.row.monospacedDigit())
+            if let zone { Text(zone).font(WingtipType.badge) }
+        }
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
+        .fixedSize()
+    }
+}
+
+/// When the flight leaves, on the departure's line: the system's compact
+/// time picker, one button that opens the hour and minute wheels (the
+/// web's DepartPicker, ab0afd9e8), in the departure's own clock once the
+/// route crosses a zone, its zone after it. A time of day earlier than
+/// now is tomorrow's (TimelineClock.next). Picked, the planner's `depart`.
+struct TimelineDepartPicker: View {
+    @Environment(Plan.self) private var plan
+    let clock: TimelineClock
     let point: TimelinePoint
 
     var body: some View {
-        Text(words)
-            .font(WingtipType.row.monospacedDigit())
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .accessibilityIdentifier("timeline-time")
+        let zone = clock.zone(point)
+        HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.xxs) {
+            DatePicker("Departure time", selection: Binding(get: { clock.leaves }, set: { picked in
+                plan.setDepart(TimelineClock.next(picked, in: zone))
+            }), displayedComponents: [.hourAndMinute])
+                .labelsHidden()
+                .environment(\.timeZone, zone)
+                .accessibilityIdentifier("timeline-depart")
+            if clock.zoned, let name = zone.abbreviation(for: clock.leaves) {
+                Text(name).font(WingtipType.badge).foregroundStyle(.secondary)
+            }
+        }
     }
+}
 
-    private var words: String {
-        if point.role == .departure { return "Now" }
-        guard let minutes = point.minutes else { return Format.none }
-        return Format.time(Date().addingTimeInterval(minutes * 60))
+/// When a stop leaves again, after its takeoff's chips (the web's leave
+/// time in the takeoff's tray, d56facda9): the same picker, from when it
+/// lands to a day after (the planner's `own_ground`), set as its minutes
+/// on the ground (`ground`); none picked, the planner's turnaround after
+/// it lands. To the whole minute, in the stop's own clock once the route
+/// crosses a zone.
+struct TimelineLeavesPicker: View {
+    @Environment(Plan.self) private var plan
+    let point: TimelinePoint
+    let clock: TimelineClock
+
+    var body: some View {
+        if point.role == .stop, let lands = clock.at(point) {
+            let own = plan.extras.ground[point.ident.uppercased()].map(Double.init)
+            let ground = own ?? point.groundMin ?? 0
+            HStack(spacing: WingtipSpace.xs) {
+                Text("Leaves").foregroundStyle(.secondary)
+                DatePicker("Departure from \(point.ident)", selection: Binding(get: { lands.addingTimeInterval(ground * 60) }, set: { picked in
+                    plan.setGround(point.ident, minutes: Int((picked.timeIntervalSince(lands) / 60).rounded()))
+                }), in: lands...lands.addingTimeInterval(Double(Timeline.dayMin) * 60), displayedComponents: [.hourAndMinute])
+                    .labelsHidden()
+                    .environment(\.timeZone, clock.zone(point))
+                    .accessibilityIdentifier("leaves-\(point.ident)")
+            }
+        }
     }
 }

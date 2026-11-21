@@ -23,7 +23,7 @@ struct StripHead: View {
 
     private var line: String {
         StripData.headLine(dep: plan.dep, dest: plan.dest, stops: plan.stops, airplane: plan.airplaneName ?? "",
-                           cruiseFt: plan.ownAltitudeFt ?? plan.altitudeFt, departAt: nil)
+                           cruiseFt: plan.ownAltitudeFt ?? plan.altitudeFt, departAt: plan.extras.depart)
     }
 
     var body: some View {
@@ -95,7 +95,7 @@ struct StripHead: View {
                 }
             }
             .accessibilityLabel(StripData.spokenHeadLine(dep: plan.dep, dest: plan.dest, stops: plan.stops, airplane: plan.airplaneName ?? "",
-                                                         cruiseFt: plan.ownAltitudeFt ?? plan.altitudeFt, departAt: nil))
+                                                         cruiseFt: plan.ownAltitudeFt ?? plan.altitudeFt, departAt: plan.extras.depart))
         }
         .padding(WingtipSpace.lg)
         .frame(maxWidth: .infinity, minHeight: 112, alignment: .bottomLeading)

@@ -444,7 +444,18 @@ opened. Typing "traffic" offers Show Traffic in Do.
      fuel / Gallons and a number field, Cancel and Done; the engine's
      `fuel_in_tanks`, each point held to its own flight's reserve and
      the destination to an IFR alternate's fuel too; the planner's
-     `tanks`); and its time at the right. A field NASR lists closed, or
+     `tanks`); and its time at the right (`TimelineTime`): at the
+     departure when it leaves, the system's compact time picker, one
+     button with the hour and minute wheels, a time of day earlier than
+     now tomorrow's (the planner's `depart`); at the others their arrival
+     on this iPhone's clock from the planner's minutes, a dash with no
+     airplane. Once any point keeps another zone than the departure's at
+     its arrival (its card's `time_zone`), every point says its own clock
+     with its zone after it, "13:00 MST", the departure's too
+     (`TimelineClock`). A stop says when it leaves again after its
+     takeoff's chips, the same picker from its landing to a day after,
+     kept as its minutes on the ground (the planner's `ground`). A field
+     NASR lists closed, or
      whose card could not be had, says why in red under it (decision
      0043; `RouteFieldCards` asks each field's card once). Stops swipe
      off and drag into another order (Edit at the header's right); Add a

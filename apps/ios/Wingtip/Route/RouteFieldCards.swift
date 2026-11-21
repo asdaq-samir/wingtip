@@ -40,6 +40,9 @@ final class RouteFieldCards {
 
     func place(_ ident: String) -> AirportPlace? { places[ident.uppercased()] }
 
+    /// Each field's own time zone by its ident, from its card's time_zone.
+    var zones: [String: TimeZone] { places.compactMapValues { $0.timeZone.flatMap(TimeZone.init(identifier:)) } }
+
     /// Whether the field's card has said whether it is open.
     func known(_ ident: String) -> Bool { places[ident.uppercased()] != nil }
 

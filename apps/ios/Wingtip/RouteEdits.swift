@@ -118,6 +118,14 @@ struct RouteExtras: Equatable, Sendable {
     /// none picked is flown into its report's wind (`wind_runways`).
     var takeoffs: [String: String] = [:]
     var landings: [String: String] = [:]
+    /// When the flight leaves, picked on the departure's line; nil now.
+    /// The planner's `depart`, which the nav log's winds and the times
+    /// along the route are for.
+    var depart: Date?
+    /// Minutes on the ground at a stop before it is left again, by its
+    /// ident, where the pilot picked when it leaves (the planner's
+    /// `ground`, "KJVL:45"); one not named, the planner's turnaround.
+    var ground: [String: Int] = [:]
 
     /// The alternate as the planner takes it: only under IFR, VFR having
     /// none to file.
@@ -146,6 +154,8 @@ struct RouteExtras: Equatable, Sendable {
         if let tanks = Self.pairs(tanks) { query.tanks = tanks }
         if let takeoffs = Self.pairs(takeoffs) { query.runways = takeoffs }
         if let landings = Self.pairs(landings) { query.patterns = landings }
+        if let depart { query.depart = depart.formatted(.iso8601) }
+        if let ground = Self.pairs(ground) { query.ground = ground }
         let started = starts.filter { altitudes[$0] != nil }.sorted()
         if !started.isEmpty { query.altitudeStarts = started.joined(separator: ",") }
         if !holds.isEmpty { query.holds = try holds.map { try $0.text() }.joined(separator: ",") }

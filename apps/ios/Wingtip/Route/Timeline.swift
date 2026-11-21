@@ -21,6 +21,9 @@ struct TimelinePoint: Identifiable, Equatable, Sendable {
     /// the time on the ground at each stop before it, the planner's (0 at
     /// the departure); nil with no airplane picked or before the nav log.
     let minutes: Double?
+    /// At a stop landed at, its minutes on the ground before it leaves
+    /// again, as the planner flew them; nil elsewhere.
+    var groundMin: Double?
 
     var id: String { "\(index):\(ident)" }
 
@@ -49,15 +52,24 @@ enum Timeline {
                        legs: [Leg], timed: Bool) -> [TimelinePoint] {
         guard !dep.isEmpty, !dest.isEmpty else { return [] }
         let idents = [dep] + stops + [dest]
-        let arrivals = timed ? minutes(dep: dep, stops: stops, dest: dest, legs: legs) : Array(repeating: nil, count: idents.count)
+        let none = Array(repeating: Arrival(), count: idents.count)
+        let arrivals = timed ? self.arrivals(dep: dep, stops: stops, dest: dest, legs: legs) : none
         let fuel = Set(fuelStops.map { $0.uppercased() })
         return idents.enumerated().map { i, ident in
             let role: TimelinePoint.Role = i == 0 ? .departure : i == idents.count - 1 ? .destination : .stop
             let position = ident.hasPrefix("@")
             let waypoint = role == .stop && stopKinds[safe: i - 1].flatMap { $0 } == "fix"
             return TimelinePoint(index: i, ident: ident, role: role, field: !position && !waypoint, position: position,
-                                 fuelStop: role == .stop && fuel.contains(ident.uppercased()), minutes: arrivals[safe: i].flatMap { $0 })
+                                 fuelStop: role == .stop && fuel.contains(ident.uppercased()), minutes: arrivals[safe: i]?.minutes,
+                                 groundMin: role == .stop ? arrivals[safe: i]?.ground : nil)
         }
+    }
+
+    /// A point's arrival as the legs give it: the minutes from the
+    /// departure, and at a stop its minutes on the ground after.
+    struct Arrival: Equatable, Sendable {
+        var minutes: Double?
+        var ground: Double?
     }
 
     /// The minutes to each point from the strip's own walk of the legs
@@ -65,20 +77,28 @@ enum Timeline {
     /// after it), each stop matched to the first leg's end after the last
     /// one's that is it; nil for a point no leg ends at, and for all of
     /// them before the nav log is in.
-    static func minutes(dep: String, stops: [String], dest: String, legs: [Leg]) -> [Double?] {
-        var out: [Double?] = Array(repeating: nil, count: stops.count + 2)
+    static func arrivals(dep: String, stops: [String], dest: String, legs: [Leg]) -> [Arrival] {
+        var out = Array(repeating: Arrival(), count: stops.count + 2)
         guard !legs.isEmpty else { return out }
         let walked = StripData.points(dep: dep, dest: dest, stops: stops, legs: legs, checkpoints: [], course: nil)
-        out[0] = 0
+        out[0].minutes = 0
         var next = 1
         for (i, stop) in stops.enumerated() {
             guard let at = walked[next...].firstIndex(where: { $0.kind != .checkpoint && $0.name == stop.uppercased() }) else { continue }
-            out[i + 1] = walked[at].minutesFlown
+            out[i + 1] = Arrival(minutes: walked[at].minutesFlown, ground: walked[at].leg?.groundMin)
             next = at + 1
         }
-        out[out.count - 1] = walked.last?.minutesFlown
+        out[out.count - 1].minutes = walked.last?.minutesFlown
         return out
     }
+
+    /// The minutes alone (arrivals).
+    static func minutes(dep: String, stops: [String], dest: String, legs: [Leg]) -> [Double?] {
+        arrivals(dep: dep, stops: stops, dest: dest, legs: legs).map(\.minutes)
+    }
+
+    /// A stop's time on the ground at most, a day, as the planner takes it.
+    static let dayMin = 24 * 60
 
     /// The stops among `offsets`, offsets into the timeline's points: the
     /// ends are never removed or moved from the list (they are changed).
@@ -149,6 +169,20 @@ extension Plan {
     func setRunway(_ end: String?, at ident: String, takeoff: Bool) {
         let key = ident.uppercased()
         if takeoff { extras.takeoffs[key] = end } else { extras.landings[key] = end }
+        plan()
+    }
+
+    /// When the flight leaves, or (nil) now: planned again.
+    func setDepart(_ at: Date?) {
+        extras.depart = at
+        plan()
+    }
+
+    /// When a stop leaves again, as its minutes on the ground after it
+    /// lands, a whole day at most (the planner's `own_ground`), or (nil)
+    /// the planner's turnaround again: planned again.
+    func setGround(_ ident: String, minutes: Int?) {
+        extras.ground[ident.uppercased()] = minutes.map { min(max($0, 0), Timeline.dayMin) }
         plan()
     }
 

@@ -66,12 +66,13 @@ struct ProcedureMenuItems: View {
 /// the Wind first (the planner's pick where none is, AirportWords.windEnd),
 /// then "+ ARR", "+ APCH" and "+ DEP" for each kind the field publishes and
 /// the route has none of. A stop lands and leaves, so it has both, its
-/// landing's first; a picked kind is no chip, its fixes are rows on the
-/// line (TimelineProcedureRows).
+/// landing's first, and when it leaves again after them; a picked kind is
+/// no chip, its fixes are rows on the line (TimelineProcedureRows).
 struct TimelineFieldParts: View {
     @Environment(Plan.self) private var plan
     let point: TimelinePoint
     let cards: RouteFieldCards
+    let clock: TimelineClock
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -97,6 +98,8 @@ struct TimelineFieldParts: View {
         if point.role != .destination {
             runway(takeoff: true)
             kinds(TimelineRunways.leaving)
+            // When a stop leaves again, after its takeoff's chips.
+            TimelineLeavesPicker(point: point, clock: clock)
         }
     }
 
