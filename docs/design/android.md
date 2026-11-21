@@ -1336,6 +1336,18 @@ From the offline and store audits of 2026-11-10:
 - **Sign-out and Delete Account** forget everything the phone kept of the
   pilot (`account/PhoneWipe`).
 
+### 3.19 Work at each fix, and with the app put away (2026-11-21)
+
+Own ship's GPS gives a fix a second. What each fix and each clock asks
+for, by the phones' wasted-work audit:
+
+- **The cockpit receiver.** Its picture goes through the engine off the
+  main thread, each second while bytes come or while the receiver was
+  live or still holds airplanes (their 5 s and 20 s are the engine's);
+  once only the FIS-B products are left, once a minute. Traffic merges
+  again only where the receiver's airplanes changed (`Receiver.due`,
+  `trafficChanged`), as on the iPhone.
+
 ## 4. Not verified
 
 These could not be confirmed from a primary source on 2026-11-09. Check

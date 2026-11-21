@@ -87,4 +87,27 @@ struct ReceiverTests {
         #expect(overlays.map(\.level) == [3, 5])
         #expect(NexradMapLayer.overlays(nil).isEmpty)
     }
+
+    @Test func aQuietReceiverIsAgedEachSecondOnlyWhileItsAirplanesCanStillGoStale() throws {
+        let f = try fixture()
+        let heard = try picture(f)
+        let last = try #require(f.datagrams.last?.at)
+        // Never heard: nothing to read. Bytes: always read.
+        #expect(!Receiver.due(nil, heard: false, sinceS: 1))
+        #expect(Receiver.due(heard, heard: true, sinceS: 0))
+        // Gone quiet with an airplane still held: aged each second.
+        #expect(!heard.targets.isEmpty)
+        #expect(Receiver.due(heard, heard: false, sinceS: 1))
+        // Past the engine's holds the airplanes are gone and the link is not
+        // live: only the FIS-B products are left, aged once a minute.
+        let quiet = try Engine.receiverRead(data: "", at: last + 60, picture: heard)
+        #expect(quiet.targets.isEmpty && !quiet.receiver.live)
+        #expect(!quiet.texts.isEmpty)
+        #expect(!Receiver.due(quiet, heard: false, sinceS: 1))
+        #expect(Receiver.due(quiet, heard: false, sinceS: Receiver.quietEveryS))
+        // Traffic is merged again only where its airplanes changed.
+        #expect(Receiver.trafficChanged(heard, quiet))
+        #expect(!Receiver.trafficChanged(quiet, try Engine.receiverRead(data: "", at: last + 61, picture: quiet)))
+        #expect(Receiver.trafficChanged(nil, heard))
+    }
 }

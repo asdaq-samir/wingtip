@@ -1993,6 +1993,12 @@ What each fix asks for, by the phones' wasted-work audit:
   planner's most (1,000), and again only when the view leaves that box or
   its level, or after ten minutes (`RestedFetch`), as FieldWeatherFeed
   asks for their weather.
+- **The cockpit receiver.** Its picture goes through the engine off the
+  main actor, each second while bytes come or while the receiver was
+  live or still holds airplanes (their 5 s and 20 s are the engine's);
+  once only the FIS-B products are left, once a minute. Traffic merges
+  again only where the receiver's airplanes changed (`Receiver.due`,
+  `trafficChanged`).
 
 ---
 

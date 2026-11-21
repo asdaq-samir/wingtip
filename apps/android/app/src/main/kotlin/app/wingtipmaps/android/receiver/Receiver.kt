@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 
@@ -36,7 +37,8 @@ enum class ReceiverMode { AUTO, OFF }
  * 39 and 52, uAvionix's): its traffic and the FIS-B weather it is sent,
  * with no internet; the twin of the iOS app's Receiver. The socket gathers
  * its GDL 90; once a second the engine reads the bytes into the picture
- * (`receiver_read`), which this model keeps and hands back; the map's
+ * (`receiver_read`), off the main thread and once a minute where it has
+ * gone quiet (`due`), which this model keeps and hands back; the map's
  * traffic, the airport card's reports and the NEXRAD are the engine's
  * views of it. While a receiver is heard, a foreground service keeps the
  * listening going with the screen off (ReceiverService). Traffic helps see
@@ -86,21 +88,34 @@ class Receiver private constructor(private val context: Context, private val tic
         if (every == null) every = ticker.every(EVERY_MS) { read() }
     }
 
-    fun read(nowMs: Long = AppClock.nowMs()) {
+    /** When the picture was last read, for its slow ageing (`due`). */
+    private var readAtMs = Long.MIN_VALUE / 2
+
+    /** The bytes read into the picture by the engine, off the main thread:
+     *  the picture holds the FIS-B texts and blocks, often hundreds of kB
+     *  each way. Traffic is told only where the picture's airplanes, or
+     *  whether a receiver was heard, changed. */
+    suspend fun read(nowMs: Long = AppClock.nowMs()) {
         if (_mode.value != ReceiverMode.AUTO) return
         socket.start()
         _problem.value = socket.problem
         val bytes = socket.drain()
         val before = _picture.value
-        if (bytes.isEmpty() && before == null) return
-        Engine.receiverRead(Base64.encodeToString(bytes, Base64.NO_WRAP), nowMs / 1000.0, before)
-            .onSuccess { picture ->
+        if (!due(before, heard = bytes.isNotEmpty(), sinceMs = nowMs - readAtMs)) return
+        val read = withContext(Dispatchers.Default) {
+            Engine.receiverRead(Base64.encodeToString(bytes, Base64.NO_WRAP), nowMs / 1000.0, before)
+                .map { picture -> picture to if (picture.nexrad != before?.nexrad) Engine.receiverNexrad(picture).getOrNull() else _nexrad.value }
+        }
+        if (_mode.value != ReceiverMode.AUTO) return
+        readAtMs = nowMs
+        read
+            .onSuccess { (picture, nexrad) ->
                 _picture.value = picture
-                if (picture.nexrad != before?.nexrad) _nexrad.value = Engine.receiverNexrad(picture).getOrNull()
+                _nexrad.value = nexrad
                 serve(picture.receiver.live)
+                if (trafficChanged(before, picture)) onRead?.invoke()
             }
             .onFailure { _problem.value = it.message }
-        onRead?.invoke()
     }
 
     /** The traffic to draw: the receiver's own airplanes first, then the
@@ -143,6 +158,25 @@ class Receiver private constructor(private val context: Context, private val tic
 
     companion object {
         const val EVERY_MS = 1_000L
+        /** Quiet, with nothing left that ages by the second, the picture
+         *  is aged once a minute: the FIS-B products it keeps are held
+         *  minutes to hours (the engine's REGIONAL_HOLD_S, text_hold_s). */
+        const val QUIET_EVERY_MS = 60_000L
+
+        /** Whether to read now: bytes heard; or, with none, while the
+         *  receiver was heard or still holds airplanes, whose 5 s and 20 s
+         *  (the engine's LIVE_S, TARGET_HOLD_S) want ageing each second;
+         *  else once each QUIET_EVERY_MS. Never heard: nothing to age. */
+        fun due(picture: EngineContract.ReceiverPicture?, heard: Boolean, sinceMs: Long): Boolean {
+            if (heard) return true
+            if (picture == null) return false
+            return picture.receiver.live || picture.targets.isNotEmpty() || sinceMs >= QUIET_EVERY_MS
+        }
+
+        /** Whether the traffic merged from the picture can have changed:
+         *  its airplanes, or whether a receiver has been heard at all. */
+        fun trafficChanged(before: EngineContract.ReceiverPicture?, after: EngineContract.ReceiverPicture?): Boolean =
+            before?.targets != after?.targets || (before?.receiver?.heartbeatAt == null) != (after?.receiver?.heartbeatAt == null)
         private val KEY = stringPreferencesKey("receiver_mode")
 
         // The application's context, which lives as long as the process.
