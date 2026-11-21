@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 /**
  * The callbacks a connector's client may register (app.mcp.redirect-uris).
@@ -25,6 +26,9 @@ import java.util.Locale;
  */
 public final class RedirectUris {
 
+    /** What follows a prefix entry: one path segment of plain characters. */
+    private static final Pattern CALLBACK_ID = Pattern.compile("[A-Za-z0-9_~-][A-Za-z0-9._~-]{0,199}");
+
     private final List<String> allowed;
 
     RedirectUris(List<String> allowed) {
@@ -41,7 +45,7 @@ public final class RedirectUris {
             return false;
         }
         for (String entry : allowed) {
-            if (entry.endsWith("*") && redirectUri.startsWith(entry.substring(0, entry.length() - 1))) {
+            if (entry.endsWith("*") && withinPrefix(entry.substring(0, entry.length() - 1), redirectUri)) {
                 return true;
             }
             if (isLoopback(entry) && sameLoopbackOrigin(entry, uri)) {
@@ -52,6 +56,20 @@ public final class RedirectUris {
             }
         }
         return false;
+    }
+
+    /** Whether a callback is the prefix and one more path segment of plain
+     *  characters: ChatGPT's callback id. Any string after the prefix let a
+     *  stranger's client register ".../oauth/../../somewhere?next=..." --
+     *  another page of that host, which the browser reaches by resolving
+     *  the dots, and from an open redirect there, any host at all (the
+     *  security review of 2026-11-21). */
+    static boolean withinPrefix(String prefix, String redirectUri) {
+        if (!redirectUri.startsWith(prefix)) {
+            return false;
+        }
+        String rest = redirectUri.substring(prefix.length());
+        return CALLBACK_ID.matcher(rest).matches() && !rest.contains("..");
     }
 
     /** Whether a requested callback is a registered loopback one on

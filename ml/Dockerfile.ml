@@ -33,5 +33,10 @@ USER appuser
 
 EXPOSE 8888
 
-CMD ["jupyter", "notebook", "--no-browser", "--ip=0.0.0.0", \
-     "--NotebookApp.notebook_dir=/workspace", "--NotebookApp.token=wingtip"]
+# The token is JUPYTER_TOKEN from .env where it is set, else a random one
+# made at each start, which Jupyter prints with its address (`docker
+# compose logs ml`). It used to be a fixed word written here, in a public
+# repository: with DEV_PUBLISH_ADDRESS=0.0.0.0 anyone on the Wi-Fi could
+# open a kernel with the repository mounted read-write (the security
+# review of 2026-11-21).
+CMD ["sh", "-c", "export JUPYTER_TOKEN=\"${JUPYTER_TOKEN:-$(python -c 'import secrets; print(secrets.token_hex(24))')}\" && exec jupyter notebook --no-browser --ip=0.0.0.0 --NotebookApp.notebook_dir=/workspace"]
