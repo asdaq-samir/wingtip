@@ -100,9 +100,10 @@ struct DirectStrip: View {
     }
 }
 
-/// FPL's section for the route's own edits: the Direct to, its ends'
-/// menus, the holds set, the procedures' fixes, and the pages of the
-/// flight in the air.
+/// FPL's section for the route's own edits: the Direct to, the
+/// alternate, the holds set, the procedures' fixes, and the pages of the
+/// flight in the air. The points' own menus are their marks on the
+/// timeline (RouteTimelineSection).
 struct RouteExtrasSection: View {
     @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
@@ -112,8 +113,6 @@ struct RouteExtrasSection: View {
         if plan.routed {
             Section {
                 DirectStrip()
-                RoutePointMenu(ident: plan.dep, role: .departure)
-                RoutePointMenu(ident: plan.dest, role: .destination)
                 // Under IFR, the alternate after the destination, as the
                 // web files it (14 CFR 91.169).
                 if rules == .ifr { AlternateRow() }

@@ -425,19 +425,35 @@ opened. Typing "traffic" offers Show Traffic in Do.
      route (KMSN → KOSH) with the engine's Ready to Fly line and the
      route's ••• and its ✕ at its right; the figures in one line
      (distance, ETE, fuel, altitude, airplane); Brief, Nav Log and File,
-     the web's tab bar and its File button (2026-11-21); then the route
-     itself (From and To, Routes, the airplane and the altitude), the
-     stops with Add a Stop and Add (or Remove) Fuel Stops (one tap puts
+     the web's tab bar and its File button (2026-11-21); then Routes,
+     the airplane and the altitude, and the route itself as FPL's
+     timeline (`RouteTimelineSection`, the web's, 2026-11-21): a line a
+     point, the departure, each stop and the destination, their marks
+     joined by the course's magenta (`TimelineThread`). A mark is a
+     filled circle with a white glyph (`TimelineMark`): an airport's
+     "•••" in its flight category's colour, grey with no report, a fuel
+     stop's pump, a waypoint's grey triangle, the airplane's position the
+     tint's location arrow, a field that cannot be flown to the red ✕;
+     it is the point's menu (`RoutePointActions`: More Info, Change…,
+     Direct To, Set Altitude…, a fix, Hold Here…, Remove). The ident is a
+     tap that asks the one search to change the point (Change Stop,
+     Departure, Destination); then the fuel in the tanks there
+     (`TimelineGauge`: the system's capacity gauge and the gallons,
+     "−12 gal" past empty, red under the reserve, each field the airplane
+     leaves a tap to set its fuel in a sheet of a segmented Full / No
+     fuel / Gallons and a number field, Cancel and Done; the engine's
+     `fuel_in_tanks`, each point held to its own flight's reserve and
+     the destination to an IFR alternate's fuel too; the planner's
+     `tanks`); and its time at the right. A field NASR lists closed, or
+     whose card could not be had, says why in red under it (decision
+     0043; `RouteFieldCards` asks each field's card once). Stops swipe
+     off and drag into another order (Edit at the header's right); Add a
+     Stop is the last row, then Add (or Remove) Fuel Stops (one tap puts
      in every stop the planner's rounds found, already checked; a flight
      short with none offered says why in their place, "No fuel stop in
-     reach on KMSN → KDLH"), the fuel in
-     the tanks at each field (`FuelTanksSection`: the system's capacity
-     gauge and the gallons, "−12 gal" past empty, red under the reserve,
-     each field the airplane leaves a tap to set its fuel in a sheet of
-     a segmented Full / No fuel / Gallons and a number field, Cancel and
-     Done; the engine's `fuel_in_tanks`, each point held to its own
-     flight's reserve and the destination to an IFR alternate's fuel too;
-     the planner's `tanks`) and the
+     reach on KMSN → KDLH"). The From and To fields are the route typed:
+     before it is whole, while one is typed in, and until the planner's
+     course is this route's. Then the
      rest of the plan. At the pill, the search row alone. With no route,
      the same place holds Favorites, Recents, Find Nearby and Nearest.
      The ••• is the web's More (2026-11-21): Route Options (the ways'

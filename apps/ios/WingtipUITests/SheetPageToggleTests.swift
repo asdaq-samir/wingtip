@@ -87,9 +87,10 @@ final class SheetPageToggleTests: XCTestCase {
             let flyHere = app.descendants(matching: .any)["fly-here"]
             XCTAssertTrue(flyHere.waitForExistence(timeout: 30), "no Fly Here the \(time) time")
             flyHere.tap()
-            XCTAssertTrue(app.textFields["To"].waitForExistence(timeout: 20), "Fly Here did not show FPL the \(time) time")
+            // KOSH the destination: its line on the timeline once the
+            // route is whole and planned, else the To field's word.
+            XCTAssertTrue(CardTests.routeEnds(app, at: "KOSH", timeout: 20), "Fly Here did not show FPL with KOSH the \(time) time")
             XCTAssertEqual(toggle.label, "Show search", "Fly Here left the sheet on Search the \(time) time")
-            XCTAssertEqual(app.textFields["To"].value as? String, "KOSH")
             if time == "first" {
                 // Back to Search and the same field's card again.
                 toggle.tap()
@@ -213,7 +214,10 @@ final class SheetPageToggleTests: XCTestCase {
         from.typeText("KMSN")
         to.tap()
         to.typeText("KOSH")
-        let add = app.buttons["Add a Stop"]
+        // Planned, the fields put away: the route is its timeline.
+        app.buttons["plan-button"].tap()
+        let add = app.buttons["timeline-add-stop"]
+        XCTAssertTrue(add.waitForExistence(timeout: 10), "no Add a Stop on the timeline")
         CardTests.scrollTo(add, in: app)
         add.tap()
         let title = app.staticTexts["point-ask-title"]

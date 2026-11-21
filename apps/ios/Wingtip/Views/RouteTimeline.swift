@@ -1,0 +1,141 @@
+import SwiftUI
+
+/// FPL's route on the ground as one timeline (the web's TimelineRoute,
+/// the owner's two-row timeline of 2026-11-17 and its look of 2026-11-20):
+/// a line a point -- the departure, each stop, the destination -- in one
+/// inset grouped section, the route's magenta joining their marks
+/// (TimelineThread). Each line has the point's mark, its menu (TimelineMark,
+/// RoutePointActions); its ident, a tap that asks the one search to change
+/// it (PointAsk); the fuel in the tanks there, a tap that sets it at a
+/// field the airplane leaves (TimelineGauge); and its time at the right. A
+/// field NASR lists closed, or whose card could not be had, says why in
+/// red under it (decision 0043). Stops are swiped off and dragged into
+/// another order with the system's list edits (Edit at the header's
+/// right); the ends are changed, never removed. Add a Stop is the last
+/// row, the fuel stops' button after it.
+struct RouteTimelineSection: View {
+    @Environment(Plan.self) private var plan
+    let cards: RouteFieldCards
+    /// The one search asked to pick a point (Add Stop, Change Stop, an end).
+    let ask: (PointAsk) -> Void
+    /// A gauge tapped: its field's fuel to set (FuelSetSheet).
+    let setFuel: (FuelSetAsk) -> Void
+
+    var body: some View {
+        let points = plan.timelinePoints
+        let tanks = plan.tanks
+        Section {
+            ForEach(points) { point in
+                TimelinePointRow(point: point, last: point.index == points.count - 1, cards: cards,
+                                 tank: tanks[point.tank], ask: ask, setFuel: setFuel)
+                    .listRowInsets(EdgeInsets(top: 0, leading: WingtipSpace.lg, bottom: 0, trailing: WingtipSpace.lg))
+                    .deleteDisabled(point.role != .stop)
+                    .moveDisabled(point.role != .stop)
+            }
+            .onDelete { plan.removeTimeline(at: $0) }
+            .onMove { plan.moveTimeline(from: $0, to: $1) }
+            Button { ask(.addStop) } label: { Label("Add a Stop", systemImage: "plus") }
+                .accessibilityIdentifier("timeline-add-stop")
+            FuelStopsButton()
+        } header: {
+            // The stops' Edit (delete, move) at the header's right, as
+            // iOS's lists put it.
+            HStack {
+                Text("Route")
+                Spacer()
+                if !plan.stops.isEmpty { EditButton().textCase(nil) }
+            }
+        }
+    }
+}
+
+/// One point's line on the timeline (the web's TimelineLine): its mark
+/// and menu, its ident, its tanks, its time, and why it cannot be flown
+/// to where it cannot.
+struct TimelinePointRow: View {
+    @Environment(Plan.self) private var plan
+    let point: TimelinePoint
+    let last: Bool
+    let cards: RouteFieldCards
+    let tank: TankAt?
+    let ask: (PointAsk) -> Void
+    let setFuel: (FuelSetAsk) -> Void
+
+    var body: some View {
+        let problem = point.field ? cards.problem(point.ident) : nil
+        let category = point.field ? cards.place(point.ident)?.metar?.flightCategory : nil
+        TimelineColumns(top: point.index > 0, bottom: !last) {
+            Menu {
+                RoutePointActions(ident: point.ident, role: role, change: change)
+            } label: {
+                TimelineMark(point: point, problem: problem != nil, category: category).hitArea()
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("\(RoutePointActions.spoken(point.ident, plan: plan))\(point.fuelStop ? ", fuel stop" : ""): more")
+            .accessibilityIdentifier("timeline-mark-\(point.ident)")
+        } words: {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                HStack(spacing: WingtipSpace.sm) {
+                    Button(action: change) {
+                        Text(point.name)
+                            .font(WingtipType.row)
+                            .foregroundStyle(problem == nil ? Color.primary : WingtipInk.problem)
+                            .lineLimit(1)
+                    }
+                    .buttonStyle(.borderless)
+                    .hitArea()
+                    .accessibilityLabel("\(point.name)\(category.map { ", \($0)" } ?? ""): change it")
+                    .accessibilityIdentifier("timeline-ident-\(point.ident)")
+                    if let tank { TimelineGauge(point: point, tank: tank, settable: settable, setFuel: setFuel) }
+                    Spacer(minLength: WingtipSpace.sm)
+                    TimelineTime(point: point)
+                }
+                .timelineFirstLine()
+                if let problem {
+                    Text(problem)
+                        .font(WingtipType.note)
+                        .foregroundStyle(WingtipInk.problem)
+                        .padding(.bottom, WingtipSpace.sm)
+                        .accessibilityIdentifier("timeline-problem")
+                }
+            }
+        }
+    }
+
+    private var role: RoutePointActions.Role {
+        switch point.role {
+        case .departure: .departure
+        case .stop: .stop
+        case .destination: .destination
+        }
+    }
+
+    /// The point changed: the one search asked to pick another in its place.
+    private func change() { ask(.change(index: point.index, ident: point.ident)) }
+
+    /// Whether its fuel is set here: the departure's on board, a field
+    /// landed at's after fuelling; a waypoint's and the destination's are
+    /// read only (the web's FuelSet).
+    private var settable: Bool { point.role == .departure || (point.role == .stop && point.field) }
+}
+
+/// A line's time at its right: "Now" at the departure, the others' arrival
+/// on this iPhone's clock from the planner's minutes, a dash with no
+/// airplane or before the nav log (the web's timeOf).
+struct TimelineTime: View {
+    let point: TimelinePoint
+
+    var body: some View {
+        Text(words)
+            .font(WingtipType.row.monospacedDigit())
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .accessibilityIdentifier("timeline-time")
+    }
+
+    private var words: String {
+        if point.role == .departure { return "Now" }
+        guard let minutes = point.minutes else { return Format.none }
+        return Format.time(Date().addingTimeInterval(minutes * 60))
+    }
+}

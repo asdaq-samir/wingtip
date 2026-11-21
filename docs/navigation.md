@@ -245,7 +245,7 @@ taps by shaking the iPhone or ⌘Z.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| Plan (was FPL) | the sheet itself | 1 → **0** | From/To and altitude inline; stops Edit (delete, move), **Add a Stop (the search, asked to pick: a tap on Nearest, a Favorite, a Recent or a result puts it in, 2 taps)**; each point's menu; Undo bar |
+| Plan (was FPL) | the sheet itself | 1 → **0** | From/To until the route is whole and planned, then **the timeline: a point's ident changes it through the search (2 taps), its mark is its menu (1), its gauge sets its fuel (1)**; altitude inline; stops Edit (delete, move), **Add a Stop (the search, asked to pick: a tap on Nearest, a Favorite, a Recent or a result puts it in, 2 taps)**; Undo bar |
 | Search (was Airport) | the field | 1 | Nothing typed: Your Flight, Favorites (fields and airplanes), Recents, Nearest; typed: Airports, Waypoints and Navaids, Airplanes, Do (Direct To, screens, Ask) |
 | Airport card | Tap a field; a search row; a list's row (Nearest, Favorites, Recents); hold for its preview; a link's `place=` | 1 | The one card from every way in: Fly Here (the flight's time when planned), Depart, Add Stop, Diagram; the floating bar's Add to Plan, Favorite, Share, •••; its sections' picker pinned under the bar once its head scrolls away; frequencies copy on hold |
 | Airplane profile | any N-number or airplane figure; the search's N-number or own airplane; a link's `airplane=` | 1–2 | **One profile card**: its own card from the plan or the search, pushed in the card it was tapped in; Fly This Airplane; every figure edited in place (an inline ask's Edit opens it at that figure) |

@@ -1,79 +1,52 @@
 import SwiftUI
 
-/// FPL's fuel in the tanks at each field of the route, as the web's
-/// timeline draws a gauge at each one (the owner: "next to airport say ...
-/// fuel in tanks"): the departure's at engine start, each stop's and the
-/// destination's on landing, every figure the engine's (RouteTanks). On
-/// the iPhone its own inset-grouped section, the system's capacity gauge
-/// and the gallons in each row, since a stop's row is its menu already. A
-/// row of a field the airplane leaves is a button that sets its fuel (the
+/// The fuel in the tanks at a point of FPL's timeline, right after its
+/// ident, as the web's timeline draws its gauge there (the owner: "Fuel
+/// should go right after airport"; "next to airport say ... fuel in
+/// tanks"): the departure's at engine start, each stop's and the
+/// destination's on landing, every figure the engine's (RouteTanks). The
+/// system's capacity gauge of the share left and the gallons; under the
+/// reserve in red with a mark beside it for a pilot who does not see the
+/// colour, past empty the gallons short ("−12 gal") and the gauge empty.
+/// At a field the airplane leaves it is a button that sets its fuel (the
 /// owner, 2026-11-21: "can we set the fuel tank by tapping on it?").
-struct FuelTanksSection: View {
-    @Environment(Plan.self) private var plan
-    @State private var setting: FuelSetAsk?
-
-    var body: some View {
-        let tanks = plan.tanks
-        if !tanks.isEmpty {
-            Section("Fuel in the Tanks") {
-                row(.departure, ident: plan.dep, tanks: tanks)
-                ForEach(Array(plan.stops.enumerated()), id: \.offset) { i, stop in
-                    row(.stop(i), ident: stop, tanks: tanks)
-                }
-                row(.destination, ident: plan.dest, tanks: tanks)
-            }
-            .sheet(item: $setting) { ask in FuelSetSheet(ask: ask).presentationDetents([.medium]) }
-        }
-    }
-
-    @ViewBuilder private func row(_ point: TankPoint, ident: String, tanks: [TankPoint: TankAt]) -> some View {
-        if let tank = tanks[point] {
-            let settable: Bool = {
-                if case .stop(let i) = point { return plan.course?.stops?[safe: i]?.kind != "fix" }
-                return point == .departure
-            }()
-            let what = point == .departure ? "On board" : "Lands with"
-            if settable {
-                Button { setting = FuelSetAsk(ident: ident, stop: point != .departure, tank: tank) } label: {
-                    FuelGaugeRow(ident: ident, what: what, tank: tank, refuelled: point != .departure)
-                }
-                .accessibilityHint(point == .departure ? "Sets the fuel on board at engine start" : "Sets the fuel bought at \(ident)")
-                .accessibilityIdentifier(point == .departure ? "fuel-set-departure" : "fuel-set-stop")
-            } else {
-                FuelGaugeRow(ident: ident, what: what, tank: tank, refuelled: false)
-            }
-        }
-    }
-}
-
-/// One field's gauge: its ident and what the figure is, the system's
-/// capacity gauge of the share left, and the gallons; under the reserve in
-/// red, past empty the gallons short ("−12 gal") and the gauge empty, a
-/// mark beside the red for a pilot who does not see the colour.
-struct FuelGaugeRow: View {
-    let ident: String
-    let what: String
+struct TimelineGauge: View {
+    let point: TimelinePoint
     let tank: TankAt
-    let refuelled: Bool
+    let settable: Bool
+    let setFuel: (FuelSetAsk) -> Void
+    @ScaledMetric(relativeTo: .body) private var width = 36.0
 
     var body: some View {
+        if settable {
+            Button { setFuel(FuelSetAsk(ident: point.ident, stop: point.role != .departure, tank: tank)) } label: { gauge }
+                .buttonStyle(.borderless)
+                .hitArea()
+                .accessibilityHint(point.role == .departure ? "Sets the fuel on board at engine start" : "Sets the fuel bought at \(point.ident)")
+                .accessibilityIdentifier(point.role == .departure ? "fuel-set-departure" : "fuel-set-stop")
+        } else {
+            gauge
+        }
+    }
+
+    private var gauge: some View {
         let ink: Color = tank.low ? WingtipInk.problem : .primary
-        HStack(spacing: WingtipSpace.sm) {
-            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                Text(ident).font(WingtipType.row.monospaced()).foregroundStyle(.primary)
-                Text(tank.own.map { _ in "\(what) · your fuel" } ?? what).font(WingtipType.detail).foregroundStyle(.secondary)
-            }
-            Spacer(minLength: WingtipSpace.sm)
+        let what = point.role == .departure ? "on board" : "lands with"
+        return HStack(spacing: WingtipSpace.xs) {
             if tank.low { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(ink).accessibilityHidden(true) }
             Gauge(value: min(max(tank.gal, 0), tank.usable), in: 0...max(tank.usable, 1)) { EmptyView() }
                 .gaugeStyle(.accessoryLinearCapacity)
                 .tint(ink)
-                .frame(width: 44)
+                .frame(width: width)
                 .accessibilityHidden(true)
-            Text(Format.tankGallons(tank.gal)).font(WingtipType.row.monospacedDigit().weight(.semibold)).foregroundStyle(ink)
+            Text(Format.tankGallons(tank.gal))
+                .font(WingtipType.detail.monospacedDigit().weight(.semibold))
+                .foregroundStyle(ink)
+                .lineLimit(1)
+                .fixedSize()
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(ident), \(what), \(Format.tankGallons(tank.gal))\(tank.low ? ", under the reserve" : "")")
+        .accessibilityLabel("\(what) \(Format.tankGallons(tank.gal))\(tank.own != nil ? ", your fuel" : "")\(tank.low ? ", under the reserve" : "")")
     }
 }
 
