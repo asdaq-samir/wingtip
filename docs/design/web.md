@@ -79,6 +79,14 @@ These hold on every screen below and win over any reference app.
   `prefetchTapCards`), and the airport sections as the Brief's card comes
   up, so a tap still opens its card at once (the speed audit of
   2026-11-21: the route panel was 507 KB, every card in it).
+- **What a route link loads has its own budget**, the first load's
+  counting only its static graph (0.97 of 4.2 MB): `e2e/route-load.spec.ts`
+  opens /app/plan?dep=KPWK&dest=KDLH on a cold page at a phone's size with
+  the CPU four times slower and sums every script fetched, by its decoded
+  size, until the ETE has a digit, against 4,198,439 bytes, the speed
+  audit's own measurement of that open (204 files). The figure it reads
+  goes in the test's annotations; it is lowered to a new measurement,
+  never raised.
 - **A return visit fetches nothing but the worker's own check.** The
   service worker precaches the app shell, every first-load chunk and the
   engine's `.wasm` (`globPatterns`), so a second load is served from it
