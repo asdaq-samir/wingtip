@@ -56,3 +56,27 @@ the apps' own work; the gateway half of M1 is here.
    section 7). Until then production leaves it off.
 3. **Apple's nonce:** once an iOS build that sends it is the oldest in
    use, set `APP_APPLE_REQUIRE_NONCE=true` on the gateway.
+
+## The review of 2026-11-21
+
+A second pass (claude/security-fix, from claude/fpl-edit) over the gateway,
+the planner and its services, the web, the phones, CI and the repository.
+Nothing critical or high; what it fixed:
+
+| Finding | Now |
+|---|---|
+| M: no limit on a JSON request body; Jackson read all of one before any `@Size`, on routes open to anyone (`/api/diagnostics`, `/api/speed/field`, the sign-in requests) | 10 MB on every request (`RequestBodyLimit`): a 413 for one declared larger, a chunked one stopped as it is read. Routes that hold themselves to less still do. |
+| M: a web page on the planner's machine could reach the planner on loopback, by DNS rebinding (X-Pilot-Id set, every pilot's checkpoint notes read) or by a cross-site form post (a retrain, a chart refresh) | The planner answers only its own names (`planner`, loopback, the tests') and refuses a request from another site's page (`Origin`, `Sec-Fetch-Site`): `app/local_guard.py`. |
+| M: Jupyter's token a fixed word in this public repository, with `DEV_PUBLISH_ADDRESS=0.0.0.0` a kernel on the Wi-Fi | `JUPYTER_TOKEN` from `.env`, else a random one each start, printed in `docker compose logs ml`. |
+| L: a booklet's text was read again under the drawing lock for every new field asked of it, so made-up fields held up every diagram | The text is read once per PDF; a field is a search of it. |
+| L: a deletion link's token, sent with its purpose in front, matched its row as a sign-in | Only a token of the shape the links are made in is looked up (`MagicLinkController.isLinkToken`). |
+| L: a place's or a photo's link opened whatever address it held (`javascript:`, `data:`) | The web opens only http(s), tel:, mailto: and this site's paths (`lib/safeHref`); the planner keeps only http(s) websites from Overture. |
+| L: a connector callback prefix took any string after it (`.../oauth/../../x`) | One plain path segment, ChatGPT's callback id. |
+| L: `.gitignore` named only `.env` | Other `.env.*` files, `.p8`, `.p12`, `.jks`, `.keystore`, `.pem` and `.key` too. |
+
+The rest, left for the owner or as they are, are in the review's own
+write-up: the gateway's plain HTTP port on the Wi-Fi in the phone mode
+(ForeFlight takes the pack from it), the Android App Links file before
+launch, the offline cuts' disk on a machine with the archives, a link's
+Home and Favorites applied without asking, and the CI hardening of the
+review workflow's tools.
