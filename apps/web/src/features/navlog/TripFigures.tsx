@@ -105,9 +105,9 @@ export default function TripFigures({
   /** In flight (useFlyingMode): the figures one large size whatever the
    *  sheet's (FigureStrip's `flying`), over `grow`. */
   flying?: boolean;
-  /** The planner's first suggested fuel stop for a flight longer than the
-   *  tanks (useSuggestedStops), offered under the fuel's breakdown where
-   *  the figure says it is short, as the route box offers it in FPL. */
+  /** The planner's suggested fuel stops for every flight longer than the
+   *  tanks (useSuggestedStops' fuelToAdd), offered under the fuel's
+   *  breakdown where the figure says it is short, as FPL's pill offers them. */
   fuelStop?: { idents: string[]; add: () => void } | null;
 }) {
   // The time en route tapped, the arrival's clock time in its place, and
@@ -221,7 +221,7 @@ export default function TripFigures({
                   fuelStop.add();
                 }}
               >
-                Add fuel stop at {fuelStop.idents.join(", ")}
+                {fuelStop.idents.length > 1 ? "Add fuel stops at" : "Add fuel stop at"} {fuelStop.idents.join(", ")}
               </Button>
             )}
           </ResponsivePopoverContent>

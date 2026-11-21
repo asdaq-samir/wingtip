@@ -503,9 +503,19 @@ off by default (the owner, 2026-11-13).
    after it, at the right its time (the departure's a picker); no city; below full, two stops
    or more one row between the ends, "2 Stops" and their idents, a tap taking the sheet all the way up, where each is its own row (one stop always its own); Add a Stop the last row, by the one
    search, with a pill at its end where there is fuel to plan: "Add Fuel
-   Stops" puts the planner's suggested ones in, then "Remove Fuel Stops"
-   takes them out, the first in the tint's light wash and the second in the
-   destructive light red (the owner, 2026-11-20; `FuelStopsChip`); a hold moves
+   Stops" puts the planner's suggested ones in, every flight's of the
+   route, and then reads the plan of the route with them in and puts in
+   what that plan suggests too, till it suggests none (four plans at most):
+   the planner picks the stops on the flight's figures as one flight, and
+   each stop's flight is planned on its own altitude and winds, which is
+   the check (the owner's KDSM to KCBK landed 3 gal short, KLAS to KPWK 21,
+   2026-11-20; `useSuggestedStops`' `fuelToAdd`); the pill stays Add while
+   any flight still has stops suggested, and "Remove Fuel Stops" takes
+   them out once none is, the first in the tint's light wash and the second in the
+   destructive light red (the owner, 2026-11-20; `FuelStopsChip`). A flight
+   still short with no field with fuel in reach says so in the fuel's
+   breakdown ("no fuel stop in reach"), its tanks red; it may still be
+   flown (warn, never limit); a hold moves
    a point and its menu's Remove takes a stop out, the plan's toast Undo
    putting either back. A tap on a field's
    line opens it, one at a time: its wind at the left and elevation at the

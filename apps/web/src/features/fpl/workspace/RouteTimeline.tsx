@@ -51,7 +51,7 @@ export default function RouteTimeline({
   const { metarCategory } = vm.brief;
   const { waypointStops } = vm.routeList;
   const { setStops } = vm.route;
-  const { firstFuelStop } = vm.stops;
+  const { fuelToAdd } = vm.stops;
   const { panel, setPanel } = vm.view;
   const read = !!vm.flight.flying || !!vm.flight.dryRunning;
   // From md up the side panel is the window's height at half as at full
@@ -162,13 +162,16 @@ export default function RouteTimeline({
   // route typed or pasted where Add a Stop is on a whole one (RouteStart).
   const half = !read && !wholeRoute;
   // The fuel stops' pill at Add a Stop's end: the planner's suggested ones
-  // put in, or, once the route has fuel stops, taken out again (the owner,
-  // 2026-11-20); none where there are neither.
+  // put in, every flight's, or, once the route has fuel stops and needs no
+  // more, taken out again (the owner, 2026-11-20); none where there are
+  // neither. Add while any flight still has stops suggested, though some are
+  // in: the owner's trip read 21 gal short after the tap, its last flight's
+  // stops never offered.
   const fuelIn = planned.stops.some((stop) => fuel.some((f) => sameField(f, stop)));
-  const fuelPill = fuelIn ? (
+  const fuelPill = fuelToAdd ? (
+    <FuelStopsChip added={false} onClick={fuelToAdd.add} />
+  ) : fuelIn ? (
     <FuelStopsChip added onClick={() => setStops(planned.stops.filter((stop) => !fuel.some((f) => sameField(f, stop))))} />
-  ) : firstFuelStop ? (
-    <FuelStopsChip added={false} onClick={firstFuelStop.add} />
   ) : null;
   return (
     <TimelineRoute
