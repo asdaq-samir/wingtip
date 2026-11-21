@@ -36,12 +36,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from prometheus_client import make_asgi_app
 from wingtip import schedule, weather
 from wingtip import traffic as traffic_store
 from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
 
-from . import errors, openapi_document, tracing
+from . import errors, openapi_document, route_metrics, tracing
 from .feeds import watch as feeds_watch
 from .mcp import server as mcp
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
@@ -90,6 +91,11 @@ async def _lifespan(app: FastAPI):
 app = FastAPI(title="Wingtip Maps planner", lifespan=_lifespan)
 # What failed lately, for the Dev console (app.errors).
 app.add_middleware(errors.RecordFailures)
+# Each route's calls, failures and times, for the owner's status page
+# (app.route_metrics); the same figures in Prometheus's text at /metrics,
+# on the planner's own port only (the gateway forwards /api/planner/*).
+app.add_middleware(route_metrics.CountCalls)
+app.mount("/metrics", make_asgi_app(registry=route_metrics.METRICS.registry))
 # Traces, where an OTLP endpoint is set (app.tracing).
 tracing.instrument(app)
 
