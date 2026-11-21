@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from wingtip import flight_plan as fp
 
+from .. import fuel_replan
 from ..router_basics import line, load_route, ndjson
 from ..schemas.nav_log import NavLogAltitude, NavLogDone, NavLogError, NavLogLeg, NavLogStage
 from ..checkpoint_scoring import route_checkpoints
@@ -155,6 +156,13 @@ def navlog_stream(q: Annotated[PlanQuery, Depends()]) -> StreamingResponse:
         for leg in legs:
             yield line(NavLogLeg.model_validate(leg))
 
-        yield line(NavLogDone(totals=fp.totals_of(r, runs, outcome, asked)))
+        totals = fp.totals_of(r, runs, outcome, asked)
+        # Its fuel stops checked by planning the route with them in
+        # (app.fuel_replan), which takes a plan or more: said, so the line
+        # is not silent meanwhile.
+        if totals.get("fuel_stops"):
+            yield line(NavLogStage(detail="Checking fuel stops…"))
+            totals = fuel_replan.checked(q, asked, totals)
+        yield line(NavLogDone(totals=totals))
 
     return ndjson(lines(), NavLogError)

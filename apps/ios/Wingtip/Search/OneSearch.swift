@@ -63,8 +63,7 @@ struct OneSearch: ViewModifier {
         content
             .searchable(text: $model.text, isPresented: $model.presented,
                         placement: oneRow ? .toolbarPrincipal : .navigationBarDrawer(displayMode: .always),
-                        prompt: Text(voice.listening ? OneSearchModel.speak : model.askingDestination ? OneSearchModel.whereTo
-                            : model.keeping?.prompt ?? OneSearchModel.prompt))
+                        prompt: Text(voice.listening ? OneSearchModel.speak : OneSearchModel.prompt))
             .searchSuggestions {
                 if let problem = model.problem {
                     Section { ProblemLine(problem) }
@@ -79,7 +78,16 @@ struct OneSearch: ViewModifier {
             .onChange(of: model.text) { _, _ in model.problem = nil; model.typed() }
             // A question may be typed here: Apple's model is made ready as
             // the field takes focus, not when it is sent.
-            .onChange(of: model.presented) { _, on in if on { AskRouter.prewarm() } }
+            .onChange(of: model.presented) { _, on in
+                if on {
+                    AskRouter.prewarm()
+                } else if model.picking != nil {
+                    // A pick cancelled (the field's Cancel): back where it
+                    // was asked from, the plan, nothing changed.
+                    model.picking = nil
+                    host.showPlan()
+                }
+            }
             .toolbar {
                 SearchBarItems(model: model, hear: voice.canListen ? { Task { await hear() } } : nil, open: host.page, undo: !oneRow)
             }
@@ -95,6 +103,17 @@ struct OneSearch: ViewModifier {
         // An Add's search: the airplane picked is kept, not opened.
         if let keeping = model.keeping, keep(picked, keeping) {
             model.close()
+            return
+        }
+        // Asked to pick a point of the route: a field or a waypoint tapped
+        // goes into the route, and the pilot is back on the plan (the
+        // web's pickIdent, b8887fba7), not on its card.
+        if let ask = model.picking, let ident = Self.point(picked) {
+            let closed = model.airports.first { $0.ident == ident }?.closed
+            guard plan.refusal(ident, closed: closed, for: ask) == nil else { return }
+            model.close()
+            plan.pick(ident, closed: closed, for: ask)
+            host.showPlan()
             return
         }
         model.close()
@@ -120,6 +139,16 @@ struct OneSearch: ViewModifier {
             // The traffic turned on, on the map (the web's Show Traffic).
             case .showTraffic: traffic.on = true
             }
+        }
+    }
+
+    /// The point a row stands for while the search picks one: a field's
+    /// ident (not a list of fields), or a waypoint's.
+    static func point(_ picked: SearchPick) -> String? {
+        switch picked {
+        case .airport(let route): AirportRoute(route).field
+        case .directTo(let ident): ident
+        default: nil
         }
     }
 

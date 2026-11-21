@@ -100,9 +100,10 @@ struct DirectStrip: View {
     }
 }
 
-/// FPL's section for the route's own edits: the Direct to, its ends'
-/// menus, the holds set, the procedures' fixes, and the pages of the
-/// flight in the air.
+/// FPL's section for the route's own edits: the Direct to, the
+/// alternate, the holds set, and the pages of the flight in the air. The
+/// points' own menus are their marks on the timeline and the procedures'
+/// fixes are rows on its line (RouteTimelineSection).
 struct RouteExtrasSection: View {
     @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
@@ -112,8 +113,6 @@ struct RouteExtrasSection: View {
         if plan.routed {
             Section {
                 DirectStrip()
-                RoutePointMenu(ident: plan.dep, role: .departure)
-                RoutePointMenu(ident: plan.dest, role: .destination)
                 // Under IFR, the alternate after the destination, as the
                 // web files it (14 CFR 91.169).
                 if rules == .ifr { AlternateRow() }
@@ -126,11 +125,6 @@ struct RouteExtrasSection: View {
                     }
                 }
                 .onDelete { at in at.map { plan.extras.holds[$0].fix }.forEach { plan.setHold(at: $0, nil) } }
-                ForEach(plan.procedures) { pick in
-                    NavigationLink(value: SheetPage.flight("fixes:\(pick.ident):\(pick.id)")) {
-                        LabeledContent("\(pick.name) fixes", value: plan.extras.procedureDirect["\(pick.ident):\(pick.id)"].map { "Direct \($0)" } ?? pick.ident)
-                    }
-                }
             } header: {
                 Text("Route")
             }
@@ -138,7 +132,6 @@ struct RouteExtrasSection: View {
                 // The one Nearest list, with Divert (NearestView).
                 NavigationLink(value: SheetPage.screen(.nearest)) { Label("Nearest for a Diversion", systemImage: WingtipIcon.nearest) }
                 NavigationLink(value: SheetPage.flight("notes")) { Label("Checkpoint Notes", systemImage: "text.bubble") }
-                NavigationLink(value: SheetPage.flight("file")) { Label("File Flight Plan", systemImage: WingtipIcon.send) }
             }
         }
     }

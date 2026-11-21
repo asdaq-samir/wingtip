@@ -77,6 +77,18 @@ pub struct Figures {
     pub start_gal: f64,
     pub taxi_gal: f64,
     pub reserve_gal: f64,
+    /// Under IFR with an alternate filed, the fuel from the destination on
+    /// to it (14 CFR 91.167(a)(2)), which the stretch landing at the
+    /// destination must keep with its reserve; 0 under VFR.
+    ///
+    /// A simplification, the planner's fuel check's too: each stop under
+    /// IFR is itself a first point of intended landing (91.167(a)(1)) and
+    /// would carry its own alternate unless 91.169(b)'s 1-2-3 exception
+    /// lets it go without; only the destination's alternate is counted,
+    /// as the pilot files the alternate for the destination alone. The
+    /// pilot who files a stop's own alternate sees it in that flight's
+    /// check once the stop is in.
+    pub alternate_gal: f64,
     pub ground_min: f64,
 }
 
@@ -106,7 +118,7 @@ pub struct FuelStop {
 /// the most fuel, so no leg of it runs close; the others offered after.
 pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: &[String]) -> (Vec<FuelStop>, Vec<FuelStop>) {
     let direct = geo::distance_nm(start.0, start.1, end.0, end.1);
-    if fig.start_gal - fig.taxi_gal - direct * fig.fuel_per_nm >= fig.reserve_gal {
+    if fig.start_gal - fig.taxi_gal - direct * fig.fuel_per_nm >= fig.reserve_gal + fig.alternate_gal {
         return (Vec::new(), Vec::new());
     }
     let nodes = corridor(start, end, fields, skip);
@@ -114,6 +126,8 @@ pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: 
         return (Vec::new(), Vec::new());
     }
     let reach_nm = (fig.usable_gal - fig.taxi_gal - fig.reserve_gal) / fig.fuel_per_nm;
+    // A stretch into the destination keeps the alternate's fuel too.
+    let reach_end_nm = reach_nm - fig.alternate_gal / fig.fuel_per_nm;
     let first_reach_nm = (fig.start_gal - fig.taxi_gal - fig.reserve_gal) / fig.fuel_per_nm;
     // Index 0 the destination, then the fields.
     let at: Vec<Point> = std::iter::once(end).chain(nodes.iter().map(|n| (n.lat, n.lon))).collect();
@@ -138,7 +152,8 @@ pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: 
             // Landing at `here` from field i: its leg, and the stop's time
             // on the ground where `here` is a field, not the destination.
             let via = apart[i][here] * fig.min_per_nm + if here > 0 { fig.ground_min } else { 0.0 } + to_go[here];
-            if apart[i][here] <= reach_nm && via < to_go[i] && !done[i] {
+            let reach = if here == 0 { reach_end_nm } else { reach_nm };
+            if apart[i][here] <= reach && via < to_go[i] && !done[i] {
                 to_go[i] = via;
                 then[i] = here as i64;
             }
@@ -155,12 +170,15 @@ pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: 
     let trip = |i: usize| from_start[i] * fig.min_per_nm + fig.ground_min + to_go[i];
     let least_landing = |i: usize| {
         let c = chain(i);
-        let mut legs = Vec::new();
+        // What each stretch lands with over what it must keep: the last,
+        // into the destination, keeps the alternate's fuel too.
+        let mut least = fig.start_gal - fig.taxi_gal - from_start[i] * fig.fuel_per_nm;
         for (k, &a) in c.iter().enumerate() {
-            legs.push(apart[a][*c.get(k + 1).unwrap_or(&0)]);
+            let next = *c.get(k + 1).unwrap_or(&0);
+            let kept = if next == 0 { fig.alternate_gal } else { 0.0 };
+            least = least.min(fig.usable_gal - fig.taxi_gal - apart[a][next] * fig.fuel_per_nm - kept);
         }
-        let first = fig.start_gal - fig.taxi_gal - from_start[i] * fig.fuel_per_nm;
-        first.min(fig.usable_gal - fig.taxi_gal - legs.iter().copied().fold(f64::NEG_INFINITY, f64::max) * fig.fuel_per_nm)
+        least
     };
     let first: Vec<usize> =
         (1..n).filter(|&i| from_start[i] <= first_reach_nm && to_go[i].is_finite() && chain(i).len() <= MAX_STOPS).collect();
@@ -341,6 +359,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         start_gal: r.opt_num(v, "start_gal")?.unwrap_or(r.num(v, "usable_gal")?),
         taxi_gal: r.num(v, "taxi_gal")?,
         reserve_gal: r.num(v, "reserve_gal")?,
+        alternate_gal: r.opt_num(v, "alternate_gal")?.unwrap_or(0.0),
         // The owner's 30-minute turnaround (2026-10-20), the flight crate's.
         ground_min: r.opt_num(v, "ground_min")?.unwrap_or(wingtip_flight::flight::TURNAROUND_MIN),
     };
