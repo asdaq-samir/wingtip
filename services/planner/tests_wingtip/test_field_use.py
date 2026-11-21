@@ -47,6 +47,7 @@ def test_the_record_says_who_reported_it_and_when(tmp_path, monkeypatch):
         "name": "Pillow Hill",
         "status": None,
         "site_type": None,
+        "airplane": True,
     }
     three_ck = field_use.record_of("3CK", tmp_path)
     assert (three_ck["data_source"], three_ck["info_date"], three_ck["notam_id"]) == ("inspected", "2025-07-30", "IKK")
@@ -78,3 +79,12 @@ def test_the_record_names_a_field_that_is_not_an_airport(tmp_path, monkeypatch):
     assert field_use.record_of("IL72", tmp_path)["site_type"] == "Heliport"
     assert field_use.record_of("LOT", tmp_path)["site_type"] == "Seaplane base"
     assert field_use.record_of("3CK", tmp_path)["site_type"] is None
+
+
+def test_the_record_says_whether_an_airplane_lands_there(tmp_path, monkeypatch):
+    # The engine's field_site_type: a heliport (IL72) and a seaplane base
+    # (LOT) are no landing site for an airplane on wheels; an airport is.
+    _apt(tmp_path, monkeypatch)
+    assert field_use.record_of("IL72", tmp_path)["airplane"] is False
+    assert field_use.record_of("LOT", tmp_path)["airplane"] is False
+    assert field_use.record_of("3CK", tmp_path)["airplane"] is True
