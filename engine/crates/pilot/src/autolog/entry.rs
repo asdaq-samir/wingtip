@@ -132,7 +132,10 @@ fn night_hours(points: &[Point], spans: &[(usize, usize)]) -> f64 {
     for &(a, b) in spans {
         for i in a..b {
             let (p, q) = (&points[i], &points[i + 1]);
-            if is_night((p.lat + q.lat) / 2.0, (p.lon + q.lon) / 2.0, (p.t + q.t) / 2000.0) {
+            // The step's middle in longitude the short way (lon_near): two
+            // fixes either side of 180 averaged to near Greenwich.
+            let lon = (p.lon + wingtip_core::geo::lon_near(q.lon, p.lon)) / 2.0;
+            if is_night((p.lat + q.lat) / 2.0, lon, (p.t + q.t) / 2000.0) {
                 ms += q.t - p.t;
             }
         }

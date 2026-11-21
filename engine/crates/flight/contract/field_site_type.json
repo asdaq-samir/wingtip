@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_flight::calls::field_site_type",
-  "description": "The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport.",
+  "description": "The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.",
   "type": "object",
   "properties": {
     "input": {
@@ -30,10 +30,15 @@
             null
           ],
           "description": "The site's kind in words, or null for an airport."
+        },
+        "airplane": {
+          "type": "boolean",
+          "description": "Whether an airplane on wheels lands at a field of this kind: A, G and U, or no code."
         }
       },
       "required": [
-        "words"
+        "words",
+        "airplane"
       ],
       "additionalProperties": false
     }
