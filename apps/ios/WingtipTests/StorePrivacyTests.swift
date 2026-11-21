@@ -108,4 +108,21 @@ struct StorePrivacyTests {
         #expect(PlanningAidNotice.message.hasPrefix(PlanningAid.words))
         #expect(PlanningAidNotice.message.contains("Not for navigation"))
     }
+
+    /// A notification's title, a watched airplane and a route's fields say
+    /// what the pilot flies and watches; logged public, they went into any
+    /// sysdiagnose the pilot shared (the deep security review of
+    /// 2026-11-21). Read from the source tree, as the widget's manifest is.
+    @Test func thePilotsWordsAndPlacesAreNeverLoggedPublic() throws {
+        let sources = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "Wingtip")
+        let names = try #require(FileManager.default.enumerator(at: sources, includingPropertiesForKeys: nil))
+        let publicPilot = try Regex(#"\\\((title|body|words|hex|dep|dest|email|token), privacy: \.public\)"#)
+        var found: [String] = []
+        for case let url as URL in names where url.pathExtension == "swift" {
+            let text = try String(contentsOf: url, encoding: .utf8)
+            if text.contains(publicPilot) { found.append(url.lastPathComponent) }
+        }
+        #expect(found.isEmpty, "logged public: \(found)")
+    }
 }

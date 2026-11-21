@@ -241,7 +241,7 @@ final class Plan {
         } catch {
             guard routesAskedFor == asked, !(error is CancellationError) else { return }
             routesProblem = error.localizedDescription
-            Log.planner.notice("the route options for \(dep, privacy: .public) to \(dest, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+            Log.planner.notice("the route options for \(dep, privacy: .private) to \(dest, privacy: .private) failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -280,7 +280,7 @@ final class Plan {
             briefingProblem = error.localizedDescription
             // The briefing kept stands, said with its age (KeptAgeLine).
             if briefing != nil, KeptForAir.fallsBack(error) { noteKept(briefedAt, .briefing, .weather) }
-            Log.planner.notice("the briefing for \(dep, privacy: .public) to \(dest, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+            Log.planner.notice("the briefing for \(dep, privacy: .private) to \(dest, privacy: .private) failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
