@@ -32,11 +32,11 @@ export default function FplBar({ share, strip, clear }: { share?: ReactNode; str
             name="Flight Plan"
             nameSize="heading"
             nameTestId="fpl-title"
-            // Its line the heading's own 25, so a descender (the g of
-            // "Flight") is not cut, the pills right under it; lifted 4
-            // points, its whole line with it, so nothing is cut (the owner,
-            // 2026-11-21: "a bit bigger and move up a bit").
-            nameClassName="-translate-y-1"
+            // The heading's 20 on the row's 22 line, so the two rows stay the
+            // search field's height and a turn of the page moves nothing
+            // (sheet-page-toggle.spec), the g of "Flight" still whole; lifted
+            // 4 points (the owner, 2026-11-21: "a bit bigger and move up a bit").
+            nameClassName="-translate-y-1 leading-[1.375rem]"
           />
           {strip && (
             <div className="flex h-6 max-w-full min-w-0 items-center justify-center" data-testid="route-strip">
@@ -45,7 +45,9 @@ export default function FplBar({ share, strip, clear }: { share?: ReactNode; str
           )}
         </div>
       }
-      end={clear}
+      // The ✕ 16 in from the edge, as Search is at the other end (HeadGrid
+      // pulls a card's close 4 out to its edge; FPL's head is symmetric).
+      end={clear && <span className="mr-1 flex">{clear}</span>}
     />
   );
 }
