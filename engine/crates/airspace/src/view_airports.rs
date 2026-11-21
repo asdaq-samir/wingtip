@@ -12,9 +12,12 @@
 //! hard runway: below the fields of their tier that have one, never above.
 
 use crate::json;
-use crate::pack::f64_at;
-use crate::view::{attrs_of, in_box, Bbox, AIRPORT_LIMIT};
+use crate::pack::{f64_at, Layer};
+use crate::pack_kept::kept;
+use crate::view::{attrs_kept, in_box, Bbox, AIRPORT_LIMIT};
 use crate::{pack::Pack, sort::StableSort};
+use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 struct Pin {
     ident: String,
@@ -37,16 +40,44 @@ fn rank(kind: &str) -> usize {
     ["large", "medium", "small"].iter().position(|k| *k == kind).unwrap_or(3)
 }
 
+/// A pack's airspace cut to the shapes whose boxes meet `extent`, in the
+/// layer's order, with its `airspace.vol`.
+struct Cut<'a> {
+    layer: Layer<'a>,
+    vols: &'a [u8],
+    among: Vec<usize>,
+}
+
+/// Each pack's airspace cut to the shapes whose boxes meet `extent`
+/// (west, south, east, north), ends included: a shape whose box holds a
+/// point inside `extent` is always among them, so the surface class of any
+/// such point read from the cut is the one read from the whole layer, at
+/// one pass over the boxes for every pin rather than one a pin.
+fn cut<'a>(packs: &[Pack<'a>], extent: Bbox) -> Vec<Cut<'a>> {
+    packs
+        .iter()
+        .filter_map(|p| {
+            let (layer, vols) = (p.layer("airspace")?, p.section("airspace.vol")?);
+            let among = (0..layer.count)
+                .filter(|&i| {
+                    let [w, s, e, n] = layer.bbox(i);
+                    w <= extent[2] && e >= extent[0] && s <= extent[3] && n >= extent[1]
+                })
+                .collect();
+            Some(Cut { layer, vols, among })
+        })
+        .collect()
+}
+
 /// The class of airspace at the surface of the point, from the packs'
 /// airspace, as wingtip.airspace.surface_classes reads it off the file: the
 /// lowest of the Class B, C and D whose floor is the surface there, else
 /// E where a Class E reaches the surface (its E2 to E4 areas), else G.
-fn surface_class(packs: &[Pack], lat: f64, lon: f64) -> char {
+fn surface_class(cuts: &[Cut], lat: f64, lon: f64) -> char {
     let (mut best, mut in_e) = (None::<char>, false);
-    for p in packs {
-        let (Some(layer), Some(vols)) = (p.layer("airspace"), p.section("airspace.vol")) else { continue };
-        for i in layer.holding(lon, lat).unwrap_or_default() {
-            let Some(r) = vols.get(32 * i..32 * i + 32) else { continue };
+    for part in cuts {
+        for i in part.layer.holding_among(part.among.iter().copied(), lon, lat).unwrap_or_default() {
+            let Some(r) = part.vols.get(32 * i..32 * i + 32) else { continue };
             let reaching = r[1] == 0 || (r[1] == 2 && f64_at(r, 8).is_some_and(|f| f <= 0.0));
             if !reaching {
                 continue;
@@ -61,92 +92,111 @@ fn surface_class(packs: &[Pack], lat: f64, lon: f64) -> char {
     best.unwrap_or(if in_e { 'E' } else { 'G' })
 }
 
+/// A pack's Class B, C and D primary fields, by the ident the airspace
+/// file names each by, with its class, in the file's order; none from a
+/// pack without `airspace.attr`.
+fn primaries_of(p: &Pack) -> Vec<(String, char)> {
+    let Some(vols) = p.section("airspace.vol") else { return Vec::new() };
+    attrs_kept(p)
+        .iter()
+        .enumerate()
+        .filter_map(|(i, attr)| {
+            let (ident, r) = (attr.ident.clone()?, vols.get(32 * i..32 * i + 32)?);
+            let class = r[0] as char;
+            "BCD".contains(class).then_some((ident, class))
+        })
+        .collect()
+}
+
 /// Each Class B, C and D's primary field, by the ident the airspace file
 /// names it by, to the highest class it is the primary of (the planner's
-/// `_primaries`); none from packs without `airspace.attr`.
-fn primaries(packs: &[Pack]) -> Vec<(String, char)> {
-    let mut found: Vec<(String, char)> = Vec::new();
+/// `_primaries`).
+fn primaries(packs: &[Pack]) -> HashMap<String, char> {
+    let mut found: HashMap<String, char> = HashMap::new();
     for p in packs {
-        let Some(vols) = p.section("airspace.vol") else { continue };
-        for (i, attr) in attrs_of(p).into_iter().enumerate() {
-            let (Some(ident), Some(r)) = (attr.ident, vols.get(32 * i..32 * i + 32)) else { continue };
-            let class = r[0] as char;
-            if !"BCD".contains(class) {
-                continue;
-            }
-            match found.iter_mut().find(|f| f.0 == ident) {
-                Some(f) => f.1 = f.1.min(class),
-                None => found.push((ident, class)),
-            }
+        for (ident, class) in kept(p, "primaries", primaries_of).iter() {
+            found.entry(ident.clone()).and_modify(|c| *c = (*c).min(*class)).or_insert(*class);
         }
     }
     found
 }
 
+/// A pack's open landing fields (wingtip_flight::field), every row the
+/// view would list wherever it is, in the table's order: read once a pack
+/// (crate::pack_kept), the box and the packs' duplicates left to the call.
+fn fields_of(p: &Pack) -> Vec<Pin> {
+    let Some(t) = p.section("airports").and_then(|b| std::str::from_utf8(b).ok()).and_then(json::table) else { return Vec::new() };
+    let (tower, hard) = (t.col("TWR_TYPE_CODE"), t.col("HARD_FT"));
+    let (id, icao, site, name, lat, lon, status, size, owner, use_) = (
+        t.col("ARPT_ID"),
+        t.col("ICAO_ID"),
+        t.col("SITE_TYPE_CODE"),
+        t.col("ARPT_NAME"),
+        t.col("LAT_DECIMAL"),
+        t.col("LONG_DECIMAL"),
+        t.col("ARPT_STATUS"),
+        t.col("SIZE"),
+        t.col("OWNERSHIP_TYPE_CODE"),
+        t.col("FACILITY_USE_CODE"),
+    );
+    let mut pins = Vec::new();
+    for r in &t.rows {
+        let get = |c: Option<usize>| c.and_then(|c| r.get(c)).map(|s| s.trim()).unwrap_or("");
+        if get(site) != "A" || !wingtip_flight::field::is_open(Some(get(status))) {
+            continue;
+        }
+        let (Ok(la), Ok(lo)) = (get(lat).parse::<f64>(), get(lon).parse::<f64>()) else { continue };
+        // OurAirports' size, where the pack has it; a field it lists
+        // no landing field for is not one the planner lists either.
+        let kind = match size.map(|_| get(size)) {
+            None => "other",
+            Some("large") => "large",
+            Some("medium") => "medium",
+            Some("small") => "small",
+            Some(_) => continue,
+        };
+        let ident = if get(icao).is_empty() { get(id) } else { get(icao) };
+        // The services' own fields, by the flight crate's one rule
+        // (field_military, NASR APT_BASE's ownership and use codes).
+        let military = wingtip_flight::field::military(owner.map(|_| get(owner)), Some(get(use_)));
+        pins.push(Pin {
+            ident: ident.to_owned(),
+            faa_id: get(id).to_uppercase(),
+            name: crate::field_name::field_name(get(name)),
+            lat: la,
+            lon: lo,
+            kind,
+            military,
+            private: get(use_) == "PR" && military.is_none(),
+            towered: get(tower).to_uppercase().starts_with("ATCT"),
+            site: get(site).to_owned(),
+            use_: get(use_).to_owned(),
+            hard_ft: get(hard).parse::<f64>().ok().filter(|f| f.is_finite() && *f > 0.0).map_or(0, |f| f.round() as u32),
+        });
+    }
+    pins
+}
+
 /// The planner's AirportsInView for the box, JSON: the open landing fields (wingtip_flight::field)
 /// of the packs' tables inside it, the biggest first, at most AIRPORT_LIMIT.
+/// A field two packs list (a region's edge) is the first's.
 pub fn airports_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east: f64) -> String {
     let view: Bbox = [west, south, east, north];
-    let mut pins: Vec<Pin> = Vec::new();
-    for p in packs {
-        let Some(t) = p.section("airports").and_then(|b| std::str::from_utf8(b).ok()).and_then(json::table) else { continue };
-        let (tower, hard) = (t.col("TWR_TYPE_CODE"), t.col("HARD_FT"));
-        let (id, icao, site, name, lat, lon, status, size, owner, use_) = (
-            t.col("ARPT_ID"),
-            t.col("ICAO_ID"),
-            t.col("SITE_TYPE_CODE"),
-            t.col("ARPT_NAME"),
-            t.col("LAT_DECIMAL"),
-            t.col("LONG_DECIMAL"),
-            t.col("ARPT_STATUS"),
-            t.col("SIZE"),
-            t.col("OWNERSHIP_TYPE_CODE"),
-            t.col("FACILITY_USE_CODE"),
-        );
-        for r in &t.rows {
-            let get = |c: Option<usize>| c.and_then(|c| r.get(c)).map(|s| s.trim()).unwrap_or("");
-            if get(site) != "A" || !wingtip_flight::field::is_open(Some(get(status))) {
-                continue;
-            }
-            let (Ok(la), Ok(lo)) = (get(lat).parse::<f64>(), get(lon).parse::<f64>()) else { continue };
-            if !in_box((lo, la), view) {
-                continue;
-            }
-            // OurAirports' size, where the pack has it; a field it lists
-            // no landing field for is not one the planner lists either.
-            let kind = match size.map(|_| get(size)) {
-                None => "other",
-                Some("large") => "large",
-                Some("medium") => "medium",
-                Some("small") => "small",
-                Some(_) => continue,
-            };
-            let ident = if get(icao).is_empty() { get(id) } else { get(icao) };
-            if pins.iter().any(|p| p.ident == ident) {
-                continue;
-            }
-            // The services' own fields, by the flight crate's one rule
-            // (field_military, NASR APT_BASE's ownership and use codes).
-            let military = wingtip_flight::field::military(owner.map(|_| get(owner)), Some(get(use_)));
-            pins.push(Pin {
-                ident: ident.to_owned(),
-                faa_id: get(id).to_uppercase(),
-                name: crate::field_name::field_name(get(name)),
-                lat: la,
-                lon: lo,
-                kind,
-                military,
-                private: get(use_) == "PR" && military.is_none(),
-                towered: get(tower).to_uppercase().starts_with("ATCT"),
-                site: get(site).to_owned(),
-                use_: get(use_).to_owned(),
-                hard_ft: get(hard).parse::<f64>().ok().filter(|f| f.is_finite() && *f > 0.0).map_or(0, |f| f.round() as u32),
-            });
+    let held: Vec<Arc<Vec<Pin>>> = packs.iter().map(|p| kept(p, "airports-in-view", fields_of)).collect();
+    let mut seen: HashSet<&str> = HashSet::new();
+    let mut pins: Vec<&Pin> = Vec::new();
+    for f in held.iter().flat_map(|h| h.iter()) {
+        if in_box((f.lon, f.lat), view) && seen.insert(f.ident.as_str()) {
+            pins.push(f);
         }
     }
     pins.stable_sort_by(|a, b| rank(a.kind).cmp(&rank(b.kind)).then_with(|| a.ident.cmp(&b.ident)));
     pins.truncate(AIRPORT_LIMIT);
     let primary = primaries(packs);
+    let extent = pins.iter().fold([f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY], |b, p| {
+        [b[0].min(p.lon), b[1].min(p.lat), b[2].max(p.lon), b[3].max(p.lat)]
+    });
+    let cuts = cut(packs, extent);
     let mut out = String::from("{\"airports\":[");
     for (k, p) in pins.iter().enumerate() {
         if k > 0 {
@@ -166,9 +216,9 @@ pub fn airports_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
             ",\"private\":{},\"towered\":{},\"airspace_class\":\"{}\",\"primary_of\":",
             p.private,
             p.towered,
-            surface_class(packs, p.lat, p.lon)
+            surface_class(&cuts, p.lat, p.lon)
         ));
-        let primary_of = primary.iter().find(|f| f.0 == p.faa_id).map(|(_, c)| c.to_string());
+        let primary_of = primary.get(&p.faa_id).map(|c| c.to_string());
         match &primary_of {
             Some(c) => out.push_str(&format!("\"{c}\"")),
             None => out.push_str("null"),
@@ -250,5 +300,21 @@ mod tests {
         assert_eq!(got[0], ("KORD".to_owned(), 2 * 100_000 + 99_999, "regular".to_owned()));
         assert_eq!(got[1].2, "small");
         assert_eq!(got[2].2, "small");
+    }
+
+    #[test]
+    fn a_field_two_packs_list_is_the_first_packs_and_asked_again_the_same() {
+        let (with, without) = (pack(true), pack(false));
+        let packs = [Pack::read(&with).unwrap(), Pack::read(&without).unwrap()];
+        let first = airports_in_view(&packs, 41.0, -89.0, 43.0, -87.0);
+        assert_eq!(airports_in_view(&packs, 41.0, -89.0, 43.0, -87.0), first);
+        let Ok(v) = json::parse(&first) else { panic!() };
+        let fields = v.get("airports").and_then(Value::as_array).unwrap();
+        assert_eq!(fields.len(), 3);
+        // KORD as the pack with HARD_FT has it.
+        let ord = fields.iter().find(|a| a.get("ident").and_then(Value::as_str) == Some("KORD")).unwrap();
+        assert_eq!(ord.get("mark_order").and_then(Value::as_f64), Some((2 * 100_000 + 99_999 - 13_000) as f64));
+        // No airspace in these packs: every field in Class G.
+        assert!(fields.iter().all(|a| a.get("airspace_class").and_then(Value::as_str) == Some("G")));
     }
 }

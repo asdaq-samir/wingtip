@@ -59,6 +59,13 @@ STORE_VERSION = 2
 
 _LOCK = threading.Lock()
 _db: sqlite3.Connection | None = None
+#: When the store last let go of NOTAMs past their keep (s), as
+#: filed_routes prunes: the DELETE scans the whole table (no index on
+#: ends or heard), and it ran on every FNS message, about one a second.
+#: A day's keep loses nothing by being pruned once an hour; the readers
+#: test ended and ends themselves.
+_pruned_at = 0.0
+PRUNE_EVERY_S = 3600
 
 
 def _connection() -> sqlite3.Connection:
@@ -131,11 +138,12 @@ def _keep_by_place(db: sqlite3.Connection) -> None:
 
 def reset() -> None:
     """The connection closed, for a test to point STORE at its own file."""
-    global _db
+    global _db, _pruned_at
     with _LOCK:
         if _db is not None:
             _db.close()
         _db = None
+        _pruned_at = 0.0
 
 
 def _stamp(now: float) -> str:
@@ -163,8 +171,9 @@ def _ours(notam: dict) -> bool:
 
 def heard(xml: str, now: float | None = None) -> int:
     """One FNS message kept: its NOTAMs added or updated, the ones they
-    replace or cancel ended, and those a day past their end let go.
-    How many NOTAMs it gave."""
+    replace or cancel ended, and those a day past their end let go, at
+    most once every PRUNE_EVERY_S. How many NOTAMs it gave."""
+    global _pruned_at
     now = time.time() if now is None else now
     found = [n for n in notams(xml) if _ours(n)]
     with _LOCK:
@@ -201,10 +210,12 @@ def heard(xml: str, now: float | None = None) -> int:
             """,
                 {**n, "estimated": int(n["estimated"]), "heard": now},
             )
-        db.execute(
-            "DELETE FROM notams WHERE (ends IS NOT NULL AND ends < ?) OR (ended = 1 AND heard < ?)",
-            (_stamp(now - KEEP_ENDED_S), now - KEEP_ENDED_S),
-        )
+        if abs(now - _pruned_at) >= PRUNE_EVERY_S:
+            db.execute(
+                "DELETE FROM notams WHERE (ends IS NOT NULL AND ends < ?) OR (ended = 1 AND heard < ?)",
+                (_stamp(now - KEEP_ENDED_S), now - KEEP_ENDED_S),
+            )
+            _pruned_at = now
         db.commit()
     return len(found)
 

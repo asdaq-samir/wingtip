@@ -35,8 +35,9 @@ pyramid drawn ahead of time, not drawing them on request.
 pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                    │
                    ├─ /tiles/*        ──▶ S3 tiles bucket       serving.json and the archives, read by the planner
-                   ├─ /api/planner/chart-tile/*
-                   │                  ──▶ the server            a tile out of its archive, cached (cycle, revision in the address)
+                   ├─ /api/planner/chart-tile/*, terrain-tile/*, overlay-tiles*
+                   │                  ──▶ the server's planner  a tile out of its archive, cached a year (cycle, revision in the address),
+                   │                                            Caddy straight to the planner, not through the gateway
                    ├─ /app/assets/*   ──▶ the server            cached a year (fingerprinted), Brotli where asked
                    ├─ the chart, the airport search, the stock aircraft
                    │                  ──▶ the server            cached by their own header: a minute, an hour
@@ -47,6 +48,7 @@ pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                         infra/docker-compose.prod.yml), its fixed address and data disk
                         taken over by whichever server is running
                           caddy ─▶ gateway ─▶ planner (the chart model and the engine in-process)
+                            └──▶ planner, the map's tiles alone (chart, terrain, overlays)
                                      └──▶ db (Postgres 18, on the data disk)
                           ingest (the FAA's SWIM feeds, the followed airplanes, 384 MB) ─▶ SQLite
                           weather (METARs, TAFs, advisories, the GFS's winds, GLMP, TFRs, 768 MB)
@@ -77,6 +79,18 @@ server cron, hourly ─▶ docker compose run --rm charts-overlays
   view, an airport's card, the Class B list, the airspace at a point), a
   route's answers, and anything of one pilot's is `no-store`, which
   `CacheHeadersTest` checks through the whole filter chain.
+- **The map's tiles skip the gateway.** The chart's tiles, the
+  terrain's and the overlays' archive are public and the same for every
+  pilot, so Caddy hands those addresses, written out whole and read by
+  GET alone, to the planner itself (`infra/server/Caddyfile`, `@tiles`),
+  with the viewer's cookies and any `X-Pilot-Id` dropped: no Spring
+  filter chain, no session or CSRF cookie, no page headers, one hop less
+  for each of a screenful of tiles. Nothing else of the planner's is
+  reached that way (`tests_wingtip/test_front_door.py`). CloudFront keeps
+  them as long as the planner says, a year for a tile whose address
+  names its cycle and revision (`TilesCachePolicy`, keyed on `c` and `r`
+  alone). In the development stack, which has no Caddy, the gateway
+  still forwards them, without the page's headers (`TileSecurityConfig`).
 - **Only CloudFront reaches the server.** The security group admits
   port 443 from CloudFront's origin-facing addresses alone, and Caddy
   answers 404 to any request without the secret header CloudFront adds
@@ -163,7 +177,9 @@ AWS's public us-east-1 prices (CloudFront pay-as-you-go: 1 TB and 10
 million requests a month always free, then $0.085 a GB and $0.01 per
 10,000 HTTPS requests; EC2 on-demand, Spot taken at about a third). One
 cycle's archives are about 30 GB (sec@2x 18 GB, sec 6.7, tac@2x 2.3, tac
-0.9, IFR 1.8, the overlays 0.12), PNG tiles of 35 KB on average at @2x.
+0.9, IFR 1.8, the overlays 0.12), PNG tiles of 35 KB on average at @2x;
+packed as lossless WebP from 2026-11-21 (services/jobs/README.md, "The
+chart tiles as archives") about 89% of that, some 27 GB a cycle.
 An active pilot is taken as ten sessions a month of about 200 tiles and
 100 answers each, some 80 MB and 3,000 requests (the web's service
 worker keeps 20,000 tiles for the cycle, so a pilot's own area costs

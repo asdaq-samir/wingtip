@@ -5,7 +5,6 @@ import app.wingtipmaps.gateway.dto.CurrencyDto;
 import app.wingtipmaps.gateway.dto.EndorsementFieldDto;
 import app.wingtipmaps.gateway.dto.EndorsementKindDto;
 import app.wingtipmaps.gateway.dto.ExperienceItemDto;
-import app.wingtipmaps.gateway.dto.ReviewCheckDto;
 import app.wingtipmaps.gateway.planner.model.PlannerCurrencyAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerEndorsementFillAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerEndorsementFilled;
@@ -15,15 +14,13 @@ import app.wingtipmaps.gateway.planner.model.PlannerExperienceAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.planner.model.PlannerInspectionsAsk;
-import app.wingtipmaps.gateway.planner.model.PlannerLogbookEntry;
 import app.wingtipmaps.gateway.planner.model.PlannerPilotNotes;
-import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
+import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatch;
+import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatchAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerStudioDraft;
-import app.wingtipmaps.gateway.planner.model.PlannerVorCheckAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerWordsSources;
 import app.wingtipmaps.gateway.upstream.BriefingApi;
 import app.wingtipmaps.gateway.upstream.PlannerApi;
-import java.math.BigDecimal;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.time.Instant;
@@ -142,7 +139,7 @@ public class PlannerClient {
             LocalDate medicalExpiresOn,
             LocalDate ipcOn,
             LocalDate today) {
-        PlannerCurrencyAsk ask = new PlannerCurrencyAsk(entriesOf(entries), today)
+        PlannerCurrencyAsk ask = new PlannerCurrencyAsk(PlannerAsks.entriesOf(entries), today)
                 .flightReviewOn(flightReviewOn)
                 .medicalExpiresOn(medicalExpiresOn)
                 .ipcOn(ipcOn);
@@ -177,47 +174,34 @@ public class PlannerClient {
      * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public List<ExperienceItemDto> experience(List<LogbookEntry> entries, LocalDate today) {
-        PlannerExperienceAsk ask = new PlannerExperienceAsk(entriesOf(entries), today);
-        return rule(
-                "the experience",
-                () -> planner.experience(ask),
-                items -> items.stream()
-                        .map(i -> new ExperienceItemDto(
-                                i.getKey(),
-                                i.getRule(),
-                                i.getLabel(),
-                                i.getHave().doubleValue(),
-                                i.getNeed().doubleValue(),
-                                i.getUnit().getValue(),
-                                i.getMet()))
-                        .toList());
+        PlannerExperienceAsk ask = PlannerAsks.experienceAsk(entries, today);
+        return rule("the experience", () -> planner.experience(ask), PlannerAsks::experienceOf);
     }
 
-    /** The columns the planner's rules read, as its LogbookEntry has them. */
-    static List<PlannerLogbookEntry> entriesOf(List<LogbookEntry> entries) {
-        return entries.stream()
-                .map(e -> new PlannerLogbookEntry(e.getFlownOn())
-                        .totalHours(decimal(e.getTotalHours()))
-                        .nightHours(decimal(e.getNightHours()))
-                        .crossCountryHours(decimal(e.getCrossCountryHours()))
-                        .dayLandings(e.getDayLandings())
-                        .nightLandings(e.getNightLandings())
-                        .dualHours(decimal(e.getDualHours()))
-                        .soloHours(decimal(e.getSoloHours()))
-                        .instrumentHours(decimal(e.getInstrumentHours()))
-                        .toweredLandings(e.getToweredLandings())
-                        .distanceNm(decimal(e.getDistanceNm()))
-                        .longestLegNm(decimal(e.getLongestLegNm()))
-                        .approaches(e.getApproaches())
-                        .holding(e.isHolding())
-                        .tracking(e.isTracking()))
-                .toList();
-    }
-
-    /** An endorsement held, as the engine reads one: its code, the day it
-     *  was given, and the make and model it names where it says. */
-    public static PlannerHeldEndorsement held(String code, LocalDate on, String makeModel) {
-        return new PlannerHeldEndorsement(code, on).makeModel(makeModel);
+    /**
+     * Many students' experience and endorsements in one round trip (POST
+     * /api/pilot/records-batch): each answer as {@link #experience} and
+     * {@link #endorsements} give it, in the order asked. An instructor's
+     * page asked two a student and two a waiting review, one after another
+     * (waste-server audit A: about 31 for 10 students); nothing is asked
+     * of nothing.
+     *
+     * @throws PlannerUnavailableException when the planner cannot be reached or refuses,
+     *     or answers a list of another length
+     */
+    public PlannerRecordsBatch records(List<PlannerExperienceAsk> experience, List<PlannerEndorsementsAsk> endorsements) {
+        if (experience.isEmpty() && endorsements.isEmpty()) {
+            return new PlannerRecordsBatch().experience(List.of()).endorsements(List.of());
+        }
+        PlannerRecordsBatchAsk ask =
+                new PlannerRecordsBatchAsk().experience(experience).endorsements(endorsements);
+        String what = "the students' records";
+        return rule(what, () -> planner.recordsBatch(ask), r -> {
+            if (r.getExperience().size() != experience.size() || r.getEndorsements().size() != endorsements.size()) {
+                throw new PlannerUnavailableException("the planner answered " + what + " with a list of another length");
+            }
+            return r;
+        });
     }
 
     /**
@@ -225,18 +209,13 @@ public class PlannerClient {
      * engine's endorsement_records): each one's last good day in order
      * (null where it does not run out), the day the solo endorsement runs
      * out (14 CFR 61.87(n), (p)), and 61.93(d)'s checks for a solo
-     * cross-country on {@code flightOn} where it is given ({@link #checkOf}).
+     * cross-country on {@code flightOn} where it is given (PlannerAsks#checkOf).
      *
      * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public PlannerEndorsements endorsements(List<PlannerHeldEndorsement> held, LocalDate flightOn) {
         PlannerEndorsementsAsk ask = new PlannerEndorsementsAsk(held).flightOn(flightOn);
         return rule("the endorsements", () -> planner.endorsements(ask), e -> e);
-    }
-
-    /** One of 61.93(d)'s checks, as this app sends it on. */
-    public static ReviewCheckDto checkOf(PlannerReviewCheck c) {
-        return new ReviewCheckDto(c.getRule(), c.getLabel(), c.getMet(), c.getDetail());
     }
 
     /** How long the endorsements' catalogue is kept: the catalogue as last
@@ -293,11 +272,24 @@ public class PlannerClient {
      * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public LocalDate instructorRecordsSince(LocalDate today) {
-        return rule(
-                "how far back an instructor's records go",
-                () -> planner.instructorRecordsSince(today.toString()),
-                d -> d);
+        // A pure answer of the day, the same all day: asked once a day,
+        // not on every load of every instructor's page.
+        Since kept = since;
+        if (kept == null || !kept.today().equals(today)) {
+            kept = new Since(
+                    today,
+                    rule(
+                            "how far back an instructor's records go",
+                            () -> planner.instructorRecordsSince(today.toString()),
+                            d -> d));
+            since = kept;
+        }
+        return kept.since();
     }
+
+    private record Since(LocalDate today, LocalDate since) {}
+
+    private volatile @Nullable Since since;
 
     /** The endorsement of {@code code} in the catalogue, if there is one. */
     public Optional<EndorsementKindDto> endorsementKind(String code) {
@@ -322,46 +314,29 @@ public class PlannerClient {
     }
 
     /**
-     * When an airplane's inspections and checks fall due (POST
-     * /api/aircraft/inspections, the engine's inspections_due), each null
-     * where none was recorded: 14 CFR 91.409(a) and (b), 91.207(d),
-     * 91.411(a), 91.413(a), and 91.171 for the VOR check -- the largest
-     * error allowed for its kind, whether it was within, and its last good
-     * day (30 days on). The VOR check is sent only with its day, kind and
-     * error all recorded.
+     * When each airplane's inspections and checks fall due, in the order
+     * asked, in one round trip (POST /api/aircraft/inspections-batch, the
+     * engine's inspections_due an airplane): 14 CFR 91.409(a) and (b),
+     * 91.207(d), 91.411(a), 91.413(a), and 91.171 for the VOR check. Each
+     * ask is PaperworkClient#askOf's; nothing is asked of none. An
+     * aircraft list asked once an airplane (waste-server audit C).
      *
-     * @throws PlannerUnavailableException when the planner cannot be reached or refuses
+     * @throws PlannerUnavailableException when the planner cannot be reached or refuses,
+     *     or answers a list of another length
      */
-    public PlannerInspections inspections(
-            LocalDate annualOn,
-            LocalDate eltOn,
-            LocalDate staticCheckOn,
-            LocalDate transponderCheckOn,
-            Double hundredHourAtHours,
-            LocalDate vorCheckOn,
-            String vorCheckKind,
-            Double vorCheckErrorDeg) {
-        PlannerInspectionsAsk ask = new PlannerInspectionsAsk()
-                .annualOn(annualOn)
-                .eltOn(eltOn)
-                .staticCheckOn(staticCheckOn)
-                .transponderCheckOn(transponderCheckOn)
-                .hundredHourAtHours(decimal(hundredHourAtHours));
-        if (vorCheckOn != null && vorCheckKind != null && vorCheckErrorDeg != null) {
-            ask.vorCheck(new PlannerVorCheckAsk(
-                    decimal(vorCheckErrorDeg), PlannerVorCheckAsk.KindEnum.fromValue(vorCheckKind), vorCheckOn));
-        }
-        return rule("the inspections", () -> planner.inspections(ask), i -> i);
+    public List<PlannerInspections> inspections(List<PlannerInspectionsAsk> asks) {
+        return asks.isEmpty() ? List.of() : inspectionsOf(planner, "the inspections", asks);
     }
 
-    /** A JSON number, which the generated types hold as BigDecimal (the
-     *  pom says why), as the Double this app keeps; null where none. */
-    public static Double number(BigDecimal n) {
-        return n == null ? null : n.doubleValue();
-    }
-
-    static BigDecimal decimal(Double d) {
-        return d == null ? null : BigDecimal.valueOf(d);
+    /** {@link #inspections}, for PaperworkClient too: one rule, one check
+     *  of the answer's length. */
+    static List<PlannerInspections> inspectionsOf(PlannerApi planner, String what, List<PlannerInspectionsAsk> asks) {
+        return rule(what, () -> planner.inspectionsBatch(asks), all -> {
+            if (all.size() != asks.size()) {
+                throw new PlannerUnavailableException("the planner answered " + what + " with a list of another length");
+            }
+            return List.copyOf(all);
+        });
     }
 
     /** A rule asked of the planner (sent again once where it could not be

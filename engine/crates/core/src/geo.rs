@@ -55,6 +55,54 @@ pub fn distance_nm(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
     distance_and_bearing(lat1, lon1, lat2, lon2).0
 }
 
+/// How far the mean sphere's great-circle distance (sphere_nm) may stand
+/// from distance_nm's WGS-84 geodesic, as a part of it: the ellipsoid's
+/// radii of curvature run from 6,335 km (the meridian's at the equator) to
+/// 6,400 km (at the poles), within 0.6% of the sphere's 6,371 km (NGA
+/// TR8350.2's a and f), so 1% holds anywhere.
+pub const SPHERE_WITHIN: f64 = 0.01;
+
+/// The great-circle distance between two points on the mean sphere
+/// (EARTH_RADIUS_NM), nautical miles: a ranking measure for which of many
+/// is nearest, never a figure given, within SPHERE_WITHIN of distance_nm
+/// at a fraction of its cost.
+pub fn sphere_nm(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+    let (p1, p2) = (lat1.to_radians(), lat2.to_radians());
+    let half_lat = ((p2 - p1) / 2.0).sin();
+    let half_lon = ((lon2 - lon1).to_radians() / 2.0).sin();
+    let h = half_lat * half_lat + p1.cos() * p2.cos() * half_lon * half_lon;
+    2.0 * EARTH_RADIUS_NM * h.sqrt().min(1.0).asin()
+}
+
+/// Which of `points` is nearest (lat, lon) by `exact` (the caller's own
+/// distance_nm of a point, in the order of its arguments it has always
+/// asked, so the answer is the same to the last bit), and how far: the
+/// first where two are as near, as a scan of every point's `exact` answers,
+/// (0, infinity) where none is nearer than that. Only the points sphere_nm
+/// cannot rule out are solved on the ellipsoid: one whose sphere distance,
+/// less SPHERE_WITHIN, is past the nearest one's plus SPHERE_WITHIN is
+/// farther than that one on the ellipsoid too, so it can be neither the
+/// nearest nor tie with it. None for no points.
+pub fn nearest(
+    lat: f64, lon: f64, points: impl Iterator<Item = (f64, f64)> + Clone, exact: impl Fn(f64, f64) -> f64,
+) -> Option<(usize, f64)> {
+    let rough = |p: (f64, f64)| sphere_nm(lat, lon, p.0, p.1);
+    let bound = points.clone().map(rough).fold(f64::INFINITY, f64::min) * (1.0 + SPHERE_WITHIN);
+    let mut best = (0usize, f64::INFINITY);
+    let mut any = false;
+    for (i, p) in points.enumerate() {
+        any = true;
+        if rough(p) * (1.0 - SPHERE_WITHIN) > bound {
+            continue;
+        }
+        let d = exact(p.0, p.1);
+        if d < best.1 {
+            best = (i, d);
+        }
+    }
+    any.then_some(best)
+}
+
 /// The geodesic's initial course from point one to point two, degrees 0
 /// to 360 true (pyproj's Geod forward azimuth). Zero for two points that
 /// coincide, as wingtip.geo answers: Karney's own 180 would give a
@@ -157,6 +205,24 @@ pub fn track_from(lat: f64, lon: f64, a: (f64, f64), course: f64) -> (f64, f64) 
         (base, azimuth) = ((lat2, lon2), azi2);
     }
     unreachable!("the tenth try returns")
+}
+
+/// Whether (lat, lon) is surely more than `width_nm` off the geodesic from
+/// `a` on `course`, from one inverse solve where track_from takes two or
+/// three inverse and direct solves: the cross-track of the right spherical
+/// triangle the inverse's distance and angle make (track_from's own first
+/// step, sin x = sin s sin A). The sphere's answer is within a small part
+/// of a percent of the ellipsoid's (WGS-84's flattening is 1/298, NGA
+/// TR8350.2), so the margin of 2 nm and 1% of the distance keeps every
+/// point whose exact cross-track is `width_nm` or less. A corridor's first
+/// cut: a point it lets go is off the line by more than the width on the
+/// ellipsoid too, and so, as the inverse's own distance s is never less
+/// than the cross-track, more than the width from `a` as well.
+pub fn surely_off_nm(lat: f64, lon: f64, a: (f64, f64), course: f64, width_nm: f64) -> bool {
+    let (s, to_p) = distance_and_bearing(a.0, a.1, lat, lon);
+    let r = EARTH_RADIUS_NM;
+    let cross = ((s / r).sin() * (to_p - course).to_radians().sin()).clamp(-1.0, 1.0).asin() * r;
+    cross.abs() > width_nm + 2.0 + 0.01 * s
 }
 
 /// A padded (min_lat, min_lon, max_lat, max_lon) box round the route a ->

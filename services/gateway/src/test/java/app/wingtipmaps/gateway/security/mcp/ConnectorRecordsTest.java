@@ -227,7 +227,9 @@ class ConnectorRecordsTest {
     private OAuth2AuthorizationService authorizations;
 
     /** Asked before every MCP call (L4): live while the pilot is connected,
-     *  not once they disconnect or delete their account. */
+     *  not once they disconnect or delete their account. The first 204 is
+     *  kept (LiveConnections), so each 404 after it is the kept answer
+     *  forgotten by the revoke or the deletion, not read afresh. */
     @Test
     void aConnectionIsLiveUntilItIsRevokedOrTheAccountGoes() throws Exception {
         Pilot pilot =

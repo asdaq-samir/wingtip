@@ -19409,6 +19409,57 @@
         "title": "RecentError",
         "type": "object"
       },
+      "RecordsBatch": {
+        "description": "The answers to a RecordsBatchAsk, each list in the order asked.",
+        "properties": {
+          "endorsements": {
+            "items": {
+              "$ref": "#/components/schemas/Endorsements"
+            },
+            "title": "Endorsements",
+            "type": "array"
+          },
+          "experience": {
+            "items": {
+              "items": {
+                "$ref": "#/components/schemas/ExperienceItem"
+              },
+              "type": "array"
+            },
+            "title": "Experience",
+            "type": "array"
+          }
+        },
+        "required": [
+          "experience",
+          "endorsements"
+        ],
+        "title": "RecordsBatch",
+        "type": "object"
+      },
+      "RecordsBatchAsk": {
+        "description": "Many students' records asked at once, for an instructor's page:\neach student's experience (ExperienceAsk) and every endorsements ask\n(EndorsementsAsk: a student's solo day, a review's 61.93(d) checks,\na signed list's last good days), answered in the same order. One\nround trip for the page rather than two a student and two a review.",
+        "properties": {
+          "endorsements": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EndorsementsAsk"
+            },
+            "title": "Endorsements",
+            "type": "array"
+          },
+          "experience": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ExperienceAsk"
+            },
+            "title": "Experience",
+            "type": "array"
+          }
+        },
+        "title": "RecordsBatchAsk",
+        "type": "object"
+      },
       "RegistryDocument": {
         "description": "A document filed for recording against the N-number (DOCINDEX.txt,\nabout the last month's): its kind (bill of sale, lien, release...), the\nday the Registry received it, entered and corrected it.",
         "properties": {
@@ -25941,6 +25992,53 @@
         "summary": "Inspections"
       }
     },
+    "/api/aircraft/inspections-batch": {
+      "post": {
+        "description": "Many airplanes' inspections in one call, each as\n/api/aircraft/inspections answers it, in the order asked: a pilot's\naircraft list and the daily reminders ask every airplane at once.",
+        "operationId": "inspections_batch_api_aircraft_inspections_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/InspectionsAsk"
+                },
+                "title": "Asks",
+                "type": "array"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Inspections"
+                  },
+                  "title": "Response Inspections Batch Api Aircraft Inspections Batch Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Inspections Batch"
+      }
+    },
     "/api/aircraft/problems": {
       "post": {
         "description": "`{field: words}` for each field of the request that may not be\nsaved, in the words the apps show under it; `{}` where it may be. The\nfigures come as the gateway's JSON numbers and are read as the form's\ntyped text, as the engine takes them; a field left out or null is\nblank.",
@@ -27665,7 +27763,8 @@
               "application/json": {
                 "schema": {}
               },
-              "image/png": {}
+              "image/png": {},
+              "image/webp": {}
             },
             "description": "Successful Response"
           },
@@ -27738,7 +27837,8 @@
               "application/json": {
                 "schema": {}
               },
-              "image/png": {}
+              "image/png": {},
+              "image/webp": {}
             },
             "description": "Successful Response"
           },
@@ -31724,6 +31824,45 @@
           }
         },
         "summary": "Instructor Records Since"
+      }
+    },
+    "/api/pilot/records-batch": {
+      "post": {
+        "description": "Many students' experience and endorsements in one call, each as\n/api/pilot/experience and /api/pilot/endorsements answer it, in the\norder asked: an instructor's page asks its students and the reviews\nwaiting on them together (14 CFR 61.109(a), 61.87, 61.93(d)).",
+        "operationId": "records_batch_api_pilot_records_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordsBatchAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordsBatch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Records Batch"
       }
     },
     "/api/places/search": {

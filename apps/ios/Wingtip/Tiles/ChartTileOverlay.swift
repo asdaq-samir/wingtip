@@ -181,10 +181,10 @@ final class TileCache: @unchecked Sendable {
     }
 }
 
-/// A tile's PNG made ready to draw: decoded once into a plain 32-bit
-/// bitmap (the pyramid's tiles are 256-colour palette PNGs, #547, which
-/// Core Graphics would otherwise expand at every draw), with the day's
-/// lift (ChartLift) on it where asked.
+/// A tile made ready to draw, palette PNG or lossless WebP (ImageIO
+/// reads either, whatever the `.png` address says): decoded once into a
+/// plain 32-bit bitmap (#547's 256 colours Core Graphics would otherwise
+/// expand at every draw), with the day's lift (ChartLift) where asked.
 enum ChartTileImage {
     nonisolated static func decode(_ data: Data, lift: Bool) -> CGImage? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),

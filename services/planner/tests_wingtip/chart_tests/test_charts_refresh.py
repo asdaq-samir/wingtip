@@ -144,7 +144,7 @@ def test_a_cycle_staged_ahead_is_not_drawn_again_and_is_promoted_once_in_force(t
     assert promoted == ["charts-bucket"]
 
 
-def test_tile_png_caches_the_render_and_remembers_empty_tiles(tmp_path, monkeypatch):
+def test_tile_bytes_caches_the_render_and_remembers_empty_tiles(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
     monkeypatch.setattr(chart_cycle, "current_cycle", lambda *a, **k: "09-03-2026")
     box = (-90.0, 41.0, -86.0, 43.0)
@@ -158,19 +158,19 @@ def test_tile_png_caches_the_render_and_remembers_empty_tiles(tmp_path, monkeypa
 
     monkeypatch.setattr(chart_tiles, "rasters_covering", covering)
 
-    first = chart_tiles.tile_png(65, 94, 8, "sec")
+    first = chart_tiles.tile_bytes(65, 94, 8, "sec")
     assert first and first[:8] == b"\x89PNG\r\n\x1a\n"
     assert chart_tiles.tile_cached(65, 94, 8, "sec")
     monkeypatch.setattr(chart_render, "render_tile", lambda *a: pytest.fail("cached tiles are not re-rendered"))
-    assert chart_tiles.tile_png(65, 94, 8, "sec") == first
+    assert chart_tiles.tile_bytes(65, 94, 8, "sec") == first
     assert len(calls) == 1
 
-    assert chart_tiles.tile_png(65, 80, 8, "sec") is None
+    assert chart_tiles.tile_bytes(65, 80, 8, "sec") is None
     assert (tmp_path / "tiles" / "09-03-2026" / "sec" / "8" / "65" / "80.none").exists()
-    assert chart_tiles.tile_png(65, 80, 8, "sec") is None
+    assert chart_tiles.tile_bytes(65, 80, 8, "sec") is None
     assert len(calls) == 2
 
-    assert chart_tiles.tile_png(65, 94, 20, "sec") is None  # past the chart's own zoom range
+    assert chart_tiles.tile_bytes(65, 94, 20, "sec") is None  # past the chart's own zoom range
 
     image = chart_tiles.tile_image(65, 94, 8, "sec")
     assert image is not None and image.mode == "RGB"
@@ -220,11 +220,11 @@ def test_a_tile_missing_a_sheet_is_left_blank_where_tiles_do_not_fetch(tmp_path,
 
     monkeypatch.setattr(chart_tiles, "FETCH_FOR_TILES", False)
     monkeypatch.setattr(chart_render, "render_tile", lambda *a: pytest.fail("a tile missing a sheet is not drawn here"))
-    assert chart_tiles.tile_png(65, 94, 8, "sec") is None
+    assert chart_tiles.tile_bytes(65, 94, 8, "sec") is None
 
     monkeypatch.setattr(chart_tiles, "FETCH_FOR_TILES", True)
     monkeypatch.setattr(chart_render, "render_tile", render)
-    assert chart_tiles.tile_png(65, 94, 8, "sec")[:8] == b"\x89PNG\r\n\x1a\n"
+    assert chart_tiles.tile_bytes(65, 94, 8, "sec")[:8] == b"\x89PNG\r\n\x1a\n"
     assert not chart_tiles.tile_cached(65, 94, 8, "sec")
 
 

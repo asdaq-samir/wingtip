@@ -10,8 +10,15 @@ site's API terms ask heavy users to do -- a bounding-box query per route
 is exactly the "large query" the rate limit and the results cap exist
 for, and one download every few minutes replaces all of them. Each is
 asked for only if it has changed since the copy held (its ETag and
-Last-Modified): an unchanged one (the SIGMETs and G-AIRMETs most of the
-time) is a 304, neither downloaded nor parsed again.
+Last-Modified, kept beside the record: weather_store.write_validators).
+A 304 is neither downloaded nor parsed again. The site's ETags are
+nginx's mtime-size and its Last-Modified moves every minute as the file
+is regenerated, so 304s are rare (measured 2026-11-21): a body that comes
+back the same as the copy held (its digest in the record's meta, "body")
+is not parsed by the engine again either. Either way an unchanged copy
+is not written again unless the time it may be held to moves
+(weather_store.write_if_changed), so the planner does not decode it
+again; the try's attempt file confirms it, which is the age said.
 
 Each copy is stored with the time to which it may be served when a
 later fetch fails, by its product's own validity: a TAF to the end of
@@ -75,24 +82,30 @@ SOURCES = {
 
 def fetch_source(name: str) -> None:
     """Source `name` fetched and stored, if it has changed since the copy
-    stored (its validators, kept in the record's meta); an unchanged one is
-    stored again as fetched now, so its age is when it was last confirmed.
+    stored (its validators; then its body's digest); an unchanged one is
+    left as written and confirmed by the try's attempt file
+    (weather_store.confirmed_at), so its age is when it was last confirmed.
     The METARs also update each station's last wind (recent-winds). Raises
     fetch.FetchFailed, ValueError (a body the engine cannot read) or
     OSError where the copy could not be had, the stored one left in place."""
     url, parse, held_until = SOURCES[name]
     held = weather_store.read(name)
-    validators = (held.meta.get("validators") if held else None) or None
+    validators = weather_store.validators(name) if held else None
     now = time.time()
     resp = fetch.get(url, validators=validators)
     if held is not None and getattr(resp, "status_code", None) == 304:
-        data = held.data
+        data, digest = held.data, held.meta.get("body")
     else:
-        data = parse(gzip.decompress(resp.content))
-        validators = fetch.validators_of(resp)
+        body = gzip.decompress(resp.content)
+        digest = weather_store.body_hash(body)
+        same = held is not None and held.meta.get("body") == digest
+        data = held.data if same else parse(body)
+        fresh = fetch.validators_of(resp)
+        if fresh != validators:
+            weather_store.write_validators(name, fresh)
     until = held_until(data, now)
-    weather_store.write(name, data, fetched_at=now, until=until, meta={"validators": validators})
-    if name == "metars":
+    written = weather_store.write_if_changed(name, data, fetched_at=now, until=until, meta={"body": digest})
+    if name == "metars" and written:
         keep_recent_winds(data, now)
 
 
@@ -114,4 +127,7 @@ def keep_recent_winds(metars: dict, now: float) -> None:
             winds[ident] = {"wind_dir_true_deg": direction, "wind_speed_kt": speed, "observed": observed}
     oldest = now - RECENT_WIND_HOURS * 3600
     winds = {ident: w for ident, w in winds.items() if w["observed"] >= oldest}
-    weather_store.write("recent-winds", winds, fetched_at=now, until=None)
+    # Written only when a wind came or went: this runs at each new METAR
+    # set, and the 385 KB record is otherwise the same as the one held.
+    if held is None or winds != held.data:
+        weather_store.write("recent-winds", winds, fetched_at=now, until=None)

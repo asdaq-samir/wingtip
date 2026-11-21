@@ -115,3 +115,51 @@ fn a_box_around_a_point_is_a_route_of_one_point() {
     assert!((w + 93.0 + east).abs() < 1e-12 && (e + 93.0 - east).abs() < 1e-12);
     assert_eq!(box_around(-30.0, 150.0, 25.0), corridor_bbox((-30.0, 150.0), (-30.0, 150.0), 25.0));
 }
+
+#[test]
+fn the_nearest_is_the_one_a_scan_of_every_geodesic_finds() {
+    // Points every 0.6 degree of latitude and 1 of longitude over the lower 48, some twice (a tie: the first).
+    let mut points: Vec<(f64, f64)> = (0..40).flat_map(|i| (0..60).map(move |j| (25.0 + i as f64 * 0.6, -125.0 + j as f64))).collect();
+    points.push(points[100]);
+    for k in 0..200 {
+        let (lat, lon) = (24.0 + (k as f64 * 0.137) % 26.0, -126.0 + (k as f64 * 0.311) % 62.0);
+        let mut scan = (f64::INFINITY, 0usize);
+        for (i, p) in points.iter().enumerate() {
+            let d = distance_nm(lat, lon, p.0, p.1);
+            if d < scan.0 {
+                scan = (d, i);
+            }
+        }
+        let exact = |a: f64, b: f64| distance_nm(lat, lon, a, b);
+        assert_eq!(nearest(lat, lon, points.iter().copied(), exact), Some((scan.1, scan.0)), "at {lat}, {lon}");
+        let sphere = sphere_nm(lat, lon, points[scan.1].0, points[scan.1].1);
+        assert!((sphere - scan.0).abs() <= SPHERE_WITHIN * scan.0 + 1e-9);
+    }
+    assert_eq!(nearest(40.0, -90.0, std::iter::empty(), |_, _| 0.0), None);
+}
+
+#[test]
+fn the_corridors_first_cut_never_lets_go_a_point_within_the_width() {
+    // Short and long legs, east, north-east and north, low and high
+    // latitudes, at the corridors' widths (the PIREPs' 30 nm, the TAFs'
+    // reach, the look-ahead's swath): no point the exact cross-track keeps
+    // is let go, and none let go is within the width of the leg's start.
+    let legs =
+        [((25.0, -100.0), (25.5, -99.0)), ((44.0, -104.0), (48.5, -92.0)), ((30.0, -90.0), (47.0, -90.0)), ((40.0, -80.0), (40.0, -79.9))];
+    for (a, b) in legs {
+        let course = bearing_deg(a.0, a.1, b.0, b.1);
+        for width in [0.5, 5.0, 10.0, 30.0] {
+            for i in 0..=40 {
+                for j in 0..=40 {
+                    let lat = a.0.min(b.0) - 1.0 + i as f64 * ((a.0 - b.0).abs() + 2.0) / 40.0;
+                    let lon = a.1.min(b.1) - 1.0 + j as f64 * ((a.1 - b.1).abs() + 2.0) / 40.0;
+                    if surely_off_nm(lat, lon, a, course, width) {
+                        let (cross, _) = track_from(lat, lon, a, course);
+                        assert!(cross.abs() > width, "{lat},{lon} off {a:?} let go at {cross} nm, width {width}");
+                        assert!(distance_nm(a.0, a.1, lat, lon) > width);
+                    }
+                }
+            }
+        }
+    }
+}

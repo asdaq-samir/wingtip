@@ -527,11 +527,7 @@ The owner's steps, once:
    for a new app: let Google generate the app-signing key. A new
    personal developer account then runs a closed test with at least 12
    testers for 14 days before production.
-5. **Restrict the Google Maps key** (`GOOGLE_MAPS_ANDROID_KEY`) to the
-   package name and the SHA-256 of Play's app-signing certificate (Play
-   Console › Test and release › App integrity), as well as the upload
-   key's for builds installed outside Play.
-6. **Each release:** raise `ANDROID_VERSION_CODE` above the last
+5. **Each release:** raise `ANDROID_VERSION_CODE` above the last
    upload's (the workflow passes none yet, so set it for the run, or in
    `app/build.gradle.kts`), take the bundle from that run, and upload it.
    The foreground-service declarations and the Data safety form are in

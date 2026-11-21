@@ -11,6 +11,7 @@ import app.wingtipmaps.gateway.planner.model.PlannerVorCheckAsk;
 import app.wingtipmaps.gateway.upstream.PlannerApi;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Component;
 
 /**
@@ -40,7 +41,7 @@ public class PaperworkClient {
      */
     public List<PlannerPaperworkDue> pilot(
             List<LogbookEntry> entries, LocalDate review, LocalDate medical, LocalDate ipc, LocalDate today) {
-        PlannerCurrencyAsk ask = new PlannerCurrencyAsk(PlannerClient.entriesOf(entries), today)
+        PlannerCurrencyAsk ask = new PlannerCurrencyAsk(PlannerAsks.entriesOf(entries), today)
                 .flightReviewOn(review)
                 .medicalExpiresOn(medical)
                 .ipcOn(ipc);
@@ -48,12 +49,34 @@ public class PaperworkClient {
     }
 
     /**
-     * An airplane's: its recorded inspections and checks, the ELT battery's
-     * marked date, and the owner's items with a day or hours.
+     * Each airplane's, in order, in one round trip: its recorded
+     * inspections and checks, the ELT battery's marked date, and the
+     * owner's items with a day or hours ({@code kept}, by airplane id).
+     * One ask an airplane was 1 + A calls a pilot in the daily reminders
+     * (waste-server audit C).
      *
      * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
-    public List<PlannerPaperworkDue> aircraft(Aircraft a, List<AircraftDueItem> kept) {
+    public List<List<PlannerPaperworkDue>> aircraft(List<Aircraft> all, Map<Long, List<AircraftDueItem>> kept) {
+        if (all.isEmpty()) {
+            return List.of();
+        }
+        List<PlannerInspectionsAsk> asks = all.stream()
+                .map(a -> askOf(a, kept.getOrDefault(a.getId(), List.of())))
+                .toList();
+        return PlannerClient.inspectionsOf(planner, "the paperwork", asks).stream()
+                .map(i -> List.copyOf(i.getDue()))
+                .toList();
+    }
+
+    /**
+     * What the engine's inspections_due is asked of an airplane: its
+     * registration and whether it is flown for hire, the days its
+     * inspections and checks were done and the hours of its last
+     * 100-hour, the ELT battery's marked date and the owner's items. The
+     * aircraft list (AircraftDtos) and the paperwork list ask the same.
+     */
+    public static PlannerInspectionsAsk askOf(Aircraft a, List<AircraftDueItem> kept) {
         PlannerInspectionsAsk ask = new PlannerInspectionsAsk()
                 .tailNumber(a.getTailNumber())
                 .forHire(a.isForHire())
@@ -62,17 +85,16 @@ public class PaperworkClient {
                 .eltBatteryDueOn(a.getEltBatteryDueOn())
                 .staticCheckOn(a.getStaticCheckOn())
                 .transponderCheckOn(a.getTransponderCheckOn())
-                .hundredHourAtHours(PlannerClient.decimal(a.getHundredHourAtHours()))
+                .hundredHourAtHours(PlannerAsks.decimal(a.getHundredHourAtHours()))
                 .kept(kept.stream().map(PaperworkClient::kept).toList());
-        // As PlannerClient.inspections: the VOR check only with its day,
-        // kind and error all recorded.
+        // The VOR check only with its day, kind and error all recorded.
         if (a.getVorCheckOn() != null && a.getVorCheckKind() != null && a.getVorCheckErrorDeg() != null) {
             ask.vorCheck(new PlannerVorCheckAsk(
-                    PlannerClient.decimal(a.getVorCheckErrorDeg()),
+                    PlannerAsks.decimal(a.getVorCheckErrorDeg()),
                     PlannerVorCheckAsk.KindEnum.fromValue(a.getVorCheckKind().name()),
                     a.getVorCheckOn()));
         }
-        return PlannerClient.rule("the paperwork", () -> planner.inspections(ask), i -> List.copyOf(i.getDue()));
+        return ask;
     }
 
     private static PlannerKeptItem kept(AircraftDueItem i) {
@@ -82,6 +104,6 @@ public class PaperworkClient {
                         i.getTitle())
                 .reference(i.getReference())
                 .dueOn(i.getDueOn())
-                .dueAtHours(PlannerClient.decimal(i.getDueAtHours()));
+                .dueAtHours(PlannerAsks.decimal(i.getDueAtHours()));
     }
 }

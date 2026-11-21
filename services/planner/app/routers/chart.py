@@ -4,10 +4,10 @@ Overpass, the FAA subscription or the elevation service."""
 
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
-from wingtip import chart_kinds, chart_tiles, chartlabels, chartvision, geo
+from wingtip import chart_kinds, chart_serving, chart_tiles, chartlabels, chartvision, geo, tile_archive
 
 from .. import chart_model
 from ..chart_model import TRAINING_HALF_WIDTH_NM
@@ -21,11 +21,30 @@ from ..gateway import DEVELOPER, SHARED
 router = APIRouter()
 
 # Half a chart cycle, in seconds -- how long a browser (or a CDN in
-# front of this app) may keep a tile before asking again, so a new
-# edition reaches a returning pilot within a month of its date.
-# The gateway forwards Cache-Control only for routes marked SHARED
-# (app.gateway), as the tiles' are.
+# front of this app) may keep a tile asked for by its bare address,
+# before asking again, so a new edition reaches a returning pilot
+# within a month of its date. The gateway forwards Cache-Control only
+# for routes marked SHARED (app.gateway), as the tiles' are.
 _CHART_TILE_MAX_AGE_S = 28 * 24 * 3600
+# A tile asked for with the cycle and revision it is drawn from (the
+# map's address, lib/map/sources/tiles' tileTemplate: ?c=<cycle>&r=<rev>)
+# names those bytes for good: a new cycle or a re-render within one
+# changes the address, never what an address answers. So a year and
+# immutable, as the published archives are (wingtip.chart_publish):
+# Safari revalidates every subresource on a reload unless it is
+# immutable, and with no ETag on a tile its revalidation was the whole
+# tile again, some 100 KB at @2x, a screenful of them per reload.
+_NAMED_TILE_CACHE = f"public, max-age={365 * 24 * 3600}, immutable"
+
+
+def _tile_cache(request: Request, kind: str) -> str:
+    """The tile's Cache-Control: immutable where its address names the
+    cycle and revision the planner draws it from now, else half a cycle."""
+    cycle = chart_serving.serving_cycle_of(kind)
+    asked = request.query_params
+    if asked.get("c") == cycle and asked.get("r") == str(chart_serving.tiles_revision(cycle)):
+        return _NAMED_TILE_CACHE
+    return f"public, max-age={_CHART_TILE_MAX_AGE_S}"
 
 
 @router.get("/api/chart", openapi_extra=SHARED)
@@ -38,49 +57,53 @@ def chart_info(response: Response) -> ChartInfo:
     return ChartInfo(**chart_summary())
 
 
-def _chart_tile(kind: chart_kinds.ChartKind, z: int, x: int, y: int, scale: int = 1) -> Response:
+def _chart_tile(request: Request, kind: chart_kinds.ChartKind, z: int, x: int, y: int, scale: int = 1) -> Response:
     if not (kind.min_zoom <= z <= kind.max_zoom):
         raise HTTPException(404, f"{kind.key} tiles exist for zoom {kind.min_zoom}-{kind.max_zoom}")
     try:
-        png = chart_tiles.tile_png(x, y, z, kind.key, scale)
+        tile = chart_tiles.tile_bytes(x, y, z, kind.key, scale)
     except chart_tiles.TileUnavailable as err:
         # The published archive out of reach (chart_tiles.TileUnavailable):
         # a 503 that no cache keeps (CloudFront caches no 503, the stack's
         # ErrorCachingMinTTL), so the map's next ask gets the tile.
         return Response(status_code=503, content=str(err), headers={"Cache-Control": "no-store", "Retry-After": "30"})
-    if png is None:
+    if tile is None:
         # No sheet covers it -- the sea, Canada, Mexico round the country
         # as it opens: nothing to draw, which is no failure, so 204, kept
         # as long as a tile is. A 404 was an error in the browser's
         # console for every one, which Lighthouse's best practices count
         # (18 on the planner's first view, 2026-10-10).
-        return Response(status_code=204, headers={"Cache-Control": f"public, max-age={_CHART_TILE_MAX_AGE_S}"})
-    return Response(content=png, media_type="image/png", headers={"Cache-Control": f"public, max-age={_CHART_TILE_MAX_AGE_S}"})
+        return Response(status_code=204, headers={"Cache-Control": _tile_cache(request, kind.key)})
+    # Lossless WebP out of an archive packed since 2026-11-21, PNG out of
+    # one packed before or drawn on request: the address keeps its .png
+    # whatever the bytes are (every map's template has it), and the
+    # Content-Type says which (tile_archive.media_type).
+    return Response(content=tile, media_type=tile_archive.media_type(tile), headers={"Cache-Control": _tile_cache(request, kind.key)})
 
 
 # Before the plain tile's route, which would take "93@2x" for its y and
 # turn it away as no number.
 @router.get(
     "/api/chart-tile/{kind}/{z}/{x}/{y}@2x.png",
-    responses={200: {"content": {"image/png": {}}}, 204: {"description": "No sheet covers the tile"}},
+    responses={200: {"content": {"image/webp": {}, "image/png": {}}}, 204: {"description": "No sheet covers the tile"}},
     openapi_extra=SHARED,
 )
-def chart_tile_2x(kind: str, z: int, x: int, y: int) -> Response:
+def chart_tile_2x(request: Request, kind: str, z: int, x: int, y: int) -> Response:
     """The same tile at twice the pixels, 512 on a side, for a 2x or 3x
     screen: drawn from the FAA's sheet at that size, where the browser
     stretching the 256-pixel tile blurred every line and letter.
     `chart_layers` says which kinds have them (`scales`)."""
     if kind not in chart_kinds.KINDS:
         raise HTTPException(404, f"no such chart kind: {kind}")
-    return _chart_tile(chart_kinds.KINDS[kind], z, x, y, scale=2)
+    return _chart_tile(request, chart_kinds.KINDS[kind], z, x, y, scale=2)
 
 
 @router.get(
     "/api/chart-tile/{kind}/{z}/{x}/{y}.png",
-    responses={200: {"content": {"image/png": {}}}, 204: {"description": "No sheet covers the tile"}},
+    responses={200: {"content": {"image/webp": {}, "image/png": {}}}, 204: {"description": "No sheet covers the tile"}},
     openapi_extra=SHARED,
 )
-def chart_tile(kind: str, z: int, x: int, y: int) -> Response:
+def chart_tile(request: Request, kind: str, z: int, x: int, y: int) -> Response:
     """Any kind of chart by its key (`chart_layers` on the course lists
     them): `sec`, `tac`, `ifr_low`, `ifr_high`, `ifr_area`. What the
     map's layers draw from.
@@ -95,7 +118,7 @@ def chart_tile(kind: str, z: int, x: int, y: int) -> Response:
     under older names, which nothing called any more."""
     if kind not in chart_kinds.KINDS:
         raise HTTPException(404, f"no such chart kind: {kind}")
-    return _chart_tile(chart_kinds.KINDS[kind], z, x, y)
+    return _chart_tile(request, chart_kinds.KINDS[kind], z, x, y)
 
 
 @router.get("/api/classify", openapi_extra=DEVELOPER)

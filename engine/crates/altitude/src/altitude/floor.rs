@@ -5,7 +5,7 @@
 //! gazetteer places) and passes them in; the clearances are here.
 
 use super::mountainous;
-use super::track::{from_segment_nm, pieces, track_nm, Point};
+use super::track::{from_segment_nm, pieces, surely_off_nm, track_from, Point};
 
 /// 14 CFR 91.119(b): over a congested area, 1,000 ft above the highest
 /// obstacle within a horizontal radius of 2,000 ft of the aircraft.
@@ -92,11 +92,16 @@ pub fn vfr(start: Point, end: Point, breaks_nm: &[f64], ground: &Ground, obstacl
     let known = ground.congested.is_some();
     let clearance = |over_town: bool| if over_town || !known { CONGESTED_CLEARANCE_FT } else { OTHER_CLEARANCE_FT };
     let spacing = if ground.along_nm.len() > 1 { ground.along_nm[1] - ground.along_nm[0] } else { 0.0 };
-    // Each obstacle placed on the line, the corridor's alone.
+    // Each obstacle placed on the line, the corridor's alone: the course
+    // solved once for all of them, and those surely outside the corridor
+    // (most of the box the planner reads round a diagonal leg) let go
+    // after one inverse solve, not the exact point-to-line's several.
+    let course = crate::geo::bearing_deg(start.0, start.1, end.0, end.1);
     let placed: Vec<(f64, &Obstacle)> = obstacles
         .iter()
+        .filter(|o| !surely_off_nm(o.at, start, course, CORRIDOR_HALF_WIDTH_NM))
         .filter_map(|o| {
-            let (cross, along) = track_nm(o.at, start, end);
+            let (cross, along) = track_from(o.at, start, course);
             (cross.abs() <= CORRIDOR_HALF_WIDTH_NM).then_some((along, o))
         })
         .collect();

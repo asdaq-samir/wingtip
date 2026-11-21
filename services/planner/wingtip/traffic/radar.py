@@ -12,7 +12,7 @@ from ..geo import box_around, distance_nm
 from . import store
 from .adsb_lol import NEAR_RADIUS_NM, REGION_DEG, WIDE_REGION_DEG, _region
 from .common import STALE_S, _NM_PER_DEG, _wall
-from .recorded import FOLLOW_KEEP_S, RECORD_KEEP_S, _followed, _last_recorded, _record, followed
+from .recorded import FOLLOW_KEEP_S, RECORD_KEEP_S, _followed, _key, _last_recorded, _record, followed
 
 #: A followed airplane's report from elsewhere is recorded at most this
 #: often, s: STARS sweeps every 4.8 s; a point a quarter minute is a
@@ -31,6 +31,21 @@ def heard_elsewhere(plane: dict, at: float) -> None:
     if not store.radar_heard(plane, at):
         return
     if _followed(hex_id):
+        last = _last_recorded(hex_id)
+        if last is None or at - last["t"] >= ELSEWHERE_RECORD_S:
+            _record(hex_id, {**plane, "seen_s": max(0.0, _wall() - at)})
+
+
+def heard_all_elsewhere(reports: list[tuple[dict, float]], following: set[str]) -> None:
+    """heard_elsewhere for a whole radar message's reports, (plane, at):
+    kept in one transaction (store.radar_heard_many), and whether each is
+    followed read from `following`, the addresses ingest already holds
+    (radar_wanted, a second old at most), not asked of the store a track
+    at a time."""
+    for (plane, at), kept in zip(reports, store.radar_heard_many(reports)):
+        hex_id = plane["hex"]
+        if not kept or _key(hex_id) not in following:
+            continue
         last = _last_recorded(hex_id)
         if last is None or at - last["t"] >= ELSEWHERE_RECORD_S:
             _record(hex_id, {**plane, "seen_s": max(0.0, _wall() - at)})

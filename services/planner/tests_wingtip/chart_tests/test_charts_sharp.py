@@ -51,11 +51,11 @@ def test_a_sharp_tile_is_drawn_on_request_and_a_scale_never_drawn_is_none(two_sh
     sheets = {c.name: c for c in (_sheet(tmp_path, "Left", LEFT, 1), _sheet(tmp_path, "Right", RIGHT, 2))}
     monkeypatch.setattr(chart_prepare, "ensure_chart", lambda kind, name, cycle=None, fetch=True: sheets[name])
 
-    sharp = chart_render.decode_rgba(chart_tiles.tile_png(64, 94, 8, "sec", scale=2))
+    sharp = chart_render.decode_rgba(chart_tiles.tile_bytes(64, 94, 8, "sec", scale=2))
     assert sharp.shape == (512, 512, 4) and tuple(sharp[256, 256]) == (255, 0, 0, 255)
     assert chart_render.tile_path(chart_kinds.SECTIONAL, "10-29-2026", 64, 94, 8, 2).name == "94@2x.png"
     assert chart_render.tile_path(chart_kinds.SECTIONAL, "10-29-2026", 64, 94, 8, 2).exists()
-    assert chart_tiles.tile_png(64, 94, 8, "sec", scale=3) is None
+    assert chart_tiles.tile_bytes(64, 94, 8, "sec", scale=3) is None
 
 
 def test_the_published_pointer_says_which_scales_the_map_may_ask_for(tmp_path, monkeypatch):

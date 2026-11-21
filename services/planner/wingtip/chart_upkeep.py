@@ -115,7 +115,7 @@ def build_cycle(cycle: str, kinds: tuple = tuple(KINDS), workers: int | None = 2
             chart_pyramid.render_pyramid(KINDS[key], workers=workers, cycle=cycle)
     # Each finished kind's loose tiles into its archives.
     say("packing")
-    chart_archives.pack_complete(cycle, kinds)
+    chart_archives.pack_complete(cycle, kinds, workers=workers)
     return chart_serving.pyramid_complete(cycle, kinds)
 
 

@@ -15,6 +15,7 @@ import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.service.FlightService;
 import java.util.List;
 import java.util.UUID;
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -75,7 +76,7 @@ class FlightPersistenceTest {
         Flight saved =
                 flights.save(new Flight(pilot, null, "C81", "KDLH").fileNavLog(navLog(), 2500, 323.6, 171.0, 24.2));
 
-        Flight found = flights.findById(saved.getId()).orElseThrow();
+        Flight found = flights.findWithNavLogById(saved.getId()).orElseThrow();
 
         assertThat(found.getCheckpoints())
                 .extracting(FlightCheckpoint::getName)
@@ -173,7 +174,7 @@ class FlightPersistenceTest {
                 flights.save(new Flight(pilot, null, "C81", "KDLH").fileNavLog(navLog(), 2500, 323.6, 171.0, 24.2));
 
         FlightCheckpoint last =
-                flights.findById(saved.getId()).orElseThrow().getCheckpoints().get(2);
+                flights.findWithNavLogById(saved.getId()).orElseThrow().getCheckpoints().get(2);
 
         assertThat(last.getLegDistanceNm()).isNull();
         assertThat(last.getEteMin()).isNull();
@@ -186,7 +187,7 @@ class FlightPersistenceTest {
         Flight saved =
                 flights.save(new Flight(pilot, null, "C81", "KDLH").fileNavLog(navLog(), 2500, 323.6, 171.0, 24.2));
 
-        Flight refiled = flights.findById(saved.getId()).orElseThrow();
+        Flight refiled = flights.findWithNavLogById(saved.getId()).orElseThrow();
         refiled.fileNavLog(
                 List.of(
                         new FlightCheckpoint(0, "C81", "departure", 42.3172, -88.0905, 0.0),
@@ -197,7 +198,7 @@ class FlightPersistenceTest {
                 23.8);
         flights.saveAndFlush(refiled);
 
-        assertThat(flights.findById(saved.getId()).orElseThrow().getCheckpoints())
+        assertThat(flights.findWithNavLogById(saved.getId()).orElseThrow().getCheckpoints())
                 .hasSize(2);
     }
 
@@ -272,5 +273,20 @@ class FlightPersistenceTest {
         assertThat(pilots.findByGoogleSubject(pilot.getGoogleSubject())).isPresent();
         assertThat(pilots.findByEmail(pilot.getEmail())).isPresent();
         assertThat(pilots.findByGoogleSubject("nobody")).isEmpty();
+    }
+
+    /** A flight read without its nav log leaves the checkpoints unread: the
+     *  flight watch and the reviews read flights that way. */
+    @Test
+    void theNavLogIsReadOnlyByTheFindersThatNameIt() {
+        Pilot pilot = newPilot();
+        Flight saved =
+                flights.save(new Flight(pilot, null, "C81", "KDLH").fileNavLog(navLog(), 2500, 323.6, 171.0, 24.2));
+
+        assertThat(Hibernate.isInitialized(
+                        flights.findById(saved.getId()).orElseThrow().getCheckpoints()))
+                .isFalse();
+        assertThat(flights.findWithNavLogById(saved.getId()).orElseThrow().getCheckpoints())
+                .hasSize(3);
     }
 }

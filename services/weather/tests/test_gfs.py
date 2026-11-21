@@ -79,7 +79,7 @@ def test_a_period_is_stored_at_the_stations_to_the_end_of_its_window(monkeypatch
     to the end of the period's window and read by the planner as the FB's
     columns were."""
     now = datetime(2026, 11, 7, 16, 30, tzinfo=timezone.utc)
-    monkeypatch.setattr(gfs, "_fetch", lambda fcst_hr, at: (_fields(10.0, 0.0, 265.15), RUN, 6))
+    monkeypatch.setattr(gfs, "_fetch", lambda fcst_hr, at, held=None: (_fields(10.0, 0.0, 265.15), RUN, 6))
     monkeypatch.setattr(gfs.time, "time", lambda: now.timestamp())
     gfs.fetch_period("06")
     record = weather_store.read("winds-06")
@@ -107,3 +107,14 @@ def test_a_run_not_posted_falls_back_to_the_one_before_and_none_is_unavailable(m
     with pytest.raises(gfs.ModelWindsUnavailable):
         gfs._fetch("06", datetime(2026, 11, 7, 17, 1, tzinfo=timezone.utc))
     assert len(asked) == 3
+
+
+def test_the_run_and_hour_already_stored_are_not_downloaded_again(monkeypatch):
+    """The step moves with the clock's hour, the job every 45 min: a turn
+    in the same hour as the last asks for the file the store holds."""
+    asked = []
+    monkeypatch.setattr(gfs, "_download", lambda run, step: asked.append((run, step)))
+    at = datetime(2026, 11, 7, 17, 0, tzinfo=timezone.utc)
+    step = gfs.forecast_step(RUN, at + timedelta(hours=3))
+    assert gfs._fetch("06", at, held=(gfs.utc.iso(RUN), step)) is None
+    assert asked == []

@@ -618,9 +618,12 @@ Resources:
   #                  which the planner reads a tile at a time by range
   #                  requests; a month at the edge (each its own immutable
   #                  Cache-Control, its contents in its name).
-  # - /api/planner/chart-tile/*
-  #                  the server, cached: a tile the planner read out of its
-  #                  archive, its cycle and revision in its address.
+  # - /api/planner/chart-tile/*, terrain-tile/*, overlay-tiles*
+  #                  the server, cached a year at most (TilesCachePolicy):
+  #                  a tile the planner read out of its archive, its cycle
+  #                  and revision in its address. Caddy sends these to the
+  #                  planner itself, not through the gateway
+  #                  (infra/server/Caddyfile, @tiles).
   # - /app/assets/*  the server, cached: fingerprinted, a year, immutable
   #                  (WebMvcConfig's own header). CachingOptimized keys on
   #                  Brotli and gzip, so the origin sends the web build's
@@ -680,6 +683,33 @@ Resources:
           CookiesConfig: { CookieBehavior: none }
           QueryStringsConfig: { QueryStringBehavior: all }
 
+  # The map's tiles: the chart's, the terrain's and the overlays' archive.
+  # The planner says how long each is good for -- a year and immutable
+  # where the address names the cycle and revision (?c= and ?r=), else
+  # half a cycle -- and this keeps them that long, where
+  # SharedAnswersCachePolicy stops at a day: a chart tile changes only
+  # with its address, so a day's ceiling only sent the edge back to the
+  # server for the same bytes. Keyed by the path and those two query
+  # strings alone, so an address with anything else on it is the same
+  # tile; no cookie and no header goes to the origin, and no encoding is
+  # asked (rasters, and an archive read in byte ranges).
+  TilesCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Sub "${AWS::StackName}-tiles"
+        MinTTL: 0
+        DefaultTTL: 0
+        MaxTTL: 31536000
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingGzip: false
+          EnableAcceptEncodingBrotli: false
+          HeadersConfig: { HeaderBehavior: none }
+          CookiesConfig: { CookieBehavior: none }
+          QueryStringsConfig:
+            QueryStringBehavior: whitelist
+            QueryStrings: [c, r]
+
   Distribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -729,18 +759,31 @@ Resources:
             CachedMethods: [GET, HEAD]
             Compress: false  # archives read in byte ranges: a compressed answer would not be their bytes
             CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # managed CachingOptimized
-          # The map's chart tiles, through the planner: a cycle is kept as
+          # The map's chart tiles, from the planner: a cycle is kept as
           # one archive per kind (#535), so CloudFront no longer has a file
-          # per tile to answer from. Keyed by the address alone, ?c= the
-          # cycle and ?r= the revision among it, for the planner's own
-          # Cache-Control (a day here at most, the policy's ceiling).
+          # per tile to answer from. The origin's Caddy hands them to the
+          # planner itself, not the gateway (infra/server/Caddyfile's
+          # @tiles). Keyed by the address alone, ?c= the cycle and ?r= the
+          # revision among it, for the planner's own Cache-Control, a year
+          # where the address names both (TilesCachePolicy).
           - PathPattern: api/planner/chart-tile/*
             TargetOriginId: server
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods: [GET, HEAD]
             CachedMethods: [GET, HEAD]
-            Compress: false  # PNGs, already compressed
-            CachePolicyId: !Ref SharedAnswersCachePolicy
+            Compress: false  # WebP or PNG, already compressed
+            CachePolicyId: !Ref TilesCachePolicy
+          # The 3D ground's elevation tiles (the planner's
+          # /api/terrain-tile, Terrarium PNGs), the same for every pilot
+          # and for weeks: they went to the server uncached, under the
+          # default behaviour, at every 3D view.
+          - PathPattern: api/planner/terrain-tile/*
+            TargetOriginId: server
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD]
+            CachedMethods: [GET, HEAD]
+            Compress: false
+            CachePolicyId: !Ref TilesCachePolicy
           - PathPattern: app/assets/*
             TargetOriginId: server
             ViewerProtocolPolicy: redirect-to-https
@@ -801,7 +844,8 @@ Resources:
           # The map's FAA overlays as vector tiles (the planner's
           # /api/overlay-tiles and /api/overlay-tiles/{name}.pmtiles): the
           # index for the hour it says, the archive -- its build in its
-          # name -- a day at the edge and its cycle in the browser. The map
+          # name -- as long as the planner says, at the edge and in the
+          # browser; Caddy hands both to the planner itself. The map
           # reads the archive in byte ranges, which CloudFront answers from
           # what it holds (the Range header is never part of the key); not
           # compressed, since its tiles are gzipped inside and a range of
@@ -812,7 +856,7 @@ Resources:
             AllowedMethods: [GET, HEAD]
             CachedMethods: [GET, HEAD]
             Compress: false
-            CachePolicyId: !Ref SharedAnswersCachePolicy
+            CachePolicyId: !Ref TilesCachePolicy
         # A server error is passed on, never kept: CloudFront would hold
         # one for ten seconds by default, and a planner restarting would
         # then outlast itself at the edge.

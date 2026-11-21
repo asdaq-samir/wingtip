@@ -120,4 +120,23 @@ class StreamingProxyTest {
                 .isNot(new org.assertj.core.api.Condition<>(
                         t -> t instanceof AsyncRequestNotUsableException, "a client that left"));
     }
+
+    @Test
+    void aWholeAnswerIsNotFlushedEveryChunkAndAStreamIs() throws Exception {
+        byte[] body = new byte[64 * 1024];
+        int[] flushes = new int[1];
+        OutputStream counting = new ByteArrayOutputStream() {
+            @Override
+            public void flush() {
+                flushes[0]++;
+            }
+        };
+        StreamingProxy.pipe(new ByteArrayInputStream(body), false).writeTo(counting);
+        assertThat(flushes[0]).isZero();
+        boolean ndjson = StreamingProxy.isStream("application/x-ndjson");
+        StreamingProxy.pipe(new ByteArrayInputStream(body), ndjson).writeTo(counting);
+        assertThat(flushes[0]).isEqualTo(8);
+        assertThat(StreamingProxy.isStream("application/json")).isFalse();
+        assertThat(StreamingProxy.isStream("text/event-stream; charset=utf-8")).isTrue();
+    }
 }

@@ -450,6 +450,12 @@ services:
     mem_limit: 768m
     healthcheck:
       <<: *python-healthcheck
+      # Each check is a Python started afresh, and its health() stats every
+      # record and reads each attempt file: every 5 s that was 17,280 a day
+      # for a service no other one waits on (no depends_on names it), whose
+      # products change in minutes at the quickest. Every thirty, as
+      # ingest's is.
+      interval: 30s
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
 
   # Where the local stack's sign-in emails go: an inbox of its own at

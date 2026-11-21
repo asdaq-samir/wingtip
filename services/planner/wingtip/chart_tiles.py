@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 # CHARTS_FETCH_FOR_TILES=0 is CI's (infra/docker-compose.ci.yml): there the
 # warm-up prepares the corridors' own sheets (chart_prepare.prepare_for_bbox, which
 # always fetches), a tile over them is drawn and cached as ever, and a
-# tile that would need any other sheet is left blank (tile_png). The
+# tile that would need any other sheet is left blank (tile_bytes). The
 # browser suite's zoomed-out views sent for 29 sheets beyond the
 # corridor's 10, and the charts cache then carried all 39 to every run;
 # drawn instead from the sheets there were, such a tile was never whole,
@@ -80,9 +80,11 @@ def _archive(kind_key: str, cycle: str, scale: int = 1):
     return tile_archive.over_http(f"{config.CHART_TILES_URL}/{cycle}/{name}", requests) if name else None
 
 
-def tile_png(x: int, y: int, zoom: int, kind: str = "sec", scale: int = 1) -> bytes | None:
-    """The tile's PNG bytes -- from the kind's archive when its pyramid is
-    finished, where a tile it lacks is no tile; else rendered on first
+def tile_bytes(x: int, y: int, zoom: int, kind: str = "sec", scale: int = 1) -> bytes | None:
+    """The tile's bytes -- from the kind's archive when its pyramid is
+    finished, lossless WebP (or PNG, packed before 2026-11-21;
+    tile_archive.media_type tells them apart), where a tile it lacks is
+    no tile; else a palette PNG rendered on first
     request and cached on disk for the cycle; None where no chart of
     this kind covers it (a 404 for the map's tile layer to leave blank).
     `scale` 2 is the high-density tile. TileUnavailable where the tiles are
@@ -136,10 +138,10 @@ def tile_image(x: int, y: int, zoom: int, kind: str = "sec") -> Image.Image | No
     """The tile as an RGB image with the uncovered parts white -- what
     the chart reader (wingtip.chartvision) wants: paper, not the black its
     road-and-rail class looks for."""
-    png = tile_png(x, y, zoom, kind)
-    if png is None:
+    data = tile_bytes(x, y, zoom, kind)
+    if data is None:
         return None
-    rgba = Image.open(io.BytesIO(png)).convert("RGBA")
+    rgba = Image.open(io.BytesIO(data)).convert("RGBA")
     paper = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
     return Image.alpha_composite(paper, rgba).convert("RGB")
 

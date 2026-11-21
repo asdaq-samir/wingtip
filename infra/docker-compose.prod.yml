@@ -58,7 +58,7 @@ services:
     volumes:
       - ./server/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
-    depends_on: [gateway]
+    depends_on: [gateway, planner]
 
   db:
     <<: *restart
