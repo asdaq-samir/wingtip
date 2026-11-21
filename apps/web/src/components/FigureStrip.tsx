@@ -1,8 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import { cn } from "cn";
-import { FIT, FIXED_FIGURE, FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE } from "../lib/text";
-import { figureRoom } from "./figureRoom";
+import { FIGURE_SIZE, FIXED_FIGURE, FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE } from "../lib/text";
 import Explain from "./Explain";
 import FigureWait from "./FigureWait";
 import type { ExplainedTerm } from "../lib/explain";
@@ -15,8 +14,7 @@ export interface StripFigure {
   unit?: string;
   testId?: string;
   /** Short of what it must be (the fuel past the tanks), or wrong (a
-   *  destination not known): a warning mark before it, which figureRoom
-   *  leaves room for, and red where it is not a button. */
+   *  destination not known): a warning mark before it, red where it is not a button. */
   alert?: boolean;
   /** The figure as a screen reader says it, name and all ("Distance, one
    *  hundred two point four nautical miles"), the shorthand hidden from
@@ -52,15 +50,13 @@ const TYPE: Record<StripSize, { value: string; unit: string; name?: string; unit
  * owner's ask ("Can the calculations be center aligned?"); two by two
  * where the strip is under 16 rem wide, which with every rem grown is an
  * accessibility text size (24 px a rem and up on a phone; the owner's
- * 17.88 and 19.65 keep four), as the iPhone's and Android's strips stack:
- * four columns then cut the figures. Fitted as iOS fits a label to its
- * width: all of them set smaller together where the widest does not fit
- * its column, down to 0.7 of their size, and past that cut short with
- * "…" -- the figures always exact, never a rounded form in their place
- * (lib/text's FIT, each column a container; the trial of 2026-11-17,
- * where they were measured in the page and the one too wide rounded,
- * "13h 38m" read "13.6h"). It was two components, FlightLine and this,
- * each with its own grid and type.
+ * 17.88 and 19.65 keep four), as the iPhone's and Android's strips stack.
+ * Every figure at its full size, never shrunk to fit (the owner,
+ * 2026-11-21, at 19.65 px: "1,320 nm" and "⚠ 111.3 gal" read smaller than
+ * "262 nm" and "23.1 gal"): the columns are as wide as their content, the
+ * first flush left and the last flush right with the rest spread between,
+ * and only where even that is too wide is a figure cut short with "…",
+ * the figures always exact, never a rounded form in their place.
  *
  * `tap` makes a figure a button: given the figure and its face (the mark,
  * the value and the unit, sized to fit), it returns the button round the
@@ -84,12 +80,16 @@ export default function FigureStrip({
   // As many columns as figures, so none ever wraps onto a row of its own
   // (in flight the GPS altitude, a fifth figure in four columns, went under
   // the rest, and the pill showed that row alone).
-  const room = { "--fit-room": figureRoom(figures, type.unitScale), "--cols": figures.length } as CSSProperties;
+  const cols = { "--cols": figures.length } as CSSProperties;
   return (
     <div className="@container/figures relative" data-slot="section-summary">
       <dl
-        className={cn("grid gap-3", "grid-cols-[repeat(var(--cols),minmax(0,1fr))]", "@max-[16rem]/figures:grid-cols-2")}
-        style={room}
+        className={cn(
+          "grid justify-between gap-x-2 gap-y-3",
+          "grid-cols-[repeat(var(--cols),minmax(0,max-content))]",
+          "@max-[16rem]/figures:grid-cols-2",
+        )}
+        style={cols}
         data-testid={testId}
       >
         {figures.map((f, i) => {
@@ -125,12 +125,11 @@ export default function FigureStrip({
             </>,
           );
           return (
-            // Each column a container, so the figure's size is worked out
-            // from its own width (FIT's 100cqi), the same in every column.
+            // Each column as wide as its widest of name and figure.
             <div
               key={f.name}
               className={cn(
-                "@container min-w-0 text-center",
+                "min-w-0 text-center",
                 edge === "start" && "@min-[16rem]/figures:text-left",
                 edge === "end" && "@min-[16rem]/figures:text-right",
               )}
@@ -154,7 +153,7 @@ export default function FigureStrip({
               <dd
                 className={cn(
                   type.value,
-                  FIT,
+                  FIGURE_SIZE,
                   "truncate font-semibold tabular-nums",
                   button && "overflow-visible",
                   // A figure that is not a button said wrong in red, its
