@@ -32,12 +32,12 @@ export async function showPage(page: Page, at: 0 | 1) {
   const toggle = page.getByTestId("sheet-page-toggle");
   if (at === 0) {
     // FPL has no toggle: its way back is its head's Search button, which
-    // turns to Search with the search in use (its Cancel goes back to FPL),
-    // the route kept (the owner, 2026-11-20).
+    // turns to Search's resting page (the FPL button back), the route kept
+    // (the owner, 2026-11-21).
     const search = page.getByTestId("fpl-search");
     if (!(await search.isVisible())) await grabberTo(page, "half");
     await search.click();
-    await expect(page.getByTestId("one-search-cancel")).toBeVisible();
+    await expect(toggle).toBeVisible();
   } else {
     if (!(await toggle.isVisible())) await grabberTo(page, "half");
     await toggle.click();

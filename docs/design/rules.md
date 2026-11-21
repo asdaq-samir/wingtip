@@ -159,7 +159,7 @@ Compose. Nothing here is built by hand where a stock part does it.
     the page's own: the search on Search, the route's figures on FPL (with
     no route, FPL's bar); on the web the one round toggle that turns the
     pages starts Search's first row and the account button ends it (the
-    owner, 2026-11-20; §4a), nothing under the sheet.
+    owner, 2026-11-20; §4a), nothing under the sheet. FPL's head has a round Search button instead, which turns to Search's resting page (the FPL button back, the route kept) rather than into typing; a tap on the field there types.
     **The smallest size is one fixed
     height for every page and card**, never one a page: the web's
     `"4.25rem"` on the screen's foot (sheet/insets), which the search's row, a

@@ -37,8 +37,7 @@ test("Search to FPL by the toggle and back by FPL's Search button, the sheet's s
   await expect(sideDrawer(page).getByTestId("route-empty")).toBeVisible();
   await expect(sideDrawer(page).getByText("Plan a flight")).toHaveCount(0);
 
-  // FPL's Search button is the way back, the sheet's size kept, the search
-  // in use (its Cancel goes back to FPL).
+  // FPL's Search button is the way back, the sheet's size kept, Search at rest.
   await showPage(page, 0);
   await expectPage(page, 0);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
@@ -86,8 +85,8 @@ test("on Search the toggle starts the first row and the account button ends it, 
       };
     });
   const fpl = await measure();
-  // Search at rest, by its deep link: FPL's Search button opens the search
-  // in use, over the same page.
+  // Search at rest, by its deep link: FPL's Search button goes to it
+  // too, over the same page.
   await page.goto("/app/plan?dep=C81&dest=KDLH&open=search");
   await settle(page);
   await grabberTo(page, "half");
@@ -382,4 +381,22 @@ test("on FPL one tap on the ✕ asks to clear the route in a centred alert, the 
   // FPL's Search button goes back to Search, the route (here none) kept.
   await showPage(page, 0);
   await expectPage(page, 0);
+});
+
+test("on FPL its Search button goes to Search's resting page with the route kept, its FPL button back", async ({ page }) => {
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await grabberTo(page, "half");
+  await settled(sideDrawer(page));
+  await expectPage(page, 1);
+  await sideDrawer(page).getByTestId("fpl-search").click();
+  await expectPage(page, 0);
+  // At rest: the FPL button, no typing started, the route in the address.
+  await expect(toggle(page)).toBeVisible();
+  await expect(page.getByTestId("one-search-cancel")).toHaveCount(0);
+  await expect(page).toHaveURL(/dep=C81/);
+  await expect(page).toHaveURL(/dest=KDLH/);
+  await toggle(page).click();
+  await expectPage(page, 1);
+  await expect(page).toHaveURL(/dest=KDLH/);
 });

@@ -108,8 +108,7 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   await expect(page).toHaveURL(/dest=KOSH/, { timeout: slow(30_000) });
   await expectPage(page, 1);
   // The tip waits for the toggle, which Search alone has: none on FPL. Search
-  // at rest again by its deep link (FPL's Search button opens the search in
-  // use, its Cancel back to FPL).
+  // at rest again by its deep link (FPL's Search button goes there too).
   const tip = page.getByTestId("fpl-tip");
   await expect(tip).toHaveCount(0);
   await page.goto(`${page.url()}&open=search`);
