@@ -27665,7 +27665,8 @@
               "application/json": {
                 "schema": {}
               },
-              "image/png": {}
+              "image/png": {},
+              "image/webp": {}
             },
             "description": "Successful Response"
           },
@@ -27738,7 +27739,8 @@
               "application/json": {
                 "schema": {}
               },
-              "image/png": {}
+              "image/png": {},
+              "image/webp": {}
             },
             "description": "Successful Response"
           },

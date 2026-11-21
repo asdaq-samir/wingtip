@@ -176,7 +176,9 @@ AWS's public us-east-1 prices (CloudFront pay-as-you-go: 1 TB and 10
 million requests a month always free, then $0.085 a GB and $0.01 per
 10,000 HTTPS requests; EC2 on-demand, Spot taken at about a third). One
 cycle's archives are about 30 GB (sec@2x 18 GB, sec 6.7, tac@2x 2.3, tac
-0.9, IFR 1.8, the overlays 0.12), PNG tiles of 35 KB on average at @2x.
+0.9, IFR 1.8, the overlays 0.12), PNG tiles of 35 KB on average at @2x;
+packed as lossless WebP from 2026-11-21 (services/jobs/README.md, "The
+chart tiles as archives") about 89% of that, some 27 GB a cycle.
 An active pilot is taken as ten sessions a month of about 200 tiles and
 100 answers each, some 80 MB and 3,000 requests (the web's service
 worker keeps 20,000 tiles for the cycle, so a pilot's own area costs
